@@ -706,6 +706,7 @@ def test_clears_out_its_database_on_shrinking(
     assert len(runner.interesting_examples) == 1
     for b in db.fetch(runner.secondary_key):
         assert b[0] >= 127
+    assert len(list(db.fetch(runner.database_key))) == 1
 
 
 def test_saves_negated_examples_in_covering():

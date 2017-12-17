@@ -249,6 +249,7 @@ class ConjectureRunner(object):
                     changed = True
 
             if changed:
+                self.save_buffer(data.buffer)
                 self.interesting_examples[key] = data
                 self.shrunk_examples.discard(key)
                 if last_data_is_interesting and not first_call:
@@ -353,10 +354,9 @@ class ConjectureRunner(object):
                 state.valid_examples, draw_time, state.invalid_examples,
                 state.overrun_examples), HealthCheck.too_slow,)
 
-    def save_buffer(self, buffer, key=None):
+    def save_buffer(self, buffer):
         if self.settings.database is not None:
-            if key is None:
-                key = self.database_key
+            key = self.database_key
             if key is None:
                 return
             self.settings.database.save(key, hbytes(buffer))
@@ -375,15 +375,6 @@ class ConjectureRunner(object):
         return b'.'.join((self.database_key, b'coverage'))
 
     def note_details(self, data):
-        if data.status == Status.INTERESTING:
-            if (
-                self.last_data is None or
-                self.last_data.status != Status.INTERESTING or
-                self.last_data.interesting_origin == data.interesting_origin
-            ):
-                self.save_buffer(data.buffer)
-            else:
-                self.save_buffer(data.buffer, self.secondary_key)
         runtime = max(data.finish_time - data.start_time, 0.0)
         self.all_runtimes.append(runtime)
         self.all_drawtimes.extend(data.draw_times)
