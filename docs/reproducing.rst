@@ -106,7 +106,7 @@ as follows:
     ...     pass
     Falsifying example: test(f=nan)
     <BLANKLINE>
-    You can reproduce this example by temporarily adding @reproduce_failure('3.42.2', b'AAD/8AAAAAAAAQA=') as a decorator on your test case
+    You can reproduce this example by temporarily adding @reproduce_failure(..., b'AAD/8AAAAAAAAQA=') as a decorator on your test case
 
 Adding the suggested decorator to the test should reproduce the failure (as
 long as everything else is the same - changing the versions of Python or
