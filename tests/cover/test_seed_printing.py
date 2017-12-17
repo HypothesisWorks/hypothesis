@@ -23,15 +23,18 @@ import pytest
 
 import hypothesis.core as core
 import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import given, assume, settings
 from hypothesis.errors import FailedHealthCheck
-from tests.common.utils import capture_out
+from tests.common.utils import all_values, capture_out
+from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hrange
 
 
 @pytest.mark.parametrize('in_pytest', [False, True])
 @pytest.mark.parametrize('fail_healthcheck', [False, True])
-def test_prints_seed_on_exception(monkeypatch, in_pytest, fail_healthcheck):
+def test_prints_seed_only_on_healthcheck(
+    monkeypatch, in_pytest, fail_healthcheck
+):
     monkeypatch.setattr(core, 'running_under_pytest', in_pytest)
 
     strategy = st.integers()
@@ -57,9 +60,13 @@ def test_prints_seed_on_exception(monkeypatch, in_pytest, fail_healthcheck):
 
     seed = test._hypothesis_internal_use_generated_seed
     assert seed is not None
-    assert '@seed(%d)' % (seed,) in output
-    contains_pytest_instruction = ('--hypothesis-seed=%d' % (seed,)) in output
-    assert contains_pytest_instruction == in_pytest
+    if fail_healthcheck:
+        assert '@seed(%d)' % (seed,) in output
+        contains_pytest_instruction = (
+            '--hypothesis-seed=%d' % (seed,)) in output
+        assert contains_pytest_instruction == in_pytest
+    else:
+        assert '@seed' not in output
 
 
 def test_uses_global_force(monkeypatch):
@@ -81,19 +88,36 @@ def test_uses_global_force(monkeypatch):
     assert '@seed' not in output[0]
 
 
-def test_does_not_print_on_reuse_from_database():
+def test_does_print_on_reuse_from_database():
+    passes_healthcheck = False
+
+    database = InMemoryExampleDatabase()
+
+    @settings(database=database)
     @given(st.integers())
     def test(i):
+        assume(passes_healthcheck)
         raise ValueError()
 
     with capture_out() as o:
-        with pytest.raises(ValueError):
+        with pytest.raises(FailedHealthCheck):
             test()
 
     assert '@seed' in o.getvalue()
 
+    passes_healthcheck = True
+
     with capture_out() as o:
         with pytest.raises(ValueError):
             test()
 
+    assert all_values(database)
     assert '@seed' not in o.getvalue()
+
+    passes_healthcheck = False
+
+    with capture_out() as o:
+        with pytest.raises(FailedHealthCheck):
+            test()
+
+    assert '@seed' in o.getvalue()

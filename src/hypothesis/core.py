@@ -21,8 +21,11 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import ast
 import sys
 import time
+import zlib
+import base64
 import traceback
 from random import Random
 
@@ -32,14 +35,15 @@ from coverage.files import canonical_filename
 from coverage.collector import Collector
 
 import hypothesis.strategies as st
+from hypothesis import __version__
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
-    Unsatisfiable, InvalidArgument, DeadlineExceeded, MultipleFailures, \
-    FailedHealthCheck, UnsatisfiedAssumption, \
+    Unsatisfiable, DidNotReproduce, InvalidArgument, DeadlineExceeded, \
+    MultipleFailures, FailedHealthCheck, UnsatisfiedAssumption, \
     HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Phase, Verbosity, HealthCheck, \
-    note_deprecation
+    PrintSettings, note_deprecation
 from hypothesis.executors import new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
@@ -115,6 +119,54 @@ def seed(seed):
         test._hypothesis_internal_use_seed = seed
         return test
     return accept
+
+
+def reproduce_failure(version, blob):
+    """Run the example that corresponds to this data blob in order to reproduce
+    a failure.
+
+    A test with this decorator *always* runs only one example and always fails.
+    If the provided example does not cause a failure, or is in some way invalid
+    for this test, then this will fail with a DidNotReproduce error.
+
+    This decorator is not intended to be a permanent addition to your test
+    suite. It's simply some code you can add to ease reproduction of a problem
+    in the event that you don't have access to the test database. Because of
+    this, *no* compatibility guarantees are made between different versions of
+    Hypothesis - its API may change arbitrarily from version to version.
+
+    """
+    def accept(test):
+        test._hypothesis_internal_use_reproduce_failure = (version, blob)
+        return test
+    return accept
+
+
+def encode_failure(buffer):
+    buffer = bytes(buffer)
+    compressed = zlib.compress(buffer)
+    if len(compressed) < len(buffer):
+        buffer = b'\1' + compressed
+    else:
+        buffer = b'\0' + buffer
+    return base64.b64encode(buffer)
+
+
+def decode_failure(blob):
+    try:
+        buffer = base64.b64decode(blob)
+    except Exception:
+        raise InvalidArgument('Invalid base64 encoded string: %r' % (blob,))
+    prefix = buffer[:1]
+    if prefix == b'\0':
+        return buffer[1:]
+    elif prefix == b'\1':
+        return zlib.decompress(buffer[1:])
+    else:
+        raise InvalidArgument(
+            'Could not decode blob %r: Invalid start byte %r' % (
+                blob, prefix
+            ))
 
 
 class WithRunner(SearchStrategy):
@@ -408,6 +460,7 @@ class StateForActualGivenExecution(object):
 
         self.coverage_data = CoverageData()
         self.files_to_propagate = set()
+        self.failed_normally = False
 
         self.used_examples_from_database = False
 
@@ -476,6 +529,8 @@ class StateForActualGivenExecution(object):
                 return result
 
         def run(data):
+            if not hasattr(data, 'can_reproduce_example_from_repr'):
+                data.can_reproduce_example_from_repr = True
             with self.settings:
                 with BuildContext(data, is_final=is_final):
                     import random as rnd_module
@@ -485,9 +540,13 @@ class StateForActualGivenExecution(object):
                         text_repr[0] = arg_string(test, args, kwargs)
 
                     if print_example:
-                        report(
-                            lambda: 'Falsifying example: %s(%s)' % (
-                                test.__name__, arg_string(test, args, kwargs)))
+                        example = '%s(%s)' % (
+                            test.__name__, arg_string(test, args, kwargs))
+                        try:
+                            ast.parse(example)
+                        except SyntaxError:
+                            data.can_reproduce_example_from_repr = False
+                        report('Falsifying example: %s' % (example,))
                     elif current_verbosity() >= Verbosity.verbose:
                         report(
                             lambda: 'Trying example: %s(%s)' % (
@@ -642,21 +701,23 @@ class StateForActualGivenExecution(object):
             database_key=database_key,
         )
 
-        if in_given or self.collector is None:
-            runner.run()
-        else:  # pragma: no cover
-            in_given = True
-            original_trace = sys.gettrace()
-            try:
-                sys.settrace(None)
+        try:
+            if in_given or self.collector is None:
                 runner.run()
-            finally:
-                in_given = False
-                sys.settrace(original_trace)
-        note_engine_for_statistics(runner)
-        run_time = time.time() - self.start_time
-
-        self.used_examples_from_database = runner.used_examples_from_database
+            else:  # pragma: no cover
+                in_given = True
+                original_trace = sys.gettrace()
+                try:
+                    sys.settrace(None)
+                    runner.run()
+                finally:
+                    in_given = False
+                    sys.settrace(original_trace)
+            note_engine_for_statistics(runner)
+            run_time = time.time() - self.start_time
+        finally:
+            self.used_examples_from_database = \
+                runner.used_examples_from_database
 
         if runner.used_examples_from_database:
             if self.settings.derandomize:
@@ -725,14 +786,17 @@ class StateForActualGivenExecution(object):
         if not self.falsifying_examples:
             return
 
+        self.failed_normally = True
+
         flaky = 0
 
         for falsifying_example in self.falsifying_examples:
+            ran_example = ConjectureData.for_buffer(falsifying_example.buffer)
             self.__was_flaky = False
             assert falsifying_example.__expected_exception is not None
             try:
                 self.execute(
-                    ConjectureData.for_buffer(falsifying_example.buffer),
+                    ran_example,
                     print_example=True, is_final=True,
                     expected_failure=(
                         falsifying_example.__expected_exception,
@@ -749,6 +813,34 @@ class StateForActualGivenExecution(object):
                 if len(self.falsifying_examples) <= 1:
                     raise
                 report(traceback.format_exc())
+            finally:  # pragma: no cover
+                # This section is in fact entirely covered by the tests in
+                # test_reproduce_failure, but it seems to trigger a lovely set
+                # of coverage bugs: The branches show up as uncovered (despite
+                # definitely being covered - you can add an assert False else
+                # branch to verify this and see it fail - and additionally the
+                # second branch still complains about lack of coverage even if
+                # you add a pragma: no cover to it!
+                # See https://bitbucket.org/ned/coveragepy/issues/623/
+                if self.settings.print_blob is not PrintSettings.NEVER:
+                    failure_blob = encode_failure(falsifying_example.buffer)
+                    # Have to use the example we actually ran, not the original
+                    # falsifying example! Otherwise we won't catch problems
+                    # where the repr of the generated example doesn't parse.
+                    can_use_repr = ran_example.can_reproduce_example_from_repr
+                    if (
+                        self.settings.print_blob is PrintSettings.ALWAYS or (
+                            self.settings.print_blob is PrintSettings.INFER and
+                            not can_use_repr and
+                            len(failure_blob) < 200
+                        )
+                    ):
+                        report((
+                            '\n'
+                            'You can reproduce this example by temporarily '
+                            'adding @reproduce_failure(%r, %r) as a decorator '
+                            'on your test case') % (
+                                __version__, failure_blob,))
             if self.__was_flaky:
                 flaky += 1
 
@@ -839,6 +931,45 @@ def given(*given_arguments, **given_kwargs):
             )
             arguments, kwargs, test_runner, search_strategy = processed_args
 
+            state = StateForActualGivenExecution(
+                test_runner, search_strategy, test, settings, random,
+                had_seed=wrapped_test._hypothesis_internal_use_seed
+            )
+
+            reproduce_failure = \
+                wrapped_test._hypothesis_internal_use_reproduce_failure
+
+            if reproduce_failure is not None:
+                expected_version, failure = reproduce_failure
+                if expected_version != __version__:
+                    raise InvalidArgument((
+                        'Attempting to reproduce a failure from a different '
+                        'version of Hypothesis. This failure is from %s, but '
+                        'you are currently running %r. Please change your '
+                        'Hypothesis version to a matching one.'
+                    ) % (expected_version, __version__))
+                try:
+                    state.execute(ConjectureData.for_buffer(
+                        decode_failure(failure)),
+                        print_example=True, is_final=True,
+                    )
+                    raise DidNotReproduce(
+                        'Expected the test to raise an error, but it '
+                        'completed successfully.'
+                    )
+                except StopTest:
+                    raise DidNotReproduce(
+                        'The shape of the test data has changed in some way '
+                        'from where this blob was defined. Are you sure '
+                        "you're running the same test?"
+                    )
+                except UnsatisfiedAssumption:
+                    raise DidNotReproduce(
+                        'The test data failed to satisfy an assumption in the '
+                        'test. Have you added it since this blob was '
+                        'generated?'
+                    )
+
             execute_explicit_examples(
                 test_runner, test, wrapped_test, settings, arguments, kwargs
             )
@@ -853,18 +984,11 @@ def given(*given_arguments, **given_kwargs):
                 return
 
             try:
-                state = StateForActualGivenExecution(
-                    test_runner, search_strategy, test, settings, random,
-                    had_seed=wrapped_test._hypothesis_internal_use_seed
-                )
                 state.run()
             except BaseException:
                 generated_seed = \
                     wrapped_test._hypothesis_internal_use_generated_seed
-                if (
-                    generated_seed is not None and
-                    not state.used_examples_from_database
-                ):
+                if generated_seed is not None and not state.failed_normally:
                     if running_under_pytest:
                         report((
                             'You can add @seed(%(seed)d) to this test or run '
@@ -887,6 +1011,9 @@ def given(*given_arguments, **given_kwargs):
         wrapped_test._hypothesis_internal_use_settings = getattr(
             test, '_hypothesis_internal_use_settings', None
         ) or Settings.default
+        wrapped_test._hypothesis_internal_use_reproduce_failure = getattr(
+            test, '_hypothesis_internal_use_reproduce_failure', None
+        )
         return wrapped_test
     return run_test_with_generator
 

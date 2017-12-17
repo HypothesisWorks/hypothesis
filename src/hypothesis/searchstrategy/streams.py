@@ -33,6 +33,8 @@ class StreamStrategy(SearchStrategy):
         return u'StreamStrategy(%r)' % (self.source_strategy,)
 
     def do_draw(self, data):
+        data.can_reproduce_example_from_repr = False
+
         def gen():
             while True:
                 yield data.draw(self.source_strategy)

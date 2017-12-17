@@ -28,7 +28,8 @@ from hypothesis._settings import settings, Verbosity, Phase, HealthCheck, \
     unlimited
 from hypothesis.version import __version_info__, __version__
 from hypothesis.control import assume, note, reject, event
-from hypothesis.core import given, find, example, seed
+from hypothesis.core import given, find, example, seed, reproduce_failure, \
+    PrintSettings
 from hypothesis.utils.conventions import infer
 
 
@@ -37,11 +38,13 @@ __all__ = [
     'Verbosity',
     'HealthCheck',
     'Phase',
+    'PrintSettings',
     'assume',
     'reject',
     'seed',
     'given',
     'unlimited',
+    'reproduce_failure',
     'find',
     'example',
     'note',

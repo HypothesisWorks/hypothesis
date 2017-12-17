@@ -144,13 +144,6 @@ values. Any absent ones will be set to defaults:
 .. doctest::
 
     >>> from hypothesis import settings
-    >>> settings()  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-    settings(buffer_size=8192, database_file='...', deadline=not_set,
-             derandomize=True, max_examples=100, max_iterations=1000,
-             max_shrinks=500, min_satisfying_examples=5,
-             perform_health_check=True, phases=(...), stateful_step_count=50,
-             strict=False, suppress_health_check=(), timeout=60,
-             use_coverage=True, verbosity=Verbosity.normal)
     >>> settings().max_examples
     100
     >>> settings(max_examples=10).max_examples

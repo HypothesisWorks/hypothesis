@@ -208,3 +208,7 @@ class StopTest(BaseException):
     def __init__(self, testcounter):
         super(StopTest, self).__init__(repr(testcounter))
         self.testcounter = testcounter
+
+
+class DidNotReproduce(HypothesisException):
+    pass
