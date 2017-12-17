@@ -413,7 +413,9 @@ class StateForActualGivenExecution(object):
 
         if settings.use_coverage and not IN_COVERAGE_TESTS:  # pragma: no cover
             if Collector._collectors:
-                self.hijack_collector(Collector._collectors[-1])
+                parent = Collector._collectors[-1]
+                self.files_to_propagate = set(parent.data)
+                self.hijack_collector(parent)
 
             self.collector = Collector(
                 branch=True,
@@ -563,7 +565,7 @@ class StateForActualGivenExecution(object):
                 covdata.add_arcs({
                     filename: {
                         arc: None
-                        for arc in self.coverage_data.arcs(filename)}
+                        for arc in self.coverage_data.arcs(filename) or ()}
                     for filename in self.files_to_propagate
                 })
             else:
