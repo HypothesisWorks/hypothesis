@@ -47,8 +47,6 @@ env:
         # Less important tests that will probably
         # pass whenever the above do but are still
         # worth testing.
-        - TASK=check-examples2
-        - TASK=check-examples3
         - TASK=check-unicode
         - TASK=check-ancient-pip
         - TASK=check-pure-tracer
