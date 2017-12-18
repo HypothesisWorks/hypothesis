@@ -84,8 +84,8 @@ def test_decodes_to_starting_sequence(ls):
     assert run_length_decode(run_length_encode(ls)) == ls
 
 
-@given(Lists, st.integers(0, 100))
-def test_duplicating_an_element_does_not_increase_length(ls, i):
+@given(Lists, st.data())
+def test_duplicating_an_element_does_not_increase_length(ls, data):
     """The previous test could be passed by simply returning the input sequence
     so we need something that tests the compression property of our encoding.
 
@@ -97,7 +97,8 @@ def test_duplicating_an_element_does_not_increase_length(ls, i):
     # We use assume to get a valid index into the list. We could also have used
     # e.g. flatmap, but this is relatively straightforward and will tend to
     # perform better.
-    assume(i < len(ls))
+    assume(ls)
+    i = data.draw(st.integers(0, len(ls) - 1))
     ls2 = list(ls)
     # duplicating the value at i right next to it guarantees they are part of
     # the same run in the resulting compression.
