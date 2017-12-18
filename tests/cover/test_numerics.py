@@ -24,7 +24,7 @@ import pytest
 
 from hypothesis import given, assume, reject
 from hypothesis.errors import InvalidArgument
-from tests.common.utils import fails
+from tests.common.debug import find_any
 from hypothesis.strategies import data, none, tuples, decimals, integers, \
     fractions
 
@@ -72,11 +72,11 @@ def test_fuzz_decimals_bounds(data):
         assert val.as_tuple().exponent == -places
 
 
-@fails
-@given(decimals())
-def test_all_decimals_can_be_exact_floats(x):
-    assume(x.is_finite())
-    assert decimal.Decimal(float(x)) == x
+def test_all_decimals_can_be_exact_floats():
+    find_any(
+        decimals(),
+        lambda x: assume(x.is_finite()) and decimal.Decimal(float(x)) == x
+    )
 
 
 @given(fractions(), fractions(), fractions())
@@ -84,17 +84,15 @@ def test_fraction_addition_is_well_behaved(x, y, z):
     assert x + y + z == y + x + z
 
 
-@fails
-@given(decimals())
-def test_decimals_include_nan(x):
-    assert not math.isnan(x)
+def test_decimals_include_nan():
+    find_any(decimals(), lambda x: x.is_nan())
 
 
-@fails
-@given(decimals())
-def test_decimals_include_inf(x):
-    assume(not x.is_snan())
-    assert not math.isinf(x)
+def test_decimals_include_inf():
+    find_any(
+        decimals(),
+        lambda x: assume(not x.is_snan()) and math.isinf(x)
+    )
 
 
 @given(decimals(allow_nan=False))
