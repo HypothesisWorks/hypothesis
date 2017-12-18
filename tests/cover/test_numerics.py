@@ -17,7 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
 import decimal
 
 import pytest
@@ -91,19 +90,18 @@ def test_decimals_include_nan():
 def test_decimals_include_inf():
     find_any(
         decimals(),
-        lambda x: assume(not x.is_snan()) and math.isinf(x)
+        lambda x: assume(not x.is_snan()) and x.is_infinite()
     )
 
 
 @given(decimals(allow_nan=False))
 def test_decimals_can_disallow_nan(x):
-    assert not math.isnan(x)
+    assert not x.is_nan()
 
 
 @given(decimals(allow_infinity=False))
 def test_decimals_can_disallow_inf(x):
-    assume(not x.is_snan())
-    assert not math.isinf(x)
+    assert not x.is_infinite()
 
 
 @pytest.mark.parametrize('places', range(10))
