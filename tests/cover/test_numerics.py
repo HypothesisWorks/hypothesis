@@ -88,10 +88,7 @@ def test_decimals_include_nan():
 
 
 def test_decimals_include_inf():
-    find_any(
-        decimals(),
-        lambda x: assume(not x.is_snan()) and x.is_infinite()
-    )
+    find_any(decimals(), lambda x: x.is_infinite())
 
 
 @given(decimals(allow_nan=False))
