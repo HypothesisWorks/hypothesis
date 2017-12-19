@@ -23,7 +23,7 @@ import math
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import find, given, assume, settings
+from hypothesis import find, given, settings
 from tests.common.debug import minimal
 from hypothesis.internal.compat import WINDOWS
 from hypothesis.internal.floats import float_to_int, int_to_float
