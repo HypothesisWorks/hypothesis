@@ -22,7 +22,7 @@ import datetime as dt
 import pytest
 from flaky import flaky
 
-from hypothesis import find, given, settings, unlimited
+from hypothesis import given, settings, unlimited
 from tests.common.debug import minimal, find_any
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import none, dates, times, binary, datetimes, \
@@ -99,7 +99,7 @@ def test_DatetimeStrategy_draw_may_fail():
             return False
 
     strat = DatetimeStrategy(dt.datetime.min, dt.datetime.max, none())
-    failure_inducing = find(binary(), is_failure_inducing)
+    failure_inducing = minimal(binary(), is_failure_inducing)
     data = ConjectureData.for_buffer(failure_inducing * 100)
     with pytest.raises(StopTest):
         data.draw(strat)
