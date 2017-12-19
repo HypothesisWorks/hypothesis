@@ -53,7 +53,7 @@ can be tricky.  Tips:
 - Use ``git grep`` to search for keywords, e.g. the name of a strategy you've changed.
 - Deliberately break something related to your code, and see which tests fail.
 - Ask a maintainer!  Sometimes the structure is just arbitrary, and other tactics
-  don't work - but as I keep saying, we *want* to help!
+  don't work - but we *want* to help!
 
 
 About each group of tests
@@ -69,17 +69,13 @@ Still here?  Here's a note on what to expect in each directory.
     for other functions that are often useful when writing tests.
 
 ``cover/``
-    The home of enough tests to get 100% branch coverage - you'll probably
-    spend most of your time here.  Ideally this would be as quick as possible
-    while remaining comprehensive.  More details inside.
+    The home of enough tests to get 100% branch coverage, as quickly as possible
+    without compromising on test power.  This can be an intimidating target,
+    but it's entirely achievable and the maintainers are (still) here to help.
 
     This directory alone has around two-thirds of the tests for Hypothesis
     (~8k of ~12k lines of code).  If you're adding or fixing tests, chances
     are therefore good that they're in here!
-
-    We require every change to come with tests in this directory that ensure
-    100% branch coverage.  This can be an intimidating target, but it's entirely
-    achievable and this document is here to help you out.
 
 ``datetime/``
     Tests for the deprecated ``hypothesis.extra.datetime`` module, which
@@ -96,6 +92,9 @@ Still here?  Here's a note on what to expect in each directory.
     More expensive and longer-running tests, typically used to test trickier
     interactions or check for regressions in expensive bugs.  Lots of tests
     about how values shrink, databases, compatibility, etc.
+
+    New tests that are not required for full coverage of code branches or
+    behaviour should also go in ``nocover``, to keep ``cover`` reasonably fast.
 
 ``numpy/``
     Tests for the Numpy extra.
