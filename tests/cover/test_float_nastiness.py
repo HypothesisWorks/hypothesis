@@ -23,7 +23,8 @@ import math
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import find, given, assume, settings
+from hypothesis import find, given, settings
+from tests.common.debug import minimal
 from hypothesis.internal.compat import WINDOWS
 from hypothesis.internal.floats import float_to_int, int_to_float
 
@@ -40,12 +41,12 @@ def test_floats_are_in_range(lower, upper):
     test_is_in_range()
 
 
-def test_can_generate_both_zeros():
-    find(
+@pytest.mark.parametrize('sign', [-1, 1])
+def test_can_generate_both_zeros(sign):
+    assert minimal(
         st.floats(),
-        lambda x: assume(x >= 0) and math.copysign(1, x) < 0,
-        settings=settings(max_examples=10000)
-    )
+        lambda x: math.copysign(1, x) == sign,
+    ) == sign * 0.0
 
 
 @pytest.mark.parametrize((u'l', u'r'), [
@@ -54,15 +55,11 @@ def test_can_generate_both_zeros():
     (-1.0, 0.0),
     (-sys.float_info.min, sys.float_info.min),
 ])
-def test_can_generate_both_zeros_when_in_interval(l, r):
-    interval = st.floats(l, r)
-    find(
-        interval,
-        lambda x: assume(x == 0) and math.copysign(1, x) == 1,
-        settings=settings(max_iterations=20000))
-    find(
-        interval, lambda x: assume(x == 0) and math.copysign(1, x) == -1,
-        settings=settings(max_iterations=20000))
+@pytest.mark.parametrize('sign', [-1, 1])
+def test_can_generate_both_zeros_when_in_interval(l, r, sign):
+    assert minimal(
+        st.floats(l, r),
+        lambda x: math.copysign(1, x) == sign) == sign * 0.0
 
 
 @given(st.floats(0.0, 1.0))
