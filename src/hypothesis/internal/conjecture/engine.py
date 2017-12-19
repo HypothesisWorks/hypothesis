@@ -26,7 +26,7 @@ from collections import defaultdict
 import attr
 
 from hypothesis import settings as Settings
-from hypothesis import Phase, HealthCheck
+from hypothesis import Phase, Verbosity, HealthCheck
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import Counter, ceil, hbytes, hrange, \
     int_to_text, int_to_bytes, benchmark_time, int_from_bytes, \
@@ -165,7 +165,8 @@ class ConjectureRunner(object):
 
         self.target_selector.add(data)
 
-        self.debug_data(data)
+        if self.settings.verbosity >= Verbosity.debug:
+            self.debug_data(data)
 
         tags = frozenset(data.tags)
         data.tags = self.tag_intern_table.setdefault(tags, tags)
@@ -393,12 +394,12 @@ class ConjectureRunner(object):
                 self._run()
             except RunIsComplete:
                 pass
-            for v in self.interesting_examples.values():
-                self.debug_data(v)
-            self.debug(
-                u'Run complete after %d examples (%d valid) and %d shrinks' % (
-                    self.call_count, self.valid_examples, self.shrinks,
-                ))
+            if self.settings.verbosity >= Verbosity.debug:
+                for v in self.interesting_examples.values():
+                    self.debug_data(v)
+                self.debug(
+                    u'Run complete after %d examples (%d valid) and %d shrinks'
+                    % (self.call_count, self.valid_examples, self.shrinks))
 
     def _new_mutator(self):
         target_data = [None]

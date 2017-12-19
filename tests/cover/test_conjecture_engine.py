@@ -17,13 +17,14 @@
 
 from __future__ import division, print_function, absolute_import
 
+import re
 import time
 from random import seed as seed_random
 from random import Random
 
 import pytest
 
-from hypothesis import Phase, HealthCheck, settings, unlimited
+from hypothesis import Phase, Verbosity, HealthCheck, settings, unlimited
 from hypothesis.errors import FailedHealthCheck
 from tests.common.utils import all_values, checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
@@ -668,6 +669,19 @@ def test_note_events(event):
     runner = ConjectureRunner(f)
     runner.run()
     assert runner.event_call_counts[str(event)] == runner.call_count > 0
+
+
+@pytest.mark.parametrize('count', [1, 3])
+def test_debug_data(capsys, count):
+    with settings(verbosity=Verbosity.debug):
+        @run_to_buffer
+        def f(data):
+            for _ in hrange(count):
+                data.draw_bytes(1)
+            if sum(data.buffer) > 10:
+                data.mark_interesting()
+    out, _ = capsys.readouterr()
+    assert re.match(u'\\d+ bytes \\[.*\\] -> ', out)
 
 
 def test_zeroes_bytes_above_bound():
