@@ -34,9 +34,6 @@ TOOL_VIRTUALENV:=$(BUILD_RUNTIMES)/virtualenvs/tools-$(shell scripts/tool-hash.p
 TOOL_PYTHON=$(TOOL_VIRTUALENV)/bin/python
 TOOL_PIP=$(TOOL_VIRTUALENV)/bin/pip
 
-BENCHMARK_VIRTUALENV:=$(BUILD_RUNTIMES)/virtualenvs/benchmark-$(shell scripts/tool-hash.py benchmark)
-BENCHMARK_PYTHON=$(BENCHMARK_VIRTUALENV)/bin/python
-
 FILES_TO_FORMAT=$(BEST_PY3) scripts/files-to-format.py
 
 
@@ -65,11 +62,6 @@ $(PYPY):
 $(TOOL_VIRTUALENV): $(BEST_PY3)
 	$(BEST_PY3) -m virtualenv $(TOOL_VIRTUALENV)
 	$(TOOL_PIP) install -r requirements/tools.txt
-
-$(BENCHMARK_VIRTUALENV): $(BEST_PY3)
-	rm -rf $(BUILD_RUNTIMES)/virtualenvs/benchmark-*
-	$(BEST_PY3) -m virtualenv $(BENCHMARK_VIRTUALENV)
-	$(BENCHMARK_PYTHON) -m pip install -r requirements/benchmark.txt
 
 $(TOOLS): $(TOOL_VIRTUALENV)
 	mkdir -p $(TOOLS)
@@ -220,14 +212,12 @@ check-rst: $(RSTLINT) $(FLAKE8)
 	$(FLAKE8) --select=W191,W291,W292,W293,W391 *.rst docs/*.rst
 
 compile-requirements: $(PIPCOMPILE)
-	$(PIPCOMPILE) requirements/benchmark.in --output-file requirements/benchmark.txt
 	$(PIPCOMPILE) requirements/test.in --output-file requirements/test.txt
 	$(PIPCOMPILE) requirements/tools.in --output-file requirements/tools.txt
 	$(PIPCOMPILE) requirements/typing.in --output-file requirements/typing.txt
 	$(PIPCOMPILE) requirements/coverage.in --output-file requirements/coverage.txt
 
 upgrade-requirements:
-	$(PIPCOMPILE) --upgrade requirements/benchmark.in --output-file requirements/benchmark.txt
 	$(PIPCOMPILE) --upgrade requirements/test.in --output-file requirements/test.txt
 	$(PIPCOMPILE) --upgrade requirements/tools.in --output-file requirements/tools.txt
 	$(PIPCOMPILE) --upgrade requirements/typing.in --output-file requirements/typing.txt
@@ -241,21 +231,6 @@ secrets.tar.enc: deploy_key .pypirc
 	tar -cf secrets.tar deploy_key .pypirc
 	travis encrypt-file secrets.tar
 	rm secrets.tar
-
-check-benchmark: $(BENCHMARK_VIRTUALENV)
-	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --check --nruns=100
-
-build-new-benchmark-data: $(BENCHMARK_VIRTUALENV)
-	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --skip-existing --nruns=1000
-
-update-improved-benchmark-data: $(BENCHMARK_VIRTUALENV)
-	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=improved --nruns=1000
-
-update-all-benchmark-data: $(BENCHMARK_VIRTUALENV)
-	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=all --nruns=1000
-
-update-benchmark-headers: $(BENCHMARK_VIRTUALENV)
-	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --only-update-headers
 
 $(TOX): $(BEST_PY3) tox.ini $(TOOLS)
 	rm -f $(TOX)
