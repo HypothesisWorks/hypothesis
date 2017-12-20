@@ -76,6 +76,7 @@ class ConjectureData(object):
         self.tags = set()
         self.draw_times = []
         self.__intervals = None
+        self.shrinking_blocks = set()
 
     def __assert_not_frozen(self, name):
         if self.frozen:
