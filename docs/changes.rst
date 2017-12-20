@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.44.2 - 2017-12-20
+-------------------
+
+This is a pure refactoring release which changes how Hypothesis manages its
+set of examples internally. It should have no externally visible effects.
+
+-------------------
 3.44.1 - 2017-12-18
 -------------------
 
