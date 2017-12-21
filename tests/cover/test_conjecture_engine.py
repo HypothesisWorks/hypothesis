@@ -597,6 +597,54 @@ def test_can_shrink_variable_draws(n_large):
     assert sum(x[1:]) == target
 
 
+@pytest.mark.parametrize('n', [1, 5, 8, 15])
+def test_can_shrink_variable_draws_with_just_deletion(n, monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', Shrinker.interval_deletion_with_block_lowering
+    )
+
+    def gen(self):
+        data = ConjectureData.for_buffer(
+            [n] + [0] * (n - 1) + [1]
+        )
+        self.test_function(data)
+        # Would normally be added by minimize_individual_blocks, but we skip
+        # that phase in this test.
+        data.shrinking_blocks.add(0)
+
+    monkeypatch.setattr(ConjectureRunner, 'generate_new_examples', gen)
+
+    @run_to_buffer
+    def x(data):
+        n = data.draw_bits(4)
+        b = [data.draw_bits(8) for _ in hrange(n)]
+        if any(b):
+            data.mark_interesting()
+    assert x == hbytes([1, 1])
+
+
+def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', Shrinker.interval_deletion_with_block_lowering
+    )
+
+    def gen(self):
+        data = ConjectureData.for_buffer(hbytes(10))
+        self.test_function(data)
+        # Would normally be added by minimize_individual_blocks, but we skip
+        # that phase in this test.
+        data.shrinking_blocks.add(0)
+
+    monkeypatch.setattr(ConjectureRunner, 'generate_new_examples', gen)
+
+    @run_to_buffer
+    def x(data):
+        for _ in hrange(10):
+            data.draw_bytes(1)
+        data.mark_interesting()
+    assert x == hbytes(10)
+
+
 def test_run_nothing():
     def f(data):
         assert False
@@ -745,6 +793,17 @@ def test_can_delete_intervals(monkeypatch):
     assert x.buffer == hbytes([1, 0])
 
 
+def test_detects_too_small_block_starts():
+    def f(data):
+        data.draw_bytes(8)
+        data.mark_interesting()
+    runner = ConjectureRunner(f, settings=settings(database=None))
+    r = ConjectureData.for_buffer(hbytes(8))
+    runner.test_function(r)
+    assert r.status == Status.INTERESTING
+    assert not runner.prescreen_buffer(hbytes([255] * 7))
+
+
 def test_shrinks_both_interesting_examples(monkeypatch):
     def generate_new_examples(self):
         self.test_function(ConjectureData.for_buffer(hbytes([1])))
@@ -779,3 +838,47 @@ def test_reorder_blocks(monkeypatch):
             data.mark_interesting()
 
     assert x == target
+
+
+def test_duplicate_blocks_that_go_away(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', Shrinker.minimize_duplicated_blocks)
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer(hbytes([0, 0, 0, 2] * 2 + [5] * 2)))
+    )
+
+    @run_to_buffer
+    def x(data):
+        x = data.draw_bits(32)
+        y = data.draw_bits(32)
+        if x != y:
+            data.mark_invalid()
+        b = [data.draw_bytes(1) for _ in hrange(x)]
+        if len(set(b)) <= 1:
+            data.mark_interesting()
+    assert x == hbytes([0] * 8)
+
+
+def test_accidental_duplication(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', Shrinker.minimize_duplicated_blocks)
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer(hbytes([18] * 20)))
+    )
+
+    @run_to_buffer
+    def x(data):
+        x = data.draw_bits(8)
+        y = data.draw_bits(8)
+        if x != y:
+            data.mark_invalid()
+        if x < 5:
+            data.mark_invalid()
+        b = [data.draw_bytes(1) for _ in hrange(x)]
+        if len(set(b)) == 1:
+            data.mark_interesting()
+    assert x == hbytes([5] * 7)

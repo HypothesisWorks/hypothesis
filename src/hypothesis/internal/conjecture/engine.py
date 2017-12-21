@@ -28,8 +28,8 @@ import attr
 from hypothesis import settings as Settings
 from hypothesis import Phase, HealthCheck
 from hypothesis.reporting import debug_report
-from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
-    hbytes, hrange, int_to_text, int_to_bytes, benchmark_time, \
+from hypothesis.internal.compat import Counter, ceil, hbytes, hrange, \
+    int_to_text, int_to_bytes, benchmark_time, int_from_bytes, \
     to_bytes_sequence, unicode_safe_repr
 from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.healthcheck import fail_health_check
@@ -1285,8 +1285,16 @@ class Shrinker(object):
             self.minimize_individual_blocks()
             self.reorder_blocks()
             self.greedy_interval_deletion()
+            self.interval_deletion_with_block_lowering()
 
-    def try_buffer_with_rewriting_from(self, initial_attempt, v):
+    def try_shrinking_blocks(self, blocks, b):
+        initial_attempt = bytearray(self.shrink_target.buffer)
+        for i in blocks:
+            if i >= len(self.shrink_target.blocks):
+                break
+            u, v = self.shrink_target.blocks[i]
+            initial_attempt[u:v] = b
+
         initial_data = self.cached_test_function(initial_attempt)
 
         if initial_data.status == Status.INTERESTING:
@@ -1308,23 +1316,14 @@ class Shrinker(object):
         if lost_data <= 0:
             return False
 
+        self.shrink_target.shrinking_blocks.update(blocks)
+
         try_with_deleted = bytearray(initial_attempt)
         del try_with_deleted[v:v + lost_data]
-        try_with_deleted.extend(hbytes(lost_data - 1))
+
         if self.incorporate_new_buffer(try_with_deleted):
             return True
 
-        for r, s in self.shrink_target.intervals:
-            if (
-                r >= v and
-                s - r <= lost_data and
-                r < len(initial_data.buffer)
-            ):
-                try_with_deleted = bytearray(initial_attempt)
-                del try_with_deleted[r:s]
-                try_with_deleted.extend(hbytes(s - r - 1))
-                if self.incorporate_new_buffer(try_with_deleted):
-                    return True
         return False
 
     def delta_interval_deletion(self):
@@ -1400,30 +1399,21 @@ class Shrinker(object):
         )
         blocks = [buffer for buffer, count in counts.items() if count > 1]
 
-        thresholds = {}
-        for u, v in self.shrink_target.blocks:
-            b = self.shrink_target.buffer[u:v]
-            thresholds[b] = v
-
         blocks.sort(reverse=True)
         blocks.sort(key=lambda b: counts[b] * len(b), reverse=True)
         for block in blocks:
-            parts = [
-                self.shrink_target.buffer[r:s]
-                for r, s in self.shrink_target.blocks
+            targets = [
+                i for i, (u, v) in enumerate(self.shrink_target.blocks)
+                if self.shrink_target.buffer[u:v] == block
             ]
-
-            def replace(b):
-                return hbytes(EMPTY_BYTES.join(
-                    hbytes(b if c == block else c) for c in parts
-                ))
-
-            threshold = thresholds[block]
+            # This can happen if some blocks have been lost in the previous
+            # shrinking.
+            if len(targets) <= 1:
+                continue
 
             minimize(
                 block,
-                lambda b: self.try_buffer_with_rewriting_from(
-                    replace(b), threshold),
+                lambda b: self.try_shrinking_blocks(targets, b),
                 random=self.__engine.random, full=False
             )
 
@@ -1434,10 +1424,7 @@ class Shrinker(object):
             u, v = self.shrink_target.blocks[i]
             minimize(
                 self.shrink_target.buffer[u:v],
-                lambda b: self.try_buffer_with_rewriting_from(
-                    self.shrink_target.buffer[:u] + b +
-                    self.shrink_target.buffer[v:], v
-                ),
+                lambda b: self.try_shrinking_blocks((i,), b),
                 random=self.__engine.random, full=False,
             )
             i += 1
@@ -1467,4 +1454,45 @@ class Shrinker(object):
                         j -= 1
                     else:
                         break
+                i += 1
+
+    def interval_deletion_with_block_lowering(self):
+        self.debug('Lowering blocks while deleting intervals')
+        if not self.shrink_target.shrinking_blocks:
+            return
+
+        i = 0
+        while i < len(self.shrink_target.intervals):
+            u, v = self.shrink_target.intervals[i]
+            changed = False
+            prev = self.shrink_target
+            # This loop never exits normally because the r >= u branch will
+            # always trigger once we find a block inside the interval, hence
+            # the pragma.
+            for j, (r, s) in enumerate(  # pragma: no branch
+                self.shrink_target.blocks
+            ):
+                if r >= u:
+                    break
+                if j not in self.shrink_target.shrinking_blocks:
+                    continue
+                b = self.shrink_target.buffer[r:s]
+                if any(b):
+                    n = int_from_bytes(b)
+
+                    for m in hrange(max(n - 2, 0), n):
+                        c = int_to_bytes(m, len(b))
+                        attempt = bytearray(self.shrink_target.buffer)
+                        attempt[r:s] = c
+                        del attempt[u:v]
+                        if self.incorporate_new_buffer(attempt):
+                            self.shrink_target.shrinking_blocks.update(
+                                k for k in prev.shrinking_blocks
+                                if prev.blocks[k][-1] <= u
+                            )
+                            changed = True
+                            break
+                    if changed:
+                        break
+            if not changed:
                 i += 1
