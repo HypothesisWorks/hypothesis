@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.44.3 - 2017-12-21
+-------------------
+
+This release improves the shrinker in cases where examples drawn earlier can
+affect how much data is drawn later (e.g. when you draw a length parameter in
+a composite and then draw that many elements). Examples found in cases like
+this should now be much closer to minimal.
+
+-------------------
 3.44.2 - 2017-12-20
 -------------------
 
