@@ -504,8 +504,12 @@ class MappedSearchStrategy(SearchStrategy):
         for _ in range(3):
             i = data.index
             try:
-                return self.pack(data.draw(self.mapped_strategy))
+                data.start_example()
+                result = self.pack(data.draw(self.mapped_strategy))
+                data.stop_example()
+                return result
             except UnsatisfiedAssumption:
+                data.stop_example(discard=True)
                 if data.index == i:
                     raise
         reject()

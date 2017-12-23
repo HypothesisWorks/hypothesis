@@ -54,7 +54,9 @@ def integer_range(data, lower, upper, center=None):
     probe = gap + 1
 
     while probe > gap:
+        data.start_example()
         probe = data.draw_bits(bits)
+        data.stop_example(discard=probe > gap)
 
     if above:
         result = center + probe
@@ -307,13 +309,15 @@ class many(object):
         self.rejections = 0
         self.drawn = False
         self.force_stop = False
+        self.rejected = False
 
     def more(self):
         """Should I draw another element to add to the collection?"""
         if self.drawn:
-            self.data.stop_example()
+            self.data.stop_example(discard=self.rejected)
 
         self.drawn = True
+        self.rejected = False
 
         if self.min_size == self.max_size:
             should_continue = self.count < self.min_size
@@ -341,6 +345,7 @@ class many(object):
         assert self.count > 0
         self.count -= 1
         self.rejections += 1
+        self.rejected = True
         if self.rejections > 2 * self.count:
             if self.count < self.min_size:
                 self.data.mark_invalid()
