@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.44.4 - 2017-12-23
+-------------------
+
+This release fixes :issue:`1044`, which slowed tests by up to 6%
+due to broken caching.
+
+-------------------
 3.44.3 - 2017-12-21
 -------------------
 
