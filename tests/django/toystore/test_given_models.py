@@ -129,6 +129,11 @@ class TestGetsBasicModels(TestCase):
         assert isinstance(x.date, dt.date)
         assert isinstance(x.duration, dt.timedelta)
 
+    @given(models(Company))
+    def test_no_null_in_charfield(self, x):
+        # regression test for #1045.  Company just has a convenient CharField.
+        assert u'\x00' not in x.name
+
 
 class TestsNeedingRollback(TransactionTestCase):
 
