@@ -34,13 +34,15 @@ def belongs_to(package):
     cache = {text_type: {}, binary_type: {}}
 
     def accept(filepath):
+        ftype = type(filepath)
         try:
-            return cache[type(filepath)][filepath]
+            return cache[ftype][filepath]
         except KeyError:
             pass
-        filepath = encoded_filepath(filepath)
-        result = os.path.abspath(filepath).startswith(root)
-        cache[type(filepath)][filepath] = result
+        new_filepath = encoded_filepath(filepath)
+        result = os.path.abspath(new_filepath).startswith(root)
+        cache[ftype][filepath] = result
+        cache[type(new_filepath)][new_filepath] = result
         return result
     accept.__name__ = 'is_%s_file' % (package.__name__,)
     return accept
