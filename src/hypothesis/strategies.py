@@ -241,8 +241,8 @@ def integers(min_value=None, max_value=None):
     If min_value is not None then all values will be >= min_value. If
     max_value is not None then all values will be <= max_value
 
-    Examples from this strategy will shrink towards being positive (e.g. 1000
-    is considered simpler than -1) and then towards zero.
+    Examples from this strategy will shrink towards zero, and negative values
+    will also shrink towards positive (i.e. -n may be replaced by +n).
 
     """
 
