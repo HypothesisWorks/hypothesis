@@ -271,6 +271,11 @@ test_integers_are_often_small = define_test(
 )
 
 
+test_integers_are_often_small_but_not_that_small = define_test(
+    integers(), lambda x: 50 <= abs(x) <= 255
+)
+
+
 # This series of tests checks that the one_of() strategy flattens branches
 # correctly.  We assert that the probability of any branch is >= 0.1,
 # approximately (1/8 = 0.125), regardless of how heavily nested it is in the
