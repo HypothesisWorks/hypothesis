@@ -123,7 +123,7 @@ class Minimizer(object):
                 original_suffix,
                 hbytes([255]) * len(original_suffix),
             ]:
-                minimize_byte(
+                minimize_int(
                     self.current[i],
                     lambda c: self.current[i] == c or self.incorporate(
                         prefix + hbytes([c]) + suffix)
@@ -162,7 +162,7 @@ class Minimizer(object):
         if self.current[0] >> 7 == 0:
             return
 
-        i = int_from_bytes(self.current)
+        i = self.current_int
         f = lex_to_float(i)
 
         # This floating point number can be represented in our simple format.
@@ -204,14 +204,21 @@ class Minimizer(object):
         if f > 2:
             self.incorporate_float(f - 1)
 
+    @property
+    def current_int(self):
+        return int_from_bytes(self.current)
+
+    def minimize_as_integer(self):
+        minimize_int(
+            self.current_int,
+            lambda c: c == self.current_int or self.incorporate_int(c)
+        )
+
     def run(self):
         if not any(self.current):
             return
         if len(self.current) == 1:
-            minimize_byte(
-                self.current[0],
-                lambda c: c == self.current[0] or self.incorporate(hbytes([c]))
-            )
+            self.minimize_as_integer()
             return
 
         # Initial checks as to whether the two smallest possible buffers of
@@ -268,6 +275,7 @@ class Minimizer(object):
             self.shift()
             self.shrink_indices()
             self.rotate_suffixes()
+            self.minimize_as_integer()
 
 
 def minimize(initial, condition, random, full=True):
@@ -308,7 +316,7 @@ def binsearch(_lo, _hi):
     return accept
 
 
-def minimize_byte(c, f):
+def minimize_int(c, f):
     """Return the smallest byte for which a function `f` returns True, starting
     with the byte `c` as an unsigned integer."""
     if f(0):
@@ -318,13 +326,16 @@ def minimize_byte(c, f):
     elif c == 2:
         return 2
     if f(c - 1):
-        lo = 1
         hi = c - 1
-        while lo + 1 < hi:
-            mid = (lo + hi) // 2
-            if f(mid):
-                hi = mid
-            else:
-                lo = mid
-        return hi
-    return c
+    elif f(c - 2):
+        hi = c - 2
+    else:
+        return c
+    lo = 1
+    while lo + 1 < hi:
+        mid = (lo + hi) // 2
+        if f(mid):
+            hi = mid
+        else:
+            lo = mid
+    return hi
