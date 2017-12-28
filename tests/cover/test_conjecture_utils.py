@@ -23,7 +23,7 @@ from collections import Counter
 import hypothesis.strategies as st
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis import given, assume, example, settings
-from hypothesis.internal.compat import hbytes
+from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.conjecture.data import ConjectureData
 
@@ -124,6 +124,14 @@ def test_drawing_impossible_coin_still_writes():
     assert data.buffer
 
 
+def test_drawing_an_exact_fraction_coin():
+    count = 0
+    for i in hrange(8):
+        if cu.biased_coin(ConjectureData.for_buffer([i]), Fraction(3, 8)):
+            count += 1
+    assert count == 3
+
+
 @st.composite
 def weights(draw):
     parts = draw(st.lists(st.integers()))
@@ -134,6 +142,7 @@ def weights(draw):
     return base
 
 
+@example([Fraction(1, 3), Fraction(1, 3), Fraction(1, 3)])
 @example([Fraction(1, 1), Fraction(1, 2)])
 @example([Fraction(1, 2), Fraction(4, 10)])
 @example([Fraction(1, 1), Fraction(3, 5), Fraction(1, 1)])
