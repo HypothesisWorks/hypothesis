@@ -156,4 +156,5 @@ def test_sampler_distribution(weights):
     calculated = [Fraction(0)] * n
     for base, alternate, p_alternate in sampler.table:
         calculated[base] += (1 - p_alternate) / n
+        calculated[alternate] += p_alternate / n
     assert probabilities == calculated
