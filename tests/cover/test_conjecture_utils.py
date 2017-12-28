@@ -154,11 +154,6 @@ def test_sampler_distribution(weights):
     sampler = cu.Sampler(weights)
 
     calculated = [Fraction(0)] * n
-    for base, alternate, p_alternate in zip(
-        sampler.base, sampler.alternate, sampler.use_alternate
-    ):
+    for base, alternate, p_alternate in sampler.table:
         calculated[base] += (1 - p_alternate) / n
-        if alternate is not None:
-            calculated[alternate] += p_alternate / n
-
     assert probabilities == calculated

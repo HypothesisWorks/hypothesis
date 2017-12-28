@@ -234,17 +234,18 @@ class Sampler(object):
     """Sampler based on Vose's algorithm for the alias method. See
     http://www.keithschwarz.com/darts-dice-coins/ for a good explanation.
 
-    The general idea is that we maintain two tables, base and alternate, of the
-    same size. We then pick an index into the tables and choose base[i] with
-    some probability and alternate otherwise. The probabilities are chosen so
-    that the resulting mixture has the right distribution.
+    The general idea is that we store a table of triples (base, alternate, p).
+    base. We then pick a triple uniformly at random, and choose its alternate
+    value with probability p and else choose its base value. The triples are
+    chosen so that the resulting mixture has the right distribution.
 
     We maintain the following invariants to try to produce good shrinks:
 
-    1. One of base[i] and alternate[i] is i.
-    2. base[i] < alternate[i]
-    3. We try to put smaller values in alternate earlier in the list so that
-       they shrink in the right direction.
+    1. The table is in lexicographic (base, alternate) order, so that choosing
+       an earlier value in the list always lowers (or at least leaves
+       unchanged) the value.
+    2. base[i] < alternate[i], so that shrinking the draw always results in
+       shrinking the chosen element.
 
     """
 
@@ -252,9 +253,7 @@ class Sampler(object):
 
         n = len(weights)
 
-        self.base = list(hrange(n))
-        self.alternate = [None] * len(weights)
-        self.use_alternate = [None] * len(weights)
+        self.table = [[i, None, None] for i in hrange(n)]
 
         total = sum(weights)
 
@@ -273,7 +272,7 @@ class Sampler(object):
             scaled = p * n
             scaled_probabilities.append(scaled)
             if scaled == 1:
-                self.use_alternate[i] = zero
+                self.table[i][2] = zero
             elif scaled < 1:
                 small.append(i)
             else:
@@ -285,40 +284,44 @@ class Sampler(object):
             s = heapq.heappop(small)
             l = heapq.heappop(large)
 
+            assert s != l
             assert scaled_probabilities[l] > one
-            assert self.alternate[s] is None
-            self.alternate[s] = l
-            self.use_alternate[s] = one - scaled_probabilities[s]
+            assert self.table[s][1] is None
+            self.table[s][1] = l
+            self.table[s][2] = one - scaled_probabilities[s]
             scaled_probabilities[l] = (
                 scaled_probabilities[l] + scaled_probabilities[s]) - one
 
             if scaled_probabilities[l] < 1:
                 heapq.heappush(small, l)
             elif scaled_probabilities[l] == 1:
-                self.use_alternate[l] = zero
+                self.table[l][2] = zero
             else:
                 heapq.heappush(large, l)
         while large:
-            self.use_alternate[large.pop()] = zero
+            self.table[large.pop()][2] = zero
         while small:
-            self.use_alternate[small.pop()] = zero
+            self.table[small.pop()][2] = zero
 
-        for i in hrange(n):
-            assert self.base[i] != self.alternate[i]
-            if self.alternate[i] is not None and self.alternate[i] < i:
-                self.base[i], self.alternate[i] = \
-                    self.alternate[i], self.base[i]
-                self.use_alternate[i] = one - self.use_alternate[i]
+        for entry in self.table:
+            assert entry[2] is not None
+            if entry[1] is None:
+                entry[1] = entry[0]
+            elif entry[1] < entry[0]:
+                entry[0], entry[1] = entry[1], entry[0]
+                entry[2] = one - entry[2]
+        self.table.sort()
 
     def sample(self, data):
         data.start_example()
-        i = integer_range(data, 0, len(self.base) - 1)
-        use_alternate = biased_coin(data, self.use_alternate[i])
+        i = integer_range(data, 0, len(self.table) - 1)
+        base, alternate, alternate_chance = self.table[i]
+        use_alternate = biased_coin(data, alternate_chance)
         data.stop_example()
         if use_alternate:
-            return self.base[i]
+            return base
         else:
-            return self.base[i]
+            return alternate
 
 
 class many(object):
