@@ -180,7 +180,20 @@ returns a new strategy for it. So for example:
     >>> json = recursive(none() | booleans() | floats() | text(printable),
     ... lambda children: lists(children) | dictionaries(text(printable), children))
     >>> pprint(json.example())
-    ['PP']
+    [['P'],
+     [None,
+      True,
+      -inf,
+      5.5477328279826776e+16,
+      True,
+      None,
+      -0.3333333333333333,
+      -1.7093843795721067e-100,
+      False,
+      '94K~{mY>a1yA:#CmDYb',
+      None],
+     [None, 8.628035772152501e-162, None],
+     False]
     >>> pprint(json.example())
     {'': [True]}
     >>> pprint(json.example())
@@ -198,7 +211,7 @@ we wanted to only generate really small JSON we could do this as:
     >>> small_lists.example()
     [False]
     >>> small_lists.example()
-    False
+    [True, True]
     >>> small_lists.example()
     []
 
