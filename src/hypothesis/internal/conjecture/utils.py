@@ -19,10 +19,12 @@ from __future__ import division, print_function, absolute_import
 
 import enum
 import math
+import heapq
+from fractions import Fraction
 from collections import Sequence, OrderedDict
 
 from hypothesis._settings import note_deprecation
-from hypothesis.internal.compat import floor, hbytes, bit_length, \
+from hypothesis.internal.compat import floor, hbytes, hrange, bit_length, \
     int_from_bytes
 from hypothesis.internal.floats import int_to_float
 
@@ -179,7 +181,11 @@ def biased_coin(data, p):
             remainder = 256 * p - truthy
 
             if falsey + truthy == 256:
-                m, n = p.as_integer_ratio()
+                if isinstance(p, Fraction):
+                    m = p.numerator
+                    n = p.denominator
+                else:
+                    m, n = p.as_integer_ratio()
                 assert n & (n - 1) == 0, n  # n is a power of 2
                 assert n > m > 0
                 truthy = m
@@ -225,66 +231,94 @@ def biased_coin(data, p):
 
 
 class Sampler(object):
-    """Sampler based on "Succinct Sampling from Discrete Distributions" by
-    Bringmann and Larsen. In general it has some advantages and disadvantages
-    compared to the more normal alias method, but its big advantage for us is
-    that it plays well with shrinking: The values are laid out in their natural
-    order, so shrink in that order.
+    """Sampler based on Vose's algorithm for the alias method. See
+    http://www.keithschwarz.com/darts-dice-coins/ for a good explanation.
 
-    Its big disadvantage is that for heavily biased distributions it can
-    use a lot of memory. Solution is some mix of "don't do that then"
-    and not worrying about it because Hypothesis is something of a
-    memory hog anyway.
+    The general idea is that we maintain two tables, base and alternate, of the
+    same size. We then pick an index into the tables and choose base[i] with
+    some probability and alternate otherwise. The probabilities are chosen so
+    that the resulting mixture has the right distribution.
+
+    We maintain the following invariants to try to produce good shrinks:
+
+    1. One of base[i] and alternate[i] is i.
+    2. base[i] < alternate[i]
+    3. We try to put smaller values in alternate earlier in the list so that
+       they shrink in the right direction.
 
     """
 
     def __init__(self, weights):
-        # We consider each weight expressed in terms of the average weight,
-        # say t. We write the weight of i as nt + f, where n is an integer and
-        # 0 <= f < 1. We then store n items for this weight which correspond
-        # to drawing i unconditionally, and if f > 0 we store an additional
-        # item that corresponds to drawing i with probability f. This ensures
-        # that (under a uniform model) we draw i with probability proportionate
-        # to its weight.
 
-        # We then rearrange things to shrink better. The table with the whole
-        # weights is kept in sorted order so that shrinking still corresponds
-        # to shrinking leftwards. The fractional weights however are put in
-        # a second table that is logically "to the right" of the whole weights
-        # and are sorted in order of decreasing acceptance probaility. This
-        # ensures that shrinking lexicographically always results in drawing
-        # less data.
-        self.table = []
-        self.extras = []
-        self.acceptance = []
-        total = sum(weights)
         n = len(weights)
-        for i, x in enumerate(weights):
-            whole_occurrences = floor(x * n / total)
-            acceptance = x - whole_occurrences
-            self.acceptance.append(acceptance)
-            for _ in range(whole_occurrences):
-                self.table.append(i)
-            if acceptance > 0:
-                self.extras.append(i)
-        self.extras.sort(key=self.acceptance.__getitem__, reverse=True)
+
+        self.base = list(hrange(n))
+        self.alternate = [None] * len(weights)
+        self.use_alternate = [None] * len(weights)
+
+        total = sum(weights)
+
+        num_type = type(total)
+
+        zero = num_type(0)
+        one = num_type(1)
+
+        small = []
+        large = []
+
+        probabilities = [w / total for w in weights]
+        scaled_probabilities = []
+
+        for i, p in enumerate(probabilities):
+            scaled = p * n
+            scaled_probabilities.append(scaled)
+            if scaled == 1:
+                self.use_alternate[i] = zero
+            elif scaled < 1:
+                small.append(i)
+            else:
+                large.append(i)
+        heapq.heapify(small)
+        heapq.heapify(large)
+
+        while small and large:
+            s = heapq.heappop(small)
+            l = heapq.heappop(large)
+
+            assert scaled_probabilities[l] > one
+            assert self.alternate[s] is None
+            self.alternate[s] = l
+            self.use_alternate[s] = one - scaled_probabilities[s]
+            scaled_probabilities[l] = (
+                scaled_probabilities[l] + scaled_probabilities[s]) - one
+
+            if scaled_probabilities[l] < 1:
+                heapq.heappush(small, l)
+            elif scaled_probabilities[l] == 1:
+                self.use_alternate[l] = zero
+            else:
+                heapq.heappush(large, l)
+        while large:
+            self.use_alternate[large.pop()] = zero
+        while small:
+            self.use_alternate[small.pop()] = zero
+
+        for i in hrange(n):
+            assert self.base[i] != self.alternate[i]
+            if self.alternate[i] is not None and self.alternate[i] < i:
+                self.base[i], self.alternate[i] = \
+                    self.alternate[i], self.base[i]
+                self.use_alternate[i] = one - self.use_alternate[i]
 
     def sample(self, data):
-        while True:
-            data.start_example()
-            # We always draw the acceptance data even if we don't need it,
-            # because that way we keep the amount of data we use stable.
-            i = integer_range(data, 0, len(self.table) + len(self.extras) - 1)
-            if i < len(self.table):
-                result = self.table[i]
-                data.stop_example()
-                return result
-            else:
-                result = self.extras[i - len(self.table)]
-                accept = not biased_coin(data, 1 - self.acceptance[result])
-                data.stop_example()
-                if accept:
-                    return result
+        data.start_example()
+        i = integer_range(data, 0, len(self.base) - 1)
+        use_alternate = biased_coin(data, self.use_alternate[i])
+        data.stop_example()
+        if use_alternate:
+            return self.base[i]
+        else:
+            return self.base[i]
 
 
 class many(object):
