@@ -213,6 +213,8 @@ class ConjectureRunner(object):
                 break
             self.block_sizes[indices[u]] = v - u
 
+        self.dead.update(indices[self.cap:])
+
         if data.status != Status.OVERRUN and node_index not in self.dead:
             self.dead.add(node_index)
             self.tree[node_index] = data
@@ -266,6 +268,10 @@ class ConjectureRunner(object):
             self.exit_with(ExitReason.finished)
 
         self.record_for_health_check(data)
+
+    @property
+    def cap(self):
+        return self.settings.buffer_size // 2
 
     def record_for_health_check(self, data):
         # Once we've actually found a bug, there's no point in trying to run

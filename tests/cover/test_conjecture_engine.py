@@ -699,7 +699,7 @@ def test_can_increase_number_of_bytes_drawn_in_tail():
         x = data.draw_bytes(5)
         n = x.count(0)
         b = data.draw_bytes(n + 1)
-        assert not any(b[:-1])
+        assert not any(b)
 
     runner = ConjectureRunner(
         f, settings=settings(buffer_size=11, perform_health_check=False))
