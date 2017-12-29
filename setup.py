@@ -56,9 +56,9 @@ extras = {
 #
 # See https://github.com/HypothesisWorks/hypothesis-python/pull/1008
 if sys.version_info[0] < 3:
-    extras['django'] = ['pytz', 'django>=1.8,!=1.9.*,!=1.10.*,<2']
+    extras['django'] = ['pytz', 'django>=1.8,<2']
 else:
-    extras['django'] = ['pytz', 'django>=1.8,!=1.9.*,!=1.10.*,<3']
+    extras['django'] = ['pytz', 'django>=1.8,<3']
 
 extras['faker'] = extras['fakefactory']
 
