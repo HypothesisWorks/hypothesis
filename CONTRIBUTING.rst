@@ -162,7 +162,7 @@ their individual contributions.
 * `Adam Sven Johnson <https://www.github.com/pkqk>`_
 * `Alex Stapleton <https://www.github.com/public>`_
 * `Alex Willmer <https://github.com/moreati>`_ (alex@moreati.org.uk)
-* `Ben Peterson <https://github.com/killthrush>`_ (killthrush@hotmail.com_)
+* `Ben Peterson <https://github.com/killthrush>`_ (killthrush@hotmail.com)
 * `Buck Evan, copyright Google LLC <https://github.com/bukzor>`_
 * `Charles O'Farrell <https://www.github.com/charleso>`_
 * `Charlie Tanksley <https://www.github.com/charlietanksley>`_
