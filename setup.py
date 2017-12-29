@@ -45,7 +45,18 @@ extras = {
     'datetime':  ['pytz'],
     'pytz':  ['pytz'],
     'fakefactory': ['Faker>=0.7'],
-    'django': ['pytz', 'django>=1.8,!=1.9.*,!=1.10.*,<3'],
+    'django': [
+        'pytz',
+
+        # Django 2 only supports Python 3, but doesn't have any python_requires
+        # markers in its setup.py --- so "pip install django" just fails in
+        # Python 2.  So rather than relying on pip, we pin the version of
+        # Django on Python 2 ourselves.
+        #
+        # See https://github.com/HypothesisWorks/hypothesis-python/pull/1008
+        'django>=1.8,!=1.9.*,!=1.10.*,<2:python_version<3',
+        'django>=1.8,!=1.9.*,!=1.10.*,<3:python_version>=3',
+    ],
     'numpy': ['numpy>=1.9.0'],
     'pytest': ['pytest>=2.8.0'],
 }
