@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, __version__ as setuptools_version
 
 
 def local_file(name):
@@ -56,9 +56,23 @@ extras = {
 #
 # See https://github.com/HypothesisWorks/hypothesis-python/pull/1008
 if sys.version_info[0] < 3:
-    extras['django'] = ['pytz', 'django>=1.8,<2']
+    django_major_pin = '<2'
 else:
-    extras['django'] = ['pytz', 'django>=1.8,<3']
+    django_major_pin = '<3'
+
+# We only support the releases of Django that are supported by the Django
+# core team.  See https://www.djangoproject.com/download/#supported-versions
+#
+# New versions of setuptools allow us to set very precise pins; older versions
+# of setuptools are coarser.
+major_setuptools_version = int(setuptools_version.split('.')[0])
+if major_setuptools_version >= 8:
+    django_minor_pin = '>=1.8,!=1.9.*,!=1.10.*'
+else:
+    django_minor_pin = '>=1.8'
+
+django_pin = 'django%s,%s' % (django_minor_pin, django_major_pin)
+extras['django'] = ['pytz', django_pin]
 
 extras['faker'] = extras['fakefactory']
 
