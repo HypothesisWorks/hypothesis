@@ -36,8 +36,8 @@ intermediate steps of your test. That's where the ``note`` function comes in:
     ...     test_shuffle_is_noop()
     ... except AssertionError:
     ...     print('ls != ls2')
-    Falsifying example: test_shuffle_is_noop(ls=[0, 0, 1], r=RandomWithSeed(0))
-    Shuffle: [0, 1, 0]
+    Falsifying example: test_shuffle_is_noop(ls=[0, 1], r=RandomWithSeed(1))
+    Shuffle: [1, 0]
     ls != ls2
 
 The note is printed in the final run of the test in order to include any
@@ -283,7 +283,7 @@ If you want to see exactly what a strategy produces you can ask for an example:
 .. doctest::
 
     >>> integers(min_value=0, max_value=10).example()
-    9
+    1
 
 Many strategies are built out of other strategies. For example, if you want
 to define a tuple you need to say what goes in each element:
@@ -292,7 +292,7 @@ to define a tuple you need to say what goes in each element:
 
     >>> from hypothesis.strategies import tuples
     >>> tuples(integers(), integers()).example()
-    (-85296636193678268231691518597782489127, 68871684356256783618296489618877951982)
+    (134332809039453074360454593782613510772, 130496674427438803384263463511313040000)
 
 Further details are :doc:`available in a separate document <data>`.
 
@@ -509,7 +509,7 @@ argument, to force this inference for arguments with a default value.
     >>> def func(a: int, b: str):
     ...     return [a, b]
     >>> builds(func).example()
-    [72627971792323936471739212691379790782, '']
+    [-42720342683730728910509591013777481668, '\t']
 
 :func:`@given <hypothesis.given>` does not perform any implicit inference
 for required arguments, as this would break compatibility with pytest fixtures.

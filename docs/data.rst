@@ -68,7 +68,7 @@ e.g.:
 .. doctest::
 
     >>> lists(integers()).map(sorted).example()
-    [-158104205405429173199472404790070005365, -131418136966037518992825706738877085689, -49279168042092131242764306881569217089, 2564476464308589627769617001898573635]
+    [-78884847206213906511836787254166687782, -76909635420830485682582721877759211823, -44559228081689387929401032510890553563, -32036761006342126710872700040664763427, -29721490749413656301400860492587986444, -19875460741278405972821070710713254908, 1738337815718610679283633570264779410, 22460900724744407855333819913302342200, 98446321754182121638067231096055783484, 125772708953927921071741597382378939575, 161581895130900991894656088964032281884]
 
 Note that many things that you might use mapping for can also be done with
 :func:`~hypothesis.strategies.builds`.
@@ -85,9 +85,9 @@ example of ``s`` such that ``f(example)`` is truthy.
 .. doctest::
 
     >>> integers().filter(lambda x: x > 11).example()
-    87034457550488036879331335314643907276
+    168598116374314904934044029275251725493
     >>> integers().filter(lambda x: x > 11).example()
-    145321388071838806577381808280858991039
+    103020536062639114490162140392832233565
 
 It's important to note that ``filter`` isn't magic and if your condition is too
 hard to satisfy then this can fail:
@@ -110,7 +110,7 @@ you wanted pairs of integers (x,y) such that x < y you could do the following:
 .. doctest::
 
     >>> tuples(integers(), integers()).map(sorted).filter(lambda x: x[0] < x[1]).example()
-    [-145066798798423346485767563193971626126, -19139012562996970506504843426153630262]
+    [-106979217440879777144016292455448447532, -98347272262279521424856712916204968291]
 
 .. _flatmap:
 
@@ -180,30 +180,11 @@ returns a new strategy for it. So for example:
     >>> json = recursive(none() | booleans() | floats() | text(printable),
     ... lambda children: lists(children) | dictionaries(text(printable), children))
     >>> pprint(json.example())
-    {'': 'wkP!4',
-     '\nLdy': None,
-     '"uHuds:8a{h\\:694K~{mY>a1yA:#CmDYb': {},
-     '#1J1': [')gnP',
-              inf,
-              ['6', 11881275561.716116, "v'A?qyp_sB\n$62g", ''],
-              -1e-05,
-              'aF\rl',
-              [-2.599459969184803e+250, True, True, None],
-              [True,
-               '9qP\x0bnUJH5',
-               3.0741121405774857e-131,
-               None,
-               '',
-               -inf,
-               'L&',
-               1.5,
-               False,
-               None]],
-     'cx.': None}
+    ['PP']
     >>> pprint(json.example())
-    [5.321430774293539e+16, [], 1.1045114769709281e-125]
+    {'': [True]}
     >>> pprint(json.example())
-    {'a': []}
+    []
 
 That is, we start with our leaf data and then we augment it by allowing lists and dictionaries of anything we can generate as JSON data.
 
@@ -215,11 +196,11 @@ we wanted to only generate really small JSON we could do this as:
 
     >>> small_lists = recursive(booleans(), lists, max_leaves=5)
     >>> small_lists.example()
-    True
+    [False]
     >>> small_lists.example()
-    [False, False, True, True, True]
+    False
     >>> small_lists.example()
-    True
+    []
 
 .. _composite-strategies:
 
@@ -253,7 +234,7 @@ accept all the others in the expected order. Defaults are preserved.
     >>> list_and_index()
     list_and_index()
     >>> list_and_index().example()
-    ([-57328788235238539257894870261848707608], 0)
+    ([-152878008174320402947441705721992520443, -113186425854604234871894120415088031020, -96921918763257938910439520463617861053, -105558953921933489774350201121230998748, 142532841698616540202879075992631272422, -92884554287929966590888981977733955366, 58985296493310657692270943917968787600, 97379273098575556095766461165741918726, 60328833624325181011165460989194888725, -29348109911189983741103124324039487609, -134212176354682208167522355387844513741, -62659847478174732559422739267774880206, -33294213942482611904289029199093844676, 137205879894109311837996144643445403798, -61105391525705275506417777419814026363, 80214748440107597488669535240903445548], 1)
 
     >>> list_and_index(booleans())
     list_and_index(elements=booleans())
