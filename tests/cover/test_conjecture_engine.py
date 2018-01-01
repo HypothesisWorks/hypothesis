@@ -422,31 +422,12 @@ def test_fully_exhaust_base(monkeypatch):
         database=None,
     ))
 
-    def call_with(buf):
-        buf = hbytes(buf)
-
-        def draw_bytes(data, n):
-            return runner._ConjectureRunner__rewrite_for_novelty(
-                data, buf[data.index:data.index + n])
-        d = ConjectureData(
-            draw_bytes=draw_bytes, max_length=2
-        )
-        runner.test_function(d)
-        return d
-
-    # First we ensure that all children of 0 are dead.
     for c in hrange(256):
-        call_with([0, c])
+        runner.cached_test_function([0, c])
 
     assert 1 in runner.dead
 
-    # This must rewrite the first byte in order to get to a non-dead node.
-    assert call_with([0, 0]).buffer == hbytes([1, 0])
-
-    # This must rewrite the first byte in order to get to a non-dead node, but
-    # the result of doing that is *still* dead, so it must rewrite the second
-    # byte too.
-    assert call_with([0, 0]).buffer == hbytes([1, 1])
+    runner.run()
 
 
 def test_will_save_covering_examples():
@@ -707,11 +688,6 @@ def test_can_increase_number_of_bytes_drawn_in_tail():
     runner.run()
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="""This is currently demonstrating that __rewrite_for_novelty is
-broken. It should start passing once we have a more sensible deduplication
-mechanism.""")
 def test_uniqueness_is_preserved_when_writing_at_beginning():
     seen = set()
 

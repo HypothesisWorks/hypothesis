@@ -269,6 +269,40 @@ class ConjectureRunner(object):
 
         self.record_for_health_check(data)
 
+    def generate_novel_prefix(self):
+        prefix = bytearray()
+        node = 0
+        while True:
+            assert len(prefix) < self.cap
+            assert node not in self.dead
+            upper_bound = self.capped.get(node, 255) + 1
+            try:
+                c = self.forced[node]
+                prefix.append(c)
+                node = self.tree[node][c]
+                continue
+            except KeyError:
+                pass
+            c = self.random.randrange(0, upper_bound)
+            try:
+                next_node = self.tree[node][c]
+                if next_node in self.dead:
+                    choices = [
+                        c for c in hrange(upper_bound)
+                        if self.tree[node].get(c) not in self.dead
+                    ]
+                    assert choices
+                    c = self.random.choice(choices)
+                    node = self.tree[node][c]
+                else:
+                    node = next_node
+                prefix.append(c)
+            except KeyError:
+                prefix.append(c)
+                break
+        assert node not in self.dead
+        return hbytes(prefix)
+
     @property
     def cap(self):
         return self.settings.buffer_size // 2
@@ -433,7 +467,7 @@ class ConjectureRunner(object):
             choices = data.block_starts.get(n, [])
             if choices:
                 i = self.random.choice(choices)
-                return data.buffer[i:i + n]
+                return hbytes(data.buffer[i:i + n])
             else:
                 result = uniform(self.random, n)
                 assert isinstance(result, hbytes)
@@ -477,8 +511,11 @@ class ConjectureRunner(object):
             self.random.choice(options) for _ in hrange(3)
         ]
 
+        prefix = [None]
+
         def mutate_from(origin):
             target_data[0] = origin
+            prefix[0] = self.generate_novel_prefix()
             return draw_mutated
 
         def draw_mutated(data, n):
@@ -486,16 +523,16 @@ class ConjectureRunner(object):
                 result = uniform(self.random, n)
             else:
                 result = self.random.choice(bits)(data, n)
-
-            return self.__rewrite_for_novelty(
-                data, self.__zero_bound(data, result))
+            p = prefix[0]
+            if data.index < len(p):
+                start = p[data.index:data.index + n]
+                result = start + result[len(start):]
+            return self.__zero_bound(data, result)
 
         return mutate_from
 
     def __rewrite(self, data, result):
-        return self.__rewrite_for_novelty(
-            data, self.__zero_bound(data, result)
-        )
+        return self.__zero_bound(data, result)
 
     def __zero_bound(self, data, result):
         """This tries to get the size of the generated data under control by
@@ -506,88 +543,23 @@ class ConjectureRunner(object):
         the size of the generated data.
 
         """
+        initial = len(result)
         if (
             data.depth * 2 >= MAX_DEPTH or
-            (data.index + len(result)) * 2 >= self.settings.buffer_size
+            data.index >= self.cap
         ):
-            if any(result):
-                data.hit_zero_bound = True
-            return hbytes(len(result))
-        else:
-            return result
-
-    def __rewrite_for_novelty(self, data, result):
-        """Take a block that is about to be added to data as the result of a
-        draw_bytes call and rewrite it a small amount to ensure that the result
-        will be novel: that is, not hit a part of the tree that we have fully
-        explored.
-
-        This is mostly useful for test functions which draw a small
-        number of blocks.
-
-        """
-        assert isinstance(result, hbytes)
-        try:
-            node_index = data.__current_node_index
-        except AttributeError:
-            node_index = 0
-            data.__current_node_index = node_index
-            data.__hit_novelty = False
-            data.__evaluated_to = 0
-
-        if data.__hit_novelty:
-            return result
-
-        node = self.tree[node_index]
-
-        for i in hrange(data.__evaluated_to, len(data.buffer)):
-            node = self.tree[node_index]
-            try:
-                node_index = node[data.buffer[i]]
-                assert node_index not in self.dead
-                node = self.tree[node_index]
-            except KeyError:  # pragma: no cover
-                assert False, (
-                    'This should be impossible. If you see this error, please '
-                    'report it as a bug (ideally with a reproducible test '
-                    'case).'
-                )
-
-        for i, b in enumerate(result):
-            assert isinstance(b, int)
-            try:
-                new_node_index = node[b]
-            except KeyError:
-                data.__hit_novelty = True
-                return result
-
-            new_node = self.tree[new_node_index]
-
-            if new_node_index in self.dead:
-                if isinstance(result, hbytes):
-                    result = bytearray(result)
-                for c in range(256):
-                    if c not in node:
-                        assert c <= self.capped.get(node_index, c)
-                        result[i] = c
-                        data.__hit_novelty = True
-                        return hbytes(result)
-                    else:
-                        new_node_index = node[c]
-                        new_node = self.tree[new_node_index]
-                        if new_node_index not in self.dead:
-                            result[i] = c
-                            break
-                else:  # pragma: no cover
-                    assert False, (
-                        'Found a tree node which is live despite all its '
-                        'children being dead.')
-            node_index = new_node_index
-            node = new_node
-        assert node_index not in self.dead
-        data.__current_node_index = node_index
-        data.__evaluated_to = data.index + len(result)
-        return hbytes(result)
+            data.forced_indices.update(
+                hrange(data.index, data.index + initial))
+            data.hit_zero_bound = True
+            result = hbytes(initial)
+        elif data.index + initial >= self.cap:
+            data.hit_zero_bound = True
+            n = self.cap - data.index
+            data.forced_indices.update(
+                hrange(self.cap, data.index + initial))
+            result = result[:n] + hbytes(initial - n)
+        assert len(result) == initial
+        return result
 
     @property
     def database(self):
@@ -697,10 +669,16 @@ class ConjectureRunner(object):
         while not self.interesting_examples and (
             count < 10 or self.health_check_state is not None
         ):
+            prefix = self.generate_novel_prefix()
+
             def draw_bytes(data, n):
-                return self.__rewrite_for_novelty(
-                    data, self.__zero_bound(data, uniform(self.random, n))
-                )
+                if data.index < len(prefix):
+                    result = prefix[data.index:data.index + n]
+                    if len(result) < n:
+                        result += uniform(self.random, n - len(result))
+                else:
+                    result = uniform(self.random, n)
+                return self.__zero_bound(data, result)
 
             targets_found = len(self.covering_examples)
 
