@@ -29,9 +29,10 @@ from tests.common.utils import all_values, checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from tests.common.strategies import SLOW, HardToShrink
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
-from hypothesis.internal.conjecture.data import Status, ConjectureData
+from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
+    ConjectureData
 from hypothesis.internal.conjecture.engine import Shrinker, \
-    ConjectureRunner
+    RunIsComplete, ConjectureRunner
 
 MAX_SHRINKS = 1000
 
@@ -965,3 +966,77 @@ def test_can_redraw_to_prevent_getting_stuck(monkeypatch):
             data.mark_interesting()
 
     assert x == hbytes([1, 1, 1])
+
+
+@pytest.mark.parametrize('bits', [3, 9])
+@pytest.mark.parametrize('prefix', [b'', b'\0'])
+@pytest.mark.parametrize('seed', [0])
+def test_exhaustive_enumeration(prefix, bits, seed):
+    seen = set()
+
+    def f(data):
+        if prefix:
+            data.write(hbytes(prefix))
+            assert len(data.buffer) == len(prefix)
+        k = data.draw_bits(bits)
+        assert k not in seen
+        seen.add(k)
+
+    size = 2 ** bits
+
+    seen_prefixes = set()
+
+    runner = ConjectureRunner(
+        f, settings=settings(database=None, max_examples=size),
+        random=Random(seed),
+    )
+    with pytest.raises(RunIsComplete):
+        runner.cached_test_function(b'')
+        for _ in hrange(size):
+            p = runner.generate_novel_prefix()
+            assert p not in seen_prefixes
+            seen_prefixes.add(p)
+            data = ConjectureData.for_buffer(
+                hbytes(p + hbytes(2 + len(prefix))))
+            runner.test_function(data)
+            assert data.status == Status.VALID
+            node = 0
+            for b in data.buffer:
+                node = runner.tree[node][b]
+            assert node in runner.dead
+    assert len(seen) == size
+
+
+def test_depth_bounds_in_generation():
+    depth = [0]
+
+    def tree(data, n):
+        depth[0] = max(depth[0], n)
+        if data.draw_bits(8):
+            data.start_example()
+            tree(data, n + 1)
+            tree(data, n + 1)
+            data.stop_example()
+
+    def f(data):
+        tree(data, 0)
+
+    runner = ConjectureRunner(
+        f, settings=settings(database=None, max_examples=20))
+    runner.run()
+    assert 0 < depth[0] <= MAX_DEPTH
+
+
+def test_shrinking_from_mostly_zero(monkeypatch):
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda self: self.cached_test_function(hbytes(5) + hbytes([2]))
+    )
+
+    @run_to_buffer
+    def x(data):
+        s = [data.draw_bits(8) for _ in hrange(6)]
+        if any(s):
+            data.mark_interesting()
+
+    assert x == hbytes(5) + hbytes([1])
