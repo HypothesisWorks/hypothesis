@@ -430,11 +430,10 @@ class ConjectureRunner(object):
             return _draw_successor(self.random, existing)
 
         def reuse_existing(data, n):
-            choices = data.block_starts.get(n, []) or \
-                target_data[0].block_starts.get(n, [])
+            choices = data.block_starts.get(n, [])
             if choices:
                 i = self.random.choice(choices)
-                return target_data[0].buffer[i:i + n]
+                return data.buffer[i:i + n]
             else:
                 result = uniform(self.random, n)
                 assert isinstance(result, hbytes)
