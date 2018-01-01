@@ -33,23 +33,9 @@ def test_binary_tree():
     assert minimal(tree, lambda x: isinstance(x, tuple)) == (0, 0)
 
 
-def test_bad_binary_tree():
-    tree = st.deferred(lambda: st.tuples(tree, tree) | st.integers())
-
-    assert minimal(tree) == 0
-    assert minimal(tree, lambda x: isinstance(x, tuple)) == (0, 0)
-
-
 def test_large_branching_tree():
     tree = st.deferred(
         lambda: st.integers() | st.tuples(tree, tree, tree, tree, tree))
-    assert minimal(tree) == 0
-    assert minimal(tree, lambda x: isinstance(x, tuple)) == (0,) * 5
-
-
-def test_bad_branching_tree():
-    tree = st.deferred(
-        lambda: st.tuples(tree, tree, tree, tree, tree) | st.integers())
     assert minimal(tree) == 0
     assert minimal(tree, lambda x: isinstance(x, tuple)) == (0,) * 5
 
