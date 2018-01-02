@@ -60,7 +60,6 @@ env:
         - TASK=check-django20
         - TASK=check-django18
         - TASK=check-django111
-        - TASK=check-django20
         - TASK=check-pandas19
         - TASK=check-pandas20
         - TASK=check-pandas21
