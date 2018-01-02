@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.44.5 - 2018-01-02
+-------------------
+
+Happy new year!
+
+This is a no-op release that updates the year range on all of
+the copyright headers in our source to include 2018.
+
+-------------------
 3.44.4 - 2017-12-23
 -------------------
 
