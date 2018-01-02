@@ -1223,6 +1223,7 @@ class Shrinker(object):
         """
         self.__engine = engine
         self.__predicate = predicate
+        self.__discarding_failed = False
 
         # We keep track of the current best example on the shrink_target
         # attribute.
@@ -1238,7 +1239,10 @@ class Shrinker(object):
         assert sort_key(buffer) <= sort_key(self.shrink_target.buffer)
         data = ConjectureData.for_buffer(buffer)
         self.__engine.test_function(data)
-        return self.incorporate_test_data(data)
+        result = self.incorporate_test_data(data)
+        if result and not self.__discarding_failed:
+            self.remove_discarded()
+        return result
 
     def incorporate_test_data(self, data):
         if (
@@ -1272,6 +1276,11 @@ class Shrinker(object):
         ):
             return
 
+        # This will automatically be run during the normal loop, but it's worth
+        # running once before the coarse passes so they don't spend time on
+        # useless data.
+        self.remove_discarded()
+
         # Coarse passes that are worth running once when the example is likely
         # to be "far from shrunk" but not worth repeating in a loop because
         # they are subsumed by more fine grained passes.
@@ -1281,6 +1290,7 @@ class Shrinker(object):
         prev = None
         while prev is not self.shrink_target:
             prev = self.shrink_target
+            self.remove_discarded()
             self.minimize_duplicated_blocks()
             self.minimize_individual_blocks()
             self.reorder_blocks()
@@ -1325,6 +1335,15 @@ class Shrinker(object):
             return True
 
         return False
+
+    def remove_discarded(self):
+        """Try removing all bytes marked as discarded."""
+        if not self.shrink_target.discarded:
+            return
+        attempt = bytearray(self.shrink_target.buffer)
+        for u, v in sorted(self.shrink_target.discarded, reverse=True):
+            del attempt[u:v]
+        self.__discarding_failed = not self.incorporate_new_buffer(attempt)
 
     def delta_interval_deletion(self):
         """Attempt to delete every interval in the example."""

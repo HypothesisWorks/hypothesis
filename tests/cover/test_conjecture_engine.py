@@ -882,3 +882,92 @@ def test_accidental_duplication(monkeypatch):
         if len(set(b)) == 1:
             data.mark_interesting()
     assert x == hbytes([5] * 7)
+
+
+def test_discarding(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', Shrinker.remove_discarded)
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer(hbytes([0, 1] * 10)))
+    )
+
+    @run_to_buffer
+    def x(data):
+        count = 0
+        while count < 10:
+            data.start_example()
+            b = data.draw_bits(1)
+            if b:
+                count += 1
+            data.stop_example(discard=not b)
+        data.mark_interesting()
+    assert x == hbytes(hbytes([1]) * 10)
+
+
+def fixate(f):
+    def accept(self):
+        prev = None
+        while self.shrink_target is not prev:
+            prev = self.shrink_target
+            f(self)
+    return accept
+
+
+def test_discarding_runs_automatically(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', fixate(Shrinker.coarse_block_replacement))
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer(hbytes([1] * 10) + hbytes([11])))
+    )
+
+    @run_to_buffer
+    def x(data):
+        while True:
+            data.start_example()
+            b = data.draw_bits(8)
+            data.stop_example(discard=(b == 0))
+            if b == 11:
+                break
+        data.mark_interesting()
+    assert x == hbytes(hbytes([11]))
+
+
+def test_automatic_discarding_is_turned_off_if_it_does_not_work(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', fixate(Shrinker.coarse_block_replacement))
+    target = hbytes([0, 1]) * 5 + hbytes([11])
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer(target))
+    )
+
+    existing = Shrinker.remove_discarded
+
+    calls = [0]
+
+    def remove_discarded(self):
+        calls[0] += 1
+        return existing(self)
+
+    monkeypatch.setattr(Shrinker, 'remove_discarded', remove_discarded)
+
+    @run_to_buffer
+    def x(data):
+        count = 0
+        while True:
+            data.start_example()
+            b = data.draw_bits(8)
+            if not b:
+                count += 1
+            data.stop_example(discard=(b == 0))
+            if b == 11:
+                break
+        if count >= 5:
+            data.mark_interesting()
+    assert x == hbytes([0]) * 10 + hbytes([11])
+    assert calls[0] == 1
