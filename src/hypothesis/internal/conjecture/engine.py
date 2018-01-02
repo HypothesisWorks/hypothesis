@@ -821,8 +821,23 @@ class ConjectureRunner(object):
                     return False
                 return d.interesting_origin == target
 
-            self.shrink(example, predicate)
-            self.shrunk_examples.add(target)
+            example = self.shrink(example, predicate)
+            count = 0
+            while count < 10:
+                count += 1
+                self.debug('Retrying %r' % (target,))
+                attempt_buf = bytearray(example.buffer)
+                for i, (u, v) in enumerate(example.blocks):
+                    if i not in example.shrinking_blocks:
+                        attempt_buf[u:v] = uniform(self.random, v - u)
+                attempt = self.cached_test_function(attempt_buf)
+                if predicate(attempt):
+                    reshrink = self.shrink(attempt, predicate)
+                    if sort_key(reshrink.buffer) < sort_key(example.buffer):
+                        example = reshrink
+                        count = 0
+            else:
+                self.shrunk_examples.add(target)
         self.exit_with(ExitReason.finished)
 
     def clear_secondary_key(self):
