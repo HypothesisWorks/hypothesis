@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 
-from setuptools import setup, find_packages, __version__ as setuptools_version
+import setuptools
 
 
 def local_file(name):
@@ -65,7 +65,7 @@ else:
 #
 # New versions of setuptools allow us to set very precise pins; older versions
 # of setuptools are coarser.
-major_setuptools_version = int(setuptools_version.split('.')[0])
+major_setuptools_version = int(setuptools.__version__.split('.')[0])
 if major_setuptools_version >= 8:
     django_minor_pin = '>=1.8,!=1.9.*,!=1.10.*'
 else:
@@ -85,12 +85,12 @@ install_requires = ['attrs', 'coverage']
 if sys.version_info[0] < 3:
     install_requires.append('enum34')
 
-setup(
+setuptools.setup(
     name='hypothesis',
     version=__version__,
     author='David R. MacIver',
     author_email='david@drmaciver.com',
-    packages=find_packages(SOURCE),
+    packages=setuptools.find_packages(SOURCE),
     package_dir={'': SOURCE},
     url='https://github.com/HypothesisWorks/hypothesis-python',
     license='MPL v2',
