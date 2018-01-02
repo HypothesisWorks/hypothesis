@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.44.6 - 2018-01-02
+-------------------
+
+This release speeds up test case reduction in many examples by being better at
+detecting large shrinks it can use to discard redundant parts of its input.
+This will be particularly noticeable in examples that make use of filtering
+and for some integer ranges.
+
+-------------------
 3.44.5 - 2018-01-02
 -------------------
 
