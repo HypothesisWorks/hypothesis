@@ -61,7 +61,7 @@ if [ "$(python -c 'import platform; print(platform.python_implementation())')" !
     pip install .[django]
     HYPOTHESIS_DJANGO_USETZ=TRUE python -m tests.django.manage test tests.django
     HYPOTHESIS_DJANGO_USETZ=FALSE python -m tests.django.manage test tests.django
-    pip uninstall -y django
+    pip uninstall -y django pytz
   fi
 
   if [ "$(python -c 'import sys; print(sys.version_info[:2] in ((2, 7), (3, 6)))')" = "True" ] ; then

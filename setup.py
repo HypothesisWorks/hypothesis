@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 
-from setuptools import setup, find_packages
+import setuptools
 
 
 def local_file(name):
@@ -45,10 +45,34 @@ extras = {
     'datetime':  ['pytz'],
     'pytz':  ['pytz'],
     'fakefactory': ['Faker>=0.7'],
-    'django': ['pytz', 'django>=1.8,<2'],
     'numpy': ['numpy>=1.9.0'],
     'pytest': ['pytest>=2.8.0'],
 }
+
+# Django 2 only supports Python 3, but doesn't have any python_requires
+# markers in its setup.py --- so "pip install django" just fails in
+# Python 2.  So rather than relying on pip, we pin the version of
+# Django on Python 2 ourselves.
+#
+# See https://github.com/HypothesisWorks/hypothesis-python/pull/1008
+if sys.version_info[0] < 3:
+    django_major_pin = '<2'
+else:
+    django_major_pin = '<3'
+
+# We only support the releases of Django that are supported by the Django
+# core team.  See https://www.djangoproject.com/download/#supported-versions
+#
+# New versions of setuptools allow us to set very precise pins; older versions
+# of setuptools are coarser.
+major_setuptools_version = int(setuptools.__version__.split('.')[0])
+if major_setuptools_version >= 8:
+    django_minor_pin = '>=1.8,!=1.9.*,!=1.10.*'
+else:
+    django_minor_pin = '>=1.8'
+
+django_pin = 'django%s,%s' % (django_minor_pin, django_major_pin)
+extras['django'] = ['pytz', django_pin]
 
 extras['faker'] = extras['fakefactory']
 
@@ -61,12 +85,12 @@ install_requires = ['attrs', 'coverage']
 if sys.version_info[0] < 3:
     install_requires.append('enum34')
 
-setup(
+setuptools.setup(
     name='hypothesis',
     version=__version__,
     author='David R. MacIver',
     author_email='david@drmaciver.com',
-    packages=find_packages(SOURCE),
+    packages=setuptools.find_packages(SOURCE),
     package_dir={'': SOURCE},
     url='https://github.com/HypothesisWorks/hypothesis-python',
     license='MPL v2',
