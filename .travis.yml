@@ -63,6 +63,7 @@ env:
         - TASK=check-pandas19
         - TASK=check-pandas20
         - TASK=check-pandas21
+        - TASK=check-pandas22
         - TASK=deploy
 
 script:
