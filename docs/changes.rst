@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.44.7 - 2018-01-04
+-------------------
+
+This release adds support for `Django 2
+<https://www.djangoproject.com/weblog/2017/dec/02/django-20-released/>`_ in
+the hypothesis-django extra.
+
+This release drops support for Django 1.10, as it is no longer supported by
+the Django team.
+
+-------------------
 3.44.6 - 2018-01-02
 -------------------
 
