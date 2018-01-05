@@ -832,42 +832,7 @@ class ConjectureRunner(object):
                     return False
                 return d.interesting_origin == target
 
-            example = self.shrink(example, predicate)
-
-            # The main shrink pass is purely greedy.
-            # This is mostly pretty effective, but has a tendency
-            # to get stuck in a local minimum in some cases.
-            # So when we've completed the shrink process, we try
-            # starting it again from something reasonably near to
-            # the shrunk example that is likely to exhibit the same
-            # behaviour. We then rerun the shrink process and see
-            # if it gets a better result. If we do, we begin again.
-            # If not, we bail out fairly quickly after a few tries
-            # as this will usually not work.
-            count = 0
-            while count < 10:
-                count += 1
-                self.debug('Retrying %r' % (target,))
-                attempt_buf = bytearray(example.buffer)
-
-                # We use the shrinking information to identify the
-                # structural locations in the byte stream - if lowering
-                # the block would result in changing the size of the
-                # example, changing it here is too likely to break whatever
-                # it was caused the behaviour we're trying to shrink.
-                # Everything non-structural, we redraw uniformly at random.
-                for i, (u, v) in enumerate(example.blocks):
-                    if i not in example.shrinking_blocks:
-                        attempt_buf[u:v] = uniform(self.random, v - u)
-                attempt = self.cached_test_function(attempt_buf)
-                if predicate(attempt):
-                    reshrink = self.shrink(attempt, predicate)
-                    if sort_key(reshrink.buffer) < sort_key(example.buffer):
-                        # We have successfully shrunk the example past where
-                        # we started from. Now we begin the whole processs
-                        # again from the new, smaller, example.
-                        example = reshrink
-                        count = 0
+            self.shrink(example, predicate)
 
             self.shrunk_examples.add(target)
 
@@ -1307,21 +1272,7 @@ class Shrinker(object):
     def debug(self, msg):
         self.__engine.debug(msg)
 
-    def shrink(self):
-        # We assume that if an all-zero block of bytes is an interesting
-        # example then we're not going to do better than that.
-        # This might not technically be true: e.g. for integers() | booleans()
-        # the simplest example is actually [1, 0]. Missing this case is fairly
-        # harmless and this allows us to make various simplifying assumptions
-        # about the structure of the data (principally that we're never
-        # operating on a block of all zero bytes so can use non-zeroness as a
-        # signpost of complexity).
-        if (
-            not any(self.shrink_target.buffer) or
-            self.incorporate_new_buffer(hbytes(len(self.shrink_target.buffer)))
-        ):
-            return
-
+    def greedy_shrink(self):
         # This will automatically be run during the normal loop, but it's worth
         # running once before the coarse passes so they don't spend time on
         # useless data.
@@ -1342,6 +1293,66 @@ class Shrinker(object):
             self.reorder_blocks()
             self.greedy_interval_deletion()
             self.interval_deletion_with_block_lowering()
+
+    def shrink(self):
+        # We assume that if an all-zero block of bytes is an interesting
+        # example then we're not going to do better than that.
+        # This might not technically be true: e.g. for integers() | booleans()
+        # the simplest example is actually [1, 0]. Missing this case is fairly
+        # harmless and this allows us to make various simplifying assumptions
+        # about the structure of the data (principally that we're never
+        # operating on a block of all zero bytes so can use non-zeroness as a
+        # signpost of complexity).
+        if (
+            not any(self.shrink_target.buffer) or
+            self.incorporate_new_buffer(hbytes(len(self.shrink_target.buffer)))
+        ):
+            return
+
+        self.greedy_shrink()
+        self.escape_local_minimum()
+
+    def escape_local_minimum(self):
+        # The main shrink pass is purely greedy.
+        # This is mostly pretty effective, but has a tendency
+        # to get stuck in a local minimum in some cases.
+        # So when we've completed the shrink process, we try
+        # starting it again from something reasonably near to
+        # the shrunk example that is likely to exhibit the same
+        # behaviour. We then rerun the shrink process and see
+        # if it gets a better result. If we do, we begin again.
+        # If not, we bail out fairly quickly after a few tries
+        # as this will usually not work.
+        count = 0
+        while count < 10:
+            count += 1
+            self.debug('Retrying from random restart')
+            attempt_buf = bytearray(self.shrink_target.buffer)
+
+            # We use the shrinking information to identify the
+            # structural locations in the byte stream - if lowering
+            # the block would result in changing the size of the
+            # example, changing it here is too likely to break whatever
+            # it was caused the behaviour we're trying to shrink.
+            # Everything non-structural, we redraw uniformly at random.
+            for i, (u, v) in enumerate(self.shrink_target.blocks):
+                if i not in self.shrink_target.shrinking_blocks:
+                    attempt_buf[u:v] = uniform(self.__engine.random, v - u)
+            attempt = self.cached_test_function(attempt_buf)
+            if self.__predicate(attempt):
+                prev = self.shrink_target
+                self.shrink_target = attempt
+                self.greedy_shrink()
+                if (
+                    sort_key(self.shrink_target.buffer) <
+                    sort_key(prev.buffer)
+                ):
+                    # We have successfully shrunk the example past where
+                    # we started from. Now we begin the whole processs
+                    # again from the new, smaller, example.
+                    count = 0
+                else:
+                    self.shrink_target = prev
 
     def try_shrinking_blocks(self, blocks, b):
         initial_attempt = bytearray(self.shrink_target.buffer)
