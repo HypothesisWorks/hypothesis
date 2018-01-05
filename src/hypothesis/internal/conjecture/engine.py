@@ -789,12 +789,23 @@ class ConjectureRunner(object):
 
         self.reuse_existing_examples()
         self.generate_new_examples()
+        self.shrink_interesting_examples()
 
+        self.exit_with(ExitReason.finished)
+
+    def shrink_interesting_examples(self):
+        """If we've found interesting examples, try to replace each of them
+        with a minimal interesting example with the same interesting_origin.
+
+        We may find one or more examples with a new interesting_origin
+        during the shrink process. If so we shrink these too.
+
+        """
         if (
             Phase.shrink not in self.settings.phases or
             not self.interesting_examples
         ):
-            self.exit_with(ExitReason.finished)
+            return
 
         for prev_data in sorted(
             self.interesting_examples.values(),
@@ -822,11 +833,29 @@ class ConjectureRunner(object):
                 return d.interesting_origin == target
 
             example = self.shrink(example, predicate)
+
+            # The main shrink pass is purely greedy.
+            # This is mostly pretty effective, but has a tendency
+            # to get stuck in a local minimum in some cases.
+            # So when we've completed the shrink process, we try
+            # starting it again from something reasonably near to
+            # the shrunk example that is likely to exhibit the same
+            # behaviour. We then rerun the shrink process and see
+            # if it gets a better result. If we do, we begin again.
+            # If not, we bail out fairly quickly after a few tries
+            # as this will usually not work.
             count = 0
             while count < 10:
                 count += 1
                 self.debug('Retrying %r' % (target,))
                 attempt_buf = bytearray(example.buffer)
+
+                # We use the shrinking information to identify the
+                # structural locations in the byte stream - if lowering
+                # the block would result in changing the size of the
+                # example, changing it here is too likely to break whatever
+                # it was caused the behaviour we're trying to shrink.
+                # Everything non-structural, we redraw uniformly at random.
                 for i, (u, v) in enumerate(example.blocks):
                     if i not in example.shrinking_blocks:
                         attempt_buf[u:v] = uniform(self.random, v - u)
@@ -834,11 +863,13 @@ class ConjectureRunner(object):
                 if predicate(attempt):
                     reshrink = self.shrink(attempt, predicate)
                     if sort_key(reshrink.buffer) < sort_key(example.buffer):
+                        # We have successfully shrunk the example past where
+                        # we started from. Now we begin the whole processs
+                        # again from the new, smaller, example.
                         example = reshrink
                         count = 0
-            else:
-                self.shrunk_examples.add(target)
-        self.exit_with(ExitReason.finished)
+
+            self.shrunk_examples.add(target)
 
     def clear_secondary_key(self):
         if self.has_existing_examples():
