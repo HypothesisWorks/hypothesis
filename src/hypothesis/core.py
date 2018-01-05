@@ -47,7 +47,7 @@ from hypothesis._settings import Phase, Verbosity, HealthCheck, \
 from hypothesis.executors import new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
-from hypothesis.internal.compat import ceil, str_to_bytes, \
+from hypothesis.internal.compat import ceil, hbytes, str_to_bytes, \
     benchmark_time, get_type_hints, getfullargspec, encoded_filepath
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.utils.conventions import infer, not_set
@@ -1081,11 +1081,15 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
                     report(lambda: u'Found satisfying example %s' % (
                         nicerepr(result),
                     ))
-                else:
+                    last_data[0] = data
+                elif (
+                    sort_key(hbytes(data.buffer)) <
+                    sort_key(last_data[0].buffer)
+                ):
                     report(lambda: u'Shrunk example to %s' % (
                         nicerepr(result),
                     ))
-                last_data[0] = data
+                    last_data[0] = data
         if success and not data.frozen:
             data.mark_interesting()
     start = time.time()
