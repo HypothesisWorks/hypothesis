@@ -17,12 +17,18 @@
 
 from __future__ import division, print_function, absolute_import
 
+from random import Random
+
+import pytest
+
 from hypothesis import strategies as st
 from hypothesis import HealthCheck, given, settings, unlimited
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.internal.compat import hbytes
+from hypothesis.internal.compat import hbytes, hrange
 from tests.cover.test_conjecture_engine import run_to_buffer, slow_shrinker
-from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis.internal.conjecture.data import Status, ConjectureData
+from hypothesis.internal.conjecture.engine import RunIsComplete, \
+    ConjectureRunner
 
 
 @given(st.random_module())
@@ -117,3 +123,34 @@ def test_can_discard():
             seen.add(hbytes(data.draw_bytes(1)))
         data.mark_interesting()
     assert len(x) == n
+
+
+def test_exhaustive_enumeration_of_partial_buffer():
+    seen = set()
+
+    def f(data):
+        k = data.draw_bytes(2)
+        assert k[1] == 0
+        assert k not in seen
+        seen.add(k)
+
+    seen_prefixes = set()
+
+    runner = ConjectureRunner(
+        f, settings=settings(database=None, max_examples=256, buffer_size=2),
+        random=Random(0),
+    )
+    with pytest.raises(RunIsComplete):
+        runner.cached_test_function(b'')
+        for _ in hrange(256):
+            p = runner.generate_novel_prefix()
+            assert p not in seen_prefixes
+            seen_prefixes.add(p)
+            data = ConjectureData.for_buffer(hbytes(p + hbytes(2)))
+            runner.test_function(data)
+            assert data.status == Status.VALID
+            node = 0
+            for b in data.buffer:
+                node = runner.tree[node][b]
+            assert node in runner.dead
+    assert len(seen) == 256

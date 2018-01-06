@@ -1801,16 +1801,16 @@ def deferred(definition):
     >>> x.example()
     (((False, (True, True)), (False, True)), (True, True))
     >>> x.example()
-    (True, True)
+    True
 
     Mutual recursion also works fine:
 
     >>> a = st.deferred(lambda: st.booleans() | b)
     >>> b = st.deferred(lambda: st.tuples(a, a))
     >>> a.example()
-    (True, (True, False))
+    True
     >>> b.example()
-    (False, True)
+    (False, (False, ((False, True), False)))
 
     Examples from this strategy shrink as they normally would from the strategy
     returned by the definition.
