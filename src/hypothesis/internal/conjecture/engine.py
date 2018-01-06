@@ -1269,11 +1269,54 @@ class Shrinker(object):
         while prev is not self.shrink_target:
             prev = self.shrink_target
             self.remove_discarded()
+            self.zero_intervals()
             self.minimize_duplicated_blocks()
             self.minimize_individual_blocks()
             self.reorder_blocks()
             self.greedy_interval_deletion()
             self.interval_deletion_with_block_lowering()
+            self.pass_to_interval()
+
+    def zero_intervals(self):
+        """Attempt to replace each interval with its minimal possible value."""
+        i = 0
+        while i < len(self.shrink_target.intervals):
+            u, v = self.shrink_target.intervals[i]
+            buf = self.shrink_target.buffer
+            prev = self.shrink_target
+            if any(buf[u:v]):
+                attempt = self.cached_test_function(
+                    buf[:u] + hbytes(v - u) + buf[v:]
+                )
+                if (
+                    attempt.status == Status.VALID and
+                    len(attempt.buffer) < len(self.shrink_target.buffer)
+                ):
+                    ends = [s for r, s in attempt.intervals if r == u]
+                    ends.reverse()
+                    print(u, v, ends)
+                    for s in ends:
+                        if s < v and self.incorporate_new_buffer(
+                            buf[:u] + hbytes(s - u) + buf[v:]
+                        ):
+                            break
+            if self.shrink_target is prev:
+                i += 1
+
+    def pass_to_interval(self):
+        """Attempt to replace each interval with a subinterval."""
+        i = 0
+        while i < len(self.shrink_target.intervals):
+            u, v = self.shrink_target.intervals[i]
+            for r, s in reversed(self.shrink_target.intervals):
+                if u <= r <= s <= v and s - r < v - u:
+                    buf = self.shrink_target.buffer
+                    if self.incorporate_new_buffer(
+                        buf[:u] + buf[r:s] + buf[v:]
+                    ):
+                        break
+            else:
+                i += 1
 
     def shrink(self):
         # We assume that if an all-zero block of bytes is an interesting
