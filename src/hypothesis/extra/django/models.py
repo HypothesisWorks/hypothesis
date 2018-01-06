@@ -123,8 +123,12 @@ def _get_strategy_for_field(f):
                   'ipv4': ip4_addr_strings(), 'ipv6': ip6_addr_strings()}
         strategy = lookup[f.protocol.lower()]
     elif type(f) in (dm.TextField, dm.CharField):
-        strategy = st.text(min_size=(None if f.blank else 1),
-                           max_size=f.max_length)
+        strategy = st.text(
+            alphabet=st.characters(blacklist_characters=u'\x00',
+                                   blacklist_categories=('Cs',)),
+            min_size=(None if f.blank else 1),
+            max_size=f.max_length,
+        )
     elif type(f) == dm.DecimalField:
         bound = Decimal(10 ** f.max_digits - 1) / (10 ** f.decimal_places)
         strategy = st.decimals(min_value=-bound, max_value=bound,

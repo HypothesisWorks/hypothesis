@@ -790,8 +790,9 @@ def text(
     """Generates values of a unicode text type (unicode on python 2, str on
     python 3) with values drawn from alphabet, which should be an iterable of
     length one strings or a strategy generating such. If it is None it will
-    default to generating the full unicode range. If it is an empty collection
-    this will only generate empty strings.
+    default to generating the full unicode range (excluding surrogate
+    characters). If it is an empty collection this will only generate empty
+    strings.
 
     min_size, max_size and average_size have the usual interpretations.
 
