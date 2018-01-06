@@ -178,7 +178,8 @@ class ConjectureData(object):
         assert self.frozen
         if self.__intervals is None:
             intervals = set(self.blocks)
-            intervals.add((0, self.index))
+            if self.index > 0:
+                intervals.add((0, self.index))
             for l in self.intervals_by_level:
                 intervals.update(l)
                 for i in hrange(len(l) - 1):
