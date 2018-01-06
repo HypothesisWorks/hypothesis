@@ -1294,7 +1294,6 @@ class Shrinker(object):
                 ):
                     ends = [s for r, s in attempt.intervals if r == u]
                     ends.reverse()
-                    print(u, v, ends)
                     for s in ends:
                         if s < v and self.incorporate_new_buffer(
                             buf[:u] + hbytes(s - u) + buf[v:]

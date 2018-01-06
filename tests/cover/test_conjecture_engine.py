@@ -1077,3 +1077,46 @@ def test_handles_nesting_of_discard_correctly(monkeypatch):
                 data.mark_interesting()
 
     assert x == hbytes([1, 1])
+
+
+def test_can_zero_subintervals(monkeypatch):
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.cached_test_function(
+            hbytes([3, 0, 0, 0, 1]) * 10
+        ))
+
+    monkeypatch.setattr(Shrinker, 'shrink', fixate(Shrinker.zero_intervals))
+
+    @run_to_buffer
+    def x(data):
+        for _ in hrange(10):
+            n = data.draw_bits(8)
+            data.draw_bytes(n)
+            if data.draw_bits(8) != 1:
+                return
+        data.mark_interesting()
+    assert x == hbytes([0, 1]) * 10
+
+
+def test_can_pass_to_a_subinterval(monkeypatch):
+    marker = hbytes([4, 3, 2, 1])
+
+    initial = hbytes(len(marker) * 4) + marker
+
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.cached_test_function(initial))
+
+    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.pass_to_interval)
+
+    @run_to_buffer
+    def x(data):
+        while True:
+            b = data.draw_bytes(len(marker))
+            if any(b):
+                break
+        if hbytes(data.buffer) in (marker, initial):
+            data.mark_interesting()
+
+    assert x == marker
