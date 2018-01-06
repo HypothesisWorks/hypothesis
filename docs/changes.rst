@@ -21,6 +21,13 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+--------------------
+3.44.10 - 2018-01-06
+--------------------
+
+This patch avoids creating debug statements when debugging is disabled.
+Profiling suggests this is a 5-10% performance improvement (:issue:`1040`).
+
 -------------------
 3.44.9 - 2018-01-06
 -------------------
