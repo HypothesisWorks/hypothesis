@@ -281,23 +281,23 @@ class Sampler(object):
         heapq.heapify(large)
 
         while small and large:
-            s = heapq.heappop(small)
-            l = heapq.heappop(large)
+            lo = heapq.heappop(small)
+            hi = heapq.heappop(large)
 
-            assert s != l
-            assert scaled_probabilities[l] > one
-            assert self.table[s][1] is None
-            self.table[s][1] = l
-            self.table[s][2] = one - scaled_probabilities[s]
-            scaled_probabilities[l] = (
-                scaled_probabilities[l] + scaled_probabilities[s]) - one
+            assert lo != hi
+            assert scaled_probabilities[hi] > one
+            assert self.table[lo][1] is None
+            self.table[lo][1] = hi
+            self.table[lo][2] = one - scaled_probabilities[lo]
+            scaled_probabilities[hi] = (
+                scaled_probabilities[hi] + scaled_probabilities[lo]) - one
 
-            if scaled_probabilities[l] < 1:
-                heapq.heappush(small, l)
-            elif scaled_probabilities[l] == 1:
-                self.table[l][2] = zero
+            if scaled_probabilities[hi] < 1:
+                heapq.heappush(small, hi)
+            elif scaled_probabilities[hi] == 1:
+                self.table[hi][2] = zero
             else:
-                heapq.heappush(large, l)
+                heapq.heappush(large, hi)
         while large:
             self.table[large.pop()][2] = zero
         while small:
