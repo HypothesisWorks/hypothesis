@@ -319,9 +319,9 @@ class Sampler(object):
         use_alternate = biased_coin(data, alternate_chance)
         data.stop_example()
         if use_alternate:
-            return base
-        else:
             return alternate
+        else:
+            return base
 
 
 class many(object):
