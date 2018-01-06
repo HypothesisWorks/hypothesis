@@ -22,6 +22,16 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.44.9 - 2018-01-06
+-------------------
+
+This patch blacklists null characters (``'\x00'``) in automatically created
+strategies for Django :obj:`~django:django.db.models.CharField` and
+:obj:`~django:django.db.models.TextField`, due to a database issue which
+`was recently fixed upstream <https://code.djangoproject.com/ticket/28201>`_
+(Hypothesis :issue:`1045`).
+
+-------------------
 3.44.8 - 2018-01-06
 -------------------
 
