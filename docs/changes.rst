@@ -22,6 +22,19 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 --------------------
+3.44.11 - 2018-01-06
+--------------------
+
+This is a change to some internals around how Hypothesis handles avoiding
+generating duplicate examples and seeking out novel regions of the search
+space.
+
+You are unlikely to see much difference as a result of it, but it fixes
+a bug where an internal assertion could theoretically be triggered and has some
+minor effects on the distribution of examples so could potentially find bugs
+that have previously been missed.
+
+--------------------
 3.44.10 - 2018-01-06
 --------------------
 
