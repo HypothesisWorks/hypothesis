@@ -288,8 +288,8 @@ class ConjectureRunner(object):
                 next_node = self.tree[node][c]
                 if next_node in self.dead:
                     choices = [
-                        c for c in hrange(upper_bound)
-                        if self.tree[node].get(c) not in self.dead
+                        b for b in hrange(upper_bound)
+                        if self.tree[node].get(b) not in self.dead
                     ]
                     assert choices
                     c = self.random.choice(choices)
@@ -544,10 +544,7 @@ class ConjectureRunner(object):
 
         """
         initial = len(result)
-        if (
-            data.depth * 2 >= MAX_DEPTH or
-            data.index >= self.cap
-        ):
+        if data.depth * 2 >= MAX_DEPTH or data.index >= self.cap:
             data.forced_indices.update(
                 hrange(data.index, data.index + initial))
             data.hit_zero_bound = True
