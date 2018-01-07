@@ -1269,7 +1269,7 @@ def decimals(min_value=None, max_value=None,
         # Fixed-point decimals are basically integers with a scale factor
         def ctx(val, name=None):
             """Return a context in which this value is lossless."""
-            prec = max([2, abs(val or Decimal(1)).adjusted() + places + 1])
+            prec = max([1, abs(val or Decimal(1)).adjusted()]) + places + 1
             if name is not None and prec > 10 ** 4:
                 raise InvalidArgument(
                     'To represent %s_value=%r with %s places would take %s '
