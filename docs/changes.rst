@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 --------------------
+3.44.12 - 2018-01-07
+--------------------
+
+This changes Hypothesis's internal implementation of weighted sampling. This
+will affect example distribution and quality, but you shouldn't see any other
+effects.
+
+--------------------
 3.44.11 - 2018-01-06
 --------------------
 
