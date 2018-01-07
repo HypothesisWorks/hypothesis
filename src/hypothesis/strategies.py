@@ -1354,6 +1354,14 @@ def decimals(min_value=None, max_value=None,
                 min_value.adjusted(), max_value.adjusted()
             ).map(lambda i: Decimal(10) ** i).flatmap(scaled_decimals)
 
+    # Filter to bounds.  This should only ever take effect with precision of
+    # one digit, which otherwise behaves differently on various versions and
+    # operating systems.
+    if min_value is not None:
+        strat = strat.filter(lambda v: v >= min_value)
+    if max_value is not None:
+        strat = strat.filter(lambda v: v <= max_value)
+
     # Compose with sampled_from for infinities and NaNs as appropriate
     special = []
     if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
