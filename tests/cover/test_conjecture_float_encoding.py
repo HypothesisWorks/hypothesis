@@ -128,18 +128,14 @@ def test_floats_order_worse_than_their_integral_part(n, g):
 
 integral_floats = st.floats(
     allow_infinity=False, allow_nan=False, min_value=0.0
-).map(lambda x: float(int(x)))
+).map(lambda x: abs(float(int(x))))
 
 
 @given(integral_floats, integral_floats)
 def test_integral_floats_order_as_integers(x, y):
     assume(x != y)
     x, y = sorted((x, y))
-    assume(y < 0 or x > 0)
-    if y < 0:
-        assert flt.float_to_lex(y) < flt.float_to_lex(x)
-    else:
-        assert flt.float_to_lex(x) < flt.float_to_lex(y)
+    assert flt.float_to_lex(x) < flt.float_to_lex(y)
 
 
 @given(st.floats(0, 1))

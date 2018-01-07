@@ -47,7 +47,7 @@ def test_minimal_fractions_2():
 
 def test_minimal_fractions_3():
     assert minimal(
-        lists(fractions()), lambda s: len(s) >= 20) == [Fraction(0)] * 20
+        lists(fractions()), lambda s: len(s) >= 5) == [Fraction(0)] * 5
 
 
 def test_minimize_string_to_empty():

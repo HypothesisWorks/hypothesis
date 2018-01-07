@@ -112,8 +112,8 @@ class FloatStrategy(SearchStrategy):
 
         self.nasty_floats = [f for f in NASTY_FLOATS if self.permitted(f)]
         weights = [
-            0.6 * len(self.nasty_floats)
-        ] + [0.4] * len(self.nasty_floats)
+            0.2 * len(self.nasty_floats)
+        ] + [0.8] * len(self.nasty_floats)
         self.sampler = d.Sampler(weights)
 
     def __repr__(self):
