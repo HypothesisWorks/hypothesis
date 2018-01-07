@@ -180,22 +180,25 @@ returns a new strategy for it. So for example:
     >>> json = recursive(none() | booleans() | floats() | text(printable),
     ... lambda children: lists(children) | dictionaries(text(printable), children))
     >>> pprint(json.example())
-    [['P'],
-     [None,
-      True,
-      -inf,
-      5.5477328279826776e+16,
-      True,
-      None,
-      -0.3333333333333333,
-      -1.7093843795721067e-100,
-      False,
-      '94K~{mY>a1yA:#CmDYb',
-      None],
-     [None, 8.628035772152501e-162, None],
-     False]
+    ['dy',
+     [None, True, 6.297399055778002e+16, False],
+     {'a{h\\:694K~{mY>a1yA:#CmDYb': None},
+     '\\kP!4',
+     {'#1J1': '',
+      'cx.': None,
+      "jv'A?qyp_sB\n$62g": [],
+      'qgnP': [False, -inf, 'la)']},
+     [],
+     {}]
     >>> pprint(json.example())
-    {'': [True]}
+    {'': None,
+     '(Rt)': 1.192092896e-07,
+     ',': [],
+     '6': 2.2250738585072014e-308,
+     'HA=/': [],
+     'YU]gy8': inf,
+     'l': None,
+     'nK': False}
     >>> pprint(json.example())
     []
 
@@ -211,7 +214,7 @@ we wanted to only generate really small JSON we could do this as:
     >>> small_lists.example()
     [False]
     >>> small_lists.example()
-    [True, True]
+    True
     >>> small_lists.example()
     []
 
