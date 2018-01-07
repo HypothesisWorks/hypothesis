@@ -1231,10 +1231,7 @@ class Shrinker(object):
         assert sort_key(buffer) <= sort_key(self.shrink_target.buffer)
         data = ConjectureData.for_buffer(buffer)
         self.__engine.test_function(data)
-        result = self.incorporate_test_data(data)
-        if result and not self.__discarding_failed:
-            self.remove_discarded()
-        return result
+        return self.incorporate_test_data(data)
 
     def incorporate_test_data(self, data):
         if (
@@ -1242,6 +1239,8 @@ class Shrinker(object):
             sort_key(data.buffer) < sort_key(self.shrink_target.buffer)
         ):
             self.shrink_target = data
+            if data.discarded and not self.__discarding_failed:
+                self.remove_discarded()
             return True
         return False
 

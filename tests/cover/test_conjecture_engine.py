@@ -908,7 +908,7 @@ def fixate(f):
 
 def test_discarding_runs_automatically(monkeypatch):
     monkeypatch.setattr(
-        Shrinker, 'shrink', fixate(Shrinker.coarse_block_replacement))
+        Shrinker, 'shrink', fixate(Shrinker.minimize_individual_blocks))
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.test_function(
@@ -929,7 +929,7 @@ def test_discarding_runs_automatically(monkeypatch):
 
 def test_automatic_discarding_is_turned_off_if_it_does_not_work(monkeypatch):
     monkeypatch.setattr(
-        Shrinker, 'shrink', fixate(Shrinker.coarse_block_replacement))
+        Shrinker, 'shrink', fixate(Shrinker.minimize_individual_blocks))
     target = hbytes([0, 1]) * 5 + hbytes([11])
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
