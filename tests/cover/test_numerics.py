@@ -128,3 +128,12 @@ def test_issue_739_regression(x):
 def test_issue_838_regression(x):
     # If this hands forever, that's a regression
     pass
+
+
+@given(data())
+def test_absurdly_precise_bounds_error(data):
+    OVERLY_PRECISE = 10100  # greater-than-maximum precision
+    with decimal.localcontext(decimal.Context(prec=OVERLY_PRECISE)):
+        lo, hi = decimal.Decimal(1) / 3, decimal.Decimal(2) / 3
+    with pytest.raises(InvalidArgument):
+        data.draw(decimals(lo, hi, places=OVERLY_PRECISE))

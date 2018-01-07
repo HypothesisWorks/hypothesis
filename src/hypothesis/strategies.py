@@ -1308,7 +1308,7 @@ def decimals(min_value=None, max_value=None,
         if min_value is not None:
             min_value = ctx.add(min_value, 0)
             if exact_bounds['min'] < min_value:
-                min_value = ctx.next_plus(min_value)
+                min_value = ctx.next_plus(min_value)  # pragma: no cover
         if max_value is not None:
             max_value = ctx.add(max_value, 0)
             if exact_bounds['max'] > max_value:
