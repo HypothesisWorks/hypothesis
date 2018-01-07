@@ -36,7 +36,7 @@ intermediate steps of your test. That's where the ``note`` function comes in:
     ...     test_shuffle_is_noop()
     ... except AssertionError:
     ...     print('ls != ls2')
-    Falsifying example: test_shuffle_is_noop(ls=[0, 1], r=RandomWithSeed(1))
+    Falsifying example: test_shuffle_is_noop(ls=[0, 1], r=RandomWithSeed(53))
     Shuffle: [1, 0]
     ls != ls2
 
@@ -292,7 +292,7 @@ to define a tuple you need to say what goes in each element:
 
     >>> from hypothesis.strategies import tuples
     >>> tuples(integers(), integers()).example()
-    (134332809039453074360454593782613510772, 130496674427438803384263463511313040000)
+    (-24597, 12566)
 
 Further details are :doc:`available in a separate document <data>`.
 
@@ -465,7 +465,7 @@ experimenting with conditions for filtering data.
     >>> find(lists(integers()), lambda x: sum(x) >= 10 and len(x) >= 3)
     [0, 0, 10]
     >>> find(sets(integers()), lambda x: sum(x) >= 10 and len(x) >= 3)
-    {0, 1, 9}
+    {0, 9, 1}
 
 The first argument to :func:`~hypothesis.find` describes data in the usual way for an argument to
 :func:`~hypothesis.given`, and supports :doc:`all the same data types <data>`. The second is a
@@ -509,7 +509,7 @@ argument, to force this inference for arguments with a default value.
     >>> def func(a: int, b: str):
     ...     return [a, b]
     >>> builds(func).example()
-    [-42720342683730728910509591013777481668, '\t']
+    [-6993, '']
 
 :func:`@given <hypothesis.given>` does not perform any implicit inference
 for required arguments, as this would break compatibility with pytest fixtures.
