@@ -1252,6 +1252,24 @@ class Shrinker(object):
     def debug(self, msg):
         self.__engine.debug(msg)
 
+    def shrink(self):
+        # We assume that if an all-zero block of bytes is an interesting
+        # example then we're not going to do better than that.
+        # This might not technically be true: e.g. for integers() | booleans()
+        # the simplest example is actually [1, 0]. Missing this case is fairly
+        # harmless and this allows us to make various simplifying assumptions
+        # about the structure of the data (principally that we're never
+        # operating on a block of all zero bytes so can use non-zeroness as a
+        # signpost of complexity).
+        if (
+            not any(self.shrink_target.buffer) or
+            self.incorporate_new_buffer(hbytes(len(self.shrink_target.buffer)))
+        ):
+            return
+
+        self.greedy_shrink()
+        self.escape_local_minimum()
+
     def greedy_shrink(self):
         # This will automatically be run during the normal loop, but it's worth
         # running once before the coarse passes so they don't spend time on
@@ -1363,24 +1381,6 @@ class Shrinker(object):
                         break
             else:
                 i += 1
-
-    def shrink(self):
-        # We assume that if an all-zero block of bytes is an interesting
-        # example then we're not going to do better than that.
-        # This might not technically be true: e.g. for integers() | booleans()
-        # the simplest example is actually [1, 0]. Missing this case is fairly
-        # harmless and this allows us to make various simplifying assumptions
-        # about the structure of the data (principally that we're never
-        # operating on a block of all zero bytes so can use non-zeroness as a
-        # signpost of complexity).
-        if (
-            not any(self.shrink_target.buffer) or
-            self.incorporate_new_buffer(hbytes(len(self.shrink_target.buffer)))
-        ):
-            return
-
-        self.greedy_shrink()
-        self.escape_local_minimum()
 
     def escape_local_minimum(self):
         """Attempt to restart the shrink process from a larger initial value in
