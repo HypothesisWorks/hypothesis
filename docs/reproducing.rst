@@ -6,7 +6,7 @@ One of the things that is often concerning for people using randomized testing
 like Hypothesis is the question of how to reproduce failing test cases.
 
 Fortunately Hypothesis has a number of features in support of this. The one you
-will use most commonly when developing locally is `the example database <database>`,
+will use most commonly when developing locally is :doc:`the example database <database>`,
 which means that you shouldn't have to think about the problem at all for local
 use - test failures will just automatically reproduce without you having to do
 anything.
