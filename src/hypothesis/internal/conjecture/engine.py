@@ -1253,6 +1253,12 @@ class Shrinker(object):
         self.__engine.debug(msg)
 
     def shrink(self):
+        """Run the full set of shrinks and update shrink_target.
+
+        This method is "mostly idempotent" - calling it wice is unlikely to
+        have any effect, though it has a non-zero probability of doing so.
+
+        """
         # We assume that if an all-zero block of bytes is an interesting
         # example then we're not going to do better than that.
         # This might not technically be true: e.g. for integers() | booleans()
@@ -1271,6 +1277,14 @@ class Shrinker(object):
         self.escape_local_minimum()
 
     def greedy_shrink(self):
+        """Run a full set of greedy shrinks (that is, ones that will only ever
+        move to a better target) and update shrink_target appropriately.
+
+        This method iterates to a fixed point and so is idempontent - calling
+        it twice will have exactly the same effect as calling it once.
+
+        """
+
         # This will automatically be run during the normal loop, but it's worth
         # running once before the coarse passes so they don't spend time on
         # useless data.
