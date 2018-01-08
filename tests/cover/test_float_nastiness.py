@@ -21,6 +21,7 @@ import sys
 import math
 
 import pytest
+from flaky import flaky
 
 import hypothesis.strategies as st
 from hypothesis import find, given, settings
@@ -83,6 +84,7 @@ def test_can_generate_interval_endpoints(l, r):
     find(interval, lambda x: x == r, settings=settings(max_examples=10000))
 
 
+@flaky(max_runs=4, min_passes=1)
 def test_half_bounded_generates_endpoint():
     find_any(st.floats(min_value=-1.0), lambda x: x == -1.0)
     find_any(st.floats(max_value=-1.0), lambda x: x == -1.0)
