@@ -37,8 +37,8 @@ pygithub==1.35            # via pyupio
 pygments==2.2.0           # via sphinx
 pyjwt==1.5.3              # via pygithub
 pyparsing==2.2.0          # via packaging
-pytest==3.3.1
-python-gitlab==1.1.0      # via pyupio
+pytest==3.3.2
+python-gitlab==1.2.0      # via pyupio
 pytz==2017.3              # via babel
 pyupio==0.8.2
 pyyaml==3.12              # via dparse, pyupio
@@ -49,7 +49,7 @@ safety==1.6.1             # via pyupio
 six==1.11.0               # via dparse, packaging, pip-tools, pytest, python-gitlab, pyupio, sphinx, tox
 snowballstemmer==1.2.1    # via sphinx
 sphinx-rtd-theme==0.2.4
-sphinx==1.6.5
+sphinx==1.6.6
 sphinxcontrib-websupport==1.0.1  # via sphinx
 tox==2.9.1
 tqdm==4.19.5              # via pyupio, twine
