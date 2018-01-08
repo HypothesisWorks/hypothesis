@@ -34,7 +34,7 @@ def test_conditional_draw(x, data):
 def test_prints_on_failure():
     @given(st.data())
     def test(data):
-        x = data.draw(st.lists(st.integers(), min_size=1))
+        x = data.draw(st.lists(st.integers(0, 10), min_size=2))
         y = data.draw(st.sampled_from(x))
         x.remove(y)
         if y in x:
