@@ -1549,16 +1549,28 @@ class Shrinker(object):
         self.__discarding_failed = not self.incorporate_new_buffer(attempt)
 
     def delta_interval_deletion(self):
-        """Attempt to delete every interval in the example."""
+        """Attempt to delete every interval in the example, but be more
+        aggressive about it than we are in greedy_interval_deletion.
+
+        The idea here is that if we have a long list of, say, tends or
+        hundreds of elements, we *could* try deleting each element of the list
+        individually, but if only a handful of elements of the list matter then
+        this is a bit of a waste of time. Wouldn't it be better if we deleted
+        many of them at once?
+
+        The approach we use is approximately delta-debugging from Hildebrandt
+        and Zeller's "Simplifying failure-inducing input" - we try deleting
+        progressively shorter runs, eventually bottoming out in deleting single
+        intervals as per greedy_interval_deletion.
+
+        Note that this is *not* the same as actual delta-debugging on the the
+        buffer, because we are deleting intervals instead of bytes. These may
+        overlap with each-other.
+
+        """
 
         self.debug('delta interval deletes')
 
-        # We do a delta-debugging style thing here where we initially try to
-        # delete many intervals at once and prune it down exponentially to
-        # eventually only trying to delete one interval at a time.
-
-        # I'm a little skeptical that this is helpful in general, but we've
-        # got at least one benchmark where it does help.
         k = len(self.shrink_target.intervals) // 2
         while k > 0:
             i = 0
