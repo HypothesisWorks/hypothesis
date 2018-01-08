@@ -1298,6 +1298,8 @@ class Shrinker(object):
         # is much cheaper when run on close to shrunk examples.
         self.delta_interval_deletion()
 
+        run_expensive_shrinks = False
+
         prev = None
         while prev is not self.shrink_target:
             prev = self.shrink_target
@@ -1307,6 +1309,26 @@ class Shrinker(object):
             self.minimize_individual_blocks()
             self.reorder_blocks()
             self.greedy_interval_deletion()
+
+            # Passes after this point are expensive: Prior to here they should
+            # all involve no more than about n log(n) shrinks, but after here
+            # they may be quadratic or worse. Running all of the passes until
+            # they make no changes is important for correctness, but nothing
+            # says we have to run all of them on each run! So if the fast
+            # passes still seem to be making useful changes, we restart the
+            # loop here and give them another go.
+            # To avoid the case where the expensive shrinks unlock a trivial
+            # change in one of the previous passes causing this to become much
+            # more expensive by doubling the number of times we have to run
+            # them to get to run the expensive passes again, we make this
+            # decision "sticky" - once it's been useful to run the expensive
+            # changes at least once, we always run them.
+            if prev is self.shrink_target:
+                run_expensive_shrinks = True
+
+            if not run_expensive_shrinks:
+                continue
+
             self.interval_deletion_with_block_lowering()
             self.pass_to_interval()
 
