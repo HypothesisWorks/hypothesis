@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 --------------------
+3.44.14 - 2018-01-08
+--------------------
+
+This release fixes a bug in the shrinker that prevented the optimisations in
+3.44.6 from working in some cases. It would not have worked correctly when
+filtered examples were nested (e.g. with a set of integers in some range).
+
+This would not have resulted in any correctness problems, but shrinking may
+have been slower than it otherwise could be.
+
+--------------------
 3.44.13 - 2018-01-08
 --------------------
 
