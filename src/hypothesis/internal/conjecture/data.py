@@ -166,6 +166,7 @@ class ConjectureData(object):
                     if u <= r <= s <= v:
                         self.discarded.pop()
                     else:
+                        assert s <= u
                         break
                 self.discarded.append(t)
 
