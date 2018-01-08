@@ -1290,11 +1290,13 @@ class Shrinker(object):
         # useless data.
         self.remove_discarded()
 
-        # Coarse passes that are worth running once when the example is likely
-        # to be "far from shrunk" but not worth repeating in a loop because
-        # they are subsumed by more fine grained passes.
+        # We only run this once because delta-debugging is essentially useless
+        # and often actively harmful when run on examples which are "close to
+        # shrunk" - the attempts to delete long runs mostly just don't work,
+        # and we spend a huge amount of time trying them anyway. The
+        # greedy_interval_deletion pass will achieve the same end result but
+        # is much cheaper when run on close to shrunk examples.
         self.delta_interval_deletion()
-        self.coarse_block_replacement()
 
         prev = None
         while prev is not self.shrink_target:
@@ -1612,29 +1614,6 @@ class Shrinker(object):
                 self.shrink_target.buffer[:u] + self.shrink_target.buffer[v:]
             ):
                 i += 1
-
-    def coarse_block_replacement(self):
-        """Attempts to zero every block. This is a very coarse pass that we
-        only run once to attempt to remove some irrelevant detail. The main
-        purpose of it is that if we manage to zero a lot of data then many
-        attempted deletes become duplicates of each other, so we run fewer
-        tests.
-
-        If more blocks become possible to zero later that will be
-        handled by minimize_individual_blocks. The point of this is
-        simply to provide a fairly fast initial pass.
-
-        """
-        self.debug('Zeroing blocks')
-        i = 0
-        while i < len(self.shrink_target.blocks):
-            buf = self.shrink_target.buffer
-            u, v = self.shrink_target.blocks[i]
-            assert u < v
-            block = buf[u:v]
-            if any(block):
-                self.incorporate_new_buffer(buf[:u] + hbytes(v - u) + buf[v:])
-            i += 1
 
     def minimize_duplicated_blocks(self):
         """Find blocks that have been duplicated in multiple places and attempt
