@@ -24,7 +24,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import find, given, settings
-from tests.common.debug import minimal
+from tests.common.debug import minimal, find_any
 from hypothesis.internal.compat import WINDOWS
 from hypothesis.internal.floats import float_to_int, int_to_float
 
@@ -84,15 +84,13 @@ def test_can_generate_interval_endpoints(l, r):
 
 
 def test_half_bounded_generates_endpoint():
-    find(st.floats(min_value=-1.0), lambda x: x == -1.0,
-         settings=settings(max_examples=10000))
-    find(st.floats(max_value=-1.0), lambda x: x == -1.0,
-         settings=settings(max_examples=10000))
+    find_any(st.floats(min_value=-1.0), lambda x: x == -1.0)
+    find_any(st.floats(max_value=-1.0), lambda x: x == -1.0)
 
 
 def test_half_bounded_generates_zero():
-    find(st.floats(min_value=-1.0), lambda x: x == 0.0)
-    find(st.floats(max_value=1.0), lambda x: x == 0.0)
+    find_any(st.floats(min_value=-1.0), lambda x: x == 0.0)
+    find_any(st.floats(max_value=1.0), lambda x: x == 0.0)
 
 
 @pytest.mark.xfail(
