@@ -22,7 +22,6 @@ import math
 import hypothesis.internal.conjecture.utils as d
 import hypothesis.internal.conjecture.floats as flt
 from hypothesis.control import assume
-from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.floats import sign
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
@@ -55,18 +54,21 @@ class IntegersFromStrategy(SearchStrategy):
 
 class WideRangeIntStrategy(IntStrategy):
 
+    distribution = d.Sampler([
+        4.0, 8.0, 1.0, 1.0, 0.5
+    ])
+
+    sizes = [8, 16, 32, 64, 128]
+
     def __repr__(self):
         return 'WideRangeIntStrategy()'
 
     def do_draw(self, data):
-        size = 16
-        sign_mask = 2 ** (size * 8 - 1)
-
-        byt = data.draw_bytes(size)
-        r = int_from_bytes(byt)
-        negative = r & sign_mask
-        r &= (~sign_mask)
-        if negative:
+        size = self.sizes[self.distribution.sample(data)]
+        r = data.draw_bits(size)
+        sign = r & 1
+        r >>= 1
+        if sign:
             r = -r
         return int(r)
 

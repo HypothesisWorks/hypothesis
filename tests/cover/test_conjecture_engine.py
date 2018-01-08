@@ -837,7 +837,7 @@ def test_duplicate_blocks_that_go_away(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.test_function(
-            ConjectureData.for_buffer(hbytes([0, 0, 0, 2] * 2 + [5] * 2)))
+            ConjectureData.for_buffer(hbytes([1, 1, 1, 2] * 2 + [5] * 2)))
     )
 
     @run_to_buffer
@@ -846,7 +846,7 @@ def test_duplicate_blocks_that_go_away(monkeypatch):
         y = data.draw_bits(32)
         if x != y:
             data.mark_invalid()
-        b = [data.draw_bytes(1) for _ in hrange(x)]
+        b = [data.draw_bytes(1) for _ in hrange(x & 255)]
         if len(set(b)) <= 1:
             data.mark_interesting()
     assert x == hbytes([0] * 8)

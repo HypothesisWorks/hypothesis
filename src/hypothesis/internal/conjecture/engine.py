@@ -1341,7 +1341,8 @@ class Shrinker(object):
             if i >= len(self.shrink_target.blocks):
                 break
             u, v = self.shrink_target.blocks[i]
-            initial_attempt[u:v] = b
+            n = min(v - u, len(b))
+            initial_attempt[v - n:v] = b[-n:]
 
         initial_data = self.cached_test_function(initial_attempt)
 
@@ -1450,10 +1451,18 @@ class Shrinker(object):
         to minimize all of the duplicates simultaneously."""
 
         self.debug('Simultaneous shrinking of duplicated blocks')
+
+        def canon(b):
+            i = 0
+            while i < len(b) and b[i] == 0:
+                i += 1
+            return b[i:]
+
         counts = Counter(
-            self.shrink_target.buffer[u:v]
+            canon(self.shrink_target.buffer[u:v])
             for u, v in self.shrink_target.blocks
         )
+        counts.pop(hbytes(), None)
         blocks = [buffer for buffer, count in counts.items() if count > 1]
 
         blocks.sort(reverse=True)
@@ -1461,7 +1470,7 @@ class Shrinker(object):
         for block in blocks:
             targets = [
                 i for i, (u, v) in enumerate(self.shrink_target.blocks)
-                if self.shrink_target.buffer[u:v] == block
+                if canon(self.shrink_target.buffer[u:v]) == block
             ]
             # This can happen if some blocks have been lost in the previous
             # shrinking.

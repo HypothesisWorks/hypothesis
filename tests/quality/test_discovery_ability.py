@@ -184,8 +184,8 @@ test_can_produce_short_lists = define_test(
 )
 
 test_can_produce_the_same_int_twice = define_test(
-    tuples(lists(integers(), average_size=25.0), integers()),
-    lambda t: t[0].count(t[1]) > 1
+    lists(integers(), average_size=25.0),
+    lambda t: len(set(t)) < len(t)
 )
 
 
@@ -268,6 +268,11 @@ test_integers_are_sometimes_zero = define_test(
 
 test_integers_are_often_small = define_test(
     integers(), lambda x: abs(x) <= 100
+)
+
+
+test_integers_are_often_small_but_not_that_small = define_test(
+    integers(), lambda x: 50 <= abs(x) <= 255
 )
 
 

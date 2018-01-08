@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
+from random import Random
 from fractions import Fraction
 from functools import reduce
 
@@ -215,11 +216,16 @@ def test_find_large_union_list():
 
 
 @pytest.mark.parametrize('n', [0, 1, 10, 100, 1000])
-def test_containment(n):
+@pytest.mark.parametrize(
+    'seed',
+    [13878544811291720918, 15832355027548327468, 12901656430307478246]
+)
+def test_containment(n, seed):
     iv = minimal(
         tuples(lists(integers()), integers()),
         lambda x: x[1] in x[0] and x[1] >= n,
-        timeout_after=60
+        timeout_after=60,
+        random=Random(seed),
     )
     assert iv == ([n], n)
 
