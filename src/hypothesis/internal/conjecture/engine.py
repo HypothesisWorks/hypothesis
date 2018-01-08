@@ -1379,9 +1379,12 @@ class Shrinker(object):
         """Try removing all bytes marked as discarded."""
         if not self.shrink_target.discarded:
             return
-        attempt = bytearray(self.shrink_target.buffer)
-        for u, v in sorted(self.shrink_target.discarded, reverse=True):
-            del attempt[u:v]
+        include = [True] * len(self.shrink_target.buffer)
+        for u, v in self.shrink_target.discarded:
+            for i in hrange(u, v):
+                include[i] = False
+        attempt = hbytes(
+            [b for b, inc in zip(self.shrink_target.buffer, include) if inc])
         self.__discarding_failed = not self.incorporate_new_buffer(attempt)
 
     def delta_interval_deletion(self):
