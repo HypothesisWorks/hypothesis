@@ -1120,3 +1120,84 @@ def test_can_pass_to_a_subinterval(monkeypatch):
             data.mark_interesting()
 
     assert x == marker
+
+
+def test_can_handle_size_changing_in_reordering(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', Shrinker.reorder_bytes)
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer(hbytes([13, 7, 0]))))
+
+    @run_to_buffer
+    def x(data):
+        n = data.draw_bits(8)
+        if n == 0:
+            data.mark_invalid()
+        if n != 7:
+            data.draw_bits(8)
+        data.draw_bits(8)
+        data.mark_interesting()
+
+    assert x == hbytes([7, 13])
+
+
+def test_will_immediately_reorder_to_sorted(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', Shrinker.reorder_bytes)
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer(hbytes(list(range(10, 0, -1))))))
+
+    @run_to_buffer
+    def x(data):
+        for _ in hrange(10):
+            data.draw_bits(8)
+        data.mark_interesting()
+
+    assert x == hbytes(list(hrange(1, 11)))
+
+
+def test_reorder_can_fail_to_sort(monkeypatch):
+    target = hbytes([1, 0, 0, 3, 2, 1])
+
+    monkeypatch.setattr(
+        Shrinker, 'shrink', Shrinker.reorder_bytes)
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer(target)))
+
+    @run_to_buffer
+    def x(data):
+        for _ in hrange(len(target)):
+            data.draw_bits(8)
+        if hbytes(data.buffer) == target:
+            data.mark_interesting()
+
+    assert x == target
+
+
+def test_reordering_interaction_with_writing(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', Shrinker.reorder_bytes)
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer([3, 2, 1])))
+
+    @run_to_buffer
+    def x(data):
+        m = data.draw_bits(8)
+        if m == 2:
+            data.write(hbytes(2))
+        elif m == 1:
+            data.mark_invalid()
+        else:
+            data.draw_bits(8)
+            data.draw_bits(8)
+        data.mark_interesting()
+
+    assert x == hbytes([0, 0, 2])

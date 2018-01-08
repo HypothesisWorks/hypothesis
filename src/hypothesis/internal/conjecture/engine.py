@@ -1331,6 +1331,7 @@ class Shrinker(object):
 
             self.interval_deletion_with_block_lowering()
             self.pass_to_interval()
+            self.reorder_bytes()
 
     def zero_intervals(self):
         """Attempt to replace each interval with its minimal possible value.
@@ -1842,4 +1843,78 @@ class Shrinker(object):
                     if changed:
                         break
             if not changed:
+                i += 1
+
+    def reorder_bytes(self):
+        """This is a hyper-specific and moderately expensive shrink pass. It is
+        designed to do similar things to reorder_blocks, but it works in cases
+        where reorder_blocks may fail.
+
+        The idea is that we expect to have a *lot* of single byte blocks, and
+        they have very different meanings and interpretations. This means that
+        the reasonably cheap approach of doing what is basically insertion sort
+        on these blocks is unlikely to work.
+
+        So instead we try to identify the subset of the single-byte blocks that
+        we can freely move around and more aggressively put those into a sorted
+        order.
+
+        This is useful because e.g. we draw integers as single bytes, and if we
+        don't have a pass like that then we're unable to shrink from [10, 0] to
+        [0, 10].
+
+        """
+
+        free_bytes = []
+
+        for i, (u, v) in enumerate(self.shrink_target.blocks):
+            if (
+                i not in self.shrink_target.shrinking_blocks and
+                v == u + 1 and
+                u not in self.shrink_target.forced_indices
+            ):
+                free_bytes.append(u)
+
+        if not free_bytes:
+            return
+
+        original = self.shrink_target
+
+        def attempt(new_ordering):
+            assert len(new_ordering) == len(free_bytes)
+            assert len(self.shrink_target.buffer) == len(original.buffer)
+
+            attempt = bytearray(self.shrink_target.buffer)
+            for i, b in zip(free_bytes, new_ordering):
+                attempt[i] = b
+            return self.incorporate_new_buffer(attempt)
+
+        ordering = [self.shrink_target.buffer[i] for i in free_bytes]
+
+        if ordering == sorted(ordering):
+            return
+
+        if attempt(sorted(ordering)):
+            return True
+
+        n = len(ordering)
+
+        i = 1
+        while i < n:
+            for k in hrange(i - 1, -1, -1):
+                if ordering[k] <= ordering[i]:
+                    continue
+                swapped = list(ordering)
+                swapped[k], swapped[i] = swapped[i], swapped[k]
+                if attempt(swapped):
+                    i = k
+                    if (
+                        len(self.shrink_target.buffer) !=
+                        len(original.buffer)
+                    ):
+                        return
+                    ordering = [
+                        self.shrink_target.buffer[i] for i in free_bytes]
+                    break
+            else:
                 i += 1

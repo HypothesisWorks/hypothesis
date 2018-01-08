@@ -236,3 +236,13 @@ def test_duplicate_containment():
         lambda s: s[0].count(s[1]) > 1, timeout_after=100)
     assert ls == [0, 0]
     assert i == 0
+
+
+@pytest.mark.parametrize('seed', [11, 28, 37])
+def test_reordering_bytes(seed):
+    ls = minimal(
+        lists(integers()), lambda x: sum(x) >= 10 and len(x) >= 3,
+        random=Random(seed),
+    )
+
+    assert ls == sorted(ls)
