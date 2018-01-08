@@ -77,7 +77,7 @@ class ConjectureData(object):
         self.draw_times = []
         self.__intervals = None
         self.shrinking_blocks = set()
-        self.discarded = set()
+        self.discarded = []
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -160,7 +160,14 @@ class ConjectureData(object):
             t = (k, self.index)
             self.intervals_by_level[self.level].append(t)
             if discard:
-                self.discarded.add(t)
+                while self.discarded:
+                    u, v = t
+                    r, s = self.discarded[-1]
+                    if u <= r <= s <= v:
+                        self.discarded.pop()
+                    else:
+                        break
+                self.discarded.append(t)
 
     def note_event(self, event):
         self.events.add(event)
