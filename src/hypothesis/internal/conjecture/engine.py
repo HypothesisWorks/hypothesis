@@ -1300,11 +1300,11 @@ class Shrinker(object):
         while prev is not self.shrink_target:
             prev = self.shrink_target
             self.remove_discarded()
-            self.greedy_interval_deletion()
             self.zero_intervals()
             self.minimize_duplicated_blocks()
             self.minimize_individual_blocks()
             self.reorder_blocks()
+            self.greedy_interval_deletion()
             self.interval_deletion_with_block_lowering()
             self.pass_to_interval()
 
