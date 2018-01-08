@@ -1054,3 +1054,26 @@ def test_shrinking_from_mostly_zero(monkeypatch):
             data.mark_interesting()
 
     assert x == hbytes(5) + hbytes([1])
+
+
+def test_handles_nesting_of_discard_correctly(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', Shrinker.remove_discarded)
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer(hbytes([0, 0, 1, 1]))))
+
+    @run_to_buffer
+    def x(data):
+        while True:
+            data.start_example()
+            succeeded = data.draw_bits(1)
+            data.start_example()
+            data.draw_bits(1)
+            data.stop_example(discard=not succeeded)
+            data.stop_example(discard=not succeeded)
+            if succeeded:
+                data.mark_interesting()
+
+    assert x == hbytes([1, 1])
