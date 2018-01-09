@@ -465,7 +465,7 @@ experimenting with conditions for filtering data.
     >>> find(lists(integers()), lambda x: sum(x) >= 10 and len(x) >= 3)
     [0, 0, 10]
     >>> find(sets(integers()), lambda x: sum(x) >= 10 and len(x) >= 3)
-    {0, 9, 1}
+    {0, 1, 9}
 
 The first argument to :func:`~hypothesis.find` describes data in the usual way for an argument to
 :func:`~hypothesis.given`, and supports :doc:`all the same data types <data>`. The second is a
