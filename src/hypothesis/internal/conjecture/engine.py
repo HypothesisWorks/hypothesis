@@ -165,8 +165,7 @@ class ConjectureRunner(object):
 
         self.target_selector.add(data)
 
-        if self.settings.verbosity >= Verbosity.debug:
-            self.debug_data(data)
+        self.debug_data(data)
 
         tags = frozenset(data.tags)
         data.tags = self.tag_intern_table.setdefault(tags, tags)
@@ -407,6 +406,8 @@ class ConjectureRunner(object):
             debug_report(message)
 
     def debug_data(self, data):
+        if self.settings.verbosity < Verbosity.debug:
+            return
         buffer_parts = [u"["]
         for i, (u, v) in enumerate(data.blocks):
             if i > 0:
@@ -434,12 +435,11 @@ class ConjectureRunner(object):
                 self._run()
             except RunIsComplete:
                 pass
-            if self.settings.verbosity >= Verbosity.debug:
-                for v in self.interesting_examples.values():
-                    self.debug_data(v)
-                self.debug(
-                    u'Run complete after %d examples (%d valid) and %d shrinks'
-                    % (self.call_count, self.valid_examples, self.shrinks))
+            for v in self.interesting_examples.values():
+                self.debug_data(v)
+            self.debug(
+                u'Run complete after %d examples (%d valid) and %d shrinks'
+                % (self.call_count, self.valid_examples, self.shrinks))
 
     def _new_mutator(self):
         target_data = [None]
