@@ -1309,6 +1309,7 @@ class Shrinker(object):
             self.minimize_individual_blocks()
             self.reorder_blocks()
             self.greedy_interval_deletion()
+            self.lower_dependent_block_pairs()
 
             # Passes after this point are expensive: Prior to here they should
             # all involve no more than about n log(n) shrinks, but after here
@@ -1844,6 +1845,55 @@ class Shrinker(object):
                         break
             if not changed:
                 i += 1
+
+    def lower_dependent_block_pairs(self):
+        """This is a fairly specific shrink pass that is mostly specialised for
+        our integers strategy, though is probably useful in other places.
+
+        It looks for adjacent pairs of blocks where lowering the value of the
+        first changes the size of the second. Where this happens, we may lose
+        interestingness because this takes the prefix rather than the suffix
+        of the next block, so if lowering the block produces an uninteresting
+        value and this change happens, we try replacing the second block with
+        its suffix and shrink again.
+
+        For example suppose we had:
+
+            m = data.draw_bits(8)
+            n = data.draw_bits(m)
+
+        And initially we draw m = 9, n = 1. This gives us the bytes [9, 0, 1].
+        If we lower 9 to 8 then we now read [9, 0], because the block size of
+        the n has changed. This pass allows us to also try [9, 1], which
+        corresponds to m=8, n=1 as desired.
+
+        This should *mostly* be handled by the minimize_individual_blocks pass,
+        but that won't always work because its length heuristic can be wrong if
+        the changes to the next block have knock on size changes, while this
+        one triggers more reliably.
+
+        """
+        self.debug('Lowering adjacent pairs of dependent blocks')
+        i = 0
+        while i + 1 < len(self.shrink_target.blocks):
+            u, v = self.shrink_target.blocks[i]
+            i += 1
+
+            b = int_from_bytes(self.shrink_target.buffer[u:v])
+            if b > 0:
+                attempt = bytearray(self.shrink_target.buffer)
+                attempt[u:v] = int_to_bytes(b - 1, v - u)
+                attempt = hbytes(attempt)
+                shrunk = self.cached_test_function(attempt)
+                if (
+                    shrunk is not self.shrink_target and
+                    i < len(shrunk.blocks) and
+                    shrunk.blocks[i][1] < self.shrink_target.blocks[i][1]
+                ):
+                    _, r = self.shrink_target.blocks[i]
+                    k = shrunk.blocks[i][1] - shrunk.blocks[i][0]
+                    buf = attempt[:v] + self.shrink_target.buffer[r - k:]
+                    self.incorporate_new_buffer(buf)
 
     def reorder_bytes(self):
         """This is a hyper-specific and moderately expensive shrink pass. It is
