@@ -202,16 +202,18 @@ def test_minimize_long():
 
 
 def test_find_large_union_list():
+    size = 10
+
     def large_mostly_non_overlapping(xs):
         union = reduce(set.union, xs)
-        return len(union) >= 30
+        return len(union) >= size
 
     result = minimal(
         lists(sets(integers(), min_size=1), min_size=1),
         large_mostly_non_overlapping, timeout_after=120)
     assert len(result) == 1
     union = reduce(set.union, result)
-    assert len(union) == 30
+    assert len(union) == size
     assert max(union) == min(union) + len(union) - 1
 
 
