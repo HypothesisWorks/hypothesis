@@ -972,30 +972,16 @@ def builds(target, *args, **kwargs):
     )
 
 
-def delay_error(func):
-    """A decorator to make exceptions lazy but success immediate.
-
-    We want from_type to resolve to a strategy immediately if possible,
-    for a useful repr and interactive use, but delay errors until a
-    value would be drawn to localise them to a particular test.
-
-    """
+def _defer_from_type(func):
+    """Decorator to make from_type lazy to support recursive definitions."""
     @proxies(func)
     def inner(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            error = e
-
-            def lazy_error():
-                raise error
-
-            return builds(lazy_error)
+        return deferred(lambda: func(*args, **kwargs))
     return inner
 
 
 @cacheable
-@delay_error
+@_defer_from_type
 def from_type(thing):
     """Looks up the appropriate search strategy for the given type.
 
@@ -1024,12 +1010,12 @@ def from_type(thing):
 
     """
     from hypothesis.searchstrategy import types
-    if not isinstance(thing, type):
-        try:
+    try:
+        import typing
+        if not isinstance(thing, type):
             # At runtime, `typing.NewType` returns an identity function rather
             # than an actual type, but we can check that for a possible match
             # and then read the magic attribute to unwrap it.
-            import typing
             if all([
                 hasattr(thing, '__supertype__'), hasattr(typing, 'NewType'),
                 isfunction(thing), getattr(thing, '__module__', 0) == 'typing'
@@ -1040,8 +1026,16 @@ def from_type(thing):
             if getattr(thing, '__origin__', None) is typing.Union:
                 args = sorted(thing.__args__, key=types.type_sorting_key)
                 return one_of([from_type(t) for t in args])
-        except ImportError:  # pragma: no cover
-            pass
+        # We can't resolve forward references, and under Python 3.5 (only)
+        # a forward reference is an instance of type.  Hence, explicit check:
+        elif type(thing) == typing._ForwardRef:  # pragma: no cover
+            raise ResolutionFailed(
+                'thing=%s cannot be resolved.  Upgrading to python>=3.6 may '
+                'fix this problem via improvements to the typing module.'
+                % (thing,))
+    except ImportError:  # pragma: no cover
+        pass
+    if not isinstance(thing, type):
         raise InvalidArgument('thing=%s must be a type' % (thing,))
     # Now that we know `thing` is a type, the first step is to check for an
     # explicitly registered strategy.  This is the best (and hopefully most

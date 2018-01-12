@@ -365,3 +365,34 @@ def test_required_args(target, args, kwargs):
     # Mostly checking that `self` (and only self) is correctly excluded
     st.builds(target, *map(st.just, args),
               **{k: st.just(v) for k, v in kwargs.items()}).example()
+
+
+@pytest.mark.parametrize('thing', [
+    typing.Optional, typing.List, getattr(typing, 'Type', typing.Set)
+])  # check Type if it's available, otherwise Set is redundant but harmless
+def test_cannot_resolve_bare_forward_reference(thing):
+    with pytest.raises(InvalidArgument):
+        t = thing['int']
+        if type(getattr(t, '__args__', [None])[0]) != typing._ForwardRef:
+            assert sys.version_info[:2] == (3, 5)
+            pytest.xfail('python 3.5 typing module is really weird')
+        st.from_type(t).example()
+
+
+class Tree:
+    def __init__(self,
+                 left: typing.Optional['Tree'],
+                 right: typing.Optional['Tree']):
+        self.left = left
+        self.right = right
+
+    def __repr__(self):
+        return 'Tree({}, {})'.format(self.left, self.right)
+
+
+def test_resolving_recursive_type():
+    try:
+        assert isinstance(st.builds(Tree).example(), Tree)
+    except ResolutionFailed:
+        assert sys.version_info[:2] == (3, 5)
+        pytest.xfail('python 3.5 typing module may not resolve annotations')

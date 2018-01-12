@@ -26,12 +26,14 @@ import functools
 import collections
 
 import hypothesis.strategies as st
-from hypothesis.errors import ResolutionFailed
+from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import text_type, integer_types
 
 
 def type_sorting_key(t):
     """Minimise to None, then non-container types, then container types."""
+    if not isinstance(t, type):
+        raise InvalidArgument('thing=%s must be a type' % (t,))
     if t is None or t is type(None):  # noqa: E721
         return -1
     return issubclass(t, collections.abc.Container)
@@ -194,12 +196,20 @@ else:
     def resolve_Type(thing):
         if thing.__args__ is None:
             return st.just(type)
-        inner = thing.__args__[0]
-        if getattr(inner, '__origin__', None) is typing.Union:
-            return st.sampled_from(inner.__args__)
-        elif hasattr(inner, '__union_params__'):  # pragma: no cover
-            return st.sampled_from(inner.__union_params__)
-        return st.just(inner)
+        args = (thing.__args__[0],)
+        if getattr(args[0], '__origin__', None) is typing.Union:
+            args = args[0].__args__
+        elif hasattr(args[0], '__union_params__'):  # pragma: no cover
+            args = args[0].__union_params__
+        if isinstance(typing._ForwardRef, type):  # pragma: no cover
+            # Duplicate check from from_type here - only paying when needed.
+            for a in args:
+                if type(a) == typing._ForwardRef:
+                    raise ResolutionFailed(
+                        'thing=%s cannot be resolved.  Upgrading to '
+                        'python>=3.6 may fix this problem via improvements '
+                        'to the typing module.' % (thing,))
+        return st.sampled_from(sorted(args, key=type_sorting_key))
 
     @register(typing.List, st.builds(list))
     def resolve_List(thing):
