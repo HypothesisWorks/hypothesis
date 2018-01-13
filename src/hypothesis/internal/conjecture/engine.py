@@ -1578,7 +1578,7 @@ class Shrinker(object):
         """Attempt to delete every interval in the example, but be more
         aggressive about it than we are in greedy_interval_deletion.
 
-        The idea here is that if we have a long list of, say, tends or
+        The idea here is that if we have a long list of, say, tens or
         hundreds of elements, we *could* try deleting each element of the list
         individually, but if only a handful of elements of the list matter then
         this is a bit of a waste of time. Wouldn't it be better if we deleted
@@ -1620,7 +1620,7 @@ class Shrinker(object):
         This is the main point at which we try to lower the size of the data.
         e.g. if we have two successive draw calls, this will attempt to delete
         the first and replace it with the second. This also works for pairs of
-        draw calls (as we create a merged interval for adjacent drawss at the
+        draw calls (as we create a merged interval for adjacent draws at the
         same level). So, for example, if we have something like:
 
         while many.more(data):
@@ -1777,12 +1777,12 @@ class Shrinker(object):
     def interval_deletion_with_block_lowering(self):
         """This pass tries to delete each interval (as per
         greedy_interval_deletion) while replacing a block that precedes that
-        interval with its immediate two lexicographical predecessors. We only.
+        interval with its immediate two lexicographical predecessors.
 
-        do this for blocks that appear in the shrinking_blocks - that is, when
-        we tried lowering them it resulted in a smaller example. This makes it
-        important that this runs after minimize_individual_blocks (which
-        populates those blocks).
+        We only do this for blocks that appear in the shrinking_blocks - that
+        is, when we tried lowering them it resulted in a smaller example.
+        This makes it important that this runs after minimize_individual_blocks
+        (which populates those blocks).
 
         The reason for this pass is that it guarantees that we can delete
         elements of ls in the following scenario:
