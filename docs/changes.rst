@@ -22,6 +22,21 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 --------------------
+3.44.16 - 2018-01-13
+--------------------
+
+This release improves test case reduction for recursive data structures.
+Hypothesis now guarantees that whenever a strategy calls itself recursively
+(usually this will happen because you are using :func:`~hypothesis.strategies.deferred`),
+any recursive call may replace the top level value. e.g. given a tree structure,
+Hypothesis will always try replacing it with a subtree.
+
+Additionally this introduces a new heuristic that may in some circumstances
+significantly speed up test case reduction - Hypothesis should be better at
+immediately replacing elements drawn inside another strategy with their minimal
+possible value.
+
+--------------------
 3.44.15 - 2018-01-13
 --------------------
 
