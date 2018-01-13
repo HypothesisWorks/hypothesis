@@ -1913,6 +1913,11 @@ class Shrinker(object):
         don't have a pass like that then we're unable to shrink from [10, 0] to
         [0, 10].
 
+        In the event that we fail to do much sorting this is O(number of out of
+        order pairs), which is O(n^2) in the worst case. In order to offset we
+        try to do as much efficient sorting as possible to reduce the number of
+        out of order pairs before we get to that stage.
+
         """
 
         free_bytes = []
@@ -1948,6 +1953,44 @@ class Shrinker(object):
             return True
 
         n = len(ordering)
+
+        # We now try to sort the "high bytes". The idea here is that high bytes
+        # are more likely to be "payload" in some sense: Their value matters
+        # mostly in relation to the other values. Additionally they are likely
+        # to be moved around more in the reordering, so if we can get them
+        # sorted up front we will save a lot of time later.
+
+        # In order to do this we use binary search to find a value v such that
+        # we can sort all values >= v. We do this in at most 8 steps (usually
+        # less).
+
+        # Invariant: We can sort the set of bytes which are >= hi, we can't
+        # sort the set of bytes that are >= lo.
+
+        # But see comment below about how these invariants may occasionally be
+        # violated.
+        lo = min(ordering)
+        hi = max(ordering)
+        while lo + 1 < hi:
+            mid = (lo + hi) // 2
+            excessive = [i for i in hrange(n) if ordering[i] >= mid]
+            trial = list(ordering)
+            for i, b in zip(excessive, sorted(ordering[i] for i in excessive)):
+                trial[i] = b
+            if trial == ordering or attempt(trial):
+                if (
+                    len(self.shrink_target.buffer) !=
+                    len(original.buffer)
+                ):
+                    return
+                # Technically this could result in us violating our invariants
+                # if the bytes change too much. However if that happens the
+                # loop is still useful so we carry on as if it didn't.
+                ordering = [
+                    self.shrink_target.buffer[i] for i in free_bytes]
+                hi = mid
+            else:
+                lo = mid
 
         i = 1
         while i < n:

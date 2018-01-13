@@ -1143,6 +1143,37 @@ def test_can_handle_size_changing_in_reordering(monkeypatch):
     assert x == hbytes([7, 13])
 
 
+def test_can_handle_size_changing_in_reordering_with_unsortable_bits(
+    monkeypatch
+):
+    """Forces the reordering to pass to run its quadratic comparison of every
+    pair and changes the size during that pass."""
+
+    monkeypatch.setattr(
+        Shrinker, 'shrink', Shrinker.reorder_bytes)
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer(hbytes([13, 14, 7, 3]))))
+
+    @run_to_buffer
+    def x(data):
+        n = data.draw_bits(8)
+        if n not in (7, 13):
+            data.mark_invalid()
+
+        # Having this marker here means that sorting the high bytes will move
+        # this one to the right, which will make the test case invalid.
+        if data.draw_bits(8) != 14:
+            data.mark_invalid()
+        if n != 7:
+            data.draw_bits(8)
+        data.draw_bits(8)
+        data.mark_interesting()
+
+    assert x == hbytes([7, 14, 13])
+
+
 def test_will_immediately_reorder_to_sorted(monkeypatch):
     monkeypatch.setattr(
         Shrinker, 'shrink', Shrinker.reorder_bytes)
