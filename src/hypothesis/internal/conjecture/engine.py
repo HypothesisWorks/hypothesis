@@ -165,8 +165,7 @@ class ConjectureRunner(object):
 
         self.target_selector.add(data)
 
-        if self.settings.verbosity >= Verbosity.debug:
-            self.debug_data(data)
+        self.debug_data(data)
 
         tags = frozenset(data.tags)
         data.tags = self.tag_intern_table.setdefault(tags, tags)
@@ -407,6 +406,8 @@ class ConjectureRunner(object):
             debug_report(message)
 
     def debug_data(self, data):
+        if self.settings.verbosity < Verbosity.debug:
+            return
         buffer_parts = [u"["]
         for i, (u, v) in enumerate(data.blocks):
             if i > 0:
@@ -434,12 +435,11 @@ class ConjectureRunner(object):
                 self._run()
             except RunIsComplete:
                 pass
-            if self.settings.verbosity >= Verbosity.debug:
-                for v in self.interesting_examples.values():
-                    self.debug_data(v)
-                self.debug(
-                    u'Run complete after %d examples (%d valid) and %d shrinks'
-                    % (self.call_count, self.valid_examples, self.shrinks))
+            for v in self.interesting_examples.values():
+                self.debug_data(v)
+            self.debug(
+                u'Run complete after %d examples (%d valid) and %d shrinks'
+                % (self.call_count, self.valid_examples, self.shrinks))
 
     def _new_mutator(self):
         target_data = [None]
@@ -1231,10 +1231,7 @@ class Shrinker(object):
         assert sort_key(buffer) <= sort_key(self.shrink_target.buffer)
         data = ConjectureData.for_buffer(buffer)
         self.__engine.test_function(data)
-        result = self.incorporate_test_data(data)
-        if result and not self.__discarding_failed:
-            self.remove_discarded()
-        return result
+        return self.incorporate_test_data(data)
 
     def incorporate_test_data(self, data):
         if (
@@ -1242,6 +1239,8 @@ class Shrinker(object):
             sort_key(data.buffer) < sort_key(self.shrink_target.buffer)
         ):
             self.shrink_target = data
+            if data.discarded and not self.__discarding_failed:
+                self.remove_discarded()
             return True
         return False
 
@@ -1253,29 +1252,13 @@ class Shrinker(object):
     def debug(self, msg):
         self.__engine.debug(msg)
 
-    def greedy_shrink(self):
-        # This will automatically be run during the normal loop, but it's worth
-        # running once before the coarse passes so they don't spend time on
-        # useless data.
-        self.remove_discarded()
-
-        # Coarse passes that are worth running once when the example is likely
-        # to be "far from shrunk" but not worth repeating in a loop because
-        # they are subsumed by more fine grained passes.
-        self.delta_interval_deletion()
-        self.coarse_block_replacement()
-
-        prev = None
-        while prev is not self.shrink_target:
-            prev = self.shrink_target
-            self.remove_discarded()
-            self.minimize_duplicated_blocks()
-            self.minimize_individual_blocks()
-            self.reorder_blocks()
-            self.greedy_interval_deletion()
-            self.interval_deletion_with_block_lowering()
-
     def shrink(self):
+        """Run the full set of shrinks and update shrink_target.
+
+        This method is "mostly idempotent" - calling it wice is unlikely to
+        have any effect, though it has a non-zero probability of doing so.
+
+        """
         # We assume that if an all-zero block of bytes is an interesting
         # example then we're not going to do better than that.
         # This might not technically be true: e.g. for integers() | booleans()
@@ -1293,17 +1276,185 @@ class Shrinker(object):
         self.greedy_shrink()
         self.escape_local_minimum()
 
+    def greedy_shrink(self):
+        """Run a full set of greedy shrinks (that is, ones that will only ever
+        move to a better target) and update shrink_target appropriately.
+
+        This method iterates to a fixed point and so is idempontent - calling
+        it twice will have exactly the same effect as calling it once.
+
+        """
+
+        # This will automatically be run during the normal loop, but it's worth
+        # running once before the coarse passes so they don't spend time on
+        # useless data.
+        self.remove_discarded()
+
+        # We only run this once because delta-debugging is essentially useless
+        # and often actively harmful when run on examples which are "close to
+        # shrunk" - the attempts to delete long runs mostly just don't work,
+        # and we spend a huge amount of time trying them anyway. The
+        # greedy_interval_deletion pass will achieve the same end result but
+        # is much cheaper when run on close to shrunk examples.
+        self.delta_interval_deletion()
+
+        run_expensive_shrinks = False
+
+        prev = None
+        while prev is not self.shrink_target:
+            prev = self.shrink_target
+            self.remove_discarded()
+            self.zero_intervals()
+            self.minimize_duplicated_blocks()
+            self.minimize_individual_blocks()
+            self.reorder_blocks()
+            self.greedy_interval_deletion()
+            self.lower_dependent_block_pairs()
+
+            # Passes after this point are expensive: Prior to here they should
+            # all involve no more than about n log(n) shrinks, but after here
+            # they may be quadratic or worse. Running all of the passes until
+            # they make no changes is important for correctness, but nothing
+            # says we have to run all of them on each run! So if the fast
+            # passes still seem to be making useful changes, we restart the
+            # loop here and give them another go.
+            # To avoid the case where the expensive shrinks unlock a trivial
+            # change in one of the previous passes causing this to become much
+            # more expensive by doubling the number of times we have to run
+            # them to get to run the expensive passes again, we make this
+            # decision "sticky" - once it's been useful to run the expensive
+            # changes at least once, we always run them.
+            if prev is self.shrink_target:
+                run_expensive_shrinks = True
+
+            if not run_expensive_shrinks:
+                continue
+
+            self.interval_deletion_with_block_lowering()
+            self.pass_to_interval()
+            self.reorder_bytes()
+
+    def zero_intervals(self):
+        """Attempt to replace each interval with its minimal possible value.
+
+        This is intended as a fast-track to minimize whole sub-examples that
+        don't matter as rapidly as possible. For example, suppose we had
+        something like the following:
+
+        ls = data.draw(st.lists(st.lists(st.integers())))
+        assert len(ls) >= 10
+
+        Then each of the elements of ls need to be minimized, and we can do
+        that by deleting individual values from them, but we'd much rather do
+        it fast rather than slow - deleting elements one at a time takes
+        sum(map(len, ls)) shrinks, and ideally we'd do this in len(ls) shrinks
+        as we try to replace each element with [].
+
+        This pass does that by identifying the size of the "natural smallest"
+        element here. It first tries replacing an entire interval with zero.
+        This will sometimes work (e.g. when the interval is a block), but often
+        what will happen is that there will be leftover zeros that spill over
+        into the next example and ruin things - e.g. here if ls[0] is non-empty
+        and we replace it with all zero, some of the extra zeros will be
+        interpreted as terminating ls and will shrink it down to a one element
+        list, causing the test to pass.
+
+        So what we do instead is that once we've evaluated that shrink, we use
+        the size of the intervals there to find other possible sizes that we
+        could try replacing the interval with. In this case we'd spot that
+        there is a one-byte interval starting at right place for ls[i] and try
+        to replace it with that. This will successfully replace ls[i] with []
+        as desired.
+
+        """
+        i = 0
+        while i < len(self.shrink_target.intervals):
+            u, v = self.shrink_target.intervals[i]
+            buf = self.shrink_target.buffer
+            prev = self.shrink_target
+            if any(buf[u:v]):
+                attempt = self.cached_test_function(
+                    buf[:u] + hbytes(v - u) + buf[v:]
+                )
+                if (
+                    attempt.status == Status.VALID and
+                    len(attempt.buffer) < len(self.shrink_target.buffer)
+                ):
+                    ends = [s for r, s in attempt.intervals if r == u]
+                    ends.reverse()
+                    for s in ends:
+                        if s < v and self.incorporate_new_buffer(
+                            buf[:u] + hbytes(s - u) + buf[v:]
+                        ):
+                            break
+            if self.shrink_target is prev:
+                i += 1
+
+    def pass_to_interval(self):
+        """Attempt to replace each interval with a subinterval.
+
+        This is designed to deal with strategies that call themselves
+        recursively. For example, suppose we had:
+
+        binary_tree = st.deferred(
+            lambda: st.one_of(
+                st.integers(), st.tuples(binary_tree, binary_tree)))
+
+        This pass guarantees that we can replace any binary tree with one of
+        its subtrees - each of those will create an interval that the parent
+        could validly be replaced with, and this pass will try doing that.
+
+        This is pretty expensive - it takes O(len(intervals)^2) - so we run it
+        late in the process when we've got the number of intervals as far down
+        as possible.
+
+        """
+        i = 0
+        while i < len(self.shrink_target.intervals):
+            u, v = self.shrink_target.intervals[i]
+            for r, s in reversed(self.shrink_target.intervals):
+                if u <= r <= s <= v and s - r < v - u:
+                    buf = self.shrink_target.buffer
+                    if self.incorporate_new_buffer(
+                        buf[:u] + buf[r:s] + buf[v:]
+                    ):
+                        break
+            else:
+                i += 1
+
     def escape_local_minimum(self):
-        # The main shrink pass is purely greedy.
-        # This is mostly pretty effective, but has a tendency
-        # to get stuck in a local minimum in some cases.
-        # So when we've completed the shrink process, we try
-        # starting it again from something reasonably near to
-        # the shrunk example that is likely to exhibit the same
-        # behaviour. We then rerun the shrink process and see
-        # if it gets a better result. If we do, we begin again.
-        # If not, we bail out fairly quickly after a few tries
-        # as this will usually not work.
+        """Attempt to restart the shrink process from a larger initial value in
+        a way that allows us to escape a local minimum that the main greedy
+        shrink process will get stuck in.
+
+        The idea is that when we've completed the shrink process, we try
+        starting it again from something reasonably near to the shrunk example
+        that is likely to exhibit the same behaviour.
+
+        We search for an example that is selected randomly among ones that are
+        "structurally similar" to the original. If we don't find one we bail
+        out fairly quickly as this will usually not work. If we do, we restart
+        the shrink process from there. If this results in us finding a better
+        final example, we do this again until it stops working.
+
+        This is especially useful for things where the tendency to move
+        complexity to the right works against us - often a generic instance of
+        the problem is easy to shrink, but trying to reduce the size of a
+        minimized example further is hard. For example suppose we had something
+        like:
+
+        x = data.draw(lists(integers()))
+        y = data.draw(lists(integers(), min_size=len(x), max_size=len(x)))
+        assert not (any(x) and any(y))
+
+        Then this could shrink to something like [0, 1], [0, 1].
+
+        Attempting to shrink this further by deleting an element of x would
+        result in losing the last element of y, and the test would start
+        passing. But if we were to replace this with [a, b], [c, d] with c != 0
+        then deleting a or b would work.
+
+        """
         count = 0
         while count < 10:
             count += 1
@@ -1336,6 +1487,25 @@ class Shrinker(object):
                     self.shrink_target = prev
 
     def try_shrinking_blocks(self, blocks, b):
+        """Attempts to replace each block in the blocks list with b. Returns
+        True if it succeeded (which may include some additional modifications
+        to shrink_target). If it fails, it may update
+        shrink_target.shrinking_blocks to include blocks.
+
+        In current usage it is expected that each of the blocks currently have
+        the same value, although this is not essential. Note that b must be
+        < the block at min(blocks) or this is not a valid shrink.
+
+        This method will attempt to do some small amount of work to delete data
+        that occurs after the end of the blocks. This is useful for cases where
+        there is some size dependency on the value of a block. The amount of
+        work done here is relatively small - most such dependencies will be
+        handled by the interval_deletion_with_block_lowering pass - but will be
+        effective when there is a large amount of redundant data after the
+        block to be lowered.
+
+        """
+
         initial_attempt = bytearray(self.shrink_target.buffer)
         for i in blocks:
             if i >= len(self.shrink_target.blocks):
@@ -1376,25 +1546,57 @@ class Shrinker(object):
         return False
 
     def remove_discarded(self):
-        """Try removing all bytes marked as discarded."""
+        """Try removing all bytes marked as discarded.
+
+        This pass is primarily to deal with data that has been ignored while
+        doing rejection sampling - e.g. as a result of an integer range, or a
+        filtered strategy.
+
+        Such data will also be handled by the greedy_interval_deletion pass,
+        but that pass is necessarily more conservative and will try deleting
+        each interval individually. The common case is that all data drawn and
+        rejected can just be thrown away immediately in one block, so this pass
+        will be much faster than trying each one individually when it works.
+
+        """
         if not self.shrink_target.discarded:
             return
         attempt = bytearray(self.shrink_target.buffer)
         for u, v in sorted(self.shrink_target.discarded, reverse=True):
             del attempt[u:v]
+
+        # We track whether discarding works because as long as it does we will
+        # always want to run it whenever the option is available - whenever a
+        # shrink ends up introducing new discarded data we can attempt to
+        # delete it immediately. However if some discarded data looks essential
+        # in some way then that would be wasteful, so we turn off the automatic
+        # discarding if this ever fails. When this next runs explicitly, it
+        # will reset the flag if the status changes.
         self.__discarding_failed = not self.incorporate_new_buffer(attempt)
 
     def delta_interval_deletion(self):
-        """Attempt to delete every interval in the example."""
+        """Attempt to delete every interval in the example, but be more
+        aggressive about it than we are in greedy_interval_deletion.
+
+        The idea here is that if we have a long list of, say, tens or
+        hundreds of elements, we *could* try deleting each element of the list
+        individually, but if only a handful of elements of the list matter then
+        this is a bit of a waste of time. Wouldn't it be better if we deleted
+        many of them at once?
+
+        The approach we use is approximately delta-debugging from Hildebrandt
+        and Zeller's "Simplifying failure-inducing input" - we try deleting
+        progressively shorter runs, eventually bottoming out in deleting single
+        intervals as per greedy_interval_deletion.
+
+        Note that this is *not* the same as actual delta-debugging on the the
+        buffer, because we are deleting intervals instead of bytes. These may
+        overlap with each-other.
+
+        """
 
         self.debug('delta interval deletes')
 
-        # We do a delta-debugging style thing here where we initially try to
-        # delete many intervals at once and prune it down exponentially to
-        # eventually only trying to delete one interval at a time.
-
-        # I'm a little skeptical that this is helpful in general, but we've
-        # got at least one benchmark where it does help.
         k = len(self.shrink_target.intervals) // 2
         while k > 0:
             i = 0
@@ -1413,7 +1615,21 @@ class Shrinker(object):
             k //= 2
 
     def greedy_interval_deletion(self):
-        """Attempt to delete every interval in the example."""
+        """Attempt to delete every interval in the example.
+
+        This is the main point at which we try to lower the size of the data.
+        e.g. if we have two successive draw calls, this will attempt to delete
+        the first and replace it with the second. This also works for pairs of
+        draw calls (as we create a merged interval for adjacent draws at the
+        same level). So, for example, if we have something like:
+
+        while many.more(data):
+            data.draw(stuff)
+
+        This pass will attempt to delete adjacent pairs of calls to shorten the
+        loop.
+
+        """
         self.debug('greedy interval deletes')
         i = 0
         while i < len(self.shrink_target.intervals):
@@ -1423,32 +1639,27 @@ class Shrinker(object):
             ):
                 i += 1
 
-    def coarse_block_replacement(self):
-        """Attempts to zero every block. This is a very coarse pass that we
-        only run once to attempt to remove some irrelevant detail. The main
-        purpose of it is that if we manage to zero a lot of data then many
-        attempted deletes become duplicates of each other, so we run fewer
-        tests.
-
-        If more blocks become possible to zero later that will be
-        handled by minimize_individual_blocks. The point of this is
-        simply to provide a fairly fast initial pass.
-
-        """
-        self.debug('Zeroing blocks')
-        i = 0
-        while i < len(self.shrink_target.blocks):
-            buf = self.shrink_target.buffer
-            u, v = self.shrink_target.blocks[i]
-            assert u < v
-            block = buf[u:v]
-            if any(block):
-                self.incorporate_new_buffer(buf[:u] + hbytes(v - u) + buf[v:])
-            i += 1
-
     def minimize_duplicated_blocks(self):
         """Find blocks that have been duplicated in multiple places and attempt
-        to minimize all of the duplicates simultaneously."""
+        to minimize all of the duplicates simultaneously.
+
+        This lets us handle cases where two values can't be shrunk
+        independently of each other but can easily be shrunk together.
+        For example if we had something like:
+
+        ls = data.draw(lists(integers()))
+        y = data.draw(integers())
+        assert y not in ls
+
+        Suppose we drew y = 3 and after shrinking we have ls = [3]. If we were
+        to replace both 3s with 0, this would be a valid shrink, but if we were
+        to replace either 3 with 0 on its own the test would start passing.
+
+        It is also useful for when that duplication is accidental and the value
+        of the blocks doesn't matter very much because it allows us to replace
+        more values at once.
+
+        """
 
         self.debug('Simultaneous shrinking of duplicated blocks')
 
@@ -1484,6 +1695,17 @@ class Shrinker(object):
             )
 
     def minimize_individual_blocks(self):
+        """Attempt to minimize each block in sequence.
+
+        This is the pass that ensures that e.g. each integer we draw is a
+        minimum value. So it's the part that guarantees that if we e.g. do
+
+        x = data.draw(integers())
+        assert x < 10
+
+        then in our shrunk example, x = 10 rather than say 97.
+
+        """
         self.debug('Shrinking of individual blocks')
         i = 0
         while i < len(self.shrink_target.blocks):
@@ -1496,6 +1718,36 @@ class Shrinker(object):
             i += 1
 
     def reorder_blocks(self):
+        """Attempt to reorder blocks of the same size so that lexically larger
+        values go later.
+
+        This is mostly useful for canonicalization of examples. e.g. if we have
+
+        x = data.draw(st.integers())
+        y = data.draw(st.integers())
+        assert x == y
+
+        Then by minimizing x and y individually this could give us either
+        x=0, y=1 or x=1, y=0. According to our sorting order, the former is a
+        better example, but if in our initial draw y was zero then we will not
+        get it.
+
+        When this pass runs it will swap the values of x and y if that occurs.
+
+        As well as canonicalization, this can also unblock other things. For
+        example suppose we have
+
+        n = data.draw(st.integers(0, 10))
+        ls = data.draw(st.lists(st.integers(), min_size=n, max_size=n))
+        assert len([x for x in ls if x != 0]) <= 1
+
+        We could end up with something like [1, 0, 0, 1] if we started from the
+        wrong place. This pass would reorder this to [0, 0, 1, 1]. Shrinking n
+        can then try to delete the lost bytes (see try_shrinking_blocks for how
+        this works), taking us immediately to [1, 1]. This is a less important
+        role for this pass, but still significant.
+
+        """
         self.debug('Reordering blocks')
         block_lengths = sorted(self.shrink_target.block_starts, reverse=True)
         for n in block_lengths:
@@ -1523,6 +1775,37 @@ class Shrinker(object):
                 i += 1
 
     def interval_deletion_with_block_lowering(self):
+        """This pass tries to delete each interval (as per
+        greedy_interval_deletion) while replacing a block that precedes that
+        interval with its immediate two lexicographical predecessors.
+
+        We only do this for blocks that appear in the shrinking_blocks - that
+        is, when we tried lowering them it resulted in a smaller example.
+        This makes it important that this runs after minimize_individual_blocks
+        (which populates those blocks).
+
+        The reason for this pass is that it guarantees that we can delete
+        elements of ls in the following scenario:
+
+        n = data.draw(st.integers(0, 10))
+        ls = data.draw(st.lists(st.integers(), min_size=n, max_size=n))
+
+        Replacing the block for n with its predecessor replaces n with n - 1,
+        and deleting a draw call in ls means that we draw exactly the desired
+        n - 1 elements for this list.
+
+        We actually also try replacing n with n - 2, as we will have intervals
+        for adjacent pairs of draws and that ensures that those will find the
+        right block lowering in this case too.
+
+        This is necessarily a somewhat expensive pass - worst case scenario it
+        tries len(blocks) * len(intervals) = O(len(buffer)^2 log(len(buffer)))
+        shrinks, so it's important that it runs late in the process when the
+        example size is small and most of the blocks that can be zeroed have
+        been.
+
+        """
+
         self.debug('Lowering blocks while deleting intervals')
         if not self.shrink_target.shrinking_blocks:
             return
@@ -1561,4 +1844,170 @@ class Shrinker(object):
                     if changed:
                         break
             if not changed:
+                i += 1
+
+    def lower_dependent_block_pairs(self):
+        """This is a fairly specific shrink pass that is mostly specialised for
+        our integers strategy, though is probably useful in other places.
+
+        It looks for adjacent pairs of blocks where lowering the value of the
+        first changes the size of the second. Where this happens, we may lose
+        interestingness because this takes the prefix rather than the suffix
+        of the next block, so if lowering the block produces an uninteresting
+        value and this change happens, we try replacing the second block with
+        its suffix and shrink again.
+
+        For example suppose we had:
+
+            m = data.draw_bits(8)
+            n = data.draw_bits(m)
+
+        And initially we draw m = 9, n = 1. This gives us the bytes [9, 0, 1].
+        If we lower 9 to 8 then we now read [9, 0], because the block size of
+        the n has changed. This pass allows us to also try [9, 1], which
+        corresponds to m=8, n=1 as desired.
+
+        This should *mostly* be handled by the minimize_individual_blocks pass,
+        but that won't always work because its length heuristic can be wrong if
+        the changes to the next block have knock on size changes, while this
+        one triggers more reliably.
+
+        """
+        self.debug('Lowering adjacent pairs of dependent blocks')
+        i = 0
+        while i + 1 < len(self.shrink_target.blocks):
+            u, v = self.shrink_target.blocks[i]
+            i += 1
+
+            b = int_from_bytes(self.shrink_target.buffer[u:v])
+            if b > 0:
+                attempt = bytearray(self.shrink_target.buffer)
+                attempt[u:v] = int_to_bytes(b - 1, v - u)
+                attempt = hbytes(attempt)
+                shrunk = self.cached_test_function(attempt)
+                if (
+                    shrunk is not self.shrink_target and
+                    i < len(shrunk.blocks) and
+                    shrunk.blocks[i][1] < self.shrink_target.blocks[i][1]
+                ):
+                    _, r = self.shrink_target.blocks[i]
+                    k = shrunk.blocks[i][1] - shrunk.blocks[i][0]
+                    buf = attempt[:v] + self.shrink_target.buffer[r - k:]
+                    self.incorporate_new_buffer(buf)
+
+    def reorder_bytes(self):
+        """This is a hyper-specific and moderately expensive shrink pass. It is
+        designed to do similar things to reorder_blocks, but it works in cases
+        where reorder_blocks may fail.
+
+        The idea is that we expect to have a *lot* of single byte blocks, and
+        they have very different meanings and interpretations. This means that
+        the reasonably cheap approach of doing what is basically insertion sort
+        on these blocks is unlikely to work.
+
+        So instead we try to identify the subset of the single-byte blocks that
+        we can freely move around and more aggressively put those into a sorted
+        order.
+
+        This is useful because e.g. we draw integers as single bytes, and if we
+        don't have a pass like that then we're unable to shrink from [10, 0] to
+        [0, 10].
+
+        In the event that we fail to do much sorting this is O(number of out of
+        order pairs), which is O(n^2) in the worst case. In order to offset we
+        try to do as much efficient sorting as possible to reduce the number of
+        out of order pairs before we get to that stage.
+
+        """
+
+        free_bytes = []
+
+        for i, (u, v) in enumerate(self.shrink_target.blocks):
+            if (
+                i not in self.shrink_target.shrinking_blocks and
+                v == u + 1 and
+                u not in self.shrink_target.forced_indices
+            ):
+                free_bytes.append(u)
+
+        if not free_bytes:
+            return
+
+        original = self.shrink_target
+
+        def attempt(new_ordering):
+            assert len(new_ordering) == len(free_bytes)
+            assert len(self.shrink_target.buffer) == len(original.buffer)
+
+            attempt = bytearray(self.shrink_target.buffer)
+            for i, b in zip(free_bytes, new_ordering):
+                attempt[i] = b
+            return self.incorporate_new_buffer(attempt)
+
+        ordering = [self.shrink_target.buffer[i] for i in free_bytes]
+
+        if ordering == sorted(ordering):
+            return
+
+        if attempt(sorted(ordering)):
+            return True
+
+        n = len(ordering)
+
+        # We now try to sort the "high bytes". The idea here is that high bytes
+        # are more likely to be "payload" in some sense: Their value matters
+        # mostly in relation to the other values. Additionally they are likely
+        # to be moved around more in the reordering, so if we can get them
+        # sorted up front we will save a lot of time later.
+
+        # In order to do this we use binary search to find a value v such that
+        # we can sort all values >= v. We do this in at most 8 steps (usually
+        # less).
+
+        # Invariant: We can sort the set of bytes which are >= hi, we can't
+        # sort the set of bytes that are >= lo.
+
+        # But see comment below about how these invariants may occasionally be
+        # violated.
+        lo = min(ordering)
+        hi = max(ordering)
+        while lo + 1 < hi:
+            mid = (lo + hi) // 2
+            excessive = [i for i in hrange(n) if ordering[i] >= mid]
+            trial = list(ordering)
+            for i, b in zip(excessive, sorted(ordering[i] for i in excessive)):
+                trial[i] = b
+            if trial == ordering or attempt(trial):
+                if (
+                    len(self.shrink_target.buffer) !=
+                    len(original.buffer)
+                ):
+                    return
+                # Technically this could result in us violating our invariants
+                # if the bytes change too much. However if that happens the
+                # loop is still useful so we carry on as if it didn't.
+                ordering = [
+                    self.shrink_target.buffer[i] for i in free_bytes]
+                hi = mid
+            else:
+                lo = mid
+
+        i = 1
+        while i < n:
+            for k in hrange(i - 1, -1, -1):
+                if ordering[k] <= ordering[i]:
+                    continue
+                swapped = list(ordering)
+                swapped[k], swapped[i] = swapped[i], swapped[k]
+                if attempt(swapped):
+                    i = k
+                    if (
+                        len(self.shrink_target.buffer) !=
+                        len(original.buffer)
+                    ):
+                        return
+                    ordering = [
+                        self.shrink_target.buffer[i] for i in free_bytes]
+                    break
+            else:
                 i += 1
