@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 --------------------
+3.44.15 - 2018-01-13
+--------------------
+
+:func:`~hypothesis.strategies.from_type` can now resolve recursive types
+such as binary trees (:issue:`1004`).  Detection of non-type arguments has
+also improved, leading to better error messages in many cases involving
+:pep:`forward references <484#forward-references>`.
+
+--------------------
 3.44.14 - 2018-01-08
 --------------------
 
