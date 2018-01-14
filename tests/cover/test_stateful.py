@@ -511,7 +511,7 @@ def test_saves_failing_example_in_database():
     with raises(AssertionError):
         run_state_machine_as_test(
             SetStateMachine, Settings(database=db))
-    assert len(list(db.data.keys())) == 2
+    assert any(list(db.data.values()))
 
 
 def test_can_run_with_no_db():

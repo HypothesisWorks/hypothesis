@@ -58,15 +58,15 @@ def test_clears_out_database_as_things_get_boring():
         except NoSuchExample:
             pass
     stuff()
-    assert len(all_values(database)) > 1
+    assert len(non_covering_examples(database)) > 1
     do_we_care = False
     stuff()
-    initial = len(all_values(database))
+    initial = len(non_covering_examples(database))
     assert initial > 0
 
     for _ in range(initial):
         stuff()
-        keys = len(all_values(database))
+        keys = len(non_covering_examples(database))
         if not keys:
             break
     else:

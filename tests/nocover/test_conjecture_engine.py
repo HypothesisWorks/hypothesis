@@ -23,6 +23,7 @@ import pytest
 
 from hypothesis import strategies as st
 from hypothesis import HealthCheck, given, settings, unlimited
+from tests.common.utils import non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes, hrange
 from tests.cover.test_conjecture_engine import run_to_buffer, slow_shrinker
@@ -31,9 +32,7 @@ from hypothesis.internal.conjecture.engine import RunIsComplete, \
     ConjectureRunner
 
 
-@given(st.random_module())
-@settings(max_shrinks=0, deadline=None, perform_health_check=False)
-def test_lot_of_dead_nodes(rnd):
+def test_lot_of_dead_nodes():
     @run_to_buffer
     def x(data):
         for i in range(5):
@@ -61,11 +60,7 @@ def test_saves_data_while_shrinking():
     runner.run()
     assert runner.interesting_examples
     assert len(seen) == n
-    in_db = set(
-        v
-        for vs in db.data.values()
-        for v in vs
-    )
+    in_db = non_covering_examples(db)
     assert in_db.issubset(seen)
     assert in_db == seen
 
@@ -98,19 +93,12 @@ def test_garbage_collects_the_database():
     runner.run()
     assert runner.interesting_examples
 
-    def in_db():
-        return set(
-            v
-            for vs in db.data.values()
-            for v in vs
-        )
-
-    assert len(in_db()) == n + 1
+    assert len(non_covering_examples(db)) == n + 1
     runner = ConjectureRunner(
         lambda data: data.draw_bytes(4),
         settings=local_settings, database_key=key)
     runner.run()
-    assert 0 < len(in_db()) < n
+    assert 0 < len(non_covering_examples(db)) < n
 
 
 def test_can_discard():
