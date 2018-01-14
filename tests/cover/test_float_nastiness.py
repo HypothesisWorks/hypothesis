@@ -78,6 +78,7 @@ def test_does_not_generate_positive_if_right_boundary_is_negative(x):
     (-1.0, 0.0),
     (-sys.float_info.min, sys.float_info.min),
 ])
+@flaky(max_runs=4, min_passes=1)
 def test_can_generate_interval_endpoints(l, r):
     interval = st.floats(l, r)
     find(interval, lambda x: x == l, settings=settings(max_examples=10000))
