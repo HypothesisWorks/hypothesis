@@ -20,6 +20,7 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import sys
 import subprocess
 
 from hypothesistooling import should_run_ci_task
@@ -29,4 +30,4 @@ if __name__ == '__main__':
     task = os.environ['TASK']
 
     if should_run_ci_task(task=task, is_pull_request=is_pull_request):
-        subprocess.check_call(['make', task])
+        sys.exit(subprocess.call(['make', task]))
