@@ -22,6 +22,12 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 --------------------
+3.44.17 - 2018-01-15
+--------------------
+
+This release fixes a typo in internal documentation, and has no user-visible impact.
+
+--------------------
 3.44.16 - 2018-01-13
 --------------------
 
