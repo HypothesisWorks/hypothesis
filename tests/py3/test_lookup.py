@@ -396,3 +396,8 @@ def test_resolving_recursive_type():
     except ResolutionFailed:
         assert sys.version_info[:2] == (3, 5)
         pytest.xfail('python 3.5 typing module may not resolve annotations')
+    except TypeError:
+        # TypeError raised if typing.get_type_hints(Tree.__init__) fails; see
+        # https://github.com/HypothesisWorks/hypothesis-python/issues/1074
+        assert sys.version_info[:2] == (3, 5)
+        pytest.skip('Could not find type hints to resolve')
