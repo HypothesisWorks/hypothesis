@@ -88,13 +88,11 @@ def test_minimize_3_set_of_tuples():
         lambda x: len(x) >= 2) == set(((0,), (1,)))
 
 
-@pytest.mark.parametrize('seed', [11, 43, 49, 56, 65])
-def test_minimize_sets_of_sets(seed):
+def test_minimize_sets_of_sets():
     elements = integers(1, 100)
     size = 8
     set_of_sets = minimal(
         sets(frozensets(elements), min_size=size),
-        random=Random(seed),
     )
     assert frozenset() in set_of_sets
     assert len(set_of_sets) == size
