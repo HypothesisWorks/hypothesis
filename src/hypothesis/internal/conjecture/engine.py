@@ -1255,7 +1255,7 @@ class Shrinker(object):
     def shrink(self):
         """Run the full set of shrinks and update shrink_target.
 
-        This method is "mostly idempotent" - calling it wice is unlikely to
+        This method is "mostly idempotent" - calling it twice is unlikely to
         have any effect, though it has a non-zero probability of doing so.
 
         """

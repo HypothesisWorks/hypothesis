@@ -181,6 +181,7 @@ their individual contributions.
 * `jwg4 <https://www.github.com/jwg4>`_
 * `kbara <https://www.github.com/kbara>`_
 * `Lee Begg <https://www.github.com/llnz2>`_
+* `Louis Taylor <https://github.com/kragniz>`_
 * `marekventur <https://www.github.com/marekventur>`_
 * `Marius Gedminas <https://www.github.com/mgedmin>`_ (marius@gedmin.as)
 * `Markus Unterwaditzer <http://github.com/untitaker/>`_ (markus@unterwaditzer.net)
