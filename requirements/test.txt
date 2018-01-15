@@ -13,6 +13,6 @@ pbr==3.1.1                # via mock
 pluggy==0.6.0             # via pytest
 py==1.5.2                 # via pytest
 pytest-forked==0.2        # via pytest-xdist
-pytest-xdist==1.21.0
+pytest-xdist==1.22.0
 pytest==3.3.2
 six==1.11.0               # via mock, pytest
