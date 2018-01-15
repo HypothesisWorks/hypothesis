@@ -90,10 +90,8 @@ def test_minimize_3_set_of_tuples():
 
 def test_minimize_sets_of_sets():
     elements = integers(1, 100)
-    size = 10
-    set_of_sets = minimal(
-        sets(frozensets(elements)), lambda s: len(s) >= size
-    )
+    size = 8
+    set_of_sets = minimal(sets(frozensets(elements), min_size=size))
     assert frozenset() in set_of_sets
     assert len(set_of_sets) == size
     for s in set_of_sets:
