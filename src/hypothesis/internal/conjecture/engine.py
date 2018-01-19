@@ -1216,12 +1216,11 @@ class Shrinker(object):
         self.__engine = engine
         self.__predicate = predicate
         self.__discarding_failed = False
-        self.__shrinking_block_cache = {}
         self.__shrinking_prefixes = set()
 
         # We keep track of the current best example on the shrink_target
         # attribute.
-        self.shrink_target = initial
+        self.update_shrink_target(initial)
 
     def incorporate_new_buffer(self, buffer):
         buffer = hbytes(buffer[:self.shrink_target.index])
@@ -1343,7 +1342,28 @@ class Shrinker(object):
 
     @property
     def intervals(self):
-        return self.shrink_target.intervals
+        if self.__intervals is None:
+            target = self.shrink_target
+            intervals = set(target.blocks)
+            if target.index > 0:
+                intervals.add((0, target.index))
+            for l in target.intervals_by_level:
+                intervals.update(l)
+                for i in hrange(len(l) - 1):
+                    if (
+                        l[i] not in target.discarded and
+                        l[i + 1] not in target.discarded and
+                        l[i][1] == l[i + 1][0]
+                    ):
+                        intervals.add((l[i][0], l[i + 1][1]))
+            for i in hrange(len(target.blocks) - 1):
+                intervals.add((target.blocks[i][0], target.blocks[i + 1][1]))
+            # Intervals are sorted as longest first, then by interval start.
+            self.__intervals = tuple(sorted(
+                set(intervals),
+                key=lambda se: (se[0] - se[1], se[0])
+            ))
+        return self.__intervals
 
     def zero_intervals(self):
         """Attempt to replace each interval with its minimal possible value.
@@ -1466,8 +1486,10 @@ class Shrinker(object):
             self.__shrinking_prefixes.add(prefix)
 
     def update_shrink_target(self, new_target):
+        assert new_target.frozen
         self.shrink_target = new_target
         self.__shrinking_block_cache = {}
+        self.__intervals = None
 
     def escape_local_minimum(self):
         """Attempt to restart the shrink process from a larger initial value in
