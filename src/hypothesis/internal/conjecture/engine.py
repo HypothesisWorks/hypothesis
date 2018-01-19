@@ -1337,6 +1337,14 @@ class Shrinker(object):
             self.pass_to_interval()
             self.reorder_bytes()
 
+    @property
+    def blocks(self):
+        return self.shrink_target.blocks
+
+    @property
+    def intervals(self):
+        return self.shrink_target.intervals
+
     def zero_intervals(self):
         """Attempt to replace each interval with its minimal possible value.
 
@@ -1371,8 +1379,8 @@ class Shrinker(object):
 
         """
         i = 0
-        while i < len(self.shrink_target.intervals):
-            u, v = self.shrink_target.intervals[i]
+        while i < len(self.intervals):
+            u, v = self.intervals[i]
             buf = self.shrink_target.buffer
             prev = self.shrink_target
             if any(buf[u:v]):
@@ -1413,9 +1421,9 @@ class Shrinker(object):
 
         """
         i = 0
-        while i < len(self.shrink_target.intervals):
-            u, v = self.shrink_target.intervals[i]
-            for r, s in reversed(self.shrink_target.intervals):
+        while i < len(self.intervals):
+            u, v = self.intervals[i]
+            for r, s in reversed(self.intervals):
                 if u <= r <= s <= v and s - r < v - u:
                     buf = self.shrink_target.buffer
                     if self.incorporate_new_buffer(
@@ -1506,7 +1514,7 @@ class Shrinker(object):
             # example, changing it here is too likely to break whatever
             # it was caused the behaviour we're trying to shrink.
             # Everything non-structural, we redraw uniformly at random.
-            for i, (u, v) in enumerate(self.shrink_target.blocks):
+            for i, (u, v) in enumerate(self.blocks):
                 if not self.is_shrinking_block(i):
                     attempt_buf[u:v] = uniform(self.__engine.random, v - u)
             attempt = self.cached_test_function(attempt_buf)
@@ -1550,9 +1558,9 @@ class Shrinker(object):
 
         initial_attempt = bytearray(self.shrink_target.buffer)
         for i in blocks:
-            if i >= len(self.shrink_target.blocks):
+            if i >= len(self.blocks):
                 break
-            u, v = self.shrink_target.blocks[i]
+            u, v = self.blocks[i]
             n = min(v - u, len(b))
             initial_attempt[v - n:v] = b[-n:]
 
@@ -1639,13 +1647,13 @@ class Shrinker(object):
 
         self.debug('delta interval deletes')
 
-        k = len(self.shrink_target.intervals) // 2
+        k = len(self.intervals) // 2
         while k > 0:
             i = 0
-            while i + k <= len(self.shrink_target.intervals):
+            while i + k <= len(self.intervals):
                 bitmask = [True] * len(self.shrink_target.buffer)
 
-                for u, v in self.shrink_target.intervals[i:i + k]:
+                for u, v in self.intervals[i:i + k]:
                     for t in range(u, v):
                         bitmask[t] = False
 
@@ -1674,8 +1682,8 @@ class Shrinker(object):
         """
         self.debug('greedy interval deletes')
         i = 0
-        while i < len(self.shrink_target.intervals):
-            u, v = self.shrink_target.intervals[i]
+        while i < len(self.intervals):
+            u, v = self.intervals[i]
             if not self.incorporate_new_buffer(
                 self.shrink_target.buffer[:u] + self.shrink_target.buffer[v:]
             ):
@@ -1713,7 +1721,7 @@ class Shrinker(object):
 
         counts = Counter(
             canon(self.shrink_target.buffer[u:v])
-            for u, v in self.shrink_target.blocks
+            for u, v in self.blocks
         )
         counts.pop(hbytes(), None)
         blocks = [buffer for buffer, count in counts.items() if count > 1]
@@ -1722,7 +1730,7 @@ class Shrinker(object):
         blocks.sort(key=lambda b: counts[b] * len(b), reverse=True)
         for block in blocks:
             targets = [
-                i for i, (u, v) in enumerate(self.shrink_target.blocks)
+                i for i, (u, v) in enumerate(self.blocks)
                 if canon(self.shrink_target.buffer[u:v]) == block
             ]
             # This can happen if some blocks have been lost in the previous
@@ -1750,8 +1758,8 @@ class Shrinker(object):
         """
         self.debug('Shrinking of individual blocks')
         i = 0
-        while i < len(self.shrink_target.blocks):
-            u, v = self.shrink_target.blocks[i]
+        while i < len(self.blocks):
+            u, v = self.blocks[i]
             minimize(
                 self.shrink_target.buffer[u:v],
                 lambda b: self.try_shrinking_blocks((i,), b),
@@ -1850,14 +1858,14 @@ class Shrinker(object):
 
         self.debug('Lowering blocks while deleting intervals')
         i = 0
-        while i < len(self.shrink_target.intervals):
-            u, v = self.shrink_target.intervals[i]
+        while i < len(self.intervals):
+            u, v = self.intervals[i]
             changed = False
             # This loop never exits normally because the r >= u branch will
             # always trigger once we find a block inside the interval, hence
             # the pragma.
             for j, (r, s) in enumerate(  # pragma: no branch
-                self.shrink_target.blocks
+                self.blocks
             ):
                 if r >= u:
                     break
@@ -1909,8 +1917,8 @@ class Shrinker(object):
         """
         self.debug('Lowering adjacent pairs of dependent blocks')
         i = 0
-        while i + 1 < len(self.shrink_target.blocks):
-            u, v = self.shrink_target.blocks[i]
+        while i + 1 < len(self.blocks):
+            u, v = self.blocks[i]
             i += 1
 
             b = int_from_bytes(self.shrink_target.buffer[u:v])
@@ -1922,9 +1930,9 @@ class Shrinker(object):
                 if (
                     shrunk is not self.shrink_target and
                     i < len(shrunk.blocks) and
-                    shrunk.blocks[i][1] < self.shrink_target.blocks[i][1]
+                    shrunk.blocks[i][1] < self.blocks[i][1]
                 ):
-                    _, r = self.shrink_target.blocks[i]
+                    _, r = self.blocks[i]
                     k = shrunk.blocks[i][1] - shrunk.blocks[i][0]
                     buf = attempt[:v] + self.shrink_target.buffer[r - k:]
                     self.incorporate_new_buffer(buf)
@@ -1956,7 +1964,7 @@ class Shrinker(object):
 
         free_bytes = []
 
-        for i, (u, v) in enumerate(self.shrink_target.blocks):
+        for i, (u, v) in enumerate(self.blocks):
             if (
                 v == u + 1 and
                 u not in self.shrink_target.forced_indices
