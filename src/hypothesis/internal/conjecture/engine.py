@@ -1241,7 +1241,7 @@ class Shrinker(object):
         ):
             self.update_shrink_target(data)
             self.__shrinking_block_cache = {}
-            if data.discarded and not self.__discarding_failed:
+            if data.has_discards and not self.__discarding_failed:
                 self.remove_discarded()
             return True
         return False
@@ -1306,7 +1306,7 @@ class Shrinker(object):
         while prev is not self.shrink_target:
             prev = self.shrink_target
             self.remove_discarded()
-            self.zero_intervals()
+            self.zero_draws()
             self.minimize_duplicated_blocks()
             self.minimize_individual_blocks()
             self.reorder_blocks()
@@ -1347,15 +1347,21 @@ class Shrinker(object):
             intervals = set(target.blocks)
             if target.index > 0:
                 intervals.add((0, target.index))
-            for l in target.intervals_by_level:
-                intervals.update(l)
-                for i in hrange(len(l) - 1):
+            intervals.update(
+                (ex.start, ex.end) for ex in target.examples
+                if ex.start < ex.end
+            )
+            intervals_by_level = {}
+            for ex in target.examples:
+                if ex.start < ex.end:
+                    intervals_by_level.setdefault(ex.depth, []).append(ex)
+            for l in intervals_by_level.values():
+                for e1, e2 in zip(l, l[1:]):
                     if (
-                        l[i] not in target.discarded and
-                        l[i + 1] not in target.discarded and
-                        l[i][1] == l[i + 1][0]
+                        not (e1.discarded or e2.discarded) and
+                        e1.end == e2.start
                     ):
-                        intervals.add((l[i][0], l[i + 1][1]))
+                        intervals.add((e1.start, e2.end))
             for i in hrange(len(target.blocks) - 1):
                 intervals.add((target.blocks[i][0], target.blocks[i + 1][1]))
             # Intervals are sorted as longest first, then by interval start.
@@ -1365,8 +1371,8 @@ class Shrinker(object):
             ))
         return self.__intervals
 
-    def zero_intervals(self):
-        """Attempt to replace each interval with its minimal possible value.
+    def zero_draws(self):
+        """Attempt to replace each draw call with its minimal possible value.
 
         This is intended as a fast-track to minimize whole sub-examples that
         don't matter as rapidly as possible. For example, suppose we had
@@ -1399,27 +1405,22 @@ class Shrinker(object):
 
         """
         i = 0
-        while i < len(self.intervals):
-            u, v = self.intervals[i]
+        while i < len(self.shrink_target.examples):
+            ex = self.shrink_target.examples[i]
+            u = ex.start
+            v = ex.end
             buf = self.shrink_target.buffer
-            prev = self.shrink_target
             if any(buf[u:v]):
                 attempt = self.cached_test_function(
                     buf[:u] + hbytes(v - u) + buf[v:]
                 )
-                if (
-                    attempt.status == Status.VALID and
-                    len(attempt.buffer) < len(self.shrink_target.buffer)
-                ):
-                    ends = [s for r, s in attempt.intervals if r == u]
-                    ends.reverse()
-                    for s in ends:
-                        if s < v and self.incorporate_new_buffer(
-                            buf[:u] + hbytes(s - u) + buf[v:]
-                        ):
-                            break
-            if self.shrink_target is prev:
-                i += 1
+                if attempt.status == Status.VALID:
+                    v2 = attempt.examples[i].end
+                    if v2 < v:
+                        self.incorporate_new_buffer(
+                            buf[:u] + hbytes(v2 - u) + buf[v:]
+                        )
+            i += 1
 
     def pass_to_interval(self):
         """Attempt to replace each interval with a subinterval.
@@ -1631,10 +1632,19 @@ class Shrinker(object):
         will be much faster than trying each one individually when it works.
 
         """
-        if not self.shrink_target.discarded:
+        if not self.shrink_target.has_discards:
             return
+
+        discarded = []
+
+        for ex in self.shrink_target.examples:
+            if ex.discarded and (
+                not discarded or ex.start >= discarded[-1][-1]
+            ):
+                discarded.append((ex.start, ex.end))
+
         attempt = bytearray(self.shrink_target.buffer)
-        for u, v in sorted(self.shrink_target.discarded, reverse=True):
+        for u, v in reversed(discarded):
             del attempt[u:v]
 
         # We track whether discarding works because as long as it does we will

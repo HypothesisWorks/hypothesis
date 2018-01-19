@@ -1090,13 +1090,15 @@ def test_can_zero_subintervals(monkeypatch):
             hbytes([3, 0, 0, 0, 1]) * 10
         ))
 
-    monkeypatch.setattr(Shrinker, 'shrink', fixate(Shrinker.zero_intervals))
+    monkeypatch.setattr(Shrinker, 'shrink', fixate(Shrinker.zero_draws))
 
     @run_to_buffer
     def x(data):
         for _ in hrange(10):
+            data.start_example()
             n = data.draw_bits(8)
             data.draw_bytes(n)
+            data.stop_example()
             if data.draw_bits(8) != 1:
                 return
         data.mark_interesting()
