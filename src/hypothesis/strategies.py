@@ -529,21 +529,21 @@ def lists(
             def unique_by(x):
                 return x
 
+    if min_size is None:
+        min_size = 0
+
+    if average_size is None:
+        average_size = max(
+            _AVERAGE_LIST_LENGTH,
+            min_size * 2
+        )
+        if max_size is not None and max_size < float(u'inf'):
+            average_size = min(average_size, 0.5 * (min_size + max_size))
+
     if unique_by is not None:
         from hypothesis.searchstrategy.collections import UniqueListStrategy
         min_size = min_size or 0
         max_size = max_size or float(u'inf')
-        if average_size is None:
-            if max_size < float(u'inf'):
-                if max_size <= 5:
-                    average_size = min_size + 0.75 * (max_size - min_size)
-                else:
-                    average_size = (max_size + min_size) / 2
-            else:
-                average_size = max(
-                    _AVERAGE_LIST_LENGTH,
-                    min_size * 2
-                )
         result = UniqueListStrategy(
             elements=elements,
             average_size=average_size,
@@ -555,11 +555,6 @@ def lists(
         from hypothesis.searchstrategy.collections import ListStrategy
         if min_size is None:
             min_size = 0
-        if average_size is None:
-            if max_size is None:
-                average_size = _AVERAGE_LIST_LENGTH
-            else:
-                average_size = (min_size + max_size) * 0.5
 
         result = ListStrategy(
             (elements,), average_length=average_size,
