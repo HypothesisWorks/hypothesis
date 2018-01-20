@@ -585,15 +585,17 @@ def test_can_shrink_variable_draws_with_just_deletion(n, monkeypatch):
     monkeypatch.setattr(
         Shrinker, 'shrink', Shrinker.interval_deletion_with_block_lowering
     )
+    # Would normally be added by minimize_individual_blocks, but we skip
+    # that phase in this test.
+    monkeypatch.setattr(
+        Shrinker, 'is_shrinking_block', lambda self, i: i == 0
+    )
 
     def gen(self):
         data = ConjectureData.for_buffer(
             [n] + [0] * (n - 1) + [1]
         )
         self.test_function(data)
-        # Would normally be added by minimize_individual_blocks, but we skip
-        # that phase in this test.
-        data.shrinking_blocks.add(0)
 
     monkeypatch.setattr(ConjectureRunner, 'generate_new_examples', gen)
 
@@ -610,13 +612,15 @@ def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
     monkeypatch.setattr(
         Shrinker, 'shrink', Shrinker.interval_deletion_with_block_lowering
     )
+    # Would normally be added by minimize_individual_blocks, but we skip
+    # that phase in this test.
+    monkeypatch.setattr(
+        Shrinker, 'is_shrinking_block', lambda self, i: i == 0
+    )
 
     def gen(self):
         data = ConjectureData.for_buffer(hbytes(10))
         self.test_function(data)
-        # Would normally be added by minimize_individual_blocks, but we skip
-        # that phase in this test.
-        data.shrinking_blocks.add(0)
 
     monkeypatch.setattr(ConjectureRunner, 'generate_new_examples', gen)
 

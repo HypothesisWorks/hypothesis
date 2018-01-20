@@ -1216,6 +1216,8 @@ class Shrinker(object):
         self.__engine = engine
         self.__predicate = predicate
         self.__discarding_failed = False
+        self.__shrinking_block_cache = {}
+        self.__shrinking_prefixes = set()
 
         # We keep track of the current best example on the shrink_target
         # attribute.
@@ -1238,7 +1240,8 @@ class Shrinker(object):
             self.__predicate(data) and
             sort_key(data.buffer) < sort_key(self.shrink_target.buffer)
         ):
-            self.shrink_target = data
+            self.update_shrink_target(data)
+            self.__shrinking_block_cache = {}
             if data.discarded and not self.__discarding_failed:
                 self.remove_discarded()
             return True
@@ -1422,6 +1425,42 @@ class Shrinker(object):
             else:
                 i += 1
 
+    def is_shrinking_block(self, i):
+        """Checks whether block i has been previously marked as a shrinking
+        block.
+
+        If the shrink target has changed since i was last checked, will
+        attempt to calculate if an equivalent block in a previous shrink
+        target was marked as shrinking.
+
+        """
+        if not self.__shrinking_prefixes:
+            return False
+        try:
+            return self.__shrinking_block_cache[i]
+        except KeyError:
+            pass
+        t = self.shrink_target
+        return self.__shrinking_block_cache.setdefault(
+            i,
+            t.buffer[:t.blocks[i][0]] in self.__shrinking_prefixes
+        )
+
+    def mark_shrinking(self, blocks):
+        """Mark each of these blocks as a shrinking block: That is, lowering
+        its value lexicographically may cause less data to be drawn after."""
+        t = self.shrink_target
+        for i in blocks:
+            if self.__shrinking_block_cache.get(i) is True:
+                continue
+            self.__shrinking_block_cache[i] = True
+            prefix = t.buffer[:t.blocks[i][0]]
+            self.__shrinking_prefixes.add(prefix)
+
+    def update_shrink_target(self, new_target):
+        self.shrink_target = new_target
+        self.__shrinking_block_cache = {}
+
     def escape_local_minimum(self):
         """Attempt to restart the shrink process from a larger initial value in
         a way that allows us to escape a local minimum that the main greedy
@@ -1468,12 +1507,13 @@ class Shrinker(object):
             # it was caused the behaviour we're trying to shrink.
             # Everything non-structural, we redraw uniformly at random.
             for i, (u, v) in enumerate(self.shrink_target.blocks):
-                if i not in self.shrink_target.shrinking_blocks:
+                if not self.is_shrinking_block(i):
                     attempt_buf[u:v] = uniform(self.__engine.random, v - u)
             attempt = self.cached_test_function(attempt_buf)
             if self.__predicate(attempt):
                 prev = self.shrink_target
-                self.shrink_target = attempt
+                self.update_shrink_target(attempt)
+                self.__shrinking_block_cache = {}
                 self.greedy_shrink()
                 if (
                     sort_key(self.shrink_target.buffer) <
@@ -1484,13 +1524,15 @@ class Shrinker(object):
                     # again from the new, smaller, example.
                     count = 0
                 else:
-                    self.shrink_target = prev
+                    self.update_shrink_target(prev)
+                    self.__shrinking_block_cache = {}
 
     def try_shrinking_blocks(self, blocks, b):
         """Attempts to replace each block in the blocks list with b. Returns
         True if it succeeded (which may include some additional modifications
-        to shrink_target). If it fails, it may update
-        shrink_target.shrinking_blocks to include blocks.
+        to shrink_target).
+
+        May call mark_shrinking with b if this causes a reduction in size.
 
         In current usage it is expected that each of the blocks currently have
         the same value, although this is not essential. Note that b must be
@@ -1535,7 +1577,7 @@ class Shrinker(object):
         if lost_data <= 0:
             return False
 
-        self.shrink_target.shrinking_blocks.update(blocks)
+        self.mark_shrinking(blocks)
 
         try_with_deleted = bytearray(initial_attempt)
         del try_with_deleted[v:v + lost_data]
@@ -1779,7 +1821,7 @@ class Shrinker(object):
         greedy_interval_deletion) while replacing a block that precedes that
         interval with its immediate two lexicographical predecessors.
 
-        We only do this for blocks that appear in the shrinking_blocks - that
+        We only do this for blocks that are marked as shrinking - that
         is, when we tried lowering them it resulted in a smaller example.
         This makes it important that this runs after minimize_individual_blocks
         (which populates those blocks).
@@ -1807,14 +1849,10 @@ class Shrinker(object):
         """
 
         self.debug('Lowering blocks while deleting intervals')
-        if not self.shrink_target.shrinking_blocks:
-            return
-
         i = 0
         while i < len(self.shrink_target.intervals):
             u, v = self.shrink_target.intervals[i]
             changed = False
-            prev = self.shrink_target
             # This loop never exits normally because the r >= u branch will
             # always trigger once we find a block inside the interval, hence
             # the pragma.
@@ -1823,7 +1861,7 @@ class Shrinker(object):
             ):
                 if r >= u:
                     break
-                if j not in self.shrink_target.shrinking_blocks:
+                if not self.is_shrinking_block(j):
                     continue
                 b = self.shrink_target.buffer[r:s]
                 if any(b):
@@ -1835,10 +1873,6 @@ class Shrinker(object):
                         attempt[r:s] = c
                         del attempt[u:v]
                         if self.incorporate_new_buffer(attempt):
-                            self.shrink_target.shrinking_blocks.update(
-                                k for k in prev.shrinking_blocks
-                                if prev.blocks[k][-1] <= u
-                            )
                             changed = True
                             break
                     if changed:
@@ -1924,7 +1958,6 @@ class Shrinker(object):
 
         for i, (u, v) in enumerate(self.shrink_target.blocks):
             if (
-                i not in self.shrink_target.shrinking_blocks and
                 v == u + 1 and
                 u not in self.shrink_target.forced_indices
             ):
