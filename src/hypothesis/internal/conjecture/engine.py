@@ -1345,8 +1345,7 @@ class Shrinker(object):
         if self.__intervals is None:
             target = self.shrink_target
             intervals = set(target.blocks)
-            if target.index > 0:
-                intervals.add((0, target.index))
+            intervals.add((0, target.index))
             intervals.update(
                 (ex.start, ex.end) for ex in target.examples
                 if ex.start < ex.end
