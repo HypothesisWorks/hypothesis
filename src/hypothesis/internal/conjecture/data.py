@@ -37,7 +37,7 @@ class Status(IntEnum):
 
 
 @attr.s(slots=True)
-class Example():
+class Example(object):
     depth = attr.ib()
     start = attr.ib()
     end = attr.ib(default=None)
