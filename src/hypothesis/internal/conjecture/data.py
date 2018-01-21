@@ -39,6 +39,7 @@ class Status(IntEnum):
 @attr.s(slots=True)
 class Example(object):
     depth = attr.ib()
+    label = attr.ib()
     start = attr.ib()
     end = attr.ib(default=None)
     discarded = attr.ib(default=None)
@@ -46,6 +47,23 @@ class Example(object):
     @property
     def length(self):
         return self.end - self.start
+
+
+@attr.s(hash=False, cmp=False, slots=True)
+class StructuralTag(object):
+    label = attr.ib()
+
+
+STRUCTURAL_TAGS = {}
+
+
+def structural_tag(label):
+    try:
+        return STRUCTURAL_TAGS[label]
+    except KeyError:
+        result = StructuralTag(label)
+        STRUCTURAL_TAGS[label] = result
+        return result
 
 
 global_test_counter = 0
@@ -120,7 +138,7 @@ class ConjectureData(object):
             value = unicode_safe_repr(value)
         self.output += value
 
-    def draw(self, strategy):
+    def draw(self, strategy, label=None):
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument((
                 'Cannot use strategy %r within a call to find (presumably '
@@ -137,15 +155,17 @@ class ConjectureData(object):
             original_tracer = sys.gettrace()
             try:
                 sys.settrace(None)
-                return self.__draw(strategy)
+                return self.__draw(strategy, label=label)
             finally:
                 sys.settrace(original_tracer)
         else:
-            return self.__draw(strategy)
+            return self.__draw(strategy, label=label)
 
-    def __draw(self, strategy):
+    def __draw(self, strategy, label):
         at_top_level = self.depth == 0
-        self.start_example()
+        if label is None:
+            label = strategy.label
+        self.start_example(label=label)
         try:
             if not at_top_level:
                 return strategy.do_draw(self)
@@ -162,11 +182,12 @@ class ConjectureData(object):
             if not self.frozen:
                 self.stop_example()
 
-    def start_example(self):
+    def start_example(self, label=None):
         self.__assert_not_frozen('start_example')
         self.level += 1
         i = len(self.examples)
-        self.examples.append(Example(self.level, self.index))
+        self.examples.append(Example(
+            depth=self.depth, label=label, start=self.index))
         self.example_stack.append(i)
 
     def stop_example(self, discard=False):
@@ -189,10 +210,27 @@ class ConjectureData(object):
         if self.frozen:
             assert isinstance(self.buffer, hbytes)
             return
-        while (self.example_stack):
-            self.stop_example()
-        self.frozen = True
         self.finish_time = benchmark_time()
+
+        while self.example_stack:
+            self.stop_example()
+
+        self.frozen = True
+
+        if self.status >= Status.VALID:
+            discards = []
+            for ex in self.examples:
+                if ex.length == 0:
+                    continue
+                if discards:
+                    u, v = discards[-1]
+                    if u <= ex.start <= ex.end <= v:
+                        continue
+                if ex.discarded:
+                    discards.append((ex.start, ex.end))
+                    continue
+                if ex.label is not None:
+                    self.tags.add(structural_tag(ex.label))
 
         self.buffer = hbytes(self.buffer)
         self.events = frozenset(self.events)
