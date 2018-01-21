@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 --------------------
+3.44.20 - 2018-01-21
+--------------------
+
+This is a small refactoring release that changes how Hypothesis tracks some
+information about the boundary of examples in its internal representation.
+
+You are unlikely to see much difference in behaviour, but memory usage and
+run time may both go down slightly during normal test execution, and when
+failing Hypothesis might print its failing example slightly sooner.
+
+--------------------
 3.44.19 - 2018-01-21
 --------------------
 
