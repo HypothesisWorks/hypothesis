@@ -43,6 +43,10 @@ class Example(object):
     end = attr.ib(default=None)
     discarded = attr.ib(default=None)
 
+    @property
+    def length(self):
+        return self.end - self.start
+
 
 global_test_counter = 0
 

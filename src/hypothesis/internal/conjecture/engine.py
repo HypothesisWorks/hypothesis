@@ -1406,18 +1406,19 @@ class Shrinker(object):
         i = 0
         while i < len(self.shrink_target.examples):
             ex = self.shrink_target.examples[i]
-            u = ex.start
-            v = ex.end
             buf = self.shrink_target.buffer
-            if any(buf[u:v]):
+            if any(buf[ex.start:ex.end]):
+                prefix = buf[:ex.start]
+                suffix = buf[ex.end:]
                 attempt = self.cached_test_function(
-                    buf[:u] + hbytes(v - u) + buf[v:]
+                    prefix + hbytes(ex.length) + suffix
                 )
                 if attempt.status == Status.VALID:
-                    v2 = attempt.examples[i].end
-                    if v2 < v:
+                    replacement = attempt.examples[i]
+                    assert replacement.start == ex.start
+                    if replacement.length < ex.length:
                         self.incorporate_new_buffer(
-                            buf[:u] + hbytes(v2 - u) + buf[v:]
+                            prefix + hbytes(replacement.length) + suffix
                         )
             i += 1
 
