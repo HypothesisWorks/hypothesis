@@ -20,6 +20,8 @@ from __future__ import division, print_function, absolute_import
 import sys
 from enum import IntEnum
 
+import attr
+
 from hypothesis.errors import Frozen, StopTest, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
     bit_length, benchmark_time, int_from_bytes, unicode_safe_repr
@@ -32,6 +34,18 @@ class Status(IntEnum):
     INVALID = 1
     VALID = 2
     INTERESTING = 3
+
+
+@attr.s(slots=True)
+class Example(object):
+    depth = attr.ib()
+    start = attr.ib()
+    end = attr.ib(default=None)
+    discarded = attr.ib(default=None)
+
+    @property
+    def length(self):
+        return self.end - self.start
 
 
 global_test_counter = 0
@@ -63,8 +77,6 @@ class ConjectureData(object):
         self.output = u''
         self.status = Status.VALID
         self.frozen = False
-        self.intervals_by_level = []
-        self.interval_stack = []
         global global_test_counter
         self.testcounter = global_test_counter
         global_test_counter += 1
@@ -76,7 +88,12 @@ class ConjectureData(object):
         self.tags = set()
         self.draw_times = []
         self.__intervals = None
-        self.discarded = []
+
+        self.examples = []
+        self.example_stack = []
+        self.has_discards = False
+
+        self.start_example()
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -89,7 +106,9 @@ class ConjectureData(object):
 
     @property
     def depth(self):
-        return len(self.interval_stack)
+        # We always have a single example wrapping everything. We want to treat
+        # that as depth 0 rather than depth 1.
+        return self.level - 1
 
     @property
     def index(self):
@@ -145,63 +164,33 @@ class ConjectureData(object):
 
     def start_example(self):
         self.__assert_not_frozen('start_example')
-        self.interval_stack.append(self.index)
         self.level += 1
+        i = len(self.examples)
+        self.examples.append(Example(self.level, self.index))
+        self.example_stack.append(i)
 
     def stop_example(self, discard=False):
         if self.frozen:
             return
         self.level -= 1
-        while self.level >= len(self.intervals_by_level):
-            self.intervals_by_level.append([])
-        k = self.interval_stack.pop()
-        if k != self.index:
-            t = (k, self.index)
-            self.intervals_by_level[self.level].append(t)
-            if discard:
-                while self.discarded:
-                    u, v = t
-                    r, s = self.discarded[-1]
-                    if u <= r <= s <= v:
-                        self.discarded.pop()
-                    else:
-                        assert s <= u
-                        break
-                self.discarded.append(t)
+
+        k = self.example_stack.pop()
+        ex = self.examples[k]
+        ex.end = self.index
+        ex.discarded = discard
+
+        if discard:
+            self.has_discards = True
 
     def note_event(self, event):
         self.events.add(event)
-
-    @property
-    def intervals(self):
-        assert self.frozen
-        if self.__intervals is None:
-            intervals = set(self.blocks)
-            if self.index > 0:
-                intervals.add((0, self.index))
-            for l in self.intervals_by_level:
-                intervals.update(l)
-                for i in hrange(len(l) - 1):
-                    if (
-                        l[i] not in self.discarded and
-                        l[i + 1] not in self.discarded and
-                        l[i][1] == l[i + 1][0]
-                    ):
-                        intervals.add((l[i][0], l[i + 1][1]))
-            for i in hrange(len(self.blocks) - 1):
-                intervals.add((self.blocks[i][0], self.blocks[i + 1][1]))
-            # Intervals are sorted as longest first, then by interval start.
-            self.__intervals = tuple(sorted(
-                set(intervals),
-                key=lambda se: (se[0] - se[1], se[0])
-            ))
-            del self.intervals_by_level
-        return self.__intervals
 
     def freeze(self):
         if self.frozen:
             assert isinstance(self.buffer, hbytes)
             return
+        while (self.example_stack):
+            self.stop_example()
         self.frozen = True
         self.finish_time = benchmark_time()
 
@@ -259,9 +248,11 @@ class ConjectureData(object):
         if n == 0:
             return hbytes(b'')
         self.__check_capacity(n)
+        self.start_example()
         result = self._draw_bytes(self, n)
         assert len(result) == n
         self.__write(result)
+        self.stop_example()
         return hbytes(result)
 
     def mark_interesting(self, interesting_origin=None):

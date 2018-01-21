@@ -103,7 +103,7 @@ def test_closes_interval_on_error_in_strategy():
     with pytest.raises(ValueError):
         x.draw(BoomStrategy())
     x.freeze()
-    assert len(x.intervals) == 1
+    assert not any(eg.end is None for eg in x.examples)
 
 
 class BigStrategy(SearchStrategy):
@@ -117,4 +117,4 @@ def test_does_not_double_freeze_in_interval_close():
     with pytest.raises(StopTest):
         x.draw(BigStrategy())
     assert x.frozen
-    assert len(x.intervals) == 0
+    assert not any(eg.end is None for eg in x.examples)
