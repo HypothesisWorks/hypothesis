@@ -189,14 +189,14 @@ class ConjectureData(object):
         if self.frozen:
             assert isinstance(self.buffer, hbytes)
             return
+        while (self.example_stack):
+            self.stop_example()
         self.frozen = True
         self.finish_time = benchmark_time()
 
         self.buffer = hbytes(self.buffer)
         self.events = frozenset(self.events)
         del self._draw_bytes
-        while self.example_stack:
-            self.examples[self.example_stack.pop()].end = self.index
 
     def draw_bits(self, n):
         self.__assert_not_frozen('draw_bits')
