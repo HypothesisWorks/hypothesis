@@ -93,6 +93,8 @@ class ConjectureData(object):
         self.example_stack = []
         self.has_discards = False
 
+        self.start_example()
+
     def __assert_not_frozen(self, name):
         if self.frozen:
             raise Frozen(
@@ -104,7 +106,9 @@ class ConjectureData(object):
 
     @property
     def depth(self):
-        return self.level
+        # We always have a single example wrapping everything. We want to treat
+        # that as depth 0 rather than depth 1.
+        return self.level - 1
 
     @property
     def index(self):
@@ -244,9 +248,11 @@ class ConjectureData(object):
         if n == 0:
             return hbytes(b'')
         self.__check_capacity(n)
+        self.start_example()
         result = self._draw_bytes(self, n)
         assert len(result) == n
         self.__write(result)
+        self.stop_example()
         return hbytes(result)
 
     def mark_interesting(self, interesting_origin=None):

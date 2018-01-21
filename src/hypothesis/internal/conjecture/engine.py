@@ -1442,16 +1442,23 @@ class Shrinker(object):
 
         """
         i = 0
-        while i < len(self.intervals):
-            u, v = self.intervals[i]
-            for r, s in reversed(self.intervals):
-                if u <= r <= s <= v and s - r < v - u:
+        while i < len(self.shrink_target.examples):
+            ex = self.shrink_target.examples[i]
+            changed = False
+
+            for j in hrange(i + 1, len(self.shrink_target.examples)):
+                child = self.shrink_target.examples[j]
+                if child.start >= ex.end:
+                    break
+                if child.length < ex.length:
                     buf = self.shrink_target.buffer
                     if self.incorporate_new_buffer(
-                        buf[:u] + buf[r:s] + buf[v:]
+                        buf[:ex.start] + buf[child.start:child.end] +
+                        buf[ex.end:]
                     ):
+                        changed = True
                         break
-            else:
+            if not changed:
                 i += 1
 
     def is_shrinking_block(self, i):
