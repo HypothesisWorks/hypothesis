@@ -23,6 +23,7 @@ import re
 import sys
 import math
 import time
+import array
 import codecs
 import platform
 import importlib
@@ -117,11 +118,13 @@ else:
             return struct.unpack(fmt, str(string))
 
     def int_from_bytes(data):
-        assert isinstance(data, bytearray)
         if CAN_UNPACK_BYTE_ARRAY:
             unpackable_data = data
-        else:
+        elif isinstance(data, bytearray):
             unpackable_data = bytes(data)
+        else:
+            unpackable_data = data
+        assert isinstance(data, (bytes, bytearray))
         result = 0
         i = 0
         while i + 4 <= len(data):

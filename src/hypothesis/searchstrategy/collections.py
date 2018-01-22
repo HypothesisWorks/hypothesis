@@ -21,7 +21,7 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import OrderedDict, hbytes
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    MappedSearchStrategy, one_of_strategies
+    MappedSearchStrategy, combine_labels, one_of_strategies
 
 
 class TupleStrategy(SearchStrategy):
@@ -38,6 +38,10 @@ class TupleStrategy(SearchStrategy):
     def do_validate(self):
         for s in self.element_strategies:
             s.validate()
+
+    def calc_label(self):
+        return combine_labels(
+            self.class_label, *[s.label for s in self.element_strategies])
 
     def __repr__(self):
         if len(self.element_strategies) == 1:
@@ -91,6 +95,9 @@ class ListStrategy(SearchStrategy):
         self.min_size = min_size or 0
         self.max_size = max_size or float('inf')
         self.element_strategy = one_of_strategies(strategies)
+
+    def calc_label(self):
+        return combine_labels(self.class_label, self.element_strategy.label)
 
     def do_validate(self):
         self.element_strategy.validate()

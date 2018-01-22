@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import hashlib
 from collections import defaultdict
 
 import hypothesis.internal.conjecture.utils as cu
@@ -24,12 +25,30 @@ from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
     UnsatisfiedAssumption
 from hypothesis.control import assume, reject, _current_build_context
 from hypothesis._settings import note_deprecation
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import hrange, qualname, bit_length, \
+    str_to_bytes, int_from_bytes
 from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
 
 calculating = UniqueIdentifier('calculating')
+
+
+LABEL_MASK = 2 ** 64 - 1
+
+
+def calc_label(cls):
+    name = str_to_bytes(qualname(cls))
+    hashed = hashlib.md5(name).digest()
+    return int_from_bytes(hashed[:8])
+
+
+def combine_labels(*labels):
+    label = 0
+    for l in labels:
+        label = (label << 1) & LABEL_MASK
+        label ^= l
+    return label
 
 
 def one_of_strategies(xs):
@@ -54,6 +73,7 @@ class SearchStrategy(object):
 
     supports_find = True
     validate_called = False
+    __label = None
 
     def recursive_property(name, default):
         """Handle properties which may be mutually recursive among a set of
@@ -365,6 +385,31 @@ class SearchStrategy(object):
             self.validate_called = False
             raise
 
+    LABELS = {}
+
+    @property
+    def class_label(self):
+        cls = self.__class__
+        try:
+            return cls.LABELS[cls]
+        except KeyError:
+            pass
+        result = calc_label(cls)
+        cls.LABELS[cls] = result
+        return result
+
+    @property
+    def label(self):
+        if self.__label is calculating:
+            return 0
+        if self.__label is None:
+            self.__label = calculating
+            self.__label = self.calc_label()
+        return self.__label
+
+    def calc_label(self):
+        return self.class_label
+
     def do_validate(self):
         pass
 
@@ -428,20 +473,38 @@ class OneOfStrategy(SearchStrategy):
                     continue
                 seen.add(s)
                 pruned.append(s)
+            branch_labels = []
+            shift = bit_length(len(pruned))
+            for i, p in enumerate(pruned):
+                branch_labels.append(
+                    (((self.label ^ p.label) << shift) + i) & LABEL_MASK)
             self.__element_strategies = pruned
+            self.__branch_labels = tuple(branch_labels)
         return self.__element_strategies
+
+    @property
+    def branch_labels(self):
+        self.element_strategies
+        return self.__branch_labels
+
+    def calc_label(self):
+        return combine_labels(self.class_label, *[
+            p.label for p in self.original_strategies
+        ])
 
     def do_draw(self, data):
         n = len(self.element_strategies)
         assert n > 0
         if n == 1:
             return data.draw(self.element_strategies[0])
-        elif self.sampler is None:
+
+        if self.sampler is None:
             i = cu.integer_range(data, 0, n - 1)
         else:
             i = self.sampler.sample(data)
 
-        return data.draw(self.element_strategies[i])
+        return data.draw(
+            self.element_strategies[i], label=self.branch_labels[i])
 
     def __repr__(self):
         return ' | '.join(map(repr, self.original_strategies))

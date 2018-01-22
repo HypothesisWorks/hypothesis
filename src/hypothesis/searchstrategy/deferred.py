@@ -65,6 +65,21 @@ class DeferredStrategy(SearchStrategy):
     def supports_find(self):
         return self.wrapped_strategy.supports_find
 
+    def calc_label(self):
+        """deferred strategies don't have a calculated label, because we would
+        end up having to calculate the fixed point of some hash function in
+        order to calculate it when they recursively refer to themself!
+
+        The label for the wrapped strategy will still appear because it
+        will be passed to draw.
+
+        """
+
+        # This is actually the same as the parent class implementation, but we
+        # include it explicitly here in order to document that this is a
+        # deliberate decision.
+        return self.class_label
+
     def calc_is_empty(self, recur):
         return recur(self.wrapped_strategy)
 

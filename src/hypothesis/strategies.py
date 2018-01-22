@@ -1504,6 +1504,7 @@ def composite(f):
     """
 
     from hypothesis.internal.reflection import define_function_signature
+    from hypothesis.searchstrategy.strategies import calc_label
     argspec = getfullargspec(f)
 
     if (
@@ -1522,6 +1523,8 @@ def composite(f):
               if k in (argspec.args + argspec.kwonlyargs + ['return'])}
     new_argspec = argspec._replace(args=argspec.args[1:], annotations=annots)
 
+    label = calc_label(f)
+
     @defines_strategy
     @define_function_signature(f.__name__, f.__doc__, new_argspec)
     def accept(*args, **kwargs):
@@ -1535,6 +1538,10 @@ def composite(f):
                     return data.draw(strategy)
 
                 return f(draw, *args, **kwargs)
+
+            @property
+            def label(self):
+                return label
         return CompositeStrategy()
     accept.__module__ = f.__module__
     return accept

@@ -142,12 +142,8 @@ def test_terminates_shrinks(n, monkeypatch):
     last_data, = runner.interesting_examples.values()
     assert last_data.status == Status.INTERESTING
     assert runner.shrinks == n
-    in_db = set(
-        v
-        for vs in db.data.values()
-        for v in vs
-    )
-    assert len(in_db) == n + 1
+    in_db = set(db.data[runner.secondary_key])
+    assert len(in_db) == n
 
 
 def test_detects_flakiness():
