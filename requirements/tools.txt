@@ -8,8 +8,8 @@ alabaster==0.7.10         # via sphinx
 attrs==17.4.0
 autoflake==1.1            # via pyformat
 autopep8==1.3.3           # via pyformat
-babel==2.5.2              # via sphinx
-certifi==2017.11.5        # via requests
+babel==2.5.3              # via sphinx
+certifi==2018.1.18        # via requests
 chardet==3.0.4            # via requests
 click==6.7                # via pip-tools, pyupio, safety
 coverage==4.4.2
