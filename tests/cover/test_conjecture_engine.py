@@ -1234,3 +1234,46 @@ def test_reordering_interaction_with_writing(monkeypatch):
         data.mark_interesting()
 
     assert x == hbytes([0, 0, 2])
+
+
+def test_shrinking_blocks_from_common_offset(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', lambda self: (
+            self.minimize_individual_blocks(),
+            self.lower_common_block_offset(),
+        )
+    )
+
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer([11, 10])))
+
+    @run_to_buffer
+    def x(data):
+        m = data.draw_bits(8)
+        n = data.draw_bits(8)
+        if abs(m - n) <= 1:
+            data.mark_interesting()
+    assert x == hbytes([1, 0])
+
+
+def test_handle_empty_draws(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', Shrinker.greedy_interval_deletion)
+
+    lambda runner: runner.test_function(ConjectureData.for_buffer(
+        [1, 1, 0]))
+
+    @run_to_buffer
+    def x(data):
+        while True:
+            data.start_example()
+            n = data.draw_bits(1)
+            data.start_example()
+            data.stop_example()
+            data.stop_example(discard=n > 0)
+            if not n:
+                break
+        data.mark_interesting()
+    assert x == hbytes([0])
