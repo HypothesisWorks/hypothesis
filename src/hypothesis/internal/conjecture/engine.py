@@ -35,7 +35,7 @@ from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
-from hypothesis.internal.conjecture.minimizer import minimize
+from hypothesis.internal.conjecture.minimizer import minimize, minimize_int
 
 # Tell pytest to omit the body of this module from tracebacks
 # http://doc.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
@@ -1220,6 +1220,7 @@ class Shrinker(object):
 
         # We keep track of the current best example on the shrink_target
         # attribute.
+        self.shrink_target = None
         self.update_shrink_target(initial)
 
     def incorporate_new_buffer(self, buffer):
@@ -1305,6 +1306,12 @@ class Shrinker(object):
         prev = None
         while prev is not self.shrink_target:
             prev = self.shrink_target
+
+            # We reset our tracking of what changed at the beginning of the
+            # loop so that we don't get distracted by things that change once
+            # and then are stable thereafter.
+            self.clear_change_tracking()
+
             self.remove_discarded()
             self.zero_draws()
             self.minimize_duplicated_blocks()
@@ -1312,6 +1319,7 @@ class Shrinker(object):
             self.reorder_blocks()
             self.greedy_interval_deletion()
             self.lower_dependent_block_pairs()
+            self.lower_common_block_offset()
 
             # Passes after this point are expensive: Prior to here they should
             # all involve no more than about n log(n) shrinks, but after here
@@ -1482,6 +1490,67 @@ class Shrinker(object):
             t.buffer[:t.blocks[i][0]] in self.__shrinking_prefixes
         )
 
+    def lower_common_block_offset(self):
+        """Sometimes we find ourselves in a situation where changes to one part
+        of the byte stream unlock changes to other parts. Sometimes this is
+        good, but sometimes this can cause us to exhibit exponential slow
+        downs!
+
+        e.g. suppose we had the following:
+
+        m = draw(integers(min_value=0))
+        n = draw(integers(min_value=0))
+        assert abs(m - n) > 1
+
+        If this fails then we'll end up with a loop where on each iteration we
+        reduce each of m and n by 2 - m can't go lower because of n, then n
+        can't go lower because of m.
+
+        This will take us O(m) iterations to complete, which is exponential in
+        the data size, as we gradually zig zag our way towards zero.
+
+        This can only happen if we're failing to reduce the size of the byte
+        stream: The number of iterations that reduce the length of the byte
+        stream is bounded by that length.
+
+        So what we do is this: We keep track of which blocks are changing, and
+        then if there's some non-zero common offset to them we try and minimize
+        them all at once by lowering that offset.
+
+        This may not work, and it definitely won't get us out of all possible
+        exponential slow downs (an example of where it doesn't is where the
+        shape of the blocks changes as a result of this bouncing behaviour),
+        but it fails fast when it doesn't work and gets us out of a really
+        nastily slow case when it does.
+
+        """
+        if len(self.__changed_blocks) <= 1:
+            return
+
+        self.debug('Removing common block offset')
+
+        current = self.shrink_target
+
+        blocked = [current.buffer[u:v] for u, v in current.blocks]
+
+        changed = sorted(self.__changed_blocks)
+
+        ints = [int_from_bytes(blocked[i]) for i in changed]
+        offset = min(ints)
+        if offset == 0:
+            return
+
+        for i in hrange(len(ints)):
+            ints[i] -= offset
+
+        def reoffset(o):
+            new_blocks = list(blocked)
+            for i, v in zip(changed, ints):
+                new_blocks[i] = int_to_bytes(v + o, len(blocked[i]))
+            return self.incorporate_new_buffer(hbytes().join(new_blocks))
+
+        minimize_int(offset, reoffset)
+
     def mark_shrinking(self, blocks):
         """Mark each of these blocks as a shrinking block: That is, lowering
         its value lexicographically may cause less data to be drawn after."""
@@ -1493,8 +1562,27 @@ class Shrinker(object):
             prefix = t.buffer[:t.blocks[i][0]]
             self.__shrinking_prefixes.add(prefix)
 
+    def clear_change_tracking(self):
+        self.__changed_blocks.clear()
+
     def update_shrink_target(self, new_target):
         assert new_target.frozen
+        if self.shrink_target is not None:
+            if new_target.blocks != self.shrink_target.blocks:
+                self.__changed_blocks = set()
+            else:
+                current = self.shrink_target.buffer
+                new = new_target.buffer
+
+                for i, (u, v) in enumerate(self.shrink_target.blocks):
+                    if (
+                        i not in self.__changed_blocks and
+                        current[u:v] != new[u:v]
+                    ):
+                        self.__changed_blocks.add(i)
+        else:
+            self.__changed_blocks = set()
+
         self.shrink_target = new_target
         self.__shrinking_block_cache = {}
         self.__intervals = None
