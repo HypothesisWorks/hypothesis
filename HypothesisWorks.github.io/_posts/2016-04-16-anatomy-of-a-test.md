@@ -12,7 +12,7 @@ What happens when you run a test using Hypothesis? This article will help you un
 <!--more-->
 
 The Python version of Hypothesis uses *decorators* to transform a test function that
-uses Hypothesis into one that does not.
+doesn't use Hypothesis into one that does.
 
 Consider the following example using [py.test](http://pytest.org/latest/) style testing:
 
