@@ -27,7 +27,9 @@ import time
 import zlib
 import base64
 import inspect
+import warnings
 import traceback
+import contextlib
 from random import Random
 
 import attr
@@ -39,8 +41,8 @@ import hypothesis.strategies as st
 from hypothesis import __version__
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, DidNotReproduce, InvalidArgument, DeadlineExceeded, \
-    MultipleFailures, FailedHealthCheck, UnsatisfiedAssumption, \
-    HypothesisDeprecationWarning
+    MultipleFailures, FailedHealthCheck, HypothesisWarning, \
+    UnsatisfiedAssumption, HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
 from hypothesis._settings import Phase, Verbosity, HealthCheck, \
     PrintSettings
@@ -879,6 +881,23 @@ class StateForActualGivenExecution(object):
             report('Flaky example! ' + message)
 
 
+@contextlib.contextmanager
+def fake_subTest(self, msg=None, **__):
+    """Monkeypatch for `unittest.TestCase.subTest` during `@given`.
+
+    If we don't patch this out, each failing example is reported as a
+    seperate failing test by the unittest test runner, which is
+    obviously incorrect. We therefore replace it for the duration with
+    this version.
+    """
+    warnings.warn(
+        'subTest per-example reporting interacts badly with Hypothesis '
+        'trying hundreds of examples, so we disable it for the duration of '
+        'any test that uses `@given`.', HypothesisWarning, stacklevel=2
+    )
+    yield
+
+
 def given(*given_arguments, **given_kwargs):
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
@@ -948,6 +967,8 @@ def given(*given_arguments, **given_kwargs):
             )
             arguments, kwargs, test_runner, search_strategy = processed_args
 
+            runner = getattr(search_strategy, 'runner', None)
+
             state = StateForActualGivenExecution(
                 test_runner, search_strategy, test, settings, random,
                 had_seed=wrapped_test._hypothesis_internal_use_seed
@@ -1001,7 +1022,15 @@ def given(*given_arguments, **given_kwargs):
                 return
 
             try:
-                state.run()
+                if isinstance(runner, TestCase) and hasattr(runner, 'subTest'):
+                    subTest = runner.subTest
+                    try:
+                        setattr(runner, 'subTest', fake_subTest)
+                        state.run()
+                    finally:
+                        setattr(runner, 'subTest', subTest)
+                else:
+                    state.run()
             except BaseException:
                 generated_seed = \
                     wrapped_test._hypothesis_internal_use_generated_seed

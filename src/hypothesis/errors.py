@@ -154,8 +154,16 @@ class FailedHealthCheck(HypothesisException, Warning):
         self.health_check = check
 
 
-class HypothesisDeprecationWarning(HypothesisException, FutureWarning):
-    pass
+class HypothesisWarning(HypothesisException, Warning):
+    """A generic warning issued by Hypothesis."""
+
+
+class HypothesisDeprecationWarning(HypothesisWarning, FutureWarning):
+    """A deprecation warning issued by Hypothesis.
+
+    Actually inherits from FutureWarning, because DeprecationWarning is
+    hidden by the default warnings filter.
+    """
 
 
 class Frozen(HypothesisException):
