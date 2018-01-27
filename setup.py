@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
+import warnings
 
 import setuptools
 
@@ -29,6 +30,16 @@ def local_file(name):
 
 SOURCE = local_file('src')
 README = local_file('README.rst')
+
+setuptools_version = tuple(map(int, setuptools.__version__.split('.')[:2]))
+
+if setuptools_version < (36, 2):
+    # Warning only - very bad if uploading bdist but fine if installing sdist.
+    warnings.warn(
+        'This version of setuptools is too old to correctly store '
+        'conditional dependencies in binary wheels.  For more info, see:  '
+        'https://hynek.me/articles/conditional-python-dependencies/'
+    )
 
 
 # Assignment to placate pyflakes. The actual version is from the exec that
@@ -41,49 +52,38 @@ with open(local_file('src/hypothesis/version.py')) as o:
 assert __version__ is not None
 
 
+# We only support the releases of Django that are supported by the Django
+# core team.  See https://www.djangoproject.com/download/#supported-versions
+django_pin = 'django>=1.8'
+if setuptools_version >= (8, 0):
+    # New versions of setuptools allow us to set very precise pins; older
+    # versions of setuptools are coarser.  We special-case this so users with
+    # old tools can still install an sdist from PyPI.
+    django_pin += ',!=1.9.*,!=1.10.*'
+
 extras = {
     'datetime':  ['pytz'],
     'pytz':  ['pytz'],
     'fakefactory': ['Faker>=0.7'],
     'numpy': ['numpy>=1.9.0'],
     'pytest': ['pytest>=2.8.0'],
+    'django': ['pytz', django_pin],
 }
 
-# Django 2 only supports Python 3, but doesn't have any python_requires
-# markers in its setup.py --- so "pip install django" just fails in
-# Python 2.  So rather than relying on pip, we pin the version of
-# Django on Python 2 ourselves.
-#
-# See https://github.com/HypothesisWorks/hypothesis-python/pull/1008
-if sys.version_info[0] < 3:
-    django_major_pin = '<2'
-else:
-    django_major_pin = '<3'
-
-# We only support the releases of Django that are supported by the Django
-# core team.  See https://www.djangoproject.com/download/#supported-versions
-#
-# New versions of setuptools allow us to set very precise pins; older versions
-# of setuptools are coarser.
-major_setuptools_version = int(setuptools.__version__.split('.')[0])
-if major_setuptools_version >= 8:
-    django_minor_pin = '>=1.8,!=1.9.*,!=1.10.*'
-else:
-    django_minor_pin = '>=1.8'
-
-django_pin = 'django%s,%s' % (django_minor_pin, django_major_pin)
-extras['django'] = ['pytz', django_pin]
-
 extras['faker'] = extras['fakefactory']
-
 extras['all'] = sorted(sum(extras.values(), []))
 
-extras[":python_version == '2.7'"] = ['enum34']
 
 install_requires = ['attrs>=16.0.0', 'coverage']
-
-if sys.version_info[0] < 3:
+# Using an environment marker on enum34 makes the dependency condition
+# independent of the build environemnt, which is important for wheels.
+# https://www.python.org/dev/peps/pep-0345/#environment-markers
+if sys.version_info[0] < 3 and setuptools_version < (8, 0):
+    # Except really old systems, where we give up and install unconditionally
     install_requires.append('enum34')
+else:
+    install_requires.append('enum34; python_version=="2.7"')
+
 
 setuptools.setup(
     name='hypothesis',
