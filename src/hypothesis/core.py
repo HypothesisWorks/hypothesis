@@ -31,6 +31,7 @@ import warnings
 import traceback
 import contextlib
 from random import Random
+from unittest import TestCase
 
 import attr
 from coverage import CoverageData
@@ -968,6 +969,11 @@ def given(*given_arguments, **given_kwargs):
             arguments, kwargs, test_runner, search_strategy = processed_args
 
             runner = getattr(search_strategy, 'runner', None)
+            if isinstance(runner, TestCase) and test.__name__ in dir(TestCase):
+                msg = ('You have applied @given to the method %s, which is '
+                       'used by the unittest runner but is not itself a test.'
+                       '  This is not useful in any way.' % test.__name__)
+                fail_health_check(settings, msg, HealthCheck.not_a_test_method)
 
             state = StateForActualGivenExecution(
                 test_runner, search_strategy, test, settings, random,
