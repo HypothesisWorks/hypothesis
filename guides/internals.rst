@@ -194,6 +194,10 @@ this is that if we successfully deleted the current interval then the interval
 in position ``i`` has been replaced with something else, which is probably the
 next thing we would have tried deleting if we hadn't succeeded (or something
 like it), so we don't want to advance past it.
+This is specific to deletion: If we are just replacing the contents of
+something then we expect it to still be in the same place, so there we increment
+unconditionally.
+Examples of this include ``zero_draws`` and ``minimize_individual_blocks``.
 
 ------------
 The Shrinker
