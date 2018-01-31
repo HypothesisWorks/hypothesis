@@ -105,7 +105,7 @@ so that edits you make are automatically pipped up.
 
 Useful arguments you can add to pytest are `` -n 0``, which will disable build
 parallelism (I find that on my local laptop the startup time is too high to be
-worth it when running single files, so I usually do this), and `` -kfoo` where
+worth it when running single files, so I usually do this), and `` -kfoo`` where
 foo is some substring common to the set of tests you want to run (you can also
 use composite expressions here. e.g. `` -k'foo and not bar'`` will run anything
 containing foo that doesn't also contain bar).
