@@ -137,6 +137,22 @@ calls to it. This allows them to implement a certain amount of decision caching,
 e.g. avoiding trying the same shrink twice, but also gives us a place where we
 can update metadata about the search process.
 
+For objects whose goal is some form of optimisation (Shrinker, Minimizer) one
+of the pieces of metadata they will typically track is a "current target". This
+is typically the best example they have seen so far. By wrapping every call to
+the predicate, we ensure that we never miss an example even when we're passing
+through other things.
+
+For objects whose goal is some broader form of search (currently only
+``ConjectureRunner``) this also allows them to keep track of *other* examples
+of interest. For example, as part of our multiple bug discovery,
+``ConjectureRunner`` keeps track of the smallest example of each distinct
+failure that it has seen, and updates this automatically each time the test
+function is called. This means that if during shrinking we "slip" and find a
+different bug than the one we started with, we will *not* shrink to that, but
+it will get remembered by the runner if it was either novel or better than our
+current example.
+
 ~~~~~~~~~~~
 Weird Loops
 ~~~~~~~~~~~
