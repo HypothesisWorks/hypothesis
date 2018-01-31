@@ -18,7 +18,7 @@ The core engine of Hypothesis is called Conjecture.
 The "fundamental idea" of Conjecture is that you can represent an arbitrary
 randomized test case as a string of bytes, which are basically intended as the
 underlying entropy of some pseudo-random number generator (PRNG).
-Whenever you want to do something "random" you just read the next bytes and
+Whenever you want to do something "random" you read the next bytes and
 do what they tell you to do. By manipulating these bytes, we can achieve
 more interesting effects than pure randomness would allow us to do, while
 retaining the power and ease of use of random testing.
@@ -183,7 +183,7 @@ The more natural way to write this in Python would be:
 
 This way of writing the loop would be *entirely wrong*.
 
-Every time `incorporate_new_buffer` succeeds, it changes the shape of the
+Every time ``incorporate_new_buffer`` succeeds, it changes the shape of the
 current shrink target. This consequently changes the shape of intervals, both
 its particular values and its current length - on each loop iteration the loop
 might stop either because ``i`` increases or because ``len(self.intervals)``
@@ -227,7 +227,7 @@ passes fail to make any improvements.
 Search Passes
 ~~~~~~~~~~~~~
 
-Search passes are just methods on the ``Shrinker`` class in engine.py. They are
+Search passes are methods on the ``Shrinker`` class in engine.py. They are
 designed to take the current shrink target and try a number of things that might
 be sensible shrinks of it.
 
@@ -327,7 +327,7 @@ which collates a number of other issues about shrink quality that are good start
 points for people.
 
 The best place to get started thus is to take a look at those linked issues and
-just jump in and try things! Find one that you think sounds fun. Note that some
+jump in and try things! Find one that you think sounds fun. Note that some
 of them suggest not doing these as your first foray into the shrinker, as some
 are harder than others.
 
