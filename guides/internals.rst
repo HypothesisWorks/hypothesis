@@ -103,11 +103,11 @@ virtualenv where you have run ``pip install -e .``, which installs all the
 dependencies and puts your ``src`` directory in the path of installed packages
 so that edits you make are automatically pipped up.
 
-Useful arguments you can add to pytest are `` -n 0``, which will disable build
+Useful arguments you can add to pytest are ``-n 0``, which will disable build
 parallelism (I find that on my local laptop the startup time is too high to be
-worth it when running single files, so I usually do this), and `` -kfoo`` where
+worth it when running single files, so I usually do this), and ``-kfoo`` where
 foo is some substring common to the set of tests you want to run (you can also
-use composite expressions here. e.g. `` -k'foo and not bar'`` will run anything
+use composite expressions here. e.g. ``-k'foo and not bar'`` will run anything
 containing foo that doesn't also contain bar).
 
 -----------------------
@@ -291,7 +291,7 @@ I often find that it is informative to watch the shrink process in action using
 Hypothesis's verbosity settings. This can give you an idea of what the format
 of your data is, and how the shrink process transforms it.
 
-In particular, it is often useful to run a test with the flag `` -s`` to tell it
+In particular, it is often useful to run a test with the flag ``-s`` to tell it
 not to hide output and the environment variable ``HYPOTHESIS_VERBOSITY_LEVEL=debug``.
 This will give you a very detailed log of what the testing process is running,
 along with information about what passes in the shrinker rare running and how
