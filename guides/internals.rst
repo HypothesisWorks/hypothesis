@@ -49,8 +49,9 @@ so if we can't make something work without such a hack it's not a big deal.
 
 One such example of a hack is the handling of floating point numbers. There are
 a couple of lexicographic shrinks that are always valid but only really make
-sense for our particular encoding of floats. We simply detect when we're working
-on something that is of the right size to be a float and apply those transformations.
+sense for our particular encoding of floats. We check if we're working
+on something that is of the right size to be a float and apply those
+transformations regardless of whether it is actually meant to be a float.
 Worst case scenario it's not a float and they don't work, and we've run a few
 extra test cases.
 
@@ -171,7 +172,7 @@ example:
                 i += 1
 
 
-The more natural way to write this in Python would of course be:
+The more natural way to write this in Python would be:
 
 .. code-block:: python
 
