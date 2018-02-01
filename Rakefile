@@ -10,6 +10,18 @@ RSpec::Core::RakeTask.new(:test)
 
 RuboCop::RakeTask.new
 
+# Monkeypatch build to fail on error.
+# See https://github.com/tildeio/helix/issues/133
+module HelixRuntime
+  class Project
+    alias original_build cargo_build
+
+    def cargo_build
+      raise 'Build failed' unless original_build
+    end
+  end
+end
+
 HelixRuntime::BuildTask.new
 
 task test: :build
