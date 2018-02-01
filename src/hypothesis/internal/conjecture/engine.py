@@ -1227,6 +1227,9 @@ class Shrinker(object):
         buffer = hbytes(buffer[:self.shrink_target.index])
         assert sort_key(buffer) < sort_key(self.shrink_target.buffer)
 
+        if self.shrink_target.buffer.startswith(buffer):
+            return False
+
         if not self.__engine.prescreen_buffer(buffer):
             return False
 
@@ -1297,9 +1300,8 @@ class Shrinker(object):
         # and often actively harmful when run on examples which are "close to
         # shrunk" - the attempts to delete long runs mostly just don't work,
         # and we spend a huge amount of time trying them anyway. The
-        # greedy_interval_deletion pass will achieve the same end result but
+        # adaptive_example_deletion pass will achieve the same end result but
         # is much cheaper when run on close to shrunk examples.
-        self.delta_interval_deletion()
 
         run_expensive_shrinks = False
 
@@ -1313,11 +1315,11 @@ class Shrinker(object):
             self.clear_change_tracking()
 
             self.remove_discarded()
+            self.adaptive_example_deletion()
             self.zero_draws()
             self.minimize_duplicated_blocks()
             self.minimize_individual_blocks()
             self.reorder_blocks()
-            self.greedy_interval_deletion()
             self.lower_dependent_block_pairs()
             self.lower_common_block_offset()
 
@@ -1720,7 +1722,7 @@ class Shrinker(object):
         doing rejection sampling - e.g. as a result of an integer range, or a
         filtered strategy.
 
-        Such data will also be handled by the greedy_interval_deletion pass,
+        Such data will also be handled by the adaptive_example_deletion pass,
         but that pass is necessarily more conservative and will try deleting
         each interval individually. The common case is that all data drawn and
         rejected can just be thrown away immediately in one block, so this pass
@@ -1753,7 +1755,7 @@ class Shrinker(object):
 
     def delta_interval_deletion(self):
         """Attempt to delete every interval in the example, but be more
-        aggressive about it than we are in greedy_interval_deletion.
+        aggressive about it than we are in adaptive_example_deletion.
 
         The idea here is that if we have a long list of, say, tens or
         hundreds of elements, we *could* try deleting each element of the list
@@ -1764,7 +1766,7 @@ class Shrinker(object):
         The approach we use is approximately delta-debugging from Hildebrandt
         and Zeller's "Simplifying failure-inducing input" - we try deleting
         progressively shorter runs, eventually bottoming out in deleting single
-        intervals as per greedy_interval_deletion.
+        intervals as per adaptive_example_deletion.
 
         Note that this is *not* the same as actual delta-debugging on the the
         buffer, because we are deleting intervals instead of bytes. These may
@@ -1791,14 +1793,22 @@ class Shrinker(object):
                     i += k
             k //= 2
 
-    def greedy_interval_deletion(self):
-        """Attempt to delete every interval in the example.
+    def adaptive_example_deletion(self):
+        """Attempt to delete every draw call, plus some short sequences of draw
+        calls.
+
+        The only things this guarantees to attempt to delete are every draw
+        call and every draw call plus its immediate successor (the first
+        non-empty draw call that starts strictly after it). However if this
+        seems to be working pretty well it will do its best to exploit that
+        and adapt to the fact there's currently a lot that it can delete.
 
         This is the main point at which we try to lower the size of the data.
         e.g. if we have two successive draw calls, this will attempt to delete
-        the first and replace it with the second. This also works for pairs of
-        draw calls (as we create a merged interval for adjacent draws at the
-        same level). So, for example, if we have something like:
+        the first and replace it with the second.
+
+        The fact that this will also try deleting the successor call is
+        important. For example, if we have something like:
 
         while many.more(data):
             data.draw(stuff)
@@ -1809,12 +1819,84 @@ class Shrinker(object):
         """
         self.debug('greedy interval deletes')
         i = 0
-        while i < len(self.intervals):
-            u, v = self.intervals[i]
-            if not self.incorporate_new_buffer(
-                self.shrink_target.buffer[:u] + self.shrink_target.buffer[v:]
-            ):
+        while i < len(self.shrink_target.examples):
+            if self.shrink_target.examples[i].length == 0:
                 i += 1
+                continue
+
+            # Note: We do want this fixed rather than changing during this
+            # iteration of the loop.
+            target = self.shrink_target
+
+            def try_delete_range(k):
+                """Can we delete k non-trivial non-overlapping examples
+                starting from i?"""
+                stack = []
+                j = i
+                while k > 0 and j < len(target.examples):
+                    ex = target.examples[j]
+                    if ex.length > 0 and (
+                        not stack or stack[-1][1] <= ex.start
+                    ):
+                        stack.append((ex.start, ex.end))
+                        k -= 1
+                    j += 1
+                assert stack
+                attempt = bytearray(target.buffer)
+                for u, v in reversed(stack):
+                    del attempt[u:v]
+                attempt = hbytes(attempt)
+                if sort_key(attempt) >= sort_key(self.shrink_target.buffer):
+                    return False
+                return self.incorporate_new_buffer(attempt)
+
+            # This is an adaptive pass loosely modelled after timsort. If
+            # little or nothing is deletable here then we don't try any more
+            # deletions than the naive greedy algorithm would, but if it looks
+            # like we have an opportunity to delete a lot then we try to do so.
+
+            # What we're trying to do is to find a large k such that we can
+            # delete k but not k + 1 draws starting from this point, and we
+            # want to do that in O(log(k)) rather than O(k) test executions.
+
+            # We try a quite careful sequence of small shrinks here before we
+            # move on to anything big. This is because if we try to be
+            # aggressive too early on we'll tend to find that we lose out when
+            # the example is "nearly minimal".
+            if try_delete_range(2):
+                if try_delete_range(3) and try_delete_range(4):
+
+                    # At this point it looks like we've got a pretty good
+                    # opportunity for a long run here. We do an exponential
+                    # probe upwards to try and find some k where we can't
+                    # delete many intervals. We do this rather than choosing
+                    # that upper bound to immediately be large because we
+                    # don't really expect k to be huge. If it turns out that
+                    # it is, the subsequent example is going to be so tiny that
+                    # it doesn't really matter if we waste a bit of extra time
+                    # here.
+                    hi = 5
+                    while try_delete_range(hi):
+                        assert hi <= len(target.examples)
+                        hi *= 2
+
+                    # We now know that we can delete the first lo intervals but
+                    # not the first hi. We preserve that property while doing
+                    # a binary search to find the point at which we stop being
+                    # able to delete intervals.
+                    lo = 4
+                    while lo + 1 < hi:
+                        mid = (lo + hi) // 2
+                        if try_delete_range(mid):
+                            lo = mid
+                        else:
+                            hi = mid
+            else:
+                try_delete_range(1)
+            # We unconditionally bump i because we have always tried deleting
+            # one more example than we succeeded at deleting, so we expect the
+            # next example to be undeletable.
+            i += 1
 
     def minimize_duplicated_blocks(self):
         """Find blocks that have been duplicated in multiple places and attempt
@@ -1952,9 +2034,9 @@ class Shrinker(object):
                 i += 1
 
     def interval_deletion_with_block_lowering(self):
-        """This pass tries to delete each interval (as per
-        greedy_interval_deletion) while replacing a block that precedes that
-        interval with its immediate two lexicographical predecessors.
+        """This pass tries to delete each interval while replacing a block that
+        precedes that interval with its immediate two lexicographical
+        predecessors.
 
         We only do this for blocks that are marked as shrinking - that
         is, when we tried lowering them it resulted in a smaller example.

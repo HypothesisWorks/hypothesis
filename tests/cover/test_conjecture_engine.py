@@ -770,7 +770,7 @@ def test_can_delete_intervals(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples', generate_new_examples)
     monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.greedy_interval_deletion
+        Shrinker, 'shrink', Shrinker.adaptive_example_deletion
     )
 
     def f(data):
@@ -1260,7 +1260,7 @@ def test_shrinking_blocks_from_common_offset(monkeypatch):
 
 def test_handle_empty_draws(monkeypatch):
     monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.greedy_interval_deletion)
+        Shrinker, 'shrink', Shrinker.adaptive_example_deletion)
 
     lambda runner: runner.test_function(ConjectureData.for_buffer(
         [1, 1, 0]))
