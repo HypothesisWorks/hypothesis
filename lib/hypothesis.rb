@@ -4,6 +4,7 @@ require 'hypothesis/errors'
 require 'hypothesis/providers'
 require 'hypothesis/engine'
 require 'hypothesis/world'
+require 'hypothesis/debug'
 
 module Hypothesis
   def hypothesis(options = {}, &block)
