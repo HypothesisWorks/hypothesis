@@ -4,8 +4,8 @@ def expect_failure(&block)
   expect(&block).to raise_exception(RSpec::Expectations::ExpectationNotMetError)
 end
 
-RSpec.describe 'some basic hypothesis tests' do
-  it 'should think integer addition is commutative' do
+RSpec.describe 'basic hypothesis tests' do
+  it 'think integer addition is commutative' do
     hypothesis do
       x = given integers
       y = given integers
@@ -13,7 +13,7 @@ RSpec.describe 'some basic hypothesis tests' do
     end
   end
 
-  it 'should be able to find zero values' do
+  it 'are able to find zero values' do
     expect_failure do
       hypothesis do
         x = given integers
@@ -22,7 +22,7 @@ RSpec.describe 'some basic hypothesis tests' do
     end
   end
 
-  it 'should be able to filter out values' do
+  it 'are able to filter out values' do
     hypothesis do
       x = given integers
       assume x != 0
@@ -30,7 +30,7 @@ RSpec.describe 'some basic hypothesis tests' do
     end
   end
 
-  it 'should find that string addition is not commutative' do
+  it 'find that string addition is not commutative' do
     expect_failure do
       hypothesis do
         x = given strings
