@@ -10,6 +10,9 @@ module Hypothesis
   class UnsatisfiedAssumption < Error
   end
 
+  class DataOverflow < Error
+  end
+
   class UsageError < Error
   end
 end
