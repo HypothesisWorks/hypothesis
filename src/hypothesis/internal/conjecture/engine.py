@@ -1291,18 +1291,6 @@ class Shrinker(object):
 
         """
 
-        # This will automatically be run during the normal loop, but it's worth
-        # running once before the coarse passes so they don't spend time on
-        # useless data.
-        self.remove_discarded()
-
-        # We only run this once because delta-debugging is essentially useless
-        # and often actively harmful when run on examples which are "close to
-        # shrunk" - the attempts to delete long runs mostly just don't work,
-        # and we spend a huge amount of time trying them anyway. The
-        # adaptive_example_deletion pass will achieve the same end result but
-        # is much cheaper when run on close to shrunk examples.
-
         run_expensive_shrinks = False
 
         prev = None
@@ -1752,46 +1740,6 @@ class Shrinker(object):
         # discarding if this ever fails. When this next runs explicitly, it
         # will reset the flag if the status changes.
         self.__discarding_failed = not self.incorporate_new_buffer(attempt)
-
-    def delta_interval_deletion(self):
-        """Attempt to delete every interval in the example, but be more
-        aggressive about it than we are in adaptive_example_deletion.
-
-        The idea here is that if we have a long list of, say, tens or
-        hundreds of elements, we *could* try deleting each element of the list
-        individually, but if only a handful of elements of the list matter then
-        this is a bit of a waste of time. Wouldn't it be better if we deleted
-        many of them at once?
-
-        The approach we use is approximately delta-debugging from Hildebrandt
-        and Zeller's "Simplifying failure-inducing input" - we try deleting
-        progressively shorter runs, eventually bottoming out in deleting single
-        intervals as per adaptive_example_deletion.
-
-        Note that this is *not* the same as actual delta-debugging on the the
-        buffer, because we are deleting intervals instead of bytes. These may
-        overlap with each-other.
-
-        """
-
-        self.debug('delta interval deletes')
-
-        k = len(self.intervals) // 2
-        while k > 0:
-            i = 0
-            while i + k <= len(self.intervals):
-                bitmask = [True] * len(self.shrink_target.buffer)
-
-                for u, v in self.intervals[i:i + k]:
-                    for t in range(u, v):
-                        bitmask[t] = False
-
-                if not self.incorporate_new_buffer(hbytes(
-                    b for b, v in zip(self.shrink_target.buffer, bitmask)
-                    if v
-                )):
-                    i += k
-            k //= 2
 
     def adaptive_example_deletion(self):
         """Attempt to delete every draw call, plus some short sequences of draw
