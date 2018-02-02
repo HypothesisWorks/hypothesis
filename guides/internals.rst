@@ -30,7 +30,7 @@ length and among those strings of minimal length is lexicographically (i.e. the
 normal order on strings - find the first byte at which they differ and use that
 to decide) smallest.
 
-Ideally we could think of the shrinker is a generic function that takes a
+Ideally we could think of the shrinker as a generic function that takes a
 string satisfying some predicate and returns the shortlex minimal string that
 also satisfies it.
 This is wrong on several levels: The first is that we only succeed in approximating
