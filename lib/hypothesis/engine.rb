@@ -14,13 +14,17 @@ module Hypothesis
     end
 
     def run
-      while @core_engine.should_continue
+      loop do
         core_id = @core_engine.new_source
         break if core_id.nil?
         @current_source = Source.new(@core_engine, core_id)
         begin
           result = yield(@current_source)
-          @core_engine.finish_interesting(core_id) if is_find && result
+          if is_find && result
+            @core_engine.finish_interesting(core_id)
+          else
+            @core_engine.finish_valid(core_id)
+          end
         rescue UnsatisfiedAssumption
           @core_engine.finish_invalid(core_id)
         rescue DataOverflow
@@ -28,13 +32,13 @@ module Hypothesis
         rescue StandardError
           raise if is_find
           @core_engine.finish_interesting(core_id)
-        else
-          @core_engine.finish_valid(core_id)
         end
       end
-      raise Unsatisfiable if @core_engine.was_unsatisfiable
       core_id = @core_engine.failing_example
-      return if core_id.nil?
+      if core_id.nil?
+        raise Unsatisfiable if @core_engine.was_unsatisfiable
+        return
+      end
 
       @current_source = Source.new(@core_engine, core_id, record_draws: is_find)
       yield @current_source
