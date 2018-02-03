@@ -5,7 +5,7 @@ def expect_failure(&block)
 end
 
 RSpec.describe 'basic hypothesis tests' do
-  it 'think integer addition is commutative' do
+  they 'think integer addition is commutative' do
     hypothesis do
       x = given integers
       y = given integers
@@ -13,7 +13,7 @@ RSpec.describe 'basic hypothesis tests' do
     end
   end
 
-  it 'are able to find zero values' do
+  they 'are able to find zero values' do
     expect_failure do
       hypothesis do
         x = given integers
@@ -22,7 +22,7 @@ RSpec.describe 'basic hypothesis tests' do
     end
   end
 
-  it 'are able to filter out values' do
+  they 'are able to filter out values' do
     hypothesis do
       x = given integers
       assume x != 0
@@ -30,7 +30,7 @@ RSpec.describe 'basic hypothesis tests' do
     end
   end
 
-  it 'find that string addition is not commutative' do
+  they 'find that string addition is not commutative' do
     expect_failure do
       hypothesis do
         x = given strings
