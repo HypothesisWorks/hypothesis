@@ -5,8 +5,9 @@ require 'bundler/setup'
 require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
 require 'helix_runtime/build_task'
+require 'rake/testtask'
 
-RSpec::Core::RakeTask.new(:test)
+RSpec::Core::RakeTask.new(:spec)
 
 RuboCop::RakeTask.new
 
@@ -24,7 +25,12 @@ end
 
 HelixRuntime::BuildTask.new
 
-task test: :build
+Rake::TestTask.new(minitests: :build) do |t|
+  t.test_files = FileList['minitests/**/test_*.rb']
+  t.verbose = true
+end
+
+task test: %i[build spec minitests]
 
 task :format do
   sh 'bundle exec rubocop -a'

@@ -93,3 +93,22 @@ so I've monkey-patched their build system in our Rakefile in order
 to make it error properly in this case.
 
 Can be removed when: The linked issue is fixed.
+
+
+### Stable identifiers from RSpec
+
+Another "I did terrible things to RSpec" entry, sorry. RSpec's
+design here is totally reasonable and sensible and honestly
+probably *is* how you should pass state around, but seems
+to make it impossible to get access to the Example object from
+inside an it block without actually being the definer of the
+block.
+
+See `hypothesis_stable_identifier` for details, but basically I
+couldn't figure out how to get the name of a currently executing
+spec in RSPec from a helper function without some fairly brutal
+hacks where we extract information badly from self.inspect, because
+it's there stored as a string that gets passed in for inspection.
+
+Can be removed when: Someone shows me a better way, or a
+feature is added to RSpec to make this easier.

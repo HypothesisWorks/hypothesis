@@ -12,3 +12,5 @@ Metrics/AbcSize:
   Enabled: false
 Lint/RescueException:
   Enabled: false
+Style/MixinUsage:
+  Enabled: false
