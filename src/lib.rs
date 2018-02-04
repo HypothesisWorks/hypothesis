@@ -81,8 +81,8 @@ ruby! {
 
     def bits(&mut self, id: u64, n_bits: u64) -> Option<u64> {
       match self.children.get_mut(&id) {
-        None => return None,
-        Some(source) => return source.bits(n_bits)
+        Some(source) => source.bits(n_bits).ok(),
+        _ => return None,
       }
     }
   }

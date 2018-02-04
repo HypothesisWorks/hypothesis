@@ -5,6 +5,8 @@ use rand::{ChaChaRng, Rng};
 
 pub type DataStream = Vec<u64>;
 
+pub struct FailedDraw;
+
 #[derive(Debug, Clone)]
 enum BitGenerator {
     Random(ChaChaRng),
@@ -22,11 +24,11 @@ pub struct DataSource {
 }
 
 impl DataSource {
-    pub fn bits(&mut self, n_bits: u64) -> Option<u64> {
+    pub fn bits(&mut self, n_bits: u64) -> Result<u64, FailedDraw> {
         let mut result = match self.bitgenerator {
             BitGenerator::Random(ref mut random) => random.next_u64(),
             BitGenerator::Recorded(ref mut v) => if self.record.len() >= v.len() {
-                return None;
+                return Err(FailedDraw);
             } else {
                 v[self.record.len()]
             },
@@ -39,7 +41,7 @@ impl DataSource {
 
         self.record.push(result);
 
-        return Some(result);
+        return Ok(result);
     }
 
     fn new(generator: BitGenerator) -> DataSource {
