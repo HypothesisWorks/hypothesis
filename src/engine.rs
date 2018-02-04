@@ -76,6 +76,37 @@ impl MainGenerationLoop {
 
     fn shrink_examples(&mut self) -> StepResult {
         assert!(self.shrink_target.status == Status::Interesting);
+        self.binary_search_blocks()?;
+        self.remove_intervals()?;
+        Ok(())
+    }
+
+    fn remove_intervals(&mut self) -> StepResult {
+        // TODO: Actually track the data we need to make this
+        // not quadratic.
+        let mut i = 0;
+        while i < self.shrink_target.record.len() {
+            let start_length = self.shrink_target.record.len();
+
+            let mut j = i + 1;
+            while j < self.shrink_target.record.len() {
+                assert!(j > i);
+                let mut attempt = self.shrink_target.record.clone();
+                attempt.drain(i..j);
+                assert!(attempt.len() + (j - i) == self.shrink_target.record.len());
+                let deleted = self.incorporate(&attempt)?;
+                if !deleted {
+                    j += 1;
+                }
+            }
+            if start_length == self.shrink_target.record.len() {
+                i += 1;
+            }
+        }
+        Ok(())
+    }
+
+    fn binary_search_blocks(&mut self) -> StepResult {
         let mut i = 0;
 
         let mut attempt = self.shrink_target.record.clone();

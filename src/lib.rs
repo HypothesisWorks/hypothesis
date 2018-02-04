@@ -7,17 +7,20 @@
 #![recursion_limit = "128"]
 #![deny(warnings, missing_debug_implementations)]
 
+extern crate core;
 #[macro_use]
 extern crate helix;
 extern crate rand;
 
 mod engine;
 mod data;
+mod distributions;
 
 use std::mem;
 
 use engine::Engine;
 use data::{DataSource, Status};
+use distributions::Repeat;
 
 ruby! {
   class HypothesisCoreDataSource {
@@ -101,6 +104,24 @@ ruby! {
         &mut None => None,
         &mut Some(ref mut source) => source.bits(self.n_bits).ok(),
       }
+    }
+  }
+
+  class HypothesisCoreRepeatValues{
+    struct {
+      repeat: Repeat,
+    }
+
+    def initialize(helix, min_count: u64, max_count: u64, expected_count: f64){
+      return HypothesisCoreRepeatValues{
+        helix, repeat: Repeat::new(min_count, max_count, expected_count)
+      }
+    }
+
+    def should_continue(&mut self, data: &mut HypothesisCoreDataSource) -> Option<bool>{
+      return data.source.as_mut().and_then(|ref mut source| {
+        self.repeat.should_continue(source).ok()
+      })
     }
   }
 }

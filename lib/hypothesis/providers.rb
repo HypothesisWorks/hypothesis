@@ -10,6 +10,27 @@ module Hypothesis
       Hypothesis::Provider::Implementations::CompositeProvider.new(block)
     end
 
+    def repeated(min_count: 0, max_count: 10, average_count: 5.0)
+      local_provider_implementation do |source, block|
+        rep = HypothesisCoreRepeatValues.new(
+          min_count, max_count, average_count
+        )
+        block.call while rep.should_continue(source.wrapped_data)
+      end
+    end
+
+    def lists(element, min_size: 0, max_size: 10, average_size: 10)
+      composite do
+        result = []
+        given repeated(
+          min_count: min_size, max_count: max_size, average_count: average_size
+        ) do
+          result.push given(element)
+        end
+        result
+      end
+    end
+
     def integers
       composite do |source|
         if source.given(bits(1)).positive?
@@ -37,6 +58,12 @@ module Hypothesis
         core
       )
     end
+
+    def local_provider_implementation(&block)
+      Hypothesis::Provider::Implementations::ProviderFromBlock.new(
+        block
+      )
+    end
   end
 
   class Provider
@@ -60,6 +87,16 @@ module Hypothesis
           result = @core_provider.provide(data.wrapped_data)
           raise Hypothesis::DataOverflow if result.nil?
           result
+        end
+      end
+
+      class ProviderFromBlock < Provider
+        def initialize(block)
+          @block = block
+        end
+
+        def provide(data, &block)
+          @block.call(data, block)
         end
       end
     end
