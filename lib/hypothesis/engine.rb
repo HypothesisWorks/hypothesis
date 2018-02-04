@@ -15,36 +15,36 @@ module Hypothesis
 
     def run
       loop do
-        core_id = @core_engine.new_source
-        break if core_id.nil?
-        @current_source = Source.new(@core_engine, core_id)
+        core = @core_engine.new_source
+        break if core.nil?
+        @current_source = Source.new(core)
         begin
           result = yield(@current_source)
           if is_find && result
-            @core_engine.finish_interesting(core_id)
+            @core_engine.finish_interesting(core)
           else
-            @core_engine.finish_valid(core_id)
+            @core_engine.finish_valid(core)
           end
         rescue UnsatisfiedAssumption
-          @core_engine.finish_invalid(core_id)
+          @core_engine.finish_invalid(core)
         rescue DataOverflow
-          @core_engine.finish_overflow(core_id)
+          @core_engine.finish_overflow(core)
         rescue Exception
           raise if is_find
-          @core_engine.finish_interesting(core_id)
+          @core_engine.finish_interesting(core)
         end
       end
-      core_id = @core_engine.failing_example
-      if core_id.nil?
+      core = @core_engine.failing_example
+      if core.nil?
         raise Unsatisfiable if @core_engine.was_unsatisfiable
         return
       end
 
       if is_find
-        @current_source = Source.new(@core_engine, core_id, record_draws: true)
+        @current_source = Source.new(core, record_draws: true)
         yield @current_source
       else
-        @current_source = Source.new(@core_engine, core_id, print_draws: true)
+        @current_source = Source.new(core, print_draws: true)
 
         begin
           yield @current_source
@@ -81,30 +81,31 @@ module Hypothesis
   end
 
   class Source
-    attr_reader :draws, :print_log, :print_draws
+    attr_reader :draws, :print_log, :print_draws, :wrapped_data
 
-    def initialize(
-      core_engine, core_id, print_draws: false, record_draws: false
-    )
-      @core_engine = core_engine
-      @core_id = core_id
+    def initialize(wrapped_data, print_draws: false, record_draws: false)
+      @wrapped_data = wrapped_data
 
       @draws = [] if record_draws
       @print_log = [] if print_draws
     end
 
-    def bits(n)
-      result = @core_engine.bits(@core_id, n)
-      raise Hypothesis::DataOverflow if result.nil?
+    def given(provider)
+      result = local_given(provider)
+      draws&.push(result)
       result
     end
 
     def given(provider = nil, name: nil, &block)
       provider ||= block
-      result = provider.call(self)
+      result = provider.provide(self)
       draws&.push(result)
       print_log&.push([name, result.inspect])
       result
+    end
+
+    def local_given(provider)
+      provider.provide(self)
     end
 
     def assume(condition)
