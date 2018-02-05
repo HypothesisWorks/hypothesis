@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import string
 
-from hypothesis import strategies as st
 from hypothesis import given
+from hypothesis import strategies as st
 
 IDENTIFIER_CHARS = string.ascii_letters + string.digits + '_'
 

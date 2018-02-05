@@ -22,8 +22,8 @@ import time
 
 import pytest
 
-from hypothesis import settings as Settings
 from hypothesis import find
+from hypothesis import settings as Settings
 from hypothesis.errors import Timeout, NoSuchExample
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import lists, floats, booleans, integers, \

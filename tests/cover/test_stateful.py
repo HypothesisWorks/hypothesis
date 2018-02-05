@@ -22,8 +22,8 @@ from collections import namedtuple
 
 import pytest
 
-from hypothesis import settings as Settings
 from hypothesis import assume
+from hypothesis import settings as Settings
 from hypothesis.errors import Flaky, InvalidDefinition
 from hypothesis.control import current_build_context
 from tests.common.utils import raises, capture_out, \

@@ -23,8 +23,8 @@ import traceback
 
 import pytest
 
-from hypothesis import strategies as st
 from hypothesis import HealthCheck, event, given, example, settings
+from hypothesis import strategies as st
 from hypothesis.statistics import collector
 
 

@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import strategies as st
 from hypothesis import given
+from hypothesis import strategies as st
 from hypothesis.errors import Frozen
 from hypothesis.internal.conjecture.data import Status, StopTest, \
     ConjectureData

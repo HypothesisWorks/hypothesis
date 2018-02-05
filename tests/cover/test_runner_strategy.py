@@ -21,8 +21,8 @@ from unittest import TestCase
 
 import pytest
 
-from hypothesis import strategies as st
 from hypothesis import find, given
+from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.stateful import GenericStateMachine
 
