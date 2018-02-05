@@ -21,8 +21,8 @@ from random import Random
 
 import pytest
 
-from hypothesis import strategies as st
 from hypothesis import HealthCheck, given, settings, unlimited
+from hypothesis import strategies as st
 from tests.common.utils import non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes, hrange

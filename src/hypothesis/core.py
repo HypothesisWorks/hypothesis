@@ -41,9 +41,10 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     MultipleFailures, FailedHealthCheck, UnsatisfiedAssumption, \
     HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
-from hypothesis._settings import settings as Settings
 from hypothesis._settings import Phase, Verbosity, HealthCheck, \
-    PrintSettings, note_deprecation
+    PrintSettings
+from hypothesis._settings import settings as Settings
+from hypothesis._settings import note_deprecation
 from hypothesis.executors import new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics

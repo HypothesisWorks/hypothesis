@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import re
 import time
-from random import seed as seed_random
 from random import Random
+from random import seed as seed_random
 
 import pytest
 

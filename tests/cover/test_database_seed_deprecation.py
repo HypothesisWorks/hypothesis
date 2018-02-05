@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import strategies as st
 from hypothesis import seed, given, settings
+from hypothesis import strategies as st
 from tests.common.utils import validate_deprecation
 from hypothesis.database import InMemoryExampleDatabase
 

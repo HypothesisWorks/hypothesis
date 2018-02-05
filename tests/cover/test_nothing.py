@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import strategies as st
 from hypothesis import find, given
+from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import assert_no_examples
 

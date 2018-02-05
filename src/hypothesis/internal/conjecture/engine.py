@@ -25,8 +25,8 @@ from collections import defaultdict
 
 import attr
 
-from hypothesis import settings as Settings
 from hypothesis import Phase, Verbosity, HealthCheck
+from hypothesis import settings as Settings
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import Counter, ceil, hbytes, hrange, \
     int_to_text, int_to_bytes, benchmark_time, int_from_bytes, \

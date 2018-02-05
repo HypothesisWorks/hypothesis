@@ -23,8 +23,8 @@ from random import Random
 import pytest
 
 import hypothesis.internal.conjecture.floats as flt
-from hypothesis import strategies as st
 from hypothesis import given, assume, example
+from hypothesis import strategies as st
 from hypothesis.internal.compat import ceil, floor, hbytes, int_to_bytes, \
     int_from_bytes
 from hypothesis.internal.floats import float_to_int

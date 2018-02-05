@@ -17,8 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import strategies as st
 from hypothesis import find, note, given, settings
+from hypothesis import strategies as st
 from tests.common.utils import checks_deprecated_behaviour
 
 

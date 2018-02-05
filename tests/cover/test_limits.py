@@ -17,8 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import strategies as st
 from hypothesis import given, settings
+from hypothesis import strategies as st
 
 
 def test_max_examples_are_respected():
