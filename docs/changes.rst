@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 --------------------
+3.44.26 - 2018-02-06
+--------------------
+
+This release fixes some formatting issues in the Hypothesis source code.
+It should have no externally visible effects.
+
+--------------------
 3.44.25 - 2018-02-05
 --------------------
 
