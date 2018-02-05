@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 --------------------
+3.44.25 - 2018-02-05
+--------------------
+
+This release changes the way in which Hypothesis tries to shrink the size of
+examples. It probably won't have much impact, but might make shrinking faster
+in some cases. It is unlikely but not impossible that it will change the
+resulting examples.
+
+--------------------
 3.44.24 - 2018-01-27
 --------------------
 
