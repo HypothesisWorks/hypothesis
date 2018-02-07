@@ -108,8 +108,8 @@ def test_minimal_non_boundary_float():
 
 
 def test_can_minimal_standard_complex_numbers():
-    minimal(complex_numbers(), lambda x: x.imag != 0) == 0j
-    minimal(complex_numbers(), lambda x: x.real != 0) == 1
+    assert minimal(complex_numbers(), lambda x: x.imag != 0) == 1j
+    assert minimal(complex_numbers(), lambda x: x.real != 0) == 1
 
 
 def test_minimal_float_is_zero():
