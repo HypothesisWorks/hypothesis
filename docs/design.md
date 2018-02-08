@@ -79,21 +79,28 @@ The following are currently *not* part of the intended feature set
 of Hypothesis for Ruby:
 
 * Calls to `hypothesis` may not be nested.
-* None of [the functionality for adding explicit failures](https://hypothesis.readthedocs.io/en/latest/reproducing.html)
-  (but RSpec prints the random seed for your test run, and that will
-  be respected, so the seeding aspect of this happens for free).
 * There will be no equivalent to the [stateful testing](https://hypothesis.readthedocs.io/en/latest/stateful.html)
   (but the very interactive nature of tests in the Ruby API means that
   the generic state machine stuff is just something you can write in
   your normal tests).
 * Testing will not be coverage guided (to be fair, it's barely coverage
   guided in the Python version right now...)
-* Only one failure will be reported per test (though possibly behind
-  the scenes we will track multiple failures, so that if you fix one
-  and it uncovers another it will then show you that one).
 * There will probably not be a health check system as part of the initial
   release, or if there is it will be much more basic.
+* Any equivalent to [`@reproduce_failure`](https://hypothesis.readthedocs.io/en/latest/reproducing.html#reproducing-an-example-with-with-reproduce-failure)
 
+## Possible omissions
+
+The following will be in this initial project on a "time permitting" basis:
+If everything else is going well and we've got plenty of time, I'll do them,
+but I'm currently anticipating a tightish schedule so these are probably
+for a future release:
+
+* Reporting multiple failing examples per test (this will definitely be supported
+  in the core engine, and if it's easy to support it then it will
+  also be included in the front-end. I currently think it will be
+  easy, but if it's not it will be dropped).
+* [adding explicit examples](https://hypothesis.readthedocs.io/en/latest/reproducing.html#providing-explicit-examples).
 
 ## Current Project State
 
