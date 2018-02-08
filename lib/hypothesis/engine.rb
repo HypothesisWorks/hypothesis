@@ -92,7 +92,7 @@ module Hypothesis
     end
 
     def given(provider = nil, name: nil, &block)
-      top_level = @depth == 0
+      top_level = @depth.zero?
 
       begin
         @depth += 1
