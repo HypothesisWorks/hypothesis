@@ -75,11 +75,11 @@ module Hypothesis
     end
   end
 
-  def given(provider = nil, &block)
+  def given(*args, &block)
     if World.current_engine.nil?
       raise UsageError, 'Cannot call given outside of a hypothesis block'
     end
-    World.current_engine.current_source.given(provider, &block)
+    World.current_engine.current_source.given(*args, &block)
   end
 
   def assume(condition)
