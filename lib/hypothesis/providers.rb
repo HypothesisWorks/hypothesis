@@ -7,13 +7,13 @@ module Hypothesis
     end
 
     def composite(&block)
-      Hypothesis::Provider::Implementations::CompositeProvider.new(self, block)
+      Hypothesis::Provider::Implementations::CompositeProvider.new(block)
     end
 
     def integers
-      composite do
-        if given(bits(1)).positive?
-          given(bits(64))
+      composite do |source|
+        if source.given(bits(1)).positive?
+          source.given(bits(64))
         else
           0
         end
@@ -21,8 +21,8 @@ module Hypothesis
     end
 
     def strings
-      composite do
-        if given(bits(1)).positive?
+      composite do |source|
+        if source.given(bits(1)).positive?
           'a'
         else
           'b'
@@ -41,37 +41,13 @@ module Hypothesis
 
   class Provider
     module Implementations
-      class CompositeObject
-        def initialize(parent, source)
-          @parent = parent
-          @source = source
-        end
-
-        def given(provider)
-          @source.given(provider)
-        end
-
-        def assume(condition)
-          @source.assume(condition)
-        end
-
-        def respond_to_missing?(name)
-          @parent.respond_to? name
-        end
-
-        def method_missing(name, *args, &block)
-          @parent.send(name, *args, &block)
-        end
-      end
-
       class CompositeProvider < Provider
-        def initialize(parent, block)
-          @parent = parent
+        def initialize(block)
           @block = block
         end
 
         def provide(source)
-          CompositeObject.new(@parent, source).instance_eval(&@block)
+          @block.call(source)
         end
       end
 
