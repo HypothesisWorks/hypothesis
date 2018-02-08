@@ -88,18 +88,24 @@ module Hypothesis
 
       @draws = [] if record_draws
       @print_log = [] if print_draws
+      @depth = 0
     end
 
     def given(provider = nil, name: nil, &block)
-      provider ||= block
-      result = provider.provide(self)
-      draws&.push(result)
-      print_log&.push([name, result.inspect])
-      result
-    end
+      top_level = @depth == 0
 
-    def local_given(provider)
-      provider.provide(self)
+      begin
+        @depth += 1
+        provider ||= block
+        result = provider.provide(self)
+        if top_level
+          draws&.push(result)
+          print_log&.push([name, result.inspect])
+        end
+        result
+      ensure
+        @depth -= 1
+      end
     end
 
     def assume(condition)

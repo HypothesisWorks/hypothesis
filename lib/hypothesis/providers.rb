@@ -48,7 +48,7 @@ module Hypothesis
         end
 
         def given(provider)
-          @source.local_given(provider)
+          @source.given(provider)
         end
 
         def assume(condition)
