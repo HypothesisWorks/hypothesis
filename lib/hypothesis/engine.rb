@@ -90,12 +90,6 @@ module Hypothesis
       @print_log = [] if print_draws
     end
 
-    def given(provider)
-      result = local_given(provider)
-      draws&.push(result)
-      result
-    end
-
     def given(provider = nil, name: nil, &block)
       provider ||= block
       result = provider.provide(self)
