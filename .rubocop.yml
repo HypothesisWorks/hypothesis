@@ -14,3 +14,5 @@ Lint/RescueException:
   Enabled: false
 Style/MixinUsage:
   Enabled: false
+Style/MultilineBlockChain:
+  Enabled: false
