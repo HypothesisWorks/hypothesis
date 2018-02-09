@@ -800,22 +800,11 @@ class ConjectureRunner(object):
 
         self.clear_secondary_key()
 
-        while len(self.shrunk_examples) < len(self.interesting_examples):
-            target, example = min([
-                (k, v) for k, v in self.interesting_examples.items()
-                if k not in self.shrunk_examples],
-                key=lambda kv: (sort_key(kv[1].buffer), sort_key(repr(kv[0]))),
-            )
-            self.debug('Shrinking %r' % (target,))
-
-            def predicate(d):
-                if d.status < Status.INTERESTING:
-                    return False
-                return d.interesting_origin == target
-
-            self.shrink(example, predicate)
-
-            self.shrunk_examples.add(target)
+        self.multishrink(
+            self.interesting_examples.values(),
+            predicate=lambda s: s.status == Status.INTERESTING,
+            classifier=lambda s: s.interesting_origin,
+        )
 
     def clear_secondary_key(self):
         if self.has_existing_examples():
@@ -847,13 +836,11 @@ class ConjectureRunner(object):
                         self.settings.database.delete(
                             self.secondary_key, c)
 
-    def shrink(self, example, predicate):
-        s = self.new_shrinker(example, predicate)
-        s.shrink()
-        return s.shrink_target
-
-    def new_shrinker(self, example, predicate):
-        return Shrinker(self, example, predicate)
+    def multishrink(self, examples, predicate, classifier):
+        MultiShrinker(
+            self,
+            examples, predicate, classifier
+        ).shrink()
 
     def prescreen_buffer(self, buffer):
         """Attempt to rule out buffer as a possible interesting candidate.
@@ -1187,6 +1174,98 @@ class TargetSelector(object):
         return t, result
 
 
+Boring = UniqueIdentifier('Boring')
+
+
+class MultiShrinker(object):
+    """A Multishrinker takes a number of examples, a predicate, and some
+    classification function. The goal is to simultaneously find a small example
+    of each observed outcome of the classification function that satisfies the
+    predicate.
+
+    An example of this is with failing tests, where we have possibly
+    many different bugs. The predicate is that it's a failing test (i.e.
+    status is Status.INTERESTING) and the classification is the
+    interestingness_origin.
+
+    """
+
+    def __init__(self, engine, initial, predicate, classifier):
+        self.__engine = engine
+        self.__predicate = predicate
+        self.__classifier = classifier
+
+        self.__best = {}
+        self.__shrinkers = {}
+
+        self.__fully_reduced = set()
+
+        for example in initial:
+            self.classify(example)
+
+    def debug(self, msg):
+        self.__engine.debug(msg)
+
+    def classify(self, test_data):
+        if not self.__predicate(test_data):
+            return Boring
+        result = self.__classifier(test_data)
+        try:
+            existing = self.__best[result]
+            replace = sort_key(test_data.buffer) < sort_key(existing.buffer)
+        except KeyError:
+            replace = True
+        if replace:
+            self.__fully_reduced.discard(result)
+            self.__best[result] = test_data
+        return result
+
+    def shrinker(self, label):
+        current_target = self.__best[label]
+        try:
+            current_shrinker = self.__shrinkers[label]
+            if current_shrinker.shrink_target is current_target:
+                return current_shrinker
+        except KeyError:
+            pass
+
+        result = Shrinker(
+            self.__engine,
+            current_target, lambda t: self.classify(t) == label
+        )
+        self.__shrinkers[label] = result
+        return result
+
+    def has_unshrunk_labels(self):
+        return len(self.__fully_reduced) < len(self.__best)
+
+    def target_label(self):
+        return max(
+            set(self.__best) - self.__fully_reduced,
+            key=lambda l: sort_key(self.__best[l].buffer)
+        )
+
+    def mark_label_shrunk(self, label):
+        self.__fully_reduced.add(label)
+
+    def shrink(self):
+        while self.has_unshrunk_labels():
+            self.shrink_target_label()
+
+    def shrink_target_label(self):
+        label = self.target_label()
+        self.debug('Shrinking %r' % (label,))
+        shrinker = self.shrinker(label)
+        if shrinker.is_trivial():
+            self.mark_label_shrunk(label)
+            return
+        initial = shrinker.shrink_target
+        shrinker.single_greedy_shrink_step()
+        if shrinker.shrink_target is initial:
+            shrinker.escape_local_minimum()
+            self.mark_label_shrunk(label)
+
+
 class Shrinker(object):
     """A shrinker is a child object of a ConjectureRunner which is designed to
     manage the associated state of a particular shrink problem.
@@ -1217,6 +1296,7 @@ class Shrinker(object):
         self.__predicate = predicate
         self.__discarding_failed = False
         self.__shrinking_prefixes = set()
+        self.__run_expensive_shrinks = False
 
         # We keep track of the current best example on the shrink_target
         # attribute.
@@ -1258,29 +1338,22 @@ class Shrinker(object):
     def debug(self, msg):
         self.__engine.debug(msg)
 
-    def shrink(self):
-        """Run the full set of shrinks and update shrink_target.
+    def is_trivial(self):
+        """We assume that if an all-zero block of bytes is an interesting
+        example then we're not going to do better than that.
 
-        This method is "mostly idempotent" - calling it twice is unlikely to
-        have any effect, though it has a non-zero probability of doing so.
+        This might not technically be true: e.g. for integers() |
+        booleans() the simplest example is actually [1, 0]. Missing this
+        case is fairly harmless and this allows us to make various
+        simplifying assumptions about the structure of the data
+        (principally that we're never operating on a block of all zero
+        bytes so can use non-zeroness as a signpost of complexity).
 
         """
-        # We assume that if an all-zero block of bytes is an interesting
-        # example then we're not going to do better than that.
-        # This might not technically be true: e.g. for integers() | booleans()
-        # the simplest example is actually [1, 0]. Missing this case is fairly
-        # harmless and this allows us to make various simplifying assumptions
-        # about the structure of the data (principally that we're never
-        # operating on a block of all zero bytes so can use non-zeroness as a
-        # signpost of complexity).
-        if (
+        return (
             not any(self.shrink_target.buffer) or
             self.incorporate_new_buffer(hbytes(len(self.shrink_target.buffer)))
-        ):
-            return
-
-        self.greedy_shrink()
-        self.escape_local_minimum()
+        )
 
     def greedy_shrink(self):
         """Run a full set of greedy shrinks (that is, ones that will only ever
@@ -1291,48 +1364,50 @@ class Shrinker(object):
 
         """
 
-        run_expensive_shrinks = False
-
         prev = None
         while prev is not self.shrink_target:
             prev = self.shrink_target
+            self.single_greedy_shrink_step()
 
-            # We reset our tracking of what changed at the beginning of the
-            # loop so that we don't get distracted by things that change once
-            # and then are stable thereafter.
-            self.clear_change_tracking()
+    def single_greedy_shrink_step(self):
+        prev = self.shrink_target
 
-            self.remove_discarded()
-            self.adaptive_example_deletion()
-            self.zero_draws()
-            self.minimize_duplicated_blocks()
-            self.minimize_individual_blocks()
-            self.reorder_blocks()
-            self.lower_dependent_block_pairs()
-            self.lower_common_block_offset()
+        # We reset our tracking of what changed at the beginning of the
+        # loop so that we don't get distracted by things that change once
+        # and then are stable thereafter.
+        self.clear_change_tracking()
 
-            # Passes after this point are expensive: Prior to here they should
-            # all involve no more than about n log(n) shrinks, but after here
-            # they may be quadratic or worse. Running all of the passes until
-            # they make no changes is important for correctness, but nothing
-            # says we have to run all of them on each run! So if the fast
-            # passes still seem to be making useful changes, we restart the
-            # loop here and give them another go.
-            # To avoid the case where the expensive shrinks unlock a trivial
-            # change in one of the previous passes causing this to become much
-            # more expensive by doubling the number of times we have to run
-            # them to get to run the expensive passes again, we make this
-            # decision "sticky" - once it's been useful to run the expensive
-            # changes at least once, we always run them.
-            if prev is self.shrink_target:
-                run_expensive_shrinks = True
+        self.remove_discarded()
+        self.adaptive_example_deletion()
+        self.zero_draws()
+        self.minimize_duplicated_blocks()
+        self.minimize_individual_blocks()
+        self.reorder_blocks()
+        self.lower_dependent_block_pairs()
+        self.lower_common_block_offset()
 
-            if not run_expensive_shrinks:
-                continue
+        # Passes after this point are expensive: Prior to here they should
+        # all involve no more than about n log(n) shrinks, but after here
+        # they may be quadratic or worse. Running all of the passes until
+        # they make no changes is important for correctness, but nothing
+        # says we have to run all of them on each run! So if the fast
+        # passes still seem to be making useful changes, we restart the
+        # loop here and give them another go.
+        # To avoid the case where the expensive shrinks unlock a trivial
+        # change in one of the previous passes causing this to become much
+        # more expensive by doubling the number of times we have to run
+        # them to get to run the expensive passes again, we make this
+        # decision "sticky" - once it's been useful to run the expensive
+        # changes at least once, we always run them.
+        if prev is self.shrink_target:
+            self.__run_expensive_shrinks = True
 
-            self.interval_deletion_with_block_lowering()
-            self.pass_to_interval()
-            self.reorder_bytes()
+        if not self.__run_expensive_shrinks:
+            return
+
+        self.interval_deletion_with_block_lowering()
+        self.pass_to_interval()
+        self.reorder_bytes()
 
     @property
     def blocks(self):
