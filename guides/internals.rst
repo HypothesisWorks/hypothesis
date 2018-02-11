@@ -269,7 +269,7 @@ have failed to make the input any smaller, we then turn them on.
 
 This allows the shrinker to switch from a good but slightly timid mode while its
 input is large into a more aggressive DELETE ALL THE THINGS mode once that stops
-working. By that point ideally we've made our input small enough that quadratic
+working. By that point we've usually made our input small enough that quadratic
 complexity is acceptable.
 
 We turn these on once and then they stay on. The reason for this is to avoid a
