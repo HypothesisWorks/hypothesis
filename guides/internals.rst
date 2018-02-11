@@ -16,12 +16,21 @@ Bird's Eye View Concepts
 The core engine of Hypothesis is called Conjecture.
 
 The "fundamental idea" of Conjecture is that you can represent an arbitrary
-randomized test case as a string of bytes, which are basically intended as the
-underlying entropy of some pseudo-random number generator (PRNG).
+randomized test case as the sequence of bytes read from some pseudo-random
+number generator (PRNG).
 Whenever you want to do something "random" you read the next bytes and
-do what they tell you to do. By manipulating these bytes, we can achieve
+do what they tell you to do.
+But these bytes didn't *have* to come from a PRNG, and we can run the test
+given any byte sequence we like. By manipulating the choice of bytes, we can achieve
 more interesting effects than pure randomness would allow us to do, while
 retaining the power and ease of use of random testing.
+
+The greatest strength of this idea is that we have a single source of truth
+for what an example should look like: Every byte sequence is one that *could*
+have come from a PRNG, and thus is a valid thing to try for our test.
+The only ways it can fail to be a valid test input are for it to be too short
+or for it to not satisfy one of the test's preconditions, and both are easily
+detectable.
 
 The idea of shrinking in particular is that once we have this representation,
 we can shrink arbitrary test cases based on it. We try to produce a string that
@@ -33,19 +42,18 @@ to decide) smallest.
 Ideally we could think of the shrinker as a generic function that takes a
 string satisfying some predicate and returns the shortlex minimal string that
 also satisfies it.
-This is wrong on several levels: The first is that we only succeed in approximating
-such a minimal string. The second is that we are only interested in minimizing
-things where the predicate goes through the Hypothesis API, which lets us track
-a lot of info about how the data is used and use that to guide the process.
+
+We depart from this ideal in two ways:
+
+* we can only *approximate* such a minimal string. Finding the actual minimum is
+  intractable in general.
+* we are only interested in minimizing things where the predicate goes through
+  the Hypothesis API, which lets us track how the data is used and use that to
+  guide the process.
 
 We then use a number of different transformations of the string to try and
 reduce our input. These vary from principled general transformations to shameless
-hacks that special case something we need to work well. We try to aim for mostly
-the former, but the nice thing about this model is that the underlying representation
-is fully general and we are free to try whatever we want and it will never result
-in us doing the wrong thing, so hacks are only a problem to the degree that they
-result in messy code and fragile heuristics, they're never a correctness issue,
-so if we can't make something work without such a hack it's not a big deal.
+hacks that special case something we need to work well.
 
 One such example of a hack is the handling of floating point numbers. There are
 a couple of lexicographic shrinks that are always valid but only really make
@@ -181,13 +189,19 @@ The more natural way to write this in Python would be:
                 self.shrink_target.buffer[:u] + self.shrink_target.buffer[v:]
             )
 
-This way of writing the loop would be *entirely wrong*.
+This is not equivalent in this case, and would exhibit the wrong behaviour.
 
 Every time ``incorporate_new_buffer`` succeeds, it changes the shape of the
 current shrink target. This consequently changes the shape of intervals, both
 its particular values and its current length - on each loop iteration the loop
 might stop either because ``i`` increases or because ``len(self.intervals)``
 decreases.
+
+We do not reset ``i`` to zero on success, as this would cause us to retry deleting
+things that we have already tried. This *might* work, but is less likely to.
+In the event that none of the earlier deletions succeed, this causes us to do
+retry the entire prefix uselessly, which can result in a pass taking O(n^2) time
+to do O(n) deletions.
 
 An additional quirk is that we only increment ``i`` on failure. The reason for
 this is that if we successfully deleted the current interval then the interval
@@ -204,7 +218,7 @@ The Shrinker
 ------------
 
 The shrinking part of Hypothesis is organised into a single class called ``Shrinker``
-that lives in engine.py.
+that lives in ``engine.py``.
 
 Its job is to take an initial ``ConjectureData`` object and some predicate that
 it satisfies, and to try to produce a simpler ``ConjectureData`` object that
@@ -231,7 +245,7 @@ passes fail to make any improvements.
 Search Passes
 ~~~~~~~~~~~~~
 
-Search passes are methods on the ``Shrinker`` class in engine.py. They are
+Search passes are methods on the ``Shrinker`` class in ``engine.py``. They are
 designed to take the current shrink target and try a number of things that might
 be sensible shrinks of it.
 
