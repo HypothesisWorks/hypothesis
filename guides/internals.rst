@@ -87,8 +87,10 @@ that means we can do things like replacing an integer with a smaller one.
 Testing
 -------
 
-The Hypothesis test suite is rather large, but there are a couple of areas in
-particular that are useful to know about when making engine changes.
+For general information about how to test Hypothesis, take a look at
+the `testing guide <testing-hypothesis.rst>`_, but there are a couple
+of areas that it's worth specifically highlighting for making changes
+to the engine:
 
 The first is `tests/cover/test_conjecture_engine.py <https://github.com/HypothesisWorks/hypothesis-python/blob/master/tests/cover/test_conjecture_engine.py>`_,
 which is a set of unit tests designed to put the engine into particular scenarios to exercise specific behaviours,
@@ -99,25 +101,6 @@ The other set of tests that are worth knowing about are the quality tests,
 in `tests/quality <https://github.com/HypothesisWorks/hypothesis-python/tree/master/tests/quality>`_.
 These assert specific hard to satisfy properties about the examples that Hypothesis finds -
 either their existence, or something about the final shrunk result.
-
-To run a specific test file manually, you can use pytest. I usually use the
-following invocation:
-
-.. code-block::
-
-    python -m pytest tests/cover/test_conjecture_engine.py
-
-You will need to have Hypothesis installed locally to run these. I recommend a
-virtualenv where you have run ``pip install -e .``, which installs all the
-dependencies and puts your ``src`` directory in the path of installed packages
-so that edits you make are automatically pipped up.
-
-Useful arguments you can add to pytest are ``-n 0``, which will disable build
-parallelism (I find that on my local laptop the startup time is too high to be
-worth it when running single files, so I usually do this), and ``-kfoo`` where
-foo is some substring common to the set of tests you want to run (you can also
-use composite expressions here. e.g. ``-k'foo and not bar'`` will run anything
-containing foo that doesn't also contain bar).
 
 -----------------------
 Engine Design Specifics

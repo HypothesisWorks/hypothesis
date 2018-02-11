@@ -1,6 +1,13 @@
-==============================
-Writing Tests *for* Hypothesis
-==============================
+==================
+Testing Hypothesis
+==================
+
+This is a guide to the process of testing Hypothesis itself, both how to
+run its tests and how to to write new ones.
+
+--------------------------
+General Testing Philosophy
+--------------------------
 
 The test suite for Hypothesis is unusually powerful - as you might hope! -
 but the secret is actually more about attitude than technology.
@@ -37,3 +44,56 @@ Further reading: How `SQLite is tested <https://sqlite.org/testing.html>`_,
 (for inspiration, *not* implementation).
 Dan Luu writes about `fuzz testing <https://danluu.com/testing/>`_ and
 `broken processes <https://danluu.com/wat/>`_, among other things.
+
+---------------------------------------
+Setting up a virtualenv to run tests in
+---------------------------------------
+
+If you want to run individual tests rather than relying on the make tasks
+(which you probably will), it's easiest to do this in a virtualenv.
+
+The following will give you a working virtualenv for running tests in:
+
+.. code-block:: bash
+
+  pip install virtualenv
+  python -m virtualenv testing-venv 
+
+  # On Windows: testing-venv\Scripts\activate
+  source testing-venv/bin/activate
+
+  # Can also use pip install -e .[all] to get
+  # all optional dependencies
+  pip install -e .
+
+  # Test specific dependencies.
+  pip install pytest-xdist flaky
+
+Now whenever you want to run tests you can just activate the virtualenv
+using ``source testing-venv/bin/activate`` or ``testing-venv\Scripts\activate``
+and all of the dependencies will be available to you and your local copy
+of Hypothesis will be on the path (so any edits will be picked up automatically
+and you don't need to reinstall it in the local virtualenv).
+
+-------------
+Running Tests
+-------------
+
+To run a specific test file manually, you can use pytest. I usually use the
+following invocation:
+
+.. code-block::
+
+    python -m pytest tests/cover/test_conjecture_engine.py
+
+You will need to have Hypothesis installed locally to run these. I recommend a
+virtualenv where you have run ``pip install -e .``, which installs all the
+dependencies and puts your ``src`` directory in the path of installed packages
+so that edits you make are automatically pipped up.
+
+Useful arguments you can add to pytest are ``-n 0``, which will disable build
+parallelism (I find that on my local laptop the startup time is too high to be
+worth it when running single files, so I usually do this), and ``-kfoo`` where
+foo is some substring common to the set of tests you want to run (you can also
+use composite expressions here. e.g. ``-k'foo and not bar'`` will run anything
+containing foo that doesn't also contain bar).
