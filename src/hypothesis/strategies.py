@@ -928,9 +928,10 @@ def random_module():
 
 @cacheable
 @defines_strategy
-def builds(target, *args, **kwargs):
+def builds(hypothesis_internal_target=None, *args, **kwargs):
     """Generates values by drawing from ``args`` and ``kwargs`` and passing
-    them to ``target`` in the appropriate argument position.
+    them to ``hypothesis_internal_target`` in the appropriate argument
+    position.
 
     e.g. ``builds(target, integers(), flag=booleans())`` would draw an
     integer ``i`` and a boolean ``b`` and call ``target(i, flag=b)``.
@@ -945,22 +946,33 @@ def builds(target, *args, **kwargs):
     the target.
 
     """
+    if hypothesis_internal_target is None:
+        try:
+            hypothesis_internal_target = kwargs.pop('target')
+        except KeyError:
+            raise TypeError('`builds()` must receive an argument for the target we are '
+                            'building, either as the `hypothesis_internal_target` argument or'
+                            ' (deprecated) the `target` keyword argument')
+
+        note_deprecation('The `target` argument to `builds()` is deprecated. '
+                         'Use `hypothesis_internal_target` instead.')
     if infer in args:
         # Avoid an implementation nightmare juggling tuples and worse things
         raise InvalidArgument('infer was passed as a positional argument to '
                               'builds(), but is only allowed as a keyword arg')
-    hints = get_type_hints(target.__init__ if isclass(target) else target)
+    hints = get_type_hints(hypothesis_internal_target.__init__
+                           if isclass(hypothesis_internal_target) else hypothesis_internal_target)
     for kw in [k for k, v in kwargs.items() if v is infer]:
         if kw not in hints:
             raise InvalidArgument(
                 'passed %s=infer for %s, but %s has no type annotation'
-                % (kw, target.__name__, kw))
+                % (kw, hypothesis_internal_target.__name__, kw))
         kwargs[kw] = from_type(hints[kw])
-    required = required_args(target, args, kwargs)
+    required = required_args(hypothesis_internal_target, args, kwargs)
     for ms in set(hints) & (required or set()):
         kwargs[ms] = from_type(hints[ms])
     return tuples(tuples(*args), fixed_dictionaries(kwargs)).map(
-        lambda value: target(*value[0], **value[1])
+        lambda value: hypothesis_internal_target(*value[0], **value[1])
     )
 
 

@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import math
 import decimal
 import fractions
+import collections
 from datetime import date, time, datetime, timedelta
 
 import pytest
@@ -27,6 +28,7 @@ import pytest
 import hypothesis.strategies as ds
 from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.internal.reflection import nicerepr
 
 
@@ -223,6 +225,29 @@ def test_validates_args(fn, args):
 )
 def test_produces_valid_examples_from_args(fn, args):
     fn(*args).example()
+
+
+def test_build_class_with_target_kwarg():
+    NamedTupleWithTargetField = collections.namedtuple('Something', ['target'])
+    ds.builds(NamedTupleWithTargetField, target=ds.integers())
+
+
+@checks_deprecated_behaviour
+def test_builds_can_specify_target_with_target_kwarg():
+    # wish deprecation warning were issued here:
+    strategy = ds.builds(target=lambda x: x, x=ds.integers())
+
+    # instead we only get the warning here:
+    strategy.example()
+
+
+def test_builds_raises_with_no_target():
+    with pytest.raises(TypeError):
+        # wish TypeError were raised here
+        strategy = ds.builds()
+
+        # instead we only get the ValueError here:
+        strategy.example()
 
 
 def test_tuples_raise_error_on_bad_kwargs():
