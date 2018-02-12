@@ -16,11 +16,11 @@ Bird's Eye View Concepts
 The core engine of Hypothesis is called Conjecture.
 
 The "fundamental idea" of Conjecture is that you can represent an arbitrary
-randomized test case as the sequence of bytes read from some pseudo-random
-number generator (PRNG).
-Whenever you want to do something "random" you read the next bytes and
-do what they tell you to do.
-But these bytes didn't *have* to come from a PRNG, and we can run the test
+randomized test case as the sequence of bytes read from the pseudo-random
+number generator (PRNG) that produced it.
+Whenever the test did something "random" it actually read the next bytes and
+did what they told it to do.
+But those bytes didn't *have* to come from a PRNG, and we can run the test
 given any byte sequence we like. By manipulating the choice of bytes, we can achieve
 more interesting effects than pure randomness would allow us to do, while
 retaining the power and ease of use of random testing.
