@@ -8,10 +8,10 @@ author: alexwlchan
 ---
 
 If you watch [the Hypothesis changelog][changelog], you'll notice the rate of releases sped up dramatically in 2017.
-We released 113 different versions, sometimes multiple times a day.
+We released over a hundred different versions, sometimes multiple times a day.
 
 This is all thanks to our continuous release process.
-We've completely automated the process of releasing, so every pull request that changes code gets a new release.
+We've completely automated the process of releasing, so every pull request that changes code gets a new release, without any human input.
 In this post, I'll explain how our continuous releases work, and why we find it so useful.
 
 [changelog]: https://hypothesis.readthedocs.io/en/latest/changes.html
@@ -27,8 +27,7 @@ This meant that releases were somewhat infrequent, and features spent a long tim
 The pace of development picked up in 2017 -- partly as new maintainers arrived, and partly work for David's PhD -- and we wanted to be able to release more frequently.
 We decided to automate the entire release process.
 
-Now, when you create a pull request that changes the Hypothesis code --anything that gets installed by pip, not the tests or docs -- you have to include a `RELEASE.rst` file, which describes your change.
-
+Now, when you create a pull request that changes the Hypothesis code -- anything that gets installed by pip, not the tests or docs -- you have to include a `RELEASE.rst` file, which describes your change.
 Here's an example from [a recent pull request][recent]:
 
     RELEASE_TYPE: patch
@@ -62,7 +61,7 @@ For example:
 These two changes are saved as a new commit, and that commit gets tagged as the new release.
 The tag and the commit are pushed to GitHub, and then CI builds a new package and publishes it to PyPI.
 
-So with no manual intervention, every code change triggers a new release, and it's usually available within half an hour of merging the pull request.
+So with no very little extra work, every code change triggers a new release, and it's usually available within half an hour of merging the pull request.
 
 [recent]: https://github.com/HypothesisWorks/hypothesis-python/pull/1101
 [semver]: https://semver.org/
@@ -74,14 +73,14 @@ So with no manual intervention, every code change triggers a new release, and it
 Moving to continuous releases has been amazing.
 
 Our releases happen much more quickly.
-Rather than waiting for somebody to do a manual release, every patch is available as soon as our tests confirm it's okay.
+Rather than waiting for somebody to do it manually, every patch is available as soon as our tests confirm it's okay.
 If something's been merged, it's either available for download, or it will be very shortly.
 
 Automation also makes our release process more reliable.
 Manual steps have scope for error, and we've had a few dodgy releases in the past.
-This process has cut over 100 releases, near flawlessly.
+This process has cut over 100 releases near flawlessly.
 
-Because every pull request gets a new release, we're also doing smaller releases.
+Because we have one release per pull request, we're doing smaller releases as well.
 This means we have much better changelogs -- in the past, a release might contain multiple changes, and it was easy to overlook or forget something.
 No more!
 It's also made new bugs easier to find.
@@ -102,7 +101,7 @@ When I go to a repo with a bug report, see that a bugfix was merged two weeks ag
 I've started using this in my other repos -- both these scripts exactly, and derivatives of the same idea.
 
 If you'd like to try this yourself (and I'd really encourage you to do so!), all the scripts for this process are under the same MPL license as Hypothesis itself.
-Look in the [scripts directory][scripts].
+Look in the [scripts directory][scripts] of the main repo.
 In particular, `check-release-file.py` looks for a release note on pull requests, and `deploy.py` is what actually cuts the release.
 
 [scripts]: https://github.com/HypothesisWorks/hypothesis-python/tree/master/scripts
