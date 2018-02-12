@@ -57,7 +57,7 @@ The following will give you a working virtualenv for running tests in:
 .. code-block:: bash
 
   pip install virtualenv
-  python -m virtualenv testing-venv 
+  python -m virtualenv testing-venv
 
   # On Windows: testing-venv\Scripts\activate
   source testing-venv/bin/activate
@@ -79,21 +79,62 @@ and you don't need to reinstall it in the local virtualenv).
 Running Tests
 -------------
 
-To run a specific test file manually, you can use pytest. I usually use the
-following invocation:
+In order to run tests outside of the make/tox/etc set up, you'll need an
+environment where Hypothesis is on the path and all of the testing dependencies
+are installed.
+We recommend doing this inside a virtualenv as described in the previous section.
+
+All testing is done using `pytest <https://docs.pytest.org/en/latest/>`_,
+with a couple of plugins installed. For advanced usage we recommend reading the
+pytest documentation, but this section will give you a primer in enough of the
+common commands and arguments to get started.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Selecting Which Files to Run
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following invocation runs all of the tests in the file
+`tests/cover/test_conjecture_engine.py`:
 
 .. code-block::
 
     python -m pytest tests/cover/test_conjecture_engine.py
 
-You will need to have Hypothesis installed locally to run these. I recommend a
-virtualenv where you have run ``pip install -e .``, which installs all the
-dependencies and puts your ``src`` directory in the path of installed packages
-so that edits you make are automatically pipped up.
+If you want to run multiple files you can pass them all as arguments, and if
+you pass a directory then it will run all files in that directory.
+For example the following runs all the files in `test_conjecture_engine.py`
+and `test_slippage.py`
 
-Useful arguments you can add to pytest are ``-n 0``, which will disable build
-parallelism (I find that on my local laptop the startup time is too high to be
-worth it when running single files, so I usually do this), and ``-kfoo`` where
-foo is some substring common to the set of tests you want to run (you can also
-use composite expressions here. e.g. ``-k'foo and not bar'`` will run anything
-containing foo that doesn't also contain bar).
+.. code-block::
+
+    python -m pytest tests/cover/test_conjecture_engine.py tests/cover/test_slippage.py
+
+If you were running this in bash (if you're not sure: if you're not on Windows
+you probably are) you could also use the syntax:
+
+.. code-block::
+
+    python -m pytest tests/cover/test_{conjecture_engine,slippage}.py
+
+And the following would run all tests under `tests/cover`:
+
+.. code-block::
+
+    python -m pytest tests/cover
+
+~~~~~~~~~~~~~~~~
+Useful Arguments
+~~~~~~~~~~~~~~~~
+
+Some useful arguments to pytest include:
+
+* You can pass ``-n 0`` to turn off ``pytest-xdist``'s parallel test execution.
+  Sometimes for running just a small number of tests its startup time is longer
+  than the time it saves (this will vary from system to system), so this can
+  be helpful if you find yourself waiting on test runners to start a lot.
+* You can use ``-k`` to select a subset of tests to run. This matches on substrings
+  of the test names. For example ``-kfoo`` will only run tests that have "foo" as
+  a substring of their name. You can also use composite expressions here.
+  e.g. ``-k'foo and not bar'`` will run anything containing foo that doesn't
+  also contain bar. [More information on how to select tests to run can be found
+  in the pytest documentation](https://docs.pytest.org/en/latest/usage.html#specifying-tests-selecting-tests).
