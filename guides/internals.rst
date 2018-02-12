@@ -117,7 +117,7 @@ There are a number of cases where we find ourself with a user-provided function
 (where the "user" might still be something that is entirely our code) and we
 want to pass a whole bunch of different examples to it in order to achieve some
 result. Currently this includes each of the main engine, the Shrinker (in
-engine.py) and the minimizer, but there are likely to be more in future.
+``engine.py``) and the minimizer, but there are likely to be more in future.
 
 We typically organise such things in terms of an object that you create with
 the function and possibly an initial argument that stores these on self and
