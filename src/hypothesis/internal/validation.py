@@ -18,7 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-from numbers import Rational
+from numbers import Rational, Real
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import integer_types
@@ -66,6 +66,20 @@ def check_valid_bound(value, name):
         return
     if math.isnan(value):
         raise InvalidArgument(u'Invalid end point %s=%r' % (name, value))
+
+
+@check_function
+def check_valid_magnitude(value, name):
+    """Checks that value is either unspecified, or a non-negaive valid interval bound.
+
+    Otherwise raises InvalidArgument.
+
+    """
+    if value is None:
+        return
+    if isinstance(value, Real):
+        if value < 0 or math.isnan(value):
+            raise InvalidArgument(u'Invalid magnitude %s=%r' % (name, value))
 
 
 @check_function

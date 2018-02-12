@@ -41,7 +41,8 @@ from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
 from hypothesis.internal.validation import check_type, try_convert, \
     check_strategy, check_valid_size, check_valid_bound, \
-    check_valid_sizes, check_valid_integer, check_valid_interval
+    check_valid_sizes, check_valid_integer, check_valid_interval, \
+    check_valid_magnitude
 
 __all__ = [
     'nothing',
@@ -417,12 +418,51 @@ def floats(
 
 @cacheable
 @defines_strategy_with_reusable_values
-def complex_numbers():
+def complex_numbers(
+    min_magnitude=0, max_magnitude=None, allow_infinity=None, allow_nan=None
+):
     """Returns a strategy that generates complex numbers.
 
-    Examples from this strategy shrink by shrinking their component real
-    and imaginary parts.
+    This strategy views a complex number as a vector in the complex plane
+    with some magnitude (length) and argument (angle).  If you would prefer
+    to define complex numbers in terms of real and imaginary parts, you can
+    do so with::
+
+        my_complex_numbers = builds(complex, floats(), floats())
+
+    ``min_magnitude`` and ``max_magnitude`` must be positive real numbers,
+    or None for the upper limit.
+    TODO: describe inf and nan arguments here once behaviour is set
+
+    Examples from this strategy shrink by shrinking their magnitude as for
+    `~hypothesis.strategies.floats`, and simplifying the ratio between the
+    real and imaginary parts.
     """
+
+    # Check that both magnitude bounds are positive
+    # Check that both bounds are instances of numbers.Real (see issue #814)
+    # Check that low bound is lower than high bound
+    # Check that not
+    #  max_magnitude is not None and
+    #  allow_infinity and
+    #  isfinite(max_magnitude)
+    # If allow_nan is None: allow_nan = max_magnitude is None
+
+    min_magnitude = try_convert(float, min_magnitude, 'min_magnitude')
+    max_magnitude = try_convert(float, max_magnitude, 'max_magnitude')
+
+    check_valid_magnitude(min_magnitude, 'min_magnitude')
+    check_valid_magnitude(max_magnitude, 'max_magnitude')
+    check_valid_interval(min_magnitude, max_magnitude, 'min_magnitude', 'max_magnitude')
+
+    if allow_infinity is None:
+        allow_infinity = bool(max_magnitude is None)
+    elif allow_infinity:
+        if max_magnitude is not None:
+            raise InvalidArgument(
+                'Cannot have allow_infinity=%r with max_magnitude' % (allow_infinity)
+            )
+
     from hypothesis.searchstrategy.numbers import ComplexStrategy
     return ComplexStrategy(
         tuples(floats(), floats())
