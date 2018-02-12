@@ -9,20 +9,20 @@ run its tests and how to to write new ones.
 General Testing Philosophy
 --------------------------
 
-The test suite for Hypothesis is unusually powerful --- as you might hope! ---
+The test suite for Hypothesis is unusually powerful - as you might hope! -
 but the secret is actually more about attitude than technology.
 
 The key is that we treat any bug in Hypothesis as a bug in our test suite
-too --- and think about the kinds of bugs that might not be caught, then write
+too - and think about the kinds of bugs that might not be caught, then write
 tests that would catch them.
 
 We also use a variety of tools to check our code automatically.  This includes
 formatting, import order, linting, and doctests (so examples in docs don't
-break).  All of this is checked in CI --- which means that once the build is
+break).  All of this is checked in CI - which means that once the build is
 green, humans can all focus on meaningful review rather than nitpicking
 operator spacing.
 
-Similarly, we require all code to have tests with 100% branch coverage --- as
+Similarly, we require all code to have tests with 100% branch coverage - as
 a starting point, not the final goal.
 
 - Requiring full coverage can't guarantee that we've written all the tests
@@ -30,7 +30,7 @@ a starting point, not the final goal.
   result), but less than full coverage guarantees that there's some code we're
   not testing at all.
 - Tests beyond full coverage generally aim to demonstrate that a particular
-  feature works, or that some subtle failure case is not present --- often
+  feature works, or that some subtle failure case is not present - often
   because when it was found and fixed, someone wrote a test to make sure it
   couldn't come back!
 
