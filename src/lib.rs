@@ -124,6 +124,20 @@ ruby! {
       })
     }
   }
+
+  class HypothesisCoreIntegers{
+    struct {
+        bitlengths: distributions::Sampler,
+    }
+    def initialize(helix){
+      return HypothesisCoreIntegers{helix,bitlengths: distributions::good_bitlengths()};
+    }
+    def provide(&mut self, data: &mut HypothesisCoreDataSource) -> Option<i64>{
+      data.source.as_mut().and_then(|ref mut source| {
+        distributions::integer_from_bitlengths(source, &self.bitlengths).ok()
+      })
+    }
+  }
 }
 
 fn mark_child_status(engine: &mut Engine, child: &mut HypothesisCoreDataSource, status: Status) {

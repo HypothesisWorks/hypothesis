@@ -32,13 +32,7 @@ module Hypothesis
     end
 
     def integers
-      composite do |source|
-        if source.given(bits(1)).positive?
-          source.given(bits(64))
-        else
-          0
-        end
-      end
+      from_hypothesis_core HypothesisCoreIntegers.new
     end
 
     def strings
