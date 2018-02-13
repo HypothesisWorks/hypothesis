@@ -44,4 +44,19 @@ RSpec.describe 'printing examples' do
       end
     end
   end
+
+  it 'does not include nested givens in printing' do
+    expect do
+      hypothesis do
+        value = given(composite do |source|
+          source.given integers
+          source.given integers
+          source.given integers
+        end)
+        expect(value).to eq(0)
+      end
+    end.to raise_exception(RSpec::Expectations::ExpectationNotMetError) do |ex|
+      expect(ex.to_s.scan(/Given/).count).to eq(1)
+    end
+  end
 end

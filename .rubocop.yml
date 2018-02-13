@@ -16,3 +16,7 @@ Style/MixinUsage:
   Enabled: false
 Style/MultilineBlockChain:
   Enabled: false
+Style/MethodMissing:
+  Enabled: false
+Style/MultilineBlockChain:
+  Enabled: false
