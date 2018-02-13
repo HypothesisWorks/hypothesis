@@ -59,4 +59,15 @@ RSpec.describe 'printing examples' do
       expect(ex.to_s.scan(/Given/).count).to eq(1)
     end
   end
+
+  it 'includes Given in inspect as well as to_s' do
+    expect do
+      hypothesis do
+        n = given integers
+        expect(n).to eq(0)
+      end
+    end.to raise_exception do |ex|
+      expect(ex.inspect).to match(/Given #1/)
+    end
+  end
 end

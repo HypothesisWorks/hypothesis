@@ -41,9 +41,14 @@ module Hypothesis
     # as a string.
     begin
       is_rspec = is_a? RSpec::Core::ExampleGroup
+      # We do our coverage testing inside rspec, so this will
+      # never trigger! Though we also don't currently have a
+      # test that covers it outside of rspec...
+      # :nocov:
     rescue NameError
       is_rspec = false
     end
+    # :nocov:
 
     if is_rspec
       return [
@@ -60,7 +65,9 @@ module Hypothesis
     end
     # This should never happen unless something very strange is
     # going on.
+    # :nocov:
     raise 'BUG: Somehow we have no caller!'
+    # :nocov:
   end
 
   def hypothesis(options = {}, &block)
