@@ -238,8 +238,9 @@ impl Engine {
 
     pub fn next_source(&mut self) -> Option<DataSource> {
         assert!(self.state == EngineState::ReadyToProvide);
-        self.await_loop_response();
         self.state = EngineState::AwaitingCompletion;
+
+        self.await_loop_response();
 
         let mut local_result = None;
         mem::swap(&mut local_result, &mut self.loop_response);
@@ -264,6 +265,7 @@ impl Engine {
     fn consume_test_result(&mut self, result: TestResult) -> () {
         assert!(self.state == EngineState::AwaitingCompletion);
         self.state = EngineState::ReadyToProvide;
+
         match result.status {
             Status::Interesting => self.best_example = Some(result.clone()),
             _ => (),
