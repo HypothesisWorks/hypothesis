@@ -135,6 +135,20 @@ def test_complex_numbers_magnitude_range_empty():
         complex_numbers(min_magnitude=3, max_magnitude=2).example()
 
 
+def test_complex_numbers_max_magnitude_finite_allow_inf():
+    with pytest.raises(InvalidArgument):
+        complex_numbers(max_magnitude=2, allow_infinity=True).example()
+
+
+def test_complex_numbers_max_magnitude_infinite_allow_inf():
+    complex_numbers(max_magnitude=float(u'inf'), allow_infinity=True).example()
+
+
+def test_complex_numbers_max_magnitude_allow_nan():
+    with pytest.raises(InvalidArgument):
+        complex_numbers(max_magnitude=2, allow_nan=True).example()
+
+
 def test_does_not_error_if_min_size_is_bigger_than_default_size():
     lists(integers(), min_size=50).example()
     sets(integers(), min_size=50).example()

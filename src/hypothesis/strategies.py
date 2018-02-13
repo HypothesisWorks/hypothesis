@@ -455,13 +455,22 @@ def complex_numbers(
     check_valid_magnitude(max_magnitude, 'max_magnitude')
     check_valid_interval(min_magnitude, max_magnitude, 'min_magnitude', 'max_magnitude')
 
+    if max_magnitude == float(u'inf'):
+        max_magnitude = None
+
     if allow_infinity is None:
         allow_infinity = bool(max_magnitude is None)
-    elif allow_infinity:
-        if max_magnitude is not None:
-            raise InvalidArgument(
-                'Cannot have allow_infinity=%r with max_magnitude' % (allow_infinity)
-            )
+    elif allow_infinity and max_magnitude is not None:
+        raise InvalidArgument(
+            'Cannot have allow_infinity=%r with max_magnitude' % (allow_infinity)
+        )
+
+    if allow_nan is None:
+        allow_nan = bool(max_magnitude is None)
+    elif allow_nan and max_magnitude is not None:
+        raise InvalidArgument(
+            'Cannot have allow_nan=%r, with max_magnitude' % (allow_nan)
+        )
 
     from hypothesis.searchstrategy.numbers import ComplexStrategy
     return ComplexStrategy(
