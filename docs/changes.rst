@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+-------------------
+3.45.0 - 2018-02-13
+-------------------
+
+This release fixes :func:`~hypothesis.strategies.builds` so that ``target``
+can be used as a keyword argument for passing values to the target. The target
+itself can still be specified as a keyword argument, but that behavior is now
+deprecated. The target should be provided as the first positional argument.
+
 --------------------
 3.44.26 - 2018-02-06
 --------------------
