@@ -937,7 +937,7 @@ def random_module():
 
 @cacheable
 @defines_strategy
-def builds(*target_and_args, **kwargs):
+def builds(*callable_and_args, **kwargs):
     """Generates values by drawing from ``args`` and ``kwargs`` and passing
     them to the callable (provided as the first positional argument) in the
     appropriate argument position.
@@ -955,8 +955,8 @@ def builds(*target_and_args, **kwargs):
     the callable.
 
     """
-    if target_and_args:
-        target, args = target_and_args[0], target_and_args[1:]
+    if callable_and_args:
+        target, args = callable_and_args[0], callable_and_args[1:]
         if not callable(target):
             raise InvalidArgument(
                 'The first positional argument to builds() must be a callable '
