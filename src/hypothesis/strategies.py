@@ -936,8 +936,8 @@ def random_module():
 @defines_strategy
 def builds(*target_and_args, **kwargs):
     """Generates values by drawing from ``args`` and ``kwargs`` and passing
-    them to ``hypothesis_internal_target`` in the appropriate argument
-    position.
+    them to the target (provided as the first positional argument) in the
+    appropriate argument position.
 
     e.g. ``builds(target, integers(), flag=booleans())`` would draw an
     integer ``i`` and a boolean ``b`` and call ``target(i, flag=b)``.
@@ -971,7 +971,7 @@ def builds(*target_and_args, **kwargs):
             target = kwargs.pop('target')
         except KeyError:
             raise TypeError('builds() must receive an argument for the target we are '
-                            'building, either as the hypothesis_internal_target argument or'
+                            'building, either as the the first positional argument or'
                             ' (deprecated) the target keyword argument')
 
     if infer in args:
