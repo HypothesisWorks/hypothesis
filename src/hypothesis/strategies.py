@@ -966,14 +966,6 @@ def builds(*target_and_args, **kwargs):
        raise InvalidArgument('No target was provided to builds().'
                              'Specify it as the first positional argument.')
 
-    if target is None:
-        try:
-            target = kwargs.pop('target')
-        except KeyError:
-            raise TypeError('builds() must receive an argument for the target we are '
-                            'building, either as the the first positional argument or'
-                            ' (deprecated) the target keyword argument')
-
     if infer in args:
         # Avoid an implementation nightmare juggling tuples and worse things
         raise InvalidArgument('infer was passed as a positional argument to '
