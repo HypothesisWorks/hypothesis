@@ -953,7 +953,7 @@ def builds(*target_and_args, **kwargs):
 
     """
     if target_and_args:
-        target, *args = target_and_args
+        target, args = target_and_args
         if not callable(target):
             raise InvalidArgument('The first positional argument to `builds()` must be a callable'
                                   'target to construct.')
