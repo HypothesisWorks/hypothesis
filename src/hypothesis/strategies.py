@@ -117,13 +117,16 @@ def cacheable(fn):
 
 
 def base_defines_strategy(force_reusable):
-    """Returns a decorator for strategy functions. If force_reusable is True, the generated
-    values are assumed to be reusable, i.e. immutable and safe to cache, across multiple test
+    """Returns a decorator for strategy functions.
+
+    If force_reusable is True, the generated values are assumed to be
+    reusable, i.e. immutable and safe to cache, across multiple test
     invocations.
 
     """
     def decorator(strategy_definition):
-        """A decorator that registers the function as a strategy and makes it lazily evaluated."""
+        """A decorator that registers the function as a strategy and makes it
+        lazily evaluated."""
         from hypothesis.searchstrategy.lazy import LazyStrategy
         _strategies.add(strategy_definition.__name__)
 
@@ -963,8 +966,8 @@ def builds(*target_and_args, **kwargs):
                          'Provide it as the first positional argument instead.')
         target = kwargs.pop('target')
     else:
-       raise InvalidArgument('No target was provided to builds().'
-                             'Specify it as the first positional argument.')
+        raise InvalidArgument('No target was provided to builds().'
+                              'Specify it as the first positional argument.')
 
     if infer in args:
         # Avoid an implementation nightmare juggling tuples and worse things
