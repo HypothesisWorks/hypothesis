@@ -22,7 +22,6 @@ enum LoopExitReason {
 enum LoopCommand {
     RunThis(DataSource),
     Finished(LoopExitReason, MainGenerationLoop),
-    UnexpectedTermination,
 }
 
 #[derive(Debug)]
@@ -60,13 +59,16 @@ impl MainGenerationLoop {
 
     fn loop_body(&mut self) -> StepResult {
         self.generate_examples()?;
-        self.shrink_examples()?;
+        if self.shrink_target.status == Status::Interesting {
+            self.shrink_examples()?;
+        }
         return Err(LoopExitReason::Complete);
     }
 
     fn generate_examples(&mut self) -> StepResult {
         while self.valid_examples < self.max_examples
             && self.shrink_target.status != Status::Interesting
+            && self.invalid_examples < 10 * self.max_examples
         {
             let r = self.random.gen();
             self.execute(DataSource::from_random(r))?;
@@ -190,6 +192,7 @@ pub struct Engine {
     state: EngineState,
 
     // Communication channels with the main testing loop
+    handle: Option<thread::JoinHandle<()>>,
     receiver: Receiver<LoopCommand>,
     sender: SyncSender<TestResult>,
 }
@@ -205,14 +208,6 @@ impl Engine {
         let (send_local, recv_remote) = sync_channel(1);
         let (send_remote, recv_local) = sync_channel(1);
 
-        let engine = Engine {
-            best_example: None,
-            loop_response: None,
-            sender: send_local,
-            receiver: recv_local,
-            state: EngineState::ReadyToProvide,
-        };
-
         let main_loop = MainGenerationLoop {
             max_examples: max_examples,
             random: ChaChaRng::from_seed(seed),
@@ -225,11 +220,18 @@ impl Engine {
             interesting_examples: 0,
         };
 
-        thread::spawn(move || {
+        let handle = thread::spawn(move || {
             main_loop.run();
         });
 
-        return engine;
+        Engine {
+            best_example: None,
+            loop_response: None,
+            sender: send_local,
+            receiver: recv_local,
+            handle: Some(handle),
+            state: EngineState::ReadyToProvide,
+        }
     }
 
     pub fn mark_finished(&mut self, source: DataSource, status: Status) -> () {
@@ -275,20 +277,16 @@ impl Engine {
             return ();
         }
 
-        match self.sender.send(result) {
-            Ok(_) => (),
-            Err(_) => self.loop_went_oops(),
-        }
-    }
-
-    fn loop_went_oops(&mut self) {
-        self.loop_response = Some(LoopCommand::UnexpectedTermination)
+        // NB: Deliberately not matching on result. If this fails,
+        // that's OK - it means the loop has shut down and when we ask
+        // for data from it we'll get its shutdown response.
+        let _ = self.sender.send(result);
     }
 
     pub fn was_unsatisfiable(&self) -> bool {
         match &self.loop_response {
             &Some(LoopCommand::Finished(_, ref main_loop)) => {
-                main_loop.interesting_examples > 0 || main_loop.valid_examples > 0
+                main_loop.interesting_examples == 0 && main_loop.valid_examples == 0
             }
             _ => false,
         }
@@ -301,11 +299,41 @@ impl Engine {
         }
     }
 
+    fn await_thread_termination(&mut self) {
+        let mut maybe_handle = None;
+        mem::swap(&mut self.handle, &mut maybe_handle);
+        if let Some(handle) = maybe_handle {
+            if let Err(boxed_msg) = handle.join() {
+                // FIXME: This is awful but as far as I can tell this is
+                // genuinely the only way to get the actual message out of the
+                // panic in the child thread! It's boxed as an Any, and the
+                // debug of Any just says "Any". Fortunately the main loop is
+                // very much under our control so this doesn't matter too much
+                // here, but yuck!
+                if let Some(msg) = boxed_msg.downcast_ref::<&str>() {
+                    panic!(msg.to_string());
+                } else if let Some(msg) = boxed_msg.downcast_ref::<String>() {
+                    panic!(msg.clone());
+                } else {
+                    panic!("BUG: Unexpected panic format in main loop");
+                }
+            }
+        }
+    }
+
     fn await_loop_response(&mut self) -> () {
         if self.loop_response.is_none() {
             match self.receiver.recv() {
-                Ok(response) => self.loop_response = Some(response),
-                Err(_) => self.loop_went_oops(),
+                Ok(response) => {
+                    self.loop_response = Some(response);
+                    if self.has_shutdown() {
+                        self.await_thread_termination();
+                    }
+                }
+                Err(_) => {
+                    self.await_thread_termination();
+                    panic!("BUG: Unexpected silent termination of generation loop.")
+                }
             }
         }
     }
