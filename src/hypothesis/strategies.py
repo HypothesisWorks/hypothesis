@@ -117,7 +117,13 @@ def cacheable(fn):
 
 
 def base_defines_strategy(force_reusable):
+    """Returns a decorator for strategy functions. If force_reusable is True, the generated
+    values are assumed to be reusable, i.e. immutable and safe to cache, across multiple test
+    invocations.
+
+    """
     def decorator(strategy_definition):
+        """A decorator that registers the function as a strategy and makes it lazily evaluated."""
         from hypothesis.searchstrategy.lazy import LazyStrategy
         _strategies.add(strategy_definition.__name__)
 
@@ -192,7 +198,7 @@ def just(value):
     return JustStrategy(value)
 
 
-@defines_strategy
+@defines_strategy_with_reusable_values
 def none():
     """Return a strategy which only generates None.
 
