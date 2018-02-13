@@ -955,24 +955,24 @@ def builds(*target_and_args, **kwargs):
     if target_and_args:
         target, args = target_and_args
         if not callable(target):
-            raise InvalidArgument('The first positional argument to `builds()` must be a callable'
+            raise InvalidArgument('The first positional argument to builds() must be a callable'
                                   'target to construct.')
     elif 'target' in kwargs:
         args = []
-        note_deprecation('Specifying the target as a keyword argument to `builds()` is deprecated. '
+        note_deprecation('Specifying the target as a keyword argument to builds() is deprecated. '
                          'Provide it as the first positional argument instead.')
         target = kwargs.pop('target')
     else:
-       raise InvalidArgument('No target was provided to `builds()`.'
+       raise InvalidArgument('No target was provided to builds().'
                              'Specify it as the first positional argument.')
 
     if target is None:
         try:
             target = kwargs.pop('target')
         except KeyError:
-            raise TypeError('`builds()` must receive an argument for the target we are '
-                            'building, either as the `hypothesis_internal_target` argument or'
-                            ' (deprecated) the `target` keyword argument')
+            raise TypeError('builds() must receive an argument for the target we are '
+                            'building, either as the hypothesis_internal_target argument or'
+                            ' (deprecated) the target keyword argument')
 
     if infer in args:
         # Avoid an implementation nightmare juggling tuples and worse things
