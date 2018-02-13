@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import math
 import decimal
 import fractions
+import collections
 from datetime import date, time, datetime, timedelta
 
 import pytest
@@ -27,6 +28,7 @@ import pytest
 import hypothesis.strategies as ds
 from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.internal.reflection import nicerepr
 
 
@@ -223,6 +225,35 @@ def test_validates_args(fn, args):
 )
 def test_produces_valid_examples_from_args(fn, args):
     fn(*args).example()
+
+
+def test_build_class_with_target_kwarg():
+    NamedTupleWithTargetField = collections.namedtuple('Something', ['target'])
+    ds.builds(NamedTupleWithTargetField, target=ds.integers()).example()
+
+
+@checks_deprecated_behaviour
+def test_builds_can_specify_target_with_target_kwarg():
+    ds.builds(x=ds.integers(), target=lambda x: x).example()
+
+
+def test_builds_raises_with_no_target():
+    with pytest.raises(InvalidArgument):
+        ds.builds().example()
+
+
+@pytest.mark.parametrize('non_callable', [1, 'abc', ds.integers()])
+def test_builds_raises_if_non_callable_as_target_kwarg(non_callable):
+    with pytest.raises(InvalidArgument):
+        ds.builds(target=non_callable).example()
+
+
+@pytest.mark.parametrize('non_callable', [1, 'abc', ds.integers()])
+def test_builds_raises_if_non_callable_as_first_arg(non_callable):
+    # If there are any positional arguments, then the target (which must be
+    # callable) must be specified as the first one.
+    with pytest.raises(InvalidArgument):
+        ds.builds(non_callable, target=lambda x: x).example()
 
 
 def test_tuples_raise_error_on_bad_kwargs():

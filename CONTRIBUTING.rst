@@ -171,6 +171,7 @@ their individual contributions.
 * `Cory Benfield <https://www.github.com/Lukasa>`_
 * `Cristi Cobzarenco <https://github.com/cristicbz>`_ (cristi@reinfer.io)
 * `David Bonner <https://github.com/rascalking>`_ (dbonner@gmail.com)
+* `David Chudzicki <https://github.com/dchudz>`_ (dchudz@gmail.com)
 * `Derek Gustafson <https://www.github.com/degustaf>`_
 * `Dion Misic <https://www.github.com/kingdion>`_ (dion.misic@gmail.com)
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
