@@ -135,6 +135,14 @@ def test_complex_numbers_magnitude_range_empty():
         complex_numbers(min_magnitude=3, max_magnitude=2).example()
 
 
+def test_complex_numbers_magnitude_range_singleton():
+    complex_numbers(min_magnitude=3, max_magnitude=3).example()
+
+
+def test_complex_numbers_magnitude_zero():
+    complex_numbers(max_magnitude=0).example()
+
+
 def test_complex_numbers_max_magnitude_finite_allow_inf():
     with pytest.raises(InvalidArgument):
         complex_numbers(max_magnitude=2, allow_infinity=True).example()
