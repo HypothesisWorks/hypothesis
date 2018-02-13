@@ -928,7 +928,7 @@ def random_module():
 
 @cacheable
 @defines_strategy
-def builds(hypothesis_internal_target=None, *args, **kwargs):
+def builds(*target_and_args, **kwargs):
     """Generates values by drawing from ``args`` and ``kwargs`` and passing
     them to ``hypothesis_internal_target`` in the appropriate argument
     position.
@@ -946,33 +946,45 @@ def builds(hypothesis_internal_target=None, *args, **kwargs):
     the target.
 
     """
-    if hypothesis_internal_target is None:
+    if target_and_args:
+        target, *args = target_and_args
+        if not callable(target):
+            raise InvalidArgument('The first positional argument to `builds()` must be a callable'
+                                  'target to construct.')
+    elif 'target' in kwargs:
+        args = []
+        note_deprecation('Specifying the target as a keyword argument to `builds()` is deprecated. '
+                         'Provide it as the first positional argument instead.')
+        target = kwargs.pop('target')
+    else:
+       raise InvalidArgument('No target was provided to `builds()`.'
+                             'Specify it as the first positional argument.')
+
+    if target is None:
         try:
-            hypothesis_internal_target = kwargs.pop('target')
+            target = kwargs.pop('target')
         except KeyError:
             raise TypeError('`builds()` must receive an argument for the target we are '
                             'building, either as the `hypothesis_internal_target` argument or'
                             ' (deprecated) the `target` keyword argument')
 
-        note_deprecation('The `target` argument to `builds()` is deprecated. '
-                         'Use `hypothesis_internal_target` instead.')
     if infer in args:
         # Avoid an implementation nightmare juggling tuples and worse things
         raise InvalidArgument('infer was passed as a positional argument to '
                               'builds(), but is only allowed as a keyword arg')
-    hints = get_type_hints(hypothesis_internal_target.__init__
-                           if isclass(hypothesis_internal_target) else hypothesis_internal_target)
+    hints = get_type_hints(target.__init__
+                           if isclass(target) else target)
     for kw in [k for k, v in kwargs.items() if v is infer]:
         if kw not in hints:
             raise InvalidArgument(
                 'passed %s=infer for %s, but %s has no type annotation'
-                % (kw, hypothesis_internal_target.__name__, kw))
+                % (kw, target.__name__, kw))
         kwargs[kw] = from_type(hints[kw])
-    required = required_args(hypothesis_internal_target, args, kwargs)
+    required = required_args(target, args, kwargs)
     for ms in set(hints) & (required or set()):
         kwargs[ms] = from_type(hints[ms])
     return tuples(tuples(*args), fixed_dictionaries(kwargs)).map(
-        lambda value: hypothesis_internal_target(*value[0], **value[1])
+        lambda value: target(*value[0], **value[1])
     )
 
 
