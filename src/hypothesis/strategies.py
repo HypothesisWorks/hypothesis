@@ -970,7 +970,7 @@ def builds(*callable_and_args, **kwargs):
     else:
         raise InvalidArgument(
             'builds() must be passed a callable as the first positional '
-            'argument, but no positional argument was given.')
+            'argument, but no positional arguments were given.')
 
     if infer in args:
         # Avoid an implementation nightmare juggling tuples and worse things

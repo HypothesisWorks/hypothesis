@@ -1,4 +1,4 @@
-RELEASE_TYPE: patch
+RELEASE_TYPE: minor
 
 This release fixes :func:`~hypothesis.strategies.builds` so that ``target``
 can be used as a keyword argument for passing values to the target. The target
