@@ -939,42 +939,44 @@ def random_module():
 @defines_strategy
 def builds(*target_and_args, **kwargs):
     """Generates values by drawing from ``args`` and ``kwargs`` and passing
-    them to the target (provided as the first positional argument) in the
+    them to the callable (provided as the first positional argument) in the
     appropriate argument position.
 
     e.g. ``builds(target, integers(), flag=booleans())`` would draw an
     integer ``i`` and a boolean ``b`` and call ``target(i, flag=b)``.
 
-    If ``target`` has type annotations, they will be used to infer a strategy
+    If the callable has type annotations, they will be used to infer a strategy
     for required arguments that were not passed to builds.  You can also tell
     builds to infer a strategy for an optional argument by passing the special
     value :const:`hypothesis.infer` as a keyword argument to
-    builds, instead of a strategy for that argument to ``target``.
+    builds, instead of a strategy for that argument to the callable.
 
     Examples from this strategy shrink by shrinking the argument values to
-    the target.
+    the callable.
 
     """
     if target_and_args:
         target, args = target_and_args[0], target_and_args[1:]
         if not callable(target):
-            raise InvalidArgument('The first positional argument to builds() must be a callable'
-                                  'target to construct.')
-    elif 'target' in kwargs:
+            raise InvalidArgument(
+                'The first positional argument to builds() must be a callable '
+                'target to construct.')
+    elif 'target' in kwargs and callable(kwargs['target']):
         args = []
-        note_deprecation('Specifying the target as a keyword argument to builds() is deprecated. '
-                         'Provide it as the first positional argument instead.')
+        note_deprecation(
+            'Specifying the target as a keyword argument to builds() is '
+            'deprecated. Provide it as the first positional argument instead.')
         target = kwargs.pop('target')
     else:
-        raise InvalidArgument('No target was provided to builds().'
-                              'Specify it as the first positional argument.')
+        raise InvalidArgument(
+            'builds() must be passed a callable as the first positional '
+            'argument, but no positional argument was given.')
 
     if infer in args:
         # Avoid an implementation nightmare juggling tuples and worse things
         raise InvalidArgument('infer was passed as a positional argument to '
                               'builds(), but is only allowed as a keyword arg')
-    hints = get_type_hints(target.__init__
-                           if isclass(target) else target)
+    hints = get_type_hints(target.__init__ if isclass(target) else target)
     for kw in [k for k, v in kwargs.items() if v is infer]:
         if kw not in hints:
             raise InvalidArgument(

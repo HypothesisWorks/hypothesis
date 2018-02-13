@@ -229,7 +229,7 @@ def test_produces_valid_examples_from_args(fn, args):
 
 def test_build_class_with_target_kwarg():
     NamedTupleWithTargetField = collections.namedtuple('Something', ['target'])
-    ds.builds(NamedTupleWithTargetField, target=ds.integers())
+    ds.builds(NamedTupleWithTargetField, target=ds.integers()).example()
 
 
 @checks_deprecated_behaviour
@@ -243,9 +243,15 @@ def test_builds_raises_with_no_target():
 
 
 @pytest.mark.parametrize('non_callable', [1, 'abc', ds.integers()])
-def test_builds_raises_if_passed_search_strategy_as_first_arg(non_callable):
-    # If there are any positional arguments, then the target (which must be callable) must be
-    # specified as the first one.
+def test_builds_raises_if_non_callable_as_target_kwarg(non_callable):
+    with pytest.raises(InvalidArgument):
+        ds.builds(target=non_callable).example()
+
+
+@pytest.mark.parametrize('non_callable', [1, 'abc', ds.integers()])
+def test_builds_raises_if_non_callable_as_first_arg(non_callable):
+    # If there are any positional arguments, then the target (which must be
+    # callable) must be specified as the first one.
     with pytest.raises(InvalidArgument):
         ds.builds(non_callable, target=lambda x: x).example()
 
