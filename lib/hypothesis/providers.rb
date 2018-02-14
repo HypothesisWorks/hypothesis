@@ -31,8 +31,24 @@ module Hypothesis
       end
     end
 
-    def integers
-      from_hypothesis_core HypothesisCoreIntegers.new
+    def integers(min: nil, max: nil)
+      base = from_hypothesis_core HypothesisCoreIntegers.new
+      if min.nil? && max.nil?
+        base
+      elsif min.nil?
+        composite { |source| max - source.given(base).abs }
+      elsif max.nil?
+        composite { |source| min + source.given(base).abs }
+      else
+        bounded = from_hypothesis_core(
+          HypothesisCoreBoundedIntegers.new(max - min)
+        )
+        if min.zero?
+          bounded
+        else
+          composite { |_source| min + given(bounded) }
+        end
+      end
     end
 
     def strings
