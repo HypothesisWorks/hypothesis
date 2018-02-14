@@ -96,12 +96,3 @@ pub struct TestResult {
     pub record: DataStream,
     pub status: Status,
 }
-
-impl TestResult {
-    pub fn dummy() -> TestResult {
-        TestResult {
-            record: Vec::new(),
-            status: Status::Invalid,
-        }
-    }
-}
