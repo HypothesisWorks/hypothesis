@@ -171,6 +171,12 @@ impl MainGenerationLoop {
     }
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+enum EngineState {
+    AwaitingCompletion,
+    ReadyToProvide,
+}
+
 #[derive(Debug)]
 pub struct Engine {
     // Information that we might be asked for.
@@ -180,6 +186,8 @@ pub struct Engine {
     // this is set to Some(Finished(_)) it stays that way,
     // otherwise it is cleared on access.
     loop_response: Option<LoopCommand>,
+
+    state: EngineState,
 
     // Communication channels with the main testing loop
     receiver: Receiver<LoopCommand>,
@@ -202,6 +210,7 @@ impl Engine {
             loop_response: None,
             sender: send_local,
             receiver: recv_local,
+            state: EngineState::ReadyToProvide,
         };
 
         let main_loop = MainGenerationLoop {
@@ -228,6 +237,9 @@ impl Engine {
     }
 
     pub fn next_source(&mut self) -> Option<DataSource> {
+        assert!(self.state == EngineState::ReadyToProvide);
+        self.state = EngineState::AwaitingCompletion;
+
         self.await_loop_response();
 
         let mut local_result = None;
@@ -251,6 +263,9 @@ impl Engine {
     }
 
     fn consume_test_result(&mut self, result: TestResult) -> () {
+        assert!(self.state == EngineState::AwaitingCompletion);
+        self.state = EngineState::ReadyToProvide;
+
         match result.status {
             Status::Interesting => self.best_example = Some(result.clone()),
             _ => (),
