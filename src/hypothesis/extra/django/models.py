@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import re
 import string
 from decimal import Decimal
 from datetime import timedelta
@@ -24,6 +25,7 @@ from datetime import timedelta
 import django.db.models as dm
 from django.db import IntegrityError
 from django.conf import settings as django_settings
+from django.core import validators
 from django.core.exceptions import ValidationError
 
 import hypothesis.strategies as st
@@ -128,6 +130,24 @@ def _get_strategy_for_field(f):
             min_size=(None if f.blank else 1),
             max_size=f.max_length,
         )
+        # We can infer a vastly more precise strategy by considering the
+        # validators as well as the field type.  This is a minimal proof of
+        # concept, but we intend to leverage the idea much more heavily soon.
+        # See https://github.com/HypothesisWorks/hypothesis-python/issues/1116
+        re_validators = [
+            v for v in f.validators
+            if isinstance(v, validators.RegexValidator) and not v.inverse_match
+        ]
+        if re_validators:
+            regexes = [re.compile(v.regex, v.flags) if isinstance(v.regex, str)
+                       else v.regex for v in re_validators]
+            # This strategy generates according to one of the regexes, and
+            # filters using the others.  It can therefore learn to generate
+            # from the most restrictive and filter with permissive patterns.
+            # Not maximally efficient, but it makes pathological cases rarer.
+            # If you want a challenge: extend https://qntm.org/greenery to
+            # compute intersections of the full Python regex language.
+            strategy = st.one_of(*[st.from_regex(r) for r in regexes])
     elif type(f) == dm.DecimalField:
         bound = Decimal(10 ** f.max_digits - 1) / (10 ** f.decimal_places)
         strategy = st.decimals(min_value=-bound, max_value=bound,
