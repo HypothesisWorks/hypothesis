@@ -34,6 +34,7 @@ module Hypothesis
           @core_engine.finish_interesting(core)
         end
       end
+      @current_source = nil
       core = @core_engine.failing_example
       if core.nil?
         raise Unsatisfiable if @core_engine.was_unsatisfiable

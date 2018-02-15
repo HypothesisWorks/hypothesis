@@ -4,7 +4,7 @@
 // crate, and everything else is going to get factored out
 // into its own.
 
-#![recursion_limit = "128"]
+#![recursion_limit = "256"]
 #![deny(warnings, missing_debug_implementations)]
 
 extern crate core;
@@ -121,6 +121,35 @@ ruby! {
     def should_continue(&mut self, data: &mut HypothesisCoreDataSource) -> Option<bool>{
       return data.source.as_mut().and_then(|ref mut source| {
         self.repeat.should_continue(source).ok()
+      })
+    }
+  }
+
+  class HypothesisCoreIntegers{
+    struct {
+        bitlengths: distributions::Sampler,
+    }
+    def initialize(helix){
+      return HypothesisCoreIntegers{helix,bitlengths: distributions::good_bitlengths()};
+    }
+    def provide(&mut self, data: &mut HypothesisCoreDataSource) -> Option<i64>{
+      data.source.as_mut().and_then(|ref mut source| {
+        distributions::integer_from_bitlengths(source, &self.bitlengths).ok()
+      })
+    }
+  }
+
+  class HypothesisCoreBoundedIntegers{
+    struct {
+        max_value: u64,
+    }
+    def initialize(helix, max_value: u64){
+      return HypothesisCoreBoundedIntegers{helix, max_value: max_value};
+    }
+
+    def provide(&mut self, data: &mut HypothesisCoreDataSource) -> Option<u64>{
+      data.source.as_mut().and_then(|ref mut source| {
+        distributions::bounded_int(source, self.max_value).ok()
       })
     }
   }

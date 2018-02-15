@@ -1,18 +1,18 @@
 # frozen_string_literal: true
 
 module Hypothesis
-  class Error < RuntimeError
+  class HypothesisError < RuntimeError
   end
 
-  class Unsatisfiable < Error
+  class Unsatisfiable < HypothesisError
   end
 
-  class UnsatisfiedAssumption < Error
+  class UnsatisfiedAssumption < HypothesisError
   end
 
-  class DataOverflow < Error
+  class DataOverflow < HypothesisError
   end
 
-  class UsageError < Error
+  class UsageError < HypothesisError
   end
 end

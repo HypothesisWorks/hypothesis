@@ -31,12 +31,22 @@ module Hypothesis
       end
     end
 
-    def integers
-      composite do |source|
-        if source.given(bits(1)).positive?
-          source.given(bits(64))
+    def integers(min: nil, max: nil)
+      base = from_hypothesis_core HypothesisCoreIntegers.new
+      if min.nil? && max.nil?
+        base
+      elsif min.nil?
+        composite { |source| max - source.given(base).abs }
+      elsif max.nil?
+        composite { |source| min + source.given(base).abs }
+      else
+        bounded = from_hypothesis_core(
+          HypothesisCoreBoundedIntegers.new(max - min)
+        )
+        if min.zero?
+          bounded
         else
-          0
+          composite { |_source| min + given(bounded) }
         end
       end
     end
