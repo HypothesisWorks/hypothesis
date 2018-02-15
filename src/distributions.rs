@@ -61,6 +61,7 @@ impl Repeat {
     pub fn should_continue(&mut self, source: &mut DataSource) -> Result<bool, FailedDraw> {
         let result = if self.current_count < self.min_count {
             self.draw_until(source, true)?;
+            self.current_count += 1;
             return Ok(true);
         } else if self.current_count >= self.max_count {
             self.draw_until(source, false)?;
