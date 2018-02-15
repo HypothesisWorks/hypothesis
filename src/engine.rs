@@ -216,6 +216,19 @@ where
     }
 
     fn incorporate(&mut self, buf: &DataStream) -> Result<bool, LoopExitReason> {
+        assert!(
+            buf.len() <= self.shrink_target.record.len(),
+            "Expected incorporate to not increase length, but buf.len() = {} \
+             while shrink target was {}",
+            buf.len(),
+            self.shrink_target.record.len()
+        );
+        if buf.len() == self.shrink_target.record.len() {
+            assert!(buf < &self.shrink_target.record);
+        }
+        if self.shrink_target.record.starts_with(buf) {
+            return Ok(false);
+        }
         let result = self.main_loop.execute(DataSource::from_vec(buf.clone()))?;
         return Ok(self.predicate(&result));
     }
