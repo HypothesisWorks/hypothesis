@@ -12,7 +12,7 @@ use data::{DataSource, DataStream, Status, TestResult};
 #[derive(Debug, Clone)]
 enum LoopExitReason {
     Complete,
-    //MaxExamples,
+    MaxExamples,
     //MaxShrinks,
     Shutdown,
     //Error(String),
@@ -31,7 +31,7 @@ struct MainGenerationLoop {
     max_examples: u64,
     random: ChaChaRng,
 
-    shrink_target: TestResult,
+    best_example: Option<TestResult>,
 
     valid_examples: u64,
     invalid_examples: u64,
@@ -58,28 +58,94 @@ impl MainGenerationLoop {
     }
 
     fn loop_body(&mut self) -> StepResult {
-        self.generate_examples()?;
-        if self.shrink_target.status == Status::Interesting {
-            self.shrink_examples()?;
-        }
+        let interesting_example = self.generate_examples()?;
+
+        let mut shrinker = Shrinker::new(self, interesting_example, |r| {
+            r.status == Status::Interesting
+        });
+
+        shrinker.run()?;
+
         return Err(LoopExitReason::Complete);
     }
 
-    fn generate_examples(&mut self) -> StepResult {
+    fn generate_examples(&mut self) -> Result<TestResult, LoopExitReason> {
         while self.valid_examples < self.max_examples
-            && self.shrink_target.status != Status::Interesting
             && self.invalid_examples < 10 * self.max_examples
         {
             let r = self.random.gen();
-            self.execute(DataSource::from_random(r))?;
+            let result = self.execute(DataSource::from_random(r))?;
+            if result.status == Status::Interesting {
+                return Ok(result);
+            }
         }
-        return Ok(());
+        return Err(LoopExitReason::MaxExamples);
     }
 
-    fn shrink_examples(&mut self) -> StepResult {
-        assert!(self.shrink_target.status == Status::Interesting);
-        self.binary_search_blocks()?;
-        self.remove_intervals()?;
+    fn execute(&mut self, source: DataSource) -> Result<TestResult, LoopExitReason> {
+        let result = match self.sender.send(LoopCommand::RunThis(source)) {
+            Ok(_) => match self.receiver.recv() {
+                Ok(t) => t,
+                Err(_) => return Err(LoopExitReason::Shutdown),
+            },
+            Err(_) => return Err(LoopExitReason::Shutdown),
+        };
+        match result.status {
+            Status::Overflow => (),
+            Status::Invalid => self.invalid_examples += 1,
+            Status::Valid => self.valid_examples += 1,
+            Status::Interesting => {
+                self.best_example = Some(result.clone());
+                self.interesting_examples += 1;
+            }
+        }
+
+        Ok(result)
+    }
+}
+
+struct Shrinker<'owner, Predicate> {
+    _predicate: Predicate,
+    shrink_target: TestResult,
+    changes: u64,
+    main_loop: &'owner mut MainGenerationLoop,
+}
+
+impl<'owner, Predicate> Shrinker<'owner, Predicate>
+where
+    Predicate: Fn(&TestResult) -> bool,
+{
+    fn new(
+        main_loop: &'owner mut MainGenerationLoop,
+        shrink_target: TestResult,
+        predicate: Predicate,
+    ) -> Shrinker<'owner, Predicate> {
+        assert!(predicate(&shrink_target));
+        Shrinker {
+            main_loop: main_loop,
+            _predicate: predicate,
+            shrink_target: shrink_target,
+            changes: 0,
+        }
+    }
+
+    fn predicate(&mut self, result: &TestResult) -> bool {
+        let succeeded = (self._predicate)(result);
+        if succeeded {
+            self.changes += 1;
+            self.shrink_target = result.clone();
+        }
+        succeeded
+    }
+
+    fn run(&mut self) -> StepResult {
+        let mut prev = self.changes + 1;
+
+        while prev != self.changes {
+            prev = self.changes;
+            self.binary_search_blocks()?;
+            self.remove_intervals()?;
+        }
         Ok(())
     }
 
@@ -147,29 +213,8 @@ impl MainGenerationLoop {
     }
 
     fn incorporate(&mut self, buf: &DataStream) -> Result<bool, LoopExitReason> {
-        let result = self.execute(DataSource::from_vec(buf.clone()))?;
-        return Ok(result.status == Status::Interesting);
-    }
-
-    fn execute(&mut self, source: DataSource) -> Result<TestResult, LoopExitReason> {
-        let result = match self.sender.send(LoopCommand::RunThis(source)) {
-            Ok(_) => match self.receiver.recv() {
-                Ok(t) => t,
-                Err(_) => return Err(LoopExitReason::Shutdown),
-            },
-            Err(_) => return Err(LoopExitReason::Shutdown),
-        };
-        match result.status {
-            Status::Overflow => (),
-            Status::Invalid => self.invalid_examples += 1,
-            Status::Valid => self.valid_examples += 1,
-            Status::Interesting => {
-                self.shrink_target = result.clone();
-                self.interesting_examples += 1;
-            }
-        }
-
-        Ok(result)
+        let result = self.main_loop.execute(DataSource::from_vec(buf.clone()))?;
+        return Ok(self.predicate(&result));
     }
 }
 
@@ -181,9 +226,6 @@ enum EngineState {
 
 #[derive(Debug)]
 pub struct Engine {
-    // Information that we might be asked for.
-    best_example: Option<TestResult>,
-
     // The next response from the main loop. Once
     // this is set to Some(Finished(_)) it stays that way,
     // otherwise it is cleared on access.
@@ -213,8 +255,7 @@ impl Engine {
             random: ChaChaRng::from_seed(seed),
             sender: send_remote,
             receiver: recv_remote,
-
-            shrink_target: TestResult::dummy(),
+            best_example: None,
             valid_examples: 0,
             invalid_examples: 0,
             interesting_examples: 0,
@@ -225,7 +266,6 @@ impl Engine {
         });
 
         Engine {
-            best_example: None,
             loop_response: None,
             sender: send_local,
             receiver: recv_local,
@@ -258,8 +298,14 @@ impl Engine {
     }
 
     pub fn best_source(&self) -> Option<DataSource> {
-        match &self.best_example {
-            &Some(ref result) => Some(DataSource::from_vec(result.record.clone())),
+        match &self.loop_response {
+            &Some(LoopCommand::Finished(
+                _,
+                MainGenerationLoop {
+                    best_example: Some(ref result),
+                    ..
+                },
+            )) => Some(DataSource::from_vec(result.record.clone())),
             _ => None,
         }
     }
@@ -267,11 +313,6 @@ impl Engine {
     fn consume_test_result(&mut self, result: TestResult) -> () {
         assert!(self.state == EngineState::AwaitingCompletion);
         self.state = EngineState::ReadyToProvide;
-
-        match result.status {
-            Status::Interesting => self.best_example = Some(result.clone()),
-            _ => (),
-        };
 
         if self.has_shutdown() {
             return ();
