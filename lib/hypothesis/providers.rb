@@ -93,10 +93,28 @@ module Hypothesis
   end
 
   class Provider
+    def map
+      Implementations::CompositeProvider.new do |source|
+        yield(source.given(self))
+      end
+    end
+
+    def select
+      Implementations::CompositeProvider.new do |source|
+        result = nil
+        4.times do |i|
+          source.assume(i < 3)
+          result = source.given(self)
+          break if yield(result)
+        end
+        result
+      end
+    end
+
     module Implementations
       class CompositeProvider < Provider
-        def initialize(block)
-          @block = block
+        def initialize(block = nil, &implicit)
+          @block = block || implicit
         end
 
         def provide(source)
