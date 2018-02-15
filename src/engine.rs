@@ -181,7 +181,6 @@ where
 
         while i < self.shrink_target.record.len() {
             assert!(attempt.len() >= self.shrink_target.record.len());
-            attempt.truncate(self.shrink_target.record.len());
 
             let mut hi = self.shrink_target.record[i];
 
@@ -197,12 +196,16 @@ where
                         attempt[i] = mid;
                         let succeeded = self.incorporate(&attempt)?;
                         if succeeded {
+                            attempt = self.shrink_target.record.clone();
                             hi = mid;
                         } else {
+                            attempt[i] = self.shrink_target.record[i];
                             lo = mid;
                         }
                     }
                     attempt[i] = hi;
+                } else {
+                    attempt = self.shrink_target.record.clone();
                 }
             }
 
