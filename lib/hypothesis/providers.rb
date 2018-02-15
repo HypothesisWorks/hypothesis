@@ -10,20 +10,20 @@ module Hypothesis
       Hypothesis::Provider::Implementations::CompositeProvider.new(block)
     end
 
-    def repeated(min_count: 0, max_count: 10, average_count: 5.0)
+    def repeated(min_count: 0, max_count: 10)
       local_provider_implementation do |source, block|
         rep = HypothesisCoreRepeatValues.new(
-          min_count, max_count, average_count
+          min_count, max_count, (min_count + max_count) * 0.5
         )
         block.call while rep.should_continue(source.wrapped_data)
       end
     end
 
-    def lists(element, min_size: 0, max_size: 10, average_size: 10)
+    def lists(element, min_size: 0, max_size: 10)
       composite do
         result = []
         given repeated(
-          min_count: min_size, max_count: max_size, average_count: average_size
+          min_count: min_size, max_count: max_size
         ) do
           result.push given(element)
         end
