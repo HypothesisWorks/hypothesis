@@ -39,4 +39,13 @@ RSpec.describe 'basic hypothesis tests' do
       end
     end
   end
+
+  they 'raise unsatisfiable when all assumptions fail' do
+    expect do
+      hypothesis do
+        given integers
+        assume false
+      end
+    end.to raise_exception(Hypothesis::Unsatisfiable)
+  end
 end
