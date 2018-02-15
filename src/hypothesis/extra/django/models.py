@@ -161,12 +161,38 @@ def _get_strategy_for_field(f):
     return strategy
 
 
-def models(model, **extra):
-    """Return a strategy for instances of a model."""
-    result = {k: v for k, v in extra.items() if v is not default_value}
+def models(model, **field_strategies):
+    """Return a strategy for examples of ``model``.
+
+    .. warning::
+        Hypothesis creates saved models. This will run inside your testing
+        transaction when using the test runner, but if you use the dev console
+        this will leave debris in your database.
+
+    ``model`` must be an subclass of :class:`~django:django.db.models.Model`.
+    Strategies for fields may be passed as keyword arguments, for example
+    ``is_staff=st.just(False)``.
+
+    Hypothesis can often infer a strategy based the field type and validators
+    - for best results, make sure your validators are derived from Django's
+    and therefore have the known types and attributes.
+    Passing a keyword argument skips inference for that field; pass a strategy
+    or pass :const:`hypothesis.extra.django.models.default_value` to skip
+    inference for that field.
+
+    Foreign keys are not automatically derived. If they're nullable they will
+    default to always being null, otherwise you always have to specify them.
+    For example, examples of a Shop type with a foreign key to Company could
+    be generated with::
+
+      shop_strategy = models(Shop, company=models(Company))
+
+    """
+    result = {k: v for k, v in field_strategies.items()
+              if v is not default_value}
     missed = []
     for f in model._meta.concrete_fields:
-        if not (f.name in extra or isinstance(f, dm.AutoField)):
+        if not (f.name in field_strategies or isinstance(f, dm.AutoField)):
             result[f.name] = _get_strategy_for_field(f)
             if result[f.name].is_empty:
                 missed.append(f.name)

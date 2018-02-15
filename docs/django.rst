@@ -29,13 +29,10 @@ If you are using :class:`~hypothesis.extra.django.TransactionTestCase`,
 you may need to use ``@settings(suppress_health_check=[HealthCheck.too_slow])``
 to avoid :doc:`errors due to slow example generation </healthchecks>`.
 
-In addition to the above, Hypothesis has some support for automatically
-deriving strategies for your model types, which you can then customize further.
+Having set up a test class, you can now pass :func:`@given <hypothesis.given>`
+a strategy for Django models:
 
-.. warning::
-    Hypothesis creates saved models. This will run inside your testing
-    transaction when using the test runner, but if you use the dev console this
-    will leave debris in your database.
+.. autofunction:: hypothesis.extra.django.models.models
 
 For example, using the trivial django project I have for testing:
 
@@ -55,7 +52,21 @@ For example, using the trivial django project I have for testing:
 
 Hypothesis has just created this with whatever the relevant type of data is.
 
-Obviously the customer's age is implausible, so lets fix that:
+Obviously the customer's age is implausible, which is only possible because
+we have not used (eg) :class:`~django:django.core.validators.MinValueValidator`
+to set the valid range for this field (or used a
+:class:`~django:django.db.models.PositiveSmallIntegerField`, which would only
+need a maximum value validator).
+
+If you *do* have validators attached, Hypothesis will only generate examples
+that pass validation.  Sometimes that will mean that we fail a
+:class:`~hypothesis.HealthCheck` because of the filtering, so let's explicitly
+pass a strategy to skip validation at the strategy level:
+
+.. note::
+    Inference from validators will be much more powerful when :issue:`1116`
+    is implemented, but there will always be some edge cases that require you
+    to pass an explicit strategy.
 
 .. code-block:: python
 
@@ -65,20 +76,6 @@ Obviously the customer's age is implausible, so lets fix that:
     <Customer: Customer object>
     >>> c.age
     5
-
-You can use this to override any fields you like. Sometimes this will be
-mandatory: If you have a non-nullable field of a type Hypothesis doesn't know
-how to create (e.g. a foreign key) then the models function will error unless
-you explicitly pass a strategy to use there.
-
-Foreign keys are not automatically derived. If they're nullable they will default
-to always being null, otherwise you always have to specify them. e.g. suppose
-we had a Shop type with a foreign key to company, we would define a strategy
-for it as:
-
-.. code:: python
-
-  shop_strategy = models(Shop, company=models(Company))
 
 ---------------
 Tips and tricks
