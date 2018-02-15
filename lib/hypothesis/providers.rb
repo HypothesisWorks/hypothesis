@@ -2,10 +2,6 @@
 
 module Hypothesis
   module Providers
-    def bits(n)
-      from_hypothesis_core HypothesisCoreBitProvider.new(n)
-    end
-
     def composite(&block)
       Hypothesis::Provider::Implementations::CompositeProvider.new(block)
     end
