@@ -31,6 +31,26 @@ module Hypothesis
       end
     end
 
+    def mixed(*args)
+      args = args.flatten
+      indexes = from_hypothesis_core(
+        HypothesisCoreBoundedIntegers.new(args.size - 1)
+      )
+      composite do |source|
+        i = source.given(indexes)
+        source.given(args[i])
+      end
+    end
+
+    def choice_of(values)
+      indexes = from_hypothesis_core(
+        HypothesisCoreBoundedIntegers.new(values.size - 1)
+      )
+      composite do |source|
+        values.fetch(source.given(indexes))
+      end
+    end
+
     def integers(min: nil, max: nil)
       base = from_hypothesis_core HypothesisCoreIntegers.new
       if min.nil? && max.nil?

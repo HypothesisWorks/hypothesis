@@ -22,5 +22,11 @@ module Hypothesis
         Hypothesis::World.current_engine = nil
       end
     end
+
+    def find_any(options = {}, &block)
+      # Currently the same as find, but once we have config
+      # options for shrinking it will turn that off.
+      find(options, &block)
+    end
   end
 end
