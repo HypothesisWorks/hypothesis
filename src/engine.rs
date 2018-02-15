@@ -277,9 +277,12 @@ impl Engine {
             interesting_examples: 0,
         };
 
-        let handle = thread::spawn(move || {
-            main_loop.run();
-        });
+        let handle = thread::Builder::new()
+            .name("Hypothesis main loop".to_string())
+            .spawn(move || {
+                main_loop.run();
+            })
+            .unwrap();
 
         Engine {
             loop_response: None,
