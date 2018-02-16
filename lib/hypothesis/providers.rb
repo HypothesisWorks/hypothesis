@@ -96,12 +96,6 @@ module Hypothesis
         core
       )
     end
-
-    def local_provider_implementation(&block)
-      Hypothesis::Provider::Implementations::ProviderFromBlock.new(
-        block
-      )
-    end
   end
 
   class Provider
@@ -143,16 +137,6 @@ module Hypothesis
           result = @core_provider.provide(data.wrapped_data)
           raise Hypothesis::DataOverflow if result.nil?
           result
-        end
-      end
-
-      class ProviderFromBlock < Provider
-        def initialize(block)
-          @block = block
-        end
-
-        def provide(data, &block)
-          @block.call(data, block)
         end
       end
     end
