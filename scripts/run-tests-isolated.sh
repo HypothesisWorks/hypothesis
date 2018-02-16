@@ -6,6 +6,7 @@ rm -rf isolated
 mkdir isolated
 
 rm -rf hypothesis-specs*.gem
+rm -rf lib/hypothesis-ruby-core/
 
 gem build hypothesis-specs.gemspec
 
