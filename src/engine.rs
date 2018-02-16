@@ -181,7 +181,6 @@ where
 
         while i < self.shrink_target.record.len() {
             assert!(attempt.len() >= self.shrink_target.record.len());
-            attempt.truncate(self.shrink_target.record.len());
 
             let mut hi = self.shrink_target.record[i];
 
@@ -197,12 +196,16 @@ where
                         attempt[i] = mid;
                         let succeeded = self.incorporate(&attempt)?;
                         if succeeded {
+                            attempt = self.shrink_target.record.clone();
                             hi = mid;
                         } else {
+                            attempt[i] = self.shrink_target.record[i];
                             lo = mid;
                         }
                     }
                     attempt[i] = hi;
+                } else {
+                    attempt = self.shrink_target.record.clone();
                 }
             }
 
@@ -213,6 +216,19 @@ where
     }
 
     fn incorporate(&mut self, buf: &DataStream) -> Result<bool, LoopExitReason> {
+        assert!(
+            buf.len() <= self.shrink_target.record.len(),
+            "Expected incorporate to not increase length, but buf.len() = {} \
+             while shrink target was {}",
+            buf.len(),
+            self.shrink_target.record.len()
+        );
+        if buf.len() == self.shrink_target.record.len() {
+            assert!(buf < &self.shrink_target.record);
+        }
+        if self.shrink_target.record.starts_with(buf) {
+            return Ok(false);
+        }
         let result = self.main_loop.execute(DataSource::from_vec(buf.clone()))?;
         return Ok(self.predicate(&result));
     }
@@ -261,9 +277,12 @@ impl Engine {
             interesting_examples: 0,
         };
 
-        let handle = thread::spawn(move || {
-            main_loop.run();
-        });
+        let handle = thread::Builder::new()
+            .name("Hypothesis main loop".to_string())
+            .spawn(move || {
+                main_loop.run();
+            })
+            .unwrap();
 
         Engine {
             loop_response: None,

@@ -20,3 +20,5 @@ Style/MethodMissing:
   Enabled: false
 Style/MultilineBlockChain:
   Enabled: false
+Metrics/ModuleLength:
+  Enabled: false

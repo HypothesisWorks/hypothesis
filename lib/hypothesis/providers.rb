@@ -2,28 +2,48 @@
 
 module Hypothesis
   module Providers
-    def bits(n)
-      from_hypothesis_core HypothesisCoreBitProvider.new(n)
-    end
-
     def composite(&block)
       Hypothesis::Provider::Implementations::CompositeProvider.new(block)
     end
 
-    def repeated(min_count: 0, max_count: 10, average_count: 5.0)
+    def codepoints(min: 1, max: 1_114_111)
+      base = integers(min: min, max: max)
+      if min <= 126
+        mixed(integers(min: min, max: [126, max].min), base)
+      else
+        base
+      end
+    end
+
+    def strings(codepoints: nil, min_size: 0, max_size: 10)
+      codepoints = self.codepoints if codepoints.nil?
+      codepoints = codepoints.select do |i|
+        begin
+          [i].pack('U*').codepoints
+          true
+        rescue ArgumentError
+          false
+        end
+      end
+      lists(codepoints, min_size: min_size, max_size: max_size).map do |ls|
+        ls.pack('U*')
+      end
+    end
+
+    def repeated(min_count: 0, max_count: 10)
       local_provider_implementation do |source, block|
         rep = HypothesisCoreRepeatValues.new(
-          min_count, max_count, average_count
+          min_count, max_count, (min_count + max_count) * 0.5
         )
         block.call while rep.should_continue(source.wrapped_data)
       end
     end
 
-    def lists(element, min_size: 0, max_size: 10, average_size: 10)
+    def lists(element, min_size: 0, max_size: 10)
       composite do
         result = []
         given repeated(
-          min_count: min_size, max_count: max_size, average_count: average_size
+          min_count: min_size, max_count: max_size
         ) do
           result.push given(element)
         end
@@ -71,16 +91,6 @@ module Hypothesis
       end
     end
 
-    def strings
-      composite do |source|
-        if source.given(bits(1)).positive?
-          'a'
-        else
-          'b'
-        end
-      end
-    end
-
     private
 
     def from_hypothesis_core(core)
@@ -97,10 +107,28 @@ module Hypothesis
   end
 
   class Provider
+    def map
+      Implementations::CompositeProvider.new do |source|
+        yield(source.given(self))
+      end
+    end
+
+    def select
+      Implementations::CompositeProvider.new do |source|
+        result = nil
+        4.times do |i|
+          source.assume(i < 3)
+          result = source.given(self)
+          break if yield(result)
+        end
+        result
+      end
+    end
+
     module Implementations
       class CompositeProvider < Provider
-        def initialize(block)
-          @block = block
+        def initialize(block = nil, &implicit)
+          @block = block || implicit
         end
 
         def provide(source)

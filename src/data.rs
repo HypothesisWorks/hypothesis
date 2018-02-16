@@ -5,6 +5,7 @@ use rand::{ChaChaRng, Rng};
 
 pub type DataStream = Vec<u64>;
 
+#[derive(Debug, Clone)]
 pub struct FailedDraw;
 
 #[derive(Debug, Clone)]
