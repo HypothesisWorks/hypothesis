@@ -32,4 +32,14 @@ RSpec.describe 'Incorrect usage' do
       end
     end
   end
+
+  it 'includes using the parent given inside a composite' do
+    bad_usage do
+      hypothesis do
+        given(composite do
+          given integers
+        end)
+      end
+    end
+  end
 end

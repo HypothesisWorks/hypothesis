@@ -82,11 +82,24 @@ module Hypothesis
     end
   end
 
-  def given(*args, &block)
+  def given(*args)
     if World.current_engine.nil?
       raise UsageError, 'Cannot call given outside of a hypothesis block'
     end
-    World.current_engine.current_source.given(*args, &block)
+
+    @hypothesis_in_given = false unless defined? @hypothesis_in_given
+
+    if @hypothesis_in_given
+      raise UsageError, 'Cannot nest calls to given. Did you mean to call' \
+        ' given on a source argument?'
+    end
+
+    @hypothesis_in_given = true
+    begin
+      World.current_engine.current_source.given(*args)
+    ensure
+      @hypothesis_in_given = false
+    end
   end
 
   def assume(condition)

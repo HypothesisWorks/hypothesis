@@ -84,7 +84,7 @@ module Hypothesis
         if min.zero?
           bounded
         else
-          composite { |_source| min + given(bounded) }
+          composite { |source| min + source.given(bounded) }
         end
       end
     end
