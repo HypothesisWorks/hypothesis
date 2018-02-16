@@ -47,7 +47,7 @@ into our plans for future :doc:`compatibility <supported>` may be useful:
 
 - We value compatibility, and maintain it as far as practical.  This generally
   excludes things which are end-of-life upstream, or have an unstable API.
-- We would like to drop Python 2 support when it it reaches end of life in
+- We would like to drop Python 2 support when it reaches end of life in
   2020.  Ongoing support is likely to depend on commercial funding.
 - We intend to support PyPy3 as soon as it supports a recent enough version of
   Python 3.  See :issue:`602`.
