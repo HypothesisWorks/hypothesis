@@ -2,7 +2,12 @@
 
 require 'simplecov'
 SimpleCov.minimum_coverage 100
-SimpleCov.start
+SimpleCov.start do
+  add_filter do |source_file|
+    name = source_file.filename
+    !(name.include?('/hypothesis/') || name.end_with?('hypothesis.rb'))
+  end
+end
 
 require 'hypothesis'
 

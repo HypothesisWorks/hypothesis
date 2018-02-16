@@ -12,10 +12,10 @@ install:
   - scripts/ensure-rustup.sh
   - bundle install
 
-env:
-    matrix:
-        - TASK=rubocop
-        - TASK=test
 
-script:
-    - bundle exec rake $TASK
+jobs:
+  include:
+    - stage: test
+      script: bundle exec rake format
+    -
+      script: ./scripts/run-tests-isolated.sh

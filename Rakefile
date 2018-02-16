@@ -33,5 +33,5 @@ end
 task test: %i[build spec minitests]
 
 task :format do
-  sh 'bundle exec rubocop -a'
+  sh 'bundle exec rubocop -a lib spec minitests Rakefile'
 end
