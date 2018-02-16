@@ -14,6 +14,10 @@ module Hypothesis
       Hypothesis::Provider::Implementations::CompositeProvider.new(block)
     end
 
+    def booleans
+      integers(min: 0, max: 1).map { |i| i == 1 }
+    end
+
     def codepoints(min: 1, max: 1_114_111)
       base = integers(min: min, max: max)
       if min <= 126
