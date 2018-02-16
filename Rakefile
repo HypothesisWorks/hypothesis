@@ -1,15 +1,21 @@
 # frozen_string_literal: true
 
-require 'bundler/setup'
-
-require 'rspec/core/rake_task'
-require 'rubocop/rake_task'
 require 'helix_runtime/build_task'
-require 'rake/testtask'
 
-RSpec::Core::RakeTask.new(:spec)
+begin
+  require 'rspec/core/rake_task'
+  RSpec::Core::RakeTask.new(:spec)
 
-RuboCop::RakeTask.new
+  require 'rake/testtask'
+
+  Rake::TestTask.new(minitests: :build) do |t|
+    t.test_files = FileList['minitests/**/test_*.rb']
+    t.verbose = true
+  end
+
+  task test: %i[build spec minitests]
+rescue LoadError
+end
 
 # Monkeypatch build to fail on error.
 # See https://github.com/tildeio/helix/issues/133
@@ -25,13 +31,6 @@ end
 
 HelixRuntime::BuildTask.new
 
-Rake::TestTask.new(minitests: :build) do |t|
-  t.test_files = FileList['minitests/**/test_*.rb']
-  t.verbose = true
-end
-
-task test: %i[build spec minitests]
-
 task :format do
-  sh 'bundle exec rubocop -a'
+  sh 'bundle exec rubocop -a lib spec minitests Rakefile'
 end

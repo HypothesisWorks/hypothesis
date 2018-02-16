@@ -22,3 +22,5 @@ Style/MultilineBlockChain:
   Enabled: false
 Metrics/ModuleLength:
   Enabled: false
+Lint/HandleExceptions:
+  Enabled: false
