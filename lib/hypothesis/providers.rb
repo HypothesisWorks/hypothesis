@@ -64,6 +64,13 @@ module Hypothesis
       end
     end
 
+    def fixed_arrays(*elements)
+      elements = elements.flatten
+      composite do |source|
+        elements.map { |e| source.given(e) }.to_a
+      end
+    end
+
     def arrays(element, min_size: 0, max_size: 10)
       composite do |source|
         result = []
