@@ -123,6 +123,10 @@ ruby! {
         self.repeat.should_continue(source).ok()
       })
     }
+
+    def reject(&mut self){
+      self.repeat.reject();
+    }
   }
 
   class HypothesisCoreIntegers{

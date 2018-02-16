@@ -23,6 +23,32 @@ module Hypothesis
       end
     end
 
+    def fixed_hashes(hash)
+      composite do |source|
+        result = {}
+        hash.each { |k, v| result[k] = source.given(v) }
+        result
+      end
+    end
+
+    def hashes(keys, values, min_size: 0, max_size: 10)
+      composite do |source|
+        result = {}
+        rep = HypothesisCoreRepeatValues.new(
+          min_size, max_size, (min_size + max_size) * 0.5
+        )
+        while rep.should_continue(source)
+          key = source.given(keys)
+          if result.include?(key)
+            rep.reject
+          else
+            result[key] = source.given(values)
+          end
+        end
+        result
+      end
+    end
+
     def strings(codepoints: nil, min_size: 0, max_size: 10)
       codepoints = self.codepoints if codepoints.nil?
       codepoints = codepoints.select do |i|

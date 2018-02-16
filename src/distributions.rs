@@ -58,23 +58,27 @@ impl Repeat {
         }
     }
 
+    pub fn reject(&mut self) {
+        assert!(self.current_count > 0);
+        self.current_count -= 1;
+    }
+
     pub fn should_continue(&mut self, source: &mut DataSource) -> Result<bool, FailedDraw> {
-        let result = if self.current_count < self.min_count {
+        if self.current_count < self.min_count {
             self.draw_until(source, true)?;
             self.current_count += 1;
             return Ok(true);
         } else if self.current_count >= self.max_count {
             self.draw_until(source, false)?;
             return Ok(false);
-        } else {
-            weighted(source, self.p_continue)
-        };
-
-        match result {
-            Ok(true) => self.current_count += 1,
-            _ => (),
         }
-        return result;
+
+        let result = weighted(source, self.p_continue)?;
+        if result {
+            self.current_count += 1;
+        } else {
+        }
+        return Ok(result);
     }
 }
 
