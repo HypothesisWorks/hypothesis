@@ -25,7 +25,7 @@ module Hypothesis
           false
         end
       end
-      lists(codepoints, min_size: min_size, max_size: max_size).map do |ls|
+      arrays(codepoints, min_size: min_size, max_size: max_size).map do |ls|
         ls.pack('U*')
       end
     end
@@ -39,7 +39,7 @@ module Hypothesis
       end
     end
 
-    def lists(element, min_size: 0, max_size: 10)
+    def arrays(element, min_size: 0, max_size: 10)
       composite do
         result = []
         given repeated(
