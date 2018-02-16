@@ -12,10 +12,6 @@ install:
   - scripts/ensure-rustup.sh
   - bundle install
 
-branches:
-  only:
-    - "master"
-
 env:
     matrix:
         - TASK=rubocop
