@@ -1,5 +1,13 @@
 # frozen_string_literal: true
 
+class HypothesisCoreRepeatValues
+  def should_continue(source)
+    result = _should_continue(source.wrapped_data)
+    raise Hypothesis::DataOverflow if result.nil?
+    result
+  end
+end
+
 module Hypothesis
   module Providers
     def composite(&block)
@@ -30,23 +38,13 @@ module Hypothesis
       end
     end
 
-    def repeated(min_count: 0, max_count: 10)
-      local_provider_implementation do |source, block|
-        rep = HypothesisCoreRepeatValues.new(
-          min_count, max_count, (min_count + max_count) * 0.5
-        )
-        block.call while rep.should_continue(source.wrapped_data)
-      end
-    end
-
     def arrays(element, min_size: 0, max_size: 10)
-      composite do
+      composite do |source|
         result = []
-        given repeated(
-          min_count: min_size, max_count: max_size
-        ) do
-          result.push given(element)
-        end
+        rep = HypothesisCoreRepeatValues.new(
+          min_size, max_size, (min_size + max_size) * 0.5
+        )
+        result.push source.given(element) while rep.should_continue(source)
         result
       end
     end
