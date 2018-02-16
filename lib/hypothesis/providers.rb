@@ -1,5 +1,13 @@
 # frozen_string_literal: true
 
+class HypothesisCoreRepeatValues
+  def should_continue(source)
+    result = _should_continue(source.wrapped_data)
+    raise Hypothesis::DataOverflow if result.nil?
+    result
+  end
+end
+
 module Hypothesis
   module Providers
     def composite(&block)
@@ -15,6 +23,32 @@ module Hypothesis
       end
     end
 
+    def fixed_hashes(hash)
+      composite do |source|
+        result = {}
+        hash.each { |k, v| result[k] = source.given(v) }
+        result
+      end
+    end
+
+    def hashes(keys, values, min_size: 0, max_size: 10)
+      composite do |source|
+        result = {}
+        rep = HypothesisCoreRepeatValues.new(
+          min_size, max_size, (min_size + max_size) * 0.5
+        )
+        while rep.should_continue(source)
+          key = source.given(keys)
+          if result.include?(key)
+            rep.reject
+          else
+            result[key] = source.given(values)
+          end
+        end
+        result
+      end
+    end
+
     def strings(codepoints: nil, min_size: 0, max_size: 10)
       codepoints = self.codepoints if codepoints.nil?
       codepoints = codepoints.select do |i|
@@ -25,28 +59,25 @@ module Hypothesis
           false
         end
       end
-      lists(codepoints, min_size: min_size, max_size: max_size).map do |ls|
+      arrays(codepoints, min_size: min_size, max_size: max_size).map do |ls|
         ls.pack('U*')
       end
     end
 
-    def repeated(min_count: 0, max_count: 10)
-      local_provider_implementation do |source, block|
-        rep = HypothesisCoreRepeatValues.new(
-          min_count, max_count, (min_count + max_count) * 0.5
-        )
-        block.call while rep.should_continue(source.wrapped_data)
+    def fixed_arrays(*elements)
+      elements = elements.flatten
+      composite do |source|
+        elements.map { |e| source.given(e) }.to_a
       end
     end
 
-    def lists(element, min_size: 0, max_size: 10)
-      composite do
+    def arrays(element, min_size: 0, max_size: 10)
+      composite do |source|
         result = []
-        given repeated(
-          min_count: min_size, max_count: max_size
-        ) do
-          result.push given(element)
-        end
+        rep = HypothesisCoreRepeatValues.new(
+          min_size, max_size, (min_size + max_size) * 0.5
+        )
+        result.push source.given(element) while rep.should_continue(source)
         result
       end
     end
@@ -86,7 +117,7 @@ module Hypothesis
         if min.zero?
           bounded
         else
-          composite { |_source| min + given(bounded) }
+          composite { |source| min + source.given(bounded) }
         end
       end
     end
@@ -96,12 +127,6 @@ module Hypothesis
     def from_hypothesis_core(core)
       Hypothesis::Provider::Implementations::ProviderFromCore.new(
         core
-      )
-    end
-
-    def local_provider_implementation(&block)
-      Hypothesis::Provider::Implementations::ProviderFromBlock.new(
-        block
       )
     end
   end
@@ -145,16 +170,6 @@ module Hypothesis
           result = @core_provider.provide(data.wrapped_data)
           raise Hypothesis::DataOverflow if result.nil?
           result
-        end
-      end
-
-      class ProviderFromBlock < Provider
-        def initialize(block)
-          @block = block
-        end
-
-        def provide(data, &block)
-          @block.call(data, block)
         end
       end
     end

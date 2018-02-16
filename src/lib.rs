@@ -118,10 +118,14 @@ ruby! {
       }
     }
 
-    def should_continue(&mut self, data: &mut HypothesisCoreDataSource) -> Option<bool>{
+    def _should_continue(&mut self, data: &mut HypothesisCoreDataSource) -> Option<bool>{
       return data.source.as_mut().and_then(|ref mut source| {
         self.repeat.should_continue(source).ok()
       })
+    }
+
+    def reject(&mut self){
+      self.repeat.reject();
     }
   }
 
