@@ -23,14 +23,14 @@ RSpec.describe "removing an element from a list" do
     hypothesis do
       # Or lists(integers, min_size: 1), but this lets us
       # demonstrate assume.
-      values = given arrays(of: integers)
+      values = any array(of: integers)
 
       # If this is not true then the test will stop here.
       assume values.length > 0
 
       # note: choice_of is not currently implemented, but
       # would provide any value chosen from its argument.
-      to_remove = given(any_value_from(values))
+      to_remove = any choice_of(values)
 
       values.delete_at(value.index(to_remove))
 

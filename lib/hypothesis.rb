@@ -21,7 +21,7 @@ module Hypothesis
 
   # @!visibility private
   def hypothesis_stable_identifier
-    # Attempt to get a "stable identifier" for any given
+    # Attempt to get a "stable identifier" for any any
     # call into hypothesis. We use these to create
     # database keys (or will when we have a database) that
     # are stable across runs, so that when a test that
@@ -87,13 +87,13 @@ module Hypothesis
   #
   # ```ruby
   # hypothesis do
-  #   x = given any_integer
-  #   y = given any_integer(min: x)
+  #   x = any integer
+  #   y = any integer(min: x)
   #   expect(y).to be >= x
   # end
   # ```
   #
-  # The arguments to `given` are `Provider` instances which
+  # The arguments to `any` are `Provider` instances which
   # specify the range of value values for it to return.
   #
   # Typically you would include this inside some test in your
@@ -190,25 +190,25 @@ module Hypothesis
   # @param name [String, nil] An optional name to show next to the result on
   #   failure. This can be helpful if you have a lot of givens in your
   #   hypothesis, as it makes it easier to keep track of which is which.
-  def given(provider, name: nil)
+  def any(provider, name: nil)
     if World.current_engine.nil?
-      raise UsageError, 'Cannot call given outside of a hypothesis block'
+      raise UsageError, 'Cannot call any outside of a hypothesis block'
     end
 
-    @hypothesis_in_given = false unless defined? @hypothesis_in_given
+    @hypothesis_in_any = false unless defined? @hypothesis_in_any
 
-    if @hypothesis_in_given
-      raise UsageError, 'Cannot nest calls to given. Did you mean to call' \
-        ' given on a source argument?'
+    if @hypothesis_in_any
+      raise UsageError, 'Cannot nest calls to any. Did you mean to call' \
+        ' any on a source argument?'
     end
 
-    @hypothesis_in_given = true
+    @hypothesis_in_any = true
     begin
-      World.current_engine.current_source.internal_given(
+      World.current_engine.current_source.internal_any(
         provider, name: name
       )
     ensure
-      @hypothesis_in_given = false
+      @hypothesis_in_any = false
     end
   end
 

@@ -6,7 +6,7 @@ RSpec.describe 'find' do
   it "raises an error if it can't find anything" do
     expect do
       find do
-        given integers
+        any integers
         false
       end
     end.to raise_exception(Hypothesis::Debug::NoSuchExample)

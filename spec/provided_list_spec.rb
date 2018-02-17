@@ -5,7 +5,7 @@ RSpec.describe 'shrinking' do
   include Hypothesis::Providers
 
   it 'finds a small list' do
-    ls, = find { given(arrays(of: integers)).length >= 2 }
+    ls, = find { any(arrays(of: integers)).length >= 2 }
     expect(ls).to eq([0, 0])
   end
 
@@ -13,7 +13,7 @@ RSpec.describe 'shrinking' do
     @original_target = nil
 
     ls, = find do
-      v = given(arrays(of: integers))
+      v = any(arrays(of: integers))
 
       if v.length >= 5 && @original_target.nil? && v[-1] > 0
         @original_target = v

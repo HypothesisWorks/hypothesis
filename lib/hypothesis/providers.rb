@@ -15,7 +15,7 @@ module Hypothesis
   end
 
   # A Provider describes a range of valid values that
-  # can be provided by {Hypothesis#given}.
+  # can be provided by {Hypothesis#any}.
   # This class should not be subclassed directly, but
   # instead should always be constructed using methods
   # from {Hypothesis::Providers}.
@@ -30,7 +30,7 @@ module Hypothesis
     # @yield A value from the current provider
     def map
       Implementations::CompositeProvider.new do |source|
-        yield(source.given(self))
+        yield(source.any(self))
       end
     end
 
@@ -55,7 +55,7 @@ module Hypothesis
         result = nil
         4.times do |i|
           source.assume(i < 3)
-          result = source.given(self)
+          result = source.any(self)
           break if yield(result)
         end
         result
@@ -106,7 +106,7 @@ module Hypothesis
   # two names: A singular and a plural name. These are
   # simply aliases and are identical in every way, but are
   # provided to improve readability. For example
-  # `given an_integer` reads better than `given integers`
+  # `any an_integer` reads better than `given integers`
   # but `arrays(of: integers)` reads better than
   # `arrays(of: an_integer)`.
   module Providers
@@ -122,11 +122,11 @@ module Hypothesis
     #
     # ```ruby
     #   composite do |tc|
-    #     ls = tc.given(integers)
+    #     ls = tc.any(integers)
     #     # Or min_size: 1 above, but this shows use of
     #     # assume
     #     tc.assume(ls.size > 0)
-    #     i = tc.given(choice_of(ls))
+    #     i = tc.any(choice_of(ls))
     #     [ls, i]
     # ```
     #
@@ -144,7 +144,7 @@ module Hypothesis
       integers(min: 0, max: 1).map { |i| i == 1 }
     end
 
-    alias any_boolean booleans
+    alias boolean booleans
 
     # A provider of unicode codepoints.
     # @return [Provider]
@@ -153,13 +153,13 @@ module Hypothesis
     def codepoints(min: 1, max: 1_114_111)
       base = integers(min: min, max: max)
       if min <= 126
-        mixed(integers(min: min, max: [126, max].min), base)
+        from(integers(min: min, max: [126, max].min), base)
       else
         base
       end
     end
 
-    alias any_codepoint codepoints
+    alias codepoint codepoints
 
     # A provider of strings
     # @return [Provider]
@@ -187,7 +187,7 @@ module Hypothesis
       end
     end
 
-    alias any_string strings
+    alias string strings
 
     # A provider of hashes of a fixed shape
     # This is used for hashes where you know exactly what the
@@ -202,12 +202,12 @@ module Hypothesis
     def hashes_of_shape(hash)
       composite do |source|
         result = {}
-        hash.each { |k, v| result[k] = source.given(v) }
+        hash.each { |k, v| result[k] = source.any(v) }
         result
       end
     end
 
-    alias any_hash_of_shape hashes_of_shape
+    alias hash_of_shape hashes_of_shape
 
     # A provider of hashes of variable shape, where the keys and
     # values are each drawn from a specified provider. For example
@@ -222,18 +222,18 @@ module Hypothesis
           min_size, max_size, (min_size + max_size) * 0.5
         )
         while rep.should_continue(source)
-          key = source.given(keys)
+          key = source.any(keys)
           if result.include?(key)
             rep.reject
           else
-            result[key] = source.given(values)
+            result[key] = source.any(values)
           end
         end
         result
       end
     end
 
-    alias any_hash_with hashes_with
+    alias hash_with hashes_with
 
     # A provider of arrays of a fixed shape
     # This is used for arrays where you know exactly what the
@@ -249,11 +249,11 @@ module Hypothesis
     def arrays_of_shape(*elements)
       elements = elements.flatten
       composite do |source|
-        elements.map { |e| source.given(e) }.to_a
+        elements.map { |e| source.any(e) }.to_a
       end
     end
 
-    alias any_array_of_shape arrays_of_shape
+    alias array_of_shape arrays_of_shape
 
     # A provider of arrays of variable shape.
     # This is used for arrays where all of the elements come from
@@ -270,32 +270,38 @@ module Hypothesis
         rep = HypothesisCoreRepeatValues.new(
           min_size, max_size, (min_size + max_size) * 0.5
         )
-        result.push source.given(of) while rep.should_continue(source)
+        result.push source.any(of) while rep.should_continue(source)
         result
       end
     end
 
-    alias any_array arrays
+    alias array arrays
 
     # A provider that combines several other providers, so that it may
     # provide any value that could come from one of them.
-    # For example, mixed(strings, integers) could provide either of "a"
+    # For example, from(strings, integers) could provide either of "a"
     # or 1.
+    # @note This has a slightly non-standard aliasing. It reads more
+    #   nicely if you write `any from(a, b, c)` but e.g.
+    #   `lists(of: mix_of(a, b, c))`.
+    #
     # @return [Provider]
     # @param components [Array<Provider>] Providers from which the
     #   returned provider may draw values. If components contains an
-    #   array it will be flattened first, so e.g. mixed(a, b)
-    #   is equivalent to mixed([a, b])
-    def mixed(*components)
+    #   array it will be flattened first, so e.g. from(a, b)
+    #   is equivalent to from([a, b])
+    def from(*components)
       components = components.flatten
       indexes = from_hypothesis_core(
         HypothesisCoreBoundedIntegers.new(components.size - 1)
       )
       composite do |source|
-        i = source.given(indexes)
-        source.given(components[i])
+        i = source.any(indexes)
+        source.any(components[i])
       end
     end
+
+    alias mix_of from
 
     # A provider for any one of a fixed list of values.
     # @note these values are provided as is, so if the provided
@@ -307,17 +313,17 @@ module Hypothesis
     # @return [Provider]
     # @param values [Enumerable] A collection of values that may be
     #   provided.
-    def values_from(values)
+    def choice_from(values)
       values = values.to_a
       indexes = from_hypothesis_core(
         HypothesisCoreBoundedIntegers.new(values.size - 1)
       )
       composite do |source|
-        values.fetch(source.given(indexes))
+        values.fetch(source.any(indexes))
       end
     end
 
-    alias any_value_from values_from
+    alias choices_from choice_from
 
     # A provider for integers
     # @return [Provider]
@@ -328,9 +334,9 @@ module Hypothesis
       if min.nil? && max.nil?
         base
       elsif min.nil?
-        composite { |source| max - source.given(base).abs }
+        composite { |source| max - source.any(base).abs }
       elsif max.nil?
-        composite { |source| min + source.given(base).abs }
+        composite { |source| min + source.any(base).abs }
       else
         bounded = from_hypothesis_core(
           HypothesisCoreBoundedIntegers.new(max - min)
@@ -338,12 +344,12 @@ module Hypothesis
         if min.zero?
           bounded
         else
-          composite { |source| min + source.given(bounded) }
+          composite { |source| min + source.any(bounded) }
         end
       end
     end
 
-    alias any_integer integers
+    alias integer integers
 
     private
 

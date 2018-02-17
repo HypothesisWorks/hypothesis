@@ -14,8 +14,8 @@ RSpec.describe 'Incorrect usage' do
     end
   end
 
-  it 'includes using given outside a hypothesis call' do
-    bad_usage { given integers }
+  it 'includes using any outside a hypothesis call' do
+    bad_usage { any integers }
   end
 
   it 'includes using assume outside a hypothesis call' do
@@ -28,16 +28,16 @@ RSpec.describe 'Incorrect usage' do
     end
     bad_usage do
       hypothesis do
-        find { given integers >= 0 }
+        find { any integers >= 0 }
       end
     end
   end
 
-  it 'includes using the parent given inside a composite' do
+  it 'includes using the parent any inside a composite' do
     bad_usage do
       hypothesis do
-        given(composite do
-          given integers
+        any(composite do
+          any integers
         end)
       end
     end
