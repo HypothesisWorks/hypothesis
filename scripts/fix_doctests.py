@@ -67,6 +67,11 @@ class FailingExample(object):
         return slice(self.line, self.line + len(self.expected_lines))
 
     def adjust(self):
+        if self.line is None and self.file.endswith('.rst'):
+            # Sphinx reports an unknown line number when the doctest is
+            # included from a docstring, so docutils must have misreported the
+            # file location.  We thus force it to the most likley candidate:
+            self.file = 'src/hypothesis/strategies.py'
         with open(self.file) as f:
             lines = f.read().split('\n')
         if self.line is not None:
