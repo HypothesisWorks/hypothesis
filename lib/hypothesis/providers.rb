@@ -103,7 +103,7 @@ module Hypothesis
   # on the module object directly.
   module Providers
     class <<self
-      include self
+      include Providers
     end
 
     # composite lets you chain multiple providers together,
