@@ -18,4 +18,6 @@ jobs:
     - stage: test
       script: bundle exec rake format
     -
+      script: bundle exec rake doc
+    -
       script: ./scripts/run-tests-isolated.sh
