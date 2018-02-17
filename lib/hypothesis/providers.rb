@@ -153,7 +153,7 @@ module Hypothesis
     def codepoints(min: 1, max: 1_114_111)
       base = integers(min: min, max: max)
       if min <= 126
-        mixed(integers(min: min, max: [126, max].min), base)
+        from(integers(min: min, max: [126, max].min), base)
       else
         base
       end
@@ -279,14 +279,18 @@ module Hypothesis
 
     # A provider that combines several other providers, so that it may
     # provide any value that could come from one of them.
-    # For example, mixed(strings, integers) could provide either of "a"
+    # For example, from(strings, integers) could provide either of "a"
     # or 1.
+    # @note This has a slightly non-standard aliasing. It reads more
+    #   nicely if you write `any from(a, b, c)` but e.g.
+    #   `lists(of: mix_of(a, b, c))`.
+    #
     # @return [Provider]
     # @param components [Array<Provider>] Providers from which the
     #   returned provider may draw values. If components contains an
-    #   array it will be flattened first, so e.g. mixed(a, b)
-    #   is equivalent to mixed([a, b])
-    def mixed(*components)
+    #   array it will be flattened first, so e.g. from(a, b)
+    #   is equivalent to from([a, b])
+    def from(*components)
       components = components.flatten
       indexes = from_hypothesis_core(
         HypothesisCoreBoundedIntegers.new(components.size - 1)
@@ -296,6 +300,8 @@ module Hypothesis
         source.any(components[i])
       end
     end
+
+    alias mix_of from
 
     # A provider for any one of a fixed list of values.
     # @note these values are provided as is, so if the provided
