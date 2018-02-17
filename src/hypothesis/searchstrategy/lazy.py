@@ -64,7 +64,6 @@ def unwrap_strategies(s):
 
 
 class LazyStrategy(SearchStrategy):
-
     """A strategy which is defined purely by conversion to and from another
     strategy.
 

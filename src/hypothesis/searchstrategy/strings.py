@@ -27,8 +27,8 @@ from hypothesis.searchstrategy.strategies import SearchStrategy, \
 
 
 class OneCharStringStrategy(SearchStrategy):
-
     """A strategy which generates single character strings of text type."""
+
     specifier = text_type
     zero_point = ord('0')
 
@@ -67,7 +67,6 @@ class OneCharStringStrategy(SearchStrategy):
 
 
 class StringStrategy(MappedSearchStrategy):
-
     """A strategy for text strings, defined in terms of a strategy for lists of
     single character text strings."""
 
@@ -84,7 +83,6 @@ class StringStrategy(MappedSearchStrategy):
 
 
 class BinaryStringStrategy(MappedSearchStrategy):
-
     """A strategy for strings of bytes, defined in terms of a strategy for
     lists of bytes."""
 

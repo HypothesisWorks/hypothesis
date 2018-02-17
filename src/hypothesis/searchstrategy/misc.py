@@ -24,7 +24,6 @@ from hypothesis.searchstrategy.strategies import SearchStrategy, \
 
 
 class BoolStrategy(SearchStrategy):
-
     """A strategy that produces Booleans with a Bernoulli conditional
     distribution."""
 
@@ -47,9 +46,7 @@ def is_simple_data(value):
 
 
 class JustStrategy(SearchStrategy):
-
-    """A strategy which simply returns a single fixed value with probability
-    1."""
+    """A strategy which always returns a single fixed value."""
 
     def __init__(self, value):
         SearchStrategy.__init__(self)
@@ -69,7 +66,6 @@ class JustStrategy(SearchStrategy):
 
 
 class RandomStrategy(MappedSearchStrategy):
-
     """A strategy which produces Random objects.
 
     The conditional distribution is simply a RandomWithSeed seeded with
@@ -82,7 +78,6 @@ class RandomStrategy(MappedSearchStrategy):
 
 
 class SampledFromStrategy(SearchStrategy):
-
     """A strategy which samples from a set of elements. This is essentially
     equivalent to using a OneOfStrategy over Just strategies but may be more
     efficient and convenient.

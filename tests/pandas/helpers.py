@@ -28,7 +28,6 @@ PANDAS_TIME_DTYPES = tuple(map(np.dtype, [
 def supported_by_pandas(dtype):
     """Checks whether the dtype is one that can be correctly handled by
     Pandas."""
-
     # Pandas only supports a limited range of timedelta and datetime dtypes
     # compared to the full range that numpy supports and will convert
     # everything to those types (possibly increasing precision in the course of

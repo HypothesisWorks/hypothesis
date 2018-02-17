@@ -19,17 +19,14 @@ from __future__ import division, print_function, absolute_import
 
 
 class HypothesisException(Exception):
-
     """Generic parent class for exceptions thrown by Hypothesis."""
 
 
 class CleanupFailed(HypothesisException):
-
     """At least one cleanup task failed and no other exception was raised."""
 
 
 class UnsatisfiedAssumption(HypothesisException):
-
     """An internal error raised by assume.
 
     If you're seeing this error something has gone wrong.
@@ -38,7 +35,6 @@ class UnsatisfiedAssumption(HypothesisException):
 
 
 class BadTemplateDraw(HypothesisException):
-
     """An internal error raised when something unfortunate happened during
     template generation and you should restart the draw, preferably with a new
     parameter.
@@ -50,7 +46,6 @@ class BadTemplateDraw(HypothesisException):
 
 
 class NoSuchExample(HypothesisException):
-
     """The condition we have been asked to satisfy appears to be always false.
 
     This does not guarantee that no example exists, only that we were
@@ -76,14 +71,12 @@ class DefinitelyNoSuchExample(NoSuchExample):  # pragma: no cover
 
 
 class NoExamples(HypothesisException):
-
     """Raised when example() is called on a strategy but we cannot find any
     examples after enough tries that we really should have been able to if this
     was ever going to work."""
 
 
 class Unsatisfiable(HypothesisException):
-
     """We ran out of time or examples before we could find enough examples
     which satisfy the assumptions of this hypothesis.
 
@@ -98,7 +91,6 @@ class Unsatisfiable(HypothesisException):
 
 
 class Flaky(HypothesisException):
-
     """This function appears to fail non-deterministically: We have seen it
     fail when passed this example at least once, but a subsequent invocation
     did not fail.
@@ -117,31 +109,26 @@ class Flaky(HypothesisException):
 
 
 class Timeout(Unsatisfiable):
-
     """We were unable to find enough examples that satisfied the preconditions
     of this hypothesis in the amount of time allotted to us."""
 
 
 class WrongFormat(HypothesisException, ValueError):
-
     """An exception indicating you have attempted to serialize a value that
     does not match the type described by this format."""
 
 
 class BadData(HypothesisException, ValueError):
-
     """The data that we got out of the database does not seem to match the data
     we could have put into the database given this schema."""
 
 
 class InvalidArgument(HypothesisException, TypeError):
-
     """Used to indicate that the arguments to a Hypothesis function were in
     some manner incorrect."""
 
 
 class ResolutionFailed(InvalidArgument):
-
     """Hypothesis had to resolve a type to a strategy, but this failed.
 
     Type inference is best-effort, so this only happens when an
@@ -152,18 +139,15 @@ class ResolutionFailed(InvalidArgument):
 
 
 class InvalidState(HypothesisException):
-
     """The system is not in a state where you were allowed to do that."""
 
 
 class InvalidDefinition(HypothesisException, TypeError):
-
     """Used to indicate that a class definition was not well put together and
     has something wrong with it."""
 
 
 class AbnormalExit(HypothesisException):
-
     """Raised when a test running in a child process exits without returning or
     raising an exception."""
 
@@ -182,7 +166,6 @@ class HypothesisDeprecationWarning(HypothesisException, FutureWarning):
 
 
 class Frozen(HypothesisException):
-
     """Raised when a mutation method has been called on a ConjectureData object
     after freeze() has been called."""
 

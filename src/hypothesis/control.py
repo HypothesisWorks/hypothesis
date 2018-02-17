@@ -30,8 +30,8 @@ def reject():
 
 
 def assume(condition):
-    """``assume()`` is like an :ref:`assert <python:assert>` that marks the
-    example as bad, rather than failing the test.
+    """Calling ``assume`` is like an :ref:`assert <python:assert>` that marks
+    the example as bad, rather than failing the test.
 
     This allows you to specify properties that you *assume* will be
     true, and let Hypothesis try to avoid similar examples in future.
@@ -123,7 +123,6 @@ def event(value):
     Events should be strings or convertible to them.
 
     """
-
     context = _current_build_context.value
     if context is None:
         raise InvalidArgument(

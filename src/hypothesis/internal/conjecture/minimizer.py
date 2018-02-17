@@ -151,7 +151,6 @@ class Minimizer(object):
         of floating at low cost in runtime and only moderate cost in elegance.
 
         """
-
         # If the block is of the wrong size then we're certainly not using the
         # float encoding.
         if self.size != 8:

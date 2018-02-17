@@ -25,7 +25,6 @@ from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 class DeferredStrategy(SearchStrategy):
-
     """A strategy which may be used before it is fully defined."""
 
     def __init__(self, definition):
@@ -66,7 +65,7 @@ class DeferredStrategy(SearchStrategy):
         return self.wrapped_strategy.supports_find
 
     def calc_label(self):
-        """deferred strategies don't have a calculated label, because we would
+        """Deferred strategies don't have a calculated label, because we would
         end up having to calculate the fixed point of some hash function in
         order to calculate it when they recursively refer to themself!
 
@@ -74,7 +73,6 @@ class DeferredStrategy(SearchStrategy):
         will be passed to draw.
 
         """
-
         # This is actually the same as the parent class implementation, but we
         # include it explicitly here in order to document that this is a
         # deliberate decision.

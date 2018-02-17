@@ -973,6 +973,7 @@ class SampleSet(object):
     the index for efficient lookup to add and remove values.
 
     """
+
     __slots__ = ('__values', '__index')
 
     def __init__(self):
@@ -1290,7 +1291,6 @@ class Shrinker(object):
         it twice will have exactly the same effect as calling it once.
 
         """
-
         run_expensive_shrinks = False
 
         prev = None
@@ -1663,7 +1663,6 @@ class Shrinker(object):
         block to be lowered.
 
         """
-
         initial_attempt = bytearray(self.shrink_target.buffer)
         for i in blocks:
             if i >= len(self.blocks):
@@ -1867,7 +1866,6 @@ class Shrinker(object):
         more values at once.
 
         """
-
         self.debug('Simultaneous shrinking of duplicated blocks')
 
         def canon(b):
@@ -2012,7 +2010,6 @@ class Shrinker(object):
         been.
 
         """
-
         self.debug('Lowering blocks while deleting intervals')
         i = 0
         while i < len(self.intervals):
@@ -2118,7 +2115,6 @@ class Shrinker(object):
         out of order pairs before we get to that stage.
 
         """
-
         free_bytes = []
 
         for i, (u, v) in enumerate(self.blocks):

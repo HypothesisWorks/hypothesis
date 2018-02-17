@@ -92,7 +92,6 @@ default_value = UniqueIdentifier(u'default_value')
 def validator_to_filter(f):
     """Converts the field run_validators method to something suitable for use
     in filter."""
-
     def validate(value):
         try:
             f.run_validators(value)

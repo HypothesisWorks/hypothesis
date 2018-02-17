@@ -116,7 +116,6 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
 
 
 class GenericStateMachine(object):
-
     """A GenericStateMachine is the basic entry point into Hypothesis's
     approach to stateful testing.
 
@@ -211,7 +210,6 @@ GenericStateMachine.find_breaking_runner = classmethod(find_breaking_runner)
 
 
 class StateMachineRunner(object):
-
     """A StateMachineRunner is a description of how to run a state machine.
 
     It contains values that it will use to shape the examples.
@@ -430,7 +428,6 @@ class ShuffleBundle(object):
 
 
 class RuleBasedStateMachine(GenericStateMachine):
-
     """A RuleBasedStateMachine gives you a more structured way to define state
     machines.
 
@@ -441,6 +438,7 @@ class RuleBasedStateMachine(GenericStateMachine):
     executed.
 
     """
+
     _rules_per_class = {}
     _invariants_per_class = {}
     _base_rules_per_class = {}
