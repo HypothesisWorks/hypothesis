@@ -80,37 +80,4 @@ module Hypothesis
       end
     end
   end
-
-  class TestCase
-    attr_reader :draws, :print_log, :print_draws, :wrapped_data
-
-    def initialize(wrapped_data, print_draws: false, record_draws: false)
-      @wrapped_data = wrapped_data
-
-      @draws = [] if record_draws
-      @print_log = [] if print_draws
-      @depth = 0
-    end
-
-    def given(provider = nil, name: nil, &block)
-      top_level = @depth.zero?
-
-      begin
-        @depth += 1
-        provider ||= block
-        result = provider.provide(self, &block)
-        if top_level
-          draws&.push(result)
-          print_log&.push([name, result.inspect])
-        end
-        result
-      ensure
-        @depth -= 1
-      end
-    end
-
-    def assume(condition)
-      raise UnsatisfiedAssumption unless condition
-    end
-  end
 end
