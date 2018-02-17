@@ -17,13 +17,22 @@
 
 from __future__ import division, print_function, absolute_import
 
+from inspect import cleandoc
+
 from hypothesis._settings import note_deprecation
 from hypothesis.internal.reflection import proxies
 
 
 def renamed_arguments(**rename_mapping):
     """Helper function for deprecating arguments that have been renamed to a
-    new form."""
+    new form.
+
+    Note: There are some issues with this function (see
+    https://github.com/HypothesisWorks/hypothesis-python/issues/1111).
+    It's not too bad for current uses, but shouldn't be used in new
+    places without fixing it up.
+
+    """
     assert len(set(rename_mapping.values())) == len(rename_mapping)
 
     def accept(f):
@@ -48,6 +57,10 @@ def renamed_arguments(**rename_mapping):
         # a docstring is a strong indicator that they're running in this mode,
         # so skip adding this message if that's the case.
         if with_name_check.__doc__ is not None:
+            # Appending to the raw docstring gives the new stuff a
+            # different indentation level and so prevents the later clean step
+            # from working properly. So we clean here first.
+            with_name_check.__doc__ = cleandoc(with_name_check.__doc__)
             with_name_check.__doc__ += '\n'.join((
                 '', '',
                 'The following arguments have been renamed:',
