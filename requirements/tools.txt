@@ -17,6 +17,8 @@ docformatter==0.8         # via pyformat
 docutils==0.14            # via restructuredtext-lint, sphinx
 dparse==0.2.1             # via pyupio, safety
 first==2.0.1              # via pip-tools
+flake8-docstrings==1.3.0
+flake8-polyfill==1.0.2    # via flake8-docstrings
 flake8==3.5.0
 hashin-pyup==0.7.2        # via pyupio
 idna==2.6                 # via requests
@@ -31,6 +33,7 @@ pkginfo==1.4.1            # via twine
 pluggy==0.6.0             # via pytest, tox
 py==1.5.2                 # via pytest, tox
 pycodestyle==2.3.1        # via autopep8, flake8
+pydocstyle==2.1.1         # via flake8-docstrings
 pyflakes==1.6.0           # via autoflake, flake8
 pyformat==0.7
 pygithub==1.36            # via pyupio
@@ -46,8 +49,8 @@ requests-toolbelt==0.8.0  # via twine
 requests==2.18.4          # via python-gitlab, pyupio, requests-toolbelt, safety, sphinx, twine
 restructuredtext-lint==1.1.2
 safety==1.7.0             # via pyupio
-six==1.11.0               # via dparse, packaging, pip-tools, pytest, python-gitlab, pyupio, sphinx, tox
-snowballstemmer==1.2.1    # via sphinx
+six==1.11.0               # via dparse, packaging, pip-tools, pydocstyle, pytest, python-gitlab, pyupio, sphinx, tox
+snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.2.4
 sphinx==1.7.0
 sphinxcontrib-websupport==1.0.1  # via sphinx
