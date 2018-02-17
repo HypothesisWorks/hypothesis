@@ -6,8 +6,10 @@ require 'hypothesis/engine'
 require 'hypothesis/world'
 
 module Hypothesis
+  # @!visibility private
   HYPOTHESIS_LOCATION = File.dirname(__FILE__)
 
+  # @!visibility private
   def hypothesis_stable_identifier
     # Attempt to get a "stable identifier" for any given
     # call into hypothesis. We use these to create

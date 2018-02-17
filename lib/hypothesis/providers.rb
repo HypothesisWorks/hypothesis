@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# @!visibility private
 class HypothesisCoreRepeatValues
   def should_continue(source)
     result = _should_continue(source.wrapped_data)
@@ -154,7 +155,9 @@ module Hypothesis
       end
     end
 
+    # @!visibility private
     module Implementations
+      # @!visibility private
       class CompositeProvider < Provider
         def initialize(block = nil, &implicit)
           @block = block || implicit
@@ -165,6 +168,7 @@ module Hypothesis
         end
       end
 
+      # @!visibility private
       class ProviderFromCore < Provider
         def initialize(core_provider)
           @core_provider = core_provider
