@@ -93,7 +93,7 @@ class FailingExample(object):
 
     def __repr__(self):
         return '{}\nExpected: {!r:.60}\nGot:      {!r:.60}'.format(
-            self.location, self.expected, self.got)
+            self.location, self.expected_lines, self.got_lines)
 
 
 def get_doctest_output():
@@ -112,6 +112,12 @@ def get_doctest_output():
         tests[ex.file].add(ex)
     return {fname: sorted(examples, key=lambda x: x.line, reverse=True)
             for fname, examples in tests.items()}
+
+
+def indent_like(lines, like):
+    """Indent ``lines`` to the same level as ``like``."""
+    prefix = len(like[0].rstrip()) - len(dedent_lines(like)[0].rstrip())
+    return [prefix * ' ' + l for l in dedent_lines(lines, force_newline=True)]
 
 
 def main():
@@ -133,7 +139,8 @@ def main():
         with open(fname) as f:
             lines = f.readlines()
         for ex in examples:
-            lines[ex.indices] = ex.got_lines
+            # Note: can't indent earlier, as we don't know file indentation
+            lines[ex.indices] = indent_like(ex.got_lines, lines[ex.indices])
         with open(fname, 'w') as f:
             f.writelines(lines)
 
