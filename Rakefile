@@ -74,19 +74,20 @@ rescue LoadError
 end
 
 task :gem do
-  uncommitted = `git ls-files lib/ --others --exclude-standard`.split()
+  uncommitted = `git ls-files lib/ --others --exclude-standard`.split
   uncommitted_ruby = uncommitted.grep(/\.rb$/)
   uncommitted_ruby.sort!
-  if uncommitted_ruby.size > 0
-    abort "Cannot build gem with uncomitted Ruby files #{uncommitted_ruby.join(", ")}"
+  unless uncommitted_ruby.empty?
+    abort 'Cannot build gem with uncomitted Ruby '\
+      "files #{uncommitted_ruby.join(', ')}"
   end
 
-  sh "rm -rf hypothesis-specs*.gem"
-  sh "git clean -fdx lib"
-  sh "gem build hypothesis-specs.gemspec"
+  sh 'rm -rf hypothesis-specs*.gem'
+  sh 'git clean -fdx lib'
+  sh 'gem build hypothesis-specs.gemspec'
 end
 
 task :tag_release do
-  spec = Gem::Specification::load("hypothesis-specs.gemspec")
-  sh "git", "tag", spec.version.to_s
+  spec = Gem::Specification.load('hypothesis-specs.gemspec')
+  sh 'git', 'tag', spec.version.to_s
 end
