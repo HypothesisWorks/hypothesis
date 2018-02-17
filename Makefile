@@ -77,7 +77,7 @@ format: $(PYFORMAT) $(ISORT)
 	$(FILES_TO_FORMAT) | xargs $(PYFORMAT) -i
 
 lint: $(FLAKE8)
-	$(FLAKE8) src tests --exclude=compat.py,test_reflection.py,test_imports.py,tests/py2,test_lambda_formatting.py
+	$(FLAKE8) src tests
 
 
 check-pyup-yml: $(TOOL_VIRTUALENV)
