@@ -24,6 +24,7 @@ import re
 import sys
 from subprocess import PIPE, run
 from collections import defaultdict
+from distutils.version import StrictVersion
 
 import hypothesistooling as tools
 
@@ -98,6 +99,11 @@ def get_doctest_output():
 
 def main():
     os.chdir(tools.ROOT)
+    version = run(['sphinx-build', '--version'], stdout=PIPE,
+                  encoding='utf-8').stdout.lstrip('sphinx-build ')
+    if StrictVersion(version) < '1.7':
+        print('This script requires Sphinx 1.7 or later; got %s.\n' % version)
+        sys.exit(2)
     failing = get_doctest_output()
     if not failing:
         print('All doctests are OK')
