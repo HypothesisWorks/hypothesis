@@ -8,3 +8,4 @@ coverage
 .yardoc
 isolated
 doc
+*.gem

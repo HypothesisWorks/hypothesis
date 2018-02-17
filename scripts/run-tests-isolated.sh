@@ -5,10 +5,7 @@ set -e -o xtrace
 rm -rf isolated
 mkdir isolated
 
-rm -rf hypothesis-specs*.gem
-rm -rf lib/hypothesis-ruby-core/
-
-gem build hypothesis-specs.gemspec
+bundle exec rake gem
 
 mv hypothesis-specs*.gem isolated
 cp -Rl .rspec spec isolated

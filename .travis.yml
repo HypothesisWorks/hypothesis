@@ -21,3 +21,26 @@ jobs:
       script: bundle exec rake doc
     -
       script: ./scripts/run-tests-isolated.sh
+
+before_deploy:
+  script:
+    - rake tag_release
+
+deploy:
+  -
+    provider: releases
+    api_key:
+      secure: wa05CldqVjYhPt031t+cvkKsMrlTsuEYFmGn5tp2aNUoJbYw5UNovZTqsPCZUbG8alU/u35I0Wzul/YMc8pRAC7N82E0ZCmZ4G+MAqjWMspT8pNHLh3VvPEEQnG7sgTaXWK2MViWeOOPICILUIzhMNFadNMk3I2fw4AJUG11uWS9nky/cIrsk3THPFZl6qWfcMr1U01OfCgF4r8Vv3TcF65YLkg9cHdVwiNlH1kI6turA0DP1SY57gat3nH45vR/+AVw2KivAFPzujCBlw3w6vzPGP+WNE8FNzg/CV0az5kyPo5qXC9f8yKQLOYJzzR8ZgCsmZkBwzq8rBs8yqZ3sXU14bSEtOOzUnKv+9fwDTm8B8MkYifZDhhPyxFf74h2cs75ZdlHSt8sK3HuBG8ZKDWlla2XqQo0UpzQLmPe9YO3lWPdL585bV80d8YIFQWP9h7rrbVkdNyjNU7oa8MUz7Ju26/dMI1LD6ytfonmSvPQngxRi+g0w/A/K7EFcZPbWLgNChLAYFxoYJLoSa+chcKPQ8+ckinvdt4gW9TT+nuCOpynoW/is4c6ruRKVC4e6dYFU98Qa5YWcnZW/ltWTKex0Bv48uEcuP/qbb9QtkfEHtrSIyIsJTwAZfiezi0mRV2zI1iHbayoHJkBlk4G95tFZoyOvSNwlfNFzXsS64A=
+    file: hypothesis-*.gem
+    file_glob: true
+    on:
+      repo: HypothesisWorks/hypothesis-ruby
+      branch: master
+  -
+    provider: rubygems
+    api_key:
+      secure: cVLBEQhjnMS2N5S1+4fD/4jR+fwW5hZhpKSyIgX124IpXHAj6efdMpT6J7juAE3rCTjb677pS+E8dvRM1xSYOf8pr7N7sKzPLdhg8mKpV2QjTrq3Jg7dsDBB+jJUy1FBofY9DZieAGvGAXdvF53RIDpcrWRlUr8Qrj0AbxyJfNfIOOWP4lAg9TEQkv8kSWkcnfkJiiPf+qCBX+xdo5mwl6FqyKux5HhdMIjnRnqliMC2LYxqqqPo8CVS8K2U3jKGT/LPgUQqCe52dSJcJbStcBUFy4fVun9vOFTBM4SbEXGm8+CLuBqT+OwCOEtu6yDrIMOwDV6+SPAiNVOcSPc3juR5gwd64Mm69RJqJf7VsXfgNPgXf8s+Z2xpvq9ss1rgIdlv4iH61k/BqVU7SY4u2Q8n/QcThkVxWcbt5e8YT1PXkOIgqf0Py/pkuSAitBuA3Tzf0xBwfZ3FFO7w3fPbxF4u+YBbWdNsanGgKN9FDTJI78+RqKDtdQd3eq4h4GxOiAkHGRAlmnKldLdFBVs2nLU8u2pIrwCxcHV+StOMdTQcmCrp+qt0GDwh2odCJjzckPqAJRA1mdoNDpAHFRaa1jGvqpD2Q88KxSQvtEHikBi25cSoAlpBPjokYjRp8/TSgCFIXzaEaMDGvoIMnKUS3FK4rsgamYx6bv4apKIRq/Y=
+    gem: hypothesis-specs
+    on:
+      repo: HypothesisWorks/hypothesis-ruby
+      branch: master

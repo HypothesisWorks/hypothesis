@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'rubygems'
 require 'helix_runtime/build_task'
 
 begin
@@ -70,4 +71,23 @@ begin
     end
   end
 rescue LoadError
+end
+
+task :gem do
+  uncommitted = `git ls-files lib/ --others --exclude-standard`.split
+  uncommitted_ruby = uncommitted.grep(/\.rb$/)
+  uncommitted_ruby.sort!
+  unless uncommitted_ruby.empty?
+    abort 'Cannot build gem with uncomitted Ruby '\
+      "files #{uncommitted_ruby.join(', ')}"
+  end
+
+  sh 'rm -rf hypothesis-specs*.gem'
+  sh 'git clean -fdx lib'
+  sh 'gem build hypothesis-specs.gemspec'
+end
+
+task :tag_release do
+  spec = Gem::Specification.load('hypothesis-specs.gemspec')
+  sh 'git', 'tag', spec.version.to_s
 end
