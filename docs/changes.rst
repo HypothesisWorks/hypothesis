@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.45.1 - 2018-02-17
+-------------------
+
+This fixes an indentation issue in docstrings for
+:func:`~hypothesis.strategies.datetimes`, :func:`~hypothesis.strategies.dates`,
+:func:`~hypothesis.strategies.times`, and
+:func:`~hypothesis.strategies.timedeltas`.
+
+-------------------
 3.45.0 - 2018-02-13
 -------------------
 
