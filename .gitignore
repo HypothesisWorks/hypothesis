@@ -5,3 +5,6 @@ target/
 Cargo.lock
 *.so
 coverage
+.yardoc
+isolated
+doc

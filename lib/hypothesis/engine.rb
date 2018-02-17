@@ -8,16 +8,18 @@ module Hypothesis
     attr_reader :current_source
     attr_accessor :is_find
 
-    def initialize(max_examples: 200, seed: nil)
-      seed = Random.rand(2**64 - 1) if seed.nil?
-      @core_engine = HypothesisCoreEngine.new(seed, max_examples)
+    def initialize(options)
+      seed = Random.rand(2**64 - 1)
+      @core_engine = HypothesisCoreEngine.new(
+        seed, options.fetch(:max_examples)
+      )
     end
 
     def run
       loop do
         core = @core_engine.new_source
         break if core.nil?
-        @current_source = Source.new(core)
+        @current_source = TestCase.new(core)
         begin
           result = yield(@current_source)
           if is_find && result
@@ -42,10 +44,10 @@ module Hypothesis
       end
 
       if is_find
-        @current_source = Source.new(core, record_draws: true)
+        @current_source = TestCase.new(core, record_draws: true)
         yield @current_source
       else
-        @current_source = Source.new(core, print_draws: true)
+        @current_source = TestCase.new(core, print_draws: true)
 
         begin
           yield @current_source
@@ -78,39 +80,6 @@ module Hypothesis
           raise e
         end
       end
-    end
-  end
-
-  class Source
-    attr_reader :draws, :print_log, :print_draws, :wrapped_data
-
-    def initialize(wrapped_data, print_draws: false, record_draws: false)
-      @wrapped_data = wrapped_data
-
-      @draws = [] if record_draws
-      @print_log = [] if print_draws
-      @depth = 0
-    end
-
-    def given(provider = nil, name: nil, &block)
-      top_level = @depth.zero?
-
-      begin
-        @depth += 1
-        provider ||= block
-        result = provider.provide(self, &block)
-        if top_level
-          draws&.push(result)
-          print_log&.push([name, result.inspect])
-        end
-        result
-      ensure
-        @depth -= 1
-      end
-    end
-
-    def assume(condition)
-      raise UnsatisfiedAssumption unless condition
     end
   end
 end
