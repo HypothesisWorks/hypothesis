@@ -1150,7 +1150,6 @@ def test_can_handle_size_changing_in_reordering_with_unsortable_bits(
 ):
     """Forces the reordering to pass to run its quadratic comparison of every
     pair and changes the size during that pass."""
-
     monkeypatch.setattr(
         Shrinker, 'shrink', Shrinker.reorder_bytes)
     monkeypatch.setattr(

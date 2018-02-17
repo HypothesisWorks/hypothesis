@@ -32,7 +32,6 @@ def test_no_falsifying_example_if_unittest_skip(skip_exception):
     """If a ``SkipTest`` exception is raised during a test, Hypothesis should
     not continue running the test and shrink process, nor should it print
     anything about falsifying examples."""
-
     class DemoTest(unittest.TestCase):
 
         @given(xs=integers())
