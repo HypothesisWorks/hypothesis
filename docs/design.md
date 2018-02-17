@@ -30,7 +30,7 @@ for Python and Hypothesis for Ruby are:
 * In Python we do a whole giant song and dance about exposing
   functions for the test runner to call, while in Ruby we just
   have a function which repeatedly calls a block and then fails.
-* in Python you specify a bunch of given parameters up front,
+* In Python you specify a bunch of given parameters up front,
   and then if you want values inline in the test you [explicitly
   opt in to it](https://hypothesis.readthedocs.io/en/latest/data.html#drawing-interactively-in-tests),
   while in Ruby this is not only the default but the only way to
@@ -38,6 +38,10 @@ for Python and Hypothesis for Ruby are:
 * Strategies are called providers because strategy is a terrible
   name that was originally intended to be internal and then leaked
   into the public API because I wasn't thinking hard about naming.
+* Many of the providers have different names than the corresponding
+  names in hypothesis-python. There is also a weird dual naming
+  convention for providers where there is both e.g. `integers` and
+  `any_integer` as aliases for each other.
 
 So for example:
 
@@ -45,8 +49,8 @@ So for example:
 RSPec.describe "integer addition" do
   it "commutes" do
     hypothesis do
-      m = given integers
-      n = given integers
+      m = given any_integer
+      n = given any_integer
       expect(m + n).to eq(n + m)
     end
   end
