@@ -5,13 +5,13 @@ RSpec.describe 'mixed provider' do
 
   it 'includes the first argument' do
     find_any do
-      given(mixed(integers, strings)).is_a? Integer
+      any(mixed(integers, strings)).is_a? Integer
     end
   end
 
   it 'includes the second argument' do
     find_any do
-      given(mixed(integers, strings)).is_a? String
+      any(mixed(integers, strings)).is_a? String
     end
   end
 end

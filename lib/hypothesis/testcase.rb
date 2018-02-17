@@ -18,15 +18,15 @@ module Hypothesis
       @depth = 0
     end
 
-    # Calls {Hypothesis#given} in the test case this represents,
+    # Calls {Hypothesis#any} in the test case this represents,
     # but does not print the result in the event of a failing test
     # case.
     #
-    # @return [Object] A given for the current test case.
+    # @return [Object] A any for the current test case.
     # @param provider [Provider] A provider describing the possible
-    #   givens.
-    def given(provider)
-      internal_given(provider)
+    #   anys.
+    def any(provider)
+      internal_any(provider)
     end
 
     # Calls {Hypothesis#assume} in the test case this represents.
@@ -35,7 +35,7 @@ module Hypothesis
     end
 
     # @!visibility private
-    def internal_given(provider = nil, name: nil, &block)
+    def internal_any(provider = nil, name: nil, &block)
       top_level = @depth.zero?
 
       begin

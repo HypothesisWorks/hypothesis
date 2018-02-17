@@ -4,7 +4,7 @@ RSpec.describe 'printing examples' do
   it 'adds a statement to the exceptions string' do
     expect do
       hypothesis do
-        n = given integers
+        n = any integers
         expect(n).to eq(0)
       end
     end.to raise_exception(/Given #1/)
@@ -13,8 +13,8 @@ RSpec.describe 'printing examples' do
   it 'adds multiple statements to the exceptions string' do
     expect do
       hypothesis do
-        n = given integers
-        m = given integers
+        n = any integers
+        m = any integers
         expect(n).to eq(m)
       end
     end.to raise_exception(/Given #1.+Given #2/m)
@@ -23,7 +23,7 @@ RSpec.describe 'printing examples' do
   it 'includes the name in the Given' do
     expect do
       hypothesis do
-        n = given integers, name: 'fred'
+        n = any integers, name: 'fred'
         expect(n).to eq(1)
       end
     end.to raise_exception(/Given fred:/)
@@ -34,7 +34,7 @@ RSpec.describe 'printing examples' do
     3.times do
       expect do
         hypothesis do
-          given integers
+          any integers
           raise shared
         end
       end.to raise_exception do |ex|
@@ -45,13 +45,13 @@ RSpec.describe 'printing examples' do
     end
   end
 
-  it 'does not include nested givens in printing' do
+  it 'does not include nested anys in printing' do
     expect do
       hypothesis do
-        value = given(composite do |source|
-          source.given integers
-          source.given integers
-          source.given integers
+        value = any(composite do |source|
+          source.any integers
+          source.any integers
+          source.any integers
         end)
         expect(value).to eq(0)
       end
@@ -63,7 +63,7 @@ RSpec.describe 'printing examples' do
   it 'includes Given in inspect as well as to_s' do
     expect do
       hypothesis do
-        n = given integers
+        n = any integers
         expect(n).to eq(0)
       end
     end.to raise_exception do |ex|

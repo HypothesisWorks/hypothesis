@@ -5,7 +5,7 @@ RSpec.describe 'hypothesis' do
 
   it 'can find mid sized integers' do
     n, = find do
-      m = given(integers)
+      m = any(integers)
       m >= 100 && m <= 1000
     end
     expect(n).to eq(100)

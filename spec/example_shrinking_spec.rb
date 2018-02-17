@@ -4,7 +4,7 @@ RSpec.describe 'shrinking' do
   include Hypothesis::Debug
 
   it 'finds lower bounds on integers' do
-    n, = find { given(integers) >= 10 }
+    n, = find { any(integers) >= 10 }
     expect(n).to eq(10)
   end
 
@@ -12,8 +12,8 @@ RSpec.describe 'shrinking' do
     @original = nil
 
     a, b = find do
-      m = given integers
-      n = given integers
+      m = any integers
+      n = any integers
       m > n && n > 0
     end
 

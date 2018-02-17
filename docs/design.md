@@ -41,7 +41,7 @@ for Python and Hypothesis for Ruby are:
 * Many of the providers have different names than the corresponding
   names in hypothesis-python. There is also a weird dual naming
   convention for providers where there is both e.g. `integers` and
-  `any_integer` as aliases for each other.
+  `integer` as aliases for each other.
 
 So for example:
 
@@ -49,8 +49,8 @@ So for example:
 RSPec.describe "integer addition" do
   it "commutes" do
     hypothesis do
-      m = given any_integer
-      n = given any_integer
+      m = any integer
+      n = any integer
       expect(m + n).to eq(n + m)
     end
   end
