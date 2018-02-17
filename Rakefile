@@ -36,23 +36,23 @@ task :format do
 end
 
 begin
-  require "yard"
+  require 'yard'
 
   YARD::Rake::YardocTask.new(:runyard) do |t|
-   t.files   = [
-    'lib/hypothesis.rb', 'lib/hypothesis/errors.rb', 'lib/hypothesis/providers.rb',
-    'lib/hypothesis/testcase.rb',
-  ]
-   t.options = ['--markup=markdown', '--no-private']
+    t.files = [
+      'lib/hypothesis.rb', 'lib/hypothesis/errors.rb',
+      'lib/hypothesis/providers.rb', 'lib/hypothesis/testcase.rb'
+    ]
+    t.options = ['--markup=markdown', '--no-private']
   end
 
-  task :doc => :runyard do
+  task doc: :runyard do
     YARD::Registry.load
 
     objs = YARD::Registry.select do |o|
       is_private = false
       t = o
-      while !t.root?
+      until t.root?
         if t.visibility != :public
           is_private = true
           break
@@ -60,13 +60,13 @@ begin
         t = t.parent
       end
 
-      !is_private && o.docstring.blank? 
+      !is_private && o.docstring.blank?
     end
 
-    objs.sort_by!{|o| o.name.to_s }
+    objs.sort_by! { |o| o.name.to_s }
 
-    if objs.size > 0
-      abort "Undocumented objects: #{objs.map{|o| o.name}.join(', ')}"
+    unless objs.empty?
+      abort "Undocumented objects: #{objs.map(&:name).join(', ')}"
     end
   end
 rescue LoadError

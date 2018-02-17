@@ -22,12 +22,12 @@ module Hypothesis
   class Provider
     # A Provider that provides values by drawing them from
     # this provider and passing them to the block argument.
-    # 
+    #
     # e.g. `integers.map { |i| i * 2 }` is a provider of
     # even integers.
     #
     # @return [Provider]
-    # @yield A value from the current provider 
+    # @yield A value from the current provider
     def map
       Implementations::CompositeProvider.new do |source|
         yield(source.given(self))
@@ -38,7 +38,7 @@ module Hypothesis
 
     # A Provider providing values drawn from this
     # provider such that the block returns a true value.
-    # 
+    #
     # e.g. `integers.map { |i| i % 2 == 0}` is a provider of
     # even integers (but will typically be less efficient
     # than the one suggested in {Provider#map}.
@@ -49,7 +49,7 @@ module Hypothesis
     #   testing.
     #
     # @return [Provider]
-    # @yield A value from the current provider 
+    # @yield A value from the current provider
     def select
       Implementations::CompositeProvider.new do |source|
         result = nil
@@ -97,13 +97,13 @@ module Hypothesis
   # A module of many common {Provider} implementations.
   # You should use methods from here to construct providers
   # for your testing rather than subclassing Provider yourself.
-  # 
+  #
   # You can use methods from this module by including
   # Hypothesis::Providers in your tests, or by calling them
   # on the module object directly.
   #
   # Most methods in this module that return a Provider have
-  # two names: A singular and a plural name. These are 
+  # two names: A singular and a plural name. These are
   # simply aliases and are identical in every way, but are
   # provided to improve readability. For example
   # `given an_integer` reads better than `given integers`
@@ -116,7 +116,7 @@ module Hypothesis
 
     # composite lets you chain multiple providers together,
     # by providing whatever value results from its block.
-    # 
+    #
     # For example the following provides a list plus some
     # element from that list:
     #

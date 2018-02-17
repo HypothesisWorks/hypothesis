@@ -6,7 +6,6 @@ require 'hypothesis/testcase'
 require 'hypothesis/engine'
 require 'hypothesis/world'
 
-
 # This is the main module for using Hypothesis.
 # It is expected that you will include this in your
 # tests, but its methods are also available on the
@@ -106,18 +105,18 @@ module Hypothesis
   # y had a minimum value of x.
   # If we changed it to `expect(y).to be > x` we would see output
   # like the following:
-  # 
+  #
   # ```
   # Failure/Error: expect(y).to be > x
-  # 
+  #
   # Given #1: 0
   # Given #2: 0
   # expected: > 0
-  #      got:   0 
-  #```
+  #      got:   0
+  # ```
   #
   # In more detail:
-  # 
+  #
   # hypothesis calls its provided block many times. Each invocation
   # of the block is a *test case*.
   # A test case has three important features:
@@ -133,13 +132,13 @@ module Hypothesis
   #   case should be considered a failure. These could be e.g. RSpec
   #   expectations or minitest matchers, but anything that throws an
   #   exception will be treated as a failed assertion.
-  # 
+  #
   # A test case which satisfies all of its assumptions and assertions
   # is *valid*. A test-case which satisfies all of its assumptions but
   # fails one of its assertions is *failing*.
-  # 
+  #
   # A call to hypothesis does the following:
-  # 
+  #
   # 1. It tries to *generate* a failing test case.
   # 2. If it succeeded then it will *shrink* that failing test case.
   # 3. Finally, it will *display* the shrunk failing test case by
@@ -148,7 +147,7 @@ module Hypothesis
   #
   # Generation consists of randomly trying test cases until one of
   # three things has happened:
-  # 
+  #
   # 1. It has found a failing test case. At this point it will start
   #    *shrinking* the test case (see below).
   # 2. It has found enough valid test cases. At this point it will
@@ -158,7 +157,7 @@ module Hypothesis
   #    time. At this point it will either silently stop or raise
   #    `Hypothesis::Unsatisfiable` depending on how many valid
   #    examples it found.
-  # 
+  #
   # *Shrinking* is when Hypothesis takes a failing test case and tries
   # to make it easier to understand. It does this by replacing the givens
   # in the test case with smaller and simpler values. These givens will
@@ -166,7 +165,7 @@ module Hypothesis
   # In general shrinking is automatic and you shouldn't need to care
   # about the details of it. If the test case you're shown at the end
   # is messy or needlessly large, please file a bug explaining the problem!
-  # 
+  #
   # @param max_valid_test_cases [Integer] The maximum number of valid test
   #   cases to run without finding a failing test case before stopping.
   def hypothesis(max_valid_test_cases: 200, &block)

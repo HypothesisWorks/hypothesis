@@ -17,7 +17,7 @@ RSpec.describe 'variable hash providers' do
       x = given any_hash_with(
         keys: integers(min: 0, max: 4),
         values: strings,
-        min_size: 4,
+        min_size: 4
       )
       expect(x.size).to be >= 4
     end

@@ -16,7 +16,7 @@ module Hypothesis
     class NoSuchExample < HypothesisError
     end
 
-    def find(options={}, &block)
+    def find(options = {}, &block)
       unless Hypothesis::World.current_engine.nil?
         raise UsageError, 'Cannot nest hypothesis calls'
       end

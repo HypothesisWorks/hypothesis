@@ -10,7 +10,9 @@ module Hypothesis
 
     def initialize(options)
       seed = Random.rand(2**64 - 1)
-      @core_engine = HypothesisCoreEngine.new(seed, options.fetch(:max_examples))
+      @core_engine = HypothesisCoreEngine.new(
+        seed, options.fetch(:max_examples)
+      )
     end
 
     def run

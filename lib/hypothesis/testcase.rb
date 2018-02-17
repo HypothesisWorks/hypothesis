@@ -1,5 +1,6 @@
-module Hypothesis
+# frozen_string_literal: true
 
+module Hypothesis
   # A TestCase class provides a concrete representation of
   # an executing test case. You do not normally need to use this
   # within the body of the test, but it exists to be used as
@@ -20,14 +21,13 @@ module Hypothesis
     # Calls {Hypothesis#given} in the test case this represents,
     # but does not print the result in the event of a failing test
     # case.
-    # 
+    #
     # @return [Object] A given for the current test case.
     # @param provider [Provider] A provider describing the possible
     #   givens.
     def given(provider)
       internal_given(provider)
     end
-
 
     # Calls {Hypothesis#assume} in the test case this represents.
     def assume(condition)
