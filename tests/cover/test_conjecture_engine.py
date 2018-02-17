@@ -33,9 +33,19 @@ from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     ConjectureData
 from hypothesis.internal.conjecture.engine import Shrinker, \
-    RunIsComplete, ConjectureRunner
+    MultiShrinker, RunIsComplete, ConjectureRunner
 
 MAX_SHRINKS = 1000
+
+
+def patch_shrinking(monkeypatch, shrink):
+    monkeypatch.setattr(
+        Shrinker, 'escape_local_minimum', lambda self: None)
+    monkeypatch.setattr(
+        MultiShrinker, 'shrink', MultiShrinker.shrink_target_label,
+    )
+    monkeypatch.setattr(Shrinker, 'single_greedy_shrink_step', shrink)
+    monkeypatch.setattr(Shrinker, 'is_trivial', lambda self: False)
 
 
 def run_to_buffer(f):
@@ -578,8 +588,8 @@ def test_can_shrink_variable_draws(n_large):
 
 @pytest.mark.parametrize('n', [1, 5, 8, 15])
 def test_can_shrink_variable_draws_with_just_deletion(n, monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.interval_deletion_with_block_lowering
+    patch_shrinking(
+        monkeypatch, Shrinker.interval_deletion_with_block_lowering
     )
     # Would normally be added by minimize_individual_blocks, but we skip
     # that phase in this test.
@@ -605,8 +615,8 @@ def test_can_shrink_variable_draws_with_just_deletion(n, monkeypatch):
 
 
 def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.interval_deletion_with_block_lowering
+    patch_shrinking(
+        monkeypatch, Shrinker.interval_deletion_with_block_lowering
     )
     # Would normally be added by minimize_individual_blocks, but we skip
     # that phase in this test.
@@ -769,9 +779,7 @@ def test_can_delete_intervals(monkeypatch):
 
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples', generate_new_examples)
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.adaptive_example_deletion
-    )
+    patch_shrinking(monkeypatch, Shrinker.adaptive_example_deletion)
 
     def f(data):
         if data.draw_bits(1):
@@ -819,7 +827,7 @@ def test_reorder_blocks(monkeypatch):
 
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples', generate_new_examples)
-    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.reorder_blocks)
+    patch_shrinking(monkeypatch, Shrinker.reorder_blocks)
 
     @run_to_buffer
     def x(data):
@@ -832,8 +840,7 @@ def test_reorder_blocks(monkeypatch):
 
 
 def test_duplicate_blocks_that_go_away(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.minimize_duplicated_blocks)
+    patch_shrinking(monkeypatch, Shrinker.minimize_duplicated_blocks)
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.test_function(
@@ -853,8 +860,7 @@ def test_duplicate_blocks_that_go_away(monkeypatch):
 
 
 def test_accidental_duplication(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.minimize_duplicated_blocks)
+    patch_shrinking(monkeypatch, Shrinker.minimize_duplicated_blocks)
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.test_function(
@@ -876,8 +882,7 @@ def test_accidental_duplication(monkeypatch):
 
 
 def test_discarding(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.remove_discarded)
+    patch_shrinking(monkeypatch, Shrinker.remove_discarded)
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.test_function(
@@ -907,8 +912,7 @@ def fixate(f):
 
 
 def test_discarding_runs_automatically(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', fixate(Shrinker.minimize_individual_blocks))
+    patch_shrinking(monkeypatch, fixate(Shrinker.minimize_individual_blocks))
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.test_function(
@@ -928,8 +932,7 @@ def test_discarding_runs_automatically(monkeypatch):
 
 
 def test_automatic_discarding_is_turned_off_if_it_does_not_work(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', fixate(Shrinker.minimize_individual_blocks))
+    patch_shrinking(monkeypatch, fixate(Shrinker.minimize_individual_blocks))
     target = hbytes([0, 1]) * 5 + hbytes([11])
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
@@ -1057,8 +1060,7 @@ def test_shrinking_from_mostly_zero(monkeypatch):
 
 
 def test_handles_nesting_of_discard_correctly(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.remove_discarded)
+    patch_shrinking(monkeypatch, Shrinker.remove_discarded)
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.test_function(
@@ -1086,7 +1088,7 @@ def test_can_zero_subintervals(monkeypatch):
             hbytes([3, 0, 0, 0, 1]) * 10
         ))
 
-    monkeypatch.setattr(Shrinker, 'shrink', fixate(Shrinker.zero_draws))
+    patch_shrinking(monkeypatch, fixate(Shrinker.zero_draws))
 
     @run_to_buffer
     def x(data):
@@ -1110,7 +1112,7 @@ def test_can_pass_to_a_subinterval(monkeypatch):
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.cached_test_function(initial))
 
-    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.pass_to_interval)
+    patch_shrinking(monkeypatch, Shrinker.pass_to_interval)
 
     @run_to_buffer
     def x(data):
@@ -1125,8 +1127,7 @@ def test_can_pass_to_a_subinterval(monkeypatch):
 
 
 def test_can_handle_size_changing_in_reordering(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
+    patch_shrinking(monkeypatch, Shrinker.reorder_bytes)
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.test_function(
@@ -1151,8 +1152,7 @@ def test_can_handle_size_changing_in_reordering_with_unsortable_bits(
     """Forces the reordering to pass to run its quadratic comparison of every
     pair and changes the size during that pass."""
 
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
+    patch_shrinking(monkeypatch, Shrinker.reorder_bytes)
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.test_function(
@@ -1177,8 +1177,7 @@ def test_can_handle_size_changing_in_reordering_with_unsortable_bits(
 
 
 def test_will_immediately_reorder_to_sorted(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
+    patch_shrinking(monkeypatch, Shrinker.reorder_bytes)
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.test_function(
@@ -1196,8 +1195,7 @@ def test_will_immediately_reorder_to_sorted(monkeypatch):
 def test_reorder_can_fail_to_sort(monkeypatch):
     target = hbytes([1, 0, 0, 3, 2, 1])
 
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
+    patch_shrinking(monkeypatch, Shrinker.reorder_bytes)
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.test_function(
@@ -1214,8 +1212,7 @@ def test_reorder_can_fail_to_sort(monkeypatch):
 
 
 def test_reordering_interaction_with_writing(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
+    patch_shrinking(monkeypatch, Shrinker.reorder_bytes)
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.test_function(
@@ -1237,8 +1234,8 @@ def test_reordering_interaction_with_writing(monkeypatch):
 
 
 def test_shrinking_blocks_from_common_offset(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', lambda self: (
+    patch_shrinking(
+        monkeypatch, lambda self: (
             self.minimize_individual_blocks(),
             self.lower_common_block_offset(),
         )
@@ -1259,11 +1256,12 @@ def test_shrinking_blocks_from_common_offset(monkeypatch):
 
 
 def test_handle_empty_draws(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.adaptive_example_deletion)
+    patch_shrinking(monkeypatch, Shrinker.adaptive_example_deletion)
 
-    lambda runner: runner.test_function(ConjectureData.for_buffer(
-        [1, 1, 0]))
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(ConjectureData.for_buffer(
+            [1, 1, 0])))
 
     @run_to_buffer
     def x(data):
@@ -1277,3 +1275,26 @@ def test_handle_empty_draws(monkeypatch):
                 break
         data.mark_interesting()
     assert x == hbytes([0])
+
+
+def test_shrinks_multiple_at_once(monkeypatch):
+    n = 6
+
+    def test_function(data):
+        data.mark_interesting(data.draw_bits(16) % n)
+
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(ConjectureData.for_buffer(
+            [255, 255])))
+
+    runner = ConjectureRunner(test_function, settings=settings(
+        max_examples=5000, max_iterations=10000, max_shrinks=MAX_SHRINKS,
+        buffer_size=1024,
+        database=None, perform_health_check=False,
+    ))
+    runner.run()
+    assert len(runner.interesting_examples) == n
+    assert {d.buffer for d in runner.interesting_examples.values()} == {
+        hbytes([0, k]) for k in hrange(n)
+    }
