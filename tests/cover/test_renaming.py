@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import inspect
+
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.internal.renaming import renamed_arguments
 
@@ -37,3 +39,17 @@ def test_using_old_args():
     old_arg = 'An order of otters on the Ouse'
     assert f(old_arg=old_arg) == old_arg
     assert f.__doc__ is None
+
+
+@renamed_arguments(old_arg='new_arg')
+def g(new_arg=None, old_arg=None):
+    """Hi.
+
+    Bye
+
+    """
+
+
+def test_docstring():
+    """Make sure the docstring's indentation didn't get messed up."""
+    assert inspect.cleandoc(g.__doc__).startswith('Hi.\n\nBye')
