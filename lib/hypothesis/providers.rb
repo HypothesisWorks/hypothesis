@@ -101,6 +101,14 @@ module Hypothesis
   # You can use methods from this module by including
   # Hypothesis::Providers in your tests, or by calling them
   # on the module object directly.
+  #
+  # Most methods in this module that return a Provider have
+  # two names: A singular and a plural name. These are 
+  # simply aliases and are identical in every way, but are
+  # provided to improve readability. For example
+  # `given an_integer` reads better than `given integers`
+  # but `arrays(of: integers)` reads better than
+  # `arrays(of: an_integer)`.
   module Providers
     class <<self
       include Providers
@@ -136,6 +144,8 @@ module Hypothesis
       integers(min: 0, max: 1).map { |i| i == 1 }
     end
 
+    alias any_boolean booleans
+
     # A provider of unicode codepoints.
     # @return [Provider]
     # @param min [Integer] The smallest codepoint to provide
@@ -148,6 +158,8 @@ module Hypothesis
         base
       end
     end
+
+    alias any_codepoint codepoints
 
     # A provider of strings
     # @return [Provider]
@@ -170,10 +182,12 @@ module Hypothesis
           false
         end
       end
-      arrays(codepoints, min_size: min_size, max_size: max_size).map do |ls|
+      arrays(of: codepoints, min_size: min_size, max_size: max_size).map do |ls|
         ls.pack('U*')
       end
     end
+
+    alias any_string strings
 
     # A provider of hashes of a fixed shape
     # This is used for hashes where you know exactly what the
@@ -185,7 +199,7 @@ module Hypothesis
     #  The keys will be present unmodified in the provided hashes,
     #  and the values should be providers that will be used to provide
     #  the corresponding values.
-    def fixed_hashes(hash)
+    def hashes_of_shape(hash)
       composite do |source|
         result = {}
         hash.each { |k, v| result[k] = source.given(v) }
@@ -193,13 +207,15 @@ module Hypothesis
       end
     end
 
+    alias any_hash_of_shape hashes_of_shape
+
     # A provider of hashes of variable shape, where the keys and
     # values are each drawn from a specified provider. For example
     # hashes(strings, strings) might provide `{"a" => "b"}`.
     # @return provider
     # @param keys [Provider] the provider that will provide keys
     # @param values [Provider] the provider that will provide values
-    def hashes(keys, values, min_size: 0, max_size: 10)
+    def hashes_with(keys:, values:, min_size: 0, max_size: 10)
       composite do |source|
         result = {}
         rep = HypothesisCoreRepeatValues.new(
@@ -217,6 +233,8 @@ module Hypothesis
       end
     end
 
+    alias any_hash_with hashes_with
+
     # A provider of arrays of a fixed shape
     # This is used for arrays where you know exactly what the
     # keys are, and may want to use different providers for
@@ -228,12 +246,14 @@ module Hypothesis
     #   drawn from the corresponding argument. If elements contains an
     #   array it will be flattened first, so e.g. fixed_arrays(a, b)
     #   is equivalent to fixed_arrays([a, b])
-    def fixed_arrays(*elements)
+    def arrays_of_shape(*elements)
       elements = elements.flatten
       composite do |source|
         elements.map { |e| source.given(e) }.to_a
       end
     end
+
+    alias any_array_of_shape arrays_of_shape
 
     # A provider of arrays of variable shape.
     # This is used for arrays where all of the elements come from
@@ -244,16 +264,18 @@ module Hypothesis
     #   elements of the array.
     # @param min_size [Integer] The smallest valid size of a provided array
     # @param max_size [Integer] The largest valid size of a provided array
-    def arrays(element, min_size: 0, max_size: 10)
+    def arrays(of:, min_size: 0, max_size: 10)
       composite do |source|
         result = []
         rep = HypothesisCoreRepeatValues.new(
           min_size, max_size, (min_size + max_size) * 0.5
         )
-        result.push source.given(element) while rep.should_continue(source)
+        result.push source.given(of) while rep.should_continue(source)
         result
       end
     end
+
+    alias any_array arrays
 
     # A provider that combines several other providers, so that it may
     # provide any value that could come from one of them.
@@ -285,7 +307,7 @@ module Hypothesis
     # @return [Provider]
     # @param values [Enumerable] A collection of values that may be
     #   provided.
-    def choice_of(values)
+    def values_from(values)
       values = values.to_a
       indexes = from_hypothesis_core(
         HypothesisCoreBoundedIntegers.new(values.size - 1)
@@ -294,6 +316,8 @@ module Hypothesis
         values.fetch(source.given(indexes))
       end
     end
+
+    alias any_value_from values_from
 
     # A provider for integers
     # @return [Provider]
@@ -318,6 +342,8 @@ module Hypothesis
         end
       end
     end
+
+    alias any_integer integers
 
     private
 
