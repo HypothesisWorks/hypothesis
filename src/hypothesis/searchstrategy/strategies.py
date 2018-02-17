@@ -60,7 +60,6 @@ def one_of_strategies(xs):
 
 
 class SearchStrategy(object):
-
     """A SearchStrategy is an object that knows how to explore data of a given
     type.
 
@@ -421,7 +420,6 @@ class SearchStrategy(object):
 
 
 class OneOfStrategy(SearchStrategy):
-
     """Implements a union of strategies. Given a number of strategies this
     generates values which could have come from any of them.
 
@@ -526,7 +524,6 @@ class OneOfStrategy(SearchStrategy):
 
 
 class MappedSearchStrategy(SearchStrategy):
-
     """A strategy which is defined purely by conversion to and from another
     strategy.
 

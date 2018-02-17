@@ -433,7 +433,6 @@ def data_frames(
       InvalidArgument being raised.
 
     """
-
     if index is None:
         index = range_indexes()
     else:

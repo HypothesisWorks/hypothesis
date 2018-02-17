@@ -64,7 +64,7 @@ class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
     """
 
     def save(self, key, value):
-        """save this value under this key.
+        """Save ``value`` under ``key``.
 
         If this value is already present for this key, silently do
         nothing

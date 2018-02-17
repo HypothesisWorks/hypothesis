@@ -28,7 +28,6 @@ from hypothesis.searchstrategy.strategies import SearchStrategy, \
 
 
 class IntStrategy(SearchStrategy):
-
     """A generic strategy for integer types that provides the basic methods
     other than produce.
 
@@ -74,7 +73,6 @@ class WideRangeIntStrategy(IntStrategy):
 
 
 class BoundedIntStrategy(SearchStrategy):
-
     """A strategy for providing integers in some interval with inclusive
     endpoints."""
 
@@ -102,7 +100,6 @@ NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
 
 
 class FloatStrategy(SearchStrategy):
-
     """Generic superclass for strategies which produce floats."""
 
     def __init__(self, allow_infinity, allow_nan):
@@ -148,7 +145,6 @@ def float_order_key(k):
 
 
 class FixedBoundedFloatStrategy(SearchStrategy):
-
     """A strategy for floats distributed between two endpoints.
 
     The conditional distribution tries to produce values clustered
@@ -189,7 +185,6 @@ class FixedBoundedFloatStrategy(SearchStrategy):
 
 
 class ComplexStrategy(MappedSearchStrategy):
-
     """A strategy over complex numbers, with real and imaginary values
     distributed according to some provided strategy for floating point
     numbers."""

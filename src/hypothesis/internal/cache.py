@@ -49,6 +49,7 @@ class GenericCache(object):
     on_access and on_evict to implement a specific scoring strategy.
 
     """
+
     __slots__ = ('keys_to_indices', 'data', 'max_size')
 
     def __init__(self, max_size):
@@ -141,7 +142,6 @@ class GenericCache(object):
         is working correctly this should be an expensive no-op.
 
         """
-
         for i, e in enumerate(self.data):
             assert self.keys_to_indices[e.key] == i
             for j in [i * 2 + 1, i * 2 + 2]:
@@ -160,7 +160,6 @@ class GenericCache(object):
         the heap property has been violated locally around i but previously
         held for all other indexes (and no other values have been modified),
         this fixes the heap so that the heap property holds everywhere."""
-
         while i > 0:
             parent = (i - 1) // 2
             if self.__out_of_order(parent, i):
@@ -189,7 +188,6 @@ class GenericCache(object):
         i must be the parent of j.
 
         """
-
         assert i == (j - 1) // 2
         return self.data[j].score < self.data[i].score
 
@@ -209,6 +207,7 @@ class LRUReusedCache(GenericCache):
     entries in preference for the new ones.
 
     """
+
     __slots__ = ('__tick',)
 
     def __init__(self, max_size, ):

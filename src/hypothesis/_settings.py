@@ -110,7 +110,6 @@ class settingsMeta(type):
 
 
 class settings(settingsMeta('settings', (object,), {})):
-
     """A settings object controls a variety of parameters that are used in
     falsification. These may control both the falsification strategy and the
     details of the data that is generated.
@@ -290,11 +289,11 @@ class settings(settingsMeta('settings', (object,), {})):
 
     @staticmethod
     def register_profile(name, settings):
-        """registers a collection of values to be used as a settings profile.
-        These settings can be loaded in by name. Enable different defaults for
-        different settings.
+        """Registers a collection of values to be used as a settings profile.
 
-        - settings is a settings object
+        These settings can be loaded in by name. Enable different
+        defaults for different settings.  ``settings`` must be a
+        settings object.
 
         """
         settings._profiles[name] = settings

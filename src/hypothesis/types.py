@@ -25,7 +25,6 @@ from hypothesis.errors import InvalidArgument
 
 
 class RandomWithSeed(Random):
-
     """A subclass of Random designed to expose the seed it was initially
     provided with.
 
@@ -51,7 +50,6 @@ class RandomWithSeed(Random):
 
 
 class Stream(object):
-
     """A stream is a possibly infinite list. You can index into it, and you can
     iterate over it, but you can't ask its length and iterating over it will
     not necessarily terminate.

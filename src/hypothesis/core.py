@@ -114,7 +114,6 @@ def seed(seed):
     derandomize setting if it is present.
 
     """
-
     def accept(test):
         test._hypothesis_internal_use_seed = seed
         return test

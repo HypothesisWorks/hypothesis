@@ -378,7 +378,7 @@ class many(object):
 
     def reject(self):
         """Reject the last example (i.e. don't count it towards our budget of
-        elements because it's not going to go in the final collection)"""
+        elements because it's not going to go in the final collection)."""
         assert self.count > 0
         self.count -= 1
         self.rejections += 1

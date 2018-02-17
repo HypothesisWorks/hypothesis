@@ -25,7 +25,6 @@ from hypothesis.searchstrategy.strategies import SearchStrategy, \
 
 
 class TupleStrategy(SearchStrategy):
-
     """A strategy responsible for fixed length tuples based on heterogenous
     strategies for each of their elements."""
 
@@ -72,7 +71,6 @@ TERMINATOR = hbytes(b'\0')
 
 
 class ListStrategy(SearchStrategy):
-
     """A strategy for lists which takes an intended average length and a
     strategy for each of its element types and generates lists containing any
     of those element types.
@@ -192,12 +190,11 @@ class UniqueListStrategy(SearchStrategy):
 
 
 class FixedKeysDictStrategy(MappedSearchStrategy):
-
     """A strategy which produces dicts with a fixed set of keys, given a
     strategy for each of their equivalent values.
 
-    e.g. {'foo' : some_int_strategy} would
-    generate dicts with the single key 'foo' mapping to some integer.
+    e.g. {'foo' : some_int_strategy} would generate dicts with the single
+    key 'foo' mapping to some integer.
 
     """
 

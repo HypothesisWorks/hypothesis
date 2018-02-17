@@ -38,7 +38,7 @@ from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, \
 
 
 def fully_qualified_name(f):
-    """Returns a unique identifier for f pointing to the module it was define
+    """Returns a unique identifier for f pointing to the module it was defined
     on, and an containing functions."""
     if f.__module__ is not None:
         return f.__module__ + '.' + qualname(f)
