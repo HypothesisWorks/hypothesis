@@ -120,14 +120,14 @@ module Hypothesis
       include Providers
     end
 
-    # composite lets you chain multiple providers together,
+    # built_as lets you chain multiple providers together,
     # by providing whatever value results from its block.
     #
     # For example the following provides a list plus some
     # element from that list:
     #
     # ```ruby
-    #   composite do
+    #   built_as do
     #     ls = any list(of: integers)
     #     # Or min_size: 1 above, but this shows use of
     #     # assume
@@ -138,9 +138,11 @@ module Hypothesis
     #
     # @return [Provider] A provider that provides the result
     #   of the passed block.
-    def composite(&block)
+    def built_as(&block)
       Hypothesis::Provider::Implementations::CompositeProvider.new(block)
     end
+
+    alias values_built_as built_as
 
     # A provider of boolean values
     # @return [Provider]
@@ -204,7 +206,7 @@ module Hypothesis
     #  and the values should be providers that will be used to provide
     #  the corresponding values.
     def hashes_of_shape(hash)
-      composite do
+      built_as do
         result = {}
         hash.each { |k, v| result[k] = any(v) }
         result
@@ -220,7 +222,7 @@ module Hypothesis
     # @param keys [Provider] the provider that will provide keys
     # @param values [Provider] the provider that will provide values
     def hashes_with(keys:, values:, min_size: 0, max_size: 10)
-      composite do
+      built_as do
         result = {}
         rep = HypothesisCoreRepeatValues.new(
           min_size, max_size, (min_size + max_size) * 0.5
@@ -253,7 +255,7 @@ module Hypothesis
     #   is equivalent to fixed_arrays([a, b])
     def arrays_of_shape(*elements)
       elements = elements.flatten
-      composite do
+      built_as do
         elements.map { |e| any e }.to_a
       end
     end
@@ -270,7 +272,7 @@ module Hypothesis
     # @param min_size [Integer] The smallest valid size of a provided array
     # @param max_size [Integer] The largest valid size of a provided array
     def arrays(of:, min_size: 0, max_size: 10)
-      composite do
+      built_as do
         result = []
         rep = HypothesisCoreRepeatValues.new(
           min_size, max_size, (min_size + max_size) * 0.5
@@ -301,7 +303,7 @@ module Hypothesis
       indexes = from_hypothesis_core(
         HypothesisCoreBoundedIntegers.new(components.size - 1)
       )
-      composite do
+      built_as do
         i = any indexes
         any components[i]
       end
@@ -324,7 +326,7 @@ module Hypothesis
       indexes = from_hypothesis_core(
         HypothesisCoreBoundedIntegers.new(values.size - 1)
       )
-      composite do
+      built_as do
         values.fetch(any(indexes))
       end
     end
@@ -340,9 +342,9 @@ module Hypothesis
       if min.nil? && max.nil?
         base
       elsif min.nil?
-        composite { max - any(base).abs }
+        built_as { max - any(base).abs }
       elsif max.nil?
-        composite { min + any(base).abs }
+        built_as { min + any(base).abs }
       else
         bounded = from_hypothesis_core(
           HypothesisCoreBoundedIntegers.new(max - min)
@@ -350,7 +352,7 @@ module Hypothesis
         if min.zero?
           bounded
         else
-          composite { min + any(bounded) }
+          built_as { min + any(bounded) }
         end
       end
     end

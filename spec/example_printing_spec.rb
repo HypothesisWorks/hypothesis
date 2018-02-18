@@ -48,7 +48,7 @@ RSpec.describe 'printing examples' do
   it 'does not include nested anys in printing' do
     expect do
       hypothesis do
-        value = any composite do
+        value = any built_as do
           any integers
           any integers
           any integers
