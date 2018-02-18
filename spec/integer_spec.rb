@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe 'integer providers' do
+RSpec.describe 'integer possibles' do
   they 'respect upper bounds' do
     hypothesis do
       expect(any(integers(max: 100))).to be <= 100

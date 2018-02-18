@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe 'fixed hash providers' do
+RSpec.describe 'fixed hash possibles' do
   they 'include all the keys' do
     hypothesis do
       x = any hash_of_shape(a: integers, b: integers)
@@ -11,7 +11,7 @@ RSpec.describe 'fixed hash providers' do
   end
 end
 
-RSpec.describe 'variable hash providers' do
+RSpec.describe 'variable hash possibles' do
   they 'respect lower bounds' do
     hypothesis do
       x = any hash_with(

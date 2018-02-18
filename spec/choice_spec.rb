@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe 'element_of provider' do
+RSpec.describe 'element_of possible' do
   include Hypothesis::Debug
 
   it 'includes the first argument' do

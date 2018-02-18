@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe 'from provider' do
+RSpec.describe 'from possible' do
   include Hypothesis::Debug
 
   it 'includes the first argument' do

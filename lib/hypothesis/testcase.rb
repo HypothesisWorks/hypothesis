@@ -24,13 +24,13 @@ module Hypothesis
     end
 
     # @!visibility private
-    def any(provider = nil, name: nil, &block)
+    def any(possible = nil, name: nil, &block)
       top_level = @depth.zero?
 
       begin
         @depth += 1
-        provider ||= block
-        result = provider.provide(&block)
+        possible ||= block
+        result = possible.provide(&block)
         if top_level
           draws&.push(result)
           print_log&.push([name, result.inspect])
