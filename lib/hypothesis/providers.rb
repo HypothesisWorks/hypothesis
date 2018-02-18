@@ -126,7 +126,7 @@ module Hypothesis
     #     # Or min_size: 1 above, but this shows use of
     #     # assume
     #     tc.assume(ls.size > 0)
-    #     i = tc.any(choice_of(ls))
+    #     i = tc.any(element_of(ls))
     #     [ls, i]
     # ```
     #
@@ -313,7 +313,7 @@ module Hypothesis
     # @return [Provider]
     # @param values [Enumerable] A collection of values that may be
     #   provided.
-    def choice_from(values)
+    def element_of(values)
       values = values.to_a
       indexes = from_hypothesis_core(
         HypothesisCoreBoundedIntegers.new(values.size - 1)
@@ -323,7 +323,7 @@ module Hypothesis
       end
     end
 
-    alias choices_from choice_from
+    alias elements_of element_of
 
     # A provider for integers
     # @return [Provider]
