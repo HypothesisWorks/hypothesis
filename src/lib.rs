@@ -90,13 +90,13 @@ ruby! {
     }
   }
 
-  class HypothesisCoreBitProvider{
+  class HypothesisCoreBitPossible{
     struct {
       n_bits: u64,
     }
 
     def initialize(helix, n_bits: u64){
-      return HypothesisCoreBitProvider{helix, n_bits: n_bits};
+      return HypothesisCoreBitPossible{helix, n_bits: n_bits};
     }
 
     def provide(&mut self, data: &mut HypothesisCoreDataSource) -> Option<u64>{

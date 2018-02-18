@@ -2,7 +2,7 @@
 
 RSpec.describe 'shrinking' do
   include Hypothesis::Debug
-  include Hypothesis::Providers
+  include Hypothesis::Possibilities
 
   it 'finds a small list' do
     ls, = find { any(arrays(of: integers)).length >= 2 }

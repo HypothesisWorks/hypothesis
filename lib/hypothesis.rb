@@ -93,7 +93,7 @@ module Hypothesis
   # end
   # ```
   #
-  # The arguments to `any` are `Provider` instances which
+  # The arguments to `any` are `Possible` instances which
   # specify the range of value values for it to return.
   #
   # Typically you would include this inside some test in your
@@ -185,31 +185,19 @@ module Hypothesis
   # Supplies a value to be used in your hypothesis.
   # @note It is invalid to call this method outside of a hypothesis block.
   # @return [Object] A value provided by the provider argument.
-  # @param provider [Provider] A provider that specifies the possible values
+  # @param provider [Possible] A provider that specifies the possible values
   #   to return.
   # @param name [String, nil] An optional name to show next to the result on
   #   failure. This can be helpful if you have a lot of givens in your
   #   hypothesis, as it makes it easier to keep track of which is which.
-  def any(provider, name: nil)
+  def any(provider, name: nil, &block)
     if World.current_engine.nil?
       raise UsageError, 'Cannot call any outside of a hypothesis block'
     end
 
-    @hypothesis_in_any = false unless defined? @hypothesis_in_any
-
-    if @hypothesis_in_any
-      raise UsageError, 'Cannot nest calls to any. Did you mean to call' \
-        ' any on a source argument?'
-    end
-
-    @hypothesis_in_any = true
-    begin
-      World.current_engine.current_source.internal_any(
-        provider, name: name
-      )
-    ensure
-      @hypothesis_in_any = false
-    end
+    World.current_engine.current_source.any(
+      provider, name: name, &block
+    )
   end
 
   # Specify an assumption of your test case. Only test cases which satisfy

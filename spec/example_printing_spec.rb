@@ -48,11 +48,11 @@ RSpec.describe 'printing examples' do
   it 'does not include nested anys in printing' do
     expect do
       hypothesis do
-        value = any(composite do |source|
-          source.any integers
-          source.any integers
-          source.any integers
-        end)
+        value = any built_as do
+          any integers
+          any integers
+          any integers
+        end
         expect(value).to eq(0)
       end
     end.to raise_exception(RSpec::Expectations::ExpectationNotMetError) do |ex|

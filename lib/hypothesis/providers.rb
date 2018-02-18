@@ -14,48 +14,52 @@ module Hypothesis
     include Hypothesis
   end
 
-  # A Provider describes a range of valid values that
-  # can be provided by {Hypothesis#any}.
+  # A Possible describes a range of valid values that
+  # can result from a call to {Hypothesis#any}.
   # This class should not be subclassed directly, but
   # instead should always be constructed using methods
-  # from {Hypothesis::Providers}.
-  class Provider
-    # A Provider that provides values by drawing them from
-    # this provider and passing them to the block argument.
+  # from {Hypothesis::Possibilities}.
+  class Possible
+    # @!visibility private
+    include Hypothesis
+
+    # A Possible value constructed by passing one of these
+    # Possible values to the provided block.
     #
-    # e.g. `integers.map { |i| i * 2 }` is a provider of
-    # even integers.
+    # e.g. the Possible values of `integers.map { |i| i * 2 }`
+    # are all even integers.
     #
-    # @return [Provider]
-    # @yield A value from the current provider
+    # @return [Possible]
+    # @yield A possible value of self.
     def map
-      Implementations::CompositeProvider.new do |source|
-        yield(source.any(self))
+      Implementations::CompositePossible.new do
+        yield any(self)
       end
     end
 
     alias collect map
 
-    # A Provider providing values drawn from this
-    # provider such that the block returns a true value.
+    # One of these Possible values selected such that
+    # the block returns a true value for it.
     #
-    # e.g. `integers.map { |i| i % 2 == 0}` is a provider of
-    # even integers (but will typically be less efficient
-    # than the one suggested in {Provider#map}.
+    # e.g. the Possible values of
+    # `integers.filter { |i| i % 2 == 0}`  are all even
+    # integers (but will typically be less efficient
+    # than the one suggested in {Possible#map}.
     #
     # @note Similar warnings to {Hypothesis#assume} apply
     #   here: If the condition is difficult to satisfy this
     #   may impact the performance and quality of your
     #   testing.
     #
-    # @return [Provider]
-    # @yield A value from the current provider
+    # @return [Possible]
+    # @yield A possible value of self.
     def select
-      Implementations::CompositeProvider.new do |source|
+      Implementations::CompositePossible.new do
         result = nil
         4.times do |i|
-          source.assume(i < 3)
-          result = source.any(self)
+          assume(i < 3)
+          result = any self
           break if yield(result)
         end
         result
@@ -67,25 +71,26 @@ module Hypothesis
     # @!visibility private
     module Implementations
       # @!visibility private
-      class CompositeProvider < Provider
+      class CompositePossible < Possible
         def initialize(block = nil, &implicit)
           @block = block || implicit
         end
 
         # @!visibility private
-        def provide(source)
-          @block.call(source)
+        def provide(&block)
+          (@block || block).call
         end
       end
 
       # @!visibility private
-      class ProviderFromCore < Provider
+      class PossibleFromCore < Possible
         def initialize(core_provider)
           @core_provider = core_provider
         end
 
         # @!visibility private
-        def provide(data)
+        def provide
+          data = World.current_engine.current_source
           result = @core_provider.provide(data.wrapped_data)
           raise Hypothesis::DataOverflow if result.nil?
           result
@@ -94,60 +99,62 @@ module Hypothesis
     end
   end
 
-  # A module of many common {Provider} implementations.
-  # You should use methods from here to construct providers
-  # for your testing rather than subclassing Provider yourself.
+  # A module of many common {Possible} implementations.
+  # Rather than subclassing Possible yourself you should use
+  # methods from this module to construct Possible values.`
   #
   # You can use methods from this module by including
-  # Hypothesis::Providers in your tests, or by calling them
+  # Hypothesis::Possibilities in your tests, or by calling them
   # on the module object directly.
   #
-  # Most methods in this module that return a Provider have
+  # Most methods in this module that return a Possible have
   # two names: A singular and a plural name. These are
   # simply aliases and are identical in every way, but are
   # provided to improve readability. For example
-  # `any an_integer` reads better than `given integers`
+  # `any integer` reads better than `given integers`
   # but `arrays(of: integers)` reads better than
-  # `arrays(of: an_integer)`.
-  module Providers
+  # `arrays(of: integer)`.
+  module Possibilities
+    include Hypothesis
+
     class <<self
-      include Providers
+      include Possibilities
     end
 
-    # composite lets you chain multiple providers together,
+    # built_as lets you chain multiple Possible values together,
     # by providing whatever value results from its block.
     #
-    # For example the following provides a list plus some
-    # element from that list:
+    # For example the following provides a array plus some
+    # element from that array:
     #
     # ```ruby
-    #   composite do |tc|
-    #     ls = tc.any(integers)
+    #   built_as do
+    #     ls = any array(of: integers)
     #     # Or min_size: 1 above, but this shows use of
     #     # assume
-    #     tc.assume(ls.size > 0)
-    #     i = tc.any(choice_of(ls))
+    #     assume ls.size > 0
+    #     i = any element_of(ls)
     #     [ls, i]
     # ```
     #
-    # @yield [TestCase] A TestCase instance representing
-    #   the state of the currently executing test case.
-    # @return [Provider] A provider that provides the result
-    #   of the passed block.
-    def composite(&block)
-      Hypothesis::Provider::Implementations::CompositeProvider.new(block)
+    # @return [Possible] A Possible whose possible values are
+    #   any result from the passed block.
+    def built_as(&block)
+      Hypothesis::Possible::Implementations::CompositePossible.new(block)
     end
 
-    # A provider of boolean values
-    # @return [Provider]
+    alias values_built_as built_as
+
+    # A Possible boolean value
+    # @return [Possible]
     def booleans
       integers(min: 0, max: 1).map { |i| i == 1 }
     end
 
     alias boolean booleans
 
-    # A provider of unicode codepoints.
-    # @return [Provider]
+    # A Possible unicode codepoint.
+    # @return [Possible]
     # @param min [Integer] The smallest codepoint to provide
     # @param max [Integer] The largest codepoint to provide
     def codepoints(min: 1, max: 1_114_111)
@@ -161,11 +168,11 @@ module Hypothesis
 
     alias codepoint codepoints
 
-    # A provider of strings
-    # @return [Provider]
-    # @param codepoints [Provider, nil] A provider for the
-    #   codepoints that will be found in the string. If nil,
-    #   will default to self.codepoints. Values from this provider
+    # A Possible String
+    # @return [Possible]
+    # @param codepoints [Possible, nil] The Possible codepoints
+    #   that can be found in the string. If nil,
+    #   will default to self.codepoints. These
     #   will be further filtered to ensure the generated string is
     #   valid.
     # @param min_size [Integer] The smallest valid length for a
@@ -189,44 +196,43 @@ module Hypothesis
 
     alias string strings
 
-    # A provider of hashes of a fixed shape
+    # A Possible Hash, where all possible values have a fixed
+    # shape.
     # This is used for hashes where you know exactly what the
-    # keys are, and may want to use different providers for
-    # their values. For example, fixed_hashes(a: integers, b: booleans)
+    # keys are, and different keys may have different possible values.
+    # For example, fixed_hashes(a: integers, b: booleans)
     # will give you values like `{a: 11, b: false}`.
-    # @return [Provider]
+    # @return [Possible]
     # @param hash [Hash] A hash describing the values to provide.
     #  The keys will be present unmodified in the provided hashes,
-    #  and the values should be providers that will be used to provide
-    #  the corresponding values.
+    #  mapping to their Possible value in the result.
     def hashes_of_shape(hash)
-      composite do |source|
+      built_as do
         result = {}
-        hash.each { |k, v| result[k] = source.any(v) }
+        hash.each { |k, v| result[k] = any(v) }
         result
       end
     end
 
     alias hash_of_shape hashes_of_shape
 
-    # A provider of hashes of variable shape, where the keys and
-    # values are each drawn from a specified provider. For example
-    # hashes(strings, strings) might provide `{"a" => "b"}`.
-    # @return provider
-    # @param keys [Provider] the provider that will provide keys
-    # @param values [Provider] the provider that will provide values
+    # A Possible Hash of variable shape.
+    # @return [Possible]
+    # @param keys [Possible] the possible keys
+    # @param values [Possible] the possible values
     def hashes_with(keys:, values:, min_size: 0, max_size: 10)
-      composite do |source|
+      built_as do
         result = {}
         rep = HypothesisCoreRepeatValues.new(
           min_size, max_size, (min_size + max_size) * 0.5
         )
+        source = World.current_engine.current_source
         while rep.should_continue(source)
-          key = source.any(keys)
+          key = any keys
           if result.include?(key)
             rep.reject
           else
-            result[key] = source.any(values)
+            result[key] = any values
           end
         end
         result
@@ -235,59 +241,61 @@ module Hypothesis
 
     alias hash_with hashes_with
 
-    # A provider of arrays of a fixed shape
-    # This is used for arrays where you know exactly what the
-    # keys are, and may want to use different providers for
-    # their values. For example, fixed_arrays(strings, integers)
+    # A Possible Arrays of a fixed shape.
+    # This is used for arrays where you know exactly how many
+    # elements there are, and different values may be possible
+    # at different positions.
+    # For example, fixed_arrays(strings, integers)
     # will give you values like ["a", 1]
-    # @return [Provider]
-    # @param elements [Array<Provider>] A variable number of providers.
-    #   The provided array will have this many values, with each value
-    #   drawn from the corresponding argument. If elements contains an
-    #   array it will be flattened first, so e.g. fixed_arrays(a, b)
-    #   is equivalent to fixed_arrays([a, b])
+    # @return [Possible]
+    # @param elements [Array<Possible>] A variable number of Possible.
+    #   values. The provided array will have this many values, with
+    #   each value possible for the corresponding argument. If elements
+    #   contains an array it will be flattened first, so e.g.
+    #   arrays_of_shape(a, b) is equivalent to arrays_of_shape([a, b])
     def arrays_of_shape(*elements)
       elements = elements.flatten
-      composite do |source|
-        elements.map { |e| source.any(e) }.to_a
+      built_as do
+        elements.map { |e| any e }.to_a
       end
     end
 
     alias array_of_shape arrays_of_shape
 
-    # A provider of arrays of variable shape.
+    # A Possible Array of variable shape.
     # This is used for arrays where all of the elements come from
-    # the same provider and the size may vary.
+    # the size may vary and the same values are possible at any position.
     # For example, arrays(booleans) might provide [false, true, false].
-    # @return [Provider]
-    # @param element [Provider] A provider that will be used for drawing
-    #   elements of the array.
+    # @return [Possible]
+    # @param of [Possible] The possible elements of the array.
     # @param min_size [Integer] The smallest valid size of a provided array
     # @param max_size [Integer] The largest valid size of a provided array
     def arrays(of:, min_size: 0, max_size: 10)
-      composite do |source|
+      built_as do
         result = []
         rep = HypothesisCoreRepeatValues.new(
           min_size, max_size, (min_size + max_size) * 0.5
         )
-        result.push source.any(of) while rep.should_continue(source)
+        source = World.current_engine.current_source
+        result.push any(of) while rep.should_continue(source)
         result
       end
     end
 
     alias array arrays
 
-    # A provider that combines several other providers, so that it may
-    # provide any value that could come from one of them.
+    # A Possible where the possible values are any one of a number
+    # of other possible values.
     # For example, from(strings, integers) could provide either of "a"
     # or 1.
     # @note This has a slightly non-standard aliasing. It reads more
     #   nicely if you write `any from(a, b, c)` but e.g.
-    #   `lists(of: mix_of(a, b, c))`.
+    #   `arrays(of: mix_of(a, b, c))`.
     #
-    # @return [Provider]
-    # @param components [Array<Provider>] Providers from which the
-    #   returned provider may draw values. If components contains an
+    # @return [Possible]
+    # @param components [Array<Possible>] A number of Possible values,
+    #   where the result will include any value possible from any of
+    #   them. If components contains an
     #   array it will be flattened first, so e.g. from(a, b)
     #   is equivalent to from([a, b])
     def from(*components)
@@ -295,38 +303,37 @@ module Hypothesis
       indexes = from_hypothesis_core(
         HypothesisCoreBoundedIntegers.new(components.size - 1)
       )
-      composite do |source|
-        i = source.any(indexes)
-        source.any(components[i])
+      built_as do
+        i = any indexes
+        any components[i]
       end
     end
 
     alias mix_of from
 
-    # A provider for any one of a fixed list of values.
+    # A Possible where any one of a fixed array of values is possible.
     # @note these values are provided as is, so if the provided
     #   values are mutated in the test you should be careful to make
-    #   sure each test run gets a fresh list (if you use this provider
+    #   sure each test run gets a fresh value (if you use this Possible
     #   in line in the test you don't need to worry about this, this
-    #   is only a problem if you define the provider outside of your
+    #   is only a problem if you define the Possible outside of your
     #   hypothesis block).
-    # @return [Provider]
-    # @param values [Enumerable] A collection of values that may be
-    #   provided.
-    def choice_from(values)
+    # @return [Possible]
+    # @param values [Enumerable] A collection of possible values.
+    def element_of(values)
       values = values.to_a
       indexes = from_hypothesis_core(
         HypothesisCoreBoundedIntegers.new(values.size - 1)
       )
-      composite do |source|
-        values.fetch(source.any(indexes))
+      built_as do
+        values.fetch(any(indexes))
       end
     end
 
-    alias choices_from choice_from
+    alias elements_of element_of
 
-    # A provider for integers
-    # @return [Provider]
+    # A Possible integer
+    # @return [Possible]
     # @param min [Integer] The smallest value integer to provide.
     # @param max [Integer] The largest value integer to provide.
     def integers(min: nil, max: nil)
@@ -334,9 +341,9 @@ module Hypothesis
       if min.nil? && max.nil?
         base
       elsif min.nil?
-        composite { |source| max - source.any(base).abs }
+        built_as { max - any(base).abs }
       elsif max.nil?
-        composite { |source| min + source.any(base).abs }
+        built_as { min + any(base).abs }
       else
         bounded = from_hypothesis_core(
           HypothesisCoreBoundedIntegers.new(max - min)
@@ -344,7 +351,7 @@ module Hypothesis
         if min.zero?
           bounded
         else
-          composite { |source| min + source.any(bounded) }
+          built_as { min + any(bounded) }
         end
       end
     end
@@ -354,7 +361,7 @@ module Hypothesis
     private
 
     def from_hypothesis_core(core)
-      Hypothesis::Provider::Implementations::ProviderFromCore.new(
+      Hypothesis::Possible::Implementations::PossibleFromCore.new(
         core
       )
     end
