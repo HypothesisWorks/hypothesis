@@ -195,7 +195,7 @@ module Hypothesis
       raise UsageError, 'Cannot call any outside of a hypothesis block'
     end
 
-    World.current_engine.current_source.internal_any(
+    World.current_engine.current_source.any(
       provider, name: name
     )
   end

@@ -76,7 +76,7 @@ module Hypothesis
         end
 
         # @!visibility private
-        def provide(_source)
+        def provide
           @block.call
         end
       end
@@ -88,7 +88,8 @@ module Hypothesis
         end
 
         # @!visibility private
-        def provide(data)
+        def provide
+          data = World.current_engine.current_source
           result = @core_provider.provide(data.wrapped_data)
           raise Hypothesis::DataOverflow if result.nil?
           result

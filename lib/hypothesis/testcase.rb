@@ -5,6 +5,7 @@ module Hypothesis
   # an executing test case. You do not normally need to use this
   # within the body of the test, but it exists to be used as
   # an argument to {Hypothesis::Providers::composite}.
+  # @!visibility private
   class TestCase
     # @!visibility private
     attr_reader :draws, :print_log, :print_draws, :wrapped_data
@@ -18,30 +19,18 @@ module Hypothesis
       @depth = 0
     end
 
-    # Calls {Hypothesis#any} in the test case this represents,
-    # but does not print the result in the event of a failing test
-    # case.
-    #
-    # @return [Object] A any for the current test case.
-    # @param provider [Provider] A provider describing the possible
-    #   anys.
-    def any(provider)
-      internal_any(provider)
-    end
-
-    # Calls {Hypothesis#assume} in the test case this represents.
     def assume(condition)
       raise UnsatisfiedAssumption unless condition
     end
 
     # @!visibility private
-    def internal_any(provider = nil, name: nil, &block)
+    def any(provider = nil, name: nil, &block)
       top_level = @depth.zero?
 
       begin
         @depth += 1
         provider ||= block
-        result = provider.provide(self, &block)
+        result = provider.provide
         if top_level
           draws&.push(result)
           print_log&.push([name, result.inspect])
