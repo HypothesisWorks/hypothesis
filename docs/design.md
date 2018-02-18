@@ -35,12 +35,13 @@ for Python and Hypothesis for Ruby are:
   opt in to it](https://hypothesis.readthedocs.io/en/latest/data.html#drawing-interactively-in-tests),
   while in Ruby this is not only the default but the only way to
   get those values.
-* Strategies are called providers because strategy is a terrible
+* Strategies are called Possibles because strategy is a terrible
   name that was originally intended to be internal and then leaked
   into the public API because I wasn't thinking hard about naming.
-* Many of the providers have different names than the corresponding
+* Many of the Possible implementations have different names than
+  the corresponding
   names in hypothesis-python. There is also a weird dual naming
-  convention for providers where there is both e.g. `integers` and
+  convention for Possibles where there is both e.g. `integers` and
   `integer` as aliases for each other.
 
 So for example:
@@ -115,7 +116,7 @@ to be filed off before it can be built.
 
 Things that don't work yet but will:
 
-* The provider library is limited, and most of what is there is bad.
+* The Possible library is limited, and most of what is there is bad.
 * The shrinker is *very* primitive in comparison to in Python.
 * The example database does not yet exist.
 * It can't actually be installed as a gem! Note that even once it is

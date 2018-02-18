@@ -42,7 +42,7 @@ begin
   YARD::Rake::YardocTask.new(:runyard) do |t|
     t.files = [
       'lib/hypothesis.rb', 'lib/hypothesis/errors.rb',
-      'lib/hypothesis/providers.rb'
+      'lib/hypothesis/possible.rb'
     ]
     t.options = ['--markup=markdown', '--no-private']
   end

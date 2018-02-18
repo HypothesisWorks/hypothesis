@@ -84,14 +84,14 @@ module Hypothesis
 
       # @!visibility private
       class PossibleFromCore < Possible
-        def initialize(core_provider)
-          @core_provider = core_provider
+        def initialize(core_possible)
+          @core_possible = core_possible
         end
 
         # @!visibility private
         def provide
           data = World.current_engine.current_source
-          result = @core_provider.provide(data.wrapped_data)
+          result = @core_possible.provide(data.wrapped_data)
           raise Hypothesis::DataOverflow if result.nil?
           result
         end

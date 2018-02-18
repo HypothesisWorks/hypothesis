@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'hypothesis/errors'
-require 'hypothesis/providers'
+require 'hypothesis/possible'
 require 'hypothesis/testcase'
 require 'hypothesis/engine'
 require 'hypothesis/world'
@@ -161,8 +161,9 @@ module Hypothesis
   # *Shrinking* is when Hypothesis takes a failing test case and tries
   # to make it easier to understand. It does this by replacing the givens
   # in the test case with smaller and simpler values. These givens will
-  # still come from the providers, and will obey all the usual constraints.
-  # In general shrinking is automatic and you shouldn't need to care
+  # still come from the possible values, and will obey all the usual
+  # constraints.
+  # In general, shrinking is automatic and you shouldn't need to care
   # about the details of it. If the test case you're shown at the end
   # is messy or needlessly large, please file a bug explaining the problem!
   #
@@ -184,19 +185,19 @@ module Hypothesis
 
   # Supplies a value to be used in your hypothesis.
   # @note It is invalid to call this method outside of a hypothesis block.
-  # @return [Object] A value provided by the provider argument.
-  # @param provider [Possible] A provider that specifies the possible values
+  # @return [Object] A value provided by the possible argument.
+  # @param possible [Possible] A possible that specifies the possible values
   #   to return.
   # @param name [String, nil] An optional name to show next to the result on
   #   failure. This can be helpful if you have a lot of givens in your
   #   hypothesis, as it makes it easier to keep track of which is which.
-  def any(provider, name: nil, &block)
+  def any(possible, name: nil, &block)
     if World.current_engine.nil?
       raise UsageError, 'Cannot call any outside of a hypothesis block'
     end
 
     World.current_engine.current_source.any(
-      provider, name: name, &block
+      possible, name: name, &block
     )
   end
 
