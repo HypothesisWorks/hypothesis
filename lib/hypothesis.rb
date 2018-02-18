@@ -195,21 +195,9 @@ module Hypothesis
       raise UsageError, 'Cannot call any outside of a hypothesis block'
     end
 
-    @hypothesis_in_any = false unless defined? @hypothesis_in_any
-
-    if @hypothesis_in_any
-      raise UsageError, 'Cannot nest calls to any. Did you mean to call' \
-        ' any on a source argument?'
-    end
-
-    @hypothesis_in_any = true
-    begin
-      World.current_engine.current_source.internal_any(
-        provider, name: name
-      )
-    ensure
-      @hypothesis_in_any = false
-    end
+    World.current_engine.current_source.internal_any(
+      provider, name: name
+    )
   end
 
   # Specify an assumption of your test case. Only test cases which satisfy

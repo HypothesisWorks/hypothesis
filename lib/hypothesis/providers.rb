@@ -20,6 +20,9 @@ module Hypothesis
   # instead should always be constructed using methods
   # from {Hypothesis::Providers}.
   class Provider
+    # @!visibility private
+    include Hypothesis
+
     # A Provider that provides values by drawing them from
     # this provider and passing them to the block argument.
     #
@@ -29,8 +32,8 @@ module Hypothesis
     # @return [Provider]
     # @yield A value from the current provider
     def map
-      Implementations::CompositeProvider.new do |source|
-        yield(source.any(self))
+      Implementations::CompositeProvider.new do
+        yield any(self)
       end
     end
 
@@ -51,11 +54,11 @@ module Hypothesis
     # @return [Provider]
     # @yield A value from the current provider
     def select
-      Implementations::CompositeProvider.new do |source|
+      Implementations::CompositeProvider.new do
         result = nil
         4.times do |i|
-          source.assume(i < 3)
-          result = source.any(self)
+          assume(i < 3)
+          result = any self
           break if yield(result)
         end
         result
@@ -73,8 +76,8 @@ module Hypothesis
         end
 
         # @!visibility private
-        def provide(source)
-          @block.call(source)
+        def provide(_source)
+          @block.call
         end
       end
 
@@ -110,6 +113,8 @@ module Hypothesis
   # but `arrays(of: integers)` reads better than
   # `arrays(of: an_integer)`.
   module Providers
+    include Hypothesis
+
     class <<self
       include Providers
     end
@@ -121,17 +126,15 @@ module Hypothesis
     # element from that list:
     #
     # ```ruby
-    #   composite do |tc|
-    #     ls = tc.any(integers)
+    #   composite do
+    #     ls = any list(of: integers)
     #     # Or min_size: 1 above, but this shows use of
     #     # assume
-    #     tc.assume(ls.size > 0)
-    #     i = tc.any(element_of(ls))
+    #     assume(ls.size > 0)
+    #     i = any element_of(ls)
     #     [ls, i]
     # ```
     #
-    # @yield [TestCase] A TestCase instance representing
-    #   the state of the currently executing test case.
     # @return [Provider] A provider that provides the result
     #   of the passed block.
     def composite(&block)
@@ -200,9 +203,9 @@ module Hypothesis
     #  and the values should be providers that will be used to provide
     #  the corresponding values.
     def hashes_of_shape(hash)
-      composite do |source|
+      composite do
         result = {}
-        hash.each { |k, v| result[k] = source.any(v) }
+        hash.each { |k, v| result[k] = any(v) }
         result
       end
     end
@@ -216,17 +219,18 @@ module Hypothesis
     # @param keys [Provider] the provider that will provide keys
     # @param values [Provider] the provider that will provide values
     def hashes_with(keys:, values:, min_size: 0, max_size: 10)
-      composite do |source|
+      composite do
         result = {}
         rep = HypothesisCoreRepeatValues.new(
           min_size, max_size, (min_size + max_size) * 0.5
         )
+        source = World.current_engine.current_source
         while rep.should_continue(source)
-          key = source.any(keys)
+          key = any keys
           if result.include?(key)
             rep.reject
           else
-            result[key] = source.any(values)
+            result[key] = any values
           end
         end
         result
@@ -248,8 +252,8 @@ module Hypothesis
     #   is equivalent to fixed_arrays([a, b])
     def arrays_of_shape(*elements)
       elements = elements.flatten
-      composite do |source|
-        elements.map { |e| source.any(e) }.to_a
+      composite do
+        elements.map { |e| any e }.to_a
       end
     end
 
@@ -265,12 +269,13 @@ module Hypothesis
     # @param min_size [Integer] The smallest valid size of a provided array
     # @param max_size [Integer] The largest valid size of a provided array
     def arrays(of:, min_size: 0, max_size: 10)
-      composite do |source|
+      composite do
         result = []
         rep = HypothesisCoreRepeatValues.new(
           min_size, max_size, (min_size + max_size) * 0.5
         )
-        result.push source.any(of) while rep.should_continue(source)
+        source = World.current_engine.current_source
+        result.push any(of) while rep.should_continue(source)
         result
       end
     end
@@ -295,9 +300,9 @@ module Hypothesis
       indexes = from_hypothesis_core(
         HypothesisCoreBoundedIntegers.new(components.size - 1)
       )
-      composite do |source|
-        i = source.any(indexes)
-        source.any(components[i])
+      composite do
+        i = any indexes
+        any components[i]
       end
     end
 
@@ -318,8 +323,8 @@ module Hypothesis
       indexes = from_hypothesis_core(
         HypothesisCoreBoundedIntegers.new(values.size - 1)
       )
-      composite do |source|
-        values.fetch(source.any(indexes))
+      composite do
+        values.fetch(any(indexes))
       end
     end
 
@@ -334,9 +339,9 @@ module Hypothesis
       if min.nil? && max.nil?
         base
       elsif min.nil?
-        composite { |source| max - source.any(base).abs }
+        composite { max - any(base).abs }
       elsif max.nil?
-        composite { |source| min + source.any(base).abs }
+        composite { min + any(base).abs }
       else
         bounded = from_hypothesis_core(
           HypothesisCoreBoundedIntegers.new(max - min)
@@ -344,7 +349,7 @@ module Hypothesis
         if min.zero?
           bounded
         else
-          composite { |source| min + source.any(bounded) }
+          composite { min + any(bounded) }
         end
       end
     end
