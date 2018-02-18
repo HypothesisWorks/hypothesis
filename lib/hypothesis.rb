@@ -93,7 +93,7 @@ module Hypothesis
   # end
   # ```
   #
-  # The arguments to `any` are `Provider` instances which
+  # The arguments to `any` are `Possible` instances which
   # specify the range of value values for it to return.
   #
   # Typically you would include this inside some test in your
@@ -185,7 +185,7 @@ module Hypothesis
   # Supplies a value to be used in your hypothesis.
   # @note It is invalid to call this method outside of a hypothesis block.
   # @return [Object] A value provided by the provider argument.
-  # @param provider [Provider] A provider that specifies the possible values
+  # @param provider [Possible] A provider that specifies the possible values
   #   to return.
   # @param name [String, nil] An optional name to show next to the result on
   #   failure. This can be helpful if you have a lot of givens in your

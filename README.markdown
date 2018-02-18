@@ -15,7 +15,7 @@ require "hypothesis"
 
 RSpec.configure do |config|
   config.include(Hypothesis)
-  config.include(Hypothesis::Providers)
+  config.include(Hypothesis::Possibilities)
 end
 
 RSpec.describe "removing an element from a list" do

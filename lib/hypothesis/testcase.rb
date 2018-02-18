@@ -4,7 +4,7 @@ module Hypothesis
   # A TestCase class provides a concrete representation of
   # an executing test case. You do not normally need to use this
   # within the body of the test, but it exists to be used as
-  # an argument to {Hypothesis::Providers::built_as}.
+  # an argument to {Hypothesis::Possibilities::built_as}.
   # @!visibility private
   class TestCase
     # @!visibility private

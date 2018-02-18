@@ -69,5 +69,5 @@ RSpec.configure do |config|
   Kernel.srand config.seed
 
   config.include(Hypothesis)
-  config.include(Hypothesis::Providers)
+  config.include(Hypothesis::Possibilities)
 end
