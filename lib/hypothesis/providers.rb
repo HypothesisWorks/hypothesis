@@ -76,8 +76,8 @@ module Hypothesis
         end
 
         # @!visibility private
-        def provide
-          @block.call
+        def provide(&block)
+          (@block || block).call
         end
       end
 
@@ -131,7 +131,7 @@ module Hypothesis
     #     ls = any list(of: integers)
     #     # Or min_size: 1 above, but this shows use of
     #     # assume
-    #     assume(ls.size > 0)
+    #     assume ls.size > 0
     #     i = any element_of(ls)
     #     [ls, i]
     # ```

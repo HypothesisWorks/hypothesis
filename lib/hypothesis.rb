@@ -190,13 +190,13 @@ module Hypothesis
   # @param name [String, nil] An optional name to show next to the result on
   #   failure. This can be helpful if you have a lot of givens in your
   #   hypothesis, as it makes it easier to keep track of which is which.
-  def any(provider, name: nil)
+  def any(provider, name: nil, &block)
     if World.current_engine.nil?
       raise UsageError, 'Cannot call any outside of a hypothesis block'
     end
 
     World.current_engine.current_source.any(
-      provider, name: name
+      provider, name: name, &block
     )
   end
 

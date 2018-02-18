@@ -30,7 +30,7 @@ module Hypothesis
       begin
         @depth += 1
         provider ||= block
-        result = provider.provide
+        result = provider.provide(&block)
         if top_level
           draws&.push(result)
           print_log&.push([name, result.inspect])
