@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.45.2 - 2018-02-18
+-------------------
+
+This release makes our docstring style more consistent, thanks to
+:pypi:`flake8-docstrings`.  There are no user-visible changes.
+
+-------------------
 3.45.1 - 2018-02-17
 -------------------
 
