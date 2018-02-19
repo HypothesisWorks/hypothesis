@@ -200,7 +200,7 @@ module Hypothesis
     # shape.
     # This is used for hashes where you know exactly what the
     # keys are, and different keys may have different possible values.
-    # For example, fixed_hashes(a: integers, b: booleans)
+    # For example, hashes_of_shape(a: integers, b: booleans)
     # will give you values like `{a: 11, b: false}`.
     # @return [Possible]
     # @param hash [Hash] A hash describing the values to provide.
@@ -245,7 +245,7 @@ module Hypothesis
     # This is used for arrays where you know exactly how many
     # elements there are, and different values may be possible
     # at different positions.
-    # For example, fixed_arrays(strings, integers)
+    # For example, arrays_of_shape(strings, integers)
     # will give you values like ["a", 1]
     # @return [Possible]
     # @param elements [Array<Possible>] A variable number of Possible.
