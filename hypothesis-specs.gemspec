@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name        = 'hypothesis-specs'
-  s.version     = '0.0.4'
+  s.version     = '0.0.5'
   s.date        = '2018-02-19'
   s.description = <<~DESCRIPTION
     A port of the Hypothesis property-based testing library to Ruby
