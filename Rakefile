@@ -106,7 +106,7 @@ task :gem do
 
   spec = Gem::Specification.load(GEMSPEC)
 
-  unless system 'git', 'diff', '--exit-code', *spec.files
+  unless system 'git', 'diff', '--exit-code', *(spec.files - ['Rakefile'])
     abort 'Cannot build gem from uncommited files'
   end
 
@@ -199,6 +199,7 @@ file 'secrets.tar.enc' => 'secrets' do
 end
 
 task deploy: :gem do
+  Gem::Specification._clear_load_cache
   spec = Gem::Specification.load('hypothesis-specs.gemspec')
 
   succeeded = system('git', 'tag', spec.version.to_s)
