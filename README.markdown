@@ -30,7 +30,7 @@ RSpec.describe "removing an element from a list" do
 
       to_remove = any element_of(values)
 
-      values.delete_at(value.index(to_remove))
+      values.delete_at(values.index(to_remove))
 
       # Will fail if the value ws duplicated in the list.
       expect(values.include?(to_remove)).to be false
