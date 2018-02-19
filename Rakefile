@@ -99,7 +99,7 @@ file 'secrets.tar.enc' => 'secrets' do
 end
 
 task deploy: :gem do
-  on_master = system("git merge-base  --is-ancestor HEAD origin/master")
+  on_master = system('git merge-base  --is-ancestor HEAD origin/master')
 
   unless on_master
     puts 'Not on master, so no deploy'
