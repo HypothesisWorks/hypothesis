@@ -3,6 +3,7 @@
 require 'rubygems'
 require 'helix_runtime/build_task'
 require 'date'
+require 'open3'
 
 begin
   require 'rspec/core/rake_task'
@@ -88,6 +89,12 @@ GEMSPEC = 'hypothesis-specs.gemspec'
 RELEASE_FILE = 'RELEASE.md'
 CHANGELOG = 'CHANGELOG.md'
 
+def run_for_output(*args)
+  out, result = Open3.capture2(*args)
+  abort if result.exitstatus != 0
+  out.strip
+end
+
 task :gem do
   uncommitted = `git ls-files lib/ --others --exclude-standard`.split
   uncommitted_ruby = uncommitted.grep(/\.rb$/)
@@ -96,13 +103,25 @@ task :gem do
     abort 'Cannot build gem with uncomitted Ruby '\
       "files #{uncommitted_ruby.join(', ')}"
   end
+
   spec = Gem::Specification.load(GEMSPEC)
 
   unless system 'git', 'diff', '--exit-code', *spec.files
     abort 'Cannot build gem from uncommited files'
   end
 
-  has_changes = !(system 'git diff --exit-code origin/master -- src/ lib/')
+  previous_version = spec.version.to_s
+
+  if run_for_output('git', 'tag', '-l', previous_version).empty?
+    sh 'git', 'fetch', '--tags'
+  end
+
+  point_of_divergence = run_for_output(
+    'git', 'merge-base', 'HEAD', previous_version
+  )
+
+  has_changes = !system("git diff --exit-code #{point_of_divergence} "\
+    '-- src/ lib/')
   if File.exist?(RELEASE_FILE)
     release_contents = IO.read(RELEASE_FILE).strip
     release_type, release_contents = release_contents.split("\n", 2)
