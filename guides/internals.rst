@@ -309,13 +309,11 @@ I often find that it is informative to watch the shrink process in action using
 Hypothesis's verbosity settings. This can give you an idea of what the format
 of your data is, and how the shrink process transforms it.
 
-In particular, it is often useful to run a test with the flags ``-s -n0`` to
-tell it not to hide output and the environment variable
-``HYPOTHESIS_VERBOSITY_LEVEL=debug``. (The ``-n0`` is to disable ``xdist``
-since it doesn't play well with ``-s``.) This will give you a very detailed log
-of what the testing process is running, along with information about what passes
-in the shrinker rare running and how they transform it. Since ``xdist`` doesn't
-play well with ``-s``, you should also use ``-n 0`` to disable ``xdist``.
+In particular, it is often useful to run a test with the flag ``-s`` to tell it
+not to hide output and the environment variable ``HYPOTHESIS_VERBOSITY_LEVEL=debug``.
+This will give you a very detailed log of what the testing process is running,
+along with information about what passes in the shrinker rare running and how
+they transform it.
 
 ---------------
 Getting Started
