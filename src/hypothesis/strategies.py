@@ -453,7 +453,8 @@ def complex_numbers(
 
     check_valid_magnitude(min_magnitude, 'min_magnitude')
     check_valid_magnitude(max_magnitude, 'max_magnitude')
-    check_valid_interval(min_magnitude, max_magnitude, 'min_magnitude', 'max_magnitude')
+    check_valid_interval(min_magnitude, max_magnitude,
+                         'min_magnitude', 'max_magnitude')
 
     if max_magnitude == float(u'inf'):
         max_magnitude = None
@@ -473,8 +474,26 @@ def complex_numbers(
         )
 
     from hypothesis.searchstrategy.numbers import ComplexStrategy
+
+    if allow_nan:
+        return ComplexStrategy(
+            tuples(floats(allow_nan=True), floats(allow_nan=True))
+        )
+
+    if max_magnitude is None:
+        return ComplexStrategy(
+            tuples(floats(allow_nan=False), floats(allow_nan=False))
+        )
+
+    def project(z, a, b):
+        # FIXME
+        return z
+
     return ComplexStrategy(
-        tuples(floats(), floats())
+        tuples(
+            floats(min_value=-max_magnitude, max_value=max_magnitude),
+            floats(min_value=-max_magnitude, max_value=max_magnitude)
+        ).map(lambda z : project(z, min_magnitude, max_magnitude))
     )
 
 
