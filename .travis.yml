@@ -16,11 +16,14 @@ install:
 jobs:
   include:
     - stage: test
+      env: TASK=checkformat
       script: bundle exec rake checkformat
     -
+      env: TASK=documentation
       script: bundle exec rake doc
     -
+      env: TASK=run-tests
       script: ./scripts/run-tests-isolated.sh
     - stage: deploy
-
+      if: branch = master
       script: bundle exec rake deploy

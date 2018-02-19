@@ -2,6 +2,7 @@
 
 require 'rubygems'
 require 'helix_runtime/build_task'
+require 'date'
 
 begin
   require 'rspec/core/rake_task'
@@ -82,6 +83,11 @@ begin
 rescue LoadError
 end
 
+GEMSPEC = 'hypothesis-specs.gemspec'
+
+RELEASE_FILE = 'RELEASE.md'
+CHANGELOG = 'CHANGELOG.md'
+
 task :gem do
   uncommitted = `git ls-files lib/ --others --exclude-standard`.split
   uncommitted_ruby = uncommitted.grep(/\.rb$/)
@@ -89,6 +95,72 @@ task :gem do
   unless uncommitted_ruby.empty?
     abort 'Cannot build gem with uncomitted Ruby '\
       "files #{uncommitted_ruby.join(', ')}"
+  end
+  spec = Gem::Specification.load(GEMSPEC)
+
+  unless system 'git', 'diff', '--exit-code', *spec.files
+    abort 'Cannot build gem from uncommited files'
+  end
+
+  has_changes = system 'git diff --exit-code origin/master -- src/ lib/'
+  if File.exist?(RELEASE_FILE)
+    release_contents = IO.read(RELEASE_FILE).strip
+    release_type, release_contents = release_contents.split("\n", 2)
+
+    match = /RELEASE_TYPE: +(major|minor|patch)/.match(release_type)
+    if match
+      release_type = match[1]
+      release_contents = release_contents.strip
+    else
+      abort "Invalid release type line #{release_type.inspect}"
+    end
+
+    components = spec.version.segments.to_a
+    if release_type == 'major'
+      components[0] += 1
+    elsif release_type == 'minor'
+      components[1] += 1
+    else
+      if release_type != 'patch'
+        raise "Unexpected release type #{release_type.inspect}"
+      end
+      components[2] += 1
+    end
+
+    new_version = components.join('.')
+    new_date = Date.today.strftime
+
+    lines = File.readlines(GEMSPEC).map do |l|
+      l.sub(/(s.version += +)'.+$/, "\\1'#{new_version}'").sub(
+        /(s.date += +)'.+$/, "\\1'#{new_date}'"
+      )
+    end
+
+    out = File.new(GEMSPEC, 'w')
+    lines.each do |l|
+      out.write(l)
+    end
+    out.close
+
+    git 'checkout', 'HEAD', CHANGELOG
+    previous_changelog = IO.read(CHANGELOG)
+
+    out = File.new(CHANGELOG, 'w')
+
+    out.write(
+      "## Hypothesis for Ruby #{new_version} (#{new_date})\n\n"
+    )
+    out.write(release_contents.strip)
+    out.write("\n\n")
+    out.write(previous_changelog)
+    out.close
+
+    git 'reset'
+    git 'add', CHANGELOG, GEMSPEC
+    git 'rm', RELEASE_FILE
+    git 'commit', '-m', "Bump version to #{new_version} and update changelog"
+  elsif has_changes
+    abort! 'Source changes found but no release file exists'
   end
 
   sh 'rm -rf hypothesis-specs*.gem'
@@ -142,7 +214,7 @@ task deploy: :gem do
   sh(
     'ssh-agent', 'sh', '-c',
     'chmod 0600 secrets/deploy_key && ssh-add secrets/deploy_key && ' \
-    'git push ssh-origin --tags'
+    'git push ssh-origin HEAD:master && git push ssh-origin --tags'
   )
 
   sh 'rm -f ~/.gem/credentials'
