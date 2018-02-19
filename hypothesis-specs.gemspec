@@ -11,7 +11,7 @@ DESCRIPTION
   s.authors     = ['David R. Maciver']
   s.email       = 'david@drmaciver.com'
   s.files       = Dir['{ext/*,src/**/*,lib/**/*}'] + [
-    'Cargo.lock', 'Cargo.toml', 'LICENSE.txt', 'README.markdown', 'Rakefile',
+    'Cargo.toml', 'LICENSE.txt', 'README.markdown', 'Rakefile',
     'CHANGELOG.md'
   ]
   s.homepage    = 'http://github.com/HypothesisWorks/hypothesis-ruby'
