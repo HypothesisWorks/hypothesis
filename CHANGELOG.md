@@ -1,3 +1,7 @@
+## Hypothesis for Ruby 0.0.7 (2018-02-19)
+
+This release updates an error in the README.
+
 ## Hypothesis for Ruby 0.0.6 (2018-02-19)
 
 This release just updates the gem description.
