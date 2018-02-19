@@ -102,7 +102,7 @@ task :gem do
     abort 'Cannot build gem from uncommited files'
   end
 
-  has_changes = system 'git diff --exit-code origin/master -- src/ lib/'
+  has_changes = !(system 'git diff --exit-code origin/master -- src/ lib/')
   if File.exist?(RELEASE_FILE)
     release_contents = IO.read(RELEASE_FILE).strip
     release_type, release_contents = release_contents.split("\n", 2)
