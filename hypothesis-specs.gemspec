@@ -5,7 +5,7 @@ Gem::Specification.new do |s|
   s.version     = '0.0.5'
   s.date        = '2018-02-19'
   s.description = <<~DESCRIPTION
-    A port of the Hypothesis property-based testing library to Ruby
+    Hypothesis is a powerful, flexible, and easy to use library for property-based testing.
 DESCRIPTION
   s.summary     = s.description
   s.authors     = ['David R. Maciver']
