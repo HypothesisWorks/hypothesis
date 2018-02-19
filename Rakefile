@@ -160,7 +160,7 @@ task :gem do
     git 'rm', RELEASE_FILE
     git 'commit', '-m', "Bump version to #{new_version} and update changelog\n\n[skip ci]"
   elsif has_changes
-    abort! 'Source changes found but no release file exists'
+    abort 'Source changes found but no release file exists'
   end
 
   sh 'rm -rf hypothesis-specs*.gem'
