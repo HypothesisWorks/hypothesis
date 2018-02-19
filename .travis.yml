@@ -16,7 +16,7 @@ install:
 jobs:
   include:
     - stage: test
-      script: bundle exec rake format
+      script: bundle exec rake checkformat
     -
       script: bundle exec rake doc
     -

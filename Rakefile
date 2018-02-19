@@ -32,9 +32,17 @@ end
 
 HelixRuntime::BuildTask.new
 
-task :format do
-  sh 'bundle exec rubocop -a lib spec minitests ' \
+def rubocop(fix:)
+  sh "bundle exec rubocop #{'-a' if fix} lib spec minitests " \
   'Rakefile hypothesis-specs.gemspec'
+end
+
+task :checkformat do
+  rubocop(fix: false)
+end
+
+task :format do
+  rubocop(fix: true)
 end
 
 begin
