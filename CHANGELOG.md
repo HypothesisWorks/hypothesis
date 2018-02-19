@@ -1,3 +1,7 @@
+## Hypothesis for Ruby 0.0.6 (2018-02-19)
+
+This release just updates the gem description.
+
 ## Hypothesis for Ruby 0.0.5 (2018-02-19)
 
 This is a trivial release to test the release automation.
