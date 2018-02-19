@@ -59,12 +59,16 @@ and should work with anything else you care to use.
 
 ## Getting Started
 
-Hypothesis is not currently available on rubygems.org (but will be soon!).
+Hypothesis is not available on rubygems.org as a developer preview.
 If you want to try it today you can use the current development branch by adding the following to your Gemfile:
 
 ```ruby
-gem 'hypothesis-specs', :git => 'https://github.com/HypothesisWorks/hypothesis-ruby.git', :branch => 'development'
+gem 'hypothesis-specs'
 ```
+
+The API is still in flux, so be warned that you should expect it to break on upgrades!
+Right now this is really more to allow you to try it out and provide feedback than something you should expect to rely on.
+The more feedback we get, the sooner it will get here!
 
 Note that in order to use Hypothesis for Ruby, you will need a rust toolchain installed.
 Please go to [https://www.rustup.rs](https://www.rustup.rs) and follow the instructions if you do not already have one.
