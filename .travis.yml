@@ -25,5 +25,5 @@ jobs:
       env: TASK=run-tests
       script: ./scripts/run-tests-isolated.sh
     - stage: deploy
-
+      if: branch = master
       script: bundle exec rake deploy
