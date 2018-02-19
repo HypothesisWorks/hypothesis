@@ -158,7 +158,7 @@ task :gem do
     git 'reset'
     git 'add', CHANGELOG, GEMSPEC
     git 'rm', RELEASE_FILE
-    git 'commit', '-m', "Bump version to #{new_version} and update changelog"
+    git 'commit', '-m', "Bump version to #{new_version} and update changelog\n\n[skip ci]'
   elsif has_changes
     abort! 'Source changes found but no release file exists'
   end
