@@ -1,199 +1,169 @@
-#![recursion_limit = "128"]
-#![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
+// "Bridging" root code that exists exclusively to provide
+// a ruby -> Hypothesis engine binding. Long term the code
+// in here is the only code that is going to stay in this
+// crate, and everything else is going to get factored out
+// into its own.
 
+#![recursion_limit = "256"]
+#![deny(warnings, missing_debug_implementations)]
+
+extern crate core;
 #[macro_use]
 extern crate helix;
 extern crate rand;
 
-use rand::{ChaChaRng, Rng, SeedableRng};
-use std::collections::HashMap;
-use std::rc::Rc;
+mod engine;
+mod data;
+mod distributions;
 
-#[derive(Debug, Clone)]
-enum BitGenerator {
-    Random(ChaChaRng),
-    Recorded(Rc<Vec<u64>>),
-}
+use std::mem;
 
-#[derive(Debug, Clone)]
-struct DataSource {
-    bitgenerator: BitGenerator,
-    record: Vec<u64>,
-}
-
-#[derive(Debug, Clone)]
-enum Status {
-    Overflow,
-    Invalid,
-    Valid,
-    Interesting,
-}
-
-#[derive(Debug, Clone)]
-struct Engine {
-    random: ChaChaRng,
-    max_examples: u64,
-    valid_examples: u64,
-    invalid_examples: u64,
-    interesting_examples: u64,
-    best_example: Option<Rc<Vec<u64>>>,
-}
-
-impl DataSource {
-    fn bits(&mut self, n_bits: u64) -> Option<u64> {
-        let mut result = match self.bitgenerator {
-            BitGenerator::Random(ref mut random) => random.next_u64(),
-            BitGenerator::Recorded(ref mut v) => if self.record.len() >= v.len() {
-                return None;
-            } else {
-                v[self.record.len()]
-            },
-        };
-
-        if n_bits < 64 {
-            let mask = (1 << n_bits) - 1;
-            result &= mask;
-        };
-
-        self.record.push(result);
-
-        return Some(result);
-    }
-
-    fn new(generator: BitGenerator) -> DataSource {
-        return DataSource {
-            bitgenerator: generator,
-            record: Vec::new(),
-        };
-    }
-
-    fn from_random(random: ChaChaRng) -> DataSource {
-        return DataSource::new(BitGenerator::Random(random));
-    }
-
-    fn from_vec(record: Rc<Vec<u64>>) -> DataSource {
-        return DataSource::new(BitGenerator::Recorded(record));
-    }
-}
-
-impl Engine {
-    fn new(max_examples: u64, seed: &[u32]) -> Engine {
-        return Engine {
-            random: ChaChaRng::from_seed(seed),
-            max_examples: max_examples,
-            valid_examples: 0,
-            invalid_examples: 0,
-            interesting_examples: 0,
-            best_example: None,
-        };
-    }
-
-    fn should_continue(&self) -> bool {
-        return (self.valid_examples < self.max_examples)
-            && (self.valid_examples + self.invalid_examples < self.max_examples * 10)
-            && (self.interesting_examples == 0);
-    }
-
-    fn mark_finished(&mut self, source: DataSource, status: Status) -> () {
-        match status {
-            Status::Overflow => (),
-            Status::Valid => self.valid_examples += 1,
-            Status::Invalid => self.invalid_examples += 1,
-            Status::Interesting => {
-                self.interesting_examples += 1;
-                self.best_example = Some(Rc::new(source.record));
-            }
-        }
-    }
-
-    fn new_source(&mut self) -> DataSource {
-        return DataSource::from_random(self.random.gen());
-    }
-
-    fn failing_example(&self) -> Option<DataSource> {
-        match self.best_example {
-            None => return None,
-            Some(ref v) => return Some(DataSource::from_vec(v.clone())),
-        }
-    }
-}
+use engine::Engine;
+use data::{DataSource, Status};
+use distributions::Repeat;
 
 ruby! {
+  class HypothesisCoreDataSource {
+    struct {
+      source: Option<DataSource>,
+    }
+
+    def initialize(helix, engine: &mut HypothesisCoreEngine){
+      let mut result = HypothesisCoreDataSource{helix, source: None};
+      mem::swap(&mut result.source, &mut engine.pending);
+      return result;
+    }
+  }
+
   class HypothesisCoreEngine {
     struct {
-      next_id: u64,
-      children: HashMap<u64, DataSource>,
       engine: Engine,
+      pending: Option<DataSource>,
     }
 
     def initialize(helix, seed: u64, max_examples: u64){
       let xs: [u32; 2] = [seed as u32, (seed >> 32) as u32];
       HypothesisCoreEngine{
         helix,
-        next_id: 0,
-        children: HashMap::new(),
         engine: Engine::new(max_examples, &xs),
+        pending: None,
       }
     }
 
-    def was_unsatisfiable(&self) -> bool {
-      return self.engine.valid_examples == 0 && self.engine.interesting_examples == 0;
+    def new_source(&mut self) -> Option<HypothesisCoreDataSource> {
+      match self.engine.next_source() {
+        None => None,
+        Some(source) => {
+          self.pending = Some(source);
+          Some(HypothesisCoreDataSource::new(self))
+        },
+      }
     }
 
-    def new_source(&mut self) -> u64 {
-      let result = self.next_id;
-      self.children.insert(result, self.engine.new_source());
-      self.next_id += 1;
-      return result;
-    }
-
-    def failing_example(&mut self) -> Option<u64> {
-      if let Some(source) = self.engine.failing_example() {
-        let result = self.next_id;
-        self.children.insert(result, source);
-        self.next_id += 1;
-        return Some(result);
+    def failing_example(&mut self) -> Option<HypothesisCoreDataSource> {
+      if let Some(source) = self.engine.best_source() {
+        self.pending = Some(source);
+        return Some(HypothesisCoreDataSource::new(self));
       } else {
         return None;
       }
     }
 
-    def should_continue(&self) -> bool {
-      return self.engine.should_continue();
+    def was_unsatisfiable(&mut self) -> bool {
+      self.engine.was_unsatisfiable()
     }
 
-    def finish_overflow(&mut self, id: u64){
-      mark_status_id(&mut self.engine, &mut self.children, id, Status::Overflow);
+    def finish_overflow(&mut self, child: &mut HypothesisCoreDataSource){
+      mark_child_status(&mut self.engine, child, Status::Overflow);
     }
 
-    def finish_invalid(&mut self, id: u64){
-      mark_status_id(&mut self.engine, &mut self.children, id, Status::Invalid);
+    def finish_invalid(&mut self, child: &mut HypothesisCoreDataSource){
+      mark_child_status(&mut self.engine, child, Status::Invalid);
     }
 
-    def finish_interesting(&mut self, id: u64){
-      mark_status_id(&mut self.engine, &mut self.children, id, Status::Interesting);
+    def finish_interesting(&mut self, child: &mut HypothesisCoreDataSource){
+      mark_child_status(&mut self.engine, child, Status::Interesting);
     }
 
-    def finish_valid(&mut self, id: u64){
-      mark_status_id(&mut self.engine, &mut self.children, id, Status::Valid);
+    def finish_valid(&mut self, child: &mut HypothesisCoreDataSource){
+      mark_child_status(&mut self.engine, child, Status::Valid);
+    }
+  }
+
+  class HypothesisCoreBitPossible{
+    struct {
+      n_bits: u64,
     }
 
-    def bits(&mut self, id: u64, n_bits: u64) -> Option<u64> {
-      match self.children.get_mut(&id) {
-        None => return None,
-        Some(source) => return source.bits(n_bits)
+    def initialize(helix, n_bits: u64){
+      return HypothesisCoreBitPossible{helix, n_bits: n_bits};
+    }
+
+    def provide(&mut self, data: &mut HypothesisCoreDataSource) -> Option<u64>{
+      match &mut data.source {
+        &mut None => None,
+        &mut Some(ref mut source) => source.bits(self.n_bits).ok(),
       }
+    }
+  }
+
+  class HypothesisCoreRepeatValues{
+    struct {
+      repeat: Repeat,
+    }
+
+    def initialize(helix, min_count: u64, max_count: u64, expected_count: f64){
+      return HypothesisCoreRepeatValues{
+        helix, repeat: Repeat::new(min_count, max_count, expected_count)
+      }
+    }
+
+    def _should_continue(&mut self, data: &mut HypothesisCoreDataSource) -> Option<bool>{
+      return data.source.as_mut().and_then(|ref mut source| {
+        self.repeat.should_continue(source).ok()
+      })
+    }
+
+    def reject(&mut self){
+      self.repeat.reject();
+    }
+  }
+
+  class HypothesisCoreIntegers{
+    struct {
+        bitlengths: distributions::Sampler,
+    }
+    def initialize(helix){
+      return HypothesisCoreIntegers{helix,bitlengths: distributions::good_bitlengths()};
+    }
+    def provide(&mut self, data: &mut HypothesisCoreDataSource) -> Option<i64>{
+      data.source.as_mut().and_then(|ref mut source| {
+        distributions::integer_from_bitlengths(source, &self.bitlengths).ok()
+      })
+    }
+  }
+
+  class HypothesisCoreBoundedIntegers{
+    struct {
+        max_value: u64,
+    }
+    def initialize(helix, max_value: u64){
+      return HypothesisCoreBoundedIntegers{helix, max_value: max_value};
+    }
+
+    def provide(&mut self, data: &mut HypothesisCoreDataSource) -> Option<u64>{
+      data.source.as_mut().and_then(|ref mut source| {
+        distributions::bounded_int(source, self.max_value).ok()
+      })
     }
   }
 }
 
-fn mark_status_id(
-    engine: &mut Engine,
-    children: &mut HashMap<u64, DataSource>,
-    id: u64,
-    status: Status,
-) {
-    match children.remove(&id) {
+fn mark_child_status(engine: &mut Engine, child: &mut HypothesisCoreDataSource, status: Status) {
+    let mut replacement = None;
+    mem::swap(&mut replacement, &mut child.source);
+
+    match replacement {
         Some(source) => engine.mark_finished(source, status),
         None => (),
     }

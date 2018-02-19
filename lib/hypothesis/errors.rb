@@ -1,18 +1,28 @@
 # frozen_string_literal: true
 
 module Hypothesis
-  class Error < RuntimeError
+  # A generic superclass for all errors thrown by
+  # Hypothesis.
+  class HypothesisError < RuntimeError
   end
 
-  class Unsatisfiable < Error
+  # Indicates that Hypothesis was not able to find
+  # enough valid examples for the test to be meaningful.
+  # (Currently this is only thrown if Hypothesis did not
+  # find *any* valid examples).
+  class Unsatisfiable < HypothesisError
   end
 
-  class UnsatisfiedAssumption < Error
+  # Indicates that the Hypothesis API has been used
+  # incorrectly in some manner.
+  class UsageError < HypothesisError
   end
 
-  class DataOverflow < Error
+  # @!visibility private
+  class UnsatisfiedAssumption < HypothesisError
   end
 
-  class UsageError < Error
+  # @!visibility private
+  class DataOverflow < HypothesisError
   end
 end

@@ -6,56 +6,80 @@ require 'hypothesis-ruby-core/native'
 module Hypothesis
   class Engine
     attr_reader :current_source
+    attr_accessor :is_find
 
-    def initialize(max_examples: 200, seed: nil)
-      seed = Random.rand(2**64 - 1) if seed.nil?
-      @core_engine = HypothesisCoreEngine.new(seed, max_examples)
+    def initialize(options)
+      seed = Random.rand(2**64 - 1)
+      @core_engine = HypothesisCoreEngine.new(
+        seed, options.fetch(:max_examples)
+      )
     end
 
     def run
-      while @core_engine.should_continue
-        core_id = @core_engine.new_source
-        @current_source = Source.new(@core_engine, core_id)
+      loop do
+        core = @core_engine.new_source
+        break if core.nil?
+        @current_source = TestCase.new(core)
         begin
-          yield(@current_source)
+          result = yield(@current_source)
+          if is_find && result
+            @core_engine.finish_interesting(core)
+          else
+            @core_engine.finish_valid(core)
+          end
         rescue UnsatisfiedAssumption
-          @core_engine.finish_invalid(core_id)
+          @core_engine.finish_invalid(core)
         rescue DataOverflow
-          @core_engine.finish_overflow(core_id)
-        rescue StandardError
-          @core_engine.finish_interesting(core_id)
-        else
-          @core_engine.finish_valid(core_id)
+          @core_engine.finish_overflow(core)
+        rescue Exception
+          raise if is_find
+          @core_engine.finish_interesting(core)
         end
       end
-      raise Unsatisfiable if @core_engine.was_unsatisfiable
-      core_id = @core_engine.failing_example
-      return if core_id.nil?
+      @current_source = nil
+      core = @core_engine.failing_example
+      if core.nil?
+        raise Unsatisfiable if @core_engine.was_unsatisfiable
+        return
+      end
 
-      @current_source = Source.new(@core_engine, core_id)
-      yield @current_source
-    end
-  end
+      if is_find
+        @current_source = TestCase.new(core, record_draws: true)
+        yield @current_source
+      else
+        @current_source = TestCase.new(core, print_draws: true)
 
-  class Source
-    def initialize(core_engine, core_id)
-      @core_engine = core_engine
-      @core_id = core_id
-    end
+        begin
+          yield @current_source
+        rescue Exception => e
+          givens = @current_source.print_log
+          given_str = givens.each_with_index.map do |(name, s), i|
+            name = "##{i + 1}" if name.nil?
+            "Given #{name}: #{s}"
+          end.to_a
 
-    def bits(n)
-      result = @core_engine.bits(@core_id, n)
-      raise Hypothesis::DataOverflow if result.nil?
-      result
-    end
+          if e.respond_to? :hypothesis_data
+            e.hypothesis_data[0] = given_str
+          else
+            original_to_s = e.to_s
+            original_inspect = e.inspect
 
-    def given(provider = nil, &block)
-      provider ||= block
-      provider.call(self)
-    end
+            class <<e
+              attr_accessor :hypothesis_data
 
-    def assume(condition)
-      raise UnsatisfiedAssumption unless condition
+              def to_s
+                ['', hypothesis_data[0], '', hypothesis_data[1]].join("\n")
+              end
+
+              def inspect
+                ['', hypothesis_data[0], '', hypothesis_data[2]].join("\n")
+              end
+            end
+            e.hypothesis_data = [given_str, original_to_s, original_inspect]
+          end
+          raise e
+        end
+      end
     end
   end
 end
