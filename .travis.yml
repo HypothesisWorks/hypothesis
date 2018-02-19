@@ -30,6 +30,7 @@ jobs:
           - bundle exec rake tag_release
 
       deploy:
+        if: branch = master
         -
           provider: releases
           api_key:
