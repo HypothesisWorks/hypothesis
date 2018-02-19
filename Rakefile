@@ -33,7 +33,8 @@ end
 HelixRuntime::BuildTask.new
 
 task :format do
-  sh 'bundle exec rubocop -a lib spec minitests Rakefile'
+  sh 'bundle exec rubocop -a lib spec minitests ' \
+  'Rakefile hypothesis-specs.gemspec'
 end
 
 begin
@@ -87,7 +88,58 @@ task :gem do
   sh 'gem build hypothesis-specs.gemspec'
 end
 
-task :tag_release do
+def git(*args)
+  sh 'git', *args
+end
+
+file 'secrets.tar.enc' => 'secrets' do
+  sh 'rm -f secrets.tar secrets.tar.enc'
+  sh 'tar -cf secrets.tar secrets'
+  sh 'travis encrypt-file secrets.tar'
+end
+
+task deploy: :gem do
+  on_master = system("git merge-base  --is-ancestor HEAD origin/master")
+
+  unless on_master
+    puts 'Not on master, so no deploy'
+    next
+  end
+
   spec = Gem::Specification.load('hypothesis-specs.gemspec')
-  sh 'git', 'tag', spec.version.to_s
+
+  succeeded = system('git', 'tag', spec.version.to_s)
+
+  unless succeeded
+    puts "Looks like we've already done this release."
+    next
+  end
+
+  unless File.directory? 'secrets'
+    sh 'rm -rf secrets'
+    sh 'openssl aes-256-cbc -K $encrypted_b0055249143b_key -iv ' \
+    '$encrypted_b0055249143b_iv -in secrets.tar.enc -out secrets.tar -d'
+
+    sh 'tar -xvf secrets.tar'
+  end
+
+  git('config', 'user.name', 'Travis CI on behalf of David R. MacIver')
+  git('config', 'user.email', 'david@drmaciver.com')
+  git('config', 'core.sshCommand', 'ssh -i secrets/deploy_key')
+  git(
+    'remote', 'add', 'ssh-origin',
+    'git@github.com:HypothesisWorks/hypothesis-ruby.git'
+  )
+
+  sh(
+    'ssh-agent', 'sh', '-c',
+    'chmod 0600 secrets/deploy_key && ssh-add secrets/deploy_key && ' \
+    'git push ssh-origin --tags'
+  )
+
+  sh 'rm -f ~/.gem/credentials'
+  sh 'mkdir -p ~/.gem'
+  sh 'ln -s $(PWD)/secrets/api_key.yaml ~/.gem/credentials'
+  sh 'chmod 0600 ~/.gem/credentials'
+  sh 'gem push hypothesis-specs*.gem'
 end

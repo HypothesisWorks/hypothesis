@@ -9,3 +9,5 @@ coverage
 isolated
 doc
 *.gem
+secrets
+secrets.tar
