@@ -139,7 +139,7 @@ task deploy: :gem do
 
   sh 'rm -f ~/.gem/credentials'
   sh 'mkdir -p ~/.gem'
-  sh 'ln -s $(PWD)/secrets/api_key.yaml ~/.gem/credentials'
+  sh 'ln -s $(pwd)/secrets/api_key.yaml ~/.gem/credentials'
   sh 'chmod 0600 ~/.gem/credentials'
   sh 'gem push hypothesis-specs*.gem'
 end
