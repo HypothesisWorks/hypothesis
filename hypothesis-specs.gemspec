@@ -12,7 +12,7 @@ DESCRIPTION
   s.email       = 'david@drmaciver.com'
   s.files       = Dir['{ext/*,src/**/*,lib/**/*}'] + [
     'Cargo.lock', 'Cargo.toml', 'LICENSE.txt', 'README.markdown', 'Rakefile',
-    'Changelog.md'
+    'CHANGELOG.md'
   ]
   s.homepage    = 'http://github.com/HypothesisWorks/hypothesis-ruby'
   s.license     = 'MPL-2.0'
