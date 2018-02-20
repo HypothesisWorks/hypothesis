@@ -1,3 +1,10 @@
+PATH
+  remote: .
+  specs:
+    hypothesis-specs (0.0.8)
+      helix_runtime (~> 0.7.0)
+      rake (>= 10.0, < 13.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -53,9 +60,8 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  helix_runtime (~> 0.7.2)
+  hypothesis-specs!
   minitest (~> 5.8.4)
-  rake (~> 12.0)
   redcarpet (~> 3.4.0)
   rspec (~> 3.0)
   rubocop (~> 0.51.0)

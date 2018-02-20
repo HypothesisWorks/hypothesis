@@ -18,5 +18,5 @@ DESCRIPTION
   s.license     = 'MPL-2.0'
   s.extensions = Dir['ext/extconf.rb']
   s.add_dependency 'helix_runtime', '~> 0.7.0'
-  s.add_dependency 'rake', '~> 10.0'
+  s.add_runtime_dependency 'rake', '>= 10.0', '< 13.0'
 end
