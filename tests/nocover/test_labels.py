@@ -99,7 +99,8 @@ def test_discarded_intervals_are_not_in_labels():
         data.draw_bits(1)
         data.stop_example()
 
-    assert x == frozenset({2})
+    assert 3 not in x
+    assert 2 in x
 
 
 def test_nested_discarded_intervals_are_not_in_labels():
@@ -115,7 +116,9 @@ def test_nested_discarded_intervals_are_not_in_labels():
         data.draw_bits(1)
         data.stop_example()
 
-    assert x == frozenset({2})
+    assert 2 in x
+    assert 3 not in x
+    assert 4 not in x
 
 
 def test_label_of_deferred_strategy_is_well_defined():
