@@ -66,7 +66,10 @@ The tag and the commit are pushed to GitHub, and then CI builds a new package an
 
 So with no very little extra work, every code change triggers a new release, and it's usually available within half an hour of merging the pull request.
 
-This system isn't perfect, and it
+The current system isn't perfect, and it wouldn't scale to a more active team.
+In particular, you can't merge new features until the code in master has been released -- you get conflicts around `RELEASE.rst`.
+Because Hypothesis only has one full-time contributor, and everybody else works on it in their free time, we don't create patches fast enough for this to be a problem.
+If you wanted to use this in a more active team, you'd need some changes.
 
 [phd]: http://www.drmaciver.com/2017/04/life-changes-announcement-academia-edition/
 [recent]: https://github.com/HypothesisWorks/hypothesis-python/pull/1101
