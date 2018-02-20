@@ -24,7 +24,7 @@ In the past, Hypothesis was released manually.
 Somebody had to write a changelog, tag a new release on GitHub, and run some manual pip commands to publish a new version to PyPI -- and only David had the credentials for the latter.
 
 This meant that releases were somewhat infrequent, and features spent a long time in master before they were available to `pip install`.
-The pace of development picked up in 2017 -- partly as new maintainers arrived, and partly work for David's PhD -- and we wanted to be able to release more frequently.
+The pace of development picked up in 2017 -- partly as new maintainers arrived, and partly groundwork for David's upcoming (now started) PhD -- and we wanted to be able to release more frequently.
 We decided to automate the entire release process.
 
 Now, when you create a pull request that changes the Hypothesis code -- anything that gets installed by pip, not the tests or docs -- you have to include a `RELEASE.rst` file, which describes your change.
@@ -72,22 +72,24 @@ So with no very little extra work, every code change triggers a new release, and
 
 Moving to continuous releases has been amazing.
 
-Our releases happen much more quickly.
+The big benefit is that nobody has to do manual releases any more.
+Before we had this system, changelogs had to be assembled and written by hand, which meant reading the commit log since the last release.
+This is both boring and prone to error -- in the past, a release might contain multiple changes, and it was easy to overlook or forget something in the changelog.
+No more!
+
+Another benefit is that our releases happen much more quickly.
 Rather than waiting for somebody to do it manually, every patch is available as soon as our tests confirm it's okay.
 If something's been merged, it's either available for download, or it will be very shortly.
+
+Releasing more often means each individual release is much smaller, which makes it much easier to find the source of bugs or regressions.
+If somebody finds a bug, we can trace it to a specific release (and corresponding pull request), and there's a relatively small amount of code to inspect.
 
 Automation also makes our release process more reliable.
 Manual steps have scope for error, and we've had a few dodgy releases in the past.
 This process has cut over 100 releases near flawlessly.
 
-Because we have one release per pull request, we're doing smaller releases as well.
-This means we have much better changelogs -- in the past, a release might contain multiple changes, and it was easy to overlook or forget something.
-No more!
-It's also made new bugs easier to find.
-When a user reports a new bug, we can trace it to a specific release (and corresponding PR), and there's a relatively small amount of code to inspect.
-
 Finally, every contributor gets to make a release.
-If you submit a patch, your change is available immediately, and it's entirely your work.
+If you submit a patch that gets accepted, your change is available immediately, and it's entirely your work.
 This may have no tangible benefit, but it gives off nice fuzzy feelings, especially for first-time contributors.
 (Speaking of which, we're always looking [for new contributors][contributors]!)
 
@@ -103,5 +105,6 @@ I've started using this in my other repos -- both these scripts exactly, and der
 If you'd like to try this yourself (and I'd really encourage you to do so!), all the scripts for this process are under the same MPL license as Hypothesis itself.
 Look in the [scripts directory][scripts] of the main repo.
 In particular, `check-release-file.py` looks for a release note on pull requests, and `deploy.py` is what actually cuts the release.
+The code will probably need tweaking for your repo (it's closely based on how Hypothesis works), but hopefully it provides a useful starting point.
 
 [scripts]: https://github.com/HypothesisWorks/hypothesis-python/tree/master/scripts
