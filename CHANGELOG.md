@@ -1,3 +1,7 @@
+## Hypothesis for Ruby 0.0.8 (2018-02-20)
+
+This release fixes the dependency on Rake to be in a more sensible range.
+
 ## Hypothesis for Ruby 0.0.7 (2018-02-19)
 
 This release updates an error in the README.
