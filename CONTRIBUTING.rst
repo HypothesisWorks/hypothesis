@@ -29,8 +29,9 @@ fixes the error. Spot a tyop? Fix it up and send us a PR!
 You can read more about how we document Hypothesis in ``guides/documentation.rst``
 
 The process for submitting source code PRs is generally more involved
-(don't worry, we'll help you through it), so do read the rest of this document
-first.
+(don't worry, we'll help you through it), so do read the rest of this document.
+If you're planning a larger change, the contributor guides (in the ``guides/``
+directory) will make sure you're on the right track.
 
 -----------------------
 Copyright and Licensing
@@ -84,32 +85,6 @@ master fairly promptly. This will immediately trigger a release! Don't be scared
 breaks things, that's our fault not yours - the whole point of this process is to ensure
 that problems get caught before we merge rather than after.
 
-
-~~~~~~~~~~~~~~~~
-The Release File
-~~~~~~~~~~~~~~~~
-
-All changes to Hypothesis get released automatically when they are merged to
-master.
-
-In order to update the version and change log entry, you have to create a
-release file. This is a normal restructured text file called RELEASE.rst that
-lives in the root of the repository and will be used as the change log entry.
-
-It should start with following lines:
-
-* RELEASE_TYPE: major
-* RELEASE_TYPE: minor
-* RELEASE_TYPE: patch
-
-This specifies the component of the version number that should be updated, with
-the meaning of each component following `semver <http://semver.org/>`_. As a
-rule of thumb if it's a bug fix it's probably a patch version update, if it's
-a new feature it's definitely a minor version update, and you probably
-shouldn't ever need to use a major version update unless you're part of the
-core team and we've discussed it a lot.
-
-This line will be removed from the final change log entry.
 
 ~~~~~~~~~
 The build
