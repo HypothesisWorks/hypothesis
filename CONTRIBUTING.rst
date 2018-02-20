@@ -96,19 +96,21 @@ In order to update the version and change log entry, you have to create a
 release file. This is a normal restructured text file called RELEASE.rst that
 lives in the root of the repository and will be used as the change log entry.
 
-It should start with following lines:
+The first line of the file specifies the component of the version number that
+will be updated, according to our `semantic versioning <http://semver.org/>`_
+policy.
 
-* RELEASE_TYPE: major
-* RELEASE_TYPE: minor
-* RELEASE_TYPE: patch
+- ``RELEASE_TYPE: major`` is for breaking changes, and will only be used by the
+  core team after extensive discussion.
+- ``RELEASE_TYPE: minor`` is for anything that adds to the public (ie documented)
+  API, changes an argument signature, or adds a new deprecation or health check.
+  Minor (or patch) releases **may not** cause errors in any code that runs
+  without errors on an earlier version.
+- ``RELEASE_TYPE: patch`` is for changes that are not visible in the public
+  interface, from improving a docstring to backwards-compatible improvements
+  in shrinking behaviour.
 
-This specifies the component of the version number that should be updated, with
-the meaning of each component following `semver <http://semver.org/>`_. As a
-rule of thumb if it's a bug fix it's probably a patch version update, if it's
-a new feature it's definitely a minor version update, and you probably
-shouldn't ever need to use a major version update unless you're part of the
-core team and we've discussed it a lot.
-
+If in doubt, open your pull for a minor release and ask us!
 This line will be removed from the final change log entry.
 
 ~~~~~~~~~
