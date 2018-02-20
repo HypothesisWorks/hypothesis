@@ -84,6 +84,26 @@ master fairly promptly. This will immediately trigger a release! Don't be scared
 breaks things, that's our fault not yours - the whole point of this process is to ensure
 that problems get caught before we merge rather than after.
 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Pull request or external package?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+New strategies can be added to Hypothesis, or published as an external package
+on PyPI - either is fine for most strategies.  If in doubt, ask!
+
+It's generally much easier to get things working outside, because there's
+more freedom to experiment and fewer requirements in stability and API style.
+We're happy to review and help with external packages as well as pull requests;
+several parts of Hypothesis started life outside and were integrated later
+(with permission, of course).  For clarity, we suggest naming your package
+in the pattern of ``hypothesis-regex`` and ``hypothesis-protobuf`` on PyPI.
+
+On the hand, being inside gets you access to some deeper implementation
+features (if you need them) and better long-term guarantees about maintenance.
+We particularly encourage pull requests for new composable primitives that
+make implementing other strategies easier, or for widely used types in the
+Python standard library.  Strategies for other things are also welcome;
+anything with external dependencies just goes in ``hypothesis.extra``.
 
 ~~~~~~~~~~~~~~~~
 The Release File
