@@ -24,7 +24,7 @@ In the past, Hypothesis was released manually.
 Somebody had to write a changelog, tag a new release on GitHub, and run some manual pip commands to publish a new version to PyPI -- and only David had the credentials for the latter.
 
 This meant that releases were somewhat infrequent, and features spent a long time in master before they were available to `pip install`.
-The pace of development picked up in 2017 -- partly as new maintainers arrived, and partly groundwork for David's upcoming (now started) PhD -- and we wanted to be able to release more frequently.
+The pace of development picked up in 2017 -- partly as new maintainers arrived, and partly groundwork for [David's upcoming (now started) PhD][phd] -- and we wanted to be able to release more frequently.
 We decided to automate the entire release process.
 
 Now, when you create a pull request that changes the Hypothesis code -- anything that gets installed by pip, not the tests or docs -- you have to include a `RELEASE.rst` file, which describes your change.
@@ -42,6 +42,9 @@ The rest is a description of the changes in your patch.
 
 We have a test in CI that checks for this file -- any change to the core code needs a release file, even [fixing a typo][typo].
 If you need a release file but haven't written one, the tests fail and your pull request won't be merged.
+
+Sometimes we write a release file even if there aren't changes to the core source code, but when we think it's worth a release.
+For example, we make patch releases for changes to the installation code in `setup.py`, or larger changes to our test code for the benefit of downstream packagers.
 
 Once you've written a release file and the pull request is merged into master, and after all the other tests have passed, our CI uses this file to create a new release.
 
@@ -63,6 +66,9 @@ The tag and the commit are pushed to GitHub, and then CI builds a new package an
 
 So with no very little extra work, every code change triggers a new release, and it's usually available within half an hour of merging the pull request.
 
+This system isn't perfect, and it
+
+[phd]: http://www.drmaciver.com/2017/04/life-changes-announcement-academia-edition/
 [recent]: https://github.com/HypothesisWorks/hypothesis-python/pull/1101
 [semver]: https://semver.org/
 [typo]: https://github.com/HypothesisWorks/hypothesis-python/pull/1069
