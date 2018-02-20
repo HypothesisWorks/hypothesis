@@ -39,6 +39,6 @@ def test_this_one_is_ok():
 def test_runs_reporting_hook(testdir):
     script = testdir.makepyfile(TESTSUITE)
     testdir.makeconftest(CONFTEST)
-    result = testdir.runpytest(script, LOAD_PROFILE_OPTION, 'test')
+    result = testdir.runpytest(script, LOAD_PROFILE_OPTION, 'test', '-n0')
     out = '\n'.join(result.stdout.lines)
     assert '1 passed' in out
