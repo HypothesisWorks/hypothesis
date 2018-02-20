@@ -1531,7 +1531,7 @@ def composite(f):
     """
 
     from hypothesis.internal.reflection import define_function_signature
-    from hypothesis.searchstrategy.strategies import calc_label
+    from hypothesis.internal.conjecture.utils import calc_label_from_cls
     argspec = getfullargspec(f)
 
     if (
@@ -1550,7 +1550,7 @@ def composite(f):
               if k in (argspec.args + argspec.kwonlyargs + ['return'])}
     new_argspec = argspec._replace(args=argspec.args[1:], annotations=annots)
 
-    label = calc_label(f)
+    label = calc_label_from_cls(f)
 
     @defines_strategy
     @define_function_signature(f.__name__, f.__doc__, new_argspec)

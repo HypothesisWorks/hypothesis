@@ -23,6 +23,7 @@ import hypothesis.internal.conjecture.utils as d
 import hypothesis.internal.conjecture.floats as flt
 from hypothesis.control import assume
 from hypothesis.internal.floats import sign
+from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
 
@@ -128,7 +129,8 @@ class FloatStrategy(SearchStrategy):
 
     def do_draw(self, data):
         while True:
-            data.start_example()
+            data.start_example(calc_label_from_name(
+                'getting another float in FloatStrategy'))
             i = self.sampler.sample(data)
             if i == 0:
                 result = flt.draw_float(data)

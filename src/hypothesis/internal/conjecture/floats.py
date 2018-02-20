@@ -21,6 +21,7 @@ from array import array
 
 from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
 from hypothesis.internal.floats import float_to_int, int_to_float
+from hypothesis.internal.conjecture.utils import calc_label_from_name
 
 """
 This module implements support for arbitrary floating point numbers in
@@ -231,7 +232,7 @@ def is_simple(f):
 
 def draw_float(data):
     try:
-        data.start_example()
+        data.start_example(calc_label_from_name('drawing a float'))
         f = lex_to_float(data.draw_bits(64))
         if data.draw_bits(1):
             f = -f

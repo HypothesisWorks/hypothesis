@@ -17,7 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import hashlib
 from collections import defaultdict
 
 import hypothesis.internal.conjecture.utils as cu
@@ -25,30 +24,14 @@ from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
     UnsatisfiedAssumption
 from hypothesis.control import assume, reject, _current_build_context
 from hypothesis._settings import note_deprecation
-from hypothesis.internal.compat import hrange, qualname, bit_length, \
-    str_to_bytes, int_from_bytes
+from hypothesis.internal.compat import hrange, bit_length
 from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.internal.conjecture.utils import LABEL_MASK, \
+    combine_labels, calc_label_from_cls, calc_label_from_name
 
 calculating = UniqueIdentifier('calculating')
-
-
-LABEL_MASK = 2 ** 64 - 1
-
-
-def calc_label(cls):
-    name = str_to_bytes(qualname(cls))
-    hashed = hashlib.md5(name).digest()
-    return int_from_bytes(hashed[:8])
-
-
-def combine_labels(*labels):
-    label = 0
-    for l in labels:
-        label = (label << 1) & LABEL_MASK
-        label ^= l
-    return label
 
 
 def one_of_strategies(xs):
@@ -393,7 +376,7 @@ class SearchStrategy(object):
             return cls.LABELS[cls]
         except KeyError:
             pass
-        result = calc_label(cls)
+        result = calc_label_from_cls(cls)
         cls.LABELS[cls] = result
         return result
 
@@ -564,7 +547,8 @@ class MappedSearchStrategy(SearchStrategy):
         for _ in range(3):
             i = data.index
             try:
-                data.start_example()
+                data.start_example(calc_label_from_name(
+                    'another attempted draw in MappedSearchStrategy'))
                 result = self.pack(data.draw(self.mapped_strategy))
                 data.stop_example()
                 return result
