@@ -42,8 +42,7 @@ def test_should_be_verbose(x):
 ])
 def test_output_without_capture(testdir, capture, expected):
     script = testdir.makepyfile(TESTSUITE)
-    result = testdir.runpytest(
-        script, '--verbose', '--capture', capture, '-n0')
+    result = testdir.runpytest(script, '--verbose', '--capture', capture, '-n0')
     out = '\n'.join(result.stdout.lines)
     assert 'test_should_be_verbose' in out
     assert ('Trying example' in out) == expected
