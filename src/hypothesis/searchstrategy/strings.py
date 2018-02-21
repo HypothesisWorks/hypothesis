@@ -39,6 +39,8 @@ class OneCharStringStrategy(SearchStrategy):
                  min_codepoint=None,
                  max_codepoint=None,
                  whitelist_characters=None):
+        assert set(whitelist_categories or ()).issubset(charmap.categories())
+        assert set(blacklist_categories or ()).issubset(charmap.categories())
         intervals = charmap.query(
             include_categories=whitelist_categories,
             exclude_categories=blacklist_categories,
