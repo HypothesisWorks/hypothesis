@@ -107,7 +107,7 @@ def categories():
     return tuple(_categories)
 
 
-def as_general_categories(cats, name):
+def as_general_categories(cats, name='cats'):
     """Return a tuple of Unicode categories in a normalised order.
 
     This function expands one-letter designations of a major class to include

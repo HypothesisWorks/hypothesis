@@ -27,24 +27,20 @@ import hypothesis.strategies as st
 from hypothesis import reject
 from hypothesis.internal.compat import PY3, hrange, hunichr, text_type, \
     int_to_byte
+from hypothesis.internal.charmap import categories, as_general_categories
 
 HAS_SUBPATTERN_FLAGS = sys.version_info[:2] >= (3, 6)
 
 
-UNICODE_CATEGORIES = set([
-    'Cf', 'Cn', 'Co', 'LC', 'Ll', 'Lm', 'Lo', 'Lt', 'Lu',
-    'Mc', 'Me', 'Mn', 'Nd', 'Nl', 'No', 'Pc', 'Pd', 'Pe',
-    'Pf', 'Pi', 'Po', 'Ps', 'Sc', 'Sk', 'Sm', 'So', 'Zl',
-    'Zp', 'Zs',
-])
+UNICODE_CATEGORIES = set(categories())
 
 
 SPACE_CHARS = set(u' \t\n\r\f\v')
 UNICODE_SPACE_CHARS = SPACE_CHARS | set(u'\x1c\x1d\x1e\x1f\x85')
 UNICODE_DIGIT_CATEGORIES = set(['Nd'])
-UNICODE_SPACE_CATEGORIES = set(['Zs', 'Zl', 'Zp'])
-UNICODE_LETTER_CATEGORIES = set(['LC', 'Ll', 'Lm', 'Lo', 'Lt', 'Lu'])
-UNICODE_WORD_CATEGORIES = UNICODE_LETTER_CATEGORIES | set(['Nd', 'Nl', 'No'])
+UNICODE_SPACE_CATEGORIES = set(as_general_categories('Z'))
+UNICODE_LETTER_CATEGORIES = set(as_general_categories('L'))
+UNICODE_WORD_CATEGORIES = set(as_general_categories(['L', 'N']))
 
 # This is verbose, but correct on all versions of Python
 BYTES_ALL = set(int_to_byte(i) for i in range(256))
