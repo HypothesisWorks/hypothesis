@@ -141,6 +141,9 @@ def fn_ktest(*fnkwargs):
         'min_value': time(2, 0),
         'max_value': time(1, 0)}),
     (ds.uuids, {'version': 6}),
+    (ds.characters, {'whitelist_categories': ['Nd'],
+                     'blacklist_categories': ['Nd']}),
+    (ds.characters, {'whitelist_categories': [5]}),
 )
 def test_validates_keyword_arguments(fn, kwargs):
     with pytest.raises(InvalidArgument):

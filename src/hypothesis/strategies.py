@@ -39,8 +39,8 @@ from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
 from hypothesis.internal.validation import check_type, try_convert, \
-    check_strategy, check_valid_bound, check_valid_sizes, \
-    check_valid_integer, check_valid_interval
+    check_strategy, check_valid_size, check_valid_bound, \
+    check_valid_sizes, check_valid_integer, check_valid_interval
 
 __all__ = [
     'nothing',
@@ -737,15 +737,10 @@ def characters(whitelist_categories=None, blacklist_categories=None,
     Examples from this strategy shrink towards smaller codepoints.
 
     """
-    if (
-        min_codepoint is not None and max_codepoint is not None and
-        min_codepoint > max_codepoint
-    ):
-        raise InvalidArgument(
-            'Cannot have min_codepoint=%d > max_codepoint=%d ' % (
-                min_codepoint, max_codepoint
-            )
-        )
+    check_valid_size(min_codepoint, 'min_codepoint')
+    check_valid_size(max_codepoint, 'max_codepoint')
+    check_valid_interval(min_codepoint, max_codepoint,
+                         'min_codepoint', 'max_codepoint')
     if all((whitelist_characters is not None,
             min_codepoint is None,
             max_codepoint is None,
