@@ -141,6 +141,10 @@ def fn_ktest(*fnkwargs):
         'min_value': time(2, 0),
         'max_value': time(1, 0)}),
     (ds.uuids, {'version': 6}),
+    (ds.characters, {'min_codepoint': -1}),
+    (ds.characters, {'min_codepoint': '1'}),
+    (ds.characters, {'max_codepoint': -1}),
+    (ds.characters, {'max_codepoint': '1'}),
 )
 def test_validates_keyword_arguments(fn, kwargs):
     with pytest.raises(InvalidArgument):
