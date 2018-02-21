@@ -33,6 +33,9 @@ from hypothesis.internal.conjecture.utils import LABEL_MASK, \
 
 calculating = UniqueIdentifier('calculating')
 
+MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
+    'another attempted draw in MappedSearchStrategy')
+
 
 def one_of_strategies(xs):
     """Helper function for unioning multiple strategies."""
@@ -547,8 +550,7 @@ class MappedSearchStrategy(SearchStrategy):
         for _ in range(3):
             i = data.index
             try:
-                data.start_example(calc_label_from_name(
-                    'another attempted draw in MappedSearchStrategy'))
+                data.start_example(MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL)
                 result = self.pack(data.draw(self.mapped_strategy))
                 data.stop_example()
                 return result

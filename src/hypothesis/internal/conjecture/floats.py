@@ -91,6 +91,8 @@ SPECIAL_EXPONENTS = (0, MAX_EXPONENT)
 BIAS = 1023
 MAX_POSITIVE_EXPONENT = (MAX_EXPONENT - 1 - BIAS)
 
+DRAW_FLOAT_LABEL = calc_label_from_name('drawing a float')
+
 
 def exponent_key(e):
     if e == MAX_EXPONENT:
@@ -232,7 +234,7 @@ def is_simple(f):
 
 def draw_float(data):
     try:
-        data.start_example(calc_label_from_name('drawing a float'))
+        data.start_example(DRAW_FLOAT_LABEL)
         f = lex_to_float(data.draw_bits(64))
         if data.draw_bits(1):
             f = -f

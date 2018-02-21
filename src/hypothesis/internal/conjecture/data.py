@@ -29,6 +29,9 @@ from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.escalation import mark_for_escalation
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 
+TOP_LABEL = calc_label_from_name('top')
+DRAW_BYTES_LABEL = calc_label_from_name('draw_bytes() in ConjectureData')
+
 
 class Status(IntEnum):
     OVERRUN = 0
@@ -112,7 +115,7 @@ class ConjectureData(object):
         self.example_stack = []
         self.has_discards = False
 
-        self.start_example(calc_label_from_name('top'))
+        self.start_example(TOP_LABEL)
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -286,8 +289,7 @@ class ConjectureData(object):
         if n == 0:
             return hbytes(b'')
         self.__check_capacity(n)
-        self.start_example(calc_label_from_name(
-            'draw_bytes() in ConjectureData'))
+        self.start_example(DRAW_BYTES_LABEL)
         result = self._draw_bytes(self, n)
         assert len(result) == n
         self.__write(result)

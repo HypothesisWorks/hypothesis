@@ -99,6 +99,9 @@ NASTY_FLOATS = sorted([
 NASTY_FLOATS = list(map(float, NASTY_FLOATS))
 NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
 
+FLOAT_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
+    'getting another float in FloatStrategy')
+
 
 class FloatStrategy(SearchStrategy):
     """Generic superclass for strategies which produce floats."""
@@ -129,8 +132,7 @@ class FloatStrategy(SearchStrategy):
 
     def do_draw(self, data):
         while True:
-            data.start_example(calc_label_from_name(
-                'getting another float in FloatStrategy'))
+            data.start_example(FLOAT_STRATEGY_DO_DRAW_LABEL)
             i = self.sampler.sample(data)
             if i == 0:
                 result = flt.draw_float(data)

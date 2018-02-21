@@ -52,6 +52,8 @@ from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.searchstrategy.collections import TupleStrategy, \
     FixedKeysDictStrategy
 
+STATE_MACHINE_RUN_LABEL = calc_label_from_name('another state machine step')
+
 
 class TestCaseProperty(object):  # pragma: no cover
 
@@ -235,8 +237,7 @@ class StateMachineRunner(object):
             while True:
                 if steps >= self.n_steps:
                     stopping_value = 0
-                self.data.start_example(calc_label_from_name(
-                    'another state machine step'))
+                self.data.start_example(STATE_MACHINE_RUN_LABEL)
                 if not cu.biased_coin(self.data, stopping_value):
                     self.data.stop_example()
                     break
