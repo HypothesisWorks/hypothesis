@@ -18,7 +18,7 @@ for k, v in sorted(dict(os.environ).items()):
 pip install .
 
 
-PYTEST="python -m pytest"
+PYTEST="python -m pytest -n2"
 
 $PYTEST tests/cover
 
