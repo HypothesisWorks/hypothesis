@@ -714,28 +714,38 @@ def characters(whitelist_categories=None, blacklist_categories=None,
     """Generates unicode text type (unicode on python 2, str on python 3)
     characters following specified filtering rules.
 
-    When no filtering rules are specifed, any character can be produced.
+    - When no filtering rules are specifed, any character can be produced.
+    - If ``min_codepoint`` or ``max_codepoint`` is specifed, then only
+      characters having a codepoint in that range will be produced.
+    - If ``whitelist_categories`` is specified, then only characters from those
+      Unicode categories will be produced. This is a further restriction,
+      characters must also satisfy ``min_codepoint`` and ``max_codepoint``.
+    - If ``blacklist_categories`` is specified, then any character from those
+      categories will not be produced.  Any overlap between
+      ``whitelist_categories`` and ``blacklist_categories`` will raise an
+      exception, as each character can only belong to a single class.
+    - If ``whitelist_characters`` is specified, then any additional characters
+      in that list will also be produced.
+    - If ``blacklist_characters`` is specified, then any characters in
+      that list will be not be produced. Any overlap between \
+      ``whitelist_characters`` and ``blacklist_characters`` will raise an
+      exception.
 
-    If ``min_codepoint`` or ``max_codepoint`` is specifed, then only
-    characters having a codepoint in that range will be produced.
+    The ``_codepoint`` arguments must be integers between zero and
+    :obj:`python:sys.max_unicode`.  The ``_characters`` arguments must be
+    collections of length-one unicode strings, such as a unicode string.
 
-    If ``whitelist_categories`` is specified, then only characters from those
-    Unicode categories will be produced. This is a further restriction,
-    characters must also satisfy ``min_codepoint`` and ``max_codepoint``.
+    The ``_categories`` arguments must be used to specify either the
+    one-letter Unicode major category or the two-letter Unicode
+    `general category`_.  For example, ``('Nd', 'Lu')`` signifies "Number,
+    decimal digit" and "Letter, uppercase".  A single letter ('major category')
+    can be given to match all corresponding categories, for example ``'P'``
+    for characters in any punctuation category.
 
-    If ``blacklist_categories`` is specified, then any character from those
-    categories will not be produced.  Any overlap between
-    ``whitelist_categories`` and ``blacklist_categories`` will raise an
-    exception, as each character can only belong to a single class.
+    .. _general category: https://wikipedia.org/wiki/Unicode_character_property
 
-    If ``whitelist_characters`` is specified, then any additional characters
-    in that list will also be produced.
-
-    If ``blacklist_characters`` is specified, then any characters in that list
-    will be not be produced. Any overlap between ``whitelist_characters`` and
-    ``blacklist_characters`` will raise an exception.
-
-    Examples from this strategy shrink towards smaller codepoints.
+    Examples from this strategy shrink towards the codepoint for ``'0'``,
+    or the first allowable codepoint after it if ``'0'`` is excluded.
 
     """
     check_valid_size(min_codepoint, 'min_codepoint')
