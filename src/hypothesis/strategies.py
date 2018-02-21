@@ -35,6 +35,7 @@ from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
     text_type, get_type_hints, getfullargspec, implements_iterator
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats
+from hypothesis.internal.charmap import validate_categories
 from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
@@ -723,9 +724,9 @@ def characters(whitelist_categories=None, blacklist_categories=None,
     characters must also satisfy ``min_codepoint`` and ``max_codepoint``.
 
     If ``blacklist_categories`` is specified, then any character from those
-    categories will not be produced. This is a further restriction,
-    characters that match both ``whitelist_categories`` and
-    ``blacklist_categories`` will not be produced.
+    categories will not be produced.  Any overlap between
+    ``whitelist_categories`` and ``blacklist_categories`` will raise an
+    exception, as each character can only belong to a single class.
 
     If ``whitelist_characters`` is specified, then any additional characters
     in that list will also be produced.
@@ -748,25 +749,25 @@ def characters(whitelist_categories=None, blacklist_categories=None,
             blacklist_categories is None,
             )):
         raise InvalidArgument(
-            'Cannot have just whitelist_characters=%r alone, '
-            'it would have no effect. Perhaps you want sampled_from()' % (
-                whitelist_characters,
-            )
-        )
-    if (
-        whitelist_characters is not None and
-        blacklist_characters is not None and
-        set(blacklist_characters).intersection(set(whitelist_characters))
-    ):
+            'Passing only whitelist_characters=%r would have no effect. '
+            'Perhaps you want sampled_from() ?' % (whitelist_characters,))
+    blacklist_characters = blacklist_characters or ''
+    whitelist_characters = whitelist_characters or ''
+    overlap = set(blacklist_characters).intersection(whitelist_characters)
+    if overlap:
         raise InvalidArgument(
             'Characters %r are present in both whitelist_characters=%r, and '
             'blacklist_characters=%r' % (
-                set(blacklist_characters).intersection(
-                    set(whitelist_characters)
-                ),
-                whitelist_characters, blacklist_characters,
-            )
-        )
+                sorted(overlap), whitelist_characters, blacklist_characters))
+    blacklist_categories = validate_categories(blacklist_categories)
+    whitelist_categories = validate_categories(whitelist_categories)
+    both_cats = set(
+        blacklist_categories or ()).intersection(whitelist_categories or ())
+    if both_cats:
+        raise InvalidArgument(
+            'Categories %r are present in both whitelist_categories=%r, and '
+            'blacklist_categories=%r' % (
+                sorted(both_cats), whitelist_categories, blacklist_categories))
 
     from hypothesis.searchstrategy.strings import OneCharStringStrategy
     return OneCharStringStrategy(whitelist_categories=whitelist_categories,

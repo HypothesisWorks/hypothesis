@@ -205,6 +205,8 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.text, {'alphabet': 'abc'}),
     (ds.text, {'alphabet': ''}),
     (ds.text, {'alphabet': ds.sampled_from('abc')}),
+    (ds.characters, {'whitelist_categories': ['N']}),
+    (ds.characters, {'blacklist_categories': []}),
 )
 def test_produces_valid_examples_from_keyword(fn, kwargs):
     fn(**kwargs).example()

@@ -24,6 +24,7 @@ import pickle
 import tempfile
 import unicodedata
 
+from hypothesis.errors import InvalidArgument
 from hypothesis.configuration import tmpdir, storage_directory
 from hypothesis.internal.compat import hunichr
 
@@ -104,6 +105,36 @@ def categories():
         _categories.append('Cc')
         _categories.append('Cs')
     return tuple(_categories)
+
+
+def validate_categories(cats, name=None):
+    """Return a tuple of Unicode categories in a normalised order.
+
+    This function expands one-letter designations of a major class to include
+    all subclasses:
+
+    >>> validate_categories(['N'])
+    ('Nd', 'Nl', 'No')
+
+    See section 4.5 of the Unicode standard for more on classes:
+    https://www.unicode.org/versions/Unicode10.0.0/ch04.pdf
+
+    If the collection ``cats`` includes any elements that do not represent a
+    major class or a class with subclass, InvalidArgument is raised.
+
+    """
+    if cats is None:
+        return None
+    major_classes = ('L', 'M', 'N', 'P', 'S', 'Z', 'C')
+    cs = categories()
+    out = set(cats)
+    for c in cats:
+        if c in major_classes:
+            out.discard(c)
+            out.update(x for x in cs if x.startswith(c))
+        elif c not in cs:
+            raise InvalidArgument('%r is not a valid Unicode category' % (c,))
+    return tuple(c for c in cs if c in out)
 
 
 def _union_intervals(x, y):
@@ -241,7 +272,7 @@ def _category_key(exclude, include):
     If include is None then default to including all categories.
     Any item in include that is not a unicode character will be excluded.
 
-    >>> _category_key(exclude=['So'], include=['Lu', 'Me', 'Cs', 'So', 'Xx'])
+    >>> _category_key(exclude=['So'], include=['Lu', 'Me', 'Cs', 'So'])
     ('Me', 'Lu', 'Cs')
 
     """
@@ -251,6 +282,8 @@ def _category_key(exclude, include):
     else:
         include = set(include)
     exclude = set(exclude or ())
+    assert include.issubset(cs)
+    assert exclude.issubset(cs)
     include -= exclude
     result = tuple(c for c in cs if c in include)
     return result
