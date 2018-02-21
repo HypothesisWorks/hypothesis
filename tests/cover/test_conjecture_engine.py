@@ -33,8 +33,8 @@ from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     ConjectureData
 from hypothesis.internal.conjecture.utils import calc_label_from_name
-from hypothesis.internal.conjecture.engine import Shrinker, \
-    RunIsComplete, ConjectureRunner
+from hypothesis.internal.conjecture.engine import Negated, Shrinker, \
+    RunIsComplete, ConjectureRunner, universal
 
 MAX_SHRINKS = 1000
 SOME_LABEL = calc_label_from_name('some label')
@@ -755,13 +755,19 @@ def test_clears_out_its_database_on_shrinking(
 
 
 def test_saves_negated_examples_in_covering():
+    """Check that every tag that's a key in examples_by_tags is either the
+    universal tag or a Negated of some other tag that is also in the dict?"""
     def f(data):
         if data.draw_bits(8) & 1:
             data.add_tag('hi')
 
     runner = ConjectureRunner(f)
     runner.run()
-    assert len(runner.target_selector.examples_by_tags) == 7
+
+    tags = set(runner.target_selector.examples_by_tags)
+    negated_tags = {t for t in tags if isinstance(t, Negated)}
+    not_universal_or_negated = tags - negated_tags - {universal}
+    assert {t.tag for t in negated_tags} == not_universal_or_negated > set()
 
 
 def test_can_delete_intervals(monkeypatch):
