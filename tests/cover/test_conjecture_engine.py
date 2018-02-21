@@ -755,8 +755,8 @@ def test_clears_out_its_database_on_shrinking(
 
 
 def test_saves_negated_examples_in_covering():
-    """Check that every tag that's a key in examples_by_tags is either the
-    universal tag or a Negated of some other tag that is also in the dict?"""
+    """Check that every key in examples_by_tags is either the universal tag or
+    a Negated of some other key in the dict."""
     def f(data):
         if data.draw_bits(8) & 1:
             data.add_tag('hi')
