@@ -145,6 +145,7 @@ def fn_ktest(*fnkwargs):
     (ds.characters, {'min_codepoint': '1'}),
     (ds.characters, {'max_codepoint': -1}),
     (ds.characters, {'max_codepoint': '1'}),
+    (ds.characters, {'whitelist_categories': []}),
     (ds.characters, {'whitelist_categories': ['Nd'],
                      'blacklist_categories': ['Nd']}),
 )
