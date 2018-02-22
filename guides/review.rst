@@ -103,9 +103,9 @@ src then it counts.
    a bug in Hypothesis or in the way the user wrote the code or the test.
 4. The changelog must be kept up to date by creating a RELEASE.rst file in
    the root of the repository.  Notes on whether to bump the minor version
-   or patch version can be found in ``CONTRIBUTING.rst``.  Make sure you
-   build the documentation and manually inspect the resulting changelog for
-   formatting errors that didn't result in a compilation error.
+   or patch version can be found in ``CONTRIBUTING.rst``.  For complicated
+   markup, consider building the docs and manually checking the changelog
+   for formatting errors that didn't result in a compilation error.
 
 ~~~~~~~~~~~
 API Changes
