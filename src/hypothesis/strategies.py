@@ -733,7 +733,7 @@ def characters(whitelist_categories=None, blacklist_categories=None,
 
     The ``_codepoint`` arguments must be integers between zero and
     :obj:`python:sys.max_unicode`.  The ``_characters`` arguments must be
-    collections of length-one unicode strings (e.g. longer unicode strings).
+    collections of length-one unicode strings, such as a unicode string.
 
     The ``_categories`` arguments must be collections of strings (type str
     on any version) identifying a Unicode `general category`_.  For example,
