@@ -29,8 +29,9 @@ fixes the error. Spot a tyop? Fix it up and send us a PR!
 You can read more about how we document Hypothesis in ``guides/documentation.rst``
 
 The process for submitting source code PRs is generally more involved
-(don't worry, we'll help you through it), so do read the rest of this document
-first.
+(don't worry, we'll help you through it), so do read the rest of this document.
+If you're planning a larger change, the contributor guides (in the ``guides/``
+directory) will make sure you're on the right track.
 
 -----------------------
 Copyright and Licensing
@@ -104,34 +105,6 @@ We particularly encourage pull requests for new composable primitives that
 make implementing other strategies easier, or for widely used types in the
 Python standard library.  Strategies for other things are also welcome;
 anything with external dependencies just goes in ``hypothesis.extra``.
-
-~~~~~~~~~~~~~~~~
-The Release File
-~~~~~~~~~~~~~~~~
-
-All changes to Hypothesis get released automatically when they are merged to
-master.
-
-In order to update the version and change log entry, you have to create a
-release file. This is a normal restructured text file called RELEASE.rst that
-lives in the root of the repository and will be used as the change log entry.
-
-The first line of the file specifies the component of the version number that
-will be updated, according to our `semantic versioning <http://semver.org/>`_
-policy.
-
-- ``RELEASE_TYPE: major`` is for breaking changes, and will only be used by the
-  core team after extensive discussion.
-- ``RELEASE_TYPE: minor`` is for anything that adds to the public (ie documented)
-  API, changes an argument signature, or adds a new deprecation or health check.
-  Minor (or patch) releases **may not** cause errors in any code that runs
-  without errors on an earlier version.
-- ``RELEASE_TYPE: patch`` is for changes that are not visible in the public
-  interface, from improving a docstring to backwards-compatible improvements
-  in shrinking behaviour.
-
-If in doubt, open your pull for a minor release and ask us!
-This line will be removed from the final change log entry.
 
 ~~~~~~~~~
 The build
