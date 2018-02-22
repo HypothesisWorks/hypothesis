@@ -24,7 +24,7 @@ import pickle
 import tempfile
 import unicodedata
 
-from hypothesis.errors import InvalidArgument
+from hypothesis._settings import note_deprecation
 from hypothesis.configuration import tmpdir, storage_directory
 from hypothesis.internal.compat import hunichr
 
@@ -107,20 +107,20 @@ def categories():
     return tuple(_categories)
 
 
-def validate_categories(cats, name=None):
+def as_general_categories(cats, name):
     """Return a tuple of Unicode categories in a normalised order.
 
     This function expands one-letter designations of a major class to include
     all subclasses:
 
-    >>> validate_categories(['N'])
+    >>> as_general_categories(['N'])
     ('Nd', 'Nl', 'No')
 
     See section 4.5 of the Unicode standard for more on classes:
     https://www.unicode.org/versions/Unicode10.0.0/ch04.pdf
 
     If the collection ``cats`` includes any elements that do not represent a
-    major class or a class with subclass, InvalidArgument is raised.
+    major class or a class with subclass, a deprecation warning is raised.
 
     """
     if cats is None:
@@ -133,7 +133,9 @@ def validate_categories(cats, name=None):
             out.discard(c)
             out.update(x for x in cs if x.startswith(c))
         elif c not in cs:
-            raise InvalidArgument('%r is not a valid Unicode category' % (c,))
+            note_deprecation(
+                'In %s=%r, %r is not a valid Unicode category.  This will '
+                'be an error in a future version.' % (name, cats, c))
     return tuple(c for c in cs if c in out)
 
 

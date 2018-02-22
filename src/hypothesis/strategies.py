@@ -35,7 +35,7 @@ from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
     text_type, get_type_hints, getfullargspec, implements_iterator
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats
-from hypothesis.internal.charmap import validate_categories
+from hypothesis.internal.charmap import as_general_categories
 from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
@@ -768,8 +768,10 @@ def characters(whitelist_categories=None, blacklist_categories=None,
             'Characters %r are present in both whitelist_characters=%r, and '
             'blacklist_characters=%r' % (
                 sorted(overlap), whitelist_characters, blacklist_characters))
-    blacklist_categories = validate_categories(blacklist_categories)
-    whitelist_categories = validate_categories(whitelist_categories)
+    blacklist_categories = as_general_categories(
+        blacklist_categories, 'blacklist_categories')
+    whitelist_categories = as_general_categories(
+        whitelist_categories, 'whitelist_categories')
     both_cats = set(
         blacklist_categories or ()).intersection(whitelist_categories or ())
     if both_cats:
