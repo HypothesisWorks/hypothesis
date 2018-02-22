@@ -35,12 +35,13 @@ from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
     text_type, get_type_hints, getfullargspec, implements_iterator
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats
+from hypothesis.internal.charmap import as_general_categories
 from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
 from hypothesis.internal.validation import check_type, try_convert, \
-    check_strategy, check_valid_bound, check_valid_sizes, \
-    check_valid_integer, check_valid_interval
+    check_strategy, check_valid_size, check_valid_bound, \
+    check_valid_sizes, check_valid_integer, check_valid_interval
 
 __all__ = [
     'nothing',
@@ -713,39 +714,43 @@ def characters(whitelist_categories=None, blacklist_categories=None,
     """Generates unicode text type (unicode on python 2, str on python 3)
     characters following specified filtering rules.
 
-    When no filtering rules are specifed, any character can be produced.
+    - When no filtering rules are specifed, any character can be produced.
+    - If ``min_codepoint`` or ``max_codepoint`` is specifed, then only
+      characters having a codepoint in that range will be produced.
+    - If ``whitelist_categories`` is specified, then only characters from those
+      Unicode categories will be produced. This is a further restriction,
+      characters must also satisfy ``min_codepoint`` and ``max_codepoint``.
+    - If ``blacklist_categories`` is specified, then any character from those
+      categories will not be produced.  Any overlap between
+      ``whitelist_categories`` and ``blacklist_categories`` will raise an
+      exception, as each character can only belong to a single class.
+    - If ``whitelist_characters`` is specified, then any additional characters
+      in that list will also be produced.
+    - If ``blacklist_characters`` is specified, then any characters in
+      that list will be not be produced. Any overlap between \
+      ``whitelist_characters`` and ``blacklist_characters`` will raise an
+      exception.
 
-    If ``min_codepoint`` or ``max_codepoint`` is specifed, then only
-    characters having a codepoint in that range will be produced.
+    The ``_codepoint`` arguments must be integers between zero and
+    :obj:`python:sys.max_unicode`.  The ``_characters`` arguments must be
+    collections of length-one unicode strings, such as a unicode string.
 
-    If ``whitelist_categories`` is specified, then only characters from those
-    Unicode categories will be produced. This is a further restriction,
-    characters must also satisfy ``min_codepoint`` and ``max_codepoint``.
+    The ``_categories`` arguments must be collections of strings (type str
+    on any version) identifying a Unicode `general category`_.  For example,
+    ``('Nd', 'Lu')`` signifies "Number, decimal digit" and "Letter, uppercase".
+    A single letter ('major category') can be given to match all corresponding
+    categories, for example ``'P'`` for characters in any punctuation category.
 
-    If ``blacklist_categories`` is specified, then any character from those
-    categories will not be produced. This is a further restriction,
-    characters that match both ``whitelist_categories`` and
-    ``blacklist_categories`` will not be produced.
+    .. _general category: https://wikipedia.org/wiki/Unicode_character_property
 
-    If ``whitelist_characters`` is specified, then any additional characters
-    in that list will also be produced.
-
-    If ``blacklist_characters`` is specified, then any characters in that list
-    will be not be produced. Any overlap between ``whitelist_characters`` and
-    ``blacklist_characters`` will raise an exception.
-
-    Examples from this strategy shrink towards smaller codepoints.
+    Examples from this strategy shrink towards the codepoint for ``'0'``,
+    or the first allowable codepoint after it if ``'0'`` is excluded.
 
     """
-    if (
-        min_codepoint is not None and max_codepoint is not None and
-        min_codepoint > max_codepoint
-    ):
-        raise InvalidArgument(
-            'Cannot have min_codepoint=%d > max_codepoint=%d ' % (
-                min_codepoint, max_codepoint
-            )
-        )
+    check_valid_size(min_codepoint, 'min_codepoint')
+    check_valid_size(max_codepoint, 'max_codepoint')
+    check_valid_interval(min_codepoint, max_codepoint,
+                         'min_codepoint', 'max_codepoint')
     if all((whitelist_characters is not None,
             min_codepoint is None,
             max_codepoint is None,
@@ -753,25 +758,27 @@ def characters(whitelist_categories=None, blacklist_categories=None,
             blacklist_categories is None,
             )):
         raise InvalidArgument(
-            'Cannot have just whitelist_characters=%r alone, '
-            'it would have no effect. Perhaps you want sampled_from()' % (
-                whitelist_characters,
-            )
-        )
-    if (
-        whitelist_characters is not None and
-        blacklist_characters is not None and
-        set(blacklist_characters).intersection(set(whitelist_characters))
-    ):
+            'Passing only whitelist_characters=%r would have no effect. '
+            'Perhaps you want sampled_from() ?' % (whitelist_characters,))
+    blacklist_characters = blacklist_characters or ''
+    whitelist_characters = whitelist_characters or ''
+    overlap = set(blacklist_characters).intersection(whitelist_characters)
+    if overlap:
         raise InvalidArgument(
             'Characters %r are present in both whitelist_characters=%r, and '
             'blacklist_characters=%r' % (
-                set(blacklist_characters).intersection(
-                    set(whitelist_characters)
-                ),
-                whitelist_characters, blacklist_characters,
-            )
-        )
+                sorted(overlap), whitelist_characters, blacklist_characters))
+    blacklist_categories = as_general_categories(
+        blacklist_categories, 'blacklist_categories')
+    whitelist_categories = as_general_categories(
+        whitelist_categories, 'whitelist_categories')
+    both_cats = set(
+        blacklist_categories or ()).intersection(whitelist_categories or ())
+    if both_cats:
+        raise InvalidArgument(
+            'Categories %r are present in both whitelist_categories=%r, and '
+            'blacklist_categories=%r' % (
+                sorted(both_cats), whitelist_categories, blacklist_categories))
 
     from hypothesis.searchstrategy.strings import OneCharStringStrategy
     return OneCharStringStrategy(whitelist_categories=whitelist_categories,

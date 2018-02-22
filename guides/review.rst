@@ -101,17 +101,11 @@ src then it counts.
 3. Hypothesis must never be *flaky*. Flakiness here is
    defined as anything where a test fails and this does not indicate
    a bug in Hypothesis or in the way the user wrote the code or the test.
-4. The version number must be kept up to date, following
-   `Semantic Versioning <http://semver.org/>`_ conventions: The third (patch)
-   number increases for things that don't change public facing functionality,
-   the second (minor) for things that do but are backwards compatible, and
-   the first (major) changes for things that aren't backwards compatible.
-   See the section on API changes for the latter two.
-5. The changelog should be kept up to date by creating a RELEASE.rst file in
-   the root of the repository. Make sure you build the documentation and
-   manually inspect the resulting changelog to see that it looks good - there
-   are a lot of syntax mistakes possible in RST that don't result in a
-   compilation error.
+4. The changelog must be kept up to date by creating a RELEASE.rst file in
+   the root of the repository.  Notes on whether to bump the minor version
+   or patch version can be found in the documentation guide.  For complicated
+   markup, consider building the docs and manually checking the changelog
+   for formatting errors that didn't result in a compilation error.
 
 ~~~~~~~~~~~
 API Changes

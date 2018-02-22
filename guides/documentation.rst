@@ -57,11 +57,27 @@ where every pull request that touches ``./src`` results in a new release.
 That means every contributor gets to write their changelog!
 
 A changelog entry should be written in a new ``RELEASE.rst`` file in
-the repository root, and:
+the repository root.  The first line of the file specifies the component
+of the version number that will be updated, according to our
+`semantic versioning <http://semver.org/>`_ policy.
+
+- ``RELEASE_TYPE: major`` is for breaking changes, and will only be used by the
+  core team after extensive discussion.
+- ``RELEASE_TYPE: minor`` is for anything that adds to the public (ie documented)
+  API, changes an argument signature, or adds a new deprecation or health check.
+  Minor (or patch) releases **may not** cause errors in any code that runs
+  without errors on an earlier version.
+- ``RELEASE_TYPE: patch`` is for changes that are not visible in the public
+  interface, from improving a docstring to backwards-compatible improvements
+  in shrinking behaviour.
+
+This first line will be removed from the final change log entry.
+The remaining lines are the actual changelog text for this release,
+which should:
 
 - concisely describe what changed and why
 - use Sphinx cross-references to any functions or classes mentioned
-- if closing an issue, mention it with the issue role to generate a link
+- if closing an issue, mention it with the ``:issue:`` role to generate a link
 - finish with a note of thanks from the maintainers:
   "Thanks to <your name> for this bug fix / feature / contribution"
   (depending on which it is).  If this is your first contribution,
@@ -72,11 +88,9 @@ the repository root, and:
 Updating Doctests
 -----------------
 
-We use the Sphinx `doctest` builder to ensure that all example code snippets
+We use the Sphinx ``doctest`` builder to ensure that all example code snippets
 are kept up to date.  To make this less tedious, you can run
 ``scripts/fix_doctests.py`` (under Python 3) to... fix failing doctests.
 
 The script is pretty good, but doesn't handle ``+ELLIPSIS`` or
-``+NORMALIZE_WHITESPACE`` options.  Check that output is stable (running
-it again should give "All doctests are OK"), then review the diff before
-committing.
+``+NORMALIZE_WHITESPACE`` options.  Review the diff before committing.

@@ -141,6 +141,13 @@ def fn_ktest(*fnkwargs):
         'min_value': time(2, 0),
         'max_value': time(1, 0)}),
     (ds.uuids, {'version': 6}),
+    (ds.characters, {'min_codepoint': -1}),
+    (ds.characters, {'min_codepoint': '1'}),
+    (ds.characters, {'max_codepoint': -1}),
+    (ds.characters, {'max_codepoint': '1'}),
+    (ds.characters, {'whitelist_categories': ['Nd'],
+                     'blacklist_categories': ['Nd']}),
+    (ds.characters, {'whitelist_categories': [5]}),
 )
 def test_validates_keyword_arguments(fn, kwargs):
     with pytest.raises(InvalidArgument):
@@ -202,6 +209,8 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.text, {'alphabet': 'abc'}),
     (ds.text, {'alphabet': ''}),
     (ds.text, {'alphabet': ds.sampled_from('abc')}),
+    (ds.characters, {'whitelist_categories': ['N']}),
+    (ds.characters, {'blacklist_categories': []}),
 )
 def test_produces_valid_examples_from_keyword(fn, kwargs):
     fn(**kwargs).example()
