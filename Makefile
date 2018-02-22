@@ -145,8 +145,9 @@ check-pytest30: $(TOX)
 check-pytest28: $(TOX)
 	$(TOX) --recreate -e pytest28
 
-check-quality: $(TOX)
+check-quality: $(TOX) $(PY27)
 	$(TOX) --recreate -e quality
+	$(TOX) --recreate -e quality2
 
 check-ancient-pip: $(PY273)
 	scripts/check-ancient-pip.sh $(PY273)
