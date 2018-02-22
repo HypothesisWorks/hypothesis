@@ -98,7 +98,7 @@ several parts of Hypothesis started life outside and were integrated later
 (with permission, of course).  For clarity, we suggest naming your package
 in the pattern of ``hypothesis-regex`` and ``hypothesis-protobuf`` on PyPI.
 
-On the hand, being inside gets you access to some deeper implementation
+On the other hand, being inside gets you access to some deeper implementation
 features (if you need them) and better long-term guarantees about maintenance.
 We particularly encourage pull requests for new composable primitives that
 make implementing other strategies easier, or for widely used types in the
