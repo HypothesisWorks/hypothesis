@@ -763,11 +763,11 @@ def test_saves_negated_examples_in_covering():
 
     runner = ConjectureRunner(f)
     runner.run()
-
     tags = set(runner.target_selector.examples_by_tags)
     negated_tags = {t for t in tags if isinstance(t, Negated)}
     not_universal_or_negated = tags - negated_tags - {universal}
-    assert {t.tag for t in negated_tags} == not_universal_or_negated > set()
+    assert not_universal_or_negated > set()
+    assert {t.tag for t in negated_tags} == not_universal_or_negated
 
 
 def test_can_delete_intervals(monkeypatch):
