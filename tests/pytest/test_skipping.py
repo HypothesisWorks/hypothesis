@@ -40,6 +40,6 @@ def test_no_falsifying_example_if_pytest_skip(testdir):
     about falsifying examples."""
     script = testdir.makepyfile(PYTEST_TESTSUITE)
     result = testdir.runpytest(script, '--verbose', '--strict', '-m',
-                               'hypothesis', '-n0')
+                               'hypothesis')
     out = '\n'.join(result.stdout.lines)
     assert 'Falsifying example' not in out

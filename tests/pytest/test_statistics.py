@@ -54,14 +54,14 @@ def test_iterations(x):
 
 def test_does_not_run_statistics_by_default(testdir):
     script = testdir.makepyfile(TESTSUITE)
-    result = testdir.runpytest(script, '-n0')
+    result = testdir.runpytest(script)
     out = '\n'.join(result.stdout.lines)
     assert 'Hypothesis Statistics' not in out
 
 
 def test_prints_statistics_given_option(testdir):
     script = testdir.makepyfile(TESTSUITE)
-    result = testdir.runpytest(script, PRINT_STATISTICS_OPTION, '-n0')
+    result = testdir.runpytest(script, PRINT_STATISTICS_OPTION)
     out = '\n'.join(result.stdout.lines)
     assert 'Hypothesis Statistics' in out
     assert 'timeout=0.2' in out
@@ -86,7 +86,7 @@ class TestStuff(TestCase):
 
 def test_prints_statistics_for_unittest_tests(testdir):
     script = testdir.makepyfile(UNITTEST_TESTSUITE)
-    result = testdir.runpytest(script, PRINT_STATISTICS_OPTION, '-n0')
+    result = testdir.runpytest(script, PRINT_STATISTICS_OPTION)
     out = '\n'.join(result.stdout.lines)
     assert 'Hypothesis Statistics' in out
     assert 'TestStuff::test_all_valid' in out
@@ -113,7 +113,7 @@ TestStuff = Stuff.TestCase
 
 def test_prints_statistics_for_stateful_tests(testdir):
     script = testdir.makepyfile(STATEFUL_TESTSUITE)
-    result = testdir.runpytest(script, PRINT_STATISTICS_OPTION, '-n0')
+    result = testdir.runpytest(script, PRINT_STATISTICS_OPTION)
     out = '\n'.join(result.stdout.lines)
     assert 'Hypothesis Statistics' in out
     assert 'TestStuff::runTest' in out

@@ -42,8 +42,7 @@ def test_should_be_verbose(x):
 ])
 def test_output_without_capture(testdir, capture, expected):
     script = testdir.makepyfile(TESTSUITE)
-    result = testdir.runpytest(
-        script, '--verbose', '--capture', capture, '-n0')
+    result = testdir.runpytest(script, '--verbose', '--capture', capture)
     out = '\n'.join(result.stdout.lines)
     assert 'test_should_be_verbose' in out
     assert ('Trying example' in out) == expected
@@ -79,7 +78,7 @@ def test_output_emitting_unicode(testdir, monkeypatch):
     script = testdir.makepyfile(UNICODE_EMITTING)
     result = getattr(
         testdir, 'runpytest_subprocess', testdir.runpytest)(
-        script, '--verbose', '--capture=no', '-n0')
+        script, '--verbose', '--capture=no')
     out = '\n'.join(result.stdout.lines)
     assert 'test_emits_unicode' in out
     assert escape_unicode_characters(hunichr(1001)) in out
@@ -107,7 +106,7 @@ def get_line_num(token, result):
 
 def test_timeout_traceback_is_hidden(testdir):
     script = testdir.makepyfile(TRACEBACKHIDE_TIMEOUT)
-    result = testdir.runpytest(script, '--verbose', '-n0')
+    result = testdir.runpytest(script, '--verbose')
     def_line = get_line_num('def test_timeout_traceback_is_hidden', result)
     timeout_line = get_line_num('Timeout: Ran out of time', result)
     # If __tracebackhide__ works, then the Timeout error message will be
@@ -128,7 +127,7 @@ def test_healthcheck_traceback_is_hidden(x):
 
 def test_healthcheck_traceback_is_hidden(testdir):
     script = testdir.makepyfile(TRACEBACKHIDE_HEALTHCHECK)
-    result = testdir.runpytest(script, '--verbose', '-n0')
+    result = testdir.runpytest(script, '--verbose')
     def_token = '__ test_healthcheck_traceback_is_hidden __'
     timeout_token = ': FailedHealthCheck'
     def_line = get_line_num(def_token, result)

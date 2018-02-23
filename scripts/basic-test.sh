@@ -20,18 +20,6 @@ pip install .
 
 PYTEST="python -m pytest -n2"
 
-$PYTEST tests/cover
-
-$PYTEST examples
-
-COVERAGE_TEST_TRACER=timid $PYTEST tests/cover
-
-if [ "$(python -c 'import sys; print(sys.version_info[0] == 2)')" = "True" ] ; then
-    $PYTEST tests/py2
-else
-    $PYTEST tests/py3
-fi
-
 $PYTEST --runpytest=subprocess tests/pytest
 
 pip install ".[datetime]"
