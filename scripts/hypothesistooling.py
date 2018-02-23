@@ -120,7 +120,8 @@ def has_source_changes(version=None):
     point_of_divergence = merge_base('HEAD', version)
 
     return subprocess.call([
-        'git', 'diff', '--exit-code', point_of_divergence, 'HEAD', '--', SRC,
+        'git', 'diff', '-s', '--exit-code', point_of_divergence, 'HEAD', '--',
+        SRC,
     ]) != 0
 
 
