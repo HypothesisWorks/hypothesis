@@ -22,6 +22,12 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.45.3 - 2018-02-23
+-------------------
+
+This patch may improve example shrinking slightly for some strategies.
+
+-------------------
 3.45.2 - 2018-02-18
 -------------------
 
