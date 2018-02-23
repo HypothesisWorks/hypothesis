@@ -47,6 +47,8 @@ def problem(draw):
 @given(problem())
 def test_avoids_zig_zag_trap(p):
     b, marker, lower_bound = p
+    b = hbytes(b)
+    marker = hbytes(marker)
 
     n_bits = 8 * (len(b) + 1)
 

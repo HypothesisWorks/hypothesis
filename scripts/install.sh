@@ -86,7 +86,7 @@ install () {
 for var in "$@"; do
   case "${var}" in
     2.7)
-      install 2.7.11 python2.7
+      install 2.7.14 python2.7
       ;;
     2.7.3)
       install 2.7.3 python2.7.3
