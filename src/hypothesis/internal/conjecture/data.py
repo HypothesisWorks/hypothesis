@@ -27,6 +27,10 @@ from hypothesis.internal.compat import hbytes, hrange, text_type, \
     bit_length, benchmark_time, int_from_bytes, unicode_safe_repr
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.escalation import mark_for_escalation
+from hypothesis.internal.conjecture.utils import calc_label_from_name
+
+TOP_LABEL = calc_label_from_name('top')
+DRAW_BYTES_LABEL = calc_label_from_name('draw_bytes() in ConjectureData')
 
 
 class Status(IntEnum):
@@ -111,7 +115,7 @@ class ConjectureData(object):
         self.example_stack = []
         self.has_discards = False
 
-        self.start_example()
+        self.start_example(TOP_LABEL)
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -182,7 +186,7 @@ class ConjectureData(object):
             if not self.frozen:
                 self.stop_example()
 
-    def start_example(self, label=None):
+    def start_example(self, label):
         self.__assert_not_frozen('start_example')
         self.level += 1
         i = len(self.examples)
@@ -229,8 +233,7 @@ class ConjectureData(object):
                 if ex.discarded:
                     discards.append((ex.start, ex.end))
                     continue
-                if ex.label is not None:
-                    self.tags.add(structural_tag(ex.label))
+                self.tags.add(structural_tag(ex.label))
 
         self.buffer = hbytes(self.buffer)
         self.events = frozenset(self.events)
@@ -286,7 +289,7 @@ class ConjectureData(object):
         if n == 0:
             return hbytes(b'')
         self.__check_capacity(n)
-        self.start_example()
+        self.start_example(DRAW_BYTES_LABEL)
         result = self._draw_bytes(self, n)
         assert len(result) == n
         self.__write(result)

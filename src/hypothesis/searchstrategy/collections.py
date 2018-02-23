@@ -20,8 +20,9 @@ from __future__ import division, print_function, absolute_import
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import OrderedDict, hbytes
+from hypothesis.internal.conjecture.utils import combine_labels
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    MappedSearchStrategy, combine_labels, one_of_strategies
+    MappedSearchStrategy, one_of_strategies
 
 
 class TupleStrategy(SearchStrategy):

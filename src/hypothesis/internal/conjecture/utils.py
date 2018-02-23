@@ -20,13 +20,41 @@ from __future__ import division, print_function, absolute_import
 import enum
 import math
 import heapq
+import hashlib
 from fractions import Fraction
 from collections import Sequence, OrderedDict
 
 from hypothesis._settings import note_deprecation
-from hypothesis.internal.compat import floor, hbytes, hrange, bit_length, \
-    int_from_bytes
+from hypothesis.internal.compat import floor, hbytes, hrange, qualname, \
+    bit_length, str_to_bytes, int_from_bytes
 from hypothesis.internal.floats import int_to_float
+
+LABEL_MASK = 2 ** 64 - 1
+
+
+def calc_label_from_name(name):
+    hashed = hashlib.md5(str_to_bytes(name)).digest()
+    return int_from_bytes(hashed[:8])
+
+
+def calc_label_from_cls(cls):
+    return calc_label_from_name(qualname(cls))
+
+
+def combine_labels(*labels):
+    label = 0
+    for l in labels:
+        label = (label << 1) & LABEL_MASK
+        label ^= l
+    return label
+
+
+INTEGER_RANGE_DRAW_LABEL = calc_label_from_name(
+    'another draw in integer_range()')
+GEOMETRIC_LABEL = calc_label_from_name('geometric()')
+BIASED_COIN_LABEL = calc_label_from_name('biased_coin()')
+SAMPLE_IN_SAMPLER_LABLE = calc_label_from_name('a sample() in Sampler')
+ONE_FROM_MANY_LABEL = calc_label_from_name('one more from many()')
 
 
 def integer_range(data, lower, upper, center=None):
@@ -56,7 +84,7 @@ def integer_range(data, lower, upper, center=None):
     probe = gap + 1
 
     while probe > gap:
-        data.start_example()
+        data.start_example(INTEGER_RANGE_DRAW_LABEL)
         probe = data.draw_bits(bits)
         data.stop_example(discard=probe > gap)
 
@@ -131,8 +159,7 @@ def fractional_float(data):
 
 def geometric(data, p):
     denom = math.log1p(-p)
-
-    data.start_example()
+    data.start_example(GEOMETRIC_LABEL)
     while True:
         probe = fractional_float(data)
         if probe < 1.0:
@@ -149,7 +176,7 @@ def boolean(data):
 def biased_coin(data, p):
     """Return False with probability p (assuming a uniform generator),
     shrinking towards False."""
-    data.start_example()
+    data.start_example(BIASED_COIN_LABEL)
     while True:
         # The logic here is a bit complicated and special cased to make it
         # play better with the shrinker.
@@ -313,7 +340,7 @@ class Sampler(object):
         self.table.sort()
 
     def sample(self, data):
-        data.start_example()
+        data.start_example(SAMPLE_IN_SAMPLER_LABLE)
         i = integer_range(data, 0, len(self.table) - 1)
         base, alternate, alternate_chance = self.table[i]
         use_alternate = biased_coin(data, alternate_chance)
@@ -370,7 +397,7 @@ class many(object):
             should_continue = biased_coin(self.data, p_continue)
 
         if should_continue:
-            self.data.start_example()
+            self.data.start_example(ONE_FROM_MANY_LABEL)
             self.count += 1
             return True
         else:

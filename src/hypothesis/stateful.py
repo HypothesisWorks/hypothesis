@@ -46,10 +46,13 @@ from hypothesis.strategies import just, lists, builds, one_of, runner, \
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 from hypothesis.internal.reflection import proxies, nicerepr
 from hypothesis.internal.conjecture.data import StopTest
-from hypothesis.internal.conjecture.utils import integer_range
+from hypothesis.internal.conjecture.utils import integer_range, \
+    calc_label_from_name
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.searchstrategy.collections import TupleStrategy, \
     FixedKeysDictStrategy
+
+STATE_MACHINE_RUN_LABEL = calc_label_from_name('another state machine step')
 
 
 class TestCaseProperty(object):  # pragma: no cover
@@ -234,7 +237,7 @@ class StateMachineRunner(object):
             while True:
                 if steps >= self.n_steps:
                     stopping_value = 0
-                self.data.start_example()
+                self.data.start_example(STATE_MACHINE_RUN_LABEL)
                 if not cu.biased_coin(self.data, stopping_value):
                     self.data.stop_example()
                     break

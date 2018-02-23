@@ -32,10 +32,12 @@ from tests.common.strategies import SLOW, HardToShrink
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     ConjectureData
-from hypothesis.internal.conjecture.engine import Shrinker, \
-    RunIsComplete, ConjectureRunner
+from hypothesis.internal.conjecture.utils import calc_label_from_name
+from hypothesis.internal.conjecture.engine import Negated, Shrinker, \
+    RunIsComplete, ConjectureRunner, universal
 
 MAX_SHRINKS = 1000
+SOME_LABEL = calc_label_from_name('some label')
 
 
 def run_to_buffer(f):
@@ -165,7 +167,7 @@ def test_variadic_draw():
     def draw_list(data):
         result = []
         while True:
-            data.start_example()
+            data.start_example(SOME_LABEL)
             d = data.draw_bytes(1)[0] & 7
             if d:
                 result.append(data.draw_bytes(d))
@@ -753,13 +755,19 @@ def test_clears_out_its_database_on_shrinking(
 
 
 def test_saves_negated_examples_in_covering():
+    """Check that every key in examples_by_tags is either the universal tag or
+    a Negated of some other key in the dict."""
     def f(data):
         if data.draw_bits(8) & 1:
             data.add_tag('hi')
 
     runner = ConjectureRunner(f)
     runner.run()
-    assert len(runner.target_selector.examples_by_tags) == 3
+    tags = set(runner.target_selector.examples_by_tags)
+    negated_tags = {t for t in tags if isinstance(t, Negated)}
+    not_universal_or_negated = tags - negated_tags - {universal}
+    assert not_universal_or_negated > set()
+    assert {t.tag for t in negated_tags} == not_universal_or_negated
 
 
 def test_can_delete_intervals(monkeypatch):
@@ -888,7 +896,7 @@ def test_discarding(monkeypatch):
     def x(data):
         count = 0
         while count < 10:
-            data.start_example()
+            data.start_example(SOME_LABEL)
             b = data.draw_bits(1)
             if b:
                 count += 1
@@ -918,7 +926,7 @@ def test_discarding_runs_automatically(monkeypatch):
     @run_to_buffer
     def x(data):
         while True:
-            data.start_example()
+            data.start_example(SOME_LABEL)
             b = data.draw_bits(8)
             data.stop_example(discard=(b == 0))
             if b == 11:
@@ -951,7 +959,7 @@ def test_automatic_discarding_is_turned_off_if_it_does_not_work(monkeypatch):
     def x(data):
         count = 0
         while True:
-            data.start_example()
+            data.start_example(SOME_LABEL)
             b = data.draw_bits(8)
             if not b:
                 count += 1
@@ -1027,7 +1035,7 @@ def test_depth_bounds_in_generation():
     def tree(data, n):
         depth[0] = max(depth[0], n)
         if data.draw_bits(8):
-            data.start_example()
+            data.start_example(SOME_LABEL)
             tree(data, n + 1)
             tree(data, n + 1)
             data.stop_example()
@@ -1067,9 +1075,9 @@ def test_handles_nesting_of_discard_correctly(monkeypatch):
     @run_to_buffer
     def x(data):
         while True:
-            data.start_example()
+            data.start_example(SOME_LABEL)
             succeeded = data.draw_bits(1)
-            data.start_example()
+            data.start_example(SOME_LABEL)
             data.draw_bits(1)
             data.stop_example(discard=not succeeded)
             data.stop_example(discard=not succeeded)
@@ -1091,7 +1099,7 @@ def test_can_zero_subintervals(monkeypatch):
     @run_to_buffer
     def x(data):
         for _ in hrange(10):
-            data.start_example()
+            data.start_example(SOME_LABEL)
             n = data.draw_bits(8)
             data.draw_bytes(n)
             data.stop_example()
@@ -1267,9 +1275,9 @@ def test_handle_empty_draws(monkeypatch):
     @run_to_buffer
     def x(data):
         while True:
-            data.start_example()
+            data.start_example(SOME_LABEL)
             n = data.draw_bits(1)
-            data.start_example()
+            data.start_example(SOME_LABEL)
             data.stop_example()
             data.stop_example(discard=n > 0)
             if not n:
