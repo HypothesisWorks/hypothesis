@@ -65,8 +65,12 @@ of the version number that will be updated, according to our
   core team after extensive discussion.
 - ``RELEASE_TYPE: minor`` is for anything that adds to the public (ie documented)
   API, changes an argument signature, or adds a new deprecation or health check.
-  Minor (or patch) releases **may not** cause errors in any code that runs
-  without errors on an earlier version.
+  Minor (or patch) releases **must not** cause errors in any code that runs
+  without errors on an earlier version of Hypothesis, using only the public API.
+  Silent errors *may* be converted to noisy errors, but generally we prefer
+  to issue a deprecation warning and use the new behaviour if possible.
+  This stability policy only applies to use of Hypothesis itself, not the
+  results of user-written tests that use Hypothesis.
 - ``RELEASE_TYPE: patch`` is for changes that are not visible in the public
   interface, from improving a docstring to backwards-compatible improvements
   in shrinking behaviour.

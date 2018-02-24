@@ -101,9 +101,9 @@ src then it counts.
 3. Hypothesis must never be *flaky*. Flakiness here is
    defined as anything where a test fails and this does not indicate
    a bug in Hypothesis or in the way the user wrote the code or the test.
-4. The changelog must be kept up to date by creating a RELEASE.rst file in
-   the root of the repository.  Notes on whether to bump the minor version
-   or patch version can be found in the documentation guide.  For complicated
+4. The changelog (in ``RELEASE.rst``) should bump the minor or patch version
+   (see guides/documentation.rst for details), accurately describe the
+   changes, and shouldn't refer to internal-only APIs.  For complicated
    markup, consider building the docs and manually checking the changelog
    for formatting errors that didn't result in a compilation error.
 
