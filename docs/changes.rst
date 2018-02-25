@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.45.4 - 2018-02-25
+-------------------
+
+This patch improves some internal debugging information, fixes
+a typo in a validation error message, and expands the documentation
+for new contributors.
+
+-------------------
 3.45.3 - 2018-02-23
 -------------------
 
