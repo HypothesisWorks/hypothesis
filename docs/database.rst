@@ -23,10 +23,9 @@ File locations
 
 The default storage format is as a fairly opaque directory structure. Each test
 corresponds to a directory, and each example to a file within that directory.
-The standard location for it is .hypothesis/examples in your current working
-directory. You can override this, either by setting either the database\_file property on
-a settings object (you probably want to specify it on settings.default) or by setting the
-HYPOTHESIS\_DATABASE\_FILE environment variable.
+The standard location for it is ``.hypothesis/examples`` in your current working
+directory. You can override this by setting the :obj:`~hypothesis.settings.database_file`
+setting, or with the ``HYPOTHESIS_DATABASE_FILE`` environment variable.
 
 There is also a legacy sqlite3 based format. This is mostly still supported for
 compatibility reasons, and support will be dropped in some future version of

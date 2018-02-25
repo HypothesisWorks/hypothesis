@@ -491,7 +491,7 @@ class OneOfStrategy(SearchStrategy):
             self.element_strategies[i], label=self.branch_labels[i])
 
     def __repr__(self):
-        return ' | '.join(map(repr, self.original_strategies))
+        return 'one_of(%s)' % ', '.join(map(repr, self.original_strategies))
 
     def do_validate(self):
         for e in self.element_strategies:

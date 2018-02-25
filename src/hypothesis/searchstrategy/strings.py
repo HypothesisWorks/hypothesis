@@ -76,7 +76,7 @@ class StringStrategy(MappedSearchStrategy):
         )
 
     def __repr__(self):
-        return 'StringStrategy()'
+        return "%r.map(u''.join)" % self.mapped_strategy
 
     def pack(self, ls):
         return u''.join(ls)
@@ -87,7 +87,8 @@ class BinaryStringStrategy(MappedSearchStrategy):
     lists of bytes."""
 
     def __repr__(self):
-        return 'BinaryStringStrategy()'
+        return '%r.map(bytearray).map(%s)' % (
+            self.mapped_strategy, binary_type.__name__)
 
     def pack(self, x):
         assert isinstance(x, list), repr(x)
