@@ -12,3 +12,4 @@ twine
 attrs
 coverage
 pyupio
+django

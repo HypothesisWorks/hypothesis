@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import re
 import string
 from decimal import Decimal
 from datetime import timedelta
@@ -24,6 +25,7 @@ from datetime import timedelta
 import django.db.models as dm
 from django.db import IntegrityError
 from django.conf import settings as django_settings
+from django.core import validators
 from django.core.exceptions import ValidationError
 
 import hypothesis.strategies as st
@@ -128,6 +130,24 @@ def _get_strategy_for_field(f):
             min_size=(None if f.blank else 1),
             max_size=f.max_length,
         )
+        # We can infer a vastly more precise strategy by considering the
+        # validators as well as the field type.  This is a minimal proof of
+        # concept, but we intend to leverage the idea much more heavily soon.
+        # See https://github.com/HypothesisWorks/hypothesis-python/issues/1116
+        re_validators = [
+            v for v in f.validators
+            if isinstance(v, validators.RegexValidator) and not v.inverse_match
+        ]
+        if re_validators:
+            regexes = [re.compile(v.regex, v.flags) if isinstance(v.regex, str)
+                       else v.regex for v in re_validators]
+            # This strategy generates according to one of the regexes, and
+            # filters using the others.  It can therefore learn to generate
+            # from the most restrictive and filter with permissive patterns.
+            # Not maximally efficient, but it makes pathological cases rarer.
+            # If you want a challenge: extend https://qntm.org/greenery to
+            # compute intersections of the full Python regex language.
+            strategy = st.one_of(*[st.from_regex(r) for r in regexes])
     elif type(f) == dm.DecimalField:
         bound = Decimal(10 ** f.max_digits - 1) / (10 ** f.decimal_places)
         strategy = st.decimals(min_value=-bound, max_value=bound,
@@ -141,12 +161,38 @@ def _get_strategy_for_field(f):
     return strategy
 
 
-def models(model, **extra):
-    """Return a strategy for instances of a model."""
-    result = {k: v for k, v in extra.items() if v is not default_value}
+def models(model, **field_strategies):
+    """Return a strategy for examples of ``model``.
+
+    .. warning::
+        Hypothesis creates saved models. This will run inside your testing
+        transaction when using the test runner, but if you use the dev console
+        this will leave debris in your database.
+
+    ``model`` must be an subclass of :class:`~django:django.db.models.Model`.
+    Strategies for fields may be passed as keyword arguments, for example
+    ``is_staff=st.just(False)``.
+
+    Hypothesis can often infer a strategy based the field type and validators
+    - for best results, make sure your validators are derived from Django's
+    and therefore have the known types and attributes.
+    Passing a keyword argument skips inference for that field; pass a strategy
+    or pass :const:`hypothesis.extra.django.models.default_value` to skip
+    inference for that field.
+
+    Foreign keys are not automatically derived. If they're nullable they will
+    default to always being null, otherwise you always have to specify them.
+    For example, examples of a Shop type with a foreign key to Company could
+    be generated with::
+
+      shop_strategy = models(Shop, company=models(Company))
+
+    """
+    result = {k: v for k, v in field_strategies.items()
+              if v is not default_value}
     missed = []
     for f in model._meta.concrete_fields:
-        if not (f.name in extra or isinstance(f, dm.AutoField)):
+        if not (f.name in field_strategies or isinstance(f, dm.AutoField)):
             result[f.name] = _get_strategy_for_field(f)
             if result[f.name].is_empty:
                 missed.append(f.name)

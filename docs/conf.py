@@ -70,6 +70,7 @@ intersphinx_mapping = {
     'numpy': ('https://docs.scipy.org/doc/numpy/', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
     'pytest': ('https://docs.pytest.org/en/stable/', None),
+    'django': ('https://django.readthedocs.io/en/stable/', None),
 }
 
 autodoc_mock_imports = ['numpy', 'pandas']

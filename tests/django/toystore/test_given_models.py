@@ -21,6 +21,7 @@ import datetime as dt
 from uuid import UUID
 
 from django.conf import settings as django_settings
+from django.contrib.auth.models import User
 
 from hypothesis import HealthCheck, given, assume, settings
 from hypothesis.errors import InvalidArgument
@@ -157,3 +158,10 @@ class TestRestrictedFields(TestCase):
                          instance.choice_field_grouped.lower())
         self.assertEqual(instance.even_number_field % 2, 0)
         self.assertTrue(instance.non_blank_text_field)
+
+
+class TestValidatorInference(TestCase):
+
+    @given(models(User))
+    def test_user_issue_1112_regression(self, user):
+        assert user.username
