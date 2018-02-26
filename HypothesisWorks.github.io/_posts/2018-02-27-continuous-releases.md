@@ -1,7 +1,7 @@
 ---
 layout: post
 tags: development-process
-date: 2018-02-21 12:00
+date: 2018-02-27 07:00
 title: The Hypothesis continuous release process
 published: true
 author: alexwlchan
