@@ -52,8 +52,9 @@ from hypothesis._settings import note_deprecation
 from hypothesis.executors import new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
-from hypothesis.internal.compat import ceil, hbytes, str_to_bytes, \
-    benchmark_time, get_type_hints, getfullargspec, encoded_filepath
+from hypothesis.internal.compat import ceil, hbytes, qualname, \
+    str_to_bytes, benchmark_time, get_type_hints, getfullargspec, \
+    encoded_filepath, bad_django_TestCase
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.escalation import is_hypothesis_file, \
@@ -974,6 +975,15 @@ def given(*given_arguments, **given_kwargs):
                        'used by the unittest runner but is not itself a test.'
                        '  This is not useful in any way.' % test.__name__)
                 fail_health_check(settings, msg, HealthCheck.not_a_test_method)
+            if bad_django_TestCase(runner):  # pragma: no cover
+                # Covered by the Django tests, but not the pytest coverage task
+                raise InvalidArgument(
+                    'You have applied @given to a method on %s, but this '
+                    'class does not inherit from the supported versions in '
+                    '`hypothesis.extra.django`.  Use the Hypothesis variants '
+                    'to ensure that each example is run in a separate '
+                    'database transaction.' % qualname(type(runner))
+                )
 
             state = StateForActualGivenExecution(
                 test_runner, search_strategy, test, settings, random,
