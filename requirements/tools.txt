@@ -14,7 +14,7 @@ chardet==3.0.4            # via requests
 click==6.7                # via pip-tools, pyupio, safety
 coverage==4.5.1
 django==2.0.2
-docformatter==0.8         # via pyformat
+docformatter==1.0         # via pyformat
 docutils==0.14            # via restructuredtext-lint, sphinx
 dparse==0.2.1             # via pyupio, safety
 first==2.0.1              # via pip-tools
