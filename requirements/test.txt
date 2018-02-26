@@ -14,5 +14,5 @@ pluggy==0.6.0             # via pytest
 py==1.5.2                 # via pytest
 pytest-forked==0.2        # via pytest-xdist
 pytest-xdist==1.22.1
-pytest==3.4.0
+pytest==3.4.1
 six==1.11.0               # via mock, pytest
