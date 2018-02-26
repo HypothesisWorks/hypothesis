@@ -24,15 +24,14 @@ import pytest
 from hypothesis import find
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import find_any, assert_no_examples
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import characters
 from hypothesis.internal.compat import text_type
 
 
-def test_bad_category_arguments():
-    with pytest.raises(InvalidArgument):
-        characters(
-            whitelist_categories=['foo'], blacklist_categories=['bar']
-        ).example()
+@checks_deprecated_behaviour
+def test_nonexistent_category_argument():
+    characters(blacklist_categories=['foo']).example()
 
 
 def test_bad_codepoint_arguments():
@@ -62,6 +61,14 @@ def test_characters_of_specific_groups():
         st, lambda c: unicodedata.category(c) not in ('Lu', 'Nd'))
 
 
+def test_characters_of_major_categories():
+    st = characters(whitelist_categories=('L', 'N'))
+    find(st, lambda c: unicodedata.category(c).startswith('L'))
+    find(st, lambda c: unicodedata.category(c).startswith('N'))
+    assert_no_examples(
+        st, lambda c: unicodedata.category(c)[0] not in ('L', 'N'))
+
+
 def test_exclude_characters_of_specific_groups():
     st = characters(blacklist_categories=('Lu', 'Nd'))
 
@@ -69,6 +76,13 @@ def test_exclude_characters_of_specific_groups():
     find(st, lambda c: unicodedata.category(c) != 'Nd')
 
     assert_no_examples(st, lambda c: unicodedata.category(c) in ('Lu', 'Nd'))
+
+
+def test_exclude_characters_of_major_categories():
+    st = characters(blacklist_categories=('L', 'N'))
+    find(st, lambda c: not unicodedata.category(c).startswith('L'))
+    find(st, lambda c: not unicodedata.category(c).startswith('N'))
+    assert_no_examples(st, lambda c: unicodedata.category(c)[0] in ('L', 'N'))
 
 
 def test_find_one():
