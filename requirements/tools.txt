@@ -48,7 +48,7 @@ pyupio==0.8.2
 pyyaml==3.12              # via dparse, pyupio
 requests-toolbelt==0.8.0  # via twine
 requests==2.18.4          # via python-gitlab, pyupio, requests-toolbelt, safety, sphinx, twine
-restructuredtext-lint==1.1.2
+restructuredtext-lint==1.1.3
 safety==1.7.0             # via pyupio
 six==1.11.0               # via dparse, packaging, pip-tools, pydocstyle, pytest, python-gitlab, pyupio, sphinx, tox
 snowballstemmer==1.2.1    # via pydocstyle, sphinx
