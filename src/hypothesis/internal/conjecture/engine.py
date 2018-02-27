@@ -1545,10 +1545,13 @@ class Shrinker(object):
 
         nonzero = sorted([b for b in range(n) if ints[b] > 0 and b not in shrink_blocks])
 
-        if len(ints) == 0:
+        if len(nonzero) == 0:
             return
 
         pairs = itertools.combinations(nonzero, 2)  # TODO: Should we try combinations of > 2?
+
+        if len(pairs) == 0:
+            return
 
         # Try reoffseting every pair
         def reoffset_pair(pair, o):
