@@ -1550,9 +1550,6 @@ class Shrinker(object):
 
         pairs = itertools.combinations(nonzero, 2)  # TODO: Should we try combinations of > 2?
 
-        if len(pairs) == 0:
-            return
-
         # Try reoffseting every pair
         def reoffset_pair(pair, o):
             u, v = pair
