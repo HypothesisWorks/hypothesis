@@ -285,17 +285,32 @@ class settings(settingsMeta('settings', (object,), {})):
         return default_context_manager.__exit__(*args, **kwargs)
 
     @staticmethod
-    def register_profile(name, settings):
+    def register_profile(name, parent=None, **kwargs):
         """Registers a collection of values to be used as a settings profile.
 
         Settings profiles can be loaded by name - for example, you might
         create a 'fast' profile which runs fewer examples, keep the 'default'
         profile, and create a 'ci' profile that increases the number of
         examples and uses a different database to store failures.
+
+        The arguments to this method are exactly as for
+        :class:`~hypothesis.settings`: optional ``parent`` settings, and
+        keyword arguments for each setting that will be set differently to
+        parent (or settings.default, if parent is None).
         """
         if not isinstance(name, (str, text_type)):
             note_deprecation('name=%r must be a string' % (name,))
-        settings._profiles[name] = settings
+        if 'settings' in kwargs:
+            if parent is None:
+                parent = kwargs.pop('settings')
+                note_deprecation('The `settings` argument is deprecated - '
+                                 'use `parent` instead.')
+            else:
+                raise InvalidArgument(
+                    'The `settings` argument is deprecated, and has been '
+                    'replaced by the `parent` argument.  Use `parent` only.'
+                )
+        settings._profiles[name] = settings(parent=parent, **kwargs)
 
     @staticmethod
     def get_profile(name):
