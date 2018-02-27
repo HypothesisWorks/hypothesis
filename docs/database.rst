@@ -56,7 +56,7 @@ The examples database can be shared simply by checking the directory into
 version control, for example with the following ``.gitignore``::
 
     # Ignore files cached by Hypothesis...
-    .hypothesis/
+    .hypothesis/*
     # except for the examples directory
     !.hypothesis/examples/
 
