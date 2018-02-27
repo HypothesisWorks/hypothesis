@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import heapq
+import itertools
 from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
@@ -1547,11 +1548,7 @@ class Shrinker(object):
         if len(ints) == 0:
             return
 
-        pairs = []
-        for x in nonzero:
-            for y in nonzero:
-                if x != y:
-                    pairs.append((x, y))
+        pairs = itertools.combinations(nonzero, 2)  # TODO: Should we try combinations of > 2?
 
         # Try reoffseting every pair
         def reoffset_pair(pair, o):
