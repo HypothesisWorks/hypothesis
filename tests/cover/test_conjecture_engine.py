@@ -1253,15 +1253,15 @@ def test_shrinking_block_pairs(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.test_function(
-            ConjectureData.for_buffer([11, 10])))
+            ConjectureData.for_buffer([12, 10])))
 
     @run_to_buffer
     def x(data):
         m = data.draw_bits(8)
         n = data.draw_bits(8)
-        if abs(n - m) <= 1 and m > n:
+        if m == n + 2:
             data.mark_interesting()
-    assert x == hbytes([1, 0])
+    assert x == hbytes([2, 0])
 
 
 def test_shrinking_blocks_from_common_offset(monkeypatch):
