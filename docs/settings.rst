@@ -263,13 +263,12 @@ by your conftest you can load one with the command line option ``--hypothesis-pr
 Timeouts
 ~~~~~~~~
 
-The `timeout` functionality of Hypothesis is being deprecated, and will
+The timeout functionality of Hypothesis is being deprecated, and will
 eventually be removed. For the moment, the timeout setting can still be set
 and the old default timeout of one minute remains.
 
 If you want to future proof your code you can get
-the future behaviour by setting it to the value `unlimited`, which you can
-import from the main Hypothesis package:
+the future behaviour by setting it to the value ``hypothesis.unlimited``.
 
 .. code:: python
 

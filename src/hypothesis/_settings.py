@@ -287,35 +287,26 @@ class settings(settingsMeta('settings', (object,), {})):
     def register_profile(name, settings):
         """Registers a collection of values to be used as a settings profile.
 
-        These settings can be loaded in by name. Enable different
-        defaults for different settings.  ``settings`` must be a
-        settings object.
+        Settings profiles can be loaded by name - for example, you might
+        create a 'fast' profile which runs fewer examples, keep the 'default'
+        profile, and create a 'ci' profile that increases the number of
+        examples and uses a different database to store failures.
         """
         settings._profiles[name] = settings
 
     @staticmethod
     def get_profile(name):
-        """Return the profile with the given name.
-
-        - name is a string representing the name of the profile
-         to load
-        A InvalidArgument exception will be thrown if the
-         profile does not exist
-        """
+        """Return the profile with the given name."""
         try:
             return settings._profiles[name]
         except KeyError:
-            raise InvalidArgument(
-                "Profile '{0}' has not been registered".format(
-                    name
-                )
-            )
+            raise InvalidArgument('Profile %r is not registered' % (name,))
 
     @staticmethod
     def load_profile(name):
-        """Loads in the settings defined in the profile provided If the profile
-        does not exist an InvalidArgument will be thrown.
+        """Loads in the settings defined in the profile provided.
 
+        If the profile does not exist an InvalidArgument will be thrown.
         Any setting not defined in the profile will be the library
         defined default for that setting
         """
