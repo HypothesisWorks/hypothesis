@@ -1574,6 +1574,7 @@ class Shrinker(object):
             buffer = hbytes().join(new_blocks)
             if sort_key(buffer) < sort_key(self.shrink_target.buffer):
                 return buffer
+
         best_buff = None
         best_score = None
         for pair in pairs:
