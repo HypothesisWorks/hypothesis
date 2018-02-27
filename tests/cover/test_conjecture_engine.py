@@ -1243,6 +1243,27 @@ def test_reordering_interaction_with_writing(monkeypatch):
     assert x == hbytes([0, 0, 2])
 
 
+def test_shrinking_block_pairs(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', lambda self: (
+            self.shrink_offset_pairs()
+        )
+    )
+
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer([11, 10])))
+
+    @run_to_buffer
+    def x(data):
+        m = data.draw_bits(8)
+        n = data.draw_bits(8)
+        if abs(n - m) <= 1 and m > n:
+            data.mark_interesting()
+    assert x == hbytes([1, 0])
+
+
 def test_shrinking_blocks_from_common_offset(monkeypatch):
     monkeypatch.setattr(
         Shrinker, 'shrink', lambda self: (

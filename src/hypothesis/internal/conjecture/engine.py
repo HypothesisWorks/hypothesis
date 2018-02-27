@@ -1543,7 +1543,8 @@ class Shrinker(object):
         minimize_int(offset, reoffset)
 
     def shrink_offset_pairs(self):
-        """Lower any two blocks offset from each other the same ammount."""
+        """Lower any two blocks offset from each other the same ammount.
+        Try lowering every non-zero pair of non-shrinking blocks by a common offset."""
         self.debug('Shrinking offset pairs.')
 
         current = self.shrink_target
@@ -1557,7 +1558,6 @@ class Shrinker(object):
 
         nonzero = sorted([b for b in range(n) if ints[b] > 0 and b not in shrink_blocks])
 
-        self.debug('Found changed ints: {}'.format(ints))
         if len(ints) == 0:
             return
 
@@ -1574,7 +1574,6 @@ class Shrinker(object):
             new_blocks = list(blocked)
             new_blocks[u] = int_to_bytes(ints[u] + o - m, len(blocked[u]))
             new_blocks[v] = int_to_bytes(ints[v] + o - m, len(blocked[v]))
-            self.debug('Trying to offset pair {}'.format(pair))
 
             buffer = hbytes().join(new_blocks)
             if sort_key(buffer) < sort_key(self.shrink_target.buffer):
