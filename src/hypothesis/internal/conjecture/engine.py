@@ -1320,6 +1320,7 @@ class Shrinker(object):
             if not run_expensive_shrinks:
                 continue
 
+            self.shrink_offset_pairs()
             self.interval_deletion_with_block_lowering()
             self.pass_to_interval()
             self.reorder_bytes()
@@ -1526,6 +1527,49 @@ class Shrinker(object):
             return self.incorporate_new_buffer(hbytes().join(new_blocks))
 
         minimize_int(offset, reoffset)
+
+    def shrink_offset_pairs(self):
+        """Any time we have two bytes offset from each other the same ammount, lower them."""
+        self.debug('Shrinking offset pairs.')
+
+        current = self.shrink_target
+        blocked = [current.buffer[u:v] for u, v in current.blocks]
+
+        changed = sorted([b for b in range(len(current.blocks)) if int_from_bytes(blocked[b]) > 0 and not self.is_shrinking_block(b)])
+
+        ints = [int_from_bytes(blocked[i]) for i in range(len(blocked))]
+        self.debug('Found changed ints: {}'.format(ints))
+        if len(ints) == 0:
+            return
+        sints = set(changed)
+
+        pairs = []
+        for x in changed:
+            for y in sints - {x}:
+                pairs.append((x,y))
+                
+        # Try reoffseting every pair
+        def reoffset_pair(p, o):
+            pair = pairs[p]
+            u,v = pair
+            m = min([ints[u], ints[v]])
+            new_blocks = list(blocked)
+            new_blocks[u] = int_to_bytes(ints[u] + o - m, len(blocked[u]))
+            new_blocks[v] = int_to_bytes(ints[v] + o - m, len(blocked[v]))
+            self.debug('Trying to offset pair {}'.format(pair))
+
+            buffer = hbytes().join(new_blocks)
+            if sort_key(buffer) < sort_key(self.shrink_target.buffer):
+                return self.incorporate_new_buffer(buffer)
+
+        for p in range(len(pairs)):
+            pair = pairs[p]
+            offset = min(ints[pair[0]], ints[pair[1]])
+            minimize_int(offset, lambda o: reoffset_pair(p,o))
+            
+            
+                
+        
 
     def mark_shrinking(self, blocks):
         """Mark each of these blocks as a shrinking block: That is, lowering
