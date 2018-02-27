@@ -155,6 +155,13 @@ def test_load_profile():
     assert settings.default.min_satisfying_examples == 5
 
 
+@checks_deprecated_behaviour
+def test_nonstring_profile_names_deprecated():
+    settings.register_profile(5, max_shrinks=5)
+    settings.load_profile(5)
+    assert settings.default.max_shrinks == 5
+
+
 def test_loading_profile_keeps_expected_behaviour():
     settings.register_profile('ci', settings(max_examples=10000))
     settings.load_profile('ci')

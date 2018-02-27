@@ -33,6 +33,7 @@ import attr
 
 from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
 from hypothesis.configuration import hypothesis_home_dir
+from hypothesis.internal.compat import text_type
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.internal.validation import try_convert
 from hypothesis.utils.dynamicvariables import DynamicVariable
@@ -292,11 +293,15 @@ class settings(settingsMeta('settings', (object,), {})):
         profile, and create a 'ci' profile that increases the number of
         examples and uses a different database to store failures.
         """
+        if not isinstance(name, (str, text_type)):
+            note_deprecation('name=%r must be a string' % (name,))
         settings._profiles[name] = settings
 
     @staticmethod
     def get_profile(name):
         """Return the profile with the given name."""
+        if not isinstance(name, (str, text_type)):
+            note_deprecation('name=%r must be a string' % (name,))
         try:
             return settings._profiles[name]
         except KeyError:
@@ -310,6 +315,8 @@ class settings(settingsMeta('settings', (object,), {})):
         Any setting not defined in the profile will be the library
         defined default for that setting
         """
+        if not isinstance(name, (str, text_type)):
+            note_deprecation('name=%r must be a string' % (name,))
         settings._current_profile = name
         settings._assign_default_internal(settings.get_profile(name))
 
@@ -707,10 +714,6 @@ more details of this behaviour.
 
 settings.lock_further_definitions()
 
-settings.register_profile('default', settings())
-settings.load_profile('default')
-assert settings.default is not None
-
 
 def note_deprecation(message, s=None):
     if s is None:
@@ -720,3 +723,8 @@ def note_deprecation(message, s=None):
     warning = HypothesisDeprecationWarning(message)
     if verbosity > Verbosity.quiet:
         warnings.warn(warning, stacklevel=3)
+
+
+settings.register_profile('default', settings())
+settings.load_profile('default')
+assert settings.default is not None
