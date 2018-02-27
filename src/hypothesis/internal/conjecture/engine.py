@@ -1566,11 +1566,10 @@ class Shrinker(object):
 
         # Try reoffseting every pair
         def reoffset_pair(pair, o):
-            u, v = pair
-            m = min([ints[u], ints[v]])
+            m = min(pair)
             new_blocks = list(blocked)
-            new_blocks[u] = int_to_bytes(ints[u] + o - m, len(blocked[u]))
-            new_blocks[v] = int_to_bytes(ints[v] + o - m, len(blocked[v]))
+            for i in pair:
+                new_blocks[i] = int_to_bytes(ints[i] + o - m, len(blocked[i]))
 
             buffer = hbytes().join(new_blocks)
             if sort_key(buffer) < sort_key(self.shrink_target.buffer):
