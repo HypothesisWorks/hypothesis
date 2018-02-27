@@ -1555,7 +1555,7 @@ class Shrinker(object):
 
         shrink_blocks = [b for b in range(n) if self.is_shrinking_block(b)]
 
-        ints = [int_from_bytes(blocked[i]) for i in range(len(blocked))]
+        ints = [int_from_bytes(blocked[i]) for i in range(n)]
 
         nonzero = sorted([b for b in range(n) if ints[b] > 0 and b not in shrink_blocks])
 
@@ -1573,11 +1573,21 @@ class Shrinker(object):
 
             buffer = hbytes().join(new_blocks)
             if sort_key(buffer) < sort_key(self.shrink_target.buffer):
-                return self.incorporate_new_buffer(buffer)
-
+                return buffer
+        best_buff = None
+        best_score = None
         for pair in pairs:
-            offset = min(ints[pair[0]], ints[pair[1]])
-            minimize_int(offset, lambda o: reoffset_pair(pair, o))
+            offset = min(pair)
+            best_offest = minimize_int(offset, lambda o: reoffset_pair(pair, o))
+            buffer = reoffset_pair(pair, best_offest)
+            if not best_score or sort_key(buffer) < best_score:
+                best_score = sort_key(buffer)
+                best_buff = buffer
+
+        if not best_buff:
+            return
+
+        self.incorporate_new_buffer(best_buff)
 
     def mark_shrinking(self, blocks):
         """Mark each of these blocks as a shrinking block: That is, lowering
