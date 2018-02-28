@@ -591,7 +591,6 @@ def test_invariant_precondition():
     """If an invariant precodition isn't met, the invariant isn't run.
 
     The precondition decorator can be applied in any order.
-
     """
     class Invariant(RuleBasedStateMachine):
 

@@ -68,7 +68,6 @@ class LazyStrategy(SearchStrategy):
     strategy.
 
     Its parameter and distribution come from that other strategy.
-
     """
 
     def __init__(self, function, args, kwargs):

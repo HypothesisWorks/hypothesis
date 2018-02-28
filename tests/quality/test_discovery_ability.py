@@ -23,7 +23,6 @@ These tests all take the form of a classic hypothesis test with the null
 hypothesis being that the probability of some event occurring when
 drawing data from the distribution produced by some specifier is >=
 REQUIRED_P
-
 """
 
 

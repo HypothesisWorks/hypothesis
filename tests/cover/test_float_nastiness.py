@@ -131,7 +131,6 @@ def test_can_guard_against_draws_of_nan():
     thing to happen is then to try to zero the branch parameter of the
     one_of, but that will put an illegal value there, so it's not
     allowed to happen.
-
     """
     tagged_floats = st.one_of(
         st.tuples(st.just(0), st.floats(allow_nan=False)),

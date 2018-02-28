@@ -127,7 +127,6 @@ def test_ceil(x):
     Under Python 2, math.ceil returns a float, which cannot represent large
     integers - for example, `float(2**53) == float(2**53 + 1)` - and this
     is obviously incorrect for unlimited-precision integer operations.
-
     """
     assert isinstance(ceil(x), integer_types)
     assert x <= ceil(x) < x + 1

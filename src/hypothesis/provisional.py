@@ -22,7 +22,6 @@ Point releases may move or break the contents at any time!
 
 Internet strategies should conform to https://tools.ietf.org/html/rfc3696 or
 the authoritative definitions it links to.  If not, report the bug!
-
 """
 
 from __future__ import division, print_function, absolute_import
@@ -52,7 +51,6 @@ def emails():
 
     See https://github.com/HypothesisWorks/hypothesis-python/issues/162
     for work on a permanent replacement.
-
     """
     local_chars = string.ascii_letters + string.digits + "!#$%&'*+-/=^_`{|}~"
     local_part = st.text(local_chars, min_size=1, max_size=64)
@@ -67,7 +65,6 @@ def ip4_addr_strings():
 
     This consists of four strings representing integers [0..255],
     without zero-padding, joined by dots.
-
     """
     return st.builds('{}.{}.{}.{}'.format, *(4 * [st.integers(0, 255)]))
 
@@ -78,7 +75,6 @@ def ip6_addr_strings():
 
     This consists of sixteen quads of hex digits (0000 .. FFFF), joined
     by colons.  Values do not currently have zero-segments collapsed.
-
     """
     part = st.integers(0, 2**16 - 1).map(u'{:04x}'.format)
     return st.tuples(*[part] * 8).map(lambda a: u':'.join(a).upper())

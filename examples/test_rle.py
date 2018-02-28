@@ -27,7 +27,6 @@ a fruitful source of testing with Hypothesis.
 
 It also has an example of testing invariants in response to changes in the
 underlying data.
-
 """
 
 from __future__ import division, print_function, absolute_import
@@ -79,7 +78,6 @@ def test_decodes_to_starting_sequence(ls):
     original sequence back.
 
     Otherwise we've done something very wrong.
-
     """
     assert run_length_decode(run_length_encode(ls)) == ls
 
@@ -92,7 +90,6 @@ def test_duplicating_an_element_does_not_increase_length(ls, data):
     In this test we deliberately introduce or extend a run and assert
     that this does not increase the length of our encoding, because they
     should be part of the same run in the final result.
-
     """
     # We use assume to get a valid index into the list. We could also have used
     # e.g. flatmap, but this is relatively straightforward and will tend to

@@ -35,7 +35,6 @@ def assume(condition):
 
     This allows you to specify properties that you *assume* will be
     true, and let Hypothesis try to avoid similar examples in future.
-
     """
     if not condition:
         raise UnsatisfiedAssumption()
@@ -95,7 +94,6 @@ def cleanup(teardown):
     Inside a test this isn't very interesting, because you can just use
     a finally block, but note that you can use this inside map, flatmap,
     etc. in order to e.g. insist that a value is closed at the end.
-
     """
     context = _current_build_context.value
     if context is None:
@@ -121,7 +119,6 @@ def event(value):
     statistics reporting mode.
 
     Events should be strings or convertible to them.
-
     """
     context = _current_build_context.value
     if context is None:
