@@ -1562,9 +1562,16 @@ class Shrinker(object):
 
         # Try reoffseting every pair
         def reoffset_pair(pair, o):
-            m = min([int_from_block(p) for p in pair])
+            n = len(self.blocks)
+            # Number of blocks may have changed, need to validate
+            valid_pair = [p for p in pair if p < n]
+
+            if len(valid_pair) == 0:
+                return
+
+            m = min([int_from_block(p) for p in valid_pair])
             new_blocks = [self.shrink_target.buffer[u:v] for u, v in self.blocks]
-            for i in pair:
+            for i in valid_pair:
                 new_blocks[i] = int_to_bytes(int_from_block(i) + o - m, block_len(i))
 
             buffer = hbytes().join(new_blocks)
@@ -1576,7 +1583,6 @@ class Shrinker(object):
                 j = i + 1
                 while j < len(self.shrink_target.blocks):
                     if not self.is_shrinking_block(j) and int_from_block(j) > 0:
-                        # TODO: Shrink logic for pair (i, j) goes here.
                         offset = min(int_from_block(i), int_from_block(j))
                         minimize_int(offset, lambda o: reoffset_pair((i, j), o))
                     j += 1
