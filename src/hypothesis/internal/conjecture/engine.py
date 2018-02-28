@@ -1570,9 +1570,11 @@ class Shrinker(object):
                 return
 
             m = min([int_from_block(p) for p in valid_pair])
-            new_blocks = [self.shrink_target.buffer[u:v] for u, v in self.blocks]
+            new_blocks = [self.shrink_target.buffer[u:v]
+                          for u, v in self.blocks]
             for i in valid_pair:
-                new_blocks[i] = int_to_bytes(int_from_block(i) + o - m, block_len(i))
+                new_blocks[i] = int_to_bytes(
+                    int_from_block(i) + o - m, block_len(i))
 
             buffer = hbytes().join(new_blocks)
             return self.incorporate_new_buffer(buffer)
@@ -1584,7 +1586,8 @@ class Shrinker(object):
                 while j < len(self.shrink_target.blocks):
                     if not self.is_shrinking_block(j) and int_from_block(j) > 0:
                         offset = min(int_from_block(i), int_from_block(j))
-                        minimize_int(offset, lambda o: reoffset_pair((i, j), o))
+                        minimize_int(
+                            offset, lambda o: reoffset_pair((i, j), o))
                     j += 1
             i += 1
 
