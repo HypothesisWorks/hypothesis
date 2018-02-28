@@ -1547,8 +1547,8 @@ class Shrinker(object):
 
         ints = [int_from_bytes(blocked[i]) for i in range(n)]
 
-        nonzero = sorted([b for b in range(n) if ints[b]
-                          > 0 and b not in shrink_blocks])
+        nonzero = sorted([b for b in range(n)
+                          if ints[b] > 0 and b not in shrink_blocks])
 
         if len(nonzero) == 0:
             return
@@ -1558,7 +1558,7 @@ class Shrinker(object):
 
         # Try reoffseting every pair
         def reoffset_pair(pair, o):
-            m = min(pair)
+            m = min([ints[p] for p in pair])
             new_blocks = list(blocked)
             for i in pair:
                 new_blocks[i] = int_to_bytes(ints[i] + o - m, len(blocked[i]))
