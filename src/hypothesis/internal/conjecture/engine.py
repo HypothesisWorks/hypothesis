@@ -18,7 +18,6 @@
 from __future__ import division, print_function, absolute_import
 
 import heapq
-import itertools
 from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
@@ -1570,6 +1569,10 @@ class Shrinker(object):
                 return
 
             m = min([int_from_block(p) for p in valid_pair])
+
+            if m > o:
+                return 
+            
             new_blocks = [self.shrink_target.buffer[u:v]
                           for u, v in self.blocks]
             for i in valid_pair:
@@ -1585,7 +1588,8 @@ class Shrinker(object):
                 j = i + 1
                 while j < len(self.shrink_target.blocks):
                     if not self.is_shrinking_block(j) and int_from_block(j) > 0:
-                        offset = min(int_from_block(i), int_from_block(j))
+                        offset = min(int_from_block(i),
+                                     int_from_block(j))
                         minimize_int(
                             offset, lambda o: reoffset_pair((i, j), o))
                     j += 1
