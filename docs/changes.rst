@@ -22,6 +22,12 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.46.2 - 2018-03-01
+-------------------
+
+This release removes an unnecessary branch from the code, and has no user-visible impact.
+
+-------------------
 3.46.1 - 2018-03-01
 -------------------
 
