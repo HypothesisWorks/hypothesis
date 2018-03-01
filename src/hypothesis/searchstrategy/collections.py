@@ -79,7 +79,6 @@ class ListStrategy(SearchStrategy):
     The conditional distribution of the length is geometric, and the
     conditional distribution of each parameter is whatever their
     strategies define.
-
     """
 
     def __init__(
@@ -196,7 +195,6 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
 
     e.g. {'foo' : some_int_strategy} would generate dicts with the single
     key 'foo' mapping to some integer.
-
     """
 
     def __init__(self, strategy_dict):

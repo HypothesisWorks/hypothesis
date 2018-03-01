@@ -64,7 +64,6 @@ def test_mock_injection():
 
     (covers https://github.com/HypothesisWorks/hypothesis-
     python/issues/491)
-
     """
     from mock import Mock
 

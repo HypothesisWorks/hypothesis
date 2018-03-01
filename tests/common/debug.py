@@ -117,7 +117,6 @@ def assert_all_examples(strategy, predicate):
 
     :param strategy: Hypothesis strategy to check
     :param predicate: (callable) Predicate that takes example and returns bool
-
     """
     @given(strategy)
     def assert_examples(s):

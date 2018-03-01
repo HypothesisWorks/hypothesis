@@ -31,7 +31,6 @@ def renamed_arguments(**rename_mapping):
     https://github.com/HypothesisWorks/hypothesis-python/issues/1111).
     It's not too bad for current uses, but shouldn't be used in new
     places without fixing it up.
-
     """
     assert len(set(rename_mapping.values())) == len(rename_mapping)
 

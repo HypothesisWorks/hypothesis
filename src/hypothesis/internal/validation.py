@@ -50,7 +50,6 @@ def check_valid_integer(value):
     """Checks that value is either unspecified, or a valid integer.
 
     Otherwise raises InvalidArgument.
-
     """
     if value is None:
         return
@@ -62,7 +61,6 @@ def check_valid_bound(value, name):
     """Checks that value is either unspecified, or a valid interval bound.
 
     Otherwise raises InvalidArgument.
-
     """
     if value is None or isinstance(value, integer_types + (Rational,)):
         return
@@ -98,7 +96,6 @@ def check_valid_size(value, name):
     expressed as an integer/float.
 
     Otherwise raises InvalidArgument.
-
     """
     if value is None:
         return
@@ -115,7 +112,6 @@ def check_valid_interval(lower_bound, upper_bound, lower_name, upper_name):
     define a valid interval on the number line.
 
     Otherwise raises InvalidArgument.
-
     """
     if lower_bound is None or upper_bound is None:
         return

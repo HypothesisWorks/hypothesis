@@ -117,7 +117,6 @@ class CharactersBuilder(object):
     :param negate: If True, configure :func:`hypothesis.strategies.characters`
         to match anything other than configured character set
     :param flags: Regex flags. They affect how and which characters are matched
-
     """
 
     def __init__(self, negate=False, flags=0):
@@ -316,7 +315,6 @@ def _strategy(codes, context, is_unicode):
     1. List of groups (for backreferences)
     2. Active regex flags (e.g. IGNORECASE, DOTALL, UNICODE, they affect
        behavior of various inner strategies)
-
     """
     def recurse(codes):
         return _strategy(codes, context, is_unicode)

@@ -273,7 +273,6 @@ class Sampler(object):
        unchanged) the value.
     2. base[i] < alternate[i], so that shrinking the draw always results in
        shrinking the chosen element.
-
     """
 
     def __init__(self, weights):
@@ -361,7 +360,6 @@ class many(object):
     elements = many(data, ...)
     while elements.more():
         add_stuff_to_result()
-
     """
 
     def __init__(self, data, min_size, max_size, average_size):

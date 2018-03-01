@@ -53,7 +53,6 @@ class SearchStrategy(object):
     the public API and their behaviour may change significantly between
     minor version releases. They will generally be stable between patch
     releases.
-
     """
 
     supports_find = True
@@ -85,7 +84,6 @@ class SearchStrategy(object):
         Michael D., Celeste Hollenbeck, and Matthew Might. "On the complexity
         and performance of parsing with derivatives." ACM SIGPLAN Notices 51.6
         (2016): 224-236.
-
         """
         cache_key = 'cached_' + name
         calculation = 'calc_' + name
@@ -236,7 +234,6 @@ class SearchStrategy(object):
         exploration of the API, not for any sort of real testing.
 
         This method is part of the public API.
-
         """
         context = _current_build_context.value
         if context is not None:
@@ -305,7 +302,6 @@ class SearchStrategy(object):
         from this strategy and then calling pack() on the result, giving that.
 
         This method is part of the public API.
-
         """
         return MappedSearchStrategy(
             pack=pack, strategy=self
@@ -317,7 +313,6 @@ class SearchStrategy(object):
         strategy(expand(x))
 
         This method is part of the public API.
-
         """
         from hypothesis.searchstrategy.flatmapped import FlatMapStrategy
         return FlatMapStrategy(
@@ -331,7 +326,6 @@ class SearchStrategy(object):
         Unsatisfiable.
 
         This method is part of the public API.
-
         """
         return FilteredStrategy(
             condition=condition,
@@ -347,7 +341,6 @@ class SearchStrategy(object):
         of this strategy or the other strategy.
 
         This method is part of the public API.
-
         """
         if not isinstance(other, SearchStrategy):
             raise ValueError('Cannot | a SearchStrategy with %r' % (other,))
@@ -357,7 +350,6 @@ class SearchStrategy(object):
         """Throw an exception if the strategy is not valid.
 
         This can happen due to lazy construction
-
         """
         if self.validate_called:
             return
@@ -412,7 +404,6 @@ class OneOfStrategy(SearchStrategy):
     The conditional distribution draws uniformly at random from some
     non-empty subset of these strategies and then draws from the
     conditional distribution of that strategy.
-
     """
 
     def __init__(self, strategies, bias=None):
@@ -514,7 +505,6 @@ class MappedSearchStrategy(SearchStrategy):
     strategy.
 
     Its parameter and distribution come from that other strategy.
-
     """
 
     def __init__(self, strategy, pack=None):

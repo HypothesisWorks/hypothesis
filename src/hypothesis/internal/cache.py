@@ -47,7 +47,6 @@ class GenericCache(object):
 
     Implementations are expected to implement new_entry and optionally
     on_access and on_evict to implement a specific scoring strategy.
-
     """
 
     __slots__ = ('keys_to_indices', 'data', 'max_size')
@@ -117,7 +116,6 @@ class GenericCache(object):
         map.
 
         Returns the score to associate with the key.
-
         """
         raise NotImplementedError()
 
@@ -126,7 +124,6 @@ class GenericCache(object):
         written.
 
         Returns the new score for the key.
-
         """
         return score
 
@@ -140,7 +137,6 @@ class GenericCache(object):
 
         Asserts that all of the cache's invariants hold. When everything
         is working correctly this should be an expensive no-op.
-
         """
         for i, e in enumerate(self.data):
             assert self.keys_to_indices[e.key] == i
@@ -186,7 +182,6 @@ class GenericCache(object):
         """Returns True if the indices i, j are in the wrong order.
 
         i must be the parent of j.
-
         """
         assert i == (j - 1) // 2
         return self.data[j].score < self.data[i].score
@@ -205,7 +200,6 @@ class LRUReusedCache(GenericCache):
     scan-resistance to the process: If we end up scanning through a large
     number of keys without reusing them, this does not evict the existing
     entries in preference for the new ones.
-
     """
 
     __slots__ = ('__tick',)

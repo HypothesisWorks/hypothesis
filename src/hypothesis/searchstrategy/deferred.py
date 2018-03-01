@@ -71,7 +71,6 @@ class DeferredStrategy(SearchStrategy):
 
         The label for the wrapped strategy will still appear because it
         will be passed to draw.
-
         """
         # This is actually the same as the parent class implementation, but we
         # include it explicitly here in order to document that this is a
