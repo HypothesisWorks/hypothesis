@@ -1533,7 +1533,6 @@ class Shrinker(object):
 
         Try lowering every non-zero pair of non-shrinking blocks by a
         common offset.
-
         """
         self.debug('Shrinking offset pairs.')
 
@@ -1557,8 +1556,8 @@ class Shrinker(object):
             m = min([int_from_block(p) for p in valid_pair])
 
             if m > o:
-                return 
-            
+                return
+
             new_blocks = [self.shrink_target.buffer[u:v]
                           for u, v in self.blocks]
             for i in valid_pair:
