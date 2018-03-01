@@ -61,7 +61,6 @@ class Minimizer(object):
         buffer.
 
         Return True if it succeeds as such.
-
         """
         assert isinstance(buffer, hbytes)
         assert len(buffer) == self.size
@@ -149,7 +148,6 @@ class Minimizer(object):
 
         So that's what this method does. It's a cheat to give us good shrinking
         of floating at low cost in runtime and only moderate cost in elegance.
-
         """
         # If the block is of the wrong size then we're certainly not using the
         # float encoding.
@@ -292,7 +290,6 @@ def binsearch(_lo, _hi):
 
     This function is used purely for its side effects and returns
     nothing.
-
     """
     def accept(f):
         lo = _lo

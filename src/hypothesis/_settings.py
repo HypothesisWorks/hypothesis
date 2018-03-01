@@ -19,7 +19,6 @@
 
 Either an explicit settings object can be used or the default object on
 this module can be modified.
-
 """
 
 from __future__ import division, print_function, absolute_import
@@ -116,7 +115,6 @@ class settings(settingsMeta('settings', (object,), {})):
 
     Default values are picked up from the settings.default object and
     changes made there will be picked up in newly created settings.
-
     """
 
     _WHITELISTED_REAL_PROPERTIES = [
@@ -193,7 +191,6 @@ class settings(settingsMeta('settings', (object,), {})):
         - default is the default value. This may be a zero argument
           function in which case it is evaluated and its result is stored
           the first time it is accessed on any given settings object.
-
         """
         if settings.__definitions_are_locked:
             from hypothesis.errors import InvalidState
@@ -265,7 +262,6 @@ class settings(settingsMeta('settings', (object,), {})):
         database_file setting is not None this will be lazily loaded as
         an ExampleDatabase, using that file the first time that this
         property is accessed on a particular thread.
-
         """
         if self._database is not_set and self.database_file is not None:
             from hypothesis.database import ExampleDatabase
@@ -294,7 +290,6 @@ class settings(settingsMeta('settings', (object,), {})):
         These settings can be loaded in by name. Enable different
         defaults for different settings.  ``settings`` must be a
         settings object.
-
         """
         settings._profiles[name] = settings
 
@@ -306,7 +301,6 @@ class settings(settingsMeta('settings', (object,), {})):
          to load
         A InvalidArgument exception will be thrown if the
          profile does not exist
-
         """
         try:
             return settings._profiles[name]
@@ -324,7 +318,6 @@ class settings(settingsMeta('settings', (object,), {})):
 
         Any setting not defined in the profile will be the library
         defined default for that setting
-
         """
         settings._current_profile = name
         settings._assign_default_internal(settings.get_profile(name))
@@ -482,7 +475,6 @@ class HealthCheck(Enum):
     """Arguments for :attr:`~hypothesis.settings.suppress_health_check`.
 
     Each member of this enum is a type of health check to suppress.
-
     """
 
     exception_in_generation = 0

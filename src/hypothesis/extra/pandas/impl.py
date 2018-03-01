@@ -156,7 +156,6 @@ def range_indexes(min_size=0, max_size=None):
     * min_size is the smallest number of elements the index can have.
     * max_size is the largest number of elements the index can have. If None
       it will default to some suitable value based on min_size.
-
     """
     check_valid_size(min_size, 'min_size')
     check_valid_size(max_size, 'max_size')
@@ -189,7 +188,6 @@ def indexes(
       should pass a max_size explicitly.
     * unique specifies whether all of the elements in the resulting index
       should be distinct.
-
     """
     check_valid_size(min_size, 'min_size')
     check_valid_size(max_size, 'max_size')
@@ -238,7 +236,6 @@ def series(elements=None, dtype=None, index=None, fill=None, unique=False):
         >>> series(dtype=int).example()
         0   -2001747478
         1    1153062837
-
     """
     if index is None:
         index = range_indexes()
@@ -292,7 +289,6 @@ class column(object):
     * fill: A default value for elements of the column. See
       :func:`~hypothesis.extra.numpy.arrays` for a full explanation.
     * unique: If all values in this column should be distinct.
-
     """
 
     name = attr.ib(default=None)
@@ -313,7 +309,6 @@ def columns(
     objects, or a number, in which case that many unnamed columns will
     be created. All other arguments are passed through verbatim to
     create the columns.
-
     """
     try:
         names = list(names_or_number)
@@ -431,7 +426,6 @@ def data_frames(
       dicts are passed, if there are keys with no corresponding column name,
       if sequences are passed if there are too many items) will result in
       InvalidArgument being raised.
-
     """
     if index is None:
         index = range_indexes()

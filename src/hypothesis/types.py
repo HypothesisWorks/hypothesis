@@ -30,7 +30,6 @@ class RandomWithSeed(Random):
 
     We consistently use this instead of Random objects because it makes
     examples much easier to recreate.
-
     """
 
     def __init__(self, seed):
@@ -60,7 +59,6 @@ class Stream(object):
     Internally Hypothesis uses the fact that you can tell how much of a stream
     has been evaluated, but you shouldn't use that. The only public APIs of
     a Stream are that you can index, slice, and iterate it.
-
     """
 
     def __init__(self, generator=None):

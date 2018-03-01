@@ -45,7 +45,6 @@ def charmap():
 
     >>> charmap()['Co']
     ((57344, 63743), (983040, 1048573), (1048576, 1114109))
-
     """
     global _charmap
     # Best-effort caching in the face of missing files and/or unwritable
@@ -92,7 +91,6 @@ def categories():
 
     >>> categories() # doctest: +ELLIPSIS
     ('Zl', 'Zp', 'Co', 'Me', 'Pc', ..., 'Cc', 'Cs')
-
     """
     global _categories
     if _categories is None:
@@ -121,7 +119,6 @@ def as_general_categories(cats, name='cats'):
 
     If the collection ``cats`` includes any elements that do not represent a
     major class or a class with subclass, a deprecation warning is raised.
-
     """
     if cats is None:
         return None
@@ -146,7 +143,6 @@ def _union_intervals(x, y):
 
     >>> _union_intervals([(3, 10)], [(1, 2), (5, 17)])
     ((1, 17),)
-
     """
     if not x:
         return tuple((u, v) for u, v in y)
@@ -182,7 +178,6 @@ def _subtract_intervals(x, y):
     For example _subtract_intervals([(1, 10)], [(2, 3), (9, 15)]) would
     return [(1, 1), (4, 8)], removing the values 2, 3, 9 and 10 from the
     interval.
-
     """
     if not y:
         return tuple(x)
@@ -256,7 +251,6 @@ def _intervals(s):
 
     >>> _intervals('abcdef0123456789')
     ((48, 57), (97, 102))
-
     """
     intervals = tuple((ord(c), ord(c)) for c in sorted(s))
     return _union_intervals(intervals, intervals)
@@ -276,7 +270,6 @@ def _category_key(exclude, include):
 
     >>> _category_key(exclude=['So'], include=['Lu', 'Me', 'Cs', 'So'])
     ('Me', 'Lu', 'Cs')
-
     """
     cs = categories()
     if include is None:
@@ -299,7 +292,6 @@ def _query_for_key(key):
     ((0, 1114111),)
     >>> _query_for_key(('Zl', 'Zp', 'Co'))
     ((8232, 8233), (57344, 63743), (983040, 1048573), (1048576, 1114109))
-
     """
     try:
         return category_index_cache[key]
@@ -340,7 +332,6 @@ def query(
     >>> query(min_codepoint=0, max_codepoint=128, include_categories=['Lu'],
     ...       include_characters=u'☃')
     ((65, 90), (9731, 9731))
-
     """
     if min_codepoint is None:
         min_codepoint = 0

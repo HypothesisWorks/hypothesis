@@ -38,7 +38,6 @@ class PoisonedTree(SearchStrategy):
 
     The actual result is flattened out, but the hierarchy is implicit in
     the data.
-
     """
 
     def __init__(self, p):

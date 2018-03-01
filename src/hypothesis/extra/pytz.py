@@ -20,7 +20,6 @@
 You can use this strategy to make
 :py:func:`hypothesis.strategies.datetimes` and
 :py:func:`hypothesis.strategies.times` produce timezone-aware values.
-
 """
 
 from __future__ import division, print_function, absolute_import
@@ -42,7 +41,6 @@ def timezones():
     This strategy minimises to UTC, or the smallest possible fixed
     offset, and is designed for use with
     :py:func:`hypothesis.strategies.datetimes`.
-
     """
     all_timezones = [pytz.timezone(tz) for tz in pytz.all_timezones]
     # Some timezones have always had a constant offset from UTC.  This makes

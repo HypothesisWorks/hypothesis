@@ -60,7 +60,6 @@ class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
     A key -> multiple distinct values mapping.
 
     Keys and values are binary data.
-
     """
 
     def save(self, key, value):
@@ -68,7 +67,6 @@ class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
 
         If this value is already present for this key, silently do
         nothing
-
         """
         raise NotImplementedError('%s.save' % (type(self).__name__))
 
@@ -76,7 +74,6 @@ class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
         """Remove this value from this key.
 
         If this value is not present, silently do nothing.
-
         """
         raise NotImplementedError('%s.delete' % (type(self).__name__))
 
@@ -87,7 +84,6 @@ class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
 
         Note that value will be inserted at dest regardless of whether
         it is currently present at src.
-
         """
         if src == dest:
             self.save(src, value)

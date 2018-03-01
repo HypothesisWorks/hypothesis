@@ -542,7 +542,6 @@ class ConjectureRunner(object):
 
         This causes us to enter "shrinking mode" there and thus reduce
         the size of the generated data.
-
         """
         initial = len(result)
         if data.depth * 2 >= MAX_DEPTH or data.index >= self.cap:
@@ -581,7 +580,6 @@ class ConjectureRunner(object):
         which the last failure came from but we don't enforce that). We
         then take a random sampling of the remainder and try those. Any
         examples that are no longer interesting are cleared out.
-
         """
         if self.has_existing_examples():
             self.debug('Reusing examples from database')
@@ -780,7 +778,6 @@ class ConjectureRunner(object):
 
         We may find one or more examples with a new interesting_origin
         during the shrink process. If so we shrink these too.
-
         """
         if (
             Phase.shrink not in self.settings.phases or
@@ -864,7 +861,6 @@ class ConjectureRunner(object):
 
         This is purely an optimisation to try to reduce the number of tests we
         run. "return True" would be a valid but inefficient implementation.
-
         """
         node_index = 0
         n = len(buffer)
@@ -971,7 +967,6 @@ class SampleSet(object):
     values to their index in an array. Sampling uniformly at random then
     becomes simply a matter of sampling from the array, but we can use
     the index for efficient lookup to add and remove values.
-
     """
 
     __slots__ = ('__values', '__index')
@@ -1082,7 +1077,6 @@ class TargetSelector(object):
     4. Among the interesting deduplicated coverage targets we essentially
        round-robin between them, but with a more consistent distribution than
        uniformly at random, which is important particularly for short runs.
-
     """
 
     def __init__(self, random):
@@ -1201,7 +1195,6 @@ class Shrinker(object):
 
     The expected usage pattern is that this is only ever called from within the
     engine.
-
     """
 
     def __init__(self, engine, initial, predicate):
@@ -1212,7 +1205,6 @@ class Shrinker(object):
 
         Note that initial is a ConjectureData object, and predicate
         takes ConjectureData objects.
-
         """
         self.__engine = engine
         self.__predicate = predicate
@@ -1264,7 +1256,6 @@ class Shrinker(object):
 
         This method is "mostly idempotent" - calling it twice is unlikely to
         have any effect, though it has a non-zero probability of doing so.
-
         """
         # We assume that if an all-zero block of bytes is an interesting
         # example then we're not going to do better than that.
@@ -1289,7 +1280,6 @@ class Shrinker(object):
 
         This method iterates to a fixed point and so is idempontent - calling
         it twice will have exactly the same effect as calling it once.
-
         """
         run_expensive_shrinks = False
 
@@ -1399,7 +1389,6 @@ class Shrinker(object):
         there is a one-byte interval starting at right place for ls[i] and try
         to replace it with that. This will successfully replace ls[i] with []
         as desired.
-
         """
         i = 0
         while i < len(self.shrink_target.examples):
@@ -1437,7 +1426,6 @@ class Shrinker(object):
         This is pretty expensive - it takes O(len(intervals)^2) - so we run it
         late in the process when we've got the number of intervals as far down
         as possible.
-
         """
         i = 0
         while i < len(self.shrink_target.examples):
@@ -1466,7 +1454,6 @@ class Shrinker(object):
         If the shrink target has changed since i was last checked, will
         attempt to calculate if an equivalent block in a previous shrink
         target was marked as shrinking.
-
         """
         if not self.__shrinking_prefixes:
             return False
@@ -1512,7 +1499,6 @@ class Shrinker(object):
         shape of the blocks changes as a result of this bouncing behaviour),
         but it fails fast when it doesn't work and gets us out of a really
         nastily slow case when it does.
-
         """
         if len(self.__changed_blocks) <= 1:
             return
@@ -1608,7 +1594,6 @@ class Shrinker(object):
         result in losing the last element of y, and the test would start
         passing. But if we were to replace this with [a, b], [c, d] with c != 0
         then deleting a or b would work.
-
         """
         count = 0
         while count < 10:
@@ -1661,7 +1646,6 @@ class Shrinker(object):
         handled by the interval_deletion_with_block_lowering pass - but will be
         effective when there is a large amount of redundant data after the
         block to be lowered.
-
         """
         initial_attempt = bytearray(self.shrink_target.buffer)
         for i in blocks:
@@ -1714,7 +1698,6 @@ class Shrinker(object):
         each interval individually. The common case is that all data drawn and
         rejected can just be thrown away immediately in one block, so this pass
         will be much faster than trying each one individually when it works.
-
         """
         if not self.shrink_target.has_discards:
             return
@@ -1762,7 +1745,6 @@ class Shrinker(object):
 
         This pass will attempt to delete adjacent pairs of calls to shorten the
         loop.
-
         """
         self.debug('greedy interval deletes')
         i = 0
@@ -1864,7 +1846,6 @@ class Shrinker(object):
         It is also useful for when that duplication is accidental and the value
         of the blocks doesn't matter very much because it allows us to replace
         more values at once.
-
         """
         self.debug('Simultaneous shrinking of duplicated blocks')
 
@@ -1909,7 +1890,6 @@ class Shrinker(object):
         assert x < 10
 
         then in our shrunk example, x = 10 rather than say 97.
-
         """
         self.debug('Shrinking of individual blocks')
         i = 0
@@ -1951,7 +1931,6 @@ class Shrinker(object):
         can then try to delete the lost bytes (see try_shrinking_blocks for how
         this works), taking us immediately to [1, 1]. This is a less important
         role for this pass, but still significant.
-
         """
         self.debug('Reordering blocks')
         block_lengths = sorted(self.shrink_target.block_starts, reverse=True)
@@ -2008,7 +1987,6 @@ class Shrinker(object):
         shrinks, so it's important that it runs late in the process when the
         example size is small and most of the blocks that can be zeroed have
         been.
-
         """
         self.debug('Lowering blocks while deleting intervals')
         i = 0
@@ -2067,7 +2045,6 @@ class Shrinker(object):
         but that won't always work because its length heuristic can be wrong if
         the changes to the next block have knock on size changes, while this
         one triggers more reliably.
-
         """
         self.debug('Lowering adjacent pairs of dependent blocks')
         i = 0
@@ -2113,7 +2090,6 @@ class Shrinker(object):
         order pairs), which is O(n^2) in the worst case. In order to offset we
         try to do as much efficient sorting as possible to reduce the number of
         out of order pairs before we get to that stage.
-
         """
         free_bytes = []
 

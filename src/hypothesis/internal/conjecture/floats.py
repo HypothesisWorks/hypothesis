@@ -153,7 +153,6 @@ def reverse64(v):
 
     In this case concatenating consists of shifting them into the right
     position for the word and then oring the bits together.
-
     """
     assert v.bit_length() <= 64
     return (

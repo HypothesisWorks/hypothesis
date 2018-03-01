@@ -123,7 +123,6 @@ def base_defines_strategy(force_reusable):
     If force_reusable is True, the generated values are assumed to be
     reusable, i.e. immutable and safe to cache, across multiple test
     invocations.
-
     """
     def decorator(strategy_definition):
         """A decorator that registers the function as a strategy and makes it
@@ -180,7 +179,6 @@ def nothing():
     an attempt to draw.
 
     Examples from this strategy do not shrink (because there are none).
-
     """
     return NOTHING
 
@@ -195,7 +193,6 @@ def just(value):
     of ``just(callable())`` to get a fresh value each time.
 
     Examples from this strategy do not shrink (because there is only one).
-
     """
     from hypothesis.searchstrategy.misc import JustStrategy
 
@@ -208,7 +205,6 @@ def none():
 
     Examples from this strategy do not shrink (because there is only
     one).
-
     """
     return just(None)
 
@@ -231,7 +227,6 @@ def one_of(*args):
     ``x = st.deferred(lambda: st.none() | st.tuples(x, x))`` will shrink well,
     but ``x = st.deferred(lambda: st.tuples(x, x) | st.none())`` will shrink
     very badly indeed.
-
     """
     if len(args) == 1 and not isinstance(args[0], SearchStrategy):
         try:
@@ -253,7 +248,6 @@ def integers(min_value=None, max_value=None):
 
     Examples from this strategy will shrink towards zero, and negative values
     will also shrink towards positive (i.e. -n may be replaced by +n).
-
     """
 
     check_valid_bound(min_value, 'min_value')
@@ -303,7 +297,6 @@ def booleans():
 
     Examples from this strategy will shrink towards False (i.e.
     shrinking will try to replace True with False where possible).
-
     """
     from hypothesis.searchstrategy.misc import BoolStrategy
     return BoolStrategy()
@@ -330,7 +323,6 @@ def floats(
     shrinking behaviour, but it tries to improve "human readability". Finite
     numbers will be preferred to infinity and infinity will be preferred to
     NaN.
-
     """
 
     if allow_nan is None:
@@ -430,7 +422,6 @@ def complex_numbers():
 
     Examples from this strategy shrink by shrinking their component real
     and imaginary parts.
-
     """
     from hypothesis.searchstrategy.numbers import ComplexStrategy
     return ComplexStrategy(
@@ -448,7 +439,6 @@ def tuples(*args):
     two with both values an integer.
 
     Examples from this strategy shrink by shrinking their component parts.
-
     """
     for arg in args:
         check_strategy(arg)
@@ -472,7 +462,6 @@ def sampled_from(elements):
     the list. So e.g. sampled_from((10, 1)) will shrink by trying to replace
     1 values with 10, and sampled_from((1, 10)) will shrink by trying to
     replace 10 values with 1.
-
     """
     from hypothesis.searchstrategy.misc import SampledFromStrategy
     from hypothesis.internal.conjecture.utils import check_sample
@@ -518,7 +507,6 @@ def lists(
 
     Examples from this strategy shrink by trying to remove elements from the
     list, and by shrinking each individual element of the list.
-
     """
     check_valid_sizes(min_size, average_size, max_size)
     if elements is None or (max_size is not None and max_size <= 0):
@@ -581,7 +569,6 @@ def sets(elements=None, min_size=None, average_size=None, max_size=None):
 
     Examples from this strategy shrink by trying to remove elements from the
     set, and by shrinking each individual element of the set.
-
     """
     return lists(
         elements=elements, min_size=min_size, average_size=average_size,
@@ -609,7 +596,6 @@ def iterables(elements=None, min_size=None, average_size=None, max_size=None,
     fixed length (e.g. generators). This strategy produces iterators,
     which cannot be indexed and do not have a fixed length. This ensures
     that you do not accidentally depend on sequence behaviour.
-
     """
     @implements_iterator
     class PrettyIter(object):
@@ -644,7 +630,6 @@ def fixed_dictionaries(mapping):
 
     Examples from this strategy shrink by shrinking each individual value in
     the generated dictionary.
-
     """
     from hypothesis.searchstrategy.collections import FixedKeysDictStrategy
     check_type(dict, mapping, 'mapping')
@@ -666,7 +651,6 @@ def dictionaries(
 
     Examples from this strategy shrink by trying to remove keys from the
     generated dictionary, and by shrinking each generated key and value.
-
     """
     check_valid_sizes(min_size, average_size, max_size)
     if max_size == 0:
@@ -693,7 +677,6 @@ def streaming(elements):
 
     .. deprecated:: 3.15.0
         Use :func:`data() <hypothesis.strategies.data>` instead.
-
     """
     note_deprecation(
         'streaming() has been deprecated. Use the data() strategy instead and '
@@ -746,7 +729,6 @@ def characters(whitelist_categories=None, blacklist_categories=None,
 
     Examples from this strategy shrink towards the codepoint for ``'0'``,
     or the first allowable codepoint after it if ``'0'`` is excluded.
-
     """
     check_valid_size(min_codepoint, 'min_codepoint')
     check_valid_size(max_codepoint, 'max_codepoint')
@@ -813,7 +795,6 @@ def text(
 
     Examples from this strategy shrink towards shorter strings, and with the
     characters in the text shrinking as per the alphabet strategy.
-
     """
     from hypothesis.searchstrategy.strings import StringStrategy
     if alphabet is None:
@@ -863,7 +844,6 @@ def from_regex(regex):
 
     Examples from this strategy shrink towards shorter strings and lower
     character values.
-
     """
     from hypothesis.searchstrategy.regex import regex_strategy
     return regex_strategy(regex)
@@ -881,7 +861,6 @@ def binary(
 
     Examples from this strategy shrink towards smaller strings and lower byte
     values.
-
     """
     from hypothesis.searchstrategy.strings import BinaryStringStrategy, \
         FixedSizeBytes
@@ -903,7 +882,6 @@ def randoms():
     RandomWithSeed class which displays what it was initially seeded with)
 
     Examples from this strategy shrink to seeds closer to zero.
-
     """
     from hypothesis.searchstrategy.misc import RandomStrategy
     return RandomStrategy(integers())
@@ -932,7 +910,6 @@ def random_module():
     which will give you one.
 
     Examples from these strategy shrink to seeds closer to zero.
-
     """
     from hypothesis.control import cleanup
     import random
@@ -967,7 +944,6 @@ def builds(*callable_and_args, **kwargs):
 
     Examples from this strategy shrink by shrinking the argument values to
     the callable.
-
     """
     if callable_and_args:
         target, args = callable_and_args[0], callable_and_args[1:]
@@ -1040,7 +1016,6 @@ def from_type(thing):
        other elements in the lookup.
     4. Finally, if ``thing`` has type annotations for all required arguments,
        it is resolved via :func:`~hypothesis.strategies.builds`.
-
     """
     from hypothesis.searchstrategy import types
     try:
@@ -1148,7 +1123,6 @@ def fractions(min_value=None, max_value=None, max_denominator=None):
 
     Examples from this strategy shrink towards smaller denominators, then
     closer to zero.
-
     """
     min_value = try_convert(Fraction, min_value, 'min_value')
     max_value = try_convert(Fraction, max_value, 'max_value')
@@ -1254,7 +1228,6 @@ def decimals(min_value=None, max_value=None,
 
     Examples from this strategy do not have a well defined shrink order but
     try to maximize human readability when shrinking.
-
     """
     # Convert min_value and max_value to Decimal values, and validate args
     check_valid_integer(places)
@@ -1364,7 +1337,6 @@ def permutations(values):
 
     Examples from this strategy shrink by trying to become closer to the
     original order of values.
-
     """
     from hypothesis.internal.conjecture.utils import integer_range
 
@@ -1422,7 +1394,6 @@ def datetimes(
     are at the beginning of the list for proper minimisation.
 
     Examples from this strategy shrink towards midnight on January 1st 2000.
-
     """
     # Why must bounds be naive?  In principle, we could also write a strategy
     # that took aware bounds, but the API and validation is much harder.
@@ -1464,7 +1435,6 @@ def dates(
     """A strategy for dates between ``min_date`` and ``max_date``.
 
     Examples from this strategy shrink towards January 1st 2000.
-
     """
     from hypothesis.searchstrategy.datetime import DateStrategy
 
@@ -1491,7 +1461,6 @@ def times(
 
     Examples from this strategy shrink towards midnight, with the timezone
     component shrinking as for the strategy that provided it.
-
     """
     check_type(dt.time, min_value, 'min_value')
     check_type(dt.time, max_value, 'max_value')
@@ -1518,7 +1487,6 @@ def timedeltas(
     """A strategy for timedeltas between ``min_value`` and ``max_value``.
 
     Examples from this strategy shrink towards zero.
-
     """
     from hypothesis.searchstrategy.datetime import TimedeltaStrategy
 
@@ -1541,7 +1509,6 @@ def composite(f):
 
     Examples from this strategy shrink by shrinking the output of each draw
     call.
-
     """
 
     from hypothesis.internal.reflection import define_function_signature
@@ -1604,7 +1571,6 @@ def shared(base, key=None):
     >>> y = shared(s, key="hi")
 
     Examples from this strategy shrink as per their base strategy.
-
     """
     from hypothesis.searchstrategy.shared import SharedStrategy
     return SharedStrategy(base, key)
@@ -1623,7 +1589,6 @@ def choices():
 
     Examples from this strategy shrink by making each choice function return
     an earlier value in the sequence passed to it.
-
     """
     from hypothesis.control import note, current_build_context
     from hypothesis.internal.conjecture.utils import choice, check_sample
@@ -1678,7 +1643,6 @@ def uuids(version=None):
     ``lists(uuids())`` the resulting list will never contain duplicates.
 
     Examples from this strategy don't have any meaningful shrink order.
-
     """
     from uuid import UUID
     if version not in (None, 1, 2, 3, 4, 5):
@@ -1701,7 +1665,6 @@ def runner(default=not_set):
     that default. If no default is provided, raises InvalidArgument.
 
     Examples from this strategy do not shrink (because there is only one).
-
     """
     class RunnerStrategy(SearchStrategy):
 
@@ -1734,7 +1697,6 @@ def data():
 
     Examples from this strategy do not shrink (because there is only one),
     but the result of calls to each draw() call shrink as they normally would.
-
     """
     from hypothesis.control import note
 
@@ -1803,7 +1765,6 @@ def register_type_strategy(custom_type, strategy):
 
     ``strategy`` may be a search strategy, or a function that takes a type and
     returns a strategy (useful for generic types).
-
     """
     from hypothesis.searchstrategy import types
     if not isinstance(custom_type, type):
@@ -1848,7 +1809,6 @@ def deferred(definition):
 
     Examples from this strategy shrink as they normally would from the strategy
     returned by the definition.
-
     """
     from hypothesis.searchstrategy.deferred import DeferredStrategy
     return DeferredStrategy(definition)

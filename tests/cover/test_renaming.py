@@ -46,7 +46,6 @@ def g(new_arg=None, old_arg=None):
     """Hi.
 
     Bye
-
     """
 
 
