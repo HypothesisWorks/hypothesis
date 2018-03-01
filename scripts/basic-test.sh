@@ -20,7 +20,10 @@ pip install .
 
 PYTEST="python -m pytest -n2"
 
-$PYTEST --runpytest=subprocess tests/pytest
+# These these tests invoke pytest in a subprocess, sometimes with settings
+# that are expected to produce warnings - so we need to override our tox
+# environment's desire to error.
+PYTHONWARNINGS="default" $PYTEST --runpytest=subprocess tests/pytest
 
 pip install ".[datetime]"
 $PYTEST tests/datetime/
@@ -56,9 +59,11 @@ if [ "$(python -c 'import platform; print(platform.python_implementation())')" !
     pip install numpy
     $PYTEST tests/numpy
 
+
     pip install pandas
 
-    $PYTEST tests/pandas
+    # https://github.com/pandas-dev/pandas/issues/19944
+    PYTHONWARNINGS="default" $PYTEST tests/pandas
 
     pip uninstall -y numpy pandas
   fi
