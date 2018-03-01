@@ -1533,7 +1533,6 @@ class Shrinker(object):
 
         Try lowering every non-zero pair of non-shrinking blocks by a
         common offset.
-
         """
         self.debug('Shrinking offset pairs.')
 
