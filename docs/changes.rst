@@ -22,6 +22,12 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.46.1 - 2018-03-01
+-------------------
+
+This changes only the formatting of our docstrings and should have no user-visible effects.
+
+-------------------
 3.46.0 - 2018-02-26
 -------------------
 
