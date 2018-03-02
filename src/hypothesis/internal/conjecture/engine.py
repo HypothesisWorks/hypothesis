@@ -1568,7 +1568,9 @@ class Shrinker(object):
                 j = i + 1
                 while j < len(self.shrink_target.blocks):
                     block_val = int_from_block(j)
-                    if not self.is_shrinking_block(j) and block_val > 0:
+                    i_block_val = int_from_block(i)
+                    if not self.is_shrinking_block(j) \
+                       and block_val > 0 and i_block_val > 0:
                         offset = min(int_from_block(i),
                                      int_from_block(j))
                         minimize_int(
