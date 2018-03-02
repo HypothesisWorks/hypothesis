@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.47.0 - 2018-03-02
+-------------------
+
+:obj:`~hypothesis.settings.register_profile` now accepts keyword arguments
+for specific settings, and the parent settings object is now optional.
+Using a ``name`` for a registered profile which is not a string was never
+suggested, but it is now also deprecated and will eventually be an error.
+
+-------------------
 3.46.2 - 2018-03-01
 -------------------
 
