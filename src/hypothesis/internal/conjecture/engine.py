@@ -1537,6 +1537,7 @@ class Shrinker(object):
         self.debug('Shrinking offset pairs.')
 
         current = [self.shrink_target.buffer[u:v] for u, v in self.blocks]
+
         def int_from_block(i):
             return int_from_bytes(current[i])
 
@@ -1553,7 +1554,7 @@ class Shrinker(object):
             m = min([int_from_block(p) for p in valid_pair])
 
             new_blocks = [self.shrink_target.buffer[u:v]
-                                        for u, v in self.blocks]
+                          for u, v in self.blocks]
             for i in valid_pair:
                 new_blocks[i] = int_to_bytes(
                     int_from_block(i) + o - m, block_len(i))
