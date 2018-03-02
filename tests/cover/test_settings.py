@@ -95,6 +95,20 @@ def test_cannot_create_settings_with_invalid_options():
         settings(a_setting_with_limited_options=u'spoon')
 
 
+def test_cannot_register_with_parent_and_settings_args():
+    with pytest.raises(InvalidArgument):
+        settings.register_profile(
+            'conflicted', settings.default, settings=settings.default)
+    assert 'conflicted' not in settings._profiles
+
+
+@checks_deprecated_behaviour
+def test_register_profile_kwarg_settings_is_deprecated():
+    settings.register_profile('test', settings=settings(max_examples=10))
+    settings.load_profile('test')
+    assert settings.default.max_examples == 10
+
+
 def test_can_set_verbosity():
     settings(verbosity=Verbosity.quiet)
     settings(verbosity=Verbosity.normal)
@@ -134,14 +148,7 @@ def test_load_profile():
     assert settings.default.max_shrinks == 500
     assert settings.default.min_satisfying_examples == 5
 
-    settings.register_profile(
-        'test',
-        settings(
-            max_examples=10,
-            max_shrinks=5
-        )
-    )
-
+    settings.register_profile('test', settings(max_examples=10), max_shrinks=5)
     settings.load_profile('test')
 
     assert settings.default.max_examples == 10
@@ -153,6 +160,13 @@ def test_load_profile():
     assert settings.default.max_examples == 100
     assert settings.default.max_shrinks == 500
     assert settings.default.min_satisfying_examples == 5
+
+
+@checks_deprecated_behaviour
+def test_nonstring_profile_names_deprecated():
+    settings.register_profile(5, max_shrinks=5)
+    settings.load_profile(5)
+    assert settings.default.max_shrinks == 5
 
 
 def test_loading_profile_keeps_expected_behaviour():
