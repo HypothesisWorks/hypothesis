@@ -326,9 +326,9 @@ class settings(settingsMeta('settings', (object,), {})):
     def load_profile(name):
         """Loads in the settings defined in the profile provided.
 
-        If the profile does not exist an InvalidArgument will be thrown.
+        If the profile does not exist, InvalidArgument will be raised.
         Any setting not defined in the profile will be the library
-        defined default for that setting
+        defined default for that setting.
         """
         if not isinstance(name, (str, text_type)):
             note_deprecation('name=%r must be a string' % (name,))
