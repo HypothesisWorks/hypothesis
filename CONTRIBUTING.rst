@@ -171,6 +171,7 @@ their individual contributions.
 * `Dion Misic <https://www.github.com/kingdion>`_ (dion.misic@gmail.com)
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
+* `Gregory Petrosyan <https://github.com/flyingmutant>`_
 * `Jeremy Thurgood <https://github.com/jerith>`_
 * `JP Viljoen <https://github.com/froztbyte>`_ (froztbyte@froztbyte.net)
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (jonty@jonty.co.uk)
