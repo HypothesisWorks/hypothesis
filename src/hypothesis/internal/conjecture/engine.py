@@ -1551,7 +1551,7 @@ class Shrinker(object):
             valid_pair = [p for p in pair if p < n and int_from_block(p) > 0]
 
             if len(valid_pair) < 2:
-                return 
+                return
             m = min([int_from_block(p) for p in valid_pair])
 
             new_blocks = [self.shrink_target.buffer[u:v]
