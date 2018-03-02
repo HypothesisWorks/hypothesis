@@ -1263,7 +1263,6 @@ def test_shrinking_block_pairs(monkeypatch):
             data.mark_interesting()
     assert x == hbytes([2, 0])
 
-
 def test_non_minimal_pair_shrink(monkeypatch):
     monkeypatch.setattr(
         Shrinker, 'shrink', lambda self: (
