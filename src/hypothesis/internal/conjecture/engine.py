@@ -1531,15 +1531,15 @@ class Shrinker(object):
     def shrink_offset_pairs(self):
         """Lower any two blocks offset from each other the same ammount.
 
-        Before this shrink pass, two blocks explicitly offset from each other would
-        not get minimized properly:
+        Before this shrink pass, two blocks explicitly offset from each
+        other would not get minimized properly:
          >>> b = st.integers(0, 255)
          >>> find(st.tuples(b, b), lambda x: x[0] == x[1] + 1)
         (149,148)
 
-        This expensive (O(n^2)) pass goes through every pair of non-zero blocks in
-        the current shrink target and sees if the shrink target can be improved by
-        applying an offset to both of them.
+        This expensive (O(n^2)) pass goes through every pair of non-zero
+        blocks in the current shrink target and sees if the shrink
+        target can be improved by applying an offset to both of them.
         """
         self.debug('Shrinking offset pairs.')
 
