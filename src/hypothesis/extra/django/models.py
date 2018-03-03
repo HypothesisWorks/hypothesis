@@ -186,7 +186,6 @@ def models(model, **field_strategies):
     be generated with::
 
       shop_strategy = models(Shop, company=models(Company))
-
     """
     result = {k: v for k, v in field_strategies.items()
               if v is not default_value}

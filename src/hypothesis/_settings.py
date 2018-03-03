@@ -19,7 +19,6 @@
 
 Either an explicit settings object can be used or the default object on
 this module can be modified.
-
 """
 
 from __future__ import division, print_function, absolute_import
@@ -34,6 +33,7 @@ import attr
 
 from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
 from hypothesis.configuration import hypothesis_home_dir
+from hypothesis.internal.compat import text_type
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.internal.validation import try_convert
 from hypothesis.utils.dynamicvariables import DynamicVariable
@@ -116,7 +116,6 @@ class settings(settingsMeta('settings', (object,), {})):
 
     Default values are picked up from the settings.default object and
     changes made there will be picked up in newly created settings.
-
     """
 
     _WHITELISTED_REAL_PROPERTIES = [
@@ -193,7 +192,6 @@ class settings(settingsMeta('settings', (object,), {})):
         - default is the default value. This may be a zero argument
           function in which case it is evaluated and its result is stored
           the first time it is accessed on any given settings object.
-
         """
         if settings.__definitions_are_locked:
             from hypothesis.errors import InvalidState
@@ -265,7 +263,6 @@ class settings(settingsMeta('settings', (object,), {})):
         database_file setting is not None this will be lazily loaded as
         an ExampleDatabase, using that file the first time that this
         property is accessed on a particular thread.
-
         """
         if self._database is not_set and self.database_file is not None:
             from hypothesis.database import ExampleDatabase
@@ -288,44 +285,53 @@ class settings(settingsMeta('settings', (object,), {})):
         return default_context_manager.__exit__(*args, **kwargs)
 
     @staticmethod
-    def register_profile(name, settings):
+    def register_profile(name, parent=None, **kwargs):
         """Registers a collection of values to be used as a settings profile.
 
-        These settings can be loaded in by name. Enable different
-        defaults for different settings.  ``settings`` must be a
-        settings object.
+        Settings profiles can be loaded by name - for example, you might
+        create a 'fast' profile which runs fewer examples, keep the 'default'
+        profile, and create a 'ci' profile that increases the number of
+        examples and uses a different database to store failures.
 
+        The arguments to this method are exactly as for
+        :class:`~hypothesis.settings`: optional ``parent`` settings, and
+        keyword arguments for each setting that will be set differently to
+        parent (or settings.default, if parent is None).
         """
-        settings._profiles[name] = settings
+        if not isinstance(name, (str, text_type)):
+            note_deprecation('name=%r must be a string' % (name,))
+        if 'settings' in kwargs:
+            if parent is None:
+                parent = kwargs.pop('settings')
+                note_deprecation('The `settings` argument is deprecated - '
+                                 'use `parent` instead.')
+            else:
+                raise InvalidArgument(
+                    'The `settings` argument is deprecated, and has been '
+                    'replaced by the `parent` argument.  Use `parent` only.'
+                )
+        settings._profiles[name] = settings(parent=parent, **kwargs)
 
     @staticmethod
     def get_profile(name):
-        """Return the profile with the given name.
-
-        - name is a string representing the name of the profile
-         to load
-        A InvalidArgument exception will be thrown if the
-         profile does not exist
-
-        """
+        """Return the profile with the given name."""
+        if not isinstance(name, (str, text_type)):
+            note_deprecation('name=%r must be a string' % (name,))
         try:
             return settings._profiles[name]
         except KeyError:
-            raise InvalidArgument(
-                "Profile '{0}' has not been registered".format(
-                    name
-                )
-            )
+            raise InvalidArgument('Profile %r is not registered' % (name,))
 
     @staticmethod
     def load_profile(name):
-        """Loads in the settings defined in the profile provided If the profile
-        does not exist an InvalidArgument will be thrown.
+        """Loads in the settings defined in the profile provided.
 
+        If the profile does not exist, InvalidArgument will be raised.
         Any setting not defined in the profile will be the library
-        defined default for that setting
-
+        defined default for that setting.
         """
+        if not isinstance(name, (str, text_type)):
+            note_deprecation('name=%r must be a string' % (name,))
         settings._current_profile = name
         settings._assign_default_internal(settings.get_profile(name))
 
@@ -482,7 +488,6 @@ class HealthCheck(Enum):
     """Arguments for :attr:`~hypothesis.settings.suppress_health_check`.
 
     Each member of this enum is a type of health check to suppress.
-
     """
 
     exception_in_generation = 0
@@ -724,10 +729,6 @@ more details of this behaviour.
 
 settings.lock_further_definitions()
 
-settings.register_profile('default', settings())
-settings.load_profile('default')
-assert settings.default is not None
-
 
 def note_deprecation(message, s=None):
     if s is None:
@@ -737,3 +738,8 @@ def note_deprecation(message, s=None):
     warning = HypothesisDeprecationWarning(message)
     if verbosity > Verbosity.quiet:
         warnings.warn(warning, stacklevel=3)
+
+
+settings.register_profile('default', settings())
+settings.load_profile('default')
+assert settings.default is not None

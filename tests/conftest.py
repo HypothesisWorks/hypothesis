@@ -52,7 +52,6 @@ def consistently_increment_time(monkeypatch):
     flakily.
 
     Replacing time with a fake version under our control avoids this problem.
-
     """
     frozen = [False]
 

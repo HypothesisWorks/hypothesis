@@ -30,7 +30,6 @@ class UnsatisfiedAssumption(HypothesisException):
     """An internal error raised by assume.
 
     If you're seeing this error something has gone wrong.
-
     """
 
 
@@ -41,7 +40,6 @@ class BadTemplateDraw(HypothesisException):
 
     This is not an error condition internally, but if you ever see this
     in your code it's probably a Hypothesis bug
-
     """
 
 
@@ -50,7 +48,6 @@ class NoSuchExample(HypothesisException):
 
     This does not guarantee that no example exists, only that we were
     unable to find one.
-
     """
 
     def __init__(self, condition_string, extra=''):
@@ -66,7 +63,6 @@ class DefinitelyNoSuchExample(NoSuchExample):  # pragma: no cover
 
     This exception remains for compatibility reasons for now but can
     never actually be thrown.
-
     """
 
 
@@ -86,7 +82,6 @@ class Unsatisfiable(HypothesisException):
     strategy or using a better starting point (e.g if you are requiring
     a list has unique values you could instead filter out all duplicate
     values from the list)
-
     """
 
 
@@ -104,7 +99,6 @@ class Flaky(HypothesisException):
         3. The function is timing sensitive and can fail or pass depending on
            how long it takes. Try breaking it up into smaller functions which
            don't do that and testing those instead.
-
     """
 
 
@@ -134,7 +128,6 @@ class ResolutionFailed(InvalidArgument):
     Type inference is best-effort, so this only happens when an
     annotation exists but could not be resolved for a required argument
     to the target of ``builds()``, or where the user passed ``infer``.
-
     """
 
 

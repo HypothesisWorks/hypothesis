@@ -162,7 +162,6 @@ def build_jobs():
     Note: This usage of Travis has been somewhat reverse engineered due
     to a certain dearth of documentation as to what values what takes
     when.
-
     """
     import requests
 

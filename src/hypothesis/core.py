@@ -133,7 +133,6 @@ def reproduce_failure(version, blob):
     in the event that you don't have access to the test database. Because of
     this, *no* compatibility guarantees are made between different versions of
     Hypothesis - its API may change arbitrarily from version to version.
-
     """
     def accept(test):
         test._hypothesis_internal_use_reproduce_failure = (version, blob)
@@ -349,7 +348,6 @@ def skip_exceptions_to_reraise():
 
     This is intended to cover most common test runners; if you would
     like another to be added please open an issue or pull request.
-
     """
     import unittest
     # This is a set because nose may simply re-export unittest.SkipTest
@@ -885,7 +883,6 @@ def given(*given_arguments, **given_kwargs):
     randomized test.
 
     This is the main entry point to Hypothesis.
-
     """
     def run_test_with_generator(test):
         generator_arguments = tuple(given_arguments)

@@ -349,7 +349,6 @@ def update_code_location(code, newfile, newlineno):
     hack that I've done purely for vanity, and if you're reading this
     code you're probably here because it's broken something and now
     you're angry at me. Sorry.
-
     """
     unpacked = [
         getattr(code, name) for name in CODE_FIELD_ORDER

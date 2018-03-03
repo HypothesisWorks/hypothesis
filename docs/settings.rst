@@ -220,7 +220,7 @@ of tests that explicitly change the settings.
 .. doctest::
 
     >>> from hypothesis import settings
-    >>> settings.register_profile("ci", settings(max_examples=1000))
+    >>> settings.register_profile("ci", max_examples=1000)
     >>> settings().max_examples
     100
     >>> settings.load_profile("ci")
@@ -246,9 +246,9 @@ If this variable is not defined the Hypothesis defined defaults will be loaded.
 
     >>> import os
     >>> from hypothesis import settings, Verbosity
-    >>> settings.register_profile("ci", settings(max_examples=1000))
-    >>> settings.register_profile("dev", settings(max_examples=10))
-    >>> settings.register_profile("debug", settings(max_examples=10, verbosity=Verbosity.verbose))
+    >>> settings.register_profile("ci", max_examples=1000)
+    >>> settings.register_profile("dev", max_examples=10)
+    >>> settings.register_profile("debug", max_examples=10, verbosity=Verbosity.verbose)
     >>> settings.load_profile(os.getenv(u'HYPOTHESIS_PROFILE', 'default'))
 
 If you are using the hypothesis pytest plugin and your profiles are registered
@@ -263,13 +263,12 @@ by your conftest you can load one with the command line option ``--hypothesis-pr
 Timeouts
 ~~~~~~~~
 
-The `timeout` functionality of Hypothesis is being deprecated, and will
+The timeout functionality of Hypothesis is being deprecated, and will
 eventually be removed. For the moment, the timeout setting can still be set
 and the old default timeout of one minute remains.
 
 If you want to future proof your code you can get
-the future behaviour by setting it to the value `unlimited`, which you can
-import from the main Hypothesis package:
+the future behaviour by setting it to the value ``hypothesis.unlimited``.
 
 .. code:: python
 

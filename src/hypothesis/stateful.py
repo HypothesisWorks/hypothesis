@@ -21,7 +21,6 @@ a single value.
 
 Notably, the set of steps available at any point may depend on the
 execution to date.
-
 """
 
 
@@ -102,7 +101,6 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
     state_machine_factory is anything which returns an instance of
     GenericStateMachine when called with no arguments - it can be a class or a
     function. settings will be used to control the execution of the test.
-
     """
     try:
         breaker = find_breaking_runner(state_machine_factory, settings)
@@ -138,7 +136,6 @@ class GenericStateMachine(object):
 
     And if this ever produces an error it will shrink it down to a small
     sequence of example choices demonstrating that.
-
     """
 
     def steps(self):
@@ -154,7 +151,6 @@ class GenericStateMachine(object):
         """Print a step to the current reporter.
 
         This is called right before a step is executed.
-
         """
         self.step_count = getattr(self, u'step_count', 0) + 1
         report(u'Step #%d: %s' % (self.step_count, nicerepr(step)))
@@ -164,7 +160,6 @@ class GenericStateMachine(object):
         state.
 
         Does nothing by default
-
         """
         pass
 
@@ -216,7 +211,6 @@ class StateMachineRunner(object):
     """A StateMachineRunner is a description of how to run a state machine.
 
     It contains values that it will use to shape the examples.
-
     """
 
     def __init__(self, data, n_steps):
@@ -304,7 +298,6 @@ def rule(targets=(), target=None, **kwargs):
     invocation. If their value is a Bundle then values that have previously
     been produced for that bundle will be provided, if they are anything else
     it will be turned into a strategy and values from that will be provided.
-
     """
     if target is not None:
         targets += (target,)
@@ -359,7 +352,6 @@ def precondition(precond):
 
     This is better than using assume in your rule since more valid rules
     should be able to be run.
-
     """
     def decorator(f):
         @proxies(f)
@@ -403,7 +395,6 @@ def invariant():
             @invariant()
             def is_nonzero(self):
                 assert self.state != 0
-
     """
     def accept(f):
         existing_invariant = getattr(f, INVARIANT_MARKER, None)
@@ -439,7 +430,6 @@ class RuleBasedStateMachine(GenericStateMachine):
     from bundles (or just from normal strategies) and push data onto
     bundles. At any given point a random applicable rule will be
     executed.
-
     """
 
     _rules_per_class = {}

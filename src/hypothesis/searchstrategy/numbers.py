@@ -33,7 +33,6 @@ class IntStrategy(SearchStrategy):
     other than produce.
 
     Subclasses should provide the produce method.
-
     """
 
 
@@ -153,7 +152,6 @@ class FixedBoundedFloatStrategy(SearchStrategy):
 
     The conditional distribution tries to produce values clustered
     closer to one of the ends.
-
     """
 
     def __init__(self, lower_bound, upper_bound):

@@ -70,7 +70,6 @@ class RandomStrategy(MappedSearchStrategy):
 
     The conditional distribution is simply a RandomWithSeed seeded with
     a 128 bits of data chosen uniformly at random.
-
     """
 
     def pack(self, i):
@@ -84,7 +83,6 @@ class SampledFromStrategy(SearchStrategy):
 
     The conditional distribution chooses uniformly at random from some
     non-empty subset of the elements.
-
     """
 
     def __init__(self, elements):

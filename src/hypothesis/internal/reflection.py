@@ -53,7 +53,6 @@ def is_mock(obj):
     args. As they are sneaky and can look like almost anything else,
     we'll check this by looking for random attributes.  This is more
     robust than looking for types.
-
     """
     for _ in range(10):
         if not hasattr(obj, str(uuid.uuid4())):
@@ -67,7 +66,6 @@ def function_digest(function):
     minor changes to the function.
 
     No guarantee of uniqueness though it usually will be.
-
     """
     hasher = hashlib.md5()
     try:
@@ -98,7 +96,6 @@ def required_args(target, args=(), kwargs=()):
     fill from type hints.  target may be any callable (including classes
     and bound methods).  args and kwargs should be as they are passed to
     builds() - that is, a tuple of values and a dict of names: values.
-
     """
     try:
         spec = getfullargspec(
@@ -121,7 +118,6 @@ def convert_keyword_arguments(function, args, kwargs):
     passed as positional and keyword args to the function. Unless function has.
 
     **kwargs the dictionary will always be empty.
-
     """
     argspec = getfullargspec(function)
     new_args = []
@@ -170,7 +166,6 @@ def convert_positional_arguments(function, args, kwargs):
     been moved to kwargs.
 
     new_args will only be non-empty if function has a variadic argument.
-
     """
     argspec = getfullargspec(function)
     new_kwargs = dict(argspec.kwonlydefaults or {})
@@ -245,7 +240,6 @@ def extract_lambda_source(f):
 
     This is not a good function and I am sorry for it. Forgive me my
     sins, oh lord
-
     """
     argspec = getfullargspec(f)
     arg_strings = []
@@ -524,7 +518,6 @@ def impersonate(target):
 
     Note that this updates the function in place, it doesn't return a
     new one.
-
     """
     def accept(f):
         f.__code__ = update_code_location(

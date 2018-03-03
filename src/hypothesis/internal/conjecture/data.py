@@ -183,8 +183,7 @@ class ConjectureData(object):
                 finally:
                     self.draw_times.append(benchmark_time() - start_time)
         finally:
-            if not self.frozen:
-                self.stop_example()
+            self.stop_example()
 
     def start_example(self, label):
         self.__assert_not_frozen('start_example')

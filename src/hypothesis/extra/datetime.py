@@ -19,7 +19,6 @@
 
 It depends on the ``pytz`` package, which is stable enough that almost any
 version should be compatible - most updates are for the timezone database.
-
 """
 
 from __future__ import division, print_function, absolute_import
@@ -74,7 +73,6 @@ def datetimes(allow_naive=None, timezones=None, min_year=None, max_year=None):
     available via pytz will be used.
 
     All generated datetimes will be between min_year and max_year, inclusive.
-
     """
     note_deprecation('Use hypothesis.strategies.datetimes, which supports '
                      'full-precision bounds and has a simpler API.')
@@ -92,7 +90,6 @@ def dates(min_year=None, max_year=None):
         use :py:func:`hypothesis.strategies.dates` instead.
 
     All generated dates will be between min_year and max_year, inclusive.
-
     """
     note_deprecation('Use hypothesis.strategies.dates, which supports bounds '
                      'given as date objects for single-day resolution.')
@@ -109,7 +106,6 @@ def times(allow_naive=None, timezones=None):
 
     The allow_naive and timezones arguments act the same as the datetimes
     strategy above.
-
     """
     note_deprecation('Use hypothesis.strategies.times, which supports '
                      'min_time and max_time arguments.')
