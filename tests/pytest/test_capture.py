@@ -97,7 +97,7 @@ import pytest
 
 # Since our tests are run with warnings-as-errors, we need to ignore
 # the HypothesisDeprecationWarning that comes from timeout=1. The warning can
-# come from within the test execution so the outer catch_warnings context 
+# come from within the test execution so the outer catch_warnings context
 # manager below isn't sufficient.
 @pytest.yield_fixture
 def catch_warnings():
@@ -105,7 +105,7 @@ def catch_warnings():
         warnings.simplefilter('ignore', HypothesisDeprecationWarning)
         yield
 
-  
+
 with warnings.catch_warnings(record=True):
     warnings.simplefilter('ignore', HypothesisDeprecationWarning)
     @given(integers())
