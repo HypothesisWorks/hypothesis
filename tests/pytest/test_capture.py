@@ -88,12 +88,30 @@ def test_output_emitting_unicode(testdir, monkeypatch):
 TRACEBACKHIDE_TIMEOUT = """
 from hypothesis import given, settings
 from hypothesis.strategies import integers
-import time
+from hypothesis.errors import HypothesisDeprecationWarning
 
-@given(integers())
-@settings(timeout=1)
-def test_timeout_traceback_is_hidden(i):
-    time.sleep(1.1)
+import time
+import warnings
+import pytest
+
+
+# Since our tests are run with warnings-as-errors, we need to ignore
+# the HypothesisDeprecationWarning that comes from timeout=1. The warning can
+# come from within the test execution so the outer catch_warnings context 
+# manager below isn't sufficient.
+@pytest.yield_fixture
+def catch_warnings():
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter('ignore', HypothesisDeprecationWarning)
+        yield
+
+  
+with warnings.catch_warnings(record=True):
+    warnings.simplefilter('ignore', HypothesisDeprecationWarning)
+    @given(integers())
+    @settings(timeout=1)
+    def test_timeout_traceback_is_hidden(catch_warnings, i):
+        time.sleep(1.1)
 """
 
 
