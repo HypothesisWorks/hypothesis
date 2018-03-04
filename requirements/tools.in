@@ -8,6 +8,7 @@ restructuredtext-lint
 Sphinx
 sphinx-rtd-theme
 tox
+tox-venv
 twine
 attrs
 coverage
