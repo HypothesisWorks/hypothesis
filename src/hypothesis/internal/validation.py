@@ -18,7 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-from numbers import Rational
+import decimal
+from numbers import Real, Rational
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import integer_types
@@ -64,6 +65,8 @@ def check_valid_bound(value, name):
     """
     if value is None or isinstance(value, integer_types + (Rational,)):
         return
+    if not isinstance(value, (Real, decimal.Decimal)):
+        raise InvalidArgument('%s=%r must be a real number.' % (name, value))
     if math.isnan(value):
         raise InvalidArgument(u'Invalid end point %s=%r' % (name, value))
 

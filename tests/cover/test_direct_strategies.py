@@ -119,6 +119,8 @@ def fn_ktest(*fnkwargs):
     (ds.binary, {'min_size': 10, 'max_size': 9}),
     (ds.binary, {'max_size': 10, 'average_size': 20}),
     (ds.floats, {'min_value': float('nan')}),
+    (ds.floats, {'min_value': '0'}),
+    (ds.floats, {'max_value': '0'}),
     (ds.floats, {'max_value': 0.0, 'min_value': 1.0}),
     (ds.floats, {'min_value': 0.0, 'allow_nan': True}),
     (ds.floats, {'max_value': 0.0, 'allow_nan': True}),

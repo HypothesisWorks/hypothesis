@@ -334,11 +334,14 @@ def floats(
                     allow_nan
                 ))
 
-    min_value = try_convert(float, min_value, 'min_value')
-    max_value = try_convert(float, max_value, 'max_value')
-
     check_valid_bound(min_value, 'min_value')
     check_valid_bound(max_value, 'max_value')
+
+    if min_value is not None:
+        min_value = float(min_value)
+    if max_value is not None:
+        max_value = float(max_value)
+
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
     if min_value == float(u'-inf'):
         min_value = None
