@@ -63,4 +63,3 @@ unify==0.4                # via pyformat
 untokenize==0.1.1         # via docformatter, unify
 urllib3==1.22             # via requests
 virtualenv==15.1.0        # via tox
-wheel==0.30
