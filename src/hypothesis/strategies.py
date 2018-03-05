@@ -486,8 +486,11 @@ def complex_numbers(
         )
 
     def project(z, a, b):
-        # FIXME
-        return z
+        absz = math.hypot(*z)
+        if absz > b:
+            return z * (b / absz)
+        else:
+            return z
 
     return ComplexStrategy(
         tuples(

@@ -24,7 +24,7 @@ import pytest
 
 from hypothesis import given
 from tests.common.debug import minimal
-from hypothesis.strategies import lists, floats, integers, complex_numbers
+from hypothesis.strategies import lists, floats, integers
 
 
 def test_minimize_negative_int():
@@ -105,11 +105,6 @@ def test_minimals_boundary_floats():
 def test_minimal_non_boundary_float():
     x = minimal(floats(min_value=1, max_value=9), lambda x: x > 2)
     assert 2 < x < 3
-
-
-def test_can_minimal_standard_complex_numbers():
-    assert minimal(complex_numbers(), lambda x: x.imag != 0) == 1j
-    assert minimal(complex_numbers(), lambda x: x.real != 0) == 1
 
 
 def test_minimal_float_is_zero():
