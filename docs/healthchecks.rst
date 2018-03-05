@@ -17,11 +17,12 @@ If any of these scenarios are detected, Hypothesis will emit a warning about the
 The general goal of these health checks is to warn you about things that you are doing that might
 appear to work but will either cause Hypothesis to not work correctly or to perform badly.
 
-To selectively disable health checks, use the suppress_health_check setting.
+To selectively disable health checks, use the
+:obj:`~hypothesis.settings.suppress_health_check` setting.
 The argument for this parameter is a list with elements drawn from any of
 the class-level attributes of the HealthCheck class.
 
-To disable all health checks, set the perform_health_check settings parameter
+To disable all health checks, set the :obj:`~hypothesis.settings.perform_health_check`
 to False.
 
 .. module:: hypothesis

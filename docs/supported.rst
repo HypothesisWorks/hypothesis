@@ -52,22 +52,22 @@ test to take this form.
 
 In terms of what's actually *known* to work:
 
-  * Hypothesis integrates as smoothly with py.test and unittest as I can make it,
+  * Hypothesis integrates as smoothly with py.test and unittest as we can make it,
     and this is verified as part of the CI.
-  * py.test fixtures work correctly with Hypothesis based functions, but note that
-    function based fixtures will only run once for the whole function, not once per
-    example.
+    Note however that :func:`@given <hypothesis.given>` should only be used on
+    tests, not :class:`python:unittest.TestCase` setup or teardown methods.
+  * py.test fixtures work in the usual way for tests that have been decorated
+    with :func:`@given <hypothesis.given>` - just avoid passing a strategy for
+    each argument that will be supplied by a fixture.  However, each fixture
+    will run once for the whole function, not once per example.  Decorating a
+    fixture function is meaningless.
   * Nose works fine with hypothesis, and this is tested as part of the CI. yield based
     tests simply won't work.
   * Integration with Django's testing requires use of the :ref:`hypothesis-django` package.
     The issue is that in Django's tests' normal mode of execution it will reset the
     database one per test rather than once per example, which is not what you want.
-
-Coverage works out of the box with Hypothesis (and Hypothesis has 100% branch
-coverage in its own tests). However you should probably not use Coverage, Hypothesis
-and PyPy together. Because Hypothesis does quite a lot of CPU heavy work compared
-to normal tests, it really exacerbates the performance problems the two normally
-have working together.
+  * Coverage works out of the box with Hypothesis - we use it to guide example
+    selection for user code, and Hypothesis has 100% branch coverage in its own tests.
 
 -----------------
 Optional Packages
@@ -82,10 +82,11 @@ Regularly verifying this
 ------------------------
 
 Everything mentioned above as explicitly supported is checked on every commit
-with `Travis <https://travis-ci.org/HypothesisWorks/hypothesis-python>`_ and
-`Appveyor <https://ci.appveyor.com/project/DRMacIver/hypothesis-python/>`_
-and goes green before a release happens, so when I say they're supported I
-really mean it.
+with `Travis <https://travis-ci.org/HypothesisWorks/hypothesis-python>`_,
+`Appveyor <https://ci.appveyor.com/project/DRMacIver/hypothesis-python/>`_, and
+`CircleCI <https://circleci.com/gh/HypothesisWorks/hypothesis-python>`_.
+Our continous delivery pipeline runs all of these checks before publishing
+each release, so when we say they're supported we really mean it.
 
 -------------------
 Hypothesis versions

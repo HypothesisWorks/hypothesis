@@ -26,8 +26,12 @@ import sys
 import time
 import zlib
 import base64
+import inspect
+import warnings
 import traceback
+import contextlib
 from random import Random
+from unittest import TestCase
 
 import attr
 from coverage import CoverageData
@@ -38,8 +42,8 @@ import hypothesis.strategies as st
 from hypothesis import __version__
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, DidNotReproduce, InvalidArgument, DeadlineExceeded, \
-    MultipleFailures, FailedHealthCheck, UnsatisfiedAssumption, \
-    HypothesisDeprecationWarning
+    MultipleFailures, FailedHealthCheck, HypothesisWarning, \
+    UnsatisfiedAssumption, HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
 from hypothesis._settings import Phase, Verbosity, HealthCheck, \
     PrintSettings
@@ -48,8 +52,9 @@ from hypothesis._settings import note_deprecation
 from hypothesis.executors import new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
-from hypothesis.internal.compat import ceil, hbytes, str_to_bytes, \
-    benchmark_time, get_type_hints, getfullargspec, encoded_filepath
+from hypothesis.internal.compat import ceil, hbytes, qualname, \
+    str_to_bytes, benchmark_time, get_type_hints, getfullargspec, \
+    encoded_filepath, bad_django_TestCase
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.escalation import is_hypothesis_file, \
@@ -878,6 +883,23 @@ class StateForActualGivenExecution(object):
             report('Flaky example! ' + message)
 
 
+@contextlib.contextmanager
+def fake_subTest(self, msg=None, **__):
+    """Monkeypatch for `unittest.TestCase.subTest` during `@given`.
+
+    If we don't patch this out, each failing example is reported as a
+    seperate failing test by the unittest test runner, which is
+    obviously incorrect. We therefore replace it for the duration with
+    this version.
+    """
+    warnings.warn(
+        'subTest per-example reporting interacts badly with Hypothesis '
+        'trying hundreds of examples, so we disable it for the duration of '
+        'any test that uses `@given`.', HypothesisWarning, stacklevel=2
+    )
+    yield
+
+
 def given(*given_arguments, **given_kwargs):
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
@@ -885,6 +907,11 @@ def given(*given_arguments, **given_kwargs):
     This is the main entry point to Hypothesis.
     """
     def run_test_with_generator(test):
+        if inspect.isclass(test):
+            # Provide a meaningful error to users, instead of exceptions from
+            # internals that assume we're dealing with a function.
+            raise InvalidArgument('@given cannot be applied to a class.')
+
         generator_arguments = tuple(given_arguments)
         generator_kwargs = dict(given_kwargs)
 
@@ -942,6 +969,22 @@ def given(*given_arguments, **given_kwargs):
             )
             arguments, kwargs, test_runner, search_strategy = processed_args
 
+            runner = getattr(search_strategy, 'runner', None)
+            if isinstance(runner, TestCase) and test.__name__ in dir(TestCase):
+                msg = ('You have applied @given to the method %s, which is '
+                       'used by the unittest runner but is not itself a test.'
+                       '  This is not useful in any way.' % test.__name__)
+                fail_health_check(settings, msg, HealthCheck.not_a_test_method)
+            if bad_django_TestCase(runner):  # pragma: no cover
+                # Covered by the Django tests, but not the pytest coverage task
+                raise InvalidArgument(
+                    'You have applied @given to a method on %s, but this '
+                    'class does not inherit from the supported versions in '
+                    '`hypothesis.extra.django`.  Use the Hypothesis variants '
+                    'to ensure that each example is run in a separate '
+                    'database transaction.' % qualname(type(runner))
+                )
+
             state = StateForActualGivenExecution(
                 test_runner, search_strategy, test, settings, random,
                 had_seed=wrapped_test._hypothesis_internal_use_seed
@@ -995,7 +1038,15 @@ def given(*given_arguments, **given_kwargs):
                 return
 
             try:
-                state.run()
+                if isinstance(runner, TestCase) and hasattr(runner, 'subTest'):
+                    subTest = runner.subTest
+                    try:
+                        setattr(runner, 'subTest', fake_subTest)
+                        state.run()
+                    finally:
+                        setattr(runner, 'subTest', subTest)
+                else:
+                    state.run()
             except BaseException:
                 generated_seed = \
                     wrapped_test._hypothesis_internal_use_generated_seed

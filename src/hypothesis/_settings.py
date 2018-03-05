@@ -522,6 +522,9 @@ class HealthCheck(Enum):
     large_base_example = 7
     """Checks if the natural example to shrink towards is very large."""
 
+    not_a_test_method = 8
+    """Checks if @given has been applied to a method of unittest.TestCase."""
+
 
 @unique
 class Statistics(IntEnum):

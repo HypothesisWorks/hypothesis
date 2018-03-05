@@ -23,7 +23,7 @@ import pytest
 
 from hypothesis import given, infer, assume, reject, settings
 from hypothesis.errors import Timeout, Unsatisfiable, InvalidArgument
-from tests.common.utils import validate_deprecation
+from tests.common.utils import fails_with, validate_deprecation
 from hypothesis.strategies import booleans, integers
 
 
@@ -89,3 +89,12 @@ def test_given_twice_deprecated():
         pass
     with validate_deprecation():
         inner()
+
+
+@fails_with(InvalidArgument)
+def test_given_is_not_a_class_decorator():
+    @given(integers())
+    class test_given_is_not_a_class_decorator():
+
+        def __init__(self, i):
+            pass

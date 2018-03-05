@@ -281,7 +281,7 @@ the future behaviour by setting it to the value ``hypothesis.unlimited``.
         ...
 
 This will cause your code to run until it hits the normal Hypothesis example
-limits, regardless of how long it takes. `timeout=unlimited` will remain a
+limits, regardless of how long it takes. ``timeout=unlimited`` will remain a
 valid setting after the timeout functionality has been deprecated (but will
 then have its own deprecation cycle).
 

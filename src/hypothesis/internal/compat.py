@@ -517,3 +517,19 @@ if PY2:
         return hbytes(base(s))
 else:
     from base64 import b64decode
+
+
+_cases = []
+
+
+def bad_django_TestCase(runner):
+    if runner is None:
+        return False
+    if not _cases:
+        try:
+            from django.test import TransactionTestCase
+            from hypothesis.extra.django import HypothesisTestCase
+            _cases[:] = TransactionTestCase, HypothesisTestCase
+        except ImportError:
+            _cases[:] = type, type
+    return isinstance(runner, _cases[0]) and not isinstance(runner, _cases[1])
