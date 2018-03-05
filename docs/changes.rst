@@ -22,6 +22,12 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.48.1 - 2018-03-05
+-------------------
+
+This patch will minimize examples that would come out non-minimal in previous versions. Thanks to Kyle Reeve for this patch.
+
+-------------------
 3.48.0 - 2018-03-05
 -------------------
 
