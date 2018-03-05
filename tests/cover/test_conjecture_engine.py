@@ -1243,6 +1243,78 @@ def test_reordering_interaction_with_writing(monkeypatch):
     assert x == hbytes([0, 0, 2])
 
 
+def test_shrinking_block_pairs(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', lambda self: (
+            self.shrink_offset_pairs()
+        )
+    )
+
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer([12, 10])))
+
+    @run_to_buffer
+    def x(data):
+        m = data.draw_bits(8)
+        n = data.draw_bits(8)
+        if m == n + 2:
+            data.mark_interesting()
+    assert x == hbytes([2, 0])
+
+
+def test_non_minimal_pair_shrink(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', lambda self: (
+            self.shrink_offset_pairs()
+        )
+    )
+
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer([12, 10])))
+
+    @run_to_buffer
+    def x(data):
+        m = data.draw_bits(8)
+        if m < 5:
+            data.mark_invalid()
+        if m == 5:
+            data.mark_interesting()
+        n = data.draw_bits(8)
+        if m == n + 2:
+            data.mark_interesting()
+    assert x == hbytes([5])
+
+
+def test_buffer_changes_during_pair_shrink(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', lambda self: (
+            self.shrink_offset_pairs()
+        )
+    )
+
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer([12, 10])))
+
+    @run_to_buffer
+    def x(data):
+        m = data.draw_bits(8)
+        if m < 5:
+            data.mark_invalid()
+        if m == 5:
+            data.write(hbytes([1]))
+            data.mark_interesting()
+        n = data.draw_bits(8)
+        if m == n + 2:
+            data.mark_interesting()
+    assert x == hbytes([5, 1])
+
+
 def test_shrinking_blocks_from_common_offset(monkeypatch):
     monkeypatch.setattr(
         Shrinker, 'shrink', lambda self: (

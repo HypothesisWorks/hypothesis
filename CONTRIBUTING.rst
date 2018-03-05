@@ -177,6 +177,7 @@ their individual contributions.
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (jonty@jonty.co.uk)
 * `jwg4 <https://www.github.com/jwg4>`_
 * `kbara <https://www.github.com/kbara>`_
+* `Kyle Reeve <https://www.github.com/kreeve>`_ (krzw92@gmail.com)
 * `Lee Begg <https://www.github.com/llnz2>`_
 * `Louis Taylor <https://github.com/kragniz>`_
 * `marekventur <https://www.github.com/marekventur>`_
