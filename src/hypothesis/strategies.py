@@ -423,30 +423,17 @@ def complex_numbers(
 ):
     """Returns a strategy that generates complex numbers.
 
-    This strategy views a complex number as a vector in the complex plane
-    with some magnitude (length) and argument (angle).  If you would prefer
-    to define complex numbers in terms of real and imaginary parts, you can
-    do so with::
+    This strategy draws complex numbers with constrained magnitudes.
+    The ``min_magnitude`` and ``max_magnitude`` paramters should be
+    non-negative finite or infinite floating-point-numbers, values
+    of None correspond to zero and infinity respectively.
 
-        my_complex_numbers = builds(complex, floats(), floats())
-
-    ``min_magnitude`` and ``max_magnitude`` must be positive real numbers,
-    or None for the upper limit.
     TODO: describe inf and nan arguments here once behaviour is set
 
     Examples from this strategy shrink by shrinking their magnitude as for
     `~hypothesis.strategies.floats`, and simplifying the ratio between the
     real and imaginary parts.
     """
-
-    # Check that both magnitude bounds are positive
-    # Check that both bounds are instances of numbers.Real (see issue #814)
-    # Check that low bound is lower than high bound
-    # Check that not
-    #  max_magnitude is not None and
-    #  allow_infinity and
-    #  isfinite(max_magnitude)
-    # If allow_nan is None: allow_nan = max_magnitude is None
 
     min_magnitude = try_convert(float, min_magnitude, 'min_magnitude')
     max_magnitude = try_convert(float, max_magnitude, 'max_magnitude')
@@ -475,13 +462,12 @@ def complex_numbers(
 
     from hypothesis.searchstrategy.numbers import ComplexStrategy
 
+    # Project a tuple z = (x, y) radially onto the closed origin-centred
+    # annulus of radii a <= b.  In the case than z is (0, 0), i.e., when
+    # there is no "radially", project to (a, 0).  When z = (NaN, NaN),
+    # return z.
+
     def project(z, a, b):
-        """
-        Project a tuple z = (x, y) radially onto the closed origin-centred
-        annulus of radii a <= b.  In the case than z is (0, 0), i.e., when
-        there is no "radially", project to (a, 0).  When z = (NaN, NaN),
-        return z.
-        """
         absz = math.hypot(*z)
         if absz > b:
             return z * (b / absz)
@@ -498,7 +484,7 @@ def complex_numbers(
             tuples(
                 floats(allow_nan=allow_nan),
                 floats(allow_nan=allow_nan)
-            ).map(lambda z : project(z, min_magnitude, float(u'inf')))
+            ).map(lambda z: project(z, min_magnitude, float(u'inf')))
         )
 
     return ComplexStrategy(

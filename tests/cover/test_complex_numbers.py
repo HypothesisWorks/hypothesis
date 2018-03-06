@@ -69,3 +69,11 @@ def test_min_magnitude_zero(allow_nan):
         complex_numbers(min_magnitude=0),
         lambda x: True
     ) == 0
+
+
+@pytest.mark.parametrize('allow_nan', (True, False))
+def test_min_magnitude_none(allow_nan):
+    assert minimal(
+        complex_numbers(min_magnitude=None),
+        lambda x: True
+    ) == 0
