@@ -424,9 +424,9 @@ def complex_numbers(
     """Returns a strategy that generates complex numbers.
 
     This strategy draws complex numbers with constrained magnitudes.
-    The ``min_magnitude`` and ``max_magnitude`` paramters should be
+    The ``min_magnitude`` and ``max_magnitude`` parameters should be
     non-negative finite or infinite floating-point-numbers, values
-    of None correspond to zero and infinity respectively.
+    of None correspond to zero and infinite values respectively.
 
     TODO: describe inf and nan arguments here once behaviour is set
 
@@ -450,7 +450,8 @@ def complex_numbers(
         allow_infinity = bool(max_magnitude is None)
     elif allow_infinity and max_magnitude is not None:
         raise InvalidArgument(
-            'Cannot have allow_infinity=%r with max_magnitude' % (allow_infinity)
+            'Cannot have allow_infinity=%r with max_magnitude' %
+            (allow_infinity)
         )
 
     if allow_nan is None:
@@ -462,7 +463,7 @@ def complex_numbers(
 
     from hypothesis.searchstrategy.numbers import ComplexStrategy
 
-    # Project a tuple z = (x, y) radially onto the closed origin-centred
+    # Project a pair z = (x, y) radially onto the closed origin-centred
     # annulus of radii a <= b.  In the case than z is (0, 0), i.e., when
     # there is no "radially", project to (a, 0).  When z = (NaN, NaN),
     # return z.
@@ -491,7 +492,7 @@ def complex_numbers(
         tuples(
             floats(min_value=-max_magnitude, max_value=max_magnitude),
             floats(min_value=-max_magnitude, max_value=max_magnitude)
-        ).map(lambda z : project(z, min_magnitude, max_magnitude))
+        ).map(lambda z: project(z, min_magnitude, max_magnitude))
     )
 
 
