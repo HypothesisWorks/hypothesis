@@ -475,22 +475,31 @@ def complex_numbers(
 
     from hypothesis.searchstrategy.numbers import ComplexStrategy
 
-    if allow_nan:
-        return ComplexStrategy(
-            tuples(floats(allow_nan=True), floats(allow_nan=True))
-        )
-
-    if max_magnitude is None:
-        return ComplexStrategy(
-            tuples(floats(allow_nan=False), floats(allow_nan=False))
-        )
-
     def project(z, a, b):
+        """
+        Project a tuple z = (x, y) radially onto the closed origin-centred
+        annulus of radii a <= b.  In the case than z is (0, 0), i.e., when
+        there is no "radially", project to (a, 0).  When z = (NaN, NaN),
+        return z.
+        """
         absz = math.hypot(*z)
         if absz > b:
             return z * (b / absz)
+        elif absz < a:
+            if absz == 0:
+                return (a, 0)
+            else:
+                return z * (a / absz)
         else:
             return z
+
+    if allow_nan or max_magnitude is None:
+        return ComplexStrategy(
+            tuples(
+                floats(allow_nan=allow_nan),
+                floats(allow_nan=allow_nan)
+            ).map(lambda z : project(z, min_magnitude, float(u'inf')))
+        )
 
     return ComplexStrategy(
         tuples(

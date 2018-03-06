@@ -28,12 +28,12 @@ from hypothesis.strategies import complex_numbers
 
 
 def test_minimal_complex_number_is_zero():
-    assert minimal(complex_numbers(), lambda x: True) == 0 + 0j
+    assert minimal(complex_numbers(), lambda x: True) == 0
 
 
 def test_can_minimal_standard_complex_numbers():
-    assert minimal(complex_numbers(), lambda x: x.imag != 0) == 0 + 1j
-    assert minimal(complex_numbers(), lambda x: x.real != 0) == 1 + 0j
+    assert minimal(complex_numbers(), lambda x: x.imag != 0) == 1j
+    assert minimal(complex_numbers(), lambda x: x.real != 0) == 1
 
 
 @pytest.mark.parametrize('k', range(-5, 5))
@@ -42,3 +42,30 @@ def test_max_magnitude_respected(k):
     assert abs(
         minimal(complex_numbers(max_magnitude=m), lambda x: True)
     ) <= m
+
+
+def test_max_magnitude_zero():
+    assert minimal(
+        complex_numbers(max_magnitude=0),
+        lambda x: True
+    ) == 0
+
+
+@pytest.mark.parametrize('k', range(-5, 5))
+@pytest.mark.parametrize('allow_nan', (True, False))
+def test_min_magnitude_respected(k, allow_nan):
+    m = 10**k
+    assert abs(
+        minimal(
+            complex_numbers(min_magnitude=m, allow_nan=allow_nan),
+            lambda x: True
+        )
+    ) >= m
+
+
+@pytest.mark.parametrize('allow_nan', (True, False))
+def test_min_magnitude_zero(allow_nan):
+    assert minimal(
+        complex_numbers(min_magnitude=0),
+        lambda x: True
+    ) == 0
