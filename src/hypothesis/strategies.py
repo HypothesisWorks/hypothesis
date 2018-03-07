@@ -463,20 +463,24 @@ def complex_numbers(
 
     from hypothesis.searchstrategy.numbers import ComplexStrategy
 
+    def tuple_scaled(z, mu):
+        return tuple([mu * zi for zi in z])
+
     # Project a pair z = (x, y) radially onto the closed origin-centred
     # annulus of radii a <= b.  In the case than z is (0, 0), i.e., when
     # there is no "radially", project to (a, 0).  When z = (NaN, NaN),
     # return z.
 
     def project(z, a, b):
+        print(z)
         absz = math.hypot(*z)
         if absz > b:
-            return z * (b / absz)
+            return tuple_scaled(z, b / absz)
         elif absz < a:
             if absz == 0:
                 return (a, 0)
             else:
-                return z * (a / absz)
+                return tuple_scaled(z, a / absz)
         else:
             return z
 
