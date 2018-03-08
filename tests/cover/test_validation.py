@@ -23,7 +23,7 @@ from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import fails_with
 from hypothesis.strategies import sets, lists, floats, booleans, \
-    integers, recursive, frozensets, complex_numbers
+    integers, recursive, frozensets
 
 
 def test_errors_when_given_varargs():
@@ -114,47 +114,6 @@ def test_float_range_and_allow_nan_cannot_both_be_enabled():
 def test_float_finite_range_and_allow_infinity_cannot_both_be_enabled():
     with pytest.raises(InvalidArgument):
         floats(0, 1, allow_infinity=True).example()
-
-
-def test_complex_numbers_magnitude_nan():
-    with pytest.raises(InvalidArgument):
-        complex_numbers(min_magnitude=float(u'nan')).example()
-    with pytest.raises(InvalidArgument):
-        complex_numbers(max_magnitude=float(u'nan')).example()
-
-
-def test_complex_numbers_magnitude_negative():
-    with pytest.raises(InvalidArgument):
-        complex_numbers(min_magnitude=-1).example()
-    with pytest.raises(InvalidArgument):
-        complex_numbers(max_magnitude=-1).example()
-
-
-def test_complex_numbers_magnitude_range_empty():
-    with pytest.raises(InvalidArgument):
-        complex_numbers(min_magnitude=3, max_magnitude=2).example()
-
-
-def test_complex_numbers_magnitude_range_singleton():
-    complex_numbers(min_magnitude=3, max_magnitude=3).example()
-
-
-def test_complex_numbers_magnitude_zero():
-    complex_numbers(max_magnitude=0).example()
-
-
-def test_complex_numbers_max_magnitude_finite_allow_inf():
-    with pytest.raises(InvalidArgument):
-        complex_numbers(max_magnitude=2, allow_infinity=True).example()
-
-
-def test_complex_numbers_max_magnitude_infinite_allow_inf():
-    complex_numbers(max_magnitude=float(u'inf'), allow_infinity=True).example()
-
-
-def test_complex_numbers_max_magnitude_allow_nan():
-    with pytest.raises(InvalidArgument):
-        complex_numbers(max_magnitude=2, allow_nan=True).example()
 
 
 def test_does_not_error_if_min_size_is_bigger_than_default_size():
