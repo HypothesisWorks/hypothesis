@@ -78,6 +78,7 @@ def test_min_magnitude_none(allow_nan):
         lambda x: True
     ) == 0
 
+
 def test_can_minimal_constrained_complex_numbers():
     assert minimal(
         # expect the two case to behave the same, but not ...

@@ -468,8 +468,8 @@ def complex_numbers(
 
     # Project a pair z = (x, y) radially onto the closed origin-centred
     # annulus of radii a <= b.  In the case than z is (0, 0), i.e., when
-    # there is no "radially", project to (a, 0).  When z = (NaN, NaN),
-    # return z.
+    # there is no "radially", project to (a, 0).  When a component of z
+    # is NaN tnen so is |z|, so return z.
 
     def project(z, a, b):
         print(z)
@@ -489,14 +489,20 @@ def complex_numbers(
             tuples(
                 floats(allow_nan=allow_nan),
                 floats(allow_nan=allow_nan)
-            ).map(lambda z: project(z, min_magnitude, float(u'inf')))
+            ).map(
+                lambda z:
+                project(z, min_magnitude, float(u'inf'))
+            )
         )
 
     return ComplexStrategy(
         tuples(
             floats(min_value=-max_magnitude, max_value=max_magnitude),
             floats(min_value=-max_magnitude, max_value=max_magnitude)
-        ).map(lambda z: project(z, min_magnitude, max_magnitude))
+        ).map(
+            lambda z:
+            project(z, min_magnitude, max_magnitude)
+        )
     )
 
 
