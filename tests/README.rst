@@ -85,9 +85,6 @@ Still here?  Here's a note on what to expect in each directory.
     Tests for the Django extra.  Includes a toy application, to give us lots
     of models to generate.
 
-``fakefactory/``
-    Tests for the deprecated Faker extra.
-
 ``nocover/``
     More expensive and longer-running tests, typically used to test trickier
     interactions or check for regressions in expensive bugs.  Lots of tests
