@@ -24,7 +24,7 @@ import pytest
 from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import checks_deprecated_behaviour
-from hypothesis.strategies import text, lists, booleans, streaming
+from hypothesis.strategies import text, lists, booleans
 from hypothesis.searchstrategy.streams import Stream
 
 
@@ -49,15 +49,6 @@ def loop(x):
 def test_can_stream_infinite():
     s = Stream(loop(False))
     assert list(islice(s, 100)) == [False] * 100
-
-
-@checks_deprecated_behaviour
-def test_fetched_repr_is_in_stream_repr():
-    @given(streaming(text()))
-    def test(s):
-        assert repr(s) == u'Stream(...)'
-        assert repr(next(iter(s))) in repr(s)
-    test()
 
 
 def test_cannot_thunk_past_end_of_list():
@@ -95,21 +86,9 @@ def test_can_map():
     assert list(x) == [2, 4, 6]
 
 
-@checks_deprecated_behaviour
-def test_streaming_errors_in_find():
-    with pytest.raises(InvalidArgument):
-        find(streaming(booleans()), lambda x: True)
-
-
 def test_default_stream_is_empty():
     assert list(Stream()) == []
 
 
 def test_can_slice_streams():
     assert list(Stream([1, 2, 3])[:2]) == [1, 2]
-
-
-@checks_deprecated_behaviour
-def test_validates_argument():
-    with pytest.raises(InvalidArgument):
-        streaming(bool).example()
