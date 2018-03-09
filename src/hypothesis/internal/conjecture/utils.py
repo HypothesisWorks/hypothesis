@@ -125,14 +125,14 @@ def check_sample(values):
         note_deprecation(
             ('Cannot sample from %r, not a sequence.  ' % (values,)) +
             'Hypothesis goes to some length to ensure that sampling an '
-            'element from a collection (with `sampled_from` or `choices`) is '
-            'replayable and can be minimised.  To replay a saved example, '
-            'the sampled values must have the same iteration order on every '
-            'run - ruling out sets, dicts, etc due to hash randomisation.  '
-            'Most cases can simply use `sorted(values)`, but mixed types or '
-            'special values such as math.nan require careful handling - and '
-            'note that when simplifying an example, Hypothesis treats '
-            'earlier values as simpler.')
+            'element from a collection (with `sampled_from`) is replayable and '
+            'can be minimised.  To replay a saved example, the sampled values '
+            'must have the same iteration order on every run - ruling out '
+            'sets, dicts, etc due to hash randomisation.  Most cases can use '
+            '`sorted(values)`, but mixed types or special values such as '
+            'math.nan require careful handling - and note that when '
+            'simplifying an example, Hypothesis treats earlier values as '
+            'simpler.')
     return tuple(values)
 
 
