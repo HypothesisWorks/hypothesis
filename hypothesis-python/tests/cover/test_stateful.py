@@ -50,7 +50,6 @@ from hypothesis.stateful import (
 from hypothesis.strategies import (
     binary,
     booleans,
-    choices,
     integers,
     just,
     lists,
@@ -470,18 +469,6 @@ IntAdder.define_rule(
     function=lambda self, x, y: x,
     arguments={u"x": integers(), u"y": Bundle(u"ints")},
 )
-
-
-@checks_deprecated_behaviour
-def test_can_choose_in_a_machine():
-    class ChoosingMachine(GenericStateMachine):
-        def steps(self):
-            return choices()
-
-        def execute_step(self, choices):
-            choices([1, 2, 3])
-
-    run_state_machine_as_test(ChoosingMachine)
 
 
 TestGoodSets = GoodSet.TestCase
