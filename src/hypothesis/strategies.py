@@ -47,7 +47,6 @@ __all__ = [
     'nothing',
     'just', 'one_of',
     'none',
-    'choices',
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
     'characters', 'text', 'from_regex', 'binary', 'uuids',
@@ -1550,60 +1549,6 @@ def shared(base, key=None):
     """
     from hypothesis.searchstrategy.shared import SharedStrategy
     return SharedStrategy(base, key)
-
-
-@defines_strategy
-def choices():
-    """Strategy that generates a function that behaves like random.choice.
-
-    Will note choices made for reproducibility.
-
-    .. deprecated:: 3.15.0
-
-        Use :func:`data() <hypothesis.strategies.data>` with
-        :func:`sampled_from() <hypothesis.strategies.sampled_from>` instead.
-
-    Examples from this strategy shrink by making each choice function return
-    an earlier value in the sequence passed to it.
-    """
-    from hypothesis.control import note, current_build_context
-    from hypothesis.internal.conjecture.utils import choice, check_sample
-
-    note_deprecation(
-        'choices() has been deprecated. Use the data() strategy instead and '
-        'replace its usage with data.draw(sampled_from(elements))) calls.'
-    )
-
-    class Chooser(object):
-
-        def __init__(self, build_context, data):
-            self.build_context = build_context
-            self.data = data
-            self.choice_count = 0
-
-        def __call__(self, values):
-            if not values:
-                raise IndexError('Cannot choose from empty sequence')
-            result = choice(self.data, check_sample(values))
-            with self.build_context.local():
-                self.choice_count += 1
-                note('Choice #%d: %r' % (self.choice_count, result))
-            return result
-
-        def __repr__(self):
-            return 'choice'
-
-    class ChoiceStrategy(SearchStrategy):
-        supports_find = False
-
-        def do_draw(self, data):
-            data.can_reproduce_example_from_repr = False
-            return Chooser(current_build_context(), data)
-
-    return shared(
-        ChoiceStrategy(),
-        key='hypothesis.strategies.chooser.choice_function'
-    )
 
 
 @cacheable
