@@ -18,7 +18,6 @@
 from __future__ import division, print_function, absolute_import
 
 from random import Random
-from itertools import islice
 
 
 class RandomWithSeed(Random):
