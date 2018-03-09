@@ -47,7 +47,7 @@ __all__ = [
     'nothing',
     'just', 'one_of',
     'none',
-    'choices', 'streaming',
+    'choices',
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
     'characters', 'text', 'from_regex', 'binary', 'uuids',
