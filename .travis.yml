@@ -10,6 +10,7 @@ os:
 branches:
   only:
     - "master"
+    - "v4"
 
 cache:
     apt: true
