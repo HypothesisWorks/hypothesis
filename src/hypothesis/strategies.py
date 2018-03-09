@@ -509,10 +509,19 @@ def lists(
     list, and by shrinking each individual element of the list.
     """
     check_valid_sizes(min_size, average_size, max_size)
-    if elements is None or (max_size is not None and max_size <= 0):
-        if max_size is None or max_size > 0:
+    if elements is None:
+        note_deprecation(
+            'Passing a strategy for `elements` of the list will be required '
+            'in a future version of Hypothesis.  To create lists that are '
+            'always empty, use `builds(list)` or `lists(nothing())`.'
+        )
+        if min_size or average_size or max_size:
+            # Checked internally for lists with an elements strategy, but
+            # we're about to skip that and return builds(list) instead...
             raise InvalidArgument(
-                u'Cannot create non-empty lists without an element type'
+                'Cannot create a non-empty collection (min_size=%r, '
+                'average_size=%r, max_size=%r) without elements.'
+                % (min_size, average_size, max_size)
             )
         else:
             return builds(list)
@@ -570,6 +579,12 @@ def sets(elements=None, min_size=None, average_size=None, max_size=None):
     Examples from this strategy shrink by trying to remove elements from the
     set, and by shrinking each individual element of the set.
     """
+    if elements is None:
+        note_deprecation(
+            'Passing a strategy for `elements` of the set will be required '
+            'in a future version of Hypothesis.  To create sets that are '
+            'always empty, use `builds(set)` or `sets(nothing())`.'
+        )
     return lists(
         elements=elements, min_size=min_size, average_size=average_size,
         max_size=max_size, unique=True
@@ -581,6 +596,13 @@ def sets(elements=None, min_size=None, average_size=None, max_size=None):
 def frozensets(elements=None, min_size=None, average_size=None, max_size=None):
     """This is identical to the sets function but instead returns
     frozensets."""
+    if elements is None:
+        note_deprecation(
+            'Passing a strategy for `elements` of the frozenset will be '
+            'required in a future version of Hypothesis.  To create '
+            'frozensets that are always empty, use `builds(frozenset)` '
+            'or `frozensets(nothing())`.'
+        )
     return lists(
         elements=elements, min_size=min_size, average_size=average_size,
         max_size=max_size, unique=True
@@ -597,6 +619,13 @@ def iterables(elements=None, min_size=None, average_size=None, max_size=None,
     which cannot be indexed and do not have a fixed length. This ensures
     that you do not accidentally depend on sequence behaviour.
     """
+    if elements is None:
+        note_deprecation(
+            'Passing a strategy for `elements` of the iterable will be '
+            'required in a future version of Hypothesis.  To create '
+            'iterables that are always empty, use `iterables(nothing())`.'
+        )
+
     @implements_iterator
     class PrettyIter(object):
         def __init__(self, values):
