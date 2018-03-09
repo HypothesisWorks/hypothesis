@@ -56,7 +56,6 @@ extras = {
     "datetime": ["pytz>=2014.1"],
     "pytz": ["pytz>=2014.1"],
     "dateutil": ["python-dateutil>=1.4"],
-    "fakefactory": ["Faker>=0.7"],
     "numpy": ["numpy>=1.9.0"],
     "pandas": ["pandas>=0.19"],
     "pytest": ["pytest>=3.0"],
@@ -66,7 +65,6 @@ extras = {
     "django": ["pytz", "django>=1.11"],
 }
 
-extras["faker"] = extras["fakefactory"]
 extras["all"] = sorted(sum(extras.values(), []))
 
 

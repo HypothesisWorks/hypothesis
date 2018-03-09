@@ -2664,7 +2664,7 @@ more pleasant and may shrink large examples slightly faster.
 3.42.0 - 2017-12-09
 -------------------
 
-This release deprecates :ref:`faker-extra`, which was designed as a transition
+This release deprecates ``faker-extra``, which was designed as a transition
 strategy but does not support example shrinking or coverage-guided discovery.
 
 .. _v3.41.0:
