@@ -24,11 +24,3 @@ hypothesis[pytz]
 
 .. automodule:: hypothesis.extra.pytz
    :members:
-
-
---------------------
-hypothesis[datetime]
---------------------
-
-.. automodule:: hypothesis.extra.datetime
-   :members:
