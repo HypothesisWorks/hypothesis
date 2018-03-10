@@ -62,15 +62,11 @@ class ListStrategy(SearchStrategy):
     """A strategy for lists which takes a strategy for its elements and the
     allowed lengths, and generates lists with the correct size and contents."""
 
-    def __init__(
-        self,
-        elements, average_size=50.0, min_size=0, max_size=float('inf')
-    ):
+    def __init__(self, elements, min_size=0, max_size=float('inf')):
         SearchStrategy.__init__(self)
-        self.average_size = average_size
         self.min_size = min_size or 0
         self.max_size = max_size or float('inf')
-        assert 0 <= min_size <= average_size <= max_size
+        assert 0 <= min_size <= max_size
         self.element_strategy = elements
 
     def calc_label(self):
@@ -105,7 +101,6 @@ class ListStrategy(SearchStrategy):
         elements = cu.many(
             data,
             min_size=self.min_size, max_size=self.max_size,
-            average_size=self.average_size
         )
         result = []
         while elements.more():
@@ -113,17 +108,16 @@ class ListStrategy(SearchStrategy):
         return result
 
     def __repr__(self):
-        return '%s(%r, min_size=%r, average_size=%r, max_size=%r)' % (
+        return '%s(%r, min_size=%r, max_size=%r)' % (
             self.__class__.__name__, self.element_strategy, self.min_size,
-            self.average_size, self.max_size
+            self.max_size
         )
 
 
 class UniqueListStrategy(ListStrategy):
 
-    def __init__(self, elements, min_size, max_size, average_size, key):
-        super(UniqueListStrategy, self).__init__(
-            elements, average_size, min_size, max_size)
+    def __init__(self, elements, min_size, max_size, key):
+        super(UniqueListStrategy, self).__init__(elements, min_size, max_size)
         self.key = key
 
     def do_draw(self, data):
@@ -134,7 +128,6 @@ class UniqueListStrategy(ListStrategy):
         elements = cu.many(
             data,
             min_size=self.min_size, max_size=self.max_size,
-            average_size=self.average_size
         )
         seen = set()
         result = []

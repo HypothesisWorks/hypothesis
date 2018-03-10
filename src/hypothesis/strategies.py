@@ -494,9 +494,6 @@ def sampled_from(elements):
     return SampledFromStrategy(values)
 
 
-_AVERAGE_LIST_LENGTH = 5.0
-
-
 @cacheable
 @defines_strategy
 def lists(
@@ -508,9 +505,9 @@ def lists(
     None). If max_size is 0 then elements may be None and only the empty list
     will be drawn.
 
-    average_size may be used as a size hint to roughly control the size
-    of the list but it may not be the actual average of sizes you get, due
-    to a variety of factors.
+    The average_size argument is deprecated.  This hint is a holdout from
+    earlier versions where Hypothesis needed help to generate data in sensible
+    sizes, but subsequent improvements have rendered it obsolete.
 
     If unique is True (or something that evaluates to True), we compare direct
     object equality, as if unique_by was `lambda x: x`. This comparison only
@@ -538,8 +535,9 @@ def lists(
                 'average_size=%r, max_size=%r) without elements.'
                 % (min_size, average_size, max_size)
             )
-        else:
-            return builds(list)
+        return builds(list)
+    if max_size == 0:
+        return builds(list)
     check_strategy(elements)
     if unique:
         if unique_by is not None:
@@ -557,29 +555,16 @@ def lists(
     if max_size is None:
         max_size = float('inf')
 
-    if average_size is None:
-        average_size = max(
-            _AVERAGE_LIST_LENGTH,
-            min_size * 2
-        )
-        if max_size < float('inf'):
-            average_size = min(average_size, 0.5 * (min_size + max_size))
-
     from hypothesis.searchstrategy.collections import ListStrategy, \
         UniqueListStrategy
     if unique_by is not None:
         return UniqueListStrategy(
             elements=elements,
-            average_size=average_size,
             max_size=max_size,
             min_size=min_size,
             key=unique_by
         )
-    else:
-        return ListStrategy(
-            elements, average_size=average_size,
-            min_size=min_size, max_size=max_size,
-        )
+    return ListStrategy(elements, min_size=min_size, max_size=max_size)
 
 
 @cacheable
@@ -704,7 +689,7 @@ def dictionaries(
 
     return lists(
         tuples(keys, values),
-        min_size=min_size, average_size=average_size, max_size=max_size,
+        min_size=min_size, max_size=max_size,
         unique_by=lambda x: x[0]
     ).map(dict_class)
 
@@ -835,12 +820,17 @@ def text(
     characters). If it is an empty collection this will only generate empty
     strings.
 
-    min_size, max_size and average_size have the usual interpretations.
+    min_size and max_size have the usual interpretations.
+
+    The average_size argument is deprecated.  This hint is a holdout from
+    earlier versions where Hypothesis needed help to generate data in sensible
+    sizes, but subsequent improvements have rendered it obsolete.
 
     Examples from this strategy shrink towards shorter strings, and with the
     characters in the text shrinking as per the alphabet strategy.
     """
     from hypothesis.searchstrategy.strings import StringStrategy
+    check_valid_sizes(min_size, average_size, max_size)
     if alphabet is None:
         char_strategy = characters(blacklist_categories=('Cs',))
     elif not alphabet:
@@ -856,8 +846,7 @@ def text(
     else:
         char_strategy = sampled_from(list(map(text_type, alphabet)))
     return StringStrategy(lists(
-        char_strategy, average_size=average_size, min_size=min_size,
-        max_size=max_size
+        char_strategy, min_size=min_size, max_size=max_size
     ))
 
 
@@ -901,7 +890,11 @@ def binary(
     """Generates the appropriate binary type (str in python 2, bytes in python
     3).
 
-    min_size, average_size and max_size have the usual interpretations.
+    min_size and max_size have the usual interpretations.
+
+    The average_size argument is deprecated.  This hint is a holdout from
+    earlier versions where Hypothesis needed help to generate data in sensible
+    sizes, but subsequent improvements have rendered it obsolete.
 
     Examples from this strategy shrink towards smaller strings and lower byte
     values.
@@ -914,7 +907,7 @@ def binary(
     return BinaryStringStrategy(
         lists(
             integers(min_value=0, max_value=255),
-            average_size=average_size, min_size=min_size, max_size=max_size
+            min_size=min_size, max_size=max_size
         )
     )
 

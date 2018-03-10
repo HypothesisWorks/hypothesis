@@ -362,10 +362,16 @@ class many(object):
         add_stuff_to_result()
     """
 
-    def __init__(self, data, min_size, max_size, average_size):
+    def __init__(self, data, min_size, max_size):
         self.min_size = min_size
         self.max_size = max_size
         self.data = data
+        average_size = min(
+            # Should generate at least an increment above minimum,
+            max(min_size * 2, min_size + 5),
+            # but not more than the midpoint between minimum and maximum
+            0.5 * (min_size + max_size),
+        )
         self.stopping_value = 1 - 1.0 / (1 + average_size)
         self.count = 0
         self.rejections = 0

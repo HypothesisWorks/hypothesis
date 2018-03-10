@@ -122,7 +122,6 @@ class ValueIndexStrategy(st.SearchStrategy):
 
         iterator = cu.many(
             data, min_size=self.min_size, max_size=self.max_size,
-            average_size=(self.min_size + self.max_size) / 2
         )
 
         while iterator.more():

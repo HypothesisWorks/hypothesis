@@ -17,8 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
-
 import numpy as np
 
 import hypothesis.strategies as st
@@ -132,7 +130,6 @@ class ArrayStrategy(SearchStrategy):
                 elements = cu.many(
                     data,
                     min_size=self.array_size, max_size=self.array_size,
-                    average_size=self.array_size
                 )
                 i = 0
                 while elements.more():
@@ -160,10 +157,6 @@ class ArrayStrategy(SearchStrategy):
             elements = cu.many(
                 data,
                 min_size=0, max_size=self.array_size,
-                # sqrt isn't chosen for any particularly principled reason. It
-                # just grows reasonably quickly but sublinearly, and for small
-                # arrays it represents a decent fraction of the array size.
-                average_size=math.sqrt(self.array_size),
             )
 
             needs_fill = np.full(self.array_size, True)
