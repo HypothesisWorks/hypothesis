@@ -78,8 +78,7 @@ Still here?  Here's a note on what to expect in each directory.
     are therefore good that they're in here!
 
 ``datetime/``
-    Tests for the deprecated ``hypothesis.extra.datetime`` module, which
-    depends on the ``pytz`` package.
+    Tests which depend on the ``pytz`` or ``dateutil`` packages for timezones.
 
 ``django/``
     Tests for the Django extra.  Includes a toy application, to give us lots

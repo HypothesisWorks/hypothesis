@@ -27,6 +27,3 @@ There are separate pages for :doc:`django` and :doc:`numpy`.
 
 .. automodule:: hypothesis.extra.dateutil
    :members:
-
-.. automodule:: hypothesis.extra.datetime
-   :members:
