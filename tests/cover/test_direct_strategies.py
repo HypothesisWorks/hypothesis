@@ -105,13 +105,11 @@ def fn_ktest(*fnkwargs):
     (ds.fractions, {'max_denominator': 0}),
     (ds.fractions, {'max_denominator': 1.5}),
     (ds.fractions, {'min_value': complex(1, 2)}),
-    (ds.lists, {}),
     (ds.lists, {'average_size': '5'}),
     (ds.lists, {'average_size': float('nan')}),
     (ds.lists, {'min_size': 10, 'max_size': 9}),
     (ds.lists, {'min_size': -10, 'max_size': -9}),
     (ds.lists, {'max_size': -9}),
-    (ds.lists, {'max_size': 10}),
     (ds.lists, {'min_size': -10}),
     (ds.lists, {'max_size': 10, 'average_size': 20}),
     (ds.lists, {'min_size': 1.0, 'average_size': 0.5}),
@@ -180,7 +178,7 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.fractions, {'min_value': fractions.Fraction(1, 2)}),
     (ds.fractions, {'min_value': '1/2', 'max_denominator': 1}),
     (ds.fractions, {'max_value': '1/2', 'max_denominator': 1}),
-    (ds.lists, {'max_size': 0}),
+    (ds.lists, {'elements': ds.nothing(), 'max_size': 0}),
     (ds.lists, {'elements': ds.integers()}),
     (ds.lists, {'elements': ds.integers(), 'max_size': 5}),
     (ds.lists, {'elements': ds.booleans(), 'min_size': 5}),
@@ -388,3 +386,14 @@ def test_iterables_are_exhaustible(it):
 
 def test_minimal_iterable():
     assert list(find(ds.iterables(ds.integers()), lambda x: True)) == []
+
+
+@checks_deprecated_behaviour
+def test_iterables_without_elements_is_deprecated():
+    assert list(ds.iterables().example()) == []
+
+
+@checks_deprecated_behaviour
+def test_lists_wit_max_size_no_elements_is_deprecated_and_error():
+    with pytest.raises(InvalidArgument):
+        ds.lists(max_size=1).example()
