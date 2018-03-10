@@ -33,6 +33,7 @@ skip_commits:
 branches:
   only:
     - master
+    - v4
     - /^\d+\.\d+\.\d+$/
 
 artifacts:
