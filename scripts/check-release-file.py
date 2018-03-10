@@ -26,9 +26,10 @@ import hypothesistooling as tools
 
 sys.path.append(os.path.dirname(__file__))  # noqa
 
+DO_RELEASE_CHECK = os.environ.get('TRAVIS_BRANCH', 'master') == 'master'
 
 if __name__ == '__main__':
-    if tools.has_source_changes():
+    if DO_RELEASE_CHECK and tools.has_source_changes():
         if not tools.has_release():
             print(
                 'There are source changes but no RELEASE.rst. Please create '
@@ -36,3 +37,6 @@ if __name__ == '__main__':
             )
             sys.exit(1)
         tools.parse_release_file()
+    else:
+        print('Skipping release check, because this is not the master branch '
+              'or the pull request is not targeting the master branch.')
