@@ -47,7 +47,7 @@ __all__ = [
     'nothing',
     'just', 'one_of',
     'none',
-    'choices', 'streaming',
+    'choices',
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
     'characters', 'text', 'from_regex', 'binary', 'uuids',
@@ -663,30 +663,6 @@ def dictionaries(
         min_size=min_size, average_size=average_size, max_size=max_size,
         unique_by=lambda x: x[0]
     ).map(dict_class)
-
-
-@defines_strategy
-def streaming(elements):
-    """Generates an infinite stream of values where each value is drawn from
-    elements.
-
-    The result is iterable (the iterator will never terminate) and
-    indexable.
-
-    Examples from this strategy shrink by trying to shrink each value drawn.
-
-    .. deprecated:: 3.15.0
-        Use :func:`data() <hypothesis.strategies.data>` instead.
-    """
-    note_deprecation(
-        'streaming() has been deprecated. Use the data() strategy instead and '
-        'replace stream iteration with data.draw() calls.'
-    )
-
-    check_strategy(elements)
-
-    from hypothesis.searchstrategy.streams import StreamStrategy
-    return StreamStrategy(elements)
 
 
 @cacheable
