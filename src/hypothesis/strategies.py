@@ -444,7 +444,7 @@ def tuples(*args):
         check_strategy(arg)
 
     from hypothesis.searchstrategy.collections import TupleStrategy
-    return TupleStrategy(args, tuple)
+    return TupleStrategy(args)
 
 
 @defines_strategy

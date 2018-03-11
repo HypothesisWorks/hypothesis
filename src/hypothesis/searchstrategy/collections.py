@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import OrderedDict, hbytes
+from hypothesis.internal.compat import OrderedDict
 from hypothesis.internal.conjecture.utils import combine_labels
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
@@ -29,11 +29,9 @@ class TupleStrategy(SearchStrategy):
     """A strategy responsible for fixed length tuples based on heterogenous
     strategies for each of their elements."""
 
-    def __init__(self,
-                 strategies, tuple_type):
+    def __init__(self, strategies):
         SearchStrategy.__init__(self)
-        strategies = tuple(strategies)
-        self.element_strategies = strategies
+        self.element_strategies = tuple(strategies)
 
     def do_validate(self):
         for s in self.element_strategies:
@@ -48,38 +46,21 @@ class TupleStrategy(SearchStrategy):
             tuple_string = '%s,' % (repr(self.element_strategies[0]),)
         else:
             tuple_string = ', '.join(map(repr, self.element_strategies))
-        return 'TupleStrategy((%s))' % (
-            tuple_string,
-        )
+        return 'TupleStrategy((%s))' % (tuple_string,)
 
     def calc_has_reusable_values(self, recur):
         return all(recur(e) for e in self.element_strategies)
 
-    def newtuple(self, xs):
-        """Produce a new tuple of the correct type."""
-        return tuple(xs)
-
     def do_draw(self, data):
-        return self.newtuple(
-            data.draw(e) for e in self.element_strategies
-        )
+        return tuple(data.draw(e) for e in self.element_strategies)
 
     def calc_is_empty(self, recur):
         return any(recur(e) for e in self.element_strategies)
 
 
-TERMINATOR = hbytes(b'\0')
-
-
 class ListStrategy(SearchStrategy):
-    """A strategy for lists which takes an intended average length and a
-    strategy for each of its element types and generates lists containing any
-    of those element types.
-
-    The conditional distribution of the length is geometric, and the
-    conditional distribution of each parameter is whatever their
-    strategies define.
-    """
+    """A strategy for lists which takes a strategy for its elements and the
+    allowed lengths, and generates lists with the correct size and contents."""
 
     def __init__(
         self,
@@ -140,11 +121,7 @@ class ListStrategy(SearchStrategy):
 
 class UniqueListStrategy(ListStrategy):
 
-    def __init__(
-        self,
-        elements, min_size, max_size, average_size,
-        key
-    ):
+    def __init__(self, elements, min_size, max_size, average_size, key):
         super(UniqueListStrategy, self).__init__(
             elements, average_size, min_size, max_size)
         self.key = key
@@ -198,7 +175,7 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
                 ))
         super(FixedKeysDictStrategy, self).__init__(
             strategy=TupleStrategy(
-                (strategy_dict[k] for k in self.keys), tuple
+                (strategy_dict[k] for k in self.keys)
             )
         )
 
