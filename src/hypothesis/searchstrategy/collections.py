@@ -104,6 +104,13 @@ class ListStrategy(SearchStrategy):
                 'Cannot create non-empty lists with elements drawn from '
                 'strategy %r because it has no values.') % (
                 self.element_strategy,))
+        if self.element_strategy.is_empty and 0 < self.max_size < float('inf'):
+            from hypothesis._settings import note_deprecation
+            note_deprecation(
+                'Cannot create a collection of max_size=%r, because no '
+                'elements can be drawn from the element strategy %r'
+                % (self.max_size, self.element_strategy)
+            )
 
     def calc_is_empty(self, recur):
         if self.min_size == 0:

@@ -397,3 +397,8 @@ def test_iterables_without_elements_is_deprecated():
 def test_lists_wit_max_size_no_elements_is_deprecated_and_error():
     with pytest.raises(InvalidArgument):
         ds.lists(max_size=1).example()
+
+
+@checks_deprecated_behaviour
+def test_empty_elements_with_max_size_is_deprecated():
+    ds.lists(ds.nothing(), max_size=1).example()
