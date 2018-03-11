@@ -36,7 +36,6 @@ from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats
 from hypothesis.internal.charmap import as_general_categories
-from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
 from hypothesis.internal.validation import check_type, try_convert, \
@@ -1335,21 +1334,16 @@ def permutations(values):
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(
-    min_datetime='min_value',
-    max_datetime='max_value',
-)
 def datetimes(
-    min_value=dt.datetime.min, max_value=dt.datetime.max,
-    timezones=none(),
-    min_datetime=None, max_datetime=None,
+    min_value=dt.datetime.min, max_value=dt.datetime.max, timezones=none(),
 ):
     """A strategy for generating datetimes, which may be timezone-aware.
 
     This strategy works by drawing a naive datetime between ``min_datetime``
     and ``max_datetime``, which must both be naive (have no timezone).
 
-    ``timezones`` must be a strategy that generates tzinfo objects (or None,
+    ``timezones`` must be a strategy that generates
+    :class:`~python:datetime.tzinfo` objects (or None,
     which is valid for naive datetimes).  A value drawn from this strategy
     will be added to a naive datetime, and the resulting tz-aware datetime
     returned.
@@ -1360,8 +1354,8 @@ def datetimes(
         adjustments, etc.  This is intentional, as malformed timestamps are a
         common source of bugs.
 
-    :py:func:`hypothesis.extra.timezones` requires the ``pytz`` package, but
-    provides all timezones in the Olsen database.  If you also want to allow
+    :py:func:`hypothesis.extra.timezones` requires the :pypi:`pytz` package,
+    but provides all timezones in the Olsen database.  If you want to allow
     naive datetimes, combine strategies like ``none() | timezones()``.
 
     Alternatively, you can create a list of the timezones you wish to allow
@@ -1400,14 +1394,7 @@ def datetimes(
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(
-    min_date='min_value',
-    max_date='max_value',
-)
-def dates(
-    min_value=dt.date.min, max_value=dt.date.max,
-    min_date=None, max_date=None,
-):
+def dates(min_value=dt.date.min, max_value=dt.date.max):
     """A strategy for dates between ``min_date`` and ``max_date``.
 
     Examples from this strategy shrink towards January 1st 2000.
@@ -1423,14 +1410,7 @@ def dates(
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(
-    min_time='min_value',
-    max_time='max_value',
-)
-def times(
-    min_value=dt.time.min, max_value=dt.time.max, timezones=none(),
-    min_time=None, max_time=None,
-):
+def times(min_value=dt.time.min, max_value=dt.time.max, timezones=none()):
     """A strategy for times between ``min_time`` and ``max_time``.
 
     The ``timezones`` argument is handled as for :py:func:`datetimes`.
@@ -1452,14 +1432,7 @@ def times(
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(
-    min_delta='min_value',
-    max_delta='max_value',
-)
-def timedeltas(
-    min_value=dt.timedelta.min, max_value=dt.timedelta.max,
-    min_delta=None, max_delta=None
-):
+def timedeltas(min_value=dt.timedelta.min, max_value=dt.timedelta.max):
     """A strategy for timedeltas between ``min_value`` and ``max_value``.
 
     Examples from this strategy shrink towards zero.
