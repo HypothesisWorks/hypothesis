@@ -22,7 +22,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import OrderedDict, hbytes
 from hypothesis.internal.conjecture.utils import combine_labels
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    MappedSearchStrategy, one_of_strategies
+    MappedSearchStrategy
 
 
 class TupleStrategy(SearchStrategy):
@@ -83,16 +83,14 @@ class ListStrategy(SearchStrategy):
 
     def __init__(
         self,
-        strategies, average_length=50.0, min_size=0, max_size=float('inf')
+        elements, average_size=50.0, min_size=0, max_size=float('inf')
     ):
         SearchStrategy.__init__(self)
-
-        assert average_length > 0
-        self.average_length = average_length
-        strategies = tuple(strategies)
+        self.average_size = average_size
         self.min_size = min_size or 0
         self.max_size = max_size or float('inf')
-        self.element_strategy = one_of_strategies(strategies)
+        assert 0 <= min_size <= average_size <= max_size
+        self.element_strategy = elements
 
     def calc_label(self):
         return combine_labels(self.class_label, self.element_strategy.label)
@@ -126,7 +124,7 @@ class ListStrategy(SearchStrategy):
         elements = cu.many(
             data,
             min_size=self.min_size, max_size=self.max_size,
-            average_size=self.average_length
+            average_size=self.average_size
         )
         result = []
         while elements.more():
@@ -134,42 +132,22 @@ class ListStrategy(SearchStrategy):
         return result
 
     def __repr__(self):
-        return (
-            'ListStrategy(%r, min_size=%r, average_size=%r, max_size=%r)'
-        ) % (
-            self.element_strategy, self.min_size, self.average_length,
-            self.max_size
+        return '%s(%r, min_size=%r, average_size=%r, max_size=%r)' % (
+            self.__class__.__name__, self.element_strategy, self.min_size,
+            self.average_size, self.max_size
         )
 
 
-class UniqueListStrategy(SearchStrategy):
+class UniqueListStrategy(ListStrategy):
 
     def __init__(
         self,
         elements, min_size, max_size, average_size,
         key
     ):
-        super(UniqueListStrategy, self).__init__()
-        assert min_size <= average_size <= max_size
-        self.min_size = min_size
-        self.max_size = max_size
-        self.average_size = average_size
-        self.element_strategy = elements
+        super(UniqueListStrategy, self).__init__(
+            elements, average_size, min_size, max_size)
         self.key = key
-
-    def do_validate(self):
-        self.element_strategy.validate()
-        if self.is_empty:
-            raise InvalidArgument((
-                'Cannot create non-empty lists with elements drawn from '
-                'strategy %r because it has no values.') % (
-                self.element_strategy,))
-
-    def calc_is_empty(self, recur):
-        if self.min_size == 0:
-            return False
-        else:
-            return recur(self.element_strategy)
 
     def do_draw(self, data):
         if self.element_strategy.is_empty:

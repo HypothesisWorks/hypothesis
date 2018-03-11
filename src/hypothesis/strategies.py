@@ -562,7 +562,7 @@ def lists(
         )
     else:
         return ListStrategy(
-            (elements,), average_length=average_size,
+            elements, average_size=average_size,
             min_size=min_size, max_size=max_size,
         )
 
