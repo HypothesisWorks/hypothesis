@@ -23,7 +23,7 @@ from tests.common.debug import minimal, find_any
 from hypothesis.extra.numpy import arrays
 
 
-@given(arrays(object, 100, st.lists(max_size=0)))
+@given(arrays(object, 100, st.builds(list)))
 def test_generated_lists_are_distinct(ls):
     assert len(set(map(id, ls))) == len(ls)
 
