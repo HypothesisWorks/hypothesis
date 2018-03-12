@@ -158,14 +158,10 @@ def test_can_minimal_float_far_from_integral():
 
 def test_list_of_fractional_float():
     assert set(minimal(
-        lists(floats(), average_size=20),
+        lists(floats(), min_size=5),
         lambda x: len([t for t in x if t >= 1.5]) >= 5,
         timeout_after=60,
-    )) in (
-        set((1.5,)),
-        set((1.5, 2.0)),
-        set((2.0,)),
-    )
+    )).issubset([1.5, 2.0])
 
 
 def test_minimal_fractional_float():

@@ -131,7 +131,7 @@ test_can_produce_stripped_strings = define_test(
 )
 
 test_can_produce_multi_line_strings = define_test(
-    text(average_size=25.0), lambda x: u'\n' in x
+    text(), lambda x: u'\n' in x
 )
 
 test_can_produce_ascii_strings = define_test(
@@ -175,7 +175,7 @@ test_can_produce_floats_in_middle = define_test(
 )
 
 test_can_produce_long_lists = define_test(
-    lists(integers(), average_size=25.0), long_list
+    lists(integers()), long_list
 )
 
 test_can_produce_short_lists = define_test(
@@ -183,7 +183,7 @@ test_can_produce_short_lists = define_test(
 )
 
 test_can_produce_the_same_int_twice = define_test(
-    lists(integers(), average_size=25.0),
+    lists(integers()),
     lambda t: len(set(t)) < len(t)
 )
 
@@ -235,24 +235,24 @@ test_ints_can_occasionally_be_really_large = define_test(
 )
 
 test_mixing_is_sometimes_distorted = define_test(
-    lists(booleans() | tuples(), average_size=25.0), distorted,
+    lists(booleans() | tuples()), distorted,
     condition=lambda x: len(set(map(type, x))) == 2,
 )
 
 test_mixes_2_reasonably_often = define_test(
-    lists(booleans() | tuples(), average_size=25.0),
+    lists(booleans() | tuples()),
     lambda x: len(set(map(type, x))) > 1,
     condition=bool,
 )
 
 test_partial_mixes_3_reasonably_often = define_test(
-    lists(booleans() | tuples() | just(u'hi'), average_size=25.0),
+    lists(booleans() | tuples() | just(u'hi')),
     lambda x: 1 < len(set(map(type, x))) < 3,
     condition=bool,
 )
 
 test_mixes_not_too_often = define_test(
-    lists(booleans() | tuples(), average_size=25.0),
+    lists(booleans() | tuples()),
     lambda x: len(set(map(type, x))) == 1,
     condition=bool,
 )
