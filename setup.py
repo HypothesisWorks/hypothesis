@@ -64,13 +64,11 @@ if setuptools_version >= (8, 0):
 extras = {
     'datetime':  ['pytz'],
     'pytz':  ['pytz'],
-    'fakefactory': ['Faker>=0.7'],
     'numpy': ['numpy>=1.9.0'],
     'pytest': ['pytest>=2.8.0'],
     'django': ['pytz', django_pin],
 }
 
-extras['faker'] = extras['fakefactory']
 extras['all'] = sorted(sum(extras.values(), []))
 
 

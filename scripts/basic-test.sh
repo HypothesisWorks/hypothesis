@@ -39,11 +39,6 @@ for f in tests/nocover/test_*.py; do
   $PYTEST "$f"
 done
 
-# fake-factory doesn't have a correct universal wheel
-pip install --no-binary :all: faker
-$PYTEST tests/fakefactory/
-pip uninstall -y faker
-
 if [ "$(python -c 'import platform; print(platform.python_implementation())')" != "PyPy" ]; then
   if [ "$(python -c 'import sys; print(sys.version_info[0] == 2 or sys.version_info[:2] >= (3, 4))')" == "True" ] ; then
     pip install .[django]
