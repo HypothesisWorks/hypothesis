@@ -26,8 +26,7 @@ from hypothesis import assume
 from hypothesis import settings as Settings
 from hypothesis.errors import Flaky, InvalidDefinition
 from hypothesis.control import current_build_context
-from tests.common.utils import raises, capture_out, \
-    checks_deprecated_behaviour
+from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, GenericStateMachine, \
     RuleBasedStateMachine, rule, invariant, precondition, \
