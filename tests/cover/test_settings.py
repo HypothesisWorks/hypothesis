@@ -261,3 +261,22 @@ def test_does_not_warn_if_quiet():
 @given(st.builds(lambda: settings.default))
 def test_settings_in_strategies_are_from_test_scope(s):
     assert s.max_examples == 7
+
+
+def test_settings_alone():
+    @checks_deprecated_behaviour
+    @settings()
+    def test_nothing():
+        pass
+
+
+@settings()
+@given(st.integers())
+def test_outer_ok(x):
+    pass
+
+
+@given(st.integers())
+@settings()
+def test_inner_ok(x):
+    pass

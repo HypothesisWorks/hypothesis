@@ -907,11 +907,14 @@ def given(*given_arguments, **given_kwargs):
     This is the main entry point to Hypothesis.
     """
     def run_test_with_generator(test):
+        if hasattr(test, '_hypothesis_internal_test_function_without_warning'):
+            # Pull out the original test function to avoid the warning we
+            # stuck in about using @settings without @given.
+            test = test._hypothesis_internal_test_function_without_warning
         if inspect.isclass(test):
             # Provide a meaningful error to users, instead of exceptions from
             # internals that assume we're dealing with a function.
             raise InvalidArgument('@given cannot be applied to a class.')
-
         generator_arguments = tuple(given_arguments)
         generator_kwargs = dict(given_kwargs)
 

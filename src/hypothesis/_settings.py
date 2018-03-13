@@ -35,6 +35,7 @@ from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
 from hypothesis.configuration import hypothesis_home_dir
 from hypothesis.internal.compat import text_type
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
+from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import try_convert
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
@@ -175,8 +176,28 @@ class settings(settingsMeta('settings', (object,), {})):
             return self.storage.defaults_stack
 
     def __call__(self, test):
+        """Attach the settings as an attribute.
+
+        Also, so that we can issue a deprecation warning for
+        ``settings``` used alone, give note the deprecation, but also
+        attach the original test for ``@given`` to unwrap and avoid the
+        warning.
+        """
+        @proxies(test)
+        def new_test(*args, **kwargs):
+            note_deprecation(
+                'Using `@settings` without `@given` does not make sense and '
+                'will be an error in a future version of Hypothesis.'
+            )
+            test(*args, **kwargs)
         test._hypothesis_internal_use_settings = self
-        return test
+        new_test._hypothesis_internal_test_function_without_warning = test
+        # This conditional avoids the warning when @settings is outer.
+        # (Unwrapping in @given avoids it when @settings is outer.)
+        if getattr(test, 'is_hypothesis_test', False):
+            return test
+        else:
+            return new_test
 
     @classmethod
     def define_setting(
