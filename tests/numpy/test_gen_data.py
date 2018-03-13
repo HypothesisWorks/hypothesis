@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import sys
+
 import numpy as np
 import pytest
 from flaky import flaky
@@ -185,12 +187,14 @@ def test_can_turn_off_subarrays(dt):
         assert field.shape == ()
 
 
-@given(nps.integer_dtypes(endianness='>'))
-def test_can_restrict_endianness(dt):
-    if dt.itemsize == 1:
-        assert dt.byteorder == '|'
+@pytest.mark.parametrize('byteorder', ['<', '>'])
+@given(data=st.data())
+def test_can_restrict_endianness(data, byteorder):
+    dtype = data.draw(nps.integer_dtypes(byteorder, sizes=(16, 32, 64)))
+    if byteorder == ('<' if sys.byteorder == 'little' else '>'):
+        assert dtype.byteorder == '='
     else:
-        assert dt.byteorder == '>'
+        assert dtype.byteorder == byteorder
 
 
 @given(nps.integer_dtypes(sizes=8))
