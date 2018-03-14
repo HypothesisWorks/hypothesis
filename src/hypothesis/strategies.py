@@ -21,7 +21,7 @@ import enum
 import math
 import datetime as dt
 import operator
-from decimal import Context, Decimal
+from decimal import Context, Decimal, localcontext
 from inspect import isclass, isfunction
 from fractions import Fraction
 from functools import reduce
@@ -1234,6 +1234,25 @@ def fractions(min_value=None, max_value=None, max_denominator=None):
         lambda f: f.limit_denominator(max_denominator))
 
 
+def _as_finite_decimal(value, name, allow_infinity):
+    """Convert decimal bounds to decimals, carefully."""
+    assert name in ('min_value', 'max_value')
+    if value is None:
+        return None
+    if not isinstance(value, Decimal):
+        with localcontext(Context()):  # ensure that default traps are enabled
+            value = try_convert(Decimal, value, name)
+    if value.is_finite():
+        return value
+    if value.is_infinite() and (value < 0 if 'min' in name else value > 0):
+        if allow_infinity or allow_infinity is None:
+            return None
+        raise InvalidArgument('allow_infinity=%r, but %s=%r'
+                              % (allow_infinity, name, value))
+    # This could be infinity, quiet NaN, or signalling NaN
+    raise InvalidArgument(u'Invalid %s=%r' % (name, value))
+
+
 @cacheable
 @defines_strategy_with_reusable_values
 def decimals(min_value=None, max_value=None,
@@ -1255,6 +1274,10 @@ def decimals(min_value=None, max_value=None,
     If ``places`` is not None, all finite values drawn from the strategy will
     have that number of digits after the decimal place.
 
+    Regardless of their value, generated examples may have at most ten
+    thousand digits of precision.  Note that this does not exclude large
+    values - `Decimal(10) ** 99999` has only one digit of precision!
+
     Examples from this strategy do not have a well defined shrink order but
     try to maximize human readability when shrinking.
     """
@@ -1262,28 +1285,9 @@ def decimals(min_value=None, max_value=None,
     check_valid_integer(places)
     if places is not None and places < 0:
         raise InvalidArgument('places=%r may not be negative' % places)
-
-    if min_value is not None:
-        min_value = try_convert(Decimal, min_value, 'min_value')
-        if min_value.is_infinite() and min_value < 0:
-            if not (allow_infinity or allow_infinity is None):
-                raise InvalidArgument('allow_infinity=%r, but min_value=%r'
-                                      % (allow_infinity, min_value))
-            min_value = None
-        elif not min_value.is_finite():
-            # This could be positive infinity, quiet NaN, or signalling NaN
-            raise InvalidArgument(u'Invalid min_value=%r' % min_value)
-    if max_value is not None:
-        max_value = try_convert(Decimal, max_value, 'max_value')
-        if max_value.is_infinite() and max_value > 0:
-            if not (allow_infinity or allow_infinity is None):
-                raise InvalidArgument('allow_infinity=%r, but max_value=%r'
-                                      % (allow_infinity, max_value))
-            max_value = None
-        elif not max_value.is_finite():
-            raise InvalidArgument(u'Invalid max_value=%r' % max_value)
+    min_value = _as_finite_decimal(min_value, 'min_value', allow_infinity)
+    max_value = _as_finite_decimal(max_value, 'max_value', allow_infinity)
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
-
     if allow_infinity and (None not in (min_value, max_value)):
         raise InvalidArgument('Cannot allow infinity between finite bounds')
     # Set up a strategy for finite decimals.  Note that both floating and
@@ -1292,21 +1296,27 @@ def decimals(min_value=None, max_value=None,
     # required precision for lossless operation and use context methods.
     if places is not None:
         # Fixed-point decimals are basically integers with a scale factor
-        def ctx(val):
+        def ctx(val, name=None):
             """Return a context in which this value is lossless."""
-            precision = ceil(math.log10(abs(val) or 1)) + places + 1
-            return Context(prec=max([precision, 1]))
+            prec = max([1, abs(val or Decimal(1)).adjusted()]) + places + 1
+            if name is not None and prec > 10 ** 4:
+                raise InvalidArgument(
+                    'To represent %s_value=%r with %s places would take %s '
+                    'digits, and Hypothesis does not support Decimals with '
+                    'more than 10^4 digits.' % (name, val, places, prec)
+                )
+            return Context(prec=prec)
 
         def int_to_decimal(val):
-            context = ctx(val)
+            context = ctx(Decimal(val))
             return context.quantize(context.multiply(val, factor), factor)
 
         factor = Decimal(10) ** -places
         min_num, max_num = None, None
         if min_value is not None:
-            min_num = ceil(ctx(min_value).divide(min_value, factor))
+            min_num = ceil(ctx(min_value, 'min').divide(min_value, factor))
         if max_value is not None:
-            max_num = floor(ctx(max_value).divide(max_value, factor))
+            max_num = floor(ctx(max_value, 'max').divide(max_value, factor))
         if None not in (min_num, max_num) and min_num > max_num:
             raise InvalidArgument(
                 'There are no decimals with %d places between min_value=%r '
@@ -1315,19 +1325,79 @@ def decimals(min_value=None, max_value=None,
     else:
         # Otherwise, they're like fractions featuring a power of ten
         def fraction_to_decimal(val):
-            precision = ceil(math.log10(abs(val.numerator) or 1) +
-                             math.log10(val.denominator)) + 1
-            return Context(prec=precision or 1).divide(
-                Decimal(val.numerator), val.denominator)
+            precision = ceil(Decimal(abs(val.numerator) or 1).adjusted() +
+                             Decimal(val.denominator).adjusted()) + 1
+            return Context(prec=precision).divide(
+                val.numerator, val.denominator)
 
-        strat = fractions(min_value, max_value).map(fraction_to_decimal)
+        # Round bounding values to at most ten thousand digits of precision,
+        # so that casting to Fraction doesn't eat too much time and memory
+        exact_bounds = dict(min=min_value, max=max_value)
+        ctx = Context(prec=10000)
+        if min_value is not None:
+            min_value = ctx.add(min_value, 0)
+            if exact_bounds['min'] < min_value:
+                min_value = ctx.next_plus(min_value)  # pragma: no cover
+        if max_value is not None:
+            max_value = ctx.add(max_value, 0)
+            if exact_bounds['max'] > max_value:
+                max_value = ctx.next_minus(max_value)
+        if None not in (min_value, max_value) and min_value > max_value:
+            raise InvalidArgument(
+                'There are no decimal values between the given minimum and '
+                'maximum values with at most ten thousand digits of precison.'
+            )
+
+        # We split this into several cases, so that we can handle very large
+        # exponents without the pathological time and memory usage
+        if min_value is None and max_value is None:
+            # The trivial case - just use default values.
+            strat = fractions().map(fraction_to_decimal)
+        elif max_value is None:
+            # With a single bound, we can scale so the exponent is zero,
+            # generate, and rescale the example.
+            scale = Decimal(10) ** min_value.adjusted()
+            strat = fractions(min_value=min_value / scale)\
+                .map(fraction_to_decimal).map(lambda d: d * scale)
+        elif min_value is None:
+            scale = Decimal(10) ** max_value.adjusted()
+            strat = fractions(max_value=max_value / scale)\
+                .map(fraction_to_decimal).map(lambda d: d * scale)
+        elif abs(min_value.adjusted()) < 99 and abs(max_value.adjusted()) < 99:
+            # If we have two bounds which are "not too large", the naive
+            # approach simplifies shrinking and handles the common use-cases.
+            strat = fractions(min_value, max_value).map(fraction_to_decimal)
+        else:
+            # Finally, for a very large bounded region we first pick an
+            # exponent, then create a strategy from it.  This is relatively
+            # expensive at runtime, but that's just the cost of precision!
+            def scaled_decimals(scale):
+                # This strategy can draw from a large but manageable region,
+                # bounded by the actual bounding values or "reasonable size"
+                return fractions(
+                    min_value=max([min_value / scale, Decimal(10) ** -99]),
+                    max_value=min([max_value / scale, Decimal(10) ** 99]),
+                ).map(fraction_to_decimal).map(lambda d: d * scale)
+
+            strat = integers(
+                min_value.adjusted(), max_value.adjusted()
+            ).map(lambda i: Decimal(10) ** i).flatmap(scaled_decimals)
+
+    # Filter to bounds.  This should only ever take effect with precision of
+    # one digit, which otherwise behaves differently on various versions and
+    # operating systems.
+    if min_value is not None:
+        strat = strat.filter(lambda v: v >= min_value)
+    if max_value is not None:
+        strat = strat.filter(lambda v: v <= max_value)
+
     # Compose with sampled_from for infinities and NaNs as appropriate
     special = []
     if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
         special.extend(map(Decimal, ('NaN', '-NaN', 'sNaN', '-sNaN')))
-    if allow_infinity or (allow_infinity is max_value is None):
+    if allow_infinity or (allow_infinity is None and max_value is None):
         special.append(Decimal('Infinity'))
-    if allow_infinity or (allow_infinity is min_value is None):
+    if allow_infinity or (allow_infinity is None and min_value is None):
         special.append(Decimal('-Infinity'))
     return strat | sampled_from(special)
 
