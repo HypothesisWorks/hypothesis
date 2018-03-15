@@ -41,7 +41,10 @@ done
 
 # fake-factory doesn't have a correct universal wheel
 pip install --no-binary :all: faker
-$PYTEST tests/fakefactory/
+# https://github.com/joke2k/faker/pull/718
+# (can't ignore this in PYTHONWARNINGS like the others because it turns into a
+# SyntaxError)
+PYTHONWARNINGS="error::FutureWarning" $PYTEST tests/fakefactory/
 pip uninstall -y faker
 
 if [ "$(python -c 'import platform; print(platform.python_implementation())')" != "PyPy" ]; then
