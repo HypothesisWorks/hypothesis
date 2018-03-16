@@ -21,7 +21,8 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given, infer
-from hypothesis.errors import InvalidArgument, ResolutionFailed
+from hypothesis.errors import InvalidArgument, ResolutionFailed, \
+    HypothesisDeprecationWarning
 from hypothesis.searchstrategy import types
 from hypothesis.internal.compat import PY2, integer_types
 
@@ -38,7 +39,7 @@ for thing in (getattr(st, name) for name in sorted(st._strategies)
             ex = thing(*([st.nothing()] * n)).example()
             types_with_core_strat.add(type(ex))
             break
-        except (TypeError, InvalidArgument):
+        except (TypeError, InvalidArgument, HypothesisDeprecationWarning):
             continue
 
 

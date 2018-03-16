@@ -42,8 +42,8 @@ def reusable():
             allow_nan=st.booleans()
         ),
 
-        st.builds(st.just, st.lists(max_size=0)),
-        st.builds(st.sampled_from, st.lists(st.lists(max_size=0))),
+        st.builds(st.just, st.builds(list)),
+        st.builds(st.sampled_from, st.lists(st.builds(list))),
 
         st.lists(reusable).map(st.one_of),
         st.lists(reusable).map(lambda ls: st.tuples(*ls)),

@@ -54,7 +54,8 @@ def abc(x, y, z):
 
 
 standard_types = [
-    lists(max_size=0), tuples(), sets(max_size=0), frozensets(max_size=0),
+    lists(none(), max_size=0), tuples(),
+    sets(none(), max_size=0), frozensets(none(), max_size=0),
     fixed_dictionaries({}),
     abc(booleans(), booleans(), booleans()),
     abc(booleans(), booleans(), integers()),

@@ -42,7 +42,7 @@ def test_sets_of_small_average_size():
     assert len(sets(integers(), average_size=1.0).example()) <= 10
 
 
-@given(sets(max_size=0))
+@given(sets(integers(), max_size=0))
 def test_empty_sets(x):
     assert x == set()
 
