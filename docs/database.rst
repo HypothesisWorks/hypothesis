@@ -27,11 +27,6 @@ The standard location for it is ``.hypothesis/examples`` in your current working
 directory. You can override this by setting the :obj:`~hypothesis.settings.database_file`
 setting, or with the ``HYPOTHESIS_DATABASE_FILE`` environment variable.
 
-There is also a legacy sqlite3 based format. This is mostly still supported for
-compatibility reasons, and support will be dropped in some future version of
-Hypothesis. If you use a database file name ending in .db, .sqlite or .sqlite3
-that format will be used instead.
-
 --------------------------------------------
 Upgrading Hypothesis and changing your tests
 --------------------------------------------
