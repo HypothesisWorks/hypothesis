@@ -24,7 +24,7 @@ import pickle
 import tempfile
 import unicodedata
 
-from hypothesis._settings import note_deprecation
+from hypothesis.errors import InvalidArgument
 from hypothesis.configuration import tmpdir, storage_directory
 from hypothesis.internal.compat import hunichr
 
@@ -130,9 +130,9 @@ def as_general_categories(cats, name='cats'):
             out.discard(c)
             out.update(x for x in cs if x.startswith(c))
         elif c not in cs:
-            note_deprecation(
-                'In %s=%r, %r is not a valid Unicode category.  This will '
-                'be an error in a future version.' % (name, cats, c))
+            raise InvalidArgument(
+                'In %s=%r, %r is not a valid Unicode category.'
+                % (name, cats, c))
     return tuple(c for c in cs if c in out)
 
 
