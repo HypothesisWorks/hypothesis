@@ -102,13 +102,6 @@ def test_cannot_register_with_parent_and_settings_args():
     assert 'conflicted' not in settings._profiles
 
 
-@checks_deprecated_behaviour
-def test_register_profile_kwarg_settings_is_deprecated():
-    settings.register_profile('test', settings=settings(max_examples=10))
-    settings.load_profile('test')
-    assert settings.default.max_examples == 10
-
-
 def test_can_set_verbosity():
     settings(verbosity=Verbosity.quiet)
     settings(verbosity=Verbosity.normal)

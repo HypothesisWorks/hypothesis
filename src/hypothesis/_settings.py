@@ -301,15 +301,9 @@ class settings(settingsMeta('settings', (object,), {})):
         if not isinstance(name, (str, text_type)):
             note_deprecation('name=%r must be a string' % (name,))
         if 'settings' in kwargs:
-            if parent is None:
-                parent = kwargs.pop('settings')
-                note_deprecation('The `settings` argument is deprecated - '
-                                 'use `parent` instead.')
-            else:
-                raise InvalidArgument(
-                    'The `settings` argument is deprecated, and has been '
-                    'replaced by the `parent` argument.  Use `parent` only.'
-                )
+            raise InvalidArgument(
+                'The `settings` argument has been renamed `parent`'
+            )
         settings._profiles[name] = settings(parent=parent, **kwargs)
 
     @staticmethod
