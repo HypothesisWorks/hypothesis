@@ -22,7 +22,8 @@ import time
 import pytest
 
 from hypothesis import given, infer, assume, reject, settings
-from hypothesis.errors import Timeout, Unsatisfiable, InvalidArgument
+from hypothesis.errors import Timeout, InvalidState, Unsatisfiable, \
+    InvalidArgument
 from tests.common.utils import fails_with, validate_deprecation
 from hypothesis.strategies import booleans, integers
 
@@ -82,12 +83,12 @@ def test_error_if_infer_is_posarg():
         inner()
 
 
-def test_given_twice_deprecated():
+def test_given_twice_is_error():
     @given(booleans())
     @given(integers())
     def inner(a, b):
         pass
-    with validate_deprecation():
+    with pytest.raises(InvalidState):
         inner()
 
 

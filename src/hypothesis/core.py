@@ -40,10 +40,11 @@ from coverage.collector import Collector
 
 import hypothesis.strategies as st
 from hypothesis import __version__
-from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
-    Unsatisfiable, DidNotReproduce, InvalidArgument, DeadlineExceeded, \
-    MultipleFailures, FailedHealthCheck, HypothesisWarning, \
-    UnsatisfiedAssumption, HypothesisDeprecationWarning
+from hypothesis.errors import Flaky, Timeout, InvalidState, \
+    NoSuchExample, Unsatisfiable, DidNotReproduce, InvalidArgument, \
+    DeadlineExceeded, MultipleFailures, FailedHealthCheck, \
+    HypothesisWarning, UnsatisfiedAssumption, \
+    HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
 from hypothesis._settings import Phase, Verbosity, HealthCheck, \
     PrintSettings
@@ -939,15 +940,14 @@ def given(*given_arguments, **given_kwargs):
             __tracebackhide__ = True
 
             if getattr(test, 'is_hypothesis_test', False):
-                note_deprecation((
-                    'You have applied @given to a test more than once. In '
-                    'future this will be an error. Applying @given twice '
-                    'wraps the test twice, which can be extremely slow. A '
+                raise InvalidState(
+                    'You have applied @given to a test more than once, which '
+                    'repeatedly wraps the test - this is extremely slow. A '
                     'similar effect can be gained by combining the arguments '
-                    'to the two calls to given. For example, instead of '
+                    'of the two calls to given. For example, instead of '
                     '@given(booleans()) @given(integers()), you could write '
                     '@given(booleans(), integers())'
-                ))
+                )
 
             settings = wrapped_test._hypothesis_internal_use_settings
 
