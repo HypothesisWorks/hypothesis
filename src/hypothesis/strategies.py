@@ -40,7 +40,8 @@ from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
 from hypothesis.internal.validation import check_type, try_convert, \
     check_strategy, check_valid_size, check_valid_bound, \
-    check_valid_sizes, check_valid_integer, check_valid_interval
+    check_valid_sizes, check_valid_integer, check_valid_interval, \
+    try_convert_1d_sequence
 
 __all__ = [
     'nothing',
@@ -461,9 +462,7 @@ def sampled_from(elements):
     1 values with 10, and sampled_from((1, 10)) will shrink by trying to
     replace 10 values with 1.
     """
-    from hypothesis.searchstrategy.misc import SampledFromStrategy
-    from hypothesis.internal.conjecture.utils import check_sample
-    values = check_sample(elements)
+    values = try_convert_1d_sequence(elements)
     if not values:
         return nothing()
     if len(values) == 1:
@@ -474,6 +473,7 @@ def sampled_from(elements):
         # these dynamically, because static allocation takes O(2^n) memory.
         return sets(sampled_from(values), min_size=1).map(
             lambda s: reduce(operator.or_, s))
+    from hypothesis.searchstrategy.misc import SampledFromStrategy
     return SampledFromStrategy(values)
 
 

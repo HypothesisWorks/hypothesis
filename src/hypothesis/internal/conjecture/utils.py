@@ -17,14 +17,11 @@
 
 from __future__ import division, print_function, absolute_import
 
-import enum
 import math
 import heapq
 import hashlib
 from fractions import Fraction
-from collections import Sequence, OrderedDict
 
-from hypothesis._settings import note_deprecation
 from hypothesis.internal.compat import floor, hbytes, hrange, qualname, \
     bit_length, str_to_bytes, int_from_bytes
 from hypothesis.internal.floats import int_to_float
@@ -101,39 +98,6 @@ def centered_integer_range(data, lower, upper, center):
     return integer_range(
         data, lower, upper, center=center
     )
-
-
-def check_sample(values):
-    try:
-        from numpy import ndarray
-        if isinstance(values, ndarray):
-            if values.ndim != 1:
-                note_deprecation((
-                    'Only one-dimensional arrays are supported for sampling, '
-                    'and the given value has {ndim} dimensions (shape '
-                    '{shape}).  This array would give samples of array slices '
-                    'instead of elements!  Use np.ravel(values) to convert '
-                    'to a one-dimensional array, or tuple(values) if you '
-                    'want to sample slices.  Sampling a multi-dimensional '
-                    'array will be an error in a future version of Hypothesis.'
-                ).format(ndim=values.ndim, shape=values.shape))
-            return tuple(values)
-    except ImportError:  # pragma: no cover
-        pass
-
-    if not isinstance(values, (OrderedDict, Sequence, enum.EnumMeta)):
-        note_deprecation(
-            ('Cannot sample from %r, not a sequence.  ' % (values,)) +
-            'Hypothesis goes to some length to ensure that sampling an '
-            'element from a collection is replayable and can be '
-            'minimised.  To replay a saved example, the sampled values '
-            'must have the same iteration order on every run - ruling out '
-            'sets, dicts, etc due to hash randomisation.  Most cases can use '
-            '`sorted(values)`, but mixed types or special values such as '
-            'math.nan require careful handling - and note that when '
-            'simplifying an example, Hypothesis treats earlier values as '
-            'simpler.')
-    return tuple(values)
 
 
 def choice(data, values):

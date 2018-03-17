@@ -17,12 +17,20 @@
 
 from __future__ import division, print_function, absolute_import
 
+import enum
 import math
 from numbers import Rational
+from collections import Sequence, OrderedDict
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import integer_types
 from hypothesis.internal.coverage import check_function
+
+try:
+    from numpy import ndarray
+except ImportError:  # pragma: no cover
+    # Will always return True in the instance check below.
+    ndarray = Sequence
 
 
 @check_function
@@ -136,3 +144,32 @@ def check_valid_sizes(min_size, average_size, max_size):
             'Cannot have average_size=%r with non-zero max_size=%r' % (
                 average_size, max_size
             ))
+
+
+@check_function
+def try_convert_1d_sequence(elements):
+    if not isinstance(elements, (OrderedDict, Sequence, enum.EnumMeta)):
+        if isinstance(elements, ndarray):
+            if elements.ndim != 1:
+                raise InvalidArgument(
+                    'Only one-dimensional arrays are supported for sampling, '
+                    'and the given value has %s dimensions (shape %s).  '
+                    'This array would give samples of array slices '
+                    'instead of elements!  Use np.ravel(values) to convert '
+                    'to a one-dimensional array, or tuple(values) if you '
+                    'want to sample slices.' % (elements.ndim, elements.shape)
+                )
+            return tuple(elements)
+        raise InvalidArgument(
+            'Cannot sample from %r, not a sequence.  '
+            'Hypothesis goes to some length to ensure that sampling an '
+            'element from a collection is replayable and can be '
+            'minimised.  To replay a saved example, the sampled values '
+            'must have the same iteration order on every run - ruling out '
+            'sets, dicts, etc due to hash randomisation.  Most cases can use '
+            '`sorted(values)`, but mixed types or special values such as '
+            'math.nan require careful handling - and note that when '
+            'simplifying an example, Hypothesis treats earlier values as '
+            'simpler.' % (elements,)
+        )
+    return tuple(elements)
