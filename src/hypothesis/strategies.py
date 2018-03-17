@@ -28,7 +28,6 @@ from functools import reduce
 
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.control import assume
-from hypothesis._settings import note_deprecation
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
@@ -925,12 +924,6 @@ def builds(*callable_and_args, **kwargs):
             raise InvalidArgument(
                 'The first positional argument to builds() must be a callable '
                 'target to construct.')
-    elif 'target' in kwargs and callable(kwargs['target']):
-        args = []
-        note_deprecation(
-            'Specifying the target as a keyword argument to builds() is '
-            'deprecated. Provide it as the first positional argument instead.')
-        target = kwargs.pop('target')
     else:
         raise InvalidArgument(
             'builds() must be passed a callable as the first positional '
