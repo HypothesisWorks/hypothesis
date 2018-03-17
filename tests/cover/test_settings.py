@@ -24,8 +24,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given, unlimited
-from hypothesis.errors import InvalidState, InvalidArgument, \
-    HypothesisDeprecationWarning
+from hypothesis.errors import InvalidState, InvalidArgument
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
@@ -192,11 +191,6 @@ def test_cannot_delete_a_setting():
     x = settings()
     with pytest.raises(AttributeError):
         del x.foo
-
-
-def test_cannot_set_strict():
-    with pytest.raises(HypothesisDeprecationWarning):
-        settings(strict=True)
 
 
 @checks_deprecated_behaviour

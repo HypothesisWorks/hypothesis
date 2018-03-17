@@ -434,27 +434,6 @@ find novel breakages.
 )
 
 settings.define_setting(
-    'strict',
-    default=os.getenv('HYPOTHESIS_STRICT_MODE') == 'true',
-    description="""
-If set to True, anything that would cause Hypothesis to issue a warning will
-instead raise an error. Note that new warnings may be added at any time, so
-running with strict set to True means that new Hypothesis releases may validly
-break your code.  Note also that, as strict mode is itself deprecated,
-enabling it is now an error!
-
-You can enable this setting temporarily by setting the HYPOTHESIS_STRICT_MODE
-environment variable to the string 'true'.
-""",
-    deprecation_message="""
-Strict mode is deprecated and will go away in a future version of Hypothesis.
-To get the same behaviour, use
-warnings.simplefilter('error', HypothesisDeprecationWarning).
-""",
-    future_default=False,
-)
-
-settings.define_setting(
     'database_file',
     default=lambda: (
         os.getenv('HYPOTHESIS_DATABASE_FILE') or
