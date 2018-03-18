@@ -17,7 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import pytest
 import math
 import sys
 
@@ -63,7 +62,7 @@ def test_cathetus_subnormal_underflow():
     )
     assert b == 3 * u, (
         'expecting cathetus(%g, %g) == %g, got %g' %
-        (h, a, 3*u, b)
+        (h, a, 3 * u, b)
     )
 
 
@@ -177,4 +176,8 @@ def test_pythagorean_triples():
     ]
     for triple in triples:
         a, b, h = triple
+        assert math.hypot(a, b) == h, (
+            'defective pythagoran triple (%g, %g, %g)' %
+            (a, b, h)
+        )
         assert_cathetus_exact(h, a, b)
