@@ -18,6 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+import math
+import sys
 
 from hypothesis.internal.cathetus import cathetus
 
@@ -25,18 +27,103 @@ from hypothesis.internal.cathetus import cathetus
 def assert_cathetus_exact(h, a, b):
     b0 = cathetus(h, a)
     assert b == b0, (
-        'expected cathetus(%g, %g) == %g, got %g',
-        h, a, b, b0
+        'expected cathetus(%g, %g) == %g, got %g' %
+        (h, a, b, b0)
     )
+
+
+def assert_cathetus_nan(h, a):
+    b = cathetus(h, a)
+    assert math.isnan(b), (
+        'expected cathetus(%g, %g) == NaN, got %g' %
+        (h, a, b)
+    )
+
+
+def assert_cathetus_inf(h, a):
+    b = cathetus(h, a)
+    assert math.isinf(b), (
+        'expected cathetus(%g, %g) == Infinity, got %g' %
+        (h, a, b)
+    )
+
+
+def test_cathetus_subnormal_underflow():
+    u = sys.float_info.min * sys.float_info.epsilon
+    h = 5 * u
+    a = 4 * u
+    b = cathetus(h, a)
+    assert not math.isnan(b), (
+        'expecting cathetus(%g, %g) not NaN, got %g' %
+        (h, a, b)
+    )
+    assert b > 0, (
+        'expecting cathetus(%g, %g) positive, got %g' %
+        (h, a, b)
+    )
+    assert b == 3 * u, (
+        'expecting cathetus(%g, %g) == %g, got %g' %
+        (h, a, 3*u, b)
+    )
+
+
+def test_cathetus_simple_underflow():
+    a = sys.float_info.min
+    h = a * math.sqrt(2)
+    b = cathetus(h, a)
+    assert not math.isnan(b), (
+        'expecting cathetus(%g, %g) not NaN, got %g' %
+        (h, a, b)
+    )
+    assert b > 0, (
+        'expecting cathetus(%g, %g) positive, got %g' %
+        (h, a, b)
+    )
+
+
+def test_cathetus_simple_overflow():
+    h = sys.float_info.max
+    a = h / math.sqrt(2)
+    b = cathetus(h, a)
+    assert not (math.isinf(b) or math.isnan(b)), (
+        'expecting cathetus(%g, %g) finite, got %g' %
+        (h, a, b)
+    )
+
+
+def test_cathetus_nan_hypot():
+    assert_cathetus_nan(float(u'nan'), 3)
+    assert_cathetus_nan(float(u'nan'), -3)
+    assert_cathetus_nan(float(u'nan'), 0)
+    assert_cathetus_nan(float(u'nan'), float(u'inf'))
+    assert_cathetus_nan(float(u'nan'), float(u'nan'))
+
+
+def test_cathetus_infinite_hypot():
+    assert_cathetus_inf(float(u'inf'), 3)
+    assert_cathetus_inf(float(u'inf'), -3)
+    assert_cathetus_inf(float(u'inf'), 0)
+    assert_cathetus_inf(float(u'inf'), float(u'nan'))
+    assert_cathetus_nan(float(u'inf'), float(u'inf'))
+
+
+def test_cathetus_infeasible():
+    assert_cathetus_nan(2, 3)
+    assert_cathetus_nan(2, -3)
+    assert_cathetus_nan(2, float(u'inf'))
+    assert_cathetus_nan(2, float(u'nan'))
+
 
 def test_cathetus_negative():
     assert_cathetus_exact(-5, 4, 3)
     assert_cathetus_exact(5, -4, 3)
     assert_cathetus_exact(-5, -4, 3)
 
+
 def test_cathetus_zero():
     assert_cathetus_exact(0, 0, 0)
     assert_cathetus_exact(1, 0, 1)
+
 
 def test_pythagorean_triples():
     triples = [

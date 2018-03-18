@@ -15,7 +15,8 @@
 #
 # END HEADER
 
-from math import sqrt
+from math import sqrt, isnan, isinf, fabs
+from sys import float_info as fi
 
 def cathetus(h, a):
     """Given the lengths of the hypotenuse and a side of a right
@@ -23,4 +24,28 @@ def cathetus(h, a):
     to the C99 hypot() function.
     https://github.com/jjgreen/cathetus
     """
-    return sqrt(h*h - a*a)
+    if isnan(h):
+        return float(u'nan')
+
+    if isinf(h):
+        if isinf(a):
+            return float(u'nan')
+        else:
+            return float(u'inf')
+
+    h = fabs(h)
+    a = fabs(a)
+
+    if h < a:
+        return float(u'nan')
+
+    if h > sqrt(fi.max):
+        if h > fi.max / 2:
+            return sqrt(h - a) * sqrt(h/2 + a/2) * sqrt(2)
+        else:
+            return sqrt(h - a) * sqrt(h + a)
+
+    if h < sqrt(fi.min):
+        return sqrt(h - a) * sqrt(h + a)
+
+    return sqrt((h - a) * (h + a))
