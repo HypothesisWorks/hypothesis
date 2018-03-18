@@ -530,6 +530,7 @@ def bad_django_TestCase(runner):
             from django.test import TransactionTestCase
             from hypothesis.extra.django import HypothesisTestCase
             _cases[:] = TransactionTestCase, HypothesisTestCase
-        except ImportError:
-            _cases[:] = type, type
+        except Exception:
+            # Can't use ImportError, because of e.g. Django config errors
+            _cases[:] = (), type
     return isinstance(runner, _cases[0]) and not isinstance(runner, _cases[1])
