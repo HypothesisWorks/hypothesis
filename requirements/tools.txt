@@ -30,7 +30,7 @@ markupsafe==1.0           # via jinja2
 mccabe==0.6.1             # via flake8
 packaging==17.1           # via dparse, pyupio, safety, sphinx
 pip-tools==1.11.0
-pkginfo==1.4.1            # via twine
+pkginfo==1.4.2            # via twine
 pluggy==0.6.0             # via pytest, tox
 py==1.5.2                 # via pytest, tox
 pycodestyle==2.3.1        # via autopep8, flake8
