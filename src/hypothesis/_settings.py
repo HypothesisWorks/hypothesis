@@ -35,7 +35,6 @@ from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
 from hypothesis.configuration import hypothesis_home_dir
 from hypothesis.internal.compat import text_type
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
-from hypothesis.internal.validation import try_convert
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 __all__ = [
@@ -636,6 +635,7 @@ attempting to actually execute your test.
 
 
 def validate_health_check_suppressions(suppressions):
+    from hypothesis.internal.validation import try_convert
     suppressions = try_convert(list, suppressions, 'suppress_health_check')
     for s in suppressions:
         if not isinstance(s, HealthCheck):
