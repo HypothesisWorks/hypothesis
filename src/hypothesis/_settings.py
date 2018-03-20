@@ -38,6 +38,7 @@ from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import try_convert
 from hypothesis.utils.dynamicvariables import DynamicVariable
+from hypothesis.internal.reflection import get_pretty_function_description
 
 __all__ = [
     'settings',
@@ -176,13 +177,44 @@ class settings(settingsMeta('settings', (object,), {})):
             return self.storage.defaults_stack
 
     def __call__(self, test):
-        """Attach the settings as an attribute.
+        """Make the settings object (self) an attribute of the test.
 
-        Also, so that we can issue a deprecation warning for
-        ``settings``` used alone, give note the deprecation, but also
-        attach the original test for ``@given`` to unwrap and avoid the
-        warning.
+        The settings are later discovered by looking them up on the test
+        itself.
+
+        Also, we want to issue a deprecation warning for settings used alone
+        (without @given) so, note the deprecation in the new test, but also
+        attach the version without the warning as an attribute, so that @given
+        can unwrap it (since if @given is used, that means we don't want the
+        deprecation warning).
+
+        When it's time to turn the warning into an error, we'll raise an
+        exception instead of calling note_deprecation (and can delete
+        "test(*args, **kwargs)").
         """
+        if not callable(test):
+            raise InvalidArgument(
+                'settings objects can be called as a decorator with @given, '
+                'but test=%r' % (test,)
+            )
+        print(test.__dict__)
+        if hasattr(test, '_hypothesis_internal_settings_applied'):
+            note_deprecation(
+                '%s has already been decorated with a settings object, which will '
+                'be overridden.  This will be an error in a future version of '
+                'Hypothesis.\n    Previous:  %r\n    This:  %r' % (
+                    get_pretty_function_description(test),
+                    test._hypothesis_internal_use_settings,
+                    self
+                )
+            )
+
+
+        test._hypothesis_internal_use_settings = self
+
+        # For double-@settings check:
+        test._hypothesis_internal_settings_applied = True
+
         @proxies(test)
         def new_test(*args, **kwargs):
             note_deprecation(
@@ -190,14 +222,20 @@ class settings(settingsMeta('settings', (object,), {})):
                 'will be an error in a future version of Hypothesis.'
             )
             test(*args, **kwargs)
-        test._hypothesis_internal_use_settings = self
+
+        # @given will get the test from this attribution (rather than use the
+        # version with the deprecation warning)
         new_test._hypothesis_internal_test_function_without_warning = test
-        # This conditional avoids the warning when @settings is outer.
-        # (Unwrapping in @given avoids it when @settings is outer.)
-        if getattr(test, 'is_hypothesis_test', False):
-            return test
-        else:
-            return new_test
+
+        # This means @given has been applied, so we don't need to worry about
+        # warning for @settings alone.
+        has_given_applied = getattr(test, 'is_hypothesis_test', False)
+        test_to_use = test if has_given_applied else new_test
+        test_to_use._hypothesis_internal_use_settings = self
+        # Can't use _hypothesis_internal_use_settings as an indicator that
+        # @settings was applied, because @given also assigns that attribute.
+        test._hypothesis_internal_settings_applied = True
+        return test_to_use
 
     @classmethod
     def define_setting(

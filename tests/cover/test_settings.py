@@ -263,11 +263,42 @@ def test_settings_in_strategies_are_from_test_scope(s):
     assert s.max_examples == 7
 
 
+@checks_deprecated_behaviour
 def test_settings_alone():
-    @checks_deprecated_behaviour
     @settings()
     def test_nothing():
         pass
+    test_nothing()
+
+
+@checks_deprecated_behaviour
+def test_settings_applied_twice_1():
+    @given(st.integers())
+    @settings()
+    @settings()
+    def test_nothing(x):
+        pass
+    test_nothing()
+
+
+@checks_deprecated_behaviour
+def test_settings_applied_twice_2():
+    @settings()
+    @given(st.integers())
+    @settings()
+    def test_nothing(x):
+        pass
+    test_nothing()
+
+
+@checks_deprecated_behaviour
+def test_settings_applied_twice_3():
+    @settings()
+    @settings()
+    @given(st.integers())
+    def test_nothing(x):
+        pass
+    test_nothing()
 
 
 @settings()

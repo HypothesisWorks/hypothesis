@@ -1070,6 +1070,9 @@ def given(*given_arguments, **given_kwargs):
             if not (attrib.startswith('_') or hasattr(wrapped_test, attrib)):
                 setattr(wrapped_test, attrib, getattr(test, attrib))
         wrapped_test.is_hypothesis_test = True
+        if hasattr(test, '_hypothesis_internal_settings_applied'):
+            # Used to check if @settings is applied twice.
+            wrapped_test._hypothesis_internal_settings_applied = True
         wrapped_test._hypothesis_internal_use_seed = getattr(
             test, '_hypothesis_internal_use_seed', None
         )
