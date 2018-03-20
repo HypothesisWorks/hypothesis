@@ -95,37 +95,32 @@ import warnings
 import pytest
 
 
-# Since our tests are run with warnings-as-errors, we need to ignore
-# the HypothesisDeprecationWarning that comes from timeout=1. The warning can
-# come from within the test execution so the outer catch_warnings context
-# manager below isn't sufficient.
-@pytest.yield_fixture
-def catch_warnings():
+def test_timeout_traceback_is_hidden():
     with warnings.catch_warnings(record=True):
         warnings.simplefilter('ignore', HypothesisDeprecationWarning)
-        yield
-
-
-with warnings.catch_warnings(record=True):
-    warnings.simplefilter('ignore', HypothesisDeprecationWarning)
-    @given(integers())
-    @settings(timeout=1)
-    def test_timeout_traceback_is_hidden(catch_warnings, i):
-        time.sleep(1.1)
+        @given(integers())
+        @settings(timeout=1)
+        def inner(i):
+            time.sleep(1.1)
+        inner()
 """
 
 
-def get_line_num(token, result):
+def get_line_num(token, result, skip_n=0):
     for i, line in enumerate(result.stdout.lines):
         if token in line:
-            return i
-    assert False, 'Token %r not found' % token
+            if skip_n == 0:
+                return i
+            else:
+                skip_n -= 1
+    assert False, \
+        'Token %r not found (after skipping %r appearances)' % (token, skip_n)
 
 
 def test_timeout_traceback_is_hidden(testdir):
     script = testdir.makepyfile(TRACEBACKHIDE_TIMEOUT)
     result = testdir.runpytest(script, '--verbose')
-    def_line = get_line_num('def test_timeout_traceback_is_hidden', result)
+    def_line = get_line_num('def inner', result, skip_n=1)
     timeout_line = get_line_num('Timeout: Ran out of time', result)
     # If __tracebackhide__ works, then the Timeout error message will be
     # next to the test name.  If it doesn't work, then the message will be
