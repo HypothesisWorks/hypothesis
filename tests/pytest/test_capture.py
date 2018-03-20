@@ -120,6 +120,9 @@ def get_line_num(token, result, skip_n=0):
 def test_timeout_traceback_is_hidden(testdir):
     script = testdir.makepyfile(TRACEBACKHIDE_TIMEOUT)
     result = testdir.runpytest(script, '--verbose')
+    # `def inner` shows up in the output twice: once when pytest shows us the
+    # source code of the failing test, and once in the traceback.
+    # It's the 2nd that should be next to the "Timeout: ..." message.
     def_line = get_line_num('def inner', result, skip_n=1)
     timeout_line = get_line_num('Timeout: Ran out of time', result)
     # If __tracebackhide__ works, then the Timeout error message will be
