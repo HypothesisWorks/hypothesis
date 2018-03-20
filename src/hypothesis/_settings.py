@@ -695,6 +695,7 @@ attempting to actually execute your test.
 
 
 def validate_health_check_suppressions(suppressions):
+    from hypothesis.internal.validation import try_convert
     suppressions = try_convert(list, suppressions, 'suppress_health_check')
     for s in suppressions:
         if not isinstance(s, HealthCheck):

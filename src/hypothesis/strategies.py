@@ -21,7 +21,7 @@ import enum
 import math
 import datetime as dt
 import operator
-from decimal import Context, Decimal
+from decimal import Context, Decimal, localcontext
 from inspect import isclass, isfunction
 from fractions import Fraction
 from functools import reduce
@@ -33,8 +33,8 @@ from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
     text_type, get_type_hints, getfullargspec, implements_iterator
-from hypothesis.internal.floats import is_negative, float_to_int, \
-    int_to_float, count_between_floats
+from hypothesis.internal.floats import next_up, next_down, is_negative, \
+    float_to_int, int_to_float, count_between_floats
 from hypothesis.internal.charmap import as_general_categories
 from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
@@ -334,16 +334,31 @@ def floats(
                     allow_nan
                 ))
 
-    min_value = try_convert(float, min_value, 'min_value')
-    max_value = try_convert(float, max_value, 'max_value')
-
     check_valid_bound(min_value, 'min_value')
     check_valid_bound(max_value, 'max_value')
+
+    min_arg, max_arg = min_value, max_value
+    if min_value is not None:
+        min_value = float(min_value)
+    if max_value is not None:
+        max_value = float(max_value)
+
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
     if min_value == float(u'-inf'):
         min_value = None
     if max_value == float(u'inf'):
         max_value = None
+
+    if min_value is not None and min_value < min_arg:
+        min_value = next_up(min_value)
+        assert min_value > min_arg
+    if max_value is not None and max_value > max_arg:
+        max_value = next_down(max_value)
+        assert max_value < max_arg
+    if None not in (min_value, max_value) and min_value > max_value:
+        raise InvalidArgument(
+            'There are no floating-point values between min_value=%r and '
+            'max_value=%r' % (min_arg, max_arg))
 
     if allow_infinity is None:
         allow_infinity = bool(min_value is None or max_value is None)
@@ -1234,6 +1249,25 @@ def fractions(min_value=None, max_value=None, max_denominator=None):
         lambda f: f.limit_denominator(max_denominator))
 
 
+def _as_finite_decimal(value, name, allow_infinity):
+    """Convert decimal bounds to decimals, carefully."""
+    assert name in ('min_value', 'max_value')
+    if value is None:
+        return None
+    if not isinstance(value, Decimal):
+        with localcontext(Context()):  # ensure that default traps are enabled
+            value = try_convert(Decimal, value, name)
+    if value.is_finite():
+        return value
+    if value.is_infinite() and (value < 0 if 'min' in name else value > 0):
+        if allow_infinity or allow_infinity is None:
+            return None
+        raise InvalidArgument('allow_infinity=%r, but %s=%r'
+                              % (allow_infinity, name, value))
+    # This could be infinity, quiet NaN, or signalling NaN
+    raise InvalidArgument(u'Invalid %s=%r' % (name, value))
+
+
 @cacheable
 @defines_strategy_with_reusable_values
 def decimals(min_value=None, max_value=None,
@@ -1262,28 +1296,9 @@ def decimals(min_value=None, max_value=None,
     check_valid_integer(places)
     if places is not None and places < 0:
         raise InvalidArgument('places=%r may not be negative' % places)
-
-    if min_value is not None:
-        min_value = try_convert(Decimal, min_value, 'min_value')
-        if min_value.is_infinite() and min_value < 0:
-            if not (allow_infinity or allow_infinity is None):
-                raise InvalidArgument('allow_infinity=%r, but min_value=%r'
-                                      % (allow_infinity, min_value))
-            min_value = None
-        elif not min_value.is_finite():
-            # This could be positive infinity, quiet NaN, or signalling NaN
-            raise InvalidArgument(u'Invalid min_value=%r' % min_value)
-    if max_value is not None:
-        max_value = try_convert(Decimal, max_value, 'max_value')
-        if max_value.is_infinite() and max_value > 0:
-            if not (allow_infinity or allow_infinity is None):
-                raise InvalidArgument('allow_infinity=%r, but max_value=%r'
-                                      % (allow_infinity, max_value))
-            max_value = None
-        elif not max_value.is_finite():
-            raise InvalidArgument(u'Invalid max_value=%r' % max_value)
+    min_value = _as_finite_decimal(min_value, 'min_value', allow_infinity)
+    max_value = _as_finite_decimal(max_value, 'max_value', allow_infinity)
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
-
     if allow_infinity and (None not in (min_value, max_value)):
         raise InvalidArgument('Cannot allow infinity between finite bounds')
     # Set up a strategy for finite decimals.  Note that both floating and

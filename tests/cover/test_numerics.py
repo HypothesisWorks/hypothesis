@@ -122,3 +122,13 @@ def test_issue_725_regression(x):
 @given(decimals(min_value='0.1', max_value='0.3'))
 def test_issue_739_regression(x):
     pass
+
+
+def test_consistent_decimal_error():
+    bad = 'invalid argument to Decimal'
+    with pytest.raises(InvalidArgument) as excinfo:
+        decimals(bad).example()
+    with pytest.raises(InvalidArgument) as excinfo2:
+        with decimal.localcontext(decimal.Context(traps=[])):
+            decimals(bad).example()
+    assert str(excinfo.value) == str(excinfo2.value)
