@@ -339,16 +339,18 @@ def test_has_ascii(x):
     assert any(c in ascii_characters for c in x)
 
 
-def test_with_seed():
+def test_uses_provided_seed():
+    import random
+    random.seed(0)
+    initial = random.getstate()
+
     @given(integers())
     @seed(42)
-    # Being explicit about database=None ensures the seed (not database)
-    # will be used and avoids the HypothesisDeprecationWarning that
-    # "future use of @seed will imply database=None"
-    # In that future, @settings will be unnecessary here.
-    @settings(database=None)
     def test_foo(x):
         pass
+
+    test_foo()
+    assert hash(repr(random.getstate())) == hash(repr(initial))
 
 
 def test_can_derandomize():
