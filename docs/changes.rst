@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.50.1 - 2018-03-20
+-------------------
+
+This patch fixes an internal error introduced in 3.48.0, where a check
+for the Django test runner would expose import-time errors in Django
+configuration (:issue:`1167`).
+
+-------------------
 3.50.0 - 2018-03-19
 -------------------
 
