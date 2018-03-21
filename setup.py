@@ -66,6 +66,7 @@ extras = {
     'pytz':  ['pytz'],
     'fakefactory': ['Faker>=0.7'],
     'numpy': ['numpy>=1.9.0'],
+    'pandas': ['pandas>=0.19'],
     'pytest': ['pytest>=2.8.0'],
     'django': ['pytz', django_pin],
 }
@@ -83,6 +84,26 @@ if sys.version_info[0] < 3 and setuptools_version < (8, 0):
     install_requires.append('enum34')
 else:
     install_requires.append('enum34; python_version=="2.7"')
+
+
+# We have a **long** list of development dependencies, most of which have
+# more recent version requirements on them than the user-facing extras
+extras['test'] = extras['pytest'] + [
+    'flaky>=3',
+    'pytest-xdist>=1.20',
+    'mock',  # Needed on Py2; used on Py3 for consistency
+]
+
+extras['dev'] = extras['test'] + [
+    'flake8>=3.5.0',        # check for bare-except, etc.
+    'flake8-docstrings',
+    'isort>=4.3.0',         # guess at relevant bugfixes
+    'pip-tools>=1.9',       # correctness bugs before this
+    'pyformat>=0.7',        # docstring formatting changed
+    'restructuredtext-lint',
+    'Sphinx>=1.7',          # doctest builder improvements
+    'sphinx-rtd-theme',
+]
 
 
 setuptools.setup(
