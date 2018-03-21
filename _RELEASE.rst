@@ -47,3 +47,5 @@ Other changes in Hypothesis 4
   and has been removed.
 - Unused Hypothesis exception types - ``BadData``, ``BadTemplateDraw``,
   ``DefinitelyNoSuchExample``, and ``WrongFormat`` - have been removed.
+- The ``elements`` argument is now required for all collections strategies
+  such as :func:`~hypothesis.strategies.lists`.

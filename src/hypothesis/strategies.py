@@ -497,13 +497,12 @@ _AVERAGE_LIST_LENGTH = 5.0
 @cacheable
 @defines_strategy
 def lists(
-    elements=None, min_size=None, average_size=None, max_size=None,
+    elements, min_size=None, average_size=None, max_size=None,
     unique_by=None, unique=False,
 ):
     """Returns a list containing values drawn from elements with length in the
     interval [min_size, max_size] (no bounds in that direction if these are
-    None). If max_size is 0 then elements may be None and only the empty list
-    will be drawn.
+    None).
 
     average_size may be used as a size hint to roughly control the size
     of the list but it may not be the actual average of sizes you get, due
@@ -521,23 +520,7 @@ def lists(
     list, and by shrinking each individual element of the list.
     """
     check_valid_sizes(min_size, average_size, max_size)
-    if elements is None:
-        note_deprecation(
-            'Passing a strategy for `elements` of the list will be required '
-            'in a future version of Hypothesis.  To create lists that are '
-            'always empty, use `builds(list)` or `lists(nothing())`.'
-        )
-        if min_size or average_size or max_size:
-            # Checked internally for lists with an elements strategy, but
-            # we're about to skip that and return builds(list) instead...
-            raise InvalidArgument(
-                'Cannot create a non-empty collection (min_size=%r, '
-                'average_size=%r, max_size=%r) without elements.'
-                % (min_size, average_size, max_size)
-            )
-        else:
-            return builds(list)
-    check_strategy(elements)
+    check_strategy(elements, 'elements')
     if unique:
         if unique_by is not None:
             raise InvalidArgument((
@@ -581,7 +564,7 @@ def lists(
 
 @cacheable
 @defines_strategy
-def sets(elements=None, min_size=None, average_size=None, max_size=None):
+def sets(elements, min_size=None, average_size=None, max_size=None):
     """This has the same behaviour as lists, but returns sets instead.
 
     Note that Hypothesis cannot tell if values are drawn from elements
@@ -591,12 +574,6 @@ def sets(elements=None, min_size=None, average_size=None, max_size=None):
     Examples from this strategy shrink by trying to remove elements from the
     set, and by shrinking each individual element of the set.
     """
-    if elements is None:
-        note_deprecation(
-            'Passing a strategy for `elements` of the set will be required '
-            'in a future version of Hypothesis.  To create sets that are '
-            'always empty, use `builds(set)` or `sets(nothing())`.'
-        )
     return lists(
         elements=elements, min_size=min_size, average_size=average_size,
         max_size=max_size, unique=True
@@ -605,16 +582,9 @@ def sets(elements=None, min_size=None, average_size=None, max_size=None):
 
 @cacheable
 @defines_strategy
-def frozensets(elements=None, min_size=None, average_size=None, max_size=None):
+def frozensets(elements, min_size=None, average_size=None, max_size=None):
     """This is identical to the sets function but instead returns
     frozensets."""
-    if elements is None:
-        note_deprecation(
-            'Passing a strategy for `elements` of the frozenset will be '
-            'required in a future version of Hypothesis.  To create '
-            'frozensets that are always empty, use `builds(frozenset)` '
-            'or `frozensets(nothing())`.'
-        )
     return lists(
         elements=elements, min_size=min_size, average_size=average_size,
         max_size=max_size, unique=True
@@ -622,7 +592,7 @@ def frozensets(elements=None, min_size=None, average_size=None, max_size=None):
 
 
 @defines_strategy
-def iterables(elements=None, min_size=None, average_size=None, max_size=None,
+def iterables(elements, min_size=None, average_size=None, max_size=None,
               unique_by=None, unique=False):
     """This has the same behaviour as lists, but returns iterables instead.
 
@@ -631,12 +601,6 @@ def iterables(elements=None, min_size=None, average_size=None, max_size=None,
     which cannot be indexed and do not have a fixed length. This ensures
     that you do not accidentally depend on sequence behaviour.
     """
-    if elements is None:
-        note_deprecation(
-            'Passing a strategy for `elements` of the iterable will be '
-            'required in a future version of Hypothesis.  To create '
-            'iterables that are always empty, use `iterables(nothing())`.'
-        )
 
     @implements_iterator
     class PrettyIter(object):
