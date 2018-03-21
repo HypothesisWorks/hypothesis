@@ -4,6 +4,3 @@
 tox
 twine
 pyupio
-wheel
-pip>=9.0.1
-setuptools>=36.2.1
