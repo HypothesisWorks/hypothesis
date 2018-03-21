@@ -22,7 +22,7 @@ PYTEST="python -m pytest -n2"
 
 $PYTEST --runpytest=subprocess tests/pytest
 
-pip install ".[datetime]"
+pip install ".[pytz]"
 $PYTEST tests/datetime/
 pip uninstall -y pytz
 

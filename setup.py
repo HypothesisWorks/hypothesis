@@ -62,7 +62,6 @@ if setuptools_version >= (8, 0):
     django_pin += ',!=1.9.*,!=1.10.*'
 
 extras = {
-    'datetime':  ['pytz'],
     'pytz':  ['pytz'],
     'numpy': ['numpy>=1.9.0'],
     'pytest': ['pytest>=2.8.0'],
