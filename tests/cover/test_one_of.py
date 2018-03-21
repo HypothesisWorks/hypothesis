@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
+from hypothesis import given
 from tests.common.debug import assert_no_examples
 
 
@@ -25,3 +26,13 @@ def test_one_of_empty():
     e = st.one_of()
     assert e.is_empty
     assert_no_examples(e)
+
+
+@given(st.one_of(st.integers().filter(bool)))
+def test_one_of_filtered(i):
+    assert bool(i)
+
+
+@given(st.one_of(st.just(100).flatmap(st.integers)))
+def test_one_of_flatmapped(i):
+    assert i >= 100

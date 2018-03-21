@@ -21,8 +21,8 @@ import pytest
 
 from hypothesis import find, given, assume, settings
 from hypothesis.database import ExampleDatabase
-from hypothesis.strategies import just, text, lists, floats, tuples, \
-    booleans, integers
+from hypothesis.strategies import just, text, lists, builds, floats, \
+    tuples, booleans, integers
 from hypothesis.internal.compat import Counter
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
@@ -72,7 +72,7 @@ def test_flatmap_retrieve_from_db():
 
 
 def test_flatmap_does_not_reuse_strategies():
-    s = lists(max_size=0).flatmap(just)
+    s = builds(list).flatmap(just)
     assert s.example() is not s.example()
 
 

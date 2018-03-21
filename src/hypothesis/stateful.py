@@ -41,15 +41,13 @@ from hypothesis._settings import Verbosity
 from hypothesis._settings import settings as Settings
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.strategies import just, lists, builds, one_of, runner, \
-    integers
+    tuples, integers, fixed_dictionaries
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 from hypothesis.internal.reflection import proxies, nicerepr
 from hypothesis.internal.conjecture.data import StopTest
 from hypothesis.internal.conjecture.utils import integer_range, \
     calc_label_from_name
 from hypothesis.searchstrategy.strategies import SearchStrategy
-from hypothesis.searchstrategy.collections import TupleStrategy, \
-    FixedKeysDictStrategy
 
 STATE_MACHINE_RUN_LABEL = calc_label_from_name('another state machine step')
 
@@ -536,10 +534,9 @@ class RuleBasedStateMachine(GenericStateMachine):
                         break
                 converted_arguments[k] = v
             if valid:
-                strategies.append(TupleStrategy((
-                    just(rule),
-                    FixedKeysDictStrategy(converted_arguments)
-                ), tuple))
+                strategies.append(tuples(
+                    just(rule), fixed_dictionaries(converted_arguments)
+                ))
         if not strategies:
             raise InvalidDefinition(
                 u'No progress can be made from state %r' % (self,)
