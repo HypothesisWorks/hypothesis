@@ -18,10 +18,11 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
+import pytest
 
 from hypothesis import given, assume
 from hypothesis.extra import numpy as npst
-from tests.common.utils import checks_deprecated_behaviour
+from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import data, sampled_from
 
 
@@ -38,10 +39,10 @@ def test_can_sample_1D_numpy_array_without_warning(data, arr):
     assert elem in arr
 
 
-@checks_deprecated_behaviour
 @given(data(), npst.arrays(
     dtype=npst.scalar_dtypes(),
     shape=npst.array_shapes(min_dims=2, max_dims=5)
 ))
-def test_sampling_multi_dimensional_arrays_is_deprecated(data, arr):
-    data.draw(sampled_from(arr))
+def test_sampling_multi_dimensional_arrays_is_error(data, arr):
+    with pytest.raises(InvalidArgument):
+        data.draw(sampled_from(arr))

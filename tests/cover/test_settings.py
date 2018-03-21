@@ -24,8 +24,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given, unlimited
-from hypothesis.errors import InvalidState, InvalidArgument, \
-    HypothesisDeprecationWarning
+from hypothesis.errors import InvalidState, InvalidArgument
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
@@ -100,13 +99,6 @@ def test_cannot_register_with_parent_and_settings_args():
         settings.register_profile(
             'conflicted', settings.default, settings=settings.default)
     assert 'conflicted' not in settings._profiles
-
-
-@checks_deprecated_behaviour
-def test_register_profile_kwarg_settings_is_deprecated():
-    settings.register_profile('test', settings=settings(max_examples=10))
-    settings.load_profile('test')
-    assert settings.default.max_examples == 10
 
 
 def test_can_set_verbosity():
@@ -199,11 +191,6 @@ def test_cannot_delete_a_setting():
     x = settings()
     with pytest.raises(AttributeError):
         del x.foo
-
-
-def test_cannot_set_strict():
-    with pytest.raises(HypothesisDeprecationWarning):
-        settings(strict=True)
 
 
 @checks_deprecated_behaviour

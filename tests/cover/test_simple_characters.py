@@ -24,14 +24,13 @@ import pytest
 from hypothesis import find
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import find_any, assert_no_examples
-from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import characters
 from hypothesis.internal.compat import text_type
 
 
-@checks_deprecated_behaviour
 def test_nonexistent_category_argument():
-    characters(blacklist_categories=['foo']).example()
+    with pytest.raises(InvalidArgument):
+        characters(blacklist_categories=['foo']).example()
 
 
 def test_bad_codepoint_arguments():

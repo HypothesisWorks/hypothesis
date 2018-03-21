@@ -29,3 +29,21 @@ Other changes in Hypothesis 4
 - :func:`~hypothesis.strategies.dates`, :func:`~hypothesis.strategies.times`,
   and :func:`~hypothesis.strategies.datetimes` now *only* accept ``min_value``
   and ``max_value`` as bounding arguments.
+- :func:`~hypothesis.strategies.sampled_from` raises an error instead of
+  issuing a deprecation warning when passed a non-sequence input.
+- :func:`~hypothesis.strategies.builds` no longer supports the ``target``
+  keyword - pass the callable to build as the first positional argument.
+- Misuse of the ``.example()`` method of a strategy - while defining a
+  strategy, or inside a test - is now an error instead of a warning.
+- Applying :func:`@given <hypothesis.given>` multiple times to a single test
+  is now an error instead of a warning.  Apply it once, with all the arguments
+  in a single call.
+- The deprecated SQLite3 example database has been removed.
+- The ``categories`` arguments to :func:`~hypothesis.strategies.characters`
+  are now strictly validated, so passing a non-existent category is an error.
+- The ``settings`` keyword to `~hypothesis.settings.register_profile` was
+  deprecated in favor of ``parent``, and has been removed.
+- The ``strict`` setting was deprecated (and thus enabling it was an error),
+  and has been removed.
+- Unused Hypothesis exception types - ``BadData``, ``BadTemplateDraw``,
+  ``DefinitelyNoSuchExample``, and ``WrongFormat`` - have been removed.
