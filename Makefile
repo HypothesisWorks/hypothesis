@@ -149,9 +149,6 @@ check-quality: $(TOX) $(PY27)
 	$(TOX) --recreate -e quality
 	$(TOX) --recreate -e quality2
 
-check-ancient-pip: $(PY273)
-	scripts/check-ancient-pip.sh $(PY273)
-
 
 check-pytest: check-pytest28 check-pytest30
 
