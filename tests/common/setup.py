@@ -31,6 +31,9 @@ def run():
     filterwarnings('error')
     filterwarnings('ignore', category=ImportWarning)
     filterwarnings('ignore', category=FutureWarning, module='pandas._version')
+    # Only applies to Django 1.8, so this filter will go very soon!
+    filterwarnings('ignore', category=DeprecationWarning,
+                   module='tests.django.toystore.models')
 
     set_hypothesis_home_dir(mkdtemp())
 
