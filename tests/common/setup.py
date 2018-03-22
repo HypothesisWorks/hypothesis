@@ -18,19 +18,19 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-import warnings
 from tempfile import mkdtemp
+from warnings import filterwarnings
 
 from hypothesis import settings, unlimited
-from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.configuration import set_hypothesis_home_dir
 from hypothesis.internal.charmap import charmap, charmap_file
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 
 def run():
-    warnings.filterwarnings('error', category=UnicodeWarning)
-    warnings.filterwarnings('error', category=HypothesisDeprecationWarning)
+    filterwarnings('error')
+    filterwarnings('ignore', category=ImportWarning)
+    filterwarnings('ignore', category=FutureWarning, module='pandas._version')
 
     set_hypothesis_home_dir(mkdtemp())
 
