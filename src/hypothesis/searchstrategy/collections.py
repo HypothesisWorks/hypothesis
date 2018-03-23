@@ -67,6 +67,10 @@ class ListStrategy(SearchStrategy):
         self.min_size = min_size or 0
         self.max_size = max_size or float('inf')
         assert 0 <= min_size <= max_size
+        self.average_size = min(
+            max(self.min_size * 2, self.min_size + 5),
+            0.5 * (self.min_size + self.max_size),
+        )
         self.element_strategy = elements
 
     def calc_label(self):
@@ -101,6 +105,7 @@ class ListStrategy(SearchStrategy):
         elements = cu.many(
             data,
             min_size=self.min_size, max_size=self.max_size,
+            average_size=self.average_size
         )
         result = []
         while elements.more():
@@ -128,6 +133,7 @@ class UniqueListStrategy(ListStrategy):
         elements = cu.many(
             data,
             min_size=self.min_size, max_size=self.max_size,
+            average_size=self.average_size
         )
         seen = set()
         result = []
