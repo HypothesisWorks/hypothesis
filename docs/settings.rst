@@ -110,7 +110,7 @@ and :func:`@given <hypothesis.given>`.
     [1]
 
 The four levels are quiet, normal, verbose and debug. normal is the default,
-while in quiet Hypothesis will not print anything out, even the final
+while in quiet mode Hypothesis will not print anything out, not even the final
 falsifying example. debug is basically verbose but a bit more so. You probably
 don't want it.
 
@@ -119,7 +119,7 @@ You can also override the default by setting the environment variable
 setting ``HYPOTHESIS_VERBOSITY_LEVEL=verbose`` will run all your tests printing
 intermediate results and errors.
 
-If you are using ``pytest``, you may also need to
+If you are using :pypi:`pytest`, you may also need to
 :doc:`disable output capturing for passing tests <pytest:capture>`.
 
 -------------------------

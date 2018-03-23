@@ -409,8 +409,8 @@ settings.define_setting(
     default=5,
     description="""
 Raise Unsatisfiable for any tests which do not produce at least this many
-values that pass all assume() calls and which have not exhaustively covered the
-search space.
+values that pass all :func:`hypothesis.assume` calls and which have not
+exhaustively covered the search space.
 """
 )
 

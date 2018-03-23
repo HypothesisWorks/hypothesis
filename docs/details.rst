@@ -50,7 +50,7 @@ additional information you might need in your test.
 Test Statistics
 ---------------
 
-If you are using py.test you can see a number of statistics about the executed tests
+If you are using :pypi:`pytest` you can see a number of statistics about the executed tests
 by passing the command line argument ``--hypothesis-show-statistics``. This will include
 some general statistics about the test:
 
@@ -79,7 +79,7 @@ You would see:
 The final "Stopped because" line is particularly important to note: It tells you the
 setting value that determined when the test should stop trying new examples. This
 can be useful for understanding the behaviour of your tests. Ideally you'd always want
-this to be ``max_examples``.
+this to be :obj:`~hypothesis.settings.max_examples`.
 
 In some cases (such as filtered and recursive strategies) you will see events mentioned
 which describe some aspect of the data generation:
@@ -137,7 +137,7 @@ You will then see output like:
       * 18.84%, i mod 3 = 2
 
 Arguments to ``event`` can be any hashable type, but two events will be considered the same
-if they are the same when converted to a string with ``str``.
+if they are the same when converted to a string with :obj:`python:str`.
 
 ------------------
 Making assumptions
@@ -147,8 +147,8 @@ Sometimes Hypothesis doesn't give you exactly the right sort of data you want - 
 mostly of the right shape, but some examples won't work and you don't want to care about
 them. You *can* just ignore these by aborting the test early, but this runs the risk of
 accidentally testing a lot less than you think you are. Also it would be nice to spend
-less time on bad examples - if you're running 200 examples per test (the default) and
-it turns out 150 of those examples don't match your needs, that's a lot of wasted time.
+less time on bad examples - if you're running 100 examples per test (the default) and
+it turns out 70 of those examples don't match your needs, that's a lot of wasted time.
 
 .. autofunction:: hypothesis.assume
 
@@ -376,7 +376,7 @@ using :func:`@given <hypothesis.given>` with instance methods works: ``self``
 will be passed to the function as normal and not be parametrized over.
 
 The function returned by given has all the same arguments as the original
-test, minus those that are filled in by ``given``.
+test, minus those that are filled in by :func:`@given <hypothesis.given>`.
 
 -------------------------
 Custom function execution
@@ -387,6 +387,8 @@ examples.
 
 This lets you do things like set up and tear down around each example, run
 examples in a subprocess, transform coroutine tests into normal tests, etc.
+For example, :class:`~hypothesis.extra.django.TransactionTestCase` in the
+Django extra runs each example in a separate database transaction.
 
 The way this works is by introducing the concept of an executor. An executor
 is essentially a function that takes a block of code and run it. The default
@@ -397,7 +399,7 @@ executor is:
     def default_executor(function):
         return function()
 
-You define executors by defining a method execute_example on a class. Any
+You define executors by defining a method ``execute_example`` on a class. Any
 test methods on that class with :func:`@given <hypothesis.given>` used on them will use
 ``self.execute_example`` as an executor with which to run tests. For example,
 the following executor runs all its code twice:
