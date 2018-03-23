@@ -505,9 +505,8 @@ def lists(
     None). If max_size is 0 then elements may be None and only the empty list
     will be drawn.
 
-    The average_size argument is deprecated.  This hint is a holdout from
-    earlier versions where Hypothesis needed help to generate data in sensible
-    sizes, but subsequent improvements have rendered it obsolete.
+    The average_size argument is deprecated.  Internal upgrades since
+    Hypothesis 1.x mean we no longer needed this hint to generate useful data.
 
     If unique is True (or something that evaluates to True), we compare direct
     object equality, as if unique_by was `lambda x: x`. This comparison only
@@ -822,9 +821,8 @@ def text(
 
     min_size and max_size have the usual interpretations.
 
-    The average_size argument is deprecated.  This hint is a holdout from
-    earlier versions where Hypothesis needed help to generate data in sensible
-    sizes, but subsequent improvements have rendered it obsolete.
+    The average_size argument is deprecated.  Internal upgrades since
+    Hypothesis 1.x mean we no longer needed this hint to generate useful data.
 
     Examples from this strategy shrink towards shorter strings, and with the
     characters in the text shrinking as per the alphabet strategy.
@@ -892,9 +890,8 @@ def binary(
 
     min_size and max_size have the usual interpretations.
 
-    The average_size argument is deprecated.  This hint is a holdout from
-    earlier versions where Hypothesis needed help to generate data in sensible
-    sizes, but subsequent improvements have rendered it obsolete.
+    The average_size argument is deprecated.  Internal upgrades since
+    Hypothesis 1.x mean we no longer needed this hint to generate useful data.
 
     Examples from this strategy shrink towards smaller strings and lower byte
     values.
