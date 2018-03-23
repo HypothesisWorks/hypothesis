@@ -90,14 +90,11 @@ and :func:`@given <hypothesis.given>`.
     >>> from hypothesis import find, settings, Verbosity
     >>> from hypothesis.strategies import lists, booleans
     >>> find(lists(integers()), any, settings=settings(verbosity=Verbosity.verbose))
-    Trying example []
+    Tried non-satisfying example []
     Found satisfying example [-1198601713, -67, 116, -29578]
     Shrunk example to [-67, 116, -29578]
     Shrunk example to [116, -29578]
-    Shrunk example to [116, -29578]
     Shrunk example to [-29578]
-    Shrunk example to [-115]
-    Shrunk example to [-115]
     Shrunk example to [-115]
     Shrunk example to [115]
     Shrunk example to [-57]
