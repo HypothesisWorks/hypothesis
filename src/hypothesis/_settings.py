@@ -411,6 +411,10 @@ settings.define_setting(
 Raise Unsatisfiable for any tests which do not produce at least this many
 values that pass all :func:`hypothesis.assume` calls and which have not
 exhaustively covered the search space.
+
+Note that examples are compared at the level of the underlying byte-stream -
+for example, :func:`~hypothesis.strategies.booleans` contains 256 unique
+examples at this level because it always uses one byte.
 """
 )
 
