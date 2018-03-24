@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.50.3 - 2018-03-24
+-------------------
+
+This patch contains some internal refactoring so that we can run
+with warnings as errors in CI.
+
+-------------------
 3.50.2 - 2018-03-20
 -------------------
 
