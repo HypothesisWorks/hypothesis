@@ -4,6 +4,8 @@ test:
 
 machine:
   pre:
+    - cd "$(brew --repository)" && git fetch && git reset --hard origin/master
+    - brew update
     - brew install python
     - python --version
     - pip --version
