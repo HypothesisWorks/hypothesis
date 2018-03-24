@@ -216,7 +216,7 @@ def test_removing_an_element_from_a_unique_list(xs, y):
 
 
 @fails
-@given(lists(integers(), average_size=25.0), data())
+@given(lists(integers(), min_size=2), data())
 def test_removing_an_element_from_a_non_unique_list(xs, data):
     y = data.draw(sampled_from(xs))
     xs.remove(y)

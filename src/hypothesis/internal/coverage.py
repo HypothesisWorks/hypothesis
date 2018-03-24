@@ -57,7 +57,8 @@ IN_COVERAGE_TESTS = os.getenv('HYPOTHESIS_INTERNAL_COVERAGE') == 'true'
 
 
 if IN_COVERAGE_TESTS:
-    log = open('branch-check', 'w')
+    with open('branch-check', 'w'):
+        pass
     written = set()
 
     def record_branch(name, value):
@@ -65,11 +66,8 @@ if IN_COVERAGE_TESTS:
         if key in written:
             return
         written.add(key)
-        log.write(
-            json.dumps({'name': name, 'value': value})
-        )
-        log.write('\n')
-        log.flush()
+        with open('branch-check', 'a') as log:
+            log.write(json.dumps({'name': name, 'value': value}) + '\n')
 
     description_stack = []
 

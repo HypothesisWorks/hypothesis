@@ -24,10 +24,7 @@ from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
 
 
-@given(
-    st.recursive(
-        st.booleans(), lambda x: st.lists(x, average_size=20),
-        max_leaves=10))
+@given(st.recursive(st.booleans(), st.lists, max_leaves=10))
 def test_respects_leaf_limit(xs):
     def flatten(x):
         if isinstance(x, list):

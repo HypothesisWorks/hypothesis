@@ -56,8 +56,8 @@ from hypothesis.strategies import text
 from hypothesis.internal.compat import PY3
 import sys
 
-@settings(verbosity=Verbosity.verbose)
 def test_emits_unicode():
+    @settings(verbosity=Verbosity.verbose)
     @given(text())
     def test_should_emit_unicode(t):
         assert all(ord(c) <= 1000 for c in t)

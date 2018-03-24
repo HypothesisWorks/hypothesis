@@ -56,11 +56,10 @@ def builds_ignoring_invalid(target, *args, **kwargs):
 size_strategies = dict(
     min_size=st.integers(min_value=0, max_value=100) | st.none(),
     max_size=st.integers(min_value=0, max_value=100) | st.none(),
-    average_size=st.floats(min_value=0.0, max_value=100.0) | st.none()
 )
 
 
-values = st.integers() | st.text(average_size=2.0)
+values = st.integers() | st.text()
 
 
 Strategies = st.recursive(
@@ -77,10 +76,10 @@ Strategies = st.recursive(
         builds_ignoring_invalid(st.lists, x, **size_strategies),
         builds_ignoring_invalid(st.sets, x, **size_strategies),
         builds_ignoring_invalid(
-            lambda v: st.tuples(*v), st.lists(x, average_size=2.0)),
+            lambda v: st.tuples(*v), st.lists(x)),
         builds_ignoring_invalid(
             lambda v: st.one_of(*v),
-            st.lists(x, average_size=2.0, min_size=1)),
+            st.lists(x, min_size=1)),
         builds_ignoring_invalid(
             st.dictionaries, x, x,
             dict_class=st.sampled_from([dict, OrderedDict]),

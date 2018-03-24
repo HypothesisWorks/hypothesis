@@ -30,7 +30,7 @@ from hypothesis.strategies import integers, floats, just, one_of, \
     none, randoms, builds, fixed_dictionaries, recursive
 
 
-__all__ = ['small_verifier', 'standard_types', 'OrderedPair', 'TIME_INCREMENT']
+__all__ = ['standard_types', 'OrderedPair', 'TIME_INCREMENT']
 
 OrderedPair = namedtuple('OrderedPair', ('left', 'right'))
 
@@ -42,7 +42,7 @@ ordered_pair = integers().flatmap(
 
 def constant_list(strat):
     return strat.flatmap(
-        lambda v: lists(just(v), average_size=10),
+        lambda v: lists(just(v)),
     )
 
 
@@ -82,9 +82,8 @@ standard_types = [
     complex_numbers(),
     fractions(),
     decimals(),
-    lists(lists(booleans(), average_size=10), average_size=10),
-    lists(lists(booleans(), average_size=100)),
-    lists(floats(0.0, 0.0), average_size=1.0),
+    lists(lists(booleans())),
+    lists(floats(0.0, 0.0)),
     ordered_pair, constant_list(integers()),
     integers().filter(lambda x: abs(x) > 100),
     floats(min_value=-sys.float_info.max, max_value=sys.float_info.max),

@@ -22,6 +22,46 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.52.0 - 2018-03-24
+-------------------
+
+This release deprecates use of :func:`@settings(...) <hypothesis.settings>`
+as a decorator, on functions or methods that are not also decorated with
+:func:`@given <hypothesis.given>`.  You can still apply these decorators
+in any order, though you should only do so once each.
+
+Applying :func:`@given <hypothesis.given>` twice was already deprecated, and
+applying :func:`@settings(...) <hypothesis.settings>` twice is deprecated in
+this release and will become an error in a future version. Neither could ever
+be used twice to good effect.)
+
+Using :func:`@settings(...) <hypothesis.settings>` as the sole decorator on
+a test is completely pointless, so this common usage error will become an
+error in a future version of Hypothesis.
+
+-------------------
+3.51.0 - 2018-03-24
+-------------------
+
+This release deprecates the ``average_size`` argument to
+:func:`~hypothesis.strategies.lists` and other collection strategies.
+You should simply delete it wherever it was used in your tests, as it
+no longer has any effect.
+
+In early versions of Hypothesis, the ``average_size`` argument was treated
+as a hint about the distribution of examples from a strategy.  Subsequent
+improvements to the conceptual model and the engine for generating and
+shrinking examples mean it is more effective to simply describe what
+constitutes a valid example, and let our internals handle the distribution.
+
+-------------------
+3.50.3 - 2018-03-24
+-------------------
+
+This patch contains some internal refactoring so that we can run
+with warnings as errors in CI.
+
+-------------------
 3.50.2 - 2018-03-20
 -------------------
 

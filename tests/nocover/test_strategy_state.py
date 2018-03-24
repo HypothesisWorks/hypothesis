@@ -143,7 +143,7 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(target=strategies, elements=strategies)
     def list_strategy(self, elements):
-        return lists(elements, average_size=AVERAGE_LIST_LENGTH)
+        return lists(elements)
 
     @rule(target=strategies, left=strategies, right=strategies)
     def or_strategy(self, left, right):
