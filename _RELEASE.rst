@@ -49,3 +49,5 @@ Other changes in Hypothesis 4
   ``DefinitelyNoSuchExample``, and ``WrongFormat`` - have been removed.
 - The ``elements`` argument is now required for all collections strategies
   such as :func:`~hypothesis.strategies.lists`.
+- The ``average_size`` argument has been removed from the public API for
+  all strategies, including e.g. :func:`~hypothesis.strategies.lists`.
