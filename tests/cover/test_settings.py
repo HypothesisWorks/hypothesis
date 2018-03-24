@@ -311,3 +311,8 @@ def test_outer_ok(x):
 @settings()
 def test_inner_ok(x):
     pass
+
+
+def test_settings_as_decorator_must_be_on_callable():
+    with pytest.raises(InvalidArgument):
+        settings()(1)
