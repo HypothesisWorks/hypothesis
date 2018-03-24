@@ -86,8 +86,8 @@ def single_bool_lists(draw):
 @example([False, False, False, True], [3], None,)
 @settings(max_examples=0)
 @given(
-    lists(booleans(), average_size=20) | single_bool_lists(),
-    lists(integers(1, 3), average_size=20), random_module())
+    lists(booleans()) | single_bool_lists(),
+    lists(integers(1, 3)), random_module())
 def test_failure_sequence_inducing(building, testing, rnd):
     buildit = iter(building)
     testit = iter(testing)
