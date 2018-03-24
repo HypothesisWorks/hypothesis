@@ -130,11 +130,9 @@ def check_valid_sizes(min_size, average_size, max_size):
     if average_size is not None:
         from hypothesis._settings import note_deprecation
         note_deprecation(
-            'The average_size argument has been disabled, is deprecated, '
-            'and will be removed in a future version.  Upgrades since '
-            'Hypothesis 1.x mean we can generate useful data without this '
-            'hint.  Please open an issue if the default distribution of '
-            'examples does not work for your tests.'
+            'You should remove the average_size argument, because it is '
+            'deprecated and no longer has any effect.  Please open an issue '
+            'if the default distribution of examples does not work for you.'
         )
 
     check_valid_size(min_size, 'min_size')
