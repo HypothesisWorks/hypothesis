@@ -5,6 +5,8 @@ test:
 machine:
   pre:
     - brew install python
+    - python --version
+    - pip --version
 
 dependencies:
   override:
