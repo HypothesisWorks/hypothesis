@@ -19,7 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import enum
 import math
-from numbers import Rational
+import decimal
+from numbers import Real, Rational
 from collections import Sequence, OrderedDict
 
 from hypothesis.errors import InvalidArgument
@@ -72,6 +73,8 @@ def check_valid_bound(value, name):
     """
     if value is None or isinstance(value, integer_types + (Rational,)):
         return
+    if not isinstance(value, (Real, decimal.Decimal)):
+        raise InvalidArgument('%s=%r must be a real number.' % (name, value))
     if math.isnan(value):
         raise InvalidArgument(u'Invalid end point %s=%r' % (name, value))
 
@@ -90,7 +93,7 @@ def try_convert(typ, value, name):
                 name, value, type(value).__name__, typ.__name__
             )
         )
-    except (OverflowError, ValueError):
+    except (OverflowError, ValueError, ArithmeticError):
         raise InvalidArgument(
             'Cannot convert %s=%r to type %s' % (
                 name, value, typ.__name__

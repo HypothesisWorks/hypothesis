@@ -522,6 +522,6 @@ def test_prints_notes_once_on_failure():
     assert lines.count('Hi there') == 1
 
 
-@given(lists(max_size=0))
+@given(lists(integers(), max_size=0))
 def test_empty_lists(xs):
     assert xs == []

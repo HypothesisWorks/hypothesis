@@ -157,9 +157,6 @@ these should be considered targets for deprecation and/or improvement.
 
 * most of the collections in ``hypothesis.strategies`` have an ``average_size``
   distribution hint.
-* many of the collections in ``hypothesis.strategies`` allow a default of
-  ``None`` for their elements strategy (meaning only generate empty
-  collections).
 * ``hypothesis.extra.numpy`` has some arguments which can be either
   strategies or values.
 * ``hypothesis.extra.numpy`` assumes arrays are fixed size and doesn't have

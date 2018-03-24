@@ -33,9 +33,9 @@ from hypothesis.internal.compat import OrderedDict
 
 @pytest.mark.parametrize((u'col', u'strat'), [
     ((), tuples()),
-    ([], lists(max_size=0)),
-    (set(), sets(max_size=0)),
-    (frozenset(), frozensets(max_size=0)),
+    ([], lists(none(), max_size=0)),
+    (set(), sets(none(), max_size=0)),
+    (frozenset(), frozensets(none(), max_size=0)),
     ({}, fixed_dictionaries({})),
 ])
 def test_find_empty_collection_gives_empty(col, strat):
@@ -158,7 +158,7 @@ def test_minimize_dicts_with_incompatible_keys():
 
 
 def test_multiple_empty_lists_are_independent():
-    x = find(lists(lists(max_size=0)), lambda t: len(t) >= 2)
+    x = find(lists(lists(none(), max_size=0)), lambda t: len(t) >= 2)
     u, v = x
     assert u is not v
 

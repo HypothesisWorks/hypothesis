@@ -598,8 +598,7 @@ class FilteredStrategy(SearchStrategy):
 
     @property
     def branches(self):
-        branches = [
+        return [
             FilteredStrategy(strategy=strategy, condition=self.condition)
             for strategy in self.filtered_strategy.branches
         ]
-        return branches
