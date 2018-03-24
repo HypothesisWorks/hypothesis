@@ -69,7 +69,7 @@ class ListStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         self.average_size = average_size
         self.min_size = min_size or 0
-        self.max_size = max_size or float('inf')
+        self.max_size = max_size if max_size is not None else float('inf')
         assert 0 <= min_size <= average_size <= max_size
         self.element_strategy = elements
 
@@ -84,8 +84,7 @@ class ListStrategy(SearchStrategy):
                 'strategy %r because it has no values.') % (
                 self.element_strategy,))
         if self.element_strategy.is_empty and 0 < self.max_size < float('inf'):
-            from hypothesis._settings import note_deprecation
-            note_deprecation(
+            raise InvalidArgument(
                 'Cannot create a collection of max_size=%r, because no '
                 'elements can be drawn from the element strategy %r'
                 % (self.max_size, self.element_strategy)

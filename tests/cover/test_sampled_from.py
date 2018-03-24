@@ -20,8 +20,10 @@ from __future__ import division, print_function, absolute_import
 import enum
 import collections
 
+import pytest
+
 from hypothesis import given, settings
-from tests.common.utils import checks_deprecated_behaviour
+from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import sampled_from
 
 an_enum = enum.Enum('A', 'a b c')
@@ -35,11 +37,6 @@ def test_can_handle_sampling_from_fewer_than_min_satisfying(v):
     pass
 
 
-@checks_deprecated_behaviour
-def test_can_sample_sets_while_deprecated():
-    assert sampled_from(set('abc')).example() in 'abc'
-
-
 def test_can_sample_sequence_without_warning():
     sampled_from([1, 2, 3]).example()
 
@@ -51,3 +48,8 @@ def test_can_sample_ordereddict_without_warning():
 @given(sampled_from(an_enum))
 def test_can_sample_enums(member):
     assert isinstance(member, an_enum)
+
+
+def test_cannot_sample_non_collections_eg_sets():
+    with pytest.raises(InvalidArgument):
+        sampled_from(set('abc')).example()

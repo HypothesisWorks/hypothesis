@@ -26,14 +26,13 @@ from hypothesis import assume
 from hypothesis import settings as Settings
 from hypothesis.errors import Flaky, InvalidDefinition
 from hypothesis.control import current_build_context
-from tests.common.utils import raises, capture_out, \
-    checks_deprecated_behaviour
+from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, GenericStateMachine, \
     RuleBasedStateMachine, rule, invariant, precondition, \
     run_state_machine_as_test
 from hypothesis.strategies import just, none, lists, binary, tuples, \
-    choices, booleans, integers, sampled_from
+    booleans, integers, sampled_from
 from hypothesis.internal.compat import print_unicode
 
 
@@ -377,19 +376,6 @@ IntAdder.define_rule(
         u'x': integers(), u'y': Bundle(u'ints'),
     }
 )
-
-
-@checks_deprecated_behaviour
-def test_can_choose_in_a_machine():
-    class ChoosingMachine(GenericStateMachine):
-
-        def steps(self):
-            return choices()
-
-        def execute_step(self, choices):
-            choices([1, 2, 3])
-
-    run_state_machine_as_test(ChoosingMachine)
 
 
 with Settings(max_examples=10):

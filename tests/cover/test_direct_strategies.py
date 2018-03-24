@@ -28,7 +28,6 @@ import pytest
 import hypothesis.strategies as ds
 from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
-from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.internal.reflection import nicerepr
 
 
@@ -105,15 +104,18 @@ def fn_ktest(*fnkwargs):
     (ds.fractions, {'max_denominator': 0}),
     (ds.fractions, {'max_denominator': 1.5}),
     (ds.fractions, {'min_value': complex(1, 2)}),
-    (ds.lists, {'average_size': '5'}),
-    (ds.lists, {'average_size': float('nan')}),
-    (ds.lists, {'min_size': 10, 'max_size': 9}),
-    (ds.lists, {'min_size': -10, 'max_size': -9}),
-    (ds.lists, {'max_size': -9}),
-    (ds.lists, {'min_size': -10}),
-    (ds.lists, {'max_size': 10, 'average_size': 20}),
-    (ds.lists, {'min_size': 1.0, 'average_size': 0.5}),
+    (ds.lists, {'elements': ds.integers(), 'average_size': '5'}),
+    (ds.lists, {'elements': ds.integers(), 'average_size': float('nan')}),
+    (ds.lists, {'elements': ds.integers(), 'min_size': 10, 'max_size': 9}),
+    (ds.lists, {'elements': ds.integers(), 'min_size': -10, 'max_size': -9}),
+    (ds.lists, {'elements': ds.integers(), 'max_size': -9}),
+    (ds.lists, {'elements': ds.integers(), 'min_size': -10}),
+    (ds.lists, {'elements': ds.integers(), 'max_size': 10,
+                'average_size': 20}),
+    (ds.lists, {'elements': ds.integers(), 'min_size': 1.0,
+                'average_size': 0.5}),
     (ds.lists, {'elements': 'hi'}),
+    (ds.lists, {'elements': ds.nothing(), 'max_size': 1}),
     (ds.text, {'min_size': 10, 'max_size': 9}),
     (ds.text, {'max_size': 10, 'average_size': 20}),
     (ds.binary, {'min_size': 10, 'max_size': 9}),
@@ -239,11 +241,6 @@ def test_produces_valid_examples_from_args(fn, args):
 def test_build_class_with_target_kwarg():
     NamedTupleWithTargetField = collections.namedtuple('Something', ['target'])
     ds.builds(NamedTupleWithTargetField, target=ds.integers()).example()
-
-
-@checks_deprecated_behaviour
-def test_builds_can_specify_target_with_target_kwarg():
-    ds.builds(x=ds.integers(), target=lambda x: x).example()
 
 
 def test_builds_raises_with_no_target():
@@ -388,19 +385,3 @@ def test_iterables_are_exhaustible(it):
 
 def test_minimal_iterable():
     assert list(find(ds.iterables(ds.integers()), lambda x: True)) == []
-
-
-@checks_deprecated_behaviour
-def test_iterables_without_elements_is_deprecated():
-    assert list(ds.iterables().example()) == []
-
-
-@checks_deprecated_behaviour
-def test_lists_wit_max_size_no_elements_is_deprecated_and_error():
-    with pytest.raises(InvalidArgument):
-        ds.lists(max_size=1).example()
-
-
-@checks_deprecated_behaviour
-def test_empty_elements_with_max_size_is_deprecated():
-    ds.lists(ds.nothing(), max_size=1).example()

@@ -78,15 +78,11 @@ Still here?  Here's a note on what to expect in each directory.
     are therefore good that they're in here!
 
 ``datetime/``
-    Tests for the deprecated ``hypothesis.extra.datetime`` module, which
-    depends on the ``pytz`` package.
+    Tests which depend on the ``pytz`` package for timezones.
 
 ``django/``
     Tests for the Django extra.  Includes a toy application, to give us lots
     of models to generate.
-
-``fakefactory/``
-    Tests for the deprecated Faker extra.
 
 ``nocover/``
     More expensive and longer-running tests, typically used to test trickier

@@ -28,7 +28,6 @@ from functools import reduce
 
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.control import assume
-from hypothesis._settings import note_deprecation
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
@@ -36,18 +35,17 @@ from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
 from hypothesis.internal.floats import next_up, next_down, is_negative, \
     float_to_int, int_to_float, count_between_floats
 from hypothesis.internal.charmap import as_general_categories
-from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
 from hypothesis.internal.validation import check_type, try_convert, \
     check_strategy, check_valid_size, check_valid_bound, \
-    check_valid_sizes, check_valid_integer, check_valid_interval
+    check_valid_sizes, check_valid_integer, check_valid_interval, \
+    try_convert_1d_sequence
 
 __all__ = [
     'nothing',
     'just', 'one_of',
     'none',
-    'choices', 'streaming',
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
     'characters', 'text', 'from_regex', 'binary', 'uuids',
@@ -478,9 +476,7 @@ def sampled_from(elements):
     1 values with 10, and sampled_from((1, 10)) will shrink by trying to
     replace 10 values with 1.
     """
-    from hypothesis.searchstrategy.misc import SampledFromStrategy
-    from hypothesis.internal.conjecture.utils import check_sample
-    values = check_sample(elements)
+    values = try_convert_1d_sequence(elements)
     if not values:
         return nothing()
     if len(values) == 1:
@@ -491,6 +487,7 @@ def sampled_from(elements):
         # these dynamically, because static allocation takes O(2^n) memory.
         return sets(sampled_from(values), min_size=1).map(
             lambda s: reduce(operator.or_, s))
+    from hypothesis.searchstrategy.misc import SampledFromStrategy
     return SampledFromStrategy(values)
 
 
@@ -500,13 +497,12 @@ _AVERAGE_LIST_LENGTH = 5.0
 @cacheable
 @defines_strategy
 def lists(
-    elements=None, min_size=None, average_size=None, max_size=None,
+    elements, min_size=None, average_size=None, max_size=None,
     unique_by=None, unique=False,
 ):
     """Returns a list containing values drawn from elements with length in the
     interval [min_size, max_size] (no bounds in that direction if these are
-    None). If max_size is 0 then elements may be None and only the empty list
-    will be drawn.
+    None).
 
     average_size may be used as a size hint to roughly control the size
     of the list but it may not be the actual average of sizes you get, due
@@ -524,23 +520,7 @@ def lists(
     list, and by shrinking each individual element of the list.
     """
     check_valid_sizes(min_size, average_size, max_size)
-    if elements is None:
-        note_deprecation(
-            'Passing a strategy for `elements` of the list will be required '
-            'in a future version of Hypothesis.  To create lists that are '
-            'always empty, use `builds(list)` or `lists(nothing())`.'
-        )
-        if min_size or average_size or max_size:
-            # Checked internally for lists with an elements strategy, but
-            # we're about to skip that and return builds(list) instead...
-            raise InvalidArgument(
-                'Cannot create a non-empty collection (min_size=%r, '
-                'average_size=%r, max_size=%r) without elements.'
-                % (min_size, average_size, max_size)
-            )
-        else:
-            return builds(list)
-    check_strategy(elements)
+    check_strategy(elements, 'elements')
     if unique:
         if unique_by is not None:
             raise InvalidArgument((
@@ -584,7 +564,7 @@ def lists(
 
 @cacheable
 @defines_strategy
-def sets(elements=None, min_size=None, average_size=None, max_size=None):
+def sets(elements, min_size=None, average_size=None, max_size=None):
     """This has the same behaviour as lists, but returns sets instead.
 
     Note that Hypothesis cannot tell if values are drawn from elements
@@ -594,12 +574,6 @@ def sets(elements=None, min_size=None, average_size=None, max_size=None):
     Examples from this strategy shrink by trying to remove elements from the
     set, and by shrinking each individual element of the set.
     """
-    if elements is None:
-        note_deprecation(
-            'Passing a strategy for `elements` of the set will be required '
-            'in a future version of Hypothesis.  To create sets that are '
-            'always empty, use `builds(set)` or `sets(nothing())`.'
-        )
     return lists(
         elements=elements, min_size=min_size, average_size=average_size,
         max_size=max_size, unique=True
@@ -608,16 +582,9 @@ def sets(elements=None, min_size=None, average_size=None, max_size=None):
 
 @cacheable
 @defines_strategy
-def frozensets(elements=None, min_size=None, average_size=None, max_size=None):
+def frozensets(elements, min_size=None, average_size=None, max_size=None):
     """This is identical to the sets function but instead returns
     frozensets."""
-    if elements is None:
-        note_deprecation(
-            'Passing a strategy for `elements` of the frozenset will be '
-            'required in a future version of Hypothesis.  To create '
-            'frozensets that are always empty, use `builds(frozenset)` '
-            'or `frozensets(nothing())`.'
-        )
     return lists(
         elements=elements, min_size=min_size, average_size=average_size,
         max_size=max_size, unique=True
@@ -625,7 +592,7 @@ def frozensets(elements=None, min_size=None, average_size=None, max_size=None):
 
 
 @defines_strategy
-def iterables(elements=None, min_size=None, average_size=None, max_size=None,
+def iterables(elements, min_size=None, average_size=None, max_size=None,
               unique_by=None, unique=False):
     """This has the same behaviour as lists, but returns iterables instead.
 
@@ -634,12 +601,6 @@ def iterables(elements=None, min_size=None, average_size=None, max_size=None,
     which cannot be indexed and do not have a fixed length. This ensures
     that you do not accidentally depend on sequence behaviour.
     """
-    if elements is None:
-        note_deprecation(
-            'Passing a strategy for `elements` of the iterable will be '
-            'required in a future version of Hypothesis.  To create '
-            'iterables that are always empty, use `iterables(nothing())`.'
-        )
 
     @implements_iterator
     class PrettyIter(object):
@@ -707,30 +668,6 @@ def dictionaries(
         min_size=min_size, average_size=average_size, max_size=max_size,
         unique_by=lambda x: x[0]
     ).map(dict_class)
-
-
-@defines_strategy
-def streaming(elements):
-    """Generates an infinite stream of values where each value is drawn from
-    elements.
-
-    The result is iterable (the iterator will never terminate) and
-    indexable.
-
-    Examples from this strategy shrink by trying to shrink each value drawn.
-
-    .. deprecated:: 3.15.0
-        Use :func:`data() <hypothesis.strategies.data>` instead.
-    """
-    note_deprecation(
-        'streaming() has been deprecated. Use the data() strategy instead and '
-        'replace stream iteration with data.draw() calls.'
-    )
-
-    check_strategy(elements)
-
-    from hypothesis.searchstrategy.streams import StreamStrategy
-    return StreamStrategy(elements)
 
 
 @cacheable
@@ -995,12 +932,6 @@ def builds(*callable_and_args, **kwargs):
             raise InvalidArgument(
                 'The first positional argument to builds() must be a callable '
                 'target to construct.')
-    elif 'target' in kwargs and callable(kwargs['target']):
-        args = []
-        note_deprecation(
-            'Specifying the target as a keyword argument to builds() is '
-            'deprecated. Provide it as the first positional argument instead.')
-        target = kwargs.pop('target')
     else:
         raise InvalidArgument(
             'builds() must be passed a callable as the first positional '
@@ -1403,21 +1334,16 @@ def permutations(values):
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(
-    min_datetime='min_value',
-    max_datetime='max_value',
-)
 def datetimes(
-    min_value=dt.datetime.min, max_value=dt.datetime.max,
-    timezones=none(),
-    min_datetime=None, max_datetime=None,
+    min_value=dt.datetime.min, max_value=dt.datetime.max, timezones=none(),
 ):
     """A strategy for generating datetimes, which may be timezone-aware.
 
     This strategy works by drawing a naive datetime between ``min_datetime``
     and ``max_datetime``, which must both be naive (have no timezone).
 
-    ``timezones`` must be a strategy that generates tzinfo objects (or None,
+    ``timezones`` must be a strategy that generates
+    :class:`~python:datetime.tzinfo` objects (or None,
     which is valid for naive datetimes).  A value drawn from this strategy
     will be added to a naive datetime, and the resulting tz-aware datetime
     returned.
@@ -1428,8 +1354,8 @@ def datetimes(
         adjustments, etc.  This is intentional, as malformed timestamps are a
         common source of bugs.
 
-    :py:func:`hypothesis.extra.timezones` requires the ``pytz`` package, but
-    provides all timezones in the Olsen database.  If you also want to allow
+    :py:func:`hypothesis.extra.timezones` requires the :pypi:`pytz` package,
+    but provides all timezones in the Olsen database.  If you want to allow
     naive datetimes, combine strategies like ``none() | timezones()``.
 
     Alternatively, you can create a list of the timezones you wish to allow
@@ -1468,14 +1394,7 @@ def datetimes(
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(
-    min_date='min_value',
-    max_date='max_value',
-)
-def dates(
-    min_value=dt.date.min, max_value=dt.date.max,
-    min_date=None, max_date=None,
-):
+def dates(min_value=dt.date.min, max_value=dt.date.max):
     """A strategy for dates between ``min_date`` and ``max_date``.
 
     Examples from this strategy shrink towards January 1st 2000.
@@ -1491,14 +1410,7 @@ def dates(
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(
-    min_time='min_value',
-    max_time='max_value',
-)
-def times(
-    min_value=dt.time.min, max_value=dt.time.max, timezones=none(),
-    min_time=None, max_time=None,
-):
+def times(min_value=dt.time.min, max_value=dt.time.max, timezones=none()):
     """A strategy for times between ``min_time`` and ``max_time``.
 
     The ``timezones`` argument is handled as for :py:func:`datetimes`.
@@ -1520,14 +1432,7 @@ def times(
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(
-    min_delta='min_value',
-    max_delta='max_value',
-)
-def timedeltas(
-    min_value=dt.timedelta.min, max_value=dt.timedelta.max,
-    min_delta=None, max_delta=None
-):
+def timedeltas(min_value=dt.timedelta.min, max_value=dt.timedelta.max):
     """A strategy for timedeltas between ``min_value`` and ``max_value``.
 
     Examples from this strategy shrink towards zero.
@@ -1618,60 +1523,6 @@ def shared(base, key=None):
     """
     from hypothesis.searchstrategy.shared import SharedStrategy
     return SharedStrategy(base, key)
-
-
-@defines_strategy
-def choices():
-    """Strategy that generates a function that behaves like random.choice.
-
-    Will note choices made for reproducibility.
-
-    .. deprecated:: 3.15.0
-
-        Use :func:`data() <hypothesis.strategies.data>` with
-        :func:`sampled_from() <hypothesis.strategies.sampled_from>` instead.
-
-    Examples from this strategy shrink by making each choice function return
-    an earlier value in the sequence passed to it.
-    """
-    from hypothesis.control import note, current_build_context
-    from hypothesis.internal.conjecture.utils import choice, check_sample
-
-    note_deprecation(
-        'choices() has been deprecated. Use the data() strategy instead and '
-        'replace its usage with data.draw(sampled_from(elements))) calls.'
-    )
-
-    class Chooser(object):
-
-        def __init__(self, build_context, data):
-            self.build_context = build_context
-            self.data = data
-            self.choice_count = 0
-
-        def __call__(self, values):
-            if not values:
-                raise IndexError('Cannot choose from empty sequence')
-            result = choice(self.data, check_sample(values))
-            with self.build_context.local():
-                self.choice_count += 1
-                note('Choice #%d: %r' % (self.choice_count, result))
-            return result
-
-        def __repr__(self):
-            return 'choice'
-
-    class ChoiceStrategy(SearchStrategy):
-        supports_find = False
-
-        def do_draw(self, data):
-            data.can_reproduce_example_from_repr = False
-            return Chooser(current_build_context(), data)
-
-    return shared(
-        ChoiceStrategy(),
-        key='hypothesis.strategies.chooser.choice_function'
-    )
 
 
 @cacheable

@@ -33,16 +33,6 @@ class UnsatisfiedAssumption(HypothesisException):
     """
 
 
-class BadTemplateDraw(HypothesisException):
-    """An internal error raised when something unfortunate happened during
-    template generation and you should restart the draw, preferably with a new
-    parameter.
-
-    This is not an error condition internally, but if you ever see this
-    in your code it's probably a Hypothesis bug
-    """
-
-
 class NoSuchExample(HypothesisException):
     """The condition we have been asked to satisfy appears to be always false.
 
@@ -55,15 +45,6 @@ class NoSuchExample(HypothesisException):
             'No examples found of condition %s%s' % (
                 condition_string, extra)
         )
-
-
-class DefinitelyNoSuchExample(NoSuchExample):  # pragma: no cover
-    """Hypothesis used to be able to detect exhaustive coverage of a search
-    space and no longer can.
-
-    This exception remains for compatibility reasons for now but can
-    never actually be thrown.
-    """
 
 
 class NoExamples(HypothesisException):
@@ -107,16 +88,6 @@ class Timeout(Unsatisfiable):
     of this hypothesis in the amount of time allotted to us."""
 
 
-class WrongFormat(HypothesisException, ValueError):
-    """An exception indicating you have attempted to serialize a value that
-    does not match the type described by this format."""
-
-
-class BadData(HypothesisException, ValueError):
-    """The data that we got out of the database does not seem to match the data
-    we could have put into the database given this schema."""
-
-
 class InvalidArgument(HypothesisException, TypeError):
     """Used to indicate that the arguments to a Hypothesis function were in
     some manner incorrect."""
@@ -138,11 +109,6 @@ class InvalidState(HypothesisException):
 class InvalidDefinition(HypothesisException, TypeError):
     """Used to indicate that a class definition was not well put together and
     has something wrong with it."""
-
-
-class AbnormalExit(HypothesisException):
-    """Raised when a test running in a child process exits without returning or
-    raising an exception."""
 
 
 class FailedHealthCheck(HypothesisException, Warning):
