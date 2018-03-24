@@ -8,8 +8,8 @@ machine:
     - brew install python
     - python --version
     - pip --version
-    - ln -s $(which python3) /usr/local/bin/python
-    - ln -s $(which pip3) /usr/local/bin/pip
+    - ln -f -s $(which python3) /usr/local/bin/python
+    - ln -f -s $(which pip3) /usr/local/bin/pip
 
 dependencies:
   override:
