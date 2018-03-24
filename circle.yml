@@ -6,10 +6,10 @@ machine:
   pre:
     - brew update
     - brew install python
-    - python --version
-    - pip --version
     - ln -f -s $(which python3) /usr/local/bin/python
     - ln -f -s $(which pip3) /usr/local/bin/pip
+    - python --version
+    - pip --version
 
 dependencies:
   override:
