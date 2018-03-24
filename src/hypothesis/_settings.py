@@ -37,8 +37,8 @@ from hypothesis.internal.compat import text_type
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.internal.reflection import proxies, \
     get_pretty_function_description
-from hypothesis.utils.dynamicvariables import DynamicVariable
 from hypothesis.internal.validation import try_convert
+from hypothesis.utils.dynamicvariables import DynamicVariable
 
 __all__ = [
     'settings',
