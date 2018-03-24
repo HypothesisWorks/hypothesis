@@ -214,7 +214,7 @@ def one_of(*args):
     strategies.
 
     This may be called with one iterable argument instead of multiple
-    strategy arguments. In which case one_of(x) and one_of(\*x) are
+    strategy arguments. In which case ``one_of(x)`` and ``one_of(*x)`` are
     equivalent.
 
     Examples from this strategy will generally shrink to ones that come from

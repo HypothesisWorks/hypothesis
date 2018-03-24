@@ -22,6 +22,12 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.50.2 - 2018-03-20
+-------------------
+
+This has no user-visible changes except one slight formatting change to one docstring, to avoid a deprecation warning.
+
+-------------------
 3.50.1 - 2018-03-20
 -------------------
 
