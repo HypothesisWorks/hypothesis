@@ -4,11 +4,12 @@ test:
 
 machine:
   pre:
-    # - cd "$(brew --repository)" && git fetch && git reset --hard origin/master
     - brew update
     - brew install python
     - python --version
     - pip --version
+    - ln -s $(which python3) /usr/local/bin/python
+    - ln -s $(which pip3) /usr/local/bin/pip
 
 dependencies:
   override:
