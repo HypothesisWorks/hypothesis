@@ -35,10 +35,10 @@ from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
 from hypothesis.configuration import hypothesis_home_dir
 from hypothesis.internal.compat import text_type
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
-from hypothesis.internal.reflection import proxies
-from hypothesis.internal.validation import try_convert
+from hypothesis.internal.reflection import proxies, \
+    get_pretty_function_description
 from hypothesis.utils.dynamicvariables import DynamicVariable
-from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.internal.validation import try_convert
 
 __all__ = [
     'settings',
@@ -199,15 +199,14 @@ class settings(settingsMeta('settings', (object,), {})):
             )
         if hasattr(test, '_hypothesis_internal_settings_applied'):
             note_deprecation(
-                '%s has already been decorated with a settings object, which will '
-                'be overridden.  This will be an error in a future version of '
-                'Hypothesis.\n    Previous:  %r\n    This:  %r' % (
+                '%s has already been decorated with a settings object, which '
+                'will be overridden.  This will be an error in a future '
+                'version of Hypothesis.\n    Previous:  %r\n    This:  %r' % (
                     get_pretty_function_description(test),
                     test._hypothesis_internal_use_settings,
                     self
                 )
             )
-
 
         test._hypothesis_internal_use_settings = self
 
@@ -694,7 +693,6 @@ attempting to actually execute your test.
 
 
 def validate_health_check_suppressions(suppressions):
-    from hypothesis.internal.validation import try_convert
     suppressions = try_convert(list, suppressions, 'suppress_health_check')
     for s in suppressions:
         if not isinstance(s, HealthCheck):
