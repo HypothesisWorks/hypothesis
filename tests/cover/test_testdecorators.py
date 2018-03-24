@@ -346,6 +346,7 @@ def test_uses_provided_seed():
 
     @given(integers())
     @seed(42)
+    @settings(database=None)
     def test_foo(x):
         pass
 
