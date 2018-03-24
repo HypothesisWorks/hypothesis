@@ -909,7 +909,7 @@ def given(*given_arguments, **given_kwargs):
     """
     def run_test_with_generator(test):
         if hasattr(test, '_hypothesis_internal_test_function_without_warning'):
-            # Pull out the original test function to avoid the warning we
+            # Pull out the original test function to avoid the error we
             # stuck in about using @settings without @given.
             test = test._hypothesis_internal_test_function_without_warning
         if inspect.isclass(test):

@@ -198,10 +198,9 @@ class settings(settingsMeta('settings', (object,), {})):
                 'but test=%r' % (test,)
             )
         if hasattr(test, '_hypothesis_internal_settings_applied'):
-            note_deprecation(
+            raise InvalidArgument(
                 '%s has already been decorated with a settings object, which '
-                'will be overridden.  This will be an error in a future '
-                'version of Hypothesis.\n    Previous:  %r\n    This:  %r' % (
+                'would be overridden.\n    Previous:  %r\n    This:  %r' % (
                     get_pretty_function_description(test),
                     test._hypothesis_internal_use_settings,
                     self
@@ -215,11 +214,9 @@ class settings(settingsMeta('settings', (object,), {})):
 
         @proxies(test)
         def new_test(*args, **kwargs):
-            note_deprecation(
-                'Using `@settings` without `@given` does not make sense and '
-                'will be an error in a future version of Hypothesis.'
+            raise InvalidArgument(
+                'Using `@settings` without `@given` does not make sense.'
             )
-            test(*args, **kwargs)
 
         # @given will get the test from this attribution (rather than use the
         # version with the deprecation warning)

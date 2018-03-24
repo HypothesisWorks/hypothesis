@@ -51,3 +51,6 @@ Other changes in Hypothesis 4
   such as :func:`~hypothesis.strategies.lists`.
 - The ``average_size`` argument has been removed from the public API for
   all strategies, including e.g. :func:`~hypothesis.strategies.lists`.
+- Various misuses of :class:`~hypothesis.settings` as a decorator now raise
+  errors instead of issuing warnings, including applying it to a test multiple
+  times or using it alone without :func:`@given <hypothesis.given>`.
