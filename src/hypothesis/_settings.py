@@ -193,11 +193,11 @@ class settings(settingsMeta('settings', (object,), {})):
         "test(*args, **kwargs)").
         """
         if not callable(test):
-            raise InvalidArgument(
-                'settings objects can be called as a decorator with @given, '
-                'but test=%r' % (test,)
-            )
-        if hasattr(test, '_hypothesis_internal_settings_applied'):
+            raise InvalidArgument('settings objects can be called as a '
+                                  'decorator, but test=%r' % (test,))
+
+        @proxies(test)
+        def double_settings(*args, **kwargs):
             raise InvalidArgument(
                 '%s has already been decorated with a settings object, which '
                 'would be overridden.\n    Previous:  %r\n    This:  %r' % (
@@ -207,25 +207,22 @@ class settings(settingsMeta('settings', (object,), {})):
                 )
             )
 
-        test._hypothesis_internal_use_settings = self
-
-        # For double-@settings check:
-        test._hypothesis_internal_settings_applied = True
-
         @proxies(test)
-        def new_test(*args, **kwargs):
+        def settings_only(*args, **kwargs):
             raise InvalidArgument(
                 'Using `@settings` without `@given` does not make sense.'
             )
 
-        # @given will get the test from this attribution (rather than use the
-        # version with the deprecation warning)
-        new_test._hypothesis_internal_test_function_without_warning = test
-
         # This means @given has been applied, so we don't need to worry about
         # warning for @settings alone.
-        has_given_applied = getattr(test, 'is_hypothesis_test', False)
-        test_to_use = test if has_given_applied else new_test
+        test_to_use = test
+        if not getattr(test, 'is_hypothesis_test', False):
+            test_to_use = settings_only
+        if hasattr(test, '_hypothesis_internal_settings_applied'):
+            test_to_use = double_settings
+        # @given will get the test from this attribute
+        test_to_use._hypothesis_internal_test_function_without_warning = test
+        test._hypothesis_internal_use_settings = self
         test_to_use._hypothesis_internal_use_settings = self
         # Can't use _hypothesis_internal_use_settings as an indicator that
         # @settings was applied, because @given also assigns that attribute.

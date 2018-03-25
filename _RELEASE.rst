@@ -53,4 +53,5 @@ Other changes in Hypothesis 4
   all strategies, including e.g. :func:`~hypothesis.strategies.lists`.
 - Various misuses of :class:`~hypothesis.settings` as a decorator now raise
   errors instead of issuing warnings, including applying it to a test multiple
-  times or using it alone without :func:`@given <hypothesis.given>`.
+  times or using it alone without :func:`@given <hypothesis.given>`.  These
+  errors are raised when tests are executed, rather than at collection time.
