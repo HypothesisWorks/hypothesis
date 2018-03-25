@@ -30,7 +30,7 @@ from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 def run():
     filterwarnings('error')
     filterwarnings('ignore', category=ImportWarning)
-    filterwarnings('ignore', category=FutureWarning, module='pandas._version')
+    filterwarnings('default', module='pandas')
     # Only applies to Django 1.8, so this filter will go very soon!
     filterwarnings('ignore', category=DeprecationWarning,
                    module='tests.django.toystore.models')
