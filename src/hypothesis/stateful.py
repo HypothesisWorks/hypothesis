@@ -192,7 +192,8 @@ class GenericStateMachine(object):
                 tuple_tb = traceback.extract_tb(exc_tb)
                 for entry in tuple_tb:
                     filename, lineno, func_name, text = entry
-                    if __file__ in filename:
+
+                    if __file__.replace('.pyc','.py') in filename:
                         exc_tb = exc_tb.tb_next
                     else:
                         break
