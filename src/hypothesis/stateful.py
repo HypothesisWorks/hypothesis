@@ -188,16 +188,16 @@ class GenericStateMachine(object):
             try:
                 run_state_machine_as_test(state_machine_class)
             except Exception as e:
-                _0, _1, exc_tb = sys.exc_info()
+                # Filter out internal calls from the traceback.
+                exc_type, exc_value, exc_tb = sys.exc_info()
                 tuple_tb = traceback.extract_tb(exc_tb)
                 for entry in tuple_tb:
-                    filename, lineno, func_name, text = entry
-
+                    filename = entry[0]
                     if __file__.replace('.pyc','.py') in filename:
                         exc_tb = exc_tb.tb_next
                     else:
                         break
-                raise _0, _1, exc_tb
+                raise exc_type, exc_value, exc_tb
 
         runTest.is_hypothesis_test = True
         StateMachineTestCase.runTest = runTest
