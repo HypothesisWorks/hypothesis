@@ -36,7 +36,7 @@ def test_can_generate_with_large_branching():
 
     xs = find(
         st.recursive(
-            st.integers(), lambda x: st.lists(x, average_size=50),
+            st.integers(), lambda x: st.lists(x, min_size=25),
             max_leaves=100),
         lambda x: isinstance(x, list) and len(flatten(x)) >= 50
     )
@@ -50,7 +50,7 @@ def test_can_generate_some_depth_with_large_branching():
         else:
             return 1
     xs = find(
-        st.recursive(st.integers(), lambda x: st.lists(x, average_size=100)),
+        st.recursive(st.integers(), st.lists),
         lambda x: depth(x) > 1
     )
     assert xs in ([0], [[]])
@@ -90,11 +90,7 @@ def test_drawing_many_near_boundary():
 @example(Random(-1363972488426139))
 @example(Random(-4))
 def test_can_use_recursive_data_in_sets(rnd):
-    nested_sets = st.recursive(
-        st.booleans(),
-        lambda js: st.frozensets(js, average_size=2.0),
-        max_leaves=10
-    )
+    nested_sets = st.recursive(st.booleans(), st.frozensets, max_leaves=10)
     find_any(nested_sets, random=rnd)
 
     def flatten(x):
@@ -137,8 +133,7 @@ def test_can_form_sets_of_recursive_data():
 def test_can_flatmap_to_recursive_data(rnd):
     stuff = st.lists(st.integers(), min_size=1).flatmap(
         lambda elts: st.recursive(
-            st.sampled_from(elts), lambda x: st.lists(x, average_size=25),
-            max_leaves=25
+            st.sampled_from(elts), st.lists, max_leaves=25
         ))
 
     def flatten(x):

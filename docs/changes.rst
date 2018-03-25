@@ -22,6 +22,88 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.52.0 - 2018-03-24
+-------------------
+
+This release deprecates use of :func:`@settings(...) <hypothesis.settings>`
+as a decorator, on functions or methods that are not also decorated with
+:func:`@given <hypothesis.given>`.  You can still apply these decorators
+in any order, though you should only do so once each.
+
+Applying :func:`@given <hypothesis.given>` twice was already deprecated, and
+applying :func:`@settings(...) <hypothesis.settings>` twice is deprecated in
+this release and will become an error in a future version. Neither could ever
+be used twice to good effect.)
+
+Using :func:`@settings(...) <hypothesis.settings>` as the sole decorator on
+a test is completely pointless, so this common usage error will become an
+error in a future version of Hypothesis.
+
+-------------------
+3.51.0 - 2018-03-24
+-------------------
+
+This release deprecates the ``average_size`` argument to
+:func:`~hypothesis.strategies.lists` and other collection strategies.
+You should simply delete it wherever it was used in your tests, as it
+no longer has any effect.
+
+In early versions of Hypothesis, the ``average_size`` argument was treated
+as a hint about the distribution of examples from a strategy.  Subsequent
+improvements to the conceptual model and the engine for generating and
+shrinking examples mean it is more effective to simply describe what
+constitutes a valid example, and let our internals handle the distribution.
+
+-------------------
+3.50.3 - 2018-03-24
+-------------------
+
+This patch contains some internal refactoring so that we can run
+with warnings as errors in CI.
+
+-------------------
+3.50.2 - 2018-03-20
+-------------------
+
+This has no user-visible changes except one slight formatting change to one docstring, to avoid a deprecation warning.
+
+-------------------
+3.50.1 - 2018-03-20
+-------------------
+
+This patch fixes an internal error introduced in 3.48.0, where a check
+for the Django test runner would expose import-time errors in Django
+configuration (:issue:`1167`).
+
+-------------------
+3.50.0 - 2018-03-19
+-------------------
+
+This release improves validation of numeric bounds for some strategies.
+
+- :func:`~hypothesis.strategies.integers` and :func:`~hypothesis.strategies.floats`
+  now raise ``InvalidArgument`` if passed a ``min_value`` or ``max_value``
+  which is not an instance of :class:`~python:numbers.Real`, instead of
+  various internal errors.
+- :func:`~hypothesis.strategies.floats` now converts its bounding values to
+  the nearest float above or below the min or max bound respectively, instead
+  of just casting to float.  The old behaviour was incorrect in that you could
+  generate ``float(min_value)``, even when this was less than ``min_value``
+  itself (possible with eg. fractions).
+- When both bounds are provided to :func:`~hypothesis.strategies.floats` but
+  there are no floats in the interval, such as ``[(2**54)+1 .. (2**55)-1]``,
+  InvalidArgument is raised.
+- :func:`~hypothesis.strategies.decimals` gives a more useful error message
+  if passed a string that cannot be converted to :class:`~python:decimal.Decimal`
+  in a context where this error is not trapped.
+
+Code that previously **seemed** to work may be explicitly broken if there
+were no floats between ``min_value`` and ``max_value`` (only possible with
+non-float bounds), or if a bound was not a :class:`~python:numbers.Real`
+number but still allowed in :obj:`python:math.isnan` (some custom classes
+with a ``__float__`` method).
+
+-------------------
 3.49.1 - 2018-03-15
 -------------------
 

@@ -105,20 +105,17 @@ def fn_ktest(*fnkwargs):
     (ds.fractions, {'max_denominator': 0}),
     (ds.fractions, {'max_denominator': 1.5}),
     (ds.fractions, {'min_value': complex(1, 2)}),
-    (ds.lists, {'average_size': '5'}),
-    (ds.lists, {'average_size': float('nan')}),
     (ds.lists, {'min_size': 10, 'max_size': 9}),
     (ds.lists, {'min_size': -10, 'max_size': -9}),
     (ds.lists, {'max_size': -9}),
     (ds.lists, {'min_size': -10}),
-    (ds.lists, {'max_size': 10, 'average_size': 20}),
-    (ds.lists, {'min_size': 1.0, 'average_size': 0.5}),
+    (ds.lists, {'min_size': float('nan')}),
     (ds.lists, {'elements': 'hi'}),
     (ds.text, {'min_size': 10, 'max_size': 9}),
-    (ds.text, {'max_size': 10, 'average_size': 20}),
     (ds.binary, {'min_size': 10, 'max_size': 9}),
-    (ds.binary, {'max_size': 10, 'average_size': 20}),
     (ds.floats, {'min_value': float('nan')}),
+    (ds.floats, {'min_value': '0'}),
+    (ds.floats, {'max_value': '0'}),
     (ds.floats, {'max_value': 0.0, 'min_value': 1.0}),
     (ds.floats, {'min_value': 0.0, 'allow_nan': True}),
     (ds.floats, {'max_value': 0.0, 'allow_nan': True}),
@@ -183,8 +180,6 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.lists, {'elements': ds.integers(), 'max_size': 5}),
     (ds.lists, {'elements': ds.booleans(), 'min_size': 5}),
     (ds.lists, {'elements': ds.booleans(), 'min_size': 5, 'max_size': 10}),
-    (ds.lists, {
-        'average_size': 20, 'elements': ds.booleans(), 'max_size': 25}),
     (ds.sets, {
         'min_size': 10, 'max_size': 10, 'elements': ds.integers(),
     }),
@@ -394,7 +389,7 @@ def test_iterables_without_elements_is_deprecated():
 
 
 @checks_deprecated_behaviour
-def test_lists_wit_max_size_no_elements_is_deprecated_and_error():
+def test_lists_with_max_size_no_elements_is_deprecated_and_error():
     with pytest.raises(InvalidArgument):
         ds.lists(max_size=1).example()
 
@@ -402,3 +397,8 @@ def test_lists_wit_max_size_no_elements_is_deprecated_and_error():
 @checks_deprecated_behaviour
 def test_empty_elements_with_max_size_is_deprecated():
     ds.lists(ds.nothing(), max_size=1).example()
+
+
+@checks_deprecated_behaviour
+def test_average_size_is_deprecated():
+    ds.lists(ds.integers(), average_size=1).example()

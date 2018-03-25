@@ -56,8 +56,8 @@ from hypothesis.strategies import text
 from hypothesis.internal.compat import PY3
 import sys
 
-@settings(verbosity=Verbosity.verbose)
 def test_emits_unicode():
+    @settings(verbosity=Verbosity.verbose)
     @given(text())
     def test_should_emit_unicode(t):
         assert all(ord(c) <= 1000 for c in t)
@@ -88,26 +88,42 @@ def test_output_emitting_unicode(testdir, monkeypatch):
 TRACEBACKHIDE_TIMEOUT = """
 from hypothesis import given, settings
 from hypothesis.strategies import integers
-import time
+from hypothesis.errors import HypothesisDeprecationWarning
 
-@given(integers())
-@settings(timeout=1)
-def test_timeout_traceback_is_hidden(i):
-    time.sleep(1.1)
+import time
+import warnings
+import pytest
+
+
+def test_timeout_traceback_is_hidden():
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter('ignore', HypothesisDeprecationWarning)
+        @given(integers())
+        @settings(timeout=1)
+        def inner(i):
+            time.sleep(1.1)
+        inner()
 """
 
 
-def get_line_num(token, result):
+def get_line_num(token, result, skip_n=0):
     for i, line in enumerate(result.stdout.lines):
         if token in line:
-            return i
-    assert False, 'Token %r not found' % token
+            if skip_n == 0:
+                return i
+            else:
+                skip_n -= 1
+    assert False, \
+        'Token %r not found (after skipping %r appearances)' % (token, skip_n)
 
 
 def test_timeout_traceback_is_hidden(testdir):
     script = testdir.makepyfile(TRACEBACKHIDE_TIMEOUT)
     result = testdir.runpytest(script, '--verbose')
-    def_line = get_line_num('def test_timeout_traceback_is_hidden', result)
+    # `def inner` shows up in the output twice: once when pytest shows us the
+    # source code of the failing test, and once in the traceback.
+    # It's the 2nd that should be next to the "Timeout: ..." message.
+    def_line = get_line_num('def inner', result, skip_n=1)
     timeout_line = get_line_num('Timeout: Ran out of time', result)
     # If __tracebackhide__ works, then the Timeout error message will be
     # next to the test name.  If it doesn't work, then the message will be

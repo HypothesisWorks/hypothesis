@@ -106,10 +106,9 @@ class fails_regularly(SearchStrategy):
         print('ohai')
 
 
-@settings(max_shrinks=0)
 def test_filtering_most_things_fails_a_health_check():
     @given(fails_regularly())
-    @settings(database=None)
+    @settings(database=None, max_shrinks=0)
     def test(x):
         pass
 
@@ -119,7 +118,7 @@ def test_filtering_most_things_fails_a_health_check():
 
 
 def test_large_data_will_fail_a_health_check():
-    @given(st.lists(st.binary(min_size=1024, max_size=1024), average_size=100))
+    @given(st.lists(st.binary(min_size=1024)))
     @settings(database=None, buffer_size=1000)
     def test(x):
         pass

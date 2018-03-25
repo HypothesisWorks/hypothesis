@@ -32,4 +32,4 @@ def test_single_example(spec):
 @pytest.mark.parametrize(
     u'spec', standard_types, ids=list(map(repr, standard_types)))
 def test_list_example(spec):
-    lists(spec, average_size=2).example()
+    lists(spec).example()
