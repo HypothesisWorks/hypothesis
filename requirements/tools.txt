@@ -53,7 +53,7 @@ safety==1.7.0             # via pyupio
 six==1.11.0               # via dparse, packaging, pip-tools, pydocstyle, pytest, python-gitlab, pyupio, sphinx, tox
 snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.2.4
-sphinx==1.7.1
+sphinx==1.7.2
 sphinxcontrib-websupport==1.0.1  # via sphinx
 tox==2.9.1
 tqdm==4.19.8              # via pyupio, twine
