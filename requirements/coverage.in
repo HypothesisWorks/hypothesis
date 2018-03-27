@@ -1,4 +1,1 @@
-numpy
-coverage
-pytz
-pandas
+-e .[numpy,pandas,pytz]

@@ -1,5 +1,1 @@
-flaky
-pytest
-pytest-xdist
-mock
-attrs
+-e .[test]

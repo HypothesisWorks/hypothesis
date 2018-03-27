@@ -1,15 +1,6 @@
-flake8
-flake8-docstrings
-isort
-pip-tools
-pyformat
-pytest
-restructuredtext-lint
-Sphinx
-sphinx-rtd-theme
+-e .[django,dev]
+# The packages below are used in CI or deployment,
+# but most contributors will not need them locally.
 tox
 twine
-attrs
-coverage
 pyupio
-django

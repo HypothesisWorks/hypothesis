@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 import warnings
+from distutils.version import StrictVersion
 
 import setuptools
 
@@ -31,15 +32,37 @@ def local_file(name):
 SOURCE = local_file('src')
 README = local_file('README.rst')
 
-setuptools_version = tuple(map(int, setuptools.__version__.split('.')[:2]))
 
-if setuptools_version < (36, 2):
-    # Warning only - very bad if uploading bdist but fine if installing sdist.
+# There are good reasons for all of this, I promise.  See the issue:
+# https://github.com/HypothesisWorks/hypothesis-python/issues/1091
+setuptools_version = StrictVersion(setuptools.__version__)
+message = """
+See https://github.com/HypothesisWorks/hypothesis-python/issues/1091 for details.
+Run the following command to update your packaging tools and try again:
+
+    pip install --upgrade pip setuptools wheel
+"""
+
+if setuptools_version >= '36.2.1':
+    CONDITIONAL_INSTALL_REQUIRES_OK = True
+elif setuptools_version >= '18.0':
+    if os.environ.get('TRAVIS_REPO_SLUG', '').startswith('HypothesisWorks'):
+        print('Too-old setuptools: %s' % setuptools_version, file=sys.stderr)
+        sys.exit(1)
+    if 'bdist_wheel' in sys.argv:
+        print('Error: setuptools %s cannot build wheels with conditional '
+              'dependencies.' % setuptools_version + message, file=sys.stderr)
+        sys.exit(1)
+    CONDITIONAL_INSTALL_REQUIRES_OK = False
     warnings.warn(
         'This version of setuptools is too old to correctly store '
-        'conditional dependencies in binary wheels.  For more info, see:  '
+        'conditional dependencies in wheels.  For more info, see:  '
         'https://hynek.me/articles/conditional-python-dependencies/'
     )
+else:
+    print('Error: your version of setuptools (%s) is too old to install '
+          'Hypothesis.' % setuptools_version + message, file=sys.stderr)
+    sys.exit(1)
 
 
 # Assignment to placate pyflakes. The actual version is from the exec that
@@ -52,22 +75,15 @@ with open(local_file('src/hypothesis/version.py')) as o:
 assert __version__ is not None
 
 
-# We only support the releases of Django that are supported by the Django
-# core team.  See https://www.djangoproject.com/download/#supported-versions
-django_pin = 'django>=1.8'
-if setuptools_version >= (8, 0):
-    # New versions of setuptools allow us to set very precise pins; older
-    # versions of setuptools are coarser.  We special-case this so users with
-    # old tools can still install an sdist from PyPI.
-    django_pin += ',!=1.9.*,!=1.10.*'
-
 extras = {
     'datetime':  ['pytz'],
     'pytz':  ['pytz'],
     'fakefactory': ['Faker>=0.7'],
     'numpy': ['numpy>=1.9.0'],
+    'pandas': ['pandas>=0.19'],
     'pytest': ['pytest>=2.8.0'],
-    'django': ['pytz', django_pin],
+    # See https://www.djangoproject.com/download/#supported-versions
+    'django': ['pytz', 'django>=1.8,!=1.9.*,!=1.10.*'],
 }
 
 extras['faker'] = extras['fakefactory']
@@ -78,11 +94,30 @@ install_requires = ['attrs>=16.0.0', 'coverage']
 # Using an environment marker on enum34 makes the dependency condition
 # independent of the build environemnt, which is important for wheels.
 # https://www.python.org/dev/peps/pep-0345/#environment-markers
-if sys.version_info[0] < 3 and setuptools_version < (8, 0):
-    # Except really old systems, where we give up and install unconditionally
-    install_requires.append('enum34')
-else:
+if CONDITIONAL_INSTALL_REQUIRES_OK:
     install_requires.append('enum34; python_version=="2.7"')
+else:
+    extras['python_version=="2.7"'] = ['enum34']
+
+
+# We have a **long** list of development dependencies, most of which have
+# more recent version requirements on them than the user-facing extras
+extras['test'] = extras['pytest'] + [
+    'flaky>=3',
+    'pytest-xdist>=1.20',
+    'mock',  # Needed on Py2; used on Py3 for consistency
+]
+
+extras['dev'] = extras['test'] + [
+    'flake8>=3.5.0',        # check for bare-except, etc.
+    'flake8-docstrings',
+    'isort>=4.3.0',         # guess at relevant bugfixes
+    'pip-tools>=1.9',       # correctness bugs before this
+    'pyformat>=0.7',        # docstring formatting changed
+    'restructuredtext-lint',
+    'Sphinx>=1.7',          # doctest builder improvements
+    'sphinx-rtd-theme',
+]
 
 
 setuptools.setup(
