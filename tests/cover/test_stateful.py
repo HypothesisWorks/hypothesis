@@ -679,3 +679,19 @@ def test_invariant_checks_initial_state():
 
     with pytest.raises(ValueError):
         run_state_machine_as_test(BadPrecondition)
+
+
+def test_always_runs_at_least_one_step():
+    class CountSteps(RuleBasedStateMachine):
+        def __init__(self):
+            super(CountSteps, self).__init__()
+            self.count = 0
+
+        @rule()
+        def do_something(self):
+            self.count += 1
+
+        def teardown(self):
+            assert self.count > 0
+
+    run_state_machine_as_test(CountSteps)
