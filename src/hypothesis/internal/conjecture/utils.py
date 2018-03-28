@@ -363,6 +363,7 @@ class many(object):
     """
 
     def __init__(self, data, min_size, max_size, average_size):
+        assert 0 <= min_size <= average_size <= max_size
         self.min_size = min_size
         self.max_size = max_size
         self.data = data

@@ -18,7 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-from numbers import Rational, Real
+import decimal
+from numbers import Real, Rational
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import integer_types
@@ -64,6 +65,8 @@ def check_valid_bound(value, name):
     """
     if value is None or isinstance(value, integer_types + (Rational,)):
         return
+    if not isinstance(value, (Real, decimal.Decimal)):
+        raise InvalidArgument('%s=%r must be a real number.' % (name, value))
     if math.isnan(value):
         raise InvalidArgument(u'Invalid end point %s=%r' % (name, value))
 
@@ -96,7 +99,7 @@ def try_convert(typ, value, name):
                 name, value, type(value).__name__, typ.__name__
             )
         )
-    except (OverflowError, ValueError):
+    except (OverflowError, ValueError, ArithmeticError):
         raise InvalidArgument(
             'Cannot convert %s=%r to type %s' % (
                 name, value, typ.__name__
@@ -138,15 +141,14 @@ def check_valid_interval(lower_bound, upper_bound, lower_name, upper_name):
 
 @check_function
 def check_valid_sizes(min_size, average_size, max_size):
+    if average_size is not None:
+        from hypothesis._settings import note_deprecation
+        note_deprecation(
+            'You should remove the average_size argument, because it is '
+            'deprecated and no longer has any effect.  Please open an issue '
+            'if the default distribution of examples does not work for you.'
+        )
+
     check_valid_size(min_size, 'min_size')
     check_valid_size(max_size, 'max_size')
-    check_valid_size(average_size, 'average_size')
     check_valid_interval(min_size, max_size, 'min_size', 'max_size')
-    check_valid_interval(average_size, max_size, 'average_size', 'max_size')
-    check_valid_interval(min_size, average_size, 'min_size', 'average_size')
-
-    if average_size == 0 and (max_size is None or max_size > 0):
-        raise InvalidArgument(
-            'Cannot have average_size=%r with non-zero max_size=%r' % (
-                average_size, max_size
-            ))

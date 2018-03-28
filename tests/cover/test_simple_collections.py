@@ -72,7 +72,7 @@ def test_minimizes_list_of_lists():
 
 def test_minimize_long_list():
     assert find(
-        lists(booleans(), average_size=100), lambda x: len(x) >= 70
+        lists(booleans(), min_size=50), lambda x: len(x) >= 70
     ) == [False] * 70
 
 

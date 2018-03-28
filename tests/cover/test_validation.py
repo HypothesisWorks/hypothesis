@@ -133,17 +133,6 @@ def test_list_unique_and_unique_by_cannot_both_be_enabled():
     assert 'unique_by' in e.value.args[0]
 
 
-def test_an_average_size_must_be_positive():
-    with pytest.raises(InvalidArgument):
-        lists(integers(), average_size=0.0).example()
-    with pytest.raises(InvalidArgument):
-        lists(integers(), average_size=-1.0).example()
-
-
-def test_an_average_size_may_be_zero_if_max_size_is():
-    lists(integers(), average_size=0.0, max_size=0)
-
-
 def test_min_before_max():
     with pytest.raises(InvalidArgument):
         integers(min_value=1, max_value=0).validate()

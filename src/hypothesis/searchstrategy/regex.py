@@ -250,11 +250,11 @@ def regex_strategy(regex):
             return st.binary()
 
     if is_unicode:
-        base_padding_strategy = st.text(average_size=1)
+        base_padding_strategy = st.text()
         empty = st.just(u'')
         newline = st.just(u'\n')
     else:
-        base_padding_strategy = st.binary(average_size=1)
+        base_padding_strategy = st.binary()
         empty = st.just(b'')
         newline = st.just(b'\n')
 

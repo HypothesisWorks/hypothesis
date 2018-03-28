@@ -38,14 +38,9 @@ for ex in [
     e(st.text),
     e(st.binary)
 ]:
-    adjust(ex, average_size=10, max_size=9),
-    adjust(ex, average_size=10, min_size=11),
-
     adjust(ex, min_size=-1)
-    adjust(ex, average_size=-1)
     adjust(ex, max_size=-1)
     adjust(ex, min_size='no')
-    adjust(ex, average_size='no')
     adjust(ex, max_size='no')
 
 
