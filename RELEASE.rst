@@ -8,3 +8,6 @@ in two ways:
 * RuleBasedStateMachine tests which used bundles extensively would often shrink
   terribly. This should now be significantly improved, though there is likely
   a lot more room for improvement.
+
+This release also involves a low level change to how ranges of integers are
+handles which may result in other improvements to shrink quality in some cases.

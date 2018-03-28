@@ -18,7 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import inspect
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 import pytest
 
@@ -695,3 +695,52 @@ def test_always_runs_at_least_one_step():
             assert self.count > 0
 
     run_state_machine_as_test(CountSteps)
+
+
+def test_removes_needless_steps():
+    """Regression test from an example based on
+    tests/nocover/test_database_agreement.py, but without the expensive bits.
+    Comparing two database implementations in which deletion is broken, so as
+    soon as a key/value pair is successfully deleted the test will now fail if
+    you ever check that key.
+
+    The main interesting feature of this is that it has a lot of
+    opportunities to generate keys and values before it actually fails,
+    but will still fail with very high probability.
+    """
+    class IncorrectDeletion(RuleBasedStateMachine):
+        def __init__(self):
+            super(IncorrectDeletion, self).__init__()
+            self.__saved = defaultdict(set)
+            self.__deleted = defaultdict(set)
+
+        keys = Bundle('keys')
+        values = Bundle('values')
+
+        @rule(target=keys, k=binary())
+        def k(self, k):
+            return k
+
+        @rule(target=values, v=binary())
+        def v(self, v):
+            return v
+
+        @rule(k=keys, v=values)
+        def save(self, k, v):
+            self.__saved[k].add(v)
+
+        @rule(k=keys, v=values)
+        def delete(self, k, v):
+            if v in self.__saved[k]:
+                self.__deleted[k].add(v)
+
+        @rule(k=keys)
+        def values_agree(self, k):
+            assert not self.__deleted[k]
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            run_state_machine_as_test(IncorrectDeletion)
+
+    assert o.getvalue().count(' = k(') == 1
+    assert o.getvalue().count(' = v(') == 1
