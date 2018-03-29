@@ -250,8 +250,7 @@ def test_bad_machines_fail(machine):
         raise
     v = o.getvalue()
     print_unicode(v)
-    assert u'Step #1' in v
-    assert u'Step #50' not in v
+    assert len(v.splitlines()) <= 50
 
 
 def test_multiple_rules_same_func():
@@ -742,5 +741,34 @@ def test_removes_needless_steps():
         with pytest.raises(AssertionError):
             run_state_machine_as_test(IncorrectDeletion)
 
-    assert o.getvalue().count(' = k(') == 1
-    assert o.getvalue().count(' = v(') == 1
+    assert o.getvalue().count(' = state.k(') == 1
+    assert o.getvalue().count(' = state.v(') == 1
+
+
+def test_prints_equal_values_with_correct_variable_name():
+    class MovesBetweenBundles(RuleBasedStateMachine):
+        b1 = Bundle('b1')
+        b2 = Bundle('b2')
+
+        @rule(target=b1)
+        def create(self):
+            return []
+
+        @rule(target=b2, source=b1)
+        def transfer(self, source):
+            return source
+
+        @rule(source=b2)
+        def fail(self, source):
+            assert False
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            run_state_machine_as_test(MovesBetweenBundles)
+
+    result = o.getvalue()
+    for m in ['create', 'transfer', 'fail']:
+        assert result.count(m) == 1
+    assert 'v1 = state.create()' in result
+    assert 'v2 = state.transfer(source=v1)' in result
+    assert 'state.fail(source=v2)' in result

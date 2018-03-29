@@ -41,6 +41,8 @@ but more flexible API and the higher level rule based API which is both
 easier to use and also produces a much better display of data due to its
 greater structure. We'll start with the more structured one.
 
+.. _rulebasedstateful:
+
 -------------------------
 Rule based state machines
 -------------------------
@@ -49,182 +51,116 @@ Rule based state machines are the ones you're most likely to want to use.
 They're significantly more user friendly and should be good enough for most
 things you'd want to do.
 
-A rule based state machine is a collection of functions (possibly with side
-effects) which may depend on both values that Hypothesis can generate and
-also on values that have resulted from previous function calls.
+The two main ingredients of a rule based state machine are rules and bundles.
 
-You define a rule based state machine as follows:
+A rule is very similar to a normal ``@given`` based test in that it takes
+values drawn from strategies and passes them to a user defined test function.
+The key difference is that where ``@given`` based tests must be independent,
+rules can be chained together - a single test run may involve multiple rule
+invocations, which may interact in various ways.
+
+A Bundle is a named collection of generated values that can be reused by other
+operations in the test.
+They are populated with the results of rules, and may be used as arguments to
+rules, allowing data to flow from one rule to another, and rules to work on
+the results of previous computations or actions.
+
+The following rule based state machine example is a simplified version of a
+test for Hypothesis's example database implementation. An example database
+maps keys to sets of values, and in this test we compare two different
+implementations: One purely in memory (based on a Python ``dict``) and one on
+disk.
 
 .. code:: python
 
-  import unittest
-  from collections import namedtuple
+    import shutil
+    import tempfile
 
-  from hypothesis import strategies as st
-  from hypothesis.stateful import RuleBasedStateMachine, Bundle, rule
-
-
-  Leaf = namedtuple('Leaf', ('label',))
-  Split = namedtuple('Split', ('left', 'right'))
+    import hypothesis.strategies as st
+    from hypothesis.database import InMemoryExampleDatabase, \
+        DirectoryBasedExampleDatabase
+    from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
 
-  class BalancedTrees(RuleBasedStateMachine):
-      trees = Bundle('BinaryTree')
+    class DatabaseComparison(RuleBasedStateMachine):
+        def __init__(self):
+            super(DatabaseComparison, self).__init__()
+            self.tempd = tempfile.mkdtemp()
+            self.on_disk_db = DirectoryBasedExampleDatabase(self.tempd)
+            self.in_memory_db = InMemoryExampleDatabase()
 
-      @rule(target=trees, x=st.integers())
-      def leaf(self, x):
-          return Leaf(x)
+        keys = Bundle('keys')
+        values = Bundle('values')
 
-      @rule(target=trees, left=trees, right=trees)
-      def split(self, left, right):
-          return Split(left, right)
+        @rule(target=keys, k=st.binary())
+        def k(self, k):
+            return k
 
-      @rule(tree=trees)
-      def check_balanced(self, tree):
-          if isinstance(tree, Leaf):
-              return
-          else:
-              assert abs(self.size(tree.left) - self.size(tree.right)) <= 1
-              self.check_balanced(tree.left)
-              self.check_balanced(tree.right)
+        @rule(target=values, v=st.binary())
+        def v(self, v):
+            return v
 
-      def size(self, tree):
-          if isinstance(tree, Leaf):
-              return 1
-          else:
-              return 1 + self.size(tree.left) + self.size(tree.right)
+        @rule(k=keys, v=values)
+        def save(self, k, v):
+            self.in_memory_db.save(k, v)
+            self.on_disk_db.save(k, v)
 
-In this we declare a Bundle, which is a named collection of previously generated
-values. We define two rules which put data onto this bundle - one which just
-generates leaves with integer labels, the other of which takes two previously
-generated values and returns a new one.
+        @rule(k=keys, v=values)
+        def delete(self, k, v):
+            self.in_memory_db.delete(k, v)
+            self.on_disk_db.delete(k, v)
+
+        @rule(k=keys)
+        def values_agree(self, k):
+            assert set(self.in_memory_db.fetch(k)) == set(
+                self.on_disk_db.fetch(k)
+            )
+
+        def teardown(self):
+            shutil.rmtree(self.tempd)
+
+
+    TestDBComparison = DatabaseComparison.TestCase
+
+In this we declare two bundles - one for keys, and one for values.
+We have two trivial rules which just populate them with data (``k`` and ``v``),
+and three non-trivial rules:
+``save`` saves a value under a key in each database implementation,
+``delete`` removes that value from that key in each database implementation,
+and ``values_agree`` checks that the two databases agree on a given key.
 
 We can then integrate this into our test suite by getting a unittest TestCase
 from it:
 
 .. code:: python
 
-  TestTrees = BalancedTrees.TestCase
+  TestTrees = DatabaseComparison.TestCase
 
+  # Or just run with pytest's unittest support
   if __name__ == '__main__':
       unittest.main()
 
-(these will also be picked up by py.test if you prefer to use that). Running
-this we get:
+This test currently passes, but if we comment out the line where we call ``self.in_memory_db.delete(k, v)``,
+we would see the following output when run under pytest:
 
-.. code:: bash
+::
 
-  Step #1: v1 = leaf(x=0)
-  Step #2: v2 = split(left=v1, right=v1)
-  Step #3: v3 = split(left=v2, right=v1)
-  Step #4: check_balanced(tree=v3)
-  F
-  ======================================================================
-  FAIL: runTest (hypothesis.stateful.BalancedTrees.TestCase)
-  ----------------------------------------------------------------------
-  Traceback (most recent call last):
-  (...)
-  assert abs(self.size(tree.left) - self.size(tree.right)) <= 1
-  AssertionError
+    AssertionError: assert set() == {b''}
+
+    ------------ Hypothesis ------------ 
+
+    state = DatabaseComparison()
+    v1 = state.k(k=b'')
+    v2 = state.v(v=v1)
+    state.save(k=v1, v=v2)
+    state.values_agree(k=v1)
+    state.teardown()
 
 Note how it's printed out a very short program that will demonstrate the
-problem.
-
-...the problem of course being that we've not actually written any code to
-balance this tree at *all*, so of course it's not balanced.
-
-So lets balance some trees.
-
-
-.. code:: python
-
-    from collections import namedtuple
-
-    from hypothesis import strategies as st
-    from hypothesis.stateful import RuleBasedStateMachine, Bundle, rule
-
-
-    Leaf = namedtuple('Leaf', ('label',))
-    Split = namedtuple('Split', ('left', 'right'))
-
-
-    class BalancedTrees(RuleBasedStateMachine):
-        trees = Bundle('BinaryTree')
-        balanced_trees = Bundle('balanced BinaryTree')
-
-        @rule(target=trees, x=st.integers())
-        def leaf(self, x):
-            return Leaf(x)
-
-        @rule(target=trees, left=trees, right=trees)
-        def split(self, left, right):
-            return Split(left, right)
-
-        @rule(tree=balanced_trees)
-        def check_balanced(self, tree):
-            if isinstance(tree, Leaf):
-                return
-            else:
-                assert abs(self.size(tree.left) - self.size(tree.right)) <= 1, \
-                    repr(tree)
-                self.check_balanced(tree.left)
-                self.check_balanced(tree.right)
-
-        @rule(target=balanced_trees, tree=trees)
-        def balance_tree(self, tree):
-            return self.split_leaves(self.flatten(tree))
-
-        def size(self, tree):
-            if isinstance(tree, Leaf):
-                return 1
-            else:
-                return self.size(tree.left) + self.size(tree.right)
-
-        def flatten(self, tree):
-            if isinstance(tree, Leaf):
-                return (tree.label,)
-            else:
-                return self.flatten(tree.left) + self.flatten(tree.right)
-
-        def split_leaves(self, leaves):
-            assert leaves
-            if len(leaves) == 1:
-                return Leaf(leaves[0])
-            else:
-                mid = len(leaves) // 2
-                return Split(
-                    self.split_leaves(leaves[:mid]),
-                    self.split_leaves(leaves[mid:]),
-                )
-
-
-We've now written a really noddy tree balancing implementation.  This takes
-trees and puts them into a new bundle of data, and we only assert that things
-in the balanced_trees bundle are actually balanced.
-
-If you run this it will sit there silently for a while (you can turn on
-:ref:`verbose output <verbose-output>` to get slightly more information about
-what's happening. debug will give you all the intermediate programs being run)
-and then run, telling you your test has passed! Our balancing algorithm worked.
-
-Now lets break it to make sure the test is still valid:
-
-Changing the split to ``mid = max(len(leaves) // 3, 1)`` this should no longer
-balance, which gives us the following counter-example:
-
-.. code:: python
-
-  v1 = leaf(x=0)
-  v2 = split(left=v1, right=v1)
-  v3 = balance_tree(tree=v1)
-  v4 = split(left=v2, right=v2)
-  v5 = balance_tree(tree=v4)
-  check_balanced(tree=v5)
-
-Note that the example could be shrunk further by deleting v3. Due to some
-technical limitations, Hypothesis was unable to find that particular shrink.
-In general it's rare for examples produced to be long, but they won't always be
-minimal.
+problem. The output from a rule based state machine should generally be pretty
+close to Python code - if you have custom ``repr`` implementations that don't
+return valid Python then it might not be, but most of the time you should just
+be able to copy and paste the code into a test to reproduce it.
 
 You can control the detailed behaviour with a settings object on the TestCase
 (this is a normal hypothesis settings object using the defaults at the time
@@ -233,11 +169,12 @@ fewer examples with larger programs you could change the settings to:
 
 .. code:: python
 
-  TestTrees.settings = settings(max_examples=100, stateful_step_count=100)
+  DatabaseComparison.settings = settings(max_examples=50, stateful_step_count=100)
 
 Which doubles the number of steps each program runs and halves the number of
-runs relative to the example. settings.timeout will also be respected as usual.
+test cases that will be run.
 
+-------------
 Preconditions
 -------------
 
@@ -275,8 +212,9 @@ useful sequence of steps will be generated.
 Note that currently preconditions can't access bundles; if you need to use
 preconditions, you should store relevant data on the instance instead.
 
-Invariant
----------
+----------
+Invariants
+----------
 
 Often there are invariants that you want to ensure are met after every step in
 a process.  It would be possible to add these as rules that are run, but they
