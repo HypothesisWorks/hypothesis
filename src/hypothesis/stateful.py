@@ -40,8 +40,8 @@ from hypothesis.control import BuildContext
 from hypothesis._settings import Verbosity
 from hypothesis._settings import settings as Settings
 from hypothesis.reporting import report, verbose_report, current_verbosity
-from hypothesis.strategies import just, lists, builds, one_of, runner, \
-    tuples, integers, fixed_dictionaries
+from hypothesis.strategies import just, one_of, runner, tuples, \
+    fixed_dictionaries
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 from hypothesis.internal.reflection import proxies, nicerepr
 from hypothesis.internal.conjecture.data import StopTest
@@ -221,25 +221,19 @@ class StateMachineRunner(object):
             print_steps = current_verbosity() >= Verbosity.debug
         self.data.hypothesis_runner = state_machine
 
-        stopping_value = 1 - 1.0 / (1 + self.n_steps * 0.5)
+        should_continue = cu.many(
+            self.data, min_size=1, max_size=self.n_steps,
+            average_size=self.n_steps,
+        )
+
         try:
             state_machine.check_invariants()
 
-            steps = 0
-            while True:
-                if steps >= self.n_steps:
-                    stopping_value = 0
-                self.data.start_example(STATE_MACHINE_RUN_LABEL)
-                if not cu.biased_coin(self.data, stopping_value):
-                    self.data.stop_example()
-                    break
-                assert steps < self.n_steps
+            while should_continue.more():
                 value = self.data.draw(state_machine.steps())
-                steps += 1
                 if print_steps:
                     state_machine.print_step(value)
                 state_machine.execute_step(value)
-                self.data.stop_example()
                 state_machine.check_invariants()
         finally:
             state_machine.teardown()
@@ -275,8 +269,8 @@ class Bundle(SearchStrategy):
         bundle = machine.bundle(self.name)
         if not bundle:
             data.mark_invalid()
-        reference = bundle.pop()
-        bundle.insert(integer_range(data, 0, len(bundle)), reference)
+        i = integer_range(data, 0, len(bundle) - 1)
+        reference = bundle[i]
         return machine.names_to_values[reference.name]
 
 
@@ -413,12 +407,6 @@ def invariant():
     return accept
 
 
-@attr.s()
-class ShuffleBundle(object):
-    bundle = attr.ib()
-    swaps = attr.ib()
-
-
 class RuleBasedStateMachine(GenericStateMachine):
     """A RuleBasedStateMachine gives you a more structured way to define state
     machines.
@@ -542,18 +530,9 @@ class RuleBasedStateMachine(GenericStateMachine):
                 u'No progress can be made from state %r' % (self,)
             )
 
-        for name, bundle in self.bundles.items():
-            if len(bundle) > 1:
-                strategies.append(
-                    builds(
-                        ShuffleBundle, just(name),
-                        lists(integers(0, len(bundle) - 1))))
-
         return one_of(strategies)
 
     def print_step(self, step):
-        if isinstance(step, ShuffleBundle):
-            return
         rule, data = step
         data_repr = {}
         for k, v in data.items():
@@ -567,11 +546,6 @@ class RuleBasedStateMachine(GenericStateMachine):
         ))
 
     def execute_step(self, step):
-        if isinstance(step, ShuffleBundle):
-            bundle = self.bundle(step.bundle)
-            for i in step.swaps:
-                bundle.insert(i, bundle.pop())
-            return
         rule, data = step
         data = dict(data)
         result = rule.function(self, **data)

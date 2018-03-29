@@ -28,8 +28,11 @@ from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.conjecture.data import ConjectureData
 
 
-def test_does_not_draw_data_for_empty_range():
-    assert cu.integer_range(ConjectureData.for_buffer(b''), 1, 1) == 1
+def test_does_draw_data_for_empty_range():
+    data = ConjectureData.for_buffer(b'\1')
+    assert cu.integer_range(data, 1, 1) == 1
+    data.freeze()
+    assert data.buffer == hbytes(b'\0')
 
 
 def test_uniform_float_shrinks_to_zero():
