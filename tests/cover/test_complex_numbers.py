@@ -52,27 +52,24 @@ def test_max_magnitude_zero():
 
 
 @pytest.mark.parametrize('k', range(-5, 5))
-@pytest.mark.parametrize('allow_nan', (True, False))
-def test_min_magnitude_respected(k, allow_nan):
+def test_min_magnitude_respected(k):
     m = 10**k
     assert abs(
         minimal(
-            complex_numbers(min_magnitude=m, allow_nan=allow_nan),
+            complex_numbers(min_magnitude=m),
             lambda x: True
         )
     ) >= m
 
 
-@pytest.mark.parametrize('allow_nan', (True, False))
-def test_min_magnitude_zero(allow_nan):
+def test_min_magnitude_zero():
     assert minimal(
         complex_numbers(min_magnitude=0),
         lambda x: True
     ) == 0
 
 
-@pytest.mark.parametrize('allow_nan', (True, False))
-def test_min_magnitude_none(allow_nan):
+def test_min_magnitude_none():
     assert minimal(
         complex_numbers(min_magnitude=None),
         lambda x: True

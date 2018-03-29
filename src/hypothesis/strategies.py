@@ -43,6 +43,7 @@ from hypothesis.internal.validation import check_type, try_convert, \
     check_strategy, check_valid_size, check_valid_bound, \
     check_valid_sizes, check_valid_integer, check_valid_interval, \
     check_valid_magnitude
+from hypothesis.internal.cathetus import cathetus
 
 __all__ = [
     'nothing',
@@ -429,96 +430,6 @@ def floats(
         if max_value == 0 and is_negative(max_value):
             result = result.filter(is_negative)
         return result
-
-
-@cacheable
-@defines_strategy_with_reusable_values
-def complex_numbers(
-    min_magnitude=0, max_magnitude=None, allow_infinity=None, allow_nan=None
-):
-    """Returns a strategy that generates complex numbers.
-
-    This strategy draws complex numbers with constrained magnitudes.
-    The ``min_magnitude`` and ``max_magnitude`` parameters should be
-    non-negative finite or infinite floating-point-numbers, values
-    of None correspond to zero and infinite values respectively.
-
-    TODO: describe inf and nan arguments here once behaviour is set
-
-    Examples from this strategy shrink by shrinking their magnitude as for
-    `~hypothesis.strategies.floats`, and simplifying the ratio between the
-    real and imaginary parts.
-    """
-
-    min_magnitude = try_convert(float, min_magnitude, 'min_magnitude')
-    max_magnitude = try_convert(float, max_magnitude, 'max_magnitude')
-
-    check_valid_magnitude(min_magnitude, 'min_magnitude')
-    check_valid_magnitude(max_magnitude, 'max_magnitude')
-    check_valid_interval(min_magnitude, max_magnitude,
-                         'min_magnitude', 'max_magnitude')
-
-    if max_magnitude == float(u'inf'):
-        max_magnitude = None
-
-    if allow_infinity is None:
-        allow_infinity = bool(max_magnitude is None)
-    elif allow_infinity and max_magnitude is not None:
-        raise InvalidArgument(
-            'Cannot have allow_infinity=%r with max_magnitude' %
-            (allow_infinity)
-        )
-
-    if allow_nan is None:
-        allow_nan = bool(max_magnitude is None)
-    elif allow_nan and max_magnitude is not None:
-        raise InvalidArgument(
-            'Cannot have allow_nan=%r, with max_magnitude' % (allow_nan)
-        )
-
-    from hypothesis.searchstrategy.numbers import ComplexStrategy
-
-    def tuple_scaled(z, mu):
-        return tuple([mu * zi for zi in z])
-
-    # Project a pair z = (x, y) radially onto the closed origin-centred
-    # annulus of radii a <= b.  In the case than z is (0, 0), i.e., when
-    # there is no "radially", project to (a, 0).  When a component of z
-    # is NaN tnen so is |z|, so return z.
-
-    def project(z, a, b):
-        print(z)
-        absz = math.hypot(*z)
-        if absz > b:
-            return tuple_scaled(z, b / absz)
-        elif absz < a:
-            if absz == 0:
-                return (a, 0)
-            else:
-                return tuple_scaled(z, a / absz)
-        else:
-            return z
-
-    if allow_nan or max_magnitude is None:
-        return ComplexStrategy(
-            tuples(
-                floats(allow_nan=allow_nan),
-                floats(allow_nan=allow_nan)
-            ).map(
-                lambda z:
-                project(z, min_magnitude, float(u'inf'))
-            )
-        )
-
-    return ComplexStrategy(
-        tuples(
-            floats(min_value=-max_magnitude, max_value=max_magnitude),
-            floats(min_value=-max_magnitude, max_value=max_magnitude)
-        ).map(
-            lambda z:
-            project(z, min_magnitude, max_magnitude)
-        )
-    )
 
 
 @cacheable
@@ -1664,6 +1575,90 @@ def composite(f):
         return CompositeStrategy()
     accept.__module__ = f.__module__
     return accept
+
+@composite
+def complex_numbers(
+        draw,
+        min_magnitude=0,
+        max_magnitude=None,
+        allow_infinity=None,
+        allow_nan=None
+):
+    """Returns a strategy that generates complex numbers.
+
+    This strategy draws complex numbers with constrained magnitudes.
+    The ``min_magnitude`` and ``max_magnitude`` parameters should be
+    non-negative finite or infinite floating-point-numbers, values
+    of None correspond to zero and infinite values respectively.
+
+    If min_magnitude is positive or max_magnitude is finite, it is an
+    error to enable allow_nan.
+
+    If max_magnitude is finite, it is an error to enable allow_infinity.
+
+    Examples from this strategy shrink by shrinking their magnitude as for
+    `~hypothesis.strategies.floats`, and simplifying the ratio between the
+    real and imaginary parts.
+    """
+
+    min_magnitude = try_convert(float, min_magnitude, 'min_magnitude')
+    max_magnitude = try_convert(float, max_magnitude, 'max_magnitude')
+
+    check_valid_magnitude(min_magnitude, 'min_magnitude')
+    check_valid_magnitude(max_magnitude, 'max_magnitude')
+    check_valid_interval(
+        min_magnitude, max_magnitude,
+        'min_magnitude', 'max_magnitude'
+    )
+
+    if max_magnitude == float(u'inf'):
+        max_magnitude = None
+    if min_magnitude == 0:
+        min_magnitude = None
+
+    if allow_infinity is None:
+        allow_infinity = bool(max_magnitude is None)
+    elif allow_infinity and max_magnitude is not None:
+        raise InvalidArgument(
+            'Cannot have allow_infinity=%r with max_magnitude=%r' %
+            (allow_infinity, max_magnitude)
+        )
+
+    if allow_nan is None:
+        allow_nan = bool(min_magnitude is None and max_magnitude is None)
+    elif allow_nan and (min_magnitude is not None or max_magnitude is not None):
+        raise InvalidArgument(
+            'Cannot have allow_nan=%r, min_magnitude=%r max_magnitude=%r' % (
+                allow_nan,
+                min_magnitude,
+                max_magnitude
+            )
+        )
+
+    if max_magnitude is None:
+        max_magnitude = float(u'inf')
+    if min_magnitude is None:
+        min_magnitude = 0
+
+    if allow_nan:
+        zi = draw(floats(allow_nan=True))
+        zr = draw(floats(allow_nan=True))
+        return complex(zr, zi)
+
+    zi = draw(floats(0, max_magnitude))
+    rmax = cathetus(max_magnitude, zi)
+    if zi < min_magnitude:
+        rmin = cathetus(min_magnitude, zi)
+    else:
+        rmin = 0
+    zr = draw(floats(rmin, rmax))
+
+    if draw(booleans()):
+        zr = -zr
+	if draw(booleans()):
+            return complex(zi, zr)
+
+    return complex(zr, zi)
 
 
 def shared(base, key=None):
