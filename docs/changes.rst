@@ -22,6 +22,18 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.52.2 - 2018-03-30
+-------------------
+
+This release improves the output of failures with
+:ref:`rule based stateful testing <rulebasedstateful>` in two ways:
+
+* The output from it is now usually valid Python code.
+* When the same value has two different names because it belongs to two different
+  bundles, it will now display with the name associated with the correct bundle
+  for a rule argument where it is used.
+
+-------------------
 3.52.1 - 2018-03-29
 -------------------
 
