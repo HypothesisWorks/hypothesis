@@ -33,7 +33,7 @@ While it is impossible to enumerate everything that is unkind, disrespectful or 
 4. It's OK not to *want* to know something. If you think someone's question is fundamentally flawed, you should still ask permission before explaining what they should actually be asking.
 5. Note that "I was just joking" is not a valid defence.
 6. Don't suggest violence as a response to things, e.g. "People who do/think X should be Y-ed".
-   Even when it's obvious hyperbole and it's very clear that no actual threat is meant (which is usually the case),
+   Even if you think it is obvious hyperbole and that it's very clear that no actual threat is meant,
    it still contributes to a culture that makes people feel unsafe.
 
 
