@@ -1604,9 +1604,6 @@ def complex_numbers(
     real and imaginary parts.
     """
 
-    min_magnitude = try_convert(float, min_magnitude, 'min_magnitude')
-    max_magnitude = try_convert(float, max_magnitude, 'max_magnitude')
-
     check_valid_magnitude(min_magnitude, 'min_magnitude')
     check_valid_magnitude(max_magnitude, 'max_magnitude')
     check_valid_interval(
