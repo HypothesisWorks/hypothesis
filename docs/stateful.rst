@@ -148,7 +148,7 @@ we would see the following output when run under pytest:
 
     AssertionError: assert set() == {b''}
 
-    ------------ Hypothesis ------------ 
+    ------------ Hypothesis ------------
 
     state = DatabaseComparison()
     v1 = state.k(k=b'')
