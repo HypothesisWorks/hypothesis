@@ -55,7 +55,7 @@ def cathetus(h, a):
         else:
             return sqrt(h - a) * sqrt(h + a)
 
-    if h < sqrt(fi.min):
+    if h < sqrt(float_info.min):
         return sqrt(h - a) * sqrt(h + a)
 
     return sqrt((h - a) * (h + a))
