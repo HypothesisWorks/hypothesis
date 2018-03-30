@@ -1576,7 +1576,8 @@ def composite(f):
     accept.__module__ = f.__module__
     return accept
 
-
+@defines_strategy_with_reusable_values
+@cacheable
 @composite
 def complex_numbers(
         draw,
