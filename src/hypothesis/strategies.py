@@ -1576,6 +1576,7 @@ def composite(f):
     accept.__module__ = f.__module__
     return accept
 
+
 @defines_strategy_with_reusable_values
 @cacheable
 @composite
@@ -1628,7 +1629,7 @@ def complex_numbers(
 
     if allow_nan is None:
         allow_nan = bool(min_magnitude is None and max_magnitude is None)
-    elif allow_nan and (min_magnitude is not None or max_magnitude is not None):
+    elif allow_nan and not (min_magnitude is None and max_magnitude is None):
         raise InvalidArgument(
             'Cannot have allow_nan=%r, min_magnitude=%r max_magnitude=%r' % (
                 allow_nan,
