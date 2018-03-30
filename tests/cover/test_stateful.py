@@ -250,7 +250,8 @@ def test_bad_machines_fail(machine):
         raise
     v = o.getvalue()
     print_unicode(v)
-    assert len(v.splitlines()) <= 50
+    steps = [l for l in v.splitlines() if 'Step ' in l or 'state.' in l]
+    assert 1 <= len(steps) <= 50
 
 
 def test_multiple_rules_same_func():
