@@ -73,10 +73,10 @@ def check_valid_bound(value, name):
 
 @check_function
 def check_valid_magnitude(value, name):
-    """Checks that value is either unspecified, or a non-negaive valid interval bound.
+    """Checks that value is either unspecified, or a non-negaive valid interval
+    bound.
 
     Otherwise raises InvalidArgument.
-
     """
     if value is None:
         return

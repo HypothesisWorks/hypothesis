@@ -17,8 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
 import sys
+import math
 
 from hypothesis.internal.cathetus import cathetus
 

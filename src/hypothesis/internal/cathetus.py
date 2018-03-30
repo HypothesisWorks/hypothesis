@@ -15,16 +15,19 @@
 #
 # END HEADER
 
-from math import sqrt, isnan, isinf, fabs
-from sys import float_info as fi
+from __future__ import division, print_function, absolute_import
+
+from sys import float_info
+from math import fabs, sqrt, isinf, isnan
 
 
 def cathetus(h, a):
-    """Given the lengths of the hypotenuse and a side of a right
-    triangle, return the length of the other side.  A companion
-    to the C99 hypot() function.  Some care is needed to avoid
-    underflow in the case of small arguments, and overflow in the
-    case of large arguments as would occur for the naive implementaion
+    """Given the lengths of the hypotenuse and a side of a right triangle,
+    return the length of the other side.  A companion to the C99 hypot()
+    function.  Some care is needed to avoid underflow in the case of small
+    arguments, and overflow in the case of large arguments as would occur for
+    the naive implementaion.
+
     as sqrt(h*h - a*a).  The behaviour with respect the non-finite
     arguments (NaNs and infinities) is designed to be as consistent
     as possible with the C99 hypot() specifications.
@@ -46,8 +49,8 @@ def cathetus(h, a):
     if h < a:
         return float(u'nan')
 
-    if h > sqrt(fi.max):
-        if h > fi.max / 2:
+    if h > sqrt(float_info.max):
+        if h > float_info.max / 2:
             return sqrt(h - a) * sqrt(h / 2 + a / 2) * sqrt(2)
         else:
             return sqrt(h - a) * sqrt(h + a)

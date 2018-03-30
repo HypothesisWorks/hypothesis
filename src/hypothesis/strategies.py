@@ -36,6 +36,7 @@ from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
 from hypothesis.internal.floats import next_up, next_down, is_negative, \
     float_to_int, int_to_float, count_between_floats
 from hypothesis.internal.charmap import as_general_categories
+from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
@@ -43,7 +44,6 @@ from hypothesis.internal.validation import check_type, try_convert, \
     check_strategy, check_valid_size, check_valid_bound, \
     check_valid_sizes, check_valid_integer, check_valid_interval, \
     check_valid_magnitude
-from hypothesis.internal.cathetus import cathetus
 
 __all__ = [
     'nothing',
@@ -1576,6 +1576,7 @@ def composite(f):
     accept.__module__ = f.__module__
     return accept
 
+
 @composite
 def complex_numbers(
         draw,
@@ -1655,7 +1656,7 @@ def complex_numbers(
 
     if draw(booleans()):
         zr = -zr
-	if draw(booleans()):
+        if draw(booleans()):
             return complex(zi, zr)
 
     return complex(zr, zi)
