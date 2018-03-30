@@ -67,67 +67,68 @@ the results of previous computations or actions.
 
 The following rule based state machine example is a simplified version of a
 test for Hypothesis's example database implementation. An example database
-maps keys to sets of values, and in this test we compare two different
-implementations: One purely in memory (based on a Python ``dict``) and one on
-disk.
+maps keys to sets of values, and in this test we compare one implementation of
+it to a simplified in memory model of its behaviour, which just stores the same
+values in a Python ``dict``. The test then runs operations against both the
+real database and the in-memory representation of it and looks for discrepancies
+in their behaviour.
 
 .. code:: python
 
-    import shutil
-    import tempfile
+  import shutil
+  import tempfile
 
-    import hypothesis.strategies as st
-    from hypothesis.database import InMemoryExampleDatabase, \
-        DirectoryBasedExampleDatabase
-    from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
-
-
-    class DatabaseComparison(RuleBasedStateMachine):
-        def __init__(self):
-            super(DatabaseComparison, self).__init__()
-            self.tempd = tempfile.mkdtemp()
-            self.on_disk_db = DirectoryBasedExampleDatabase(self.tempd)
-            self.in_memory_db = InMemoryExampleDatabase()
-
-        keys = Bundle('keys')
-        values = Bundle('values')
-
-        @rule(target=keys, k=st.binary())
-        def k(self, k):
-            return k
-
-        @rule(target=values, v=st.binary())
-        def v(self, v):
-            return v
-
-        @rule(k=keys, v=values)
-        def save(self, k, v):
-            self.in_memory_db.save(k, v)
-            self.on_disk_db.save(k, v)
-
-        @rule(k=keys, v=values)
-        def delete(self, k, v):
-            self.in_memory_db.delete(k, v)
-            self.on_disk_db.delete(k, v)
-
-        @rule(k=keys)
-        def values_agree(self, k):
-            assert set(self.in_memory_db.fetch(k)) == set(
-                self.on_disk_db.fetch(k)
-            )
-
-        def teardown(self):
-            shutil.rmtree(self.tempd)
+  from collections import defaultdict
+  import hypothesis.strategies as st
+  from hypothesis.database import DirectoryBasedExampleDatabase
+  from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
 
-    TestDBComparison = DatabaseComparison.TestCase
+  class DatabaseComparison(RuleBasedStateMachine):
+      def __init__(self):
+          super(DatabaseComparison, self).__init__()
+          self.tempd = tempfile.mkdtemp()
+          self.database = DirectoryBasedExampleDatabase(self.tempd)
+          self.model = defaultdict(set)
+
+      keys = Bundle('keys')
+      values = Bundle('values')
+
+      @rule(target=keys, k=st.binary())
+      def k(self, k):
+          return k
+
+      @rule(target=values, v=st.binary())
+      def v(self, v):
+          return v
+
+      @rule(k=keys, v=values)
+      def save(self, k, v):
+          self.model[k].add(v)
+          self.database.save(k, v)
+
+      @rule(k=keys, v=values)
+      def delete(self, k, v):
+          self.model[k].discard(v)
+          self.database.delete(k, v)
+
+      @rule(k=keys)
+      def values_agree(self, k):
+          assert set(self.database.fetch(k)) == self.model[k]
+
+      def teardown(self):
+          shutil.rmtree(self.tempd)
+
+
+  TestDBComparison = DatabaseComparison.TestCase
 
 In this we declare two bundles - one for keys, and one for values.
 We have two trivial rules which just populate them with data (``k`` and ``v``),
 and three non-trivial rules:
-``save`` saves a value under a key in each database implementation,
-``delete`` removes that value from that key in each database implementation,
-and ``values_agree`` checks that the two databases agree on a given key.
+``save`` saves a value under a key and ``delete`` removes a value from a key,
+in both cases also updating the model of what *should* be in the database.
+``values_agree`` then checks that the contents of the database agrees with the
+model for a particular key.
 
 We can then integrate this into our test suite by getting a unittest TestCase
 from it:
@@ -153,6 +154,7 @@ we would see the following output when run under pytest:
     v1 = state.k(k=b'')
     v2 = state.v(v=v1)
     state.save(k=v1, v=v2)
+    state.delete(k=v1, v=v2)
     state.values_agree(k=v1)
     state.teardown()
 
