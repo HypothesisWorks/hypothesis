@@ -145,6 +145,18 @@ class GenericStateMachine(object):
         """Execute a step that has been previously drawn from self.steps()"""
         raise NotImplementedError(u'%r.execute_step()' % (self,))
 
+    def print_start(self):
+        """Called right at the start of printing.
+
+        By default does nothing.
+        """
+
+    def print_end(self):
+        """Called right at the end of printing.
+
+        By default does nothing.
+        """
+
     def print_step(self, step):
         """Print a step to the current reporter.
 
@@ -227,6 +239,8 @@ class StateMachineRunner(object):
         )
 
         try:
+            if print_steps:
+                state_machine.print_start()
             state_machine.check_invariants()
 
             while should_continue.more():
@@ -236,6 +250,8 @@ class StateMachineRunner(object):
                 state_machine.execute_step(value)
                 state_machine.check_invariants()
         finally:
+            if print_steps:
+                state_machine.print_end()
             state_machine.teardown()
 
 
@@ -259,8 +275,7 @@ class Rule(object):
 self_strategy = runner()
 
 
-class Bundle(SearchStrategy):
-
+class BundleReferenceStrategy(SearchStrategy):
     def __init__(self, name):
         self.name = name
 
@@ -269,8 +284,18 @@ class Bundle(SearchStrategy):
         bundle = machine.bundle(self.name)
         if not bundle:
             data.mark_invalid()
-        i = integer_range(data, 0, len(bundle) - 1)
-        reference = bundle[i]
+        return bundle[integer_range(data, 0, len(bundle) - 1)]
+
+
+class Bundle(SearchStrategy):
+
+    def __init__(self, name):
+        self.name = name
+        self.__reference_strategy = BundleReferenceStrategy(name)
+
+    def do_draw(self, data):
+        machine = data.draw(self_strategy)
+        reference = data.draw(self.__reference_strategy)
         return machine.names_to_values[reference.name]
 
 
@@ -434,6 +459,8 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.__printer = RepresentationPrinter(self.__stream)
 
     def __pretty(self, value):
+        if isinstance(value, VarReference):
+            return value.name
         self.__stream.seek(0)
         self.__stream.truncate(0)
         self.__printer.output_width = 0
@@ -520,6 +547,7 @@ class RuleBasedStateMachine(GenericStateMachine):
                     if not bundle:
                         valid = False
                         break
+                    v = BundleReferenceStrategy(v.name)
                 converted_arguments[k] = v
             if valid:
                 strategies.append(tuples(
@@ -532,14 +560,19 @@ class RuleBasedStateMachine(GenericStateMachine):
 
         return one_of(strategies)
 
+    def print_start(self):
+        report(u'state = %s()' % (self.__class__.__name__,))
+
+    def print_end(self):
+        report(u'state.teardown()')
+
     def print_step(self, step):
         rule, data = step
         data_repr = {}
         for k, v in data.items():
             data_repr[k] = self.__pretty(v)
         self.step_count = getattr(self, u'step_count', 0) + 1
-        report(u'Step #%d: %s%s(%s)' % (
-            self.step_count,
+        report(u'%sstate.%s(%s)' % (
             u'%s = ' % (self.upcoming_name(),) if rule.targets else u'',
             rule.function.__name__,
             u', '.join(u'%s=%s' % kv for kv in data_repr.items())
@@ -548,12 +581,15 @@ class RuleBasedStateMachine(GenericStateMachine):
     def execute_step(self, step):
         rule, data = step
         data = dict(data)
+        for k, v in list(data.items()):
+            if isinstance(v, VarReference):
+                data[k] = self.names_to_values[v.name]
         result = rule.function(self, **data)
         if rule.targets:
             name = self.new_name()
             self.names_to_values[name] = result
             self.__printer.singleton_pprinters.setdefault(
-                id(result), lambda obj, p, cycle: p.text(name),
+                id(result), lambda obj, p, cycle: p.text(name)
             )
             for target in rule.targets:
                 self.bundle(target).append(VarReference(name))
