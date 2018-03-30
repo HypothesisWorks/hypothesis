@@ -23,14 +23,14 @@ from math import fabs, sqrt, isinf, isnan
 
 def cathetus(h, a):
     """Given the lengths of the hypotenuse and a side of a right triangle,
-    return the length of the other side.  A companion to the C99 hypot()
-    function.  Some care is needed to avoid underflow in the case of small
-    arguments, and overflow in the case of large arguments as would occur for
-    the naive implementaion.
+    return the length of the other side.
 
-    as sqrt(h*h - a*a).  The behaviour with respect the non-finite
-    arguments (NaNs and infinities) is designed to be as consistent
-    as possible with the C99 hypot() specifications.
+    A companion to the C99 hypot() function.  Some care is needed to avoid
+    underflow in the case of small arguments, and overflow in the case of
+    large arguments as would occur for the naive implementation as
+    sqrt(h*h - a*a).  The behaviour with respect the non-finite arguments
+    (NaNs and infinities) is designed to be as consistent as possible with
+    the C99 hypot() specifications.
 
     Based on the C99 implementation https://github.com/jjgreen/cathetus
     """
