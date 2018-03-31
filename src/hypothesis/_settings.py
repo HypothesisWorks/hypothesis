@@ -135,11 +135,7 @@ class settings(settingsMeta('settings', (object,), {})):
         else:
             raise AttributeError('settings has no attribute %s' % (name,))
 
-    def __init__(
-            self,
-            parent=None,
-            **kwargs
-    ):
+    def __init__(self, parent=None, **kwargs):
         self._construction_complete = False
         self._database = kwargs.pop('database', not_set)
         database_file = kwargs.get('database_file', not_set)
@@ -161,7 +157,7 @@ class settings(settingsMeta('settings', (object,), {})):
         for name, value in kwargs.items():
             if name not in all_settings:
                 raise InvalidArgument(
-                    'Invalid argument %s' % (name,))
+                    'Invalid argument: %r is not a valid setting' % (name,))
             setattr(self, name, value)
         self.storage = threading.local()
         self._construction_complete = True
@@ -237,7 +233,7 @@ class settings(settingsMeta('settings', (object,), {})):
 
     @classmethod
     def define_setting(
-        cls, name, description, default, options=None, deprecation=None,
+        cls, name, description, default, options=None,
         validator=None, show_default=True, future_default=not_set,
         deprecation_message=None,
     ):
