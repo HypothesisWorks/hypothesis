@@ -161,16 +161,13 @@ check-faker070: $(TOX)
 check-faker-latest: $(TOX)
 	$(TOX) --recreate -e faker-latest
 
-check-django18: $(TOX)
-	$(TOX) --recreate -e django18
-
 check-django111: $(TOX)
 	$(TOX) --recreate -e django111
 
 check-django20: $(BEST_PY3) $(TOX)
 	$(TOX) --recreate -e django20
 
-check-django: check-django18 check-django111 check-django20
+check-django: check-django111 check-django20
 
 check-pandas19: $(TOX)
 	$(TOX) --recreate -e pandas19
