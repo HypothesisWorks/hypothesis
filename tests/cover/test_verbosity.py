@@ -82,7 +82,7 @@ def test_prints_initial_attempts_on_find():
                 return x not in seen
             find(integers(), not_first)
 
-    assert u'Trying example' in o.getvalue()
+    assert u'Tried non-satisfying example' in o.getvalue()
 
 
 def test_includes_intermediate_results_in_verbose_mode():
