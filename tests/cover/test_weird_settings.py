@@ -19,8 +19,10 @@ from __future__ import division, print_function, absolute_import
 
 from hypothesis import given, settings
 from hypothesis import strategies as st
+from tests.common.utils import checks_deprecated_behaviour
 
 
+@checks_deprecated_behaviour
 def test_setting_database_to_none_disables_the_database():
     @given(st.booleans())
     @settings(database_file=None)
