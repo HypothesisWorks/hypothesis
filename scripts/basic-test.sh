@@ -51,7 +51,7 @@ if [ "$(python -c 'import platform; print(platform.python_implementation())')" !
     pip install numpy
     $PYTEST tests/numpy
 
-    pip install pandas
+    pip install --upgrade pandas numpy
 
     $PYTEST tests/pandas
 
