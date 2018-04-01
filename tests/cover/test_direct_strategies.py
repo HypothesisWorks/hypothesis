@@ -202,6 +202,7 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.floats, {'min_value': 1.0, 'allow_nan': False}),
     (ds.floats, {'max_value': 1.0, 'allow_nan': False}),
     (ds.floats, {'max_value': 1.0, 'min_value': -1.0, 'allow_nan': False}),
+    (ds.complex_numbers, {}),
     (ds.complex_numbers, {'min_magnitude': 3, 'max_magnitude': 3}),
     (ds.complex_numbers, {'max_magnitude': 0}),
     (ds.complex_numbers, {
