@@ -229,10 +229,12 @@ def test_can_have_none_database():
     assert settings(database=None).database is None
 
 
+@checks_deprecated_behaviour
 def test_can_have_none_database_file():
     assert settings(database_file=None).database is None
 
 
+@checks_deprecated_behaviour
 def test_can_override_database_file():
     f = mkdtemp()
     x = settings(database_file=f)
