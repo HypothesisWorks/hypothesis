@@ -1646,11 +1646,15 @@ def complex_numbers(
         return complex(zr, zi)
 
     zi = draw(floats(0, max_magnitude))
-    rmax = cathetus(max_magnitude, zi)
+    if math.isinf(zi):
+        rmax = float(u'inf')
+    else:
+        rmax = cathetus(max_magnitude, zi)
     if zi < min_magnitude:
         rmin = cathetus(min_magnitude, zi)
     else:
         rmin = 0
+
     zr = draw(floats(rmin, rmax))
 
     if draw(booleans()):
