@@ -1591,17 +1591,17 @@ def complex_numbers(
 
     This strategy draws complex numbers with constrained magnitudes.
     The ``min_magnitude`` and ``max_magnitude`` parameters should be
-    non-negative finite or infinite floating-point-numbers, values
-    of None correspond to zero and infinite values respectively.
+    non-negative :class:`~python:numbers.Real` numbers; values
+    of ``None`` correspond to zero and infinite values respectively.
 
-    If min_magnitude is positive or max_magnitude is finite, it is an
-    error to enable allow_nan.
+    If ``min_magnitude`` is positive or ``max_magnitude`` is finite, it
+    is an error to enable ``allow_nan``.
 
-    If max_magnitude is finite, it is an error to enable allow_infinity.
+    If ``max_magnitude`` is finite, it is an error to enable
+    ``allow_infinity``.
 
-    Examples from this strategy shrink by shrinking their magnitude as for
-    `~hypothesis.strategies.floats`, and simplifying the ratio between the
-    real and imaginary parts.
+    Examples from this strategy shrink by shrinking their real and
+    imaginary parts, as `~hypothesis.strategies.floats`.
     """
 
     check_valid_magnitude(min_magnitude, 'min_magnitude')
