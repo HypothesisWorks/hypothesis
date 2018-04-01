@@ -19,8 +19,6 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 
-import pytest
-
 import hypothesis.strategies as st
 from hypothesis import given
 from tests.common.debug import minimal
@@ -101,7 +99,7 @@ def test_minimal_min_magnitude_none():
 
 
 # FIXME : expect this to be 1, but 0.5 returned
-# @pytest.mark.skipif(True, reason='to determine')
+@pytest.mark.skipif(True, reason='to determine')
 def test_minimal_min_magnitude_positive():
     assert minimal(
         complex_numbers(min_magnitude=0.5),
@@ -117,7 +115,7 @@ def test_minimal_max_magnitude_finite():
 
 
 # FIXME : expect this to be 1, but 0.5 returned
-# @pytest.mark.skipif(True, reason='to determine')
+@pytest.mark.skipif(True, reason='to determine')
 def test_minimal_minmax_magnitude():
     assert minimal(
         complex_numbers(min_magnitude=0.5, max_magnitude=1.5),

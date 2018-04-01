@@ -24,8 +24,7 @@ import hypothesis.internal.conjecture.floats as flt
 from hypothesis.control import assume
 from hypothesis.internal.floats import sign
 from hypothesis.internal.conjecture.utils import calc_label_from_name
-from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    MappedSearchStrategy
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 class IntStrategy(SearchStrategy):
