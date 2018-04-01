@@ -80,8 +80,18 @@ def test_cathetus_simple_underflow():
     )
 
 
-def test_cathetus_simple_overflow():
+def test_cathetus_huge_no_overflow():
     h = sys.float_info.max
+    a = h / math.sqrt(2)
+    b = cathetus(h, a)
+    assert not (math.isinf(b) or math.isnan(b)), (
+        'expecting cathetus(%g, %g) finite, got %g' %
+        (h, a, b)
+    )
+
+
+def test_cathetus_large_no_overflow():
+    h = sys.float_info.max / 3
     a = h / math.sqrt(2)
     b = cathetus(h, a)
     assert not (math.isinf(b) or math.isnan(b)), (
