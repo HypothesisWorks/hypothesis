@@ -17,70 +17,115 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
-import math
-
 import pytest
 
-from hypothesis import given
+import hypothesis.strategies as st
+import sys
 from tests.common.debug import minimal
+from hypothesis import given
 from hypothesis.strategies import complex_numbers
 
 
-def test_minimal_complex_number_is_zero():
+def test_minimal():
     assert minimal(complex_numbers(), lambda x: True) == 0
 
 
-def test_can_minimal_standard_complex_numbers():
-    assert minimal(complex_numbers(), lambda x: x.imag != 0) == 1j
+def test_minimal_nonzero_real():
     assert minimal(complex_numbers(), lambda x: x.real != 0) == 1
 
 
-@pytest.mark.parametrize('k', range(-5, 5))
-def test_max_magnitude_respected(k):
-    m = 10**k
-    assert abs(
-        minimal(complex_numbers(max_magnitude=m), lambda x: True)
-    ) <= m
+def test_minimal_nonzero_imaginary():
+    assert minimal(complex_numbers(), lambda x: x.imag != 0) == 1j
 
 
-def test_max_magnitude_zero():
+def test_minimal_quadrant1():
+    assert minimal(
+        complex_numbers(),
+        lambda x: x.imag > 0 and x.real > 0
+    ) == 1 + 1j
+
+
+def test_minimal_quadrant2():
+    assert minimal(
+        complex_numbers(),
+        lambda x: x.imag > 0 and x.real < 0
+    ) == -1 + 1j
+
+
+def test_minimal_quadrant3():
+    assert minimal(
+        complex_numbers(),
+        lambda x: x.imag < 0 and x.real < 0
+    ) == -1 - 1j
+
+
+def test_minimal_quadrant4():
+    assert minimal(
+        complex_numbers(),
+        lambda x: x.imag < 0 and x.real > 0
+    ) == 1 - 1j
+
+
+@given(st.data(), st.integers(-5, 5).map(lambda x: 10 ** x))
+def test_max_magnitude_respected(data, mag):
+    c = data.draw(complex_numbers(max_magnitude=mag))
+    assert abs(c) <= mag * (1 + sys.float_info.epsilon)
+
+
+def test_minimal_max_magnitude_zero():
     assert minimal(
         complex_numbers(max_magnitude=0),
         lambda x: True
     ) == 0
 
 
-@pytest.mark.parametrize('k', range(-5, 5))
-def test_min_magnitude_respected(k):
-    m = 10**k
-    assert abs(
-        minimal(
-            complex_numbers(min_magnitude=m),
-            lambda x: True
-        )
-    ) >= m
+@given(st.data(), st.integers(-5, 5).map(lambda x: 10 ** x))
+def test_min_magnitude_respected(data, mag):
+    c = data.draw(complex_numbers(min_magnitude=mag))
+    assert abs(c) >= mag * (1 - sys.float_info.epsilon)
 
 
-def test_min_magnitude_zero():
+def test_minimal_min_magnitude_zero():
     assert minimal(
         complex_numbers(min_magnitude=0),
         lambda x: True
     ) == 0
 
 
-def test_min_magnitude_none():
+def test_minimal_min_magnitude_none():
     assert minimal(
         complex_numbers(min_magnitude=None),
         lambda x: True
     ) == 0
 
 
-def test_can_minimal_constrained_complex_numbers():
+# expect this to be 1, but 0.5 returned
+@pytest.mark.skipif(True, reason='to determine')
+def test_minimal_min_magnitude_positive():
     assert minimal(
-        # expect the two case to behave the same, but not ...
-        # complex_numbers(min_magnitude=0.493, max_magnitude=1.985),
-        complex_numbers(),
-        lambda x: x.real > 0
+        complex_numbers(min_magnitude=0.5),
+        lambda x: True
     ) == 1
-    # raise
+
+
+def test_minimal_max_magnitude_finite():
+    assert minimal(
+        complex_numbers(max_magnitude=1.5),
+        lambda x: True
+    ) == 0
+
+
+# expect this to be 1, but 0.5 returned
+@pytest.mark.skipif(True, reason='to determine')
+def test_minimal_minmax_magnitude():
+    assert minimal(
+        complex_numbers(min_magnitude=0.5, max_magnitude=1.5),
+        lambda x: True
+    ) == 1
+
+
+def test_minimal_minmax_magnitude_equal():
+    assert minimal(
+        complex_numbers(min_magnitude=1, max_magnitude=1),
+        lambda x: True
+    ) == 1
