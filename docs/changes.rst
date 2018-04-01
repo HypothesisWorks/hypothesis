@@ -22,6 +22,39 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.53.0 - 2018-04-01
+-------------------
+
+This release removes support for Django 1.8, which reached end of life on
+2018-04-01.  `You can see Django's release and support schedule
+`on the Django Project website <https://www.djangoproject.com/download/#supported-versions>`_.
+
+-------------------
+3.52.3 - 2018-04-01
+-------------------
+
+This patch fixes the :obj:`~hypothesis.settings.min_satisfying_examples` settings
+documentation, by explaining that example shrinking is tracked at the level
+of the underlying bytestream rather than the output value.
+
+The output from :func:`~hypothesis.find` in verbose mode has also been
+adjusted - see :ref:`the example session <verbose-output>` - to avoid
+duplicating lines when the example repr is constant, even if the underlying
+representation has been shrunken.
+
+-------------------
+3.52.2 - 2018-03-30
+-------------------
+
+This release improves the output of failures with
+:ref:`rule based stateful testing <rulebasedstateful>` in two ways:
+
+* The output from it is now usually valid Python code.
+* When the same value has two different names because it belongs to two different
+  bundles, it will now display with the name associated with the correct bundle
+  for a rule argument where it is used.
+
+-------------------
 3.52.1 - 2018-03-29
 -------------------
 

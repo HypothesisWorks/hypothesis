@@ -52,22 +52,15 @@ with open(local_file('src/hypothesis/version.py')) as o:
 assert __version__ is not None
 
 
-# We only support the releases of Django that are supported by the Django
-# core team.  See https://www.djangoproject.com/download/#supported-versions
-django_pin = 'django>=1.8'
-if setuptools_version >= (8, 0):
-    # New versions of setuptools allow us to set very precise pins; older
-    # versions of setuptools are coarser.  We special-case this so users with
-    # old tools can still install an sdist from PyPI.
-    django_pin += ',!=1.9.*,!=1.10.*'
-
 extras = {
     'datetime':  ['pytz'],
     'pytz':  ['pytz'],
     'fakefactory': ['Faker>=0.7'],
     'numpy': ['numpy>=1.9.0'],
     'pytest': ['pytest>=2.8.0'],
-    'django': ['pytz', django_pin],
+    # We only support Django versions with upstream support - see
+    # https://www.djangoproject.com/download/#supported-versions
+    'django': ['pytz', 'django>=1.11'],
 }
 
 extras['faker'] = extras['fakefactory']

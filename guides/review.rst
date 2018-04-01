@@ -215,3 +215,44 @@ reviewer.
    change? Could they be improved?
 3. Are there any more general changes suggested by this, and do they have
    appropriate issues and/or pull requests associated with them?
+
+~~~~~~~~~~~~~~~~~~~~
+Asking for more work
+~~~~~~~~~~~~~~~~~~~~
+
+Reviewers should in general not request changes that expand the scope of
+a pull request beyond its original intended goal. The primary design
+philosophy of our work-flow is that making correct changes should be cheap,
+and scope creep on pull requests works against that - If you can't touch
+something without having to touch a number of related areas as well,
+changing things becomes expensive again.
+
+This of course doesn't cover things where additional work is required to
+ensure the change is actually correct - for example, if you change public
+functionality you certainly need to update its documentation. That isn't
+scope creep, that's just the normal scope.
+
+If a pull request suggests additional work then between the reviewer and the
+author people should ensure that there are relevant tracking issues for that
+work (as per question 3 in "Non-Blocking Questions" above), but there is no
+obligation for either of them to actually do any of the work on those issues.
+By default it is the reviewer who should open these issues, but the author
+is welcome to as well.
+
+That being said, it's legitimate to expand the scope of a pull request in
+some cases. For example:
+
+* If not doing so is likely to cause problems later. For example, because
+  of backwards compatibility requirements it might make sense to ask for some
+  additional functionality that is likely to be added later so that the arguments
+  to a function are in a more sensible order.
+* Cases where the added functionality feels extremely incomplete in some
+  way without an additional change. The litmus test here should be "this will
+  almost never be useful because...". This is still fairly subjective, but at
+  least one good use case where the change is a clear improvement over the status
+  quo is enough to indicate that this doesn't apply.
+
+If it's unclear, the reviewer should feel free to suggest additional work
+(but if the author is someone new, please make sure that it's clear that this
+is a suggestion and not a requirement!), but the author of the pull request should
+feel equally free to decline the suggestion.

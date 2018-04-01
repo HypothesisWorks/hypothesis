@@ -1111,6 +1111,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
     random = random or new_random()
     successful_examples = [0]
     last_data = [None]
+    last_repr = [None]
 
     def template_condition(data):
         with BuildContext(data):
@@ -1127,22 +1128,19 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
 
         if settings.verbosity == Verbosity.verbose:
             if not successful_examples[0]:
-                report(lambda: u'Trying example %s' % (
-                    nicerepr(result),
-                ))
+                report(
+                    u'Tried non-satisfying example %s' % (nicerepr(result),))
             elif success:
                 if successful_examples[0] == 1:
-                    report(lambda: u'Found satisfying example %s' % (
-                        nicerepr(result),
-                    ))
+                    last_repr[0] = nicerepr(result)
+                    report(u'Found satisfying example %s' % (last_repr[0],))
                     last_data[0] = data
                 elif (
                     sort_key(hbytes(data.buffer)) <
                     sort_key(last_data[0].buffer)
-                ):
-                    report(lambda: u'Shrunk example to %s' % (
-                        nicerepr(result),
-                    ))
+                ) and nicerepr(result) != last_repr[0]:
+                    last_repr[0] = nicerepr(result)
+                    report(u'Shrunk example to %s' % (last_repr[0],))
                     last_data[0] = data
         if success and not data.frozen:
             data.mark_interesting()
