@@ -184,15 +184,3 @@ class FixedBoundedFloatStrategy(SearchStrategy):
             if f == g:
                 f = math.copysign(f, g)
         return f
-
-
-class ComplexStrategy(MappedSearchStrategy):
-    """A strategy over complex numbers, with real and imaginary values
-    distributed according to some provided strategy for floating point
-    numbers."""
-
-    def __repr__(self):
-        return 'ComplexStrategy()'
-
-    def pack(self, value):
-        return complex(*value)
