@@ -32,9 +32,8 @@ from enum import Enum, IntEnum, unique
 import attr
 
 from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
-from hypothesis.configuration import hypothesis_home_dir
 from hypothesis.internal.compat import text_type
-from hypothesis.utils.conventions import UniqueIdentifier, not_set
+from hypothesis.utils.conventions import UniqueIdentifier, infer, not_set
 from hypothesis.internal.reflection import proxies, \
     get_pretty_function_description
 from hypothesis.internal.validation import try_convert
@@ -503,10 +502,7 @@ def _validate_database(db):
 
 settings.define_setting(
     'database',
-    default=lambda: _validate_database(
-        os.getenv('HYPOTHESIS_DATABASE_FILE') or
-        os.path.join(hypothesis_home_dir(), 'examples')
-    ),
+    default=lambda: _validate_database(infer),
     show_default=False,
     description="""
 An instance of hypothesis.database.ExampleDatabase that will be
