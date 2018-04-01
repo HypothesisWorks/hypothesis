@@ -491,22 +491,15 @@ def sampled_from(elements):
     return SampledFromStrategy(values)
 
 
-_AVERAGE_LIST_LENGTH = 5.0
-
-
 @cacheable
 @defines_strategy
 def lists(
-    elements, min_size=None, average_size=None, max_size=None,
+    elements, min_size=None, max_size=None,
     unique_by=None, unique=False,
 ):
     """Returns a list containing values drawn from elements with length in the
     interval [min_size, max_size] (no bounds in that direction if these are
     None).
-
-    average_size may be used as a size hint to roughly control the size
-    of the list but it may not be the actual average of sizes you get, due
-    to a variety of factors.
 
     If unique is True (or something that evaluates to True), we compare direct
     object equality, as if unique_by was `lambda x: x`. This comparison only
@@ -519,7 +512,7 @@ def lists(
     Examples from this strategy shrink by trying to remove elements from the
     list, and by shrinking each individual element of the list.
     """
-    check_valid_sizes(min_size, average_size, max_size)
+    check_valid_sizes(min_size, max_size)
     check_strategy(elements, 'elements')
     if unique:
         if unique_by is not None:
@@ -537,34 +530,21 @@ def lists(
     if max_size is None:
         max_size = float('inf')
 
-    if average_size is None:
-        average_size = max(
-            _AVERAGE_LIST_LENGTH,
-            min_size * 2
-        )
-        if max_size < float('inf'):
-            average_size = min(average_size, 0.5 * (min_size + max_size))
-
     from hypothesis.searchstrategy.collections import ListStrategy, \
         UniqueListStrategy
     if unique_by is not None:
         return UniqueListStrategy(
             elements=elements,
-            average_size=average_size,
             max_size=max_size,
             min_size=min_size,
             key=unique_by
         )
-    else:
-        return ListStrategy(
-            elements, average_size=average_size,
-            min_size=min_size, max_size=max_size,
-        )
+    return ListStrategy(elements, min_size=min_size, max_size=max_size)
 
 
 @cacheable
 @defines_strategy
-def sets(elements, min_size=None, average_size=None, max_size=None):
+def sets(elements, min_size=None, max_size=None):
     """This has the same behaviour as lists, but returns sets instead.
 
     Note that Hypothesis cannot tell if values are drawn from elements
@@ -575,24 +555,22 @@ def sets(elements, min_size=None, average_size=None, max_size=None):
     set, and by shrinking each individual element of the set.
     """
     return lists(
-        elements=elements, min_size=min_size, average_size=average_size,
-        max_size=max_size, unique=True
+        elements=elements, min_size=min_size, max_size=max_size, unique=True
     ).map(set)
 
 
 @cacheable
 @defines_strategy
-def frozensets(elements, min_size=None, average_size=None, max_size=None):
+def frozensets(elements, min_size=None, max_size=None):
     """This is identical to the sets function but instead returns
     frozensets."""
     return lists(
-        elements=elements, min_size=min_size, average_size=average_size,
-        max_size=max_size, unique=True
+        elements=elements, min_size=min_size, max_size=max_size, unique=True
     ).map(frozenset)
 
 
 @defines_strategy
-def iterables(elements, min_size=None, average_size=None, max_size=None,
+def iterables(elements, min_size=None, max_size=None,
               unique_by=None, unique=False):
     """This has the same behaviour as lists, but returns iterables instead.
 
@@ -618,8 +596,8 @@ def iterables(elements, min_size=None, average_size=None, max_size=None,
             return 'iter({!r})'.format(self._values)
 
     return lists(
-        elements=elements, min_size=min_size, average_size=average_size,
-        max_size=max_size, unique_by=unique_by, unique=unique
+        elements=elements, min_size=min_size, max_size=max_size,
+        unique_by=unique_by, unique=unique
     ).map(PrettyIter)
 
 
@@ -645,10 +623,7 @@ def fixed_dictionaries(mapping):
 
 @cacheable
 @defines_strategy
-def dictionaries(
-    keys, values, dict_class=dict,
-    min_size=None, average_size=None, max_size=None
-):
+def dictionaries(keys, values, dict_class=dict, min_size=None, max_size=None):
     """Generates dictionaries of type dict_class with keys drawn from the keys
     argument and values drawn from the values argument.
 
@@ -657,7 +632,7 @@ def dictionaries(
     Examples from this strategy shrink by trying to remove keys from the
     generated dictionary, and by shrinking each generated key and value.
     """
-    check_valid_sizes(min_size, average_size, max_size)
+    check_valid_sizes(min_size, max_size)
     if max_size == 0:
         return fixed_dictionaries(dict_class())
     check_strategy(keys)
@@ -665,7 +640,7 @@ def dictionaries(
 
     return lists(
         tuples(keys, values),
-        min_size=min_size, average_size=average_size, max_size=max_size,
+        min_size=min_size, max_size=max_size,
         unique_by=lambda x: x[0]
     ).map(dict_class)
 
@@ -761,10 +736,7 @@ def characters(whitelist_categories=None, blacklist_categories=None,
 
 @cacheable
 @defines_strategy_with_reusable_values
-def text(
-    alphabet=None,
-    min_size=None, average_size=None, max_size=None
-):
+def text(alphabet=None, min_size=None, max_size=None):
     """Generates values of a unicode text type (unicode on python 2, str on
     python 3) with values drawn from alphabet, which should be an iterable of
     length one strings or a strategy generating such. If it is None it will
@@ -772,12 +744,13 @@ def text(
     characters). If it is an empty collection this will only generate empty
     strings.
 
-    min_size, max_size and average_size have the usual interpretations.
+    min_size and max_size have the usual interpretations.
 
     Examples from this strategy shrink towards shorter strings, and with the
     characters in the text shrinking as per the alphabet strategy.
     """
     from hypothesis.searchstrategy.strings import StringStrategy
+    check_valid_sizes(min_size, max_size)
     if alphabet is None:
         char_strategy = characters(blacklist_categories=('Cs',))
     elif not alphabet:
@@ -793,8 +766,7 @@ def text(
     else:
         char_strategy = sampled_from(list(map(text_type, alphabet)))
     return StringStrategy(lists(
-        char_strategy, average_size=average_size, min_size=min_size,
-        max_size=max_size
+        char_strategy, min_size=min_size, max_size=max_size
     ))
 
 
@@ -832,26 +804,24 @@ def from_regex(regex):
 
 @cacheable
 @defines_strategy_with_reusable_values
-def binary(
-    min_size=None, average_size=None, max_size=None
-):
+def binary(min_size=None, max_size=None):
     """Generates the appropriate binary type (str in python 2, bytes in python
     3).
 
-    min_size, average_size and max_size have the usual interpretations.
+    min_size and max_size have the usual interpretations.
 
     Examples from this strategy shrink towards smaller strings and lower byte
     values.
     """
     from hypothesis.searchstrategy.strings import BinaryStringStrategy, \
         FixedSizeBytes
-    check_valid_sizes(min_size, average_size, max_size)
+    check_valid_sizes(min_size, max_size)
     if min_size == max_size is not None:
         return FixedSizeBytes(min_size)
     return BinaryStringStrategy(
         lists(
             integers(min_value=0, max_value=255),
-            average_size=average_size, min_size=min_size, max_size=max_size
+            min_size=min_size, max_size=max_size
         )
     )
 

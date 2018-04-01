@@ -155,8 +155,6 @@ A catalogue of current violations
 The following are places where we currently deviate from this style. Some of
 these should be considered targets for deprecation and/or improvement.
 
-* most of the collections in ``hypothesis.strategies`` have an ``average_size``
-  distribution hint.
 * ``hypothesis.extra.numpy`` has some arguments which can be either
   strategies or values.
 * ``hypothesis.extra.numpy`` assumes arrays are fixed size and doesn't have

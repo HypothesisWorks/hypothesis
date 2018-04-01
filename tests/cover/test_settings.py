@@ -25,7 +25,7 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import given, unlimited
 from hypothesis.errors import InvalidState, InvalidArgument
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import fails_with, checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
 from hypothesis._settings import Verbosity, settings, default_variable, \
@@ -248,3 +248,50 @@ def test_does_not_warn_if_quiet():
 @given(st.builds(lambda: settings.default))
 def test_settings_in_strategies_are_from_test_scope(s):
     assert s.max_examples == 7
+
+
+@fails_with(InvalidArgument)
+@settings()
+def test_settings_alone():
+    pass
+
+
+@fails_with(InvalidArgument)
+@given(st.integers())
+@settings()
+@settings()
+def test_settings_applied_twice_1(x):
+    pass
+
+
+@fails_with(InvalidArgument)
+@settings()
+@given(st.integers())
+@settings()
+def test_settings_applied_twice_2(x):
+    pass
+
+
+@fails_with(InvalidArgument)
+@settings()
+@settings()
+@given(st.integers())
+def test_settings_applied_twice_3(x):
+    pass
+
+
+@settings()
+@given(st.integers())
+def test_outer_ok(x):
+    pass
+
+
+@given(st.integers())
+@settings()
+def test_inner_ok(x):
+    pass
+
+
+def test_settings_as_decorator_must_be_on_callable():
+    with pytest.raises(InvalidArgument):
+        settings()(1)

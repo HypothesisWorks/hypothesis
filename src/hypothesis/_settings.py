@@ -35,6 +35,9 @@ from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
 from hypothesis.configuration import hypothesis_home_dir
 from hypothesis.internal.compat import text_type
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
+from hypothesis.internal.reflection import proxies, \
+    get_pretty_function_description
+from hypothesis.internal.validation import try_convert
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 __all__ = [
@@ -174,8 +177,57 @@ class settings(settingsMeta('settings', (object,), {})):
             return self.storage.defaults_stack
 
     def __call__(self, test):
+        """Make the settings object (self) an attribute of the test.
+
+        The settings are later discovered by looking them up on the test
+        itself.
+
+        Also, we want to issue a deprecation warning for settings used alone
+        (without @given) so, note the deprecation in the new test, but also
+        attach the version without the warning as an attribute, so that @given
+        can unwrap it (since if @given is used, that means we don't want the
+        deprecation warning).
+
+        When it's time to turn the warning into an error, we'll raise an
+        exception instead of calling note_deprecation (and can delete
+        "test(*args, **kwargs)").
+        """
+        if not callable(test):
+            raise InvalidArgument('settings objects can be called as a '
+                                  'decorator, but test=%r' % (test,))
+
+        @proxies(test)
+        def double_settings(*args, **kwargs):
+            raise InvalidArgument(
+                '%s has already been decorated with a settings object, which '
+                'would be overridden.\n    Previous:  %r\n    This:  %r' % (
+                    get_pretty_function_description(test),
+                    test._hypothesis_internal_use_settings,
+                    self
+                )
+            )
+
+        @proxies(test)
+        def settings_only(*args, **kwargs):
+            raise InvalidArgument(
+                'Using `@settings` without `@given` does not make sense.'
+            )
+
+        # This means @given has been applied, so we don't need to worry about
+        # warning for @settings alone.
+        test_to_use = test
+        if not getattr(test, 'is_hypothesis_test', False):
+            test_to_use = settings_only
+        if hasattr(test, '_hypothesis_internal_settings_applied'):
+            test_to_use = double_settings
+        # @given will get the test from this attribute
+        test_to_use._hypothesis_internal_test_function_without_warning = test
         test._hypothesis_internal_use_settings = self
-        return test
+        test_to_use._hypothesis_internal_use_settings = self
+        # Can't use _hypothesis_internal_use_settings as an indicator that
+        # @settings was applied, because @given also assigns that attribute.
+        test._hypothesis_internal_settings_applied = True
+        return test_to_use
 
     @classmethod
     def define_setting(
@@ -608,7 +660,6 @@ attempting to actually execute your test.
 
 
 def validate_health_check_suppressions(suppressions):
-    from hypothesis.internal.validation import try_convert
     suppressions = try_convert(list, suppressions, 'suppress_health_check')
     for s in suppressions:
         if not isinstance(s, HealthCheck):
