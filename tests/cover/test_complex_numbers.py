@@ -19,6 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 
+import pytest
+
 import hypothesis.strategies as st
 from hypothesis import given
 from tests.common.debug import minimal
