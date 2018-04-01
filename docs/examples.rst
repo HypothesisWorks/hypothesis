@@ -141,7 +141,7 @@ we actually wanted our labels to be unique. Lets change the test to do that.
         return list(table.values())
 
 
-    NodeSet = s.lists(Node).map(deduplicate_nodes_by_label)
+    NodeSet = s.lists(NodeStrategy).map(deduplicate_nodes_by_label)
 
 We define a function to deduplicate nodes by labels, and then map that over a strategy
 for lists of nodes to give us a strategy for lists of nodes with unique labels. We can
