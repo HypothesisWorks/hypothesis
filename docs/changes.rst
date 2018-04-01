@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.53.0 - 2018-04-01
+-------------------
+
+This release removes support for Django 1.8, which reached end of life on
+2018-04-01.  `You can see Django's release and support schedule
+`on the Django Project website <https://www.djangoproject.com/download/#supported-versions>`_.
+
+-------------------
 3.52.3 - 2018-04-01
 -------------------
 
