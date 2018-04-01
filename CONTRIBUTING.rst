@@ -173,6 +173,7 @@ their individual contributions.
 * `follower <https://www.github.com/follower>`_
 * `Gregory Petrosyan <https://github.com/flyingmutant>`_
 * `Jeremy Thurgood <https://github.com/jerith>`_
+* `J.J. Green <http://soliton.vm.bytemark.co.uk/pub/jjg/>`_
 * `JP Viljoen <https://github.com/froztbyte>`_ (froztbyte@froztbyte.net)
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (jonty@jonty.co.uk)
 * `jwg4 <https://www.github.com/jwg4>`_
