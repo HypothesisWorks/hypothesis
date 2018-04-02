@@ -18,11 +18,10 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
-
-import pytest
+import math
 
 import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, reject
 from tests.common.debug import minimal
 from hypothesis.strategies import complex_numbers
 
@@ -73,11 +72,9 @@ def test_max_magnitude_respected(data, mag):
     assert abs(c) <= mag * (1 + sys.float_info.epsilon)
 
 
-def test_minimal_max_magnitude_zero():
-    assert minimal(
-        complex_numbers(max_magnitude=0),
-        lambda x: True
-    ) == 0
+@given(complex_numbers(max_magnitude=0))
+def test_max_magnitude_zero(val):
+    assert val == 0
 
 
 @given(st.data(), st.integers(-5, 5).map(lambda x: 10 ** x))
@@ -104,33 +101,26 @@ def test_minimal_min_magnitude_none():
     ) == 0
 
 
-# FIXME : expect this to be 1, but 0.5 returned
-@pytest.mark.skipif(True, reason='to determine')
 def test_minimal_min_magnitude_positive():
     assert minimal(
         complex_numbers(min_magnitude=0.5),
         lambda x: True
-    ) == 1
+    ) in (0.5, 1)
 
 
-def test_minimal_max_magnitude_finite():
-    assert minimal(
-        complex_numbers(max_magnitude=1.5),
-        lambda x: True
-    ) == 0
-
-
-# FIXME : expect this to be 1, but 0.5 returned
-@pytest.mark.skipif(True, reason='to determine')
 def test_minimal_minmax_magnitude():
     assert minimal(
         complex_numbers(min_magnitude=0.5, max_magnitude=1.5),
         lambda x: True
-    ) == 1
+    ) in (0.5, 1)
 
 
-def test_minimal_minmax_magnitude_equal():
-    assert minimal(
-        complex_numbers(min_magnitude=1, max_magnitude=1),
-        lambda x: True
-    ) == 1
+@given(st.data(), st.floats(0, allow_infinity=False, allow_nan=False))
+def test_minmax_magnitude_equal(data, mag):
+    val = data.draw(st.complex_numbers(min_magnitude=mag, max_magnitude=mag))
+    try:
+        assert math.isclose(abs(val), mag)
+    except OverflowError:
+        reject()
+    except AttributeError:
+        pass  # Python 2.7.3 does not have math.isclose
