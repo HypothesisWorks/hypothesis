@@ -53,8 +53,8 @@ assert __version__ is not None
 
 
 extras = {
-    'datetime':  ['pytz'],
-    'pytz':  ['pytz'],
+    'datetime': ['pytz'],
+    'pytz': ['pytz'],
     'fakefactory': ['Faker>=0.7'],
     'numpy': ['numpy>=1.9.0'],
     'pytest': ['pytest>=2.8.0'],
