@@ -1641,8 +1641,8 @@ def complex_numbers(
         min_magnitude = 0
 
     if allow_nan:
-        zi = draw(floats(allow_nan=True))
-        zr = draw(floats(allow_nan=True))
+        zi = draw(floats(allow_nan=True, allow_infinity=allow_infinity))
+        zr = draw(floats(allow_nan=True, allow_infinity=allow_infinity))
         return complex(zr, zi)
 
     zi = draw(floats(0, max_magnitude))
@@ -1659,8 +1659,11 @@ def complex_numbers(
 
     if draw(booleans()):
         zr = -zr
-        if draw(booleans()):
-            return complex(zi, zr)
+    if draw(booleans()):
+        zi = -zi
+
+    if draw(booleans()):
+        return complex(zi, zr)
 
     return complex(zr, zi)
 

@@ -78,11 +78,9 @@ def check_valid_magnitude(value, name):
 
     Otherwise raises InvalidArgument.
     """
-    if value is None:
-        return
-    if isinstance(value, Real):
-        if value < 0 or math.isnan(value):
-            raise InvalidArgument(u'Invalid magnitude %s=%r' % (name, value))
+    check_valid_bound(value, name)
+    if value is not None and value < 0:
+        raise InvalidArgument('%s=%r must not be negative.' % (name, value))
 
 
 @check_function
