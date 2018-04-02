@@ -1595,23 +1595,17 @@ def complex_numbers(
     of ``None`` correspond to zero and infinite values respectively.
 
     If ``min_magnitude`` is positive or ``max_magnitude`` is finite, it
-    is an error to enable ``allow_nan``.
-
-    If ``max_magnitude`` is finite, it is an error to enable
-    ``allow_infinity``.
+    is an error to enable ``allow_nan``.  If ``max_magnitude`` is finite,
+    it is an error to enable ``allow_infinity``.
 
     Examples from this strategy shrink by shrinking their real and
-    imaginary parts, as `~hypothesis.strategies.floats`.
+    imaginary parts, as :func:`~hypothesis.strategies.floats`.
     """
-
     check_valid_magnitude(min_magnitude, 'min_magnitude')
     check_valid_magnitude(max_magnitude, 'max_magnitude')
-    check_valid_interval(
-        min_magnitude, max_magnitude,
-        'min_magnitude', 'max_magnitude'
-    )
-
-    if max_magnitude == float(u'inf'):
+    check_valid_interval(min_magnitude, max_magnitude,
+                         'min_magnitude', 'max_magnitude')
+    if math.isinf(max_magnitude):
         max_magnitude = None
     if min_magnitude == 0:
         min_magnitude = None
@@ -1623,16 +1617,12 @@ def complex_numbers(
             'Cannot have allow_infinity=%r with max_magnitude=%r' %
             (allow_infinity, max_magnitude)
         )
-
     if allow_nan is None:
         allow_nan = bool(min_magnitude is None and max_magnitude is None)
     elif allow_nan and not (min_magnitude is None and max_magnitude is None):
         raise InvalidArgument(
-            'Cannot have allow_nan=%r, min_magnitude=%r max_magnitude=%r' % (
-                allow_nan,
-                min_magnitude,
-                max_magnitude
-            )
+            'Cannot have allow_nan=%r, min_magnitude=%r max_magnitude=%r' %
+            (allow_nan, min_magnitude, max_magnitude)
         )
 
     if max_magnitude is None:
