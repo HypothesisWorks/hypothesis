@@ -27,6 +27,7 @@ execution to date.
 from __future__ import division, print_function, absolute_import
 
 import inspect
+import sys
 import traceback
 from unittest import TestCase
 
@@ -196,7 +197,19 @@ class GenericStateMachine(object):
         # We define this outside of the class and assign it because you can't
         # assign attributes to instance method values in Python 2
         def runTest(self):
-            run_state_machine_as_test(state_machine_class)
+            try:
+                run_state_machine_as_test(state_machine_class)
+            except Exception as e:
+                # Filter out internal calls from the traceback.
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                tuple_tb = traceback.extract_tb(exc_tb)
+                for entry in tuple_tb:
+                    filename = entry[0]
+                    if __file__.replace('.pyc','.py') in filename:
+                        exc_tb = exc_tb.tb_next
+                    else:
+                        break
+                raise exc_type, exc_value, exc_tb
 
         runTest.is_hypothesis_test = True
         StateMachineTestCase.runTest = runTest
@@ -212,6 +225,9 @@ class GenericStateMachine(object):
             StateMachineTestCase
         )
         return StateMachineTestCase
+
+
+
 
 
 GenericStateMachine.find_breaking_runner = classmethod(find_breaking_runner)
