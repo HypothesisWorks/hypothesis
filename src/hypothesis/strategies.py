@@ -1579,14 +1579,8 @@ def composite(f):
 
 @defines_strategy_with_reusable_values
 @cacheable
-@composite
-def complex_numbers(
-        draw,
-        min_magnitude=0,
-        max_magnitude=None,
-        allow_infinity=None,
-        allow_nan=None
-):
+def complex_numbers(min_magnitude=0, max_magnitude=None,
+                    allow_infinity=None, allow_nan=None):
     """Returns a strategy that generates complex numbers.
 
     This strategy draws complex numbers with constrained magnitudes.
@@ -1605,7 +1599,7 @@ def complex_numbers(
     check_valid_magnitude(max_magnitude, 'max_magnitude')
     check_valid_interval(min_magnitude, max_magnitude,
                          'min_magnitude', 'max_magnitude')
-    if math.isinf(max_magnitude):
+    if max_magnitude == float('inf'):
         max_magnitude = None
     if min_magnitude == 0:
         min_magnitude = None
@@ -1624,38 +1618,38 @@ def complex_numbers(
             'Cannot have allow_nan=%r, min_magnitude=%r max_magnitude=%r' %
             (allow_nan, min_magnitude, max_magnitude)
         )
+    allow_kw = dict(allow_nan=allow_nan, allow_infinity=allow_infinity)
 
-    if max_magnitude is None:
-        max_magnitude = float(u'inf')
-    if min_magnitude is None:
-        min_magnitude = 0
+    if min_magnitude is None and max_magnitude is None:
+        # In this simple but common case, there are no constraints on the
+        # magnitude and therefore no relationship between the real and
+        # imaginary parts.
+        return builds(complex, floats(**allow_kw), floats(**allow_kw))
 
-    if allow_nan:
-        zi = draw(floats(allow_nan=True, allow_infinity=allow_infinity))
-        zr = draw(floats(allow_nan=True, allow_infinity=allow_infinity))
+    @composite
+    def constrained_complex(draw):
+        # Draw the imaginary part, and determine the maximum real part given
+        # this and the max_magnitude
+        if max_magnitude is None:
+            zi = draw(floats(**allow_kw))
+            rmax = float('inf')
+        else:
+            zi = draw(floats(-max_magnitude, max_magnitude, **allow_kw))
+            rmax = cathetus(max_magnitude, zi)
+        # Draw the real part from the allowed range given the imaginary part
+        if min_magnitude is None or math.fabs(zi) >= min_magnitude:
+            zr = draw(floats(-rmax, rmax, **allow_kw))
+        else:
+            zr = draw(floats(cathetus(min_magnitude, zi), rmax, **allow_kw))
+        # Order of conditions carefully tuned to draw the bool or not
+        # consistently for given magnitude arguments, which is crucial to
+        # shrink well.
+        if min_magnitude is not None and draw(booleans()) and \
+                math.fabs(zi) <= min_magnitude:
+            zr = -zr
         return complex(zr, zi)
 
-    zi = draw(floats(0, max_magnitude))
-    if math.isinf(zi):
-        rmax = float(u'inf')
-    else:
-        rmax = cathetus(max_magnitude, zi)
-    if zi < min_magnitude:
-        rmin = cathetus(min_magnitude, zi)
-    else:
-        rmin = 0
-
-    zr = draw(floats(rmin, rmax))
-
-    if draw(booleans()):
-        zr = -zr
-    if draw(booleans()):
-        zi = -zi
-
-    if draw(booleans()):
-        return complex(zi, zr)
-
-    return complex(zr, zi)
+    return constrained_complex()
 
 
 def shared(base, key=None):
