@@ -83,7 +83,11 @@ def test_minimal_max_magnitude_zero():
 @given(st.data(), st.integers(-5, 5).map(lambda x: 10 ** x))
 def test_min_magnitude_respected(data, mag):
     c = data.draw(complex_numbers(min_magnitude=mag))
-    assert abs(c) >= mag * (1 - sys.float_info.epsilon)
+    assert (
+        abs(c.real) >= mag or
+        abs(c.imag) >= mag or
+        abs(c) >= mag * (1 - sys.float_info.epsilon)
+    )
 
 
 def test_minimal_min_magnitude_zero():
