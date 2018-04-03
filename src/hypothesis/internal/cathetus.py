@@ -41,7 +41,7 @@ def cathetus(h, a):
         if isinf(a):
             return float(u'nan')
         else:
-            # Includes the case when a is NaN, deliberately, since the
+            # Deliberately includes the case when isnan(a), because the
             # C99 standard mandates that hypot(inf, nan) == inf
             return float(u'inf')
 

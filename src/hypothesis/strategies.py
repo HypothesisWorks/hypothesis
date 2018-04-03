@@ -1594,6 +1594,11 @@ def complex_numbers(min_magnitude=0, max_magnitude=None,
 
     Examples from this strategy shrink by shrinking their real and
     imaginary parts, as :func:`~hypothesis.strategies.floats`.
+
+    If you need to generate complex numbers with particular real and
+    imaginary parts or relationships between parts, consider using
+    `builds(complex, ...) <hypothesis.strategies.builds>` or
+    `@composite <hypothesis.strategies.composite>` respectively.
     """
     check_valid_magnitude(min_magnitude, 'min_magnitude')
     check_valid_magnitude(max_magnitude, 'max_magnitude')
@@ -1641,9 +1646,9 @@ def complex_numbers(min_magnitude=0, max_magnitude=None,
             zr = draw(floats(-rmax, rmax, **allow_kw))
         else:
             zr = draw(floats(cathetus(min_magnitude, zi), rmax, **allow_kw))
-        # Order of conditions carefully tuned to draw the bool or not
-        # consistently for given magnitude arguments, which is crucial to
-        # shrink well.
+        # Order of conditions carefully tuned so that for a given pair of
+        # magnitude arguments, we always either draw or do not draw the bool
+        # (crucial for good shrinking behaviour) but only invert when needed.
         if min_magnitude is not None and draw(booleans()) and \
                 math.fabs(zi) <= min_magnitude:
             zr = -zr
