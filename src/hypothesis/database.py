@@ -40,9 +40,9 @@ def _db_for_path(path=None):
     if path is infer:
         path = os.getenv('HYPOTHESIS_DATABASE_FILE')
         if path is not None:  # pragma: no cover
-            # Note: for Hypothesis 4, there should still be a deprecation
-            # warning (noting that the var is ignored) to ease debugging for
-            # anyone using it and migrating to a new version.
+            # Note: we should retain an explicit deprecation warning for a
+            # further period after this is removed, to ease debugging for
+            # anyone migrating to a new version.
             note_deprecation(
                 'The $HYPOTHESIS_DATABASE_FILE environment variable is '
                 'deprecated, and will be ignored by a future version of '

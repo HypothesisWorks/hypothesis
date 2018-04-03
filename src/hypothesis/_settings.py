@@ -50,9 +50,6 @@ unlimited = UniqueIdentifier('unlimited')
 all_settings = {}
 
 
-_db_cache = {}
-
-
 class settingsProperty(object):
 
     def __init__(self, name, show_default):
@@ -139,7 +136,11 @@ class settings(settingsMeta('settings', (object,), {})):
             kwargs.get('database', not_set) is not_set and
             kwargs.get('database_file', not_set) is not not_set
         ):
-            kwargs['database'] = kwargs['database_file']
+            if kwargs['database_file'] is None:
+                kwargs['database'] = None
+            else:
+                from hypothesis.database import ExampleDatabase
+                kwargs['database'] = ExampleDatabase(kwargs['database_file'])
         self._construction_complete = False
         deprecations = []
         defaults = parent or settings.default
@@ -491,13 +492,18 @@ warnings.simplefilter('error', HypothesisDeprecationWarning).
 )
 
 
-def _validate_database(db):
+def _validate_database(db, __from_db_file=False):
     from hypothesis.database import ExampleDatabase
     if db is None or db is not_set or isinstance(db, ExampleDatabase):
         return db
-    if db not in _db_cache:
-        _db_cache[db] = ExampleDatabase(db)
-    return _db_cache[db]
+    if __from_db_file or db is infer:
+        return ExampleDatabase(db)
+    raise InvalidArgument(
+        'Arguments to the database setting must be None or an instance of '
+        'ExampleDatabase.  Try passing database=ExampleDatabase(%r), or '
+        'construct and use one of the specific subclasses in '
+        'hypothesis.database' % (db,)
+    )
 
 
 settings.define_setting(
@@ -518,10 +524,10 @@ settings.define_setting(
     default=not_set,
     show_default=False,
     description="""
-The directory location to save and load previously tried examples;
+The file or directory location to save and load previously tried examples;
 `:memory:` for an in-memory cache or None to disable caching entirely.
 """,
-    validator=_validate_database,
+    validator=lambda f: _validate_database(f, __from_db_file=True),
     deprecation_message="""
 The `database_file` setting is deprecated in favor of the `database`
 setting, and will be removed in a future version.  It only exists at

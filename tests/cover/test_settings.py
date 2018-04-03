@@ -229,6 +229,15 @@ def test_can_have_none_database():
     assert settings(database=None).database is None
 
 
+@pytest.mark.parametrize('db', [None, ExampleDatabase(':memory:')])
+def test_database_type_must_be_ExampleDatabase(db):
+    with settings(database=db):
+        settings_property_db = settings.database
+        with pytest.raises(InvalidArgument):
+            settings(database='.hypothesis/examples')
+        assert settings.database is settings_property_db
+
+
 @checks_deprecated_behaviour
 def test_can_have_none_database_file():
     assert settings(database_file=None).database is None
