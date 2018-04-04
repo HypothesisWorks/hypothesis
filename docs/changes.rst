@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.54.0 - 2018-04-04
+-------------------
+
+This release improves the :func:`~hypotheses.strategies.complex_numbers`
+strategy, which now supports ``min_magnitude`` and ``max_magnitude``
+arguments, along with ``allow_nan`` and ``allow_infinity`` like for
+:func:`~hypotheses.strategies.floats`.
+
+Thanks to J.J. Green for this feature.
+
+-------------------
 3.53.0 - 2018-04-01
 -------------------
 
