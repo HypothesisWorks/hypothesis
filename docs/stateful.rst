@@ -33,11 +33,6 @@ structured representation of actions. However the generic state machines are
 more flexible, and are particularly useful if you want the set of currently
 possible actions to depend primarily on external state.
 
-The first thing to note is that there are two levels of API: The low level
-but more flexible API and the higher level rule based API which is both
-easier to use and also produces a much better display of data due to its
-greater structure. We'll start with the more structured one.
-
 .. _rulebasedstateful:
 
 -------------------------
