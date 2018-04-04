@@ -2,39 +2,36 @@
 Stateful testing
 ================
 
-Hypothesis offers support for a stateful style of test, where instead of
-trying to produce a single data value that causes a specific test to fail, it
-tries to generate a program that errors. In many ways, this sort of testing is
-to classical property based testing as property based testing is to normal
-example based testing.
+Hypothesis offers support for a style of test, where instead of trying to
+produce a set of arguments that cause a specific test to fail, it tries to
+generate a test that fails based on a series of actions that exercise your
+code in some way, effectively generating an entire new test for your code
+rather than just some data for a test you wrote.
 
-The idea doesn't originate with Hypothesis, though Hypothesis's implementation
-and approach is mostly not based on an existing implementation and should be
-considered some mix of novel and independent reinventions.
+.. note::
 
-This style of testing is useful both for programs which involve some sort
-of mutable state and for complex APIs where there's no state per se but the
-actions you perform involve e.g. taking data from one function and feeding it
-into another.
+  This style of testing is often called *model-based testing*, but in Hypothesis
+  is called *stateful testing* (mostly for historical reasons - the original
+  implementation of this idea in Hypothesis was more closely based on
+  `ScalaCheck's stateful testing <https://github.com/rickynils/scalacheck/blob/master/doc/UserGuide.md#stateful-testing>`_
+  where the name is more apt),
+  but both these names are somewhat misleading: You don't really need any sort of
+  formal model of your code to use this, and it can be just as useful for pure APIs
+  that don't involve any state as it is for stateful ones.
 
-The idea is that you teach Hypothesis how to interact with your program: Be it
-a server, a python API, whatever. All you need is to be able to answer the
-question "Given what I've done so far, what could I do now?". After that,
-Hypothesis takes over and tries to find sequences of actions which cause a
-test failure.
+  It's perhaps best to not take the name of this sort of testing too seriously.
+  Regardless of what you call it, it is a powerful form of testing which is useful
+  for most non-trivial APIs.
 
-Right now the stateful testing is a bit new and experimental and should be
-considered as a semi-public API: It may break between minor versions but won't
-break between patch releases, and there are still some rough edges in the API
-that will need to be filed off.
+Hypothesis has two stateful testing APIs: A high level one, providing what
+we call *rule based state machines*, and a low level one, providing what we call
+*generic* state machines.
 
-This shouldn't discourage you from using it. Although it's not as robust as the
-rest of Hypothesis, it's still pretty robust and more importantly is extremely
-powerful. I found a number of really subtle bugs in Hypothesis by turning the
-stateful testing onto a subset of the Hypothesis API, and you likely will find
-the same.
-
-Enough preamble, lets see how to use it.
+You probably want to use the rule based state machines - they provide a high
+level API for describing the sort of actions you want to perform, based on a
+structured representation of actions. However the generic state machines are
+more flexible, and are particularly useful if you want the set of currently
+possible actions to depend primarily on external state.
 
 The first thing to note is that there are two levels of API: The low level
 but more flexible API and the higher level rule based API which is both
