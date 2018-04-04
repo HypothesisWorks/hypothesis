@@ -33,7 +33,7 @@ import attr
 
 from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
 from hypothesis.internal.compat import text_type
-from hypothesis.utils.conventions import UniqueIdentifier, infer, not_set
+from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.internal.reflection import proxies, \
     get_pretty_function_description
 from hypothesis.internal.validation import try_convert
@@ -494,9 +494,9 @@ warnings.simplefilter('error', HypothesisDeprecationWarning).
 
 def _validate_database(db, __from_db_file=False):
     from hypothesis.database import ExampleDatabase
-    if db is None or db is not_set or isinstance(db, ExampleDatabase):
+    if db is None or isinstance(db, ExampleDatabase):
         return db
-    if __from_db_file or db is infer:
+    if __from_db_file or db is not_set:
         return ExampleDatabase(db)
     raise InvalidArgument(
         'Arguments to the database setting must be None or an instance of '
@@ -508,7 +508,7 @@ def _validate_database(db, __from_db_file=False):
 
 settings.define_setting(
     'database',
-    default=lambda: _validate_database(infer),
+    default=lambda: _validate_database(not_set),
     show_default=False,
     description="""
 An instance of hypothesis.database.ExampleDatabase that will be

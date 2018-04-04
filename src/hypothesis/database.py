@@ -30,14 +30,14 @@ from hypothesis._settings import note_deprecation
 from hypothesis.configuration import storage_directory
 from hypothesis.internal.compat import FileNotFoundError, hbytes, \
     b64decode, b64encode
-from hypothesis.utils.conventions import infer
+from hypothesis.utils.conventions import not_set
 
 sqlite3 = None
 SQLITE_PATH = re.compile(r"\.\(db|sqlite|sqlite3\)$")
 
 
 def _db_for_path(path=None):
-    if path is infer:
+    if path is not_set:
         path = os.getenv('HYPOTHESIS_DATABASE_FILE')
         if path is not None:  # pragma: no cover
             # Note: we should retain an explicit deprecation warning for a
