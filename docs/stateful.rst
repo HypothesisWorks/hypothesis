@@ -252,124 +252,74 @@ invariants, you should store relevant data on the instance instead.
 Generic state machines
 ----------------------
 
-The class GenericStateMachine is the underlying machinery of stateful testing
-in Hypothesis. In execution it looks much like the RuleBasedStateMachine but
-it allows the set of steps available to depend in essentially arbitrary
-ways on what has happened so far. For example, if you wanted to
-use Hypothesis to test a game, it could choose each step in the machine based
-on the game to date and the set of actions the game program is telling it it
-has available.
+The class ``GenericStateMachine`` is the underlying machinery of stateful testing
+in Hypothesis. Chances are you will want to use the rule based stateful testing
+for most things, but the generic state machine functionality can be useful e.g. if
+you want to test things where the set of actions to be taken is more closely
+tied to the state of the system you are testing.
 
-It essentially executes the following loop:
+.. module:: hypothesis.stateful
+.. autoclass:: GenericStateMachine
+    :members: steps, execute_step, check_invariants, teardown
 
-.. code:: python
-
-    machine = MyStateMachine()
-    try:
-        machine.check_invariants()
-        for _ in range(n_steps):
-            step = machine.steps().example()
-            machine.execute_step(step)
-            machine.check_invariants()
-    finally:
-        machine.teardown()
-
-Where ``steps`` and ``execute_step`` are methods you must implement, and
-``teardown`` and ``check_invarants`` are methods you can implement if required.
-``steps`` returns a strategy, which is allowed to depend arbitrarily on the
-current state of the test execution. *Ideally* a good steps implementation
-should be robust against minor changes in the state. Steps that change a lot
-between slightly different executions will tend to produce worse quality
-examples because they're hard to simplify.
-
-The steps method *may* depend on external state, but it's not advisable and
-may produce flaky tests.
-
-If any of ``execute_step``, ``check_invariants`` or ``teardown`` produces an
-exception, Hypothesis will try to find a minimal sequence of values steps such
-that the following throws an exception:
+For example, here we use stateful testing as a sort of link checker, to test
+`hypothesis.works <https://hypothesis.works>`_ for broken links or links that
+use HTTP instead of HTTPS.
 
 .. code:: python
 
-    machine = MyStateMachine()
-    try:
-        machine.check_invariants()
-        for step in steps:
-            machine.execute_step(step)
-            machine.check_invariants()
-    finally:
-        machine.teardown()
-
-and such that at every point, the step executed is one that could plausible
-have come from a call to ``steps`` in the current state.
-
-Here's an example of using stateful testing to test a broken implementation
-of a set in terms of a list (note that you could easily do something close to
-this example with the rule based testing instead, and probably should. This
-is mostly for illustration purposes):
-
-.. code:: python
-
-    import unittest
-
-    from hypothesis.stateful import GenericStateMachine
-    from hypothesis.strategies import tuples, sampled_from, just, integers
+  from hypothesis.stateful import GenericStateMachine
+  import hypothesis.strategies as st
+  from requests_html import HTMLSession
 
 
-    class BrokenSet(GenericStateMachine):
-        def __init__(self):
-            self.data = []
+  class LinkChecker(GenericStateMachine):
+      def __init__(self):
+          super(LinkChecker, self).__init__()
+          self.session = HTMLSession()
+          self.result = None
 
-        def steps(self):
-            add_strategy = tuples(just("add"), integers())
-            if not self.data:
-                return add_strategy
-            else:
-                return (
-                    add_strategy |
-                    tuples(just("delete"), sampled_from(self.data)))
+      def steps(self):
+          if self.result is None:
+              # Always start on the home page
+              return st.just("https://hypothesis.works/")
+          else:
+              return st.sampled_from([
+                  l
+                  for l in self.result.html.absolute_links
+                  # Don't try to crawl to other people's sites
+                  if l.startswith("https://hypothesis.works") and
+                  # Avoid Cloudflare's bot protection. We are a bot but we don't
+                  # care about the info it's hiding.
+                  '/cdn-cgi/' not in l
+              ])
 
-        def execute_step(self, step):
-            action, value = step
-            if action == 'delete':
-                try:
-                    self.data.remove(value)
-                except ValueError:
-                    pass
-                assert value not in self.data
-            else:
-                assert action == 'add'
-                self.data.append(value)
-                assert value in self.data
+      def execute_step(self, step):
+          self.result = self.session.get(step)
 
+          assert self.result.status_code == 200
 
-    TestSet = BrokenSet.TestCase
-
-    if __name__ == '__main__':
-        unittest.main()
+          for l in self.result.html.absolute_links:
+              # All links should be HTTPS
+              assert "http://hypothesis.works" not in l
 
 
-Note that the strategy changes each time based on the data that's currently
-in the state machine.
+  TestLinks = LinkChecker.TestCase
 
-Running this gives us the following:
+Running this (at the time of writing this documentation) produced the following
+output:
 
-.. code:: bash
+::
 
-  Step #1: ('add', 0)
-  Step #2: ('add', 0)
-  Step #3: ('delete', 0)
-  F
-  ======================================================================
-  FAIL: runTest (hypothesis.stateful.BrokenSet.TestCase)
-  ----------------------------------------------------------------------
-  Traceback (most recent call last):
-  (...)
-      assert value not in self.data
-  AssertionError
+  AssertionError: assert 'http://hypothesis.works' not in 'http://hypoth...test-fixtures/'
+  'http://hypothesis.works' is contained here:
+    http://hypothesis.works/articles/hypothesis-pytest-fixtures/
+  ? +++++++++++++++++++++++
 
-So it adds two elements, then deletes one, and throws an assertion when it
-finds out that this only deleted one of the copies of the element.
+    ------------ Hypothesis ------------
+
+  Step #1: 'https://hypothesis.works/'
+  Step #2: 'https://hypothesis.works/articles/'
 
 
 -------------------------
