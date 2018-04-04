@@ -134,7 +134,7 @@ from it:
   if __name__ == '__main__':
       unittest.main()
 
-This test currently passes, but if we comment out the line where we call ``self.in_memory_db.delete(k, v)``,
+This test currently passes, but if we comment out the line where we call ``self.model[k].discard(v)``,
 we would see the following output when run under pytest:
 
 ::
