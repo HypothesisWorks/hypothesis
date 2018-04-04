@@ -2,11 +2,12 @@
 Stateful testing
 ================
 
-Hypothesis offers support for a style of test, where instead of trying to
-produce a set of arguments that cause a specific test to fail, it tries to
-generate a test that fails based on a series of actions that exercise your
-code in some way, effectively generating an entire new test for your code
-rather than just some data for a test you wrote.
+With :func:`@given <hypothesis.given>`, your tests are still something that
+you mostly write yourself, with Hypothesis providing some data.
+With Hypothesis's *stateful testing*, Hypothesis instead tries to generate
+not just data but entire tests. You specify a number of primitive
+actions that can be combined together, and then Hypothesis will
+try to find sequences of those actions that result in a failure.
 
 .. note::
 
@@ -14,8 +15,8 @@ rather than just some data for a test you wrote.
   is called *stateful testing* (mostly for historical reasons - the original
   implementation of this idea in Hypothesis was more closely based on
   `ScalaCheck's stateful testing <https://github.com/rickynils/scalacheck/blob/master/doc/UserGuide.md#stateful-testing>`_
-  where the name is more apt),
-  but both these names are somewhat misleading: You don't really need any sort of
+  where the name is more apt).
+  Both of these names are somewhat misleading: You don't really need any sort of
   formal model of your code to use this, and it can be just as useful for pure APIs
   that don't involve any state as it is for stateful ones.
 
@@ -247,7 +248,7 @@ invariants, you should store relevant data on the instance instead.
 Generic state machines
 ----------------------
 
-The class ``GenericStateMachine`` is the underlying machinery of stateful testing
+The class :class:`~hypothesis.stateful.GenericStateMachine` is the underlying machinery of stateful testing
 in Hypothesis. Chances are you will want to use the rule based stateful testing
 for most things, but the generic state machine functionality can be useful e.g. if
 you want to test things where the set of actions to be taken is more closely
