@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import math
+from sys import float_info
 
 import pytest
 
@@ -94,8 +95,8 @@ def test_cathetus_infinite(h, a):
     (0, 0, 0),
     (1, 0, 1),
 ])
-def test_cathetus_exact(h, a, b):
-    assert cathetus(h, a) == b
+def test_cathetus_signs(h, a, b):
+    assert abs(cathetus(h, a) - b) <= abs(b) * float_info.epsilon
 
 
 @pytest.mark.parametrize('a,b,h', [
@@ -148,5 +149,5 @@ def test_cathetus_exact(h, a, b):
     (68, 285, 293),
 ])
 def test_pythagorean_triples(a, b, h):
-    assert math.hypot(a, b) == h, 'defective pythagoran triple'
-    assert cathetus(h, a) == b
+    assert abs(math.hypot(a, b) - h) <= abs(h) * float_info.epsilon
+    assert abs(cathetus(h, a) - b) <= abs(b) * float_info.epsilon
