@@ -25,7 +25,7 @@ rather than just some data for a test you wrote.
 
 Hypothesis has two stateful testing APIs: A high level one, providing what
 we call *rule based state machines*, and a low level one, providing what we call
-*generic* state machines.
+*generic state machines*.
 
 You probably want to use the rule based state machines - they provide a high
 level API for describing the sort of actions you want to perform, based on a
