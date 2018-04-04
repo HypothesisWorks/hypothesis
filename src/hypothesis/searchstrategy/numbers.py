@@ -24,8 +24,7 @@ import hypothesis.internal.conjecture.floats as flt
 from hypothesis.control import assume
 from hypothesis.internal.floats import sign
 from hypothesis.internal.conjecture.utils import calc_label_from_name
-from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    MappedSearchStrategy
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 class IntStrategy(SearchStrategy):
@@ -184,15 +183,3 @@ class FixedBoundedFloatStrategy(SearchStrategy):
             if f == g:
                 f = math.copysign(f, g)
         return f
-
-
-class ComplexStrategy(MappedSearchStrategy):
-    """A strategy over complex numbers, with real and imaginary values
-    distributed according to some provided strategy for floating point
-    numbers."""
-
-    def __repr__(self):
-        return 'ComplexStrategy()'
-
-    def pack(self, value):
-        return complex(*value)

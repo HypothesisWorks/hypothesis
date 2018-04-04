@@ -36,12 +36,14 @@ from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
 from hypothesis.internal.floats import next_up, next_down, is_negative, \
     float_to_int, int_to_float, count_between_floats
 from hypothesis.internal.charmap import as_general_categories
+from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
 from hypothesis.internal.validation import check_type, try_convert, \
     check_strategy, check_valid_size, check_valid_bound, \
-    check_valid_sizes, check_valid_integer, check_valid_interval
+    check_valid_sizes, check_valid_integer, check_valid_interval, \
+    check_valid_magnitude
 
 __all__ = [
     'nothing',
@@ -428,20 +430,6 @@ def floats(
         if max_value == 0 and is_negative(max_value):
             result = result.filter(is_negative)
         return result
-
-
-@cacheable
-@defines_strategy_with_reusable_values
-def complex_numbers():
-    """Returns a strategy that generates complex numbers.
-
-    Examples from this strategy shrink by shrinking their component real
-    and imaginary parts.
-    """
-    from hypothesis.searchstrategy.numbers import ComplexStrategy
-    return ComplexStrategy(
-        tuples(floats(), floats())
-    )
 
 
 @cacheable
@@ -1587,6 +1575,86 @@ def composite(f):
         return CompositeStrategy()
     accept.__module__ = f.__module__
     return accept
+
+
+@defines_strategy_with_reusable_values
+@cacheable
+def complex_numbers(min_magnitude=0, max_magnitude=None,
+                    allow_infinity=None, allow_nan=None):
+    """Returns a strategy that generates complex numbers.
+
+    This strategy draws complex numbers with constrained magnitudes.
+    The ``min_magnitude`` and ``max_magnitude`` parameters should be
+    non-negative :class:`~python:numbers.Real` numbers; values
+    of ``None`` correspond to zero and infinite values respectively.
+
+    If ``min_magnitude`` is positive or ``max_magnitude`` is finite, it
+    is an error to enable ``allow_nan``.  If ``max_magnitude`` is finite,
+    it is an error to enable ``allow_infinity``.
+
+    Examples from this strategy shrink by shrinking their real and
+    imaginary parts, as :func:`~hypothesis.strategies.floats`.
+
+    If you need to generate complex numbers with particular real and
+    imaginary parts or relationships between parts, consider using
+    `builds(complex, ...) <hypothesis.strategies.builds>` or
+    `@composite <hypothesis.strategies.composite>` respectively.
+    """
+    check_valid_magnitude(min_magnitude, 'min_magnitude')
+    check_valid_magnitude(max_magnitude, 'max_magnitude')
+    check_valid_interval(min_magnitude, max_magnitude,
+                         'min_magnitude', 'max_magnitude')
+    if max_magnitude == float('inf'):
+        max_magnitude = None
+    if min_magnitude == 0:
+        min_magnitude = None
+
+    if allow_infinity is None:
+        allow_infinity = bool(max_magnitude is None)
+    elif allow_infinity and max_magnitude is not None:
+        raise InvalidArgument(
+            'Cannot have allow_infinity=%r with max_magnitude=%r' %
+            (allow_infinity, max_magnitude)
+        )
+    if allow_nan is None:
+        allow_nan = bool(min_magnitude is None and max_magnitude is None)
+    elif allow_nan and not (min_magnitude is None and max_magnitude is None):
+        raise InvalidArgument(
+            'Cannot have allow_nan=%r, min_magnitude=%r max_magnitude=%r' %
+            (allow_nan, min_magnitude, max_magnitude)
+        )
+    allow_kw = dict(allow_nan=allow_nan, allow_infinity=allow_infinity)
+
+    if min_magnitude is None and max_magnitude is None:
+        # In this simple but common case, there are no constraints on the
+        # magnitude and therefore no relationship between the real and
+        # imaginary parts.
+        return builds(complex, floats(**allow_kw), floats(**allow_kw))
+
+    @composite
+    def constrained_complex(draw):
+        # Draw the imaginary part, and determine the maximum real part given
+        # this and the max_magnitude
+        if max_magnitude is None:
+            zi = draw(floats(**allow_kw))
+            rmax = float('inf')
+        else:
+            zi = draw(floats(-max_magnitude, max_magnitude, **allow_kw))
+            rmax = cathetus(max_magnitude, zi)
+        # Draw the real part from the allowed range given the imaginary part
+        if min_magnitude is None or math.fabs(zi) >= min_magnitude:
+            zr = draw(floats(-rmax, rmax, **allow_kw))
+        else:
+            zr = draw(floats(cathetus(min_magnitude, zi), rmax, **allow_kw))
+        # Order of conditions carefully tuned so that for a given pair of
+        # magnitude arguments, we always either draw or do not draw the bool
+        # (crucial for good shrinking behaviour) but only invert when needed.
+        if min_magnitude is not None and draw(booleans()) and \
+                math.fabs(zi) <= min_magnitude:
+            zr = -zr
+        return complex(zr, zi)
+
+    return constrained_complex()
 
 
 def shared(base, key=None):

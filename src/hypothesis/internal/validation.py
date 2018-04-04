@@ -72,6 +72,18 @@ def check_valid_bound(value, name):
 
 
 @check_function
+def check_valid_magnitude(value, name):
+    """Checks that value is either unspecified, or a non-negative valid
+    interval bound.
+
+    Otherwise raises InvalidArgument.
+    """
+    check_valid_bound(value, name)
+    if value is not None and value < 0:
+        raise InvalidArgument('%s=%r must not be negative.' % (name, value))
+
+
+@check_function
 def try_convert(typ, value, name):
     if value is None:
         return None
