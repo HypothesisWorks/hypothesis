@@ -24,13 +24,17 @@ File locations
 The default storage format is as a fairly opaque directory structure. Each test
 corresponds to a directory, and each example to a file within that directory.
 The standard location for it is ``.hypothesis/examples`` in your current working
-directory. You can override this by setting the :obj:`~hypothesis.settings.database_file`
-setting, or with the ``HYPOTHESIS_DATABASE_FILE`` environment variable.
+directory. You can override this by setting the
+:obj:`~hypothesis.settings.database` setting.
 
 There is also a legacy sqlite3 based format. This is mostly still supported for
 compatibility reasons, and support will be dropped in some future version of
 Hypothesis. If you use a database file name ending in .db, .sqlite or .sqlite3
 that format will be used instead.
+
+If you have not configured a database and the default location is unusable
+(e.g. because you do not have read/write permission), Hypothesis will issue
+a warning and then fall back to an in-memory database.
 
 --------------------------------------------
 Upgrading Hypothesis and changing your tests

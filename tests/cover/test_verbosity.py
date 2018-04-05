@@ -60,7 +60,7 @@ def test_does_not_log_in_quiet_mode():
 
 def test_includes_progress_in_verbose_mode():
     with capture_verbosity(Verbosity.verbose) as o:
-        with settings(verbosity=Verbosity.verbose):
+        with settings(verbosity=Verbosity.verbose, database=None):
             find(lists(integers()), lambda x: sum(x) >= 1000000)
 
     out = o.getvalue()
