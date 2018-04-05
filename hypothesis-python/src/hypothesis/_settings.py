@@ -236,7 +236,7 @@ class settings(settingsMeta('settings', (object,), {})):
     def define_setting(
         cls, name, description, default, options=None,
         validator=None, show_default=True, future_default=not_set,
-        deprecation_message=None,
+        deprecation_message=None, hide_repr=not_set,
     ):
         """Add a new setting.
 
@@ -259,9 +259,12 @@ class settings(settingsMeta('settings', (object,), {})):
         if future_default is not_set:
             future_default = default
 
+        if hide_repr is not_set:
+            hide_repr = bool(deprecation_message)
+
         all_settings[name] = Setting(
             name, description.strip(), default, options, validator,
-            future_default, deprecation_message,
+            future_default, deprecation_message, hide_repr,
         )
         setattr(settings, name, settingsProperty(name, show_default))
 
@@ -295,11 +298,11 @@ class settings(settingsMeta('settings', (object,), {})):
 
     def __repr__(self):
         bits = []
-        for name in all_settings:
+        for name, setting in all_settings.items():
             value = getattr(self, name)
-            bits.append('%s=%r' % (name, value))
-        bits.sort()
-        return 'settings(%s)' % ', '.join(bits)
+            if value != setting.default or not setting.hide_repr:
+                bits.append('%s=%r' % (name, value))
+        return 'settings(%s)' % ', '.join(sorted(bits))
 
     def __enter__(self):
         default_context_manager = default_variable.with_value(self)
@@ -372,6 +375,7 @@ class Setting(object):
     validator = attr.ib()
     future_default = attr.ib()
     deprecation_message = attr.ib()
+    hide_repr = attr.ib()
 
 
 settings.define_setting(
@@ -446,6 +450,7 @@ limit - Hypothesis won't e.g. interrupt execution of the called
 function to stop it. If this value is <= 0 then no timeout will be
 applied.
 """,
+    hide_repr=False,  # Still affects behaviour at runtime
     deprecation_message="""
 The timeout setting is deprecated and will be removed in a future version of
 Hypothesis. To get the future behaviour set ``timeout=hypothesis.unlimited``
