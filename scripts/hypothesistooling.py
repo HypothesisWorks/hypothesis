@@ -40,7 +40,7 @@ def tags():
 
 ROOT = subprocess.check_output([
     'git', 'rev-parse', '--show-toplevel']).decode('ascii').strip()
-SRC = os.path.join(ROOT, 'src')
+SRC = os.path.join(ROOT, 'hypothesis-python', 'src')
 
 assert os.path.exists(SRC)
 
@@ -48,7 +48,7 @@ assert os.path.exists(SRC)
 __version__ = None
 __version_info__ = None
 
-VERSION_FILE = os.path.join(ROOT, 'src/hypothesis/version.py')
+VERSION_FILE = os.path.join(SRC, 'hypothesis/version.py')
 
 with open(VERSION_FILE) as o:
     exec(o.read())
