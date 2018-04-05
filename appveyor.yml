@@ -3,7 +3,7 @@ environment:
     # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
     # /E:ON and /V:ON options are not enabled in the batch script interpreter
     # See: http://stackoverflow.com/a/13751649/163740
-    CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\scripts\\run_with_env.cmd"
+    CMD_IN_ENV: "cmd /E:ON /V:ON /C ..\\scripts\\run_with_env.cmd"
 
     TWINE_USERNAME: DRMacIver
     TWINE_PASSWORD:
@@ -62,9 +62,9 @@ install:
   # Check that we have the expected version and architecture for Python
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
-  - "%CMD_IN_ENV% python -m pip.__main__ install --upgrade setuptools pip wheel twine"
-  - "%CMD_IN_ENV% python -m pip.__main__ install setuptools -rrequirements/test.txt"
   - "cd hypothesis-python"
+  - "%CMD_IN_ENV% python -m pip.__main__ install --upgrade setuptools pip wheel twine"
+  - "%CMD_IN_ENV% python -m pip.__main__ install setuptools -r../requirements/test.txt"
   - "%CMD_IN_ENV% python -m pip.__main__ install .[all]"
   - "%CMD_IN_ENV% python setup.py bdist_wheel --dist-dir dist"
 
