@@ -220,9 +220,7 @@ bad_machines = (
 )
 
 for m in bad_machines:
-    m.TestCase.settings = Settings(
-        m.TestCase.settings, max_examples=1000, max_iterations=2000
-    )
+    m.TestCase.settings = Settings(m.TestCase.settings, max_examples=1000)
 
 
 cheap_bad_machines = list(bad_machines)

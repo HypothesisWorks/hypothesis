@@ -170,34 +170,24 @@ def test_does_not_catch_interrupt_during_falsify():
 
 def test_contains_the_test_function_name_in_the_exception_string():
 
-    calls = [0]
-
     @given(integers())
-    @settings(max_iterations=10, max_examples=10)
+    @settings(max_examples=1)
     def this_has_a_totally_unique_name(x):
-        calls[0] += 1
         reject()
 
     with raises(Unsatisfiable) as e:
         this_has_a_totally_unique_name()
-        print('Called %d times' % tuple(calls))
-
     assert this_has_a_totally_unique_name.__name__ in e.value.args[0]
-
-    calls2 = [0]
 
     class Foo(object):
 
         @given(integers())
-        @settings(max_iterations=10, max_examples=10)
+        @settings(max_examples=1)
         def this_has_a_unique_name_and_lives_on_a_class(self, x):
-            calls2[0] += 1
             reject()
 
     with raises(Unsatisfiable) as e:
         Foo().this_has_a_unique_name_and_lives_on_a_class()
-        print('Called %d times' % tuple(calls2))
-
     assert (
         Foo.this_has_a_unique_name_and_lives_on_a_class.__name__
     ) in e.value.args[0]

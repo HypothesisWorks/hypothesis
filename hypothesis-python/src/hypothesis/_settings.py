@@ -405,11 +405,15 @@ counter-example, falsification will terminate.
 
 settings.define_setting(
     'max_iterations',
-    default=1000,
+    default=not_set,
     description="""
 Once this many iterations of the example loop have run, including ones which
 failed to satisfy assumptions and ones which produced duplicates, falsification
 will terminate.
+""",
+    deprecation_message="""
+The max_iterations setting has been disabled, as internal heuristics are more
+useful for this purpose than a user setting.  It no longer has any effect.
 """
 )
 

@@ -259,9 +259,7 @@ class ConjectureRunner(object):
         if not self.interesting_examples:
             if self.valid_examples >= self.settings.max_examples:
                 self.exit_with(ExitReason.max_examples)
-            if self.call_count >= max(
-                self.settings.max_iterations, self.settings.max_examples
-            ):
+            if self.call_count >= self.settings.max_examples * 10:
                 self.exit_with(ExitReason.max_iterations)
 
         if self.__tree_is_exhausted():

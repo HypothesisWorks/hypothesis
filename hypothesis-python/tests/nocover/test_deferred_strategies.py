@@ -65,7 +65,7 @@ def test_arbitrary_recursion(strategies):
             try:
                 find(s, lambda x: True, settings=settings(
                     max_shrinks=0, database=None, verbosity=Verbosity.quiet,
-                    max_examples=1, max_iterations=10,
+                    max_examples=1,
                 ))
             except (Unsatisfiable, NoSuchExample):
                 pass

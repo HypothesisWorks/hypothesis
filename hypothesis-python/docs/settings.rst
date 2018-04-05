@@ -140,17 +140,15 @@ You can also copy settings from other settings:
 .. doctest::
 
     >>> s = settings(max_examples=10)
-    >>> t = settings(s, max_iterations=20)
+    >>> t = settings(s, derandomize=False)
     >>> s.max_examples
     10
-    >>> t.max_iterations
-    20
-    >>> s.max_iterations
-    1000
-    >>> s.max_shrinks
-    500
-    >>> t.max_shrinks
-    500
+    >>> t.max_examples
+    10
+    >>> s.derandomize
+    True
+    >>> t.derandomize
+    False
 
 ----------------
 Default settings

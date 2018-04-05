@@ -82,7 +82,6 @@ def define_test(specifier, predicate, condition=None):
                 test_function,
                 settings=Settings(
                     max_examples=100,
-                    max_iterations=1000,
                     max_shrinks=0
                 ))
             runner.run()
