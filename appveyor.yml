@@ -63,6 +63,7 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
   - "%CMD_IN_ENV% python -m pip.__main__ install --upgrade setuptools pip wheel twine"
+  - "cd hypothesis-python"
   - "%CMD_IN_ENV% python -m pip.__main__ install setuptools -rrequirements/test.txt"
   - "%CMD_IN_ENV% python -m pip.__main__ install .[all]"
   - "%CMD_IN_ENV% python setup.py bdist_wheel --dist-dir dist"
