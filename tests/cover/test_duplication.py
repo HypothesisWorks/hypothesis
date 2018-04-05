@@ -38,6 +38,7 @@ def test_does_not_duplicate_blocks(n):
     counts = Counter()
 
     @given(Blocks(n))
+    @settings(database=None)
     def test(b):
         counts[b] += 1
     test()

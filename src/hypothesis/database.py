@@ -20,19 +20,48 @@ from __future__ import division, print_function, absolute_import
 import os
 import re
 import binascii
+import warnings
 import threading
 from hashlib import sha1
 from contextlib import contextmanager
 
+from hypothesis.errors import HypothesisWarning
 from hypothesis._settings import note_deprecation
+from hypothesis.configuration import storage_directory
 from hypothesis.internal.compat import FileNotFoundError, hbytes, \
     b64decode, b64encode
+from hypothesis.utils.conventions import not_set
 
 sqlite3 = None
 SQLITE_PATH = re.compile(r"\.\(db|sqlite|sqlite3\)$")
 
 
 def _db_for_path(path=None):
+    if path is not_set:
+        path = os.getenv('HYPOTHESIS_DATABASE_FILE')
+        if path is not None:  # pragma: no cover
+            # Note: we should retain an explicit deprecation warning for a
+            # further period after this is removed, to ease debugging for
+            # anyone migrating to a new version.
+            note_deprecation(
+                'The $HYPOTHESIS_DATABASE_FILE environment variable is '
+                'deprecated, and will be ignored by a future version of '
+                'Hypothesis.  Configure your database location via a '
+                'settings profile instead.'
+            )
+            return _db_for_path(path)
+        # Note: storage_directory attempts to create the dir in question, so
+        # if os.access fails there *must* be a fatal permissions issue.
+        path = storage_directory('examples')
+        if os.access(path, os.R_OK | os.W_OK | os.X_OK):
+            return _db_for_path(path)
+        else:  # pragma: no cover
+            warnings.warn(HypothesisWarning(
+                'The database setting is not configured, and the default '
+                'location is unusable - falling back to an in-memory '
+                'database for this session.  path=%r' % (path,)
+            ))
+            return InMemoryExampleDatabase()
     if path in (None, ':memory:'):
         return InMemoryExampleDatabase()
     path = str(path)

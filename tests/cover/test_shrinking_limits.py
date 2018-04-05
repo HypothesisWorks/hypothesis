@@ -33,6 +33,6 @@ def test_max_shrinks():
 
     find(
         st.binary(min_size=100, max_size=100), tracktrue,
-        settings=settings(max_shrinks=1)
+        settings=settings(max_shrinks=1, database=None)
     )
     assert len(seen) == 2

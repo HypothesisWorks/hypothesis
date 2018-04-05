@@ -32,7 +32,6 @@ from enum import Enum, IntEnum, unique
 import attr
 
 from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
-from hypothesis.configuration import hypothesis_home_dir
 from hypothesis.internal.compat import text_type
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.internal.reflection import proxies, \
@@ -49,9 +48,6 @@ unlimited = UniqueIdentifier('unlimited')
 
 
 all_settings = {}
-
-
-_db_cache = {}
 
 
 class settingsProperty(object):
@@ -121,7 +117,7 @@ class settings(settingsMeta('settings', (object,), {})):
     """
 
     _WHITELISTED_REAL_PROPERTIES = [
-        '_database', '_construction_complete', 'storage'
+        '_construction_complete', 'storage'
     ]
     __definitions_are_locked = False
     _profiles = {}
@@ -135,14 +131,17 @@ class settings(settingsMeta('settings', (object,), {})):
         else:
             raise AttributeError('settings has no attribute %s' % (name,))
 
-    def __init__(
-            self,
-            parent=None,
-            **kwargs
-    ):
+    def __init__(self, parent=None, **kwargs):
+        if (
+            kwargs.get('database', not_set) is not_set and
+            kwargs.get('database_file', not_set) is not not_set
+        ):
+            if kwargs['database_file'] is None:
+                kwargs['database'] = None
+            else:
+                from hypothesis.database import ExampleDatabase
+                kwargs['database'] = ExampleDatabase(kwargs['database_file'])
         self._construction_complete = False
-        self._database = kwargs.pop('database', not_set)
-        database_file = kwargs.get('database_file', not_set)
         deprecations = []
         defaults = parent or settings.default
         if defaults is not None:
@@ -156,12 +155,10 @@ class settings(settingsMeta('settings', (object,), {})):
                     if setting.validator:
                         kwargs[setting.name] = setting.validator(
                             kwargs[setting.name])
-            if self._database is not_set and database_file is not_set:
-                self._database = defaults.database
         for name, value in kwargs.items():
             if name not in all_settings:
                 raise InvalidArgument(
-                    'Invalid argument %s' % (name,))
+                    'Invalid argument: %r is not a valid setting' % (name,))
             setattr(self, name, value)
         self.storage = threading.local()
         self._construction_complete = True
@@ -237,7 +234,7 @@ class settings(settingsMeta('settings', (object,), {})):
 
     @classmethod
     def define_setting(
-        cls, name, description, default, options=None, deprecation=None,
+        cls, name, description, default, options=None,
         validator=None, show_default=True, future_default=not_set,
         deprecation_message=None,
     ):
@@ -275,12 +272,6 @@ class settings(settingsMeta('settings', (object,), {})):
     def __setattr__(self, name, value):
         if name in settings._WHITELISTED_REAL_PROPERTIES:
             return object.__setattr__(self, name, value)
-        elif name == 'database':
-            assert self._construction_complete
-            raise AttributeError(
-                'settings objects are immutable and may not be assigned to'
-                ' after construction.'
-            )
         elif name in all_settings:
             if self._construction_complete:
                 raise AttributeError(
@@ -309,27 +300,6 @@ class settings(settingsMeta('settings', (object,), {})):
             bits.append('%s=%r' % (name, value))
         bits.sort()
         return 'settings(%s)' % ', '.join(bits)
-
-    @property
-    def database(self):
-        """An ExampleDatabase instance to use for storage of examples. May be
-        None.
-
-        If this was explicitly set at settings instantiation then that
-        value will be used (even if it was None). If not and the
-        database_file setting is not None this will be lazily loaded as
-        an ExampleDatabase, using that file the first time that this
-        property is accessed on a particular thread.
-        """
-        if self._database is not_set and self.database_file is not None:
-            from hypothesis.database import ExampleDatabase
-            if self.database_file not in _db_cache:
-                _db_cache[self.database_file] = (
-                    ExampleDatabase(self.database_file))
-            return _db_cache[self.database_file]
-        if self._database is not_set:
-            self._database = None
-        return self._database
 
     def __enter__(self):
         default_context_manager = default_variable.with_value(self)
@@ -521,18 +491,49 @@ warnings.simplefilter('error', HypothesisDeprecationWarning).
     future_default=False,
 )
 
+
+def _validate_database(db, __from_db_file=False):
+    from hypothesis.database import ExampleDatabase
+    if db is None or isinstance(db, ExampleDatabase):
+        return db
+    if __from_db_file or db is not_set:
+        return ExampleDatabase(db)
+    raise InvalidArgument(
+        'Arguments to the database setting must be None or an instance of '
+        'ExampleDatabase.  Try passing database=ExampleDatabase(%r), or '
+        'construct and use one of the specific subclasses in '
+        'hypothesis.database' % (db,)
+    )
+
+
 settings.define_setting(
-    'database_file',
-    default=lambda: (
-        os.getenv('HYPOTHESIS_DATABASE_FILE') or
-        os.path.join(hypothesis_home_dir(), 'examples')
-    ),
+    'database',
+    default=lambda: _validate_database(not_set),
     show_default=False,
     description="""
-    An instance of hypothesis.database.ExampleDatabase that will be
+An instance of hypothesis.database.ExampleDatabase that will be
 used to save examples to and load previous examples from. May be None
-in which case no storage will be used.
-"""
+in which case no storage will be used, `:memory:` for an in-memory
+database, or any path for a directory-based example database.
+""",
+    validator=_validate_database,
+)
+
+settings.define_setting(
+    'database_file',
+    default=not_set,
+    show_default=False,
+    description="""
+The file or directory location to save and load previously tried examples;
+`:memory:` for an in-memory cache or None to disable caching entirely.
+""",
+    validator=lambda f: _validate_database(f, __from_db_file=True),
+    deprecation_message="""
+The `database_file` setting is deprecated in favor of the `database`
+setting, and will be removed in a future version.  It only exists at
+all for complicated historical reasons and you should just use
+`database` instead.
+""",
 )
 
 
