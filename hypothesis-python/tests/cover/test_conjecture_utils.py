@@ -22,7 +22,7 @@ from collections import Counter
 
 import hypothesis.strategies as st
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis import given, assume, example, settings
+from hypothesis import HealthCheck, given, assume, example, settings
 from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.conjecture.data import ConjectureData
@@ -151,7 +151,7 @@ def weights(draw):
 @example([Fraction(1, 1), Fraction(3, 5), Fraction(1, 1)])
 @example([Fraction(2, 257), Fraction(2, 5), Fraction(1, 11)])
 @settings(
-    deadline=None, perform_health_check=False,
+    deadline=None, suppress_health_check=list(HealthCheck),
     max_examples=0 if IN_COVERAGE_TESTS else settings.default.max_examples,
 )
 @given(st.lists(weights(), min_size=1))

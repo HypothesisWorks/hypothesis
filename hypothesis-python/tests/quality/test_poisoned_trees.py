@@ -22,7 +22,7 @@ from random import Random
 import pytest
 
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis import settings, unlimited
+from hypothesis import HealthCheck, settings, unlimited
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.conjecture.engine import ConjectureData, \
@@ -63,7 +63,7 @@ LOTS = 10 ** 6
 
 
 TEST_SETTINGS = settings(
-    database=None, perform_health_check=False, max_examples=LOTS,
+    database=None, suppress_health_check=list(HealthCheck), max_examples=LOTS,
     deadline=None, timeout=unlimited, max_shrinks=LOTS
 )
 

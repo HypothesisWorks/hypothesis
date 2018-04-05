@@ -18,7 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
-from hypothesis import Verbosity, note, given, assume, example, settings
+from hypothesis import Verbosity, HealthCheck, note, given, assume, \
+    example, settings
 from hypothesis.internal.compat import hbytes, int_from_bytes
 from hypothesis.internal.conjecture.data import Status, ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -41,7 +42,7 @@ def problem(draw):
 @example((b'\x01', b'', 1))
 @example((b'\x01', b'', 0))
 @settings(
-    deadline=None, perform_health_check=False, max_examples=10,
+    deadline=None, suppress_health_check=list(HealthCheck), max_examples=10,
     max_shrinks=100
 )
 @given(problem())

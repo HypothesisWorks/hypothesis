@@ -44,7 +44,7 @@ def run_to_buffer(f):
     runner = ConjectureRunner(f, settings=settings(
         max_examples=5000, max_iterations=10000, max_shrinks=MAX_SHRINKS,
         buffer_size=1024,
-        database=None, perform_health_check=False,
+        database=None, suppress_health_check=list(HealthCheck),
     ))
     runner.run()
     assert runner.interesting_examples
@@ -225,7 +225,7 @@ def test_stops_after_max_iterations_when_generating():
 
     runner = ConjectureRunner(f, settings=settings(
         max_examples=1, max_iterations=max_iterations,
-        database=db, perform_health_check=False,
+        database=db, suppress_health_check=list(HealthCheck),
     ), database_key=key)
     runner.run()
     assert len(seen) == max_iterations
@@ -521,7 +521,7 @@ def fails_health_check(label):
     def accept(f):
         runner = ConjectureRunner(f, settings=settings(
             max_examples=100, max_iterations=100, max_shrinks=0,
-            buffer_size=1024, database=None, perform_health_check=True,
+            buffer_size=1024, database=None,
         ))
 
         with pytest.raises(FailedHealthCheck) as e:
@@ -700,7 +700,8 @@ def test_can_increase_number_of_bytes_drawn_in_tail():
         assert not any(b)
 
     runner = ConjectureRunner(
-        f, settings=settings(buffer_size=11, perform_health_check=False))
+        f, settings=settings(
+            buffer_size=11, suppress_health_check=list(HealthCheck)))
 
     runner.run()
 

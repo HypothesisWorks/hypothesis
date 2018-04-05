@@ -23,7 +23,7 @@ pytest_plugins = 'pytester'
 
 
 TESTSUITE = """
-from hypothesis import given, settings, assume
+from hypothesis import HealthCheck, given, settings, assume
 from hypothesis.strategies import integers
 import time
 import warnings
@@ -44,7 +44,8 @@ def test_slow(x):
 
 
 @settings(
-    max_examples=1000, min_satisfying_examples=1, perform_health_check=False
+    max_examples=1000, min_satisfying_examples=1,
+    suppress_health_check=list(HealthCheck)
 )
 @given(integers())
 def test_iterations(x):

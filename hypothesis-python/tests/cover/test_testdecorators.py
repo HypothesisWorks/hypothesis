@@ -22,8 +22,8 @@ import threading
 from collections import namedtuple
 
 import hypothesis.reporting as reporting
-from hypothesis import Verbosity, note, seed, given, assume, reject, \
-    settings
+from hypothesis import Verbosity, HealthCheck, note, seed, given, assume, \
+    reject, settings
 from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails, raises, fails_with, capture_out
 from hypothesis.strategies import data, just, sets, text, lists, binary, \
@@ -421,7 +421,7 @@ def test_named_tuples_are_of_right_type(litter):
 
 @fails_with(AttributeError)
 @given(integers().map(lambda x: x.nope))
-@settings(perform_health_check=False)
+@settings(suppress_health_check=list(HealthCheck))
 def test_fails_in_reify(x):
     pass
 

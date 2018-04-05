@@ -67,7 +67,7 @@ class TestWorkflow(VanillaTestCase):
         class LocalTest(TestCase):
 
             @given(integers().map(break_the_db))
-            @settings(perform_health_check=False)
+            @settings(suppress_health_check=list(HealthCheck))
             def test_does_not_break_other_things(self, unused):
                 pass
 

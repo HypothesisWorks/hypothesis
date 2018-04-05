@@ -678,7 +678,7 @@ class StateForActualGivenExecution(object):
                             arc(filename, source, target)
                             for source, target in covdata.arcs(filename)
                         )
-            if result is not None and self.settings.perform_health_check:
+            if result is not None:
                 fail_health_check(self.settings, (
                     'Tests run under @given should return None, but '
                     '%s returned %r instead.'
@@ -1096,7 +1096,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
         min_satisfying_examples=0,
         max_shrinks=2000,
     )
-    settings = Settings(settings, perform_health_check=False)
+    settings = Settings(settings, suppress_health_check=list(HealthCheck))
 
     if database_key is None and settings.database is not None:
         database_key = function_digest(condition)

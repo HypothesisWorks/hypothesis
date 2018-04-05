@@ -637,6 +637,8 @@ class ConjectureRunner(object):
         if Phase.generate not in self.settings.phases:
             return
 
+        self.health_check_state = HealthCheckState()
+
         zero_data = self.cached_test_function(
             hbytes(self.settings.buffer_size))
         if zero_data.status == Status.OVERRUN or (
@@ -657,9 +659,6 @@ class ConjectureRunner(object):
                 'one_of(none(), some_complex_strategy)?',
                 HealthCheck.large_base_example
             )
-
-        if self.settings.perform_health_check:
-            self.health_check_state = HealthCheckState()
 
         count = 0
         while not self.interesting_examples and (

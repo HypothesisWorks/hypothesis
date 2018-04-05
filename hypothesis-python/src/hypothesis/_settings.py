@@ -141,6 +141,8 @@ class settings(settingsMeta('settings', (object,), {})):
             else:
                 from hypothesis.database import ExampleDatabase
                 kwargs['database'] = ExampleDatabase(kwargs['database_file'])
+        if not kwargs.get('perform_health_check', True):
+            kwargs['suppress_health_check'] = list(HealthCheck)
         self._construction_complete = False
         deprecations = []
         defaults = parent or settings.default
@@ -694,15 +696,24 @@ Number of steps to run a stateful program for before giving up on it breaking.
 
 settings.define_setting(
     'perform_health_check',
-    default=True,
+    default=not_set,
     description=u"""
 If set to True, Hypothesis will run a preliminary health check before
 attempting to actually execute your test.
-"""
+""",
+    deprecation_message="""
+This setting is deprecated, as `perform_health_check=False` duplicates the
+effect of `suppress_health_check=list(HealthCheck)`.  Use that, or a more
+specific list, instead!
+""",
 )
 
 
 def validate_health_check_suppressions(suppressions):
+    if suppressions == list(HealthCheck):
+        # Support the suggested replacement for perform_health_check=False
+        suppressions.remove(HealthCheck.exception_in_generation)
+        suppressions.remove(HealthCheck.random_module)
     suppressions = try_convert(list, suppressions, 'suppress_health_check')
     for s in suppressions:
         if not isinstance(s, HealthCheck):

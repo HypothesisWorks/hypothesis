@@ -22,7 +22,8 @@ from random import Random
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import Verbosity, given, assume, example, settings
+from hypothesis import Verbosity, HealthCheck, given, assume, example, \
+    settings
 from tests.common.debug import minimal
 from hypothesis.internal.compat import ceil
 
@@ -42,7 +43,8 @@ def test_can_shrink_in_variable_sized_context(n):
 
 @example(1.5)
 @given(st.floats(min_value=0, allow_infinity=False, allow_nan=False))
-@settings(use_coverage=False, deadline=None, perform_health_check=False)
+@settings(use_coverage=False, deadline=None,
+          suppress_health_check=list(HealthCheck))
 def test_shrinks_downwards_to_integers(f):
     g = minimal(
         st.floats(), lambda x: x >= f, random=Random(0),
@@ -53,7 +55,8 @@ def test_shrinks_downwards_to_integers(f):
 
 @example(1)
 @given(st.integers(1, 2 ** 16 - 1))
-@settings(use_coverage=False, deadline=None, perform_health_check=False)
+@settings(use_coverage=False, deadline=None,
+          suppress_health_check=list(HealthCheck))
 def test_shrinks_downwards_to_integers_when_fractional(b):
     g = minimal(
         st.floats(),

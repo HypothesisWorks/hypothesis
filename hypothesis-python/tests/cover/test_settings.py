@@ -109,6 +109,12 @@ def test_register_profile_kwarg_settings_is_deprecated():
     assert settings.default.max_examples == 10
 
 
+@checks_deprecated_behaviour
+def test_perform_health_check_setting_is_deprecated():
+    s = settings(suppress_health_check=(), perform_health_check=False)
+    assert s.suppress_health_check
+
+
 def test_can_set_verbosity():
     settings(verbosity=Verbosity.quiet)
     settings(verbosity=Verbosity.normal)
