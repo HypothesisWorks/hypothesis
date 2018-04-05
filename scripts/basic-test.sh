@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e -o xtrace
 
+cd $(dirname $0)/../hypothesis-python
+
 # We run a reduced set of tests on OSX mostly so the CI runs in vaguely
 # reasonable time.
 if [[ "$(uname -s)" == 'Darwin' ]]; then

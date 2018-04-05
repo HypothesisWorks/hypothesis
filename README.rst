@@ -2,58 +2,29 @@
 Hypothesis
 ==========
 
-Hypothesis is an advanced testing library for Python. It lets you write tests which
-are parametrized by a source of examples, and then generates simple and comprehensible
-examples that make your tests fail. This lets you find more bugs in your code with less
-work.
+Hypothesis is family of testing libraries which let you write tests parametrized
+by a source of examples. A Hypothesis implementation then generates simple an
+comprehensible examples that make your tests fail.
+This simplifies writing your tests and makes them more powerful at the same time,
+by letting software automate the boring bits and do them to a higher standard than a human would,
+freeing you to focus on the higher level test logic.
 
-e.g.
+This sort of testing is typically called "property-based testing",
+and the most widely known implementation of the concept is the Haskell library `QuickCheck <https://hackage.haskell.org/package/QuickCheck>`_,
+but Hypothesis differs significantly from QuickCheck and is designed to fit idiomatically and easily into existing styles of testing that you are useful,
+with absolutely no familiarity with Haskell or functional programming needed. 
 
-.. code-block:: python
+The currently available implementations of Hypothesis are:
 
-  @given(st.lists(
-    st.floats(allow_nan=False, allow_infinity=False), min_size=1))
-  def test_mean(xs):
-      assert min(xs) <= mean(xs) <= max(xs)
+* `Hypothesis for Python <hypothesis-python>`_ is the original implementation,
+  and the only one that is currently fully production ready.
+* `Hypothesis for Ruby <https://github.com/HypothesisWorks/hypothesis-ruby>`_
+  is an ongoing project that we intend to eventually reach parity with
+  Hypothesis for Python.
+* `Hypothesis for Java <https://github.com/HypothesisWorks/hypothesis-java>`_
+  is a prototype written some time ago. It's far from feature complete and is
+  not under active development, but was intended to prove the viability of the
+  concept.
 
-.. code-block::
-
-  Falsifying example: test_mean(
-    xs=[1.7976321109618856e+308, 6.102390043022755e+303]
-  )
-
-Hypothesis is extremely practical and advances the state of the art of
-unit testing by some way. It's easy to use, stable, and powerful. If
-you're not using Hypothesis to test your project then you're missing out.
-
-------------------------
-Quick Start/Installation
-------------------------
-If you just want to get started:
-
-.. code-block::
-
-  pip install hypothesis
-
-
------------------
-Links of interest
------------------
-
-The main Hypothesis site is at `hypothesis.works <http://hypothesis.works>`_, and contains a lot
-of good introductory and explanatory material.
-
-Extensive documentation and examples of usage are `available at readthedocs <https://hypothesis.readthedocs.io/en/master/>`_.
-
-If you want to talk to people about using Hypothesis, `we have both an IRC channel
-and a mailing list <https://hypothesis.readthedocs.io/en/latest/community.html>`_.
-
-If you want to receive occasional updates about Hypothesis, including useful tips and tricks, there's a
-`TinyLetter mailing list to sign up for them <http://tinyletter.com/DRMacIver/>`_.
-
-If you want to contribute to Hypothesis, `instructions are here <https://github.com/HypothesisWorks/hypothesis-python/blob/master/CONTRIBUTING.rst>`_.
-
-If you want to hear from people who are already using Hypothesis, some of them `have written
-about it <https://hypothesis.readthedocs.io/en/latest/endorsements.html>`_.
-
-If you want to create a downstream package of Hypothesis, please read `these guidelines for packagers <https://hypothesis.readthedocs.io/en/latest/packaging.html>`_.
+This repository will eventually house all implementations of Hypothesis, but
+we are currently in the process of consolidating the existing repositories into a single one.
