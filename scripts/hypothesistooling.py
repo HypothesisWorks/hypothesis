@@ -40,15 +40,19 @@ def tags():
 
 ROOT = subprocess.check_output([
     'git', 'rev-parse', '--show-toplevel']).decode('ascii').strip()
-SRC = os.path.join(ROOT, 'hypothesis-python', 'src')
 
-assert os.path.exists(SRC)
+HYPOTHESIS_PYTHON = os.path.join(ROOT, 'hypothesis-python')
+
+PYTHON_SRC = os.path.join(HYPOTHESIS_PYTHON, 'src')
+PYTHON_TESTS = os.path.join(HYPOTHESIS_PYTHON, 'tests')
+
+assert os.path.exists(PYTHON_SRC)
 
 
 __version__ = None
 __version_info__ = None
 
-VERSION_FILE = os.path.join(SRC, 'hypothesis/version.py')
+VERSION_FILE = os.path.join(PYTHON_SRC, 'hypothesis/version.py')
 
 with open(VERSION_FILE) as o:
     exec(o.read())
@@ -121,7 +125,7 @@ def has_source_changes(version=None):
 
     return subprocess.call([
         'git', 'diff', '--no-patch', '--exit-code', point_of_divergence,
-        'HEAD', '--', SRC,
+        'HEAD', '--', PYTHON_SRC,
     ]) != 0
 
 

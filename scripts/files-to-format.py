@@ -18,11 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-import sys
 
 import hypothesistooling as tools
-
-sys.path.append(os.path.dirname(__file__))  # noqa
 
 
 def should_format_file(path):
