@@ -1,4 +1,10 @@
+
 .PHONY: clean documentation
+
+
+ROOT_DIR:=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+HYPOTHESIS_PYTHON=$(ROOT_DIR)/hypothesis-python
 
 
 DEVELOPMENT_DATABASE?=postgres://whereshouldilive@localhost/whereshouldilive_dev
@@ -35,6 +41,11 @@ TOOL_PYTHON=$(TOOL_VIRTUALENV)/bin/python
 TOOL_PIP=$(TOOL_VIRTUALENV)/bin/pip
 
 FILES_TO_FORMAT=$(BEST_PY3) scripts/files-to-format.py
+
+
+define run_tox
+	cd $(HYPOTHESIS_PYTHON); $(TOX) --recreate -e $(1)
+endef
 
 
 export PATH:=$(BUILD_RUNTIMES)/snakepit:$(TOOLS):$(PATH)
@@ -113,41 +124,41 @@ check-shellcheck: $(SHELLCHECK)
 	shellcheck scripts/*.sh
 
 check-py27: $(PY27) $(TOX)
-	$(TOX) --recreate -e py27-full
+	$(call run_tox,py27-full)
 
 check-py273: $(PY273) $(TOX)
-	$(TOX) --recreate -e oldpy27
+	$(call run_tox,oldpy27)
 
 check-py27-typing: $(PY27) $(TOX)
-	$(TOX) --recreate -e py27typing
+	$(call run_tox,py27typing)
 
 check-py34: $(PY34) $(TOX)
-	$(TOX) --recreate -e py34-full
+	$(call run_tox,py34-full)
 
 check-py35: $(PY35) $(TOX)
-	$(TOX) --recreate -e py35-full
+	$(call run_tox,py35-full)
 
 check-py36: $(BEST_PY3) $(TOX)
-	$(TOX) --recreate -e py36-full
+	$(call run_tox,py36-full)
 
 check-pypy: $(PYPY) $(TOX)
-	$(TOX) --recreate -e pypy-full
+	$(call run_tox,pypy-full)
 
 check-pypy-with-tracer: $(PYPY) $(TOX)
-	$(TOX) --recreate -e pypy-with-tracer
+	$(call run_tox,pypy-with-tracer)
 
 check-nose: $(TOX)
-	$(TOX) --recreate -e nose
+	$(call run_tox,nose)
 
 check-pytest30: $(TOX)
-	$(TOX) --recreate -e pytest30
+	$(call run_tox,pytest30)
 
 check-pytest28: $(TOX)
-	$(TOX) --recreate -e pytest28
+	$(call run_tox,pytest28)
 
 check-quality: $(TOX) $(PY27)
-	$(TOX) --recreate -e quality
-	$(TOX) --recreate -e quality2
+	$(call run_tox,quality)
+	$(call run_tox,quality2)
 
 check-ancient-pip: $(PY273)
 	scripts/check-ancient-pip.sh $(PY273)
@@ -156,53 +167,53 @@ check-ancient-pip: $(PY273)
 check-pytest: check-pytest28 check-pytest30
 
 check-faker070: $(TOX)
-	$(TOX) --recreate -e faker070
+	$(call run_tox,faker070)
 
 check-faker-latest: $(TOX)
-	$(TOX) --recreate -e faker-latest
+	$(call run_tox,faker-latest)
 
 check-django111: $(TOX)
-	$(TOX) --recreate -e django111
+	$(call run_tox,django111)
 
 check-django20: $(BEST_PY3) $(TOX)
-	$(TOX) --recreate -e django20
+	$(call run_tox,django20)
 
 check-django: check-django111 check-django20
 
 check-pandas19: $(TOX)
-	$(TOX) --recreate -e pandas19
+	$(call run_tox,pandas19)
 
 check-pandas20: $(TOX)
-	$(TOX) --recreate -e pandas20
+	$(call run_tox,pandas20)
 
 check-pandas21: $(TOX)
-	$(TOX) --recreate -e pandas21
+	$(call run_tox,pandas21)
 
 check-pandas22: $(TOX)
-	$(TOX) --recreate -e pandas22
+	$(call run_tox,pandas22)
 
 check-examples2: $(TOX) $(PY27)
-	$(TOX) --recreate -e examples2
+	$(call run_tox,examples2)
 
 check-examples3: $(TOX)
-	$(TOX) --recreate -e examples3
+	$(call run_tox,examples3)
 
 check-coverage: $(TOX)
-	$(TOX) --recreate -e coverage
+	$(call run_tox,coverage)
 
 check-pure-tracer: $(TOX)
-	$(TOX) --recreate -e pure-tracer
+	$(call run_tox,pure-tracer)
 
 check-unicode: $(TOX) $(PY27)
-	$(TOX) --recreate -e unicode
+	$(call run_tox,unicode)
 
 check-noformat: check-coverage check-py26 check-py27 check-py34 check-py35 check-pypy check-django check-pytest
 
 check: check-format check-noformat
 
 check-fast: lint $(PYPY) $(PY36) $(TOX)
-	$(TOX) --recreate -e pypy-brief
-	$(TOX) --recreate -e py36-prettyquick
+	$(call run_tox,pypy-brief)
+	$(call run_tox,py36-prettyquick)
 
 check-rst: $(RSTLINT) $(FLAKE8)
 	$(RSTLINT) CONTRIBUTING.rst README.rst
@@ -230,7 +241,7 @@ secrets.tar.enc: deploy_key .pypirc
 	travis encrypt-file secrets.tar
 	rm secrets.tar
 
-$(TOX): $(BEST_PY3) tox.ini $(TOOLS)
+$(TOX): $(BEST_PY3) $(HYPOTHESIS_PYTHON)/tox.ini $(TOOLS)
 	rm -f $(TOX)
 	ln -sf $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 	touch $(TOOL_VIRTUALENV)/bin/tox $(TOX)
