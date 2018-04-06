@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.55.1 - 2018-04-06
+-------------------
+
+This patch relaxes constraints on the expected values returned
+by the standard library function :func:`hypot` and the internal
+helper function :func:`~hypotheses.internal.cathetus`, this to
+fix near-exact test-failures on some 32-bit systems.
+
+-------------------
 3.55.0 - 2018-04-05
 -------------------
 
