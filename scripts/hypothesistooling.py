@@ -100,7 +100,7 @@ def is_ancestor(a, b):
     return check == 0
 
 
-CHANGELOG_FILE = os.path.join(ROOT, 'docs', 'changes.rst')
+CHANGELOG_FILE = os.path.join(HYPOTHESIS_PYTHON, 'docs', 'changes.rst')
 
 
 def changelog():
@@ -208,7 +208,7 @@ def all_files():
         'ascii').splitlines()
 
 
-RELEASE_FILE = os.path.join(ROOT, 'RELEASE.rst')
+RELEASE_FILE = os.path.join(HYPOTHESIS_PYTHON, 'RELEASE.rst')
 
 
 def has_release():
