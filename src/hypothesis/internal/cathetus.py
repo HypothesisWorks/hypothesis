@@ -32,6 +32,10 @@ def cathetus(h, a):
     (NaNs and infinities) is designed to be as consistent as possible with
     the C99 hypot() specifications.
 
+    This function relies on the system ``sqrt`` function and so, like it,
+    may be inaccurate up to a relative error of (around) floating-point
+    epsilon.
+
     Based on the C99 implementation https://github.com/jjgreen/cathetus
     """
     if isnan(h):

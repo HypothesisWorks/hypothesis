@@ -55,7 +55,7 @@ Thanks to J.J. Green for this feature.
 -------------------
 
 This release removes support for Django 1.8, which reached end of life on
-2018-04-01.  `You can see Django's release and support schedule
+2018-04-01.  You can see Django's release and support schedule
 `on the Django Project website <https://www.djangoproject.com/download/#supported-versions>`_.
 
 -------------------
@@ -111,7 +111,7 @@ in any order, though you should only do so once each.
 Applying :func:`@given <hypothesis.given>` twice was already deprecated, and
 applying :func:`@settings(...) <hypothesis.settings>` twice is deprecated in
 this release and will become an error in a future version. Neither could ever
-be used twice to good effect.)
+be used twice to good effect.
 
 Using :func:`@settings(...) <hypothesis.settings>` as the sole decorator on
 a test is completely pointless, so this common usage error will become an
