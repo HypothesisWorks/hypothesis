@@ -277,7 +277,7 @@ clean:
 .PHONY: RELEASE.rst
 RELEASE.rst:
 
-documentation: $(SPHINX_BUILD) docs/*.rst RELEASE.rst
+documentation: $(SPHINX_BUILD)
 	scripts/build-documentation.sh $(SPHINX_BUILD) $(PY36)
 
 doctest: $(SPHINX_BUILD)
