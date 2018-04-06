@@ -280,8 +280,8 @@ RELEASE.rst:
 documentation: $(SPHINX_BUILD) docs/*.rst RELEASE.rst
 	scripts/build-documentation.sh $(SPHINX_BUILD) $(PY36)
 
-doctest: $(SPHINX_BUILD) docs/*.rst
-	PYTHONPATH=src $(SPHINX_BUILD) -W -b doctest -d docs/_build/doctrees docs docs/_build/html
+doctest: $(SPHINX_BUILD)
+	cd $(HYPOTHESIS_PYTHON); PYTHONPATH=src $(SPHINX_BUILD) -W -b doctest -d docs/_build/doctrees docs docs/_build/html
 
 fix_doctests: $(TOOL_VIRTUALENV)
 	PYTHONPATH=src $(TOOL_PYTHON) scripts/fix_doctests.py
