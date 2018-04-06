@@ -2,7 +2,7 @@
 .PHONY: clean documentation
 
 
-ROOT_DIR:=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+ROOT_DIR:=$(shell git rev-parse --show-toplevel)
 
 HYPOTHESIS_PYTHON=$(ROOT_DIR)/hypothesis-python
 
