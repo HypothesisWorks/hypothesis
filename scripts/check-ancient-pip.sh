@@ -5,7 +5,7 @@ set -x
 
 PYTHON=$1
 
-cd $(dirname "$0")/../hypothesis-python
+cd "$(dirname "$0")"/../hypothesis-python
 
 BROKEN_VIRTUALENV=$($PYTHON -c'import tempfile; print(tempfile.mkdtemp())')
 
