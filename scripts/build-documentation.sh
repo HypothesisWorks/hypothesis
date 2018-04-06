@@ -13,7 +13,7 @@ cd "$HERE"/../hypothesis-python
 
 if [ -e RELEASE.rst ] ; then
     trap "git checkout docs/changes.rst src/hypothesis/version.py" EXIT
-    $PYTHON scripts/update-changelog-for-docs.py
+    $PYTHON ../scripts/update-changelog-for-docs.py
 fi
 
 export PYTHONPATH=src 
