@@ -107,14 +107,15 @@ def test_timeout_traceback_is_hidden():
 
 
 def get_line_num(token, result, skip_n=0):
+    skipped = 0
     for i, line in enumerate(result.stdout.lines):
         if token in line:
-            if skip_n == 0:
+            if skip_n == skipped:
                 return i
             else:
-                skip_n -= 1
-    assert False, \
-        'Token %r not found (after skipping %r appearances)' % (token, skip_n)
+                skipped += 1
+    assert False, 'Token %r not found (skipped %r of planned %r skips)' % (
+        token, skipped, skip_n)
 
 
 def test_timeout_traceback_is_hidden(testdir):
