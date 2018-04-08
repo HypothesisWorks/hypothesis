@@ -776,31 +776,23 @@ class StateForActualGivenExecution(object):
                 ) % (
                     self.settings.timeout, runner.valid_examples),
                     self.settings)
-            if runner.valid_examples < min(
-                self.settings.min_satisfying_examples,
-                self.settings.max_examples,
-            ) and not (
+            if runner.valid_examples <= 1 and not (
                 runner.exit_reason == ExitReason.finished and
                 self.at_least_one_success
             ):
                 if timed_out:
                     raise Timeout((
                         'Ran out of time before finding a satisfying '
-                        'example for '
-                        '%s. Only found %d examples in ' +
-                        '%.2fs.'
+                        'example for %s. Only found %d examples in %.2fs.'
                     ) % (
                         get_pretty_function_description(self.test),
                         runner.valid_examples, run_time
                     ))
                 else:
-                    raise Unsatisfiable((
-                        'Unable to satisfy assumptions of hypothesis '
-                        '%s. Only %d examples considered '
-                        'satisfied assumptions'
-                    ) % (
-                        get_pretty_function_description(self.test),
-                        runner.valid_examples,))
+                    raise Unsatisfiable(
+                        'Unable to satisfy assumptions of hypothesis %s.' %
+                        (get_pretty_function_description(self.test),)
+                    )
 
         if not self.falsifying_examples:
             return
@@ -1093,7 +1085,6 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
     matches the predicate function ``condition``."""
     settings = settings or Settings(
         max_examples=2000,
-        min_satisfying_examples=0,
         max_shrinks=2000,
     )
     settings = Settings(settings, suppress_health_check=list(HealthCheck))
@@ -1159,8 +1150,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
             list(runner.interesting_examples.values())[0].buffer)
         with BuildContext(data):
             return data.draw(search)
-    if (
-        runner.valid_examples <= settings.min_satisfying_examples and
+    if runner.valid_examples == 0 and (
         runner.exit_reason != ExitReason.finished
     ):
         if settings.timeout > 0 and run_time > settings.timeout:
@@ -1172,11 +1162,9 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
                 runner.valid_examples, run_time))
 
         else:
-            raise Unsatisfiable((
-                'Unable to satisfy assumptions of '
-                '%s. Only %d examples considered satisfied assumptions'
-            ) % (
-                get_pretty_function_description(condition),
-                runner.valid_examples,))
+            raise Unsatisfiable(
+                'Unable to satisfy assumptions of %s.' %
+                (get_pretty_function_description(condition),)
+            )
 
     raise NoSuchExample(get_pretty_function_description(condition))

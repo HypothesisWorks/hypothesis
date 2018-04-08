@@ -451,12 +451,6 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
     assert 'Lo' in out.getvalue()
 
 
-@given(integers())
-@settings(max_examples=1)
-def test_should_not_fail_if_max_examples_less_than_min_satisfying(x):
-    pass
-
-
 @given(integers().filter(lambda x: x % 4 == 0))
 def test_filtered_values_satisfy_condition(i):
     assert i % 4 == 0

@@ -10,3 +10,7 @@ easier to use.
 - :obj:`~hypothesis.settings.max_iterations` is deprecated and disabled,
   because we can usually get better behaviour from an internal heuristic
   than a user-controlled setting.
+- :obj:`~hypothesis.settings.min_satisfying_examples` is deprecated and
+  disabled, due to overlap with the
+  :obj:`~hypothesis.settings.HealthCheck.filter_too_much` healthcheck
+  and poor interaction with :obj:`~hypothesis.settings.max_examples`.

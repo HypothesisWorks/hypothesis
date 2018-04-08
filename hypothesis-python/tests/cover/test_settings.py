@@ -152,20 +152,17 @@ def test_load_profile():
     settings.load_profile('default')
     assert settings.default.max_examples == 100
     assert settings.default.max_shrinks == 500
-    assert settings.default.min_satisfying_examples == 5
 
     settings.register_profile('test', settings(max_examples=10), max_shrinks=5)
     settings.load_profile('test')
 
     assert settings.default.max_examples == 10
     assert settings.default.max_shrinks == 5
-    assert settings.default.min_satisfying_examples == 5
 
     settings.load_profile('default')
 
     assert settings.default.max_examples == 100
     assert settings.default.max_shrinks == 500
-    assert settings.default.min_satisfying_examples == 5
 
 
 @checks_deprecated_behaviour

@@ -20,19 +20,13 @@ from __future__ import division, print_function, absolute_import
 import enum
 import collections
 
-from hypothesis import given, settings
+from hypothesis import given
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import sampled_from
 
 an_enum = enum.Enum('A', 'a b c')
 
 an_ordereddict = collections.OrderedDict([('a', 1), ('b', 2), ('c', 3)])
-
-
-@given(sampled_from((1, 2)))
-@settings(min_satisfying_examples=10)
-def test_can_handle_sampling_from_fewer_than_min_satisfying(v):
-    pass
 
 
 @checks_deprecated_behaviour

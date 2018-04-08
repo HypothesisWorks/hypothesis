@@ -72,47 +72,6 @@ class HypothesisSpec(RuleBasedStateMachine):
         self.teardown()
         self.database = ExampleDatabase()
 
-    @rule(strat=strategies, r=integers(), max_shrinks=integers(0, 100))
-    def find_constant_failure(self, strat, r, max_shrinks):
-        with settings(
-            verbosity=Verbosity.quiet, max_examples=1,
-            min_satisfying_examples=0,
-            database=self.database,
-            max_shrinks=max_shrinks,
-        ):
-            @given(strat)
-            @seed(r)
-            def test(x):
-                assert False
-
-            try:
-                test()
-            except (AssertionError, FailedHealthCheck):
-                pass
-
-    @rule(
-        strat=strategies, r=integers(), p=floats(0, 1),
-        max_examples=integers(1, 10), max_shrinks=integers(1, 100)
-    )
-    def find_weird_failure(self, strat, r, max_examples, p, max_shrinks):
-        with settings(
-            verbosity=Verbosity.quiet, max_examples=max_examples,
-            min_satisfying_examples=0,
-            database=self.database,
-            max_shrinks=max_shrinks,
-        ):
-            @given(strat)
-            @seed(r)
-            def test(x):
-                assert Random(
-                    hashlib.md5(repr(x).encode(u'utf-8')).digest()
-                ).random() <= p
-
-            try:
-                test()
-            except (AssertionError, FailedHealthCheck):
-                pass
-
     @rule(target=strategies, spec=sampled_from((
         integers(), booleans(), floats(), complex_numbers(),
         fractions(), decimals(), text(), binary(), none(),
@@ -226,9 +185,7 @@ TestHypothesis = HypothesisSpec.TestCase
 TestHypothesis.settings = settings(
     TestHypothesis.settings,
     stateful_step_count=10 if PYPY else 50,
-    max_shrinks=500,
     timeout=unlimited,
-    min_satisfying_examples=0,
     verbosity=max(TestHypothesis.settings.verbosity, Verbosity.verbose),
     max_examples=10000 if MAIN else 200,
 )

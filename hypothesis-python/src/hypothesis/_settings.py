@@ -382,15 +382,16 @@ class Setting(object):
 
 settings.define_setting(
     'min_satisfying_examples',
-    default=5,
+    default=not_set,
     description="""
 Raise Unsatisfiable for any tests which do not produce at least this many
 values that pass all :func:`hypothesis.assume` calls and which have not
 exhaustively covered the search space.
-
-Note that examples are compared at the level of the underlying byte-stream -
-for example, :func:`~hypothesis.strategies.booleans` contains 256 unique
-examples at this level because it always uses one byte.
+""",
+    deprecation_message="""
+The min_satisfying_examples setting has been deprecated and disabled, due to
+overlap with the filter_too_much healthcheck and poor interaction with the
+max_examples setting.
 """
 )
 

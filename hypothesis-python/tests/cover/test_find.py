@@ -52,20 +52,8 @@ def test_can_find_nans():
         assert 2 <= len(x) <= 3
 
 
-def test_raises_when_no_example():
-    settings = Settings(
-        max_examples=20,
-        min_satisfying_examples=0,
-    )
-    with pytest.raises(NoSuchExample):
-        find(integers(), lambda x: False, settings=settings)
-
-
 def test_condition_is_name():
-    settings = Settings(
-        max_examples=20,
-        min_satisfying_examples=0,
-    )
+    settings = Settings(max_examples=20)
     with pytest.raises(NoSuchExample) as e:
         find(booleans(), lambda x: False, settings=settings)
     assert 'lambda x:' in e.value.args[0]

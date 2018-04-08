@@ -37,16 +37,13 @@ def test_all_valid(x):
     pass
 
 
-@settings(timeout=0.2, min_satisfying_examples=1)
+@settings(timeout=0.2)
 @given(integers())
 def test_slow(x):
     time.sleep(0.1)
 
 
-@settings(
-    max_examples=1000, min_satisfying_examples=1,
-    suppress_health_check=list(HealthCheck)
-)
+@settings(max_examples=1000, suppress_health_check=list(HealthCheck))
 @given(integers())
 def test_iterations(x):
     assume(x % 50 == 0)

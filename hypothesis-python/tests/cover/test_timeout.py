@@ -44,7 +44,7 @@ calls = [0, 0, 0, 0]
 
 
 with validate_deprecation():
-    timeout_settings = settings(timeout=0.2, min_satisfying_examples=2)
+    timeout_settings = settings(timeout=0.2)
 
 
 # The following tests exist to test that verifiers start their timeout
