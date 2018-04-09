@@ -36,7 +36,7 @@ intermediate steps of your test. That's where the ``note`` function comes in:
     ...     test_shuffle_is_noop()
     ... except AssertionError:
     ...     print('ls != ls2')
-    Falsifying example: test_shuffle_is_noop(ls=[0, 1], r=RandomWithSeed(53))
+    Falsifying example: test_shuffle_is_noop(ls=[0, 1], r=RandomWithSeed(18))
     Shuffle: [1, 0]
     ls != ls2
 
