@@ -13,10 +13,10 @@ certifi==2018.1.18        # via requests
 chardet==3.0.4            # via requests
 click==6.7                # via pip-tools, pyupio, safety
 coverage==4.5.1
-django==2.0.3
+django==2.0.4
 docformatter==1.0         # via pyformat
 docutils==0.14            # via restructuredtext-lint, sphinx
-dparse==0.2.1             # via pyupio, safety
+dparse==0.4.1             # via pyupio, safety
 first==2.0.1              # via pip-tools
 flake8-docstrings==1.3.0
 flake8-polyfill==1.0.2    # via flake8-docstrings
@@ -50,14 +50,14 @@ pyyaml==3.12              # via dparse, pyupio
 requests-toolbelt==0.8.0  # via twine
 requests==2.18.4          # via python-gitlab, pyupio, requests-toolbelt, safety, sphinx, twine
 restructuredtext-lint==1.1.3
-safety==1.7.0             # via pyupio
+safety==1.8.1             # via pyupio
 six==1.11.0               # via dparse, more-itertools, packaging, pip-tools, pydocstyle, pytest, python-gitlab, pyupio, sphinx, tox
 snowballstemmer==1.2.1    # via pydocstyle, sphinx
-sphinx-rtd-theme==0.2.4
+sphinx-rtd-theme==0.3.0
 sphinx==1.7.2
 sphinxcontrib-websupport==1.0.1  # via sphinx
-tox==2.9.1
-tqdm==4.19.9              # via pyupio, twine
+tox==3.0.0
+tqdm==4.21.0              # via pyupio, twine
 twine==1.11.0
 unify==0.4                # via pyformat
 untokenize==0.1.1         # via docformatter, unify
