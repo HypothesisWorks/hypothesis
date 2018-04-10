@@ -308,6 +308,8 @@ def update_changelog_and_version():
     new_changelog_parts = [
         beginning.strip(),
         '',
+        '.. _v%s:' % (new_version_string),
+        '',
         border_for_new_version,
         heading_for_new_version,
         border_for_new_version,
