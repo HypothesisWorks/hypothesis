@@ -286,5 +286,5 @@ doctest: $(SPHINX_BUILD)
 fix_doctests: $(TOOL_VIRTUALENV)
 	PYTHONPATH=src $(TOOL_PYTHON) scripts/fix_doctests.py
 
-check_secrets: $(TOOL_VIRTUALENV)
+check-secrets: $(TOOL_VIRTUALENV)
 	$(TOOL_PYTHON) scripts/check_secrets.py
