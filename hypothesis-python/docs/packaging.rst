@@ -83,7 +83,7 @@ Tests are organised into a number of top level subdirectories of the tests/ dire
 * py3: Tests that can only be run under Python 3
 * datetime: This tests the subset of Hypothesis that depends on pytz
 * fakefactory: This tests the subset of Hypothesis that depends on fakefactory.
-* django: This tests the subset of Hypothesis that depends on django (this also depends on fakefactory).
+* django: This tests the subset of Hypothesis that depends on django
 
 
 An example invocation for running the coverage subset of these tests:

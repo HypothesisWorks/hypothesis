@@ -942,15 +942,15 @@ def given(*given_arguments, **given_kwargs):
             __tracebackhide__ = True
 
             if getattr(test, 'is_hypothesis_test', False):
-                note_deprecation((
+                note_deprecation(
                     'You have applied @given to a test more than once. In '
                     'future this will be an error. Applying @given twice '
                     'wraps the test twice, which can be extremely slow. A '
                     'similar effect can be gained by combining the arguments '
-                    'to the two calls to given. For example, instead of '
+                    'of the two calls to given. For example, instead of '
                     '@given(booleans()) @given(integers()), you could write '
                     '@given(booleans(), integers())'
-                ))
+                )
 
             settings = wrapped_test._hypothesis_internal_use_settings
 

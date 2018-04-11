@@ -196,12 +196,13 @@ Time zone arithmetic
 This is an example of some tests for pytz which check that various timezone
 conversions behave as you would expect them to. These tests should all pass,
 and are mostly a demonstration of some useful sorts of thing to test with
-Hypothesis, and how the hypothesis-datetime extra package works.
+Hypothesis, and how the :func:`~hypothesis.strategies.datetimes` strategy works.
 
 .. doctest::
 
     >>> from datetime import timedelta
     >>> from hypothesis.extra.pytz import timezones
+    >>> from hypothesis.strategies import datetimes
 
     >>> # The datetimes strategy is naive by default, so tell it to use timezones
     >>> aware_datetimes = datetimes(timezones=timezones())

@@ -16,7 +16,7 @@ and even harder to regularly test. Hypothesis is always tested against the lates
 compatible version and each package will note the expected compatibility range. If
 you run into a bug with any of these please specify the dependency version.
 
-There are seperate pages for :doc:`django` and :doc:`numpy`.
+There are separate pages for :doc:`django` and :doc:`numpy`.
 
 --------------------
 hypothesis[pytz]

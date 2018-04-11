@@ -525,7 +525,7 @@ def lists(
         return builds(list)
     if max_size == 0:
         return builds(list)
-    check_strategy(elements)
+    check_strategy(elements, 'elements')
     if unique:
         if unique_by is not None:
             raise InvalidArgument((
@@ -1395,7 +1395,8 @@ def datetimes(
     This strategy works by drawing a naive datetime between ``min_datetime``
     and ``max_datetime``, which must both be naive (have no timezone).
 
-    ``timezones`` must be a strategy that generates tzinfo objects (or None,
+    ``timezones`` must be a strategy that generates
+    :class:`~python:datetime.tzinfo` objects (or None,
     which is valid for naive datetimes).  A value drawn from this strategy
     will be added to a naive datetime, and the resulting tz-aware datetime
     returned.
@@ -1406,9 +1407,9 @@ def datetimes(
         adjustments, etc.  This is intentional, as malformed timestamps are a
         common source of bugs.
 
-    :py:func:`hypothesis.extra.timezones` requires the ``pytz`` package, but
-    provides all timezones in the Olsen database.  If you also want to allow
-    naive datetimes, combine strategies like ``none() | timezones()``.
+    :py:func:`hypothesis.extra.pytz.timezones` requires the :pypi:`pytz`
+    package, but provides all timezones in the Olsen database.  If you want to
+    allow naive datetimes, combine strategies like ``none() | timezones()``.
 
     Alternatively, you can create a list of the timezones you wish to allow
     (e.g. from the standard library, ``datetutil``, or ``pytz``) and use
