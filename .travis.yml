@@ -31,6 +31,7 @@ env:
         - TASK=check-pyup-yml
         - TASK=check-release-file
         - TASK=check-shellcheck
+        - TASK=check-secrets
         - TASK=documentation
         - TASK=lint
         - TASK=doctest

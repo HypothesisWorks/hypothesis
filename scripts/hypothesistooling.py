@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import re
 import sys
+import shlex
 import subprocess
 from datetime import datetime, timedelta
 
@@ -153,7 +154,7 @@ def create_tag_and_push():
     subprocess.check_call([
         'ssh-agent', 'sh', '-c',
         'chmod 0600 deploy_key && ' +
-        'ssh-add deploy_key && ' +
+        'ssh-add %s && ' % (shlex.quote(DEPLOY_KEY),) +
         'git push ssh-origin HEAD:master &&'
         'git push ssh-origin --tags'
     ])
@@ -404,3 +405,24 @@ def should_run_ci_task(task, is_pull_request):
     else:
         print('There are no changes which would need a test run.')
         return False
+
+
+SECRETS_BASE = os.path.join(ROOT, 'secrets')
+SECRETS_TAR = SECRETS_BASE + '.tar'
+ENCRYPTED_SECRETS = SECRETS_TAR + '.enc'
+
+DEPLOY_KEY = os.path.join(ROOT, 'deploy_key')
+PYPIRC = os.path.join(ROOT, '.pypirc')
+
+
+def decrypt_secrets():
+    subprocess.check_call([
+        'openssl', 'aes-256-cbc',
+        '-K', os.environ['encrypted_39cb4cc39a80_key'],
+        '-iv', os.environ['encrypted_39cb4cc39a80_iv'],
+        '-in', ENCRYPTED_SECRETS,
+        '-out', SECRETS_TAR,
+        '-d'
+    ])
+
+    subprocess.check_call(['tar', '-xvf', SECRETS_TAR])
