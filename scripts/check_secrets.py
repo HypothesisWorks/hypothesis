@@ -27,3 +27,5 @@ if __name__ == '__main__':
         sys.exit(0)
 
     tools.decrypt_secrets()
+
+    assert os.path.exists(tools.DEPLOY_KEY)
