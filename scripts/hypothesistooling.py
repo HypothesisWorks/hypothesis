@@ -153,7 +153,6 @@ def create_tag_and_push():
 
     subprocess.check_call([
         'ssh-agent', 'sh', '-c',
-        'chmod 0600 deploy_key && ' +
         'ssh-add %s && ' % (shlex.quote(DEPLOY_KEY),) +
         'git push ssh-origin HEAD:master &&'
         'git push ssh-origin --tags'
@@ -426,3 +425,5 @@ def decrypt_secrets():
     ])
 
     subprocess.check_call(['tar', '-xvf', SECRETS_TAR])
+
+    os.chmod(DEPLOY_KEY, int('0600', 8))
