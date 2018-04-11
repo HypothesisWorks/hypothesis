@@ -425,5 +425,6 @@ def decrypt_secrets():
     ])
 
     subprocess.check_call(['tar', '-xvf', SECRETS_TAR], cwd=ROOT)
-
+    assert os.path.exists(DEPLOY_KEY)
+    assert os.path.exists(PYPIRC)
     os.chmod(DEPLOY_KEY, int('0600', 8))
