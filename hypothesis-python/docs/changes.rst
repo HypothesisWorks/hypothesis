@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.55.2 - 2018-04-11
+-------------------
+
+This release updates the URL metadata associated with the PyPI package.
+It has no other user visible effects.
+
+-------------------
 3.55.1 - 2018-04-06
 -------------------
 
