@@ -6,8 +6,9 @@
 # have to go through and you should feel free to use this to avoid some of
 # that suffering in advance.
 
-set -e
-set -x
+set -o errexit
+set -o nounset
+set -o xtrace
 
 # OS X seems to have some weird Localse problems on Travis. This attempts to set
 # the Locale to known good ones during install
