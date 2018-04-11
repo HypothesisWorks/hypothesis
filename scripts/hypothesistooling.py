@@ -424,6 +424,6 @@ def decrypt_secrets():
         '-d'
     ])
 
-    subprocess.check_call(['tar', '-xvf', SECRETS_TAR])
+    subprocess.check_call(['tar', '-xvf', SECRETS_TAR], cwd=ROOT)
 
     os.chmod(DEPLOY_KEY, int('0600', 8))
