@@ -40,15 +40,19 @@ def tags():
 
 ROOT = subprocess.check_output([
     'git', 'rev-parse', '--show-toplevel']).decode('ascii').strip()
-SRC = os.path.join(ROOT, 'src')
 
-assert os.path.exists(SRC)
+HYPOTHESIS_PYTHON = os.path.join(ROOT, 'hypothesis-python')
+
+PYTHON_SRC = os.path.join(HYPOTHESIS_PYTHON, 'src')
+PYTHON_TESTS = os.path.join(HYPOTHESIS_PYTHON, 'tests')
+
+assert os.path.exists(PYTHON_SRC)
 
 
 __version__ = None
 __version_info__ = None
 
-VERSION_FILE = os.path.join(ROOT, 'src/hypothesis/version.py')
+VERSION_FILE = os.path.join(PYTHON_SRC, 'hypothesis/version.py')
 
 with open(VERSION_FILE) as o:
     exec(o.read())
@@ -96,7 +100,7 @@ def is_ancestor(a, b):
     return check == 0
 
 
-CHANGELOG_FILE = os.path.join(ROOT, 'docs', 'changes.rst')
+CHANGELOG_FILE = os.path.join(HYPOTHESIS_PYTHON, 'docs', 'changes.rst')
 
 
 def changelog():
@@ -121,7 +125,7 @@ def has_source_changes(version=None):
 
     return subprocess.call([
         'git', 'diff', '--no-patch', '--exit-code', point_of_divergence,
-        'HEAD', '--', SRC,
+        'HEAD', '--', PYTHON_SRC,
     ]) != 0
 
 
@@ -204,7 +208,7 @@ def all_files():
         'ascii').splitlines()
 
 
-RELEASE_FILE = os.path.join(ROOT, 'RELEASE.rst')
+RELEASE_FILE = os.path.join(HYPOTHESIS_PYTHON, 'RELEASE.rst')
 
 
 def has_release():

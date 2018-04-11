@@ -5,6 +5,8 @@ set -x
 
 PYTHON=$1
 
+cd "$(dirname "$0")"/../hypothesis-python
+
 BROKEN_VIRTUALENV=$($PYTHON -c'import tempfile; print(tempfile.mkdtemp())')
 
 trap 'rm -rf $BROKEN_VIRTUALENV' EXIT
@@ -15,7 +17,7 @@ $PYTHON setup.py sdist --dist-dir=tmp-dist-dir
 
 $PYTHON -m pip install virtualenv
 $PYTHON -m virtualenv "$BROKEN_VIRTUALENV"
-"$BROKEN_VIRTUALENV"/bin/pip install -rrequirements/test.txt
+"$BROKEN_VIRTUALENV"/bin/pip install -r../requirements/test.txt
 
 # These are versions from debian stable as of 2017-04-21
 # See https://packages.debian.org/stable/python/

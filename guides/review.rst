@@ -2,6 +2,10 @@
 The Hypothesis Code Review Handbook
 ===================================
 
+Note: This review guide was written with the Python version in mind,
+but should apply to *all* versions. If you find a place where it's a bit
+too Python specific, please fix it or file an issue.
+
 Hypothesis has a process of reviewing every change, internal or external.
 This is a document outlining that process. It's partly descriptive, partly
 prescriptive, and entirely prone to change in response to circumstance
@@ -142,7 +146,8 @@ Public API changes must satisfy the following:
    though other maintainers are welcome and likely to chip in to review as
    well.
 9. We have a separate guide for `house API style <api-style.rst>`_ which should
-   be followed.
+   be followed. Note that currently this only covers the API style for the Python
+   version. We are still figuring out the API style for the Ruby version.
 
 ~~~~~~~~~
 Bug Fixes
@@ -159,6 +164,8 @@ Bug Fixes
 ~~~~~~~~~~~~~~~~
 Settings Changes
 ~~~~~~~~~~~~~~~~
+
+Note: This section currently only applies to the Python version.
 
 It is tempting to use the Hypothesis settings object as a dumping ground for
 anything and everything that you can think of to control Hypothesis. This
@@ -187,7 +194,8 @@ Engine Changes
 
 Engine changes are anything that change a "fundamental" of how Hypothesis
 works. A good rule of thumb is that an engine change is anything that touches
-a file in hypothesis.internal.conjecture.
+a file in hypothesis.internal.conjecture (Python version) or Rust code (Ruby
+version).
 
 All such changes should:
 

@@ -31,13 +31,15 @@ import hypothesistooling as tools
 sys.path.append(os.path.dirname(__file__))  # noqa
 
 
-DIST = os.path.join(tools.ROOT, 'dist')
+DIST = os.path.join(tools.HYPOTHESIS_PYTHON, 'dist')
 
 
 PENDING_STATUS = ('started', 'created')
 
 
 if __name__ == '__main__':
+    os.chdir(tools.HYPOTHESIS_PYTHON)
+
     last_release = tools.latest_version()
 
     print('Current version: %s. Latest released version: %s' % (
