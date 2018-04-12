@@ -115,8 +115,10 @@ def seed(seed):
     May be any hashable object. No exact meaning for seed is provided
     other than that for a fixed seed value Hypothesis will try the same
     actions (insofar as it can given external sources of non-
-    determinism. e.g. timing and hash randomization). Overrides the
-    derandomize setting if it is present.
+    determinism. e.g. timing and hash randomization).
+
+    Overrides the derandomize setting, which is designed to enable
+    deterministic builds rather than reproducing observed failures.
 
     """
     def accept(test):
