@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # This script is here to bootstrap the Hypothesis build process into a working
-# version of Python, then hand over to the actual Hypothesi build runner (which
+# version of Python, then hand over to the actual Hypothesis build runner (which
 # is written in Python instead of bash).
 
 set -x
