@@ -256,7 +256,7 @@ def check_rst():
     docs = glob('hypothesis-python/docs/*.rst')
 
     pip_tool('rst-lint', *rst)
-    pip_tool('flake8',  '--select=W191,W291,W292,W293,W391', *(rst + docs))
+    pip_tool('flake8', '--select=W191,W291,W292,W293,W391', *(rst + docs))
 
 
 @task
@@ -577,9 +577,3 @@ if __name__ == '__main__':
         TASKS[task_to_run]()
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
-    except Exception:
-        import pdb
-        import traceback
-        type, value, tb = sys.exc_info()
-        traceback.print_exc()
-        pdb.post_mortem(tb)
