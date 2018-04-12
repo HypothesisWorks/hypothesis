@@ -4,7 +4,9 @@
 # version of Python, then hand over to the actual Hypothesi build runner (which
 # is written in Python instead of bash).
 
-set -e -u -x
+set -x
+set -o errexit
+set -o nounset
 
 ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 
@@ -12,6 +14,7 @@ export HYPOTHESIS_ROOT="$ROOT"
 
 SCRIPTS="$ROOT/tooling/scripts"
 
+# shellcheck source=tooling/scripts/common.sh
 source "$SCRIPTS/common.sh"
 
 "$SCRIPTS/ensure-python.sh" 3.6.5
