@@ -49,7 +49,7 @@ def task(fn):
 def lint():
     os.chdir(tools.HYPOTHESIS_PYTHON)
     pip_tool('flake8', 'src', 'tests', '--config', os.path.join(
-        tools.ROOT, ".flake8"
+        tools.ROOT, '.flake8'
     ))
 
 
