@@ -65,50 +65,6 @@ def check_pyup_yml():
         sys.exit(1)
 
 
-@task
-def validate_branch_check():
-    with open('branch-check') as i:
-        data = [
-            json.loads(l) for l in i
-        ]
-
-    checks = defaultdict(set)
-
-    for d in data:
-        checks[d['name']].add(d['value'])
-
-    always_true = []
-    always_false = []
-
-    for c, vs in sorted(checks.items()):
-        if len(vs) < 2:
-            v = list(vs)[0]
-            assert v in (False, True)
-            if v:
-                always_true.append(c)
-            else:
-                always_false.append(c)
-
-    failure = always_true or always_false
-
-    if failure:
-        print('Some branches were not properly covered.')
-        print()
-
-    if always_true:
-        print('The following were always True:')
-        print()
-        for c in always_true:
-            print('  * %s' % (c,))
-    if always_false:
-        print('The following were always False:')
-        print()
-        for c in always_false:
-            print('  * %s' % (c,))
-    if failure:
-        sys.exit(1)
-
-
 DIST = os.path.join(tools.HYPOTHESIS_PYTHON, 'dist')
 PENDING_STATUS = ('started', 'created')
 
