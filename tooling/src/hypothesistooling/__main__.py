@@ -54,7 +54,7 @@ def lint():
 
 
 @task
-def check_pyup_yaml():
+def check_pyup_yml():
     with open(tools.PYUP_FILE, 'r') as i:
         data = yaml.safe_load(i.read())
     config = Config()
