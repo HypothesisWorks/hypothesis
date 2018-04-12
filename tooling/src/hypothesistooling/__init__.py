@@ -40,12 +40,16 @@ def tags():
 
 
 ROOT = subprocess.check_output([
-    'git', 'rev-parse', '--show-toplevel']).decode('ascii').strip()
+    'git', '-C',  os.path.dirname(__file__), 'rev-parse', '--show-toplevel',
+]).decode('ascii').strip()
 
 HYPOTHESIS_PYTHON = os.path.join(ROOT, 'hypothesis-python')
 
 PYTHON_SRC = os.path.join(HYPOTHESIS_PYTHON, 'src')
 PYTHON_TESTS = os.path.join(HYPOTHESIS_PYTHON, 'tests')
+
+PYUP_FILE = os.path.join(ROOT, '.pyup.yml')
+
 
 assert os.path.exists(PYTHON_SRC)
 
@@ -204,8 +208,11 @@ def modified_files():
 
 
 def all_files():
-    return subprocess.check_output(['git', 'ls-files']).decode(
-        'ascii').splitlines()
+    return [
+        f for f in subprocess.check_output(
+            ['git', 'ls-files']).decode('ascii').splitlines()
+        if os.path.exists(f)
+    ]
 
 
 RELEASE_FILE = os.path.join(HYPOTHESIS_PYTHON, 'RELEASE.rst')
@@ -370,9 +377,9 @@ def changed_files_from_master():
     return files
 
 
-def should_run_ci_task(task, is_pull_request):
+def should_run_ci_task(task):
     """Given a task name, should we run this task?"""
-    if not is_pull_request:
+    if not IS_PULL_REQUEST:
         print('We only skip tests if the job is a pull request.')
         return True
 
@@ -432,3 +439,16 @@ def decrypt_secrets():
     assert os.path.exists(DEPLOY_KEY)
     assert os.path.exists(PYPIRC)
     os.chmod(DEPLOY_KEY, int('0600', 8))
+
+
+IS_TRAVIS_PULL_REQUEST = (
+    os.environ.get('TRAVIS_EVENT_TYPE') == 'pull_request'
+)
+
+IS_CIRCLE_PULL_REQUEST = (
+    os.environ.get('CIRCLE_BRANCH') == 'master' and
+    os.environ.get('CI_PULL_REQUESTS', '') != ''
+)
+
+
+IS_PULL_REQUEST = IS_TRAVIS_PULL_REQUEST or IS_CIRCLE_PULL_REQUEST

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
@@ -17,15 +19,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-import os
 import sys
-
-import hypothesistooling as tools
+import hashlib
 
 if __name__ == '__main__':
-    if os.environ.get('TRAVIS_SECURE_ENV_VARS', None) != 'true':
-        sys.exit(0)
-
-    tools.decrypt_secrets()
-
-    assert os.path.exists(tools.DEPLOY_KEY)
+    print(hashlib.sha1(sys.stdin.read().encode('utf-8')).hexdigest()[:10])

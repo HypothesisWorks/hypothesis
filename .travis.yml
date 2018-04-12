@@ -65,7 +65,7 @@ env:
         - TASK=deploy
 
 script:
-    - python scripts/run_travis_make_task.py
+    - ./build.sh 
 
 matrix:
     fast_finish: true

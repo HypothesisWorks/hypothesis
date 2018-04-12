@@ -1,6 +1,8 @@
 test:
   override:
-    - scripts/run_circle.py
+    - ./build.sh check-pypy
+    - ./build.sh check-py27
+    - ./build.sh check-py36
 
 machine:
   pre:
