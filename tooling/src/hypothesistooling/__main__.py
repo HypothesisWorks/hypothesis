@@ -499,7 +499,7 @@ standard_tox_task('faker-latest')
 standard_tox_task('django20')
 standard_tox_task('django111')
 
-for n in [20, 21, 22, 23]:
+for n in [19, 20, 21, 22, 23]:
     standard_tox_task('pandas%d' % (n,))
 
 standard_tox_task('examples3')
