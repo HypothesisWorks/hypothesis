@@ -86,7 +86,7 @@ setuptools.setup(
     packages=setuptools.find_packages(SOURCE),
     package_dir={'': SOURCE},
     url=(
-        'https://github.com/HypothesisWorks/hypothesis-python/'
+        'https://github.com/HypothesisWorks/hypothesis/'
         'tree/master/hypothesis-python'
     ),
     license='MPL v2',

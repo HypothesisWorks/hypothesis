@@ -147,7 +147,7 @@ def create_tag_and_push():
     git('config', 'core.sshCommand', 'ssh -i deploy_key')
     git(
         'remote', 'add', 'ssh-origin',
-        'git@github.com:HypothesisWorks/hypothesis-python.git'
+        'git@github.com:HypothesisWorks/hypothesis.git'
     )
     git('tag', __version__)
 
