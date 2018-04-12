@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e -o xtrace
 
-cd "$(dirname "$0")"/../hypothesis-python
+cd "$(dirname "$0")"/..
 
 # We run a reduced set of tests on OSX mostly so the CI runs in vaguely
 # reasonable time.
