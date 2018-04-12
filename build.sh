@@ -6,7 +6,7 @@
 
 set -e -u -x
 
-ROOT="$(git -C $(dirname "$0") rev-parse --show-toplevel)"
+ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 
 export HYPOTHESIS_ROOT="$ROOT"
 
@@ -28,7 +28,7 @@ TOOL_PYTHON="$TOOL_VIRTUALENV/bin/python"
 if [ ! -e "$TOOL_PYTHON" ] ; then
     rm -rf "$TOOL_VIRTUALENV"
     "$PYTHON" -m pip install --upgrade virtualenv
-	"$PYTHON" -m virtualenv $TOOL_VIRTUALENV
+	"$PYTHON" -m virtualenv "$TOOL_VIRTUALENV"
 	"$TOOL_PYTHON" -m pip install -r requirements/tools.txt
 	"$TOOL_PYTHON" -m pip install -e tooling
 fi

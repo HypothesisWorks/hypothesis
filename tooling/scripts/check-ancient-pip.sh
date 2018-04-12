@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
-set -e
 set -x
+set -o errexit
+set -o nounset
 
 PYTHON=$1
 
+# shellcheck source=tooling/scripts/common.sh
 source "$(dirname "$0")/common.sh"
 
 cd "$ROOT/hypothesis-python"

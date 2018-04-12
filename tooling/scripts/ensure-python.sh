@@ -6,10 +6,10 @@
 # have to go through and you should feel free to use this to avoid some of
 # that suffering in advance.
 
-set -e
-set -x
-set -u
+set -o errexit
+set -o nounset
 
+# shellcheck source=tooling/scripts/common.sh
 source $(dirname "$0")/common.sh
 
 # This is to guard against multiple builds in parallel. The various installers will tend
@@ -24,7 +24,7 @@ source $(dirname "$0")/common.sh
 # ever not being acquired.
 
 VERSION="$1"
-TARGET=$(pythonloc $VERSION)
+TARGET=$(pythonloc "$VERSION")
 
 if [ ! -e "$TARGET/bin/python" ] ; then 
     mkdir -p "$BASE"
