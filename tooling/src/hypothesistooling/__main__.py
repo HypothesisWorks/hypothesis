@@ -440,7 +440,7 @@ PYPY2 = 'pypy2.7-5.10.0'
 
 @task
 def check_py273():
-    python = tools.python_executable('2.7.3')
+    python = install.python_executable('2.7.3')
 
     # Create a fully qualified version of the name so e.g. tox
     # will pick it up for the more specific interpreter.
