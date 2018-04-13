@@ -215,6 +215,7 @@ def has_release():
     return os.path.exists(RELEASE_FILE)
 
 
+CHANGELOG_ANCHOR = re.compile(r"^\.\. _v\d+\.\d+\.\d+:$")
 CHANGELOG_BORDER = re.compile(r"^-+$")
 CHANGELOG_HEADER = re.compile(r"^\d+\.\d+\.\d+ - \d\d\d\d-\d\d-\d\d$")
 RELEASE_TYPE = re.compile(r"^RELEASE_TYPE: +(major|minor|patch)")
@@ -264,9 +265,10 @@ def update_changelog_and_version():
     lines = contents.split('\n')
     assert contents == '\n'.join(lines)
     for i, l in enumerate(lines):
-        if CHANGELOG_BORDER.match(l):
-            assert CHANGELOG_HEADER.match(lines[i + 1]), repr(lines[i + 1])
+        if CHANGELOG_ANCHOR.match(l):
             assert CHANGELOG_BORDER.match(lines[i + 2]), repr(lines[i + 2])
+            assert CHANGELOG_HEADER.match(lines[i + 3]), repr(lines[i + 3])
+            assert CHANGELOG_BORDER.match(lines[i + 4]), repr(lines[i + 4])
             beginning = '\n'.join(lines[:i])
             rest = '\n'.join(lines[i:])
             assert '\n'.join((beginning, rest)) == contents
