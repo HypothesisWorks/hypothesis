@@ -47,8 +47,8 @@ PYTHONS = set()
 def ensure_python(version):
     if version in PYTHONS:
         return
-
     scripts.run_script('ensure-python.sh', version)
+    assert os.path.exists(__python_executable(version))
     PYTHONS.add(version)
 
 
