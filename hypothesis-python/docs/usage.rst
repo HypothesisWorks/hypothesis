@@ -2,9 +2,13 @@
 Open Source Projects using Hypothesis
 =====================================
 
-The following is a non-exhaustive list of open source projects I know are using Hypothesis. If you're aware of
-any others please add them to the list! The only inclusion criterion right now is that if it's a Python library
+The following is a non-exhaustive list of open source projects I know are
+using Hypothesis. If you're aware of any others please add them to the list!
+The only inclusion criterion right now is that if it's a Python library
 then it should be available on pypi.
+
+You can find hundreds more from `the Hypothesis page at libraries.io
+<https://libraries.io/pypi/hypothesis>`_.
 
 * `aur <https://github.com/cdown/aur>`_
 * `argon2_cffi <https://github.com/hynek/argon2_cffi>`_

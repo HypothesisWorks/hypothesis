@@ -21,7 +21,7 @@ import sys
 import math
 
 import hypothesis.strategies as st
-from hypothesis import given, reject
+from hypothesis import given, assume, reject
 from tests.common.debug import minimal
 from hypothesis.strategies import complex_numbers
 
@@ -119,6 +119,7 @@ def test_minimal_minmax_magnitude():
 def test_minmax_magnitude_equal(data, mag):
     val = data.draw(st.complex_numbers(min_magnitude=mag, max_magnitude=mag))
     try:
+        assume(abs(val) < float('inf'))
         assert math.isclose(abs(val), mag)
     except OverflowError:
         reject()

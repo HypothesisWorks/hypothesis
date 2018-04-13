@@ -93,14 +93,14 @@ warnings.filterwarnings('error', category=DeprecationWarning)
 # This config value must be a dictionary of external sites, mapping unique
 # short alias names to a base URL and a prefix.
 # See http://sphinx-doc.org/ext/extlinks.html
-_repo = 'https://github.com/HypothesisWorks/hypothesis-python/'
+_repo = 'https://github.com/HypothesisWorks/hypothesis/'
 extlinks = {
     'commit': (_repo + 'commit/%s', 'commit '),
     'gh-file': (_repo + 'blob/master/%s', ''),
     'gh-link': (_repo + '%s', ''),
     'issue': (_repo + 'issues/%s', 'issue #'),
     'pull': (_repo + 'pulls/%s', 'pull request #'),
-    'pypi': ('https://pypi.python.org/pypi/%s', ''),
+    'pypi': ('https://pypi.org/project/%s', ''),
 }
 
 # -- Options for HTML output ----------------------------------------------

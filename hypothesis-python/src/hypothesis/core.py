@@ -115,8 +115,10 @@ def seed(seed):
     May be any hashable object. No exact meaning for seed is provided
     other than that for a fixed seed value Hypothesis will try the same
     actions (insofar as it can given external sources of non-
-    determinism. e.g. timing and hash randomization). Overrides the
-    derandomize setting if it is present.
+    determinism. e.g. timing and hash randomization).
+
+    Overrides the derandomize setting, which is designed to enable
+    deterministic builds rather than reproducing observed failures.
 
     """
     def accept(test):
@@ -942,15 +944,15 @@ def given(*given_arguments, **given_kwargs):
             __tracebackhide__ = True
 
             if getattr(test, 'is_hypothesis_test', False):
-                note_deprecation((
+                note_deprecation(
                     'You have applied @given to a test more than once. In '
                     'future this will be an error. Applying @given twice '
                     'wraps the test twice, which can be extremely slow. A '
                     'similar effect can be gained by combining the arguments '
-                    'to the two calls to given. For example, instead of '
+                    'of the two calls to given. For example, instead of '
                     '@given(booleans()) @given(integers()), you could write '
                     '@given(booleans(), integers())'
-                ))
+                )
 
             settings = wrapped_test._hypothesis_internal_use_settings
 

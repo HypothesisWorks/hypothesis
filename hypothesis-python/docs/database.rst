@@ -17,6 +17,9 @@ correctness - if there's an example you want to ensure occurs each time then :re
 including them in your source code <providing-explicit-examples>` - but it helps the development
 workflow considerably by making sure that the examples you've just found are reproduced.
 
+The database also records examples that excercise less-used parts of your
+code, so the database may update even when no failing examples were found.
+
 --------------
 File locations
 --------------
