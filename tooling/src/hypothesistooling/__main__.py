@@ -420,6 +420,16 @@ def check_ancient_pip():
 
 
 def run_tox(task, version):
+    python = install.python_executable(version)
+
+    # Create a version of the name that tox will pick up for the correct
+    # interpreter alias.
+    linked_version = os.path.basename(python) + ALIASES[version]
+    try:
+        os.symlink(python, linked_version)
+    except FileExistsError:
+        pass
+
     os.chdir(tools.HYPOTHESIS_PYTHON)
     env = dict(os.environ)
     python = install.python_executable(version)
@@ -438,18 +448,18 @@ PY36 = '3.6.5'
 PYPY2 = 'pypy2.7-5.10.0'
 
 
+ALIASES = {
+    PY273: 'py273',
+    PYPY2: 'pypy',
+}
+
+for n in [PY27, PY34, PY35, PY36]:
+    major, minor, patch = n.split('.')
+    ALIASES[n] = 'python%s.%s' % (major, minor)
+
+
 @task
 def check_py273():
-    python = install.python_executable('2.7.3')
-
-    # Create a fully qualified version of the name so e.g. tox
-    # will pick it up for the more specific interpreter.
-    linked_version = python + '2.7.3'
-    try:
-        os.symlink(python, linked_version)
-    except FileExistsError:
-        pass
-
     run_tox('oldpy27', PY273)
 
 
