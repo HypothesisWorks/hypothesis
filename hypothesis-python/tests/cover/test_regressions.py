@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
+from hypothesis import Verbosity, seed, given, assume, settings
 from hypothesis import strategies as st
-from hypothesis import Verbosity, given, settings, assume, seed
 
 
 def strat():
