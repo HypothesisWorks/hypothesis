@@ -23,6 +23,15 @@ information to the contrary.
 
 .. _v3.55.3:
 
+.. _v3.55.4:
+
+-------------------
+3.55.4 - 2018-04-13
+-------------------
+
+This patch makes a variety of minor improvements to the documentation,
+and improves a few validation messages for invalid inputs.
+
 -------------------
 3.55.3 - 2018-04-12
 -------------------
