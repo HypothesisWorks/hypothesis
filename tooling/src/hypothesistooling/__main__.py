@@ -70,7 +70,7 @@ PENDING_STATUS = ('started', 'created')
 
 
 @task
-def deploy(self):
+def deploy():
     os.chdir(tools.HYPOTHESIS_PYTHON)
 
     last_release = tools.latest_version()
