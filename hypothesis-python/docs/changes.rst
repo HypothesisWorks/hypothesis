@@ -21,8 +21,6 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
-.. _v3.55.3:
-
 .. _v3.55.4:
 
 -------------------
@@ -31,6 +29,8 @@ information to the contrary.
 
 This patch makes a variety of minor improvements to the documentation,
 and improves a few validation messages for invalid inputs.
+
+.. _v3.55.3:
 
 -------------------
 3.55.3 - 2018-04-12
