@@ -448,6 +448,13 @@ PY36 = '3.6.5'
 PYPY2 = 'pypy2.7-5.10.0'
 
 
+@task
+def install_core():
+    install.python_executable(PYPY2)
+    install.python_executable(PY27)
+    install.python_executable(PY36)
+
+
 ALIASES = {
     PY273: 'py273',
     PYPY2: 'pypy',

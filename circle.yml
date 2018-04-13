@@ -15,7 +15,7 @@ machine:
 
 dependencies:
   override:
-    - make install-core
+    - ./build.sh install-core
 
   cache_directories:
     - ~/.cache/hypothesis-build-runtimes
