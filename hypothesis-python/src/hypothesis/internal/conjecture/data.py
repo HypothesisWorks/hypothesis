@@ -201,6 +201,15 @@ class ConjectureData(object):
         k = self.example_stack.pop()
         ex = self.examples[k]
         ex.end = self.index
+
+        # We don't want to count empty examples as discards even if the flag
+        # says we should. This leads to situations like
+        # https://github.com/HypothesisWorks/hypothesis/issues/1230
+        # where it can look like we should discard data but there's nothing
+        # useful for us to do.
+        if self.index == ex.start:
+            discard = False
+
         ex.discarded = discard
 
         if discard:

@@ -118,3 +118,11 @@ def test_does_not_double_freeze_in_interval_close():
         x.draw(BigStrategy())
     assert x.frozen
     assert not any(eg.end is None for eg in x.examples)
+
+
+def test_empty_discards_do_not_count():
+    x = ConjectureData.for_buffer(b'')
+    x.start_example(label=1)
+    x.stop_example(discard=True)
+    x.freeze()
+    assert not x.has_discards
