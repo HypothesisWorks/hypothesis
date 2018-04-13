@@ -24,9 +24,9 @@ import faker
 from faker.factory import AVAILABLE_LOCALES
 
 from hypothesis._settings import note_deprecation
-from hypothesis.internal.compat import text_type
-from hypothesis.internal.reflection import check_valid_identifier
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis._internal.compat import text_type
+from hypothesis._internal.reflection import check_valid_identifier
+from hypothesis._searchstrategy.strategies import SearchStrategy
 
 
 def fake_factory(source, locale=None, locales=None, providers=()):

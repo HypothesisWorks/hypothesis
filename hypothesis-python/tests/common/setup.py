@@ -22,9 +22,9 @@ from tempfile import mkdtemp
 from warnings import filterwarnings
 
 from hypothesis import settings, unlimited
-from hypothesis.configuration import set_hypothesis_home_dir
-from hypothesis.internal.charmap import charmap, charmap_file
-from hypothesis.internal.coverage import IN_COVERAGE_TESTS
+from hypothesis._configuration import set_hypothesis_home_dir
+from hypothesis._internal.charmap import charmap, charmap_file
+from hypothesis._internal.coverage import IN_COVERAGE_TESTS
 
 
 def run():

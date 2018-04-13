@@ -22,7 +22,7 @@ import string
 
 import hypothesis.strategies as st
 from hypothesis import given, assume, reject
-from hypothesis.searchstrategy.regex import base_regex_strategy
+from hypothesis._searchstrategy.regex import base_regex_strategy
 
 
 @st.composite

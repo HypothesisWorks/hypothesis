@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 from tests.common.debug import minimal, find_any
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.extra.datetime import dates
-from hypothesis.internal.compat import hrange
+from hypothesis._internal.compat import hrange
 
 
 @checks_deprecated_behaviour

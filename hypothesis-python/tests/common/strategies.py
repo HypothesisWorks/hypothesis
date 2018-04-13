@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import time
 
-from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import hrange
+from hypothesis._searchstrategy import SearchStrategy
+from hypothesis._internal.compat import hrange
 
 
 class _Slow(SearchStrategy):

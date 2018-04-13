@@ -23,7 +23,7 @@ from hypothesis import find, given, assume, settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import just, text, lists, builds, floats, \
     tuples, booleans, integers
-from hypothesis.internal.compat import Counter
+from hypothesis._internal.compat import Counter
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
 

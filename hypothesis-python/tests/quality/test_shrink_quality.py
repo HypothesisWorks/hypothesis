@@ -31,7 +31,7 @@ from tests.common.debug import minimal
 from hypothesis.strategies import just, sets, text, lists, tuples, \
     booleans, integers, fractions, frozensets, dictionaries, \
     sampled_from
-from hypothesis.internal.compat import PY3, OrderedDict, hrange
+from hypothesis._internal.compat import PY3, OrderedDict, hrange
 
 
 def test_integers_from_minimizes_leftwards():

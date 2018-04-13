@@ -21,8 +21,8 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given
-from hypothesis.internal.compat import PY3
-from hypothesis.internal.reflection import arg_string
+from hypothesis._internal.compat import PY3
+from hypothesis._internal.reflection import arg_string
 
 
 class BadRepr(object):

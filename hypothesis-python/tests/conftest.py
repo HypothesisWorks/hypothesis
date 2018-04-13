@@ -25,7 +25,7 @@ import pytest
 
 from tests.common import TIME_INCREMENT
 from tests.common.setup import run
-from hypothesis.internal.coverage import IN_COVERAGE_TESTS
+from hypothesis._internal.coverage import IN_COVERAGE_TESTS
 
 run()
 

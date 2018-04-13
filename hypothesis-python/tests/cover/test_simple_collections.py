@@ -28,7 +28,7 @@ from tests.common.debug import minimal, find_any
 from hypothesis.strategies import none, sets, text, lists, builds, \
     tuples, booleans, integers, frozensets, dictionaries, \
     fixed_dictionaries
-from hypothesis.internal.compat import OrderedDict
+from hypothesis._internal.compat import OrderedDict
 
 
 @pytest.mark.parametrize((u'col', u'strat'), [

@@ -17,7 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.internal.floats import count_between_floats
+from hypothesis._internal.floats import count_between_floats
 
 
 def test_can_handle_straddling_zero():

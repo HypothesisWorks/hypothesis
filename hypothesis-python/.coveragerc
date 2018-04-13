@@ -8,7 +8,7 @@ omit =
     **/strategytests.py
     **/compat*.py
     **/extra/__init__.py
-    **/.tox/*/lib/*/site-packages/hypothesis/internal/coverage.py
+    **/.tox/*/lib/*/site-packages/hypothesis/_internal/coverage.py
 
 [report]
 exclude_lines =

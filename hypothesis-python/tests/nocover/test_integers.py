@@ -22,9 +22,9 @@ from random import Random
 import hypothesis.strategies as st
 from hypothesis import Phase, Verbosity, HealthCheck, note, given, \
     assume, reject, settings, unlimited
-from hypothesis.internal.compat import ceil, hbytes
-from hypothesis.internal.conjecture.data import StopTest, ConjectureData
-from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis._internal.compat import ceil, hbytes
+from hypothesis._internal.conjecture.data import StopTest, ConjectureData
+from hypothesis._internal.conjecture.engine import ConjectureRunner
 
 
 @st.composite

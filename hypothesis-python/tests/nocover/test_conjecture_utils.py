@@ -19,9 +19,9 @@ from __future__ import division, print_function, absolute_import
 
 from fractions import Fraction
 
-import hypothesis.internal.conjecture.utils as cu
-from hypothesis.internal.compat import int_to_bytes
-from hypothesis.internal.conjecture.data import StopTest, ConjectureData
+import hypothesis._internal.conjecture.utils as cu
+from hypothesis._internal.compat import int_to_bytes
+from hypothesis._internal.conjecture.data import StopTest, ConjectureData
 
 
 def test_gives_the_correct_probabilities():

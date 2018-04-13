@@ -26,10 +26,10 @@ failing examples it finds.
 from hypothesis._settings import settings, Verbosity, Phase, HealthCheck, \
     unlimited
 from hypothesis.version import __version_info__, __version__
-from hypothesis.control import assume, note, reject, event
-from hypothesis.core import given, find, example, seed, reproduce_failure, \
+from hypothesis._control import assume, note, reject, event
+from hypothesis._core import given, find, example, seed, reproduce_failure, \
     PrintSettings
-from hypothesis.utils.conventions import infer
+from hypothesis._utils.conventions import infer
 
 
 __all__ = [

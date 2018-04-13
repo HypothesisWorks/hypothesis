@@ -27,20 +27,20 @@ from fractions import Fraction
 from functools import reduce
 
 from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.control import assume
+from hypothesis._control import assume
 from hypothesis._settings import note_deprecation
-from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
+from hypothesis._internal.cache import LRUReusedCache
+from hypothesis._searchstrategy import SearchStrategy
+from hypothesis._internal.compat import gcd, ceil, floor, hrange, \
     text_type, get_type_hints, getfullargspec, implements_iterator
-from hypothesis.internal.floats import next_up, next_down, is_negative, \
+from hypothesis._internal.floats import next_up, next_down, is_negative, \
     float_to_int, int_to_float, count_between_floats
-from hypothesis.internal.charmap import as_general_categories
-from hypothesis.internal.cathetus import cathetus
-from hypothesis.internal.renaming import renamed_arguments
-from hypothesis.utils.conventions import infer, not_set
-from hypothesis.internal.reflection import proxies, required_args
-from hypothesis.internal.validation import check_type, try_convert, \
+from hypothesis._internal.charmap import as_general_categories
+from hypothesis._internal.cathetus import cathetus
+from hypothesis._internal.renaming import renamed_arguments
+from hypothesis._utils.conventions import infer, not_set
+from hypothesis._internal.reflection import proxies, required_args
+from hypothesis._internal.validation import check_type, try_convert, \
     check_strategy, check_valid_size, check_valid_bound, \
     check_valid_sizes, check_valid_integer, check_valid_interval, \
     check_valid_magnitude
@@ -134,7 +134,7 @@ def base_defines_strategy(force_reusable):
     def decorator(strategy_definition):
         """A decorator that registers the function as a strategy and makes it
         lazily evaluated."""
-        from hypothesis.searchstrategy.lazy import LazyStrategy
+        from hypothesis._searchstrategy.lazy import LazyStrategy
         _strategies.add(strategy_definition.__name__)
 
         @proxies(strategy_definition)
@@ -202,7 +202,7 @@ def just(value):
 
     Examples from this strategy do not shrink (because there is only one).
     """
-    from hypothesis.searchstrategy.misc import JustStrategy
+    from hypothesis._searchstrategy.misc import JustStrategy
 
     return JustStrategy(value)
 
@@ -245,7 +245,7 @@ def one_of(
             args = tuple(args[0])
         except TypeError:
             pass
-    from hypothesis.searchstrategy.strategies import OneOfStrategy
+    from hypothesis._searchstrategy.strategies import OneOfStrategy
     return OneOfStrategy(args)
 
 
@@ -267,7 +267,7 @@ def integers(min_value=None, max_value=None):
     check_valid_bound(max_value, 'max_value')
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
 
-    from hypothesis.searchstrategy.numbers import IntegersFromStrategy, \
+    from hypothesis._searchstrategy.numbers import IntegersFromStrategy, \
         BoundedIntStrategy, WideRangeIntStrategy
 
     min_int_value = None if min_value is None else ceil(min_value)
@@ -312,7 +312,7 @@ def booleans():
     Examples from this strategy will shrink towards False (i.e.
     shrinking will try to replace True with False where possible).
     """
-    from hypothesis.searchstrategy.misc import BoolStrategy
+    from hypothesis._searchstrategy.misc import BoolStrategy
     return BoolStrategy()
 
 
@@ -384,7 +384,7 @@ def floats(
                     allow_infinity
                 ))
 
-    from hypothesis.searchstrategy.numbers import FloatStrategy, \
+    from hypothesis._searchstrategy.numbers import FloatStrategy, \
         FixedBoundedFloatStrategy
     if min_value is None and max_value is None:
         return FloatStrategy(
@@ -459,7 +459,7 @@ def tuples(*args):
     for arg in args:
         check_strategy(arg)
 
-    from hypothesis.searchstrategy.collections import TupleStrategy
+    from hypothesis._searchstrategy.collections import TupleStrategy
     return TupleStrategy(args)
 
 
@@ -480,8 +480,8 @@ def sampled_from(elements):
     1 values with 10, and sampled_from((1, 10)) will shrink by trying to
     replace 10 values with 1.
     """
-    from hypothesis.searchstrategy.misc import SampledFromStrategy
-    from hypothesis.internal.conjecture.utils import check_sample
+    from hypothesis._searchstrategy.misc import SampledFromStrategy
+    from hypothesis._internal.conjecture.utils import check_sample
     values = check_sample(elements)
     if not values:
         return nothing()
@@ -555,7 +555,7 @@ def lists(
             def unique_by(x):
                 return x
 
-    from hypothesis.searchstrategy.collections import ListStrategy, \
+    from hypothesis._searchstrategy.collections import ListStrategy, \
         UniqueListStrategy
     if unique_by is not None:
         return UniqueListStrategy(
@@ -663,7 +663,7 @@ def fixed_dictionaries(mapping):
     Examples from this strategy shrink by shrinking each individual value in
     the generated dictionary.
     """
-    from hypothesis.searchstrategy.collections import FixedKeysDictStrategy
+    from hypothesis._searchstrategy.collections import FixedKeysDictStrategy
     check_type(dict, mapping, 'mapping')
     for v in mapping.values():
         check_strategy(v)
@@ -717,7 +717,7 @@ def streaming(elements):
 
     check_strategy(elements)
 
-    from hypothesis.searchstrategy.streams import StreamStrategy
+    from hypothesis._searchstrategy.streams import StreamStrategy
     return StreamStrategy(elements)
 
 
@@ -807,7 +807,7 @@ def characters(
             'blacklist_categories=%r' % (
                 sorted(both_cats), whitelist_categories, blacklist_categories))
 
-    from hypothesis.searchstrategy.strings import OneCharStringStrategy
+    from hypothesis._searchstrategy.strings import OneCharStringStrategy
     return OneCharStringStrategy(whitelist_categories=whitelist_categories,
                                  blacklist_categories=blacklist_categories,
                                  blacklist_characters=blacklist_characters,
@@ -838,7 +838,7 @@ def text(
     Examples from this strategy shrink towards shorter strings, and with the
     characters in the text shrinking as per the alphabet strategy.
     """
-    from hypothesis.searchstrategy.strings import StringStrategy
+    from hypothesis._searchstrategy.strings import StringStrategy
     check_valid_sizes(min_size, average_size, max_size)
     if alphabet is None:
         char_strategy = characters(blacklist_categories=('Cs',))
@@ -888,7 +888,7 @@ def from_regex(regex):
     Examples from this strategy shrink towards shorter strings and lower
     character values.
     """
-    from hypothesis.searchstrategy.regex import regex_strategy
+    from hypothesis._searchstrategy.regex import regex_strategy
     return regex_strategy(regex)
 
 
@@ -909,7 +909,7 @@ def binary(
     Examples from this strategy shrink towards smaller strings and lower byte
     values.
     """
-    from hypothesis.searchstrategy.strings import BinaryStringStrategy, \
+    from hypothesis._searchstrategy.strings import BinaryStringStrategy, \
         FixedSizeBytes
     check_valid_sizes(min_size, average_size, max_size)
     if min_size == max_size is not None:
@@ -930,7 +930,7 @@ def randoms():
 
     Examples from this strategy shrink to seeds closer to zero.
     """
-    from hypothesis.searchstrategy.misc import RandomStrategy
+    from hypothesis._searchstrategy.misc import RandomStrategy
     return RandomStrategy(integers())
 
 
@@ -958,7 +958,7 @@ def random_module():
 
     Examples from these strategy shrink to seeds closer to zero.
     """
-    from hypothesis.control import cleanup
+    from hypothesis._control import cleanup
     import random
 
     class RandomModule(SearchStrategy):
@@ -1064,7 +1064,7 @@ def from_type(thing):
     4. Finally, if ``thing`` has type annotations for all required arguments,
        it is resolved via :func:`~hypothesis.strategies.builds`.
     """
-    from hypothesis.searchstrategy import types
+    from hypothesis._searchstrategy import types
     try:
         import typing
         if not isinstance(thing, type):
@@ -1381,7 +1381,7 @@ def recursive(
 
     """
 
-    from hypothesis.searchstrategy.recursive import RecursiveStrategy
+    from hypothesis._searchstrategy.recursive import RecursiveStrategy
     return RecursiveStrategy(base, extend, max_leaves)
 
 
@@ -1394,7 +1394,7 @@ def permutations(values):
     Examples from this strategy shrink by trying to become closer to the
     original order of values.
     """
-    from hypothesis.internal.conjecture.utils import integer_range
+    from hypothesis._internal.conjecture.utils import integer_range
 
     values = list(values)
     if not values:
@@ -1464,7 +1464,7 @@ def datetimes(
     # handle datetimes in e.g. a four-microsecond span which is not
     # representable in UTC.  Handling (d), all of the above, leads to a much
     # more complex API for all users and a useful feature for very few.
-    from hypothesis.searchstrategy.datetime import DatetimeStrategy
+    from hypothesis._searchstrategy.datetime import DatetimeStrategy
 
     check_type(dt.datetime, min_value, 'min_value')
     check_type(dt.datetime, max_value, 'max_value')
@@ -1497,7 +1497,7 @@ def dates(
 
     Examples from this strategy shrink towards January 1st 2000.
     """
-    from hypothesis.searchstrategy.datetime import DateStrategy
+    from hypothesis._searchstrategy.datetime import DateStrategy
 
     check_type(dt.date, min_value, 'min_value')
     check_type(dt.date, max_value, 'max_value')
@@ -1556,7 +1556,7 @@ def timedeltas(
 
     Examples from this strategy shrink towards zero.
     """
-    from hypothesis.searchstrategy.datetime import TimedeltaStrategy
+    from hypothesis._searchstrategy.datetime import TimedeltaStrategy
 
     check_type(dt.timedelta, min_value, 'min_value')
     check_type(dt.timedelta, max_value, 'max_value')
@@ -1579,8 +1579,8 @@ def composite(f):
     call.
     """
 
-    from hypothesis.internal.reflection import define_function_signature
-    from hypothesis.internal.conjecture.utils import calc_label_from_cls
+    from hypothesis._internal.reflection import define_function_signature
+    from hypothesis._internal.conjecture.utils import calc_label_from_cls
     argspec = getfullargspec(f)
 
     if (
@@ -1725,7 +1725,7 @@ def shared(base, key=None):
 
     Examples from this strategy shrink as per their base strategy.
     """
-    from hypothesis.searchstrategy.shared import SharedStrategy
+    from hypothesis._searchstrategy.shared import SharedStrategy
     return SharedStrategy(base, key)
 
 
@@ -1743,8 +1743,8 @@ def choices():
     Examples from this strategy shrink by making each choice function return
     an earlier value in the sequence passed to it.
     """
-    from hypothesis.control import note, current_build_context
-    from hypothesis.internal.conjecture.utils import choice, check_sample
+    from hypothesis._control import note, current_build_context
+    from hypothesis._internal.conjecture.utils import choice, check_sample
 
     note_deprecation(
         'choices() has been deprecated. Use the data() strategy instead and '
@@ -1852,7 +1852,7 @@ def data():
     Examples from this strategy do not shrink (because there is only one),
     but the result of calls to each draw() call shrink as they normally would.
     """
-    from hypothesis.control import note
+    from hypothesis._control import note
 
     class DataObject(object):
 
@@ -1921,7 +1921,7 @@ def register_type_strategy(custom_type, strategy):
     ``strategy`` may be a search strategy, or a function that takes a type and
     returns a strategy (useful for generic types).
     """
-    from hypothesis.searchstrategy import types
+    from hypothesis._searchstrategy import types
     if not isinstance(custom_type, type):
         raise InvalidArgument('custom_type=%r must be a type')
     elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
@@ -1966,7 +1966,7 @@ def deferred(definition):
     Examples from this strategy shrink as they normally would from the strategy
     returned by the definition.
     """
-    from hypothesis.searchstrategy.deferred import DeferredStrategy
+    from hypothesis._searchstrategy.deferred import DeferredStrategy
     return DeferredStrategy(definition)
 
 

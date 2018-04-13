@@ -28,8 +28,8 @@ import hypothesis.strategies as st
 from hypothesis import find, given, assume, settings
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal, find_any
-from hypothesis.internal.compat import WINDOWS
-from hypothesis.internal.floats import next_up, next_down, float_to_int, \
+from hypothesis._internal.compat import WINDOWS
+from hypothesis._internal.floats import next_up, next_down, float_to_int, \
     int_to_float
 
 

@@ -21,11 +21,11 @@ from fractions import Fraction
 from collections import Counter
 
 import hypothesis.strategies as st
-import hypothesis.internal.conjecture.utils as cu
+import hypothesis._internal.conjecture.utils as cu
 from hypothesis import HealthCheck, given, assume, example, settings
-from hypothesis.internal.compat import hbytes, hrange
-from hypothesis.internal.coverage import IN_COVERAGE_TESTS
-from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis._internal.compat import hbytes, hrange
+from hypothesis._internal.coverage import IN_COVERAGE_TESTS
+from hypothesis._internal.conjecture.data import ConjectureData
 
 
 def test_does_draw_data_for_empty_range():

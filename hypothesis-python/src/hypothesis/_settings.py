@@ -31,12 +31,12 @@ from enum import Enum, IntEnum, unique
 import attr
 
 from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
-from hypothesis.internal.compat import text_type
-from hypothesis.utils.conventions import UniqueIdentifier, not_set
-from hypothesis.internal.reflection import proxies, \
+from hypothesis._internal.compat import text_type
+from hypothesis._utils.conventions import UniqueIdentifier, not_set
+from hypothesis._internal.reflection import proxies, \
     get_pretty_function_description
-from hypothesis.internal.validation import try_convert
-from hypothesis.utils.dynamicvariables import DynamicVariable
+from hypothesis._internal.validation import try_convert
+from hypothesis._utils.dynamicvariables import DynamicVariable
 
 if False:
     from typing import Dict, List  # noqa

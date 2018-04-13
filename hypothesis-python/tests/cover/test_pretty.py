@@ -63,9 +63,9 @@ from collections import deque, defaultdict
 
 import pytest
 
-from hypothesis.vendor import pretty
+from hypothesis._vendor import pretty
 from tests.common.utils import capture_out
-from hypothesis.internal.compat import PY3, Counter, OrderedDict, \
+from hypothesis._internal.compat import PY3, Counter, OrderedDict, \
     a_good_encoding
 
 py2_only = pytest.mark.skipif(PY3, reason='This test only runs on python 2')

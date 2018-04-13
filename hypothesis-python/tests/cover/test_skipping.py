@@ -22,7 +22,7 @@ import unittest
 import pytest
 
 from hypothesis import given
-from hypothesis.core import exceptions_to_reraise
+from hypothesis._core import exceptions_to_reraise
 from tests.common.utils import capture_out
 from hypothesis.strategies import integers
 

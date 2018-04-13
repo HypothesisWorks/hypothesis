@@ -22,10 +22,10 @@ from coverage import Coverage
 
 import hypothesis.strategies as st
 from hypothesis import given, settings
-from hypothesis.core import escalate_warning
+from hypothesis._core import escalate_warning
 from tests.common.utils import all_values
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.internal.compat import hrange
+from hypothesis._internal.compat import hrange
 
 pytestmark = pytest.mark.skipif(
     not settings.default.use_coverage,

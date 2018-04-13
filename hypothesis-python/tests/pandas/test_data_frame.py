@@ -24,7 +24,7 @@ import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
 from hypothesis import given, reject
-from hypothesis.types import RandomWithSeed as Random
+from hypothesis._types import RandomWithSeed as Random
 from tests.common.debug import minimal, find_any
 from tests.pandas.helpers import supported_by_pandas
 

@@ -25,8 +25,8 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import find, given, example, settings
 from hypothesis.errors import NoExamples
-from hypothesis.control import _current_build_context
 from tests.common.utils import checks_deprecated_behaviour
+from hypothesis._control import _current_build_context
 
 
 @settings(deadline=None)

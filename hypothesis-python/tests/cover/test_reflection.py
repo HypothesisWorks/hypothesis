@@ -25,8 +25,8 @@ import pytest
 
 from mock import Mock, MagicMock, NonCallableMock, NonCallableMagicMock
 from tests.common.utils import raises
-from hypothesis.internal.compat import PY3, FullArgSpec, getfullargspec
-from hypothesis.internal.reflection import is_mock, proxies, arg_string, \
+from hypothesis._internal.compat import PY3, FullArgSpec, getfullargspec
+from hypothesis._internal.reflection import is_mock, proxies, arg_string, \
     required_args, unbind_method, eval_directory, function_digest, \
     fully_qualified_name, source_exec_as_module, \
     convert_keyword_arguments, define_function_signature, \
@@ -471,7 +471,7 @@ def test_fully_qualified_name():
     assert fully_qualified_name(Container.funcy) == \
         'tests.cover.test_reflection.Container.funcy'
     assert fully_qualified_name(fully_qualified_name) == \
-        'hypothesis.internal.reflection.fully_qualified_name'
+        'hypothesis._internal.reflection.fully_qualified_name'
 
 
 def test_qualname_of_function_with_none_module_is_name():

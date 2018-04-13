@@ -22,7 +22,7 @@ from collections import Counter
 import pytest
 
 from hypothesis import given, settings
-from hypothesis.searchstrategy import SearchStrategy
+from hypothesis._searchstrategy import SearchStrategy
 
 
 class Blocks(SearchStrategy):

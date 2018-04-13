@@ -22,7 +22,7 @@ from itertools import islice
 from hypothesis import HealthCheck, given, settings
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import integers, streaming
-from hypothesis.internal.compat import integer_types
+from hypothesis._internal.compat import integer_types
 
 
 @checks_deprecated_behaviour

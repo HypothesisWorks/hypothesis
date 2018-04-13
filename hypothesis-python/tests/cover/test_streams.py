@@ -25,7 +25,7 @@ from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import text, lists, booleans, streaming
-from hypothesis.searchstrategy.streams import Stream
+from hypothesis._searchstrategy.streams import Stream
 
 
 @given(lists(booleans()))

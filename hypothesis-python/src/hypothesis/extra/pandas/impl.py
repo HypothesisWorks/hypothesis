@@ -26,12 +26,12 @@ import numpy as np
 import pandas
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
-import hypothesis.internal.conjecture.utils as cu
+import hypothesis._internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
-from hypothesis.control import reject
-from hypothesis.internal.compat import hrange
-from hypothesis.internal.coverage import check, check_function
-from hypothesis.internal.validation import check_type, try_convert, \
+from hypothesis._control import reject
+from hypothesis._internal.compat import hrange
+from hypothesis._internal.coverage import check, check_function
+from hypothesis._internal.validation import check_type, try_convert, \
     check_strategy, check_valid_size, check_valid_interval
 
 try:

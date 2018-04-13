@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 from hypothesis import Verbosity, find, note, given, settings
 from hypothesis import strategies as st
 from hypothesis.errors import NoSuchExample, Unsatisfiable
-from hypothesis.internal.compat import hrange
+from hypothesis._internal.compat import hrange
 
 
 @st.composite

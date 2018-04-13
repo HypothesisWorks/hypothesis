@@ -11,12 +11,13 @@ Hypothesis APIs come in three flavours:
 * Public: Hypothesis releases since 1.0 are `semantically versioned <https://semver.org/>`_
   with respect to these parts of the API. These will not break except between
   major version bumps. All APIs mentioned in this documentation are public unless
-  explicitly noted otherwise.
+  explicitly marked or noted otherwise.
 * Semi-public: These are APIs that are considered ready to use but are not wholly
   nailed down yet. They will not break in patch releases and will *usually* not break
   in minor releases, but when necessary  minor releases may break semi-public APIs.
 * Internal: These may break at any time and you really should not use them at
-  all.
+  all.  If a name begins with an underscore or is accessed via such a name,
+  it is *always* an internal API - see :pep:`PEP 8 <8#public-and-internal-interfaces>`.
 
 You should generally assume that an API is internal unless you have specific
 information to the contrary.

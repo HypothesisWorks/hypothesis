@@ -24,7 +24,7 @@ import pytest
 
 from hypothesis import given
 from hypothesis import strategies as st
-from hypothesis.internal.compat import FullArgSpec, ceil, floor, hrange, \
+from hypothesis._internal.compat import FullArgSpec, ceil, floor, hrange, \
     qualname, int_to_bytes, integer_types, getfullargspec, \
     int_from_bytes
 

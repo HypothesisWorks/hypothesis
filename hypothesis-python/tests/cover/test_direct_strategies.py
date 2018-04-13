@@ -29,7 +29,7 @@ import hypothesis.strategies as ds
 from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import checks_deprecated_behaviour
-from hypothesis.internal.reflection import nicerepr
+from hypothesis._internal.reflection import nicerepr
 
 
 def fn_test(*fnkwargs):

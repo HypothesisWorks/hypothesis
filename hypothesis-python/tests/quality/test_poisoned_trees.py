@@ -21,11 +21,11 @@ from random import Random
 
 import pytest
 
-import hypothesis.internal.conjecture.utils as cu
+import hypothesis._internal.conjecture.utils as cu
 from hypothesis import HealthCheck, settings, unlimited
-from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import hbytes, hrange
-from hypothesis.internal.conjecture.engine import ConjectureData, \
+from hypothesis._searchstrategy import SearchStrategy
+from hypothesis._internal.compat import hbytes, hrange
+from hypothesis._internal.conjecture.engine import ConjectureData, \
     ConjectureRunner, uniform
 
 POISON = 'POISON'

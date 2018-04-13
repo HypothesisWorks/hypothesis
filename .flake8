@@ -2,7 +2,7 @@
 
 exclude =
     compat.py,
-    hypothesis-python/src/hypothesis/vendor/*,
+    hypothesis-python/src/hypothesis/_vendor/*,
     test_reflection.py,
     test_imports.py,
     hypothesis-python/tests/py2/*,

@@ -17,7 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.internal.reflection import source_exec_as_module
+from hypothesis._internal.reflection import source_exec_as_module
 
 
 def test_can_eval_as_source():
@@ -31,7 +31,7 @@ def test_caches():
 
 
 RECURSIVE = """
-from hypothesis.internal.reflection import source_exec_as_module
+from hypothesis._internal.reflection import source_exec_as_module
 
 def test_recurse():
     assert not (

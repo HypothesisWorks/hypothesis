@@ -25,10 +25,10 @@ from hypothesis import HealthCheck, given, settings, unlimited
 from hypothesis import strategies as st
 from tests.common.utils import non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.internal.compat import hbytes, hrange
+from hypothesis._internal.compat import hbytes, hrange
 from tests.cover.test_conjecture_engine import run_to_buffer, slow_shrinker
-from hypothesis.internal.conjecture.data import Status, ConjectureData
-from hypothesis.internal.conjecture.engine import RunIsComplete, \
+from hypothesis._internal.conjecture.data import Status, ConjectureData
+from hypothesis._internal.conjecture.engine import RunIsComplete, \
     ConjectureRunner
 
 

@@ -21,13 +21,13 @@ import time
 
 import pytest
 
-import hypothesis.core as core
+import hypothesis._core as core
 import hypothesis.strategies as st
 from hypothesis import given, assume, settings
 from hypothesis.errors import FailedHealthCheck
 from tests.common.utils import all_values, capture_out
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.internal.compat import hrange
+from hypothesis._internal.compat import hrange
 
 
 @pytest.mark.parametrize('in_pytest', [False, True])

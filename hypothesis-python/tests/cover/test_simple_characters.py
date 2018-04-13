@@ -26,7 +26,7 @@ from hypothesis.errors import InvalidArgument
 from tests.common.debug import find_any, assert_no_examples
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import characters
-from hypothesis.internal.compat import text_type
+from hypothesis._internal.compat import text_type
 
 
 @checks_deprecated_behaviour

@@ -25,7 +25,7 @@ import pytest
 
 from hypothesis import HealthCheck, event, given, assume, example, settings
 from hypothesis import strategies as st
-from hypothesis.statistics import collector
+from hypothesis._statistics import collector
 
 
 def call_for_statistics(test_function):

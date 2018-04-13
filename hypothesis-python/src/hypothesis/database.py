@@ -27,10 +27,10 @@ from contextlib import contextmanager
 
 from hypothesis.errors import HypothesisWarning
 from hypothesis._settings import note_deprecation
-from hypothesis.configuration import storage_directory
-from hypothesis.internal.compat import FileNotFoundError, hbytes, \
+from hypothesis._configuration import storage_directory
+from hypothesis._internal.compat import FileNotFoundError, hbytes, \
     b64decode, b64encode
-from hypothesis.utils.conventions import not_set
+from hypothesis._utils.conventions import not_set
 
 sqlite3 = None
 SQLITE_PATH = re.compile(r"\.\(db|sqlite|sqlite3\)$")

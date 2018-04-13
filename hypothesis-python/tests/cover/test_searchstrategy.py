@@ -22,11 +22,11 @@ from collections import namedtuple
 
 import pytest
 
-from hypothesis.types import RandomWithSeed
+from hypothesis._types import RandomWithSeed
 from tests.common.debug import assert_no_examples
 from hypothesis.strategies import just, tuples, randoms, booleans, integers
-from hypothesis.internal.compat import text_type
-from hypothesis.searchstrategy.strategies import one_of_strategies
+from hypothesis._internal.compat import text_type
+from hypothesis._searchstrategy.strategies import one_of_strategies
 
 
 def test_or_errors_when_given_non_strategy():

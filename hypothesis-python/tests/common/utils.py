@@ -24,8 +24,8 @@ from io import BytesIO, StringIO
 
 from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.reporting import default, with_reporter
-from hypothesis.internal.compat import PY2
-from hypothesis.internal.reflection import proxies
+from hypothesis._internal.compat import PY2
+from hypothesis._internal.reflection import proxies
 
 
 @contextlib.contextmanager

@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import inspect
 
 from tests.common.utils import checks_deprecated_behaviour
-from hypothesis.internal.renaming import renamed_arguments
+from hypothesis._internal.renaming import renamed_arguments
 
 
 @renamed_arguments(old_arg='new_arg')

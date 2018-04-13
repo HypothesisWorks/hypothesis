@@ -33,7 +33,7 @@ from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
 from hypothesis._settings import Verbosity, settings, default_variable, \
     note_deprecation
-from hypothesis.utils.conventions import not_set
+from hypothesis._utils.conventions import not_set
 
 
 def test_has_docstrings():
@@ -338,7 +338,7 @@ def test_settings_as_decorator_must_be_on_callable():
 ASSERT_DATABASE_PATH = """
 import tempfile
 from hypothesis import settings
-from hypothesis.configuration import set_hypothesis_home_dir
+from hypothesis._configuration import set_hypothesis_home_dir
 from hypothesis.database import DirectoryBasedExampleDatabase
 
 settings.default.database
