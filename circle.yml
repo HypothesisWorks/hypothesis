@@ -15,6 +15,7 @@ machine:
 
 dependencies:
   override:
+    - brew install readline xz
     - ./build.sh install-core
 
   cache_directories:
