@@ -8,6 +8,7 @@
 
 set -o errexit
 set -o nounset
+set -x
 
 # shellcheck source=tooling/scripts/common.sh
 source $(dirname "$0")/common.sh
