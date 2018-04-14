@@ -154,8 +154,8 @@ except ImportError:  # pragma: no cover
 else:
     _global_type_lookup.update({
         typing.ByteString: st.binary(),
-        typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),
-        typing.io.TextIO: st.builds(io.StringIO, st.text()),
+        typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),  # type: ignore
+        typing.io.TextIO: st.builds(io.StringIO, st.text()),  # type: ignore
         typing.Reversible: st.lists(st.integers()),
         typing.SupportsAbs: st.complex_numbers(),
         typing.SupportsComplex: st.complex_numbers(),

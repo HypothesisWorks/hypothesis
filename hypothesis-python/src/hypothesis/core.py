@@ -39,12 +39,12 @@ from coverage.files import canonical_filename
 from coverage.collector import Collector
 
 import hypothesis.strategies as st
-from hypothesis import __version__
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, DidNotReproduce, InvalidArgument, DeadlineExceeded, \
     MultipleFailures, FailedHealthCheck, HypothesisWarning, \
     UnsatisfiedAssumption, HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
+from hypothesis.version import __version__
 from hypothesis._settings import Phase, Verbosity, HealthCheck, \
     PrintSettings
 from hypothesis._settings import settings as Settings
@@ -73,6 +73,9 @@ try:
     from coverage.tracer import CFileDisposition as FileDisposition
 except ImportError:  # pragma: no cover
     from coverage.collector import FileDisposition
+
+if False:
+    from typing import Any, Dict  # noqa
 
 
 running_under_pytest = False
@@ -424,7 +427,7 @@ class Arc(object):
         self.target = target
 
 
-ARC_CACHE = {}
+ARC_CACHE = {}  # type: Dict[str, Dict[Any, Dict[Any, Arc]]]
 
 
 def arc(filename, source, target):

@@ -22,7 +22,11 @@ from hypothesis.internal.reflection import arg_string, \
     convert_keyword_arguments, convert_positional_arguments
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
-unwrap_cache = {}
+if False:
+    from typing import Dict  # noqa
+
+
+unwrap_cache = {}  # type: Dict[SearchStrategy, SearchStrategy]
 unwrap_depth = 0
 
 

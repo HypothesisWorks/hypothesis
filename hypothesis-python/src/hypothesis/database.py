@@ -83,7 +83,9 @@ class EDMeta(type):
         return super(EDMeta, self).__call__(*args, **kwargs)
 
 
-class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
+class ExampleDatabase(
+    EDMeta('ExampleDatabase', (object,), {})  # type: ignore
+):
     """Interface class for storage systems.
 
     A key -> multiple distinct values mapping.
