@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.55.5:
+
+-------------------
+3.55.5 - 2018-04-14
+-------------------
+
+This patch fixes one possible cause of :issue:`966`.  When running
+Python 2 with hash randomisation, passing a :obj:`python:bytes` object
+to :func:`python:random.seed` would use ``version=1``, which broke
+:obj:`~hypothesis.settings.derandomize` (because the seed depended on
+a randomised hash).  If :obj:`~hypothesis.settings.derandomize` is
+*still* nondeterministic for you, please open an issue.
+
 .. _v3.55.4:
 
 -------------------
