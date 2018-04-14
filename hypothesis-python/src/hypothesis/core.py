@@ -54,7 +54,7 @@ from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import ceil, hbytes, qualname, \
     str_to_bytes, benchmark_time, get_type_hints, getfullargspec, \
-    encoded_filepath, bad_django_TestCase
+    int_from_bytes, encoded_filepath, bad_django_TestCase
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.escalation import is_hypothesis_file, \
@@ -300,7 +300,7 @@ def get_random_for_wrapped_test(test, wrapped_test):
         return Random(
             wrapped_test._hypothesis_internal_use_seed)
     elif settings.derandomize:
-        return Random(function_digest(test))
+        return Random(int_from_bytes(function_digest(test)))
     elif global_force_seed is not None:
         return Random(global_force_seed)
     else:
