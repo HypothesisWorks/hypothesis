@@ -14,3 +14,6 @@ easier to use.
   disabled, due to overlap with the
   :obj:`~hypothesis.settings.HealthCheck.filter_too_much` healthcheck
   and poor interaction with :obj:`~hypothesis.settings.max_examples`.
+- :envvar:`HYPOTHESIS_VERBOSITY_LEVEL` was never documented, but is
+  now explicitly deprecated.  Set :obj:`~hypothesis.settings.verbosity`
+  through the profile system instead.

@@ -607,66 +607,36 @@ class Statistics(IntEnum):
     always = 2
 
 
-class Verbosity(object):
+@unique
+class Verbosity(IntEnum):
+    quiet = 0
+    normal = 1
+    verbose = 2
+    debug = 3
+
+    @staticmethod
+    def _get_default():
+        var = os.getenv('HYPOTHESIS_VERBOSITY_LEVEL')
+        if var is not None:  # pragma: no cover
+            note_deprecation(
+                'The $HYPOTHESIS_VERBOSITY_LEVEL environment variable is '
+                'deprecated, and will be ignored by a future version of '
+                'Hypothesis.  Configure your verbosity level via a '
+                'settings profile instead.'
+            )
+            if var not in [v.name for v in list(Verbosity)]:
+                InvalidArgument('No such verbosity level %r' % (var,))
+            return getattr(Verbosity, var)
+        return Verbosity.normal
 
     def __repr__(self):
         return 'Verbosity.%s' % (self.name,)
 
-    def __init__(self, name, level):
-        self.name = name
-        self.level = level
-
-    def __eq__(self, other):
-        return isinstance(other, Verbosity) and (
-            self.level == other.level
-        )
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return self.level
-
-    def __lt__(self, other):
-        return self.level < other.level
-
-    def __le__(self, other):
-        return self.level <= other.level
-
-    def __gt__(self, other):
-        return self.level > other.level
-
-    def __ge__(self, other):
-        return self.level >= other.level
-
-    @classmethod
-    def by_name(cls, key):
-        result = getattr(cls, key, None)
-        if isinstance(result, Verbosity):
-            return result
-        raise InvalidArgument('No such verbosity level %r' % (key,))
-
-
-Verbosity.quiet = Verbosity('quiet', 0)
-Verbosity.normal = Verbosity('normal', 1)
-Verbosity.verbose = Verbosity('verbose', 2)
-Verbosity.debug = Verbosity('debug', 3)
-Verbosity.all = [
-    Verbosity.quiet, Verbosity.normal, Verbosity.verbose, Verbosity.debug
-]
-
-
-ENVIRONMENT_VERBOSITY_OVERRIDE = os.getenv('HYPOTHESIS_VERBOSITY_LEVEL')
-
-if ENVIRONMENT_VERBOSITY_OVERRIDE:  # pragma: no cover
-    DEFAULT_VERBOSITY = Verbosity.by_name(ENVIRONMENT_VERBOSITY_OVERRIDE)
-else:
-    DEFAULT_VERBOSITY = Verbosity.normal
 
 settings.define_setting(
     'verbosity',
-    options=Verbosity.all,
-    default=DEFAULT_VERBOSITY,
+    options=tuple(Verbosity),
+    default=Verbosity._get_default(),
     description='Control the verbosity level of Hypothesis messages',
 )
 
