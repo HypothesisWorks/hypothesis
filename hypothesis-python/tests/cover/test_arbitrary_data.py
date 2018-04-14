@@ -52,7 +52,7 @@ def test_prints_on_failure():
 def test_prints_labels_if_given_on_failure():
     @given(st.data())
     def test(data):
-        x = data.draw(st.lists(st.integers(), min_size=1),
+        x = data.draw(st.lists(st.integers(0, 10), min_size=2),
                       label='Some numbers')
         y = data.draw(st.sampled_from(x), label='A number')
         assert y in x
