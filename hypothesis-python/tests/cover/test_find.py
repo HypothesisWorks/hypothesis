@@ -18,14 +18,12 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-import time
 
 import pytest
 
 from hypothesis import find
 from hypothesis import settings as Settings
-from hypothesis.errors import Timeout, NoSuchExample
-from tests.common.utils import checks_deprecated_behaviour
+from hypothesis.errors import NoSuchExample
 from hypothesis.strategies import lists, floats, booleans, integers, \
     dictionaries
 
@@ -74,14 +72,3 @@ def test_find_dictionary():
     assert len(find(
         dictionaries(keys=integers(), values=integers()),
         lambda xs: any(kv[0] > kv[1] for kv in xs.items()))) == 1
-
-
-@checks_deprecated_behaviour
-def test_times_out():
-    with pytest.raises(Timeout) as e:
-        find(
-            integers(),
-            lambda x: time.sleep(0.05) or False,
-            settings=Settings(timeout=0.01))
-
-    e.value.args[0]

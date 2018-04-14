@@ -1154,7 +1154,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
         runner.exit_reason != ExitReason.finished
     ):
         if settings.timeout > 0 and run_time > settings.timeout:
-            raise Timeout((
+            raise Timeout((  # pragma: no cover
                 'Ran out of time before finding enough valid examples for '
                 '%s. Only %d valid examples found in %.2f seconds.'
             ) % (
