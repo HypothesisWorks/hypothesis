@@ -19,6 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
 from hypothesis import find, given, settings, unlimited
+from tests.common.utils import no_shrink
+from hypothesis._settings import Phase
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
@@ -42,7 +44,7 @@ class interval(SearchStrategy):
 )
 @settings(
     max_examples=100,
-    max_shrinks=0,
+    phases=no_shrink,
     deadline=None,
     database=None,
     timeout=unlimited
@@ -50,8 +52,9 @@ class interval(SearchStrategy):
 def test_intervals_shrink_to_center(inter, rnd):
     lower, center, upper = inter
     s = interval(lower, upper, center)
-    assert find(s, lambda x: True) == center
+    shrink = settings(phases=tuple(Phase))
+    assert find(s, lambda x: True, shrink) == center
     if lower < center:
-        assert find(s, lambda x: x < center) == center - 1
+        assert find(s, lambda x: x < center, shrink) == center - 1
     if center < upper:
-        assert find(s, lambda x: x > center) == center + 1
+        assert find(s, lambda x: x > center, shrink) == center + 1

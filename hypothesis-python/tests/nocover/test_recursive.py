@@ -17,13 +17,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-from random import Random
-
 from flaky import flaky
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, find, given, example, settings
+from hypothesis import HealthCheck, find, given, settings
 from tests.common.debug import find_any
+from tests.common.utils import no_shrink
 
 
 def test_can_generate_with_large_branching():
@@ -77,20 +76,18 @@ def test_drawing_many_near_boundary():
             lambda x: st.lists(x, min_size=8, max_size=10).map(tuple),
             max_leaves=9)),
         lambda x: len(set(x)) >= 5,
-        settings=settings(max_examples=10000, database=None, max_shrinks=2000)
+        settings=settings(max_examples=10000, database=None)
     )
     assert len(ls) == 5
 
 
 @given(st.randoms())
 @settings(
-    max_examples=50, max_shrinks=0, suppress_health_check=HealthCheck.all(),
+    max_examples=50, phases=no_shrink, suppress_health_check=HealthCheck.all(),
     deadline=None
 )
-@example(Random(-1363972488426139))
-@example(Random(-4))
 def test_can_use_recursive_data_in_sets(rnd):
-    nested_sets = st.recursive(st.booleans(), st.frozensets, max_leaves=10)
+    nested_sets = st.recursive(st.booleans(), st.frozensets, max_leaves=3)
     find_any(nested_sets, random=rnd)
 
     def flatten(x):
@@ -106,7 +103,7 @@ def test_can_use_recursive_data_in_sets(rnd):
     assert rnd is not None
     x = find(
         nested_sets, lambda x: len(flatten(x)) == 2, random=rnd,
-        settings=settings(database=None, max_shrinks=1000, max_examples=1000))
+        settings=settings(database=None, max_examples=1000))
     assert x in (
         frozenset((False, True)),
         frozenset((False, frozenset((True,)))),
@@ -121,6 +118,6 @@ def test_can_form_sets_of_recursive_data():
         lambda x: st.lists(x, min_size=5).map(tuple),
         max_leaves=20))
     xs = find(trees, lambda x: len(x) >= 5, settings=settings(
-        database=None, max_shrinks=1000, max_examples=1000
+        database=None, max_examples=1000
     ))
     assert len(xs) == 5

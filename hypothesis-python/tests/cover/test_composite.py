@@ -99,7 +99,7 @@ def test_composite_of_lists():
     assert find(st.lists(f()), lambda x: len(x) >= 10) == [0] * 10
 
 
-@flaky(min_passes=5, max_runs=5)
+@flaky(min_passes=3, max_runs=5)
 def test_can_shrink_matrices_with_length_param():
     @st.composite
     def matrix(draw):
@@ -111,16 +111,7 @@ def test_can_shrink_matrices_with_length_param():
         ]
 
     def transpose(m):
-        rows = len(m)
-        columns = len(m[0])
-        result = [
-            [None] * rows
-            for _ in range(columns)
-        ]
-        for i in range(rows):
-            for j in range(columns):
-                result[j][i] = m[i][j]
-        return result
+        return [[row[i] for row in m] for i in range(len(m[0]))]
 
     def is_square(m):
         return len(m) == len(m[0])

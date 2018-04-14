@@ -23,7 +23,7 @@ import pytest
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
-from hypothesis import given, reject
+from hypothesis import HealthCheck, given, reject, settings
 from hypothesis.types import RandomWithSeed as Random
 from tests.common.debug import minimal, find_any
 from tests.pandas.helpers import supported_by_pandas
@@ -172,6 +172,7 @@ def test_unique_column_with_fill(df):
     assert len(set(df['A'])) == len(df['A'])
 
 
+@settings(suppress_health_check=[HealthCheck.too_slow])
 @given(st.data())
 def test_arbitrary_data_frames(data):
     columns = data.draw(st.lists(

@@ -44,6 +44,7 @@ __tracebackhide__ = True
 
 
 HUNG_TEST_TIME_LIMIT = 5 * 60
+MAX_SHRINKS = 500
 
 
 @attr.s
@@ -249,7 +250,7 @@ class ConjectureRunner(object):
                 self.interesting_examples[key] = data
                 self.shrunk_examples.discard(key)
 
-            if self.shrinks >= self.settings.max_shrinks:
+            if self.shrinks >= MAX_SHRINKS:
                 self.exit_with(ExitReason.max_shrinks)
         if (
             self.settings.timeout > 0 and
