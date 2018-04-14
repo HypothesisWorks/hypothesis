@@ -1773,6 +1773,8 @@ class Shrinker(object):
             ):
                 discarded.append((ex.start, ex.end))
 
+        assert discarded
+
         attempt = bytearray(self.shrink_target.buffer)
         for u, v in reversed(discarded):
             del attempt[u:v]

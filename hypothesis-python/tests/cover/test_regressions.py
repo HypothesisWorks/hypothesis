@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import Verbosity, given, settings
+from hypothesis import Verbosity, seed, given, assume, settings
 from hypothesis import strategies as st
 
 
@@ -77,3 +77,27 @@ def test_mock_injection():
     test_foo_spec(Bar())
     test_foo_spec(Mock(Bar))
     test_foo_spec(Mock())
+
+
+def test_regression_issue_1230():
+    strategy = st.builds(
+        lambda x, y: dict((list(x.items()) + list(y.items()))),
+        st.fixed_dictionaries({'0': st.text()}),
+        st.builds(
+            lambda dictionary, keys: {key: dictionary[key] for key in keys},
+            st.fixed_dictionaries({
+                '1': st.lists(elements=st.sampled_from(['a']))
+            }),
+            st.sets(elements=st.sampled_from(['1']))
+        )
+    )
+
+    @seed(81581571036124932593143257836081491416)
+    @settings(database=None)
+    @given(strategy)
+    def test_false_is_false(params):
+        assume(params.get('0') not in ('', '\x00'))
+        raise ValueError()
+
+    with pytest.raises(ValueError):
+        test_false_is_false()
