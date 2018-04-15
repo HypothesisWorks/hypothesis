@@ -1,7 +1,9 @@
 RELEASE_TYPE: minor
 
-This release should make the :class:`~hypothesis.settings` feature
-easier to use.
+This release deprecates several redundant or internally oriented
+:class:`~hypothesis.settings`, working towards an orthogonal set of
+configuration options that are widely useful *without* requiring any
+knowledge of our internals (:issue:`535`).
 
 - Deprecated settings that no longer have any effect are no longer
   shown in the ``__repr__`` unless set to a non-default value.

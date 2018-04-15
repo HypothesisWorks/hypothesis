@@ -384,9 +384,7 @@ settings.define_setting(
     'min_satisfying_examples',
     default=not_set,
     description="""
-Raise Unsatisfiable for any tests which do not produce at least this many
-values that pass all :func:`hypothesis.assume` calls and which have not
-exhaustively covered the search space.
+This doesn't actually do anything, but remains for compatibility reasons.
 """,
     deprecation_message="""
 The min_satisfying_examples setting has been deprecated and disabled, due to
@@ -408,9 +406,7 @@ settings.define_setting(
     'max_iterations',
     default=not_set,
     description="""
-Once this many iterations of the example loop have run, including ones which
-failed to satisfy assumptions and ones which produced duplicates, falsification
-will terminate.
+This doesn't actually do anything, but remains for compatibility reasons.
 """,
     deprecation_message="""
 The max_iterations setting has been disabled, as internal heuristics are more
@@ -486,14 +482,9 @@ settings.define_setting(
     'strict',
     default=os.getenv('HYPOTHESIS_STRICT_MODE') == 'true',
     description="""
-If set to True, anything that would cause Hypothesis to issue a warning will
-instead raise an error. Note that new warnings may be added at any time, so
-running with strict set to True means that new Hypothesis releases may validly
-break your code.  Note also that, as strict mode is itself deprecated,
-enabling it is now an error!
-
-You can enable this setting temporarily by setting the HYPOTHESIS_STRICT_MODE
-environment variable to the string 'true'.
+Strict mode has been deprecated in favor of Python's standard warnings
+controls.  Ironically, enabling it is therefore an error - it only exists so
+that users get the right *type* of error!
 """,
     deprecation_message="""
 Strict mode is deprecated and will go away in a future version of Hypothesis.
@@ -619,14 +610,15 @@ class Verbosity(IntEnum):
         var = os.getenv('HYPOTHESIS_VERBOSITY_LEVEL')
         if var is not None:  # pragma: no cover
             note_deprecation(
-                'The $HYPOTHESIS_VERBOSITY_LEVEL environment variable is '
+                'The HYPOTHESIS_VERBOSITY_LEVEL environment variable is '
                 'deprecated, and will be ignored by a future version of '
                 'Hypothesis.  Configure your verbosity level via a '
                 'settings profile instead.'
             )
-            if var not in [v.name for v in list(Verbosity)]:
-                InvalidArgument('No such verbosity level %r' % (var,))
-            return getattr(Verbosity, var)
+            try:
+                return Verbosity[var]
+            except KeyError:
+                raise InvalidArgument('No such verbosity level %r' % (var,))
         return Verbosity.normal
 
     def __repr__(self):
