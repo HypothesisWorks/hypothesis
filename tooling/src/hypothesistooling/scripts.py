@@ -55,6 +55,7 @@ def tool_path(name):
 
 
 def pip_tool(name, *args, **kwargs):
+    print(name, *map(shlex.quote, args))
     r = subprocess.call([tool_path(name), *args], **kwargs)
 
     if r != 0:

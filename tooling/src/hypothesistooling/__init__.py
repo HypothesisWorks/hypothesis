@@ -40,7 +40,7 @@ def tags():
 
 
 ROOT = subprocess.check_output([
-    'git', '-C',  os.path.dirname(__file__), 'rev-parse', '--show-toplevel',
+    'git', '-C', os.path.dirname(__file__), 'rev-parse', '--show-toplevel',
 ]).decode('ascii').strip()
 
 HYPOTHESIS_PYTHON = os.path.join(ROOT, 'hypothesis-python')

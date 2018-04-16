@@ -45,10 +45,11 @@ def task(fn):
 
 @task
 def lint():
-    os.chdir(tools.HYPOTHESIS_PYTHON)
-    pip_tool('flake8', 'src', 'tests', '--config', os.path.join(
-        tools.ROOT, '.flake8'
-    ))
+    pip_tool(
+        'flake8',
+        *[f for f in tools.all_files() if f.endswith('.py')],
+        '--config', os.path.join(tools.ROOT, '.flake8'),
+    )
 
 
 @task

@@ -2,9 +2,9 @@
 
 exclude =
     compat.py,
-    src/hypothesis/vendor/,
+    hypothesis-python/src/hypothesis/vendor/*,
     test_reflection.py,
     test_imports.py,
-    tests/py2,
+    hypothesis-python/tests/py2/*,
     test_lambda_formatting.py
 ignore = D1,D205,D209,D213,D400,D401,D999
