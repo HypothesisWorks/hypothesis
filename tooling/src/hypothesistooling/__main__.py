@@ -19,14 +19,12 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
-import json
 import random
 import shutil
 import subprocess
 from glob import glob
 from time import time, sleep
 from datetime import datetime
-from collections import defaultdict
 
 import yaml
 from pyup.config import Config
@@ -540,6 +538,13 @@ def check_unicode():
 
 
 if __name__ == '__main__':
+    if 'SNAKEPIT' not in os.environ:
+        print(
+            'This module should not be executed directly, but instead via '
+            'build.sh (which sets up its environment)'
+        )
+        sys.exit(1)
+
     task_to_run = os.environ.get('TASK')
     if task_to_run is None:
         task_to_run = sys.argv[1]

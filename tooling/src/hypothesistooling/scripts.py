@@ -18,8 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import re
 import sys
-import json
 import shlex
 import subprocess
 
@@ -34,29 +34,17 @@ def run_script(script, *args, **kwargs):
 
 
 SCRIPTS = os.path.join(ROOT, 'tooling', 'scripts')
-
-
-DUMP_ENVIRON = """
-set -e -u
-
-%(python)s -c 'import os; import json; print(json.dumps(dict(os.environ)))'
-source %(scripts)s/common.sh
-%(python)s -c 'import os; import json; print(json.dumps(dict(os.environ)))'
-""" % {
-    'scripts': shlex.quote(SCRIPTS),
-    'python': shlex.quote(os.path.abspath(sys.executable)),
-}
+COMMON = os.path.join(SCRIPTS, 'common.sh')
 
 
 def __calc_script_variables():
-    output = subprocess.check_output([
-        'bash', '-c', DUMP_ENVIRON
-    ], env={'HOME': os.environ['HOME']})
+    exports = re.compile(r"export ([A-Z_]+)(=|$)")
 
-    env1, env2 = map(json.loads, output.splitlines())
-    for k, v in env2.items():
-        if k not in env1:
-            globals()[k] = v
+    with open(COMMON) as i:
+        common = i.read()
+
+    for name, _ in exports.findall(common):
+        globals()[name] = os.environ[name]
 
 
 __calc_script_variables()
