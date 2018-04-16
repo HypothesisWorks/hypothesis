@@ -32,7 +32,7 @@ from pyup.config import Config
 import hypothesistooling as tools
 import hypothesistooling.installers as install
 from hypothesistooling import fix_doctests as fd
-from hypothesistooling.scripts import pip_tool, run_script
+from hypothesistooling.scripts import pip_tool
 
 TASKS = {}
 
