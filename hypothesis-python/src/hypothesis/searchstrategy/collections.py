@@ -65,8 +65,8 @@ class ListStrategy(SearchStrategy):
     def __init__(self, elements, min_size=0, max_size=float('inf')):
         SearchStrategy.__init__(self)
         self.min_size = min_size or 0
-        self.max_size = max_size or float('inf')
-        assert 0 <= min_size <= max_size
+        self.max_size = max_size if max_size is not None else float('inf')
+        assert 0 <= self.min_size <= self.max_size
         self.average_size = min(
             max(self.min_size * 2, self.min_size + 5),
             0.5 * (self.min_size + self.max_size),

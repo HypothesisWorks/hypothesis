@@ -75,7 +75,7 @@ except ImportError:  # pragma: no cover
     from coverage.collector import FileDisposition
 
 if False:
-    from typing import Any, Dict  # noqa
+    from typing import Any, Dict, Callable, Optional  # noqa
 
 
 running_under_pytest = False
@@ -893,6 +893,7 @@ def fake_subTest(self, msg=None, **__):
 
 
 def given(*given_arguments, **given_kwargs):
+    # type: (*SearchStrategy, **SearchStrategy) -> Callable
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
 
@@ -1078,7 +1079,14 @@ def given(*given_arguments, **given_kwargs):
     return run_test_with_generator
 
 
-def find(specifier, condition, settings=None, random=None, database_key=None):
+def find(
+    specifier,  # type: SearchStrategy
+    condition,  # type: Callable[[Any], bool]
+    settings=None,  # type: Settings
+    random=None,   # type: Any
+    database_key=None,  # type: bytes
+):
+    # type: (...) -> Any
     """Returns the minimal example from the given strategy ``specifier`` that
     matches the predicate function ``condition``."""
     settings = settings or Settings(
