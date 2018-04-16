@@ -7,15 +7,10 @@ test:
 machine:
   pre:
     - brew update
-    - brew install python
-    - ln -f -s $(which python3) /usr/local/bin/python
-    - ln -f -s $(which pip3) /usr/local/bin/pip
-    - python --version
-    - pip --version
+    - brew install readline xz ncurses
 
 dependencies:
   override:
-    - brew install readline xz
     - ./build.sh install-core
 
   cache_directories:
