@@ -409,15 +409,6 @@ def doctest():
     )
 
 
-@task
-def check_ancient_pip():
-    os.chdir(tools.HYPOTHESIS_PYTHON)
-
-    run_script(
-        'check-ancient-pip.sh', install.python_executable('2.7.3')
-    )
-
-
 def run_tox(task, version):
     python = install.python_executable(version)
 
@@ -439,7 +430,6 @@ def run_tox(task, version):
     pip_tool('tox', '-e', task, env=env)
 
 
-PY273 = '2.7.3'
 PY27 = '2.7.14'
 PY34 = '3.4.8'
 PY35 = '3.5.5'
@@ -454,18 +444,12 @@ def install_core():
 
 
 ALIASES = {
-    PY273: 'py273',
     PYPY2: 'pypy',
 }
 
 for n in [PY27, PY34, PY35, PY36]:
     major, minor, patch = n.split('.')
     ALIASES[n] = 'python%s.%s' % (major, minor)
-
-
-@task
-def check_py273():
-    run_tox('oldpy27', PY273)
 
 
 @task
