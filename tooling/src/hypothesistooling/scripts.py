@@ -27,6 +27,7 @@ from hypothesistooling import ROOT
 
 
 def run_script(script, *args, **kwargs):
+    print(script, *map(shlex.quote, args))
     return subprocess.check_call(
         [os.path.join(SCRIPTS, script), *args], **kwargs
     )
