@@ -8,6 +8,9 @@ machine:
   pre:
     - brew update
     - brew install readline xz ncurses
+    # I have no idea what this does, but it was suggested as a solution to
+    # some install problems on OSX.
+    - xcode-select --install
 
 dependencies:
   override:
