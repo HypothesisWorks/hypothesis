@@ -32,7 +32,7 @@ if [ ! -e "$TOOL_PYTHON" ] ; then
     rm -rf "$TOOL_VIRTUALENV"
     "$PYTHON" -m pip install --upgrade virtualenv
 	"$PYTHON" -m virtualenv "$TOOL_VIRTUALENV"
-	"$TOOL_PYTHON" -m pip install -r requirements/tools.txt
+	"$TOOL_PYTHON" -m pip install --no-warn-script-location -r requirements/tools.txt
 	"$TOOL_PYTHON" -m pip install -e tooling
 fi
 
