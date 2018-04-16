@@ -85,7 +85,7 @@ def test_drawing_many_near_boundary():
 
 @given(st.randoms())
 @settings(
-    max_examples=50, max_shrinks=0, suppress_health_check=list(HealthCheck),
+    max_examples=50, max_shrinks=0, suppress_health_check=HealthCheck.all(),
     deadline=None
 )
 @example(Random(-1363972488426139))
@@ -129,7 +129,7 @@ def test_can_form_sets_of_recursive_data():
 
 @given(st.randoms())
 @settings(
-    max_examples=50, max_shrinks=0, suppress_health_check=list(HealthCheck),
+    max_examples=50, max_shrinks=0, suppress_health_check=HealthCheck.all(),
     deadline=None
 )
 def test_can_flatmap_to_recursive_data(rnd):

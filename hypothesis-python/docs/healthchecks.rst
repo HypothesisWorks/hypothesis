@@ -21,7 +21,7 @@ To selectively disable health checks, use the
 :obj:`~hypothesis.settings.suppress_health_check` setting.
 The argument for this parameter is a list with elements drawn from any of
 the class-level attributes of the HealthCheck class.
-Using a value of ``list(HealthCheck)`` will disable all health checks.
+Using a value of ``HealthCheck.all()`` will disable all health checks.
 
 .. module:: hypothesis
 .. autoclass:: HealthCheck

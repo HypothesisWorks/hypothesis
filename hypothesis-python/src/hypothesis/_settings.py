@@ -142,7 +142,7 @@ class settings(settingsMeta('settings', (object,), {})):
                 from hypothesis.database import ExampleDatabase
                 kwargs['database'] = ExampleDatabase(kwargs['database_file'])
         if not kwargs.get('perform_health_check', True):
-            kwargs['suppress_health_check'] = list(HealthCheck)
+            kwargs['suppress_health_check'] = HealthCheck.all()
         self._construction_complete = False
         deprecations = []
         defaults = parent or settings.default
@@ -555,6 +555,14 @@ class HealthCheck(Enum):
     Each member of this enum is a type of health check to suppress.
     """
 
+    def __repr__(self):
+        return '%s.%s' % (self.__class__.__name__, self.name)
+
+    @classmethod
+    def all(cls):
+        bad = (HealthCheck.exception_in_generation, HealthCheck.random_module)
+        return [h for h in list(cls) if h not in bad]
+
     exception_in_generation = 0
     """Deprecated and no longer does anything. It used to convert errors in
     data generation into FailedHealthCheck error."""
@@ -670,17 +678,12 @@ attempting to actually execute your test.
 """,
     deprecation_message="""
 This setting is deprecated, as `perform_health_check=False` duplicates the
-effect of `suppress_health_check=list(HealthCheck)`.  Use that, or a more
-specific list, instead!
+effect of `suppress_health_check=HealthCheck.all()`.  Use that instead!
 """,
 )
 
 
 def validate_health_check_suppressions(suppressions):
-    if suppressions == list(HealthCheck):
-        # Support the suggested replacement for perform_health_check=False
-        suppressions.remove(HealthCheck.exception_in_generation)
-        suppressions.remove(HealthCheck.random_module)
     suppressions = try_convert(list, suppressions, 'suppress_health_check')
     for s in suppressions:
         if not isinstance(s, HealthCheck):

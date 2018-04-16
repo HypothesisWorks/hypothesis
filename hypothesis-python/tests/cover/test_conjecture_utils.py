@@ -151,7 +151,7 @@ def weights(draw):
 @example([Fraction(1, 1), Fraction(3, 5), Fraction(1, 1)])
 @example([Fraction(2, 257), Fraction(2, 5), Fraction(1, 11)])
 @settings(
-    deadline=None, suppress_health_check=list(HealthCheck),
+    deadline=None, suppress_health_check=HealthCheck.all(),
     max_examples=0 if IN_COVERAGE_TESTS else settings.default.max_examples,
 )
 @given(st.lists(weights(), min_size=1))

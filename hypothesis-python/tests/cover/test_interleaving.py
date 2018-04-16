@@ -27,7 +27,7 @@ def test_can_eval_stream_inside_find():
     @given(st.streaming(st.integers(min_value=0)), st.random_module())
     @settings(
         buffer_size=200, max_shrinks=5, max_examples=10,
-        suppress_health_check=list(HealthCheck))
+        suppress_health_check=HealthCheck.all())
     def test(stream, rnd):
         x = find(
             st.lists(st.integers(min_value=0), min_size=10),

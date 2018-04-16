@@ -43,7 +43,7 @@ SOME_LABEL = calc_label_from_name('some label')
 def run_to_buffer(f):
     runner = ConjectureRunner(f, settings=settings(
         max_examples=5000, max_shrinks=MAX_SHRINKS, buffer_size=1024,
-        database=None, suppress_health_check=list(HealthCheck),
+        database=None, suppress_health_check=HealthCheck.all(),
     ))
     runner.run()
     assert runner.interesting_examples
@@ -646,7 +646,7 @@ def test_can_increase_number_of_bytes_drawn_in_tail():
 
     runner = ConjectureRunner(
         f, settings=settings(
-            buffer_size=11, suppress_health_check=list(HealthCheck)))
+            buffer_size=11, suppress_health_check=HealthCheck.all()))
 
     runner.run()
 

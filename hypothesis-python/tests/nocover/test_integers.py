@@ -44,7 +44,7 @@ def problems(draw):
 
 
 @settings(
-    suppress_health_check=list(HealthCheck), timeout=unlimited, deadline=None,
+    suppress_health_check=HealthCheck.all(), timeout=unlimited, deadline=None,
 )
 @given(problems())
 def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
@@ -66,7 +66,7 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
             data.mark_interesting()
 
     runner = ConjectureRunner(f, random=Random(0), settings=settings(
-        suppress_health_check=list(HealthCheck), timeout=unlimited,
+        suppress_health_check=HealthCheck.all(), timeout=unlimited,
         phases=(Phase.shrink,), database=None, verbosity=Verbosity.quiet
     ))
 

@@ -41,7 +41,7 @@ def test_raises_timeout_on_slow_test():
 
 def test_raises_unsatisfiable_if_all_false():
     @given(integers())
-    @settings(max_examples=50, suppress_health_check=list(HealthCheck))
+    @settings(max_examples=50, suppress_health_check=HealthCheck.all())
     def test_assume_false(x):
         reject()
 

@@ -1087,7 +1087,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
         max_examples=2000,
         max_shrinks=2000,
     )
-    settings = Settings(settings, suppress_health_check=list(HealthCheck))
+    settings = Settings(settings, suppress_health_check=HealthCheck.all())
 
     if database_key is None and settings.database is not None:
         database_key = function_digest(condition)

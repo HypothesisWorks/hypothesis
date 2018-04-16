@@ -63,7 +63,7 @@ LOTS = 10 ** 6
 
 
 TEST_SETTINGS = settings(
-    database=None, suppress_health_check=list(HealthCheck), max_examples=LOTS,
+    database=None, suppress_health_check=HealthCheck.all(), max_examples=LOTS,
     deadline=None, timeout=unlimited, max_shrinks=LOTS
 )
 

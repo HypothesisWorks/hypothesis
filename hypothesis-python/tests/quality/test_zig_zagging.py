@@ -42,7 +42,7 @@ def problem(draw):
 @example((b'\x01', b'', 1))
 @example((b'\x01', b'', 0))
 @settings(
-    deadline=None, suppress_health_check=list(HealthCheck), max_examples=10,
+    deadline=None, suppress_health_check=HealthCheck.all(), max_examples=10,
     max_shrinks=100
 )
 @given(problem())
