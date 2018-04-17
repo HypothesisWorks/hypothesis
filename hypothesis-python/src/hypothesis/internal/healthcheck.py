@@ -27,8 +27,6 @@ def fail_health_check(settings, message, label):
 
     if label in settings.suppress_health_check:
         return
-    if not settings.perform_health_check:
-        return
     message += (
         '\nSee https://hypothesis.readthedocs.io/en/latest/health'
         'checks.html for more information about this. '

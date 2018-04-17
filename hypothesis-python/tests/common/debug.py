@@ -37,7 +37,6 @@ def minimal(
     settings = Settings(
         settings,
         max_examples=50000,
-        max_iterations=100000,
         max_shrinks=5000,
         database=None,
     )
@@ -77,7 +76,6 @@ def find_any(
     settings = Settings(
         settings,
         max_examples=10000,
-        max_iterations=10000,
         max_shrinks=0000,
         database=None,
     )
@@ -103,10 +101,7 @@ def assert_no_examples(strategy, condition=None):
             assume(condition(x))
 
     try:
-        result = find(
-            strategy, predicate,
-            settings=Settings(max_iterations=100, max_shrinks=1)
-        )
+        result = find(strategy, predicate, settings=Settings(max_shrinks=1))
         assert False, 'Expected no results but found %r' % (result,)
     except (Unsatisfiable, NoSuchExample):
         pass

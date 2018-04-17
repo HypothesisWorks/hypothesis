@@ -20,8 +20,8 @@ from __future__ import division, print_function, absolute_import
 from random import Random
 
 import hypothesis.strategies as st
-from hypothesis import Phase, Verbosity, note, given, assume, reject, \
-    settings, unlimited
+from hypothesis import Phase, Verbosity, HealthCheck, note, given, \
+    assume, reject, settings, unlimited
 from hypothesis.internal.compat import ceil, hbytes
 from hypothesis.internal.conjecture.data import StopTest, ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -44,7 +44,7 @@ def problems(draw):
 
 
 @settings(
-    perform_health_check=False, timeout=unlimited, deadline=None,
+    suppress_health_check=HealthCheck.all(), timeout=unlimited, deadline=None,
 )
 @given(problems())
 def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
@@ -66,8 +66,8 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
             data.mark_interesting()
 
     runner = ConjectureRunner(f, random=Random(0), settings=settings(
-        perform_health_check=False, timeout=unlimited, phases=(Phase.shrink,),
-        database=None, verbosity=Verbosity.quiet
+        suppress_health_check=HealthCheck.all(), timeout=unlimited,
+        phases=(Phase.shrink,), database=None, verbosity=Verbosity.quiet
     ))
 
     runner.test_function(ConjectureData.for_buffer(blob))

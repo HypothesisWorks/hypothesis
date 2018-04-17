@@ -22,8 +22,8 @@ import threading
 from collections import namedtuple
 
 import hypothesis.reporting as reporting
-from hypothesis import Verbosity, note, seed, given, assume, reject, \
-    settings
+from hypothesis import Verbosity, HealthCheck, note, seed, given, assume, \
+    reject, settings
 from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails, raises, fails_with, capture_out
 from hypothesis.strategies import data, just, sets, text, lists, binary, \
@@ -170,34 +170,24 @@ def test_does_not_catch_interrupt_during_falsify():
 
 def test_contains_the_test_function_name_in_the_exception_string():
 
-    calls = [0]
-
     @given(integers())
-    @settings(max_iterations=10, max_examples=10)
+    @settings(max_examples=1)
     def this_has_a_totally_unique_name(x):
-        calls[0] += 1
         reject()
 
     with raises(Unsatisfiable) as e:
         this_has_a_totally_unique_name()
-        print('Called %d times' % tuple(calls))
-
     assert this_has_a_totally_unique_name.__name__ in e.value.args[0]
-
-    calls2 = [0]
 
     class Foo(object):
 
         @given(integers())
-        @settings(max_iterations=10, max_examples=10)
+        @settings(max_examples=1)
         def this_has_a_unique_name_and_lives_on_a_class(self, x):
-            calls2[0] += 1
             reject()
 
     with raises(Unsatisfiable) as e:
         Foo().this_has_a_unique_name_and_lives_on_a_class()
-        print('Called %d times' % tuple(calls2))
-
     assert (
         Foo.this_has_a_unique_name_and_lives_on_a_class.__name__
     ) in e.value.args[0]
@@ -421,7 +411,7 @@ def test_named_tuples_are_of_right_type(litter):
 
 @fails_with(AttributeError)
 @given(integers().map(lambda x: x.nope))
-@settings(perform_health_check=False)
+@settings(suppress_health_check=HealthCheck.all())
 def test_fails_in_reify(x):
     pass
 
@@ -459,12 +449,6 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
     assert failing == [2]
     assert 'Falsifying example' in out.getvalue()
     assert 'Lo' in out.getvalue()
-
-
-@given(integers())
-@settings(max_examples=1)
-def test_should_not_fail_if_max_examples_less_than_min_satisfying(x):
-    pass
 
 
 @given(integers().filter(lambda x: x % 4 == 0))

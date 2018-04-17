@@ -42,9 +42,8 @@ SOME_LABEL = calc_label_from_name('some label')
 
 def run_to_buffer(f):
     runner = ConjectureRunner(f, settings=settings(
-        max_examples=5000, max_iterations=10000, max_shrinks=MAX_SHRINKS,
-        buffer_size=1024,
-        database=None, perform_health_check=False,
+        max_examples=5000, max_shrinks=MAX_SHRINKS, buffer_size=1024,
+        database=None, suppress_health_check=HealthCheck.all(),
     ))
     runner.run()
     assert runner.interesting_examples
@@ -137,7 +136,7 @@ def test_terminates_shrinks(n, monkeypatch):
         ConjectureRunner, 'generate_new_examples', generate_new_examples)
 
     runner = ConjectureRunner(slow_shrinker(), settings=settings(
-        max_examples=5000, max_iterations=10000, max_shrinks=n,
+        max_examples=5000, max_shrinks=n,
         database=db, timeout=unlimited,
     ), random=Random(0), database_key=b'key')
     runner.run()
@@ -201,57 +200,10 @@ def test_can_navigate_to_a_valid_example():
         data.draw_bytes(i)
         data.mark_interesting()
     runner = ConjectureRunner(f, settings=settings(
-        max_examples=5000, max_iterations=10000,
-        buffer_size=2,
-        database=None,
+        max_examples=5000, buffer_size=2, database=None,
     ))
     runner.run()
     assert runner.interesting_examples
-
-
-def test_stops_after_max_iterations_when_generating():
-    key = b'key'
-    value = b'rubber baby buggy bumpers'
-    max_iterations = 100
-
-    db = ExampleDatabase(':memory:')
-    db.save(key, value)
-
-    seen = []
-
-    def f(data):
-        seen.append(data.draw_bytes(len(value)))
-        data.mark_invalid()
-
-    runner = ConjectureRunner(f, settings=settings(
-        max_examples=1, max_iterations=max_iterations,
-        database=db, perform_health_check=False,
-    ), database_key=key)
-    runner.run()
-    assert len(seen) == max_iterations
-    assert value in seen
-
-
-def test_stops_after_max_iterations_when_reading():
-    key = b'key'
-    max_iterations = 1
-
-    db = ExampleDatabase(':memory:')
-    for i in range(10):
-        db.save(key, hbytes([i]))
-
-    seen = []
-
-    def f(data):
-        seen.append(data.draw_bytes(1))
-        data.mark_invalid()
-
-    runner = ConjectureRunner(f, settings=settings(
-        max_examples=1, max_iterations=max_iterations,
-        database=db,
-    ), database_key=key)
-    runner.run()
-    assert len(seen) == max_iterations
 
 
 def test_stops_after_max_examples_when_reading():
@@ -417,9 +369,7 @@ def test_fully_exhaust_base(monkeypatch):
         seen.add(key)
 
     runner = ConjectureRunner(f, settings=settings(
-        max_examples=10000, max_iterations=10000, max_shrinks=0,
-        buffer_size=1024,
-        database=None,
+        max_examples=10000, max_shrinks=0, buffer_size=1024, database=None,
     ))
 
     for c in hrange(256):
@@ -448,9 +398,7 @@ def test_will_save_covering_examples():
 
     db = InMemoryExampleDatabase()
     runner = ConjectureRunner(tagged, settings=settings(
-        max_examples=100, max_iterations=10000, max_shrinks=0,
-        buffer_size=1024,
-        database=db,
+        max_examples=100, max_shrinks=0, buffer_size=1024, database=db,
     ), database_key=b'stuff')
     runner.run()
     assert len(all_values(db)) == len(tags)
@@ -472,9 +420,7 @@ def test_will_shrink_covering_examples():
 
     db = InMemoryExampleDatabase()
     runner = ConjectureRunner(tagged, settings=settings(
-        max_examples=100, max_iterations=10000, max_shrinks=0,
-        buffer_size=1024,
-        database=db,
+        max_examples=100, max_shrinks=0, buffer_size=1024, database=db,
     ), database_key=b'stuff')
     runner.run()
     saved = set(all_values(db))
@@ -520,8 +466,7 @@ def test_returns_written():
 def fails_health_check(label):
     def accept(f):
         runner = ConjectureRunner(f, settings=settings(
-            max_examples=100, max_iterations=100, max_shrinks=0,
-            buffer_size=1024, database=None, perform_health_check=True,
+            max_examples=100, max_shrinks=0, buffer_size=1024, database=None,
         ))
 
         with pytest.raises(FailedHealthCheck) as e:
@@ -700,7 +645,8 @@ def test_can_increase_number_of_bytes_drawn_in_tail():
         assert not any(b)
 
     runner = ConjectureRunner(
-        f, settings=settings(buffer_size=11, perform_health_check=False))
+        f, settings=settings(
+            buffer_size=11, suppress_health_check=HealthCheck.all()))
 
     runner.run()
 

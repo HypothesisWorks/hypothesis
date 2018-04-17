@@ -189,9 +189,7 @@ class GenericStateMachine(object):
             pass
 
         class StateMachineTestCase(TestCase):
-            settings = Settings(
-                min_satisfying_examples=1
-            )
+            settings = Settings()
 
         # We define this outside of the class and assign it because you can't
         # assign attributes to instance method values in Python 2

@@ -18,14 +18,12 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-import time
 
 import pytest
 
 from hypothesis import find
 from hypothesis import settings as Settings
-from hypothesis.errors import Timeout, NoSuchExample
-from tests.common.utils import checks_deprecated_behaviour
+from hypothesis.errors import NoSuchExample
 from hypothesis.strategies import lists, floats, booleans, integers, \
     dictionaries
 
@@ -52,20 +50,8 @@ def test_can_find_nans():
         assert 2 <= len(x) <= 3
 
 
-def test_raises_when_no_example():
-    settings = Settings(
-        max_examples=20,
-        min_satisfying_examples=0,
-    )
-    with pytest.raises(NoSuchExample):
-        find(integers(), lambda x: False, settings=settings)
-
-
 def test_condition_is_name():
-    settings = Settings(
-        max_examples=20,
-        min_satisfying_examples=0,
-    )
+    settings = Settings(max_examples=20)
     with pytest.raises(NoSuchExample) as e:
         find(booleans(), lambda x: False, settings=settings)
     assert 'lambda x:' in e.value.args[0]
@@ -86,14 +72,3 @@ def test_find_dictionary():
     assert len(find(
         dictionaries(keys=integers(), values=integers()),
         lambda xs: any(kv[0] > kv[1] for kv in xs.items()))) == 1
-
-
-@checks_deprecated_behaviour
-def test_times_out():
-    with pytest.raises(Timeout) as e:
-        find(
-            integers(),
-            lambda x: time.sleep(0.05) or False,
-            settings=Settings(timeout=0.01))
-
-    e.value.args[0]

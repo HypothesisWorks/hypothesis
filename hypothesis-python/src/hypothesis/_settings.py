@@ -141,6 +141,8 @@ class settings(settingsMeta('settings', (object,), {})):
             else:
                 from hypothesis.database import ExampleDatabase
                 kwargs['database'] = ExampleDatabase(kwargs['database_file'])
+        if not kwargs.get('perform_health_check', True):
+            kwargs['suppress_health_check'] = HealthCheck.all()
         self._construction_complete = False
         deprecations = []
         defaults = parent or settings.default
@@ -236,7 +238,7 @@ class settings(settingsMeta('settings', (object,), {})):
     def define_setting(
         cls, name, description, default, options=None,
         validator=None, show_default=True, future_default=not_set,
-        deprecation_message=None,
+        deprecation_message=None, hide_repr=not_set,
     ):
         """Add a new setting.
 
@@ -259,9 +261,12 @@ class settings(settingsMeta('settings', (object,), {})):
         if future_default is not_set:
             future_default = default
 
+        if hide_repr is not_set:
+            hide_repr = bool(deprecation_message)
+
         all_settings[name] = Setting(
             name, description.strip(), default, options, validator,
-            future_default, deprecation_message,
+            future_default, deprecation_message, hide_repr,
         )
         setattr(settings, name, settingsProperty(name, show_default))
 
@@ -295,11 +300,11 @@ class settings(settingsMeta('settings', (object,), {})):
 
     def __repr__(self):
         bits = []
-        for name in all_settings:
+        for name, setting in all_settings.items():
             value = getattr(self, name)
-            bits.append('%s=%r' % (name, value))
-        bits.sort()
-        return 'settings(%s)' % ', '.join(bits)
+            if value != setting.default or not setting.hide_repr:
+                bits.append('%s=%r' % (name, value))
+        return 'settings(%s)' % ', '.join(sorted(bits))
 
     def __enter__(self):
         default_context_manager = default_variable.with_value(self)
@@ -372,19 +377,19 @@ class Setting(object):
     validator = attr.ib()
     future_default = attr.ib()
     deprecation_message = attr.ib()
+    hide_repr = attr.ib()
 
 
 settings.define_setting(
     'min_satisfying_examples',
-    default=5,
+    default=not_set,
     description="""
-Raise Unsatisfiable for any tests which do not produce at least this many
-values that pass all :func:`hypothesis.assume` calls and which have not
-exhaustively covered the search space.
-
-Note that examples are compared at the level of the underlying byte-stream -
-for example, :func:`~hypothesis.strategies.booleans` contains 256 unique
-examples at this level because it always uses one byte.
+This doesn't actually do anything, but remains for compatibility reasons.
+""",
+    deprecation_message="""
+The min_satisfying_examples setting has been deprecated and disabled, due to
+overlap with the filter_too_much healthcheck and poor interaction with the
+max_examples setting.
 """
 )
 
@@ -399,11 +404,13 @@ counter-example, falsification will terminate.
 
 settings.define_setting(
     'max_iterations',
-    default=1000,
+    default=not_set,
     description="""
-Once this many iterations of the example loop have run, including ones which
-failed to satisfy assumptions and ones which produced duplicates, falsification
-will terminate.
+This doesn't actually do anything, but remains for compatibility reasons.
+""",
+    deprecation_message="""
+The max_iterations setting has been disabled, as internal heuristics are more
+useful for this purpose than a user setting.  It no longer has any effect.
 """
 )
 
@@ -446,6 +453,7 @@ limit - Hypothesis won't e.g. interrupt execution of the called
 function to stop it. If this value is <= 0 then no timeout will be
 applied.
 """,
+    hide_repr=False,  # Still affects behaviour at runtime
     deprecation_message="""
 The timeout setting is deprecated and will be removed in a future version of
 Hypothesis. To get the future behaviour set ``timeout=hypothesis.unlimited``
@@ -474,14 +482,9 @@ settings.define_setting(
     'strict',
     default=os.getenv('HYPOTHESIS_STRICT_MODE') == 'true',
     description="""
-If set to True, anything that would cause Hypothesis to issue a warning will
-instead raise an error. Note that new warnings may be added at any time, so
-running with strict set to True means that new Hypothesis releases may validly
-break your code.  Note also that, as strict mode is itself deprecated,
-enabling it is now an error!
-
-You can enable this setting temporarily by setting the HYPOTHESIS_STRICT_MODE
-environment variable to the string 'true'.
+Strict mode has been deprecated in favor of Python's standard warnings
+controls.  Ironically, enabling it is therefore an error - it only exists so
+that users get the right *type* of error!
 """,
     deprecation_message="""
 Strict mode is deprecated and will go away in a future version of Hypothesis.
@@ -552,6 +555,14 @@ class HealthCheck(Enum):
     Each member of this enum is a type of health check to suppress.
     """
 
+    def __repr__(self):
+        return '%s.%s' % (self.__class__.__name__, self.name)
+
+    @classmethod
+    def all(cls):
+        bad = (HealthCheck.exception_in_generation, HealthCheck.random_module)
+        return [h for h in list(cls) if h not in bad]
+
     exception_in_generation = 0
     """Deprecated and no longer does anything. It used to convert errors in
     data generation into FailedHealthCheck error."""
@@ -595,66 +606,37 @@ class Statistics(IntEnum):
     always = 2
 
 
-class Verbosity(object):
+@unique
+class Verbosity(IntEnum):
+    quiet = 0
+    normal = 1
+    verbose = 2
+    debug = 3
+
+    @staticmethod
+    def _get_default():
+        var = os.getenv('HYPOTHESIS_VERBOSITY_LEVEL')
+        if var is not None:  # pragma: no cover
+            note_deprecation(
+                'The HYPOTHESIS_VERBOSITY_LEVEL environment variable is '
+                'deprecated, and will be ignored by a future version of '
+                'Hypothesis.  Configure your verbosity level via a '
+                'settings profile instead.'
+            )
+            try:
+                return Verbosity[var]
+            except KeyError:
+                raise InvalidArgument('No such verbosity level %r' % (var,))
+        return Verbosity.normal
 
     def __repr__(self):
         return 'Verbosity.%s' % (self.name,)
 
-    def __init__(self, name, level):
-        self.name = name
-        self.level = level
-
-    def __eq__(self, other):
-        return isinstance(other, Verbosity) and (
-            self.level == other.level
-        )
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return self.level
-
-    def __lt__(self, other):
-        return self.level < other.level
-
-    def __le__(self, other):
-        return self.level <= other.level
-
-    def __gt__(self, other):
-        return self.level > other.level
-
-    def __ge__(self, other):
-        return self.level >= other.level
-
-    @classmethod
-    def by_name(cls, key):
-        result = getattr(cls, key, None)
-        if isinstance(result, Verbosity):
-            return result
-        raise InvalidArgument('No such verbosity level %r' % (key,))
-
-
-Verbosity.quiet = Verbosity('quiet', 0)
-Verbosity.normal = Verbosity('normal', 1)
-Verbosity.verbose = Verbosity('verbose', 2)
-Verbosity.debug = Verbosity('debug', 3)
-Verbosity.all = [
-    Verbosity.quiet, Verbosity.normal, Verbosity.verbose, Verbosity.debug
-]
-
-
-ENVIRONMENT_VERBOSITY_OVERRIDE = os.getenv('HYPOTHESIS_VERBOSITY_LEVEL')
-
-if ENVIRONMENT_VERBOSITY_OVERRIDE:  # pragma: no cover
-    DEFAULT_VERBOSITY = Verbosity.by_name(ENVIRONMENT_VERBOSITY_OVERRIDE)
-else:
-    DEFAULT_VERBOSITY = Verbosity.normal
 
 settings.define_setting(
     'verbosity',
-    options=Verbosity.all,
-    default=DEFAULT_VERBOSITY,
+    options=tuple(Verbosity),
+    default=Verbosity._get_default(),
     description='Control the verbosity level of Hypothesis messages',
 )
 
@@ -689,11 +671,15 @@ Number of steps to run a stateful program for before giving up on it breaking.
 
 settings.define_setting(
     'perform_health_check',
-    default=True,
+    default=not_set,
     description=u"""
 If set to True, Hypothesis will run a preliminary health check before
 attempting to actually execute your test.
-"""
+""",
+    deprecation_message="""
+This setting is deprecated, as `perform_health_check=False` duplicates the
+effect of `suppress_health_check=HealthCheck.all()`.  Use that instead!
+""",
 )
 
 

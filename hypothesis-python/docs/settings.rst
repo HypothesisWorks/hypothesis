@@ -134,23 +134,20 @@ values. Any absent ones will be set to defaults:
     >>> settings(max_examples=10).max_examples
     10
 
-
-You can also copy settings from other settings:
+You can also pass a 'parent' settings object as the first argument,
+and any settings you do not specify as keyword arguments will be
+copied from the parent settings:
 
 .. doctest::
 
-    >>> s = settings(max_examples=10)
-    >>> t = settings(s, max_iterations=20)
-    >>> s.max_examples
-    10
-    >>> t.max_iterations
-    20
-    >>> s.max_iterations
-    1000
-    >>> s.max_shrinks
-    500
-    >>> t.max_shrinks
-    500
+    >>> parent = settings(max_examples=10)
+    >>> child = settings(parent, deadline=200)
+    >>> parent.max_examples == child.max_examples == 10
+    True
+    >>> parent.deadline
+    not_set
+    >>> child.deadline
+    200
 
 ----------------
 Default settings

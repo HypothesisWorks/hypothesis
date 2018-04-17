@@ -17,16 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import given, settings
+from hypothesis import given
 from hypothesis import strategies as st
 
 
 @given(st.data())
 def test_never_draw_anything(data):
-    pass
-
-
-@settings(min_satisfying_examples=1000)
-@given(st.booleans())
-def test_want_more_than_exist(b):
     pass

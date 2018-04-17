@@ -283,7 +283,6 @@ class SearchStrategy(object):
                 random=random,
                 settings=settings(
                     max_shrinks=0,
-                    max_iterations=1000,
                     database=None,
                     verbosity=Verbosity.quiet,
                 )

@@ -22,7 +22,7 @@ from random import Random
 from flaky import flaky
 
 import hypothesis.strategies as st
-from hypothesis import find, given, example, settings
+from hypothesis import HealthCheck, find, given, example, settings
 from tests.common.debug import find_any
 from hypothesis.internal.compat import integer_types
 
@@ -85,7 +85,8 @@ def test_drawing_many_near_boundary():
 
 @given(st.randoms())
 @settings(
-    max_examples=50, max_shrinks=0, perform_health_check=False, deadline=None
+    max_examples=50, max_shrinks=0, suppress_health_check=HealthCheck.all(),
+    deadline=None
 )
 @example(Random(-1363972488426139))
 @example(Random(-4))
@@ -128,7 +129,8 @@ def test_can_form_sets_of_recursive_data():
 
 @given(st.randoms())
 @settings(
-    max_examples=50, max_shrinks=0, perform_health_check=False, deadline=None
+    max_examples=50, max_shrinks=0, suppress_health_check=HealthCheck.all(),
+    deadline=None
 )
 def test_can_flatmap_to_recursive_data(rnd):
     stuff = st.lists(st.integers(), min_size=1).flatmap(

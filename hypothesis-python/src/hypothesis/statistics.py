@@ -62,6 +62,11 @@ class Statistics(object):
             self.exit_reason = 'nothing left to do'
         elif engine.exit_reason == ExitReason.flaky:
             self.exit_reason = 'test was flaky'
+        elif engine.exit_reason == ExitReason.max_iterations:
+            self.exit_reason = ((
+                'settings.max_examples={}, but < 10% of examples satisfied '
+                'assumptions').format(engine.settings.max_examples)
+            )
         else:
             self.exit_reason = (
                 'settings.%s=%r' % (

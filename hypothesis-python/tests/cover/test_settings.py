@@ -109,6 +109,12 @@ def test_register_profile_kwarg_settings_is_deprecated():
     assert settings.default.max_examples == 10
 
 
+@checks_deprecated_behaviour
+def test_perform_health_check_setting_is_deprecated():
+    s = settings(suppress_health_check=(), perform_health_check=False)
+    assert s.suppress_health_check
+
+
 def test_can_set_verbosity():
     settings(verbosity=Verbosity.quiet)
     settings(verbosity=Verbosity.normal)
@@ -146,20 +152,17 @@ def test_load_profile():
     settings.load_profile('default')
     assert settings.default.max_examples == 100
     assert settings.default.max_shrinks == 500
-    assert settings.default.min_satisfying_examples == 5
 
     settings.register_profile('test', settings(max_examples=10), max_shrinks=5)
     settings.load_profile('test')
 
     assert settings.default.max_examples == 10
     assert settings.default.max_shrinks == 5
-    assert settings.default.min_satisfying_examples == 5
 
     settings.load_profile('default')
 
     assert settings.default.max_examples == 100
     assert settings.default.max_shrinks == 500
-    assert settings.default.min_satisfying_examples == 5
 
 
 @checks_deprecated_behaviour

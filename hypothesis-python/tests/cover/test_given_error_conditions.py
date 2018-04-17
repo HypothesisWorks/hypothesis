@@ -21,7 +21,7 @@ import time
 
 import pytest
 
-from hypothesis import given, infer, assume, reject, settings
+from hypothesis import HealthCheck, given, infer, assume, reject, settings
 from hypothesis.errors import Timeout, Unsatisfiable, InvalidArgument
 from tests.common.utils import fails_with, validate_deprecation
 from hypothesis.strategies import booleans, integers
@@ -41,7 +41,7 @@ def test_raises_timeout_on_slow_test():
 
 def test_raises_unsatisfiable_if_all_false():
     @given(integers())
-    @settings(max_examples=50, perform_health_check=False)
+    @settings(max_examples=50, suppress_health_check=HealthCheck.all())
     def test_assume_false(x):
         reject()
 

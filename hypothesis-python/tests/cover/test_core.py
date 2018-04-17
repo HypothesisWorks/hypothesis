@@ -46,24 +46,21 @@ def test_stops_after_max_examples_if_satisfying():
     assert len(tracker) == max_examples
 
 
-def test_stops_after_max_iterations_if_not_satisfying():
-    tracker = set()
+def test_stops_after_ten_times_max_examples_if_not_satisfying():
+    count = [0]
 
     def track(x):
-        tracker.add(x)
+        count[0] += 1
         reject()
 
     max_examples = 100
-    max_iterations = 200
 
     with pytest.raises(Unsatisfiable):
         find(
             s.integers(0, 10000),
-            track, settings=settings(
-                max_examples=max_examples, max_iterations=max_iterations))
+            track, settings=settings(max_examples=max_examples))
 
-    # May be less because of duplication
-    assert len(tracker) <= max_iterations
+    assert count[0] == 10 * max_examples
 
 
 @checks_deprecated_behaviour
