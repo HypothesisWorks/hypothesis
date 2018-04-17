@@ -19,3 +19,5 @@ knowledge of our internals (:issue:`535`).
 - :envvar:`HYPOTHESIS_VERBOSITY_LEVEL` was never documented, but is
   now explicitly deprecated.  Set :obj:`~hypothesis.settings.verbosity`
   through the profile system instead.
+- Examples tried by :func:`~hypothesis.find` are now reported at ``debug``
+  verbosity level (as well as ``verbose`` level).
