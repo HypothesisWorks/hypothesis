@@ -12,7 +12,7 @@ source "$HERE/common.sh"
 # This is to guard against multiple builds in parallel. The various installers will tend
 # to stomp all over each other if you do this and they haven't previously successfully
 # succeeded. We use a lock file to block progress so only one install runs at a time.
-# This script should be pretty fast once files are cached, so the lost of concurrency
+# This script should be pretty fast once files are cached, so the loss of concurrency
 # is not a major problem.
 # This should be using the lockfile command, but that's not available on the
 # containerized travis and we can't install it without sudo.
