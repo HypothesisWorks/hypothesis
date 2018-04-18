@@ -1,17 +1,13 @@
 #!/usr/bin/env bash
 
-# Special license: Take literally anything you want out of this file. I don't
-# care. Consider it WTFPL licensed if you like.
-# Basically there's a lot of suffering encoded here that I don't want you to
-# have to go through and you should feel free to use this to avoid some of
-# that suffering in advance.
-
 set -o errexit
 set -o nounset
 set -x
 
+HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # shellcheck source=tooling/scripts/common.sh
-source $(dirname "$0")/common.sh
+source "$HERE/common.sh"
 
 # This is to guard against multiple builds in parallel. The various installers will tend
 # to stomp all over each other if you do this and they haven't previously successfully
