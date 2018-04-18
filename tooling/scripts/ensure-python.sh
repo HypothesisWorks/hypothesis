@@ -16,7 +16,7 @@ source "$HERE/common.sh"
 # is not a major problem.
 # This should be using the lockfile command, but that's not available on the
 # containerized travis and we can't install it without sudo.
-# Is is unclear if this is actually useful. I was seeing behaviour that suggested
+# It is unclear if this is actually useful. I was seeing behaviour that suggested
 # concurrent runs of the installer, but I can't seem to find any evidence of this lock
 # ever not being acquired.
 
