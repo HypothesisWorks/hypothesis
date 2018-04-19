@@ -617,16 +617,18 @@ class Verbosity(IntEnum):
     def _get_default():
         var = os.getenv('HYPOTHESIS_VERBOSITY_LEVEL')
         if var is not None:  # pragma: no cover
-            note_deprecation(
+            try:
+                result = Verbosity[var]
+            except KeyError:
+                raise InvalidArgument('No such verbosity level %r' % (var,))
+
+            warnings.warn(HypothesisDeprecationWarning(
                 'The HYPOTHESIS_VERBOSITY_LEVEL environment variable is '
                 'deprecated, and will be ignored by a future version of '
                 'Hypothesis.  Configure your verbosity level via a '
                 'settings profile instead.'
-            )
-            try:
-                return Verbosity[var]
-            except KeyError:
-                raise InvalidArgument('No such verbosity level %r' % (var,))
+            ))
+            return result
         return Verbosity.normal
 
     def __repr__(self):
