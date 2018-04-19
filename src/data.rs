@@ -2,6 +2,8 @@
 // needs.
 
 use rand::{ChaChaRng, Rng};
+use std::collections::HashSet;
+
 
 pub type DataStream = Vec<u64>;
 
@@ -40,6 +42,7 @@ pub struct DataSource {
     record: DataStream,
     draws: Vec<DrawInProgress>,
     draw_stack: Vec<usize>,
+    written_indices: HashSet<usize>,    
 }
 
 impl DataSource {
@@ -49,6 +52,7 @@ impl DataSource {
             record: DataStream::new(),
             draws: Vec::new(),
             draw_stack: Vec::new(),
+            written_indices: HashSet::new(),
         };
     }
 
@@ -115,6 +119,7 @@ impl DataSource {
         TestResult {
             record: self.record,
             status: status,
+            written_indices: self.written_indices,
             draws: self.draws
                 .drain(..)
                 .filter_map(|d| match d {
@@ -166,4 +171,5 @@ pub struct TestResult {
     pub record: DataStream,
     pub status: Status,
     pub draws: Vec<Draw>,
+    pub written_indices: HashSet<usize>,    
 }

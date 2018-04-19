@@ -13,9 +13,7 @@ use data::{DataSource, DataStream, Status, TestResult};
 enum LoopExitReason {
     Complete,
     MaxExamples,
-    //MaxShrinks,
     Shutdown,
-    //Error(String),
 }
 
 #[derive(Debug)]
@@ -293,7 +291,7 @@ where
 
             let mut hi = self.shrink_target.record[i];
 
-            if hi > 0 {
+            if hi > 0 && !self.shrink_target.written_indices.contains(&i) {
                 attempt[i] = 0;
                 let zeroed = self.incorporate(&attempt)?;
                 if !zeroed {
