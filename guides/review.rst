@@ -75,21 +75,48 @@ thinks this conflicts with the above higher level goals, they may make
 an exception if both the author and another maintainer agree.
 
 
-~~~~~~~~~~~~~~~~~~~~
-General Requirements
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+Orthogonality
+~~~~~~~~~~~~~
 
-The following are required for almost every change:
+For all minor or patch releases, we enforce a hard and fast rule that they
+contain no more than one user-visible change. Major releases are allowed
+to bundle multiple changes together, but these should be structured as
+smaller pull requests into some tracking branch.
 
-1. Changes must be of reasonable size. If a change could logically
-   be broken up into several smaller changes that could be reviewed
-   separately on their own merits, it should be.
-2. The motivation for each change should be clearly explained (this
-   doesn't have to be an essay, especially for small changes, but
-   at least a sentence of explanation is usually required).
-3. The likely consequences of a change should be outlined (again,
-   this doesn't have an essay, and it may be sufficiently
-   self-explanatory that the motivation section is sufficient).
+We are currently very bad at this, so reviewers should feel empowered
+to be extra strict and provide a lot of push back on this.
+
+What counts as a user visible change is somewhat up to individual
+judgement, but you should err in the direction of assuming that
+if it might count then it does count.
+
+A good rule of thumb is that the ``RELEASE.rst`` uses the words "additionally"
+or needs bullet points to be clear, it is likely too large.
+
+Ideally changes that are not user visible should also be self-contained
+into their own releases, but a certain amount of leniency is permitted -
+it's certainly OK to do a moderate amount of refactoring while you're
+in the area, and if a pull request involves no release at all then the same
+level of orthogonality is not required (but is still desirable).
+
+~~~~~~~~~~~~~~~~~~~~~~
+Clarity of Description
+~~~~~~~~~~~~~~~~~~~~~~
+
+The ``RELEASE.rst`` should contain a description of the change that
+makes clear:
+
+1. The motivation for the change 
+2. The likely consequences of the change
+
+This doesn't have to be an essay. If you're following the orthogonality
+requirements a paragraph or two is likely sufficient.
+
+Any additional information that is useful to reviewers should be provided
+in the pull request comment. This can include e.g. background, why the
+particular approach was taken, references to internals that are unlikely
+to be of interest to users.
 
 ~~~~~~~~~~~~~~~~~~~~~
 Functionality Changes
