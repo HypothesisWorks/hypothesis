@@ -34,7 +34,7 @@ def run():
 
     new_home = mkdtemp()
     set_hypothesis_home_dir(new_home)
-    assert hypothesis.settings.default.startswith(new_home)
+    assert settings.default.startswith(new_home)
 
     charmap()
     assert os.path.exists(charmap_file()), charmap_file()
