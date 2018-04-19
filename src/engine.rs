@@ -133,7 +133,16 @@ where
 
     fn predicate(&mut self, result: &TestResult) -> bool {
         let succeeded = (self._predicate)(result);
-        if succeeded {
+        if succeeded
+            && (
+          // In the presence of writes it may be the case that we thought
+          // we were going to shrink this but didn't actually succeed because
+          // the written value was used.
+          result.record.len() < self.shrink_target.record.len() || (
+            result.record.len() == self.shrink_target.record.len()  &&
+            result.record < self.shrink_target.record
+          )
+        ) {
             self.changes += 1;
             self.shrink_target = result.clone();
         }
@@ -154,7 +163,7 @@ where
                 continue;
             }
 
-            self.try_delete_all_ranges()?;
+            self.delete_all_ranges()?;
         }
         Ok(())
     }
@@ -251,9 +260,7 @@ where
         return Ok(());
     }
 
-    fn try_delete_all_ranges(&mut self) -> StepResult {
-        // TODO: Actually track the data we need to make this
-        // not quadratic.
+    fn delete_all_ranges(&mut self) -> StepResult {
         let mut i = 0;
         while i < self.shrink_target.record.len() {
             let start_length = self.shrink_target.record.len();

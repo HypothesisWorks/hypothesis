@@ -11,7 +11,11 @@ pub fn weighted(source: &mut DataSource, probability: f64) -> Result<bool, Faile
 
     let truthy = (probability * (u64::max_value() as f64 + 1.0)).floor() as u64;
     let probe = source.bits(64)?;
-    return Ok(probe >= u64::max_value() - truthy + 1);
+    if truthy == 0 {
+        Ok(false)
+    } else {
+        return Ok(probe >= u64::max_value() - (truthy - 1));
+    }
 }
 
 pub fn bounded_int(source: &mut DataSource, max: u64) -> Draw<u64> {
@@ -46,15 +50,12 @@ impl Repeat {
         }
     }
 
-    fn draw_until(&self, source: &mut DataSource, value: bool) -> Result<(), FailedDraw> {
-        // Force a draw until we get the desired outcome. By having this we get much better
-        // shrinking when min_size or max_size are set because all decisions are represented
-        // somewhere in the bit stream.
-        loop {
-            let d = weighted(source, self.p_continue)?;
-            if d == value {
-                return Ok(());
-            }
+    fn force_result(&self, source: &mut DataSource, value: bool) -> Result<(), FailedDraw> {
+        if value {
+            // TODO: Change to 1 when we move over to good weighted implementation
+            source.write(u64::max_value())
+        } else {
+            source.write(0)
         }
     }
 
@@ -65,11 +66,11 @@ impl Repeat {
 
     pub fn should_continue(&mut self, source: &mut DataSource) -> Result<bool, FailedDraw> {
         if self.current_count < self.min_count {
-            self.draw_until(source, true)?;
+            self.force_result(source, true)?;
             self.current_count += 1;
             return Ok(true);
         } else if self.current_count >= self.max_count {
-            self.draw_until(source, false)?;
+            self.force_result(source, false)?;
             return Ok(false);
         }
 

@@ -81,6 +81,16 @@ impl DataSource {
         self.draws[i].end = Some(end);
     }
 
+    pub fn write(&mut self, value: u64) -> Result<(), FailedDraw> {
+        match self.bitgenerator {
+            BitGenerator::Recorded(ref mut v) if self.record.len() >= v.len() => Err(FailedDraw),
+            _ => {
+                self.record.push(value);
+                Ok(())
+            }
+        }
+    }
+
     pub fn bits(&mut self, n_bits: u64) -> Result<u64, FailedDraw> {
         let mut result = match self.bitgenerator {
             BitGenerator::Random(ref mut random) => random.next_u64(),
