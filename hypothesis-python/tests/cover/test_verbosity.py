@@ -117,6 +117,12 @@ def test_picks_up_verbosity_from_environment(tmpdir):
     environ = dict(os.environ)
 
     environ['HYPOTHESIS_VERBOSITY_LEVEL'] = 'debug'
+
+    bad_vars = [
+        t for t in environ.items() if not all(isinstance(s, str) for s in t)
+    ]
+    assert not bad_vars
+
     output = subprocess.check_output([
         sys.executable, str(script)
     ], env=environ).decode('ascii')
