@@ -108,6 +108,7 @@ struct Shrinker<'owner, Predicate> {
     _predicate: Predicate,
     shrink_target: TestResult,
     changes: u64,
+    expensive_passes_enabled: bool,
     main_loop: &'owner mut MainGenerationLoop,
 }
 
@@ -126,6 +127,7 @@ where
             _predicate: predicate,
             shrink_target: shrink_target,
             changes: 0,
+            expensive_passes_enabled: false,
         }
     }
 
@@ -145,7 +147,14 @@ where
             prev = self.changes;
             self.adaptive_delete()?;
             self.binary_search_blocks()?;
-            self.remove_intervals()?;
+            if prev == self.changes {
+                self.expensive_passes_enabled = true;
+            }
+            if !self.expensive_passes_enabled {
+                continue;
+            }
+
+            self.try_delete_all_ranges()?;
         }
         Ok(())
     }
@@ -242,7 +251,7 @@ where
         return Ok(());
     }
 
-    fn remove_intervals(&mut self) -> StepResult {
+    fn try_delete_all_ranges(&mut self) -> StepResult {
         // TODO: Actually track the data we need to make this
         // not quadratic.
         let mut i = 0;
