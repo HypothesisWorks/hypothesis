@@ -4,7 +4,6 @@
 use rand::{ChaChaRng, Rng};
 use std::collections::HashSet;
 
-
 pub type DataStream = Vec<u64>;
 
 #[derive(Debug, Clone)]
@@ -42,7 +41,7 @@ pub struct DataSource {
     record: DataStream,
     draws: Vec<DrawInProgress>,
     draw_stack: Vec<usize>,
-    written_indices: HashSet<usize>,    
+    written_indices: HashSet<usize>,
 }
 
 impl DataSource {
@@ -171,5 +170,5 @@ pub struct TestResult {
     pub record: DataStream,
     pub status: Status,
     pub draws: Vec<Draw>,
-    pub written_indices: HashSet<usize>,    
+    pub written_indices: HashSet<usize>,
 }
