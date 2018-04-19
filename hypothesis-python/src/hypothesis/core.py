@@ -776,7 +776,7 @@ class StateForActualGivenExecution(object):
                 ) % (
                     self.settings.timeout, runner.valid_examples),
                     self.settings)
-            if runner.valid_examples <= 1 and not (
+            if runner.valid_examples == 0 and not (
                 runner.exit_reason == ExitReason.finished and
                 self.at_least_one_success
             ):
