@@ -6,7 +6,7 @@
 set -o errexit
 set -o nounset
 
-HERE=$(dirname "$0")
+HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT="$(git -C "$HERE" rev-parse --show-toplevel)"
 
 export ROOT

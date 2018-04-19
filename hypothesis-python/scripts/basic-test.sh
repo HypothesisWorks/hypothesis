@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e -o xtrace
 
-cd "$(dirname "$0")"/..
+HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$HERE/.."
 
 # We run a reduced set of tests on OSX mostly so the CI runs in vaguely
 # reasonable time.
