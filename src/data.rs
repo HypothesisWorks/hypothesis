@@ -16,10 +16,18 @@ enum BitGenerator {
 
 // Records information corresponding to a single draw call.
 #[derive(Debug, Clone)]
-pub struct Draw {
+pub struct DrawInProgress {
     depth: usize,
     start: usize,
     end: Option<usize>,
+}
+
+// Records information corresponding to a single draw call.
+#[derive(Debug, Clone)]
+pub struct Draw {
+    pub depth: usize,
+    pub start: usize,
+    pub end: usize,
 }
 
 // Main entry point for running a test:
@@ -30,7 +38,7 @@ pub struct Draw {
 pub struct DataSource {
     bitgenerator: BitGenerator,
     record: DataStream,
-    draws: Vec<Draw>,
+    draws: Vec<DrawInProgress>,
     draw_stack: Vec<usize>,
 }
 
@@ -58,7 +66,7 @@ impl DataSource {
         let start = self.record.len();
 
         self.draw_stack.push(i);
-        self.draws.push(Draw {
+        self.draws.push(DrawInProgress {
             start: start,
             end: None,
             depth: depth,
@@ -93,10 +101,28 @@ impl DataSource {
         return Ok(result);
     }
 
-    pub fn to_result(self, status: Status) -> TestResult {
+    pub fn to_result(mut self, status: Status) -> TestResult {
         TestResult {
             record: self.record,
             status: status,
+            draws: self.draws
+                .drain(..)
+                .filter_map(|d| match d {
+                    DrawInProgress {
+                        depth,
+                        start,
+                        end: Some(end),
+                    } if start < end =>
+                    {
+                        Some(Draw {
+                            start: start,
+                            end: end,
+                            depth: depth,
+                        })
+                    }
+                    _ => None,
+                })
+                .collect(),
         }
     }
 }
@@ -129,4 +155,5 @@ pub enum Status {
 pub struct TestResult {
     pub record: DataStream,
     pub status: Status,
+    pub draws: Vec<Draw>,
 }

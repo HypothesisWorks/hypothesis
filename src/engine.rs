@@ -143,10 +143,103 @@ where
 
         while prev != self.changes {
             prev = self.changes;
+            self.adaptive_delete()?;
             self.binary_search_blocks()?;
             self.remove_intervals()?;
         }
         Ok(())
+    }
+
+    fn try_delete_range(
+        &mut self,
+        target: &TestResult,
+        i: usize,
+        k: usize,
+    ) -> Result<bool, LoopExitReason> {
+        // Attempts to delete k non-overlapping draws starting from the draw at index i.
+
+        let mut stack: Vec<(usize, usize)> = Vec::new();
+        let mut j = i;
+        while j < target.draws.len() && stack.len() < k {
+            let m = target.draws[j].start;
+            let n = target.draws[j].end;
+            assert!(m < n);
+            if m < n && (stack.len() == 0 || stack[stack.len() - 1].1 <= m) {
+                stack.push((m, n))
+            }
+            j += 1;
+        }
+
+        let mut attempt = target.record.clone();
+        while stack.len() > 0 {
+            let (m, n) = stack.pop().unwrap();
+            attempt.drain(m..n);
+        }
+
+        if attempt.len() >= self.shrink_target.record.len() {
+            Ok(false)
+        } else {
+            self.incorporate(&attempt)
+        }
+    }
+
+    fn adaptive_delete(&mut self) -> StepResult {
+        let mut i = 0;
+        let target = self.shrink_target.clone();
+
+        while i < target.draws.len() {
+            // This is an adaptive pass loosely modelled after timsort. If
+            // little or nothing is deletable here then we don't try any more
+            // deletions than the naive greedy algorithm would, but if it looks
+            // like we have an opportunity to delete a lot then we try to do so.
+
+            // What we're trying to do is to find a large k such that we can
+            // delete k but not k + 1 draws starting from this point, and we
+            // want to do that in O(log(k)) rather than O(k) test executions.
+
+            // We try a quite careful sequence of small shrinks here before we
+            // move on to anything big. This is because if we try to be
+            // aggressive too early on we'll tend to find that we lose out when
+            // the example is "nearly minimal".
+            if self.try_delete_range(&target, i, 2)? {
+                if self.try_delete_range(&target, i, 3)? && self.try_delete_range(&target, i, 4)? {
+                    let mut hi = 5;
+                    // At this point it looks like we've got a pretty good
+                    // opportunity for a long run here. We do an exponential
+                    // probe upwards to try and find some k where we can't
+                    // delete many intervals. We do this rather than choosing
+                    // that upper bound to immediately be large because we
+                    // don't really expect k to be huge. If it turns out that
+                    // it is, the subsequent example is going to be so tiny that
+                    // it doesn't really matter if we waste a bit of extra time
+                    // here.
+                    while self.try_delete_range(&target, i, hi)? {
+                        assert!(hi <= target.draws.len());
+                        hi *= 2;
+                    }
+                    // We now know that we can delete the first lo intervals but
+                    // not the first hi. We preserve that property while doing
+                    // a binary search to find the point at which we stop being
+                    // able to delete intervals.
+                    let mut lo = 4;
+                    while lo + 1 < hi {
+                        let mid = lo + (hi - lo) / 2;
+                        if self.try_delete_range(&target, i, mid)? {
+                            lo = mid;
+                        } else {
+                            hi = mid;
+                        }
+                    }
+                }
+            } else {
+                self.try_delete_range(&target, i, 1)?;
+            }
+            // We unconditionally bump i because we have always tried deleting
+            // one more example than we succeeded at deleting, so we expect the
+            // next example to be undeletable.
+            i += 1;
+        }
+        return Ok(());
     }
 
     fn remove_intervals(&mut self) -> StepResult {
