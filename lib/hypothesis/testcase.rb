@@ -30,7 +30,9 @@ module Hypothesis
       begin
         @depth += 1
         possible ||= block
+        @wrapped_data.start_draw
         result = possible.provide(&block)
+        @wrapped_data.stop_draw
         if top_level
           draws&.push(result)
           print_log&.push([name, result.inspect])

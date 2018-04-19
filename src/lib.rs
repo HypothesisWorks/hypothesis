@@ -33,6 +33,18 @@ ruby! {
       mem::swap(&mut result.source, &mut engine.pending);
       return result;
     }
+
+    def start_draw(&mut self){
+      if let &mut Some(ref mut source) = &mut self.source {
+        source.start_draw();
+      }
+    }
+
+    def stop_draw(&mut self){
+      if let &mut Some(ref mut source) = &mut self.source {
+        source.stop_draw();
+      }
+    }
   }
 
   class HypothesisCoreEngine {

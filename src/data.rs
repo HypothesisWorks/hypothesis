@@ -14,6 +14,14 @@ enum BitGenerator {
     Recorded(DataStream),
 }
 
+// Records information corresponding to a single draw call.
+#[derive(Debug, Clone)]
+pub struct Draw {
+    depth: usize,
+    start: usize,
+    end: Option<usize>,
+}
+
 // Main entry point for running a test:
 // A test function takes a DataSource, uses it to
 // produce some data, and the DataSource records the
@@ -22,9 +30,49 @@ enum BitGenerator {
 pub struct DataSource {
     bitgenerator: BitGenerator,
     record: DataStream,
+    draws: Vec<Draw>,
+    draw_stack: Vec<usize>,
 }
 
 impl DataSource {
+    fn new(generator: BitGenerator) -> DataSource {
+        return DataSource {
+            bitgenerator: generator,
+            record: DataStream::new(),
+            draws: Vec::new(),
+            draw_stack: Vec::new(),
+        };
+    }
+
+    pub fn from_random(random: ChaChaRng) -> DataSource {
+        return DataSource::new(BitGenerator::Random(random));
+    }
+
+    pub fn from_vec(record: DataStream) -> DataSource {
+        return DataSource::new(BitGenerator::Recorded(record));
+    }
+
+    pub fn start_draw(&mut self) {
+        let i = self.draws.len();
+        let depth = self.draw_stack.len();
+        let start = self.record.len();
+
+        self.draw_stack.push(i);
+        self.draws.push(Draw {
+            start: start,
+            end: None,
+            depth: depth,
+        });
+    }
+
+    pub fn stop_draw(&mut self) {
+        assert!(self.draws.len() > 0);
+        assert!(self.draw_stack.len() > 0);
+        let i = self.draw_stack.pop().unwrap();
+        let end = self.record.len();
+        self.draws[i].end = Some(end);
+    }
+
     pub fn bits(&mut self, n_bits: u64) -> Result<u64, FailedDraw> {
         let mut result = match self.bitgenerator {
             BitGenerator::Random(ref mut random) => random.next_u64(),
@@ -43,21 +91,6 @@ impl DataSource {
         self.record.push(result);
 
         return Ok(result);
-    }
-
-    fn new(generator: BitGenerator) -> DataSource {
-        return DataSource {
-            bitgenerator: generator,
-            record: DataStream::new(),
-        };
-    }
-
-    pub fn from_random(random: ChaChaRng) -> DataSource {
-        return DataSource::new(BitGenerator::Random(random));
-    }
-
-    pub fn from_vec(record: DataStream) -> DataSource {
-        return DataSource::new(BitGenerator::Recorded(record));
     }
 
     pub fn to_result(self, status: Status) -> TestResult {
