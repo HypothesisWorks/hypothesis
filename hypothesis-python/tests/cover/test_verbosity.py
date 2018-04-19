@@ -99,13 +99,15 @@ def test_includes_intermediate_results_in_verbose_mode():
 
 
 PRINT_VERBOSITY = """
+from __future__ import print_function
+
 import warnings
 warnings.resetwarnings()
 
 from hypothesis import settings
 
 if __name__ == '__main__':
-    print("VERBOSITY", settings.default.verbosity.name)
+    print("VERBOSITY=%s" % (settings.default.verbosity.name,))
 """
 
 
@@ -119,4 +121,4 @@ def test_picks_up_verbosity_from_environment(tmpdir):
         sys.executable, str(script)
     ], env=environ).decode('ascii')
 
-    assert 'VERBOSITY debug' in output
+    assert 'VERBOSITY=debug' in output
