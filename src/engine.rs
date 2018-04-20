@@ -178,13 +178,12 @@ where
                 if !succeeded && result.record.len() < self.shrink_target.record.len() {
                     let mut j = 0;
                     while j < self.shrink_target.draws.len() {
-                        // The borrow checker wants to pick a fight here and insists that the immutable
-                        // borrow that you get if you use let ref d = self.shrink_target.draws[j]
-                        // prevents the mutable borrow of self in self.incorporate. Perhaps there's some
-                        // good reason for this in the rust semantics, but it's objectively wrong that
-                        // a conflict is possible given that this works fine if you just inline the
-                        // definition. Ugly though.
-                        if self.shrink_target.draws[j].start > i {
+                        // Having to copy this is an annoying consequence of lexical lifetimes -
+                        // if we borrowed it immutably then we'd not be allowed to call self.incorporate
+                        // down below. Fortunately these things are tiny structs of integers so it doesn't
+                        // really matter.
+                        let d = self.shrink_target.draws[j].clone();
+                        if d.start > i {
                             let mut attempt2 = attempt.clone();
                             attempt2.drain(
                                 self.shrink_target.draws[j].start..self.shrink_target.draws[j].end,
