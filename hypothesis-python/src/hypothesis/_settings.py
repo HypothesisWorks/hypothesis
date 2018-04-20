@@ -61,7 +61,14 @@ class settingsProperty(object):
             return self
         else:
             try:
-                return obj.__dict__[self.name]
+                result = obj.__dict__[self.name]
+                # This is a gross hack, but it preserves the old behaviour that
+                # you can change the storage directory and it will be reflected
+                # in the default database.
+                if self.name == 'database' and result is not_set:
+                    from hypothesis.database import ExampleDatabase
+                    result = ExampleDatabase(not_set)
+                return result
             except KeyError:
                 raise AttributeError(self.name)
 
@@ -124,10 +131,7 @@ class settings(settingsMeta('settings', (object,), {})):
 
     def __getattr__(self, name):
         if name in all_settings:
-            d = all_settings[name].default
-            if inspect.isfunction(d):
-                d = d()
-            return d
+            return all_settings[name].default
         else:
             raise AttributeError('settings has no attribute %s' % (name,))
 
@@ -511,7 +515,7 @@ def _validate_database(db, __from_db_file=False):
 
 settings.define_setting(
     'database',
-    default=lambda: _validate_database(not_set),
+    default=not_set,
     show_default=False,
     description="""
 An instance of hypothesis.database.ExampleDatabase that will be

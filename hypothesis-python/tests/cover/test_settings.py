@@ -18,6 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import sys
+import subprocess
 from tempfile import mkdtemp
 
 import pytest
@@ -31,6 +33,7 @@ from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
 from hypothesis._settings import Verbosity, settings, default_variable, \
     note_deprecation
+from hypothesis.utils.conventions import not_set
 
 
 def test_has_docstrings():
@@ -330,3 +333,35 @@ def test_inner_ok(x):
 def test_settings_as_decorator_must_be_on_callable():
     with pytest.raises(InvalidArgument):
         settings()(1)
+
+
+ASSERT_DATABASE_PATH = """
+import tempfile
+from hypothesis import settings
+from hypothesis.configuration import set_hypothesis_home_dir
+from hypothesis.database import DirectoryBasedExampleDatabase
+
+settings.default.database
+
+if __name__ == '__main__':
+    new_home = tempfile.mkdtemp()
+    set_hypothesis_home_dir(new_home)
+    db = settings.default.database
+    assert isinstance(db, DirectoryBasedExampleDatabase), db
+    assert db.path.startswith(new_home), (db.path, new_home)
+"""
+
+
+def test_puts_the_database_in_the_home_dir_by_default(tmpdir):
+    script = tmpdir.join('assertlocation.py')
+    script.write(ASSERT_DATABASE_PATH)
+
+    subprocess.check_call([
+        sys.executable, str(script)
+    ])
+
+
+def test_database_is_reference_preserved():
+    s = settings(database=not_set)
+
+    assert s.database is s.database

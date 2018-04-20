@@ -32,7 +32,9 @@ def run():
     filterwarnings('ignore', category=ImportWarning)
     filterwarnings('ignore', category=FutureWarning, module='pandas._version')
 
-    set_hypothesis_home_dir(mkdtemp())
+    new_home = mkdtemp()
+    set_hypothesis_home_dir(new_home)
+    assert settings.default.database.path.startswith(new_home)
 
     charmap()
     assert os.path.exists(charmap_file()), charmap_file()
