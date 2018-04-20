@@ -131,10 +131,7 @@ class settings(settingsMeta('settings', (object,), {})):
 
     def __getattr__(self, name):
         if name in all_settings:
-            d = all_settings[name].default
-            if inspect.isfunction(d):
-                d = d()
-            return d
+            return all_settings[name].default
         else:
             raise AttributeError('settings has no attribute %s' % (name,))
 
