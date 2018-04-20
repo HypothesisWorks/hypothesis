@@ -28,7 +28,7 @@ information to the contrary.
 -------------------
 
 This release fixes a problem that was introduced in `3.56.0 <v3.56.0>`:
-Use of the ``HYPOTHESIS_VERBOSITY_LEVEL`` environment variable was, rather
+Use of the :envvar:`HYPOTHESIS_VERBOSITY_LEVEL` environment variable was, rather
 than deprecated, actually broken due to being read before various setup
 the deprecation path needed was done. It now works correctly (and emits a
 deprecation warning).
@@ -55,9 +55,8 @@ knowledge of our internals (:issue:`535`).
   disabled, due to overlap with the
   :obj:`~hypothesis.settings.HealthCheck.filter_too_much` healthcheck
   and poor interaction with :obj:`~hypothesis.settings.max_examples`.
-- :envvar:`HYPOTHESIS_VERBOSITY_LEVEL` was never documented, but is
-  now explicitly deprecated.  Set :obj:`~hypothesis.settings.verbosity`
-  through the profile system instead.
+- :envvar:`HYPOTHESIS_VERBOSITY_LEVEL` is now deprecated.  Set
+  :obj:`~hypothesis.settings.verbosity` through the profile system instead.
 - Examples tried by :func:`~hypothesis.find` are now reported at ``debug``
   verbosity level (as well as ``verbose`` level).
 

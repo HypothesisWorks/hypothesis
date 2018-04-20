@@ -111,11 +111,6 @@ while in quiet mode Hypothesis will not print anything out, not even the final
 falsifying example. debug is basically verbose but a bit more so. You probably
 don't want it.
 
-You can also override the default by setting the environment variable
-:envvar:`HYPOTHESIS_VERBOSITY_LEVEL` to the name of the level you want. So e.g.
-setting ``HYPOTHESIS_VERBOSITY_LEVEL=verbose`` will run all your tests printing
-intermediate results and errors.
-
 If you are using :pypi:`pytest`, you may also need to
 :doc:`disable output capturing for passing tests <pytest:capture>`.
 
