@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.56.2:
+
+-------------------
+3.56.2 - 2018-04-20
+-------------------
+
+This release fixes a problem introduced in :ref:`3.56.0 <v3.56.0>` where
+setting :obj:`~hypothesis.settings.max_examples` to ``1`` would result in tests
+failing with ``Unsatisfiable``. This problem could also occur in other harder
+to trigger circumstances (e.g. by setting it to a low value, having a hard to
+satisfy assumption, and disabling health checks).
+
 .. _v3.56.1:
 
 -------------------
