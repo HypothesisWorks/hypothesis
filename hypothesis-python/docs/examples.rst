@@ -135,22 +135,15 @@ we actually wanted our labels to be unique. Lets change the test to do that.
 .. code:: python
 
     def deduplicate_nodes_by_label(nodes):
-        table = {}
-        for node in nodes:
-            table[node.label] = node
+        table = {node.label: node for node in nodes}
         return list(table.values())
 
-
-    NodeSet = s.lists(NodeStrategy).map(deduplicate_nodes_by_label)
-
-We define a function to deduplicate nodes by labels, and then map that over a strategy
-for lists of nodes to give us a strategy for lists of nodes with unique labels. We can
-now rewrite the test to use that:
-
+We define a function to deduplicate nodes by labels, and can now map that over a strategy
+for lists of nodes to give us a strategy for lists of nodes with unique labels:
 
 .. code:: python
 
-    @given(NodeSet)
+    @given(s.lists(NodeStrategy).map(deduplicate_nodes_by_label))
     def test_sorting_nodes_is_prefix_sorted(xs):
         sort_nodes(xs)
         assert is_prefix_sorted(xs)
