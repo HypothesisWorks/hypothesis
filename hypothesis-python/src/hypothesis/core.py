@@ -450,7 +450,6 @@ class StateForActualGivenExecution(object):
         self.test_runner = test_runner
         self.search_strategy = search_strategy
         self.settings = settings
-        self.at_least_one_success = False
         self.last_exception = None
         self.falsifying_examples = ()
         self.__was_flaky = False
@@ -683,7 +682,6 @@ class StateForActualGivenExecution(object):
                     'Tests run under @given should return None, but '
                     '%s returned %r instead.'
                 ) % (self.test.__name__, result), HealthCheck.return_value)
-            self.at_least_one_success = True
             return False
         except UnsatisfiedAssumption:
             data.mark_invalid()
@@ -776,10 +774,7 @@ class StateForActualGivenExecution(object):
                 ) % (
                     self.settings.timeout, runner.valid_examples),
                     self.settings)
-            if runner.valid_examples == 0 and not (
-                runner.exit_reason == ExitReason.finished and
-                self.at_least_one_success
-            ):
+            if runner.valid_examples == 0:
                 if timed_out:
                     raise Timeout((
                         'Ran out of time before finding a satisfying '
