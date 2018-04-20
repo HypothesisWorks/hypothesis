@@ -19,8 +19,10 @@ from __future__ import division, print_function, absolute_import
 
 import time
 
-from hypothesis import given, settings
-from hypothesis.errors import HypothesisDeprecationWarning
+import pytest
+
+from hypothesis import given, reject, settings
+from hypothesis.errors import Timeout, HypothesisDeprecationWarning
 from tests.common.utils import fails, fails_with, validate_deprecation
 from hypothesis.strategies import integers
 
@@ -34,6 +36,19 @@ def test_hitting_timeout_is_deprecated():
 
     with validate_deprecation():
         test_slow_test_times_out()
+
+
+def test_slow_unsatisfiable_test():
+    with validate_deprecation():
+        @settings(timeout=0.1)
+        @given(integers())
+        def test_slow_test_times_out(x):
+            time.sleep(0.05)
+            reject()
+
+    with validate_deprecation():
+        with pytest.raises(Timeout):
+            test_slow_test_times_out()
 
 
 # Cheap hack to make test functions which fail on their second invocation
