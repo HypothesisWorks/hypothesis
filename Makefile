@@ -21,6 +21,7 @@ PY273=$(BUILD_RUNTIMES)/snakepit/python2.7.3
 PY34=$(BUILD_RUNTIMES)/snakepit/python3.4
 PY35=$(BUILD_RUNTIMES)/snakepit/python3.5
 PY36=$(BUILD_RUNTIMES)/snakepit/python3.6
+PY37=$(BUILD_RUNTIMES)/snakepit/python3.7
 PYPY=$(BUILD_RUNTIMES)/snakepit/pypy
 
 BEST_PY3=$(PY36)
@@ -65,6 +66,9 @@ $(PY35):
 
 $(PY36):
 	scripts/retry.sh scripts/install.sh 3.6
+
+$(PY37):
+	scripts/retry.sh scripts/install.sh 3.7
 
 
 $(PYPY):
@@ -139,6 +143,9 @@ check-py35: $(PY35) $(TOX)
 
 check-py36: $(BEST_PY3) $(TOX)
 	$(call run_tox,py36-full)
+
+check-py37: $(PY37) $(TOX)
+	$(TOX) --recreate -e py37-full
 
 check-pypy: $(PYPY) $(TOX)
 	$(call run_tox,pypy-full)

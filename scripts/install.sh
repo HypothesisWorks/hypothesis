@@ -6,8 +6,9 @@
 # have to go through and you should feel free to use this to avoid some of
 # that suffering in advance.
 
-set -e
-set -x
+set -o errexit
+set -o nounset
+set -o xtrace
 
 # OS X seems to have some weird Localse problems on Travis. This attempts to set
 # the Locale to known good ones during install
@@ -99,6 +100,9 @@ for var in "$@"; do
       ;;
     3.6)
       install 3.6.1 python3.6
+      ;;
+    3.7)
+      install 3.7.0b3 python3.7
       ;;
     pypy)
       install pypy2.7-5.8.0 pypy
