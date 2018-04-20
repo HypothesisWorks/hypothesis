@@ -174,8 +174,7 @@ where
             if self.shrink_target.record[i] > 0 {
                 let mut attempt = self.shrink_target.record.clone();
                 attempt[i] -= 1;
-                let (succeeded, result) = self.execute(&attempt)?;
-                if !succeeded && result.record.len() < self.shrink_target.record.len() {
+                if !self.incorporate(&attempt)? {
                     let mut j = 0;
                     while j < self.shrink_target.draws.len() {
                         // Having to copy this is an annoying consequence of lexical lifetimes -
