@@ -25,6 +25,7 @@ pub fn weighted(source: &mut DataSource, probability: f64) -> Result<bool, Faile
 pub fn bounded_int(source: &mut DataSource, max: u64) -> Draw<u64> {
     let bitlength = 64 - max.leading_zeros() as u64;
     if bitlength == 0 {
+        source.write(0)?;
         return Ok(0);
     }
     loop {
@@ -60,7 +61,14 @@ impl Repeat {
     }
 
     pub fn should_continue(&mut self, source: &mut DataSource) -> Result<bool, FailedDraw> {
-        if self.current_count < self.min_count {
+        if self.min_count == self.max_count {
+            if self.current_count < self.max_count {
+                self.current_count += 1;
+                return Ok(true);
+            } else {
+                return Ok(false);
+            }
+        } else if self.current_count < self.min_count {
             source.write(1)?;
             self.current_count += 1;
             return Ok(true);
