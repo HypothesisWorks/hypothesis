@@ -161,7 +161,29 @@ where
                 continue;
             }
 
+            self.reorder_blocks()?;
             self.delete_all_ranges()?;
+        }
+        Ok(())
+    }
+
+    fn reorder_blocks(&mut self) -> StepResult {
+        let mut i = 0;
+        while i < self.shrink_target.record.len() {
+            let mut j = i + 1;
+            while j < self.shrink_target.record.len() {
+                assert!(i < self.shrink_target.record.len());
+                if self.shrink_target.record[i] == 0 {
+                    break;
+                }
+                if self.shrink_target.record[j] < self.shrink_target.record[i] {
+                    let mut attempt = self.shrink_target.record.clone();
+                    attempt.swap(i, j);
+                    self.incorporate(&attempt)?;
+                }
+                j += 1;
+            }
+            i += 1;
         }
         Ok(())
     }
@@ -281,38 +303,45 @@ where
         Ok(())
     }
 
+    fn try_lowering_value(&mut self, i: usize, v: u64) -> Result<bool, LoopExitReason> {
+        if v >= self.shrink_target.record[i] {
+            return Ok(false);
+        }
+
+        let mut attempt = self.shrink_target.record.clone();
+        attempt[i] = v;
+        let (succeeded, result) = self.execute(&attempt)?;
+        assert!(result.record.len() <= self.shrink_target.record.len());
+        let lost_bytes = self.shrink_target.record.len() - result.record.len();
+        if !succeeded && result.status == Status::Valid && lost_bytes > 0 {
+            attempt.drain(i + 1..i + lost_bytes + 1);
+            assert!(attempt.len() + lost_bytes == self.shrink_target.record.len());
+            self.incorporate(&attempt)
+        } else {
+            Ok(succeeded)
+        }
+    }
+
     fn binary_search_blocks(&mut self) -> StepResult {
         let mut i = 0;
 
-        let mut attempt = self.shrink_target.record.clone();
-
         while i < self.shrink_target.record.len() {
-            assert!(attempt.len() >= self.shrink_target.record.len());
-
             let mut hi = self.shrink_target.record[i];
 
             if hi > 0 && !self.shrink_target.written_indices.contains(&i) {
-                attempt[i] = 0;
-                let zeroed = self.incorporate(&attempt)?;
+                let zeroed = self.try_lowering_value(i, 0)?;
                 if !zeroed {
                     let mut lo = 0;
                     // Binary search to find the smallest value we can
                     // replace this with.
                     while lo + 1 < hi {
                         let mid = lo + (hi - lo) / 2;
-                        attempt[i] = mid;
-                        let succeeded = self.incorporate(&attempt)?;
-                        if succeeded {
-                            attempt = self.shrink_target.record.clone();
+                        if self.try_lowering_value(i, mid)? {
                             hi = mid;
                         } else {
-                            attempt[i] = self.shrink_target.record[i];
                             lo = mid;
                         }
                     }
-                    attempt[i] = hi;
-                } else {
-                    attempt = self.shrink_target.record.clone();
                 }
             }
 
@@ -320,6 +349,12 @@ where
         }
 
         Ok(())
+    }
+
+    fn execute(&mut self, buf: &DataStream) -> Result<(bool, TestResult), LoopExitReason> {
+        // TODO: Later there will be caching here
+        let result = self.main_loop.execute(DataSource::from_vec(buf.clone()))?;
+        Ok((self.predicate(&result), result))
     }
 
     fn incorporate(&mut self, buf: &DataStream) -> Result<bool, LoopExitReason> {
@@ -336,8 +371,8 @@ where
         if self.shrink_target.record.starts_with(buf) {
             return Ok(false);
         }
-        let result = self.main_loop.execute(DataSource::from_vec(buf.clone()))?;
-        return Ok(self.predicate(&result));
+        let (succeeded, _) = self.execute(buf)?;
+        Ok(succeeded)
     }
 }
 

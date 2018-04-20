@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+
 RSpec.describe 'shrinking' do
   include Hypothesis::Debug
 
@@ -19,5 +20,17 @@ RSpec.describe 'shrinking' do
 
     expect(a).to eq(2)
     expect(b).to eq(1)
+  end
+
+  it 'can shrink through a chain' do
+    ls, = find do
+      x = any built_as do
+        n = any integers(min: 1, max: 100)
+        any arrays(of: integers(min: 0, max: 10), min_size: n, max_size: n)
+      end
+      x.sum >= 50
+    end
+
+    expect(ls).to_not include(0)
   end
 end
