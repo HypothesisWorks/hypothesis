@@ -4,6 +4,8 @@ use std::collections::BinaryHeap;
 use std::mem;
 use std::cmp::{Ord, Ordering, PartialOrd, Reverse};
 
+use std::u64::MAX as MAX64;
+
 type Draw<T> = Result<T, FailedDraw>;
 
 pub fn weighted(source: &mut DataSource, probability: f64) -> Result<bool, FailedDraw> {
@@ -11,11 +13,13 @@ pub fn weighted(source: &mut DataSource, probability: f64) -> Result<bool, Faile
 
     let truthy = (probability * (u64::max_value() as f64 + 1.0)).floor() as u64;
     let probe = source.bits(64)?;
-    if truthy == 0 {
-        Ok(false)
-    } else {
-        return Ok(probe >= u64::max_value() - (truthy - 1));
-    }
+    Ok(match (truthy, probe) {
+        (0, _) => false,
+        (MAX64, _) => true,
+        (_, 0) => false,
+        (_, 1) => true,
+        _ => probe >= MAX64 - truthy,
+    })
 }
 
 pub fn bounded_int(source: &mut DataSource, max: u64) -> Draw<u64> {
@@ -50,15 +54,6 @@ impl Repeat {
         }
     }
 
-    fn force_result(&self, source: &mut DataSource, value: bool) -> Result<(), FailedDraw> {
-        if value {
-            // TODO: Change to 1 when we move over to good weighted implementation
-            source.write(u64::max_value())
-        } else {
-            source.write(0)
-        }
-    }
-
     pub fn reject(&mut self) {
         assert!(self.current_count > 0);
         self.current_count -= 1;
@@ -66,11 +61,11 @@ impl Repeat {
 
     pub fn should_continue(&mut self, source: &mut DataSource) -> Result<bool, FailedDraw> {
         if self.current_count < self.min_count {
-            self.force_result(source, true)?;
+            source.write(1)?;
             self.current_count += 1;
             return Ok(true);
         } else if self.current_count >= self.max_count {
-            self.force_result(source, false)?;
+            source.write(0)?;
             return Ok(false);
         }
 
