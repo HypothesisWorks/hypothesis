@@ -27,18 +27,6 @@ from tests.common.utils import fails_with, validate_deprecation
 from hypothesis.strategies import booleans, integers
 
 
-def test_raises_timeout_on_slow_test():
-    with validate_deprecation():
-        @given(integers())
-        @settings(timeout=0.01)
-        def test_is_slow(x):
-            time.sleep(0.02)
-
-    with validate_deprecation():
-        with pytest.raises(Timeout):
-            test_is_slow()
-
-
 def test_raises_unsatisfiable_if_all_false():
     @given(integers())
     @settings(max_examples=50, suppress_health_check=HealthCheck.all())

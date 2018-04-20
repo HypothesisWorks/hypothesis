@@ -86,7 +86,7 @@ def test_output_emitting_unicode(testdir, monkeypatch):
 
 
 TRACEBACKHIDE_TIMEOUT = """
-from hypothesis import given, settings
+from hypothesis import given, settings, reject
 from hypothesis.strategies import integers
 from hypothesis.errors import HypothesisDeprecationWarning
 
@@ -102,6 +102,7 @@ def test_timeout_traceback_is_hidden():
         @settings(timeout=1)
         def inner(i):
             time.sleep(1.1)
+            reject()
         inner()
 """
 

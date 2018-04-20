@@ -169,9 +169,11 @@ def test_does_not_catch_interrupt_during_falsify():
 
 
 def test_contains_the_test_function_name_in_the_exception_string():
+    look_for_one = settings(
+        max_examples=1, suppress_health_check=HealthCheck.all())
 
     @given(integers())
-    @settings(max_examples=1)
+    @look_for_one
     def this_has_a_totally_unique_name(x):
         reject()
 
@@ -182,7 +184,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
     class Foo(object):
 
         @given(integers())
-        @settings(max_examples=1)
+        @look_for_one
         def this_has_a_unique_name_and_lives_on_a_class(self, x):
             reject()
 
