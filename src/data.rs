@@ -134,6 +134,10 @@ impl DataSource {
                             depth: depth,
                         })
                     }
+                    DrawInProgress { end: None, .. } => {
+                        assert!(status == Status::Invalid || status == Status::Overflow);
+                        None
+                    }
                     _ => None,
                 })
                 .collect(),
@@ -143,7 +147,7 @@ impl DataSource {
 
 // Status indicates the result that we got from completing
 // a single test execution.
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Copy)]
 pub enum Status {
     // The test tried to read more data than we had for it.
     Overflow,
