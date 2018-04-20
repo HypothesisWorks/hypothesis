@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-
 RSpec.describe 'shrinking' do
   include Hypothesis::Debug
 
