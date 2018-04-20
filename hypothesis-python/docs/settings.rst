@@ -245,7 +245,7 @@ by your conftest you can load one with the command line option ``--hypothesis-pr
 
 .. code:: bash
 
-    $ py.test tests --hypothesis-profile <profile-name>
+    $ pytest tests --hypothesis-profile <profile-name>
 
 
 ~~~~~~~~

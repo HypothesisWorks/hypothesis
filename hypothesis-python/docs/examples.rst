@@ -193,7 +193,7 @@ managed to sort some nodes without getting it completely wrong. Go us.
 Time zone arithmetic
 --------------------
 
-This is an example of some tests for pytz which check that various timezone
+This is an example of some tests for :pypi:`pytz` which check that various timezone
 conversions behave as you would expect them to. These tests should all pass,
 and are mostly a demonstration of some useful sorts of thing to test with
 Hypothesis, and how the :func:`~hypothesis.strategies.datetimes` strategy works.
@@ -369,6 +369,7 @@ hammer their API without their permission).
 All this does is use Hypothesis to generate random JSON data matching the
 format their API asks for and check for 500 errors. More advanced tests which
 then use the result and go on to do other things are definitely also possible.
+The :pypi:`swagger-conformance` package provides an excellent example of this!
 
 .. code:: python
 
