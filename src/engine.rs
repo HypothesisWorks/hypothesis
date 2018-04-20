@@ -13,9 +13,7 @@ use data::{DataSource, DataStream, Status, TestResult};
 enum LoopExitReason {
     Complete,
     MaxExamples,
-    //MaxShrinks,
     Shutdown,
-    //Error(String),
 }
 
 #[derive(Debug)]
@@ -108,6 +106,7 @@ struct Shrinker<'owner, Predicate> {
     _predicate: Predicate,
     shrink_target: TestResult,
     changes: u64,
+    expensive_passes_enabled: bool,
     main_loop: &'owner mut MainGenerationLoop,
 }
 
@@ -126,12 +125,22 @@ where
             _predicate: predicate,
             shrink_target: shrink_target,
             changes: 0,
+            expensive_passes_enabled: false,
         }
     }
 
     fn predicate(&mut self, result: &TestResult) -> bool {
         let succeeded = (self._predicate)(result);
-        if succeeded {
+        if succeeded
+            && (
+          // In the presence of writes it may be the case that we thought
+          // we were going to shrink this but didn't actually succeed because
+          // the written value was used.
+          result.record.len() < self.shrink_target.record.len() || (
+            result.record.len() == self.shrink_target.record.len()  &&
+            result.record < self.shrink_target.record
+          )
+        ) {
             self.changes += 1;
             self.shrink_target = result.clone();
         }
@@ -143,15 +152,167 @@ where
 
         while prev != self.changes {
             prev = self.changes;
+            self.adaptive_delete()?;
             self.binary_search_blocks()?;
-            self.remove_intervals()?;
+            if prev == self.changes {
+                self.expensive_passes_enabled = true;
+            }
+            if !self.expensive_passes_enabled {
+                continue;
+            }
+
+            self.reorder_blocks()?;
+            self.lower_and_delete()?;
+            self.delete_all_ranges()?;
         }
         Ok(())
     }
 
-    fn remove_intervals(&mut self) -> StepResult {
-        // TODO: Actually track the data we need to make this
-        // not quadratic.
+    fn lower_and_delete(&mut self) -> StepResult {
+        let mut i = 0;
+        while i < self.shrink_target.record.len() {
+            if self.shrink_target.record[i] > 0 {
+                let mut attempt = self.shrink_target.record.clone();
+                attempt[i] -= 1;
+                let (succeeded, result) = self.execute(&attempt)?;
+                if !succeeded && result.record.len() < self.shrink_target.record.len() {
+                    let mut j = 0;
+                    while j < self.shrink_target.draws.len() {
+                        // Having to copy this is an annoying consequence of lexical lifetimes -
+                        // if we borrowed it immutably then we'd not be allowed to call self.incorporate
+                        // down below. Fortunately these things are tiny structs of integers so it doesn't
+                        // really matter.
+                        let d = self.shrink_target.draws[j].clone();
+                        if d.start > i {
+                            let mut attempt2 = attempt.clone();
+                            attempt2.drain(d.start..d.end);
+                            if self.incorporate(&attempt2)? {
+                                break;
+                            }
+                        }
+                        j += 1;
+                    }
+                }
+            }
+            i += 1;
+        }
+        Ok(())
+    }
+
+    fn reorder_blocks(&mut self) -> StepResult {
+        let mut i = 0;
+        while i < self.shrink_target.record.len() {
+            let mut j = i + 1;
+            while j < self.shrink_target.record.len() {
+                assert!(i < self.shrink_target.record.len());
+                if self.shrink_target.record[i] == 0 {
+                    break;
+                }
+                if self.shrink_target.record[j] < self.shrink_target.record[i] {
+                    let mut attempt = self.shrink_target.record.clone();
+                    attempt.swap(i, j);
+                    self.incorporate(&attempt)?;
+                }
+                j += 1;
+            }
+            i += 1;
+        }
+        Ok(())
+    }
+
+    fn try_delete_range(
+        &mut self,
+        target: &TestResult,
+        i: usize,
+        k: usize,
+    ) -> Result<bool, LoopExitReason> {
+        // Attempts to delete k non-overlapping draws starting from the draw at index i.
+
+        let mut stack: Vec<(usize, usize)> = Vec::new();
+        let mut j = i;
+        while j < target.draws.len() && stack.len() < k {
+            let m = target.draws[j].start;
+            let n = target.draws[j].end;
+            assert!(m < n);
+            if m < n && (stack.len() == 0 || stack[stack.len() - 1].1 <= m) {
+                stack.push((m, n))
+            }
+            j += 1;
+        }
+
+        let mut attempt = target.record.clone();
+        while stack.len() > 0 {
+            let (m, n) = stack.pop().unwrap();
+            attempt.drain(m..n);
+        }
+
+        if attempt.len() >= self.shrink_target.record.len() {
+            Ok(false)
+        } else {
+            self.incorporate(&attempt)
+        }
+    }
+
+    fn adaptive_delete(&mut self) -> StepResult {
+        let mut i = 0;
+        let target = self.shrink_target.clone();
+
+        while i < target.draws.len() {
+            // This is an adaptive pass loosely modelled after timsort. If
+            // little or nothing is deletable here then we don't try any more
+            // deletions than the naive greedy algorithm would, but if it looks
+            // like we have an opportunity to delete a lot then we try to do so.
+
+            // What we're trying to do is to find a large k such that we can
+            // delete k but not k + 1 draws starting from this point, and we
+            // want to do that in O(log(k)) rather than O(k) test executions.
+
+            // We try a quite careful sequence of small shrinks here before we
+            // move on to anything big. This is because if we try to be
+            // aggressive too early on we'll tend to find that we lose out when
+            // the example is "nearly minimal".
+            if self.try_delete_range(&target, i, 2)? {
+                if self.try_delete_range(&target, i, 3)? && self.try_delete_range(&target, i, 4)? {
+                    let mut hi = 5;
+                    // At this point it looks like we've got a pretty good
+                    // opportunity for a long run here. We do an exponential
+                    // probe upwards to try and find some k where we can't
+                    // delete many intervals. We do this rather than choosing
+                    // that upper bound to immediately be large because we
+                    // don't really expect k to be huge. If it turns out that
+                    // it is, the subsequent example is going to be so tiny that
+                    // it doesn't really matter if we waste a bit of extra time
+                    // here.
+                    while self.try_delete_range(&target, i, hi)? {
+                        assert!(hi <= target.draws.len());
+                        hi *= 2;
+                    }
+                    // We now know that we can delete the first lo intervals but
+                    // not the first hi. We preserve that property while doing
+                    // a binary search to find the point at which we stop being
+                    // able to delete intervals.
+                    let mut lo = 4;
+                    while lo + 1 < hi {
+                        let mid = lo + (hi - lo) / 2;
+                        if self.try_delete_range(&target, i, mid)? {
+                            lo = mid;
+                        } else {
+                            hi = mid;
+                        }
+                    }
+                }
+            } else {
+                self.try_delete_range(&target, i, 1)?;
+            }
+            // We unconditionally bump i because we have always tried deleting
+            // one more example than we succeeded at deleting, so we expect the
+            // next example to be undeletable.
+            i += 1;
+        }
+        return Ok(());
+    }
+
+    fn delete_all_ranges(&mut self) -> StepResult {
         let mut i = 0;
         while i < self.shrink_target.record.len() {
             let start_length = self.shrink_target.record.len();
@@ -174,38 +335,45 @@ where
         Ok(())
     }
 
+    fn try_lowering_value(&mut self, i: usize, v: u64) -> Result<bool, LoopExitReason> {
+        if v >= self.shrink_target.record[i] {
+            return Ok(false);
+        }
+
+        let mut attempt = self.shrink_target.record.clone();
+        attempt[i] = v;
+        let (succeeded, result) = self.execute(&attempt)?;
+        assert!(result.record.len() <= self.shrink_target.record.len());
+        let lost_bytes = self.shrink_target.record.len() - result.record.len();
+        if !succeeded && result.status == Status::Valid && lost_bytes > 0 {
+            attempt.drain(i + 1..i + lost_bytes + 1);
+            assert!(attempt.len() + lost_bytes == self.shrink_target.record.len());
+            self.incorporate(&attempt)
+        } else {
+            Ok(succeeded)
+        }
+    }
+
     fn binary_search_blocks(&mut self) -> StepResult {
         let mut i = 0;
 
-        let mut attempt = self.shrink_target.record.clone();
-
         while i < self.shrink_target.record.len() {
-            assert!(attempt.len() >= self.shrink_target.record.len());
-
             let mut hi = self.shrink_target.record[i];
 
-            if hi > 0 {
-                attempt[i] = 0;
-                let zeroed = self.incorporate(&attempt)?;
+            if hi > 0 && !self.shrink_target.written_indices.contains(&i) {
+                let zeroed = self.try_lowering_value(i, 0)?;
                 if !zeroed {
                     let mut lo = 0;
                     // Binary search to find the smallest value we can
                     // replace this with.
                     while lo + 1 < hi {
                         let mid = lo + (hi - lo) / 2;
-                        attempt[i] = mid;
-                        let succeeded = self.incorporate(&attempt)?;
-                        if succeeded {
-                            attempt = self.shrink_target.record.clone();
+                        if self.try_lowering_value(i, mid)? {
                             hi = mid;
                         } else {
-                            attempt[i] = self.shrink_target.record[i];
                             lo = mid;
                         }
                     }
-                    attempt[i] = hi;
-                } else {
-                    attempt = self.shrink_target.record.clone();
                 }
             }
 
@@ -213,6 +381,12 @@ where
         }
 
         Ok(())
+    }
+
+    fn execute(&mut self, buf: &DataStream) -> Result<(bool, TestResult), LoopExitReason> {
+        // TODO: Later there will be caching here
+        let result = self.main_loop.execute(DataSource::from_vec(buf.clone()))?;
+        Ok((self.predicate(&result), result))
     }
 
     fn incorporate(&mut self, buf: &DataStream) -> Result<bool, LoopExitReason> {
@@ -229,8 +403,8 @@ where
         if self.shrink_target.record.starts_with(buf) {
             return Ok(false);
         }
-        let result = self.main_loop.execute(DataSource::from_vec(buf.clone()))?;
-        return Ok(self.predicate(&result));
+        let (succeeded, _) = self.execute(buf)?;
+        Ok(succeeded)
     }
 }
 

@@ -4,6 +4,8 @@ use std::collections::BinaryHeap;
 use std::mem;
 use std::cmp::{Ord, Ordering, PartialOrd, Reverse};
 
+use std::u64::MAX as MAX64;
+
 type Draw<T> = Result<T, FailedDraw>;
 
 pub fn weighted(source: &mut DataSource, probability: f64) -> Result<bool, FailedDraw> {
@@ -11,12 +13,19 @@ pub fn weighted(source: &mut DataSource, probability: f64) -> Result<bool, Faile
 
     let truthy = (probability * (u64::max_value() as f64 + 1.0)).floor() as u64;
     let probe = source.bits(64)?;
-    return Ok(probe >= u64::max_value() - truthy + 1);
+    Ok(match (truthy, probe) {
+        (0, _) => false,
+        (MAX64, _) => true,
+        (_, 0) => false,
+        (_, 1) => true,
+        _ => probe >= MAX64 - truthy,
+    })
 }
 
 pub fn bounded_int(source: &mut DataSource, max: u64) -> Draw<u64> {
     let bitlength = 64 - max.leading_zeros() as u64;
     if bitlength == 0 {
+        source.write(0)?;
         return Ok(0);
     }
     loop {
@@ -46,30 +55,25 @@ impl Repeat {
         }
     }
 
-    fn draw_until(&self, source: &mut DataSource, value: bool) -> Result<(), FailedDraw> {
-        // Force a draw until we get the desired outcome. By having this we get much better
-        // shrinking when min_size or max_size are set because all decisions are represented
-        // somewhere in the bit stream.
-        loop {
-            let d = weighted(source, self.p_continue)?;
-            if d == value {
-                return Ok(());
-            }
-        }
-    }
-
     pub fn reject(&mut self) {
         assert!(self.current_count > 0);
         self.current_count -= 1;
     }
 
     pub fn should_continue(&mut self, source: &mut DataSource) -> Result<bool, FailedDraw> {
-        if self.current_count < self.min_count {
-            self.draw_until(source, true)?;
+        if self.min_count == self.max_count {
+            if self.current_count < self.max_count {
+                self.current_count += 1;
+                return Ok(true);
+            } else {
+                return Ok(false);
+            }
+        } else if self.current_count < self.min_count {
+            source.write(1)?;
             self.current_count += 1;
             return Ok(true);
         } else if self.current_count >= self.max_count {
-            self.draw_until(source, false)?;
+            source.write(0)?;
             return Ok(false);
         }
 

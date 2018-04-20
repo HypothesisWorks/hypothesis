@@ -20,4 +20,31 @@ RSpec.describe 'shrinking' do
     expect(a).to eq(2)
     expect(b).to eq(1)
   end
+
+  it 'can shrink through a chain' do
+    ls, = find do
+      x = any built_as do
+        n = any integers(min: 1, max: 100)
+        any arrays(of: integers(min: 0, max: 10), min_size: n, max_size: n)
+      end
+      x.sum >= 50
+    end
+
+    expect(ls).to_not include(0)
+  end
+
+  it 'can shrink through a chain without deleting first element' do
+    10.times do
+      ls, = find do
+        x = any built_as do
+          n = any integers(min: 1, max: 100)
+          any arrays(of: integers(min: 0, max: 10), min_size: n, max_size: n)
+        end
+        assume x[0] > 0
+        x.sum >= 50
+      end
+
+      expect(ls).to_not include(0)
+    end
+  end
 end
