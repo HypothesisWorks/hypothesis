@@ -21,8 +21,7 @@ import math
 import hashlib
 from random import Random
 
-from hypothesis import Verbosity, seed, given, assume, settings, unlimited
-from hypothesis.errors import FailedHealthCheck
+from hypothesis import Verbosity, assume, settings, unlimited
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.strategies import data, just, none, text, lists, binary, \
