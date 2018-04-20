@@ -47,9 +47,12 @@ def test_can_set_homedir_and_it_will_exist(tmpdir):
     assert os.path.exists(d)
 
 
-def test_will_pick_up_location_from_env(tmpdir):
-    os.environ[u'HYPOTHESIS_STORAGE_DIRECTORY'] = str(tmpdir)
-    assert fs.hypothesis_home_dir() == str(tmpdir)
+def test_will_pick_up_location_from_env(monkeypatch, tmpdir):
+    tmpdir = str(tmpdir)
+    monkeypatch.setattr(os, 'environ', {
+        'HYPOTHESIS_STORAGE_DIRECTORY': tmpdir
+    })
+    assert fs.hypothesis_home_dir() == tmpdir
 
 
 def test_storage_directories_are_created_automatically(tmpdir):
