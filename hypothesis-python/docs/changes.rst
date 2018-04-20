@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.56.3:
+
+-------------------
+3.56.3 - 2018-04-20
+-------------------
+
+This release fixes a problem introduced in :ref:`3.56.0 <v3.56.0>` where
+setting the hypothesis home directory (through currently undocumented
+means) would no longer result in the default database location living
+in the new home directory.
+
 .. _v3.56.2:
 
 -------------------
