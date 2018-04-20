@@ -162,7 +162,36 @@ where
             }
 
             self.reorder_blocks()?;
+            self.lower_and_delete()?;
             self.delete_all_ranges()?;
+        }
+        Ok(())
+    }
+
+    fn lower_and_delete(&mut self) -> StepResult {
+        let mut i = 0;
+        while i < self.shrink_target.record.len() {
+            if self.shrink_target.record[i] > 0 {
+                let mut attempt = self.shrink_target.record.clone();
+                attempt[i] -= 1;
+                let (succeeded, result) = self.execute(&attempt)?;
+                if !succeeded && result.record.len() < self.shrink_target.record.len() {
+                    let mut j = 0;
+                    while j < self.shrink_target.draws.len() {
+                        if self.shrink_target.draws[j].start > i {
+                            let mut attempt2 = attempt.clone();
+                            attempt2.drain(
+                                self.shrink_target.draws[j].start..self.shrink_target.draws[j].end,
+                            );
+                            if self.incorporate(&attempt2)? {
+                                break;
+                            }
+                        }
+                        j += 1;
+                    }
+                }
+            }
+            i += 1;
         }
         Ok(())
     }
