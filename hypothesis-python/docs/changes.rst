@@ -27,9 +27,9 @@ information to the contrary.
 3.56.1 - 2018-04-20
 -------------------
 
-This release fixes a problem that was introduced in `3.56.0 <v3.56.0>`:
-Use of the ``HYPOTHESIS_VERBOSITY_LEVEL`` environment variable was, rather
-than deprecated, actually broken due to being read before various setup 
+This release fixes a problem that was introduced in :ref:`3.56.0 <v3.56.0>`:
+Use of the :envvar:`HYPOTHESIS_VERBOSITY_LEVEL` environment variable was, rather
+than deprecated, actually broken due to being read before various setup
 the deprecation path needed was done. It now works correctly (and emits a
 deprecation warning).
 
@@ -55,9 +55,8 @@ knowledge of our internals (:issue:`535`).
   disabled, due to overlap with the
   :obj:`~hypothesis.settings.HealthCheck.filter_too_much` healthcheck
   and poor interaction with :obj:`~hypothesis.settings.max_examples`.
-- :envvar:`HYPOTHESIS_VERBOSITY_LEVEL` was never documented, but is
-  now explicitly deprecated.  Set :obj:`~hypothesis.settings.verbosity`
-  through the profile system instead.
+- :envvar:`HYPOTHESIS_VERBOSITY_LEVEL` is now deprecated.  Set
+  :obj:`~hypothesis.settings.verbosity` through the profile system instead.
 - Examples tried by :func:`~hypothesis.find` are now reported at ``debug``
   verbosity level (as well as ``verbose`` level).
 
@@ -272,7 +271,7 @@ This has no user-visible changes except one slight formatting change to one docs
 3.50.1 - 2018-03-20
 -------------------
 
-This patch fixes an internal error introduced in 3.48.0, where a check
+This patch fixes an internal error introduced in :ref:`3.48.0 <v3.48.0>`, where a check
 for the Django test runner would expose import-time errors in Django
 configuration (:issue:`1167`).
 
@@ -1273,7 +1272,7 @@ This release fixes a performance problem in tests where
 
 Tests experience a slow-down proportionate to the amount of code they cover.
 This is still the case, but the factor is now low enough that it should be
-unnoticeable. Previously it was large and became much larger in 3.28.4.
+unnoticeable. Previously it was large and became much larger in :ref:`3.30.4 <v3.30.4>`.
 
 .. _v3.31.4:
 
@@ -1679,7 +1678,7 @@ generated array to be distinct.
 
 This release fixes an issue where Hypothesis would raise a ``TypeError`` when
 using the datetime-related strategies if running with ``PYTHONOPTIMIZE=2``.
-This bug was introduced in v3.20.0.  (See :issue:`822`)
+This bug was introduced in :ref:`3.20.0 <v3.20.0>`.  (See :issue:`822`)
 
 .. _v3.22.1:
 
@@ -1876,7 +1875,7 @@ Thanks to Ben Peterson for this bug fix.
 -------------------
 
 This release should improve the performance of some tests which
-experienced a slow down as a result of the 3.13.0 release.
+experienced a slow down as a result of the :ref:`3.13.0 <v3.13.0>` release.
 
 Tests most likely to benefit from this are ones that make extensive
 use of ``min_size`` parameters, but others may see some improvement
@@ -1888,7 +1887,7 @@ as well.
 3.18.2 - 2017-08-16
 -------------------
 
-This release fixes a bug introduced in 3.18.0. If the arguments
+This release fixes a bug introduced in :ref:`3.18.0 <v3.18.0>`. If the arguments
 ``whitelist_characters`` and ``blacklist_characters`` to
 :func:`~hypothesis.strategies.characters` both contained elements, then an
 ``InvalidArgument`` exception would be raised.
@@ -2297,7 +2296,7 @@ properties such as indexing support or repeated iteration.
 
 This is a bug fix release for a single bug:
 
-* In 3.7.3, using :func:`@example <hypothesis.example>` and a pytest fixture in the same test could
+* In :ref:`3.7.3 <v3.7.3>`, using :func:`@example <hypothesis.example>` and a pytest fixture in the same test could
   cause the test to fail to fill the arguments, and throw a TypeError.
 
 .. _v3.7.3:
@@ -2317,7 +2316,7 @@ remain unchanged.
 3.7.2 - 2017-04-21
 ------------------
 
-This reverts an undocumented change in 3.7.1 which broke installation on
+This reverts an undocumented change in :ref:`3.7.1 <v3.7.1>` which broke installation on
 debian stable: The specifier for the hypothesis[django] extra\_requires had
 introduced a wild card, which was not supported on the default version of pip.
 
@@ -2554,7 +2553,7 @@ In particular:
 3.3.0 - 2016-05-27
 ------------------
 
-This release went wrong and is functionally equivalent to 3.2.0. Ignore it.
+This release went wrong and is functionally equivalent to :ref:`3.2.0 <v3.2.0>`. Ignore it.
 
 .. _v3.2.0:
 
@@ -2579,7 +2578,7 @@ This is a small single-feature release:
 
 Single bug fix release
 
-* Another charmap problem. In 3.1.2 :func:`~hypothesis.strategies.text` and
+* Another charmap problem. In :ref:`3.1.2 <v3.1.2>` :func:`~hypothesis.strategies.text` and
   :func:`~hypothesis.strategies.characters` would break on systems
   which had ``/tmp`` mounted on a different partition than the Hypothesis storage
   directory (usually in home). This fixes that.
@@ -2610,7 +2609,7 @@ Minor bug fix release.
 * Improve performance of code using :func:`~hypothesis.strategies.lists` with max_size (thanks to
   Cristi Cobzarenco).
 * Fix install on Python 2 with ancient versions of pip so that it installs the
-  enum34 backport (thanks to Donald Stufft for telling me how to do this).
+  :pypi:`enum34` backport (thanks to Donald Stufft for telling me how to do this).
 * Remove duplicated __all__ exports from hypothesis.strategies (thanks to
   Piët Delport).
 * Update headers to point to new repository location.
@@ -2638,7 +2637,7 @@ Minor bug fix release.
 * Hypothesis now uses a pretty-printing library internally, compatible with IPython's
   pretty printing protocol (actually using the same code). This may improve the quality
   of output in some cases.
-* As a 'phases' setting that allows more fine grained control over which parts of the
+* Add a 'phases' setting that allows more fine grained control over which parts of the
   process Hypothesis runs
 * Add a suppress_health_check setting which allows you to turn off specific health checks
   in a fine grained manner.
