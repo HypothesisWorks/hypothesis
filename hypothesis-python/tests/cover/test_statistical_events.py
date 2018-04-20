@@ -23,7 +23,7 @@ import traceback
 
 import pytest
 
-from hypothesis import HealthCheck, event, given, example, settings
+from hypothesis import HealthCheck, event, given, assume, example, settings
 from hypothesis import strategies as st
 from hypothesis.statistics import collector
 
@@ -41,6 +41,16 @@ def call_for_statistics(test_function):
             traceback.print_exc()
     assert result[0] is not None
     return result[0]
+
+
+def test_notes_hard_to_satisfy():
+    @given(st.integers())
+    @settings(suppress_health_check=HealthCheck.all())
+    def test(i):
+        assume(i == 0)
+
+    stats = call_for_statistics(test)
+    assert 'satisfied assumptions' in stats.exit_reason
 
 
 def test_can_callback_with_a_string():
