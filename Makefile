@@ -217,7 +217,7 @@ check-fast: lint $(PYPY) $(PY36) $(TOX)
 check-rst: $(RSTLINT) $(FLAKE8)
 	$(RSTLINT) CONTRIBUTING.rst README.rst
 	$(RSTLINT) guides/*.rst
-	$(FLAKE8) --select=W191,W291,W292,W293,W391 *.rst hypothesis-python/docs/*.rst
+	$(FLAKE8) --select=W191,W291,W292,W293,W391 *.rst hypothesis-python/*.rst hypothesis-python/docs/*.rst
 
 compile-requirements: $(PIPCOMPILE)
 	$(PIPCOMPILE) requirements/test.in --output-file requirements/test.txt
