@@ -4,7 +4,7 @@
 # version of Python, then hand over to the actual Hypothesis build runner (which
 # is written in Python instead of bash).
 
-set -x
+set -o xtrace
 set -o errexit
 set -o nounset
 
