@@ -107,7 +107,7 @@ Clarity of Description
 The ``RELEASE.rst`` should contain a description of the change that
 makes clear:
 
-1. The motivation for the change 
+1. The motivation for the change
 2. The likely consequences of the change
 
 This doesn't have to be an essay. If you're following the orthogonality

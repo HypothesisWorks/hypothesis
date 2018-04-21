@@ -17,12 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
-import time
-
 import pytest
 
 from hypothesis import HealthCheck, given, infer, assume, reject, settings
-from hypothesis.errors import Timeout, Unsatisfiable, InvalidArgument
+from hypothesis.errors import Unsatisfiable, InvalidArgument
 from tests.common.utils import fails_with, validate_deprecation
 from hypothesis.strategies import booleans, integers
 

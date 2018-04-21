@@ -28,6 +28,9 @@ from collections import defaultdict
 from distutils.version import StrictVersion
 
 import hypothesistooling as tools
+from hypothesistooling.scripts import tool_path
+
+SPHINXBUILD = tool_path('sphinx-build')
 
 
 def dedent_lines(lines, force_newline=None):
@@ -104,7 +107,7 @@ class FailingExample(object):
 def get_doctest_output():
     # Return a dict of filename: list of examples, sorted from last to first
     # so that replacing them in sequence works
-    command = run(['sphinx-build', '-b', 'doctest', 'docs', 'docs/_build'],
+    command = run([SPHINXBUILD, '-b', 'doctest', 'docs', 'docs/_build'],
                   stdout=PIPE, stderr=PIPE, encoding='utf-8')
     output = [FailingExample(c) for c in command.stdout.split('*' * 70)
               if c.strip().startswith('File "')]
@@ -127,7 +130,7 @@ def indent_like(lines, like):
 
 def main():
     os.chdir(tools.ROOT)
-    version = run(['sphinx-build', '--version'], stdout=PIPE,
+    version = run([SPHINXBUILD, '--version'], stdout=PIPE,
                   encoding='utf-8').stdout.lstrip('sphinx-build ')
     if StrictVersion(version) < '1.7':
         print('This script requires Sphinx 1.7 or later; got %s.\n' % version)

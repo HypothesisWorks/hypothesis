@@ -3,7 +3,7 @@ How to Work on Hypothesis Internals
 ===================================
 
 Note: Currently this guide is very specific to the *Python* version of Hypothesis.
-Over time the core will be factored out into a small separate set of libraries - 
+Over time the core will be factored out into a small separate set of libraries -
 the current migration plan is to move all of the Python code into Rust and have
 the Python and Ruby versions both depend on this. Eventually we will likely need
 to have more than one core library - e.g. a Java one as well.

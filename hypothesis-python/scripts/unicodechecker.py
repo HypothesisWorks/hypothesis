@@ -26,7 +26,6 @@ from tempfile import mkdtemp
 import unicodenazi
 from hypothesis import settings, unlimited
 from hypothesis.errors import HypothesisDeprecationWarning
-from hypothesistooling import PYTHON_TESTS
 from hypothesis.configuration import set_hypothesis_home_dir
 
 warnings.filterwarnings('error', category=UnicodeWarning)
@@ -48,12 +47,17 @@ TESTS = [
     'test_testdecorators',
 ]
 
-sys.path.append(os.path.join(PYTHON_TESTS, 'cover'))
+sys.path.append(os.path.join('tests', 'cover'))
 
-if __name__ == '__main__':
+
+def main():
     for t in TESTS:
         module = __import__(t)
         for k, v in sorted(module.__dict__.items(), key=lambda x: x[0]):
             if k.startswith('test_') and inspect.isfunction(v):
                 print(k)
                 v()
+
+
+if __name__ == '__main__':
+    main()

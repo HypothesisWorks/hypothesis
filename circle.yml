@@ -1,19 +1,16 @@
 test:
   override:
-    - scripts/run_circle.py
+    - ./build.sh check-py27
+    - ./build.sh check-py36
 
 machine:
   pre:
     - brew update
-    - brew install python
-    - ln -f -s $(which python3) /usr/local/bin/python
-    - ln -f -s $(which pip3) /usr/local/bin/pip
-    - python --version
-    - pip --version
+    - brew install readline xz ncurses
 
 dependencies:
   override:
-    - make install-core
+    - ./build.sh install-core
 
   cache_directories:
     - ~/.cache/hypothesis-build-runtimes

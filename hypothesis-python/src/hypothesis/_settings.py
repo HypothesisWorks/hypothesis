@@ -24,7 +24,6 @@ this module can be modified.
 from __future__ import division, print_function, absolute_import
 
 import os
-import inspect
 import warnings
 import threading
 from enum import Enum, IntEnum, unique
