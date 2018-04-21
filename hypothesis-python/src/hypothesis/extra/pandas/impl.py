@@ -22,8 +22,8 @@ from collections import Iterable, OrderedDict
 
 import attr
 import numpy as np
-
 import pandas
+
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis._internal.conjecture.utils as cu
