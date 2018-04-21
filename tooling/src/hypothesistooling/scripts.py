@@ -26,8 +26,26 @@ import subprocess
 from hypothesistooling import ROOT
 
 
+def print_command(command, args):
+    args = list(args)
+    ranges = []
+    for i, v in enumerate(args):
+        if os.path.exists(v):
+            if not ranges or ranges[-1][-1] < i - 1:
+                ranges.append([i, i])
+            elif ranges[-1][-1] + 1 == i:
+                ranges[-1][-1] += 1
+    for i, j in ranges:
+        if j > i:
+            args[i] = '...'
+            for k in range(i + 1, j + 1):
+                args[k] = None
+    args = [v for v in args if v is not None]
+    print(command, *map(shlex.quote, args))
+
+
 def run_script(script, *args, **kwargs):
-    print(script, *map(shlex.quote, args))
+    print_command(script, args)
     return subprocess.check_call(
         [os.path.join(SCRIPTS, script), *args], **kwargs
     )
@@ -55,7 +73,7 @@ def tool_path(name):
 
 
 def pip_tool(name, *args, **kwargs):
-    print(name, *map(shlex.quote, args))
+    print_command(name, args)
     r = subprocess.call([tool_path(name), *args], **kwargs)
 
     if r != 0:
