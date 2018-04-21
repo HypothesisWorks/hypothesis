@@ -135,22 +135,15 @@ we actually wanted our labels to be unique. Lets change the test to do that.
 .. code:: python
 
     def deduplicate_nodes_by_label(nodes):
-        table = {}
-        for node in nodes:
-            table[node.label] = node
+        table = {node.label: node for node in nodes}
         return list(table.values())
 
-
-    NodeSet = s.lists(NodeStrategy).map(deduplicate_nodes_by_label)
-
-We define a function to deduplicate nodes by labels, and then map that over a strategy
-for lists of nodes to give us a strategy for lists of nodes with unique labels. We can
-now rewrite the test to use that:
-
+We define a function to deduplicate nodes by labels, and can now map that over a strategy
+for lists of nodes to give us a strategy for lists of nodes with unique labels:
 
 .. code:: python
 
-    @given(NodeSet)
+    @given(s.lists(NodeStrategy).map(deduplicate_nodes_by_label))
     def test_sorting_nodes_is_prefix_sorted(xs):
         sort_nodes(xs)
         assert is_prefix_sorted(xs)
@@ -193,7 +186,7 @@ managed to sort some nodes without getting it completely wrong. Go us.
 Time zone arithmetic
 --------------------
 
-This is an example of some tests for pytz which check that various timezone
+This is an example of some tests for :pypi:`pytz` which check that various timezone
 conversions behave as you would expect them to. These tests should all pass,
 and are mostly a demonstration of some useful sorts of thing to test with
 Hypothesis, and how the :func:`~hypothesis.strategies.datetimes` strategy works.
@@ -369,6 +362,7 @@ hammer their API without their permission).
 All this does is use Hypothesis to generate random JSON data matching the
 format their API asks for and check for 500 errors. More advanced tests which
 then use the result and go on to do other things are definitely also possible.
+The :pypi:`swagger-conformance` package provides an excellent example of this!
 
 .. code:: python
 

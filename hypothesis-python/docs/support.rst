@@ -4,7 +4,8 @@ Help and Support
 
 For questions you are happy to ask in public, the :doc:`Hypothesis community <community>` is a
 friendly place where I or others will be more than happy to help you out. You're also welcome to
-ask questions on Stack Overflow. If you do, please tag them with 'python-hypothesis' so someone
+ask questions on Stack Overflow. If you do, please tag them with
+`'python-hypothesis' <https://stackoverflow.com/questions/tagged/python-hypothesis>`_ so someone
 sees them.
 
 For bugs and enhancements, please file an issue on the :issue:`GitHub issue tracker <>`.

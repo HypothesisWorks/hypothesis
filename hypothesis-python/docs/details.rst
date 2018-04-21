@@ -437,12 +437,11 @@ and should be rewritten as:
 .. code:: python
 
     from unittest import TestCase
-    import inspect
 
     class TestRunTwice(TestCase):
         def execute_example(self, f):
             result = f()
-            if inspect.isfunction(result):
+            if callable(result):
                 result = result()
             return result
 

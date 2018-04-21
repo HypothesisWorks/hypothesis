@@ -665,7 +665,7 @@ also improved, leading to better error messages in many cases involving
 --------------------
 
 This release fixes a bug in the shrinker that prevented the optimisations in
-3.44.6 from working in some cases. It would not have worked correctly when
+:ref:`3.44.6 <v3.44.6>` from working in some cases. It would not have worked correctly when
 filtered examples were nested (e.g. with a set of integers in some range).
 
 This would not have resulted in any correctness problems, but shrinking may
@@ -826,7 +826,7 @@ would show up normally.
 3.44.0 - 2017-12-17
 -------------------
 
-This release adds a new feature: The :ref:`@reproduce_failure <reproduce_failure>`,
+This release adds a new feature: The :ref:`@reproduce_failure decorator <reproduce_failure>`,
 designed to make it easy to use Hypothesis's binary format for examples to
 reproduce a problem locally without having to share your example database
 between machines.
@@ -1106,8 +1106,8 @@ The following are now deprecated:
 * Passing :attr:`~hypothesis.HealthCheck.random_module` to
   :attr:`~hypothesis.settings.suppress_health_check`. This hasn't done anything
   for a long time, but was never explicitly deprecated. Hypothesis always seeds
-  the random module when running @given tests, so this is no longer an error
-  and suppressing it doesn't do anything.
+  the random module when running :func:`@given <hypothesis.given>` tests, so this
+  is no longer an error and suppressing it doesn't do anything.
 * Passing non-:class:`~hypothesis.HealthCheck` values in
   :attr:`~hypothesis.settings.suppress_health_check`. This was previously
   allowed but never did anything useful.
@@ -2271,7 +2271,7 @@ reliable iteration order.
 3.8.3 - 2017-05-09
 ------------------
 
-This release removes a version check for older versions of pytest when using
+This release removes a version check for older versions of :pypi:`pytest` when using
 the Hypothesis pytest plugin. The pytest plugin will now run unconditionally
 on all versions of pytest. This breaks compatibility with any version of pytest
 prior to 2.7.0 (which is more than two years old).
@@ -2317,10 +2317,9 @@ properties such as indexing support or repeated iteration.
 3.7.4 - 2017-04-22
 ------------------
 
-This is a bug fix release for a single bug:
-
-* In :ref:`3.7.3 <v3.7.3>`, using :func:`@example <hypothesis.example>` and a pytest fixture in the same test could
-  cause the test to fail to fill the arguments, and throw a TypeError.
+This patch fixes a bug in :ref:`3.7.3 <v3.7.3>`, where using
+:func:`@example <hypothesis.example>` and a pytest fixture in the same test
+could cause the test to fail to fill the arguments, and throw a TypeError.
 
 .. _v3.7.3:
 
@@ -2508,7 +2507,7 @@ This is a feature release.
 
 * :func:`~hypothesis.strategies.fractions` and :func:`~hypothesis.strategies.decimals` strategies now support min_value and max_value
   parameters. Thanks go to Anne Mulhern for the development of this feature.
-* The Hypothesis pytest plugin now supports a --hypothesis-show-statistics parameter
+* The Hypothesis pytest plugin now supports a ``--hypothesis-show-statistics`` parameter
   that gives detailed statistics about the tests that were run. Huge thanks to
   Jean-Louis Fuchs and Adfinis-SyGroup for funding the development of this feature.
 * There is a new :func:`~hypothesis.event` function that can be used to add custom statistics.
@@ -2561,7 +2560,7 @@ This is a bug fix release for a single bug:
 This release is entirely provided by `Lucas Wiman <https://github.com/lucaswiman>`_:
 
 Strategies constructed by :func:`~hypothesis.extra.django.models` will now respect much more of
-Django's validations out of the box. Wherever possible full_clean() should
+Django's validations out of the box. Wherever possible :meth:`~django:django.db.models.Model.full_clean` should
 succeed.
 
 In particular:
