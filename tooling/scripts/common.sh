@@ -10,7 +10,7 @@ HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT="$(git -C "$HERE" rev-parse --show-toplevel)"
 
 export ROOT
-export BUILD_RUNTIMES=${BUILD_RUNTIMES-$HOME/.cache/hypothesis-build-runtimes}
+export BUILD_RUNTIMES=${BUILD_RUNTIMES:-$HOME/.cache/hypothesis-build-runtimes}
 export BASE="$BUILD_RUNTIMES"
 export PYENV="$BASE/pyenv"
 export SNAKEPIT="$BASE/python-versions/"
