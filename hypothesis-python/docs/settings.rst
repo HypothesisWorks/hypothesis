@@ -40,12 +40,9 @@ the same. The following is exactly equivalent:
 Available settings
 ------------------
 
-.. module:: hypothesis
-.. autoclass:: settings
-    :members: max_examples, max_iterations, min_satisfying_examples,
-        max_shrinks, timeout, strict, database_file, stateful_step_count,
-        database, perform_health_check, suppress_health_check, buffer_size,
-        phases, deadline, use_coverage, derandomize
+.. autoclass:: hypothesis.settings
+    :members:
+    :exclude-members: register_profile, get_profile, load_profile
 
 .. _phases:
 
