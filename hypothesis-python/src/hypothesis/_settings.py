@@ -38,6 +38,9 @@ from hypothesis.internal.reflection import proxies, \
 from hypothesis.internal.validation import try_convert
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
+if False:
+    from typing import Dict, List  # noqa
+
 __all__ = [
     'settings',
 ]
@@ -46,7 +49,7 @@ __all__ = [
 unlimited = UniqueIdentifier('unlimited')
 
 
-all_settings = {}
+all_settings = {}  # type: Dict[str, Setting]
 
 
 class settingsProperty(object):
@@ -113,7 +116,9 @@ class settingsMeta(type):
         default_variable.value = value
 
 
-class settings(settingsMeta('settings', (object,), {})):
+class settings(
+    settingsMeta('settings', (object,), {})  # type: ignore
+):
     """A settings object controls a variety of parameters that are used in
     falsification. These may control both the falsification strategy and the
     details of the data that is generated.
@@ -126,7 +131,7 @@ class settings(settingsMeta('settings', (object,), {})):
         '_construction_complete', 'storage'
     ]
     __definitions_are_locked = False
-    _profiles = {}
+    _profiles = {}  # type: dict
 
     def __getattr__(self, name):
         if name in all_settings:
@@ -498,11 +503,11 @@ warnings.simplefilter('error', HypothesisDeprecationWarning).
 )
 
 
-def _validate_database(db, __from_db_file=False):
+def _validate_database(db, _from_db_file=False):
     from hypothesis.database import ExampleDatabase
     if db is None or isinstance(db, ExampleDatabase):
         return db
-    if __from_db_file or db is not_set:
+    if _from_db_file or db is not_set:
         return ExampleDatabase(db)
     raise InvalidArgument(
         'Arguments to the database setting must be None or an instance of '
@@ -533,7 +538,7 @@ settings.define_setting(
 The file or directory location to save and load previously tried examples;
 `:memory:` for an in-memory cache or None to disable caching entirely.
 """,
-    validator=lambda f: _validate_database(f, __from_db_file=True),
+    validator=lambda f: _validate_database(f, _from_db_file=True),
     deprecation_message="""
 The `database_file` setting is deprecated in favor of the `database`
 setting, and will be removed in a future version.  It only exists at

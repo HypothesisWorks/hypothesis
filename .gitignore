@@ -4,6 +4,7 @@
 venv*
 .cache
 .pytest_cache
+.mypy_cache
 .hypothesis
 docs/_build
 *.egg-info

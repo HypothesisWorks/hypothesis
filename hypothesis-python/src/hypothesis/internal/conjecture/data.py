@@ -58,7 +58,7 @@ class StructuralTag(object):
     label = attr.ib()
 
 
-STRUCTURAL_TAGS = {}
+STRUCTURAL_TAGS = {}  # type: dict
 
 
 def structural_tag(label):

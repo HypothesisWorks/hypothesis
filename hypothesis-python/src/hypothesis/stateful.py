@@ -51,6 +51,9 @@ from hypothesis.searchstrategy.strategies import SearchStrategy
 
 STATE_MACHINE_RUN_LABEL = calc_label_from_name('another state machine step')
 
+if False:
+    from typing import Any, Dict, List, Text  # noqa
+
 
 class TestCaseProperty(object):  # pragma: no cover
 
@@ -136,6 +139,8 @@ class GenericStateMachine(object):
     sequence of example choices demonstrating that.
     """
 
+    find_breaking_runner = None  # type: classmethod
+
     def steps(self):
         """Return a SearchStrategy instance the defines the available next
         steps."""
@@ -177,7 +182,7 @@ class GenericStateMachine(object):
         """Called after initializing and after executing each step."""
         pass
 
-    _test_case_cache = {}
+    _test_case_cache = {}  # type: dict
 
     TestCase = TestCaseProperty()
 
@@ -441,18 +446,18 @@ class RuleBasedStateMachine(GenericStateMachine):
     executed.
     """
 
-    _rules_per_class = {}
-    _invariants_per_class = {}
-    _base_rules_per_class = {}
+    _rules_per_class = {}  # type: Dict[type, List[classmethod]]
+    _invariants_per_class = {}  # type: Dict[type, List[classmethod]]
+    _base_rules_per_class = {}  # type: Dict[type, List[classmethod]]
 
     def __init__(self):
         if not self.rules():
             raise InvalidDefinition(u'Type %s defines no rules' % (
                 type(self).__name__,
             ))
-        self.bundles = {}
+        self.bundles = {}  # type: Dict[Text, list]
         self.name_counter = 1
-        self.names_to_values = {}
+        self.names_to_values = {}  # type: Dict[Text, Any]
         self.__stream = CUnicodeIO()
         self.__printer = RepresentationPrinter(self.__stream)
 

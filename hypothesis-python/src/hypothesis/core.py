@@ -39,12 +39,12 @@ from coverage.files import canonical_filename
 from coverage.collector import Collector
 
 import hypothesis.strategies as st
-from hypothesis import __version__
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, DidNotReproduce, InvalidArgument, DeadlineExceeded, \
     MultipleFailures, FailedHealthCheck, HypothesisWarning, \
     UnsatisfiedAssumption, HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
+from hypothesis.version import __version__
 from hypothesis._settings import Phase, Verbosity, HealthCheck, \
     PrintSettings
 from hypothesis._settings import settings as Settings
@@ -73,6 +73,9 @@ try:
     from coverage.tracer import CFileDisposition as FileDisposition
 except ImportError:  # pragma: no cover
     from coverage.collector import FileDisposition
+
+if False:
+    from typing import Any, Dict, Callable, Optional  # noqa
 
 
 running_under_pytest = False
@@ -424,7 +427,7 @@ class Arc(object):
         self.target = target
 
 
-ARC_CACHE = {}
+ARC_CACHE = {}  # type: Dict[str, Dict[Any, Dict[Any, Arc]]]
 
 
 def arc(filename, source, target):
@@ -890,6 +893,7 @@ def fake_subTest(self, msg=None, **__):
 
 
 def given(*given_arguments, **given_kwargs):
+    # type: (*SearchStrategy, **SearchStrategy) -> Callable
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
 
@@ -1075,7 +1079,14 @@ def given(*given_arguments, **given_kwargs):
     return run_test_with_generator
 
 
-def find(specifier, condition, settings=None, random=None, database_key=None):
+def find(
+    specifier,  # type: SearchStrategy
+    condition,  # type: Callable[[Any], bool]
+    settings=None,  # type: Settings
+    random=None,   # type: Any
+    database_key=None,  # type: bytes
+):
+    # type: (...) -> Any
     """Returns the minimal example from the given strategy ``specifier`` that
     matches the predicate function ``condition``."""
     settings = settings or Settings(

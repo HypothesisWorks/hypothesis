@@ -1018,7 +1018,7 @@ class Negated(object):
         self.tag = tag
 
 
-NEGATED_CACHE = {}
+NEGATED_CACHE = {}  # type: dict
 
 
 def negated(tag):

@@ -53,6 +53,11 @@ def lint():
 
 
 @task
+def check_type_hints():
+    pip_tool('mypy', tools.PYTHON_SRC)
+
+
+@task
 def check_pyup_yml():
     with open(tools.PYUP_FILE, 'r') as i:
         data = yaml.safe_load(i.read())

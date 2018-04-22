@@ -33,8 +33,11 @@ from collections import namedtuple
 try:
     from collections import OrderedDict, Counter
 except ImportError:  # pragma: no cover
-    from ordereddict import OrderedDict
-    from counter import Counter
+    from ordereddict import OrderedDict  # type: ignore
+    from counter import Counter  # type: ignore
+
+if False:
+    from typing import Type  # noqa
 
 
 PY2 = sys.version_info[0] == 2
@@ -410,7 +413,7 @@ class compatbytes(bytearray):
         else:
             return r
 
-    __setitem__ = None
+    __setitem__ = None  # type: ignore
 
     def join(self, parts):
         result = bytearray()
@@ -467,7 +470,7 @@ def implements_iterator(it):
 
 
 if PY3:
-    FileNotFoundError = FileNotFoundError
+    FileNotFoundError = FileNotFoundError  # type: Type[IOError]
 else:
     FileNotFoundError = IOError
 
@@ -475,7 +478,7 @@ else:
 # an existing file where you're not allowed to. This is rather less consistent
 # between versions than might be hoped.
 if PY3:
-    FileExistsError = FileExistsError
+    FileExistsError = FileExistsError  # type: Type[IOError]
 
 elif WINDOWS:
     FileExistsError = WindowsError
@@ -519,7 +522,7 @@ else:
     from base64 import b64decode
 
 
-_cases = []
+_cases = []  # type: list
 
 
 def bad_django_TestCase(runner):

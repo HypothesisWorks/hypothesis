@@ -403,7 +403,7 @@ def eval_directory():
     return storage_directory('eval_source')
 
 
-eval_cache = {}
+eval_cache = {}  # type: dict
 
 
 def source_exec_as_module(source):
