@@ -22,8 +22,13 @@ from inspect import cleandoc
 from hypothesis._settings import note_deprecation
 from hypothesis.internal.reflection import proxies
 
+if False:
+    from typing import Callable  # noqa
+    from hypothesis.searchstrategy.strategies import T  # noqa
+
 
 def renamed_arguments(**rename_mapping):
+    # type: (**str) -> Callable[[T], T]
     """Helper function for deprecating arguments that have been renamed to a
     new form.
 
