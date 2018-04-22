@@ -29,11 +29,16 @@ from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 
+if False:
+    from typing import Any, Union, Sequence, Tuple  # noqa
+    from hypothesis.searchstrategy.strategies import T  # noqa
+
 TIME_RESOLUTIONS = tuple('Y  M  D  h  m  s  ms  us  ns  ps  fs  as'.split())
 
 
 @st.defines_strategy_with_reusable_values
 def from_dtype(dtype):
+    # type: (np.dtype) -> st.SearchStrategy[Any]
     # Compound datatypes, eg 'f4,f4,f4'
     if dtype.names is not None:
         # mapping np.void.type over a strategy is nonsense, so return now.
@@ -47,7 +52,7 @@ def from_dtype(dtype):
 
     # Scalar datatypes
     if dtype.kind == u'b':
-        result = st.booleans()
+        result = st.booleans()  # type: SearchStrategy[Any]
     elif dtype.kind == u'f':
         result = st.floats()
     elif dtype.kind == u'c':
@@ -227,8 +232,14 @@ def fill_for(elements, unique, fill, name=''):
 
 @st.composite
 def arrays(
-    draw, dtype, shape, elements=None, fill=None, unique=False
+    draw,  # type: Any
+    dtype,  # type: Any
+    shape,  # type: Union[int, Sequence[int]]
+    elements=None,  # type: st.SearchStrategy[Any]
+    fill=None,  # type: st.SearchStrategy[Any]
+    unique=False,  # type: bool
 ):
+    # type: (...) -> st.SearchStrategy[np.ndarray]
     """Returns a strategy for generating :class:`numpy's
     ndarrays<numpy.ndarray>`.
 
@@ -320,6 +331,7 @@ def arrays(
 
 @st.defines_strategy
 def array_shapes(min_dims=1, max_dims=3, min_side=1, max_side=10):
+    # type: (int, int, int, int) -> st.SearchStrategy[Tuple[int, ...]]
     """Return a strategy for array shapes (tuples of int >= 1)."""
     order_check('dims', 1, min_dims, max_dims)
     order_check('side', 1, min_side, max_side)
@@ -329,6 +341,7 @@ def array_shapes(min_dims=1, max_dims=3, min_side=1, max_side=10):
 
 @st.defines_strategy
 def scalar_dtypes():
+    # type: () -> st.SearchStrategy[np.dtype]
     """Return a strategy that can return any non-flexible scalar dtype."""
     return st.one_of(boolean_dtypes(),
                      integer_dtypes(), unsigned_integer_dtypes(),
@@ -337,6 +350,7 @@ def scalar_dtypes():
 
 
 def defines_dtype_strategy(strat):
+    # type: (T) -> T
     @st.defines_strategy
     @proxies(strat)
     def inner(*args, **kwargs):
@@ -346,6 +360,7 @@ def defines_dtype_strategy(strat):
 
 @defines_dtype_strategy
 def boolean_dtypes():
+    # type: () -> st.SearchStrategy[np.dtype]
     return st.just('?')
 
 
@@ -374,6 +389,7 @@ def dtype_factory(kind, sizes, valid_sizes, endianness):
 
 @defines_dtype_strategy
 def unsigned_integer_dtypes(endianness='?', sizes=(8, 16, 32, 64)):
+    # type: (str, Sequence[int]) -> st.SearchStrategy[np.dtype]
     """Return a strategy for unsigned integer dtypes.
 
     endianness may be ``<`` for little-endian, ``>`` for big-endian,
@@ -388,6 +404,7 @@ def unsigned_integer_dtypes(endianness='?', sizes=(8, 16, 32, 64)):
 
 @defines_dtype_strategy
 def integer_dtypes(endianness='?', sizes=(8, 16, 32, 64)):
+    # type: (str, Sequence[int]) -> st.SearchStrategy[np.dtype]
     """Return a strategy for signed integer dtypes.
 
     endianness and sizes are treated as for
@@ -398,6 +415,7 @@ def integer_dtypes(endianness='?', sizes=(8, 16, 32, 64)):
 
 @defines_dtype_strategy
 def floating_dtypes(endianness='?', sizes=(16, 32, 64)):
+    # type: (str, Sequence[int]) -> st.SearchStrategy[np.dtype]
     """Return a strategy for floating-point dtypes.
 
     sizes is the size in bits of floating-point number.  Some machines support
@@ -412,6 +430,7 @@ def floating_dtypes(endianness='?', sizes=(16, 32, 64)):
 
 @defines_dtype_strategy
 def complex_number_dtypes(endianness='?', sizes=(64, 128)):
+    # type: (str, Sequence[int]) -> st.SearchStrategy[np.dtype]
     """Return a strategy for complex-number dtypes.
 
     sizes is the total size in bits of a complex number, which consists
@@ -439,6 +458,7 @@ def validate_time_slice(max_period, min_period):
 
 @defines_dtype_strategy
 def datetime64_dtypes(max_period='Y', min_period='ns', endianness='?'):
+    # type: (str, str, str) -> st.SearchStrategy[np.dtype]
     """Return a strategy for datetime64 dtypes, with various precisions from
     year to attosecond."""
     return dtype_factory('datetime64[{}]',
@@ -448,6 +468,7 @@ def datetime64_dtypes(max_period='Y', min_period='ns', endianness='?'):
 
 @defines_dtype_strategy
 def timedelta64_dtypes(max_period='Y', min_period='ns', endianness='?'):
+    # type: (str, str, str) -> st.SearchStrategy[np.dtype]
     """Return a strategy for timedelta64 dtypes, with various precisions from
     year to attosecond."""
     return dtype_factory('timedelta64[{}]',
@@ -457,6 +478,7 @@ def timedelta64_dtypes(max_period='Y', min_period='ns', endianness='?'):
 
 @defines_dtype_strategy
 def byte_string_dtypes(endianness='?', min_len=0, max_len=16):
+    # type: (str, int, int) -> st.SearchStrategy[np.dtype]
     """Return a strategy for generating bytestring dtypes, of various lengths
     and byteorder."""
     order_check('len', 0, min_len, max_len)
@@ -466,6 +488,7 @@ def byte_string_dtypes(endianness='?', min_len=0, max_len=16):
 
 @defines_dtype_strategy
 def unicode_string_dtypes(endianness='?', min_len=0, max_len=16):
+    # type: (str, int, int) -> st.SearchStrategy[np.dtype]
     """Return a strategy for generating unicode string dtypes, of various
     lengths and byteorder."""
     order_check('len', 0, min_len, max_len)
@@ -474,23 +497,34 @@ def unicode_string_dtypes(endianness='?', min_len=0, max_len=16):
 
 
 @defines_dtype_strategy
-def array_dtypes(subtype_strategy=scalar_dtypes(),
-                 min_size=1, max_size=5, allow_subarrays=False):
+def array_dtypes(
+    subtype_strategy=scalar_dtypes(),  # type: st.SearchStrategy[np.dtype]
+    min_size=1,  # type: int
+    max_size=5,  # type: int
+    allow_subarrays=False,  # type: bool
+):
+    # type: (...) -> st.SearchStrategy[np.dtype]
     """Return a strategy for generating array (compound) dtypes, with members
     drawn from the given subtype strategy."""
     order_check('size', 0, min_size, max_size)
-    native_strings = st.text if text_type is str else st.binary
-    elements = st.tuples(native_strings(), subtype_strategy)
+    native_strings = st.text()  # type: SearchStrategy[Any]
+    if text_type is not str:  # pragma: no cover
+        native_strings = st.binary()
+    elements = st.tuples(native_strings, subtype_strategy)
     if allow_subarrays:
-        elements |= st.tuples(native_strings(), subtype_strategy,
+        elements |= st.tuples(native_strings, subtype_strategy,
                               array_shapes(max_dims=2, max_side=2))
     return st.lists(elements=elements, min_size=min_size, max_size=max_size,
                     unique_by=lambda d: d[0])
 
 
 @st.defines_strategy
-def nested_dtypes(subtype_strategy=scalar_dtypes(),
-                  max_leaves=10, max_itemsize=None):
+def nested_dtypes(
+    subtype_strategy=scalar_dtypes(),  # type: st.SearchStrategy[np.dtype]
+    max_leaves=10,  # type: int
+    max_itemsize=None,  # type: int
+):
+    # type: (...) -> st.SearchStrategy[np.dtype]
     """Return the most-general dtype strategy.
 
     Elements drawn from this strategy may be simple (from the

@@ -75,7 +75,8 @@ except ImportError:  # pragma: no cover
     from coverage.collector import FileDisposition
 
 if False:
-    from typing import Any, Dict, Callable, Optional  # noqa
+    from typing import Any, Dict, Callable, Optional, Union  # noqa
+    from hypothesis.utils.conventions import UniqueIdentifier  # noqa
 
 
 running_under_pytest = False
@@ -892,8 +893,11 @@ def fake_subTest(self, msg=None, **__):
     yield
 
 
-def given(*given_arguments, **given_kwargs):
-    # type: (*SearchStrategy, **SearchStrategy) -> Callable
+def given(
+    *given_arguments,  # type: Union[SearchStrategy, UniqueIdentifier]
+    **given_kwargs  # type: Union[SearchStrategy, UniqueIdentifier]
+):
+    # type: (...) -> Callable[[Callable[..., None]], Callable[..., None]]
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
 

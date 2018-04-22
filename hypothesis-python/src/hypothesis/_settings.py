@@ -39,7 +39,7 @@ from hypothesis.internal.validation import try_convert
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 if False:
-    from typing import Dict, List  # noqa
+    from typing import Any, Dict, List  # noqa
 
 __all__ = [
     'settings',
@@ -140,6 +140,7 @@ class settings(
             raise AttributeError('settings has no attribute %s' % (name,))
 
     def __init__(self, parent=None, **kwargs):
+        # type: (settings, **Any) -> None
         if (
             kwargs.get('database', not_set) is not_set and
             kwargs.get('database_file', not_set) is not not_set
@@ -326,6 +327,7 @@ class settings(
 
     @staticmethod
     def register_profile(name, parent=None, **kwargs):
+        # type: (str, settings, **Any) -> None
         """Registers a collection of values to be used as a settings profile.
 
         Settings profiles can be loaded by name - for example, you might
@@ -354,6 +356,7 @@ class settings(
 
     @staticmethod
     def get_profile(name):
+        # type: (str) -> settings
         """Return the profile with the given name."""
         if not isinstance(name, (str, text_type)):
             note_deprecation('name=%r must be a string' % (name,))
@@ -364,6 +367,7 @@ class settings(
 
     @staticmethod
     def load_profile(name):
+        # type: (str) -> None
         """Loads in the settings defined in the profile provided.
 
         If the profile does not exist, InvalidArgument will be raised.
@@ -568,6 +572,7 @@ class HealthCheck(Enum):
 
     @classmethod
     def all(cls):
+        # type: () -> List[HealthCheck]
         bad = (HealthCheck.exception_in_generation, HealthCheck.random_module)
         return [h for h in list(cls) if h not in bad]
 
@@ -623,6 +628,7 @@ class Verbosity(IntEnum):
 
     @staticmethod
     def _get_default():
+        # type: () -> Verbosity
         var = os.getenv('HYPOTHESIS_VERBOSITY_LEVEL')
         if var is not None:  # pragma: no cover
             try:
@@ -792,6 +798,7 @@ settings.lock_further_definitions()
 
 
 def note_deprecation(message, s=None):
+    # type: (str, settings) -> None
     if s is None:
         s = settings.default
     assert s is not None

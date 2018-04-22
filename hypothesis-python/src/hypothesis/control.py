@@ -24,12 +24,16 @@ from hypothesis.errors import CleanupFailed, InvalidArgument, \
 from hypothesis.reporting import report
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
+if False:
+    from typing import Any, AnyStr  # noqa
+
 
 def reject():
     raise UnsatisfiedAssumption()
 
 
 def assume(condition):
+    # type: (Any) -> bool
     """Calling ``assume`` is like an :ref:`assert <python:assert>` that marks
     the example as bad, rather than failing the test.
 
@@ -103,6 +107,7 @@ def cleanup(teardown):
 
 
 def note(value):
+    # type: (AnyStr) -> None
     """Report this value in the final execution."""
     context = _current_build_context.value
     if context is None:
@@ -114,6 +119,7 @@ def note(value):
 
 
 def event(value):
+    # type: (AnyStr) -> None
     """Record an event that occurred this test. Statistics on number of test
     runs with each event will be reported at the end if you run Hypothesis in
     statistics reporting mode.
