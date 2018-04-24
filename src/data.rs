@@ -39,6 +39,7 @@ pub struct Draw {
 pub struct DataSource {
     bitgenerator: BitGenerator,
     record: DataStream,
+    sizes: Vec<u64>,
     draws: Vec<DrawInProgress>,
     draw_stack: Vec<usize>,
     written_indices: HashSet<usize>,
@@ -49,6 +50,7 @@ impl DataSource {
         return DataSource {
             bitgenerator: generator,
             record: DataStream::new(),
+            sizes: Vec::new(),
             draws: Vec::new(),
             draw_stack: Vec::new(),
             written_indices: HashSet::new(),
@@ -95,6 +97,7 @@ impl DataSource {
     }
 
     pub fn bits(&mut self, n_bits: u64) -> Result<u64, FailedDraw> {
+        self.sizes.push(n_bits);
         let mut result = match self.bitgenerator {
             BitGenerator::Random(ref mut random) => random.next_u64(),
             BitGenerator::Recorded(ref mut v) => if self.record.len() >= v.len() {
@@ -119,6 +122,7 @@ impl DataSource {
             record: self.record,
             status: status,
             written_indices: self.written_indices,
+            sizes: self.sizes,
             draws: self.draws
                 .drain(..)
                 .filter_map(|d| match d {
@@ -174,5 +178,6 @@ pub struct TestResult {
     pub record: DataStream,
     pub status: Status,
     pub draws: Vec<Draw>,
+    pub sizes: Vec<u64>,
     pub written_indices: HashSet<usize>,
 }

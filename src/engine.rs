@@ -3,11 +3,14 @@
 
 use rand::{ChaChaRng, Rng, SeedableRng};
 
+use std::cmp::Reverse;
+use std::collections::HashMap;
+use std::mem;
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::thread;
-use std::mem;
 
 use data::{DataSource, DataStream, Status, TestResult};
+use intminimize::minimize_integer;
 
 #[derive(Debug, Clone)]
 enum LoopExitReason {
@@ -153,7 +156,8 @@ where
         while prev != self.changes {
             prev = self.changes;
             self.adaptive_delete()?;
-            self.binary_search_blocks()?;
+            self.minimize_individual_blocks()?;
+            self.minimize_duplicated_blocks()?;
             if prev == self.changes {
                 self.expensive_passes_enabled = true;
             }
@@ -354,32 +358,72 @@ where
         }
     }
 
-    fn binary_search_blocks(&mut self) -> StepResult {
+    fn minimize_individual_blocks(&mut self) -> StepResult {
         let mut i = 0;
 
         while i < self.shrink_target.record.len() {
-            let mut hi = self.shrink_target.record[i];
-
-            if hi > 0 && !self.shrink_target.written_indices.contains(&i) {
-                let zeroed = self.try_lowering_value(i, 0)?;
-                if !zeroed {
-                    let mut lo = 0;
-                    // Binary search to find the smallest value we can
-                    // replace this with.
-                    while lo + 1 < hi {
-                        let mid = lo + (hi - lo) / 2;
-                        if self.try_lowering_value(i, mid)? {
-                            hi = mid;
-                        } else {
-                            lo = mid;
-                        }
-                    }
-                }
+            if !self.shrink_target.written_indices.contains(&i) {
+                minimize_integer(self.shrink_target.record[i], |v| {
+                    self.try_lowering_value(i, v)
+                })?;
             }
 
             i += 1;
         }
 
+        Ok(())
+    }
+
+    fn calc_duplicates(&self) -> Vec<Vec<usize>> {
+        assert!(self.shrink_target.record.len() == self.shrink_target.sizes.len());
+        let mut duplicates: HashMap<(u64, u64), Vec<usize>> = HashMap::new();
+        for (i, (u, v)) in self.shrink_target
+            .record
+            .iter()
+            .zip(self.shrink_target.sizes.iter())
+            .enumerate()
+        {
+            duplicates
+                .entry((*u, *v))
+                .or_insert_with(|| Vec::new())
+                .push(i);
+        }
+
+        let mut result: Vec<Vec<usize>> = duplicates
+            .drain()
+            .filter_map(|(_, elements)| {
+                if elements.len() > 1 {
+                    Some(elements)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        result.sort_by_key(|v| Reverse(v.len()));
+        result
+    }
+
+    fn minimize_duplicated_blocks(&mut self) -> StepResult {
+        let mut i = 0;
+        let mut targets = self.calc_duplicates();
+        while i < targets.len() {
+            let target = mem::replace(&mut targets[i], Vec::new());
+            i += 1;
+            assert!(target.len() > 0);
+            let v = self.shrink_target.record[target[0]];
+            let base = self.shrink_target.record.clone();
+
+            let w = minimize_integer(v, |t| {
+                let mut attempt = base.clone();
+                for i in &target {
+                    attempt[*i] = t
+                }
+                self.incorporate(&attempt)
+            })?;
+            if w != v {
+                targets = self.calc_duplicates();
+            }
+        }
         Ok(())
     }
 

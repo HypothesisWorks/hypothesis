@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'set'
+
 RSpec.describe 'shrinking' do
   include Hypothesis::Debug
 
@@ -45,6 +47,17 @@ RSpec.describe 'shrinking' do
       end
 
       expect(ls).to_not include(0)
+    end
+  end
+
+  it 'can shrink duplicate elements' do
+    10.times do
+      ls, = find do
+        x = any array(of: integers(min: 0, max: 100))
+        significant = x.select { |n| n > 0 }
+        Set.new(significant).length < significant.length
+      end
+      expect(ls).to eq([1, 1])
     end
   end
 end
