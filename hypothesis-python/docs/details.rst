@@ -543,3 +543,55 @@ changes between Python 3.5.0 and 3.6.1, including at minor versions.  These
 are all supported on a best-effort basis, but you may encounter problems with
 an old version of the module.  Please report them to us, and consider
 updating to a newer version of Python as a workaround.
+
+
+.. _our-type-hints:
+
+------------------------------
+Type Annotations in Hypothesis
+------------------------------
+
+If you install Hypothesis and use :pypi:`mypy` 0.590+, or another
+:PEP:`561`-compatible tool, the type checker should automatically pick
+up our type hints.
+
+.. note::
+    Hypothesis' type hints may make breaking changes between minor releases.
+
+    Upstream tools and conventions about type hints remain in flux - for
+    example the :mod:`python:typing` module itself is provisional, and Mypy
+    has not yet reached version 1.0 - and we plan to support the latest
+    version of this ecosystem, as well as older versions where practical.
+
+    We may also find more precise ways to describe the type of various
+    interfaces, or change their type and runtime behaviour togther in a way
+    which is otherwise backwards-compatible.  We often omit type hints for
+    deprecated features or arguments, as an additional form of warning.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Writing downstream type hints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Projects that :doc:`provide Hypothesis strategies <strategies>` and use
+type hints may wish to annotate their strategies too.  This *is* a
+supported use-case, again on a best-effort provisional basis.  For example:
+
+.. code:: python
+
+    def foo_strategy() -> SearchStrategy[Foo]: ...
+
+:class:`hypothesis.strategies.SearchStrategy` is the type of all strategy
+objects.  It is a generic type, and covariant in the type of the examples
+it creates.  For example:
+
+- ``integers()`` is of type ``SearchStrategy[int]``.
+- ``lists(integers())`` is of type ``SearchStrategy[List[int]]``.
+- ``SearchStrategy[Dog]`` is a subtype of ``SearchStrategy[Animal]``
+  if ``Dog`` is a subtype of ``Animal`` (as seems likely).
+
+.. warning::
+    :class:`~hypothesis.strategies.SearchStrategy` **should only be used
+    in type hints.**  Please do not inherit from, compare to, or otherwise
+    use it in any way outside of type hints.  The only supported way to
+    construct objects of this type is to use the functions provided by the
+    :mod:`hypothesis.strategies` module!
