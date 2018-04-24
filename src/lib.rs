@@ -15,6 +15,7 @@ extern crate rand;
 mod engine;
 mod data;
 mod distributions;
+mod intminimize;
 
 use std::mem;
 

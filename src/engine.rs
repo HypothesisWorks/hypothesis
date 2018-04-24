@@ -8,6 +8,8 @@ use std::thread;
 use std::mem;
 
 use data::{DataSource, DataStream, Status, TestResult};
+use intminimize::minimize_integer;
+
 
 #[derive(Debug, Clone)]
 enum LoopExitReason {
@@ -358,23 +360,8 @@ where
         let mut i = 0;
 
         while i < self.shrink_target.record.len() {
-            let mut hi = self.shrink_target.record[i];
-
-            if hi > 0 && !self.shrink_target.written_indices.contains(&i) {
-                let zeroed = self.try_lowering_value(i, 0)?;
-                if !zeroed {
-                    let mut lo = 0;
-                    // Binary search to find the smallest value we can
-                    // replace this with.
-                    while lo + 1 < hi {
-                        let mid = lo + (hi - lo) / 2;
-                        if self.try_lowering_value(i, mid)? {
-                            hi = mid;
-                        } else {
-                            lo = mid;
-                        }
-                    }
-                }
+            if !self.shrink_target.written_indices.contains(&i) {
+                minimize_integer(self.shrink_target.record[i], |v| self.try_lowering_value(i, v))?;
             }
 
             i += 1;
