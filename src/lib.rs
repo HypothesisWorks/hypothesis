@@ -12,16 +12,16 @@ extern crate core;
 extern crate helix;
 extern crate rand;
 
-mod engine;
 mod data;
 mod distributions;
+mod engine;
 mod intminimize;
 
 use std::mem;
 
-use engine::Engine;
 use data::{DataSource, Status};
 use distributions::Repeat;
+use engine::Engine;
 
 ruby! {
   class HypothesisCoreDataSource {

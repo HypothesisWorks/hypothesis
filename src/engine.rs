@@ -3,13 +3,12 @@
 
 use rand::{ChaChaRng, Rng, SeedableRng};
 
+use std::mem;
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::thread;
-use std::mem;
 
 use data::{DataSource, DataStream, Status, TestResult};
 use intminimize::minimize_integer;
-
 
 #[derive(Debug, Clone)]
 enum LoopExitReason {
@@ -361,7 +360,9 @@ where
 
         while i < self.shrink_target.record.len() {
             if !self.shrink_target.written_indices.contains(&i) {
-                minimize_integer(self.shrink_target.record[i], |v| self.try_lowering_value(i, v))?;
+                minimize_integer(self.shrink_target.record[i], |v| {
+                    self.try_lowering_value(i, v)
+                })?;
             }
 
             i += 1;
