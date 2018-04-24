@@ -17,7 +17,7 @@ begin
   end
 
   task :rust_tests do
-      sh "cargo test"
+    sh 'cargo test'
   end
 
   task test: %i[build spec minitests rust_tests]
