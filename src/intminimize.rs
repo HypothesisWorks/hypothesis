@@ -68,6 +68,21 @@ where
 
     assert!(minimizer.best >= SMALL);
 
+    for i in 0..64 {
+        let left_mask = 1 << i;
+        let mut right_mask = left_mask >> 1;
+        while right_mask != 0 {
+            minimizer.modify(|x| {
+                if x & left_mask == 0 || x & right_mask != 0 {
+                    x
+                } else {
+                    x ^ (right_mask | left_mask)
+                }
+            })?;
+            right_mask >>= 1;
+        }
+    }
+
     if !minimizer.modify(|x| x - 1)? {
         return Ok(minimizer.best);
     }
@@ -94,8 +109,17 @@ mod tests {
     where
         F: Fn(u64) -> bool,
     {
-        let r: Result<u64, ()> = minimize_integer(start, |x| Ok(criterion(x)));
-        r.unwrap()
+        let mut best = start;
+
+        loop {
+            let ran: Result<u64, ()> = minimize_integer(best, |x| Ok(criterion(x)));
+            let result = ran.unwrap();
+            assert!(result <= best);
+            if result == best {
+                return best;
+            }
+            best = result;
+        }
     }
 
     #[test]
@@ -110,5 +134,16 @@ mod tests {
         let y = 0b111111111111;
         let n = non_failing_minimize(y, |k| k & x == x);
         assert_eq!(n, x);
+    }
+
+    #[test]
+    fn sort_bits() {
+        let x: u64 = 0b1011011011000111;
+        let y: u64 = 0b0000001111111111;
+        let c = x.count_ones();
+        assert_eq!(c, y.count_ones());
+
+        let n = non_failing_minimize(x, |k| k.count_ones() == c);
+        assert_eq!(y, n);
     }
 }
