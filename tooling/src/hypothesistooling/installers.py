@@ -93,4 +93,4 @@ def ensure_shellcheck():
         return
     update_stack()
     ensure_ghc()
-    subprocess.check_call([STACK, 'install', 'shellcheck'])
+    subprocess.check_call([STACK, 'install', 'ShellCheck'])
