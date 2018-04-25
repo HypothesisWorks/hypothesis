@@ -383,10 +383,12 @@ where
             .zip(self.shrink_target.sizes.iter())
             .enumerate()
         {
-            duplicates
-                .entry((*u, *v))
-                .or_insert_with(|| Vec::new())
-                .push(i);
+            if !self.shrink_target.written_indices.contains(&i) {
+                duplicates
+                    .entry((*u, *v))
+                    .or_insert_with(|| Vec::new())
+                    .push(i);
+            }
         }
 
         let mut result: Vec<Vec<usize>> = duplicates

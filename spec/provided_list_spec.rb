@@ -10,17 +10,19 @@ RSpec.describe 'shrinking' do
   end
 
   it 'shrinks a list to its last element' do
-    @original_target = nil
+    10.times do
+      @original_target = nil
 
-    ls, = find do
-      v = any(arrays(of: integers))
+      ls, = find do
+        v = any(arrays(of: integers))
 
-      if v.length >= 5 && @original_target.nil? && v[-1] > 0
-        @original_target = v
+        if v.length >= 5 && @original_target.nil? && v[-1] > 0
+          @original_target = v
+        end
+        !@original_target.nil? && v && v[-1] == @original_target[-1]
       end
-      !@original_target.nil? && v && v[-1] == @original_target[-1]
-    end
 
-    expect(ls.length).to eq(1)
+      expect(ls.length).to eq(1)
+    end
   end
 end

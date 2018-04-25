@@ -90,6 +90,7 @@ impl DataSource {
         match self.bitgenerator {
             BitGenerator::Recorded(ref mut v) if self.record.len() >= v.len() => Err(FailedDraw),
             _ => {
+                self.sizes.push(0);
                 self.record.push(value);
                 Ok(())
             }
