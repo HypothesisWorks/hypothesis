@@ -69,15 +69,28 @@ def ensure_stack():
     )
 
 
+stack_updated = False
+
+
+def update_stack():
+    global stack_updated
+    if stack_updated:
+        return
+    stack_updated = True
+    ensure_stack()
+    subprocess.check_call([STACK, 'update'])
+
+
 def ensure_ghc():
     if os.path.exists(GHC):
         return
-    ensure_stack()
+    update_stack()
     subprocess.check_call([STACK, 'setup'])
 
 
 def ensure_shellcheck():
     if os.path.exists(SHELLCHECK):
         return
+    update_stack()
     ensure_ghc()
-    subprocess.check_call([STACK, 'install', 'shellcheck'])
+    subprocess.check_call([STACK, 'install', 'ShellCheck'])
