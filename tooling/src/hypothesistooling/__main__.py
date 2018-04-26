@@ -419,7 +419,7 @@ def run_tox(task, version):
 
     # Create a version of the name that tox will pick up for the correct
     # interpreter alias.
-    linked_version = os.path.basename(python) + ALIASES[version]
+    linked_version = os.path.join(os.path.basename(python), ALIASES[version])
     try:
         os.symlink(python, linked_version)
     except FileExistsError:
@@ -440,6 +440,7 @@ PY34 = '3.4.8'
 PY35 = '3.5.5'
 PY36 = '3.6.5'
 PYPY2 = 'pypy2.7-5.10.0'
+PYPY3 = 'pypy3.5-5.10.0'
 
 
 @task
@@ -450,6 +451,7 @@ def install_core():
 
 ALIASES = {
     PYPY2: 'pypy',
+    PYPY3: 'pypy3',
 }
 
 for n in [PY27, PY34, PY35, PY36]:
@@ -480,6 +482,11 @@ def check_py36():
 @task
 def check_pypy():
     run_tox('pypy-full', PYPY2)
+
+
+@task
+def check_pypy3():
+    run_tox('pypy-full', PYPY3)
 
 
 @task

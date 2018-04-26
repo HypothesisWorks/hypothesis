@@ -41,6 +41,7 @@ env:
         - TASK=check-coverage
         - TASK=check-requirements
         - TASK=check-pypy
+        - TASK=check-pypy3
         - TASK=check-py27
         - TASK=check-py36
         - TASK=check-quality
