@@ -1,3 +1,11 @@
+## Hypothesis for Ruby 0.0.10 (2018-04-26)
+
+This release is another update to shrinking:
+
+* Cases where the value may be simplified without necessarily
+  becoming smaller will have better results.
+* Duplicated values can now sometimes be simultaneously shrunk.
+
 ## Hypothesis for Ruby 0.0.9 (2018-04-20)
 
 This improves Hypothesis for Ruby's shrinking to be much closer
