@@ -85,7 +85,7 @@ and :func:`@given <hypothesis.given>`.
 .. doctest::
 
     >>> from hypothesis import find, settings, Verbosity
-    >>> from hypothesis.strategies import lists, booleans
+    >>> from hypothesis.strategies import lists, integers
     >>> find(lists(integers()), any, settings=settings(verbosity=Verbosity.verbose))
     Tried non-satisfying example []
     Found satisfying example [-1198601713, -67, 116, -29578]
