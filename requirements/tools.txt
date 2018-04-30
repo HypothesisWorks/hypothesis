@@ -30,7 +30,7 @@ mccabe==0.6.1             # via flake8
 more-itertools==4.1.0     # via pytest
 mypy==0.590
 packaging==17.1           # via dparse, pyupio, safety, sphinx
-pip-tools==2.0.1
+pip-tools==2.0.2
 pkginfo==1.4.2            # via twine
 pluggy==0.6.0             # via pytest, tox
 py==1.5.3                 # via pytest, tox
