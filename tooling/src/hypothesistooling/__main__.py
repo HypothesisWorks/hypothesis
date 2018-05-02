@@ -447,6 +447,7 @@ PYPY2 = 'pypy2.7-5.10.0'
 def install_core():
     install.python_executable(PY27)
     install.python_executable(PY36)
+    install.python_executable(PY37)
 
 
 ALIASES = {

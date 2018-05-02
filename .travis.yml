@@ -60,7 +60,6 @@ env:
         - TASK=check-pypy
         - TASK=check-py27
         - TASK=check-py36
-        - TASK=check-py37
         - TASK=check-quality
 
         # Less important tests that will probably
