@@ -439,6 +439,7 @@ PY27 = '2.7.14'
 PY34 = '3.4.8'
 PY35 = '3.5.5'
 PY36 = '3.6.5'
+PY37 = '3.7.0b3'
 PYPY2 = 'pypy2.7-5.10.0'
 
 
@@ -475,6 +476,11 @@ def check_py35():
 @task
 def check_py36():
     run_tox('py36-full', PY36)
+
+
+@task
+def check_py37():
+    run_tox('py37-full', PY37)
 
 
 @task
