@@ -451,6 +451,7 @@ def install_core():
 
 ALIASES = {
     PYPY2: 'pypy',
+    PY37: 'python3.7',
 }
 
 for n in [PY27, PY34, PY35, PY36]:
