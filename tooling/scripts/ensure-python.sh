@@ -57,7 +57,7 @@ if [ ! -e "$TARGET/bin/python" ] ; then
     fi
 
     for _ in $(seq 5); do
-        if "$BASE/pyenv/plugins/python-build/bin/python-build" -v "$VERSION" "$TARGET" ; then
+        if "$BASE/pyenv/plugins/python-build/bin/python-build" "$VERSION" "$TARGET" ; then
             exit 0
         fi
         echo "Command failed. Retrying..."
