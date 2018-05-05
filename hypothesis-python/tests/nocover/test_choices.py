@@ -22,7 +22,7 @@ from hypothesis import given, settings, unlimited
 from tests.common.utils import raises, capture_out, \
     checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase
-from hypothesis.internal.compat import hrange
+from hypothesis._internal.compat import hrange
 
 
 @checks_deprecated_behaviour

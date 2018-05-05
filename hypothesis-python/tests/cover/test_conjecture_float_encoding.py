@@ -22,14 +22,14 @@ from random import Random
 
 import pytest
 
-import hypothesis.internal.conjecture.floats as flt
+import hypothesis._internal.conjecture.floats as flt
 from hypothesis import given, assume, example
 from hypothesis import strategies as st
-from hypothesis.internal.compat import ceil, floor, hbytes, int_to_bytes, \
-    int_from_bytes
-from hypothesis.internal.floats import float_to_int
-from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.internal.conjecture.minimizer import minimize
+from hypothesis._internal.compat import ceil, floor, hbytes, \
+    int_to_bytes, int_from_bytes
+from hypothesis._internal.floats import float_to_int
+from hypothesis._internal.conjecture.data import ConjectureData
+from hypothesis._internal.conjecture.minimizer import minimize
 
 EXPONENTS = list(range(0, flt.MAX_EXPONENT + 1))
 assert len(EXPONENTS) == 2 ** 11

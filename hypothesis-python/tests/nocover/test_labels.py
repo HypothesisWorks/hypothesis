@@ -18,8 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
-from hypothesis.internal.compat import hbytes
-from hypothesis.internal.conjecture.data import Status, StructuralTag, \
+from hypothesis._internal.compat import hbytes
+from hypothesis._internal.conjecture.data import Status, StructuralTag, \
     ConjectureData
 
 

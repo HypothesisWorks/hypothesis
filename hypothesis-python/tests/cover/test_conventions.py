@@ -17,7 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.utils.conventions import UniqueIdentifier
+from hypothesis._utils.conventions import UniqueIdentifier
 
 
 def test_unique_identifier_repr():

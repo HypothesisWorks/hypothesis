@@ -22,7 +22,7 @@ import pytest
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import integers
-from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis._internal.reflection import get_pretty_function_description
 
 
 def test_destructuring_lambdas():

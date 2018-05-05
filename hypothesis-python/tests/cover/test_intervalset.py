@@ -21,8 +21,8 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given, assume, example
-from hypothesis.internal.charmap import _subtract_intervals
-from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis._internal.charmap import _subtract_intervals
+from hypothesis._internal.intervalsets import IntervalSet
 
 
 def build_intervals(ls):

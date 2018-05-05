@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis.internal.floats import sign
+from hypothesis._internal.floats import sign
 
 
 def test_sign_gives_good_type_error():

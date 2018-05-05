@@ -21,7 +21,7 @@ import re
 
 import pytest
 
-from hypothesis.internal.compat import hrange
+from hypothesis._internal.compat import hrange
 
 pytest_plugins = str('pytester')
 

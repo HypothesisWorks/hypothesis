@@ -21,9 +21,10 @@ import attr
 
 import hypothesis.strategies as st
 from hypothesis import given, settings
-from hypothesis.internal.compat import hrange
-from hypothesis.internal.conjecture.data import Status
-from hypothesis.internal.conjecture.engine import TargetSelector, universal
+from hypothesis._internal.compat import hrange
+from hypothesis._internal.conjecture.data import Status
+from hypothesis._internal.conjecture.engine import TargetSelector, \
+    universal
 
 
 @attr.s()

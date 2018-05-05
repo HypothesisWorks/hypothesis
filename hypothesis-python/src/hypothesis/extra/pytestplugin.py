@@ -19,12 +19,12 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-import hypothesis.core as core
+import hypothesis._core as core
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
-from hypothesis.statistics import collector
-from hypothesis.internal.compat import OrderedDict, text_type
-from hypothesis.internal.detection import is_hypothesis_test
+from hypothesis._statistics import collector
+from hypothesis._internal.compat import OrderedDict, text_type
+from hypothesis._internal.detection import is_hypothesis_test
 
 LOAD_PROFILE_OPTION = '--hypothesis-profile'
 PRINT_STATISTICS_OPTION = '--hypothesis-show-statistics'

@@ -20,9 +20,9 @@ from __future__ import division, print_function, absolute_import
 import hypothesis.strategies as st
 from hypothesis import Verbosity, HealthCheck, note, given, assume, \
     example, settings
-from hypothesis.internal.compat import hbytes, int_from_bytes
-from hypothesis.internal.conjecture.data import Status, ConjectureData
-from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis._internal.compat import hbytes, int_from_bytes
+from hypothesis._internal.conjecture.data import Status, ConjectureData
+from hypothesis._internal.conjecture.engine import ConjectureRunner
 
 
 @st.composite

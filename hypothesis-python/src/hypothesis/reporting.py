@@ -20,9 +20,9 @@ from __future__ import division, print_function, absolute_import
 import inspect
 
 from hypothesis._settings import Verbosity, settings
-from hypothesis.internal.compat import print_unicode, \
+from hypothesis._internal.compat import print_unicode, \
     escape_unicode_characters
-from hypothesis.utils.dynamicvariables import DynamicVariable
+from hypothesis._utils.dynamicvariables import DynamicVariable
 
 
 def silent(value):

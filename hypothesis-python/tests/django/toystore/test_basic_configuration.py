@@ -27,7 +27,7 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import integers
 from hypothesis.extra.django import TestCase, TransactionTestCase
-from hypothesis.internal.compat import PYPY
+from hypothesis._internal.compat import PYPY
 from tests.django.toystore.models import Company
 
 

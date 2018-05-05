@@ -29,11 +29,11 @@ from hypothesis.errors import FailedHealthCheck
 from tests.common.utils import all_values, checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from tests.common.strategies import SLOW, HardToShrink
-from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
-from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
+from hypothesis._internal.compat import hbytes, hrange, int_from_bytes
+from hypothesis._internal.conjecture.data import MAX_DEPTH, Status, \
     ConjectureData
-from hypothesis.internal.conjecture.utils import calc_label_from_name
-from hypothesis.internal.conjecture.engine import Negated, Shrinker, \
+from hypothesis._internal.conjecture.utils import calc_label_from_name
+from hypothesis._internal.conjecture.engine import Negated, Shrinker, \
     RunIsComplete, ConjectureRunner, universal
 
 MAX_SHRINKS = 1000

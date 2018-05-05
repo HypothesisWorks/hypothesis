@@ -32,22 +32,22 @@ from unittest import TestCase
 
 import attr
 
-import hypothesis.internal.conjecture.utils as cu
-from hypothesis.core import find
+import hypothesis._internal.conjecture.utils as cu
+from hypothesis._core import find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     HypothesisException
-from hypothesis.control import BuildContext
+from hypothesis._control import BuildContext
 from hypothesis._settings import Verbosity
 from hypothesis._settings import settings as Settings
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.strategies import just, one_of, runner, tuples, \
     fixed_dictionaries
-from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
-from hypothesis.internal.reflection import proxies, nicerepr
-from hypothesis.internal.conjecture.data import StopTest
-from hypothesis.internal.conjecture.utils import integer_range, \
+from hypothesis._vendor.pretty import CUnicodeIO, RepresentationPrinter
+from hypothesis._internal.reflection import proxies, nicerepr
+from hypothesis._internal.conjecture.data import StopTest
+from hypothesis._internal.conjecture.utils import integer_range, \
     calc_label_from_name
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis._searchstrategy.strategies import SearchStrategy
 
 STATE_MACHINE_RUN_LABEL = calc_label_from_name('another state machine step')
 

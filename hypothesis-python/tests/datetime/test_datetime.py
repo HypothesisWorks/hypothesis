@@ -28,7 +28,7 @@ from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal, find_any
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.extra.datetime import datetimes
-from hypothesis.internal.compat import hrange
+from hypothesis._internal.compat import hrange
 
 
 @checks_deprecated_behaviour

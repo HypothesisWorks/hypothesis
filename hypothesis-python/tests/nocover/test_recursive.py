@@ -24,7 +24,7 @@ from flaky import flaky
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, find, given, example, settings
 from tests.common.debug import find_any
-from hypothesis.internal.compat import integer_types
+from hypothesis._internal.compat import integer_types
 
 
 def test_can_generate_with_large_branching():

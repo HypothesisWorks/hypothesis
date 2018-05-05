@@ -25,7 +25,7 @@ from hypothesis import Verbosity, note, given, example, settings, reporting
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import capture_out
 from hypothesis.strategies import text, integers
-from hypothesis.internal.compat import integer_types, print_unicode
+from hypothesis._internal.compat import integer_types, print_unicode
 
 
 class TestInstanceMethods(TestCase):

@@ -26,7 +26,7 @@ from tempfile import mkdtemp
 import unicodenazi
 from hypothesis import settings, unlimited
 from hypothesis.errors import HypothesisDeprecationWarning
-from hypothesis.configuration import set_hypothesis_home_dir
+from hypothesis._configuration import set_hypothesis_home_dir
 
 warnings.filterwarnings('error', category=UnicodeWarning)
 warnings.filterwarnings('error', category=HypothesisDeprecationWarning)

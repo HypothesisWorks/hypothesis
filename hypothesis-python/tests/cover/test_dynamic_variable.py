@@ -17,7 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.utils.dynamicvariables import DynamicVariable
+from hypothesis._utils.dynamicvariables import DynamicVariable
 
 
 def test_can_assign():

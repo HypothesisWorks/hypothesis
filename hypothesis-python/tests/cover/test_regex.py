@@ -27,8 +27,8 @@ import hypothesis.strategies as st
 from hypothesis import given, assume
 from tests.common.debug import find_any, assert_no_examples, \
     assert_all_examples
-from hypothesis.internal.compat import PY3, hrange, hunichr
-from hypothesis.searchstrategy.regex import SPACE_CHARS, \
+from hypothesis._internal.compat import PY3, hrange, hunichr
+from hypothesis._searchstrategy.regex import SPACE_CHARS, \
     UNICODE_SPACE_CHARS, HAS_WEIRD_WORD_CHARS, UNICODE_WORD_CATEGORIES, \
     UNICODE_DIGIT_CATEGORIES, UNICODE_SPACE_CATEGORIES, \
     UNICODE_WEIRD_NONWORD_CHARS, base_regex_strategy

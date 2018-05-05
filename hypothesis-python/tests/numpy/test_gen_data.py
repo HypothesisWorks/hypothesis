@@ -28,8 +28,8 @@ import hypothesis.extra.numpy as nps
 from hypothesis import given, assume, settings
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal, find_any
-from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import text_type, binary_type
+from hypothesis._searchstrategy import SearchStrategy
+from hypothesis._internal.compat import text_type, binary_type
 
 STANDARD_TYPES = list(map(np.dtype, [
     u'int8', u'int32', u'int64',

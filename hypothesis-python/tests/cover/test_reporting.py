@@ -27,7 +27,7 @@ from tests.common.utils import capture_out
 from hypothesis._settings import Verbosity, settings
 from hypothesis.reporting import report, debug_report, verbose_report
 from hypothesis.strategies import integers
-from hypothesis.internal.compat import PY2
+from hypothesis._internal.compat import PY2
 
 
 def test_can_suppress_output():

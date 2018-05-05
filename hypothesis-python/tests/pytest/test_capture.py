@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis.internal.compat import PY2, WINDOWS, hunichr, \
+from hypothesis._internal.compat import PY2, WINDOWS, hunichr, \
     escape_unicode_characters
 
 pytest_plugins = str('pytester')
@@ -53,7 +53,7 @@ UNICODE_EMITTING = """
 import pytest
 from hypothesis import given, settings, Verbosity
 from hypothesis.strategies import text
-from hypothesis.internal.compat import PY3
+from hypothesis._internal.compat import PY3
 import sys
 
 def test_emits_unicode():

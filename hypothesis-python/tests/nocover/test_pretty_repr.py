@@ -20,8 +20,8 @@ from __future__ import division, print_function, absolute_import
 import hypothesis.strategies as st
 from hypothesis import given, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.control import reject
-from hypothesis.internal.compat import OrderedDict
+from hypothesis._control import reject
+from hypothesis._internal.compat import OrderedDict
 
 
 def foo(x):

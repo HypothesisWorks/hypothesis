@@ -23,7 +23,7 @@ from __future__ import division, print_function, absolute_import
 import sys
 import subprocess
 
-import hypothesis.core as core
+import hypothesis._core as core
 
 
 def test_is_running_under_pytest():
@@ -31,7 +31,7 @@ def test_is_running_under_pytest():
 
 
 FILE_TO_RUN = """
-import hypothesis.core as core
+import hypothesis._core as core
 assert not core.running_under_pytest
 """
 

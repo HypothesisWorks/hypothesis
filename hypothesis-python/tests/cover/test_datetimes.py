@@ -27,9 +27,9 @@ from tests.common.debug import minimal, find_any
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import none, dates, times, binary, datetimes, \
     timedeltas
-from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy.datetime import DatetimeStrategy
-from hypothesis.internal.conjecture.data import Status, StopTest, \
+from hypothesis._internal.compat import hrange
+from hypothesis._searchstrategy.datetime import DatetimeStrategy
+from hypothesis._internal.conjecture.data import Status, StopTest, \
     ConjectureData
 
 

@@ -22,9 +22,9 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 from hypothesis.errors import Frozen
-from hypothesis.internal.conjecture.data import Status, StopTest, \
+from hypothesis._internal.conjecture.data import Status, StopTest, \
     ConjectureData
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis._searchstrategy.strategies import SearchStrategy
 
 
 @given(st.binary())

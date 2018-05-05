@@ -24,7 +24,7 @@ import hypothesis.strategies as st
 from hypothesis import find, given, assume
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
-from hypothesis.internal.compat import hrange
+from hypothesis._internal.compat import hrange
 
 
 @st.composite

@@ -26,7 +26,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 from hypothesis.errors import FailedHealthCheck, HypothesisWarning
 from tests.common.utils import fails_with
-from hypothesis.internal.compat import PY2
+from hypothesis._internal.compat import PY2
 
 
 class Thing_with_a_subThing(unittest.TestCase):

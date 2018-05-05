@@ -22,8 +22,8 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import getfullargspec
-from hypothesis.internal.reflection import define_function_signature, \
+from hypothesis._internal.compat import getfullargspec
+from hypothesis._internal.reflection import define_function_signature, \
     convert_positional_arguments, get_pretty_function_description
 
 

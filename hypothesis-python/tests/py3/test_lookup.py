@@ -29,8 +29,8 @@ import hypothesis.strategies as st
 from hypothesis import find, given, infer, assume
 from hypothesis.errors import NoExamples, InvalidArgument, ResolutionFailed
 from hypothesis.strategies import from_type
-from hypothesis.searchstrategy import types
-from hypothesis.internal.compat import integer_types, get_type_hints
+from hypothesis._searchstrategy import types
+from hypothesis._internal.compat import integer_types, get_type_hints
 
 typing = pytest.importorskip('typing')
 sentinel = object()

@@ -23,7 +23,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, note, given, assume, example, settings
-from hypothesis.internal.cache import GenericCache, LRUReusedCache
+from hypothesis._internal.cache import GenericCache, LRUReusedCache
 
 
 class LRUCache(GenericCache):

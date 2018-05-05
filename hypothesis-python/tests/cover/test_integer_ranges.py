@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
 from hypothesis import find, given, settings, unlimited
-from hypothesis.internal.conjecture.utils import integer_range
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis._internal.conjecture.utils import integer_range
+from hypothesis._searchstrategy.strategies import SearchStrategy
 
 
 class interval(SearchStrategy):

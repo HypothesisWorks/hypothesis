@@ -27,7 +27,7 @@ from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.strategies import data, just, none, text, lists, binary, \
     floats, tuples, booleans, decimals, integers, fractions, \
     float_to_int, int_to_float, sampled_from, complex_numbers
-from hypothesis.internal.compat import PYPY
+from hypothesis._internal.compat import PYPY
 
 AVERAGE_LIST_LENGTH = 2
 

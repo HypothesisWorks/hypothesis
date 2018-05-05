@@ -260,7 +260,7 @@ def format():
             'header.py', 'test_lambda_formatting.py'
         ):
             return False
-        if 'vendor' in path.split(os.path.sep):
+        if '_vendor' in path.split(os.path.sep):
             return False
         return path.endswith('.py')
 

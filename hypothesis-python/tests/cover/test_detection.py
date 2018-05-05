@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 from hypothesis import given
 from hypothesis.stateful import GenericStateMachine
 from hypothesis.strategies import integers
-from hypothesis.internal.detection import is_hypothesis_test
+from hypothesis._internal.detection import is_hypothesis_test
 
 
 def test_functions_default_to_not_tests():

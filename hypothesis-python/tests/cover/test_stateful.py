@@ -25,16 +25,16 @@ import pytest
 from hypothesis import assume
 from hypothesis import settings as Settings
 from hypothesis.errors import Flaky, InvalidDefinition
-from hypothesis.control import current_build_context
 from tests.common.utils import raises, capture_out, \
     checks_deprecated_behaviour
+from hypothesis._control import current_build_context
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, GenericStateMachine, \
     RuleBasedStateMachine, rule, invariant, precondition, \
     run_state_machine_as_test
 from hypothesis.strategies import just, none, lists, binary, tuples, \
     choices, booleans, integers, sampled_from
-from hypothesis.internal.compat import print_unicode
+from hypothesis._internal.compat import print_unicode
 
 
 class SetStateMachine(GenericStateMachine):

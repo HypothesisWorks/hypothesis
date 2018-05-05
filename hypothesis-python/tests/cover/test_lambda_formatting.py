@@ -17,7 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis._internal.reflection import get_pretty_function_description
 
 
 def test_bracket_whitespace_is_striped():

@@ -17,7 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.internal.reflection import proxies
+from hypothesis._internal.reflection import proxies
 
 
 def test_can_copy_argspec_of_unicode_args():

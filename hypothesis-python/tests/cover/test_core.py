@@ -24,7 +24,7 @@ from flaky import flaky
 
 import hypothesis.strategies as s
 from hypothesis import find, given, reject, settings
-from hypothesis.core import arc
+from hypothesis._core import arc
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from tests.common.utils import checks_deprecated_behaviour
 

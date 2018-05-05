@@ -25,10 +25,10 @@ from pytest import raises
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, given, settings
 from hypothesis.errors import InvalidArgument, FailedHealthCheck
-from hypothesis.control import assume
 from tests.common.utils import checks_deprecated_behaviour
-from hypothesis.internal.compat import int_from_bytes
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis._control import assume
+from hypothesis._internal.compat import int_from_bytes
+from hypothesis._searchstrategy.strategies import SearchStrategy
 
 
 def test_slow_generation_fails_a_health_check():

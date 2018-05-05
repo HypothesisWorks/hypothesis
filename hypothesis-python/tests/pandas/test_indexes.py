@@ -18,9 +18,9 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
+import pandas
 import pytest
 
-import pandas
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst

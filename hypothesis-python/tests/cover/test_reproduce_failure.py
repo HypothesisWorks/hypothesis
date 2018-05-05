@@ -26,7 +26,7 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import PrintSettings, given, reject, example, settings, \
     __version__, reproduce_failure
-from hypothesis.core import decode_failure, encode_failure
+from hypothesis._core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument
 from tests.common.utils import capture_out
 

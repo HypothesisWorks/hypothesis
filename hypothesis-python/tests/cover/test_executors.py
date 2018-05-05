@@ -23,7 +23,7 @@ from unittest import TestCase
 import pytest
 
 from hypothesis import given, example
-from hypothesis.executors import ConjectureRunner
+from hypothesis._executors import ConjectureRunner
 from hypothesis.strategies import booleans, integers
 
 

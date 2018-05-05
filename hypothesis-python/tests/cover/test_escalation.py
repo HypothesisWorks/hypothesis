@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesis.strategies as st
-import hypothesis.internal.escalation as esc
+import hypothesis._internal.escalation as esc
 from hypothesis import given
 
 

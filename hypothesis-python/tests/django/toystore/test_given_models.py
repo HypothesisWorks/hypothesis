@@ -27,7 +27,7 @@ from hypothesis import HealthCheck, given, assume, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import just, lists
 from hypothesis.extra.django import TestCase, TransactionTestCase
-from hypothesis.internal.compat import text_type
+from hypothesis._internal.compat import text_type
 from tests.django.toystore.models import Store, Company, Customer, \
     SelfLoop, Customish, ManyTimes, OddFields, ManyNumerics, \
     CustomishField, CouldBeCharming, CustomishDefault, RestrictedFields, \

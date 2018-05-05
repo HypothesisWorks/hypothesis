@@ -23,8 +23,8 @@ import hypothesis.strategies as st
 from hypothesis import given, infer
 from hypothesis.errors import InvalidArgument, ResolutionFailed, \
     HypothesisDeprecationWarning
-from hypothesis.searchstrategy import types
-from hypothesis.internal.compat import PY2, integer_types
+from hypothesis._searchstrategy import types
+from hypothesis._internal.compat import PY2, integer_types
 
 # Build a set of all types output by core strategies
 blacklist = [

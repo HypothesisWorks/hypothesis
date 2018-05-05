@@ -22,9 +22,9 @@ import sys
 import unicodedata
 
 import hypothesis.strategies as st
-import hypothesis.internal.charmap as cm
+import hypothesis._internal.charmap as cm
 from hypothesis import given, assume
-from hypothesis.internal.compat import hunichr
+from hypothesis._internal.compat import hunichr
 
 
 def test_charmap_contains_all_unicode():

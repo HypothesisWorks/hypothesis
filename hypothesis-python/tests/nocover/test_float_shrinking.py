@@ -25,7 +25,7 @@ import hypothesis.strategies as st
 from hypothesis import Verbosity, HealthCheck, given, assume, example, \
     settings
 from tests.common.debug import minimal
-from hypothesis.internal.compat import ceil
+from hypothesis._internal.compat import ceil
 
 
 def test_shrinks_to_simple_floats():

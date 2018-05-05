@@ -19,10 +19,11 @@ from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
 from hypothesis.stateful import RuleBasedStateMachine, rule, precondition
-from hypothesis.internal.compat import hrange
+from hypothesis._internal.compat import hrange
 from tests.cover.test_target_selector import FakeConjectureData, \
     fake_randoms
-from hypothesis.internal.conjecture.engine import TargetSelector, universal
+from hypothesis._internal.conjecture.engine import TargetSelector, \
+    universal
 
 
 class TargetSelectorMachine(RuleBasedStateMachine):

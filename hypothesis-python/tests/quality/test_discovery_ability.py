@@ -32,12 +32,12 @@ import re
 import math
 import collections
 
-import hypothesis.internal.reflection as reflection
+import hypothesis._internal.reflection as reflection
 from hypothesis import settings as Settings
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategies import just, sets, text, lists, floats, \
     one_of, tuples, booleans, integers, sampled_from
-from hypothesis.internal.conjecture.engine import \
+from hypothesis._internal.conjecture.engine import \
     ConjectureRunner as ConConjectureRunner
 
 RUNS = 100
