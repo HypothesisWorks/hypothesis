@@ -259,7 +259,7 @@ def test_can_override_database_file():
 
 def test_cannot_define_settings_once_locked():
     with pytest.raises(InvalidState):
-        settings.define_setting('hi', 'there', 4)
+        settings._define_setting('hi', 'there', 4)
 
 
 def test_cannot_assign_default():
