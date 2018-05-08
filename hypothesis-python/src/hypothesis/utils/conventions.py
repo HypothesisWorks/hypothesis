@@ -17,6 +17,12 @@
 
 from __future__ import division, print_function, absolute_import
 
+# Notes: we use instances of these objects as singletons which serve as
+# identifiers in various patches of code.  The more specific types
+# (DefaultValueType and InferType) exist so that typecheckers such as Mypy
+# can distinguish them from the others.  DefaultValueType is only used in
+# the Django extra.
+
 
 class UniqueIdentifier(object):
 
@@ -27,5 +33,13 @@ class UniqueIdentifier(object):
         return self.identifier
 
 
-infer = UniqueIdentifier(u'infer')
+class DefaultValueType(UniqueIdentifier):
+    pass
+
+
+class InferType(UniqueIdentifier):
+    pass
+
+
+infer = InferType(u'infer')
 not_set = UniqueIdentifier(u'not_set')

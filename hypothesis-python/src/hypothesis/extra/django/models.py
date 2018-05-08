@@ -34,7 +34,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
 from hypothesis.provisional import emails, ip4_addr_strings, \
     ip6_addr_strings
-from hypothesis.utils.conventions import UniqueIdentifier
+from hypothesis.utils.conventions import DefaultValueType
 
 if False:
     from datetime import tzinfo  # noqa
@@ -94,7 +94,7 @@ def add_default_field_mapping(field_type, strategy):
     field_mappings()[field_type] = strategy
 
 
-default_value = UniqueIdentifier(u'default_value')
+default_value = DefaultValueType(u'default_value')
 
 
 def validator_to_filter(f):
@@ -171,7 +171,7 @@ def _get_strategy_for_field(f):
 
 def models(
     model,  # type: Type[dm.Model]
-    **field_strategies  # type: Union[st.SearchStrategy[Any], UniqueIdentifier]
+    **field_strategies  # type: Union[st.SearchStrategy[Any], DefaultValueType]
 ):
     # type: (...) -> st.SearchStrategy[Any]
     """Return a strategy for examples of ``model``.
@@ -199,8 +199,10 @@ def models(
 
       shop_strategy = models(Shop, company=models(Company))
     """
-    result = {k: v for k, v in field_strategies.items()
-              if v is not default_value}
+    result = {}
+    for k, v in field_strategies.items():
+        if not isinstance(v, DefaultValueType):
+            result[k] = v
     missed = []  # type: List[Text]
     for f in model._meta.concrete_fields:
         if not (f.name in field_strategies or isinstance(f, dm.AutoField)):

@@ -52,7 +52,7 @@ if False:
     from typing import TypeVar, Tuple, List, Set, FrozenSet, overload  # noqa
     from typing import Type, Mapping, Text, AnyStr, Optional  # noqa
 
-    from hypothesis.utils.conventions import UniqueIdentifier  # noqa
+    from hypothesis.utils.conventions import InferType  # noqa
     from hypothesis.searchstrategy.strategies import T, Ex  # noqa
     K, V = TypeVar['K'], TypeVar['V']
     # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
@@ -1024,7 +1024,7 @@ def random_module():
 @defines_strategy
 def builds(
     *callable_and_args,  # type: Any
-    **kwargs  # type: Union[SearchStrategy[Any], UniqueIdentifier]
+    **kwargs  # type: Union[SearchStrategy[Any], InferType]
 ):
     # type: (...) -> SearchStrategy[Any]
     """Generates values by drawing from ``args`` and ``kwargs`` and passing
