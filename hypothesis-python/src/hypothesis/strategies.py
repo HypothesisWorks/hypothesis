@@ -658,6 +658,22 @@ def frozensets(
     ).map(frozenset)
 
 
+@implements_iterator
+class PrettyIter(object):
+    def __init__(self, values):
+        self._values = values
+        self._iter = iter(self._values)
+
+    def __iter__(self):
+        return self._iter
+
+    def __next__(self):
+        return next(self._iter)
+
+    def __repr__(self):
+        return 'iter({!r})'.format(self._values)
+
+
 @defines_strategy
 def iterables(elements=None, min_size=None, average_size=None, max_size=None,
               unique_by=None, unique=False):
@@ -674,21 +690,6 @@ def iterables(elements=None, min_size=None, average_size=None, max_size=None,
             'required in a future version of Hypothesis.  To create '
             'iterables that are always empty, use `iterables(nothing())`.'
         )
-
-    @implements_iterator
-    class PrettyIter(object):
-        def __init__(self, values):
-            self._values = values
-            self._iter = iter(self._values)
-
-        def __iter__(self):
-            return self._iter
-
-        def __next__(self):
-            return next(self._iter)
-
-        def __repr__(self):
-            return 'iter({!r})'.format(self._values)
 
     return lists(
         elements=elements, min_size=min_size, average_size=average_size,
@@ -994,6 +995,16 @@ class RandomSeeder(object):
         return 'random.seed(%r)' % (self.seed,)
 
 
+class RandomModule(SearchStrategy):
+    def do_draw(self, data):
+        data.can_reproduce_example_from_repr = False
+        seed = data.draw(integers())
+        state = random.getstate()
+        random.seed(seed)
+        cleanup(lambda: random.setstate(state))
+        return RandomSeeder(seed)
+
+
 @cacheable
 @defines_strategy
 def random_module():
@@ -1009,15 +1020,6 @@ def random_module():
 
     Examples from these strategy shrink to seeds closer to zero.
     """
-    class RandomModule(SearchStrategy):
-        def do_draw(self, data):
-            data.can_reproduce_example_from_repr = False
-            seed = data.draw(integers())
-            state = random.getstate()
-            random.seed(seed)
-            cleanup(lambda: random.setstate(state))
-            return RandomSeeder(seed)
-
     return shared(RandomModule(), 'hypothesis.strategies.random_module()')
 
 
@@ -1462,6 +1464,21 @@ def recursive(
     return RecursiveStrategy(base, extend, max_leaves)
 
 
+class PermutationStrategy(SearchStrategy):
+    def __init__(self, values):
+        self.values = values
+
+    def do_draw(self, data):
+        # Reversed Fisher-Yates shuffle. Reverse order so that it shrinks
+        # propertly: This way we prefer things that are lexicographically
+        # closer to the identity.
+        result = list(self.values)
+        for i in hrange(len(result)):
+            j = integer_range(data, i, len(result) - 1)
+            result[i], result[j] = result[j], result[i]
+        return result
+
+
 @defines_strategy
 def permutations(values):
     # type: (Sequence[T]) -> SearchStrategy[List[T]]
@@ -1475,18 +1492,7 @@ def permutations(values):
     if not values:
         return builds(list)
 
-    class PermutationStrategy(SearchStrategy):
-
-        def do_draw(self, data):
-            # Reversed Fisher-Yates shuffle. Reverse order so that it shrinks
-            # propertly: This way we prefer things that are lexicographically
-            # closer to the identity.
-            result = list(values)
-            for i in hrange(len(result)):
-                j = integer_range(data, i, len(result) - 1)
-                result[i], result[j] = result[j], result[i]
-            return result
-    return PermutationStrategy()
+    return PermutationStrategy(values)
 
 
 @defines_strategy_with_reusable_values
@@ -1635,6 +1641,26 @@ def timedeltas(
     return TimedeltaStrategy(min_value=min_value, max_value=max_value)
 
 
+class CompositeStrategy(SearchStrategy):
+    def __init__(self, definition, label, args, kwargs):
+        self.definition = definition
+        self.__label = label
+        self.args = args
+        self.kwargs = kwargs
+
+    def do_draw(self, data):
+        first_draw = [True]
+
+        def draw(strategy):
+            first_draw[0] = False
+            return data.draw(strategy)
+
+        return self.definition(draw, *self.args, **self.kwargs)
+
+    def calc_label(self):
+        return self.__label
+
+
 @cacheable
 def composite(f):
     # type: (Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]
@@ -1671,21 +1697,7 @@ def composite(f):
     @defines_strategy
     @define_function_signature(f.__name__, f.__doc__, new_argspec)
     def accept(*args, **kwargs):
-        class CompositeStrategy(SearchStrategy):
-
-            def do_draw(self, data):
-                first_draw = [True]
-
-                def draw(strategy):
-                    first_draw[0] = False
-                    return data.draw(strategy)
-
-                return f(draw, *args, **kwargs)
-
-            @property
-            def label(self):
-                return label
-        return CompositeStrategy()
+        return CompositeStrategy(f, label, args, kwargs)
     accept.__module__ = f.__module__
     return accept
 
@@ -1796,6 +1808,33 @@ def shared(base, key=None):
     return SharedStrategy(base, key)
 
 
+class Chooser(object):
+    def __init__(self, build_context, data):
+        self.build_context = build_context
+        self.data = data
+        self.choice_count = 0
+
+    def __call__(self, values):
+        if not values:
+            raise IndexError('Cannot choose from empty sequence')
+        result = choice(self.data, check_sample(values))
+        with self.build_context.local():
+            self.choice_count += 1
+            note('Choice #%d: %r' % (self.choice_count, result))
+        return result
+
+    def __repr__(self):
+        return 'choice'
+
+
+class ChoiceStrategy(SearchStrategy):
+    supports_find = False
+
+    def do_draw(self, data):
+        data.can_reproduce_example_from_repr = False
+        return Chooser(current_build_context(), data)
+
+
 @defines_strategy
 def choices():
     """Strategy that generates a function that behaves like random.choice.
@@ -1815,32 +1854,6 @@ def choices():
         'choices() has been deprecated. Use the data() strategy instead and '
         'replace its usage with data.draw(sampled_from(elements))) calls.'
     )
-
-    class Chooser(object):
-
-        def __init__(self, build_context, data):
-            self.build_context = build_context
-            self.data = data
-            self.choice_count = 0
-
-        def __call__(self, values):
-            if not values:
-                raise IndexError('Cannot choose from empty sequence')
-            result = choice(self.data, check_sample(values))
-            with self.build_context.local():
-                self.choice_count += 1
-                note('Choice #%d: %r' % (self.choice_count, result))
-            return result
-
-        def __repr__(self):
-            return 'choice'
-
-    class ChoiceStrategy(SearchStrategy):
-        supports_find = False
-
-        def do_draw(self, data):
-            data.can_reproduce_example_from_repr = False
-            return Chooser(current_build_context(), data)
 
     return shared(
         ChoiceStrategy(),
@@ -1873,6 +1886,24 @@ def uuids(version=None):
     )
 
 
+class RunnerStrategy(SearchStrategy):
+    def __init__(self, default):
+        self.default = default
+
+    def do_draw(self, data):
+        runner = getattr(data, 'hypothesis_runner', not_set)
+        if runner is not_set:
+            if self.default is not_set:
+                raise InvalidArgument(
+                    'Cannot use runner() strategy with no '
+                    'associated runner or explicit default.'
+                )
+            else:
+                return self.default
+        else:
+            return runner
+
+
 @defines_strategy_with_reusable_values
 def runner(default=not_set):
     """A strategy for getting "the current test runner", whatever that may be.
@@ -1884,21 +1915,58 @@ def runner(default=not_set):
 
     Examples from this strategy do not shrink (because there is only one).
     """
-    class RunnerStrategy(SearchStrategy):
+    return RunnerStrategy(default)
 
-        def do_draw(self, data):
-            runner = getattr(data, 'hypothesis_runner', not_set)
-            if runner is not_set:
-                if default is not_set:
-                    raise InvalidArgument(
-                        'Cannot use runner() strategy with no '
-                        'associated runner or explicit default.'
-                    )
-                else:
-                    return default
-            else:
-                return runner
-    return RunnerStrategy()
+
+class DataObject(object):
+
+    def __init__(self, data):
+        self.count = 0
+        self.data = data
+
+    def __repr__(self):
+        return 'data(...)'
+
+    def draw(self, strategy, label=None):
+        result = self.data.draw(strategy)
+        self.count += 1
+        if label is not None:
+            note('Draw %d (%s): %r' % (self.count, label, result))
+        else:
+            note('Draw %d: %r' % (self.count, result))
+        return result
+
+
+class DataStrategy(SearchStrategy):
+    supports_find = False
+
+    def do_draw(self, data):
+        data.can_reproduce_example_from_repr = False
+
+        if not hasattr(data, 'hypothesis_shared_data_strategy'):
+            data.hypothesis_shared_data_strategy = DataObject(data)
+        return data.hypothesis_shared_data_strategy
+
+    def __repr__(self):
+        return 'data()'
+
+    def map(self, f):
+        self.__not_a_first_class_strategy('map')
+
+    def filter(self, f):
+        self.__not_a_first_class_strategy('filter')
+
+    def flatmap(self, f):
+        self.__not_a_first_class_strategy('flatmap')
+
+    def example(self):
+        self.__not_a_first_class_strategy('example')
+
+    def __not_a_first_class_strategy(self, name):
+        raise InvalidArgument((
+            'Cannot call %s on a DataStrategy. You should probably be '
+            "using @composite for whatever it is you're trying to do."
+        ) % (name,))
 
 
 @cacheable
@@ -1917,54 +1985,6 @@ def data():
     Examples from this strategy do not shrink (because there is only one),
     but the result of calls to each draw() call shrink as they normally would.
     """
-    class DataObject(object):
-
-        def __init__(self, data):
-            self.count = 0
-            self.data = data
-
-        def __repr__(self):
-            return 'data(...)'
-
-        def draw(self, strategy, label=None):
-            result = self.data.draw(strategy)
-            self.count += 1
-            if label is not None:
-                note('Draw %d (%s): %r' % (self.count, label, result))
-            else:
-                note('Draw %d: %r' % (self.count, result))
-            return result
-
-    class DataStrategy(SearchStrategy):
-        supports_find = False
-
-        def do_draw(self, data):
-            data.can_reproduce_example_from_repr = False
-
-            if not hasattr(data, 'hypothesis_shared_data_strategy'):
-                data.hypothesis_shared_data_strategy = DataObject(data)
-            return data.hypothesis_shared_data_strategy
-
-        def __repr__(self):
-            return 'data()'
-
-        def map(self, f):
-            self.__not_a_first_class_strategy('map')
-
-        def filter(self, f):
-            self.__not_a_first_class_strategy('filter')
-
-        def flatmap(self, f):
-            self.__not_a_first_class_strategy('flatmap')
-
-        def example(self):
-            self.__not_a_first_class_strategy('example')
-
-        def __not_a_first_class_strategy(self, name):
-            raise InvalidArgument((
-                'Cannot call %s on a DataStrategy. You should probably be '
-                "using @composite for whatever it is you're trying to do."
-            ) % (name,))
     return DataStrategy()
 
 
