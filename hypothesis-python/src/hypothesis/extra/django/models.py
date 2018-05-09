@@ -34,10 +34,15 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
 from hypothesis.provisional import emails, ip4_addr_strings, \
     ip6_addr_strings
-from hypothesis.utils.conventions import UniqueIdentifier
+from hypothesis.utils.conventions import DefaultValueType
+
+if False:
+    from datetime import tzinfo  # noqa
+    from typing import Any, Type, Optional, List, Text, Callable, Union  # noqa
 
 
 def get_tz_strat():
+    # type: () -> st.SearchStrategy[Optional[tzinfo]]
     if getattr(django_settings, 'USE_TZ', False):
         return timezones()
     return st.none()
@@ -85,13 +90,15 @@ def field_mappings():
 
 
 def add_default_field_mapping(field_type, strategy):
+    # type: (Type[dm.Field], st.SearchStrategy[Any]) -> None
     field_mappings()[field_type] = strategy
 
 
-default_value = UniqueIdentifier(u'default_value')
+default_value = DefaultValueType(u'default_value')
 
 
 def validator_to_filter(f):
+    # type: (Type[dm.Field]) -> Callable[[Any], bool]
     """Converts the field run_validators method to something suitable for use
     in filter."""
     def validate(value):
@@ -105,8 +112,9 @@ def validator_to_filter(f):
 
 
 def _get_strategy_for_field(f):
+    # type: (Type[dm.Field]) -> st.SearchStrategy[Any]
     if f.choices:
-        choices = []
+        choices = []  # type: list
         for value, name_or_optgroup in f.choices:
             if isinstance(name_or_optgroup, (list, tuple)):
                 choices.extend(key for key, _ in name_or_optgroup)
@@ -161,7 +169,11 @@ def _get_strategy_for_field(f):
     return strategy
 
 
-def models(model, **field_strategies):
+def models(
+    model,  # type: Type[dm.Model]
+    **field_strategies  # type: Union[st.SearchStrategy[Any], DefaultValueType]
+):
+    # type: (...) -> st.SearchStrategy[Any]
     """Return a strategy for examples of ``model``.
 
     .. warning::
@@ -187,9 +199,11 @@ def models(model, **field_strategies):
 
       shop_strategy = models(Shop, company=models(Company))
     """
-    result = {k: v for k, v in field_strategies.items()
-              if v is not default_value}
-    missed = []
+    result = {}
+    for k, v in field_strategies.items():
+        if not isinstance(v, DefaultValueType):
+            result[k] = v
+    missed = []  # type: List[Text]
     for f in model._meta.concrete_fields:
         if not (f.name in field_strategies or isinstance(f, dm.AutoField)):
             result[f.name] = _get_strategy_for_field(f)

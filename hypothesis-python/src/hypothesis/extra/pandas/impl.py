@@ -42,6 +42,10 @@ except ImportError:  # pragma: no cover
             return False
         return dt == 'category'
 
+if False:
+    from typing import Any, Union, Sequence, Set  # noqa
+    from hypothesis.searchstrategy.strategies import Ex  # noqa
+
 
 def dtype_for_elements_strategy(s):
     return st.shared(
@@ -148,6 +152,7 @@ DEFAULT_MAX_SIZE = 10
 @st.cacheable
 @st.defines_strategy
 def range_indexes(min_size=0, max_size=None):
+    # type: (int, int) -> st.SearchStrategy[pandas.RangeIndex]
     """Provides a strategy which generates an :class:`~pandas.Index` whose
     values are 0, 1, ..., n for some n.
 
@@ -168,7 +173,11 @@ def range_indexes(min_size=0, max_size=None):
 @st.cacheable
 @st.defines_strategy
 def indexes(
-    elements=None, dtype=None, min_size=0, max_size=None, unique=True,
+    elements=None,  # type: st.SearchStrategy[Ex]
+    dtype=None,  # type: Any
+    min_size=0,  # type: int
+    max_size=None,  # type: int
+    unique=True,  # type: bool
 ):
     """Provides a strategy for producing a :class:`pandas.Index`.
 
@@ -203,7 +212,14 @@ def indexes(
 
 
 @st.defines_strategy
-def series(elements=None, dtype=None, index=None, fill=None, unique=False):
+def series(
+    elements=None,  # type: st.SearchStrategy[Ex]
+    dtype=None,  # type: Any
+    index=None,  # type: st.SearchStrategy[Union[Sequence, pandas.Index]]
+    fill=None,  # type: st.SearchStrategy[Ex]
+    unique=False,  # type: bool
+):
+    # type: (...) -> st.SearchStrategy[pandas.Series]
     """Provides a strategy for producing a :class:`pandas.Series`.
 
     Arguments:
@@ -299,7 +315,11 @@ class column(object):
 
 
 def columns(
-    names_or_number, dtype=None, elements=None, fill=None, unique=False
+    names_or_number,  # type: Union[int, Sequence[str]]
+    dtype=None,  # type: Any
+    elements=None,  # type: st.SearchStrategy[Ex]
+    fill=None,  # type: st.SearchStrategy[Ex]
+    unique=False,  # type: bool
 ):
     """A convenience function for producing a list of :class:`column` objects
     of the same general shape.
@@ -310,10 +330,10 @@ def columns(
     be created. All other arguments are passed through verbatim to
     create the columns.
     """
-    try:
+    if isinstance(names_or_number, (int, float)):
+        names = [None] * names_or_number  # type: list
+    else:
         names = list(names_or_number)
-    except TypeError:
-        names = [None] * names_or_number
     return [
         column(
             name=n, dtype=dtype, elements=elements, fill=fill, unique=unique
@@ -323,8 +343,11 @@ def columns(
 
 @st.defines_strategy
 def data_frames(
-    columns=None, rows=None, index=None
+    columns=None,  # type: Sequence[column]
+    rows=None,  # type: st.SearchStrategy[Union[dict, Sequence[Any]]]
+    index=None,  # type: st.SearchStrategy[Ex]
 ):
+    # type: (...) -> st.SearchStrategy[pandas.DataFrame]
     """Provides a strategy for producing a :class:`pandas.DataFrame`.
 
     Arguments:
@@ -464,12 +487,12 @@ def data_frames(
             return rows_only()
 
     assert columns is not None
-    columns = try_convert(tuple, columns, 'columns')
+    cols = try_convert(tuple, columns, 'columns')  # type: Sequence[column]
 
     rewritten_columns = []
-    column_names = set()
+    column_names = set()  # type: Set[str]
 
-    for i, c in enumerate(columns):
+    for i, c in enumerate(cols):
         check_type(column, c, 'columns[%d]' % (i,))
 
         c = copy(c)
