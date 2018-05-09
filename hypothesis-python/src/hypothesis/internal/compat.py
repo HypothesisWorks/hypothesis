@@ -522,18 +522,16 @@ else:
     from base64 import b64decode
 
 
-_cases = []  # type: list
+try:
+    from django.test import TransactionTestCase
+    from hypothesis.extra.django import HypothesisTestCase
 
-
-def bad_django_TestCase(runner):
-    if runner is None:
+    def bad_django_TestCase(runner):
+        if runner is None:
+            return False
+        return isinstance(runner, TransactionTestCase) and \
+            not isinstance(runner, HypothesisTestCase)
+except Exception:
+    # Can't use ImportError, because of e.g. Django config errors
+    def bad_django_TestCase(runner):
         return False
-    if not _cases:
-        try:
-            from django.test import TransactionTestCase
-            from hypothesis.extra.django import HypothesisTestCase
-            _cases[:] = TransactionTestCase, HypothesisTestCase
-        except Exception:
-            # Can't use ImportError, because of e.g. Django config errors
-            _cases[:] = (), type
-    return isinstance(runner, _cases[0]) and not isinstance(runner, _cases[1])
