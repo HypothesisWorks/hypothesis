@@ -25,9 +25,11 @@ from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
 from hypothesis.control import assume, _current_build_context
 from hypothesis._settings import note_deprecation
 from hypothesis.internal.compat import hrange, bit_length
+from hypothesis.internal.coverage import check_function
 from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.internal.validation import check_type
 from hypothesis.internal.conjecture.utils import LABEL_MASK, \
     combine_labels, calc_label_from_cls, calc_label_from_name
 
@@ -451,7 +453,6 @@ class OneOfStrategy(SearchStrategy):
 
     @property
     def element_strategies(self):
-        from hypothesis.strategies import check_strategy
         if self.__element_strategies is None:
             strategies = []
             for arg in self.original_strategies:
@@ -633,3 +634,8 @@ class FilteredStrategy(SearchStrategy):
             FilteredStrategy(strategy=strategy, condition=self.condition)
             for strategy in self.filtered_strategy.branches
         ]
+
+
+@check_function
+def check_strategy(arg, name=''):
+    check_type(SearchStrategy, arg, name)

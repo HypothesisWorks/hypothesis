@@ -19,8 +19,8 @@
 to explore data."""
 
 
-from .strategies import SearchStrategy
+from .strategies import SearchStrategy, check_strategy
 
 __all__ = [
-    'SearchStrategy',
+    'SearchStrategy', 'check_strategy'
 ]

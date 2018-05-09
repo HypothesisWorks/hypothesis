@@ -31,7 +31,7 @@ from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.control import assume
 from hypothesis._settings import note_deprecation
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.searchstrategy import SearchStrategy, check_strategy
 from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
     text_type, get_type_hints, getfullargspec, implements_iterator
 from hypothesis.internal.floats import next_up, next_down, is_negative, \
@@ -42,9 +42,8 @@ from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
 from hypothesis.internal.validation import check_type, try_convert, \
-    check_strategy, check_valid_size, check_valid_bound, \
-    check_valid_sizes, check_valid_integer, check_valid_interval, \
-    check_valid_magnitude
+    check_valid_size, check_valid_bound, check_valid_sizes, \
+    check_valid_integer, check_valid_interval, check_valid_magnitude
 
 if False:
     from random import Random  # noqa
