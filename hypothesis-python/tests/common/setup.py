@@ -32,6 +32,10 @@ def run():
     filterwarnings('ignore', category=ImportWarning)
     filterwarnings('ignore', category=FutureWarning, module='pandas._version')
 
+    # See https://github.com/numpy/numpy/pull/432
+    filterwarnings('ignore', message='numpy.dtype size changed')
+    filterwarnings('ignore', message='numpy.ufunc size changed')
+
     new_home = mkdtemp()
     set_hypothesis_home_dir(new_home)
     assert settings.default.database.path.startswith(new_home)
