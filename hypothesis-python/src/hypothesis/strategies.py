@@ -66,12 +66,16 @@ from hypothesis.searchstrategy.strategies import OneOfStrategy
 from hypothesis.searchstrategy.collections import ListStrategy, \
     TupleStrategy, UniqueListStrategy, FixedKeysDictStrategy
 
+typing = None   # type: Union[None, ModuleType]
+
 try:
-    import typing
+    import typing as typing_module
+    typing = typing_module
 except ImportError:
-    typing = None
+    pass
 
 if False:
+    from types import ModuleType  # noqa
     from random import Random  # noqa
     from typing import Any, Dict, Union, Sequence, Callable, Pattern  # noqa
     from typing import TypeVar, Tuple, List, Set, FrozenSet, overload  # noqa
