@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.56.7:
+
+-------------------
+3.56.7 - 2018-05-10
+-------------------
+
+This release provides a performance improvement for most tests, but in
+particular users of ``sampled_from`` who don't have numpy installed should see
+a significant performance improvement.
+
 .. _v3.56.6:
 
 -------------------
