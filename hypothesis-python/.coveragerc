@@ -20,3 +20,4 @@ exclude_lines =
     __ne__
     __copy__
     __deepcopy__
+    except ImportError:

@@ -73,7 +73,7 @@ intersphinx_mapping = {
     'django': ('https://django.readthedocs.io/en/stable/', None),
 }
 
-autodoc_mock_imports = ['numpy', 'pandas']
+autodoc_mock_imports = ['pandas']
 
 doctest_global_setup = '''
 # Some standard imports

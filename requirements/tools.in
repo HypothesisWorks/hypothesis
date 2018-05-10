@@ -14,3 +14,4 @@ attrs
 coverage
 pyupio
 django
+numpy

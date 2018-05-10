@@ -30,7 +30,8 @@ from enum import Enum, IntEnum, unique
 
 import attr
 
-from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
+from hypothesis.errors import InvalidState, InvalidArgument, \
+    HypothesisDeprecationWarning
 from hypothesis.internal.compat import text_type
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.internal.reflection import proxies, \
@@ -259,7 +260,6 @@ class settings(
           the first time it is accessed on any given settings object.
         """
         if settings.__definitions_are_locked:
-            from hypothesis.errors import InvalidState
             raise InvalidState(
                 'settings have been locked and may no longer be defined.'
             )

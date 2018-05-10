@@ -108,25 +108,25 @@ def centered_integer_range(data, lower, upper, center):
     )
 
 
-def check_sample(values):
-    try:
-        from numpy import ndarray
-        if isinstance(values, ndarray):
-            if values.ndim != 1:
-                note_deprecation((
-                    'Only one-dimensional arrays are supported for sampling, '
-                    'and the given value has {ndim} dimensions (shape '
-                    '{shape}).  This array would give samples of array slices '
-                    'instead of elements!  Use np.ravel(values) to convert '
-                    'to a one-dimensional array, or tuple(values) if you '
-                    'want to sample slices.  Sampling a multi-dimensional '
-                    'array will be an error in a future version of Hypothesis.'
-                ).format(ndim=values.ndim, shape=values.shape))
-            return tuple(values)
-    except ImportError:  # pragma: no cover
-        pass
+try:
+    from numpy import ndarray
+except ImportError:  # pragma: no cover
+    ndarray = ()
 
-    if not isinstance(values, (OrderedDict, Sequence, enum.EnumMeta)):
+
+def check_sample(values):
+    if isinstance(values, ndarray):
+        if values.ndim != 1:
+            note_deprecation((
+                'Only one-dimensional arrays are supported for sampling, '
+                'and the given value has {ndim} dimensions (shape '
+                '{shape}).  This array would give samples of array slices '
+                'instead of elements!  Use np.ravel(values) to convert '
+                'to a one-dimensional array, or tuple(values) if you '
+                'want to sample slices.  Sampling a multi-dimensional '
+                'array will be an error in a future version of Hypothesis.'
+            ).format(ndim=values.ndim, shape=values.shape))
+    elif not isinstance(values, (OrderedDict, Sequence, enum.EnumMeta)):
         note_deprecation(
             ('Cannot sample from %r, not a sequence.  ' % (values,)) +
             'Hypothesis goes to some length to ensure that sampling an '

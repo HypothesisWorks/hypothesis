@@ -41,12 +41,6 @@ def check_type(typ, arg, name=''):
 
 
 @check_function
-def check_strategy(arg, name=''):
-    from hypothesis.searchstrategy import SearchStrategy
-    check_type(SearchStrategy, arg, name)
-
-
-@check_function
 def check_valid_integer(value):
     """Checks that value is either unspecified, or a valid integer.
 
