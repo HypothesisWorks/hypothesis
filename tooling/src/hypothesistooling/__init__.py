@@ -66,6 +66,9 @@ assert __version__ is not None
 assert __version_info__ is not None
 
 
+PYTHON_TAG_PREFIX = 'hypothesis-python-'
+
+
 def latest_version():
     versions = []
 
@@ -74,6 +77,8 @@ def latest_version():
         # a large number of historic tags with a different format for versions)
         # so we parse each tag as a triple of ints (MAJOR, MINOR, PATCH)
         # and skip any tag that doesn't match that.
+        if t.startswith(PYTHON_TAG_PREFIX):
+            t = t[len(PYTHON_TAG_PREFIX):]
         assert t == t.strip()
         parts = t.split('.')
         if len(parts) != 3:
@@ -153,7 +158,7 @@ def create_tag_and_push():
         'remote', 'add', 'ssh-origin',
         'git@github.com:HypothesisWorks/hypothesis.git'
     )
-    git('tag', __version__)
+    git('tag', PYTHON_TAG_PREFIX + __version__)
 
     subprocess.check_call([
         'ssh-agent', 'sh', '-c',
