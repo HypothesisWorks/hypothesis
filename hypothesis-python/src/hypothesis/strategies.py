@@ -1131,7 +1131,7 @@ def from_type(thing):
     from hypothesis.searchstrategy import types
 
     if typing is not None:  # pragma: no branch
-        fr = typing._ForwardRef  # type: ignore
+        fr = typing._ForwardRef
         if not isinstance(thing, type):
             # At runtime, `typing.NewType` returns an identity function rather
             # than an actual type, but we can check that for a possible match
@@ -1174,7 +1174,7 @@ def from_type(thing):
     # because there are several special cases that don't play well with
     # subclass and instance checks.
     if typing is not None:  # pragma: no branch
-        if isinstance(thing, typing.TypingMeta):  # type: ignore
+        if isinstance(thing, typing.TypingMeta):
             return types.from_typing_type(thing)
     # If it's not from the typing module, we get all registered types that are
     # a subclass of `thing` and are not themselves a subtype of any other such
