@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.56.9:
+
+-------------------
+3.56.9 - 2018-05-11
+-------------------
+
+This is another release with no functionality changes as part of changes to
+Hypothesis's new release tagging scheme.
+
 .. _v3.56.8:
 
 -------------------
