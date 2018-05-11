@@ -44,8 +44,7 @@ jobs:
     - env: TASK=check-requirements
 
     - stage: main
-      env: TASK=check-coverage
-    - env: TASK=check-pypy
+      env: TASK=check-pypy
     - env: TASK=check-py27
     - env: TASK=check-py36
     - env: TASK=check-quality
@@ -54,7 +53,8 @@ jobs:
     # pass whenever the above do but are still
     # worth testing.
     - stage: extras
-      env: TASK=check-unicode
+      env: TASK=check-coverage
+    - env: TASK=check-unicode
     - env: TASK=check-pure-tracer
     - env: TASK=check-py27-typing
     - env: TASK=check-py34
