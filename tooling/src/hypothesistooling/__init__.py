@@ -116,14 +116,11 @@ def merge_base(a, b):
     ]).strip()
 
 
-def has_source_changes(version=None):
-    if version is None:
-        version = latest_version()
-
+def has_source_changes():
     # Check where we branched off from the version. We're only interested
     # in whether *we* introduced any source changes, so we check diff from
     # there rather than the diff to the other side.
-    point_of_divergence = merge_base('HEAD', version)
+    point_of_divergence = merge_base('HEAD', 'origin/master')
 
     return subprocess.call([
         'git', 'diff', '--no-patch', '--exit-code', point_of_divergence,
