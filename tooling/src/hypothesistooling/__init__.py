@@ -120,11 +120,15 @@ def point_of_divergence():
     return merge_base('HEAD', 'origin/master')
 
 
-def has_source_changes():
+def has_changes(files):
     return subprocess.call([
         'git', 'diff', '--no-patch', '--exit-code', point_of_divergence(),
-        'HEAD', '--', PYTHON_SRC,
+        'HEAD', '--', *files,
     ]) != 0
+
+
+def has_source_changes():
+    return has_changes(PYTHON_SRC)
 
 
 def has_uncommitted_changes(filename):
@@ -337,26 +341,6 @@ def update_for_pending_release():
     )
 
 
-def could_affect_tests(path):
-    """Does this file have any effect on test results?"""
-    # RST files are the input to some tests -- in particular, the
-    # documentation build and doctests.  Both of those jobs are always run,
-    # so we can ignore their effect here.
-    #
-    # IPython notebooks aren't currently used in any tests.
-    if path.endswith(('.rst', '.ipynb')):
-        return False
-
-    # These files exist but have no effect on tests.
-    if path in ('CITATION', 'LICENSE.txt', ):
-        return False
-
-    # We default to marking a file "interesting" unless we know otherwise --
-    # it's better to run tests that could have been skipped than skip tests
-    # when they needed to be run.
-    return True
-
-
 def changed_files_from_master():
     """Returns a list of files which have changed between a branch and
     master."""
@@ -368,46 +352,6 @@ def changed_files_from_master():
         if filepath:
             files.add(filepath)
     return files
-
-
-def should_run_ci_task(task):
-    """Given a task name, should we run this task?"""
-    if not IS_PULL_REQUEST:
-        print('We only skip tests if the job is a pull request.')
-        return True
-
-    # These tests are usually fast; we always run them rather than trying
-    # to keep up-to-date rules of exactly which changed files mean they
-    # should run.
-    if task in [
-        'check-pyup-yml',
-        'check-release-file',
-        'check-shellcheck',
-        'documentation',
-        'lint',
-    ]:
-        print('We always run the %s task.' % task)
-        return True
-
-    # The remaining tasks are all some sort of test of Hypothesis
-    # functionality.  Since it's better to run tests when we don't need to
-    # than skip tests when it was important, we remove any files which we
-    # know are safe to ignore, and run tests if there's anything left.
-    changed_files = changed_files_from_master()
-
-    interesting_changed_files = [
-        f for f in changed_files if could_affect_tests(f)
-    ]
-
-    if interesting_changed_files:
-        print(
-            'Changes to the following files mean we need to run tests: %s' %
-            ', '.join(interesting_changed_files)
-        )
-        return True
-    else:
-        print('There are no changes which would need a test run.')
-        return False
 
 
 SECRETS_BASE = os.path.join(ROOT, 'secrets')
