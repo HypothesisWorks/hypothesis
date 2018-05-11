@@ -116,14 +116,13 @@ def merge_base(a, b):
     ]).strip()
 
 
-def has_source_changes():
-    # Check where we branched off from the version. We're only interested
-    # in whether *we* introduced any source changes, so we check diff from
-    # there rather than the diff to the other side.
-    point_of_divergence = merge_base('HEAD', 'origin/master')
+def point_of_divergence():
+    return merge_base('HEAD', 'origin/master')
 
+
+def has_source_changes():
     return subprocess.call([
-        'git', 'diff', '--no-patch', '--exit-code', point_of_divergence,
+        'git', 'diff', '--no-patch', '--exit-code', point_of_divergence(),
         'HEAD', '--', PYTHON_SRC,
     ]) != 0
 
@@ -189,7 +188,7 @@ def modified_files():
     files = set()
     for command in [
         ['git', 'diff', '--name-only', '--diff-filter=d',
-            latest_version(), 'HEAD'],
+            point_of_divergence(), 'HEAD'],
         ['git', 'diff', '--name-only']
     ]:
         diff_output = subprocess.check_output(command).decode('ascii')
