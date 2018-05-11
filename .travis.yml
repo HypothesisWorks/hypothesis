@@ -26,44 +26,51 @@ env:
         - BUILD_RUNTIMES=$HOME/.runtimes
         - FORMAT_ALL=true
 
-    matrix:
-        # Core tests that we want to run first.
-        - TASK=check-pyup-yml
-        - TASK=check-release-file
-        - TASK=check-shellcheck
-        - TASK=check-secrets
-        - TASK=documentation
-        - TASK=lint
-        - TASK=doctest
-        - TASK=check-rst
-        - TASK=check-format
-        - TASK=check-type-hints
-        - TASK=check-coverage
-        - TASK=check-requirements
-        - TASK=check-pypy
-        - TASK=check-py27
-        - TASK=check-py36
-        - TASK=check-quality
 
-        # Less important tests that will probably
-        # pass whenever the above do but are still
-        # worth testing.
-        - TASK=check-unicode
-        - TASK=check-pure-tracer
-        - TASK=check-py27-typing
-        - TASK=check-py34
-        - TASK=check-py35
-        - TASK=check-nose
-        - TASK=check-pytest28
-        - TASK=check-faker070
-        - TASK=check-faker-latest
-        - TASK=check-django20
-        - TASK=check-django111
-        - TASK=check-pandas19
-        - TASK=check-pandas20
-        - TASK=check-pandas21
-        - TASK=check-pandas22
-        - TASK=deploy
+jobs:
+    # Prechecks that we want to run first.
+    - stage: precheck
+      env: TASK=check-pyup-yml
+    - env: TASK=check-release-file
+    - env: TASK=check-shellcheck
+    - env: TASK=check-secrets
+    - env: TASK=documentation
+    - env: TASK=lint
+    - env: TASK=doctest
+    - env: TASK=check-rst
+    - env: TASK=check-format
+    - env: TASK=check-type-hints
+    - env: TASK=check-requirements
+
+    - stage: main
+      env: TASK=check-coverage
+    - env: TASK=check-pypy
+    - env: TASK=check-py27
+    - env: TASK=check-py36
+    - env: TASK=check-quality
+
+    # Less important tests that will probably
+    # pass whenever the above do but are still
+    # worth testing.
+    - stage: extras
+    - env: TASK=check-unicode
+    - env: TASK=check-pure-tracer
+    - env: TASK=check-py27-typing
+    - env: TASK=check-py34
+    - env: TASK=check-py35
+    - env: TASK=check-nose
+    - env: TASK=check-pytest28
+    - env: TASK=check-faker070
+    - env: TASK=check-faker-latest
+    - env: TASK=check-django20
+    - env: TASK=check-django111
+    - env: TASK=check-pandas19
+    - env: TASK=check-pandas20
+    - env: TASK=check-pandas21
+    - env: TASK=check-pandas22
+
+    - stage: deploy
+      env: TASK=deploy
 
 script:
     - ./build.sh
