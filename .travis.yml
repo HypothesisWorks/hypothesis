@@ -28,6 +28,7 @@ env:
 
 
 jobs:
+  include:
     # Prechecks that we want to run first.
     - stage: precheck
       env: TASK=check-pyup-yml
