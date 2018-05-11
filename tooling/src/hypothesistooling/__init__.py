@@ -127,7 +127,7 @@ def has_changes(files):
     ]) != 0
 
 
-def has_source_changes():
+def has_python_source_changes():
     return has_changes(PYTHON_SRC)
 
 

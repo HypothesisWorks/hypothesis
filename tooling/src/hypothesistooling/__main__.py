@@ -206,7 +206,7 @@ def deploy():
 
 @task()
 def check_release_file():
-    if tools.has_source_changes():
+    if tools.has_python_source_changes():
         if not tools.has_release():
             print(
                 'There are source changes but no RELEASE.rst. Please create '
