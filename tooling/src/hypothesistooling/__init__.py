@@ -128,7 +128,7 @@ def has_changes(files):
 
 
 def has_python_source_changes():
-    return has_changes(PYTHON_SRC)
+    return has_changes([PYTHON_SRC])
 
 
 def has_uncommitted_changes(filename):
