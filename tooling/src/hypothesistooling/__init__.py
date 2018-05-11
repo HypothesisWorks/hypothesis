@@ -85,7 +85,6 @@ def latest_version():
 
     _, latest = max(versions)
 
-    assert latest in tags()
     return latest
 
 
