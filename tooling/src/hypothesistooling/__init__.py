@@ -73,26 +73,18 @@ def latest_version():
     versions = []
 
     for t in tags():
-        # All versions get tags but not all tags are versions (and there are
-        # a large number of historic tags with a different format for versions)
-        # so we parse each tag as a triple of ints (MAJOR, MINOR, PATCH)
-        # and skip any tag that doesn't match that.
         if t.startswith(PYTHON_TAG_PREFIX):
             t = t[len(PYTHON_TAG_PREFIX):]
+        else:
+            continue
         assert t == t.strip()
         parts = t.split('.')
-        if len(parts) != 3:
-            continue
-        try:
-            v = tuple(map(int, parts))
-        except ValueError:
-            continue
-
+        assert len(parts) == 3
+        v = tuple(map(int, parts))
         versions.append((v, t))
 
     _, latest = max(versions)
 
-    assert latest in tags()
     return latest
 
 
@@ -124,17 +116,13 @@ def merge_base(a, b):
     ]).strip()
 
 
-def has_source_changes(version=None):
-    if version is None:
-        version = latest_version()
+def point_of_divergence():
+    return merge_base('HEAD', 'origin/master')
 
-    # Check where we branched off from the version. We're only interested
-    # in whether *we* introduced any source changes, so we check diff from
-    # there rather than the diff to the other side.
-    point_of_divergence = merge_base('HEAD', version)
 
+def has_source_changes():
     return subprocess.call([
-        'git', 'diff', '--no-patch', '--exit-code', point_of_divergence,
+        'git', 'diff', '--no-patch', '--exit-code', point_of_divergence(),
         'HEAD', '--', PYTHON_SRC,
     ]) != 0
 
@@ -200,7 +188,7 @@ def modified_files():
     files = set()
     for command in [
         ['git', 'diff', '--name-only', '--diff-filter=d',
-            latest_version(), 'HEAD'],
+            point_of_divergence(), 'HEAD'],
         ['git', 'diff', '--name-only']
     ]:
         diff_output = subprocess.check_output(command).decode('ascii')
