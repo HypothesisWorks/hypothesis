@@ -6,18 +6,31 @@ Note: This review guide was written with the Python version in mind,
 but should apply to *all* versions. If you find a place where it's a bit
 too Python specific, please fix it or file an issue.
 
-Hypothesis has a process of reviewing every change, internal or external.
-This is a document outlining that process. It's partly descriptive, partly
-prescriptive, and entirely prone to change in response to circumstance
-and need. We're still figuring this thing out!
+This document outlines the process for reviewing changes to Hypothesis. It's
+partly descriptive, partly prescriptive, and entirely prone to change in
+response to circumstance and need. We're still figuring this thing out!
+
+-----------------
+What Needs Review
+-----------------
+
+The repository includes Hypothesis implementations for multiple languages,
+which have different review requirements due to different levels of project
+maturity:
+
+- all changes to hypothesis-python and the language-independent build
+  infrastructure must be signed off by at least one person with write access to
+  the repo other than the author of the change. (These requirements will apply
+  to any Hypothesis implementations with a 1.0 release.)
+- changes by `DRMacIver <https://github.com/DRMacIver>`_ to hypothesis-ruby do
+  not require review, but will be posted as pull requests, often for long
+  enough that if someone wants to review and ask questions, they can.
 
 ----------------
 How Review Works
 ----------------
 
-All changes to Hypothesis must be signed off by at least one person with
-write access to the repo other than the author of the change. Once the
-build is green and a reviewer has approved the change, anyone on the
+Once the build is green and a reviewer has approved the change, anyone on the
 maintainer team may merge the request.
 
 More than one maintainer *may* review a change if they wish to, but it's
