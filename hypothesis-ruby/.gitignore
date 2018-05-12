@@ -1,0 +1,13 @@
+*.sw*
+spec/examples.txt
+target/
+**/*.rs.bk
+Cargo.lock
+*.so
+coverage
+.yardoc
+isolated
+doc
+*.gem
+secrets
+secrets.tar
