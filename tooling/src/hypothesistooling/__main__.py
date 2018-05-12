@@ -439,6 +439,7 @@ PY27 = '2.7.14'
 PY34 = '3.4.8'
 PY35 = '3.5.5'
 PY36 = '3.6.5'
+PY37 = '3.7.0b4'
 PYPY2 = 'pypy2.7-5.10.0'
 
 
@@ -446,10 +447,12 @@ PYPY2 = 'pypy2.7-5.10.0'
 def install_core():
     install.python_executable(PY27)
     install.python_executable(PY36)
+    install.python_executable(PY37)
 
 
 ALIASES = {
     PYPY2: 'pypy',
+    PY37: 'python3.7',
 }
 
 for n in [PY27, PY34, PY35, PY36]:
@@ -475,6 +478,11 @@ def check_py35():
 @task
 def check_py36():
     run_tox('py36-full', PY36)
+
+
+@task
+def check_py37():
+    run_tox('py37-full', PY37)
 
 
 @task

@@ -2,6 +2,7 @@ test:
   override:
     - ./build.sh check-py27
     - ./build.sh check-py36
+    - ./build.sh check-py37
 
 machine:
   pre:
