@@ -1,0 +1,10 @@
+[flake8]
+
+exclude =
+    compat.py,
+    hypothesis-python/src/hypothesis/vendor/*,
+    test_reflection.py,
+    test_imports.py,
+    hypothesis-python/tests/py2/*,
+    test_lambda_formatting.py
+ignore = F811,D1,D205,D209,D213,D400,D401,D999

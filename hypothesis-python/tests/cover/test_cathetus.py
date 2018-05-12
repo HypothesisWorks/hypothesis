@@ -1,0 +1,153 @@
+# coding=utf-8
+#
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis-python
+#
+# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# (david@drmaciver.com), but it contains contributions by others. See
+# CONTRIBUTING.rst for a full list of people who may hold copyright, and
+# consult the git log if you need to determine who owns an individual
+# contribution.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+#
+# END HEADER
+
+from __future__ import division, print_function, absolute_import
+
+import sys
+import math
+from sys import float_info
+
+import pytest
+
+from hypothesis.internal.cathetus import cathetus
+
+
+def test_cathetus_subnormal_underflow():
+    u = sys.float_info.min * sys.float_info.epsilon
+    h = 5 * u
+    a = 4 * u
+    assert cathetus(h, a) == 3 * u
+
+
+def test_cathetus_simple_underflow():
+    a = sys.float_info.min
+    h = a * math.sqrt(2)
+    b = cathetus(h, a)
+    assert b > 0, (
+        'expecting positive cathetus(%g, %g), got %g' % (h, a, b)
+    )
+
+
+def test_cathetus_huge_no_overflow():
+    h = sys.float_info.max
+    a = h / math.sqrt(2)
+    b = cathetus(h, a)
+    assert not (math.isinf(b) or math.isnan(b)), (
+        'expecting finite cathetus(%g, %g), got %g' % (h, a, b)
+    )
+
+
+def test_cathetus_large_no_overflow():
+    h = sys.float_info.max / 3
+    a = h / math.sqrt(2)
+    b = cathetus(h, a)
+    assert not (math.isinf(b) or math.isnan(b)), (
+        'expecting finite cathetus(%g, %g), got %g' % (h, a, b)
+    )
+
+
+@pytest.mark.parametrize('h,a', [
+    # NaN hypot
+    (float(u'nan'), 3),
+    (float(u'nan'), 0),
+    (float(u'nan'), float(u'inf')),
+    (float(u'nan'), float(u'nan')),
+    # Infeasible
+    (2, 3),
+    (2, -3),
+    (2, float(u'inf')),
+    (2, float(u'nan')),
+    # Surprisingly consistent with c99 hypot()
+    (float(u'inf'), float(u'inf')),
+])
+def test_cathetus_nan(h, a):
+    assert math.isnan(cathetus(h, a))
+
+
+@pytest.mark.parametrize('h,a', [
+    (float(u'inf'), 3),
+    (float(u'inf'), -3),
+    (float(u'inf'), 0),
+    (float(u'inf'), float(u'nan')),
+])
+def test_cathetus_infinite(h, a):
+    assert math.isinf(cathetus(h, a))
+
+
+@pytest.mark.parametrize('h,a,b', [
+    (-5, 4, 3),
+    (5, -4, 3),
+    (-5, -4, 3),
+    (0, 0, 0),
+    (1, 0, 1),
+])
+def test_cathetus_signs(h, a, b):
+    assert abs(cathetus(h, a) - b) <= abs(b) * float_info.epsilon
+
+
+@pytest.mark.parametrize('a,b,h', [
+    (3, 4, 5),
+    (5, 12, 13),
+    (8, 15, 17),
+    (7, 24, 25),
+    (20, 21, 29),
+    (12, 35, 37),
+    (9, 40, 41),
+    (28, 45, 53),
+    (11, 60, 61),
+    (16, 63, 65),
+    (33, 56, 65),
+    (48, 55, 73),
+    (13, 84, 85),
+    (36, 77, 85),
+    (39, 80, 89),
+    (65, 72, 97),
+    (20, 99, 101),
+    (60, 91, 109),
+    (15, 112, 113),
+    (44, 117, 125),
+    (88, 105, 137),
+    (17, 144, 145),
+    (24, 143, 145),
+    (51, 140, 149),
+    (85, 132, 157),
+    (119, 120, 169),
+    (52, 165, 173),
+    (19, 180, 181),
+    (57, 176, 185),
+    (104, 153, 185),
+    (95, 168, 193),
+    (28, 195, 197),
+    (84, 187, 205),
+    (133, 156, 205),
+    (21, 220, 221),
+    (140, 171, 221),
+    (60, 221, 229),
+    (105, 208, 233),
+    (120, 209, 241),
+    (32, 255, 257),
+    (23, 264, 265),
+    (96, 247, 265),
+    (69, 260, 269),
+    (115, 252, 277),
+    (160, 231, 281),
+    (161, 240, 289),
+    (68, 285, 293),
+])
+def test_pythagorean_triples(a, b, h):
+    assert abs(math.hypot(a, b) - h) <= abs(h) * float_info.epsilon
+    assert abs(cathetus(h, a) - b) <= abs(b) * float_info.epsilon

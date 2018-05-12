@@ -1,0 +1,8 @@
+Copyright (c) 2013, David R. MacIver
+
+All code in this repository except where explicitly noted otherwise is released
+under the Mozilla Public License v 2.0. You can obtain a copy at http://mozilla.org/MPL/2.0/.
+
+Some code in this repository comes from other projects. Where applicable, the
+original copyright and license are noted and any modifications made are released
+dual licensed with the original license.

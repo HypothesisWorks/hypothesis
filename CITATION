@@ -1,0 +1,19 @@
+Please use one of the following samples to cite the hypothesis version (change
+x.y) from this installation
+
+Text:
+
+[Hypothesis]  Hypothesis x.y, 2016
+David R. MacIver, https://github.com/HypothesisWorks/hypothesis-python
+
+BibTeX:
+
+@misc{Hypothesisx.y,
+  title =            {{H}ypothesis x.y},
+  author =     {David R. MacIver},
+  year =             {2016},
+  howpublished = {\href{https://github.com/HypothesisWorks/hypothesis-python}{\texttt{https://github.com/HypothesisWorks/hypothesis-python}}},
+}
+
+If you are unsure about which version of hypothesis you are using run: `pip show
+hypothesis`.
