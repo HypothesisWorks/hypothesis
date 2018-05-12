@@ -15,11 +15,13 @@ What Needs Review
 -----------------
 
 The repository includes Hypothesis implementations for multiple languages,
-which have different review requirements:
+which have different review requirements due to different levels of project
+maturity:
 
 - all changes to hypothesis-python and the language-independent build
   infrastructure must be signed off by at least one person with write access to
-  the repo other than the author of the change.
+  the repo other than the author of the change. (These requirements will apply
+  to any Hypothesis implementations with a 1.0 release.)
 - changes by `DRMacIver <https://github.com/DRMacIver>`_ to hypothesis-ruby do
   not require review, but will be posted as pull requests, often for long
   enough that if someone wants to review and ask questions, they can.
