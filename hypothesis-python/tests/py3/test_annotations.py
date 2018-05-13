@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import attr
 import pytest
 
 import hypothesis.strategies as st
@@ -121,3 +122,22 @@ def test_given_edits_annotations(nargs):
         given(*(nargs * [st.none()]))(pointless_composite))
     assert spec_given.annotations.pop('return') is None
     assert len(spec_given.annotations) == 3 - nargs
+
+
+def a_converter(x) -> int:
+    return int(x)
+
+
+@attr.s
+class Inferrables(object):
+    annot_converter = attr.ib(converter=a_converter)
+
+
+@given(st.builds(Inferrables))
+def test_attrs_inference_builds(c):
+    pass
+
+
+@given(st.from_type(Inferrables))
+def test_attrs_inference_from_type(c):
+    pass

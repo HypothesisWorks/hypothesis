@@ -1,0 +1,79 @@
+# coding=utf-8
+#
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis-python
+#
+# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# (david@drmaciver.com), but it contains contributions by others. See
+# CONTRIBUTING.rst for a full list of people who may hold copyright, and
+# consult the git log if you need to determine who owns an individual
+# contribution.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+#
+# END HEADER
+
+from __future__ import division, print_function, absolute_import
+
+import attr
+import pytest
+
+import hypothesis.strategies as st
+from hypothesis import given, infer
+from hypothesis.errors import ResolutionFailed
+
+
+@attr.s
+class Inferrables(object):
+    type_ = attr.ib(type=int)
+    type_converter = attr.ib(converter=bool)
+    validator_type = attr.ib(validator=attr.validators.instance_of(str))
+    validator_type_multiple = attr.ib(validator=[
+        attr.validators.instance_of(str),
+        attr.validators.instance_of((str, int, bool)),
+    ])
+    validator_optional = attr.ib(
+        validator=attr.validators.optional(lambda inst, atrib, val: float(val))
+    )
+    validator_in = attr.ib(validator=attr.validators.in_([1, 2, 3]))
+    validator_in_multiple = attr.ib(validator=[
+        attr.validators.in_(list(range(100))),
+        attr.validators.in_([1, -1]),
+    ])
+    has_default = attr.ib(default=0)
+    has_default_factory = attr.ib(default=attr.Factory(list))
+    has_default_factory_takes_self = attr.ib(  # uninferrable but has default
+        default=attr.Factory(lambda _: list(), takes_self=True))
+
+
+@attr.s
+class Required(object):
+    a = attr.ib()
+
+
+@attr.s
+class UnhelpfulConverter(object):
+    a = attr.ib(converter=lambda x: x)
+
+
+@given(st.builds(Inferrables, has_default=infer, has_default_factory=infer))
+def test_attrs_inference_builds(c):
+    pass
+
+
+@given(st.from_type(Inferrables))
+def test_attrs_inference_from_type(c):
+    pass
+
+
+@pytest.mark.parametrize('c', [Required, UnhelpfulConverter])
+def test_cannot_infer(c):
+    with pytest.raises(ResolutionFailed):
+        st.builds(c).example()
+
+
+def test_cannot_infer_takes_self():
+    with pytest.raises(ResolutionFailed):
+        st.builds(Inferrables, has_default_factory_takes_self=infer).example()
