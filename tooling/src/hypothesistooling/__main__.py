@@ -507,6 +507,12 @@ def check_whole_repo_tests():
     ])
 
 
+@task()
+def shell():
+    import IPython
+    IPython.start_ipython([])
+
+
 if __name__ == '__main__':
     if 'SNAKEPIT' not in os.environ:
         print(
