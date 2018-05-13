@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
+import shlex
 import random
 import shutil
 import subprocess
@@ -511,6 +512,36 @@ def check_whole_repo_tests():
 def shell():
     import IPython
     IPython.start_ipython([])
+
+
+def bundle(*args):
+    env = dict(os.environ)
+    env['PATH'] = install.RUBY_BIN_DIR + ':' + env['PATH']
+    subprocess.check_call([
+        install.BUNDLER_EXECUTABLE, *args
+    ], env=env)
+
+
+def ruby_task(fn):
+    def run():
+        install.ensure_rustup()
+        install.ensure_ruby()
+        os.chdir(tools.HYPOTHESIS_RUBY)
+        # Install in deployment mode so that it gets cached on Travis.
+        bundle('install', '--deployment')
+        fn()
+    run.__name__ = fn.__name__
+    return task(if_changed=(tools.HYPOTHESIS_RUBY,))(run)
+
+
+@ruby_task
+def lint_ruby():
+    bundle('exec', 'rake', 'checkformat')
+
+
+@ruby_task
+def check_ruby_tests():
+    bundle('exec', 'rake', 'test')
 
 
 if __name__ == '__main__':
