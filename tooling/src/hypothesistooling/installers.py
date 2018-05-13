@@ -94,3 +94,47 @@ def ensure_shellcheck():
     update_stack()
     ensure_ghc()
     subprocess.check_call([STACK, 'install', 'ShellCheck'])
+
+
+def ensure_rustup():
+    scripts.run_script('ensure-rustup.sh')
+
+
+RUBY_BUILD = os.path.join(scripts.RBENV_ROOT, 'plugins', 'ruby-build')
+
+RUBY_BIN_DIR = os.path.join(scripts.INSTALLED_RUBY_DIR, 'bin')
+
+BUNDLER_EXECUTABLE = os.path.join(RUBY_BIN_DIR, 'bundle')
+GEM_EXECUTABLE = os.path.join(RUBY_BIN_DIR, 'gem')
+
+RBENV_COMMAND = os.path.join(scripts.RBENV_ROOT, 'bin', 'rbenv')
+
+
+def ensure_ruby():
+    if not os.path.exists(scripts.RBENV_ROOT):
+        subprocess.check_call([
+            'git', 'clone', 'https://github.com/rbenv/rbenv.git',
+            scripts.RBENV_ROOT
+        ])
+
+    if not os.path.exists(RUBY_BUILD):
+        subprocess.check_call([
+            'git', 'clone', 'https://github.com/rbenv/ruby-build.git',
+            RUBY_BUILD
+        ])
+
+    if not os.path.exists(
+        os.path.join(scripts.RBENV_ROOT, 'versions', scripts.RBENV_VERSION)
+    ):
+        subprocess.check_call(
+            [RBENV_COMMAND, 'install', scripts.RBENV_VERSION])
+
+    if not (
+        os.path.exists(BUNDLER_EXECUTABLE) and
+        subprocess.call([BUNDLER_EXECUTABLE, 'version']) == 0
+    ):
+        subprocess.check_call(
+            [GEM_EXECUTABLE, 'install', 'bundler']
+        )
+
+    assert os.path.exists(BUNDLER_EXECUTABLE)

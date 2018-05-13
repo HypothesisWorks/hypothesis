@@ -14,6 +14,8 @@ branches:
 cache:
     apt: true
     directories:
+        - $HOME/.cargo
+        - $HOME/.rustup
         - $HOME/.runtimes
         - $HOME/.venv
         - $HOME/.cache/pip
@@ -33,6 +35,7 @@ jobs:
       env: TASK=check-whole-repo-tests
     - env: TASK=documentation
     - env: TASK=lint
+    - env: TASK=lint-ruby
     - env: TASK=doctest
     - env: TASK=check-format
     - env: TASK=check-type-hints
@@ -43,6 +46,7 @@ jobs:
     - env: TASK=check-py27
     - env: TASK=check-py36
     - env: TASK=check-quality
+    - env: TASK=check-ruby-tests
 
     # Less important tests that will probably
     # pass whenever the above do but are still
