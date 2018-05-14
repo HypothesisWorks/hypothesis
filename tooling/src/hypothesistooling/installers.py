@@ -127,5 +127,8 @@ def ensure_ruby():
         subprocess.check_call(
             [RBENV_COMMAND, 'install', scripts.RBENV_VERSION])
 
-    if subprocess.call([BUNDLER_EXECUTABLE, 'version']) != 0:
+    if (
+        not os.path.exists(BUNDLER_EXECUTABLE) or
+        subprocess.call([BUNDLER_EXECUTABLE, 'version']) != 0
+    ):
         subprocess.check_call([GEM_EXECUTABLE, 'install', 'bundler'])
