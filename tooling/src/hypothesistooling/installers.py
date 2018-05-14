@@ -104,8 +104,9 @@ RUBY_BUILD = os.path.join(scripts.RBENV_ROOT, 'plugins', 'ruby-build')
 
 RBENV_COMMAND = os.path.join(scripts.RBENV_ROOT, 'bin', 'rbenv')
 
-BUNDLER_EXECUTABLE = os.path.join(scripts.RBENV_ROOT, 'shims', 'bundle')
-GEM_EXECUTABLE = os.path.join(scripts.RBENV_ROOT, 'shims', 'gem')
+RBENV_SHIMS = os.path.join(scripts.RBENV_ROOT, 'shims')
+BUNDLER_EXECUTABLE = os.path.join(RBENV_SHIMS, 'bundle')
+GEM_EXECUTABLE = os.path.join(RBENV_SHIMS, 'gem')
 
 
 def ensure_ruby():
@@ -127,8 +128,13 @@ def ensure_ruby():
         subprocess.check_call(
             [RBENV_COMMAND, 'install', scripts.RBENV_VERSION])
 
-    if (
-        not os.path.exists(BUNDLER_EXECUTABLE) or
-        subprocess.call([BUNDLER_EXECUTABLE, 'version']) != 0
+    if not (
+        os.path.exists(BUNDLER_EXECUTABLE) and
+        subprocess.call([BUNDLER_EXECUTABLE, 'version']) == 0
     ):
         subprocess.check_call([GEM_EXECUTABLE, 'install', 'bundler'])
+
+    assert os.path.exists(BUNDLER_EXECUTABLE), (
+        BUNDLER_EXECUTABLE, RBENV_SHIMS,
+        os.listdir(RBENV_SHIMS),
+    )
