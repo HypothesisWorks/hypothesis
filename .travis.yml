@@ -30,11 +30,6 @@ env:
         - FORMAT_ALL=true
 
 
-# Temporary hack to try and get this working
-install:
-  - rm -rf ~/.rvm
-
-
 jobs:
   include:
     # Prechecks that we want to run first.
