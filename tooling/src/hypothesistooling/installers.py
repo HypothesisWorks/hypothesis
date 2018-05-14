@@ -132,7 +132,9 @@ def ensure_ruby():
         os.path.exists(BUNDLER_EXECUTABLE) and
         subprocess.call([BUNDLER_EXECUTABLE, 'version']) == 0
     ):
-        subprocess.check_call([GEM_EXECUTABLE, 'install', 'bundler'])
+        subprocess.check_call(
+            [GEM_EXECUTABLE, 'install', 'bundler', '--verbose']
+        )
 
     assert os.path.exists(BUNDLER_EXECUTABLE), (
         BUNDLER_EXECUTABLE, RBENV_SHIMS,
