@@ -100,42 +100,32 @@ def ensure_rustup():
     scripts.run_script('ensure-rustup.sh')
 
 
-RUBY_VERSION = '2.5.1'
+RUBY_BUILD = os.path.join(scripts.RBENV_ROOT, 'plugins', 'ruby-build')
 
-RUBY_DIR = os.path.join(
-    scripts.BASE, 'ruby-versions', RUBY_VERSION
-)
+RBENV_COMMAND = os.path.join(scripts.RBENV_ROOT, 'bin', 'rbenv')
 
-RUBY_BIN_DIR = os.path.join(RUBY_DIR, 'bin')
-
-RUBY_EXECUTABLE = os.path.join(RUBY_BIN_DIR, 'ruby')
-GEM_EXECUTABLE = os.path.join(RUBY_BIN_DIR, 'gem')
-BUNDLER_EXECUTABLE = os.path.join(RUBY_BIN_DIR, 'bundler')
-
-
-RUBY_BUILD_DIR = os.path.join(scripts.BASE, 'ruby-build')
-
-RUBY_BUILD = os.path.join(RUBY_BUILD_DIR, 'bin', 'ruby-build')
+BUNDLER_EXECUTABLE = os.path.join(scripts.RBENV_ROOT, 'shims', 'bundle')
+GEM_EXECUTABLE = os.path.join(scripts.RBENV_ROOT, 'shims', 'gem')
 
 
 def ensure_ruby():
-    if not os.path.exists(RUBY_BUILD_DIR):
+    if not os.path.exists(scripts.RBENV_ROOT):
         subprocess.check_call([
-            'git', 'clone', 'https://github.com/rbenv/ruby-build.git',
-            RUBY_BUILD_DIR
+            'git', 'clone', 'https://github.com/rbenv/rbenv.git',
+            scripts.RBENV_ROOT
         ])
 
-    assert os.path.exists(RUBY_BUILD_DIR)
+    if not os.path.exists(RUBY_BUILD):
+        subprocess.check_call([
+            'git', 'clone', 'https://github.com/rbenv/ruby-build.git',
+            RUBY_BUILD
+        ])
 
-    if not os.path.exists(RUBY_EXECUTABLE):
-        subprocess.check_call([RUBY_BUILD, RUBY_VERSION, RUBY_DIR])
+    if not os.path.exists(
+        os.path.join(scripts.RBENV_ROOT, 'versions', scripts.RBENV_VERSION)
+    ):
+        subprocess.check_call(
+            [RBENV_COMMAND, 'install', scripts.RBENV_VERSION])
 
-    assert os.path.exists(RUBY_EXECUTABLE)
-    assert os.path.exists(GEM_EXECUTABLE)
-
-    if not os.path.exists(BUNDLER_EXECUTABLE):
+    if subprocess.call([BUNDLER_EXECUTABLE, 'version']) != 0:
         subprocess.check_call([GEM_EXECUTABLE, 'install', 'bundler'])
-    assert os.path.exists(BUNDLER_EXECUTABLE), (
-        BUNDLER_EXECUTABLE,
-        os.listdir(RUBY_BIN_DIR),
-    )

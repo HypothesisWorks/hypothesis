@@ -16,6 +16,8 @@ export PYENV="$BASE/pyenv"
 export SNAKEPIT="$BASE/python-versions/"
 export VIRTUALENVS="$BASE/virtualenvs/"
 export PATH="$HOME/.cargo/bin:$PATH"
+export RBENV_VERSION="2.5.1"
+export RBENV_ROOT="$HOME/.rbenv"
 
 pythonloc() {
     VERSION="$1"

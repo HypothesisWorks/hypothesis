@@ -514,11 +514,9 @@ def shell():
 
 
 def bundle(*args):
-    env = dict(os.environ)
-    env['PATH'] = install.RUBY_BIN_DIR + ':' + env['PATH']
     subprocess.check_call([
         install.BUNDLER_EXECUTABLE, *args
-    ], env=env)
+    ])
 
 
 def ruby_task(fn):
