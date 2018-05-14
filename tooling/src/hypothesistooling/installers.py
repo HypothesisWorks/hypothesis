@@ -139,5 +139,5 @@ def ensure_ruby():
         os.listdir(RBENV_SHIMS),
         os.listdir(
             os.path.join(scripts.RBENV_ROOT, 'versions',
-                         scripts.RBENV_VERSION, 'bin')
+                         scripts.RBENV_VERSION, 'bin'))
     )
