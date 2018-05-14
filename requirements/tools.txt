@@ -58,7 +58,7 @@ sphinx-rtd-theme==0.3.1
 sphinx==1.7.4
 sphinxcontrib-websupport==1.0.1  # via sphinx
 tox==3.0.0
-tqdm==4.23.2              # via pyupio, twine
+tqdm==4.23.3              # via pyupio, twine
 twine==1.11.0
 typed-ast==1.1.0          # via mypy
 unify==0.4                # via pyformat
