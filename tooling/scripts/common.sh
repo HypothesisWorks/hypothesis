@@ -15,6 +15,7 @@ export BASE="$BUILD_RUNTIMES"
 export PYENV="$BASE/pyenv"
 export SNAKEPIT="$BASE/python-versions/"
 export VIRTUALENVS="$BASE/virtualenvs/"
+export PATH="$HOME/.cargo/bin:$PATH"
 
 pythonloc() {
     VERSION="$1"
