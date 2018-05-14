@@ -135,4 +135,4 @@ def ensure_ruby():
 
     if not os.path.exists(BUNDLER_EXECUTABLE):
         subprocess.check_call([GEM_EXECUTABLE, 'install', 'bundler'])
-    assert os.path.exists(BUNDLER_EXECUTABLE)
+    assert os.path.exists(BUNDLER_EXECUTABLE), BUNDLER_EXECUTABLE
