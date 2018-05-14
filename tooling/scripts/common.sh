@@ -15,9 +15,9 @@ export BASE="$BUILD_RUNTIMES"
 export PYENV="$BASE/pyenv"
 export SNAKEPIT="$BASE/python-versions/"
 export VIRTUALENVS="$BASE/virtualenvs/"
-export PATH="$HOME/.cargo/bin:$PATH"
 export RBENV_VERSION="2.5.1"
-export RBENV_ROOT="$HOME/.rbenv"
+export RBENV_ROOT="$BASE/.rbenv"
+export PATH="$RBENV_ROOT/shims:$HOME/.cargo/bin:$PATH"
 
 pythonloc() {
     VERSION="$1"

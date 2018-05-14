@@ -15,7 +15,6 @@ cache:
     cargo: true
     apt: true
     directories:
-        - $HOME/.rbenv
         - $HOME/.rustup
         - $HOME/.runtimes
         - $HOME/.venv
