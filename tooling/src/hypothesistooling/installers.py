@@ -137,4 +137,7 @@ def ensure_ruby():
     assert os.path.exists(BUNDLER_EXECUTABLE), (
         BUNDLER_EXECUTABLE, RBENV_SHIMS,
         os.listdir(RBENV_SHIMS),
+        os.listdir(
+            os.path.join(scripts.RBENV_ROOT, 'versions',
+                         scripts.RBENV_VERSION, 'bin')
     )
