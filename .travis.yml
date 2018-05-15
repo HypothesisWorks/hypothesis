@@ -40,7 +40,6 @@ jobs:
     - env: TASK=lint-ruby
     - env: TASK=doctest
     - env: TASK=check-format
-    - env: TASK=check-type-hints
     - env: TASK=check-requirements
     - env: TASK=check-rust-tests
 
