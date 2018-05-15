@@ -507,6 +507,40 @@ def check_whole_repo_tests():
     ])
 
 
+@task()
+def shell():
+    import IPython
+    IPython.start_ipython([])
+
+
+def bundle(*args):
+    subprocess.check_call([
+        install.BUNDLER_EXECUTABLE, *args
+    ])
+
+
+def ruby_task(fn):
+    def run():
+        install.ensure_rustup()
+        install.ensure_ruby()
+        os.chdir(tools.HYPOTHESIS_RUBY)
+        # Install in deployment mode so that it gets cached on Travis.
+        bundle('install', '--deployment')
+        fn()
+    run.__name__ = fn.__name__
+    return task(if_changed=(tools.HYPOTHESIS_RUBY,))(run)
+
+
+@ruby_task
+def lint_ruby():
+    bundle('exec', 'rake', 'checkformat')
+
+
+@ruby_task
+def check_ruby_tests():
+    bundle('exec', 'rake', 'test')
+
+
 if __name__ == '__main__':
     if 'SNAKEPIT' not in os.environ:
         print(

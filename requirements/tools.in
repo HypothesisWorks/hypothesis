@@ -15,3 +15,4 @@ coverage
 pyupio
 django
 numpy
+IPython
