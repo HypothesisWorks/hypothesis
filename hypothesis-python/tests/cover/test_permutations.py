@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 from hypothesis import find, given
+from tests.common.utils import validate_deprecation
 from hypothesis.strategies import permutations
 
 
@@ -38,3 +39,11 @@ def test_permutation_values_are_permutations(perm):
 @given(permutations([]))
 def test_empty_permutations_are_empty(xs):
     assert xs == []
+
+
+def test_non_sequence_types_are_deprecated():
+    @given(permutations({1, 2, 3, 4}))
+    def inner(_permutation):
+        pass
+    with validate_deprecation():
+        inner()

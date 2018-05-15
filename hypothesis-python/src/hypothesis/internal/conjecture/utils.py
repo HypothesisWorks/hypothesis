@@ -30,6 +30,7 @@ from hypothesis.internal.compat import floor, hbytes, hrange, qualname, \
 from hypothesis.internal.floats import int_to_float
 
 LABEL_MASK = 2 ** 64 - 1
+_SEQUENCE_TYPES = (OrderedDict, Sequence, enum.EnumMeta)
 
 
 def calc_label_from_name(name):
@@ -114,9 +115,9 @@ except ImportError:  # pragma: no cover
     ndarray = ()
 
 
-def check_sample(values):
+def check_sample(values, require_1d_array=True, require_sequence=True):
     if isinstance(values, ndarray):
-        if values.ndim != 1:
+        if require_1d_array and values.ndim != 1:
             note_deprecation((
                 'Only one-dimensional arrays are supported for sampling, '
                 'and the given value has {ndim} dimensions (shape '
@@ -126,18 +127,19 @@ def check_sample(values):
                 'want to sample slices.  Sampling a multi-dimensional '
                 'array will be an error in a future version of Hypothesis.'
             ).format(ndim=values.ndim, shape=values.shape))
-    elif not isinstance(values, (OrderedDict, Sequence, enum.EnumMeta)):
+    elif require_sequence and not isinstance(values, _SEQUENCE_TYPES):
         note_deprecation(
             ('Cannot sample from %r, not a sequence.  ' % (values,)) +
             'Hypothesis goes to some length to ensure that sampling an '
-            'element from a collection (with `sampled_from` or `choices`) is '
-            'replayable and can be minimised.  To replay a saved example, '
-            'the sampled values must have the same iteration order on every '
-            'run - ruling out sets, dicts, etc due to hash randomisation.  '
-            'Most cases can simply use `sorted(values)`, but mixed types or '
-            'special values such as math.nan require careful handling - and '
-            'note that when simplifying an example, Hypothesis treats '
-            'earlier values as simpler.')
+            'element from a collection (with `sampled_from`, `choices`, or '
+            '`permutations`) is replayable and can be minimised.  To  '
+            'replay a saved example, the sampled values must have the same '
+            'iteration order on every run - ruling out sets, dicts, etc due '
+            'to hash randomisation. Most cases can simply use '
+            '`sorted(values)`, but mixed types or special values such as '
+            'math.nan require careful handling - and  note that when '
+            'simplifying an example, Hypothesis treats earlier values as '
+            'simpler.')
     return tuple(values)
 
 

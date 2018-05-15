@@ -1484,15 +1484,14 @@ class PermutationStrategy(SearchStrategy):
 
 
 @defines_strategy
-def permutations(values):
+def permutations(collection):
     # type: (Sequence[T]) -> SearchStrategy[List[T]]
-    """Return a strategy which returns permutations of the collection
-    ``values``.
+    """Return a strategy which returns permutations of the ``collection``.
 
     Examples from this strategy shrink by trying to become closer to the
     original order of values.
     """
-    values = list(values)
+    values = check_sample(collection, require_1d_array=False)
     if not values:
         return builds(list)
 
