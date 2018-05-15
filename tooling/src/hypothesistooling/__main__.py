@@ -26,9 +26,6 @@ from glob import glob
 from time import time, sleep
 from datetime import datetime
 
-import yaml
-from pyup.config import Config
-
 import hypothesistooling as tools
 import hypothesistooling.installers as install
 from hypothesistooling import fix_doctests as fd
@@ -70,18 +67,6 @@ def lint():
 @task(if_changed=tools.PYTHON_SRC)
 def check_type_hints():
     pip_tool('mypy', tools.PYTHON_SRC)
-
-
-@task()
-def check_pyup_yml():
-    with open(tools.PYUP_FILE, 'r') as i:
-        data = yaml.safe_load(i.read())
-    config = Config()
-    config.update_config(data)
-
-    if not config.is_valid_schedule():
-        print('Schedule %r is invalid' % (config.schedule,))
-        sys.exit(1)
 
 
 DIST = os.path.join(tools.HYPOTHESIS_PYTHON, 'dist')
@@ -202,46 +187,6 @@ def deploy():
     ])
 
     sys.exit(0)
-
-
-@task()
-def check_release_file():
-    if tools.has_python_source_changes():
-        if not tools.has_release():
-            print(
-                'There are source changes but no RELEASE.rst. Please create '
-                'one to describe your changes.'
-            )
-            sys.exit(1)
-        tools.parse_release_file()
-
-
-@task()
-def check_shellcheck():
-    install.ensure_shellcheck()
-    subprocess.check_call([install.SHELLCHECK] + [
-        f for f in tools.all_files()
-        if f.endswith('.sh')
-    ])
-
-
-@task()
-def check_rst():
-    rst = glob('*.rst') + glob('guides/*.rst')
-    docs = glob('hypothesis-python/docs/*.rst')
-
-    pip_tool('rst-lint', *rst)
-    pip_tool('flake8', '--select=W191,W291,W292,W293,W391', *(rst + docs))
-
-
-@task()
-def check_secrets():
-    if os.environ.get('TRAVIS_SECURE_ENV_VARS', None) != 'true':
-        sys.exit(0)
-
-    tools.decrypt_secrets()
-
-    assert os.path.exists(tools.DEPLOY_KEY)
 
 
 CURRENT_YEAR = datetime.utcnow().year
@@ -552,6 +497,14 @@ def check_examples3():
 @python_tests
 def check_unicode():
     run_tox('unicode', PY27)
+
+
+@task()
+def check_whole_repo_tests():
+    install.ensure_shellcheck()
+    subprocess.check_call([
+        sys.executable, '-m', 'pytest', tools.REPO_TESTS
+    ])
 
 
 if __name__ == '__main__':
