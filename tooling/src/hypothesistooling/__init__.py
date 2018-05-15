@@ -48,6 +48,8 @@ HYPOTHESIS_PYTHON = os.path.join(ROOT, 'hypothesis-python')
 PYTHON_SRC = os.path.join(HYPOTHESIS_PYTHON, 'src')
 PYTHON_TESTS = os.path.join(HYPOTHESIS_PYTHON, 'tests')
 
+REPO_TESTS = os.path.join(ROOT, 'whole-repo-tests')
+
 PYUP_FILE = os.path.join(ROOT, '.pyup.yml')
 
 

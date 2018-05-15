@@ -26,19 +26,14 @@ env:
         - BUILD_RUNTIMES=$HOME/.runtimes
         - FORMAT_ALL=true
 
-
 jobs:
   include:
     # Prechecks that we want to run first.
     - stage: precheck
-      env: TASK=check-pyup-yml
-    - env: TASK=check-release-file
-    - env: TASK=check-shellcheck
-    - env: TASK=check-secrets
+      env: TASK=check-whole-repo-tests
     - env: TASK=documentation
     - env: TASK=lint
     - env: TASK=doctest
-    - env: TASK=check-rst
     - env: TASK=check-format
     - env: TASK=check-type-hints
     - env: TASK=check-requirements
