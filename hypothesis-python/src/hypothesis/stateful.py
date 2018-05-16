@@ -41,7 +41,7 @@ from hypothesis._settings import Verbosity
 from hypothesis._settings import settings as Settings
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.strategies import just, one_of, runner, tuples, \
-    fixed_dictionaries
+    fixed_dictionaries, permutations
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 from hypothesis.internal.reflection import proxies, nicerepr
 from hypothesis.internal.conjecture.data import StopTest
@@ -141,6 +141,14 @@ class GenericStateMachine(object):
 
     find_breaking_runner = None  # type: classmethod
 
+    def initializing(self, data):
+        """Called at the very beginning of the run. Useful when strategies are
+        needed to initialize the state machine.
+
+        Does nothing by default.
+        """
+        pass
+
     def steps(self):
         """Return a SearchStrategy instance the defines the available next
         steps."""
@@ -174,7 +182,7 @@ class GenericStateMachine(object):
         """Called after a run has finished executing to clean up any necessary
         state.
 
-        Does nothing by default
+        Does nothing by default.
         """
         pass
 
@@ -242,6 +250,7 @@ class StateMachineRunner(object):
         )
 
         try:
+            state_machine.initializing(self.data)
             if print_steps:
                 state_machine.print_start()
             state_machine.check_invariants()
@@ -303,6 +312,7 @@ class Bundle(SearchStrategy):
 
 
 RULE_MARKER = u'hypothesis_stateful_rule'
+INITIALIZE_RULE_MARKER = u'hypothesis_stateful_initialize_rule'
 PRECONDITION_MARKER = u'hypothesis_stateful_precondition'
 INVARIANT_MARKER = u'hypothesis_stateful_invariant'
 
@@ -330,7 +340,8 @@ def rule(targets=(), target=None, **kwargs):
 
     def accept(f):
         existing_rule = getattr(f, RULE_MARKER, None)
-        if existing_rule is not None:
+        existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
+        if existing_rule is not None or existing_initialize_rule is not None:
             raise InvalidDefinition(
                 'A function cannot be used for two distinct rules. ',
                 Settings.default,
@@ -344,6 +355,44 @@ def rule(targets=(), target=None, **kwargs):
             return f(*args, **kwargs)
 
         setattr(rule_wrapper, RULE_MARKER, rule)
+        return rule_wrapper
+    return accept
+
+
+def initialize(targets=(), target=None, **kwargs):
+    """
+    """
+    if target is not None:
+        targets += (target,)
+
+    converted_targets = []
+    for t in targets:
+        while isinstance(t, Bundle):
+            t = t.name
+        converted_targets.append(t)
+
+    def accept(f):
+        existing_rule = getattr(f, RULE_MARKER, None)
+        existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
+        if existing_rule is not None or existing_initialize_rule is not None:
+            raise InvalidDefinition(
+                'A function cannot be used for two distinct rules. ',
+                Settings.default,
+            )
+        precondition = getattr(f, PRECONDITION_MARKER, None)
+        if precondition:
+            raise InvalidDefinition(
+                'An initialization rule cannot have a precondition. ',
+                Settings.default,
+            )
+        rule = Rule(targets=tuple(converted_targets), arguments=kwargs,
+                    function=f, precondition=precondition)
+
+        @proxies(f)
+        def rule_wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+
+        setattr(rule_wrapper, INITIALIZE_RULE_MARKER, rule)
         return rule_wrapper
     return accept
 
@@ -377,6 +426,13 @@ def precondition(precond):
         @proxies(f)
         def precondition_wrapper(*args, **kwargs):
             return f(*args, **kwargs)
+
+        existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
+        if existing_initialize_rule is not None:
+            raise InvalidDefinition(
+                'An initialization rule cannot have a precondition. ',
+                Settings.default,
+            )
 
         rule = getattr(f, RULE_MARKER, None)
         if rule is None:
@@ -449,6 +505,8 @@ class RuleBasedStateMachine(GenericStateMachine):
     _rules_per_class = {}  # type: Dict[type, List[classmethod]]
     _invariants_per_class = {}  # type: Dict[type, List[classmethod]]
     _base_rules_per_class = {}  # type: Dict[type, List[classmethod]]
+    _initialize_rules_per_class = {}  # type: Dict[type, List[classmethod]]
+    _base_initialize_rules_per_class = {}  # type: Dict[type, List[classmethod]]
 
     def __init__(self):
         if not self.rules():
@@ -491,6 +549,22 @@ class RuleBasedStateMachine(GenericStateMachine):
         return self.bundles.setdefault(name, [])
 
     @classmethod
+    def initialize_rules(cls):
+        try:
+            return cls._initialize_rules_per_class[cls]
+        except KeyError:
+            pass
+
+        for k, v in inspect.getmembers(cls):
+            r = getattr(v, INITIALIZE_RULE_MARKER, None)
+            if r is not None:
+                cls.define_initialize_rule(
+                    r.targets, r.function, r.arguments, r.precondition,
+                )
+        cls._initialize_rules_per_class[cls] = cls._base_initialize_rules_per_class.pop(cls, [])
+        return cls._initialize_rules_per_class[cls]
+
+    @classmethod
     def rules(cls):
         try:
             return cls._rules_per_class[cls]
@@ -522,6 +596,22 @@ class RuleBasedStateMachine(GenericStateMachine):
         return cls._invariants_per_class[cls]
 
     @classmethod
+    def define_initialize_rule(cls, targets, function, arguments, precondition=None):
+        converted_arguments = {}
+        for k, v in arguments.items():
+            converted_arguments[k] = v
+        if cls in cls._initialize_rules_per_class:
+            target = cls._initialize_rules_per_class[cls]
+        else:
+            target = cls._base_initialize_rules_per_class.setdefault(cls, [])
+
+        return target.append(
+            Rule(
+                targets, function, converted_arguments, precondition,
+            )
+        )
+
+    @classmethod
     def define_rule(cls, targets, function, arguments, precondition=None):
         converted_arguments = {}
         for k, v in arguments.items():
@@ -536,6 +626,17 @@ class RuleBasedStateMachine(GenericStateMachine):
                 targets, function, converted_arguments, precondition,
             )
         )
+
+    def initializing(self, data):
+        strategies = []
+        for rule in self.initialize_rules():
+            strategies.append(tuples(
+                just(rule), fixed_dictionaries(rule.arguments)
+            ))
+        # Shuffle the execution order
+        for strategy in data.draw(permutations(strategies)):
+            step = data.draw(strategy)
+            self.execute_step(step)
 
     def steps(self):
         strategies = []
@@ -564,7 +665,11 @@ class RuleBasedStateMachine(GenericStateMachine):
         return one_of(strategies)
 
     def print_start(self):
-        report(u'state = %s()' % (self.__class__.__name__,))
+        bundles_dump = []
+        for bundle_name, bundle_var_refs in self.bundles.items():
+            values = [self.names_to_values[x.name] for x in bundle_var_refs]
+            bundles_dump.append('%s=%r' % (bundle_name, values))
+        report(u'state = %s(%s)' % (self.__class__.__name__, ', '.join(bundles_dump)))
 
     def print_end(self):
         report(u'state.teardown()')

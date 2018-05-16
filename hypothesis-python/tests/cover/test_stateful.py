@@ -31,7 +31,7 @@ from tests.common.utils import raises, capture_out, \
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, GenericStateMachine, \
     RuleBasedStateMachine, rule, invariant, precondition, \
-    run_state_machine_as_test
+    run_state_machine_as_test, initialize
 from hypothesis.strategies import just, none, lists, binary, tuples, \
     choices, booleans, integers, sampled_from
 from hypothesis.internal.compat import print_unicode
@@ -771,3 +771,96 @@ def test_prints_equal_values_with_correct_variable_name():
     assert 'v1 = state.create()' in result
     assert 'v2 = state.transfer(source=v1)' in result
     assert 'state.fail(source=v2)' in result
+
+
+def test_initialize_rule():
+    class WithInitializeRules(RuleBasedStateMachine):
+        initialized = []
+
+        @initialize()
+        def initialize_a(self):
+            self.initialized.append('a')
+
+        @initialize()
+        def initialize_b(self):
+            self.initialized.append('b')
+
+        @initialize()
+        def initialize_c(self):
+            self.initialized.append('c')
+
+        @rule()
+        def fail_fast(self):
+            assert False
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            run_state_machine_as_test(WithInitializeRules)
+
+    init_group = WithInitializeRules.initialized
+    while init_group:
+        init1, init2, init3, *init_group = init_group
+        assert {init1, init2, init3} == {'a', 'b', 'c'}
+
+    result = o.getvalue()
+    assert 'state = WithInitializeRules()' in result
+    assert 'state.fail_fast()' in result
+    assert 'state.teardown()' in result
+
+
+def test_initialize_rule_populate_bundle():
+    class WithInitializeBundleRules(RuleBasedStateMachine):
+        a = Bundle('a')
+
+        @initialize(target=a, dep1=just('dep1'), dep2=just('dep2'))
+        def initialize_a(self, dep1, dep2):
+            return 'a v1 with (%s, %s)' % (dep1, dep2)
+
+        @rule(param=a)
+        def fail_fast(self, param):
+            assert False
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            run_state_machine_as_test(WithInitializeBundleRules)
+
+    result = o.getvalue()
+    assert "state = WithInitializeBundleRules(a=['a v1 with (dep1, dep2)'])" in result
+    assert 'state.fail_fast(param=v1)' in result
+    assert 'state.teardown()' in result
+
+
+def test_initialize_rule_dont_mix_with_precondition():
+    with pytest.raises(InvalidDefinition) as exc:
+        class BadStateMachine(RuleBasedStateMachine):
+
+            @precondition(lambda self: True)
+            @initialize()
+            def initialize(self):
+                pass
+
+    assert 'An initialization rule cannot have a precondition.' in str(exc.value)
+
+
+def test_initialize_rule_dont_mix_with_regular_rule():
+    with pytest.raises(InvalidDefinition) as exc:
+        class BadStateMachine(RuleBasedStateMachine):
+
+            @rule()
+            @initialize()
+            def initialize(self):
+                pass
+
+    assert 'A function cannot be used for two distinct rules.' in str(exc.value)
+
+
+def test_initialize_rule_cannot_be_double_applied():
+    with pytest.raises(InvalidDefinition) as exc:
+        class BadStateMachine(RuleBasedStateMachine):
+
+            @initialize()
+            @initialize()
+            def initialize(self):
+                pass
+
+    assert 'A function cannot be used for two distinct rules.' in str(exc.value)
