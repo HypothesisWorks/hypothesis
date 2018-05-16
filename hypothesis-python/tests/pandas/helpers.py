@@ -28,6 +28,12 @@ PANDAS_TIME_DTYPES = tuple(map(np.dtype, [
 def supported_by_pandas(dtype):
     """Checks whether the dtype is one that can be correctly handled by
     Pandas."""
+    # Pandas does not support non-native byte orders and things go amusingly
+    # wrong in weird places if you try to use them. See
+    # https://pandas.pydata.org/pandas-docs/stable/gotchas.html#byte-ordering-issues
+    if dtype.byteorder not in ('|', '='):
+        return False
+
     # Pandas only supports a limited range of timedelta and datetime dtypes
     # compared to the full range that numpy supports and will convert
     # everything to those types (possibly increasing precision in the course of
@@ -36,10 +42,4 @@ def supported_by_pandas(dtype):
     # out any timedelta or datetime dtypes that are not of the desired types.
     if dtype.kind in ('m', 'M'):
         return dtype in PANDAS_TIME_DTYPES
-
-    # Pandas does not support non-native byte orders and things go amusingly
-    # wrong in weird places if you try to use them. See
-    # https://pandas.pydata.org/pandas-docs/stable/gotchas.html#byte-ordering-issues
-    if dtype.byteorder not in ('|', '='):
-        return False
     return True
