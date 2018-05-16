@@ -292,8 +292,9 @@ class BundleReferenceStrategy(SearchStrategy):
 
 class Bundle(SearchStrategy):
 
-    def __init__(self, name):
+    def __init__(self, name, default_values=()):
         self.name = name
+        self.default_values = default_values
         self.__reference_strategy = BundleReferenceStrategy(name)
 
     def do_draw(self, data):
@@ -461,6 +462,19 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.__stream = CUnicodeIO()
         self.__printer = RepresentationPrinter(self.__stream)
 
+        self.bundles_default_values = []
+        for entry_name in dir(type(self)):
+            entry = getattr(type(self), entry_name)
+            if isinstance(entry, Bundle) and entry.default_values:
+                for value in entry.default_values:
+                    name = self.new_name()
+                    self.names_to_values[name] = value
+                    self.__printer.singleton_pprinters.setdefault(
+                        id(value), lambda obj, p, cycle: p.text(name)
+                    )
+                    self.bundle(entry.name).append(VarReference(name))
+                    self.bundles_default_values.append((name, value))
+
     def __pretty(self, value):
         if isinstance(value, VarReference):
             return value.name
@@ -564,7 +578,8 @@ class RuleBasedStateMachine(GenericStateMachine):
         return one_of(strategies)
 
     def print_start(self):
-        report(u'state = %s()' % (self.__class__.__name__,))
+        args = ['%s=%r' % x for x in self.bundles_default_values]
+        report(u'state = %s(%s)' % (self.__class__.__name__, ', '.join(args)))
 
     def print_end(self):
         report(u'state.teardown()')
