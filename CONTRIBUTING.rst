@@ -171,6 +171,7 @@ their individual contributions.
 * `Dion Misic <https://www.github.com/kingdion>`_ (dion.misic@gmail.com)
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
+* `Grant David Bachman <https://github.com/grantbachman>`_ (grantbachman@gmail.com)
 * `Gregory Petrosyan <https://github.com/flyingmutant>`_
 * `Jeremy Thurgood <https://github.com/jerith>`_
 * `J.J. Green <http://soliton.vm.bytemark.co.uk/pub/jjg/>`_

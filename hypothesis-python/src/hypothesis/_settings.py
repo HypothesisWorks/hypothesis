@@ -245,7 +245,7 @@ class settings(
         return test_to_use
 
     @classmethod
-    def define_setting(
+    def _define_setting(
         cls, name, description, default, options=None,
         validator=None, show_default=True, future_default=not_set,
         deprecation_message=None, hide_repr=not_set,
@@ -392,7 +392,7 @@ class Setting(object):
     hide_repr = attr.ib()
 
 
-settings.define_setting(
+settings._define_setting(
     'min_satisfying_examples',
     default=not_set,
     description="""
@@ -405,7 +405,7 @@ max_examples setting.
 """
 )
 
-settings.define_setting(
+settings._define_setting(
     'max_examples',
     default=100,
     description="""
@@ -414,7 +414,7 @@ counter-example, falsification will terminate.
 """
 )
 
-settings.define_setting(
+settings._define_setting(
     'max_iterations',
     default=not_set,
     description="""
@@ -426,7 +426,7 @@ useful for this purpose than a user setting.  It no longer has any effect.
 """
 )
 
-settings.define_setting(
+settings._define_setting(
     'buffer_size',
     default=8 * 1024,
     description="""
@@ -437,7 +437,7 @@ your tests slower.
 )
 
 
-settings.define_setting(
+settings._define_setting(
     'max_shrinks',
     default=500,
     description="""
@@ -455,7 +455,7 @@ def _validate_timeout(n):
         return n
 
 
-settings.define_setting(
+settings._define_setting(
     'timeout',
     default=60,
     description="""
@@ -476,7 +476,7 @@ setting has gone away).
     validator=_validate_timeout
 )
 
-settings.define_setting(
+settings._define_setting(
     'derandomize',
     default=False,
     description="""
@@ -490,7 +490,7 @@ find novel breakages.
 """
 )
 
-settings.define_setting(
+settings._define_setting(
     'strict',
     default=os.getenv('HYPOTHESIS_STRICT_MODE') == 'true',
     description="""
@@ -521,7 +521,7 @@ def _validate_database(db, _from_db_file=False):
     )
 
 
-settings.define_setting(
+settings._define_setting(
     'database',
     default=not_set,
     show_default=False,
@@ -534,7 +534,7 @@ database, or any path for a directory-based example database.
     validator=_validate_database,
 )
 
-settings.define_setting(
+settings._define_setting(
     'database_file',
     default=not_set,
     show_default=False,
@@ -649,7 +649,7 @@ class Verbosity(IntEnum):
         return 'Verbosity.%s' % (self.name,)
 
 
-settings.define_setting(
+settings._define_setting(
     'verbosity',
     options=tuple(Verbosity),
     default=Verbosity._get_default(),
@@ -667,7 +667,7 @@ def _validate_phases(phases):
     return phases
 
 
-settings.define_setting(
+settings._define_setting(
     'phases',
     default=tuple(Phase),
     description=(
@@ -677,7 +677,7 @@ settings.define_setting(
     validator=_validate_phases,
 )
 
-settings.define_setting(
+settings._define_setting(
     name='stateful_step_count',
     default=50,
     description="""
@@ -685,7 +685,7 @@ Number of steps to run a stateful program for before giving up on it breaking.
 """
 )
 
-settings.define_setting(
+settings._define_setting(
     'perform_health_check',
     default=not_set,
     description=u"""
@@ -720,14 +720,14 @@ def validate_health_check_suppressions(suppressions):
     return suppressions
 
 
-settings.define_setting(
+settings._define_setting(
     'suppress_health_check',
     default=(),
     description="""A list of health checks to disable.""",
     validator=validate_health_check_suppressions
 )
 
-settings.define_setting(
+settings._define_setting(
     'deadline',
     default=not_set,
     description=u"""
@@ -746,7 +746,7 @@ deadline and have not explicitly set a deadline yourself.
 """
 )
 
-settings.define_setting(
+settings._define_setting(
     'use_coverage',
     default=True,
     description="""
@@ -782,7 +782,7 @@ class PrintSettings(Enum):
     """Always print a blob on failure."""
 
 
-settings.define_setting(
+settings._define_setting(
     'print_blob',
     default=PrintSettings.INFER,
     description="""
