@@ -116,14 +116,12 @@ task :gem do
 
   previous_version = spec.version.to_s
 
-  previous_tag = "hypothesis-ruby-#{previous_version}"
-
-  if run_for_output('git', 'tag', '-l', previous_tag).empty?
+  if run_for_output('git', 'tag', '-l', previous_version).empty?
     sh 'git', 'fetch', '--tags'
   end
 
   point_of_divergence = run_for_output(
-    'git', 'merge-base', 'HEAD', previous_tag
+    'git', 'merge-base', 'HEAD', previous_version
   )
 
   has_changes = !system("git diff --exit-code #{point_of_divergence} "\
