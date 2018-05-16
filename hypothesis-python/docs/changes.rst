@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.56.10:
+
+--------------------
+3.56.10 - 2018-05-16
+--------------------
+
+This release makes :obj:`~hypothesis.settings.define_setting`
+a private method, which has the effect of hiding it from the
+documentation.
+
 .. _v3.56.9:
 
 -------------------
