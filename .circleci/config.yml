@@ -1,0 +1,19 @@
+version: 2
+jobs:
+  build:
+    macos:
+      xcode: 9.3.0
+    steps:
+      - checkout
+      - run: brew update
+      - run: brew install readline xz ncurses
+      - restore_cache:
+         keys:
+           - v1-runtimes-
+      - run: ./build.sh install-core
+      - run: ./build.sh check-py27
+      - run: ./build.sh check-py36
+      - save_cache:
+          key: v1-runtimes-{{ epoch }}
+          paths:
+            - ~/.cache/hypothesis-build-runtimes
