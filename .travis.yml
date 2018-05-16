@@ -22,6 +22,7 @@ cache:
         - $HOME/wheelhouse
         - $HOME/.stack
         - $HOME/.local
+        - vendor/bundle
 
 env:
     global:
