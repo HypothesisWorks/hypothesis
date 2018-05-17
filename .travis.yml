@@ -64,6 +64,7 @@ jobs:
     - env: TASK=check-pandas20
     - env: TASK=check-pandas21
     - env: TASK=check-pandas22
+    - env: TASK=check-pandas23
 
     - stage: deploy
       env: TASK=deploy
