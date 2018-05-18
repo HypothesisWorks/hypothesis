@@ -385,8 +385,10 @@ class ConjectureRunner(object):
 
     def downgrade_buffer(self, buffer):
         if self.settings.database is not None:
-            self.settings.database.move(
-                self.database_key, self.secondary_key, buffer)
+            key = self.database_key
+            if key is None:
+                return  # pragma: no cover
+            self.settings.database.move(key, self.secondary_key, buffer)
 
     @property
     def secondary_key(self):
