@@ -505,8 +505,8 @@ class RuleBasedStateMachine(GenericStateMachine):
     _rules_per_class = {}  # type: Dict[type, List[classmethod]]
     _invariants_per_class = {}  # type: Dict[type, List[classmethod]]
     _base_rules_per_class = {}  # type: Dict[type, List[classmethod]]
-    _initialize_rules_per_class = {}  # type: Dict[type, List[classmethod]]
-    _base_initialize_rules_per_class = {}  # type: Dict[type, List[classmethod]]
+    _initializers_per_class = {}  # type: Dict[type, List[classmethod]]
+    _base_initializers_per_class = {}  # type: Dict[type, List[classmethod]]
 
     def __init__(self):
         if not self.rules():
@@ -551,7 +551,7 @@ class RuleBasedStateMachine(GenericStateMachine):
     @classmethod
     def initialize_rules(cls):
         try:
-            return cls._initialize_rules_per_class[cls]
+            return cls._initializers_per_class[cls]
         except KeyError:
             pass
 
@@ -561,8 +561,9 @@ class RuleBasedStateMachine(GenericStateMachine):
                 cls.define_initialize_rule(
                     r.targets, r.function, r.arguments, r.precondition,
                 )
-        cls._initialize_rules_per_class[cls] = cls._base_initialize_rules_per_class.pop(cls, [])
-        return cls._initialize_rules_per_class[cls]
+        cls._initializers_per_class[cls] = \
+            cls._base_initializers_per_class.pop(cls, [])
+        return cls._initializers_per_class[cls]
 
     @classmethod
     def rules(cls):
@@ -596,14 +597,15 @@ class RuleBasedStateMachine(GenericStateMachine):
         return cls._invariants_per_class[cls]
 
     @classmethod
-    def define_initialize_rule(cls, targets, function, arguments, precondition=None):
+    def define_initialize_rule(
+            cls, targets, function, arguments, precondition=None):
         converted_arguments = {}
         for k, v in arguments.items():
             converted_arguments[k] = v
-        if cls in cls._initialize_rules_per_class:
-            target = cls._initialize_rules_per_class[cls]
+        if cls in cls._initializers_per_class:
+            target = cls._initializers_per_class[cls]
         else:
-            target = cls._base_initialize_rules_per_class.setdefault(cls, [])
+            target = cls._base_initializers_per_class.setdefault(cls, [])
 
         return target.append(
             Rule(
@@ -669,7 +671,8 @@ class RuleBasedStateMachine(GenericStateMachine):
         for bundle_name, bundle_var_refs in self.bundles.items():
             values = [self.names_to_values[x.name] for x in bundle_var_refs]
             bundles_dump.append('%s=%r' % (bundle_name, values))
-        report(u'state = %s(%s)' % (self.__class__.__name__, ', '.join(bundles_dump)))
+        report(u'state = %s(%s)' %
+               (self.__class__.__name__, ', '.join(bundles_dump)))
 
     def print_end(self):
         report(u'state.teardown()')

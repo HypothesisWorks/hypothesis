@@ -825,7 +825,8 @@ def test_initialize_rule_populate_bundle():
             run_state_machine_as_test(WithInitializeBundleRules)
 
     result = o.getvalue()
-    assert "state = WithInitializeBundleRules(a=['a v1 with (dep1, dep2)'])" in result
+    assert "state = WithInitializeBundleRules(a=['a v1 with (dep1, dep2)'])" \
+        in result
     assert 'state.fail_fast(param=v1)' in result
     assert 'state.teardown()' in result
 
@@ -839,7 +840,8 @@ def test_initialize_rule_dont_mix_with_precondition():
             def initialize(self):
                 pass
 
-    assert 'An initialization rule cannot have a precondition.' in str(exc.value)
+    assert 'An initialization rule cannot have a precondition.' in str(
+        exc.value)
 
 
 def test_initialize_rule_dont_mix_with_regular_rule():
@@ -851,7 +853,8 @@ def test_initialize_rule_dont_mix_with_regular_rule():
             def initialize(self):
                 pass
 
-    assert 'A function cannot be used for two distinct rules.' in str(exc.value)
+    assert 'A function cannot be used for two distinct rules.' in str(
+        exc.value)
 
 
 def test_initialize_rule_cannot_be_double_applied():
@@ -863,4 +866,5 @@ def test_initialize_rule_cannot_be_double_applied():
             def initialize(self):
                 pass
 
-    assert 'A function cannot be used for two distinct rules.' in str(exc.value)
+    assert 'A function cannot be used for two distinct rules.' in str(
+        exc.value)
