@@ -161,7 +161,7 @@ their individual contributions.
 * `Buck Evan, copyright Google LLC <https://github.com/bukzor>`_
 * `Charles O'Farrell <https://www.github.com/charleso>`_
 * `Charlie Tanksley <https://www.github.com/charlietanksley>`_
-* `Chase Garner <https://www.github.com/chasegarner>` _ (chase@garner.red)
+* `Chase Garner <https://www.github.com/chasegarner>`_ (chase@garner.red)
 * `Chris Down  <https://chrisdown.name>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (ch.martin@gmail.com)
 * `Cory Benfield <https://www.github.com/Lukasa>`_

@@ -30,7 +30,6 @@ from hypothesis.internal.compat import floor, hbytes, hrange, qualname, \
 from hypothesis.internal.floats import int_to_float
 
 LABEL_MASK = 2 ** 64 - 1
-_SEQUENCE_TYPES = (OrderedDict, Sequence, enum.EnumMeta)
 
 
 def calc_label_from_name(name):
@@ -127,7 +126,7 @@ def check_sample(values, strategy_name):
                 'want to sample slices.  Sampling a multi-dimensional '
                 'array will be an error in a future version of Hypothesis.'
             ).format(ndim=values.ndim, shape=values.shape))
-    elif not isinstance(values, _SEQUENCE_TYPES):
+    elif not isinstance(values, (OrderedDict, Sequence, enum.EnumMeta)):
         note_deprecation(
             'Cannot sample from {values}, not an ordered collection. '
             'Hypothesis goes to some length to ensure that the {strategy} '
