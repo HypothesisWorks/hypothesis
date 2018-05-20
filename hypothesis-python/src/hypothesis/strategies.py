@@ -525,7 +525,7 @@ def sampled_from(elements):
     1 values with 10, and sampled_from((1, 10)) will shrink by trying to
     replace 10 values with 1.
     """
-    values = check_sample(elements)
+    values = check_sample(elements, 'sampled_from')
     if not values:
         return nothing()
     if len(values) == 1:
@@ -1486,13 +1486,13 @@ class PermutationStrategy(SearchStrategy):
 @defines_strategy
 def permutations(values):
     # type: (Sequence[T]) -> SearchStrategy[List[T]]
-    """Return a strategy which returns permutations of the collection
+    """Return a strategy which returns permutations of the ordered collection
     ``values``.
 
     Examples from this strategy shrink by trying to become closer to the
     original order of values.
     """
-    values = list(values)
+    values = check_sample(values, 'permutations')
     if not values:
         return builds(list)
 
@@ -1821,7 +1821,7 @@ class Chooser(object):
     def __call__(self, values):
         if not values:
             raise IndexError('Cannot choose from empty sequence')
-        result = choice(self.data, check_sample(values))
+        result = choice(self.data, check_sample(values, 'choices'))
         with self.build_context.local():
             self.choice_count += 1
             note('Choice #%d: %r' % (self.choice_count, result))

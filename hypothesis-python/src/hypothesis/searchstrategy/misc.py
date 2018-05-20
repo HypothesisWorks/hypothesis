@@ -87,7 +87,7 @@ class SampledFromStrategy(SearchStrategy):
 
     def __init__(self, elements):
         SearchStrategy.__init__(self)
-        self.elements = d.check_sample(elements)
+        self.elements = d.check_sample(elements, 'sampled_from')
         assert self.elements
 
     def calc_has_reusable_values(self, recur):

@@ -114,7 +114,7 @@ except ImportError:  # pragma: no cover
     ndarray = ()
 
 
-def check_sample(values):
+def check_sample(values, strategy_name):
     if isinstance(values, ndarray):
         if values.ndim != 1:
             note_deprecation((
@@ -128,16 +128,16 @@ def check_sample(values):
             ).format(ndim=values.ndim, shape=values.shape))
     elif not isinstance(values, (OrderedDict, Sequence, enum.EnumMeta)):
         note_deprecation(
-            ('Cannot sample from %r, not a sequence.  ' % (values,)) +
-            'Hypothesis goes to some length to ensure that sampling an '
-            'element from a collection (with `sampled_from` or `choices`) is '
-            'replayable and can be minimised.  To replay a saved example, '
-            'the sampled values must have the same iteration order on every '
-            'run - ruling out sets, dicts, etc due to hash randomisation.  '
-            'Most cases can simply use `sorted(values)`, but mixed types or '
-            'special values such as math.nan require careful handling - and '
-            'note that when simplifying an example, Hypothesis treats '
-            'earlier values as simpler.')
+            'Cannot sample from {values}, not an ordered collection. '
+            'Hypothesis goes to some length to ensure that the {strategy} '
+            'strategy has stable results between runs. To replay a saved '
+            'example, the sampled values must have the same iteration order '
+            'on every run - ruling out sets, dicts, etc due to hash '
+            'randomisation. Most cases can simply use `sorted(values)`, but '
+            'mixed types or special values such as math.nan require careful '
+            'handling - and note that when simplifying an example, '
+            'Hypothesis treats earlier values as simpler.'.format(
+                values=repr(values), strategy=strategy_name))
     return tuple(values)
 
 
