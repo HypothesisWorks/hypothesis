@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.57.0:
+
+-------------------
+3.57.0 - 2018-05-20
+-------------------
+
+Using an unordered collection with the :func:`~hypothesis.strategies.permutations`
+strategy has been deprecated because the order in which e.g. a set shrinks is
+arbitrary. This may cause different results between runs.
+
 .. _v3.56.10:
 
 --------------------
