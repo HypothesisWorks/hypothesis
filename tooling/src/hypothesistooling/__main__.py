@@ -32,6 +32,9 @@ from hypothesistooling import fix_doctests as fd
 from hypothesistooling.scripts import pip_tool
 
 TASKS = {}
+BUILD_FILES = tuple(os.path.join(tools.ROOT, f) for f in [
+    'tooling', '.travis.yml',
+])
 
 
 def task(if_changed=()):
@@ -41,7 +44,7 @@ def task(if_changed=()):
     def accept(fn):
         def wrapped():
             if if_changed and tools.IS_PULL_REQUEST:
-                if not tools.has_changes(if_changed):
+                if not tools.has_changes(if_changed + BUILD_FILES):
                     print('Skipping task due to no changes in %s' % (
                         ', '.join(if_changed),
                     ))
