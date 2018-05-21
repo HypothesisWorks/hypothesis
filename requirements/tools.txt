@@ -35,7 +35,7 @@ pip-tools==2.0.2
 pkginfo==1.4.2            # via twine
 pluggy==0.6.0             # via pytest, tox
 py==1.5.3                 # via pytest, tox
-pycodestyle==2.3.1        # via autopep8, flake8
+pycodestyle==2.4.0        # via autopep8, flake8
 pydocstyle==2.1.1         # via flake8-docstrings
 pyflakes==1.6.0           # via autoflake, flake8
 pyformat==0.7
