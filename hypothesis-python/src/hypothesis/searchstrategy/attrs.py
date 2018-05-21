@@ -82,7 +82,10 @@ def from_attrs_attribute(attrib):
             vs = [validator]
         for v in vs:
             if isinstance(v, attr.validators._InValidator):
-                in_collections.append(v.options)
+                if isinstance(v.options, string_types):
+                    in_collections.append(list(all_substrings(v.options)))
+                else:
+                    in_collections.append(v.options)
             elif isinstance(v, attr.validators._InstanceOfValidator):
                 types[v.type].append('instance_of')
 
@@ -118,3 +121,16 @@ def ordered_intersection(in_):
         if x in intersection:
             yield x
             intersection.remove(x)
+
+
+def all_substrings(s):
+    """Generate all substrings of `s`, in order of length then occurrence.
+    Includes the empty string (first), and any duplicates that are present.
+
+    >>> list(all_substrings('010'))
+    ['', '0', '1', '0', '01', '10', '010']
+    """
+    yield s[:0]
+    for n, _ in enumerate(s):
+        for i in range(len(s) - n):
+            yield s[i:i + n + 1]

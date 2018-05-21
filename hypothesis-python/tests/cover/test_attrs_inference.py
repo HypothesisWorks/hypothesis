@@ -42,6 +42,10 @@ class Inferrables(object):
         attr.validators.in_(list(range(100))),
         attr.validators.in_([1, -1]),
     ])
+    validator_in_multiple_strings = attr.ib(validator=[
+        attr.validators.in_('abcd'),
+        attr.validators.in_(['ab', 'cd']),
+    ])
     has_default = attr.ib(default=0)
     has_default_factory = attr.ib(default=attr.Factory(list))
     has_default_factory_takes_self = attr.ib(  # uninferrable but has default
