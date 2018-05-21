@@ -1051,10 +1051,8 @@ def builds(
     builds, instead of a strategy for that argument to the callable.
 
     If the callable is a class defined with :pypi:`attrs`, missing required
-    arguments may be inferred from the type, converter, or validator (for
-    :func:`~attrs:attr.validators.in_`,
-    :func:`~attrs:attr.validators.optional`, or
-    :func:`~attrs:attr.validators.instance_of` validators) of the attribute.
+    arguments will be inferred from the attribute on a best-effort basis,
+    e.g. by checking :ref:`attrs standard validators <attrs:api_validators>`.
 
     Examples from this strategy shrink by shrinking the argument values to
     the callable.
