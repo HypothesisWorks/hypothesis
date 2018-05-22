@@ -56,6 +56,7 @@ from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import ceil, hbytes, qualname, \
     str_to_bytes, benchmark_time, get_type_hints, getfullargspec, \
     int_from_bytes, encoded_filepath, bad_django_TestCase
+from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.escalation import is_hypothesis_file, \
@@ -554,8 +555,8 @@ class StateForActualGivenExecution(object):
                 data.can_reproduce_example_from_repr = True
             with self.settings:
                 with BuildContext(data, is_final=is_final):
-                    rnd_module.seed(0)
-                    args, kwargs = data.draw(self.search_strategy)
+                    with deterministic_PRNG():
+                        args, kwargs = data.draw(self.search_strategy)
                     if expected_failure is not None:
                         text_repr[0] = arg_string(test, args, kwargs)
 
@@ -573,11 +574,13 @@ class StateForActualGivenExecution(object):
                                 test.__name__, arg_string(test, args, kwargs)))
 
                     if self.collector is None or not collect:
-                        return test(*args, **kwargs)
+                        with deterministic_PRNG():
+                            return test(*args, **kwargs)
                     else:  # pragma: no cover
                         try:
                             self.collector.start()
-                            return test(*args, **kwargs)
+                            with deterministic_PRNG():
+                                return test(*args, **kwargs)
                         finally:
                             self.collector.stop()
 
@@ -1118,9 +1121,10 @@ def find(
         with BuildContext(data):
             try:
                 data.is_find = True
-                result = data.draw(search)
-                data.note(result)
-                success = condition(result)
+                with deterministic_PRNG():
+                    result = data.draw(search)
+                    data.note(result)
+                    success = condition(result)
             except UnsatisfiedAssumption:
                 data.mark_invalid()
 
@@ -1157,7 +1161,8 @@ def find(
         data = ConjectureData.for_buffer(
             list(runner.interesting_examples.values())[0].buffer)
         with BuildContext(data):
-            return data.draw(search)
+            with deterministic_PRNG():
+                return data.draw(search)
     if runner.valid_examples == 0 and (
         runner.exit_reason != ExitReason.finished
     ):
