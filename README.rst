@@ -20,7 +20,7 @@ The currently available implementations of Hypothesis are:
 
 * `Hypothesis for Python <hypothesis-python>`_ is the original implementation,
   and the only one that is currently fully production ready.
-* `Hypothesis for Ruby <https://github.com/HypothesisWorks/hypothesis-ruby>`_
+* `Hypothesis for Ruby <hypothesis-ruby>`_
   is an ongoing project that we intend to eventually reach parity with
   Hypothesis for Python.
 * `Hypothesis for Java <https://github.com/HypothesisWorks/hypothesis-java>`_

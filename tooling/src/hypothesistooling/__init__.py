@@ -44,6 +44,7 @@ ROOT = subprocess.check_output([
 ]).decode('ascii').strip()
 
 HYPOTHESIS_PYTHON = os.path.join(ROOT, 'hypothesis-python')
+HYPOTHESIS_RUBY = os.path.join(ROOT, 'hypothesis-ruby')
 
 PYTHON_SRC = os.path.join(HYPOTHESIS_PYTHON, 'src')
 PYTHON_TESTS = os.path.join(HYPOTHESIS_PYTHON, 'tests')
