@@ -370,8 +370,8 @@ PYPIRC = os.path.join(SECRETS, '.pypirc')
 def decrypt_secrets():
     subprocess.check_call([
         'openssl', 'aes-256-cbc',
-        '-K', os.environ['encrypted_39cb4cc39a80_key'],
-        '-iv', os.environ['encrypted_39cb4cc39a80_iv'],
+        '-K', os.environ['encrypted_b8618e5d043b_key'],
+        '-iv', os.environ['encrypted_b8618e5d043b_iv'],
         '-in', ENCRYPTED_SECRETS,
         '-out', SECRETS_TAR,
         '-d'
