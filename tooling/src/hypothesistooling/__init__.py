@@ -361,8 +361,10 @@ SECRETS_BASE = os.path.join(ROOT, 'secrets')
 SECRETS_TAR = SECRETS_BASE + '.tar'
 ENCRYPTED_SECRETS = SECRETS_TAR + '.enc'
 
-DEPLOY_KEY = os.path.join(ROOT, 'deploy_key')
-PYPIRC = os.path.join(ROOT, '.pypirc')
+SECRETS = os.path.join(ROOT, 'secrets')
+
+DEPLOY_KEY = os.path.join(SECRETS, 'deploy_key')
+PYPIRC = os.path.join(SECRETS, '.pypirc')
 
 
 def decrypt_secrets():
