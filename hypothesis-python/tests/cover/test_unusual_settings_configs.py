@@ -29,7 +29,7 @@ def test_single_example(n):
 
 @settings(
     max_examples=1, database=None,
-    suppress_health_check=[HealthCheck.filter_too_much],
+    suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow],
     verbosity=Verbosity.debug,
 )
 @given(st.integers())
