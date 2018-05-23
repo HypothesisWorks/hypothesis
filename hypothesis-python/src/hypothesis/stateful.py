@@ -514,7 +514,7 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.names_to_values = {}  # type: Dict[Text, Any]
         self.__stream = CUnicodeIO()
         self.__printer = RepresentationPrinter(self.__stream)
-        self._initialize_rules_to_run = iter(self.initialize_rules())
+        self._initialize_rules_to_run = self.initialize_rules().copy()
 
     def __pretty(self, value):
         if isinstance(value, VarReference):
@@ -628,13 +628,13 @@ class RuleBasedStateMachine(GenericStateMachine):
 
     def steps(self):
         # Pick initialize rules first
-        try:
-            rule = next(self._initialize_rules_to_run)
-            return tuples(just(rule), fixed_dictionaries(rule.arguments))
-        except StopIteration:
-            pass
+        if self._initialize_rules_to_run:
+            return one_of([
+                tuples(just(rule), fixed_dictionaries(rule.arguments))
+                for rule in self._initialize_rules_to_run
+            ])
 
-        # All initialize rules has been run once, go with the regular ones
+        # All initialize rules has been run once, go with the regular rules
         strategies = []
         for rule in self.rules():
             converted_arguments = {}
@@ -693,6 +693,8 @@ class RuleBasedStateMachine(GenericStateMachine):
             )
             for target in rule.targets:
                 self.bundle(target).append(VarReference(name))
+        if self._initialize_rules_to_run:
+            self._initialize_rules_to_run.remove(rule)
 
     def check_invariants(self):
         for invar in self.invariants():
