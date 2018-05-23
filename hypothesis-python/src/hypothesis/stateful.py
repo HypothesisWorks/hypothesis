@@ -141,14 +141,6 @@ class GenericStateMachine(object):
 
     find_breaking_runner = None  # type: classmethod
 
-    def initialize(self, data):
-        """Called at the very beginning of the run. Useful when strategies are
-        needed to initialize the state machine.
-
-        Does nothing by default.
-        """
-        pass
-
     def steps(self):
         """Return a SearchStrategy instance the defines the available next
         steps."""
@@ -250,7 +242,6 @@ class StateMachineRunner(object):
         )
 
         try:
-            state_machine.initialize(self.data)
             if print_steps:
                 state_machine.print_start()
             state_machine.check_invariants()
@@ -523,6 +514,7 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.names_to_values = {}  # type: Dict[Text, Any]
         self.__stream = CUnicodeIO()
         self.__printer = RepresentationPrinter(self.__stream)
+        self._initialize_rules_to_run = iter(self.initialize_rules())
 
     def __pretty(self, value):
         if isinstance(value, VarReference):
@@ -634,18 +626,15 @@ class RuleBasedStateMachine(GenericStateMachine):
             )
         )
 
-    def initialize(self, data):
-        strategies = []
-        for rule in self.initialize_rules():
-            strategies.append(tuples(
-                just(rule), fixed_dictionaries(rule.arguments)
-            ))
-        # Shuffle the execution order
-        for strategy in data.draw(permutations(strategies)):
-            step = data.draw(strategy)
-            self.execute_step(step)
-
     def steps(self):
+        # Pick initialize rules first
+        try:
+            rule = next(self._initialize_rules_to_run)
+            return tuples(just(rule), fixed_dictionaries(rule.arguments))
+        except StopIteration:
+            pass
+
+        # All initialize rules has been run once, go with the regular ones
         strategies = []
         for rule in self.rules():
             converted_arguments = {}
@@ -672,12 +661,7 @@ class RuleBasedStateMachine(GenericStateMachine):
         return one_of(strategies)
 
     def print_start(self):
-        bundles_dump = []
-        for bundle_name, bundle_var_refs in self.bundles.items():
-            values = [self.names_to_values[x.name] for x in bundle_var_refs]
-            bundles_dump.append('%s=%r' % (bundle_name, values))
-        report(u'state = %s(%s)' %
-               (self.__class__.__name__, ', '.join(bundles_dump)))
+        report(u'state = %s()' % (self.__class__.__name__,))
 
     def print_end(self):
         report(u'state.teardown()')
