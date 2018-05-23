@@ -41,7 +41,7 @@ from hypothesis._settings import Verbosity
 from hypothesis._settings import settings as Settings
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.strategies import just, one_of, runner, tuples, \
-    fixed_dictionaries, permutations
+    permutations, fixed_dictionaries
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 from hypothesis.internal.reflection import proxies, nicerepr
 from hypothesis.internal.conjecture.data import StopTest
@@ -141,7 +141,7 @@ class GenericStateMachine(object):
 
     find_breaking_runner = None  # type: classmethod
 
-    def initializing(self, data):
+    def initialize(self, data):
         """Called at the very beginning of the run. Useful when strategies are
         needed to initialize the state machine.
 
@@ -250,7 +250,7 @@ class StateMachineRunner(object):
         )
 
         try:
-            state_machine.initializing(self.data)
+            state_machine.initialize(self.data)
             if print_steps:
                 state_machine.print_start()
             state_machine.check_invariants()
@@ -360,7 +360,12 @@ def rule(targets=(), target=None, **kwargs):
 
 
 def initialize(targets=(), target=None, **kwargs):
-    """
+    """Decorator for RuleBasedStateMachine.
+
+    An initialize decorator behaves like a rule, but the decorated
+    method is called at most once in a run. All initialize decorated
+    methods will be called before any rule decorated methods, in an
+    arbitrary order.
     """
     if target is not None:
         targets += (target,)
@@ -629,7 +634,7 @@ class RuleBasedStateMachine(GenericStateMachine):
             )
         )
 
-    def initializing(self, data):
+    def initialize(self, data):
         strategies = []
         for rule in self.initialize_rules():
             strategies.append(tuples(

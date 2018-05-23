@@ -30,8 +30,8 @@ from tests.common.utils import raises, capture_out, \
     checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, GenericStateMachine, \
-    RuleBasedStateMachine, rule, invariant, precondition, \
-    run_state_machine_as_test, initialize
+    RuleBasedStateMachine, rule, invariant, initialize, precondition, \
+    run_state_machine_as_test
 from hypothesis.strategies import just, none, lists, binary, tuples, \
     choices, booleans, integers, sampled_from
 from hypothesis.internal.compat import print_unicode
