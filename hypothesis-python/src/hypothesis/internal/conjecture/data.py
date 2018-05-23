@@ -39,6 +39,9 @@ class Status(IntEnum):
     VALID = 2
     INTERESTING = 3
 
+    def __repr__(self):
+        return 'Status.%s' % (self.name,)
+
 
 @attr.s(slots=True)
 class Example(object):
