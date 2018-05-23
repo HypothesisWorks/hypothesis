@@ -108,6 +108,7 @@ class ConjectureData(object):
         self.start_time = benchmark_time()
         self.events = set()
         self.forced_indices = set()
+        self.forced_blocks = set()
         self.capped_indices = {}
         self.interesting_origin = None
         self.tags = set()
@@ -277,6 +278,7 @@ class ConjectureData(object):
         original = self.index
         self.__write(string)
         self.forced_indices.update(hrange(original, self.index))
+        self.forced_blocks.add(len(self.blocks) - 1)
         return string
 
     def __check_capacity(self, n):
