@@ -206,7 +206,7 @@ task deploy: :gem do
   Gem::Specification._clear_load_cache
   spec = Gem::Specification.load('hypothesis-specs.gemspec')
 
-  succeeded = system('git', 'tag', spec.version.to_s)
+  succeeded = system('git', 'tag', "hypothesis-ruby-#{spec.version.to_s}")
 
   unless succeeded
     puts "Looks like we've already done this release."
