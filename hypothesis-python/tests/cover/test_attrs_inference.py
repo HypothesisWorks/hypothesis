@@ -30,6 +30,9 @@ class Inferrables(object):
     type_ = attr.ib(type=int)
     type_converter = attr.ib(converter=bool)
     validator_type = attr.ib(validator=attr.validators.instance_of(str))
+    validator_type_tuple = attr.ib(
+        validator=attr.validators.instance_of((str, int))
+    )
     validator_type_multiple = attr.ib(validator=[
         attr.validators.instance_of(str),
         attr.validators.instance_of((str, int, bool)),

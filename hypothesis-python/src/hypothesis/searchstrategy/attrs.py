@@ -100,28 +100,36 @@ def from_attrs_attribute(attrib):
 def types_to_strategy(attrib, types):
     """Find all the type metadata for this attribute, reconcile it, and infer a
     strategy from the mess."""
-    # Try to add a `type` attribute to the types we observed from validators.
-    if getattr(attrib, 'type', None) is not None:
-        types.add(attrib.type)
+    # If we know types from the validator(s), that's sufficient.
+    if len(types) == 1:
+        typ, = types
+        if isinstance(typ, tuple):
+            return st.one_of(*map(st.from_type, typ))
+        return st.from_type(typ)
+    elif types:
+        # Multiple type validators.  Pick common type(s) that satisfy all.
+        # TODO: use a more sophisticated aggregation that understands subtypes,
+        # generic types, etc.  Consider pulling some code out of st.from_type?
+        type_tuples = [k if isinstance(k, tuple) else (k,) for k in types]
+        return st.one_of(*map(st.from_type, ordered_intersection(type_tuples)))
 
-    # Similarly, try to find usable types from the converter.
+    # Otherwise, try the `type` attribute as a fallback, and finally try
+    # the type hints on a converter (desperate!) before giving up.
+    if isinstance(getattr(attrib, 'type', None), type):
+        # The convoluted test is because variable annotations may be stored
+        # in string form, and pass through attrs unevaluated.
+        # See PEP 526, PEP 563, and Hypothesis issue #1004 for details.
+        return st.from_type(attrib.type)
+
     converter = getattr(attrib, 'converter', None)
     if isinstance(converter, type):
-        types.add(converter)
+        return st.from_type(converter)
     elif callable(converter):
         hints = get_type_hints(converter)
         if 'return' in hints:
-            types.add(hints['return'])
+            return st.from_type(hints['return'])
 
-    if not types:
-        return st.nothing()
-    # Finally, we aggregate down to a type (or types) that is acceptable
-    # according to all of the metadata we have seen.
-    type_tuples = [k if isinstance(k, tuple) else (k,) for k in types]
-    return st.one_of(*map(st.from_type, ordered_intersection(type_tuples)))
-    # TODO: that would be much more useful if it knew about subtypes.
-    # A complete solution should also look at generics - consider a refactor
-    # that pulls some code out of st.from_type...
+    return st.nothing()
 
 
 def ordered_intersection(in_):
