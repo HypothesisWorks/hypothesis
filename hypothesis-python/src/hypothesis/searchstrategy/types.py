@@ -35,8 +35,8 @@ def type_sorting_key(t):
     if not isinstance(t, type):
         raise InvalidArgument('thing=%s must be a type' % (t,))
     if t is None or t is type(None):  # noqa: E721
-        return -1
-    return issubclass(t, collections.abc.Container)
+        return (-1, repr(t))
+    return (issubclass(t, collections.Container), repr(t))
 
 
 def try_issubclass(thing, maybe_superclass):

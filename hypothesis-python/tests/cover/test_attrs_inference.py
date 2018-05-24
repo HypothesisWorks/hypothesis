@@ -37,6 +37,11 @@ class Inferrables(object):
         attr.validators.instance_of(str),
         attr.validators.instance_of((str, int, bool)),
     ])
+    validator_type_has_overlap = attr.ib(validator=[
+        attr.validators.instance_of(str),
+        attr.validators.instance_of((str, list)),
+        attr.validators.instance_of(object),
+    ])
     validator_optional = attr.ib(
         validator=attr.validators.optional(lambda inst, atrib, val: float(val))
     )

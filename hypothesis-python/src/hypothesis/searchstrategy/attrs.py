@@ -26,6 +26,7 @@ import hypothesis.strategies as st
 from hypothesis.errors import ResolutionFailed
 from hypothesis.internal.compat import string_types, get_type_hints
 from hypothesis.utils.conventions import infer
+from hypothesis.searchstrategy.types import type_sorting_key
 
 
 def from_attrs(target, args, kwargs, to_infer):
@@ -107,17 +108,21 @@ def types_to_strategy(attrib, types):
             return st.one_of(*map(st.from_type, typ))
         return st.from_type(typ)
     elif types:
-        # Multiple type validators.  Pick common type(s) that satisfy all.
-        # TODO: use a more sophisticated aggregation that understands subtypes,
-        # generic types, etc.  Consider pulling some code out of st.from_type?
+        # We have a list of tuples of types, and want to find a type
+        # (or tuple of types) that is a subclass of all of of them.
         type_tuples = [k if isinstance(k, tuple) else (k,) for k in types]
-        return st.one_of(*map(st.from_type, ordered_intersection(type_tuples)))
+        # Flatten the list, filter types that would fail validation, and
+        # sort so that ordering is stable between runs and shrinks well.
+        allowed = [t for t in set(sum(type_tuples, ()))
+                   if all(issubclass(t, tup) for tup in type_tuples)]
+        allowed.sort(key=type_sorting_key)
+        return st.one_of([st.from_type(t) for t in allowed])
 
     # Otherwise, try the `type` attribute as a fallback, and finally try
     # the type hints on a converter (desperate!) before giving up.
     if isinstance(getattr(attrib, 'type', None), type):
         # The convoluted test is because variable annotations may be stored
-        # in string form, and pass through attrs unevaluated.
+        # in string form; attrs doesn't evaluate them and we don't handle them.
         # See PEP 526, PEP 563, and Hypothesis issue #1004 for details.
         return st.from_type(attrib.type)
 
