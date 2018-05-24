@@ -32,7 +32,7 @@ from collections import namedtuple
 
 try:
     from collections import OrderedDict, Counter
-except ImportError:  # pragma: no cover
+except ImportError:
     from ordereddict import OrderedDict  # type: ignore
     from counter import Counter  # type: ignore
 
@@ -144,12 +144,14 @@ else:
         assert i >= 0
         result = bytearray(size)
         j = size - 1
+        arg = i
         while i and j >= 0:
             result[j] = i & 255
             i >>= 8
             j -= 1
         if i:
-            raise OverflowError('int too big to convert')
+            raise OverflowError('i=%r cannot be represented in %r bytes'
+                                % (arg, size))
         return hbytes(result)
 
     int_to_byte = chr
