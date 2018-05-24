@@ -65,7 +65,7 @@ In terms of what's actually *known* to work:
     tests simply won't work.
   * Integration with Django's testing requires use of the :ref:`hypothesis-django` package.
     The issue is that in Django's tests' normal mode of execution it will reset the
-    database one per test rather than once per example, which is not what you want.
+    database once per test rather than once per example, which is not what you want.
   * Coverage works out of the box with Hypothesis - we use it to guide example
     selection for user code, and Hypothesis has 100% branch coverage in its own tests.
 
