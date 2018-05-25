@@ -28,7 +28,7 @@ from hypothesis import PrintSettings, given, reject, example, settings, \
     __version__, reproduce_failure
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument
-from tests.common.utils import capture_out
+from tests.common.utils import no_shrink, capture_out
 
 
 @given(st.binary() | st.binary(min_size=100))
@@ -147,7 +147,7 @@ def test_does_print_reproduction_for_simple_data_examples_by_default():
 
 
 def test_does_not_print_reproduction_for_large_data_examples_by_default():
-    @settings(max_shrinks=0)
+    @settings(phases=no_shrink)
     @given(st.data())
     def test(data):
         b = data.draw(st.binary(min_size=1000, max_size=1000))

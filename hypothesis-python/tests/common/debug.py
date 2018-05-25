@@ -22,6 +22,7 @@ import sys
 from hypothesis import find, given, assume, reject
 from hypothesis import settings as Settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
+from tests.common.utils import no_shrink
 
 TIME_INCREMENT = 0.01
 
@@ -76,7 +77,7 @@ def find_any(
     settings = Settings(
         settings,
         max_examples=10000,
-        max_shrinks=0000,
+        phases=no_shrink,
         database=None,
     )
 
@@ -101,7 +102,7 @@ def assert_no_examples(strategy, condition=None):
             assume(condition(x))
 
     try:
-        result = find(strategy, predicate, settings=Settings(max_shrinks=1))
+        result = find(strategy, predicate, settings=Settings(phases=no_shrink))
         assert False, 'Expected no results but found %r' % (result,)
     except (Unsatisfiable, NoSuchExample):
         pass

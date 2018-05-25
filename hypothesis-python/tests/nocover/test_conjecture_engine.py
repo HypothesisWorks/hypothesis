@@ -21,12 +21,12 @@ from random import Random
 
 import pytest
 
-from hypothesis import HealthCheck, given, settings, unlimited
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
-from tests.common.utils import non_covering_examples
+from tests.common.utils import no_shrink, non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes, hrange
-from tests.cover.test_conjecture_engine import run_to_buffer, slow_shrinker
+from tests.cover.test_conjecture_engine import run_to_buffer
 from hypothesis.internal.conjecture.data import Status, ConjectureData
 from hypothesis.internal.conjecture.engine import RunIsComplete, \
     ConjectureRunner
@@ -67,7 +67,8 @@ def test_saves_data_while_shrinking():
 
 @given(st.randoms(), st.random_module())
 @settings(
-    max_shrinks=0, deadline=None, suppress_health_check=[HealthCheck.hung_test]
+    phases=no_shrink, deadline=None,
+    suppress_health_check=[HealthCheck.hung_test]
 )
 def test_maliciously_bad_generator(rnd, seed):
     @run_to_buffer
@@ -78,27 +79,6 @@ def test_maliciously_bad_generator(rnd, seed):
             data.mark_invalid()
         else:
             data.mark_interesting()
-
-
-def test_garbage_collects_the_database():
-    key = b'hi there'
-    n = 200
-    db = InMemoryExampleDatabase()
-
-    local_settings = settings(
-        database=db, max_shrinks=n, timeout=unlimited)
-
-    runner = ConjectureRunner(
-        slow_shrinker(), settings=local_settings, database_key=key)
-    runner.run()
-    assert runner.interesting_examples
-
-    assert len(non_covering_examples(db)) == n + 1
-    runner = ConjectureRunner(
-        lambda data: data.draw_bytes(4),
-        settings=local_settings, database_key=key)
-    runner.run()
-    assert 0 < len(non_covering_examples(db)) < n
 
 
 def test_can_discard():

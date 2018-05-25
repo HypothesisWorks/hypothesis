@@ -23,9 +23,12 @@ import contextlib
 from io import BytesIO, StringIO
 
 from hypothesis.errors import HypothesisDeprecationWarning
+from hypothesis._settings import Phase
 from hypothesis.reporting import default, with_reporter
 from hypothesis.internal.compat import PY2
 from hypothesis.internal.reflection import proxies
+
+no_shrink = tuple(set(Phase) - {Phase.shrink})
 
 
 @contextlib.contextmanager

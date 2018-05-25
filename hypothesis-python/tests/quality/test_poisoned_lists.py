@@ -86,7 +86,7 @@ class TrialRunner(ConjectureRunner):
 LOTS = 10 ** 6
 
 TRIAL_SETTINGS = settings(
-    max_examples=LOTS, max_shrinks=LOTS, timeout=unlimited, database=None
+    max_examples=LOTS, timeout=unlimited, database=None
 )
 
 

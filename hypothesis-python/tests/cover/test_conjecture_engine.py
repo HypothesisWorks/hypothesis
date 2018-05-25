@@ -26,7 +26,8 @@ import pytest
 
 from hypothesis import Phase, Verbosity, HealthCheck, settings, unlimited
 from hypothesis.errors import FailedHealthCheck
-from tests.common.utils import all_values, checks_deprecated_behaviour
+from tests.common.utils import no_shrink, all_values, \
+    checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from tests.common.strategies import SLOW, HardToShrink
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
@@ -36,13 +37,12 @@ from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.conjecture.engine import Negated, Shrinker, \
     RunIsComplete, ConjectureRunner, universal
 
-MAX_SHRINKS = 1000
 SOME_LABEL = calc_label_from_name('some label')
 
 
 def run_to_buffer(f):
     runner = ConjectureRunner(f, settings=settings(
-        max_examples=5000, max_shrinks=MAX_SHRINKS, buffer_size=1024,
+        max_examples=5000, buffer_size=1024,
         database=None, suppress_health_check=HealthCheck.all(),
     ))
     runner.run()
@@ -369,7 +369,7 @@ def test_fully_exhaust_base(monkeypatch):
         seen.add(key)
 
     runner = ConjectureRunner(f, settings=settings(
-        max_examples=10000, max_shrinks=0, buffer_size=1024, database=None,
+        max_examples=10000, phases=no_shrink, buffer_size=1024, database=None,
     ))
 
     for c in hrange(256):
@@ -398,7 +398,7 @@ def test_will_save_covering_examples():
 
     db = InMemoryExampleDatabase()
     runner = ConjectureRunner(tagged, settings=settings(
-        max_examples=100, max_shrinks=0, buffer_size=1024, database=db,
+        max_examples=100, phases=no_shrink, buffer_size=1024, database=db,
     ), database_key=b'stuff')
     runner.run()
     assert len(all_values(db)) == len(tags)
@@ -420,7 +420,7 @@ def test_will_shrink_covering_examples():
 
     db = InMemoryExampleDatabase()
     runner = ConjectureRunner(tagged, settings=settings(
-        max_examples=100, max_shrinks=0, buffer_size=1024, database=db,
+        max_examples=100, phases=no_shrink, buffer_size=1024, database=db,
     ), database_key=b'stuff')
     runner.run()
     saved = set(all_values(db))
@@ -466,7 +466,8 @@ def test_returns_written():
 def fails_health_check(label):
     def accept(f):
         runner = ConjectureRunner(f, settings=settings(
-            max_examples=100, max_shrinks=0, buffer_size=1024, database=None,
+            max_examples=100, phases=no_shrink, buffer_size=1024,
+            database=None,
         ))
 
         with pytest.raises(FailedHealthCheck) as e:

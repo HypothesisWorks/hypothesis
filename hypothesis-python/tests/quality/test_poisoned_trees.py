@@ -64,7 +64,7 @@ LOTS = 10 ** 6
 
 TEST_SETTINGS = settings(
     database=None, suppress_health_check=HealthCheck.all(), max_examples=LOTS,
-    deadline=None, timeout=unlimited, max_shrinks=LOTS
+    deadline=None, timeout=unlimited
 )
 
 

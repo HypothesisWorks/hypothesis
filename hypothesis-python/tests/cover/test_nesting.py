@@ -21,6 +21,7 @@ from pytest import raises
 
 import hypothesis.strategies as st
 from hypothesis import Verbosity, given, settings
+from tests.common.utils import no_shrink
 
 
 def test_nesting_1():
@@ -29,7 +30,7 @@ def test_nesting_1():
     def test_blah(x):
         @given(st.integers())
         @settings(
-            max_examples=100, max_shrinks=0, database=None,
+            max_examples=100, phases=no_shrink, database=None,
             verbosity=Verbosity.quiet)
         def test_nest(y):
             if y >= x:

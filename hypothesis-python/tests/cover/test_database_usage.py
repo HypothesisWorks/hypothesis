@@ -20,8 +20,8 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import Verbosity, core, find, given, assume, settings, \
-    unlimited
+from hypothesis import Verbosity, HealthCheck, core, find, given, assume, \
+    settings, unlimited
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from tests.common.utils import all_values, non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
@@ -83,7 +83,7 @@ def test_trashes_invalid_examples():
             find(
                 st.binary(min_size=100),
                 lambda x: assume(not finicky) and has_a_non_zero_byte(x),
-                settings=settings(database=database, max_shrinks=10),
+                settings=settings(database=database),
                 database_key=key
             )
         except Unsatisfiable:
@@ -137,7 +137,7 @@ def test_clears_out_everything_smaller_than_the_interesting_example():
 
     @settings(
         database=database, verbosity=Verbosity.quiet, max_examples=100,
-        timeout=unlimited, max_shrinks=100
+        timeout=unlimited, suppress_health_check=[HealthCheck.hung_test],
     )
     @given(st.binary(min_size=10, max_size=10))
     def test(b):
