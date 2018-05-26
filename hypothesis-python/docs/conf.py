@@ -99,7 +99,7 @@ extlinks = {
     'gh-file': (_repo + 'blob/master/%s', ''),
     'gh-link': (_repo + '%s', ''),
     'issue': (_repo + 'issues/%s', 'issue #'),
-    'pull': (_repo + 'pulls/%s', 'pull request #'),
+    'pull': (_repo + 'pull/%s', 'pull request #'),
     'pypi': ('https://pypi.org/project/%s', ''),
 }
 
