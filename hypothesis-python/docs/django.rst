@@ -163,3 +163,19 @@ instead of generating one by passing ``fieldname=default_value`` to
     >>> x = models(DefaultCustomish, customish=default_value).example()
     >>> x.customish
     'b'
+
+.. _django-generating-primary-key:
+
+Generating primary key values
+=============================
+
+If your model includes a custom primary key that you want to generate
+using a strategy (rather than a default auto-increment primary key)
+then Hypothesis has to deal with the possibility of a duplicate
+primary key.
+
+If a model strategy generates a value for the primary key field,
+Hypothesis will create the model instance with
+:meth:`~django:django.db.models.query.QuerySet.update_or_create`,
+overwriting any existing instance in the database for this test case
+with the same primary key.
