@@ -112,6 +112,7 @@ setuptools.setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
         'Topic :: Software Development :: Testing',
+        'Framework :: Pytest',
     ],
     entry_points={
         'pytest11': ['hypothesispytest = hypothesis.extra.pytestplugin'],
