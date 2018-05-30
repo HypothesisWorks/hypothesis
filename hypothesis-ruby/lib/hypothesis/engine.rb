@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'helix_runtime'
-require 'hypothesis-ruby-core/native'
+require_relative '../hypothesis-ruby-core/native'
 
 module Hypothesis
   class Engine
