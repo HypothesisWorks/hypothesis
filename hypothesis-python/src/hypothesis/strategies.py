@@ -1071,7 +1071,7 @@ def builds(
         # Avoid an implementation nightmare juggling tuples and worse things
         raise InvalidArgument('infer was passed as a positional argument to '
                               'builds(), but is only allowed as a keyword arg')
-    hints = get_type_hints(target.__init__ if isclass(target) else target)
+    hints = get_type_hints(target.__init__ if isclass(target) and '__init__' in target.__dict__ else target)
     for kw in [k for k, v in kwargs.items() if v is infer]:
         if kw not in hints:
             raise InvalidArgument(

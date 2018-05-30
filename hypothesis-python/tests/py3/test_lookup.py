@@ -372,8 +372,7 @@ class AnnotatedNamedTuple(typing.NamedTuple):
     i: int
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 6), reason='new addition')
-def test_required_args():
+def test_required_args_for_namedtuple():
     print(st.builds(AnnotatedNamedTuple).example())
 
 
