@@ -799,7 +799,9 @@ def test_initialize_rule():
 
     init_group = WithInitializeRules.initialized
     while init_group:
-        init1, init2, init3, *init_group = init_group
+        init1 = init_group.pop()
+        init2 = init_group.pop()
+        init3 = init_group.pop()
         assert {init1, init2, init3} == {'a', 'b', 'c'}
 
     result = o.getvalue()

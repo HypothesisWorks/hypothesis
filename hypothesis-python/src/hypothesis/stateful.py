@@ -28,6 +28,7 @@ from __future__ import division, print_function, absolute_import
 
 import inspect
 import traceback
+from copy import copy
 from unittest import TestCase
 
 import attr
@@ -514,7 +515,7 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.names_to_values = {}  # type: Dict[Text, Any]
         self.__stream = CUnicodeIO()
         self.__printer = RepresentationPrinter(self.__stream)
-        self._initialize_rules_to_run = self.initialize_rules().copy()
+        self._initialize_rules_to_run = copy(self.initialize_rules())
 
     def __pretty(self, value):
         if isinstance(value, VarReference):
