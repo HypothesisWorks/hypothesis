@@ -5,9 +5,9 @@ Fix class xx(NamedTuple) introspection
 
 .. code:: python
 
-class AnnotatedNamedTuple(typing.NamedTuple):
-    a: str
-    i: int
+    class AnnotatedNamedTuple(typing.NamedTuple):
+        a: str
+        i: int
 
 is not buildble by :func:`@build <hypothesis.build>(AnnotedNamedTuple)` because
 they don't have an `__init__` method to introspect and find the argument (field)
