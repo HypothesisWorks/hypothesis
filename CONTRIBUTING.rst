@@ -199,3 +199,4 @@ their individual contributions.
 * `Will Hall <https://www.github.com/wrhall>`_ (wrsh07@gmail.com)
 * `Will Thompson <https://www.github.com/wjt>`_ (will@willthompson.co.uk)
 * `Zac Hatfield-Dodds <https://www.github.com/Zac-HD>`_ (zac.hatfield.dodds@gmail.com)
+* `James Uther <https://www.github.com/jbu>`_ (james.uther@gmail.com)
