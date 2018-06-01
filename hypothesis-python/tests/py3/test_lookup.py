@@ -373,7 +373,10 @@ class AnnotatedNamedTuple(typing.NamedTuple):
 
 
 def test_required_args_for_namedtuple():
-    print(st.builds(AnnotatedNamedTuple).example())
+    # NamedTuple doesn't have an __init__ method so we
+    # need to do something a bit different to introspect the
+    # constructor parameters.
+    st.builds(AnnotatedNamedTuple).example()
 
 
 @pytest.mark.parametrize('thing', [
