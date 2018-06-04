@@ -76,5 +76,5 @@ typed-ast==1.1.0          # via mypy
 unify==0.4                # via pyformat
 untokenize==0.1.1         # via docformatter, unify
 urllib3==1.22             # via requests
-virtualenv==15.2.0        # via tox
+virtualenv==16.0.0        # via tox
 wcwidth==0.1.7            # via prompt-toolkit
