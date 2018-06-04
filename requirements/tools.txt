@@ -66,7 +66,7 @@ simplegeneric==0.8.1      # via ipython
 six==1.11.0               # via dparse, more-itertools, packaging, pip-tools, prompt-toolkit, pydocstyle, pytest, python-gitlab, pyupio, sphinx, tox, traitlets
 snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.3.1
-sphinx==1.7.4
+sphinx==1.7.5
 sphinxcontrib-websupport==1.0.1  # via sphinx
 tox==3.0.0
 tqdm==4.23.3              # via pyupio, twine
