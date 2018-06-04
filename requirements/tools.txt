@@ -8,14 +8,14 @@ alabaster==0.7.10         # via sphinx
 attrs==18.1.0
 autoflake==1.2            # via pyformat
 autopep8==1.3.5           # via pyformat
-babel==2.5.3              # via sphinx
+babel==2.6.0              # via sphinx
 backcall==0.1.0           # via ipython
 certifi==2018.4.16        # via requests
 chardet==3.0.4            # via requests
 click==6.7                # via pip-tools, pyupio, safety
 coverage==4.5.1
 decorator==4.3.0          # via ipython, traitlets
-django==2.0.5
+django==2.0.6
 docformatter==1.0         # via pyformat
 docutils==0.14            # via restructuredtext-lint, sphinx
 dparse==0.4.1             # via pyupio, safety
@@ -32,29 +32,29 @@ jedi==0.12.0              # via ipython
 jinja2==2.10              # via pyupio, sphinx
 markupsafe==1.0           # via jinja2
 mccabe==0.6.1             # via flake8
-more-itertools==4.1.0     # via pytest
+more-itertools==4.2.0     # via pytest
 mypy==0.600
 numpy==1.14.3
 packaging==17.1           # via dparse, pyupio, safety, sphinx
-parso==0.2.0              # via jedi
-pexpect==4.5.0            # via ipython
+parso==0.2.1              # via jedi
+pexpect==4.6.0            # via ipython
 pickleshare==0.7.4        # via ipython
 pip-tools==2.0.2
 pkginfo==1.4.2            # via twine
 pluggy==0.6.0             # via pytest, tox
-prompt-toolkit==1.0.15    # via ipython
+prompt-toolkit==2.0.2    # via ipython
 ptyprocess==0.5.2         # via pexpect
 py==1.5.3                 # via pytest, tox
-pycodestyle==2.3.1        # via autopep8, flake8
+pycodestyle==2.4.0        # via autopep8, flake8
 pydocstyle==2.1.1         # via flake8-docstrings
-pyflakes==1.6.0           # via autoflake, flake8
+pyflakes==2.0.0           # via autoflake, flake8
 pyformat==0.7
 pygithub==1.39            # via pyupio
 pygments==2.2.0           # via ipython, sphinx
-pyjwt==1.6.1              # via pygithub
+pyjwt==1.6.4              # via pygithub
 pyparsing==2.2.0          # via packaging
-pytest==3.5.1
-python-gitlab==1.3.0      # via pyupio
+pytest==3.6.0
+python-gitlab==1.4.0      # via pyupio
 pytz==2018.4              # via babel, django
 pyupio==1.0.1
 pyyaml==3.12              # via dparse, pyupio
@@ -66,15 +66,15 @@ simplegeneric==0.8.1      # via ipython
 six==1.11.0               # via dparse, more-itertools, packaging, pip-tools, prompt-toolkit, pydocstyle, pytest, python-gitlab, pyupio, sphinx, tox, traitlets
 snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.3.1
-sphinx==1.7.4
+sphinx==1.7.5
 sphinxcontrib-websupport==1.0.1  # via sphinx
 tox==3.0.0
-tqdm==4.23.3              # via pyupio, twine
+tqdm==4.23.4              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.11.0
 typed-ast==1.1.0          # via mypy
 unify==0.4                # via pyformat
 untokenize==0.1.1         # via docformatter, unify
 urllib3==1.22             # via requests
-virtualenv==15.2.0        # via tox
+virtualenv==16.0.0        # via tox
 wcwidth==0.1.7            # via prompt-toolkit
