@@ -19,15 +19,14 @@ from __future__ import division, print_function, absolute_import
 
 import datetime as dt
 
-from dateutil import tz, zoneinfo
 import pytest
+from dateutil import tz, zoneinfo
 
 from hypothesis import given, assume
 from hypothesis.errors import InvalidArgument
-
 from tests.common.debug import minimal
-from hypothesis.extra.dateutil import timezones
 from hypothesis.strategies import times, datetimes, sampled_from
+from hypothesis.extra.dateutil import timezones
 
 
 def test_utc_is_minimal():

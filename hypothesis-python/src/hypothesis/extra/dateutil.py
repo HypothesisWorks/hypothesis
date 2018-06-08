@@ -26,7 +26,7 @@ from __future__ import division, print_function, absolute_import
 
 import datetime as dt
 
-from dateutil import zoneinfo, tz  # type: ignore
+from dateutil import tz, zoneinfo  # type: ignore
 
 import hypothesis.strategies as st
 

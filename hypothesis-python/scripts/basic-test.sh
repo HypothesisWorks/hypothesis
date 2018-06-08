@@ -25,9 +25,9 @@ PYTEST="python -m pytest -n2"
 
 $PYTEST --runpytest=subprocess tests/pytest
 
-pip install ".[pytz]"
+pip install ".[pytz, dateutil]"
 $PYTEST tests/datetime/
-pip uninstall -y pytz
+pip uninstall -y pytz python-dateutil
 
 
 if [ "$DARWIN" = true ]; then
