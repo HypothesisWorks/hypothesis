@@ -164,6 +164,7 @@ their individual contributions.
 * `Chase Garner <https://www.github.com/chasegarner>`_ (chase@garner.red)
 * `Chris Down  <https://chrisdown.name>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (ch.martin@gmail.com)
+* `Conrad Ho <https://www.github.com/conradho>`_ (conrad.alwin.ho@gmail.com)
 * `Cory Benfield <https://www.github.com/Lukasa>`_
 * `Cristi Cobzarenco <https://github.com/cristicbz>`_ (cristi@reinfer.io)
 * `David Bonner <https://github.com/rascalking>`_ (dbonner@gmail.com)
