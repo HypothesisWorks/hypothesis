@@ -55,6 +55,7 @@ assert __version__ is not None
 extras = {
     'datetime': ['pytz'],
     'pytz': ['pytz'],
+    'dateutil': ['python-dateutil'],
     'fakefactory': ['Faker>=0.7'],
     'numpy': ['numpy>=1.9.0'],
     'pytest': ['pytest>=2.8.0'],

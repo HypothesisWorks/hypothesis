@@ -12,6 +12,7 @@ tox
 twine
 attrs
 coverage
+python-dateutil
 pyupio
 django
 numpy
