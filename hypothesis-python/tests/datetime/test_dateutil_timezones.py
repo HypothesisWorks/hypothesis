@@ -83,5 +83,8 @@ def test_should_have_correct_ordering():
     def offset(timezone):
         return abs(timezone.utcoffset(dt.datetime(2000, 1, 1)))
 
-    next_interesting_tz = minimal(timezones(), lambda tz: offset(tz) > dt.timedelta(0))
+    next_interesting_tz = minimal(
+        timezones(),
+        lambda tz: offset(tz) > dt.timedelta(0)
+    )
     assert offset(next_interesting_tz) == dt.timedelta(seconds=3600)
