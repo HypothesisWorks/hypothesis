@@ -1533,6 +1533,10 @@ def datetimes(
     package, but provides all timezones in the Olsen database.  If you want to
     allow naive datetimes, combine strategies like ``none() | timezones()``.
 
+    :py:func:`hypothesis.extra.dateutil.timezones` requires the
+    :pypi:`python-dateutil` package, and similarly provides all timezones
+    there.
+
     Alternatively, you can create a list of the timezones you wish to allow
     (e.g. from the standard library, ``datetutil``, or ``pytz``) and use
     :py:func:`sampled_from`.  Ensure that simple values such as None or UTC

@@ -27,6 +27,14 @@ hypothesis[pytz]
 
 
 --------------------
+hypothesis[dateutil]
+--------------------
+
+.. automodule:: hypothesis.extra.dateutil
+   :members:
+
+
+--------------------
 hypothesis[datetime]
 --------------------
 
