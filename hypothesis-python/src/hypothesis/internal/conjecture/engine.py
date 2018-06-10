@@ -208,7 +208,7 @@ class ConjectureRunner(object):
 
         for u, v in data.blocks:
             # This can happen if we hit a dead node when walking the buffer.
-            # In that case we alrady have this section of the tree mapped.
+            # In that case we already have this section of the tree mapped.
             if u >= len(indices):
                 break
             self.block_sizes[indices[u]] = v - u
@@ -1686,7 +1686,7 @@ class Shrinker(object):
                     sort_key(prev.buffer)
                 ):
                     # We have successfully shrunk the example past where
-                    # we started from. Now we begin the whole processs
+                    # we started from. Now we begin the whole process
                     # again from the new, smaller, example.
                     count = 0
                 else:
