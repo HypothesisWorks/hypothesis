@@ -20,9 +20,9 @@ from __future__ import division, print_function, absolute_import
 import enum
 import math
 import random
+import string
 import datetime as dt
 import operator
-import string
 from uuid import UUID
 from decimal import Context, Decimal, localcontext
 from inspect import isclass, isfunction
