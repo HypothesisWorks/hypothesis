@@ -797,26 +797,24 @@ def test_initialize_rule():
         with pytest.raises(AssertionError):
             run_state_machine_as_test(WithInitializeRules)
 
-    init_group = WithInitializeRules.initialized
-    while init_group:
-        init1 = init_group.pop()
-        init2 = init_group.pop()
-        init3 = init_group.pop()
-        assert {init1, init2, init3} == {'a', 'b', 'c'}
-
+    assert set(WithInitializeRules.initialized[-3:]) == {'a', 'b', 'c'}
     result = o.getvalue()
-    assert 'state = WithInitializeRules()' in result
-    assert 'state.fail_fast()' in result
-    assert 'state.teardown()' in result
+    assert result == """state = WithInitializeRules()
+state.initialize_a()
+state.initialize_b()
+state.initialize_c()
+state.fail_fast()
+state.teardown()
+"""
 
 
 def test_initialize_rule_populate_bundle():
     class WithInitializeBundleRules(RuleBasedStateMachine):
         a = Bundle('a')
 
-        @initialize(target=a, dep1=just('dep1'), dep2=just('dep2'))
-        def initialize_a(self, dep1, dep2):
-            return 'a v1 with (%s, %s)' % (dep1, dep2)
+        @initialize(target=a, dep=just('dep'))
+        def initialize_a(self, dep):
+            return 'a v1 with (%s)' % dep
 
         @rule(param=a)
         def fail_fast(self, param):
@@ -827,10 +825,11 @@ def test_initialize_rule_populate_bundle():
             run_state_machine_as_test(WithInitializeBundleRules)
 
     result = o.getvalue()
-    assert "state = WithInitializeBundleRules(a=['a v1 with (dep1, dep2)'])" \
-        in result
-    assert 'state.fail_fast(param=v1)' in result
-    assert 'state.teardown()' in result
+    assert result == """state = WithInitializeBundleRules()
+v1 = state.initialize_a(dep='dep')
+state.fail_fast(param=v1)
+state.teardown()
+"""
 
 
 def test_initialize_rule_dont_mix_with_precondition():
