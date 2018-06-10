@@ -152,7 +152,7 @@ class SearchStrategy(Generic[Ex]):
 
                 # We track which strategies use which in the course of
                 # calculating their property value. If A ever uses B in
-                # the course of calculating its value, then whenveer the
+                # the course of calculating its value, then whenever the
                 # value of B changes we might need to update the value of
                 # A.
                 listeners = defaultdict(set)
