@@ -197,6 +197,7 @@ their individual contributions.
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
 * `Sam Hames <https://www.github.com/SamHames>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
+* `Sushobhit <https://github.com/sushobhit27>`_ (sushobhitsolanki@gmail.com)
 * `Tariq Khokhar <https://www.github.com/tkb>`_ (tariq@khokhar.net)
 * `Will Hall <https://www.github.com/wrhall>`_ (wrsh07@gmail.com)
 * `Will Thompson <https://www.github.com/wjt>`_ (will@willthompson.co.uk)

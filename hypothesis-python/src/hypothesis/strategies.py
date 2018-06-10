@@ -22,6 +22,7 @@ import math
 import random
 import datetime as dt
 import operator
+import string
 from uuid import UUID
 from decimal import Context, Decimal, localcontext
 from inspect import isclass, isfunction
@@ -108,7 +109,7 @@ __all__ = [
     'recursive', 'composite',
     'shared', 'runner', 'data',
     'deferred',
-    'from_type', 'register_type_strategy',
+    'from_type', 'register_type_strategy', 'emails',
 ]
 
 _strategies = set()
@@ -2060,6 +2061,21 @@ def deferred(definition):
     returned by the definition.
     """
     return DeferredStrategy(definition)
+
+
+@defines_strategy_with_reusable_values
+def emails():
+    """A strategy for email addresses.
+
+    See https://github.com/HypothesisWorks/hypothesis-python/issues/162
+    for work on a permanent replacement.
+    """
+    from hypothesis.provisional import domains
+    local_chars = string.ascii_letters + string.digits + "!#$%&'*+-/=^_`{|}~"
+    local_part = text(local_chars, min_size=1, max_size=64)
+    # TODO: include dot-atoms, quoted strings, escaped chars, etc in local part
+    return builds('{}@{}'.format, local_part, domains()).filter(
+        lambda addr: len(addr) <= 255)
 
 
 assert _strategies.issubset(set(__all__)), _strategies - set(__all__)

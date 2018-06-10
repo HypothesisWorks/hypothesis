@@ -20,16 +20,7 @@ from __future__ import division, print_function, absolute_import
 from binascii import unhexlify
 
 from hypothesis import given
-from hypothesis.provisional import emails, ip4_addr_strings, \
-    ip6_addr_strings
-
-
-@given(emails())
-def test_is_valid_email(address):
-    local, at_, domain = address.rpartition('@')
-    assert at_ == '@'
-    assert local
-    assert domain
+from hypothesis.provisional import ip4_addr_strings, ip6_addr_strings
 
 
 @given(ip4_addr_strings())
