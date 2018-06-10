@@ -84,7 +84,7 @@ class SearchStrategy(Generic[Ex]):
         The problem is that for properties that depend on each other, a naive
         calculation strategy may hit infinite recursion. Consider for example
         the property is_empty. A strategy defined as x = st.deferred(lambda x)
-        is certainly empty (in order ot draw a value from x we would have to
+        is certainly empty (in order to draw a value from x we would have to
         draw a value from x, for which we would have to draw a value from x,
         ...), but in order to calculate it the naive approach would end up
         calling x.is_empty in order to calculate x.is_empty in order to etc.
