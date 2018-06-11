@@ -68,7 +68,7 @@ six==1.11.0               # via dparse, more-itertools, packaging, pip-tools, pr
 snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.0
 sphinx==1.7.5
-sphinxcontrib-websupport==1.0.1  # via sphinx
+sphinxcontrib-websupport==1.1.0  # via sphinx
 tox==3.0.0
 tqdm==4.23.3              # via pyupio, twine
 traitlets==4.3.2          # via ipython
