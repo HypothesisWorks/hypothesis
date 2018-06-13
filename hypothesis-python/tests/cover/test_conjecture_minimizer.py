@@ -38,3 +38,9 @@ def test_float_hack_fails():
     assert minimize(
         hbytes([255] * 8), lambda x: x[0] >> 7, random=Random(0),
     ) == hbytes([128] + [0] * 7)
+
+
+def test_can_sort_bytes_by_reordering():
+    start = hbytes([5, 4, 3, 2, 1, 0])
+    finish = minimize(start, lambda x: set(x) == set(start), random=Random(0))
+    assert finish == hbytes([0, 1, 2, 3, 4, 5])
