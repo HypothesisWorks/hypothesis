@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.58.1:
+
+-------------------
+3.58.1 - 2018-06-13
+-------------------
+
+This improves the shrinker. It can now reorder examples: 3 1 2 becomes 1 2 3.
+
+Thanks to Luke for contributing.
+
 .. _v3.58.0:
 
 -------------------
