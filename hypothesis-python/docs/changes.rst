@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.58.0:
+
+-------------------
+3.58.0 - 2018-06-13
+-------------------
+
+This adds a new extra :py:func:`~hypothesis.extra.dateutil.timezones` strategy
+that generates dateutil timezones.
+
+Depends on :pypi:`python-dateutil`.
+
+Thanks to Conrad for contributing.
+
 .. _v3.57.0:
 
 -------------------
