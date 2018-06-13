@@ -798,14 +798,14 @@ def test_initialize_rule():
             run_state_machine_as_test(WithInitializeRules)
 
     assert set(WithInitializeRules.initialized[-3:]) == {'a', 'b', 'c'}
-    result = o.getvalue()
-    assert result == """state = WithInitializeRules()
-state.initialize_a()
-state.initialize_b()
-state.initialize_c()
-state.fail_fast()
-state.teardown()
-"""
+    result = o.getvalue().splitlines()
+    assert result[0] == 'state = WithInitializeRules()'
+    # Initialize rules call order is shuffled
+    assert {result[1], result[2], result[3]} == {
+        'state.initialize_a()', 'state.initialize_b()', 'state.initialize_c()'
+    }
+    assert result[4] == 'state.fail_fast()'
+    assert result[5] == 'state.teardown()'
 
 
 def test_initialize_rule_populate_bundle():
@@ -844,6 +844,19 @@ def test_initialize_rule_dont_mix_with_precondition():
     assert 'An initialization rule cannot have a precondition.' in str(
         exc.value)
 
+    # Also test decorator application in reverse order
+
+    with pytest.raises(InvalidDefinition) as exc:
+        class BadStateMachineReverseOrder(RuleBasedStateMachine):
+
+            @initialize()
+            @precondition(lambda self: True)
+            def initialize(self):
+                pass
+
+    assert 'An initialization rule cannot have a precondition.' in str(
+        exc.value)
+
 
 def test_initialize_rule_dont_mix_with_regular_rule():
     with pytest.raises(InvalidDefinition) as exc:
@@ -869,3 +882,74 @@ def test_initialize_rule_cannot_be_double_applied():
 
     assert 'A function cannot be used for two distinct rules.' in str(
         exc.value)
+
+
+def test_initialize_rule_in_state_machine_with_inheritance():
+    class ParentStateMachine(RuleBasedStateMachine):
+        initialized = []
+
+        @initialize()
+        def initialize_a(self):
+            self.initialized.append('a')
+
+    class ChildStateMachine(ParentStateMachine):
+
+        @initialize()
+        def initialize_b(self):
+            self.initialized.append('b')
+
+        @rule()
+        def fail_fast(self):
+            assert False
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            run_state_machine_as_test(ChildStateMachine)
+
+    assert set(ChildStateMachine.initialized[-2:]) == {'a', 'b'}
+    result = o.getvalue().splitlines()
+    assert result[0] == 'state = ChildStateMachine()'
+    # Initialize rules call order is shuffled
+    assert {result[1], result[2]} == {
+        'state.initialize_a()', 'state.initialize_b()'}
+    assert result[3] == 'state.fail_fast()'
+    assert result[4] == 'state.teardown()'
+
+
+def test_can_manually_call_initialize_rule():
+    class StateMachine(RuleBasedStateMachine):
+        initialize_called_counter = 0
+
+        @initialize()
+        def initialize(self):
+            self.initialize_called_counter += 1
+            return self.initialize_called_counter
+
+        @rule()
+        def fail_eventually(self):
+            assert self.initialize() == 2
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            run_state_machine_as_test(StateMachine)
+
+    result = o.getvalue()
+    assert result == """state = StateMachine()
+state.initialize()
+state.fail_eventually()
+state.fail_eventually()
+state.teardown()
+"""
+
+
+def test_new_initialize_rules_are_picked_up_before_and_after_rules_call():
+    class Foo(RuleBasedStateMachine):
+        pass
+    Foo.define_initialize_rule(
+        targets=(), function=lambda self: 1, arguments={}
+    )
+    assert len(Foo.initialize_rules()) == 1
+    Foo.define_initialize_rule(
+        targets=(), function=lambda self: 2, arguments={}
+    )
+    assert len(Foo.initialize_rules()) == 2
