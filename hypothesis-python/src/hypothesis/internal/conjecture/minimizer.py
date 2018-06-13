@@ -211,6 +211,9 @@ class Minimizer(object):
             lambda c: c == self.current_int or self.incorporate_int(c)
         )
 
+    def sort(self):
+        self.incorporate(hbytes(sorted(self.current)))
+
     def run(self):
         if not any(self.current):
             return
@@ -268,6 +271,7 @@ class Minimizer(object):
             first = False
             change_counter = self.changes
 
+            self.sort()
             self.float_hack()
             self.shift()
             self.shrink_indices()
