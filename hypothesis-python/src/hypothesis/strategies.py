@@ -2065,14 +2065,13 @@ def deferred(definition):
 
 @defines_strategy_with_reusable_values
 def emails():
-    """A strategy for generating email addresses as unicode strings.
-    The address format is specific in :rfc:`5322#section-3.4.1`.
-    Values shrink towards shorter local-parts and host domains.
+    """A strategy for generating email addresses as unicode strings. The
+    address format is specific in :rfc:`5322#section-3.4.1`. Values shrink
+    towards shorter local-parts and host domains.
 
-    This strategy is useful for generating "user data" for tests,
-    as mishandling of email addresses is a common source of bugs.
-    Future updates will generate more complicated addresses allowed
-    by the RFC.
+    This strategy is useful for generating "user data" for tests, as
+    mishandling of email addresses is a common source of bugs. Future
+    updates will generate more complicated addresses allowed by the RFC.
     """
     from hypothesis.provisional import domains
     local_chars = string.ascii_letters + string.digits + "!#$%&'*+-/=^_`{|}~"
