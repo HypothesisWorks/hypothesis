@@ -17,26 +17,13 @@
 
 from __future__ import division, print_function, absolute_import
 
-from binascii import unhexlify
-
 from hypothesis import given
-from hypothesis.provisional import ip4_addr_strings, ip6_addr_strings
+from hypothesis.strategies import emails
 
 
-@given(ip4_addr_strings())
-def test_is_IP4_addr(address):
-    as_num = [int(n) for n in address.split('.')]
-    assert len(as_num) == 4
-    assert all(0 <= n <= 255 for n in as_num)
-
-
-@given(ip6_addr_strings())
-def test_is_IP6_addr(address):
-    # Works for non-normalised addresses produced by this strategy, but not
-    # a particularly general test
-    assert address == address.upper()
-    as_hex = address.split(':')
-    assert len(as_hex) == 8
-    assert all(len(part) == 4 for part in as_hex)
-    raw = unhexlify(address.replace(u':', u'').encode('ascii'))
-    assert len(raw) == 16
+@given(emails())
+def test_is_valid_email(address):
+    local, at_, domain = address.rpartition('@')
+    assert at_ == '@'
+    assert local
+    assert domain

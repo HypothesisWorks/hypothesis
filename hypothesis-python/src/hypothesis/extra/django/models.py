@@ -32,8 +32,8 @@ import hypothesis.strategies as st
 from hypothesis import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
-from hypothesis.provisional import emails, ip4_addr_strings, \
-    ip6_addr_strings
+from hypothesis.strategies import emails
+from hypothesis.provisional import ip4_addr_strings, ip6_addr_strings
 from hypothesis.utils.conventions import DefaultValueType
 
 if False:

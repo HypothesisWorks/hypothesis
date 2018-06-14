@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import enum
 import math
 import random
+import string
 import datetime as dt
 import operator
 from uuid import UUID
@@ -108,7 +109,7 @@ __all__ = [
     'recursive', 'composite',
     'shared', 'runner', 'data',
     'deferred',
-    'from_type', 'register_type_strategy',
+    'from_type', 'register_type_strategy', 'emails',
 ]
 
 _strategies = set()
@@ -2060,6 +2061,24 @@ def deferred(definition):
     returned by the definition.
     """
     return DeferredStrategy(definition)
+
+
+@defines_strategy_with_reusable_values
+def emails():
+    """A strategy for generating email addresses as unicode strings. The
+    address format is specific in :rfc:`5322#section-3.4.1`. Values shrink
+    towards shorter local-parts and host domains.
+
+    This strategy is useful for generating "user data" for tests, as
+    mishandling of email addresses is a common source of bugs. Future
+    updates will generate more complicated addresses allowed by the RFC.
+    """
+    from hypothesis.provisional import domains
+    local_chars = string.ascii_letters + string.digits + "!#$%&'*+-/=^_`{|}~"
+    local_part = text(local_chars, min_size=1, max_size=64)
+    # TODO: include dot-atoms, quoted strings, escaped chars, etc in local part
+    return builds(u'{}@{}'.format, local_part, domains()).filter(
+        lambda addr: len(addr) <= 255)
 
 
 assert _strategies.issubset(set(__all__)), _strategies - set(__all__)
