@@ -260,10 +260,23 @@ def none():
     return just(None)
 
 
-def one_of(
-    *args  # type: Union[SearchStrategy[Ex], Sequence[SearchStrategy[Ex]]]
-):
-    # type: (...) -> SearchStrategy[Ex]
+@overload
+def one_of(args):
+    # type: (Sequence[SearchStrategy[Any]]) -> SearchStrategy[Any]
+    pass  # pragma: no cover
+
+
+@overload
+def one_of(*args):
+    # type: (SearchStrategy[Any]) -> SearchStrategy[Any]
+    pass  # pragma: no cover
+
+
+def one_of(*args):
+    # Mypy workaround alert:  Any is too loose above; the return paramater
+    # should be the union of the input parameters.  Unfortunately, Mypy <=0.600
+    # raises errors due to incompatible inputs instead.  See #1270 for links.
+    # v0.610 doesn't error; it gets inference wrong for 2+ arguments instead.
     """Return a strategy which generates values from any of the argument
     strategies.
 
