@@ -888,7 +888,7 @@ def characters(
 @cacheable
 @defines_strategy_with_reusable_values
 def text(
-    alphabet=None,  # type: Union[Text, SearchStrategy[Text]]
+    alphabet=None,  # type: Union[Sequence[Text], SearchStrategy[Text]]
     min_size=None,   # type: int
     average_size=None,   # type: int
     max_size=None  # type: int
