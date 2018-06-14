@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.59.0:
+
+-------------------
+3.59.0 - 2018-06-14
+-------------------
+
+This release adds the :func:`~hypothesis.strategies.emails` strategy,
+which generates unicode strings representing an email address.
+
+Thanks to Sushobhit for moving this to the public API (:issue:`162`).
+
 .. _v3.58.1:
 
 -------------------
