@@ -212,7 +212,26 @@ class Minimizer(object):
         )
 
     def sort(self):
-        self.incorporate(hbytes(sorted(self.current)))
+        return self.incorporate(hbytes(sorted(self.current)))
+
+    # Sometimes data can be sorted, except that some elements need to remain
+    # in constant locations to preserve invariants that the minimizer can't be
+    # aware of. Attempt to do as much sorting as possible.
+    # This does not try to bring elements 'across' stationary elements.
+    def partial_sort(self):
+        any_sorting_done = False
+        ps = list(self.current)
+        for i in hrange(self.size - 1):
+            j = i + 1
+            while j > 0 and ps[j - 1] > ps[j]:
+                prev_list = ps[:]
+                ps[j], ps[j - 1] = ps[j - 1], ps[j]
+                if self.incorporate(hbytes(ps)):
+                    any_sorting_done = True
+                else:  # Restore to the last usable found example
+                    ps = prev_list
+                j = j - 1
+        return any_sorting_done
 
     def run(self):
         if not any(self.current):
@@ -277,6 +296,7 @@ class Minimizer(object):
             self.shrink_indices()
             self.rotate_suffixes()
             self.minimize_as_integer()
+            self.partial_sort()
 
 
 def minimize(initial, condition, random, full=True):
