@@ -2065,16 +2065,20 @@ def deferred(definition):
 
 @defines_strategy_with_reusable_values
 def emails():
-    """A strategy for email addresses.
+    """A strategy for generating email addresses as unicode strings.
+    The address format is specific in :rfc:`5322#section-3.4.1`.
+    Values shrink towards shorter local-parts and host domains.
 
-    See https://github.com/HypothesisWorks/hypothesis-python/issues/162
-    for work on a permanent replacement.
+    This strategy is useful for generating "user data" for tests,
+    as mishandling of email addresses is a common source of bugs.
+    Future updates will generate more complicated addresses allowed
+    by the RFC.
     """
     from hypothesis.provisional import domains
     local_chars = string.ascii_letters + string.digits + "!#$%&'*+-/=^_`{|}~"
     local_part = text(local_chars, min_size=1, max_size=64)
     # TODO: include dot-atoms, quoted strings, escaped chars, etc in local part
-    return builds('{}@{}'.format, local_part, domains()).filter(
+    return builds(u'{}@{}'.format, local_part, domains()).filter(
         lambda addr: len(addr) <= 255)
 
 
