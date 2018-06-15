@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 from hypothesis import Verbosity, find, note, given, settings
 from hypothesis import strategies as st
 from hypothesis.errors import NoSuchExample, Unsatisfiable
+from tests.common.utils import no_shrink
 from hypothesis.internal.compat import hrange
 
 
@@ -64,7 +65,7 @@ def test_arbitrary_recursion(strategies):
 
             try:
                 find(s, lambda x: True, settings=settings(
-                    max_shrinks=0, database=None, verbosity=Verbosity.quiet,
+                    phases=no_shrink, database=None, verbosity=Verbosity.quiet,
                     max_examples=1,
                 ))
             except (Unsatisfiable, NoSuchExample):

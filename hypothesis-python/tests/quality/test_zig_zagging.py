@@ -43,7 +43,6 @@ def problem(draw):
 @example((b'\x01', b'', 0))
 @settings(
     deadline=None, suppress_health_check=HealthCheck.all(), max_examples=10,
-    max_shrinks=100
 )
 @given(problem())
 def test_avoids_zig_zag_trap(p):
@@ -65,7 +64,7 @@ def test_avoids_zig_zag_trap(p):
 
     runner = ConjectureRunner(
         test_function, database_key=None, settings=settings(
-            database=None, max_shrinks=100, verbosity=Verbosity.debug
+            database=None, verbosity=Verbosity.debug
         )
     )
 

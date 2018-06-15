@@ -26,7 +26,7 @@ import hypothesis.strategies as st
 from hypothesis import HealthCheck, given, settings
 from hypothesis.errors import InvalidArgument, FailedHealthCheck
 from hypothesis.control import assume
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import no_shrink, checks_deprecated_behaviour
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
@@ -108,7 +108,7 @@ class fails_regularly(SearchStrategy):
 
 def test_filtering_most_things_fails_a_health_check():
     @given(fails_regularly())
-    @settings(database=None, max_shrinks=0)
+    @settings(database=None, phases=no_shrink)
     def test(x):
         pass
 

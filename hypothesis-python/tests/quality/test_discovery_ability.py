@@ -35,6 +35,7 @@ import collections
 import hypothesis.internal.reflection as reflection
 from hypothesis import settings as Settings
 from hypothesis.errors import UnsatisfiedAssumption
+from tests.common.utils import no_shrink
 from hypothesis.strategies import just, sets, text, lists, floats, \
     one_of, tuples, booleans, integers, sampled_from
 from hypothesis.internal.conjecture.engine import \
@@ -82,7 +83,7 @@ def define_test(specifier, predicate, condition=None):
                 test_function,
                 settings=Settings(
                     max_examples=100,
-                    max_shrinks=0
+                    phases=no_shrink
                 ))
             runner.run()
             if runner.interesting_examples:

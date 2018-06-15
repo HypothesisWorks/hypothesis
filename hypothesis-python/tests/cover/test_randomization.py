@@ -23,10 +23,11 @@ from pytest import raises
 
 import hypothesis.strategies as st
 from hypothesis import Verbosity, find, given, settings
+from tests.common.utils import no_shrink
 
 
 def test_seeds_off_random():
-    s = settings(max_shrinks=0, database=None)
+    s = settings(phases=no_shrink, database=None)
     r = random.getstate()
     x = find(st.integers(), lambda x: True, settings=s)
     random.setstate(r)
@@ -40,7 +41,7 @@ def test_nesting_with_control_passes_health_check():
     def test_blah(x, rnd):
         @given(st.integers())
         @settings(
-            max_examples=100, max_shrinks=0, database=None,
+            max_examples=100, phases=no_shrink, database=None,
             verbosity=Verbosity.quiet)
         def test_nest(y):
             assert y < x

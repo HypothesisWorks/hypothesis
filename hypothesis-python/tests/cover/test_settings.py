@@ -154,25 +154,27 @@ def test_will_reload_profile_when_default_is_absent():
 def test_load_profile():
     settings.load_profile('default')
     assert settings.default.max_examples == 100
-    assert settings.default.max_shrinks == 500
+    assert settings.default.stateful_step_count == 50
 
-    settings.register_profile('test', settings(max_examples=10), max_shrinks=5)
+    settings.register_profile(
+        'test', settings(max_examples=10), stateful_step_count=5
+    )
     settings.load_profile('test')
 
     assert settings.default.max_examples == 10
-    assert settings.default.max_shrinks == 5
+    assert settings.default.stateful_step_count == 5
 
     settings.load_profile('default')
 
     assert settings.default.max_examples == 100
-    assert settings.default.max_shrinks == 500
+    assert settings.default.stateful_step_count == 50
 
 
 @checks_deprecated_behaviour
 def test_nonstring_profile_names_deprecated():
-    settings.register_profile(5, max_shrinks=5)
+    settings.register_profile(5, stateful_step_count=5)
     settings.load_profile(5)
-    assert settings.default.max_shrinks == 5
+    assert settings.default.stateful_step_count == 5
 
 
 def test_loading_profile_keeps_expected_behaviour():

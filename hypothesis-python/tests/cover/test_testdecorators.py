@@ -25,7 +25,8 @@ import hypothesis.reporting as reporting
 from hypothesis import Verbosity, HealthCheck, note, seed, given, assume, \
     reject, settings
 from hypothesis.errors import Unsatisfiable
-from tests.common.utils import fails, raises, fails_with, capture_out
+from tests.common.utils import fails, raises, no_shrink, fails_with, \
+    capture_out
 from hypothesis.strategies import data, just, sets, text, lists, binary, \
     builds, floats, one_of, booleans, integers, frozensets, sampled_from
 
@@ -437,7 +438,7 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
     failing = [0]
 
     @given(integers())
-    @settings(max_shrinks=0, max_examples=100)
+    @settings(phases=no_shrink, max_examples=100)
     def foo(x):
         if x > 11:
             note('Lo')
