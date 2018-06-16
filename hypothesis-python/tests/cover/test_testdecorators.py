@@ -22,7 +22,7 @@ import threading
 from collections import namedtuple
 
 import hypothesis.reporting as reporting
-from hypothesis import Verbosity, HealthCheck, note, seed, given, assume, \
+from hypothesis import Verbosity, HealthCheck, note, given, assume, \
     reject, settings
 from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails, raises, no_shrink, fails_with, \
@@ -330,21 +330,6 @@ def test_has_ascii(x):
         u'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ \t\n'
     )
     assert any(c in ascii_characters for c in x)
-
-
-def test_uses_provided_seed():
-    import random
-    random.seed(0)
-    initial = random.getstate()
-
-    @given(integers())
-    @seed(42)
-    @settings(database=None)
-    def test_foo(x):
-        pass
-
-    test_foo()
-    assert hash(repr(random.getstate())) == hash(repr(initial))
 
 
 def test_can_derandomize():

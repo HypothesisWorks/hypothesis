@@ -17,22 +17,22 @@
 
 from __future__ import division, print_function, absolute_import
 
-import hypothesis.strategies as st
-from hypothesis import Verbosity, HealthCheck, given, assume, settings
+import random
+import contextlib
 
 
-@settings(max_examples=1, database=None)
-@given(st.integers())
-def test_single_example(n):
-    pass
+@contextlib.contextmanager
+def deterministic_PRNG():
+    """Context manager that handles random.seed without polluting global state.
 
-
-@settings(
-    max_examples=1, database=None,
-    suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow],
-    verbosity=Verbosity.debug,
-)
-@given(st.integers())
-def test_hard_to_find_single_example(n):
-    # Numbers are arbitrary, just deliberately unlikely to hit this too soon.
-    assume(n % 50 == 11)
+    See issue #1255 and PR #1295 for details and motivation - in short,
+    leaving the global pseudo-random number generator (PRNG) seeded is a very
+    bad idea in principle, and breaks all kinds of independence assumptions
+    in practice.
+    """
+    _random_state = random.getstate()
+    random.seed(0)
+    try:
+        yield
+    finally:
+        random.setstate(_random_state)

@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import random
+
 import pytest
 
 from hypothesis import Verbosity, seed, given, assume, settings
@@ -101,3 +103,23 @@ def test_regression_issue_1230():
 
     with pytest.raises(ValueError):
         test_false_is_false()
+
+
+@given(st.integers())
+def random_func(x):
+    random.random()
+
+
+def test_prng_state_unpolluted_by_given_issue_1266():
+    # Checks that @given doesn't leave the global PRNG in a particular
+    # modified state; there may be no effect or random effect but not
+    # a consistent end-state.
+    first = random.getstate()
+    random_func()
+    second = random.getstate()
+    random_func()
+    third = random.getstate()
+    if first == second:
+        assert second == third
+    else:
+        assert second != third
