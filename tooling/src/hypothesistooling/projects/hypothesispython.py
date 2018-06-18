@@ -183,18 +183,6 @@ def commit_pending_release():
     )
 
 
-def update_changelog_for_docs():
-    if not tools.has_release():
-        return
-    if tools.has_uncommitted_changes(tools.CHANGELOG_FILE):
-        print(
-            'Cannot build documentation with uncommitted changes to '
-            'changelog and a pending release. Please commit your changes or '
-            'delete your release file.')
-        sys.exit(1)
-    tools.update_changelog_and_version()
-
-
 CHANGELOG_FILE = os.path.join(HYPOTHESIS_PYTHON, 'docs', 'changes.rst')
 DIST = os.path.join(HYPOTHESIS_PYTHON, 'dist')
 
