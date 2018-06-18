@@ -17,12 +17,15 @@
 
 from __future__ import division, print_function, absolute_import
 
+import pytest
+
 import hypothesistooling as tools
 
 
-def test_release_file_exists_and_is_valid():
-    if tools.has_python_source_changes():
-        assert tools.has_release(), \
+@pytest.mark.parametrize('project', tools.all_projects())
+def test_release_file_exists_and_is_valid(project):
+    if project.has_source_changes():
+        assert project.has_release(), \
             'There are source changes but no RELEASE.rst. Please create ' \
             'one to describe your changes.'
-        tools.parse_release_file()
+        project.parse_release_file()

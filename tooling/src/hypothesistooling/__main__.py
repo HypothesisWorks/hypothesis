@@ -19,16 +19,15 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
-import shutil
 import subprocess
 from glob import glob
 from datetime import datetime
 
 import hypothesistooling as tools
 import hypothesistooling.installers as install
+import hypothesistooling.projects.hypothesispython as hp
 from hypothesistooling import fix_doctests as fd
 from hypothesistooling.scripts import pip_tool
-import hypothesistooling.projects.hypothesispython as hypothesispython
 
 TASKS = {}
 BUILD_FILES = tuple(os.path.join(tools.ROOT, f) for f in [
@@ -66,9 +65,9 @@ def lint():
     )
 
 
-@task(if_changed=tools.PYTHON_SRC)
+@task(if_changed=hp.PYTHON_SRC)
 def check_type_hints():
-    pip_tool('mypy', tools.PYTHON_SRC)
+    pip_tool('mypy', hp.PYTHON_SRC)
 
 
 HEAD = tools.hash_for_name('HEAD')
@@ -77,25 +76,28 @@ MASTER = tools.hash_for_name('origin/master')
 
 def do_release(package):
     if not package.has_release():
-        print('No python release')
+        print('No release for %s' % (package.__name__,))
         return
 
     os.chdir(package.BASE_DIR)
 
     print('Updating changelog and version')
     package.update_for_pending_release()
+    package.build_distribution()
 
     print('Looks good to release!')
 
-    tools.create_tag_and_push()
+    tag_name = package.tag_name()
 
-    print('Now uploading to pypi.')
+    print('Creating tag %s' % (tag_name,))
 
-    subprocess.check_call([
-        sys.executable, '-m', 'twine', 'upload',
-        '--config-file', tools.PYPIRC,
-        os.path.join(DIST, '*'),
-    ])
+    tools.create_tag(tag_name)
+
+    print('Uploading distribution')
+    package.upload_distribution()
+
+    print('Pushing tag')
+    tools.push_tag(tag_name)
 
 
 @task()
@@ -115,7 +117,7 @@ def deploy():
     tools.decrypt_secrets()
     tools.configure_git()
 
-    do_python_release()
+    do_release(hp)
 
     sys.exit(0)
 
@@ -266,11 +268,11 @@ def check_requirements():
     check_not_changed()
 
 
-@task(if_changed=tools.HYPOTHESIS_PYTHON)
+@task(if_changed=hp.HYPOTHESIS_PYTHON)
 def documentation():
-    os.chdir(tools.HYPOTHESIS_PYTHON)
+    os.chdir(hp.HYPOTHESIS_PYTHON)
     try:
-        update_changelog_for_docs()
+        hp.update_changelog_and_version()
         pip_tool(
             'sphinx-build', '-W', '-b', 'html', '-d', 'docs/_build/doctrees',
             'docs', 'docs/_build/html'
@@ -281,9 +283,9 @@ def documentation():
         ])
 
 
-@task(if_changed=tools.HYPOTHESIS_PYTHON)
+@task(if_changed=hp.HYPOTHESIS_PYTHON)
 def doctest():
-    os.chdir(tools.HYPOTHESIS_PYTHON)
+    os.chdir(hp.HYPOTHESIS_PYTHON)
     env = dict(os.environ)
     env['PYTHONPATH'] = 'src'
 
@@ -304,7 +306,7 @@ def run_tox(task, version):
     except FileExistsError:
         pass
 
-    os.chdir(tools.HYPOTHESIS_PYTHON)
+    os.chdir(hp.HYPOTHESIS_PYTHON)
     env = dict(os.environ)
     python = install.python_executable(version)
 
@@ -336,7 +338,7 @@ for n in [PY27, PY34, PY35, PY36]:
     ALIASES[n] = 'python%s.%s' % (major, minor)
 
 
-python_tests = task(if_changed=(tools.PYTHON_SRC, tools.PYTHON_TESTS))
+python_tests = task(if_changed=(hp.PYTHON_SRC, hp.PYTHON_TESTS))
 
 
 @python_tests
@@ -398,8 +400,8 @@ def check_quality():
     run_tox('quality2', PY27)
 
 
-examples_task = task(if_changed=(tools.PYTHON_SRC, os.path.join(
-    tools.HYPOTHESIS_PYTHON, 'examples')
+examples_task = task(if_changed=(hp.PYTHON_SRC, os.path.join(
+    hp.HYPOTHESIS_PYTHON, 'examples')
 ))
 
 

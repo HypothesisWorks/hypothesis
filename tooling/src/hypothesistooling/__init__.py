@@ -46,27 +46,6 @@ REPO_TESTS = os.path.join(ROOT, 'whole-repo-tests')
 
 PYUP_FILE = os.path.join(ROOT, '.pyup.yml')
 
-PYTHON_TAG_PREFIX = 'hypothesis-python-'
-
-
-def latest_version():
-    versions = []
-
-    for t in tags():
-        if t.startswith(PYTHON_TAG_PREFIX):
-            t = t[len(PYTHON_TAG_PREFIX):]
-        else:
-            continue
-        assert t == t.strip()
-        parts = t.split('.')
-        assert len(parts) == 3
-        v = tuple(map(int, parts))
-        versions.append((v, t))
-
-    _, latest = max(versions)
-
-    return latest
-
 
 def hash_for_name(name):
     return subprocess.check_output([
@@ -127,22 +106,13 @@ def create_tag(tagname):
     assert tagname not in tags()
     git('tag', tagname)
 
-def create_tag_and_push():
-    assert __version__ not in tags()
-    git('config', 'user.name', 'Travis CI on behalf of David R. MacIver')
-    git('config', 'user.email', 'david@drmaciver.com')
-    git('config', 'core.sshCommand', 'ssh -i deploy_key')
-    git(
-        'remote', 'add', 'ssh-origin',
-        'git@github.com:HypothesisWorks/hypothesis.git'
-    )
-    git('tag', PYTHON_TAG_PREFIX + __version__)
 
+def push_tag(tagname):
     subprocess.check_call([
         'ssh-agent', 'sh', '-c',
         'ssh-add %s && ' % (shlex.quote(DEPLOY_KEY),) +
-        'git push ssh-origin HEAD:master &&'
-        'git push ssh-origin --tags'
+        'git push ssh-origin HEAD:master &&' +
+        'git push ssh-origin %s' % (shlex.quote(tagname),)
     ])
 
 
@@ -248,3 +218,8 @@ IS_CIRCLE_PULL_REQUEST = (
 
 
 IS_PULL_REQUEST = IS_TRAVIS_PULL_REQUEST or IS_CIRCLE_PULL_REQUEST
+
+
+def all_projects():
+    import hypothesistooling.projects.hypothesispython as hp
+    return [hp]
