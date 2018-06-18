@@ -272,7 +272,8 @@ def check_requirements():
 def documentation():
     os.chdir(hp.HYPOTHESIS_PYTHON)
     try:
-        hp.update_changelog_and_version()
+        if hp.has_release():
+            hp.update_changelog_and_version()
         pip_tool(
             'sphinx-build', '-W', '-b', 'html', '-d', 'docs/_build/doctrees',
             'docs', 'docs/_build/html'
