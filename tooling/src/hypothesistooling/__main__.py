@@ -113,7 +113,7 @@ def do_release(package):
 
 @task()
 def deploy():
-    print('Current head:', HEAD)
+    print('Current head:  ', HEAD)
     print('Current master:', MASTER)
 
     if not tools.is_ancestor(HEAD, MASTER):
