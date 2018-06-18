@@ -82,7 +82,12 @@ def do_release(package):
     os.chdir(package.BASE_DIR)
 
     print('Updating changelog and version')
-    package.update_for_pending_release()
+    package.update_changelog_and_version()
+
+    print('Committing changes')
+    package.commit_pending_release()
+
+    print('Building distribution')
     package.build_distribution()
 
     print('Looks good to release!')
@@ -109,7 +114,7 @@ def deploy():
         print('Not deploying due to not being on master')
         sys.exit(0)
 
-    if os.environ.get('TRAVIS_SECURE_ENV_VARS', None) != 'true':
+    if not tools.has_travis_secrets():
         print('Running without access to secure variables, so no deployment')
         sys.exit(0)
 

@@ -170,9 +170,7 @@ def update_changelog_and_version():
         o.write('\n'.join(new_changelog_parts))
 
 
-def update_for_pending_release():
-    update_changelog_and_version()
-
+def commit_pending_release():
     git('rm', RELEASE_FILE)
     git('add', CHANGELOG_FILE, VERSION_FILE)
 
@@ -213,6 +211,7 @@ def build_distribution():
 
 
 def upload_distribution():
+    tools.assert_can_release()
     subprocess.check_call([
         sys.executable, '-m', 'twine', 'upload',
         '--config-file', tools.PYPIRC,

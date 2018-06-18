@@ -104,12 +104,22 @@ def create_tag(tagname):
 
 
 def push_tag(tagname):
+    assert_can_release()
     subprocess.check_call([
         'ssh-agent', 'sh', '-c',
         'ssh-add %s && ' % (shlex.quote(DEPLOY_KEY),) +
         'git push ssh-origin HEAD:master &&' +
         'git push ssh-origin %s' % (shlex.quote(tagname),)
     ])
+
+
+def assert_can_release():
+    assert not IS_PULL_REQUEST, 'Cannot release from pull requests'
+    assert has_travis_secrets(), 'Cannot release without travis secure vars'
+
+
+def has_travis_secrets():
+    return os.environ.get('TRAVIS_SECURE_ENV_VARS', None) != 'true'
 
 
 def build_jobs():
