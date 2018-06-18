@@ -40,7 +40,6 @@ ROOT = subprocess.check_output([
     'git', '-C', os.path.dirname(__file__), 'rev-parse', '--show-toplevel',
 ]).decode('ascii').strip()
 
-HYPOTHESIS_RUBY = os.path.join(ROOT, 'hypothesis-ruby')
 
 REPO_TESTS = os.path.join(ROOT, 'whole-repo-tests')
 
@@ -196,6 +195,8 @@ SECRETS = os.path.join(ROOT, 'secrets')
 DEPLOY_KEY = os.path.join(SECRETS, 'deploy_key')
 PYPIRC = os.path.join(SECRETS, '.pypirc')
 
+RUBYGEMS_API_KEY = os.path.join(SECRETS, 'api_key.yaml')
+
 
 def decrypt_secrets():
     subprocess.check_call([
@@ -228,4 +229,5 @@ IS_PULL_REQUEST = IS_TRAVIS_PULL_REQUEST or IS_CIRCLE_PULL_REQUEST
 
 def all_projects():
     import hypothesistooling.projects.hypothesispython as hp
-    return [hp]
+    import hypothesistooling.projects.hypothesisruby as hr
+    return [hp, hr]

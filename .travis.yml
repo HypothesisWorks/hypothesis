@@ -18,6 +18,7 @@ cache:
         - $HOME/.rustup
         - $HOME/.runtimes
         - $HOME/.venv
+        - $HOME/.gem
         - $HOME/.cache/pip
         - $HOME/wheelhouse
         - $HOME/.stack
