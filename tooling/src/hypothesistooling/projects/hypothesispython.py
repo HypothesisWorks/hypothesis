@@ -51,6 +51,9 @@ VERSION_FILE = os.path.join(PYTHON_SRC, 'hypothesis/version.py')
 with open(VERSION_FILE) as o:
     exec(o.read())
 
+assert __version__ is not None
+assert __version_info__ is not None
+
 
 def has_release():
     return os.path.exists(RELEASE_FILE)
