@@ -110,7 +110,6 @@ def update_changelog_and_version():
     contents = changelog()
     assert '\r' not in contents
     lines = contents.split('\n')
-    assert contents == '\n'.join(lines)
     for i, l in enumerate(lines):
         if CHANGELOG_ANCHOR.match(l):
             assert CHANGELOG_BORDER.match(lines[i + 2]), repr(lines[i + 2])
