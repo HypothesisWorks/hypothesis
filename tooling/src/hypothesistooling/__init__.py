@@ -119,7 +119,7 @@ def assert_can_release():
 
 
 def has_travis_secrets():
-    return os.environ.get('TRAVIS_SECURE_ENV_VARS', None) != 'true'
+    return os.environ.get('TRAVIS_SECURE_ENV_VARS', None) == 'true'
 
 
 def build_jobs():
