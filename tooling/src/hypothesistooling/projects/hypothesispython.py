@@ -107,8 +107,7 @@ def update_changelog_and_version():
     global __version_info__
     global __version__
 
-    with open(CHANGELOG_FILE) as i:
-        contents = i.read()
+    contents = changelog()
     assert '\r' not in contents
     lines = contents.split('\n')
     assert contents == '\n'.join(lines)
