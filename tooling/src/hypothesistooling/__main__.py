@@ -19,15 +19,13 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
-import random
-import shutil
 import subprocess
 from glob import glob
-from time import time, sleep
 from datetime import datetime
 
 import hypothesistooling as tools
 import hypothesistooling.installers as install
+import hypothesistooling.projects.hypothesispython as hp
 from hypothesistooling import fix_doctests as fd
 from hypothesistooling.scripts import pip_tool
 
@@ -67,127 +65,59 @@ def lint():
     )
 
 
-@task(if_changed=tools.PYTHON_SRC)
+@task(if_changed=hp.PYTHON_SRC)
 def check_type_hints():
-    pip_tool('mypy', tools.PYTHON_SRC)
+    pip_tool('mypy', hp.PYTHON_SRC)
 
 
-DIST = os.path.join(tools.HYPOTHESIS_PYTHON, 'dist')
-PENDING_STATUS = ('started', 'created')
+HEAD = tools.hash_for_name('HEAD')
+MASTER = tools.hash_for_name('origin/master')
+
+
+def do_release(package):
+    if not package.has_release():
+        print('No release for %s' % (package.__name__,))
+        return
+
+    os.chdir(package.BASE_DIR)
+
+    print('Updating changelog and version')
+    package.update_for_pending_release()
+    package.build_distribution()
+
+    print('Looks good to release!')
+
+    tag_name = package.tag_name()
+
+    print('Creating tag %s' % (tag_name,))
+
+    tools.create_tag(tag_name)
+
+    print('Uploading distribution')
+    package.upload_distribution()
+
+    print('Pushing tag')
+    tools.push_tag(tag_name)
 
 
 @task()
 def deploy():
-    os.chdir(tools.HYPOTHESIS_PYTHON)
-
-    last_release = tools.latest_version()
-
-    print('Current version: %s. Latest released version: %s' % (
-        tools.__version__, last_release
-    ))
-
-    HEAD = tools.hash_for_name('HEAD')
-    MASTER = tools.hash_for_name('origin/master')
     print('Current head:', HEAD)
     print('Current master:', MASTER)
 
-    on_master = tools.is_ancestor(HEAD, MASTER)
-    has_release = tools.has_release()
-
-    if has_release:
-        print('Updating changelog and version')
-        tools.update_for_pending_release()
-
-    print('Building an sdist...')
-
-    if os.path.exists(DIST):
-        shutil.rmtree(DIST)
-
-    subprocess.check_output([
-        sys.executable, 'setup.py', 'sdist', '--dist-dir', DIST,
-    ])
-
-    if not on_master:
+    if not tools.is_ancestor(HEAD, MASTER):
         print('Not deploying due to not being on master')
         sys.exit(0)
 
-    if not has_release:
-        print('Not deploying due to no release')
-        sys.exit(0)
-
-    start_time = time()
-
-    prev_pending = None
-
-    # We time out after an hour, which is a stupidly long time and it should
-    # never actually take that long: A full Travis run only takes about 20-30
-    # minutes! This is really just here as a guard in case something goes
-    # wrong and we're not paying attention so as to not be too mean to Travis..
-    while time() <= start_time + 60 * 60:
-        jobs = tools.build_jobs()
-
-        failed_jobs = [
-            (k, v)
-            for k, vs in jobs.items()
-            if k not in PENDING_STATUS + ('passed',)
-            for v in vs
-        ]
-
-        if failed_jobs:
-            print('Failing this due to failure of jobs %s' % (
-                ', '.join('%s(%s)' % (s, j) for j, s in failed_jobs),
-            ))
-            sys.exit(1)
-        else:
-            pending = [j for s in PENDING_STATUS for j in jobs.get(s, ())]
-            try:
-                # This allows us to test the deploy job for a build locally.
-                pending.remove('deploy')
-            except ValueError:
-                pass
-            if pending:
-                still_pending = set(pending)
-                if prev_pending is None:
-                    print('Waiting for the following jobs to complete:')
-                    for p in sorted(still_pending):
-                        print(' * %s' % (p,))
-                    print()
-                else:
-                    completed = prev_pending - still_pending
-                    if completed:
-                        print('%s completed since last check.' % (
-                            ', '.join(sorted(completed)),))
-                prev_pending = still_pending
-                naptime = 10.0 * (2 + random.random())
-                print('Waiting %.2fs for %d more job%s to complete' % (
-                    naptime, len(pending), 's' if len(pending) > 1 else '',))
-                sleep(naptime)
-            else:
-                break
-    else:
-        print("We've been waiting for an hour. That seems bad. Failing now.")
-        sys.exit(1)
-
-    print('Looks good to release!')
-
     if os.environ.get('TRAVIS_SECURE_ENV_VARS', None) != 'true':
-        print("But we don't have the keys to do it")
+        print('Running without access to secure variables, so no deployment')
         sys.exit(0)
 
     print('Decrypting secrets')
     tools.decrypt_secrets()
+    tools.configure_git()
 
-    print('Release seems good. Pushing to github now.')
-
-    tools.create_tag_and_push()
-
-    print('Now uploading to pypi.')
-
-    subprocess.check_call([
-        sys.executable, '-m', 'twine', 'upload',
-        '--config-file', tools.PYPIRC,
-        os.path.join(DIST, '*'),
-    ])
+    do_release(hp)
 
     sys.exit(0)
 
@@ -338,23 +268,12 @@ def check_requirements():
     check_not_changed()
 
 
-def update_changelog_for_docs():
-    if not tools.has_release():
-        return
-    if tools.has_uncommitted_changes(tools.CHANGELOG_FILE):
-        print(
-            'Cannot build documentation with uncommitted changes to '
-            'changelog and a pending release. Please commit your changes or '
-            'delete your release file.')
-        sys.exit(1)
-    tools.update_changelog_and_version()
-
-
-@task(if_changed=tools.HYPOTHESIS_PYTHON)
+@task(if_changed=hp.HYPOTHESIS_PYTHON)
 def documentation():
-    os.chdir(tools.HYPOTHESIS_PYTHON)
+    os.chdir(hp.HYPOTHESIS_PYTHON)
     try:
-        update_changelog_for_docs()
+        if hp.has_release():
+            hp.update_changelog_and_version()
         pip_tool(
             'sphinx-build', '-W', '-b', 'html', '-d', 'docs/_build/doctrees',
             'docs', 'docs/_build/html'
@@ -365,9 +284,9 @@ def documentation():
         ])
 
 
-@task(if_changed=tools.HYPOTHESIS_PYTHON)
+@task(if_changed=hp.HYPOTHESIS_PYTHON)
 def doctest():
-    os.chdir(tools.HYPOTHESIS_PYTHON)
+    os.chdir(hp.HYPOTHESIS_PYTHON)
     env = dict(os.environ)
     env['PYTHONPATH'] = 'src'
 
@@ -388,7 +307,7 @@ def run_tox(task, version):
     except FileExistsError:
         pass
 
-    os.chdir(tools.HYPOTHESIS_PYTHON)
+    os.chdir(hp.HYPOTHESIS_PYTHON)
     env = dict(os.environ)
     python = install.python_executable(version)
 
@@ -420,7 +339,7 @@ for n in [PY27, PY34, PY35, PY36]:
     ALIASES[n] = 'python%s.%s' % (major, minor)
 
 
-python_tests = task(if_changed=(tools.PYTHON_SRC, tools.PYTHON_TESTS))
+python_tests = task(if_changed=(hp.PYTHON_SRC, hp.PYTHON_TESTS))
 
 
 @python_tests
@@ -482,8 +401,8 @@ def check_quality():
     run_tox('quality2', PY27)
 
 
-examples_task = task(if_changed=(tools.PYTHON_SRC, os.path.join(
-    tools.HYPOTHESIS_PYTHON, 'examples')
+examples_task = task(if_changed=(hp.PYTHON_SRC, os.path.join(
+    hp.HYPOTHESIS_PYTHON, 'examples')
 ))
 
 
