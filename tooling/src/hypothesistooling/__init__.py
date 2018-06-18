@@ -18,11 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-import re
-import sys
 import shlex
 import subprocess
-from datetime import datetime, timedelta
 
 
 def current_branch():
@@ -48,11 +45,6 @@ HYPOTHESIS_RUBY = os.path.join(ROOT, 'hypothesis-ruby')
 REPO_TESTS = os.path.join(ROOT, 'whole-repo-tests')
 
 PYUP_FILE = os.path.join(ROOT, '.pyup.yml')
-
-
-assert __version__ is not None
-assert __version_info__ is not None
-
 
 PYTHON_TAG_PREFIX = 'hypothesis-python-'
 
@@ -204,7 +196,6 @@ def all_files():
             ['git', 'ls-files']).decode('ascii').splitlines()
         if os.path.exists(f)
     ]
-
 
 
 def changed_files_from_master():
