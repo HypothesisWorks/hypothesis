@@ -28,7 +28,7 @@ TOOL_HASH=$("$PYTHON" "$SCRIPTS/tool-hash.py" < "$TOOL_REQUIREMENTS")
 TOOL_VIRTUALENV="$VIRTUALENVS/build-$TOOL_HASH"
 TOOL_PYTHON="$TOOL_VIRTUALENV/bin/python"
 
-if [ ! -e "$TOOL_PYTHON" ] ; then
+if ! "$TOOL_PYTHON" -m hypothesistooling check-installed ; then
   rm -rf "$TOOL_VIRTUALENV"
   "$PYTHON" -m pip install --upgrade virtualenv
   "$PYTHON" -m virtualenv "$TOOL_VIRTUALENV"

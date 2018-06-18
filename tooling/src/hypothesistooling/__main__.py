@@ -57,6 +57,12 @@ def task(if_changed=()):
 
 
 @task()
+def check_installed():
+    """No-op task that can be used to test for a successful install (so we
+    don't fail to run if a previous install failed midway)."""
+
+
+@task()
 def lint():
     pip_tool(
         'flake8',
