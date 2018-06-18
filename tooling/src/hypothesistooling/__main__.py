@@ -128,7 +128,8 @@ def deploy():
     tools.decrypt_secrets()
     tools.configure_git()
 
-    do_release(hp)
+    for project in tools.all_projects():
+        do_release(project)
 
     sys.exit(0)
 
