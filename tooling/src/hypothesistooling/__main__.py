@@ -28,6 +28,7 @@ import hypothesistooling as tools
 import hypothesistooling.installers as install
 from hypothesistooling import fix_doctests as fd
 from hypothesistooling.scripts import pip_tool
+import hypothesistooling.projects.hypothesispython as hypothesispython
 
 TASKS = {}
 BUILD_FILES = tuple(os.path.join(tools.ROOT, f) for f in [
@@ -70,59 +71,21 @@ def check_type_hints():
     pip_tool('mypy', tools.PYTHON_SRC)
 
 
-DIST = os.path.join(tools.HYPOTHESIS_PYTHON, 'dist')
-PENDING_STATUS = ('started', 'created')
+HEAD = tools.hash_for_name('HEAD')
+MASTER = tools.hash_for_name('origin/master')
 
 
-@task()
-def deploy():
-    os.chdir(tools.HYPOTHESIS_PYTHON)
+def do_release(package):
+    if not package.has_release():
+        print('No python release')
+        return
 
-    last_release = tools.latest_version()
+    os.chdir(package.BASE_DIR)
 
-    print('Current version: %s. Latest released version: %s' % (
-        tools.__version__, last_release
-    ))
-
-    HEAD = tools.hash_for_name('HEAD')
-    MASTER = tools.hash_for_name('origin/master')
-    print('Current head:', HEAD)
-    print('Current master:', MASTER)
-
-    on_master = tools.is_ancestor(HEAD, MASTER)
-    has_release = tools.has_release()
-
-    if has_release:
-        print('Updating changelog and version')
-        tools.update_for_pending_release()
-
-    print('Building an sdist...')
-
-    if os.path.exists(DIST):
-        shutil.rmtree(DIST)
-
-    subprocess.check_output([
-        sys.executable, 'setup.py', 'sdist', '--dist-dir', DIST,
-    ])
-
-    if not on_master:
-        print('Not deploying due to not being on master')
-        sys.exit(0)
-
-    if not has_release:
-        print('Not deploying due to no release')
-        sys.exit(0)
+    print('Updating changelog and version')
+    package.update_for_pending_release()
 
     print('Looks good to release!')
-
-    if os.environ.get('TRAVIS_SECURE_ENV_VARS', None) != 'true':
-        print("But we don't have the keys to do it")
-        sys.exit(0)
-
-    print('Decrypting secrets')
-    tools.decrypt_secrets()
-
-    print('Release seems good. Pushing to github now.')
 
     tools.create_tag_and_push()
 
@@ -133,6 +96,26 @@ def deploy():
         '--config-file', tools.PYPIRC,
         os.path.join(DIST, '*'),
     ])
+
+
+@task()
+def deploy():
+    print('Current head:', HEAD)
+    print('Current master:', MASTER)
+
+    if not tools.is_ancestor(HEAD, MASTER):
+        print('Not deploying due to not being on master')
+        sys.exit(0)
+
+    if os.environ.get('TRAVIS_SECURE_ENV_VARS', None) != 'true':
+        print('Running without access to secure variables, so no deployment')
+        sys.exit(0)
+
+    print('Decrypting secrets')
+    tools.decrypt_secrets()
+    tools.configure_git()
+
+    do_python_release()
 
     sys.exit(0)
 
@@ -281,18 +264,6 @@ def upgrade_requirements():
 def check_requirements():
     compile_requirements()
     check_not_changed()
-
-
-def update_changelog_for_docs():
-    if not tools.has_release():
-        return
-    if tools.has_uncommitted_changes(tools.CHANGELOG_FILE):
-        print(
-            'Cannot build documentation with uncommitted changes to '
-            'changelog and a pending release. Please commit your changes or '
-            'delete your release file.')
-        sys.exit(1)
-    tools.update_changelog_and_version()
 
 
 @task(if_changed=tools.HYPOTHESIS_PYTHON)
