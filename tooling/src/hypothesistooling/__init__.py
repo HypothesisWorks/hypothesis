@@ -78,10 +78,6 @@ def has_changes(files):
     ]) != 0
 
 
-def has_python_source_changes():
-    return has_changes([PYTHON_SRC])
-
-
 def has_uncommitted_changes(filename):
     return subprocess.call([
         'git', 'diff', '--exit-code', filename
