@@ -34,7 +34,7 @@ markupsafe==1.0           # via jinja2
 mccabe==0.6.1             # via flake8
 more-itertools==4.1.0     # via pytest
 mypy==0.600
-numpy==1.14.3
+numpy==1.14.5
 packaging==17.1           # via dparse, pyupio, safety, sphinx
 parso==0.2.0              # via jedi
 pexpect==4.5.0            # via ipython
