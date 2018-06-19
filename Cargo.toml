@@ -1,6 +1,9 @@
 [workspace]
 
 members = [
-  "conjecture",
+  "conjecture-rust",
   "hypothesis-ruby",
 ]
+
+[patch.crates-io]
+conjecture = { path = "./conjecture-rust" }

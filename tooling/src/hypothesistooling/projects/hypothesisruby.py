@@ -24,6 +24,7 @@ from glob import glob
 import hypothesistooling as tools
 import hypothesistooling.installers as install
 import hypothesistooling.releasemanagement as rm
+import hypothesistooling.projects.conjecturerust as cr
 from hypothesistooling import git
 from hypothesistooling.junkdrawer import once, in_dir, unlink_if_present
 
@@ -38,6 +39,8 @@ TAG_PREFIX = PACKAGE_NAME + '-'
 RELEASE_FILE = os.path.join(BASE_DIR, 'RELEASE.md')
 CHANGELOG_FILE = os.path.join(BASE_DIR, 'CHANGELOG.md')
 GEMSPEC_FILE = os.path.join(BASE_DIR, 'hypothesis-specs.gemspec')
+CARGO_FILE = os.path.join(BASE_DIR, 'Cargo.toml')
+
 
 RUST_SRC = os.path.join(BASE_DIR, 'src')
 RUBY_SRC = os.path.join(BASE_DIR, 'lib')
@@ -61,6 +64,13 @@ def update_changelog_and_version():
     version, version_info = rm.bump_version_info(version_info, release_type)
 
     rm.replace_assignment(GEMSPEC_FILE, 's.version', repr(version))
+
+    # Update to use latest version of conjecture-rust.
+    rm.replace_assignment(
+        CARGO_FILE, 'conjecture',
+        rm.extract_assignment(cr.CARGO_FILE, 'version')
+    )
+
     rm.update_markdown_changelog(
         CHANGELOG_FILE,
         name='Hypothesis for Ruby',
@@ -94,7 +104,7 @@ def tag_name():
 
 def has_source_changes():
     """Returns True if any source files have changed."""
-    return tools.has_changes([RUST_SRC, RUBY_SRC])
+    return tools.has_changes([RUST_SRC, RUBY_SRC]) or cr.has_release()
 
 
 def current_version():

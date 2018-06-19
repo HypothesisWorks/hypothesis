@@ -46,6 +46,26 @@ def release_date_string():
     ])
 
 
+def extract_assignment_from_string(contents, name):
+    lines = contents.split('\n')
+
+    matcher = re.compile(r'\A\s*%s\s*=\s*(.+)\Z' % (name,))
+
+    for i, l in enumerate(lines):
+        match = matcher.match(l)
+        if match is not None:
+            return match[1].strip()
+
+    raise ValueError('Key %s not found in %s' % (
+        name, contents
+    ))
+
+
+def extract_assignment(filename, name):
+    with open(filename) as i:
+        return extract_assignment_from_string(i.read())
+
+
 def replace_assignment_in_string(contents, name, value):
     lines = contents.split('\n')
 
