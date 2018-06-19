@@ -39,7 +39,6 @@ def release_date_string():
     (unless our release process takes more than 23 hours) this value
     remains consistent throughout the entire release.
     """
-
     now = datetime.utcnow()
 
     return max([
