@@ -1,0 +1,14 @@
+[package]
+name = "conjecture"
+version = "0.1.0"
+authors = ["David R. MacIver <david@drmaciver.com>"]
+
+homepage = "https://github.com/HypothesisWorks/hypothesis/tree/master/conjecture"
+repository = "https://github.com/HypothesisWorks/hypothesis/"
+
+description = "Core engine for Hypothesis implementations"
+
+readme = "README.md"
+license = "MPL-2.0" 
+
+[dependencies]

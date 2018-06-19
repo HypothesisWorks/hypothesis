@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+  "conjecture",
+  "hypothesis-ruby",
+]
