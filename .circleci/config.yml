@@ -11,6 +11,8 @@ jobs:
          keys:
            - v1-runtimes-
       - run: ./build.sh install-core
+      - run: ./build.sh check-coverage
+      - run: ./build.sh check-pure-tracer
       - run: ./build.sh check-py27
       - run: ./build.sh check-py36
       - save_cache:
