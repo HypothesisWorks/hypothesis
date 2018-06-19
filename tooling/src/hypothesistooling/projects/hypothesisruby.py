@@ -103,8 +103,6 @@ def current_version():
 
 
 def bundle(*args):
-    install.ensure_rustup()
-    install.ensure_ruby()
     ensure_bundler()
     bundle_command(*args)
 
@@ -122,6 +120,8 @@ def rake_task(*args):
 
 @once
 def ensure_bundler():
+    install.ensure_rustup()
+    install.ensure_ruby()
     bundle_command('install')
 
 
