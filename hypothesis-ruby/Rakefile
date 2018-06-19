@@ -149,6 +149,6 @@ task :clean do
   sh 'rm -rf target'
 end
 
-task :gem => :clean do
+task gem: :clean do
   sh 'gem build hypothesis-specs.gemspec'
 end
