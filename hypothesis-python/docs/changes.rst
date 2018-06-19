@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.59.3:
+
+-------------------
+3.59.3 - 2018-06-19
+-------------------
+
+This is a no-op release to take into account some changes to the release
+process. It should have no user visible effect.
+
 .. _v3.59.2:
 
 -------------------
