@@ -24,7 +24,10 @@ begin
 rescue LoadError
 end
 
-HelixRuntime::BuildTask.new
+build_task = HelixRuntime::BuildTask.new
+
+build_task.build_root = '..'
+
 
 def rubocop(fix:)
   sh "bundle exec rubocop #{'-a' if fix} lib spec minitests " \
@@ -90,7 +93,7 @@ end
 task :clean do
   sh 'git clean -fdx lib'
   sh 'rm -rf hypothesis-specs*.gem'
-  sh 'rm -rf target'
+  sh 'rm -rf ../target'
 end
 
 task gem: :clean do

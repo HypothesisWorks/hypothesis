@@ -20,3 +20,4 @@ deploy_key
 secrets.tar
 secrets
 htmlcov
+target
