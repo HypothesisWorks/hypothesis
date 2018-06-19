@@ -49,20 +49,18 @@ def has_release():
 
 def update_changelog_and_version():
     """Update the changelog and version based on the current release file."""
-
     rake_task('update_changelog_and_version')
 
 
 def commit_pending_release():
     """Create a commit with the new release."""
-
     git('rm', RELEASE_FILE)
     git('add', CHANGELOG_FILE, GEMSPEC_FILE)
 
     git(
         'commit', '-m',
         'Bump hypothesis-ruby version to %s and update changelog'
-        '\n\n[skip ci]' % (gemspec_version(),)
+        '\n\n[skip ci]' % (current_version(),)
     )
 
 
@@ -73,12 +71,21 @@ def build_distribution():
 
 def tag_name():
     """The tag name for the upcoming release."""
-    return TAG_PREFIX + gemspec_version()
+    return TAG_PREFIX + current_version()
 
 
 def has_source_changes():
     """Returns True if any source files have changed."""
     return tools.has_changes([RUST_SRC, RUBY_SRC])
+
+
+def current_version():
+    """Returns the current version as specified by the gemspec."""
+    ensure_bundler()
+    return subprocess.check_output([
+        install.BUNDLER_EXECUTABLE, 'exec', 'ruby', '-e',
+        RUBY_TO_PRINT_VERSION
+    ]).decode('ascii').strip()
 
 
 def bundle(*args):
@@ -109,14 +116,6 @@ require 'rubygems'
 spec = Gem::Specification::load(%r)
 puts spec.version
 """.strip().replace('\n', '; ') % (GEMSPEC_FILE,)
-
-
-def gemspec_version():
-    ensure_bundler()
-    return subprocess.check_output([
-        install.BUNDLER_EXECUTABLE, 'exec', 'ruby', '-e',
-        RUBY_TO_PRINT_VERSION
-    ]).decode('ascii').strip()
 
 
 RUBYGEMS_CREDENTIALS = os.path.expanduser('~/.gem/credentials')

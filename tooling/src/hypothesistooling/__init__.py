@@ -20,6 +20,15 @@ from __future__ import division, print_function, absolute_import
 import os
 import shlex
 import subprocess
+from datetime import datetime, timedelta
+
+
+def release_date_string():
+    now = datetime.utcnow()
+
+    return max([
+        d.strftime('%Y-%m-%d') for d in (now, now + timedelta(hours=1))
+    ])
 
 
 def current_branch():

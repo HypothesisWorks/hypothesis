@@ -22,7 +22,6 @@ import re
 import sys
 import shutil
 import subprocess
-from datetime import datetime, timedelta
 
 import hypothesistooling as tools
 from hypothesistooling import git
@@ -144,13 +143,8 @@ def update_changelog_and_version():
     with open(VERSION_FILE, 'w') as o:
         o.write('\n'.join(version_lines))
 
-    now = datetime.utcnow()
-
-    date = max([
-        d.strftime('%Y-%m-%d') for d in (now, now + timedelta(hours=1))
-    ])
-
-    heading_for_new_version = ' - '.join((new_version_string, date))
+    heading_for_new_version = ' - '.join((
+        new_version_string, tools.release_date_string()))
     border_for_new_version = '-' * len(heading_for_new_version)
 
     new_changelog_parts = [
@@ -206,6 +200,10 @@ def upload_distribution():
         '--config-file', tools.PYPIRC,
         os.path.join(DIST, '*'),
     ])
+
+
+def current_version():
+    return __version__
 
 
 def latest_version():

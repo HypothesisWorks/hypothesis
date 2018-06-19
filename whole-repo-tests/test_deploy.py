@@ -38,6 +38,12 @@ def test_release_file_exists_and_is_valid(project, monkeypatch):
 
     try:
         main.do_release(project)
+
+        with open(project.CHANGELOG_FILE) as i:
+            changelog = i.read()
+        assert project.current_version() in changelog
+        assert tools.release_date_string() in changelog
+
     finally:
         tools.git('checkout', project.BASE_DIR)
         os.chdir(tools.ROOT)
