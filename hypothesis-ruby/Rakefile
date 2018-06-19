@@ -140,6 +140,18 @@ task :update_changelog_and_version do
       out.write(l)
     end
     out.close
+
+    previous_changelog = IO.read(CHANGELOG)
+
+    out = File.new(CHANGELOG, 'w')
+
+    out.write(
+      "## Hypothesis for Ruby #{new_version} (#{new_date})\n\n"
+    )
+    out.write(release_contents.strip)
+    out.write("\n\n")
+    out.write(previous_changelog)
+    out.close
   end
 end
 
