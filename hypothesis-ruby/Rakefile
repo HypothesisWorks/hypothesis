@@ -24,18 +24,6 @@ begin
 rescue LoadError
 end
 
-# Monkeypatch build to fail on error.
-# See https://github.com/tildeio/helix/issues/133
-module HelixRuntime
-  class Project
-    alias original_build cargo_build
-
-    def cargo_build
-      raise 'Build failed' unless original_build
-    end
-  end
-end
-
 HelixRuntime::BuildTask.new
 
 def rubocop(fix:)
@@ -155,8 +143,12 @@ task :update_changelog_and_version do
   end
 end
 
-task :gem do
-  sh 'rm -rf hypothesis-specs*.gem'
+task :clean do
   sh 'git clean -fdx lib'
+  sh 'rm -rf hypothesis-specs*.gem'
+  sh 'rm -rf target'
+end
+
+task :gem => :clean do
   sh 'gem build hypothesis-specs.gemspec'
 end

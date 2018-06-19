@@ -459,7 +459,7 @@ def lint_ruby():
 
 @ruby_task
 def check_ruby_tests():
-    hr.rake_task('test')
+    hr.rake_task('clean', 'build', 'test')
 
 
 if __name__ == '__main__':
