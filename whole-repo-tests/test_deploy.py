@@ -17,15 +17,27 @@
 
 from __future__ import division, print_function, absolute_import
 
+import os
+
 import pytest
 
 import hypothesistooling as tools
+import hypothesistooling.__main__ as main
 
 
-@pytest.mark.parametrize('project', tools.all_projects())
-def test_release_file_exists_and_is_valid(project):
-    if project.has_source_changes():
-        assert project.has_release(), \
-            'There are source changes but no RELEASE.rst. Please create ' \
-            'one to describe your changes.'
-        project.parse_release_file()
+@pytest.mark.parametrize('project', [
+    p for p in tools.all_projects() if p.has_release()
+])
+def test_release_file_exists_and_is_valid(project, monkeypatch):
+    assert not tools.has_uncommitted_changes(project.BASE_DIR)
+
+    monkeypatch.setattr(tools, 'create_tag', lambda *args, **kwargs: None)
+    monkeypatch.setattr(tools, 'push_tag', lambda name: None)
+    monkeypatch.setattr(project, 'upload_distribution', lambda: None)
+    monkeypatch.setattr(project, 'commit_pending_release', lambda: None)
+
+    try:
+        main.do_release(project)
+    finally:
+        tools.git('checkout', project.BASE_DIR)
+        os.chdir(tools.ROOT)

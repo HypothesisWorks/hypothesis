@@ -20,12 +20,13 @@ from __future__ import division, print_function, absolute_import
 import os
 
 import hypothesistooling as tools
+import hypothesistooling.projects.hypothesispython as hp
 from hypothesistooling.scripts import pip_tool
 
 
 def is_sphinx(f):
     f = os.path.abspath(f)
-    return f.startswith(os.path.join(tools.HYPOTHESIS_PYTHON, 'docs'))
+    return f.startswith(os.path.join(hp.HYPOTHESIS_PYTHON, 'docs'))
 
 
 ALL_RST = [

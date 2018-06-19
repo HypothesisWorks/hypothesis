@@ -14,18 +14,3 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import division, print_function, absolute_import
-
-import pytest
-
-import hypothesistooling as tools
-
-
-@pytest.mark.parametrize('project', tools.all_projects())
-def test_release_file_exists_and_is_valid(project):
-    if project.has_source_changes():
-        assert project.has_release(), \
-            'There are source changes but no RELEASE.rst. Please create ' \
-            'one to describe your changes.'
-        project.parse_release_file()
