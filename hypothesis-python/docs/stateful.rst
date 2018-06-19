@@ -187,9 +187,9 @@ Initializes
 -----------
 
 Initializes are a special case of rules that are guaranteed to be run at most
-once at the beginning of a run.
-Note if multiple initialize rules are defined, their call order is randomized
-at each run.
+once at the beginning of a run (i.e. before any normal rule is called).
+Note if multiple initialize rules are defined, they may be called in any order,
+and that order will vary from run to run.
 
 Initializes are typically useful to populate bundles:
 
