@@ -87,62 +87,6 @@ def run_for_output(*args)
   out.strip
 end
 
-task :update_changelog_and_version do
-  if File.exist?(RELEASE_FILE)
-    spec = Gem::Specification.load(GEMSPEC)
-
-    release_contents = IO.read(RELEASE_FILE).strip
-    release_type, release_contents = release_contents.split("\n", 2)
-
-    match = /RELEASE_TYPE: +(major|minor|patch)/.match(release_type)
-    if match
-      release_type = match[1]
-      release_contents = release_contents.strip
-    else
-      abort "Invalid release type line #{release_type.inspect}"
-    end
-
-    components = spec.version.segments.to_a
-    if release_type == 'major'
-      components[0] += 1
-    elsif release_type == 'minor'
-      components[1] += 1
-    else
-      if release_type != 'patch'
-        raise "Unexpected release type #{release_type.inspect}"
-      end
-      components[2] += 1
-    end
-
-    new_version = components.join('.')
-    new_date = Date.today.strftime
-
-    lines = File.readlines(GEMSPEC).map do |l|
-      l.sub(/(s.version += +)'.+$/, "\\1'#{new_version}'").sub(
-        /(s.date += +)'.+$/, "\\1'#{new_date}'"
-      )
-    end
-
-    out = File.new(GEMSPEC, 'w')
-    lines.each do |l|
-      out.write(l)
-    end
-    out.close
-
-    previous_changelog = IO.read(CHANGELOG)
-
-    out = File.new(CHANGELOG, 'w')
-
-    out.write(
-      "## Hypothesis for Ruby #{new_version} (#{new_date})\n\n"
-    )
-    out.write(release_contents.strip)
-    out.write("\n\n")
-    out.write(previous_changelog)
-    out.close
-  end
-end
-
 task :clean do
   sh 'git clean -fdx lib'
   sh 'rm -rf hypothesis-specs*.gem'

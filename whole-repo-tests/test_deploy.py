@@ -23,6 +23,7 @@ import pytest
 
 import hypothesistooling as tools
 import hypothesistooling.__main__ as main
+import hypothesistooling.releasemanagement as rm
 
 
 @pytest.mark.parametrize('project', [
@@ -42,7 +43,8 @@ def test_release_file_exists_and_is_valid(project, monkeypatch):
         with open(project.CHANGELOG_FILE) as i:
             changelog = i.read()
         assert project.current_version() in changelog
-        assert tools.release_date_string() in changelog
+        assert rm.release_date_string() in changelog
+        assert not os.path.exists(project.RELEASE_FILE)
 
     finally:
         tools.git('checkout', project.BASE_DIR)

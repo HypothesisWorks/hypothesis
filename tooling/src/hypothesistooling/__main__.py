@@ -459,7 +459,7 @@ def lint_ruby():
 
 @ruby_task
 def check_ruby_tests():
-    hr.rake_task('clean', 'build', 'test')
+    hr.rake_task('test')
 
 
 if __name__ == '__main__':
@@ -473,7 +473,11 @@ if __name__ == '__main__':
     task_to_run = os.environ.get('TASK')
     if task_to_run is None:
         task_to_run = sys.argv[1]
-    try:
-        TASKS[task_to_run]()
-    except subprocess.CalledProcessError as e:
-        sys.exit(e.returncode)
+
+    if task_to_run == 'python':
+        os.execv(sys.executable, [sys.executable] + sys.argv[2:])
+    else:
+        try:
+            TASKS[task_to_run]()
+        except subprocess.CalledProcessError as e:
+            sys.exit(e.returncode)

@@ -23,6 +23,7 @@ from glob import glob
 
 import hypothesistooling as tools
 import hypothesistooling.installers as install
+import hypothesistooling.releasemanagement as rm
 from hypothesistooling import git
 from hypothesistooling.junkdrawer import once, in_dir
 
@@ -49,7 +50,20 @@ def has_release():
 
 def update_changelog_and_version():
     """Update the changelog and version based on the current release file."""
-    rake_task('update_changelog_and_version')
+    release_type, release_contents = rm.parse_release_file(RELEASE_FILE)
+    version = current_version()
+    version_info = rm.parse_version(version)
+
+    version, version_info = rm.bump_version_info(version_info, release_type)
+
+    rm.replace_assignment(GEMSPEC_FILE, 's.version', repr(version))
+    rm.update_markdown_changelog(
+        CHANGELOG_FILE,
+        name='Hypothesis for Ruby',
+        version=version,
+        entry=release_contents,
+    )
+    os.unlink(RELEASE_FILE)
 
 
 def commit_pending_release():
