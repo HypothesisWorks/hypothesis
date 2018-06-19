@@ -28,6 +28,7 @@ from __future__ import division, print_function, absolute_import
 
 import inspect
 import traceback
+from copy import copy
 from unittest import TestCase
 
 import attr
@@ -174,7 +175,7 @@ class GenericStateMachine(object):
         """Called after a run has finished executing to clean up any necessary
         state.
 
-        Does nothing by default
+        Does nothing by default.
         """
         pass
 
@@ -303,6 +304,7 @@ class Bundle(SearchStrategy):
 
 
 RULE_MARKER = u'hypothesis_stateful_rule'
+INITIALIZE_RULE_MARKER = u'hypothesis_stateful_initialize_rule'
 PRECONDITION_MARKER = u'hypothesis_stateful_precondition'
 INVARIANT_MARKER = u'hypothesis_stateful_invariant'
 
@@ -330,7 +332,8 @@ def rule(targets=(), target=None, **kwargs):
 
     def accept(f):
         existing_rule = getattr(f, RULE_MARKER, None)
-        if existing_rule is not None:
+        existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
+        if existing_rule is not None or existing_initialize_rule is not None:
             raise InvalidDefinition(
                 'A function cannot be used for two distinct rules. ',
                 Settings.default,
@@ -344,6 +347,49 @@ def rule(targets=(), target=None, **kwargs):
             return f(*args, **kwargs)
 
         setattr(rule_wrapper, RULE_MARKER, rule)
+        return rule_wrapper
+    return accept
+
+
+def initialize(targets=(), target=None, **kwargs):
+    """Decorator for RuleBasedStateMachine.
+
+    An initialize decorator behaves like a rule, but the decorated
+    method is called at most once in a run. All initialize decorated
+    methods will be called before any rule decorated methods, in an
+    arbitrary order.
+    """
+    if target is not None:
+        targets += (target,)
+
+    converted_targets = []
+    for t in targets:
+        while isinstance(t, Bundle):
+            t = t.name
+        converted_targets.append(t)
+
+    def accept(f):
+        existing_rule = getattr(f, RULE_MARKER, None)
+        existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
+        if existing_rule is not None or existing_initialize_rule is not None:
+            raise InvalidDefinition(
+                'A function cannot be used for two distinct rules. ',
+                Settings.default,
+            )
+        precondition = getattr(f, PRECONDITION_MARKER, None)
+        if precondition:
+            raise InvalidDefinition(
+                'An initialization rule cannot have a precondition. ',
+                Settings.default,
+            )
+        rule = Rule(targets=tuple(converted_targets), arguments=kwargs,
+                    function=f, precondition=precondition)
+
+        @proxies(f)
+        def rule_wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+
+        setattr(rule_wrapper, INITIALIZE_RULE_MARKER, rule)
         return rule_wrapper
     return accept
 
@@ -377,6 +423,13 @@ def precondition(precond):
         @proxies(f)
         def precondition_wrapper(*args, **kwargs):
             return f(*args, **kwargs)
+
+        existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
+        if existing_initialize_rule is not None:
+            raise InvalidDefinition(
+                'An initialization rule cannot have a precondition. ',
+                Settings.default,
+            )
 
         rule = getattr(f, RULE_MARKER, None)
         if rule is None:
@@ -449,6 +502,8 @@ class RuleBasedStateMachine(GenericStateMachine):
     _rules_per_class = {}  # type: Dict[type, List[classmethod]]
     _invariants_per_class = {}  # type: Dict[type, List[classmethod]]
     _base_rules_per_class = {}  # type: Dict[type, List[classmethod]]
+    _initializers_per_class = {}  # type: Dict[type, List[classmethod]]
+    _base_initializers_per_class = {}  # type: Dict[type, List[classmethod]]
 
     def __init__(self):
         if not self.rules():
@@ -460,6 +515,7 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.names_to_values = {}  # type: Dict[Text, Any]
         self.__stream = CUnicodeIO()
         self.__printer = RepresentationPrinter(self.__stream)
+        self._initialize_rules_to_run = copy(self.initialize_rules())
 
     def __pretty(self, value):
         if isinstance(value, VarReference):
@@ -489,6 +545,23 @@ class RuleBasedStateMachine(GenericStateMachine):
 
     def bundle(self, name):
         return self.bundles.setdefault(name, [])
+
+    @classmethod
+    def initialize_rules(cls):
+        try:
+            return cls._initializers_per_class[cls]
+        except KeyError:
+            pass
+
+        for k, v in inspect.getmembers(cls):
+            r = getattr(v, INITIALIZE_RULE_MARKER, None)
+            if r is not None:
+                cls.define_initialize_rule(
+                    r.targets, r.function, r.arguments, r.precondition,
+                )
+        cls._initializers_per_class[cls] = \
+            cls._base_initializers_per_class.pop(cls, [])
+        return cls._initializers_per_class[cls]
 
     @classmethod
     def rules(cls):
@@ -522,6 +595,23 @@ class RuleBasedStateMachine(GenericStateMachine):
         return cls._invariants_per_class[cls]
 
     @classmethod
+    def define_initialize_rule(
+            cls, targets, function, arguments, precondition=None):
+        converted_arguments = {}
+        for k, v in arguments.items():
+            converted_arguments[k] = v
+        if cls in cls._initializers_per_class:
+            target = cls._initializers_per_class[cls]
+        else:
+            target = cls._base_initializers_per_class.setdefault(cls, [])
+
+        return target.append(
+            Rule(
+                targets, function, converted_arguments, precondition,
+            )
+        )
+
+    @classmethod
     def define_rule(cls, targets, function, arguments, precondition=None):
         converted_arguments = {}
         for k, v in arguments.items():
@@ -538,6 +628,14 @@ class RuleBasedStateMachine(GenericStateMachine):
         )
 
     def steps(self):
+        # Pick initialize rules first
+        if self._initialize_rules_to_run:
+            return one_of([
+                tuples(just(rule), fixed_dictionaries(rule.arguments))
+                for rule in self._initialize_rules_to_run
+            ])
+
+        # All initialize rules has been run once, go with the regular rules
         strategies = []
         for rule in self.rules():
             converted_arguments = {}
@@ -596,6 +694,8 @@ class RuleBasedStateMachine(GenericStateMachine):
             )
             for target in rule.targets:
                 self.bundle(target).append(VarReference(name))
+        if self._initialize_rules_to_run:
+            self._initialize_rules_to_run.remove(rule)
 
     def check_invariants(self):
         for invar in self.invariants():
