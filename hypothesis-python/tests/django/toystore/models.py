@@ -141,3 +141,21 @@ class RestrictedFields(models.Model):
         validators=[validate_even]
     )
     non_blank_text_field = models.TextField(blank=False)
+
+
+class SelfModifyingField(models.IntegerField):
+    def pre_save(self, model_instance, add):
+        value = getattr(model_instance, self.attname)
+        value += 1
+        setattr(model_instance, self.attname, value)
+        return value
+
+
+class CompanyExtension(models.Model):
+    company = models.OneToOneField(
+        Company,
+        primary_key=True,
+        on_delete=models.CASCADE
+    )
+
+    self_modifying = SelfModifyingField()

@@ -24,16 +24,18 @@ from django.conf import settings as django_settings
 from django.contrib.auth.models import User
 
 from hypothesis import HealthCheck, given, assume, settings
-from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import just, lists
+from hypothesis.errors import InvalidArgument, HypothesisException
+from hypothesis.control import reject
+from hypothesis.strategies import just, lists, binary
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from hypothesis.internal.compat import text_type
 from tests.django.toystore.models import Store, Company, Customer, \
     SelfLoop, Customish, ManyTimes, OddFields, ManyNumerics, \
-    CustomishField, CouldBeCharming, CustomishDefault, RestrictedFields, \
-    MandatoryComputed
+    CustomishField, CouldBeCharming, CompanyExtension, CustomishDefault, \
+    RestrictedFields, MandatoryComputed
 from hypothesis.extra.django.models import models, default_value, \
     add_default_field_mapping
+from hypothesis.internal.conjecture.data import ConjectureData
 
 add_default_field_mapping(CustomishField, just(u'a'))
 
@@ -134,6 +136,27 @@ class TestGetsBasicModels(TestCase):
     def test_no_null_in_charfield(self, x):
         # regression test for #1045.  Company just has a convenient CharField.
         assert u'\x00' not in x.name
+
+    @given(binary(min_size=10))
+    def test_foreign_key_primary(self, buf):
+        # Regression test for #1307
+        company_strategy = models(
+            Company,
+            name=just('test')
+        )
+        strategy = models(
+            CompanyExtension,
+            company=company_strategy,
+            self_modifying=just(2)
+        )
+        try:
+            ConjectureData.for_buffer(buf).draw(strategy)
+        except HypothesisException as e:
+            reject()
+        # Draw again with the same buffer. This will cause a duplicate
+        # primary key.
+        ConjectureData.for_buffer(buf).draw(strategy)
+        assert CompanyExtension.objects.all().count() == 1
 
 
 class TestsNeedingRollback(TransactionTestCase):

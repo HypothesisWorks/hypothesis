@@ -213,6 +213,21 @@ def models(
         raise InvalidArgument(
             u'Missing arguments for mandatory field%s %s for model %s'
             % (u's' if missed else u'', u', '.join(missed), model.__name__))
+
+    for field in result:
+        if model._meta.get_field(field).primary_key:
+            # The primary key is generated as part of the strategy. We
+            # want to find any existing row with this primary key and
+            # overwrite its contents.
+            kwargs = {field: result.pop(field)}
+            kwargs['defaults'] = st.fixed_dictionaries(result)
+            return _models_impl(
+                st.builds(model.objects.update_or_create, **kwargs)
+            )
+
+    # The primary key is not generated as part of the strategy, so we
+    # just match against any row that has the same value for all
+    # fields.
     return _models_impl(st.builds(model.objects.get_or_create, **result))
 
 
