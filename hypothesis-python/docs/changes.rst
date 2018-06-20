@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.60.0:
+
+-------------------
+3.60.0 - 2018-06-20
+-------------------
+
+This release add ``initialize`` decorator for stateful testing
+(originally discussed in :issue:`1216`). ``initialize`` act as a special rule
+that is only called once, and all ``initialize`` rules are guaranteed to be
+called before any normal rule is called.
+
 .. _v3.59.3:
 
 -------------------
