@@ -7,5 +7,5 @@ authors = ["David R. MacIver <david@drmaciver.com>"]
 crate-type = ["cdylib"]
 
 [dependencies]
-helix = '0.7.2'
+helix = '0.7.5'
 rand = '0.3'

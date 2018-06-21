@@ -18,6 +18,7 @@ cache:
         - $HOME/.rustup
         - $HOME/.runtimes
         - $HOME/.venv
+        - $HOME/.gem
         - $HOME/.cache/pip
         - $HOME/wheelhouse
         - $HOME/.stack
@@ -47,7 +48,7 @@ jobs:
     - env: TASK=check-py27
     - env: TASK=check-py36
     - env: TASK=check-quality
-#    - env: TASK=check-ruby-tests
+    - env: TASK=check-ruby-tests
 
     # Less important tests that will probably
     # pass whenever the above do but are still

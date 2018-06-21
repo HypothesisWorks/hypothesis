@@ -25,6 +25,7 @@ from datetime import datetime
 
 import hypothesistooling as tools
 import hypothesistooling.installers as install
+import hypothesistooling.projects.hypothesisruby as hr
 import hypothesistooling.projects.hypothesispython as hp
 from hypothesistooling import fix_doctests as fd
 from hypothesistooling.scripts import pip_tool
@@ -447,32 +448,18 @@ def shell():
     IPython.start_ipython([])
 
 
-def bundle(*args):
-    subprocess.check_call([
-        install.BUNDLER_EXECUTABLE, *args
-    ])
-
-
 def ruby_task(fn):
-    def run():
-        install.ensure_rustup()
-        install.ensure_ruby()
-        os.chdir(tools.HYPOTHESIS_RUBY)
-        # Install in deployment mode so that it gets cached on Travis.
-        bundle('install', '--deployment')
-        fn()
-    run.__name__ = fn.__name__
-    return task(if_changed=(tools.HYPOTHESIS_RUBY,))(run)
+    return task(if_changed=(hr.HYPOTHESIS_RUBY,))(fn)
 
 
 @ruby_task
 def lint_ruby():
-    bundle('exec', 'rake', 'checkformat')
+    hr.rake_task('checkformat')
 
 
 @ruby_task
 def check_ruby_tests():
-    bundle('exec', 'rake', 'test')
+    hr.rake_task('test')
 
 
 if __name__ == '__main__':
@@ -486,7 +473,11 @@ if __name__ == '__main__':
     task_to_run = os.environ.get('TASK')
     if task_to_run is None:
         task_to_run = sys.argv[1]
-    try:
-        TASKS[task_to_run]()
-    except subprocess.CalledProcessError as e:
-        sys.exit(e.returncode)
+
+    if task_to_run == 'python':
+        os.execv(sys.executable, [sys.executable] + sys.argv[2:])
+    else:
+        try:
+            TASKS[task_to_run]()
+        except subprocess.CalledProcessError as e:
+            sys.exit(e.returncode)
