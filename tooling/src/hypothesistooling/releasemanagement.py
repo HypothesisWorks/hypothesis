@@ -53,7 +53,7 @@ def replace_assignment_in_string(contents, name, value):
     # "  foo = 1". Matches everything up to the last space before the value,
     # so in that example the matching group 1 would be "  foo = ". This allows
     # us to replace values while preserving formatting.
-    matcher = re.compile(r'\A(\s*%s\s*=\s*)' % (name,))
+    matcher = re.compile(r'\A(\s*%s\s*=\s*)' % (re.escape(name),))
 
     count = 0
 
