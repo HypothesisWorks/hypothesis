@@ -49,6 +49,10 @@ def release_date_string():
 def replace_assignment_in_string(contents, name, value):
     lines = contents.split('\n')
 
+    # Matches a line of the form (some space)name = (some value). e.g.
+    # "  foo = 1". Matches everything up to the last space before the value,
+    # so in that example the matching group 1 would be "  foo = ". This allows
+    # us to replace values while preserving formatting.
     matcher = re.compile(r'\A(\s*%s\s*=\s*)' % (name,))
 
     count = 0
