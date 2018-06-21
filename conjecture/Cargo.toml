@@ -3,7 +3,7 @@ name = "conjecture"
 version = "0.1.0"
 authors = ["David R. MacIver <david@drmaciver.com>"]
 
-homepage = "https://github.com/HypothesisWorks/hypothesis/tree/master/conjecture"
+homepage = "https://github.com/HypothesisWorks/hypothesis/tree/master/conjecture-rust"
 repository = "https://github.com/HypothesisWorks/hypothesis/"
 
 description = "Core engine for Hypothesis implementations"
