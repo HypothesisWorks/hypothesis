@@ -198,6 +198,11 @@ PYPIRC = os.path.join(SECRETS, '.pypirc')
 RUBYGEMS_API_KEY = os.path.join(SECRETS, 'api_key.yaml')
 
 
+SECRET_FILES = [
+    DEPLOY_KEY, PYPIRC, RUBYGEMS_API_KEY
+]
+
+
 def decrypt_secrets():
     subprocess.check_call([
         'openssl', 'aes-256-cbc',
@@ -209,8 +214,12 @@ def decrypt_secrets():
     ])
 
     subprocess.check_call(['tar', '-xvf', SECRETS_TAR], cwd=ROOT)
-    assert os.path.exists(DEPLOY_KEY)
-    assert os.path.exists(PYPIRC)
+
+    missing_files = [
+        os.path.basename(f) for f in SECRET_FILES if not os.path.exists(f)
+    ]
+
+    assert not missing_files, missing_files
     os.chmod(DEPLOY_KEY, int('0600', 8))
 
 
