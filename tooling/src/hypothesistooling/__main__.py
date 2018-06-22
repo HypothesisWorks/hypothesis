@@ -470,9 +470,16 @@ if __name__ == '__main__':
         )
         sys.exit(1)
 
-    task_to_run = os.environ.get('TASK')
-    if task_to_run is None:
+    if len(sys.argv) > 1:
         task_to_run = sys.argv[1]
+    else:
+        task_to_run = os.environ.get('TASK')
+
+    if task_to_run is None:
+        print(
+            'No task specified. Either pass the task to run as an '
+            'argument or as an environment variable TASK.')
+        sys.exit(1)
 
     if task_to_run == 'python':
         os.execv(sys.executable, [sys.executable] + sys.argv[2:])
