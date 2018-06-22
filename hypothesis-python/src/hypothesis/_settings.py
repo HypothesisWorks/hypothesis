@@ -26,6 +26,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import warnings
 import threading
+import contextlib
 from enum import Enum, IntEnum, unique
 
 import attr
@@ -382,6 +383,13 @@ class settings(
             note_deprecation('name=%r must be a string' % (name,))
         settings._current_profile = name
         settings._assign_default_internal(settings.get_profile(name))
+
+
+@contextlib.contextmanager
+def _local_settings(s):
+    default_context_manager = default_variable.with_value(s)
+    with default_context_manager:
+        yield s
 
 
 @attr.s()
