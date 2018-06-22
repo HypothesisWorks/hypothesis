@@ -25,7 +25,7 @@ import hypothesistooling as tools
 import hypothesistooling.installers as install
 import hypothesistooling.releasemanagement as rm
 from hypothesistooling import git
-from hypothesistooling.junkdrawer import once, in_dir
+from hypothesistooling.junkdrawer import once, in_dir, unlink_if_present
 
 PACKAGE_NAME = 'hypothesis-ruby'
 
@@ -141,7 +141,7 @@ def upload_distribution():
 
     # Yes, rubygems really will only look in this file. Yes this is terrible.
     # This only runs on Travis, so we may be assumed to own it, but still.
-    os.path.unlink(RUBYGEMS_CREDENTIALS)
+    unlink_if_present(RUBYGEMS_CREDENTIALS)
 
     # symlink so that the actual secret credentials can't be leaked via the
     # cache.
