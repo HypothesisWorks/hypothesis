@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesistooling as tools
+import hypothesistooling.releasemanagement as rm
 
 
 @pytest.mark.parametrize('project', tools.all_projects())
@@ -28,4 +29,4 @@ def test_release_file_exists_and_is_valid(project):
         assert project.has_release(), \
             'There are source changes but no RELEASE.rst. Please create ' \
             'one to describe your changes.'
-        project.parse_release_file()
+        rm.parse_release_file(project.RELEASE_FILE)
