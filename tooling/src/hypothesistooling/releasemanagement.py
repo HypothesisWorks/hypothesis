@@ -63,7 +63,7 @@ def extract_assignment_from_string(contents, name):
 
 def extract_assignment(filename, name):
     with open(filename) as i:
-        return extract_assignment_from_string(i.read())
+        return extract_assignment_from_string(i.read(), name)
 
 
 def replace_assignment_in_string(contents, name, value):
