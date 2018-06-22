@@ -45,3 +45,10 @@ def once(fn):
     accept.has_been_called = False
     accept.__name__ = fn.__name__
     return accept
+
+
+def unlink_if_present(path):
+    try:
+        os.unlink(path)
+    except FileNotFoundError:
+        pass
