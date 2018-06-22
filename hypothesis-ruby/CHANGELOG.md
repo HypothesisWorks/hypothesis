@@ -1,3 +1,8 @@
+# Hypothesis for Ruby 0.0.11 (2018-06-22)
+
+This release has no user-visible changes other than updating the gemspec's
+homepage attribute.
+
 ## Hypothesis for Ruby 0.0.10 (2018-04-26)
 
 This release is another update to shrinking:
