@@ -24,7 +24,7 @@ import hypothesistooling as tools
 import hypothesistooling.installers as install
 import hypothesistooling.releasemanagement as rm
 from hypothesistooling import git
-from hypothesistooling.junkdrawer import in_dir
+from hypothesistooling.junkdrawer import in_dir, unlink_if_present
 
 PACKAGE_NAME = 'conjecture-rust'
 
@@ -113,7 +113,7 @@ def upload_distribution():
 
     # Yes, cargo really will only look in this file. Yes this is terrible.
     # This only runs on Travis, so we may be assumed to own it, but still.
-    os.path.unlink(CARGO_CREDENTIALS)
+    unlink_if_present(CARGO_CREDENTIALS)
 
     # symlink so that the actual secret credentials can't be leaked via the
     # cache.
