@@ -406,7 +406,7 @@ class ConjectureRunner(object):
             self.event_call_counts[event] += 1
 
     def debug(self, message):
-        with self.settings:
+        with _local_settings(self.settings):
             debug_report(message)
 
     def debug_data(self, data):
