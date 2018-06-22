@@ -603,7 +603,7 @@ def test_note_events(event):
 
 @pytest.mark.parametrize('count', [1, 3])
 def test_debug_data(capsys, count):
-    @settings(verbosity=Verbosity.debug):
+    @settings(verbosity=Verbosity.debug)
     @run_to_buffer
     def f(data):
         for _ in hrange(count):
