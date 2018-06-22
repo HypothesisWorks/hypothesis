@@ -28,7 +28,6 @@ build_task = HelixRuntime::BuildTask.new
 
 build_task.build_root = '..'
 
-
 def rubocop(fix:)
   sh "bundle exec rubocop #{'-a' if fix} lib spec minitests " \
   'Rakefile hypothesis-specs.gemspec'
