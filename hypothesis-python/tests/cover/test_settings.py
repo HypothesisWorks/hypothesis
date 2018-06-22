@@ -69,12 +69,14 @@ def test_respects_none_database():
     assert settings(database=None).database is None
 
 
+@checks_deprecated_behaviour
 def test_settings_can_be_used_as_context_manager_to_change_defaults():
     with settings(max_examples=12):
         assert settings.default.max_examples == 12
     assert settings.default.max_examples == original_default
 
 
+@checks_deprecated_behaviour
 def test_can_repeatedly_push_the_same_thing():
     s = settings(max_examples=12)
     t = settings(max_examples=17)
@@ -177,6 +179,7 @@ def test_nonstring_profile_names_deprecated():
     assert settings.default.stateful_step_count == 5
 
 
+@checks_deprecated_behaviour
 def test_loading_profile_keeps_expected_behaviour():
     settings.register_profile('ci', settings(max_examples=10000))
     settings.load_profile('ci')
@@ -239,11 +242,11 @@ def test_can_have_none_database():
 
 @pytest.mark.parametrize('db', [None, ExampleDatabase(':memory:')])
 def test_database_type_must_be_ExampleDatabase(db):
-    with settings(database=db):
-        settings_property_db = settings.database
-        with pytest.raises(InvalidArgument):
-            settings(database='.hypothesis/examples')
-        assert settings.database is settings_property_db
+    s = settings(database=db)
+    settings_property_db = s.database
+    with pytest.raises(InvalidArgument):
+        s.database = '.hypothesis/examples'
+    assert s.database is settings_property_db
 
 
 @checks_deprecated_behaviour

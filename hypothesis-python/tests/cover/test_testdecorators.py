@@ -255,13 +255,13 @@ def test_prints_on_failure_by_default():
 
 
 def test_does_not_print_on_success():
-    with settings(verbosity=Verbosity.normal):
-        @given(integers())
-        def test_is_an_int(x):
-            return
+    @settings(verbosity=Verbosity.normal)
+    @given(integers())
+    def test_is_an_int(x):
+        return
 
-        with capture_out() as out:
-            test_is_an_int()
+    with capture_out() as out:
+        test_is_an_int()
     out = out.getvalue()
     lines = [l.strip() for l in out.split(u'\n')]
     assert all(not l for l in lines), lines
@@ -423,17 +423,16 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
     failing = [0]
 
     @given(integers())
-    @settings(phases=no_shrink, max_examples=100)
+    @settings(phases=no_shrink, max_examples=100, verbosity=Verbosity.normal)
     def foo(x):
         if x > 11:
             note('Lo')
             failing[0] += 1
             assert False
 
-    with settings(verbosity=Verbosity.normal):
-        with raises(AssertionError):
-            with capture_out() as out:
-                foo()
+    with raises(AssertionError):
+        with capture_out() as out:
+            foo()
     assert failing == [2]
     assert 'Falsifying example' in out.getvalue()
     assert 'Lo' in out.getvalue()

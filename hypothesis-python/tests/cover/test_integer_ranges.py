@@ -40,13 +40,18 @@ class interval(SearchStrategy):
     st.tuples(st.integers(), st.integers(), st.integers()).map(sorted),
     st.random_module(),
 )
-@settings(max_examples=100, max_shrinks=0, deadline=None)
+@settings(
+    max_examples=100,
+    max_shrinks=0,
+    deadline=None,
+    database=None,
+    timeout=unlimited
+)
 def test_intervals_shrink_to_center(inter, rnd):
     lower, center, upper = inter
     s = interval(lower, upper, center)
-    with settings(database=None, timeout=unlimited):
-        assert find(s, lambda x: True) == center
-        if lower < center:
-            assert find(s, lambda x: x < center) == center - 1
-        if center < upper:
-            assert find(s, lambda x: x > center) == center + 1
+    assert find(s, lambda x: True) == center
+    if lower < center:
+        assert find(s, lambda x: x < center) == center - 1
+    if center < upper:
+        assert find(s, lambda x: x > center) == center + 1

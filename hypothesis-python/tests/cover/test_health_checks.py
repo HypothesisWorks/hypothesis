@@ -53,12 +53,12 @@ def test_slow_generation_inline_fails_a_health_check():
 def test_default_health_check_can_weaken_specific():
     import random
 
+    @settings(suppress_health_check=HealthCheck.all())
     @given(st.lists(st.integers(), min_size=1))
     def test(x):
         random.choice(x)
 
-    with settings(suppress_health_check=HealthCheck.all()):
-        test()
+    test()
 
 
 def test_suppressing_filtering_health_check():
