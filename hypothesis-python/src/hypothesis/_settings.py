@@ -316,6 +316,10 @@ class settings(
         return 'settings(%s)' % ', '.join(sorted(bits))
 
     def __enter__(self):
+        note_deprecation(
+            "Settings should be determined only by global state or with the "
+            "@settings decorator."
+        )
         default_context_manager = default_variable.with_value(self)
         self.defaults_stack().append(default_context_manager)
         default_context_manager.__enter__()
