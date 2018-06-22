@@ -148,7 +148,7 @@ def upload_distribution():
     os.symlink(tools.RUBYGEMS_API_KEY, RUBYGEMS_CREDENTIALS)
 
     # Give the key the right permissions.
-    os.chmod(tools.RUBYGEMS_CREDENTIALS, int('0600', 8))
+    os.chmod(RUBYGEMS_CREDENTIALS, int('0600', 8))
 
     subprocess.check_call([
         install.GEM_EXECUTABLE, 'push', *glob('hypothesis-specs-*.gem')
