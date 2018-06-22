@@ -27,7 +27,7 @@ import attr
 
 from hypothesis import Phase, Verbosity, HealthCheck
 from hypothesis import settings as Settings
-from hypothesis._settings import _local_settings
+from hypothesis._settings import local_settings
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import Counter, ceil, hbytes, hrange, \
     int_to_text, int_to_bytes, benchmark_time, int_from_bytes, \
@@ -406,7 +406,7 @@ class ConjectureRunner(object):
             self.event_call_counts[event] += 1
 
     def debug(self, message):
-        with _local_settings(self.settings):
+        with local_settings(self.settings):
             debug_report(message)
 
     def debug_data(self, data):
@@ -434,7 +434,7 @@ class ConjectureRunner(object):
         ))
 
     def run(self):
-        with _local_settings(self.settings):
+        with local_settings(self.settings):
             try:
                 self._run()
             except RunIsComplete:

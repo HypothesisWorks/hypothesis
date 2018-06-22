@@ -386,7 +386,7 @@ class settings(
 
 
 @contextlib.contextmanager
-def _local_settings(s):
+def local_settings(s):
     default_context_manager = default_variable.with_value(s)
     with default_context_manager:
         yield s
