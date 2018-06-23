@@ -55,7 +55,7 @@ def assignment_matcher(name):
     The whole line up to the assigned value is the first matching group,
     the rest of the line is the second matching group.
     i.e. group 1 is the assignment, group 2 is the value. In the above
-    example grorup 1 would bd "  foo = " and group 2 would be "1"
+    example group 1 would be "  foo = " and group 2 would be "1"
     """
     return re.compile(r'\A(\s*%s\s*=\s*)(.+)\Z' % (re.escape(name),))
 
