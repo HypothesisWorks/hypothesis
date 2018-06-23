@@ -131,6 +131,7 @@ def test_can_not_set_verbosity_to_non_verbosity():
         settings(verbosity='kittens')
 
 
+@checks_deprecated_behaviour
 @pytest.mark.parametrize('db', [None, ExampleDatabase()])
 def test_inherits_an_empty_database(db):
     assert settings.default.database is not None
@@ -240,13 +241,14 @@ def test_can_have_none_database():
     assert settings(database=None).database is None
 
 
+@checks_deprecated_behaviour
 @pytest.mark.parametrize('db', [None, ExampleDatabase(':memory:')])
 def test_database_type_must_be_ExampleDatabase(db):
-    s = settings(database=db)
-    settings_property_db = s.database
-    with pytest.raises(InvalidArgument):
-        s.database = '.hypothesis/examples'
-    assert s.database is settings_property_db
+    with settings(database=db):
+        settings_property_db = settings.database
+        with pytest.raises(InvalidArgument):
+            settings(database='.hypothesis/examples')
+        assert settings.database is settings_property_db
 
 
 @checks_deprecated_behaviour
