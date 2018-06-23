@@ -1,3 +1,11 @@
+# Hypothesis for Ruby 0.0.12 (2018-06-23)
+
+This release is the beginning of splitting out the Rust core of Hypothesis
+Ruby into a separate `conjecture` crate for the non-Ruby-specific components
+of it.
+
+It should have no user visible impact.
+
 # Hypothesis for Ruby 0.0.11 (2018-06-22)
 
 This release has no user-visible changes other than updating the gemspec's
