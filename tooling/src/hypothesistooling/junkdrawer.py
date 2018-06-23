@@ -23,6 +23,7 @@ See https://twitter.com/betsythemuffin/status/1003313844108824584
 from __future__ import division, print_function, absolute_import
 
 import os
+import ast
 from contextlib import contextmanager
 
 
@@ -52,3 +53,7 @@ def unlink_if_present(path):
         os.unlink(path)
     except FileNotFoundError:
         pass
+
+
+def unquote_string(s):
+    return ast.literal_eval(s)

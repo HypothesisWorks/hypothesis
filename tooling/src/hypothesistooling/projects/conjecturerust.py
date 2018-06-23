@@ -23,7 +23,8 @@ import subprocess
 import hypothesistooling as tools
 import hypothesistooling.installers as install
 import hypothesistooling.releasemanagement as rm
-from hypothesistooling.junkdrawer import in_dir, unlink_if_present
+from hypothesistooling.junkdrawer import in_dir, unquote_string, \
+    unlink_if_present
 
 PACKAGE_NAME = 'conjecture-rust'
 
@@ -71,9 +72,15 @@ def cargo(*args):
         subprocess.check_call(('cargo',) + args)
 
 
+IN_TEST = False
+
+
 def build_distribution():
     """Build the crate."""
-    cargo('package')
+    if IN_TEST:
+        cargo('package', '--allow-dirty')
+    else:
+        cargo('package')
 
 
 def tag_name():
@@ -88,7 +95,7 @@ def has_source_changes():
 
 def current_version():
     """Returns the current version as specified by the Cargo.toml."""
-    return rm.extract_assignment(CARGO_FILE, 'version')
+    return unquote_string(rm.extract_assignment(CARGO_FILE, 'version'))
 
 
 CARGO_CREDENTIALS = os.path.expanduser('~/.cargo/credentials')
