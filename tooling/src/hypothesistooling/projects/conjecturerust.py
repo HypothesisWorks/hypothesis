@@ -114,6 +114,6 @@ def upload_distribution():
     os.symlink(tools.CARGO_API_KEY, CARGO_CREDENTIALS)
 
     # Give the key the right permissions.
-    os.chmod(tools.CARGO_CREDENTIALS, int('0600', 8))
+    os.chmod(CARGO_CREDENTIALS, int('0600', 8))
 
     cargo('publish')
