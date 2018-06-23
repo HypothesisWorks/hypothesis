@@ -80,13 +80,11 @@ def test_default_datetimes_are_naive(dt):
     assert dt.tzinfo is None
 
 
-@flaky(max_runs=3, min_passes=1)
 def test_bordering_on_a_leap_year():
-    with settings(database=None, max_examples=10 ** 7, timeout=unlimited):
-        x = minimal(datetimes(dt.datetime.min.replace(year=2003),
-                              dt.datetime.max.replace(year=2005)),
-                    lambda x: x.month == 2 and x.day == 29,
-                    timeout_after=60)
+    x = minimal(datetimes(dt.datetime.min.replace(year=2003),
+                          dt.datetime.max.replace(year=2005)),
+                lambda x: x.month == 2 and x.day == 29,
+                timeout_after=60)
     assert x.year == 2004
 
 
