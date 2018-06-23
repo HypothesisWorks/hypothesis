@@ -61,9 +61,11 @@ def test_does_not_log_in_quiet_mode():
 
 def test_includes_progress_in_verbose_mode():
     with capture_verbosity() as o:
-        @settings(verbosity=Verbosity.quiet, database=None)
         def foo():
-            return find(lists(integers()), lambda x: sum(x) >= 1000000)
+            find(
+                lists(integers()),
+                lambda x: sum(x) >= 1000000,
+                settings=settings(verbosity=Verbosity.verbose, database=None))
 
         foo()
 
@@ -76,7 +78,6 @@ def test_includes_progress_in_verbose_mode():
 def test_prints_initial_attempts_on_find():
 
     with capture_verbosity() as o:
-        @settings(verbosity=Verbosity.verbose)
         def foo():
             seen = []
 
@@ -85,7 +86,9 @@ def test_prints_initial_attempts_on_find():
                     seen.append(x)
                     return False
                 return x not in seen
-            find(integers(), not_first)
+            find(
+                integers(), not_first,
+                settings=settings(verbosity=Verbosity.verbose))
 
         foo()
 
@@ -93,8 +96,9 @@ def test_prints_initial_attempts_on_find():
 
 
 def test_includes_intermediate_results_in_verbose_mode():
-    with capture_verbosity(Verbosity.verbose) as o:
+    with capture_verbosity() as o:
         @fails
+        @settings(verbosity=Verbosity.verbose)
         @given(lists(integers()))
         def test_foo(x):
             assert sum(x) < 1000000
