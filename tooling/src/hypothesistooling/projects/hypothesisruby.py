@@ -92,12 +92,11 @@ def build_distribution():
         'but it was instead %s'
     ) % (LOCAL_PATH_DEPENDENCY, current_dependency)
 
-    conjecture_version = \
-        rm.extract_assignment(CONJECTURE_CARGO_FILE, 'version')
+    conjecture_version = cr.current_version()
 
     # Update to use latest version of conjecture-rust.
     try:
-        update_conjecture_dependency(conjecture_version)
+        update_conjecture_dependency(repr(conjecture_version))
         rake_task('gem')
     finally:
         update_conjecture_dependency(LOCAL_PATH_DEPENDENCY)
