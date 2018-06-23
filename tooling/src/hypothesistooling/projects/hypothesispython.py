@@ -25,7 +25,6 @@ import subprocess
 
 import hypothesistooling as tools
 import hypothesistooling.releasemanagement as rm
-from hypothesistooling import git
 from hypothesistooling.releasemanagement import bump_version_info, \
     replace_assignment, release_date_string
 
@@ -122,16 +121,6 @@ def update_changelog_and_version():
 
     with open(CHANGELOG_FILE, 'w') as o:
         o.write('\n'.join(new_changelog_parts))
-
-
-def commit_pending_release():
-    git('rm', RELEASE_FILE)
-    git('add', CHANGELOG_FILE, VERSION_FILE)
-
-    git(
-        'commit', '-m',
-        'Bump version to %s and update changelog\n\n[skip ci]' % (__version__,)
-    )
 
 
 CHANGELOG_FILE = os.path.join(HYPOTHESIS_PYTHON, 'docs', 'changes.rst')

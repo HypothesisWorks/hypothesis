@@ -29,6 +29,8 @@ from __future__ import division, print_function, absolute_import
 import re
 from datetime import datetime, timedelta
 
+import hypothesistooling as tools
+
 
 def release_date_string():
     """Returns a date string that represents what should be considered "today"
@@ -46,14 +48,42 @@ def release_date_string():
     ])
 
 
+def assignment_matcher(name):
+    """
+    Matches a single line of the form (some space)name = (some value). e.g.
+    "  foo = 1".
+    The whole line up to the assigned value is the first matching group,
+    the rest of the line is the second matching group.
+    i.e. group 1 is the assignment, group 2 is the value. In the above
+    example group 1 would be "  foo = " and group 2 would be "1"
+    """
+    return re.compile(r'\A(\s*%s\s*=\s*)(.+)\Z' % (re.escape(name),))
+
+
+def extract_assignment_from_string(contents, name):
+    lines = contents.split('\n')
+
+    matcher = assignment_matcher(name)
+
+    for i, l in enumerate(lines):
+        match = matcher.match(l)
+        if match is not None:
+            return match[2].strip()
+
+    raise ValueError('Key %s not found in %s' % (
+        name, contents
+    ))
+
+
+def extract_assignment(filename, name):
+    with open(filename) as i:
+        return extract_assignment_from_string(i.read(), name)
+
+
 def replace_assignment_in_string(contents, name, value):
     lines = contents.split('\n')
 
-    # Matches a line of the form (some space)name = (some value). e.g.
-    # "  foo = 1". Matches everything up to the last space before the value,
-    # so in that example the matching group 1 would be "  foo = ". This allows
-    # us to replace values while preserving formatting.
-    matcher = re.compile(r'\A(\s*%s\s*=\s*)' % (re.escape(name),))
+    matcher = assignment_matcher(name)
 
     count = 0
 
@@ -156,3 +186,14 @@ def update_markdown_changelog(changelog, name, version, entry):
 
 def parse_version(version):
     return tuple(map(int, version.split('.')))
+
+
+def commit_pending_release(project):
+    """Create a commit with the new release."""
+    tools.git('add', '-u', project.BASE_DIR)
+
+    tools.git(
+        'commit', '-m',
+        'Bump %s version to %s and update changelog'
+        '\n\n[skip ci]' % (project.PACKAGE_NAME, project.current_version(),)
+    )

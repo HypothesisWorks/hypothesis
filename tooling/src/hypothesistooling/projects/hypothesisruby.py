@@ -24,7 +24,7 @@ from glob import glob
 import hypothesistooling as tools
 import hypothesistooling.installers as install
 import hypothesistooling.releasemanagement as rm
-from hypothesistooling import git
+import hypothesistooling.projects.conjecturerust as cr
 from hypothesistooling.junkdrawer import once, in_dir, unlink_if_present
 
 PACKAGE_NAME = 'hypothesis-ruby'
@@ -38,6 +38,8 @@ TAG_PREFIX = PACKAGE_NAME + '-'
 RELEASE_FILE = os.path.join(BASE_DIR, 'RELEASE.md')
 CHANGELOG_FILE = os.path.join(BASE_DIR, 'CHANGELOG.md')
 GEMSPEC_FILE = os.path.join(BASE_DIR, 'hypothesis-specs.gemspec')
+CARGO_FILE = os.path.join(BASE_DIR, 'Cargo.toml')
+CONJECTURE_CARGO_FILE = cr.CARGO_FILE
 
 RUST_SRC = os.path.join(BASE_DIR, 'src')
 RUBY_SRC = os.path.join(BASE_DIR, 'lib')
@@ -61,6 +63,7 @@ def update_changelog_and_version():
     version, version_info = rm.bump_version_info(version_info, release_type)
 
     rm.replace_assignment(GEMSPEC_FILE, 's.version', repr(version))
+
     rm.update_markdown_changelog(
         CHANGELOG_FILE,
         name='Hypothesis for Ruby',
@@ -70,21 +73,33 @@ def update_changelog_and_version():
     os.unlink(RELEASE_FILE)
 
 
-def commit_pending_release():
-    """Create a commit with the new release."""
-    git('rm', RELEASE_FILE)
-    git('add', CHANGELOG_FILE, GEMSPEC_FILE)
+LOCAL_PATH_DEPENDENCY = "{ path = '../conjecture-rust' }"
 
-    git(
-        'commit', '-m',
-        'Bump hypothesis-ruby version to %s and update changelog'
-        '\n\n[skip ci]' % (current_version(),)
+
+def update_conjecture_dependency(dependency):
+    rm.replace_assignment(
+        CARGO_FILE, 'conjecture',
+        dependency
     )
 
 
 def build_distribution():
     """Build the rubygem."""
-    rake_task('gem')
+    current_dependency = rm.extract_assignment(CARGO_FILE, 'conjecture')
+
+    assert current_dependency == LOCAL_PATH_DEPENDENCY, (
+        'Cargo file in a bad state. Expected conjecture dependency to be %s '
+        'but it was instead %s'
+    ) % (LOCAL_PATH_DEPENDENCY, current_dependency)
+
+    conjecture_version = cr.current_version()
+
+    # Update to use latest version of conjecture-rust.
+    try:
+        update_conjecture_dependency(repr(conjecture_version))
+        rake_task('gem')
+    finally:
+        update_conjecture_dependency(LOCAL_PATH_DEPENDENCY)
 
 
 def tag_name():
@@ -94,7 +109,7 @@ def tag_name():
 
 def has_source_changes():
     """Returns True if any source files have changed."""
-    return tools.has_changes([RUST_SRC, RUBY_SRC])
+    return tools.has_changes([RUST_SRC, RUBY_SRC]) or cr.has_release()
 
 
 def current_version():

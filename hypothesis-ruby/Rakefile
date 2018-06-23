@@ -90,7 +90,7 @@ end
 task :clean do
   sh 'git clean -fdx lib'
   sh 'rm -rf hypothesis-specs*.gem'
-  sh 'rm -rf target'
+  sh 'rm -rf ../target'
 end
 
 task gem: :clean do
