@@ -46,15 +46,27 @@ def release_date_string():
     ])
 
 
+def assignment_matcher(name):
+    """
+    Matches a single line of the form (some space)name = (some value). e.g.
+    "  foo = 1".
+    The whole line up to the assigned value is the first matching group,
+    the rest of the line is the second matching group.
+    i.e. group 1 is the assignment, group 2 is the value. In the above
+    example grorup 1 would bd "  foo = " and group 2 would be "1"
+    """
+    return re.compile(r'\A(\s*%s\s*=\s*)(.+)\Z' % (re.escape(name),))
+
+
 def extract_assignment_from_string(contents, name):
     lines = contents.split('\n')
 
-    matcher = re.compile(r'\A\s*%s\s*=\s*(.+)\Z' % (name,))
+    matcher = assignment_matcher(name)
 
     for i, l in enumerate(lines):
         match = matcher.match(l)
         if match is not None:
-            return match[1].strip()
+            return match[2].strip()
 
     raise ValueError('Key %s not found in %s' % (
         name, contents
@@ -69,11 +81,7 @@ def extract_assignment(filename, name):
 def replace_assignment_in_string(contents, name, value):
     lines = contents.split('\n')
 
-    # Matches a line of the form (some space)name = (some value). e.g.
-    # "  foo = 1". Matches everything up to the last space before the value,
-    # so in that example the matching group 1 would be "  foo = ". This allows
-    # us to replace values while preserving formatting.
-    matcher = re.compile(r'\A(\s*%s\s*=\s*)' % (re.escape(name),))
+    matcher = assignment_matcher(name)
 
     count = 0
 
