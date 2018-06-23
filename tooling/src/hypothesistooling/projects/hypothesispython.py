@@ -24,6 +24,7 @@ import shutil
 import subprocess
 
 import hypothesistooling as tools
+import hypothesistooling.releasemanagement as rm
 from hypothesistooling import git
 from hypothesistooling.releasemanagement import bump_version_info, \
     parse_release_file, replace_assignment, release_date_string
@@ -58,6 +59,10 @@ assert __version_info__ is not None
 
 def has_release():
     return os.path.exists(RELEASE_FILE)
+
+
+def parse_release_file():
+    return rm.parse_release_file(RELEASE_FILE)
 
 
 def has_source_changes():
