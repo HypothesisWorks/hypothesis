@@ -3381,7 +3381,7 @@ Bug fixes:
   instead of its contexts. This is obviously silly. It now works with any sequence
   of things convertible to unicode strings.
 * @given will now work on methods whose definitions contains no explicit positional
-  arguments, only varargs (`bug #118 <https://github.com/HypothesisWorks/hypothesis-python/issues/118>`_).
+  arguments, only varargs (:issue:`118`).
   This may have some knock on effects because it means that @given no longer changes the
   argspec of functions other than by adding defaults.
 * Introduction of new @composite feature for more natural definition of strategies you'd
@@ -4019,7 +4019,7 @@ The one tiny bugfix:
 
 Codename: Hygienic macros or bust
 
-* You can now name an argument to @given 'f' and it won't break (issue #38)
+* You can now name an argument to @given 'f' and it won't break (:issue:`38`)
 * strategy_test_suite is now named strategy_test_suite as the documentation claims and not in fact strategy_test_suitee
 * Settings objects can now be used as a context manager to temporarily override the default values inside their context.
 

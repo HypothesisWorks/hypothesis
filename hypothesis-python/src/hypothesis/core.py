@@ -894,6 +894,25 @@ def fake_subTest(self, msg=None, **__):
     yield
 
 
+@attr.s()
+class HypothesisHandle(object):
+    """This object is provided as the .hypothesis attribute on @given tests.
+
+    Downstream users can reassign its attributes to insert custom logic into
+    the execution of each case, for example by converting an async into a
+    sync function.
+
+    This must be an attribute of an attribute, because reassignment of a
+    first-level attribute would not be visible to Hypothesis if the function
+    had been decorated before the assignment.
+
+    See https://github.com/HypothesisWorks/hypothesis/issues/1257 for more
+    information.
+    """
+
+    inner_test = attr.ib()
+
+
 def given(
     *given_arguments,  # type: Union[SearchStrategy, InferType]
     **given_kwargs  # type: Union[SearchStrategy, InferType]
@@ -938,6 +957,8 @@ def given(
         def wrapped_test(*arguments, **kwargs):
             # Tell pytest to omit the body of this function from tracebacks
             __tracebackhide__ = True
+
+            test = wrapped_test.hypothesis.inner_test
 
             if getattr(test, 'is_hypothesis_test', False):
                 note_deprecation(
@@ -1080,6 +1101,7 @@ def given(
         wrapped_test._hypothesis_internal_use_reproduce_failure = getattr(
             test, '_hypothesis_internal_use_reproduce_failure', None
         )
+        wrapped_test.hypothesis = HypothesisHandle(test)
         return wrapped_test
     return run_test_with_generator
 
