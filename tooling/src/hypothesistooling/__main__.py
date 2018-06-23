@@ -42,14 +42,14 @@ def task(if_changed=()):
         if_changed = (if_changed,)
 
     def accept(fn):
-        def wrapped():
+        def wrapped(*args):
             if if_changed and tools.IS_PULL_REQUEST:
                 if not tools.has_changes(if_changed + BUILD_FILES):
                     print('Skipping task due to no changes in %s' % (
                         ', '.join(if_changed),
                     ))
                     return
-            fn()
+            fn(*args)
         wrapped.__name__ = fn.__name__
 
         name = fn.__name__.replace('_', '-')
@@ -463,6 +463,16 @@ def check_ruby_tests():
     hr.rake_task('test')
 
 
+@task()
+def python(*args):
+    os.execv(sys.executable, (sys.executable,) + args)
+
+
+@task()
+def bundle(*args):
+    hr.bundle(*args)
+
+
 if __name__ == '__main__':
     if 'SNAKEPIT' not in os.environ:
         print(
@@ -473,8 +483,10 @@ if __name__ == '__main__':
 
     if len(sys.argv) > 1:
         task_to_run = sys.argv[1]
+        args = sys.argv[2:]
     else:
         task_to_run = os.environ.get('TASK')
+        args = ()
 
     if task_to_run is None:
         print(
@@ -482,10 +494,7 @@ if __name__ == '__main__':
             'argument or as an environment variable TASK.')
         sys.exit(1)
 
-    if task_to_run == 'python':
-        os.execv(sys.executable, [sys.executable] + sys.argv[2:])
-    else:
-        try:
-            TASKS[task_to_run]()
-        except subprocess.CalledProcessError as e:
-            sys.exit(e.returncode)
+    try:
+        TASKS[task_to_run](*args)
+    except subprocess.CalledProcessError as e:
+        sys.exit(e.returncode)
