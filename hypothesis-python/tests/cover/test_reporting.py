@@ -61,24 +61,36 @@ def test_prints_output_by_default():
     assert u'Falsifying example' in o.getvalue()
 
 
-@settings(verbosity=Verbosity.verbose)
 def test_does_not_print_debug_in_verbose():
+    @given(integers())
+    @settings(verbosity=Verbosity.verbose)
+    def f(x):
+        debug_report('Hi')
+
     with capture_out() as o:
-        debug_report(u'Hi')
-    assert not o.getvalue()
+        f()
+    assert u'Hi' not in o.getvalue()
 
 
-@settings(verbosity=Verbosity.debug)
 def test_does_print_debug_in_debug():
+    @given(integers())
+    @settings(verbosity=Verbosity.debug)
+    def f(x):
+        debug_report('Hi')
+
     with capture_out() as o:
-        debug_report(u'Hi')
+        f()
     assert u'Hi' in o.getvalue()
 
 
-@settings(verbosity=Verbosity.debug)
 def test_does_print_verbose_in_debug():
+    @given(integers())
+    @settings(verbosity=Verbosity.debug)
+    def f(x):
+        verbose_report('Hi')
+
     with capture_out() as o:
-        verbose_report(u'Hi')
+        f()
     assert u'Hi' in o.getvalue()
 
 
