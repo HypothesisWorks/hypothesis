@@ -4,6 +4,3 @@ members = [
   "conjecture-rust",
   "hypothesis-ruby",
 ]
-
-[patch.crates-io]
-conjecture = { path = "./conjecture-rust" }
