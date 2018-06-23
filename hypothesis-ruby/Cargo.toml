@@ -9,4 +9,4 @@ crate-type = ["cdylib"]
 [dependencies]
 helix = '0.7.5'
 rand = '0.3'
-conjecture = '0.1.0'
+conjecture = { path = '../conjecture-rust' }

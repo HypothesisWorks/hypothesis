@@ -39,7 +39,7 @@ RELEASE_FILE = os.path.join(BASE_DIR, 'RELEASE.md')
 CHANGELOG_FILE = os.path.join(BASE_DIR, 'CHANGELOG.md')
 GEMSPEC_FILE = os.path.join(BASE_DIR, 'hypothesis-specs.gemspec')
 CARGO_FILE = os.path.join(BASE_DIR, 'Cargo.toml')
-
+CONJECTURE_CARGO_FILE = cr.CARGO_FILE
 
 RUST_SRC = os.path.join(BASE_DIR, 'src')
 RUBY_SRC = os.path.join(BASE_DIR, 'lib')
@@ -64,12 +64,6 @@ def update_changelog_and_version():
 
     rm.replace_assignment(GEMSPEC_FILE, 's.version', repr(version))
 
-    # Update to use latest version of conjecture-rust.
-    rm.replace_assignment(
-        CARGO_FILE, 'conjecture',
-        rm.extract_assignment(cr.CARGO_FILE, 'version')
-    )
-
     rm.update_markdown_changelog(
         CHANGELOG_FILE,
         name='Hypothesis for Ruby',
@@ -79,9 +73,36 @@ def update_changelog_and_version():
     os.unlink(RELEASE_FILE)
 
 
+LOCAL_PATH_DEPENDENCY = "{ path = '../conjecture-rust' }"
+
+
+def update_conjecture_dependency(dependency):
+    rm.replace_assignment(
+        CARGO_FILE, 'conjecture',
+        dependency
+    )
+
+
 def build_distribution():
     """Build the rubygem."""
-    rake_task('gem')
+
+    current_dependency = rm.extract_assignment(
+        CONJECTURE_CARGO_FILE, 'conjecture')
+
+    assert current_dependency == LOCAL_PATH_DEPENDENCY, (
+        'Cargo file in a bad state. Expected conjecture dependency to be %s '
+        'but it was instead %s'
+    ) % (LOCAL_PATH_DEPENDENCY, current_dependency)
+
+    conjecture_version = \
+        rm.extract_assignment(CONJECTURE_CARGO_FILE, 'version')
+
+    # Update to use latest version of conjecture-rust.
+    try:
+        update_conjecture_dependency(conjecture_version)
+        rake_task('gem')
+    finally:
+        update_conjecture_dependency(LOCAL_PATH_DEPENDENCY)
 
 
 def tag_name():
