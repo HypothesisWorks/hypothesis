@@ -24,9 +24,7 @@ begin
 rescue LoadError
 end
 
-build_task = HelixRuntime::BuildTask.new
-
-build_task.build_root = `git rev-parse --show-toplevel`.strip
+HelixRuntime::BuildTask.new
 
 def rubocop(fix:)
   sh "bundle exec rubocop #{'-a' if fix} lib spec minitests " \
