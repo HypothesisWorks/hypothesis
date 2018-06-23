@@ -48,9 +48,13 @@ def has_release():
     return os.path.exists(RELEASE_FILE)
 
 
+def parse_release_file():
+    return rm.parse_release_file(RELEASE_FILE)
+
+
 def update_changelog_and_version():
     """Update the changelog and version based on the current release file."""
-    release_type, release_contents = rm.parse_release_file(RELEASE_FILE)
+    release_type, release_contents = parse_release_file()
     version = current_version()
     version_info = rm.parse_version(version)
 

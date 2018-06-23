@@ -24,9 +24,10 @@ import shutil
 import subprocess
 
 import hypothesistooling as tools
+import hypothesistooling.releasemanagement as rm
 from hypothesistooling import git
 from hypothesistooling.releasemanagement import bump_version_info, \
-    parse_release_file, replace_assignment, release_date_string
+    replace_assignment, release_date_string
 
 PACKAGE_NAME = 'hypothesis-python'
 
@@ -60,6 +61,10 @@ def has_release():
     return os.path.exists(RELEASE_FILE)
 
 
+def parse_release_file():
+    return rm.parse_release_file(RELEASE_FILE)
+
+
 def has_source_changes():
     return tools.has_changes([PYTHON_SRC])
 
@@ -86,7 +91,7 @@ def update_changelog_and_version():
             assert '\n'.join((beginning, rest)) == contents
             break
 
-    release_type, release_contents = parse_release_file(RELEASE_FILE)
+    release_type, release_contents = parse_release_file()
 
     new_version_string, new_version_info = bump_version_info(
         __version_info__, release_type)
