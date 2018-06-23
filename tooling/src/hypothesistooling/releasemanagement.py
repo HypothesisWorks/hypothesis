@@ -29,6 +29,8 @@ from __future__ import division, print_function, absolute_import
 import re
 from datetime import datetime, timedelta
 
+import hypothesistooling as tools
+
 
 def release_date_string():
     """Returns a date string that represents what should be considered "today"
@@ -184,3 +186,14 @@ def update_markdown_changelog(changelog, name, version, entry):
 
 def parse_version(version):
     return tuple(map(int, version.split('.')))
+
+
+def commit_pending_release(project):
+    """Create a commit with the new release."""
+    tools.git('add', '-u', project.BASE_DIR)
+
+    tools.git(
+        'commit', '-m',
+        'Bump %s version to %s and update changelog'
+        '\n\n[skip ci]' % (project.PACKAGE_NAME, project.current_version(),)
+    )

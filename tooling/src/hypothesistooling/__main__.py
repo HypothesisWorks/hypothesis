@@ -25,6 +25,7 @@ from datetime import datetime
 
 import hypothesistooling as tools
 import hypothesistooling.installers as install
+import hypothesistooling.releasemanagement as rm
 import hypothesistooling.projects.hypothesisruby as hr
 import hypothesistooling.projects.hypothesispython as hp
 from hypothesistooling import fix_doctests as fd
@@ -92,7 +93,7 @@ def do_release(package):
     package.update_changelog_and_version()
 
     print('Committing changes')
-    package.commit_pending_release()
+    rm.commit_pending_release(package)
 
     print('Building distribution')
     package.build_distribution()

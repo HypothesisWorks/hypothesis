@@ -23,7 +23,6 @@ import subprocess
 import hypothesistooling as tools
 import hypothesistooling.installers as install
 import hypothesistooling.releasemanagement as rm
-from hypothesistooling import git
 from hypothesistooling.junkdrawer import in_dir, unlink_if_present
 
 PACKAGE_NAME = 'conjecture-rust'
@@ -64,18 +63,6 @@ def update_changelog_and_version():
         entry=release_contents,
     )
     os.unlink(RELEASE_FILE)
-
-
-def commit_pending_release():
-    """Create a commit with the new release."""
-    git('rm', RELEASE_FILE)
-    git('add', CHANGELOG_FILE, CARGO_FILE)
-
-    git(
-        'commit', '-m',
-        'Bump conjecture-rust version to %s and update changelog'
-        '\n\n[skip ci]' % (current_version(),)
-    )
 
 
 def cargo(*args):

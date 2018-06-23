@@ -25,7 +25,6 @@ import hypothesistooling as tools
 import hypothesistooling.installers as install
 import hypothesistooling.releasemanagement as rm
 import hypothesistooling.projects.conjecturerust as cr
-from hypothesistooling import git
 from hypothesistooling.junkdrawer import once, in_dir, unlink_if_present
 
 PACKAGE_NAME = 'hypothesis-ruby'
@@ -78,18 +77,6 @@ def update_changelog_and_version():
         entry=release_contents,
     )
     os.unlink(RELEASE_FILE)
-
-
-def commit_pending_release():
-    """Create a commit with the new release."""
-    git('rm', RELEASE_FILE)
-    git('add', CHANGELOG_FILE, GEMSPEC_FILE)
-
-    git(
-        'commit', '-m',
-        'Bump hypothesis-ruby version to %s and update changelog'
-        '\n\n[skip ci]' % (current_version(),)
-    )
 
 
 def build_distribution():

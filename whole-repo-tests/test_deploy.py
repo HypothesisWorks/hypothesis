@@ -35,7 +35,7 @@ def test_release_file_exists_and_is_valid(project, monkeypatch):
     monkeypatch.setattr(tools, 'create_tag', lambda *args, **kwargs: None)
     monkeypatch.setattr(tools, 'push_tag', lambda name: None)
     monkeypatch.setattr(project, 'upload_distribution', lambda: None)
-    monkeypatch.setattr(project, 'commit_pending_release', lambda: None)
+    monkeypatch.setattr(rm, 'commit_pending_release', lambda p: None)
 
     try:
         main.do_release(project)
