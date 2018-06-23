@@ -196,10 +196,11 @@ DEPLOY_KEY = os.path.join(SECRETS, 'deploy_key')
 PYPIRC = os.path.join(SECRETS, '.pypirc')
 
 RUBYGEMS_API_KEY = os.path.join(SECRETS, 'api_key.yaml')
+CARGO_API_KEY = os.path.join(SECRETS, 'cargo-credentials')
 
 
 SECRET_FILES = [
-    DEPLOY_KEY, PYPIRC, RUBYGEMS_API_KEY
+    DEPLOY_KEY, PYPIRC, RUBYGEMS_API_KEY, CARGO_API_KEY
 ]
 
 
