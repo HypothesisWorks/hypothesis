@@ -419,6 +419,7 @@ def test_new_rules_are_picked_up_before_and_after_rules_call():
     assert len(Foo.rules()) == 2
 
 
+@checks_deprecated_behaviour
 def test_settings_are_independent():
     s = Settings()
     orig = s.max_examples
