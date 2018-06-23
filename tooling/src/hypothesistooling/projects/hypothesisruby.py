@@ -85,7 +85,6 @@ def update_conjecture_dependency(dependency):
 
 def build_distribution():
     """Build the rubygem."""
-
     current_dependency = rm.extract_assignment(CARGO_FILE, 'conjecture')
 
     assert current_dependency == LOCAL_PATH_DEPENDENCY, (
