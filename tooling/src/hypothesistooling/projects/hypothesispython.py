@@ -27,7 +27,7 @@ import hypothesistooling as tools
 import hypothesistooling.releasemanagement as rm
 from hypothesistooling import git
 from hypothesistooling.releasemanagement import bump_version_info, \
-    parse_release_file, replace_assignment, release_date_string
+    replace_assignment, release_date_string
 
 PACKAGE_NAME = 'hypothesis-python'
 
@@ -91,7 +91,7 @@ def update_changelog_and_version():
             assert '\n'.join((beginning, rest)) == contents
             break
 
-    release_type, release_contents = parse_release_file(RELEASE_FILE)
+    release_type, release_contents = parse_release_file()
 
     new_version_string, new_version_info = bump_version_info(
         __version_info__, release_type)
