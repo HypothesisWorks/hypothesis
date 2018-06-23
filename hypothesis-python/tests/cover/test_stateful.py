@@ -390,12 +390,16 @@ def test_can_choose_in_a_machine():
     run_state_machine_as_test(ChoosingMachine)
 
 
-with Settings(max_examples=10):
-    TestGoodSets = GoodSet.TestCase
-    TestGivenLike = GivenLikeStateMachine.TestCase
-    TestDynamicMachine = DynamicMachine.TestCase
-    TestIntAdder = IntAdder.TestCase
-    TestPrecondition = PreconditionMachine.TestCase
+TestGoodSets = GoodSet.TestCase
+TestGivenLike = GivenLikeStateMachine.TestCase
+TestDynamicMachine = DynamicMachine.TestCase
+TestIntAdder = IntAdder.TestCase
+TestPrecondition = PreconditionMachine.TestCase
+
+
+for test_case in (TestGoodSets, TestGivenLike, TestDynamicMachine,
+                  TestIntAdder, TestPrecondition):
+    test_case.settings = Settings(max_examples=10)
 
 
 def test_picks_up_settings_at_first_use_of_testcase():
