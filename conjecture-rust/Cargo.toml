@@ -1,6 +1,6 @@
 [package]
 name = "conjecture"
-version = "0.1.0"
+version = '0.1.1'
 authors = ["David R. MacIver <david@drmaciver.com>"]
 
 homepage = "https://github.com/HypothesisWorks/hypothesis/tree/master/conjecture-rust"
