@@ -190,6 +190,7 @@ def parse_version(version):
 
 def commit_pending_release(project):
     """Create a commit with the new release."""
+    tools.git('rm', project.RELEASE_FILE)
     tools.git('add', '-u', project.BASE_DIR)
 
     tools.git(
