@@ -34,7 +34,7 @@ def from_attrs(target, args, kwargs, to_infer):
     fields = attr.fields(target)
     kwargs = {k: v for k, v in kwargs.items() if v is not infer}
     for name in to_infer:
-        kwargs[name] = from_attrs_attribute(getattr(fields, name))
+        kwargs[name] = from_attrs_attribute(getattr(fields, name), target)
     # We might make this strategy more efficient if we added a layer here that
     # retries drawing if validation fails, for improved composition.
     # The treatment of timezones in datetimes() provides a precedent.
@@ -43,7 +43,7 @@ def from_attrs(target, args, kwargs, to_infer):
     )
 
 
-def from_attrs_attribute(attrib):
+def from_attrs_attribute(attrib, target):
     """Infer a strategy from the metadata on an attr.Attribute object."""
     # Try inferring from the default argument.  Note that this will only help
     # the user passed `infer` to builds() for this attribute, but in that case
@@ -93,8 +93,8 @@ def from_attrs_attribute(attrib):
     # when we try to get a value but have lost track of where this was created.
     if strat.is_empty:
         raise ResolutionFailed(
-            'Cannot infer a strategy from the default, vaildator, type, or '
-            'converter for %r' % (attrib,))
+            'Cannot infer a strategy from the default, validator, type, or '
+            'converter for attribute=%r of class=%r' % (attrib, target))
     return strat
 
 
