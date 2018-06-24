@@ -45,7 +45,6 @@ def test_release_file_exists_and_is_valid(project, monkeypatch):
             changelog = i.read()
         assert project.current_version() in changelog
         assert rm.release_date_string() in changelog
-        assert not os.path.exists(project.RELEASE_FILE)
 
     finally:
         tools.git('checkout', project.BASE_DIR)

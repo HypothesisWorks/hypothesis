@@ -31,15 +31,18 @@ OrderedPairs = integers(1, 200).flatmap(
     lambda e: tuples(integers(0, e - 1), just(e))
 )
 
-with settings(max_examples=100):
-    @given(ConstantLists)
-    def test_constant_lists_are_constant(x):
-        assume(len(x) >= 3)
-        assert len(set(x)) == 1
 
-    @given(OrderedPairs)
-    def test_in_order(x):
-        assert x[0] < x[1]
+@settings(max_examples=100)
+@given(ConstantLists)
+def test_constant_lists_are_constant(x):
+    assume(len(x) >= 3)
+    assert len(set(x)) == 1
+
+
+@settings(max_examples=100)
+@given(OrderedPairs)
+def test_in_order(x):
+    assert x[0] < x[1]
 
 
 def test_flatmap_retrieve_from_db():

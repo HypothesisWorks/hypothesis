@@ -49,7 +49,7 @@ from hypothesis.version import __version__
 from hypothesis._settings import Phase, Verbosity, HealthCheck, \
     PrintSettings
 from hypothesis._settings import settings as Settings
-from hypothesis._settings import note_deprecation
+from hypothesis._settings import local_settings, note_deprecation
 from hypothesis.executors import new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
@@ -553,7 +553,7 @@ class StateForActualGivenExecution(object):
         def run(data):
             if not hasattr(data, 'can_reproduce_example_from_repr'):
                 data.can_reproduce_example_from_repr = True
-            with self.settings:
+            with local_settings(self.settings):
                 with BuildContext(data, is_final=is_final):
                     with deterministic_PRNG():
                         args, kwargs = data.draw(self.search_strategy)

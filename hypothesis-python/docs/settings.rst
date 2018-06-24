@@ -151,40 +151,7 @@ right, all newly created settings objects which are not explicitly based off
 another settings are based off the default, so will inherit any values that are
 not explicitly set from it.
 
-You can change the defaults by using profiles (see next section), but you can
-also override them locally by using a settings object as a :ref:`context manager <python:context-managers>`
-
-
-.. doctest::
-
-    >>> with settings(max_examples=150):
-    ...     print(settings.default.max_examples)
-    ...     print(settings().max_examples)
-    150
-    150
-    >>> settings().max_examples
-    100
-
-Note that after the block exits the default is returned to normal.
-
-You can use this by nesting test definitions inside the context:
-
-.. code:: python
-
-    from hypothesis import given, settings
-
-    with settings(max_examples=500):
-        @given(integers())
-        def test_this_thoroughly(x):
-            pass
-
-All settings objects created or tests defined inside the block will inherit their
-defaults from the settings object used as the context. You can still override them
-with custom defined settings of course.
-
-Warning: If you use define test functions which don't use :func:`@given <hypothesis.given>`
-inside a context block, these will not use the enclosing settings. This is because the context
-manager only affects the definition, not the execution of the function.
+You can change the defaults by using profiles.
 
 .. _settings_profiles:
 

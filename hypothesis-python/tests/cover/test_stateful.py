@@ -390,12 +390,16 @@ def test_can_choose_in_a_machine():
     run_state_machine_as_test(ChoosingMachine)
 
 
-with Settings(max_examples=10):
-    TestGoodSets = GoodSet.TestCase
-    TestGivenLike = GivenLikeStateMachine.TestCase
-    TestDynamicMachine = DynamicMachine.TestCase
-    TestIntAdder = IntAdder.TestCase
-    TestPrecondition = PreconditionMachine.TestCase
+TestGoodSets = GoodSet.TestCase
+TestGivenLike = GivenLikeStateMachine.TestCase
+TestDynamicMachine = DynamicMachine.TestCase
+TestIntAdder = IntAdder.TestCase
+TestPrecondition = PreconditionMachine.TestCase
+
+
+for test_case in (TestGoodSets, TestGivenLike, TestDynamicMachine,
+                  TestIntAdder, TestPrecondition):
+    test_case.settings = Settings(max_examples=10)
 
 
 def test_picks_up_settings_at_first_use_of_testcase():
@@ -415,6 +419,7 @@ def test_new_rules_are_picked_up_before_and_after_rules_call():
     assert len(Foo.rules()) == 2
 
 
+@checks_deprecated_behaviour
 def test_settings_are_independent():
     s = Settings()
     orig = s.max_examples

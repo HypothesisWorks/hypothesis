@@ -603,13 +603,19 @@ def test_note_events(event):
 
 @pytest.mark.parametrize('count', [1, 3])
 def test_debug_data(capsys, count):
-    with settings(verbosity=Verbosity.debug):
-        @run_to_buffer
-        def f(data):
-            for _ in hrange(count):
-                data.draw_bytes(1)
-            if sum(data.buffer) > 10:
-                data.mark_interesting()
+    def f(data):
+        for _ in hrange(count):
+            data.draw_bytes(1)
+        if sum(data.buffer) > 10:
+            data.mark_interesting()
+
+    runner = ConjectureRunner(f, settings=settings(
+        max_examples=5000, buffer_size=1024,
+        database=None, suppress_health_check=HealthCheck.all(),
+        verbosity=Verbosity.debug
+    ))
+    runner.run()
+
     out, _ = capsys.readouterr()
     assert re.match(u'\\d+ bytes \\[.*\\] -> ', out)
 
