@@ -42,6 +42,7 @@ jobs:
     - env: TASK=check-format
     - env: TASK=check-type-hints
     - env: TASK=check-requirements
+    - env: TASK=check-rust-tests
 
     - stage: main
       env: TASK=check-pypy

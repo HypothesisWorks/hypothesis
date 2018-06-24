@@ -28,6 +28,7 @@ import hypothesistooling.installers as install
 import hypothesistooling.releasemanagement as rm
 import hypothesistooling.projects.hypothesisruby as hr
 import hypothesistooling.projects.hypothesispython as hp
+import hypothesistooling.projects.conjecturerust as cr
 from hypothesistooling import fix_doctests as fd
 from hypothesistooling.scripts import pip_tool
 
@@ -471,6 +472,14 @@ def python(*args):
 @task()
 def bundle(*args):
     hr.bundle(*args)
+
+
+rust_task = task(if_changed=(cr.BASE_DIR,))
+
+
+@rust_task
+def check_rust_tests():
+    cr.cargo('test')
 
 
 if __name__ == '__main__':
