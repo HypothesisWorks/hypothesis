@@ -20,9 +20,8 @@ from __future__ import division, print_function, absolute_import
 import datetime as dt
 
 import pytest
-from flaky import flaky
 
-from hypothesis import given, settings, unlimited
+from hypothesis import given
 from tests.common.debug import minimal, find_any
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import none, dates, times, binary, datetimes, \
