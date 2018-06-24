@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.61.0:
+
+-------------------
+3.61.0 - 2018-06-24
+-------------------
+
+This release deprecates the use of :class:`~hypothesis.settings` as a
+context manager, the use of which is somewhat ambiguous.
+
+Users should define settings with global state or with the
+:func:`@settings(...) <hypothesis.settings>` decorator.
+
 .. _v3.60.1:
 
 -------------------
