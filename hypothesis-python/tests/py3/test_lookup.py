@@ -367,6 +367,18 @@ def test_required_args(target, args, kwargs):
               **{k: st.just(v) for k, v in kwargs.items()}).example()
 
 
+class AnnotatedNamedTuple(typing.NamedTuple):
+    a: str
+    i: int
+
+
+def test_required_args_for_namedtuple():
+    # NamedTuple doesn't have an __init__ method so we
+    # need to do something a bit different to introspect the
+    # constructor parameters.
+    st.builds(AnnotatedNamedTuple).example()
+
+
 @pytest.mark.parametrize('thing', [
     typing.Optional, typing.List, getattr(typing, 'Type', typing.Set)
 ])  # check Type if it's available, otherwise Set is redundant but harmless

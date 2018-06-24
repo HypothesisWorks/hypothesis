@@ -98,8 +98,11 @@ def required_args(target, args=(), kwargs=()):
     builds() - that is, a tuple of values and a dict of names: values.
     """
     try:
-        spec = getfullargspec(
-            target.__init__ if inspect.isclass(target) else target)
+        if inspect.isclass(target) and '__init__' in target.__dict__:
+            # Checking dict because NamedTuples don't have an init
+            spec = getfullargspec(target.__init__)
+        else:
+            spec = getfullargspec(target)
     except TypeError:  # pragma: no cover
         return None
     # self appears in the argspec of __init__ and bound methods, but it's an
