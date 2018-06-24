@@ -186,6 +186,9 @@ def format():
 
     files_to_format = [f for f in sorted(files) if should_format_file(f)]
 
+    if not files_to_format:
+        return
+
     for f in files_to_format:
         print(f)
         lines = []
