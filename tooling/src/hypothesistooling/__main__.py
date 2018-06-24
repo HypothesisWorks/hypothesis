@@ -26,9 +26,9 @@ from datetime import datetime
 import hypothesistooling as tools
 import hypothesistooling.installers as install
 import hypothesistooling.releasemanagement as rm
+import hypothesistooling.projects.conjecturerust as cr
 import hypothesistooling.projects.hypothesisruby as hr
 import hypothesistooling.projects.hypothesispython as hp
-import hypothesistooling.projects.conjecturerust as cr
 from hypothesistooling import fix_doctests as fd
 from hypothesistooling.scripts import pip_tool
 
