@@ -131,10 +131,10 @@ def test_can_generate(pattern, encode):
 
 
 @pytest.mark.parametrize('pattern', [
-    re.compile(u'a', re.IGNORECASE),
-    u'(?i)a',
-    re.compile(u'[ab]', re.IGNORECASE),
-    u'(?i)[ab]',
+    re.compile(u'\\Aa\\Z', re.IGNORECASE),
+    u'(?i)\\Aa\\Z',
+    re.compile(u'\\A[ab]\\Z', re.IGNORECASE),
+    u'(?i)\\A[ab]\\Z',
 ])
 def test_literals_with_ignorecase(pattern):
     strategy = st.from_regex(pattern)
@@ -155,15 +155,19 @@ def test_not_literal_with_ignorecase(pattern):
 
 
 def test_any_doesnt_generate_newline():
-    assert_all_examples(st.from_regex(u'.'), lambda s: s != u'\n')
+    assert_all_examples(st.from_regex(u'\\A.\\Z'), lambda s: s != u'\n')
 
 
-@pytest.mark.parametrize('pattern', [re.compile(u'.', re.DOTALL), u'(?s).'])
+@pytest.mark.parametrize('pattern', [
+    re.compile(u'\\A.\\Z', re.DOTALL), u'(?s)\\A.\\Z'
+])
 def test_any_with_dotall_generate_newline(pattern):
     find_any(st.from_regex(pattern), lambda s: s == u'\n')
 
 
-@pytest.mark.parametrize('pattern', [re.compile(b'.', re.DOTALL), b'(?s).'])
+@pytest.mark.parametrize('pattern', [
+    re.compile(b'\\A.\\Z', re.DOTALL), b'(?s)\\A.\\Z'
+])
 def test_any_with_dotall_generate_newline_binary(pattern):
     find_any(st.from_regex(pattern), lambda s: s == b'\n')
 
@@ -214,7 +218,7 @@ def test_end_with_terminator_does_not_pad():
 
 
 def test_end():
-    strategy = st.from_regex(u'abc$')
+    strategy = st.from_regex(u'\\Aabc$')
 
     find_any(strategy, lambda s: s == u'abc')
     find_any(strategy, lambda s: s == u'abc\n')
@@ -303,7 +307,7 @@ def test_group_backref_may_not_be_present(s):
 @pytest.mark.skipif(sys.version_info[:2] < (3, 6),
                     reason='requires Python 3.6')
 def test_subpattern_flags():
-    strategy = st.from_regex(u'(?i)a(?-i:b)')
+    strategy = st.from_regex(u'(?i)\\Aa(?-i:b)\\Z')
 
     # "a" is case insensitive
     find_any(strategy, lambda s: s[0] == u'a')
