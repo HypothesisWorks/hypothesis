@@ -56,7 +56,7 @@ pyjwt==1.6.4              # via pygithub
 pyparsing==2.2.0          # via packaging
 pytest==3.6.2
 python-dateutil==2.7.3
-python-gitlab==1.4.0      # via pyupio
+python-gitlab==1.5.1      # via pyupio
 pytz==2018.4              # via babel, django
 pyupio==1.0.1
 pyyaml==3.12              # via dparse, pyupio
