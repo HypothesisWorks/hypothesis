@@ -80,7 +80,7 @@ if False:
     from random import Random  # noqa
     from typing import Any, Dict, Union, Sequence, Callable, Pattern  # noqa
     from typing import TypeVar, Tuple, List, Set, FrozenSet, overload  # noqa
-    from typing import Type, Mapping, Text, AnyStr, Optional  # noqa
+    from typing import Type, Text, AnyStr, Optional  # noqa
 
     from hypothesis.utils.conventions import InferType  # noqa
     from hypothesis.searchstrategy.strategies import T, Ex  # noqa
@@ -716,7 +716,7 @@ def iterables(elements=None, min_size=None, average_size=None, max_size=None,
 
 @defines_strategy
 def fixed_dictionaries(
-    mapping  # type: Mapping[T, SearchStrategy[Ex]]
+    mapping  # type: Dict[T, SearchStrategy[Ex]]
 ):
     # type: (...) -> SearchStrategy[Dict[T, Ex]]
     """Generates a dictionary of the same type as mapping with a fixed set of
@@ -741,12 +741,14 @@ def fixed_dictionaries(
 def dictionaries(
     keys,  # type: SearchStrategy[Ex]
     values,  # type: SearchStrategy[T]
-    dict_class=dict,  # type: Type[Mapping]
+    dict_class=dict,  # type: type
     min_size=None,  # type: int
     average_size=None,  # type: int
     max_size=None,  # type: int
 ):
-    # type: (...) -> SearchStrategy[Mapping[Ex, T]]
+    # type: (...) -> SearchStrategy[Dict[Ex, T]]
+    # Describing the exact dict_class to Mypy drops the key and value types,
+    # so we report Dict[K, V] instead of Mapping[Any, Any] for now.  Sorry!
     """Generates dictionaries of type dict_class with keys drawn from the keys
     argument and values drawn from the values argument.
 

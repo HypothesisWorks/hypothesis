@@ -54,12 +54,10 @@ def get_mypy_analysed_type(fname, val):
     ('integers().map(str)', 'str'),
     ('booleans().filter(bool)', 'bool'),
     ('lists(none())', 'list[None]'),
-    ('dictionaries(integers(), datetimes())',
-     'typing.Mapping[int, datetime.datetime]'),
+    ('dictionaries(integers(), datetimes())', 'dict[int, datetime.datetime]'),
     ('recursive(integers(), lists)', 'Union[list[Ex`-1], int]'),
-    # Note: this *should* give 'Union[int, str]' (or Text), but Mypy doesn't
-    # cope with finding the union of the parameter types.
-    # If or when this changes, fix the hints on `one_of` too!
+    # See https://github.com/python/mypy/issues/5269 - fix the hints on
+    # `one_of` and document the minimum Mypy version when the issue is fixed.
     ('one_of(integers(), text())', 'Any'),
 ])
 def test_revealed_types(tmpdir, val, expect):
