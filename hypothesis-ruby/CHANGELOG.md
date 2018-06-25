@@ -1,3 +1,8 @@
+# Hypothesis for Ruby 0.0.13 (2018-06-25)
+
+This release moves the core Rust engine into the separate Conjecture crate. It
+should have no user visible effect.
+
 # Hypothesis for Ruby 0.0.12 (2018-06-23)
 
 This release is the beginning of splitting out the Rust core of Hypothesis
