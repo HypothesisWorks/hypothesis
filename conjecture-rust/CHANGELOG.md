@@ -1,3 +1,8 @@
+# Conjecture for Rust 0.2.1 (2018-06-25)
+
+This release fixes an occasional assertion failure that could occur
+when shrinking a failing test.
+
 # Conjecture for Rust 0.2.0 (2018-06-25)
 
 This release brings over all of the core code and API that was previously in
