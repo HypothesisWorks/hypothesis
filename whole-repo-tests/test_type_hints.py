@@ -56,6 +56,7 @@ def get_mypy_analysed_type(fname, val):
     ('lists(none())', 'list[None]'),
     ('dictionaries(integers(), datetimes())',
      'typing.Mapping[int, datetime.datetime]'),
+    ('recursive(integers(), lists)', 'Union[list[Ex`-1], int]'),
     # Note: this *should* give 'Union[int, str]' (or Text), but Mypy doesn't
     # cope with finding the union of the parameter types.
     # If or when this changes, fix the hints on `one_of` too!

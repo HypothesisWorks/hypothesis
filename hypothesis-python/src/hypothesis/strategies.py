@@ -87,7 +87,6 @@ if False:
     K, V = TypeVar['K'], TypeVar['V']
     # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
     Real = Union[int, float, Fraction, Decimal]
-    ExtendFunc = Callable[[SearchStrategy[Union[T, Ex]]], SearchStrategy[T]]
 else:
     def overload(f):
         return f
@@ -1453,7 +1452,7 @@ def decimals(
 
 def recursive(
     base,  # type: SearchStrategy[Ex]
-    extend,  # type: ExtendFunc
+    extend,  # type: Callable[[SearchStrategy[Any]], SearchStrategy[T]]
     max_leaves=100,  # type: int
 ):
     # type: (...) -> SearchStrategy[Union[T, Ex]]
