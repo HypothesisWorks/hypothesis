@@ -1,3 +1,8 @@
+# Conjecture for Rust 0.2.0 (2018-06-25)
+
+This release brings over all of the core code and API that was previously in
+hypothesis-ruby.
+
 # Conjecture for Rust 0.1.1 (2018-06-23)
 
 This is an essentially no-op release that just updates the package homepage and
