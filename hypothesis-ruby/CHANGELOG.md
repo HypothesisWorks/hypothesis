@@ -1,3 +1,8 @@
+# Hypothesis for Ruby 0.0.15 (2018-06-25)
+
+This release fixes an occasional `RuntimeError` that could occur
+when shrinking a failing test.
+
 # Hypothesis for Ruby 0.0.14 (2018-06-25)
 
 This release updates the release date to the correct date, as part of fixing a
