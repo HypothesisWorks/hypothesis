@@ -16,11 +16,7 @@ begin
     t.verbose = true
   end
 
-  task :rust_tests do
-    sh 'cargo test'
-  end
-
-  task test: %i[build spec minitests rust_tests]
+  task test: %i[build spec minitests]
 rescue LoadError
 end
 

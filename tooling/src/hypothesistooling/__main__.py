@@ -26,6 +26,7 @@ from datetime import datetime
 import hypothesistooling as tools
 import hypothesistooling.installers as install
 import hypothesistooling.releasemanagement as rm
+import hypothesistooling.projects.conjecturerust as cr
 import hypothesistooling.projects.hypothesisruby as hr
 import hypothesistooling.projects.hypothesispython as hp
 from hypothesistooling import fix_doctests as fd
@@ -474,6 +475,14 @@ def python(*args):
 @task()
 def bundle(*args):
     hr.bundle(*args)
+
+
+rust_task = task(if_changed=(cr.BASE_DIR,))
+
+
+@rust_task
+def check_rust_tests():
+    cr.cargo('test')
 
 
 if __name__ == '__main__':

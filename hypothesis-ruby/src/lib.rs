@@ -11,17 +11,14 @@ extern crate core;
 #[macro_use]
 extern crate helix;
 extern crate rand;
-
-mod data;
-mod distributions;
-mod engine;
-mod intminimize;
+extern crate conjecture;
 
 use std::mem;
 
-use data::{DataSource, Status};
-use distributions::Repeat;
-use engine::Engine;
+use conjecture::data::{DataSource, Status};
+use conjecture::distributions::Repeat;
+use conjecture::distributions;
+use conjecture::engine::Engine;
 
 ruby! {
   class HypothesisCoreDataSource {
