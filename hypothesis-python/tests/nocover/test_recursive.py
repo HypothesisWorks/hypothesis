@@ -24,7 +24,6 @@ from flaky import flaky
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, find, given, example, settings
 from tests.common.debug import find_any
-from hypothesis.internal.compat import integer_types
 
 
 def test_can_generate_with_large_branching():
@@ -125,31 +124,3 @@ def test_can_form_sets_of_recursive_data():
         database=None, max_shrinks=1000, max_examples=1000
     ))
     assert len(xs) == 5
-
-
-@given(st.randoms())
-@settings(
-    max_examples=50, max_shrinks=0, suppress_health_check=HealthCheck.all(),
-    deadline=None
-)
-def test_can_flatmap_to_recursive_data(rnd):
-    stuff = st.lists(st.integers(), min_size=1).flatmap(
-        lambda elts: st.recursive(
-            st.sampled_from(elts), st.lists, max_leaves=25
-        ))
-
-    def flatten(x):
-        if isinstance(x, integer_types):
-            return [x]
-        else:
-            return sum(map(flatten, x), [])
-
-    tree = find(
-        stuff, lambda x: sum(flatten(x)) >= 100,
-        settings=settings(
-            database=None, max_shrinks=2000, max_examples=1000,
-        ),
-        random=rnd
-    )
-    flat = flatten(tree)
-    assert (sum(flat) == 1000) or (len(set(flat)) == 1)
