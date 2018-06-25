@@ -27,7 +27,7 @@ from hypothesis import strategies as st
 from tests.common.utils import no_shrink, non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
-from tests.cover.test_conjecture_engine import run_to_buffer, slow_shrinker
+from tests.cover.test_conjecture_engine import run_to_buffer
 from hypothesis.internal.conjecture.data import Status, ConjectureData
 from hypothesis.internal.conjecture.engine import RunIsComplete, \
     ConjectureRunner
