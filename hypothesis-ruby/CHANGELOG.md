@@ -1,3 +1,9 @@
+# Hypothesis for Ruby 0.0.14 (2018-06-25)
+
+This release updates the release date to the correct date, as part of fixing a
+bug which caused the last couple of releases (0.0.11, 0.0.12, and 0.0.13) to
+have an incorrect date.
+
 # Hypothesis for Ruby 0.0.13 (2018-06-25)
 
 This release moves the core Rust engine into the separate Conjecture crate. It

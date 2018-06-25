@@ -2,8 +2,8 @@
 
 Gem::Specification.new do |s|
   s.name        = 'hypothesis-specs'
-  s.version     = '0.0.13'
-  s.date        = '2018-04-26'
+  s.version     = '0.0.14'
+  s.date        = '2018-06-25'
   s.description = <<~DESCRIPTION
     Hypothesis is a powerful, flexible, and easy to use library for property-based testing.
 DESCRIPTION
