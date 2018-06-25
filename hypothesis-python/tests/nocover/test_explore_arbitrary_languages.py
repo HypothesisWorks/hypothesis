@@ -119,15 +119,12 @@ def test_explore_an_arbitrary_language(data):
 
 @pytest.mark.parametrize(
     'seed, language', [
-        (0, Write('\x01\x02', Write('\x01\x00', Branch(41, {
-            k: Terminal(Status.INTERESTING)
-            for k in [339838487202, 20255, 543, 512, 254]}))))
     ]
 )
 def test_run_specific_example(seed, language):
     """This test recreates individual languages generated with the main test.
 
-    in this file. These are typically manually pruned down a bit - e.g. it's
+    These are typically manually pruned down a bit - e.g. it's
     OK to remove VALID nodes because KeyError is treated as if it lead to one
     in this test (but not in the @given test).
 
