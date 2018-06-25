@@ -55,6 +55,7 @@ def get_mypy_analysed_type(fname, val):
     ('booleans().filter(bool)', 'bool'),
     ('lists(none())', 'list[None]'),
     ('dictionaries(integers(), datetimes())', 'dict[int, datetime.datetime]'),
+    # Ex`-1 stands for recursion in the whole type, i.e. Ex`0 == Union[...]
     ('recursive(integers(), lists)', 'Union[list[Ex`-1], int]'),
     # See https://github.com/python/mypy/issues/5269 - fix the hints on
     # `one_of` and document the minimum Mypy version when the issue is fixed.
