@@ -408,15 +408,20 @@ where
     fn minimize_duplicated_blocks(&mut self) -> StepResult {
         let mut i = 0;
         let mut targets = self.calc_duplicates();
+
         while i < targets.len() {
             let target = mem::replace(&mut targets[i], Vec::new());
+            let max_target = *target.iter().max().unwrap();
+
             i += 1;
             assert!(target.len() > 0);
             let v = self.shrink_target.record[target[0]];
-            let base = self.shrink_target.record.clone();
 
             let w = minimize_integer(v, |t| {
-                let mut attempt = base.clone();
+                if max_target >= self.shrink_target.record.len() {
+                  return Ok(false);
+                }
+                let mut attempt = self.shrink_target.record.clone();
                 for i in &target {
                     attempt[*i] = t
                 }
