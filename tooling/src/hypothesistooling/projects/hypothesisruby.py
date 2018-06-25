@@ -63,6 +63,9 @@ def update_changelog_and_version():
     version, version_info = rm.bump_version_info(version_info, release_type)
 
     rm.replace_assignment(GEMSPEC_FILE, 's.version', repr(version))
+    rm.replace_assignment(
+        GEMSPEC_FILE, 's.date', repr(rm.release_date_string())
+    )
 
     rm.update_markdown_changelog(
         CHANGELOG_FILE,
