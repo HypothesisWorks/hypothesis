@@ -34,7 +34,7 @@ def test_gets_right_dtype_for_empty_indices(ix):
     assert ix.dtype == np.dtype('int64')
 
 
-@given(pdst.indexes(elements=st.integers(0, 2**63-1), max_size=0))
+@given(pdst.indexes(elements=st.integers(0, 2**63 - 1), max_size=0))
 def test_gets_right_dtype_for_empty_indices_with_elements(ix):
     assert ix.dtype == np.dtype('int64')
 
