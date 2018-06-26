@@ -86,7 +86,7 @@ setuptools.setup(
     author_email='david@drmaciver.com',
     packages=setuptools.find_packages(SOURCE),
     package_dir={'': SOURCE},
-    package_data={'': ['py.typed']},
+    package_data={'hypothesis': ['py.typed']},
     url=(
         'https://github.com/HypothesisWorks/hypothesis/'
         'tree/master/hypothesis-python'
