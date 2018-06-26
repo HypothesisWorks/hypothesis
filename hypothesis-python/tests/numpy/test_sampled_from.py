@@ -17,9 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-import numpy as np
-
-from hypothesis import given, assume
+from hypothesis import given
 from hypothesis.extra import numpy as npst
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import data, sampled_from
@@ -30,12 +28,7 @@ from hypothesis.strategies import data, sampled_from
     shape=npst.array_shapes(max_dims=1)
 ))
 def test_can_sample_1D_numpy_array_without_warning(data, arr):
-    elem = data.draw(sampled_from(arr))
-    try:
-        assume(not np.isnan(elem))
-    except TypeError:
-        pass
-    assert elem in arr
+    data.draw(sampled_from(arr))
 
 
 @checks_deprecated_behaviour

@@ -378,6 +378,9 @@ will be passed to the function as normal and not be parametrized over.
 The function returned by given has all the same arguments as the original
 test, minus those that are filled in by :func:`@given <hypothesis.given>`.
 
+
+.. _custom-function-execution:
+
 -------------------------
 Custom function execution
 -------------------------
@@ -444,6 +447,33 @@ and should be rewritten as:
             if callable(result):
                 result = result()
             return result
+
+
+An alternative hook is provided for use by test runner extensions such as
+:pypi:`pytest-trio`, which cannot use the ``execute_example`` method.
+This is **not** recommended for end-users - it is better to write a complete
+test function directly, perhaps by using a decorator to perform the same
+transformation before applying :func:`@given <hypothesis.given>`.
+
+.. code:: python
+
+    @given(x=integers())
+    @pytest.mark.trio
+    async def test(x):
+        ...
+    # Illustrative code, inside the pytest-trio plugin
+    test.hypothesis.inner_test = lambda x: trio.run(test, x)
+
+For authors of test runners however, assigning to the ``inner_test`` attribute
+of the ``hypothesis`` attribute of the test will replace the interior test.
+
+.. note::
+    The new ``inner_test`` must accept and pass through all the ``*args``
+    and ``**kwargs`` expected by the original test.
+
+If the end user has also specified a custom executor using the
+``execute_example`` method, it - and all other execution-time logic - will
+be applied to the *new* inner test assigned by the test runner.
 
 
 -------------------------------
