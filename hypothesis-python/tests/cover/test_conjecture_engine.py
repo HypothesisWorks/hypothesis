@@ -31,13 +31,12 @@ from tests.common.utils import no_shrink, all_values, \
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from tests.common.strategies import SLOW, HardToShrink
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
+from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     ConjectureData
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.conjecture.engine import Negated, Shrinker, \
     RunIsComplete, ConjectureRunner, universal
-from hypothesis.internal.entropy import deterministic_PRNG
-
 
 SOME_LABEL = calc_label_from_name('some label')
 
