@@ -17,7 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import random
 from random import Random
 
 import pytest
@@ -27,7 +26,6 @@ from hypothesis import strategies as st
 from tests.common.utils import no_shrink, non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
-from hypothesis.internal.entropy import deterministic_PRNG
 from tests.cover.test_conjecture_engine import run_to_buffer
 from hypothesis.internal.conjecture.data import Status, ConjectureData
 from hypothesis.internal.conjecture.engine import RunIsComplete, \
@@ -131,14 +129,13 @@ def test_regression_1():
     # specific exception inside one of the shrink passes. It's unclear how
     # useful this regression test really is, but nothing else caught the
     # problem.
-    with deterministic_PRNG():
-        @run_to_buffer
-        def x(data):
-            data.write(hbytes(b'\x01\x02'))
-            data.write(hbytes(b'\x01\x00'))
-            v = data.draw_bits(41)
-            if v >= 512 or v == 254:
-                data.mark_interesting()
-        assert list(x)[:-2] == [1, 2, 1, 0, 0, 0, 0, 0]
+    @run_to_buffer
+    def x(data):
+        data.write(hbytes(b'\x01\x02'))
+        data.write(hbytes(b'\x01\x00'))
+        v = data.draw_bits(41)
+        if v >= 512 or v == 254:
+            data.mark_interesting()
+    assert list(x)[:-2] == [1, 2, 1, 0, 0, 0, 0, 0]
 
-        assert int_from_bytes(x[-2:]) in (254, 512)
+    assert int_from_bytes(x[-2:]) in (254, 512)
