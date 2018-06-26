@@ -29,6 +29,8 @@ from inspect import isclass, isfunction
 from fractions import Fraction
 from functools import reduce
 
+import attr
+
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.control import note, assume, cleanup, current_build_context
 from hypothesis._settings import note_deprecation
@@ -1062,6 +1064,10 @@ def builds(
     value :const:`hypothesis.infer` as a keyword argument to
     builds, instead of a strategy for that argument to the callable.
 
+    If the callable is a class defined with :pypi:`attrs`, missing required
+    arguments will be inferred from the attribute on a best-effort basis,
+    e.g. by checking :ref:`attrs standard validators <attrs:api_validators>`.
+
     Examples from this strategy shrink by shrinking the argument values to
     the callable.
     """
@@ -1086,16 +1092,22 @@ def builds(
         # Avoid an implementation nightmare juggling tuples and worse things
         raise InvalidArgument('infer was passed as a positional argument to '
                               'builds(), but is only allowed as a keyword arg')
-    hints = get_type_hints(target.__init__ if isclass(target) else target)
-    for kw in [k for k, v in kwargs.items() if v is infer]:
-        if kw not in hints:
-            raise InvalidArgument(
-                'passed %s=infer for %s, but %s has no type annotation'
-                % (kw, target.__name__, kw))
-        kwargs[kw] = from_type(hints[kw])
     required = required_args(target, args, kwargs)
-    for ms in set(hints) & (required or set()):
-        kwargs[ms] = from_type(hints[ms])
+    to_infer = set(k for k, v in kwargs.items() if v is infer)
+    if required or to_infer:
+        if isclass(target) and attr.has(target):
+            # Use our custom introspection for attrs classes
+            from hypothesis.searchstrategy.attrs import from_attrs
+            return from_attrs(target, args, kwargs, required | to_infer)
+        # Otherwise, try using type hints
+        hints = get_type_hints(
+            target.__init__ if isclass(target) else target)
+        if to_infer - set(hints):
+            raise InvalidArgument(
+                'passed infer for %s, but there is no type annotation'
+                % (', '.join(sorted(to_infer - set(hints)))))
+        for kw in set(hints) & (required | to_infer):
+            kwargs[kw] = from_type(hints[kw])
     # Mypy doesn't realise that `infer` is gone from kwargs now
     kwarg_strat = fixed_dictionaries(kwargs)  # type: ignore
     return tuples(tuples(*args), kwarg_strat).map(
@@ -1220,10 +1232,12 @@ def from_type(thing):
     if issubclass(thing, enum.Enum):
         assert len(thing), repr(thing) + ' has no members to sample'
         return sampled_from(thing)
-    # If the constructor has an annotation for every required argument,
-    # we can (and do) use builds() without supplying additional arguments.
+    # If the constructor has an annotation for all required arguments,
+    # or the class was defined with attrs, builds(thing) will work.
+    # (unless inference fails for an argument, but that's the same above too)
     required = required_args(thing)
-    if not required or required.issubset(get_type_hints(thing.__init__)):
+    if not required or required.issubset(get_type_hints(thing.__init__)) or \
+            attr.has(thing):
         return builds(thing)
     # We have utterly failed, and might as well say so now.
     raise ResolutionFailed('Could not resolve %r to a strategy; consider '

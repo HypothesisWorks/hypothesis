@@ -27,7 +27,7 @@ import collections
 
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.internal.compat import text_type, integer_types
+from hypothesis.internal.compat import PY2, text_type
 
 
 def type_sorting_key(t):
@@ -35,8 +35,8 @@ def type_sorting_key(t):
     if not isinstance(t, type):
         raise InvalidArgument('thing=%s must be a type' % (t,))
     if t is None or t is type(None):  # noqa: E721
-        return -1
-    return issubclass(t, collections.abc.Container)
+        return (-1, repr(t))
+    return (issubclass(t, collections.Container), repr(t))
 
 
 def try_issubclass(thing, maybe_superclass):
@@ -104,6 +104,7 @@ _global_type_lookup = {
     # Types with core Hypothesis strategies
     type(None): st.none(),
     bool: st.booleans(),
+    int: st.integers(),
     float: st.floats(),
     complex: st.complex_numbers(),
     fractions.Fraction: st.fractions(),
@@ -128,8 +129,12 @@ _global_type_lookup = {
     memoryview: st.binary().map(memoryview),
     # Pull requests with more types welcome!
 }
-for t in integer_types:
-    _global_type_lookup[t] = st.integers()
+
+if PY2:
+    _global_type_lookup.update({
+        int: st.integers().filter(lambda x: isinstance(x, int)),
+        long: st.integers().map(long)  # noqa
+    })
 
 try:
     from hypothesis.extra.pytz import timezones
