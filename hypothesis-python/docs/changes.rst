@@ -21,6 +21,20 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.63.0:
+
+-------------------
+3.63.0 - 2018-06-26
+-------------------
+
+This release adds a new mechanism to infer strategies for classes
+defined using :pypi:`attrs`, based on the the type, converter, or
+validator of each attribute.  This inference is now built in to
+:func:`~hypothesis.strategies.builds` and :func:`~hypothesis.strategies.from_type`.
+
+On Python 2, :func:`~hypothesis.strategies.from_type` no longer generates
+instances of ``int`` when passed ``long``, or vice-versa.
+
 .. _v3.62.0:
 
 -------------------
