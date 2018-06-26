@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.64.0:
+
+-------------------
+3.64.0 - 2018-06-26
+-------------------
+
+This release adds :ref:`an interface <custom-function-execution>`
+which can be used to insert a wrapper between the original test function and
+:func:`@given <hypothesis.given>` (:issue:`1257`).  This will be particularly
+useful for test runner extensions such as :pypi:`pytest-trio`, but is
+not recommended for direct use by other users of Hypothesis.
+
 .. _v3.63.0:
 
 -------------------
