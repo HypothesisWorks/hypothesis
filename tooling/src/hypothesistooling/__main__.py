@@ -74,11 +74,6 @@ def lint():
     )
 
 
-@task(if_changed=hp.PYTHON_SRC)
-def check_type_hints():
-    pip_tool('mypy', hp.PYTHON_SRC)
-
-
 HEAD = tools.hash_for_name('HEAD')
 MASTER = tools.hash_for_name('origin/master')
 
