@@ -958,7 +958,7 @@ def given(
             # Tell pytest to omit the body of this function from tracebacks
             __tracebackhide__ = True
 
-            test = wrapped_test.hypothesis.inner_test
+            test = wrapped_test.hypothesis_attributes.inner_test
 
             if getattr(test, 'is_hypothesis_test', False):
                 note_deprecation(
@@ -1101,7 +1101,7 @@ def given(
         wrapped_test._hypothesis_internal_use_reproduce_failure = getattr(
             test, '_hypothesis_internal_use_reproduce_failure', None
         )
-        wrapped_test.hypothesis = HypothesisHandle(test)
+        wrapped_test.hypothesis_attributes = HypothesisHandle(test)
         return wrapped_test
     return run_test_with_generator
 
