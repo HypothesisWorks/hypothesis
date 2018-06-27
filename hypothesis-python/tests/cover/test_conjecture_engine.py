@@ -31,6 +31,7 @@ from tests.common.utils import no_shrink, all_values, \
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from tests.common.strategies import SLOW, HardToShrink
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
+from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     ConjectureData
 from hypothesis.internal.conjecture.utils import calc_label_from_name
@@ -41,14 +42,15 @@ SOME_LABEL = calc_label_from_name('some label')
 
 
 def run_to_buffer(f):
-    runner = ConjectureRunner(f, settings=settings(
-        max_examples=5000, buffer_size=1024,
-        database=None, suppress_health_check=HealthCheck.all(),
-    ))
-    runner.run()
-    assert runner.interesting_examples
-    last_data, = runner.interesting_examples.values()
-    return hbytes(last_data.buffer)
+    with deterministic_PRNG():
+        runner = ConjectureRunner(f, settings=settings(
+            max_examples=5000, buffer_size=1024,
+            database=None, suppress_health_check=HealthCheck.all(),
+        ))
+        runner.run()
+        assert runner.interesting_examples
+        last_data, = runner.interesting_examples.values()
+        return hbytes(last_data.buffer)
 
 
 def test_can_index_results():

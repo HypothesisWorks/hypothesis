@@ -1471,6 +1471,21 @@ class Shrinker(object):
             t.buffer[:t.blocks[i][0]] in self.__shrinking_prefixes
         )
 
+    def is_payload_block(self, i):
+        """A block is payload if it is entirely non-structural: We can tinker
+        with its value freely and this will not affect the shape of the input
+        language.
+
+        This is mostly a useful concept when we're doing lexicographic
+        minimimization on multiple blocks at once - by restricting ourself to
+        payload blocks, we expect the shape of the language to not change
+        under us (but must still guard against it doing so).
+        """
+        return not (
+            self.is_shrinking_block(i) or
+            i in self.shrink_target.forced_blocks
+        )
+
     def lower_common_block_offset(self):
         """Sometimes we find ourselves in a situation where changes to one part
         of the byte stream unlock changes to other parts. Sometimes this is
@@ -1559,7 +1574,10 @@ class Shrinker(object):
         def reoffset_pair(pair, o):
             n = len(self.blocks)
             # Number of blocks may have changed, need to validate
-            valid_pair = [p for p in pair if p < n and int_from_block(p) > 0]
+            valid_pair = [
+                p for p in pair if p < n and int_from_block(p) > 0 and
+                self.is_payload_block(p)
+            ]
 
             if len(valid_pair) < 2:
                 return
@@ -1576,12 +1594,12 @@ class Shrinker(object):
 
         i = 0
         while i < len(self.blocks):
-            if not self.is_shrinking_block(i) and int_from_block(i) > 0:
+            if self.is_payload_block(i) and int_from_block(i) > 0:
                 j = i + 1
                 while j < len(self.shrink_target.blocks):
                     block_val = int_from_block(j)
                     i_block_val = int_from_block(i)
-                    if not self.is_shrinking_block(j) \
+                    if self.is_payload_block(j) \
                        and block_val > 0 and i_block_val > 0:
                         offset = min(int_from_block(i),
                                      int_from_block(j))
@@ -1674,7 +1692,7 @@ class Shrinker(object):
             # it was caused the behaviour we're trying to shrink.
             # Everything non-structural, we redraw uniformly at random.
             for i, (u, v) in enumerate(self.blocks):
-                if not self.is_shrinking_block(i):
+                if self.is_payload_block(i):
                     attempt_buf[u:v] = uniform(self.__engine.random, v - u)
             attempt = self.cached_test_function(attempt_buf)
             if self.__predicate(attempt):
