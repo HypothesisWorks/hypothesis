@@ -25,7 +25,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 
-def always_passes(*args, **kwargs):
+def passes(*args, **kwargs):
     """Stand-in for a fixed version of an inner test.
 
     For example, pytest-trio would take the inner test, wrap it in an
@@ -39,7 +39,7 @@ def test_can_replace_inner_test(x):
     assert False, 'This should be replaced'
 
 
-test_can_replace_inner_test.hypothesis.inner_test = always_passes
+test_can_replace_inner_test.hypothesis_attributes.inner_test = passes
 
 
 def decorator(func):
@@ -56,7 +56,7 @@ def test_can_replace_when_decorated(x):
     assert False, 'This should be replaced'
 
 
-test_can_replace_when_decorated.hypothesis.inner_test = always_passes
+test_can_replace_when_decorated.hypothesis_attributes.inner_test = passes
 
 
 @pytest.mark.parametrize('x', [1, 2])
@@ -65,4 +65,4 @@ def test_can_replace_when_parametrized(x, y):
     assert False, 'This should be replaced'
 
 
-test_can_replace_when_parametrized.hypothesis.inner_test = always_passes
+test_can_replace_when_parametrized.hypothesis_attributes.inner_test = passes

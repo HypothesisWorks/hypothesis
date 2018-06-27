@@ -62,3 +62,22 @@ def test_can_select_mark_on_unittest(testdir):
                                'hypothesis')
     out = '\n'.join(result.stdout.lines)
     assert '1 passed, 1 deselected' in out
+
+
+MARKER_TESTSUITE = """
+import pytest
+from hypothesis import given
+from hypothesis.strategies import integers
+
+@pytest.mark.hypothesis
+@given(integers())
+def test_foo(x):
+    pass
+"""
+
+
+def test_mark_does_not_clash_with_attribute(testdir):
+    # Regression test for issue #1362, clash between marker and attribute
+    script = testdir.makepyfile(MARKER_TESTSUITE)
+    result = testdir.runpytest(script, '--verbose', '--strict')
+    assert result.ret == 0

@@ -462,10 +462,11 @@ transformation before applying :func:`@given <hypothesis.given>`.
     async def test(x):
         ...
     # Illustrative code, inside the pytest-trio plugin
-    test.hypothesis.inner_test = lambda x: trio.run(test, x)
+    test.hypothesis_attributes.inner_test = lambda x: trio.run(test, x)
 
 For authors of test runners however, assigning to the ``inner_test`` attribute
-of the ``hypothesis`` attribute of the test will replace the interior test.
+of the ``hypothesis_attributes`` attribute of the test will replace the
+interior test.
 
 .. note::
     The new ``inner_test`` must accept and pass through all the ``*args``
