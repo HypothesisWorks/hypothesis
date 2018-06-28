@@ -334,6 +334,7 @@ PY27 = '2.7.14'
 PY34 = '3.4.8'
 PY35 = '3.5.5'
 PY36 = '3.6.5'
+PY37 = '3.7.0'
 PYPY2 = 'pypy2.7-5.10.0'
 
 
@@ -347,7 +348,7 @@ ALIASES = {
     PYPY2: 'pypy',
 }
 
-for n in [PY27, PY34, PY35, PY36]:
+for n in [PY27, PY34, PY35, PY36, PY37]:
     major, minor, patch = n.split('.')
     ALIASES[n] = 'python%s.%s' % (major, minor)
 
@@ -373,6 +374,11 @@ def check_py35():
 @python_tests
 def check_py36():
     run_tox('py36-full', PY36)
+
+
+@python_tests
+def check_py37():
+    run_tox('py37-full', PY37)
 
 
 @python_tests
