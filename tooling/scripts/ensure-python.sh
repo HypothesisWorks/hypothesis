@@ -54,13 +54,14 @@ if [ ! -e "$TARGET/bin/python" ] ; then
         wget https://www.openssl.org/source/openssl-1.0.2o.tar.gz
         tar -xf openssl-1.0.2o.tar.gz
         cd openssl-1.0.2o
-        ./config --shared --prefix="$OPENSSL_DIR"
+        ./config --prefix="$OPENSSL_DIR" --openssldir="$OPENSSL_DIR"
         make install
         popd
     fi
 
     export CFLAGS="-I$OPENSSL_DIR/include"
     export LDFLAGS="-L$OPENSSL_DIR/lib"
+    export CONFIGURE_OPTS="--with-openssl=$OPENSSL_DIR"
 
     if [ ! -d "$PYENV/.git" ]; then
       rm -rf "$PYENV"
