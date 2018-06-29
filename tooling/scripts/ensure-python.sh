@@ -56,7 +56,11 @@ if [ ! -e "$TARGET/bin/python" ] ; then
             curl -O https://www.openssl.org/source/openssl-1.0.2o.tar.gz
             tar -xf openssl-1.0.2o.tar.gz
             cd openssl-1.0.2o
-            ./config --prefix="$OPENSSL_DIR" --openssldir="$OPENSSL_DIR"
+            if [ "$DARWIN" = "true" ] ; then
+                ./Configure darwin64-x86_64-cc --openssldir="$OPENSSL_DIR"
+            else
+                ./config --openssldir="$OPENSSL_DIR"
+            fi
             make install
             popd
         fi

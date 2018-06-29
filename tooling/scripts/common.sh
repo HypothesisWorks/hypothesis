@@ -25,6 +25,14 @@ export GEM_PATH="$GEM_HOME"
 
 export PATH="$INSTALLED_RUBY_DIR/bin:$HOME/.cargo/bin:$PATH"
 
+if [[ "$(uname -s)" == 'Darwin' ]]; then
+    DARWIN=true
+else
+    DARWIN=false
+fi
+
+export DARWIN
+
 pythonloc() {
     VERSION="$1"
     echo "$SNAKEPIT/$VERSION"
