@@ -59,7 +59,7 @@ if [ ! -e "$TARGET/bin/python" ] ; then
             if [ "$DARWIN" = "true" ] ; then
                 ./Configure darwin64-x86_64-cc --openssldir="$OPENSSL_DIR"
             else
-                ./config --openssldir="$OPENSSL_DIR"
+                ./config --openssldir="$OPENSSL_DIR" --shared
             fi
             make install
             popd
