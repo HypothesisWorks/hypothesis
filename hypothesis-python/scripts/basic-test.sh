@@ -29,7 +29,7 @@ pip install ".[pytz, dateutil]"
 $PYTEST tests/datetime/
 pip uninstall -y pytz python-dateutil
 
-if [ "$(python -c 'import sys; print(sys.version_info[0] == 2')" = "True" ] ; then
+if [ "$(python -c 'import sys; print(sys.version_info[0] == 2)')" = "True" ] ; then
   $PYTEST "tests/py2"
 else
   $PYTEST "tests/py3"
