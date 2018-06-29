@@ -66,7 +66,7 @@ if [ ! -e "$TARGET/bin/python" ] ; then
         fi
 
         export CFLAGS="-I$OPENSSL_DIR/include"
-        export LDFLAGS="-L$OPENSSL_DIR/lib"
+        export LDFLAGS="-L$OPENSSL_DIR/lib -lssl -lcrypto"
         export CONFIGURE_OPTS="--with-openssl=$OPENSSL_DIR"
     fi
 
