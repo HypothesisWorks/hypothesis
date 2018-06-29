@@ -53,7 +53,7 @@ if [ ! -e "$TARGET/bin/python" ] ; then
             rm -rf "$OPENSSL_BUILD_DIR"
             mkdir -p "$OPENSSL_BUILD_DIR"
             cd "$OPENSSL_BUILD_DIR"
-            wget https://www.openssl.org/source/openssl-1.0.2o.tar.gz
+            curl -O https://www.openssl.org/source/openssl-1.0.2o.tar.gz
             tar -xf openssl-1.0.2o.tar.gz
             cd openssl-1.0.2o
             ./config --prefix="$OPENSSL_DIR" --openssldir="$OPENSSL_DIR"
