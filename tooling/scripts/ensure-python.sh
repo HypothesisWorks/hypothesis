@@ -46,13 +46,15 @@ if [ ! -e "$TARGET/bin/python" ] ; then
 
     if [ ! -e "$OPENSSL_DIR/lib/libssl.a" ] ; then
         rm -rf "$OPENSSL_DIR"
+        OPENSSL_BUILD_DIR="$BASE/openssl-builddir"
         pushd "$BASE"
-        mkdir -p openssl-builddir
-        cd openssl-builddir
+        rm -rf "$OPENSSL_BUILD_DIR"
+        mkdir -p "$OPENSSL_BUILD_DIR"
+        cd "$OPENSSL_BUILD_DIR"
         wget https://www.openssl.org/source/openssl-1.0.2o.tar.gz
-        tar -xvf openssl-1.0.2o.tar.gz
+        tar -xf openssl-1.0.2o.tar.gz
         cd openssl-1.0.2o
-        ./configure --prefix="$OPENSSL_DIR"
+        ./config --prefix="$OPENSSL_DIR"
         make install
         popd
     fi
