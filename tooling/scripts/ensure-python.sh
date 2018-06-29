@@ -44,24 +44,27 @@ if [ ! -e "$TARGET/bin/python" ] ; then
     done
     trap 'rm -rf $LOCKFILE' EXIT
 
-    if [ ! -e "$OPENSSL_DIR/lib/libssl.a" ] ; then
-        rm -rf "$OPENSSL_DIR"
-        OPENSSL_BUILD_DIR="$BASE/openssl-builddir"
-        pushd "$BASE"
-        rm -rf "$OPENSSL_BUILD_DIR"
-        mkdir -p "$OPENSSL_BUILD_DIR"
-        cd "$OPENSSL_BUILD_DIR"
-        wget https://www.openssl.org/source/openssl-1.0.2o.tar.gz
-        tar -xf openssl-1.0.2o.tar.gz
-        cd openssl-1.0.2o
-        ./config --prefix="$OPENSSL_DIR" --openssldir="$OPENSSL_DIR"
-        make install
-        popd
-    fi
+    # shellcheck disable=SC2072
+    if [[ ! "$VERSION" < "3.7" ]] ; then
+        if [ ! -e "$OPENSSL_DIR/lib/libssl.a" ] ; then
+            rm -rf "$OPENSSL_DIR"
+            OPENSSL_BUILD_DIR="$BASE/openssl-builddir"
+            pushd "$BASE"
+            rm -rf "$OPENSSL_BUILD_DIR"
+            mkdir -p "$OPENSSL_BUILD_DIR"
+            cd "$OPENSSL_BUILD_DIR"
+            wget https://www.openssl.org/source/openssl-1.0.2o.tar.gz
+            tar -xf openssl-1.0.2o.tar.gz
+            cd openssl-1.0.2o
+            ./config --prefix="$OPENSSL_DIR" --openssldir="$OPENSSL_DIR"
+            make install
+            popd
+        fi
 
-    export CFLAGS="-I$OPENSSL_DIR/include"
-    export LDFLAGS="-L$OPENSSL_DIR/lib"
-    export CONFIGURE_OPTS="--with-openssl=$OPENSSL_DIR"
+        export CFLAGS="-I$OPENSSL_DIR/include"
+        export LDFLAGS="-L$OPENSSL_DIR/lib"
+        export CONFIGURE_OPTS="--with-openssl=$OPENSSL_DIR"
+    fi
 
     if [ ! -d "$PYENV/.git" ]; then
       rm -rf "$PYENV"
