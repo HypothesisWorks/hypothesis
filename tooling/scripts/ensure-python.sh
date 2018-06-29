@@ -81,5 +81,5 @@ if [ ! -e "$TARGET/bin/python" ] ; then
       cd "$back"
     fi
 
-    "$BASE/pyenv/plugins/python-build/bin/python-build" "$VERSION" "$TARGET"
+    "$BASE/pyenv/plugins/python-build/bin/python-build" --verbose "$VERSION" "$TARGET"
 fi
