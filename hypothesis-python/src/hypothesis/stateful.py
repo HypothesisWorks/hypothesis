@@ -242,21 +242,25 @@ class StateMachineRunner(object):
             average_size=self.n_steps,
         )
 
-        try:
-            if print_steps:
-                state_machine.print_start()
-            state_machine.check_invariants()
-
-            while should_continue.more():
-                value = self.data.draw(state_machine.steps())
+        def _default_runner(data, print_steps, should_continue):
+            try:
                 if print_steps:
-                    state_machine.print_step(value)
-                state_machine.execute_step(value)
+                    state_machine.print_start()
                 state_machine.check_invariants()
-        finally:
-            if print_steps:
-                state_machine.print_end()
-            state_machine.teardown()
+
+                while should_continue.more():
+                    value = data.draw(state_machine.steps())
+                    if print_steps:
+                        state_machine.print_step(value)
+                    state_machine.execute_step(value)
+                    state_machine.check_invariants()
+            finally:
+                if print_steps:
+                    state_machine.print_end()
+                state_machine.teardown()
+
+        runner = getattr(state_machine, '_custom_runner', _default_runner)
+        runner(self.data, print_steps, should_continue)
 
 
 class StateMachineSearchStrategy(SearchStrategy):
