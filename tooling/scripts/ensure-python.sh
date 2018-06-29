@@ -44,6 +44,21 @@ if [ ! -e "$TARGET/bin/python" ] ; then
     done
     trap 'rm -rf $LOCKFILE' EXIT
 
+    if [ ! -e "$OPENSSL_DIR/lib/libssl.a" ] ; then
+        rm -rf "$OPENSSL_DIR"
+        pushd "$BASE"
+        mkdir -p openssl-builddir
+        cd openssl-builddir
+        wget https://www.openssl.org/source/openssl-1.0.2o.tar.gz
+        tar -xvf openssl-1.0.2o.tar.gz
+        cd openssl-1.0.2o
+        ./configure --prefix="$OPENSSL_DIR"
+        make install
+        popd
+    fi
+
+    export CFLAGS="-I$OPENSSL_DIR/include"
+    export LDFLAGS="-L$OPENSSL_DIR/lib"
 
     if [ ! -d "$PYENV/.git" ]; then
       rm -rf "$PYENV"

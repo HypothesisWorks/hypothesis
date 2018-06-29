@@ -13,6 +13,7 @@ export ROOT
 export BUILD_RUNTIMES=${BUILD_RUNTIMES:-$HOME/.cache/hypothesis-build-runtimes}
 export BASE="$BUILD_RUNTIMES"
 export PYENV="$BASE/pyenv"
+export OPENSSL_DIR="$BASE/openssl"
 export SNAKEPIT="$BASE/python-versions/"
 export VIRTUALENVS="$BASE/virtualenvs/"
 export RBENV_VERSION="2.5.1"
