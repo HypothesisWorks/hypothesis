@@ -1,5 +1,6 @@
 language: c
 
+dist: xenial
 sudo: false
 
 env: PYTHONDONTWRITEBYTECODE=x
@@ -46,7 +47,7 @@ jobs:
     - stage: main
       env: TASK=check-pypy
     - env: TASK=check-py27
-    - env: TASK=check-py36
+    - env: TASK=check-py37
     - env: TASK=check-quality
     - env: TASK=check-ruby-tests
 
@@ -58,6 +59,7 @@ jobs:
     - env: TASK=check-py27-typing
     - env: TASK=check-py34
     - env: TASK=check-py35
+    - env: TASK=check-py36
     - env: TASK=check-nose
     - env: TASK=check-pytest28
     - env: TASK=check-faker070
