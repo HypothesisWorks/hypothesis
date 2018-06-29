@@ -1,5 +1,6 @@
 language: c
 
+dist: xenial
 sudo: false
 
 env: PYTHONDONTWRITEBYTECODE=x
@@ -34,44 +35,7 @@ jobs:
   include:
     # Prechecks that we want to run first.
     - stage: precheck
-      env: TASK=check-whole-repo-tests
-    - env: TASK=documentation
-    - env: TASK=lint
-    - env: TASK=lint-ruby
-    - env: TASK=doctest
-    - env: TASK=check-format
-    - env: TASK=check-requirements
-    - env: TASK=check-rust-tests
-
-    - stage: main
-      env: TASK=check-pypy
-    - env: TASK=check-py27
-    - env: TASK=check-py36
-    - env: TASK=check-quality
-    - env: TASK=check-ruby-tests
-
-    # Less important tests that will probably
-    # pass whenever the above do but are still
-    # worth testing.
-    - stage: extras
-      env: TASK=check-unicode
-    - env: TASK=check-py27-typing
-    - env: TASK=check-py34
-    - env: TASK=check-py35
-    - env: TASK=check-nose
-    - env: TASK=check-pytest28
-    - env: TASK=check-faker070
-    - env: TASK=check-faker-latest
-    - env: TASK=check-django20
-    - env: TASK=check-django111
-    - env: TASK=check-pandas19
-    - env: TASK=check-pandas20
-    - env: TASK=check-pandas21
-    - env: TASK=check-pandas22
-    - env: TASK=check-pandas23
-
-    - stage: deploy
-      env: TASK=deploy
+      env: TASK=check-py37
 
 script:
     - ./build.sh

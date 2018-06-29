@@ -13,6 +13,7 @@ export ROOT
 export BUILD_RUNTIMES=${BUILD_RUNTIMES:-$HOME/.cache/hypothesis-build-runtimes}
 export BASE="$BUILD_RUNTIMES"
 export PYENV="$BASE/pyenv"
+export OPENSSL_DIR="$BASE/openssl"
 export SNAKEPIT="$BASE/python-versions/"
 export VIRTUALENVS="$BASE/virtualenvs/"
 export RBENV_VERSION="2.5.1"
@@ -23,6 +24,14 @@ export GEM_HOME="$INSTALLED_RUBY_DIR"
 export GEM_PATH="$GEM_HOME"
 
 export PATH="$INSTALLED_RUBY_DIR/bin:$HOME/.cargo/bin:$PATH"
+
+if [[ "$(uname -s)" == 'Darwin' ]]; then
+    DARWIN=true
+else
+    DARWIN=false
+fi
+
+export DARWIN
 
 pythonloc() {
     VERSION="$1"

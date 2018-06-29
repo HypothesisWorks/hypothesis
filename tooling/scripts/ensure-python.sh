@@ -44,6 +44,31 @@ if [ ! -e "$TARGET/bin/python" ] ; then
     done
     trap 'rm -rf $LOCKFILE' EXIT
 
+    # shellcheck disable=SC2072
+    if [[ ! "$VERSION" < "3.7" ]] ; then
+        if [ ! -e "$OPENSSL_DIR/lib/libssl.a" ] ; then
+            rm -rf "$OPENSSL_DIR"
+            OPENSSL_BUILD_DIR="$BASE/openssl-builddir"
+            pushd "$BASE"
+            rm -rf "$OPENSSL_BUILD_DIR"
+            mkdir -p "$OPENSSL_BUILD_DIR"
+            cd "$OPENSSL_BUILD_DIR"
+            curl -O https://www.openssl.org/source/openssl-1.0.2o.tar.gz
+            tar -xf openssl-1.0.2o.tar.gz
+            cd openssl-1.0.2o
+            if [ "$DARWIN" = "true" ] ; then
+                ./Configure darwin64-x86_64-cc --openssldir="$OPENSSL_DIR"
+            else
+                ./config --openssldir="$OPENSSL_DIR" --shared
+            fi
+            make install
+            popd
+        fi
+
+        export CFLAGS="-I$OPENSSL_DIR/include"
+        export LDFLAGS="-L$OPENSSL_DIR/lib -lssl -lcrypto"
+        export CONFIGURE_OPTS="--with-openssl=$OPENSSL_DIR"
+    fi
 
     if [ ! -d "$PYENV/.git" ]; then
       rm -rf "$PYENV"
@@ -56,11 +81,5 @@ if [ ! -e "$TARGET/bin/python" ] ; then
       cd "$back"
     fi
 
-    for _ in $(seq 5); do
-        if "$BASE/pyenv/plugins/python-build/bin/python-build" "$VERSION" "$TARGET" ; then
-            exit 0
-        fi
-        echo "Command failed. Retrying..."
-        sleep $(( ( RANDOM % 10 )  + 1 )).$(( RANDOM % 100 ))s
-    done
+    "$BASE/pyenv/plugins/python-build/bin/python-build" --verbose "$VERSION" "$TARGET"
 fi
