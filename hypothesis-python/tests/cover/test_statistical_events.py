@@ -179,3 +179,17 @@ def test_has_lambdas_in_output():
     assert any(
         'lambda x: x % 2 == 0' in e for e in stats.events
     )
+
+
+def test_stops_after_x_shrinks(monkeypatch):
+    # the max_shrinks argument is deprecated, but we still stop after some
+    # number - which we can reduce to zero to check that this works.
+    from hypothesis.internal.conjecture import engine
+    monkeypatch.setattr(engine, 'MAX_SHRINKS', 0)
+
+    @given(st.integers())
+    def test(n):
+        assert n < 100
+
+    stats = call_for_statistics(test)
+    assert 'shrunk example' in stats.exit_reason

@@ -38,7 +38,6 @@ def minimal(
     settings = Settings(
         settings,
         max_examples=50000,
-        max_shrinks=5000,
         database=None,
     )
 

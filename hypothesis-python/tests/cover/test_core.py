@@ -76,7 +76,7 @@ def test_can_time_out_in_simplify():
     )
     finish = time.time()
     run_time = finish - start
-    assert run_time <= 0.3
+    assert run_time <= 0.4
 
 
 some_normal_settings = settings()

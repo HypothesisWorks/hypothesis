@@ -23,7 +23,6 @@ from __future__ import division, print_function, absolute_import
 import os
 import ast
 import sys
-import time
 import zlib
 import base64
 import random as rnd_module
@@ -715,7 +714,7 @@ class StateForActualGivenExecution(object):
             database_key = str_to_bytes(fully_qualified_name(self.test))
         else:
             database_key = None
-        self.start_time = time.time()
+        self.start_time = benchmark_time()
         global in_given
         runner = ConjectureRunner(
             self.evaluate_test_data,
@@ -737,7 +736,7 @@ class StateForActualGivenExecution(object):
                 self.used_examples_from_database = \
                     runner.used_examples_from_database
         note_engine_for_statistics(runner)
-        run_time = time.time() - self.start_time
+        run_time = benchmark_time() - self.start_time
 
         self.used_examples_from_database = runner.used_examples_from_database
 
@@ -1116,10 +1115,8 @@ def find(
     # type: (...) -> Any
     """Returns the minimal example from the given strategy ``specifier`` that
     matches the predicate function ``condition``."""
-    settings = settings or Settings(
-        max_examples=2000,
-        max_shrinks=2000,
-    )
+    if settings is None:
+        settings = Settings(max_examples=2000)
     settings = Settings(settings, suppress_health_check=HealthCheck.all())
 
     if database_key is None and settings.database is not None:
@@ -1171,14 +1168,14 @@ def find(
                     last_data[0] = data
         if success and not data.frozen:
             data.mark_interesting()
-    start = time.time()
+    start = benchmark_time()
     runner = ConjectureRunner(
         template_condition, settings=settings, random=random,
         database_key=database_key,
     )
     runner.run()
     note_engine_for_statistics(runner)
-    run_time = time.time() - start
+    run_time = benchmark_time() - start
     if runner.interesting_examples:
         data = ConjectureData.for_buffer(
             list(runner.interesting_examples.values())[0].buffer)

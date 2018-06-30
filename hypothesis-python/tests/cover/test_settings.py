@@ -120,6 +120,13 @@ def test_perform_health_check_setting_is_deprecated():
     assert s.suppress_health_check
 
 
+@checks_deprecated_behaviour
+@given(st.integers(0, 10000))
+def test_max_shrinks_setting_is_deprecated(n):
+    s = settings(max_shrinks=n)
+    assert s.max_shrinks == n
+
+
 def test_can_set_verbosity():
     settings(verbosity=Verbosity.quiet)
     settings(verbosity=Verbosity.normal)

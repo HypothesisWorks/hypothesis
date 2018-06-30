@@ -23,7 +23,7 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
     UnsatisfiedAssumption
 from hypothesis.control import assume, _current_build_context
-from hypothesis._settings import note_deprecation
+from hypothesis._settings import Phase, note_deprecation
 from hypothesis.internal.compat import hrange, bit_length
 from hypothesis.internal.coverage import check_function
 from hypothesis.utils.conventions import UniqueIdentifier
@@ -299,9 +299,9 @@ class SearchStrategy(Generic[Ex]):
                 condition,
                 random=random,
                 settings=settings(
-                    max_shrinks=0,
                     database=None,
                     verbosity=Verbosity.quiet,
+                    phases=tuple(set(Phase) - {Phase.shrink}),
                 )
             )
         except (NoSuchExample, Unsatisfiable):

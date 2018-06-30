@@ -154,6 +154,11 @@ class settings(
                 kwargs['database'] = ExampleDatabase(kwargs['database_file'])
         if not kwargs.get('perform_health_check', True):
             kwargs['suppress_health_check'] = HealthCheck.all()
+        if kwargs.get('max_shrinks') == 0:
+            kwargs['phases'] = tuple(
+                p for p in _validate_phases(kwargs.get('phases'))
+                if p != Phase.shrink
+            )
         self._construction_complete = False
         deprecations = []
         defaults = parent or settings.default
@@ -451,11 +456,14 @@ your tests slower.
 
 settings._define_setting(
     'max_shrinks',
-    default=500,
+    default=not_set,
     description="""
-Once this many successful shrinks have been performed, Hypothesis will assume
-something has gone a bit wrong and give up rather than continuing to try to
-shrink the example.
+Passing ``max_shrinks=0`` disables the shrinking phase (see the ``phases``
+setting), but any other value has no effect and uses a general heuristic.
+""",
+    deprecation_message="""
+The max_shrinks setting has been disabled, as internal heuristics are more
+useful for this purpose than a user setting.
 """
 )
 

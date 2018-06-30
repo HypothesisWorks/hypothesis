@@ -125,6 +125,7 @@ def slow_shrinker():
 
 @pytest.mark.parametrize('n', [1, 5])
 def test_terminates_shrinks(n, monkeypatch):
+    from hypothesis.internal.conjecture import engine
     db = InMemoryExampleDatabase()
 
     def generate_new_examples(self):
@@ -136,10 +137,10 @@ def test_terminates_shrinks(n, monkeypatch):
 
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples', generate_new_examples)
+    monkeypatch.setattr(engine, 'MAX_SHRINKS', n)
 
     runner = ConjectureRunner(slow_shrinker(), settings=settings(
-        max_examples=5000, max_shrinks=n,
-        database=db, timeout=unlimited,
+        max_examples=5000, database=db, timeout=unlimited,
     ), random=Random(0), database_key=b'key')
     runner.run()
     last_data, = runner.interesting_examples.values()
@@ -291,6 +292,7 @@ def test_run_with_timeout_while_boring():
     assert runner.valid_examples > 0
 
 
+@checks_deprecated_behaviour
 def test_max_shrinks_can_disable_shrinking():
     seen = set()
 
