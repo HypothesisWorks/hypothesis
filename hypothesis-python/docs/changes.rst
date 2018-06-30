@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.65.0:
+
+-------------------
+3.65.0 - 2018-06-30
+-------------------
+
+This release deprecates the :obj:`~hypothesis.settings.max_shrinks` setting
+in favor of an internal heuristic.  If you need to avoid shrinking examples,
+use the :obj:`~hypothesis.settings.phases` setting instead.  (:issue:`1235`)
+
 .. _v3.64.2:
 
 -------------------
