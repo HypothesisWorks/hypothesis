@@ -224,13 +224,24 @@ we wanted to only generate really small JSON we could do this as:
 Composite strategies
 ~~~~~~~~~~~~~~~~~~~~
 
-The :func:`@composite <hypothesis.strategies.composite>` decorator lets you combine other strategies in more or less
+The :func:`@composite <hypothesis.strategies.composite>` decorator lets
+you combine other strategies in more or less
 arbitrary ways. It's probably the main thing you'll want to use for
 complicated custom strategies.
 
-The composite decorator works by giving you a function as the first argument
-that you can use to draw examples from other strategies. For example, the
-following gives you a list and an index into it:
+The composite decorator works by converting a function that returns one
+example into a function that returns a strategy that produces such
+examples - which you can pass to :func:`@given <hypothesis.given>`, modify
+with ``.map`` or ``.filter``, and generally use like any other strategy.
+
+It does this by giving you a special function ``draw`` as the first
+argument, which can be used just like the corresponding method of the
+:func:`~hypothesis.strategies.data` strategy within a test.  In fact,
+the implementation is almost the same - but defining a strategy with
+:func:`@composite <hypothesis.strategies.composite>` makes code reuse
+easier, and usually improves the display of failing examples.
+
+For example, the following gives you a list and an index into it:
 
 .. doctest::
 
