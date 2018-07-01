@@ -58,6 +58,9 @@ jobs:
     - env: TASK=check-py27-typing
     - env: TASK=check-py34
     - env: TASK=check-py35
+    - env: TASK=check-py37
+      sudo: required
+      dist: xenial
     - env: TASK=check-nose
     - env: TASK=check-pytest28
     - env: TASK=check-faker070
@@ -78,6 +81,10 @@ script:
 
 matrix:
     fast_finish: true
+    allow_failures:
+      - env: TASK=check-py37
+        sudo: required
+        dist: xenial
 
 notifications:
   email:

@@ -100,6 +100,9 @@ for var in "$@"; do
     3.6)
       install 3.6.1 python3.6
       ;;
+    3.7)
+      install 3.7.0 python3.7
+      ;;
     pypy)
       install pypy2.7-5.8.0 pypy
       ;;
