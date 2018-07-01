@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import sys
+
 import attr
 import pytest
 
@@ -133,11 +135,15 @@ class Inferrables(object):
     annot_converter = attr.ib(converter=a_converter)
 
 
+@pytest.mark.skipif(sys.version_info[:2] <= (3, 5),
+                    reason="Too-old typing module can't get return value hint")
 @given(st.builds(Inferrables))
 def test_attrs_inference_builds(c):
     pass
 
 
+@pytest.mark.skipif(sys.version_info[:2] <= (3, 5),
+                    reason="Too-old typing module can't get return value hint")
 @given(st.from_type(Inferrables))
 def test_attrs_inference_from_type(c):
     pass
