@@ -13,5 +13,8 @@ The two major places for community discussion are:
 Feel free to use these to ask for help, provide feedback, or discuss anything remotely
 Hypothesis related at all.
 
-Please note that `the Hypothesis code of conduct <https://github.com/HypothesisWorks/hypothesis-python/blob/master/CODE_OF_CONDUCT.rst>`_
+Please note that `the Hypothesis code of conduct <https://github.com/HypothesisWorks/hypothesis/blob/master/CODE_OF_CONDUCT.rst>`_
 applies in all Hypothesis community spaces.
+
+If you would like to cite Hypothesis, please consider `our sugested citation
+<https://github.com/HypothesisWorks/hypothesis/blob/master/CITATION>`_.
