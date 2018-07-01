@@ -20,15 +20,16 @@ If you would like to cite Hypothesis, please consider `our sugested citation
 <https://github.com/HypothesisWorks/hypothesis/blob/master/CITATION>`_.
 
 If you like repo badges, we suggest the following badge, which you can add
-with restructuredtext or markdown, respectively:
+with reStructuredText or Markdown, respectively:
 
 .. image:: https://img.shields.io/badge/hypothesis-tested-brightgreen.svg
 
 .. code:: restructuredtext
 
     .. image:: https://img.shields.io/badge/hypothesis-tested-brightgreen.svg
+       :alt: Tested with Hypothesis
        :target: https://hypothesis.readthedocs.io
 
 .. code:: md
 
-    [![](https://img.shields.io/badge/hypothesis-tested-brightgreen.svg)](https://hypothesis.readthedocs.io/)
+    [![Tested with Hypothesis](https://img.shields.io/badge/hypothesis-tested-brightgreen.svg)](https://hypothesis.readthedocs.io/)

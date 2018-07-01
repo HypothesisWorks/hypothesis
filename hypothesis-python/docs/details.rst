@@ -637,13 +637,13 @@ it creates.  For example:
 .. _pytest-plugin:
 
 ----------------------------
-The Hypothesis Pytest Plugin
+The Hypothesis pytest Plugin
 ----------------------------
 
 Hypothesis includes a tiny plugin to improve integration with :pypi:`pytest`,
 which is activated by default (but does not affect other test runners).
 It aims to improve the integration between Hypothesis and Pytest by
-providing extra information and a convenient access to config options.
+providing extra information and convenient access to config options.
 
 - ``pytest --hypothesis-show-statistics`` can be used to
   :ref:`display test and data generation statistics <statistics>`.
