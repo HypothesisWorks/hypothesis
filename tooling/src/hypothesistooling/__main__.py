@@ -352,7 +352,11 @@ for n in [PY27, PY34, PY35, PY36]:
     ALIASES[n] = 'python%s.%s' % (major, minor)
 
 
-python_tests = task(if_changed=(hp.PYTHON_SRC, hp.PYTHON_TESTS))
+python_tests = task(if_changed=(
+    hp.PYTHON_SRC,
+    hp.PYTHON_TESTS,
+    os.path.join(hp.HYPOTHESIS_PYTHON, 'scripts'),
+))
 
 
 @python_tests
