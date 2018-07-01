@@ -34,7 +34,7 @@ from unittest import TestCase
 import attr
 
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis.core import find
+from hypothesis.core import find, exceptions_meaning_failure
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     HypothesisException
 from hypothesis.control import BuildContext
@@ -77,7 +77,7 @@ def find_breaking_runner(state_machine_factory, settings=None):
             return False
         except HypothesisException:
             raise
-        except Exception:
+        except exceptions_meaning_failure:
             verbose_report(traceback.format_exc)
             return True
     if settings is None:

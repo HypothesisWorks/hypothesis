@@ -387,6 +387,24 @@ def skip_exceptions_to_reraise():
 exceptions_to_reraise = skip_exceptions_to_reraise()
 
 
+def failure_exceptions_to_catch():
+    """Return a tuple of exceptions meaning 'this test has failed', to catch.
+
+    This is intended to cover most common test runners; if you would
+    like another to be added please open an issue or pull request.
+    """
+    exceptions = [Exception]
+    try:  # pragma: no cover
+        from _pytest.outcomes import OutcomeException
+        exceptions.append(OutcomeException)
+    except ImportError:
+        pass
+    return tuple(exceptions)
+
+
+exceptions_meaning_failure = failure_exceptions_to_catch()
+
+
 def new_given_argspec(original_argspec, generator_kwargs):
     """Make an updated argspec for the wrapped test."""
     new_args = [a for a in original_argspec.args if a not in generator_kwargs]
