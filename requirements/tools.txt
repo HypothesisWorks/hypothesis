@@ -37,7 +37,7 @@ more-itertools==4.2.0     # via pytest
 mypy==0.610
 numpy==1.14.5
 packaging==17.1           # via dparse, pyupio, safety, sphinx
-parso==0.2.1              # via jedi
+parso==0.3.0              # via jedi
 pexpect==4.6.0            # via ipython
 pickleshare==0.7.4        # via ipython
 pip-tools==2.0.2
