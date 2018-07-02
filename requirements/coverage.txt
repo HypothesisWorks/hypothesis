@@ -8,5 +8,5 @@ coverage==4.5.1
 numpy==1.14.5
 pandas==0.23.1
 python-dateutil==2.7.3    # via pandas
-pytz==2018.4
+pytz==2018.5
 six==1.11.0               # via python-dateutil
