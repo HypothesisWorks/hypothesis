@@ -46,7 +46,7 @@ triggered while shrinking a failing test.
 3.64.1 - 2018-06-27
 -------------------
 
-This patch fixes type-checking errors in our vendored prety-printer,
+This patch fixes type-checking errors in our vendored pretty-printer,
 which were ignored by our mypy config but visible for anyone else
 (whoops).  Thanks to Pi Delport for reporting :issue:`1359` so promptly.
 

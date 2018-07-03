@@ -632,3 +632,30 @@ it creates.  For example:
     use it in any way outside of type hints.  The only supported way to
     construct objects of this type is to use the functions provided by the
     :mod:`hypothesis.strategies` module!
+
+
+.. _pytest-plugin:
+
+----------------------------
+The Hypothesis pytest Plugin
+----------------------------
+
+Hypothesis includes a tiny plugin to improve integration with :pypi:`pytest`,
+which is activated by default (but does not affect other test runners).
+It aims to improve the integration between Hypothesis and Pytest by
+providing extra information and convenient access to config options.
+
+- ``pytest --hypothesis-show-statistics`` can be used to
+  :ref:`display test and data generation statistics <statistics>`.
+- ``pytest --hypothesis-profile=<profile name>`` can be used to
+  :ref:`load a settings profile <settings_profiles>`.
+- ``pytest --hypothesis-seed=<an int>`` can be used to
+  :ref:`reproduce a failure with a particular seed <reproducing-with-seed>`.
+
+Finally, all tests that are defined with Hypothesis automatically have
+``@pytest.mark.hypothesis`` applied to them.  See :ref:`here for information
+on working with markers <pytest:mark examples>`.
+
+.. note::
+    Pytest will load the plugin automatically if Hypothesis is installed.
+    You don't need to do anything at all to use it.
