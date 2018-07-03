@@ -663,6 +663,12 @@ class ConjectureRunner(object):
                 HealthCheck.large_base_example
             )
 
+        for i in hrange(self.cap):
+            if i not in zero_data.forced_indices:
+                break
+        else:
+            self.exit_with(ExitReason.finished)
+
         self.health_check_state = HealthCheckState()
 
         count = 0
