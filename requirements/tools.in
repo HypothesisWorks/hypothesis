@@ -17,3 +17,7 @@ pyupio
 django
 numpy
 IPython
+
+prompt-toolkit==1.0.15    # via ipython==6.4.0
+pycodestyle==2.3.1        # via flake8==3.5.0
+pyflakes==1.6.0           # via flake8==3.5.0
