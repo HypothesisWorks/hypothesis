@@ -384,7 +384,25 @@ def skip_exceptions_to_reraise():
     return tuple(sorted(exceptions, key=str))
 
 
-exceptions_to_reraise = skip_exceptions_to_reraise()
+EXCEPTIONS_TO_RERAISE = skip_exceptions_to_reraise()
+
+
+def failure_exceptions_to_catch():
+    """Return a tuple of exceptions meaning 'this test has failed', to catch.
+
+    This is intended to cover most common test runners; if you would
+    like another to be added please open an issue or pull request.
+    """
+    exceptions = [Exception]
+    try:  # pragma: no cover
+        from _pytest.outcomes import Failed
+        exceptions.append(Failed)
+    except ImportError:
+        pass
+    return tuple(exceptions)
+
+
+EXCEPTIONS_TO_FAIL = failure_exceptions_to_catch()
 
 
 def new_given_argspec(original_argspec, generator_kwargs):
@@ -692,7 +710,7 @@ class StateForActualGivenExecution(object):
         except (
             HypothesisDeprecationWarning, FailedHealthCheck,
             StopTest,
-        ) + exceptions_to_reraise:
+        ) + EXCEPTIONS_TO_RERAISE:
             raise
         except Exception as e:
             escalate_hypothesis_internal_error()
