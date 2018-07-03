@@ -21,7 +21,7 @@ import inspect
 from collections import namedtuple, defaultdict
 
 import pytest
-from _pytest.outcomes import Failed
+from _pytest.outcomes import Failed, Skipped
 
 from hypothesis import assume
 from hypothesis import settings as Settings
@@ -961,7 +961,7 @@ def test_new_initialize_rules_are_picked_up_before_and_after_rules_call():
     assert len(Foo.initialize_rules()) == 2
 
 
-def test_steps_printed_despite_BaseException(capsys):
+def test_steps_printed_despite_pytest_fail(capsys):
     # Test for https://github.com/HypothesisWorks/hypothesis/issues/1372
     class RaisesProblem(RuleBasedStateMachine):
 
@@ -973,3 +973,16 @@ def test_steps_printed_despite_BaseException(capsys):
         run_state_machine_as_test(RaisesProblem)
     out, _ = capsys.readouterr()
     assert 'state = RaisesProblem()\nstate.oops()\nstate.teardown()\n' == out
+
+
+def test_steps_not_printed_with_pytest_skip(capsys):
+    class RaisesProblem(RuleBasedStateMachine):
+
+        @rule()
+        def skip_whole_test(self):
+            pytest.skip()
+
+    with pytest.raises(Skipped):
+        run_state_machine_as_test(RaisesProblem)
+    out, _ = capsys.readouterr()
+    assert '' == out

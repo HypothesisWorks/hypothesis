@@ -384,7 +384,7 @@ def skip_exceptions_to_reraise():
     return tuple(sorted(exceptions, key=str))
 
 
-exceptions_to_reraise = skip_exceptions_to_reraise()
+EXCEPTIONS_TO_RERAISE = skip_exceptions_to_reraise()
 
 
 def failure_exceptions_to_catch():
@@ -395,14 +395,14 @@ def failure_exceptions_to_catch():
     """
     exceptions = [Exception]
     try:  # pragma: no cover
-        from _pytest.outcomes import OutcomeException
-        exceptions.append(OutcomeException)
+        from _pytest.outcomes import Failed
+        exceptions.append(Failed)
     except ImportError:
         pass
     return tuple(exceptions)
 
 
-exceptions_meaning_failure = failure_exceptions_to_catch()
+EXCEPTIONS_TO_FAIL = failure_exceptions_to_catch()
 
 
 def new_given_argspec(original_argspec, generator_kwargs):
@@ -710,7 +710,7 @@ class StateForActualGivenExecution(object):
         except (
             HypothesisDeprecationWarning, FailedHealthCheck,
             StopTest,
-        ) + exceptions_to_reraise:
+        ) + EXCEPTIONS_TO_RERAISE:
             raise
         except Exception as e:
             escalate_hypothesis_internal_error()

@@ -22,12 +22,12 @@ import unittest
 import pytest
 
 from hypothesis import given
-from hypothesis.core import exceptions_to_reraise
+from hypothesis.core import EXCEPTIONS_TO_RERAISE
 from tests.common.utils import capture_out
 from hypothesis.strategies import integers
 
 
-@pytest.mark.parametrize('skip_exception', exceptions_to_reraise)
+@pytest.mark.parametrize('skip_exception', EXCEPTIONS_TO_RERAISE)
 def test_no_falsifying_example_if_unittest_skip(skip_exception):
     """If a ``SkipTest`` exception is raised during a test, Hypothesis should
     not continue running the test and shrink process, nor should it print
