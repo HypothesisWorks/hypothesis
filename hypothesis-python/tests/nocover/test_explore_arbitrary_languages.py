@@ -23,11 +23,20 @@ import attr
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import Verbosity, HealthCheck, note, given, assume, \
-    settings, unlimited
+import hypothesis.internal.escalation as esc
+from hypothesis import Phase, Verbosity, HealthCheck, note, given, \
+    assume, settings, unlimited
 from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
+
+
+def setup_module(module):
+    esc.PREVENT_ESCALATION = True
+
+
+def teardown_module(module):
+    esc.PREVENT_ESCALATION = False
 
 
 @attr.s()
@@ -95,7 +104,7 @@ def run_language_test_for(root, data, seed):
     runner = ConjectureRunner(test, settings=settings(
         max_examples=1, max_shrinks=100, buffer_size=512,
         database=None, suppress_health_check=HealthCheck.all(),
-        verbosity=Verbosity.quiet,
+        verbosity=Verbosity.quiet, phases=list(Phase),
     ))
     try:
         runner.run()
@@ -107,8 +116,8 @@ def run_language_test_for(root, data, seed):
 
 @settings(
     max_examples=100, suppress_health_check=HealthCheck.all(),
-    deadline=None, verbosity=Verbosity.debug, timeout=unlimited,
-    use_coverage=False,
+    deadline=None, timeout=unlimited,
+    use_coverage=False, phases=set(Phase) - {Phase.shrink},
 )
 @given(st.data())
 def test_explore_an_arbitrary_language(data):
