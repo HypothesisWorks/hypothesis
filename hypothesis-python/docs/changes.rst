@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.65.3:
+
+-------------------
+3.65.3 - 2018-07-04
+-------------------
+
+This release fixes a mostly theoretical bug where certain usage of the internal
+API could trigger an assertion error inside Hypothesis. It is unlikely that
+this problem is even possible to trigger through the public API.
+
 .. _v3.65.2:
 
 -------------------
