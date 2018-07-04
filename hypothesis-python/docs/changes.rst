@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.65.2:
+
+-------------------
+3.65.2 - 2018-07-04
+-------------------
+
+This release fixes dependency information for coverage.  Previously Hypothesis
+would allow installing :pypi:`coverage` with any version, but it only works
+with coverage 4.0 or later.
+
+We now specify the correct metadata in our ``setup.py``, so Hypothesis will
+only allow installation with compatible versions of coverage.
+
 .. _v3.65.1:
 
 -------------------
