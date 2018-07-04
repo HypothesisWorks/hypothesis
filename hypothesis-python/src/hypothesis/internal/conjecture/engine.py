@@ -663,6 +663,17 @@ class ConjectureRunner(object):
                 HealthCheck.large_base_example
             )
 
+        # If the language starts with writes of length >= cap then there is
+        # only one string in it: Everything after cap is forced to be zero (or
+        # to be whatever value is written there). That means that once we've
+        # tried the zero value, there's nothing left for us to do, so we
+        # exit early here.
+        for i in hrange(self.cap):
+            if i not in zero_data.forced_indices:
+                break
+        else:
+            self.exit_with(ExitReason.finished)
+
         self.health_check_state = HealthCheckState()
 
         count = 0

@@ -36,7 +36,7 @@ from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     ConjectureData
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.conjecture.engine import Negated, Shrinker, \
-    RunIsComplete, ConjectureRunner, universal
+    ExitReason, RunIsComplete, ConjectureRunner, universal
 
 SOME_LABEL = calc_label_from_name('some label')
 
@@ -1313,3 +1313,20 @@ def test_handle_empty_draws(monkeypatch):
                 break
         data.mark_interesting()
     assert x == hbytes([0])
+
+
+def test_large_initial_write():
+    big = hbytes(b'\xff') * 512
+
+    def f(data):
+        data.write(big)
+        data.draw_bits(63)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(f, settings=settings(
+            max_examples=5000, buffer_size=1024,
+            database=None, suppress_health_check=HealthCheck.all(),
+        ))
+        runner.run()
+
+    assert runner.exit_reason == ExitReason.finished
