@@ -21,6 +21,24 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.0:
+
+-------------------
+3.66.0 - 2018-07-05
+-------------------
+
+This release improves validation of the ``alphabet`` argument to the
+:func:`~hypothesis.strategies.text` strategy.  The following misuses
+are now deprecated, and will be an error in a future version:
+
+- passing an unordered collection (such as ``set('abc')``), which
+  violates invariants about shrinking and reproducibility
+- passing an alphabet sequence with elements that are not strings
+- passing an alphabet sequence with elements that are not of length one,
+  which violates any size constraints that may apply
+
+Thanks to Sushobhit for adding these warnings (:issue:`1329`).
+
 .. _v3.65.3:
 
 -------------------
