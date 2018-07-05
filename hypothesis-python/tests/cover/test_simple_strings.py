@@ -23,6 +23,7 @@ from random import Random
 import pytest
 
 from hypothesis import find, given, settings
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import text, binary, tuples, characters
 
 
@@ -127,3 +128,18 @@ def test_fixed_size_bytes_just_draw_bytes():
 @given(text(max_size=10**6))
 def test_can_set_max_size_large(s):
     pass
+
+
+@checks_deprecated_behaviour
+def test_alphabet_is_not_a_sequence():
+    text(alphabet=set('abc')).example()
+
+
+@checks_deprecated_behaviour
+def test_alphabet_breaking_size_limit():
+    text(['a', 'c', 'ed', 'b', 'abc']).example()
+
+
+@checks_deprecated_behaviour
+def test_alphabet_non_string():
+    text([1, 2, 3]).example()

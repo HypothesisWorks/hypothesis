@@ -28,6 +28,7 @@ from decimal import Context, Decimal, localcontext
 from inspect import isclass, isfunction
 from fractions import Fraction
 from functools import reduce
+from collections import Sequence
 
 import attr
 
@@ -37,7 +38,7 @@ from hypothesis._settings import note_deprecation
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.searchstrategy import SearchStrategy, check_strategy
 from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
-    text_type, get_type_hints, getfullargspec, implements_iterator
+    string_types, get_type_hints, getfullargspec, implements_iterator
 from hypothesis.internal.floats import next_up, next_down, is_negative, \
     float_to_int, int_to_float, count_between_floats
 from hypothesis.internal.charmap import as_general_categories
@@ -926,7 +927,31 @@ def text(
     elif isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:
-        char_strategy = sampled_from(list(map(text_type, alphabet)))
+        if not isinstance(alphabet, Sequence):
+            note_deprecation(
+                'alphabet must be an ordered sequence, or tests may be '
+                'flaky and shrinking weaker, but a %r is not a type of '
+                'sequence.  This will be an error in future.'
+                % (type(alphabet),)
+            )
+        alphabet = list(alphabet)
+        non_string = [c for c in alphabet if not isinstance(c, string_types)]
+        if non_string:
+            note_deprecation(
+                'The following elements in alphabet are not unicode '
+                'strings, which will be an error in future:  %r'
+                % (non_string,)
+            )
+            alphabet = [str(c) for c in alphabet]
+        not_one_char = [c for c in alphabet
+                        if isinstance(c, string_types) and len(c) != 1]
+        if not_one_char:
+            note_deprecation(
+                'The following elements in alphabet are not of length '
+                'one, which leads to violation of size constraints and '
+                'will be an error in future:  %r' % (not_one_char,)
+            )
+        char_strategy = sampled_from(alphabet)
     return StringStrategy(lists(
         char_strategy, min_size=min_size, max_size=max_size
     ))
