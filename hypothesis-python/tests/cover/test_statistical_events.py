@@ -25,7 +25,10 @@ import pytest
 
 from hypothesis import HealthCheck, event, given, assume, example, settings
 from hypothesis import strategies as st
-from hypothesis.statistics import collector
+from hypothesis.statistics import Statistics, collector
+from hypothesis.internal.conjecture.data import Status
+from hypothesis.internal.conjecture.engine import ExitReason, \
+    ConjectureRunner
 
 
 def call_for_statistics(test_function):
@@ -193,3 +196,20 @@ def test_stops_after_x_shrinks(monkeypatch):
 
     stats = call_for_statistics(test)
     assert 'shrunk example' in stats.exit_reason
+
+
+@pytest.mark.parametrize('drawtime,runtime', [
+    (1, 0), (-1, 0), (0, -1), (-1, -1),
+])
+def test_weird_drawtime_issues(drawtime, runtime):
+    # Regression test for #1346, where we don't have the expected relationship
+    # 0<=drawtime<= runtime due to changing clocks or floating-point issues.
+    engine = ConjectureRunner(lambda: None)
+    engine.exit_reason = ExitReason.finished
+    engine.status_runtimes[Status.VALID] = [0]
+
+    engine.all_drawtimes.append(drawtime)
+    engine.all_runtimes.extend([0, runtime])
+
+    stats = Statistics(engine)
+    assert stats.draw_time_percentage == 'NaN'
