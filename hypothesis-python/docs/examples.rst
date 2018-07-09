@@ -196,6 +196,7 @@ Hypothesis, and how the :func:`~hypothesis.strategies.datetimes` strategy works.
     >>> from datetime import timedelta
     >>> from hypothesis.extra.pytz import timezones
     >>> from hypothesis.strategies import datetimes
+    >>> from hypothesis import given
 
     >>> # The datetimes strategy is naive by default, so tell it to use timezones
     >>> aware_datetimes = datetimes(timezones=timezones())
