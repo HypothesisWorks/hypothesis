@@ -25,6 +25,7 @@ import math
 import time
 import array
 import codecs
+import inspect
 import platform
 import importlib
 from base64 import b64encode
@@ -277,7 +278,6 @@ if PY2:
                              'kwonlyargs, kwonlydefaults, annotations')
 
     def getfullargspec(func):
-        import inspect
         args, varargs, varkw, defaults = inspect.getargspec(func)
         return FullArgSpec(args, varargs, varkw, defaults, [], None,
                            getattr(func, '__annotations__', {}))
@@ -296,9 +296,10 @@ if sys.version_info[:2] < (3, 6):
         except TypeError:
             return {}
 else:
+    import typing
+
     def get_type_hints(thing):
         try:
-            import typing
             return typing.get_type_hints(thing)
         except TypeError:
             return {}
