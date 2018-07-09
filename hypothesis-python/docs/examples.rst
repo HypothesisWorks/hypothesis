@@ -94,7 +94,7 @@ First we need to define a strategy for Node:
 
 .. code:: python
 
-  from hypothesis import settings, strategy
+  from hypothesis import settings, strategies
   import hypothesis.strategies as s
 
   NodeStrategy = s.builds(
