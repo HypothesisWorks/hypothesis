@@ -158,6 +158,7 @@ their individual contributions.
 * `Alex Stapleton <https://www.github.com/public>`_
 * `Alex Willmer <https://github.com/moreati>`_ (alex@moreati.org.uk)
 * `Ben Peterson <https://github.com/killthrush>`_ (killthrush@hotmail.com)
+* `Bill Tucker <https://github.com/imbilltucker>`_ (imbilltucker@gmail.com)
 * `Buck Evan, copyright Google LLC <https://github.com/bukzor>`_
 * `Charles O'Farrell <https://www.github.com/charleso>`_
 * `Charlie Tanksley <https://www.github.com/charlietanksley>`_
