@@ -195,8 +195,7 @@ implement fully automated stateless and stateful reliability tests for the
 `robotic software components <https://roboception.com/en/rc_reason-en/>`_ .
 
 Thank you very much for creating the (probably) most powerful property-based
-testing framework around.
-__ 
+testing framework.
 
 -------------------------------------------
 `Your name goes here <http://example.com>`_
