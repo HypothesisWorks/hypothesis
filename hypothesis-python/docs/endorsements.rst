@@ -185,6 +185,18 @@ as well.
 
 __ https://github.com/merchise/xoutil/commit/0a4a0f529812fed363efb653f3ade2d2bc203945
 
+----------------------------------------------
+`Florian Kromer <https://github.com/fkromer>`_
+----------------------------------------------
+
+At `Roboception GmbH <https://roboception.com/en/>`_ I use Hypothesis to
+implement fully automated stateless and stateful reliability tests for the
+`3D sensor rc_visard <https://roboception.com/en/rc_visard-en/>`_ and
+`robotic software components <https://roboception.com/en/rc_reason-en/>`_ .
+
+Thank you very much for creating the (probably) most powerful property-based
+testing framework.
+
 -------------------------------------------
 `Your name goes here <http://example.com>`_
 -------------------------------------------
