@@ -61,8 +61,10 @@ impl MainGenerationLoop {
     fn loop_body(&mut self) -> StepResult {
         let interesting_example = self.generate_examples()?;
 
+        let initial_status = interesting_example.status;
+
         let mut shrinker = Shrinker::new(self, interesting_example, |r| {
-            r.status == Status::Interesting
+            r.status == initial_status
         });
 
         shrinker.run()?;
@@ -76,8 +78,9 @@ impl MainGenerationLoop {
         {
             let r = self.random.gen();
             let result = self.execute(DataSource::from_random(r))?;
-            if result.status == Status::Interesting {
-                return Ok(result);
+            match result.status {
+              Status::Interesting(_) => return Ok(result),
+              _ => (),
             }
         }
         return Err(LoopExitReason::MaxExamples);
@@ -95,7 +98,7 @@ impl MainGenerationLoop {
             Status::Overflow => (),
             Status::Invalid => self.invalid_examples += 1,
             Status::Valid => self.valid_examples += 1,
-            Status::Interesting => {
+            Status::Interesting(_) => {
                 self.best_example = Some(result.clone());
                 self.interesting_examples += 1;
             }

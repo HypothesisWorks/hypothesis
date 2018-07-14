@@ -167,7 +167,7 @@ pub enum Status {
 
     // This was an interesting test execution! (Usually this
     // means failing, but for things like find it may not).
-    Interesting,
+    Interesting(u64),
 }
 
 // Once a data source is finished it "decays" to a

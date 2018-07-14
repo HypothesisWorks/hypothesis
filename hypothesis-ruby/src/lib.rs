@@ -91,8 +91,8 @@ ruby! {
       mark_child_status(&mut self.engine, child, Status::Invalid);
     }
 
-    def finish_interesting(&mut self, child: &mut HypothesisCoreDataSource){
-      mark_child_status(&mut self.engine, child, Status::Interesting);
+    def finish_interesting(&mut self, child: &mut HypothesisCoreDataSource, label: u64){
+      mark_child_status(&mut self.engine, child, Status::Interesting(label));
     }
 
     def finish_valid(&mut self, child: &mut HypothesisCoreDataSource){

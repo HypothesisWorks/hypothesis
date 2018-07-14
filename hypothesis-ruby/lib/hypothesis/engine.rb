@@ -23,7 +23,7 @@ module Hypothesis
         begin
           result = yield(@current_source)
           if is_find && result
-            @core_engine.finish_interesting(core)
+            @core_engine.finish_interesting(core, 0)
           else
             @core_engine.finish_valid(core)
           end
@@ -33,7 +33,7 @@ module Hypothesis
           @core_engine.finish_overflow(core)
         rescue Exception
           raise if is_find
-          @core_engine.finish_interesting(core)
+          @core_engine.finish_interesting(core, 0)
         end
       end
       @current_source = nil
