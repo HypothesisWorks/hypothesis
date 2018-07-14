@@ -33,6 +33,7 @@ struct MainGenerationLoop {
     random: ChaChaRng,
 
     best_example: Option<TestResult>,
+    minimized_examples: HashMap<u64, TestResult>,
 
     valid_examples: u64,
     invalid_examples: u64,
@@ -98,8 +99,12 @@ impl MainGenerationLoop {
             Status::Overflow => (),
             Status::Invalid => self.invalid_examples += 1,
             Status::Valid => self.valid_examples += 1,
-            Status::Interesting(_) => {
+            Status::Interesting(n) => {
                 self.best_example = Some(result.clone());
+                self.minimized_examples.entry(n).or_insert_with(|| {result.clone()}); 
+                self.minimized_examples.entry(n).and_modify(|e| {
+                  if result < *e {*e = result.clone() }; 
+                });
                 self.interesting_examples += 1;
             }
         }
@@ -500,6 +505,7 @@ impl Engine {
             sender: send_remote,
             receiver: recv_remote,
             best_example: None,
+            minimized_examples: HashMap::new(),
             valid_examples: 0,
             invalid_examples: 0,
             interesting_examples: 0,
@@ -544,6 +550,23 @@ impl Engine {
         }
     }
 
+    pub fn list_minimized_examples(&self) -> Vec<TestResult> {
+        match &self.loop_response {
+            &Some(LoopCommand::Finished(
+                _,
+                MainGenerationLoop {
+                    ref minimized_examples,
+                    ..
+                },
+            )) => {
+              let mut results: Vec<TestResult> = minimized_examples.values().map(|v| v.clone()).collect();
+              results.sort();
+              results
+            },
+            _ => Vec::new(),
+        }
+    }
+
     pub fn best_source(&self) -> Option<DataSource> {
         match &self.loop_response {
             &Some(LoopCommand::Finished(
@@ -556,6 +579,7 @@ impl Engine {
             _ => None,
         }
     }
+
 
     fn consume_test_result(&mut self, result: TestResult) -> () {
         assert!(self.state == EngineState::AwaitingCompletion);

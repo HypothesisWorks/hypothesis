@@ -3,6 +3,7 @@
 
 use rand::{ChaChaRng, Rng};
 use std::collections::HashSet;
+use std::cmp::Ordering;
 
 pub type DataStream = Vec<u64>;
 
@@ -182,3 +183,25 @@ pub struct TestResult {
     pub sizes: Vec<u64>,
     pub written_indices: HashSet<usize>,
 }
+
+
+impl Ord for TestResult {
+    fn cmp(&self, other: &TestResult) -> Ordering {
+      self.record.len().cmp(&other.record.len()).
+      then(self.record.cmp(&other.record))
+    }
+}
+
+impl PartialOrd for TestResult {
+    fn partial_cmp(&self, other: &TestResult) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for TestResult {
+    fn eq(&self, other: &TestResult) -> bool {
+        self.record == other.record
+    }
+}
+
+impl Eq for TestResult { }
