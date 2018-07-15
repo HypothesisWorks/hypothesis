@@ -607,8 +607,8 @@ def test_does_not_think_is_inside_repl_from_script(tmpdir):
 
     lines = [
         'import sys',
-        'from hypothesis.internal.reflection import guess_if_running_in_repl',
-        'if guess_if_running_in_repl():',
+        'from hypothesis.internal.reflection import is_running_in_repl',
+        'if is_running_in_repl():',
         '    sys.exit(1)',
         'else:',
         '    sys.exit(0)',
@@ -630,8 +630,8 @@ def test_does_think_is_inside_repl_from_repl():
     )
 
     lines = [
-        b'from hypothesis.internal.reflection import guess_if_running_in_repl',
-        b'print(guess_if_running_in_repl())'
+        b'from hypothesis.internal.reflection import is_running_in_repl',
+        b'print(is_running_in_repl())'
     ]
     command = b'; '.join(lines) + b'\n'
 

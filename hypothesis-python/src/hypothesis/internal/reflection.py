@@ -538,7 +538,7 @@ def proxies(target):
     return accept
 
 
-def guess_if_running_in_repl():
+def is_running_in_repl():
     """Tries to guess if Hypothesis is running from inside an interactive
     REPL or inside a script."""
     # The last frame in this list is the outermost call on the stack.
