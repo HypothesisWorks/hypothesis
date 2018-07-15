@@ -97,7 +97,8 @@ def test_using_example_inside_repl_is_no_warning():
     )
 
     stdout, stderr = proc.communicate(
-        b'from hypothesis.strategies import integers; integers().example()\n'
+        b'from hypothesis.strategies import integers; '
+        b'print(integers().example())\n'
     )
 
     # We're looking for strings like b'45\n' or b'-30894\n'.
