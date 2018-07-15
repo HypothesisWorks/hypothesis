@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
+import subprocess
 from copy import deepcopy
 from functools import partial
 
@@ -606,7 +607,7 @@ def test_does_not_think_is_inside_repl_from_script(tmpdir):
 
     lines = [
         'import sys',
-        'from hypothesis.internal.reflection import *',
+        'from hypothesis.internal.reflection import guess_if_running_in_repl',
         'if guess_if_running_in_repl():',
         '    sys.exit(1)',
         'else:',
@@ -616,6 +617,24 @@ def test_does_not_think_is_inside_repl_from_script(tmpdir):
     with open(script, 'w') as f:
         f.write('\n'.join(lines))
 
-    import subprocess
     result = subprocess.call(['python', script])
     assert result == 0
+
+
+def test_does_think_is_inside_repl_from_repl():
+    proc = subprocess.Popen(
+        ['python'],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+
+    lines = [
+        b'from hypothesis.internal.reflection import guess_if_running_in_repl',
+        b'print(guess_if_running_in_repl())'
+    ]
+    command = b'; '.join(lines) + b'\n'
+
+    stdout, stderr = proc.communicate(command)
+    assert stdout == b'True\n'
+    assert stderr == b''
