@@ -77,6 +77,21 @@ def consistently_increment_time(monkeypatch):
     monkeypatch.setattr(time_module, 'freeze', freeze, raising=False)
 
 
+@pytest.fixture(scope=u'function', autouse=True)
+def disable_warnings_on_example(request, monkeypatch):
+    """The .example() method on strategies emits a warning if used outside
+    an interactive REPL.
+
+    We use it for convenience in some tests -- this stops it from emitting
+    a warning throughout our test suite.
+    """
+    if 'no_disable_warnings_on_example' in request.keywords:
+        return
+
+    import hypothesis.internal.reflection as reflection_module
+    monkeypatch.setattr(reflection_module, 'is_running_in_repl', lambda: True)
+
+
 if not IN_COVERAGE_TESTS:
     @pytest.fixture(scope=u'function', autouse=True)
     def validate_lack_of_trace_function():

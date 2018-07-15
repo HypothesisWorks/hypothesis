@@ -83,9 +83,26 @@ def test_example_inside_strategy():
     st.booleans().map(lambda x: st.integers().example()).example()
 
 
-@checks_deprecated_behaviour
-def test_using_example_outside_repl_is_error():
-    st.integers().example()
+def test_using_example_outside_repl_is_error(tmpdir):
+    script = tmpdir.join('example_script.py')
+    with open(script, 'wb') as outfile:
+        outfile.write(
+            b'from hypothesis.strategies import integers\n'
+            b'print(integers().example())\n'
+        )
+
+    proc = subprocess.Popen(
+        ['python', script],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+
+    stdout, stderr = proc.communicate()
+
+    # We're looking for strings like b'45\n' or b'-30894\n'.
+    assert re.match(rb'^\-?\d+\n$', stdout)
+
+    assert b'HypothesisDeprecationWarning' in stderr
 
 
 def test_using_example_inside_repl_is_no_warning():
@@ -101,7 +118,5 @@ def test_using_example_inside_repl_is_no_warning():
         b'print(integers().example())\n'
     )
 
-    # We're looking for strings like b'45\n' or b'-30894\n'.
     assert re.match(rb'^\-?\d+\n$', stdout)
-
     assert b'HypothesisDeprecationWarning' not in stderr
