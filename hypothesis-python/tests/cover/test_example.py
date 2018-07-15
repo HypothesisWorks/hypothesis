@@ -18,7 +18,6 @@
 from __future__ import division, print_function, absolute_import
 
 import re
-import subprocess
 from random import Random
 from decimal import Decimal
 
@@ -96,15 +95,8 @@ def test_using_example_outside_repl_is_error(external_script):
     assert re.match(rb'^\-?\d+\n$', stdout)
 
 
-def test_using_example_inside_repl_is_no_warning():
-    proc = subprocess.Popen(
-        ['python'],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
-
-    stdout, stderr = proc.communicate(
+def test_using_example_inside_repl_is_no_warning(repl_session):
+    stdout, stderr = repl_session(
         b'from hypothesis.strategies import integers; '
         b'print(integers().example())\n'
     )

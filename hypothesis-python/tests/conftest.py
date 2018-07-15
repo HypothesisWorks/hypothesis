@@ -115,6 +115,24 @@ def external_script(tmpdir):
     return runner
 
 
+@pytest.fixture
+def repl_session():
+    """Returns a helper that runs a single line of code in the Python REPL,
+    and returns a (stdout, stderr) tuple.
+    """
+    def runner(code):
+        proc = subprocess.Popen(
+            ['python'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+
+        return proc.communicate(code)
+
+    return runner
+
+
 if not IN_COVERAGE_TESTS:
     @pytest.fixture(scope=u'function', autouse=True)
     def validate_lack_of_trace_function():
