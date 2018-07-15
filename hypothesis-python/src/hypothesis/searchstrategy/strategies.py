@@ -280,6 +280,16 @@ class SearchStrategy(Generic[Ex]):
                     '#drawing-interactively-in-tests for more details.'
                 )
 
+        from hypothesis.internal.reflection import is_running_in_repl
+
+        if not is_running_in_repl():
+            note_deprecation(
+                'Using example() outside the interactive REPL is a bad idea. '
+                "It doesn't give a representative sample of outputs -- it's "
+                'meant for interactive exploration of the API, not for '
+                'proper testing.'
+            )
+
         from hypothesis import find, settings, Verbosity
 
         # Conjecture will always try the zero example first. This would result

@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import re
+import subprocess
 from random import Random
 from decimal import Decimal
 
@@ -29,6 +31,7 @@ from hypothesis.control import _current_build_context
 from tests.common.utils import checks_deprecated_behaviour
 
 
+@checks_deprecated_behaviour
 @settings(deadline=None)
 @given(st.integers())
 def test_deterministic_examples_are_deterministic(seed):
@@ -37,16 +40,19 @@ def test_deterministic_examples_are_deterministic(seed):
             st.lists(st.integers()).example(Random(seed))
 
 
+@checks_deprecated_behaviour
 def test_example_of_none_is_none():
     assert st.none().example() is None
 
 
+@checks_deprecated_behaviour
 def test_exception_in_compare_can_still_have_example():
     st.one_of(
         st.none().map(lambda n: Decimal('snan')),
         st.just(Decimal(0))).example()
 
 
+@checks_deprecated_behaviour
 def test_does_not_always_give_the_same_example():
     s = st.integers()
     assert len(set(
@@ -54,6 +60,7 @@ def test_does_not_always_give_the_same_example():
     )) >= 10
 
 
+@checks_deprecated_behaviour
 def test_raises_on_no_examples():
     with pytest.raises(NoExamples):
         st.nothing().example()
@@ -74,3 +81,26 @@ def test_example_inside_find():
 @checks_deprecated_behaviour
 def test_example_inside_strategy():
     st.booleans().map(lambda x: st.integers().example()).example()
+
+
+@checks_deprecated_behaviour
+def test_using_example_outside_repl_is_error():
+    st.integers().example()
+
+
+def test_using_example_inside_repl_is_no_warning():
+    proc = subprocess.Popen(
+        ['python'],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+
+    stdout, stderr = proc.communicate(
+        b'from hypothesis.strategies import integers; integers().example()\n'
+    )
+
+    # We're looking for strings like b'45\n' or b'-30894\n'.
+    assert re.match(rb'^\-?\d+\n$', stdout)
+
+    assert b'HypothesisDeprecationWarning' not in stderr
