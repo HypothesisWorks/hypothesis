@@ -83,26 +83,17 @@ def test_example_inside_strategy():
     st.booleans().map(lambda x: st.integers().example()).example()
 
 
-def test_using_example_outside_repl_is_error(tmpdir):
-    script = tmpdir.join('example_script.py')
-    with open(script, 'wb') as outfile:
-        outfile.write(
-            b'from hypothesis.strategies import integers\n'
-            b'print(integers().example())\n'
-        )
-
-    proc = subprocess.Popen(
-        ['python', script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+def test_using_example_outside_repl_is_error(external_script):
+    returncode, stdout, stderr = external_script(
+        b'from hypothesis.strategies import integers\n'
+        b'print(integers().example())\n'
     )
 
-    stdout, stderr = proc.communicate()
+    assert returncode == 0
+    assert b'HypothesisDeprecationWarning' in stderr
 
     # We're looking for strings like b'45\n' or b'-30894\n'.
     assert re.match(rb'^\-?\d+\n$', stdout)
-
-    assert b'HypothesisDeprecationWarning' in stderr
 
 
 def test_using_example_inside_repl_is_no_warning():

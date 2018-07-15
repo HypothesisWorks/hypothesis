@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import gc
 import sys
 import time as time_module
+import subprocess
 
 import pytest
 
@@ -90,6 +91,28 @@ def disable_warnings_on_example(request, monkeypatch):
 
     import hypothesis.internal.reflection as reflection_module
     monkeypatch.setattr(reflection_module, 'is_running_in_repl', lambda: True)
+
+
+@pytest.fixture
+def external_script(tmpdir):
+    """Returns a helper that saves code to an external Python script,
+    runs the code, and returns an (exit_code, stdout, stderr) tuple.
+    """
+    def runner(code):
+        script = tmpdir.join('example_script.py')
+        with open(script, 'wb') as outfile:
+            outfile.write(code)
+
+        proc = subprocess.Popen(
+            ['python', script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+
+        stdout, stderr = proc.communicate()
+        return (proc.returncode, stdout, stderr)
+
+    return runner
 
 
 if not IN_COVERAGE_TESTS:

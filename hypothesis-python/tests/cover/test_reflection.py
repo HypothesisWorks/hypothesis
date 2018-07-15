@@ -602,21 +602,13 @@ def test_required_args(target, args, kwargs, expected):
     assert required_args(target, args, kwargs) == expected
 
 
-def test_does_not_think_is_inside_repl_from_script(tmpdir):
-    script = tmpdir.join('example_script.py')
-    with open(script, 'wb') as outfile:
-        outfile.write(
-            b'from hypothesis.internal.reflection import is_running_in_repl\n'
-            b'print(is_running_in_repl())\n'
-        )
-
-    proc = subprocess.Popen(
-        ['python', script],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+def test_does_not_think_is_inside_repl_from_script(external_script):
+    returncode, stdout, stderr = external_script(
+        b'from hypothesis.internal.reflection import is_running_in_repl\n'
+        b'print(is_running_in_repl())\n'
     )
 
-    stdout, stderr = proc.communicate()
+    assert returncode == 0
     assert stdout == b'False\n'
     assert stderr == b''
 
