@@ -629,12 +629,8 @@ def test_does_think_is_inside_repl_from_repl():
         stderr=subprocess.PIPE
     )
 
-    lines = [
-        b'from hypothesis.internal.reflection import is_running_in_repl',
-        b'print(is_running_in_repl())'
-    ]
-    command = b'; '.join(lines) + b'\n'
-
-    stdout, stderr = proc.communicate(command)
+    stdout, stderr = proc.communicate(
+        b'from hypothesis.internal.reflection import *; is_running_in_repl()\n'
+    )
     assert stdout == b'True\n'
     assert stderr == b''
