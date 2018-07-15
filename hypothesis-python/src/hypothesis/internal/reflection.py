@@ -88,6 +88,18 @@ def function_digest(function):
     return hasher.digest()
 
 
+def is_typed_named_tuple(cls):
+    """Return True if cls is probably a subtype of `typing.NamedTuple`.
+
+    Unfortunately types created with `class T(NamedTuple):` actually
+    subclass `tuple` directly rather than NamedTuple.  This is annoying,
+    and means we just have to hope that nobody defines a different tuple
+    subclass with similar attributes.
+    """
+    return issubclass(cls, tuple) and hasattr(cls, '_fields') and \
+        hasattr(cls, '_field_types')
+
+
 def required_args(target, args=(), kwargs=()):
     """Return a set of names of required args to target that were not supplied
     in args or kwargs.
@@ -97,6 +109,11 @@ def required_args(target, args=(), kwargs=()):
     and bound methods).  args and kwargs should be as they are passed to
     builds() - that is, a tuple of values and a dict of names: values.
     """
+    # We start with a workaround for NamedTuples, which don't have nice inits
+    if inspect.isclass(target) and is_typed_named_tuple(target):
+        provided = set(kwargs) | set(target._fields[:len(args)])
+        return set(target._fields) - provided
+    # Then we try to do the right thing with getfullargspec
     try:
         spec = getfullargspec(
             target.__init__ if inspect.isclass(target) else target)

@@ -46,7 +46,7 @@ from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args, \
-    define_function_signature
+    is_typed_named_tuple, define_function_signature
 from hypothesis.internal.validation import check_type, try_convert, \
     check_valid_size, check_valid_bound, check_valid_sizes, \
     check_valid_integer, check_valid_interval, check_valid_magnitude
@@ -1125,8 +1125,14 @@ def builds(
             from hypothesis.searchstrategy.attrs import from_attrs
             return from_attrs(target, args, kwargs, required | to_infer)
         # Otherwise, try using type hints
-        hints = get_type_hints(
-            target.__init__ if isclass(target) else target)
+        if isclass(target):
+            if is_typed_named_tuple(target):
+                # Special handling for typing.NamedTuple
+                hints = target._field_types
+            else:
+                hints = get_type_hints(target.__init__)
+        else:
+            hints = get_type_hints(target)
         if to_infer - set(hints):
             raise InvalidArgument(
                 'passed infer for %s, but there is no type annotation'
@@ -1248,25 +1254,22 @@ def from_type(thing):
         return one_of(strategies)
     # If we don't have a strategy registered for this type or any subtype, we
     # may be able to fall back on type annotations.
-    # Types created via typing.NamedTuple use a custom attribute instead -
-    # but we can still use builds(), if we work out the right kwargs.
-    if issubclass(thing, tuple) and hasattr(thing, '_fields') \
-            and hasattr(thing, '_field_types'):
-        kwargs = {k: from_type(thing._field_types[k]) for k in thing._fields}
-        return builds(thing, **kwargs)
     if issubclass(thing, enum.Enum):
         assert len(thing), repr(thing) + ' has no members to sample'
         return sampled_from(thing)
-    # If the constructor has an annotation for all required arguments,
-    # or the class was defined with attrs, builds(thing) will work.
-    # (unless inference fails for an argument, but that's the same above too)
+    # If we know that builds(thing) will fail, give a better error message
     required = required_args(thing)
-    if not required or required.issubset(get_type_hints(thing.__init__)) or \
-            attr.has(thing):
-        return builds(thing)
-    # We have utterly failed, and might as well say so now.
-    raise ResolutionFailed('Could not resolve %r to a strategy; consider '
-                           'using register_type_strategy' % (thing,))
+    if not any([
+        not required,
+        required.issubset(get_type_hints(thing.__init__)),
+        attr.has(thing),
+        # NamedTuples are weird enough that we need a specific check for them.
+        is_typed_named_tuple(thing),
+    ]):
+        raise ResolutionFailed('Could not resolve %r to a strategy; consider '
+                               'using register_type_strategy' % (thing,))
+    # Finally, try to build an instance by calling the type object
+    return builds(thing)
 
 
 @cacheable
