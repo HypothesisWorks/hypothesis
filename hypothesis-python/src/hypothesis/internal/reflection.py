@@ -536,3 +536,14 @@ def proxies(target):
         return impersonate(target)(wraps(target)(define_function_signature(
             target.__name__, target.__doc__, getfullargspec(target))(proxy)))
     return accept
+
+
+def guess_if_running_in_repl():
+    """Tries to guess if Hypothesis is running from inside an interactive
+    REPL or inside a script."""
+    # The last frame in this list is the outermost call on the stack.
+    # In this case, the filename will be '<stdin>' if we're running inside
+    # the REPL.
+    stack = inspect.stack()
+    outermost_call = stack[-1]
+    return outermost_call.filename == '<stdin>'

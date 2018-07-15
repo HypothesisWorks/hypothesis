@@ -599,3 +599,23 @@ class Target(object):
 def test_required_args(target, args, kwargs, expected):
     # Mostly checking that `self` (and only self) is correctly excluded
     assert required_args(target, args, kwargs) == expected
+
+
+def test_does_not_think_is_inside_repl_from_script(tmpdir):
+    script = tmpdir.join('test_script.py')
+
+    lines = [
+        'import sys',
+        'from hypothesis.internal.reflection import *',
+        'if guess_if_running_in_repl():',
+        '    sys.exit(1)',
+        'else:',
+        '    sys.exit(0)',
+    ]
+
+    with open(script, 'w') as f:
+        f.write('\n'.join(lines))
+
+    import subprocess
+    result = subprocess.call(['python', script])
+    assert result == 0
