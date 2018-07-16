@@ -63,6 +63,20 @@ impl MainGenerationLoop {
     fn loop_body(&mut self) -> StepResult {
         self.generate_examples()?;
 
+        // At the start of this loop we can only have example in
+        // self.minimized_examples, but as we shrink we may find other ones.
+        // The reason why we loop is twofold:
+        // a) This allows us to include newly discovered examples. Labels that
+        //    are not found in self.minimized_examples at the beginning of the
+        //    loop will be added for the next iteration around.
+        // b) If we've previously marked a label as finished it can become
+        //    unfinished again if when shrinking another label, as when trying
+        //    to shrink one label we might accidentally find an improved shrink
+        //    for another.
+        // 
+        // In principle this might cause us to loop for a very long time before
+        // eventually settling on a fixed point, but when that happens we
+        // should hit limits on shrinking (which we haven't implemented yet).
         while self.minimized_examples.len() > self.fully_minimized.len() {
           let keys: Vec<u64> = self.minimized_examples.keys().map(|i| *i).collect();
           for label in keys.iter() {
