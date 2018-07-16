@@ -12,9 +12,10 @@ class PrintingFormatter
     end
 
     unless bad.empty?
-      puts "Files with missing coverage!"
+      puts 'Files with missing coverage!'
       bad.each do |file|
-        lines = file.source_lines.select{|l| l.coverage == 0}.map{|l| l.line_number}.sort
+        lines = file.source_lines.select { |l| l.coverage == 0 }
+                    .map(&:line_number).sort
         s = lines[0]
         groups = [[s, s]]
         lines.each do |i|
@@ -29,19 +30,18 @@ class PrintingFormatter
           if g[0] == g[1]
             markers.push(g[0].to_s)
           else
-            markers.push(g.join("-"))
+            markers.push(g.join('-'))
           end
         end
-        puts "#{file.filename}: #{markers.join(", ")}"
+        puts "#{file.filename}: #{markers.join(', ')}"
       end
     end
   end
 end
 
-SimpleCov.formatters = SimpleCov::Formatter::MultiFormatter.new([
-  SimpleCov::Formatter::HTMLFormatter,
-  PrintingFormatter,
-])
+SimpleCov.formatters = SimpleCov::Formatter::MultiFormatter.new(
+  [SimpleCov::Formatter::HTMLFormatter, PrintingFormatter]
+)
 
 SimpleCov.start do
   add_filter do |source_file|
