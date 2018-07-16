@@ -56,6 +56,7 @@ module Hypothesis
       else
         exceptions = []
         (0...@core_engine.count_failing_examples).each do |example|
+          core = @core_engine.failing_example(example)
           @current_source = TestCase.new(core, print_draws: true)
 
           begin
