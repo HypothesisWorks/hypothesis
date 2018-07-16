@@ -1,3 +1,8 @@
+# Hypothesis for Ruby 0.1.0 (2018-07-16)
+
+This release adds support for reporting multiple exceptions when Hypothesis
+finds more than one way for the test to fail.
+
 # Hypothesis for Ruby 0.0.15 (2018-06-25)
 
 This release fixes an occasional `RuntimeError` that could occur
