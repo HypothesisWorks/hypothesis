@@ -16,10 +16,27 @@ RSpec.describe 'tests with multiple failures' do
         end
 
         expect(x).to_not eq(@initial)
-        raise "Nope"
+        raise 'Nope'
       end
-    end.to raise_exception(RSpec::Expectations::MultipleExpectationsNotMetError){|e|
+    end.to raise_exception(Hypothesis::MultipleExceptionError) { |e|
       expect(e.all_exceptions.length).to eq(2)
     }
+  end
+end
+
+RSpec.describe Hypothesis::MultipleExceptionError do
+  it 'includes the message from each exception' do
+    exceptions = []
+    %w[hello world].each do |m|
+      begin
+        raise m
+      rescue Exception => e
+        exceptions.append(e)
+      end
+    end
+
+    e = Hypothesis::MultipleExceptionError.new(*exceptions)
+    expect(e.message).to include('hello')
+    expect(e.message).to include('world')
   end
 end

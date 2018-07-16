@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'hypothesis/junkdrawer'
 require 'hypothesis/errors'
 require 'hypothesis/possible'
 require 'hypothesis/testcase'

@@ -4,7 +4,6 @@ require 'helix_runtime'
 require 'hypothesis-ruby/native'
 require 'rspec/expectations'
 
-
 module Hypothesis
   class Engine
     include RSpec::Matchers
@@ -18,7 +17,7 @@ module Hypothesis
         seed, options.fetch(:max_examples)
       )
 
-      @exceptions_to_tags = Hash.new{|h, k| h[k] = h.size }
+      @exceptions_to_tags = Hash.new { |h, k| h[k] = h.size }
     end
 
     def run
@@ -39,11 +38,14 @@ module Hypothesis
           @core_engine.finish_overflow(core)
         rescue Exception => e
           raise if is_find
-          key = [e.class, e.backtrace[0]] 
+          key = [
+            e.class,
+            HypothesisJunkDrawer.find_first_relevant_line(e.backtrace)
+          ]
           @core_engine.finish_interesting(core, @exceptions_to_tags[key])
         end
       end
-      if @core_engine.count_failing_examples == 0
+      if @core_engine.count_failing_examples.zero?
         raise Unsatisfiable if @core_engine.was_unsatisfiable
         @current_source = nil
         return
@@ -87,13 +89,11 @@ module Hypothesis
               end
               e.hypothesis_data = [given_str, original_to_s, original_inspect]
             end
-            if @core_engine.count_failing_examples == 1
-              raise e
-            else
-              exceptions.push(e)
-            end
+            raise e if @core_engine.count_failing_examples == 1
+            exceptions.push(e)
           end
         end
+        raise Hypothesis::MultipleExceptionError.new(*exceptions)
       end
     end
   end
