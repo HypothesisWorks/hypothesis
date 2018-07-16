@@ -4,7 +4,7 @@
 use rand::{ChaChaRng, Rng, SeedableRng};
 
 use std::cmp::Reverse;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::mem;
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::thread;
@@ -34,6 +34,7 @@ struct MainGenerationLoop {
 
     best_example: Option<TestResult>,
     minimized_examples: HashMap<u64, TestResult>,
+    fully_minimized: HashSet<u64>,
 
     valid_examples: u64,
     invalid_examples: u64,
@@ -60,15 +61,22 @@ impl MainGenerationLoop {
     }
 
     fn loop_body(&mut self) -> StepResult {
-        let interesting_example = self.generate_examples()?;
+        self.generate_examples()?;
 
-        let initial_status = interesting_example.status;
+        while self.minimized_examples.len() > self.fully_minimized.len() {
+          let keys: Vec<u64> = self.minimized_examples.keys().map(|i| *i).collect();
+          for label in keys.iter() {
+            if self.fully_minimized.insert(*label) {
+              let target = self.minimized_examples[label].clone();
+              let mut shrinker = Shrinker::new(
+                self, target, |r| {
+                  r.status == Status::Interesting(*label)
+              });
 
-        let mut shrinker = Shrinker::new(self, interesting_example, |r| {
-            r.status == initial_status
-        });
-
-        shrinker.run()?;
+              shrinker.run()?;
+            }
+          }
+        }
 
         return Err(LoopExitReason::Complete);
     }
@@ -101,10 +109,17 @@ impl MainGenerationLoop {
             Status::Valid => self.valid_examples += 1,
             Status::Interesting(n) => {
                 self.best_example = Some(result.clone());
+                let mut changed = false;
                 self.minimized_examples.entry(n).or_insert_with(|| {result.clone()}); 
                 self.minimized_examples.entry(n).and_modify(|e| {
-                  if result < *e {*e = result.clone() }; 
+                  if result < *e {
+                    changed = true;
+                    *e = result.clone()
+                  }; 
                 });
+                if changed {
+                  self.fully_minimized.remove(&n);
+                }
                 self.interesting_examples += 1;
             }
         }
@@ -506,6 +521,7 @@ impl Engine {
             receiver: recv_remote,
             best_example: None,
             minimized_examples: HashMap::new(),
+            fully_minimized: HashSet::new(),
             valid_examples: 0,
             invalid_examples: 0,
             interesting_examples: 0,
@@ -649,4 +665,41 @@ impl Engine {
             }
         }
     }
+}
+
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use data::FailedDraw;
+
+  fn run_to_results<F>(mut f: F) -> Vec<TestResult>
+    where F: FnMut(&mut DataSource) -> Result<Status, FailedDraw> {
+    let seed: [u32; 2] = [0, 0];
+    let mut engine = Engine::new(1000, &seed);
+    while let Some(mut source) = engine.next_source() {
+      if let Ok(status) = f(&mut source) {
+        engine.mark_finished(source, status);
+      } else {
+        engine.mark_finished(source, Status::Overflow);
+      }
+    }
+    engine.list_minimized_examples()
+  }
+
+  #[test]
+  fn minimizes_all_examples(){
+    let results = run_to_results(|source| {
+      let n = source.bits(64)?;
+      if n >= 100 {
+        Ok(Status::Interesting(n % 2))
+      } else {
+        Ok(Status::Valid)
+      }
+    });
+
+    assert!(results.len() == 2);
+    assert_eq!(results[0].record[0], 100);
+    assert_eq!(results[1].record[0], 101);
+  }
 }
