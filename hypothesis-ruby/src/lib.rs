@@ -15,7 +15,7 @@ extern crate conjecture;
 
 use std::mem;
 
-use conjecture::data::{DataSource, Status};
+use conjecture::data::{DataSource, Status, TestResult};
 use conjecture::distributions::Repeat;
 use conjecture::distributions;
 use conjecture::engine::Engine;
@@ -49,6 +49,7 @@ ruby! {
     struct {
       engine: Engine,
       pending: Option<DataSource>,
+      interesting_examples: Vec<TestResult>,
     }
 
     def initialize(helix, seed: u64, max_examples: u64){
@@ -57,12 +58,16 @@ ruby! {
         helix,
         engine: Engine::new(max_examples, &xs),
         pending: None,
+        interesting_examples: Vec::new(),
       }
     }
 
     def new_source(&mut self) -> Option<HypothesisCoreDataSource> {
       match self.engine.next_source() {
-        None => None,
+        None => {
+          self.interesting_examples = self.engine.list_minimized_examples();
+          None
+        },
         Some(source) => {
           self.pending = Some(source);
           Some(HypothesisCoreDataSource::new(self))
@@ -70,13 +75,15 @@ ruby! {
       }
     }
 
-    def failing_example(&mut self) -> Option<HypothesisCoreDataSource> {
-      if let Some(source) = self.engine.best_source() {
-        self.pending = Some(source);
-        return Some(HypothesisCoreDataSource::new(self));
-      } else {
-        return None;
-      }
+    def count_failing_examples(&self) -> usize {
+      self.interesting_examples.len()
+    }
+
+    def failing_example(&mut self, i: usize) -> HypothesisCoreDataSource {
+      self.pending = Some(
+        DataSource::from_vec(self.interesting_examples[i].record.clone())
+      );
+      HypothesisCoreDataSource::new(self)
     }
 
     def was_unsatisfiable(&mut self) -> bool {
@@ -91,8 +98,8 @@ ruby! {
       mark_child_status(&mut self.engine, child, Status::Invalid);
     }
 
-    def finish_interesting(&mut self, child: &mut HypothesisCoreDataSource){
-      mark_child_status(&mut self.engine, child, Status::Interesting);
+    def finish_interesting(&mut self, child: &mut HypothesisCoreDataSource, label: u64){
+      mark_child_status(&mut self.engine, child, Status::Interesting(label));
     }
 
     def finish_valid(&mut self, child: &mut HypothesisCoreDataSource){
