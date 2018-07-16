@@ -1,3 +1,10 @@
+# Conjecture for Rust 0.3.0 (2018-07-16)
+
+This release adds support for annotating interesting examples
+to indicate that they are logically distinct. When multiple distinct
+reasons for being interesting are found, Conjecture will attempt to
+shrink all of them.
+
 # Conjecture for Rust 0.2.1 (2018-06-25)
 
 This release fixes an occasional assertion failure that could occur
