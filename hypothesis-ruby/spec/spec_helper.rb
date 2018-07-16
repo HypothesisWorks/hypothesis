@@ -46,7 +46,7 @@ SimpleCov.formatters = SimpleCov::Formatter::MultiFormatter.new(
 SimpleCov.start do
   add_filter do |source_file|
     name = source_file.filename
-    !(name.include?('/hypothesis/') || name.end_with?('hypothesis.rb'))
+    !(name.include?('/hypothesis-ruby/lib/') || name.end_with?('hypothesis.rb'))
   end
 end
 
