@@ -13,4 +13,4 @@ fi
 
 rustup default stable
 
-rustup update
+rustup update stable
