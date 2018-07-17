@@ -55,6 +55,7 @@ class TestAsyncio(TestCase):
             raise error
 
     @given(st.text())
+    @asyncio.coroutine
     def test_foo(self, x):
         assume(x)
         yield from asyncio.sleep(0.001)
