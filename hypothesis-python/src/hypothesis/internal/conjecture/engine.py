@@ -2325,7 +2325,7 @@ class Shrinker(object):
                             except OverflowError:
                                 return False
                             return self.incorporate_new_buffer(attempt)
-                        if trial(m - 1, n + 1):
+                        if trial(m - 1, n + 1) and m > 1:
                             m = int_from_bytes(self.shrink_target.buffer[u:v])
                             n = int_from_bytes(self.shrink_target.buffer[r:s])
 
