@@ -1339,6 +1339,7 @@ class Shrinker(object):
             self.interval_deletion_with_block_lowering()
             self.pass_to_interval()
             self.reorder_bytes()
+            self.minimize_block_pairs_retaining_sum()
 
     @property
     def blocks(self):
@@ -2279,3 +2280,58 @@ class Shrinker(object):
                     break
             else:
                 i += 1
+
+    def minimize_block_pairs_retaining_sum(self):
+        """This pass minimizes pairs of blocks subject to the constraint that
+        their sum when interpreted as integers remains the same. This allow us
+        to normalize a number of examples that we would otherwise struggle on.
+        e.g. consider the following:
+
+        m = data.draw_bits(8)
+        n = data.draw_bits(8)
+        if m + n >= 256:
+            data.mark_interesting()
+
+        The ideal example for this is m=1, n=255, but we will almost never
+        find that without a pass like this - we would only do so if we
+        happened to draw n=255 by chance.
+
+        This kind of scenario comes up reasonably often in the context of e.g.
+        triggering overflow behaviour.
+        """
+        i = 0
+        while i < len(self.shrink_target.blocks):
+            if self.is_payload_block(i):
+                j = i + 1
+                while j < len(self.shrink_target.blocks):
+                    u, v = self.shrink_target.blocks[i]
+                    m = int_from_bytes(self.shrink_target.buffer[u:v])
+                    if m == 0:
+                        break
+                    r, s = self.shrink_target.blocks[j]
+                    n = int_from_bytes(self.shrink_target.buffer[r:s])
+
+                    if (
+                        s - r == v - u and
+                        self.is_payload_block(j)
+                    ):
+                        def trial(x, y):
+                            if s > len(self.shrink_target.buffer):
+                                return False
+                            attempt = bytearray(self.shrink_target.buffer)
+                            try:
+                                attempt[u:v] = int_to_bytes(x, v - u)
+                                attempt[r:s] = int_to_bytes(y, s - r)
+                            except OverflowError:
+                                return False
+                            return self.incorporate_new_buffer(attempt)
+                        if trial(m - 1, n + 1):
+                            m = int_from_bytes(self.shrink_target.buffer[u:v])
+                            n = int_from_bytes(self.shrink_target.buffer[r:s])
+
+                            tot = m + n
+                            minimize_int(
+                                m, lambda x: trial(x, tot - x)
+                            )
+                    j += 1
+            i += 1
