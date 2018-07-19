@@ -13,7 +13,7 @@ For example, consider the following test:
 
     @given(st.integers(), st.integers())
     def test_does_not_exceed_100(m, n):
-        assert m + n <= 100
+        assert m + n < 100
 
 Previously this could have failed with almost any pair ``(m, n)`` with
 ``0 <= m <= n`` and ``m + n == 100``. Now it should almost always fail with
