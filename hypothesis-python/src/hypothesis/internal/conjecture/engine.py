@@ -2325,6 +2325,11 @@ class Shrinker(object):
                             except OverflowError:
                                 return False
                             return self.incorporate_new_buffer(attempt)
+                        # We first attempt to move 1 from m to n. If that works
+                        # then we treat that as a sign that it's worth trying
+                        # a more expensive minimization. But if m was already 1
+                        # (we know it's > 0) then there's no point continuing
+                        # because the value there is now zero.
                         if trial(m - 1, n + 1) and m > 1:
                             m = int_from_bytes(self.shrink_target.buffer[u:v])
                             n = int_from_bytes(self.shrink_target.buffer[r:s])
