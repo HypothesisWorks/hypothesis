@@ -1330,3 +1330,45 @@ def test_large_initial_write():
         runner.run()
 
     assert runner.exit_reason == ExitReason.finished
+
+
+@pytest.mark.parametrize('lo', [0, 1, 50])
+def test_can_shrink_additively(monkeypatch, lo):
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda self: self.test_function(
+            ConjectureData.for_buffer(hbytes([100, 100]))))
+
+    @run_to_buffer
+    def x(data):
+        m = data.draw_bits(8)
+        n = data.draw_bits(8)
+        if m >= lo and m + n == 200:
+            data.mark_interesting()
+
+    assert list(x) == [lo, 200 - lo]
+
+
+def test_can_shrink_additively_losing_size(monkeypatch):
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda self: self.test_function(
+            ConjectureData.for_buffer(hbytes([100, 100]))))
+
+    monkeypatch.setattr(
+        Shrinker, 'shrink', lambda self: (
+            self.minimize_block_pairs_retaining_sum(),
+        )
+    )
+
+    @run_to_buffer
+    def x(data):
+        m = data.draw_bits(8)
+        if m >= 10:
+            if m <= 50:
+                data.mark_interesting()
+            else:
+                n = data.draw_bits(8)
+                if m + n == 200:
+                    data.mark_interesting()
+    assert len(x) == 1
