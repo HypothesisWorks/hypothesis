@@ -367,6 +367,24 @@ def test_required_args(target, args, kwargs):
               **{k: st.just(v) for k, v in kwargs.items()}).example()
 
 
+AnnotatedNamedTuple = typing.NamedTuple('AnnotatedNamedTuple', [('a', str)])
+
+
+@given(st.builds(AnnotatedNamedTuple))
+def test_infers_args_for_namedtuple_builds(thing):
+    assert isinstance(thing.a, str)
+
+
+@given(st.from_type(AnnotatedNamedTuple))
+def test_infers_args_for_namedtuple_from_type(thing):
+    assert isinstance(thing.a, str)
+
+
+@given(st.builds(AnnotatedNamedTuple, a=st.none()))
+def test_override_args_for_namedtuple(thing):
+    assert thing.a is None
+
+
 @pytest.mark.parametrize('thing', [
     typing.Optional, typing.List, getattr(typing, 'Type', typing.Set)
 ])  # check Type if it's available, otherwise Set is redundant but harmless
