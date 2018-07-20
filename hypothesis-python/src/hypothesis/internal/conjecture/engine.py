@@ -1335,6 +1335,7 @@ class Shrinker(object):
             if not run_expensive_shrinks:
                 continue
 
+            self.reorder_examples()
             self.shrink_offset_pairs()
             self.interval_deletion_with_block_lowering()
             self.pass_to_interval()
@@ -2339,4 +2340,45 @@ class Shrinker(object):
                                 m, lambda x: trial(x, tot - x)
                             )
                     j += 1
+            i += 1
+
+    def reorder_examples(self):
+        """This pass allows us to reorder pairs of examples which come from the
+        same strategy (or strategies that happen to pun to the same label by
+        accident, but that shouldn't happen often).
+
+        For example, consider the following:
+
+        .. code-block:: python
+
+            import hypothesis.strategies as st
+            from hypothesis import given
+
+            @given(st.text(), st.text())
+            def test_does_not_exceed_100(x, y):
+                assert x != y
+
+        Without the ability to reorder x and y this could fail either with
+        ``x="", ``y="0"``, or the other way around. With reordering it will
+        reliably fail with ``x=""``, ``y="0"``.
+        """
+        i = 0
+        while i < len(self.shrink_target.examples):
+            j = i + 1
+            while j < len(self.shrink_target.examples):
+                ex1 = self.shrink_target.examples[i]
+                ex2 = self.shrink_target.examples[j]
+                if ex1.label == ex2.label and ex2.start >= ex1.end:
+                    buf = self.shrink_target.buffer
+                    attempt = (
+                        buf[:ex1.start] +
+                        buf[ex2.start:ex2.end] +
+                        buf[ex1.end:ex2.start] +
+                        buf[ex1.start:ex1.end] +
+                        buf[ex2.end:]
+                    )
+                    assert len(attempt) == len(buf)
+                    if attempt < buf:
+                        self.incorporate_new_buffer(attempt)
+                j += 1
             i += 1

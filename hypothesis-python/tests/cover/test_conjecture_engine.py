@@ -1372,3 +1372,27 @@ def test_can_shrink_additively_losing_size(monkeypatch):
                 if m + n == 200:
                     data.mark_interesting()
     assert len(x) == 1
+
+
+def test_can_reorder_examples(monkeypatch):
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer([1, 0, 1, 1, 0, 1, 0, 0, 0])))
+
+    monkeypatch.setattr(
+        Shrinker, 'shrink', Shrinker.reorder_examples,
+    )
+
+    @run_to_buffer
+    def x(data):
+        total = 0
+        for _ in range(5):
+            data.start_example(0)
+            if data.draw_bits(8):
+                total += data.draw_bits(9)
+            data.stop_example(0)
+        if total == 2:
+            data.mark_interesting()
+
+    assert list(x) == [0, 0, 0, 1, 0, 1, 1, 0, 1]
