@@ -26,20 +26,24 @@ import collections
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import find, given, infer, assume
+from hypothesis import HealthCheck, find, given, infer, assume, settings
 from hypothesis.errors import NoExamples, InvalidArgument, ResolutionFailed
 from hypothesis.strategies import from_type
 from hypothesis.searchstrategy import types
-from hypothesis.internal.compat import integer_types, get_type_hints
+from hypothesis.internal.compat import ForwardRef, integer_types, \
+    get_type_hints, typing_root_type
 
 typing = pytest.importorskip('typing')
 sentinel = object()
 generics = sorted((t for t in types._global_type_lookup
-                   if isinstance(t, typing.GenericMeta)), key=str)
+                   if isinstance(t, typing_root_type)), key=str)
 
 
 @pytest.mark.parametrize('typ', generics)
 def test_resolve_typing_module(typ):
+    @settings(suppress_health_check=[
+        HealthCheck.too_slow, HealthCheck.filter_too_much
+    ])
     @given(from_type(typ))
     def inner(ex):
         if typ in (typing.BinaryIO, typing.TextIO):
@@ -49,6 +53,8 @@ def test_resolve_typing_module(typ):
             assert ex == ()
         elif isinstance(typ, typing._ProtocolMeta):
             pass
+        elif typ is typing.Type and not isinstance(typing.Type, type):
+            assert isinstance(ex, typing.TypeVar)
         else:
             try:
                 assert isinstance(ex, typ)
@@ -227,6 +233,21 @@ def test_resolves_weird_types(typ):
     from_type(typ).example()
 
 
+@pytest.mark.parametrize('var,expected', [
+    (typing.TypeVar('V'), object),
+    (typing.TypeVar('V', bound=int), int),
+    (typing.TypeVar('V', int, str), (int, str)),
+])
+@given(data=st.data())
+def test_typevar_type_is_consistent(data, var, expected):
+    strat = st.from_type(var)
+    v1 = data.draw(strat)
+    v2 = data.draw(strat)
+    assume(v1 != v2)  # Values may vary, just not types
+    assert type(v1) == type(v2)
+    assert isinstance(v1, expected)
+
+
 def annotated_func(a: int, b: int=2, *, c: int, d: int=4):
     return a + b + c + d
 
@@ -391,7 +412,7 @@ def test_override_args_for_namedtuple(thing):
 def test_cannot_resolve_bare_forward_reference(thing):
     with pytest.raises(InvalidArgument):
         t = thing['int']
-        if type(getattr(t, '__args__', [None])[0]) != typing._ForwardRef:
+        if type(getattr(t, '__args__', [None])[0]) != ForwardRef:
             assert sys.version_info[:2] == (3, 5)
             pytest.xfail('python 3.5 typing module is really weird')
         st.from_type(t).example()

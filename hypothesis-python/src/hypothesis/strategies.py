@@ -38,7 +38,8 @@ from hypothesis._settings import note_deprecation
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.searchstrategy import SearchStrategy, check_strategy
 from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
-    string_types, get_type_hints, getfullargspec, implements_iterator
+    string_types, get_type_hints, getfullargspec, typing_root_type, \
+    implements_iterator
 from hypothesis.internal.floats import next_up, next_down, is_negative, \
     float_to_int, int_to_float, count_between_floats
 from hypothesis.internal.charmap import as_general_categories
@@ -1189,7 +1190,6 @@ def from_type(thing):
     from hypothesis.searchstrategy import types
 
     if typing is not None:  # pragma: no branch
-        fr = typing._ForwardRef
         if not isinstance(thing, type):
             # At runtime, `typing.NewType` returns an identity function rather
             # than an actual type, but we can check that for a possible match
@@ -1206,12 +1206,13 @@ def from_type(thing):
                 return one_of([from_type(t) for t in args])
         # We can't resolve forward references, and under Python 3.5 (only)
         # a forward reference is an instance of type.  Hence, explicit check:
-        elif type(thing) == fr:  # pragma: no cover
+        elif hasattr(typing, '_ForwardRef') and \
+                type(thing) == typing._ForwardRef:  # pragma: no cover
             raise ResolutionFailed(
                 'thing=%s cannot be resolved.  Upgrading to python>=3.6 may '
                 'fix this problem via improvements to the typing module.'
                 % (thing,))
-    if not isinstance(thing, type):
+    if not types.is_a_type(thing):
         raise InvalidArgument('thing=%s must be a type' % (thing,))
     # Now that we know `thing` is a type, the first step is to check for an
     # explicitly registered strategy.  This is the best (and hopefully most
@@ -1232,7 +1233,7 @@ def from_type(thing):
     # because there are several special cases that don't play well with
     # subclass and instance checks.
     if typing is not None:  # pragma: no branch
-        if isinstance(thing, typing.TypingMeta):
+        if isinstance(thing, typing_root_type):
             return types.from_typing_type(thing)
     # If it's not from the typing module, we get all registered types that are
     # a subclass of `thing` and are not themselves a subtype of any other such
@@ -1241,7 +1242,7 @@ def from_type(thing):
     strategies = [
         v if isinstance(v, SearchStrategy) else v(thing)
         for k, v in types._global_type_lookup.items()
-        if issubclass(k, thing) and sum(
+        if isinstance(k, type) and issubclass(k, thing) and sum(
             types.try_issubclass(k, typ) for typ in types._global_type_lookup
         ) == 1
     ]
@@ -2072,7 +2073,7 @@ def register_type_strategy(custom_type, strategy):
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.searchstrategy import types
-    if not isinstance(custom_type, type):
+    if not types.is_a_type(custom_type):
         raise InvalidArgument('custom_type=%r must be a type')
     elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
         raise InvalidArgument(
