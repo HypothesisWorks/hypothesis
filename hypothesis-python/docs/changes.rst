@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.3:
+
+-------------------
+3.66.3 - 2018-07-20
+-------------------
+
+This patch fixes inference in the :func:`~hypothesis.strategies.builds`
+strategy with subtypes of :class:`python:typing.NamedTuple`, where the
+``__init__`` method is not useful for introspection.  We now use the
+field types instead - thanks to James Uther for identifying this bug.
+
 .. _v3.66.2:
 
 -------------------
