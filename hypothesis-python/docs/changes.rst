@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.5:
+
+-------------------
+3.66.5 - 2018-07-22
+-------------------
+
+This patch fixes the online docs for various extras, by ensuring that
+their dependencies are installed on readthedocs.io (:issue:`1326`).
+
 .. _v3.66.4:
 
 -------------------
