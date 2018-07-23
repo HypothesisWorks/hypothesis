@@ -37,8 +37,13 @@ except ImportError:
     from ordereddict import OrderedDict  # type: ignore
     from counter import Counter  # type: ignore
 
+try:
+    from collections import abc
+except ImportError:
+    import collections as abc  # type: ignore
+
 if False:
-    from typing import Type  # noqa
+    from typing import Type, Tuple  # noqa
 
 
 PY2 = sys.version_info[0] == 2
@@ -271,6 +276,21 @@ def qualname(f):
         return f.im_class.__name__ + '.' + f.__name__
     except AttributeError:
         return f.__name__
+
+
+try:
+    import typing
+except ImportError:
+    typing_root_type = ()  # type: Tuple[type, ...]
+    ForwardRef = None
+else:
+    if hasattr(typing, '_Final'):  # new in Python 3.7
+        typing_root_type = (
+            typing._Final, typing._GenericAlias)  # type: ignore
+        ForwardRef = typing.ForwardRef  # type: ignore
+    else:
+        typing_root_type = (typing.TypingMeta, typing.TypeVar)  # type: ignore
+        ForwardRef = typing._ForwardRef  # type: ignore
 
 
 if PY2:

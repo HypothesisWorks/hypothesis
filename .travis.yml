@@ -81,10 +81,6 @@ script:
 
 matrix:
     fast_finish: true
-    allow_failures:
-      - env: TASK=check-py37
-        sudo: required
-        dist: xenial
 
 notifications:
   email:

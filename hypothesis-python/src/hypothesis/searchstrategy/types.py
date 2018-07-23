@@ -27,25 +27,36 @@ import collections
 
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.internal.compat import PY2, text_type
+from hypothesis.internal.compat import PY2, ForwardRef, abc, text_type, \
+    typing_root_type
 
 
 def type_sorting_key(t):
     """Minimise to None, then non-container types, then container types."""
-    if not isinstance(t, type):
+    if not is_a_type(t):
         raise InvalidArgument('thing=%s must be a type' % (t,))
     if t is None or t is type(None):  # noqa: E721
         return (-1, repr(t))
-    return (issubclass(t, collections.Container), repr(t))
+    if not isinstance(t, type):  # pragma: no cover
+        # Some generics in the typing module are not actually types in 3.7
+        return (2, repr(t))
+    return (int(issubclass(t, abc.Container)), repr(t))
 
 
-def try_issubclass(thing, maybe_superclass):
+def try_issubclass(thing, superclass):
+    thing = getattr(thing, '__origin__', None) or thing
+    superclass = getattr(superclass, '__origin__', None) or superclass
     try:
-        return issubclass(thing, maybe_superclass)
+        return issubclass(thing, superclass)
     except (AttributeError, TypeError):  # pragma: no cover
         # Some types can't be the subject or object of an instance or
         # subclass check under Python 3.5
         return False
+
+
+def is_a_type(thing):
+    """Return True if thing is a type or a generic type like thing."""
+    return isinstance(thing, type) or isinstance(thing, typing_root_type)
 
 
 def from_typing_type(thing):
@@ -65,22 +76,32 @@ def from_typing_type(thing):
         if not args:
             raise ResolutionFailed('Cannot resolve Union of no types.')
         return st.one_of([st.from_type(t) for t in args])
-    if isinstance(thing, typing.TupleMeta):
+    if getattr(thing, '__origin__', None) == tuple or \
+            isinstance(thing, getattr(typing, 'TupleMeta', ())):
         elem_types = getattr(thing, '__tuple_params__', None) or ()
         elem_types += getattr(thing, '__args__', None) or ()
         if getattr(thing, '__tuple_use_ellipsis__', False) or \
                 len(elem_types) == 2 and elem_types[-1] is Ellipsis:
             return st.lists(st.from_type(elem_types[0])).map(tuple)
         return st.tuples(*map(st.from_type, elem_types))
+    if isinstance(thing, typing.TypeVar):
+        if getattr(thing, '__bound__', None) is not None:
+            return st.from_type(thing.__bound__)
+        if getattr(thing, '__constraints__', None):
+            return st.shared(
+                st.sampled_from(thing.__constraints__),
+                key='typevar-with-constraint'
+            ).flatmap(st.from_type)
+        # Constraints may be None or () on various Python versions.
+        return st.text()  # An arbitrary type for the typevar
     # Now, confirm that we're dealing with a generic type as we expected
-    if not isinstance(thing, typing.GenericMeta):  # pragma: no cover
+    if not isinstance(thing, typing_root_type):  # pragma: no cover
         raise ResolutionFailed('Cannot resolve %s to a strategy' % (thing,))
     # Parametrised generic types have their __origin__ attribute set to the
     # un-parametrised version, which we need to use in the subclass checks.
     # e.g.:     typing.List[int].__origin__ == typing.List
     mapping = {k: v for k, v in _global_type_lookup.items()
-               if isinstance(k, typing.GenericMeta) and
-               try_issubclass(k, getattr(thing, '__origin__', None) or thing)}
+               if isinstance(k, typing_root_type) and try_issubclass(k, thing)}
     if typing.Dict in mapping:
         # The subtype relationships between generic and concrete View types
         # are sometimes inconsistent under Python 3.5, so we pop them out to
@@ -206,10 +227,10 @@ else:
             args = args[0].__args__
         elif hasattr(args[0], '__union_params__'):  # pragma: no cover
             args = args[0].__union_params__
-        if isinstance(typing._ForwardRef, type):  # pragma: no cover
+        if isinstance(ForwardRef, type):  # pragma: no cover
             # Duplicate check from from_type here - only paying when needed.
             for a in args:
-                if type(a) == typing._ForwardRef:
+                if type(a) == ForwardRef:
                     raise ResolutionFailed(
                         'thing=%s cannot be resolved.  Upgrading to '
                         'python>=3.6 may fix this problem via improvements '
