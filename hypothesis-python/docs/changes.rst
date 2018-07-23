@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.6:
+
+-------------------
+3.66.6 - 2018-07-23
+-------------------
+
+This patch ensures that Hypothesis fully supports Python 3.7, by
+upgrading :func:`~hypothesis.strategies.from_type` (:issue:`1264`)
+and fixing some minor issues in our test suite (:issue:`1148`).
+
 .. _v3.66.5:
 
 -------------------
