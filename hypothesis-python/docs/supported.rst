@@ -15,7 +15,7 @@ Hypothesis is supported and tested on CPython 2.7 and CPython 3.4+.
 
 Hypothesis also supports PyPy2, and will support PyPy3 when there is a stable
 release supporting Python 3.4+.  Hypothesis does not currently work on Jython,
-though could feasibly be made to do so. IronPython might work but hasn't been
+though it probably could (:issue:`174`). IronPython might work but hasn't been
 tested.  32-bit and narrow builds should work, though this is currently only
 tested on Windows.
 
@@ -48,7 +48,8 @@ If your testing relies on doing something other than calling a function and seei
 if it raises an exception then it probably *won't* work out of the box. In particular
 things like tests which return generators and expect you to do something with them
 (e.g. nose's yield based tests) will not work. Use a decorator or similar to wrap the
-test to take this form.
+test to take this form, or ask the framework maintainer to support our
+:ref:`hooks for inserting such a wrapper later <custom-function-execution>`.
 
 In terms of what's actually *known* to work:
 
@@ -56,7 +57,7 @@ In terms of what's actually *known* to work:
     and this is verified as part of the CI.
     Note however that :func:`@given <hypothesis.given>` should only be used on
     tests, not :class:`python:unittest.TestCase` setup or teardown methods.
-  * py.test fixtures work in the usual way for tests that have been decorated
+  * :pypi:`pytest` fixtures work in the usual way for tests that have been decorated
     with :func:`@given <hypothesis.given>` - just avoid passing a strategy for
     each argument that will be supplied by a fixture.  However, each fixture
     will run once for the whole function, not once per example.  Decorating a
