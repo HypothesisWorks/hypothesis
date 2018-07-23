@@ -405,7 +405,7 @@ def standard_tox_task(name):
 
 
 standard_tox_task('nose')
-standard_tox_task('pytest28')
+standard_tox_task('pytest30')
 standard_tox_task('faker070')
 standard_tox_task('faker-latest')
 standard_tox_task('django20')
