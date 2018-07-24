@@ -64,7 +64,7 @@ def test_prints_statistics_given_option(testdir):
     assert 'Hypothesis Statistics' in out
     assert 'timeout=0.2' in out
     assert 'max_examples=100' in out
-    assert 'HypothesisDeprecationWarning' in out
+    assert '< 10% of examples satisfied assumptions' in out
 
 
 UNITTEST_TESTSUITE = """
