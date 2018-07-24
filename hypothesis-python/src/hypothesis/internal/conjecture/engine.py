@@ -1233,6 +1233,13 @@ class Shrinker(object):
 
     def incorporate_new_buffer(self, buffer):
         buffer = hbytes(buffer[:self.shrink_target.index])
+
+        # Sometimes an attempt at lexicographic minimization will do the wrong
+        # thing because the buffer has changed under it (e.g. something has
+        # turned into a write, the bit size has changed). The result would be
+        # an invalid string, but it's better for us to just ignore it here as
+        # it turns out to involve quite a lot of tricky book-keeping to get
+        # this right and it's better to just handle it in one place.
         if sort_key(buffer) >= sort_key(self.shrink_target.buffer):
             return False
 
