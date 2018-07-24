@@ -37,6 +37,7 @@ Hypothesis is designed to work with a range of Python versions. Currently suppor
 * CPython 3.4.x
 * CPython 3.5.x
 * CPython 3.6.x
+* CPython 3.7.x
 
 If you feel the need to have separate Python 3 and Python 2 packages you can, but Hypothesis works unmodified
 on either.
@@ -57,8 +58,8 @@ Hypothesis has *optional* dependencies on the following libraries:
 * :pypi:`Faker`, version 0.7 or later
 * `Django <https://www.djangoproject.com>`_, all supported versions
 * :pypi:`numpy`, 1.10 or later (earlier versions will probably work fine)
-* :pypi:`pandas`, 1.8 or later
-* :pypi:`py.test <pytest>` (2.8.0 or greater). This is a mandatory dependency for testing Hypothesis itself but optional for users.
+* :pypi:`pandas`, 1.19 or later
+* :pypi:`pytest` (3.0 or greater). This is a mandatory dependency for testing Hypothesis itself but optional for users.
 
 The way this works when installing Hypothesis normally is that these features become available if the relevant
 library is installed.

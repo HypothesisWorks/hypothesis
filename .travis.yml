@@ -62,7 +62,7 @@ jobs:
       sudo: required
       dist: xenial
     - env: TASK=check-nose
-    - env: TASK=check-pytest28
+    - env: TASK=check-pytest30
     - env: TASK=check-faker070
     - env: TASK=check-faker-latest
     - env: TASK=check-django20
