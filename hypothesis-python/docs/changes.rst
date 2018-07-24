@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.8:
+
+-------------------
+3.66.8 - 2018-07-24
+-------------------
+
+This patch includes some minor fixes in the documentation, and updates
+the minimum version of :pypi:`pytest` to 3.0 (released August 2016).
+
 .. _v3.66.7:
 
 -------------------
