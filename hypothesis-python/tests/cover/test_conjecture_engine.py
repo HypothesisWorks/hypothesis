@@ -1396,3 +1396,22 @@ def test_can_reorder_examples(monkeypatch):
             data.mark_interesting()
 
     assert list(x) == [0, 0, 0, 1, 0, 1, 1, 0, 1]
+
+
+def test_permits_but_ignores_raising_order(monkeypatch):
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer([1])))
+
+    monkeypatch.setattr(
+        Shrinker, 'shrink',
+        lambda self: self.incorporate_new_buffer(hbytes([2]))
+    )
+
+    @run_to_buffer
+    def x(data):
+        data.draw_bits(2)
+        data.mark_interesting()
+
+    assert list(x) == [1]
