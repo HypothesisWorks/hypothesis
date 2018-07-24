@@ -36,6 +36,16 @@ def run():
     filterwarnings('ignore', message='numpy.dtype size changed')
     filterwarnings('ignore', message='numpy.ufunc size changed')
 
+    # Imported by Pandas in version 1.9, but fixed in later versions.
+    filterwarnings(
+        'ignore',
+        message='Importing from numpy.testing.decorators is deprecated'
+    )
+    filterwarnings(
+        'ignore',
+        message='Importing from numpy.testing.nosetester is deprecated'
+    )
+
     new_home = mkdtemp()
     set_hypothesis_home_dir(new_home)
     assert settings.default.database.path.startswith(new_home)
