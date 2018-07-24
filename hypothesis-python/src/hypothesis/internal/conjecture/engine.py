@@ -1233,7 +1233,8 @@ class Shrinker(object):
 
     def incorporate_new_buffer(self, buffer):
         buffer = hbytes(buffer[:self.shrink_target.index])
-        assert sort_key(buffer) < sort_key(self.shrink_target.buffer)
+        if sort_key(buffer) >= sort_key(self.shrink_target.buffer):
+            return False
 
         if self.shrink_target.buffer.startswith(buffer):
             return False
