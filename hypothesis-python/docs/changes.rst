@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.7:
+
+-------------------
+3.66.7 - 2018-07-24
+-------------------
+
+This release fixes a bug where difficult to shrink tests could sometimes
+trigger an internal assertion error inside the shrinker.
+
 .. _v3.66.6:
 
 -------------------
