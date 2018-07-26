@@ -46,7 +46,7 @@ def test_reports_passes():
 
     for l in value.splitlines():
         m = shrinks_info.search(l)
-        if m is not None and int(m[2]) != 0:
+        if m is not None and int(m.group(2)) != 0:
             break
     else:
         assert False, 'No reports of successful shrinks!'
