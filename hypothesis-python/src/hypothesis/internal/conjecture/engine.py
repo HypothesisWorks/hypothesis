@@ -1201,7 +1201,6 @@ class TargetSelector(object):
 def shrink_pass(fn):
     """Decorates a function that is intended to be used as a shrink pass to
     give some uniform behaviour and logging."""
-
     @proxies(fn)
     def run(self):
         self.debug('Shrink Pass %s' % (fn.__name__,))
