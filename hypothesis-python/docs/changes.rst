@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.9:
+
+-------------------
+3.66.9 - 2018-07-26
+-------------------
+
+This release improves the information that Hypothesis emits about its shrinking
+when :obj:`~hypothesis.settings.verbosity` is set to debug.
+
 .. _v3.66.8:
 
 -------------------
