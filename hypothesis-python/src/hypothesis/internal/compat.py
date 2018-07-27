@@ -50,6 +50,7 @@ PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 PYPY = platform.python_implementation() == 'PyPy'
 CAN_UNPACK_BYTE_ARRAY = sys.version_info[:3] >= (2, 7, 4)
+CAN_PACK_HALF_FLOAT = sys.version_info[:2] >= (3, 6)
 
 WINDOWS = platform.system() == 'Windows'
 
