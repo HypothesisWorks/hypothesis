@@ -372,7 +372,10 @@ def booleans():
 @cacheable
 @defines_strategy_with_reusable_values
 def floats(
-    min_value=None, max_value=None, allow_nan=None, allow_infinity=None
+    min_value=None,  # type: Real
+    max_value=None,  # type: Real
+    allow_nan=None,  # type: bool
+    allow_infinity=None,  # type: bool
 ):
     """Returns a strategy which generates floats.
 
@@ -416,13 +419,14 @@ def floats(
     if max_value == float(u'inf'):
         max_value = None
 
-    if min_value is not None and min_value < min_arg:
+    if min_value is not None and min_arg is not None and min_value < min_arg:
         min_value = next_up(min_value)
-        assert min_value > min_arg
-    if max_value is not None and max_value > max_arg:
+        assert min_value > min_arg  # type: ignore
+    if max_value is not None and max_arg is not None and max_value > max_arg:
         max_value = next_down(max_value)
-        assert max_value < max_arg
-    if None not in (min_value, max_value) and min_value > max_value:
+        assert max_value < max_arg  # type: ignore
+    if min_value is not None and max_value is not None and \
+            min_value > max_value:  # type: ignore
         raise InvalidArgument(
             'There are no floating-point values between min_value=%r and '
             'max_value=%r' % (min_arg, max_arg))
