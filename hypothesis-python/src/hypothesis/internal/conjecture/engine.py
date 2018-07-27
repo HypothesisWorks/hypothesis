@@ -38,6 +38,8 @@ from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize, minimize_int
+from hypothesis.internal.conjecture.shrinking.common import sort_key
+from hypothesis.internal.conjecture.shrinking.length import shrink_length
 
 # Tell pytest to omit the body of this module from tracebacks
 # http://doc.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
@@ -968,10 +970,6 @@ def _draw_successor(rnd, xs):
     return hbytes(r)
 
 
-def sort_key(buffer):
-    return (len(buffer), buffer)
-
-
 def uniform(random, n):
     return int_to_bytes(random.getrandbits(n * 8), n)
 
@@ -1696,6 +1694,7 @@ class Shrinker(object):
             self.__changed_blocks = set()
 
         self.shrink_target = new_target
+        self.__examples_at_depth = None
         self.__shrinking_block_cache = {}
         self.__intervals = None
 
@@ -1745,7 +1744,7 @@ class Shrinker(object):
             # Everything non-structural, we redraw uniformly at random.
             for i, (u, v) in enumerate(self.blocks):
                 if self.is_payload_block(i):
-                    attempt_buf[u:v] = uniform(self.__engine.random, v - u)
+                    attempt_buf[u:v] = uniform(self.random, v - u)
             attempt = self.cached_test_function(attempt_buf)
             if self.__predicate(attempt):
                 prev = self.shrink_target
@@ -1862,6 +1861,39 @@ class Shrinker(object):
         # will reset the flag if the status changes.
         self.__discarding_failed = not self.incorporate_new_buffer(attempt)
 
+    def examples_at_depth(self, depth):
+        """Returns a list of all examples in the current shrink target which
+        are at the requested depth, in their standard order."""
+        if self.__examples_at_depth is None:
+            it = defaultdict(list)
+            for ex in self.shrink_target.examples:
+                it[ex.depth].append(ex)
+            self.__examples_at_depth = it
+        return self.__examples_at_depth[depth]
+
+    def examples(self):
+        """Iterates over all examples in the current shrink target, handling
+        changes to the shrink target during iteration automatically. The order
+        is intended to be one that is sensible for operations of the form "for
+        each example, try to improve it.
+
+        Currently this is in order of increasing depth and from right to
+        left. By going from right to left, we are more likely to succeed
+        (fewer things depend on the current example) and also in cases
+        where there are more than one examples with the desired property
+        we would prefer to keep the earlier ones because it makes it
+        easier to reduce the size.
+        """
+        depth = 0
+        while depth <= self.shrink_target.max_depth:
+            i = 0
+            while i < len(self.examples_at_depth(depth)):
+                prev = len(self.examples_at_depth(depth))
+                yield self.examples_at_depth(depth)[-1 - i]
+                if len(self.examples_at_depth(depth)) == prev:
+                    i += 1
+            depth += 1
+
     @shrink_pass
     def adaptive_example_deletion(self):
         """Attempt to delete every draw call, plus some short sequences of draw
@@ -1869,9 +1901,9 @@ class Shrinker(object):
 
         The only things this guarantees to attempt to delete are every draw
         call and every draw call plus its immediate successor (the first
-        non-empty draw call that starts strictly after it). However if this
-        seems to be working pretty well it will do its best to exploit that
-        and adapt to the fact there's currently a lot that it can delete.
+        non-empty draw call after it and inside the same parent call). However
+        if this seems to be working pretty well it will do its best to exploit
+        that and adapt to the fact there's currently a lot that it can delete.
 
         This is the main point at which we try to lower the size of the data.
         e.g. if we have two successive draw calls, this will attempt to delete
@@ -1886,85 +1918,28 @@ class Shrinker(object):
         This pass will attempt to delete adjacent pairs of calls to shorten the
         loop.
         """
-        i = 0
-        while i < len(self.shrink_target.examples):
-            if self.shrink_target.examples[i].length == 0:
-                i += 1
+        for ex in self.examples():
+            if ex.length == 0:
+                continue
+            if not ex.children:
                 continue
 
-            # Note: We do want this fixed rather than changing during this
-            # iteration of the loop.
             target = self.shrink_target
+            prefix = target.buffer[:ex.start]
+            suffix = target.buffer[ex.end:]
+            pieces = [
+                target.buffer[c.start:c.end]
+                for c in ex.children
+            ]
+            shrink_length(
+                pieces, lambda ls: self.incorporate_new_buffer(
+                    prefix + hbytes().join(ls) + suffix
+                )
+            )
 
-            def try_delete_range(k):
-                """Can we delete k non-trivial non-overlapping examples
-                starting from i?"""
-                stack = []
-                j = i
-                while k > 0 and j < len(target.examples):
-                    ex = target.examples[j]
-                    if ex.length > 0 and (
-                        not stack or stack[-1][1] <= ex.start
-                    ):
-                        stack.append((ex.start, ex.end))
-                        k -= 1
-                    j += 1
-                assert stack
-                attempt = bytearray(target.buffer)
-                for u, v in reversed(stack):
-                    del attempt[u:v]
-                attempt = hbytes(attempt)
-                if sort_key(attempt) >= sort_key(self.shrink_target.buffer):
-                    return False
-                return self.incorporate_new_buffer(attempt)
-
-            # This is an adaptive pass loosely modelled after timsort. If
-            # little or nothing is deletable here then we don't try any more
-            # deletions than the naive greedy algorithm would, but if it looks
-            # like we have an opportunity to delete a lot then we try to do so.
-
-            # What we're trying to do is to find a large k such that we can
-            # delete k but not k + 1 draws starting from this point, and we
-            # want to do that in O(log(k)) rather than O(k) test executions.
-
-            # We try a quite careful sequence of small shrinks here before we
-            # move on to anything big. This is because if we try to be
-            # aggressive too early on we'll tend to find that we lose out when
-            # the example is "nearly minimal".
-            if try_delete_range(2):
-                if try_delete_range(3) and try_delete_range(4):
-
-                    # At this point it looks like we've got a pretty good
-                    # opportunity for a long run here. We do an exponential
-                    # probe upwards to try and find some k where we can't
-                    # delete many intervals. We do this rather than choosing
-                    # that upper bound to immediately be large because we
-                    # don't really expect k to be huge. If it turns out that
-                    # it is, the subsequent example is going to be so tiny that
-                    # it doesn't really matter if we waste a bit of extra time
-                    # here.
-                    hi = 5
-                    while try_delete_range(hi):
-                        assert hi <= len(target.examples)
-                        hi *= 2
-
-                    # We now know that we can delete the first lo intervals but
-                    # not the first hi. We preserve that property while doing
-                    # a binary search to find the point at which we stop being
-                    # able to delete intervals.
-                    lo = 4
-                    while lo + 1 < hi:
-                        mid = (lo + hi) // 2
-                        if try_delete_range(mid):
-                            lo = mid
-                        else:
-                            hi = mid
-            else:
-                try_delete_range(1)
-            # We unconditionally bump i because we have always tried deleting
-            # one more example than we succeeded at deleting, so we expect the
-            # next example to be undeletable.
-            i += 1
+    @property
+    def random(self):
+        return self.__engine.random
 
     @shrink_pass
     def minimize_duplicated_blocks(self):
@@ -2015,7 +1990,7 @@ class Shrinker(object):
             minimize(
                 block,
                 lambda b: self.try_shrinking_blocks(targets, b),
-                random=self.__engine.random, full=False
+                random=self.random, full=False
             )
 
     @shrink_pass
@@ -2036,7 +2011,7 @@ class Shrinker(object):
             minimize(
                 self.shrink_target.buffer[u:v],
                 lambda b: self.try_shrinking_blocks((i,), b),
-                random=self.__engine.random, full=False,
+                random=self.random, full=False,
             )
             i += 1
 

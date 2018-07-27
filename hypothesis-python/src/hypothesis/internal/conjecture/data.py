@@ -31,6 +31,7 @@ from hypothesis.internal.conjecture.utils import calc_label_from_name
 
 TOP_LABEL = calc_label_from_name('top')
 DRAW_BYTES_LABEL = calc_label_from_name('draw_bytes() in ConjectureData')
+DRAW_BITS_LABEL = calc_label_from_name('draw_bits() in ConjectureData')
 
 
 class Status(IntEnum):
@@ -50,6 +51,7 @@ class Example(object):
     start = attr.ib()
     end = attr.ib(default=None)
     discarded = attr.ib(default=None)
+    children = attr.ib(default=attr.Factory(list))
 
     @property
     def length(self):
@@ -114,6 +116,7 @@ class ConjectureData(object):
         self.tags = set()
         self.draw_times = []
         self.__intervals = None
+        self.max_depth = 0
 
         self.examples = []
         self.example_stack = []
@@ -193,9 +196,15 @@ class ConjectureData(object):
         self.__assert_not_frozen('start_example')
         self.level += 1
         i = len(self.examples)
-        self.examples.append(Example(
-            depth=self.depth, label=label, start=self.index))
+        ex = Example(
+            depth=self.depth, label=label, start=self.index,
+        )
+        self.examples.append(ex)
+        if self.example_stack:
+            p = self.example_stack[-1]
+            self.examples[p].children.append(ex)
         self.example_stack.append(i)
+        self.max_depth = max(self.max_depth, self.depth)
 
     def stop_example(self, discard=False):
         if self.frozen:
@@ -266,8 +275,11 @@ class ConjectureData(object):
             buf[0] &= mask
             self.capped_indices[self.index] = mask
             buf = hbytes(buf)
+            self.start_example(DRAW_BITS_LABEL)
             self.__write(buf)
             result = int_from_bytes(buf)
+            self.stop_example()
+
         assert bit_length(result) <= n
         return result
 
