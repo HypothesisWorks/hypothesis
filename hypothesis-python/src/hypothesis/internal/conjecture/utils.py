@@ -428,7 +428,7 @@ class many(object):
                 should_continue = True
             elif self.count >= self.max_size:
                 self.coin.rig(self.data, False)
-                should_continue = True
+                should_continue = False
             else:
                 should_continue = self.coin.flip(self.data)
 
