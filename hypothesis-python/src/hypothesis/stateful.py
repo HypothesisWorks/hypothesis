@@ -42,7 +42,7 @@ from hypothesis._settings import Verbosity
 from hypothesis._settings import settings as Settings
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.strategies import just, one_of, runner, tuples, \
-    fixed_dictionaries
+    sampled_from, fixed_dictionaries
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 from hypothesis.internal.reflection import proxies, nicerepr
 from hypothesis.internal.conjecture.data import StopTest
@@ -274,6 +274,14 @@ class Rule(object):
     function = attr.ib()
     arguments = attr.ib()
     precondition = attr.ib()
+    bundles = attr.ib(default=attr.Factory(list))
+
+    def __attrs_post_init__(self):
+        for k, v in sorted(self.arguments.items()):
+            if isinstance(v, Bundle):
+                self.bundles.append(v)
+                self.arguments[k] = BundleReferenceStrategy(v.name)
+        self.arguments_strategy = fixed_dictionaries(self.arguments)
 
 
 self_strategy = runner()
@@ -517,6 +525,21 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.__printer = RepresentationPrinter(self.__stream)
         self._initialize_rules_to_run = copy(self.initialize_rules())
 
+        def is_valid(rule):
+            if rule.precondition and not rule.precondition(self):
+                return False
+            for b in rule.bundles:
+                bundle = self.bundle(b.name)
+                if not bundle:
+                    return False
+            return True
+
+        rules = self.rules()
+
+        self.__rules_strategy = sampled_from(rules).filter(is_valid).flatmap(
+            lambda r: tuples(just(r), r.arguments_strategy)
+        )
+
     def __pretty(self, value):
         if isinstance(value, VarReference):
             return value.name
@@ -635,31 +658,7 @@ class RuleBasedStateMachine(GenericStateMachine):
                 for rule in self._initialize_rules_to_run
             ])
 
-        # All initialize rules has been run once, go with the regular rules
-        strategies = []
-        for rule in self.rules():
-            converted_arguments = {}
-            valid = True
-            if rule.precondition and not rule.precondition(self):
-                continue
-            for k, v in sorted(rule.arguments.items()):
-                if isinstance(v, Bundle):
-                    bundle = self.bundle(v.name)
-                    if not bundle:
-                        valid = False
-                        break
-                    v = BundleReferenceStrategy(v.name)
-                converted_arguments[k] = v
-            if valid:
-                strategies.append(tuples(
-                    just(rule), fixed_dictionaries(converted_arguments)
-                ))
-        if not strategies:
-            raise InvalidDefinition(
-                u'No progress can be made from state %r' % (self,)
-            )
-
-        return one_of(strategies)
+        return self.__rules_strategy
 
     def print_start(self):
         report(u'state = %s()' % (self.__class__.__name__,))
