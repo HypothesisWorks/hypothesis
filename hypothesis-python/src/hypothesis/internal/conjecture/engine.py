@@ -1248,6 +1248,14 @@ class Shrinker(object):
         self.__discarding_failed = False
         self.__shrinking_prefixes = set()
 
+        # We add a second level of caching local to the shrinker. This is a bit
+        # of a hack. Ideally we'd be able to rely on the engine's functionality
+        # for this. Doing it this way has two benefits: Firstly, the engine
+        # does not currently cache overruns (and probably shouldn't, but could
+        # recreate them on demand if necessary), and secondly Python dicts are
+        # much faster than our pure Python tree-based lookups.
+        self.__test_function_cache = {}
+
         # We keep track of the current best example on the shrink_target
         # attribute.
         self.shrink_target = None
@@ -1260,6 +1268,12 @@ class Shrinker(object):
 
     def incorporate_new_buffer(self, buffer):
         buffer = hbytes(buffer[:self.shrink_target.index])
+        try:
+            existing = self.__test_function_cache[buffer]
+        except KeyError:
+            pass
+        else:
+            return self.incorporate_test_data(existing)
 
         # Sometimes an attempt at lexicographic minimization will do the wrong
         # thing because the buffer has changed under it (e.g. something has
@@ -1279,9 +1293,11 @@ class Shrinker(object):
         assert sort_key(buffer) <= sort_key(self.shrink_target.buffer)
         data = ConjectureData.for_buffer(buffer)
         self.__engine.test_function(data)
+        self.__test_function_cache[buffer] = data
         return self.incorporate_test_data(data)
 
     def incorporate_test_data(self, data):
+        self.__test_function_cache[data.buffer] = data
         if (
             self.__predicate(data) and
             sort_key(data.buffer) < sort_key(self.shrink_target.buffer)
@@ -1294,8 +1310,14 @@ class Shrinker(object):
         return False
 
     def cached_test_function(self, buffer):
+        buffer = hbytes(buffer)
+        try:
+            return self.__test_function_cache[buffer]
+        except KeyError:
+            pass
         result = self.__engine.cached_test_function(buffer)
         self.incorporate_test_data(result)
+        self.__test_function_cache[buffer] = result
         return result
 
     def debug(self, msg):
