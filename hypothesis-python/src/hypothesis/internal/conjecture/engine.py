@@ -1218,6 +1218,7 @@ def shrink_pass(fn):
                 calls, 's' if calls != 1 else '',
                 shrinks, 's' if shrinks != 1 else '',
             ))
+            self.remove_discarded()
     return run
 
 
@@ -1819,7 +1820,6 @@ class Shrinker(object):
 
         return False
 
-    @shrink_pass
     def remove_discarded(self):
         """Try removing all bytes marked as discarded.
 
@@ -1850,7 +1850,11 @@ class Shrinker(object):
         for u, v in reversed(discarded):
             del attempt[u:v]
 
-        self.incorporate_new_buffer(attempt)
+        previous_length = len(self.shrink_target.buffer)
+        if self.incorporate_new_buffer(attempt):
+            lost = previous_length - len(self.shrink_target.buffer)
+            self.debug('Discarded %d byte%s' % (
+                lost, '' if lost == 1 else 's'))
 
     @shrink_pass
     def adaptive_example_deletion(self):
