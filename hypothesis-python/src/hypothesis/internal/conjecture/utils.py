@@ -189,7 +189,7 @@ class Coin(object):
             falsey = floor(opts * (1 - p))
             truthy = floor(opts * p)
             if min(falsey, truthy) == 0:
-                n_bits *= 2
+                n_bits += 1
             else:
                 break
         self.n_bits = n_bits
@@ -239,6 +239,7 @@ class Coin(object):
                 result = True
             else:
                 remainder = opts * p - truthy
+                print(falsey, truthy)
 
                 if falsey + truthy == opts:
                     if isinstance(p, Fraction):
