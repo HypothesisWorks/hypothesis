@@ -180,7 +180,7 @@ def boolean(data):
 
 class Coin(object):
     def __init__(self, p):
-        self.probabibility = p
+        self.probability = p
         assert 0 < p < 1
 
         n_bits = 1
