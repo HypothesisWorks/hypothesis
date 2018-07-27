@@ -296,7 +296,12 @@ class BundleReferenceStrategy(SearchStrategy):
         bundle = machine.bundle(self.name)
         if not bundle:
             data.mark_invalid()
-        return bundle[integer_range(data, 0, len(bundle) - 1)]
+        # Shrink towards the right rather than the left. This makes it easier
+        # to delete data generated earlier, as when the error is towards the
+        # end there can be a lot of hard to remove padding.
+        return bundle[
+            integer_range(data, 0, len(bundle) - 1, center=len(bundle))
+        ]
 
 
 class Bundle(SearchStrategy):
