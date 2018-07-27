@@ -289,6 +289,10 @@ def biased_coin(data, p):
     If force is set to True or False then this will return that value
     but set the byte stream up as if it have flipped the coin.
     """
+    if p <= 0:
+        return False
+    if p >= 1:
+        return True
     return Coin(p).flip(data)
 
 
