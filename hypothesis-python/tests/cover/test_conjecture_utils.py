@@ -23,7 +23,7 @@ from collections import Counter
 import hypothesis.strategies as st
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis import HealthCheck, given, assume, example, settings
-from hypothesis.internal.compat import hbytes, hrange
+from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.conjecture.data import ConjectureData
 
@@ -54,36 +54,32 @@ def test_geometric_can_handle_bad_first_draw():
 
 def test_coin_biased_towards_truth():
     p = 1 - 1.0 / 500
+    assert cu.Coin(p).n_bits == 9
 
-    for i in range(255):
+    data = ConjectureData.for_buffer([0, 1])
+
+    assert cu.biased_coin(data, p)
+    assert not cu.biased_coin(ConjectureData.for_buffer([0, 0]), p)
+
+    for i in hrange(2, 2 ** 9 - 1):
         assert cu.biased_coin(
-            ConjectureData.for_buffer([i]), p
+            ConjectureData.for_buffer(int_to_bytes(i, 2)), p
         )
-
-    second_order = [
-        cu.biased_coin(ConjectureData.for_buffer([255, i]), p)
-        for i in range(255)
-    ]
-
-    assert False in second_order
-    assert True in second_order
 
 
 def test_coin_biased_towards_falsehood():
     p = 1.0 / 500
+    assert cu.Coin(p).n_bits == 9
 
-    for i in range(255):
+    data = ConjectureData.for_buffer([0, 1])
+
+    assert cu.biased_coin(data, p)
+    assert not cu.biased_coin(ConjectureData.for_buffer([0, 0]), p)
+
+    for i in hrange(2, 2 ** 9 - 1):
         assert not cu.biased_coin(
-            ConjectureData.for_buffer([i]), p
+            ConjectureData.for_buffer(int_to_bytes(i, 2)), p
         )
-
-    second_order = [
-        cu.biased_coin(ConjectureData.for_buffer([255, i]), p)
-        for i in range(255)
-    ]
-
-    assert False in second_order
-    assert True in second_order
 
 
 def test_unbiased_coin_has_no_second_order():
@@ -115,24 +111,22 @@ def test_8_bits_just_reads_stream():
 
 def test_drawing_certain_coin_still_writes():
     data = ConjectureData.for_buffer([0, 1])
-    assert not data.buffer
     assert cu.biased_coin(data, 1)
-    assert data.buffer
-
-
-def test_drawing_impossible_coin_still_writes():
-    data = ConjectureData.for_buffer([1, 0])
     assert not data.buffer
+
+
+def test_drawing_impossible_coin_does_not_write():
+    data = ConjectureData.for_buffer([1, 0])
     assert not cu.biased_coin(data, 0)
-    assert data.buffer
+    assert not data.buffer
 
 
 def test_drawing_an_exact_fraction_coin():
     count = 0
-    for i in hrange(8):
+    for i in hrange(3):
         if cu.biased_coin(ConjectureData.for_buffer([i]), Fraction(3, 8)):
             count += 1
-    assert count == 3
+    assert count == 1
 
 
 @st.composite

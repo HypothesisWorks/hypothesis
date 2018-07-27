@@ -25,8 +25,8 @@ from fractions import Fraction
 from collections import Sequence, OrderedDict
 
 from hypothesis._settings import note_deprecation
-from hypothesis.internal.compat import floor, hbytes, hrange, qualname, \
-    bit_length, str_to_bytes, int_from_bytes
+from hypothesis.internal.compat import ceil, floor, hbytes, hrange, \
+    qualname, bit_length, str_to_bytes, int_from_bytes
 from hypothesis.internal.floats import int_to_float
 
 LABEL_MASK = 2 ** 64 - 1
@@ -178,88 +178,118 @@ def boolean(data):
     return bool(data.draw_bits(1))
 
 
+class Coin(object):
+    def __init__(self, p):
+        self.probability = p
+        assert 0 < p < 1
+
+        n_bits = 1
+        while True:
+            opts = 2 ** n_bits
+            falsey = floor(opts * (1 - p))
+            truthy = floor(opts * p)
+            if min(falsey, truthy) == 0:
+                n_bits += 1
+            else:
+                break
+        self.n_bits = n_bits
+        self.n_bytes = ceil(n_bits / 8)
+        self.true = hbytes(self.n_bytes - 1) + hbytes([1])
+        self.false = hbytes(self.n_bytes)
+
+    def rig(self, data, result):
+        if result:
+            data.write(self.true)
+        else:
+            data.write(self.false)
+
+    def flip(self, data):
+        data.start_example(BIASED_COIN_LABEL)
+        while True:
+            # The logic here is a bit complicated and special cased to make it
+            # play better with the shrinker.
+
+            # We imagine partitioning the real interval [0, 1] into 2**n equal
+            # parts and looking at each part and whether its interior is wholly
+            # <= p or wholly >= p. At most one part can be neither.
+
+            # We then pick a random part. If it's wholly on one side or the
+            # other of p then we use that as the answer. If p is contained in
+            # the interval then we start again with a new probability that is
+            # given by the fraction of that interval that was <= our previous
+            # p.
+
+            # We then take advantage of the fact that we have control of the
+            # labelling to make this shrink better, using the following tricks:
+
+            # If p is <= 0 or >= 1 the result of this coin is certain. We make
+            # sure to write to the data stream anyway so that these don't cause
+            # difficulties when shrinking. Note that we ensured that this can't
+            # happen on the first iteration of the loop, but there's nothing to
+            # stop it happening on a later one.
+            p = self.probability
+            opts = 2 ** self.n_bits
+            falsey = floor(opts * (1 - p))
+            truthy = floor(opts * p)
+            if p <= 0:
+                self.rig(data, False)
+                result = False
+            elif p >= 1:
+                self.rig(data, True)
+                result = True
+            else:
+                remainder = opts * p - truthy
+
+                if falsey + truthy == opts:
+                    if isinstance(p, Fraction):
+                        m = p.numerator
+                        n = p.denominator
+                    else:
+                        m, n = p.as_integer_ratio()
+                    assert n & (n - 1) == 0, n  # n is a power of 2
+                    assert n > m > 0
+                    truthy = m
+                    falsey = n - m
+                    partial = False
+                else:
+                    partial = True
+
+                i = data.draw_bits(self.n_bits)
+
+                # We always label the region that causes us to repeat the loop
+                # is opts - 1 so that shrinking this byte never causes us to
+                # need to draw more data.
+                if partial and i + 1 == opts:
+                    p = remainder
+                    continue
+                if i <= 1:
+                    # We arrange it so that zero is always false and 1 is
+                    # always true which makes shrinking easier because we can
+                    # always replace a truthy block with 1. This has the
+                    # slightly weird property that shrinking from 2 to 1 can
+                    # cause the result to grow, but the shrinker always tries 0
+                    # and 1 first anyway, so this will usually be fine.
+                    result = bool(i)
+                else:
+                    # Originally everything in the region 0 <= i < falsey was
+                    # false and everything above was true. We swapped one
+                    # truthy element into this region, so the region becomes
+                    # 0 <= i <= falsey except for i = 1. We know i > 1 here, so
+                    # the test for truth becomes i > falsey.
+                    result = i > falsey
+            break
+        data.stop_example()
+        return result
+
+
 def biased_coin(data, p):
     """Return False with probability p (assuming a uniform generator),
     shrinking towards False."""
-    data.start_example(BIASED_COIN_LABEL)
-    while True:
-        # The logic here is a bit complicated and special cased to make it
-        # play better with the shrinker.
-
-        # We imagine partitioning the real interval [0, 1] into 256 equal parts
-        # and looking at each part and whether its interior is wholly <= p
-        # or wholly >= p. At most one part can be neither.
-
-        # We then pick a random part. If it's wholly on one side or the other
-        # of p then we use that as the answer. If p is contained in the
-        # interval then we start again with a new probability that is given
-        # by the fraction of that interval that was <= our previous p.
-
-        # We then take advantage of the fact that we have control of the
-        # labelling to make this shrink better, using the following tricks:
-
-        # If p is <= 0 or >= 1 the result of this coin is certain. We make sure
-        # to write a byte to the data stream anyway so that these don't cause
-        # difficulties when shrinking.
-        if p <= 0:
-            data.write(hbytes([0]))
-            result = False
-        elif p >= 1:
-            data.write(hbytes([1]))
-            result = True
-        else:
-            falsey = floor(256 * (1 - p))
-            truthy = floor(256 * p)
-            remainder = 256 * p - truthy
-
-            if falsey + truthy == 256:
-                if isinstance(p, Fraction):
-                    m = p.numerator
-                    n = p.denominator
-                else:
-                    m, n = p.as_integer_ratio()
-                assert n & (n - 1) == 0, n  # n is a power of 2
-                assert n > m > 0
-                truthy = m
-                falsey = n - m
-                bits = bit_length(n) - 1
-                partial = False
-            else:
-                bits = 8
-                partial = True
-
-            i = data.draw_bits(bits)
-
-            # We always label the region that causes us to repeat the loop as
-            # 255 so that shrinking this byte never causes us to need to draw
-            # more data.
-            if partial and i == 255:
-                p = remainder
-                continue
-            if falsey == 0:
-                # Every other partition is truthy, so the result is true
-                result = True
-            elif truthy == 0:
-                # Every other partition is falsey, so the result is false
-                result = False
-            elif i <= 1:
-                # We special case so that zero is always false and 1 is always
-                # true which makes shrinking easier because we can always
-                # replace a truthy block with 1. This has the slightly weird
-                # property that shrinking from 2 to 1 can cause the result to
-                # grow, but the shrinker always tries 0 and 1 first anyway, so
-                # this will usually be fine.
-                result = bool(i)
-            else:
-                # Originally everything in the region 0 <= i < falsey was false
-                # and everything above was true. We swapped one truthy element
-                # into this region, so the region becomes 0 <= i <= falsey
-                # except for i = 1. We know i > 1 here, so the test for truth
-                # becomes i > falsey.
-                result = i > falsey
-        break
-    data.stop_example()
-    return result
+    if p <= 0:
+        return False
+    if p >= 1:
+        return True
+    return Coin(p).flip(data)
 
 
 class Sampler(object):
@@ -372,7 +402,7 @@ class many(object):
         self.min_size = min_size
         self.max_size = max_size
         self.data = data
-        self.stopping_value = 1 - 1.0 / (1 + average_size)
+        self.coin = Coin(1 - 1.0 / (1 + average_size))
         self.count = 0
         self.rejections = 0
         self.drawn = False
@@ -390,15 +420,17 @@ class many(object):
         if self.min_size == self.max_size:
             should_continue = self.count < self.min_size
         elif self.force_stop:
+            self.coin.rig(self.data, False)
             should_continue = False
         else:
             if self.count < self.min_size:
-                p_continue = 1.0
+                self.coin.rig(self.data, True)
+                should_continue = True
             elif self.count >= self.max_size:
-                p_continue = 0.0
+                self.coin.rig(self.data, False)
+                should_continue = False
             else:
-                p_continue = self.stopping_value
-            should_continue = biased_coin(self.data, p_continue)
+                should_continue = self.coin.flip(self.data)
 
         if should_continue:
             self.data.start_example(ONE_FROM_MANY_LABEL)
