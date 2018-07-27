@@ -18,7 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, find, given, settings, unlimited
+from hypothesis import find, given, settings, unlimited
 from tests.common.utils import no_shrink
 from hypothesis._settings import Phase
 from hypothesis.internal.conjecture.utils import integer_range
@@ -47,8 +47,7 @@ class interval(SearchStrategy):
     phases=no_shrink,
     deadline=None,
     database=None,
-    timeout=unlimited,
-    suppress_health_check=[HealthCheck.hung_test],
+    timeout=unlimited
 )
 def test_intervals_shrink_to_center(inter, rnd):
     lower, center, upper = inter
