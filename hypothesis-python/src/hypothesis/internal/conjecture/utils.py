@@ -284,11 +284,7 @@ class Coin(object):
 
 def biased_coin(data, p):
     """Return False with probability p (assuming a uniform generator),
-    shrinking towards False.
-
-    If force is set to True or False then this will return that value
-    but set the byte stream up as if it have flipped the coin.
-    """
+    shrinking towards False."""
     if p <= 0:
         return False
     if p >= 1:
