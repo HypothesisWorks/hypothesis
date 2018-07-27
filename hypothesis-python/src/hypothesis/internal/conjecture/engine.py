@@ -1270,8 +1270,12 @@ class Shrinker(object):
 
     def incorporate_new_buffer(self, buffer):
         buffer = hbytes(buffer[:self.shrink_target.index])
-        if buffer in self.__test_function_cache:
-            return False
+        try:
+            existing = self.__test_function_cache[buffer]
+        except KeyError:
+            pass
+        else:
+            return self.incorporate_test_data(existing)
 
         # Sometimes an attempt at lexicographic minimization will do the wrong
         # thing because the buffer has changed under it (e.g. something has
