@@ -33,7 +33,6 @@ from unittest import TestCase
 
 import attr
 
-from hypothesis.internal.compat import int_to_bytes
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.core import EXCEPTIONS_TO_FAIL, find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
@@ -45,6 +44,7 @@ from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.strategies import just, one_of, runner, tuples, \
     sampled_from, fixed_dictionaries
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
+from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.reflection import proxies, nicerepr
 from hypothesis.internal.conjecture.data import StopTest
 from hypothesis.internal.conjecture.utils import integer_range, \
@@ -508,14 +508,26 @@ def invariant():
     return accept
 
 
-LOOP_LABEL = cu.calc_label_from_name("RuleStrategy loop iteration")
+LOOP_LABEL = cu.calc_label_from_name('RuleStrategy loop iteration')
 
 
 class RuleStrategy(SearchStrategy):
     def __init__(self, machine):
         SearchStrategy.__init__(self)
         self.machine = machine
-        self.rules = machine.rules()
+        self.rules = list(machine.rules())
+
+        # The order is a bit arbitrary. Primarily we're trying to group rules
+        # that write to the same location together, and to put rules with no
+        # target first as they have less effect on the structure. We order from
+        # fewer to more arguments on grounds that it will plausibly need less
+        # data. This probably won't work especially well and we could be
+        # smarter about it, but it's better than just doing it in definition
+        # order.
+        self.rules.sort(key=lambda rule: (
+            sorted(rule.targets), len(rule.arguments),
+            rule.function.__name__,
+        ))
 
     def do_draw(self, data):
         # This strategy is slightly strange in its implementation.
@@ -529,7 +541,7 @@ class RuleStrategy(SearchStrategy):
         #
         #   1. We first draw a rule unconditionally, and check if it's valid.
         #      If it is, great. Nothing more to do, that's our rule.
-        #   2. If it is invalid, we now calculate the list of valid rules and 
+        #   2. If it is invalid, we now calculate the list of valid rules and
         #      draw from that list (if there are none, that's an error in the
         #      definition of the machine and we complain to the user about it).
         #   3. Once we've drawn a valid rule, we write that back to the byte
@@ -566,7 +578,6 @@ class RuleStrategy(SearchStrategy):
             if not bundle:
                 return False
         return True
-
 
 
 class RuleBasedStateMachine(GenericStateMachine):
