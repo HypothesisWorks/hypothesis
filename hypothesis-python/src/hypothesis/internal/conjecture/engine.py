@@ -1370,6 +1370,7 @@ class Shrinker(object):
             if not run_expensive_shrinks:
                 continue
 
+            self.adaptive_block_deletion()
             self.reorder_examples()
             self.shrink_offset_pairs()
             self.interval_deletion_with_block_lowering()
@@ -1936,6 +1937,24 @@ class Shrinker(object):
                     prefix + hbytes().join(ls) + suffix
                 )
             )
+
+    @shrink_pass
+    def adaptive_block_deletion(self):
+        """A secondary deletion pass which is able to do violate boundaries in
+        a way that adaptive_example_deletion cannot. Sometimes this works out
+        pretty well, but it's a bit of a niche use case so we confine it to the
+        expensive passes.
+
+        An example of where this is useful is that if we are generating
+        a list of lists, we can merge consecutive elements, e.g.
+        replacing [[a], [b]] with [[a, b]], because this pass will
+        simultaneously delete the last block of the [a] and the first
+        block of the [b], effectively joining the two lists together.
+        """
+        shrink_length([
+            self.shrink_target.buffer[u:v]
+            for u, v in self.shrink_target.blocks
+        ], lambda ls: self.incorporate_new_buffer(hbytes().join(ls)))
 
     @property
     def random(self):
