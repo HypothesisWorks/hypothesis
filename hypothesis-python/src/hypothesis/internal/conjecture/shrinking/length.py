@@ -40,8 +40,7 @@ class LengthShrinker(object):
         self.__seen = set()
 
     def incorporate(self, value):
-        if len(value) > len(self.current):
-            return False
+        assert len(value) <= len(self.current)
         key = tuple(value)
         if key in self.__seen:
             return False
