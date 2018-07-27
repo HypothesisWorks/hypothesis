@@ -239,7 +239,6 @@ class Coin(object):
                 result = True
             else:
                 remainder = opts * p - truthy
-                print(falsey, truthy)
 
                 if falsey + truthy == opts:
                     if isinstance(p, Fraction):
