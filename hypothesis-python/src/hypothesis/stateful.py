@@ -515,7 +515,19 @@ class RuleStrategy(SearchStrategy):
     def __init__(self, machine):
         SearchStrategy.__init__(self)
         self.machine = machine
-        self.rules = machine.rules()
+        self.rules = list(machine.rules())
+
+        # The order is a bit arbitrary. Primarily we're trying to group rules
+        # that write to the same location together, and to put rules with no
+        # target first as they have less effect on the structure. We order from
+        # fewer to more arguments on grounds that it will plausibly need less
+        # data. This probably won't work especially well and we could be
+        # smarter about it, but it's better than just doing it in definition
+        # order.
+        self.rules.sort(key=lambda rule: (
+            sorted(rule.targets), len(rule.arguments),
+            rule.function.__name__,
+        ))
 
     def do_draw(self, data):
         # This strategy is slightly strange in its implementation.
