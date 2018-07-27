@@ -33,6 +33,7 @@ from unittest import TestCase
 
 import attr
 
+from hypothesis.internal.compat import int_to_bytes
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.core import EXCEPTIONS_TO_FAIL, find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
@@ -274,14 +275,20 @@ class Rule(object):
     function = attr.ib()
     arguments = attr.ib()
     precondition = attr.ib()
-    bundles = attr.ib(default=attr.Factory(list))
+    bundles = attr.ib(init=False)
 
     def __attrs_post_init__(self):
+        arguments = {}
+        bundles = []
         for k, v in sorted(self.arguments.items()):
+            assert not isinstance(v, BundleReferenceStrategy)
             if isinstance(v, Bundle):
-                self.bundles.append(v)
-                self.arguments[k] = BundleReferenceStrategy(v.name)
-        self.arguments_strategy = fixed_dictionaries(self.arguments)
+                bundles.append(v)
+                arguments[k] = BundleReferenceStrategy(v.name)
+            else:
+                arguments[k] = v
+        self.bundles = tuple(bundles)
+        self.arguments_strategy = fixed_dictionaries(arguments)
 
 
 self_strategy = runner()
@@ -501,6 +508,67 @@ def invariant():
     return accept
 
 
+LOOP_LABEL = cu.calc_label_from_name("RuleStrategy loop iteration")
+
+
+class RuleStrategy(SearchStrategy):
+    def __init__(self, machine):
+        SearchStrategy.__init__(self)
+        self.machine = machine
+        self.rules = machine.rules()
+
+    def do_draw(self, data):
+        # This strategy is slightly strange in its implementation.
+        # We don't want the interpretation of the rule we draw to change based
+        # on whether other rules satisfy their preconditions or have data in
+        # their bundles. Therefore the index into the rule list needs to stay
+        # stable. BUT we don't want to draw invalid rules. So what we do is we
+        # draw an index. We *could* just loop until it's valid, but if most
+        # rules are invalid then that could result in a very long loop.
+        # So what we do is the following:
+        #
+        #   1. We first draw a rule unconditionally, and check if it's valid.
+        #      If it is, great. Nothing more to do, that's our rule.
+        #   2. If it is invalid, we now calculate the list of valid rules and 
+        #      draw from that list (if there are none, that's an error in the
+        #      definition of the machine and we complain to the user about it).
+        #   3. Once we've drawn a valid rule, we write that back to the byte
+        #      stream. As a result, when shrinking runs the shrinker can delete
+        #      the initial failed draw + the draw that lead to us finding an
+        #      index into valid_rules, leaving just the written value of i.
+        #      When this is run, it will look as we got lucky and just happened
+        #      to pick a valid rule.
+        #
+        # Easy, right?
+        n = len(self.rules)
+        i = cu.integer_range(data, 0, n - 1)
+        u, v = data.blocks[-1]
+        block_length = v - u
+        rule = self.rules[i]
+        if not self.is_valid(rule):
+            valid_rules = [
+                j for j, r in enumerate(self.rules) if self.is_valid(r)
+            ]
+            if not valid_rules:
+                raise InvalidDefinition(
+                    u'No progress can be made from state %r' % (self.machine,)
+                )
+            i = valid_rules[cu.integer_range(data, 0, len(valid_rules) - 1)]
+            data.write(int_to_bytes(i, block_length))
+            rule = self.rules[i]
+        return (rule, data.draw(rule.arguments_strategy))
+
+    def is_valid(self, rule):
+        if rule.precondition and not rule.precondition(self.machine):
+            return False
+        for b in rule.bundles:
+            bundle = self.machine.bundle(b.name)
+            if not bundle:
+                return False
+        return True
+
+
+
 class RuleBasedStateMachine(GenericStateMachine):
     """A RuleBasedStateMachine gives you a more structured way to define state
     machines.
@@ -529,21 +597,7 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.__stream = CUnicodeIO()
         self.__printer = RepresentationPrinter(self.__stream)
         self._initialize_rules_to_run = copy(self.initialize_rules())
-
-        def is_valid(rule):
-            if rule.precondition and not rule.precondition(self):
-                return False
-            for b in rule.bundles:
-                bundle = self.bundle(b.name)
-                if not bundle:
-                    return False
-            return True
-
-        rules = self.rules()
-
-        self.__rules_strategy = sampled_from(rules).filter(is_valid).flatmap(
-            lambda r: tuples(just(r), r.arguments_strategy)
-        )
+        self.__rules_strategy = RuleStrategy(self)
 
     def __pretty(self, value):
         if isinstance(value, VarReference):
