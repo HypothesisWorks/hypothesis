@@ -28,7 +28,6 @@ def find_integer(f):
 
     f(0) is assumed to be True and will not be checked.
     """
-
     # We first do a linear scan over the small numbers and only start to do
     # anything intelligent if f(4) is true. This is because it's very hard to
     # win big when the result is small. If the result is 0 and we try 2 first
