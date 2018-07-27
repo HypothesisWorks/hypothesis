@@ -402,7 +402,8 @@ class many(object):
         self.min_size = min_size
         self.max_size = max_size
         self.data = data
-        self.coin = Coin(1 - 1.0 / (1 + average_size))
+        if self.max_size > 0:
+            self.coin = Coin(1 - 1.0 / (1 + average_size))
         self.count = 0
         self.rejections = 0
         self.drawn = False
@@ -411,6 +412,9 @@ class many(object):
 
     def more(self):
         """Should I draw another element to add to the collection?"""
+        if self.max_size <= 0:
+            return False
+
         if self.drawn:
             self.data.stop_example(discard=self.rejected)
 
