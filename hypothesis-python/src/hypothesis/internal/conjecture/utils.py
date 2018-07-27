@@ -263,7 +263,7 @@ class Coin(object):
                     p = remainder
                     continue
                 if i <= 1:
-                    # We special case so that zero is always false and 1 is
+                    # We arrange it so that zero is always false and 1 is
                     # always true which makes shrinking easier because we can
                     # always replace a truthy block with 1. This has the
                     # slightly weird property that shrinking from 2 to 1 can
