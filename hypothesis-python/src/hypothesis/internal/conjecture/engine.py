@@ -1218,7 +1218,8 @@ def shrink_pass(fn):
                 calls, 's' if calls != 1 else '',
                 shrinks, 's' if shrinks != 1 else '',
             ))
-            self.remove_discarded()
+            if not self.discarding_failed:
+                self.remove_discarded()
     return run
 
 
@@ -1248,6 +1249,7 @@ class Shrinker(object):
         """
         self.__engine = engine
         self.__predicate = predicate
+        self.discarding_failed = False
         self.__shrinking_prefixes = set()
 
         # We keep track of the current best example on the shrink_target
@@ -1851,10 +1853,22 @@ class Shrinker(object):
             del attempt[u:v]
 
         previous_length = len(self.shrink_target.buffer)
-        if self.incorporate_new_buffer(attempt):
+
+        # We track whether discarding works because as long as it does we will
+        # always want to run it whenever the option is available - whenever a
+        # shrink ends up introducing new discarded data we can attempt to
+        # delete it immediately. However if some discarded data looks essential
+        # in some way then that would be wasteful, so we turn off the automatic
+        # discarding if this ever fails. When this next runs explicitly, it
+        # will reset the flag if the status changes.
+        self.discarding_failed = not self.incorporate_new_buffer(attempt)
+
+        if not self.discarding_failed:
             lost = previous_length - len(self.shrink_target.buffer)
-            self.debug('Discarded %d byte%s' % (
-                lost, '' if lost == 1 else 's'))
+            assert lost > 0
+            self.debug(
+                'Discarded %d byte%s' % (lost, '' if lost == 1 else 's')
+            )
 
     @shrink_pass
     def adaptive_example_deletion(self):
