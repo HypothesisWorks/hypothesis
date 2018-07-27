@@ -24,6 +24,8 @@ from hypothesis.internal.compat import ceil, floor, hbytes, hrange, \
     int_to_bytes, int_from_bytes
 from hypothesis.internal.conjecture.floats import is_simple, \
     float_to_lex, lex_to_float
+from hypothesis.internal.conjecture.shrinking.common import find_integer
+
 
 
 """
@@ -47,14 +49,24 @@ to do better in practice:
 
 class Minimizer(object):
 
-    def __init__(self, initial, condition, random, full):
+    def __init__(self, initial, condition, random, full, fast):
         self.current = hbytes(initial)
         self.size = len(self.current)
         self.condition = condition
         self.random = random
         self.full = full
+        self.fast = fast
         self.changes = 0
         self.seen = set()
+        self.nonzero = 0
+        self.__update_nonzero()
+
+    def __update_nonzero(self):
+        while (
+            self.nonzero < len(self.current) and
+            self.current[self.nonzero] == 0
+        ):
+            self.nonzero += 1
 
     def incorporate(self, buffer):
         """Consider this buffer as a possible replacement for the current best
@@ -64,29 +76,30 @@ class Minimizer(object):
         """
         assert isinstance(buffer, hbytes)
         assert len(buffer) == self.size
-        assert buffer <= self.current
+        assert buffer <= self.current, (buffer, self.current)
         if buffer in self.seen:
             return False
         self.seen.add(buffer)
         if buffer != self.current and self.condition(buffer):
             self.current = buffer
             self.changes += 1
+            self.__update_nonzero()
             return True
         return False
+
+    def consider(self, buffer):
+        return buffer == self.current or self.incorporate(buffer)
 
     def shift(self):
         """Attempt to shift individual byte values right as far as they can
         go."""
-        prev = -1
-        while prev != self.changes:
-            prev = self.changes
-            for i in hrange(self.size):
-                block = bytearray(self.current)
-                c = block[i]
-                for k in hrange(c.bit_length(), 0, -1):
-                    block[i] = c >> k
-                    if self.incorporate(hbytes(block)):
-                        break
+        for i in hrange(self.size):
+            block = bytearray(self.current)
+            c = block[i]
+            for k in hrange(c.bit_length(), 0, -1):
+                block[i] = c >> k
+                if self.incorporate(hbytes(block)):
+                    break
 
     def rotate_suffixes(self):
         for significant, c in enumerate(self.current):  # pragma: no branch
@@ -106,27 +119,20 @@ class Minimizer(object):
     def shrink_indices(self):
         # We take a bet that there is some monotonic lower bound such that
         # whenever current >= lower_bound the result works.
-        for i in hrange(self.size):
-            if self.current[i] == 0:
-                continue
-
-            if self.incorporate(
+        for i in hrange(self.nonzero, self.size):
+            if self.consider(
                 self.current[:i] + hbytes([0]) + self.current[i + 1:]
             ):
                 continue
 
             prefix = self.current[:i]
-            original_suffix = self.current[i + 1:]
+            suffix = self.current[i + 1:]
 
-            for suffix in [
-                original_suffix,
-                hbytes([255]) * len(original_suffix),
-            ]:
-                minimize_int(
-                    self.current[i],
-                    lambda c: self.current[i] == c or self.incorporate(
-                        prefix + hbytes([c]) + suffix)
-                )
+            minimize_int(
+                self.current[i],
+                lambda c: self.current[i] == c or self.incorporate(
+                    prefix + hbytes([c]) + suffix)
+            )
 
     def incorporate_int(self, i):
         return self.incorporate(int_to_bytes(i, self.size))
@@ -211,6 +217,10 @@ class Minimizer(object):
             lambda c: c == self.current_int or self.incorporate_int(c)
         )
 
+    def random_probe(self):
+        for _ in range(2 if self.fast else 10):
+            self.incorporate_int(self.random.randrange(0, self.current_int))
+
     def sort(self):
         return self.incorporate(hbytes(sorted(self.current)))
 
@@ -232,6 +242,34 @@ class Minimizer(object):
                     ps = prev_list
                 j = j - 1
         return any_sorting_done
+
+    def alphabet_minimization(self):
+        alphabet = sorted(set(self.current), reverse=True)
+        initial = self.current
+        for c in alphabet:
+            indices = [i for i in hrange(self.size) if initial[i] == c]
+            def replace(b):
+                attempt = bytearray(self.current)
+                for i in indices:
+                    assert attempt[i] <= c
+                    assert b <= c, (b, c)
+                    attempt[i] = b
+                return self.incorporate(hbytes(attempt))
+            minimize_int(c, replace)
+
+    def adaptive_zero(self):
+        i = 0
+        while i < self.size:
+            def try_zero_range(k):
+                """Can we zero current[i:i+k]?"""
+                if i + k > self.size:
+                    return False
+                if not any(self.current[i:i+k]):
+                    return True
+                return self.consider(
+                    self.current[:i] + hbytes(k) + self.current[i+k:]
+                )
+            i += (1 + find_integer(try_zero_range))
 
     def run(self):
         if not any(self.current):
@@ -290,20 +328,26 @@ class Minimizer(object):
             first = False
             change_counter = self.changes
 
+            self.random_probe()
             self.sort()
             self.float_hack()
-            self.shift()
+            self.adaptive_zero()
+            self.alphabet_minimization()
+
             self.shrink_indices()
-            self.rotate_suffixes()
-            self.minimize_as_integer()
-            self.partial_sort()
+
+            if not self.fast:
+                self.shift()
+                self.rotate_suffixes()
+                self.minimize_as_integer()
+                self.partial_sort()
 
 
-def minimize(initial, condition, random, full=True):
+def minimize(initial, condition, random, full=True, fast=False):
     """Perform a lexicographical minimization of the byte string 'initial' such
     that the predicate 'condition' returns True, and return the minimized
     string."""
-    m = Minimizer(initial, condition, random, full)
+    m = Minimizer(initial, condition, random, full, fast)
     m.run()
     return m.current
 
@@ -339,23 +383,15 @@ def binsearch(_lo, _hi):
 def minimize_int(c, f):
     """Return the smallest byte for which a function `f` returns True, starting
     with the byte `c` as an unsigned integer."""
+    if c == 0:
+        return 0
     if f(0):
         return 0
     if c == 1 or f(1):
         return 1
     elif c == 2:
         return 2
-    if f(c - 1):
-        hi = c - 1
-    elif f(c - 2):
-        hi = c - 2
-    else:
-        return c
-    lo = 1
-    while lo + 1 < hi:
-        mid = (lo + hi) // 2
-        if f(mid):
-            hi = mid
-        else:
-            lo = mid
-    return hi
+
+    return c - find_integer(
+        lambda k: k < c - 2 and f(c - k)
+    )

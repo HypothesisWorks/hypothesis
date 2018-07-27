@@ -31,6 +31,7 @@ from hypothesis.internal.conjecture.utils import calc_label_from_name
 
 TOP_LABEL = calc_label_from_name('top')
 DRAW_BYTES_LABEL = calc_label_from_name('draw_bytes() in ConjectureData')
+DRAW_BITS_LABEL = calc_label_from_name('draw_bits() in ConjectureData')
 
 
 class Status(IntEnum):
@@ -48,8 +49,12 @@ class Example(object):
     depth = attr.ib()
     label = attr.ib()
     start = attr.ib()
+    index = attr.ib()
     end = attr.ib(default=None)
     discarded = attr.ib(default=None)
+    parent = attr.ib(default=None)
+    children = attr.ib(default=attr.Factory(list))
+    trivial = attr.ib(default=True)
 
     @property
     def length(self):
@@ -98,6 +103,7 @@ class ConjectureData(object):
         self.level = 0
         self.block_starts = {}
         self.blocks = []
+        self.block_labels = []
         self.buffer = bytearray()
         self.output = u''
         self.status = Status.VALID
@@ -114,6 +120,7 @@ class ConjectureData(object):
         self.tags = set()
         self.draw_times = []
         self.__intervals = None
+        self.max_depth = 0
 
         self.examples = []
         self.example_stack = []
@@ -193,9 +200,16 @@ class ConjectureData(object):
         self.__assert_not_frozen('start_example')
         self.level += 1
         i = len(self.examples)
-        self.examples.append(Example(
-            depth=self.depth, label=label, start=self.index))
+        ex = Example(
+            depth=self.depth, label=label, start=self.index, index=i,
+        )
+        self.examples.append(ex)
+        if self.example_stack:
+            p = self.example_stack[-1]
+            ex.parent = p
+            self.examples[p].children.append(i)
         self.example_stack.append(i)
+        self.max_depth = max(self.max_depth, self.depth)
 
     def stop_example(self, discard=False):
         if self.frozen:
@@ -205,6 +219,9 @@ class ConjectureData(object):
         k = self.example_stack.pop()
         ex = self.examples[k]
         ex.end = self.index
+
+        if not ex.trivial and ex.parent is not None:
+            self.examples[ex.parent].trivial = False
 
         # We don't want to count empty examples as discards even if the flag
         # says we should. This leads to situations like
@@ -266,8 +283,13 @@ class ConjectureData(object):
             buf[0] &= mask
             self.capped_indices[self.index] = mask
             buf = hbytes(buf)
+            self.start_example(DRAW_BITS_LABEL)
             self.__write(buf)
             result = int_from_bytes(buf)
+            if result > 0:
+                self.examples[-1].trivial = False
+            self.stop_example()
+                
         assert bit_length(result) <= n
         return result
 
@@ -293,6 +315,7 @@ class ConjectureData(object):
         n = len(result)
         self.block_starts.setdefault(n, []).append(initial)
         self.blocks.append((initial, initial + n))
+        self.block_labels.append(self.examples[-1].label)
         assert len(result) == n
         assert self.index == initial
         self.buffer.extend(result)
@@ -304,6 +327,8 @@ class ConjectureData(object):
         self.__check_capacity(n)
         self.start_example(DRAW_BYTES_LABEL)
         result = self._draw_bytes(self, n)
+        if any(result):
+            self.examples[-1].trivial = False
         assert len(result) == n
         self.__write(result)
         self.stop_example()
