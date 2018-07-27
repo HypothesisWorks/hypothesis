@@ -88,7 +88,11 @@ class Minimizer(object):
         return False
 
     def consider(self, buffer):
-        return buffer == self.current or self.incorporate(buffer)
+        if buffer > self.current:
+            return False
+        if buffer == self.current:
+            return True
+        return self.incorporate(buffer)
 
     def shift(self):
         """Attempt to shift individual byte values right as far as they can
@@ -130,8 +134,7 @@ class Minimizer(object):
 
             minimize_int(
                 self.current[i],
-                lambda c: self.current[i] == c or self.incorporate(
-                    prefix + hbytes([c]) + suffix)
+                lambda c: self.consider(prefix + hbytes([c]) + suffix)
             )
 
     def incorporate_int(self, i):
@@ -214,7 +217,9 @@ class Minimizer(object):
     def minimize_as_integer(self):
         minimize_int(
             self.current_int,
-            lambda c: c == self.current_int or self.incorporate_int(c)
+            lambda c: c == self.current_int or (
+                c < self.current_int and self.incorporate_int(c)
+            )
         )
 
     def random_probe(self):

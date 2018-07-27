@@ -1348,7 +1348,15 @@ class Shrinker(object):
             return
 
         # import ipdb; ipdb.set_trace()
-        self.find_good_starting_point()
+        # self.fixate(self.adaptive_clearing)
+        # self.find_good_starting_point()
+        self.adaptive_example_minimization()
+
+    def fixate(self, f):
+        prev = None
+        while prev is not self.shrink_target:
+            prev = self.shrink_target
+            f()
 
     def adaptive_clearing(self):
         self.adaptive_example_zeroing()
@@ -1611,21 +1619,12 @@ class Shrinker(object):
         if ex.length == len(self.shrink_target.buffer):
             return
         buf = self.shrink_target.buffer
-        existing = buf[ex.start:ex.end]
-        for candidate in sorted(self.__candidates[ex.label], key=sort_key):
-            if sort_key(candidate) >= sort_key(existing):
-                break
-            if self.attempt_replace_example(i, candidate):
-                break
 
         minimize(
             buf[ex.start:ex.end],
             lambda b: self.attempt_replace_example(i, b),
             random=self.__engine.random, full=False, fast=fast
         )
-        ex = self.shrink_target.examples[i]
-        buf = self.shrink_target.buffer
-        self.__candidates[ex.label].add(buf[ex.start:ex.end])
 
     def delete_example(self, i):
         ex = self.shrink_target.examples[i]
@@ -1639,6 +1638,11 @@ class Shrinker(object):
         return self.incorporate_new_buffer(new)
             
     def attempt_replace_example(self, i, replacement):
+        if i >= len(self.shrink_target.examples):
+            return False
+        assert i < len(self.shrink_target.examples)
+        prev = self.shrink_target
+
         ex = self.shrink_target.examples[i]
         replacement = replacement[:ex.length]
         buf = self.shrink_target.buffer
@@ -1650,10 +1654,12 @@ class Shrinker(object):
             attempt = self.cached_test_function(
                 prefix + replacement + suffix
             )
+            assert attempt.buffer.startswith(prefix)
+            assert i < len(attempt.examples)
             ex_attempt = attempt.examples[i]
             replacement = attempt.buffer[ex_attempt.start:ex_attempt.end]
             assert ex_attempt.start == ex.start
-            if ex_attempt.length < ex.length:
+            if ex_attempt.length < ex.length and False:
                 self.incorporate_new_buffer(
                     prefix + replacement + suffix
                 )
@@ -2239,6 +2245,52 @@ class Shrinker(object):
         return chunks
 
     @shrink_pass
+    def adaptive_example_minimization(self):
+        for example in self.examples(forward=False):
+            if example.trivial:
+                continue
+            i = example.index
+            assert i < len(self.shrink_target.examples)
+            self.minimize_example(i)
+
+            # This can happen if minimization results in the example getting
+            # discarded.
+            if i >= len(self.shrink_target.examples):
+                continue
+            example = self.shrink_target.examples[i]
+            buf = self.shrink_target.buffer
+            value = buf[example.start:example.end]
+
+            targets = [
+                ex for ex in self.shrink_target.examples
+                if ex.depth == example.depth
+                and sort_key(buf[ex.start:ex.end]) > sort_key(value)
+            ]
+            if targets:
+                continue
+            if len(targets) == 1:
+                self.attempt_replace_example(targets[0].index, value)
+                continue
+            
+            def accept(candidates):
+                candidates = set(candidates)
+                if self.incorporate_new_buffer(replace_all(
+                    self.shrink_target.buffer, [
+                        (ex.start, ex.end, hbytes(size))
+                        for i, x in enumerate(targets)
+                        if i not in candidates
+                    ]  
+                )):
+                    print("REPLACE")
+                    return True
+                return False
+
+            shrink_sequence(
+                list(range(len(targets))), accept, self.random
+            )
+            
+
+    @shrink_pass
     def adaptive_example_zeroing(self):
         for label in self.labels():
             examples = list(self.examples_with_label(label))
@@ -2816,8 +2868,12 @@ def replace_all(source, replacements):
     result = bytearray()
     replacements = sorted(replacements)
     end = 0
+    desired = len(source)
     for u, v, r in replacements:
+        desired -= (v - u)
+        desired += len(r)
         result.extend(source[end:u])
         result.extend(r)
         end = v
+    assert len(result) == desired
     return hbytes(result)

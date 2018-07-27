@@ -288,7 +288,9 @@ class BundleReferenceStrategy(SearchStrategy):
         bundle = machine.bundle(self.name)
         if not bundle:
             data.mark_invalid()
-        return bundle[integer_range(data, 0, len(bundle) - 1)]
+        return bundle[
+            integer_range(data, 0, len(bundle) - 1, center=len(bundle))
+        ]
 
 
 class Bundle(SearchStrategy):

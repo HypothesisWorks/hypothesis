@@ -208,11 +208,19 @@ def biased_coin(data, p):
             data.write(hbytes([1]))
             result = True
         else:
-            falsey = floor(256 * (1 - p))
-            truthy = floor(256 * p)
-            remainder = 256 * p - truthy
+            n_bits = 1
+            while True:
+                opts = 2 ** n_bits
+                falsey = floor(opts * (1 - p))
+                truthy = floor(opts * p)
+                if min(falsey, truthy) == 0:
+                    n_bits *= 2
+                else:
+                    break
 
-            if falsey + truthy == 256:
+            remainder = opts * p - truthy
+
+            if falsey + truthy == opts:
                 if isinstance(p, Fraction):
                     m = p.numerator
                     n = p.denominator
@@ -222,27 +230,19 @@ def biased_coin(data, p):
                 assert n > m > 0
                 truthy = m
                 falsey = n - m
-                bits = bit_length(n) - 1
                 partial = False
             else:
-                bits = 8
                 partial = True
 
-            i = data.draw_bits(bits)
+            i = data.draw_bits(n_bits)
 
             # We always label the region that causes us to repeat the loop as
-            # 255 so that shrinking this byte never causes us to need to draw
-            # more data.
-            if partial and i == 255:
+            # opts - 1so that shrinking this byte never causes us to need to
+            # draw more data.
+            if partial and i + 1 == opts:
                 p = remainder
                 continue
-            if falsey == 0:
-                # Every other partition is truthy, so the result is true
-                result = True
-            elif truthy == 0:
-                # Every other partition is falsey, so the result is false
-                result = False
-            elif i <= 1:
+            if i <= 1:
                 # We special case so that zero is always false and 1 is always
                 # true which makes shrinking easier because we can always
                 # replace a truthy block with 1. This has the slightly weird

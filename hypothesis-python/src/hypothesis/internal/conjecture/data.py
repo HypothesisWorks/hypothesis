@@ -55,6 +55,7 @@ class Example(object):
     parent = attr.ib(default=None)
     children = attr.ib(default=attr.Factory(list))
     trivial = attr.ib(default=True)
+    result = attr.ib(default=None)
 
     @property
     def length(self):
@@ -181,18 +182,21 @@ class ConjectureData(object):
         if label is None:
             label = strategy.label
         self.start_example(label=label)
+        example = self.examples[-1]
         try:
             if not at_top_level:
-                return strategy.do_draw(self)
+                result = strategy.do_draw(self)
             else:
                 start_time = benchmark_time()
                 try:
-                    return strategy.do_draw(self)
+                    result = strategy.do_draw(self)
                 except BaseException as e:
                     mark_for_escalation(e)
                     raise
                 finally:
                     self.draw_times.append(benchmark_time() - start_time)
+            example.result = repr(result)
+            return result
         finally:
             self.stop_example()
 
