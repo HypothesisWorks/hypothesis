@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.12:
+
+--------------------
+3.66.12 - 2018-07-28
+--------------------
+
+This release changes how we group data together for shrinking. It should result
+in improved shrinker performance, especially in stateful testing.
+
 .. _v3.66.11:
 
 --------------------
