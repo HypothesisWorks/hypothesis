@@ -338,6 +338,17 @@ def test_empty_machine_is_invalid():
         EmptyMachine.TestCase().runTest()
 
 
+def test_machine_with_no_terminals_is_invalid():
+    class NonTerminalMachine(RuleBasedStateMachine):
+
+        @rule(value=Bundle(u'hi'))
+        def bye(self, hi):
+            pass
+
+    with raises(InvalidDefinition):
+        NonTerminalMachine.TestCase().runTest()
+
+
 class DynamicMachine(RuleBasedStateMachine):
 
     @rule(value=Bundle(u'hi'))
