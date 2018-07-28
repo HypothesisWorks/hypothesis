@@ -215,9 +215,23 @@ class NotTheLastMachine(RuleBasedStateMachine):
         self.bye_called = True
 
 
+class PopulateMultipleTargets(RuleBasedStateMachine):
+    b1 = Bundle('b1')
+    b2 = Bundle('b2')
+
+    @rule(targets=(b1, b2))
+    def populate(self):
+        return 1
+
+    @rule(x=b1, y=b2)
+    def fail(self, x, y):
+        assert False
+
+
 bad_machines = (
     OrderedStateMachine, SetStateMachine, BalancedTrees,
     DepthMachine, RoseTreeStateMachine, NotTheLastMachine,
+    PopulateMultipleTargets,
 )
 
 for m in bad_machines:
@@ -336,6 +350,17 @@ def test_empty_machine_is_invalid():
 
     with raises(InvalidDefinition):
         EmptyMachine.TestCase().runTest()
+
+
+def test_machine_with_no_terminals_is_invalid():
+    class NonTerminalMachine(RuleBasedStateMachine):
+
+        @rule(value=Bundle(u'hi'))
+        def bye(self, hi):
+            pass
+
+    with raises(InvalidDefinition):
+        NonTerminalMachine.TestCase().runTest()
 
 
 class DynamicMachine(RuleBasedStateMachine):
