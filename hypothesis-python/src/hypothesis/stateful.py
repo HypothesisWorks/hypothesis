@@ -562,7 +562,7 @@ class RuleStrategy(SearchStrategy):
                 j for j, r in enumerate(self.rules) if self.is_valid(r)
             ]
             if not valid_rules:
-                raise RuntimeError(
+                raise InvalidDefinition(
                     u'No progress can be made from state %r' % (self.machine,)
                 )
             i = valid_rules[cu.integer_range(data, 0, len(valid_rules) - 1)]

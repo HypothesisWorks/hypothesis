@@ -975,20 +975,3 @@ def test_steps_not_printed_with_pytest_skip(capsys):
         run_state_machine_as_test(RaisesProblem)
     out, _ = capsys.readouterr()
     assert '' == out
-
-
-def test_raises_InvalidDefinition_when_out_of_transitions(capsys):
-    class RunsOutOfTransitions(RuleBasedStateMachine):
-
-        @precondition(lambda self: not hasattr(self, 'marker'))
-        @rule()
-        def test_works_once_then_invalid(self):
-            self.marker = True
-
-    with pytest.raises(RuntimeError):
-        run_state_machine_as_test(RunsOutOfTransitions)
-    out, _ = capsys.readouterr()
-    assert out == """state = RunsOutOfTransitions()
-state.test_works_once_then_invalid()
-state.teardown()
-"""
