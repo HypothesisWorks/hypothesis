@@ -27,7 +27,7 @@ information to the contrary.
 3.66.11 - 2018-07-28
 --------------------
 
-This patch modifies how which rule to run is selected during 
+This patch modifies how which rule to run is selected during
 :doc:`rule based stateful testing <stateful>`. This should result in a slight
 performance increase during generation and a significant performance and
 quality improvement when shrinking.
