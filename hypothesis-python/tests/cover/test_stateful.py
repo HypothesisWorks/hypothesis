@@ -215,9 +215,23 @@ class NotTheLastMachine(RuleBasedStateMachine):
         self.bye_called = True
 
 
+class PopulateMultipleTargets(RuleBasedStateMachine):
+    b1 = Bundle('b1')
+    b2 = Bundle('b2')
+
+    @rule(targets=(b1, b2))
+    def populate(self):
+        return 1
+
+    @rule(x=b1, y=b2)
+    def fail(self, x, y):
+        assert False
+
+
 bad_machines = (
     OrderedStateMachine, SetStateMachine, BalancedTrees,
     DepthMachine, RoseTreeStateMachine, NotTheLastMachine,
+    PopulateMultipleTargets,
 )
 
 for m in bad_machines:
