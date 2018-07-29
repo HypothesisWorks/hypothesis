@@ -1415,3 +1415,25 @@ def test_permits_but_ignores_raising_order(monkeypatch):
         data.mark_interesting()
 
     assert list(x) == [1]
+
+
+def test_block_deletion_can_delete_short_ranges(monkeypatch):
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer([
+                v for i in range(5) for _ in range(i + 1) for v in [0, i]])))
+
+    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.block_deletion)
+
+    @run_to_buffer
+    def x(data):
+        while True:
+            n = data.draw_bits(16)
+            for _ in range(n):
+                if data.draw_bits(16) != n:
+                    data.mark_invalid()
+            if n == 4:
+                data.mark_interesting()
+
+    assert list(x) == [0, 4] * 5
