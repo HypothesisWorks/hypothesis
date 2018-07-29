@@ -107,26 +107,14 @@ class Minimizer(object):
         # We take a bet that there is some monotonic lower bound such that
         # whenever current >= lower_bound the result works.
         for i in hrange(self.size):
-            if self.current[i] == 0:
-                continue
-
-            if self.incorporate(
-                self.current[:i] + hbytes([0]) + self.current[i + 1:]
-            ):
-                continue
-
             prefix = self.current[:i]
-            original_suffix = self.current[i + 1:]
+            suffix = self.current[i + 1:]
 
-            for suffix in [
-                original_suffix,
-                hbytes([255]) * len(original_suffix),
-            ]:
-                minimize_int(
-                    self.current[i],
-                    lambda c: self.current[i] == c or self.incorporate(
-                        prefix + hbytes([c]) + suffix)
-                )
+            minimize_int(
+                self.current[i],
+                lambda c: self.current[i] == c or self.incorporate(
+                    prefix + hbytes([c]) + suffix)
+            )
 
     def incorporate_int(self, i):
         return self.incorporate(int_to_bytes(i, self.size))
@@ -339,6 +327,8 @@ def binsearch(_lo, _hi):
 def minimize_int(c, f):
     """Return the smallest byte for which a function `f` returns True, starting
     with the byte `c` as an unsigned integer."""
+    if c == 0:
+        return 0
     if f(0):
         return 0
     if c == 1 or f(1):
