@@ -37,9 +37,7 @@ def minimal(
         settings=None, timeout_after=10, random=None
 ):
     settings = Settings(
-        settings,
-        max_examples=50000,
-        database=None, timeout=unlimited,
+        settings, max_examples=50000, database=None, timeout=unlimited,
     )
 
     runtime = []
