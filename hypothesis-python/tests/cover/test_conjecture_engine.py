@@ -1437,3 +1437,29 @@ def test_block_deletion_can_delete_short_ranges(monkeypatch):
                 data.mark_interesting()
 
     assert list(x) == [0, 4] * 5
+
+
+def test_try_shrinking_blocks_ignores_overrun_blocks(monkeypatch):
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer([3, 3, 0, 1])))
+
+    monkeypatch.setattr(
+        Shrinker, 'shrink',
+        lambda self: self.try_shrinking_blocks(
+            (0, 1, 5), hbytes([2])
+        ),
+    )
+
+    @run_to_buffer
+    def x(data):
+        n1 = data.draw_bits(8)
+        data.draw_bits(8)
+        if n1 == 3:
+            data.draw_bits(8)
+        k = data.draw_bits(8)
+        if k == 1:
+            data.mark_interesting()
+
+    assert list(x) == [2, 2, 1]

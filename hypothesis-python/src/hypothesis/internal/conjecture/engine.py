@@ -1785,10 +1785,11 @@ class Shrinker(object):
         block to be lowered.
         """
         initial_attempt = bytearray(self.shrink_target.buffer)
-        for i in blocks:
-            if i >= len(self.blocks):
+        for i, block in enumerate(blocks):
+            if block >= len(self.blocks):
+                blocks = blocks[:i]
                 break
-            u, v = self.blocks[i]
+            u, v = self.blocks[block]
             n = min(v - u, len(b))
             initial_attempt[v - n:v] = b[-n:]
 
