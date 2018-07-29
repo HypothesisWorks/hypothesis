@@ -430,7 +430,7 @@ class ConjectureRunner(object):
 
         self.debug(u'%d bytes %s -> %s, %s' % (
             data.index,
-            repr(data.buffer),
+            u''.join(buffer_parts),
             status,
             data.output,
         ))
