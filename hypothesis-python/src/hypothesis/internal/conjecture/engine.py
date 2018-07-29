@@ -430,7 +430,7 @@ class ConjectureRunner(object):
 
         self.debug(u'%d bytes %s -> %s, %s' % (
             data.index,
-            u''.join(buffer_parts),
+            repr(data.buffer),
             status,
             data.output,
         ))
@@ -1372,6 +1372,7 @@ class Shrinker(object):
             if not run_expensive_shrinks:
                 continue
 
+            self.block_deletion()
             self.reorder_examples()
             self.shrink_offset_pairs()
             self.interval_deletion_with_block_lowering()
@@ -1973,6 +1974,33 @@ class Shrinker(object):
             # one more example than we succeeded at deleting, so we expect the
             # next example to be undeletable.
             i += 1
+
+    @shrink_pass
+    def block_deletion(self):
+        """A secondary deletion pass which attempts to delete short contiguous
+        ranges of blocks. This is able to violate boundaries in a way that
+        adaptive_example_deletion cannot.
+
+        An example of where this is useful is that if we are generating
+        a list of lists, we can merge consecutive elements, e.g.
+        replacing [[a], [b]] with [[a, b]], because this pass will
+        simultaneously delete the last block of the [a] and the first
+        block of the [b], effectively joining the two lists together.
+        """
+        i = 0
+        while i < len(self.shrink_target.blocks):
+            j = min(i + 4, len(self.shrink_target.blocks) - 2)
+            while j >= i:
+                u, v = self.shrink_target.blocks[i]
+                r, s = self.shrink_target.blocks[j]
+                if self.incorporate_new_buffer(
+                    self.shrink_target.buffer[:i] +
+                    self.shrink_target.buffer[j:]
+                ):
+                    break
+                j -= 1
+            else:
+                i += 1
 
     @shrink_pass
     def minimize_duplicated_blocks(self):
