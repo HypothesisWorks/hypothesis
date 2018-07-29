@@ -1991,11 +1991,11 @@ class Shrinker(object):
         while i < len(self.shrink_target.blocks):
             j = min(i + 4, len(self.shrink_target.blocks) - 2)
             while j >= i:
-                u, v = self.shrink_target.blocks[i]
-                r, s = self.shrink_target.blocks[j]
+                u, _ = self.shrink_target.blocks[i]
+                _, v = self.shrink_target.blocks[j]
                 if self.incorporate_new_buffer(
-                    self.shrink_target.buffer[:i] +
-                    self.shrink_target.buffer[j:]
+                    self.shrink_target.buffer[:u] +
+                    self.shrink_target.buffer[v:]
                 ):
                     break
                 j -= 1
