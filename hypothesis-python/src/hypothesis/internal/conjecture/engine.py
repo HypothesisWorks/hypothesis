@@ -27,7 +27,7 @@ import attr
 
 from hypothesis import Phase, Verbosity, HealthCheck
 from hypothesis import settings as Settings
-from hypothesis._settings import local_settings
+from hypothesis._settings import local_settings, note_deprecation
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import Counter, ceil, hbytes, hrange, \
     int_to_text, int_to_bytes, benchmark_time, int_from_bytes, \
@@ -257,6 +257,18 @@ class ConjectureRunner(object):
             self.settings.timeout > 0 and
             benchmark_time() >= self.start_time + self.settings.timeout
         ):
+            note_deprecation((
+                'Your tests are hitting the settings timeout (%.2fs). '
+                'This functionality will go away in a future release '
+                'and you should not rely on it. Instead, try setting '
+                'max_examples to be some value lower than %d (the number '
+                'of examples your test successfully ran here). Or, if you '
+                'would prefer your tests to run to completion, regardless '
+                'of how long they take, you can set the timeout value to '
+                'hypothesis.unlimited.'
+            ) % (
+                self.settings.timeout, self.valid_examples),
+                self.settings)
             self.exit_with(ExitReason.timeout)
 
         if not self.interesting_examples:

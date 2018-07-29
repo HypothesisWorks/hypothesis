@@ -72,6 +72,10 @@ def fails_with(e):
 fails = fails_with(AssertionError)
 
 
+class NotDeprecated(Exception):
+    pass
+
+
 @contextlib.contextmanager
 def validate_deprecation():
     import warnings
@@ -80,12 +84,14 @@ def validate_deprecation():
         warnings.simplefilter('always', HypothesisDeprecationWarning)
         with warnings.catch_warnings(record=True) as w:
             yield
-            assert any(
-                e.category == HypothesisDeprecationWarning for e in w
-            ), 'Expected to get a deprecation warning but got %r' % (
-                [e.category for e in w],)
     finally:
         warnings.simplefilter('error', HypothesisDeprecationWarning)
+        if not any(
+            e.category == HypothesisDeprecationWarning for e in w
+        ):
+            raise NotDeprecated(
+                'Expected to get a deprecation warning but got %r' % (
+                    [e.category for e in w],))
 
 
 def checks_deprecated_behaviour(func):
