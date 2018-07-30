@@ -17,4 +17,4 @@ py==1.5.4                 # via pytest
 pytest-forked==0.2        # via pytest-xdist
 pytest-xdist==1.22.5
 pytest==3.6.4
-six==1.11.0               # via mock, more-itertools, pytest
+six==1.11.0               # via mock, more-itertools, pytest, pytest-xdist
