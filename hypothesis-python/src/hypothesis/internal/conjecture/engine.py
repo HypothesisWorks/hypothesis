@@ -21,6 +21,7 @@ import heapq
 from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
+from contextlib import contextmanager
 from collections import defaultdict
 
 import attr
@@ -1214,24 +1215,13 @@ def shrink_pass(fn):
     """Decorates a function that is intended to be used as a shrink pass to
     give some uniform behaviour and logging."""
     @proxies(fn)
-    def run(self):
-        self.debug('Shrink Pass %s' % (fn.__name__,))
-        initial_shrinks = self.shrinks
-        initial_calls = self.calls
-        try:
-            fn(self)
-        finally:
-            calls = self.calls - initial_calls
-            shrinks = self.shrinks - initial_shrinks
-            self.debug((
-                'Shrink Pass %s completed. Made %d call%s and '
-                '%d shrink%s') % (
-                fn.__name__,
-                calls, 's' if calls != 1 else '',
-                shrinks, 's' if shrinks != 1 else '',
-            ))
-            if not self.discarding_failed:
-                self.remove_discarded()
+    def run(self, *args, **kwargs):
+        name = '%s(%s)' % (
+            fn.__name__, ', '.join(tuple(map(repr, args)) + tuple(sorted(
+                '%s=%r' % (k, v) for k, v in kwargs.items()))))
+        with self.in_shrink_pass(name):
+            return fn(self, *args, **kwargs)
+
     return run
 
 
@@ -1320,6 +1310,28 @@ class Shrinker(object):
     @property
     def random(self):
         return self.__engine.random
+
+    @contextmanager
+    def in_shrink_pass(self, name):
+        """Context manager declaring its body to be a single self-contained
+        shrink pass."""
+        self.debug('Shrink Pass %s' % (name,))
+        initial_shrinks = self.shrinks
+        initial_calls = self.calls
+        try:
+            yield
+        finally:
+            calls = self.calls - initial_calls
+            shrinks = self.shrinks - initial_shrinks
+            self.debug((
+                'Shrink Pass %s completed. Made %d call%s and '
+                '%d shrink%s') % (
+                name,
+                calls, 's' if calls != 1 else '',
+                shrinks, 's' if shrinks != 1 else '',
+            ))
+        if not self.discarding_failed:
+            self.remove_discarded()
 
     def shrink(self):
         """Run the full set of shrinks and update shrink_target.
