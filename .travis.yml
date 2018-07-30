@@ -83,6 +83,13 @@ script:
 matrix:
     fast_finish: true
 
+stages:
+    - precheck
+    - main
+    - extras
+    - name: deploy
+      if: type = push
+
 notifications:
   email:
     recipients:
