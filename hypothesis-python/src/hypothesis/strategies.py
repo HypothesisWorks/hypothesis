@@ -424,7 +424,7 @@ def floats(
             '32, and 64.' % (width,)
         )
     if width == 16 and python_version_info[:2] < (3, 6) and numpy is None:
-        raise InvalidArgument(
+        raise InvalidArgument(  # pragma: no cover
             'width=16 requires either Numpy, or Python >= 3.6 so it can use '
             "the struct module's new 'e' format."
         )

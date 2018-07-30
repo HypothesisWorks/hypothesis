@@ -209,6 +209,8 @@ def test_float_free_interval_is_invalid():
     dict(max_value=10 ** 400),
 ])
 def test_out_of_range(kwargs):
+    if kwargs.get('width') == 16 and not (CAN_PACK_HALF_FLOAT or numpy):
+        pytest.skip()
     with pytest.raises(OverflowError):
         st.floats(**kwargs).validate()
 

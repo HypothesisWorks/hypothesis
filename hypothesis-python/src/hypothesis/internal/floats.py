@@ -39,7 +39,7 @@ STRUCT_FORMATS = {
 def reinterpret_bits(x, from_, to):
     try:
         buf = struct_pack(from_, x)
-    except struct.error:
+    except struct.error:  # pragma: no cover
         if from_ == b'!e' and numpy is not None and not CAN_PACK_HALF_FLOAT:
             arr = numpy.array([x], dtype='>f2')
             if numpy.isfinite(x) and not numpy.isfinite(arr[0]):
@@ -51,7 +51,7 @@ def reinterpret_bits(x, from_, to):
             raise
     try:
         return struct_unpack(to, buf)[0]
-    except struct.error:
+    except struct.error:  # pragma: no cover
         if to == b'!e' and numpy is not None and not CAN_PACK_HALF_FLOAT:
             return float(numpy.frombuffer(buf, dtype='>f2')[0])
         raise
