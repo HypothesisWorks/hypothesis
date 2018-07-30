@@ -53,8 +53,8 @@ def test_when_nothing_could_be_produced():
 def test_characters_of_specific_groups():
     st = characters(whitelist_categories=('Lu', 'Nd'))
 
-    minimal(st, lambda c: unicodedata.category(c) == 'Lu')
-    minimal(st, lambda c: unicodedata.category(c) == 'Nd')
+    find_any(st, lambda c: unicodedata.category(c) == 'Lu')
+    find_any(st, lambda c: unicodedata.category(c) == 'Nd')
 
     assert_no_examples(
         st, lambda c: unicodedata.category(c) not in ('Lu', 'Nd'))
@@ -62,8 +62,8 @@ def test_characters_of_specific_groups():
 
 def test_characters_of_major_categories():
     st = characters(whitelist_categories=('L', 'N'))
-    minimal(st, lambda c: unicodedata.category(c).startswith('L'))
-    minimal(st, lambda c: unicodedata.category(c).startswith('N'))
+    find_any(st, lambda c: unicodedata.category(c).startswith('L'))
+    find_any(st, lambda c: unicodedata.category(c).startswith('N'))
     assert_no_examples(
         st, lambda c: unicodedata.category(c)[0] not in ('L', 'N'))
 
@@ -71,16 +71,16 @@ def test_characters_of_major_categories():
 def test_exclude_characters_of_specific_groups():
     st = characters(blacklist_categories=('Lu', 'Nd'))
 
-    minimal(st, lambda c: unicodedata.category(c) != 'Lu')
-    minimal(st, lambda c: unicodedata.category(c) != 'Nd')
+    find_any(st, lambda c: unicodedata.category(c) != 'Lu')
+    find_any(st, lambda c: unicodedata.category(c) != 'Nd')
 
     assert_no_examples(st, lambda c: unicodedata.category(c) in ('Lu', 'Nd'))
 
 
 def test_exclude_characters_of_major_categories():
     st = characters(blacklist_categories=('L', 'N'))
-    minimal(st, lambda c: not unicodedata.category(c).startswith('L'))
-    minimal(st, lambda c: not unicodedata.category(c).startswith('N'))
+    find_any(st, lambda c: not unicodedata.category(c).startswith('L'))
+    find_any(st, lambda c: not unicodedata.category(c).startswith('N'))
     assert_no_examples(st, lambda c: unicodedata.category(c)[0] in ('L', 'N'))
 
 
@@ -93,7 +93,7 @@ def test_find_one():
 def test_find_something_rare():
     st = characters(whitelist_categories=['Zs'], min_codepoint=12288)
 
-    minimal(st, lambda c: unicodedata.category(c) == 'Zs')
+    find_any(st, lambda c: unicodedata.category(c) == 'Zs')
 
     assert_no_examples(st, lambda c: unicodedata.category(c) != 'Zs')
 
