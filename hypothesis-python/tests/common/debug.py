@@ -21,6 +21,7 @@ import sys
 
 from hypothesis import find, given, assume, reject
 from hypothesis import settings as Settings
+from hypothesis import unlimited
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from tests.common.utils import no_shrink
 
@@ -36,9 +37,7 @@ def minimal(
         settings=None, timeout_after=10, random=None
 ):
     settings = Settings(
-        settings,
-        max_examples=50000,
-        database=None,
+        settings, max_examples=50000, database=None, timeout=unlimited,
     )
 
     runtime = []
