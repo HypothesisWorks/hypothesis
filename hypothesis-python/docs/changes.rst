@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.13:
+
+--------------------
+3.66.13 - 2018-07-30
+--------------------
+
+This release adds an additional shrink pass that is able to reduce the size of
+examples in some cases where the transformation is non-obvious. In particular
+this will improve the quality of some examples which would have regressed in
+`3.66.12 <3.66.12>`.
+
 .. _v3.66.12:
 
 --------------------
