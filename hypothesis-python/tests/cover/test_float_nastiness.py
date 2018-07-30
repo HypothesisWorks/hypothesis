@@ -28,9 +28,14 @@ import hypothesis.strategies as st
 from hypothesis import given, assume, settings
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal, find_any
-from hypothesis.internal.compat import WINDOWS
+from hypothesis.internal.compat import WINDOWS, CAN_PACK_HALF_FLOAT
 from hypothesis.internal.floats import next_up, next_down, float_to_int, \
     int_to_float
+
+try:
+    import numpy
+except ImportError:
+    numpy = None
 
 
 @pytest.mark.parametrize(('lower', 'upper'), [
@@ -191,3 +196,39 @@ def test_float_free_interval_is_invalid():
     assert float(lo) < lo < hi < float(hi), 'There are no floats in [lo .. hi]'
     with pytest.raises(InvalidArgument):
         st.floats(lo, hi).example()
+
+
+@pytest.mark.parametrize('kwargs', [
+    dict(min_value=10 ** 5, width=16),
+    dict(max_value=10 ** 5, width=16),
+    dict(min_value=10 ** 40, width=32),
+    dict(max_value=10 ** 40, width=32),
+    dict(min_value=10 ** 400, width=64),
+    dict(max_value=10 ** 400, width=64),
+    dict(min_value=10 ** 400),
+    dict(max_value=10 ** 400),
+])
+def test_out_of_range(kwargs):
+    with pytest.raises(OverflowError):
+        st.floats(**kwargs).validate()
+
+
+def test_invalidargument_iff_half_float_unsupported():
+    if numpy is None and not CAN_PACK_HALF_FLOAT:
+        with pytest.raises(InvalidArgument):
+            st.floats(width=16).validate()
+    else:
+        st.floats(width=16).validate()
+
+
+def test_disallowed_width():
+    with pytest.raises(InvalidArgument):
+        st.floats(width=128).validate()
+
+
+def test_no_single_floats_in_range():
+    low = 2. ** 25 + 1
+    high = low + 2
+    st.floats(low, high).validate()  # Note: OK for 64bit floats
+    with pytest.raises(InvalidArgument):
+        st.floats(low, high, width=32).validate()
