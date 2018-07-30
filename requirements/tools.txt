@@ -54,7 +54,7 @@ pygithub==1.40            # via pyupio
 pygments==2.2.0           # via ipython, sphinx
 pyjwt==1.6.4              # via pygithub
 pyparsing==2.2.0          # via packaging
-pytest==3.6.3
+pytest==3.6.4
 python-dateutil==2.7.3
 python-gitlab==1.5.1      # via pyupio
 pytz==2018.5              # via babel, django
