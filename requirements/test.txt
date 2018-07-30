@@ -12,7 +12,7 @@ flaky==3.4.0
 mock==2.0.0
 more-itertools==4.2.0     # via pytest
 pbr==4.2.0                # via mock
-pluggy==0.6.0             # via pytest
+pluggy==0.7.1             # via pytest
 py==1.5.4                 # via pytest
 pytest-forked==0.2        # via pytest-xdist
 pytest-xdist==1.22.2
