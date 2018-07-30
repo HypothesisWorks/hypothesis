@@ -74,9 +74,7 @@ def find_any(
 ):
     settings = Settings(
         settings,
-        max_examples=10000,
-        phases=no_shrink,
-        database=None,
+        max_examples=10000, phases=no_shrink, database=None, timeout=unlimited
     )
 
     if condition is None:
