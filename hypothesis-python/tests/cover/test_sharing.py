@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
 from hypothesis import given
-from tests.common.debug import find_any
+from tests.common.debug import find_any, minimize
 
 x = st.shared(st.integers())
 
@@ -61,7 +61,7 @@ def test_keys_and_default_are_not_shared():
 
 
 def test_can_simplify_shared_lists():
-    xs = find_any(
+    xs = minimize(
         st.lists(st.shared(st.integers())),
         lambda x: len(x) >= 10 and x[0] != 0
     )
