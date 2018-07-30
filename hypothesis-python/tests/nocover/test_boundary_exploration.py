@@ -20,16 +20,16 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import Verbosity, HealthCheck, given, reject, settings
+from hypothesis import Verbosity, HealthCheck, find, given, reject, \
+    settings, unlimited
 from hypothesis.errors import NoSuchExample
-from tests.common.debug import minimal
 from tests.common.utils import no_shrink
 
 
 @pytest.mark.parametrize('strat', [st.text(min_size=5)])
 @settings(
     phases=no_shrink, deadline=None,
-    suppress_health_check=[HealthCheck.too_slow, HealthCheck.hung_test]
+    suppress_health_check=HealthCheck.all()
 )
 @given(st.data())
 def test_explore_arbitrary_function(strat, data):
@@ -42,9 +42,12 @@ def test_explore_arbitrary_function(strat, data):
             return cache.setdefault(x, data.draw(st.booleans(), label=repr(x)))
 
     try:
-        minimal(
+        find(
             strat, predicate,
-            settings=settings(database=None, verbosity=Verbosity.quiet)
+            settings=settings(
+                max_examples=10, database=None, timeout=unlimited,
+                verbosity=Verbosity.quiet,
+            )
         )
     except NoSuchExample:
         reject()
