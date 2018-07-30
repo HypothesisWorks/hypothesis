@@ -47,10 +47,11 @@ def minimal(
             return True
 
     def wrapped_condition(x):
-        if runtime:
-            runtime[0] += TIME_INCREMENT
-            if runtime[0] >= timeout_after:
-                raise Timeout()
+        if timeout_after is not None:
+            if runtime:
+                runtime[0] += TIME_INCREMENT
+                if runtime[0] >= timeout_after:
+                    raise Timeout()
         result = condition(x)
         if result and not runtime:
             runtime.append(0.0)

@@ -32,13 +32,16 @@ def test_can_generate_with_large_branching():
         else:
             return [x]
 
+    size = 20
+
     xs = minimal(
         st.recursive(
-            st.integers(), lambda x: st.lists(x, min_size=25),
-            max_leaves=100),
-        lambda x: isinstance(x, list) and len(flatten(x)) >= 50
+            st.integers(), lambda x: st.lists(x, min_size=size // 2),
+            max_leaves=size * 2),
+        lambda x: isinstance(x, list) and len(flatten(x)) >= size,
+        timeout_after=None,
     )
-    assert flatten(xs) == [0] * 50
+    assert flatten(xs) == [0] * size
 
 
 def test_can_generate_some_depth_with_large_branching():
@@ -49,7 +52,8 @@ def test_can_generate_some_depth_with_large_branching():
             return 1
     xs = minimal(
         st.recursive(st.integers(), st.lists),
-        lambda x: depth(x) > 1
+        lambda x: depth(x) > 1,
+        timeout_after=None,
     )
     assert xs in ([0], [[]])
 
@@ -61,24 +65,32 @@ def test_can_find_quite_broad_lists():
         else:
             return 1
 
+    target = 10
+
     broad = minimal(
-        st.recursive(st.booleans(), lambda x: st.lists(x, max_size=10)),
-        lambda x: breadth(x) >= 20,
-        settings=settings(max_examples=10000)
+        st.recursive(
+            st.booleans(), lambda x: st.lists(x, max_size=target // 2)),
+        lambda x: breadth(x) >= target,
+        settings=settings(max_examples=10000),
+        timeout_after=None,
     )
-    assert breadth(broad) == 20
+    assert breadth(broad) == target
 
 
 def test_drawing_many_near_boundary():
+    target = 4
+
     ls = minimal(
         st.lists(st.recursive(
             st.booleans(),
-            lambda x: st.lists(x, min_size=8, max_size=10).map(tuple),
-            max_leaves=9)),
-        lambda x: len(set(x)) >= 5,
-        settings=settings(max_examples=10000, database=None)
+            lambda x: st.lists(
+                x, min_size=2 * (target - 1), max_size=2 * target
+            ).map(tuple),
+            max_leaves=2 * target - 1)),
+        lambda x: len(set(x)) >= target,
+        timeout_after=None
     )
-    assert len(ls) == 5
+    assert len(ls) == target
 
 
 @given(st.randoms())
@@ -102,8 +114,8 @@ def test_can_use_recursive_data_in_sets(rnd):
             return result
     assert rnd is not None
     x = minimal(
-        nested_sets, lambda x: len(flatten(x)) == 2, random=rnd,
-        settings=settings(database=None, max_examples=1000))
+        nested_sets, lambda x: len(flatten(x)) == 2, random=rnd
+    )
     assert x in (
         frozenset((False, True)),
         frozenset((False, frozenset((True,)))),
@@ -117,7 +129,5 @@ def test_can_form_sets_of_recursive_data():
         st.booleans(),
         lambda x: st.lists(x, min_size=5).map(tuple),
         max_leaves=20))
-    xs = minimal(trees, lambda x: len(x) >= 5, settings=settings(
-        database=None, max_examples=1000
-    ))
+    xs = minimal(trees, lambda x: len(x) >= 5)
     assert len(xs) == 5
