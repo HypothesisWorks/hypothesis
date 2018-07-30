@@ -125,9 +125,11 @@ def test_can_use_recursive_data_in_sets(rnd):
 
 @flaky(max_runs=2, min_passes=1)
 def test_can_form_sets_of_recursive_data():
+    size = 3
+
     trees = st.sets(st.recursive(
         st.booleans(),
-        lambda x: st.lists(x, min_size=5).map(tuple),
+        lambda x: st.lists(x, min_size=size).map(tuple),
         max_leaves=20))
-    xs = minimal(trees, lambda x: len(x) >= 5)
-    assert len(xs) == 5
+    xs = minimal(trees, lambda x: len(x) >= size, timeout_after=None)
+    assert len(xs) == size
