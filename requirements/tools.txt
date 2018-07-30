@@ -67,7 +67,7 @@ safety==1.8.3             # via pyupio
 simplegeneric==0.8.1      # via ipython
 six==1.11.0               # via dparse, more-itertools, packaging, pip-tools, prompt-toolkit, pydocstyle, pytest, python-dateutil, python-gitlab, pyupio, sphinx, tox, traitlets
 snowballstemmer==1.2.1    # via pydocstyle, sphinx
-sphinx-rtd-theme==0.4.0
+sphinx-rtd-theme==0.4.1
 sphinx==1.7.6
 sphinxcontrib-websupport==1.1.0  # via sphinx
 tox==3.1.2
