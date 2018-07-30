@@ -385,6 +385,7 @@ def floats(
     allow_infinity=None,  # type: bool
     width=64,  # type: int
 ):
+    # type: (...) -> SearchStrategy[float]
     """Returns a strategy which generates floats.
 
     - If min_value is not None, all values will be >= min_value.
@@ -434,8 +435,10 @@ def floats(
     min_arg, max_arg = min_value, max_value
     if min_value is not None:
         min_value = float_of(min_value, width)
+        assert isinstance(min_value, float)
     if max_value is not None:
         max_value = float_of(max_value, width)
+        assert isinstance(max_value, float)
 
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
     if min_value == float(u'-inf'):
@@ -468,9 +471,10 @@ def floats(
     if min_value is None and max_value is None:
         result = FloatStrategy(
             allow_infinity=allow_infinity, allow_nan=allow_nan,
-        )
+        )  # type: SearchStrategy[float]
     elif min_value is not None and max_value is not None:
         if min_value == max_value:
+            assert isinstance(min_value, float)
             result = just(min_value)
         elif is_negative(min_value):
             if is_negative(max_value):
@@ -491,6 +495,7 @@ def floats(
                 lambda x: int_to_float(x, width)
             )
     elif min_value is not None:
+        assert isinstance(min_value, float)
         if min_value < 0:
             result = floats(
                 min_value=0.0
@@ -498,13 +503,14 @@ def floats(
         else:
             result = (
                 floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                    lambda x: assume(not math.isnan(x)) and min_value + abs(x)
+                    lambda x: assume(not math.isnan(x)) and
+                    min_value + abs(x)  # type: ignore
                 )
             )
         if min_value == 0 and not is_negative(min_value):
             result = result.filter(lambda x: math.copysign(1.0, x) == 1)
     else:
-        assert max_value is not None
+        assert isinstance(max_value, float)
         if max_value > 0:
             result = floats(
                 min_value=0.0,
@@ -513,7 +519,8 @@ def floats(
         else:
             result = (
                 floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                    lambda x: assume(not math.isnan(x)) and max_value - abs(x)
+                    lambda x: assume(not math.isnan(x)) and
+                    max_value - abs(x)  # type: ignore
                 )
             )
         if max_value == 0 and is_negative(max_value):
@@ -1256,11 +1263,11 @@ def from_type(thing):
     if thing in types._global_type_lookup:
         strategy = types._global_type_lookup[thing]
         if not isinstance(strategy, SearchStrategy):
-            strategy = strategy(thing)
-        if strategy.is_empty:
+            strategy = strategy(thing)  # type: ignore
+        if strategy.is_empty:  # type: ignore
             raise ResolutionFailed(
                 'Error: %r resolved to an empty strategy' % (thing,))
-        return strategy
+        return strategy  # type: ignore
     # If there's no explicitly registered strategy, maybe a subtype of thing
     # is registered - if so, we can resolve it to the subclass strategy.
     # We'll start by checking if thing is from from the typing module,
@@ -1274,7 +1281,7 @@ def from_type(thing):
     # type.  For example, `Number -> integers() | floats()`, but bools() is
     # not included because bool is a subclass of int as well as Number.
     strategies = [
-        v if isinstance(v, SearchStrategy) else v(thing)
+        v if isinstance(v, SearchStrategy) else v(thing)  # type: ignore
         for k, v in types._global_type_lookup.items()
         if isinstance(k, type) and issubclass(k, thing) and sum(
             types.try_issubclass(k, typ) for typ in types._global_type_lookup

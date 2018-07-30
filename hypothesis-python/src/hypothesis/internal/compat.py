@@ -64,6 +64,11 @@ def bit_length(n):
     return n.bit_length()
 
 
+def quiet_raise(exc):
+    # Overridden by Py3 version, iff `raise XXX from None` is valid
+    raise exc
+
+
 if PY3:
     def str_to_bytes(s):
         return s.encode(a_good_encoding())
@@ -232,9 +237,6 @@ else:
         if isinstance(x, unicode):
             x = x.encode(a_good_encoding())
         print(x)
-
-    def quiet_raise(exc):
-        raise exc
 
     def benchmark_time():
         return time.time()
