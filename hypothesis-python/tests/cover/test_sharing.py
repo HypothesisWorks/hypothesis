@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
 from hypothesis import given
-from tests.common.debug import find_any, minimal
+from tests.common.debug import minimal, find_any
 
 x = st.shared(st.integers())
 
@@ -69,7 +69,7 @@ def test_can_simplify_shared_lists():
 
 
 def test_simplify_shared_linked_to_size():
-    xs = find_any(
+    xs = minimal(
         st.lists(st.shared(st.integers())),
         lambda t: sum(t) >= 1000
     )
