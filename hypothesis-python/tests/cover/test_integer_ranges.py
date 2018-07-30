@@ -18,7 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
-from hypothesis import find, given, settings, unlimited
+from hypothesis import given, settings, unlimited
+from tests.common.debug import minimal
 from tests.common.utils import no_shrink
 from hypothesis._settings import Phase
 from hypothesis.internal.conjecture.utils import integer_range
@@ -53,8 +54,8 @@ def test_intervals_shrink_to_center(inter, rnd):
     lower, center, upper = inter
     s = interval(lower, upper, center)
     shrink = settings(phases=tuple(Phase))
-    assert find(s, lambda x: True, shrink) == center
+    assert minimal(s, lambda x: True, shrink) == center
     if lower < center:
-        assert find(s, lambda x: x < center, shrink) == center - 1
+        assert minimal(s, lambda x: x < center, shrink) == center - 1
     if center < upper:
-        assert find(s, lambda x: x > center, shrink) == center + 1
+        assert minimal(s, lambda x: x > center, shrink) == center + 1

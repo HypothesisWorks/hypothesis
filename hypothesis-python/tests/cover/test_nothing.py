@@ -19,14 +19,14 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import find, given
+from hypothesis import given
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
-from tests.common.debug import assert_no_examples
+from tests.common.debug import minimal, assert_no_examples
 
 
 def test_resampling():
-    x = find(
+    x = minimal(
         st.lists(st.integers()).flatmap(
             lambda x: st.lists(st.sampled_from(x))),
         lambda x: len(x) >= 10 and len(set(x)) == 1)

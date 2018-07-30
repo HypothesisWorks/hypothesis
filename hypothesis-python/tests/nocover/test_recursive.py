@@ -20,8 +20,8 @@ from __future__ import division, print_function, absolute_import
 from flaky import flaky
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, find, given, settings
-from tests.common.debug import find_any
+from hypothesis import HealthCheck, given, settings
+from tests.common.debug import minimal, find_any
 from tests.common.utils import no_shrink
 
 
@@ -32,7 +32,7 @@ def test_can_generate_with_large_branching():
         else:
             return [x]
 
-    xs = find(
+    xs = minimal(
         st.recursive(
             st.integers(), lambda x: st.lists(x, min_size=25),
             max_leaves=100),
@@ -47,7 +47,7 @@ def test_can_generate_some_depth_with_large_branching():
             return 1 + max(map(depth, x))
         else:
             return 1
-    xs = find(
+    xs = minimal(
         st.recursive(st.integers(), st.lists),
         lambda x: depth(x) > 1
     )
@@ -61,7 +61,7 @@ def test_can_find_quite_broad_lists():
         else:
             return 1
 
-    broad = find(
+    broad = minimal(
         st.recursive(st.booleans(), lambda x: st.lists(x, max_size=10)),
         lambda x: breadth(x) >= 20,
         settings=settings(max_examples=10000)
@@ -70,7 +70,7 @@ def test_can_find_quite_broad_lists():
 
 
 def test_drawing_many_near_boundary():
-    ls = find(
+    ls = minimal(
         st.lists(st.recursive(
             st.booleans(),
             lambda x: st.lists(x, min_size=8, max_size=10).map(tuple),
@@ -101,7 +101,7 @@ def test_can_use_recursive_data_in_sets(rnd):
                     break
             return result
     assert rnd is not None
-    x = find(
+    x = minimal(
         nested_sets, lambda x: len(flatten(x)) == 2, random=rnd,
         settings=settings(database=None, max_examples=1000))
     assert x in (
@@ -117,7 +117,7 @@ def test_can_form_sets_of_recursive_data():
         st.booleans(),
         lambda x: st.lists(x, min_size=5).map(tuple),
         max_leaves=20))
-    xs = find(trees, lambda x: len(x) >= 5, settings=settings(
+    xs = minimal(trees, lambda x: len(x) >= 5, settings=settings(
         database=None, max_examples=1000
     ))
     assert len(xs) == 5

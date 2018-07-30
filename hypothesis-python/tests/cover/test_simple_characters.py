@@ -21,9 +21,8 @@ import unicodedata
 
 import pytest
 
-from hypothesis import find
 from hypothesis.errors import InvalidArgument
-from tests.common.debug import find_any, assert_no_examples
+from tests.common.debug import minimal, find_any, assert_no_examples
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import characters
 from hypothesis.internal.compat import text_type
@@ -54,8 +53,8 @@ def test_when_nothing_could_be_produced():
 def test_characters_of_specific_groups():
     st = characters(whitelist_categories=('Lu', 'Nd'))
 
-    find(st, lambda c: unicodedata.category(c) == 'Lu')
-    find(st, lambda c: unicodedata.category(c) == 'Nd')
+    minimal(st, lambda c: unicodedata.category(c) == 'Lu')
+    minimal(st, lambda c: unicodedata.category(c) == 'Nd')
 
     assert_no_examples(
         st, lambda c: unicodedata.category(c) not in ('Lu', 'Nd'))
@@ -63,8 +62,8 @@ def test_characters_of_specific_groups():
 
 def test_characters_of_major_categories():
     st = characters(whitelist_categories=('L', 'N'))
-    find(st, lambda c: unicodedata.category(c).startswith('L'))
-    find(st, lambda c: unicodedata.category(c).startswith('N'))
+    minimal(st, lambda c: unicodedata.category(c).startswith('L'))
+    minimal(st, lambda c: unicodedata.category(c).startswith('N'))
     assert_no_examples(
         st, lambda c: unicodedata.category(c)[0] not in ('L', 'N'))
 
@@ -72,28 +71,29 @@ def test_characters_of_major_categories():
 def test_exclude_characters_of_specific_groups():
     st = characters(blacklist_categories=('Lu', 'Nd'))
 
-    find(st, lambda c: unicodedata.category(c) != 'Lu')
-    find(st, lambda c: unicodedata.category(c) != 'Nd')
+    minimal(st, lambda c: unicodedata.category(c) != 'Lu')
+    minimal(st, lambda c: unicodedata.category(c) != 'Nd')
 
     assert_no_examples(st, lambda c: unicodedata.category(c) in ('Lu', 'Nd'))
 
 
 def test_exclude_characters_of_major_categories():
     st = characters(blacklist_categories=('L', 'N'))
-    find(st, lambda c: not unicodedata.category(c).startswith('L'))
-    find(st, lambda c: not unicodedata.category(c).startswith('N'))
+    minimal(st, lambda c: not unicodedata.category(c).startswith('L'))
+    minimal(st, lambda c: not unicodedata.category(c).startswith('N'))
     assert_no_examples(st, lambda c: unicodedata.category(c)[0] in ('L', 'N'))
 
 
 def test_find_one():
-    char = find(characters(min_codepoint=48, max_codepoint=48), lambda _: True)
+    char = minimal(characters(min_codepoint=48,
+                              max_codepoint=48), lambda _: True)
     assert char == u'0'
 
 
 def test_find_something_rare():
     st = characters(whitelist_categories=['Zs'], min_codepoint=12288)
 
-    find(st, lambda c: unicodedata.category(c) == 'Zs')
+    minimal(st, lambda c: unicodedata.category(c) == 'Zs')
 
     assert_no_examples(st, lambda c: unicodedata.category(c) != 'Zs')
 
@@ -130,7 +130,7 @@ def test_blacklisted_characters():
     st = characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
                     blacklist_characters=bad_chars)
 
-    assert '1' == find(st, lambda c: True)
+    assert '1' == minimal(st, lambda c: True)
 
     assert_no_examples(st, lambda c: c in bad_chars)
 

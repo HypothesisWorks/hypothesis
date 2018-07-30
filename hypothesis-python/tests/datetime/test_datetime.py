@@ -23,7 +23,7 @@ import pytz
 import pytest
 from flaky import flaky
 
-from hypothesis import find, given, assume, settings, unlimited
+from hypothesis import given, assume, settings, unlimited
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal, find_any
 from tests.common.utils import checks_deprecated_behaviour
@@ -146,7 +146,7 @@ def test_needs_permission_for_no_timezones():
 @checks_deprecated_behaviour
 @flaky(max_runs=3, min_passes=1)
 def test_bordering_on_a_leap_year():
-    x = find(
+    x = minimal(
         datetimes(min_year=2002, max_year=2005),
         lambda x: x.month == 2 and x.day == 29,
         settings=settings(

@@ -25,7 +25,7 @@ import pytest
 from flaky import flaky
 
 import hypothesis.strategies as st
-from hypothesis import find, given, assume, settings
+from hypothesis import given, assume, settings
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal, find_any
 from hypothesis.internal.compat import WINDOWS
@@ -84,8 +84,8 @@ def test_does_not_generate_positive_if_right_boundary_is_negative(x):
 @flaky(max_runs=4, min_passes=1)
 def test_can_generate_interval_endpoints(l, r):
     interval = st.floats(l, r)
-    find(interval, lambda x: x == l, settings=settings(max_examples=10000))
-    find(interval, lambda x: x == r, settings=settings(max_examples=10000))
+    minimal(interval, lambda x: x == l, settings=settings(max_examples=10000))
+    minimal(interval, lambda x: x == r, settings=settings(max_examples=10000))
 
 
 @flaky(max_runs=4, min_passes=1)
@@ -140,7 +140,7 @@ def test_can_guard_against_draws_of_nan():
         st.tuples(st.just(1), st.floats(allow_nan=True)),
     )
 
-    tag, f = find(tagged_floats, lambda x: math.isnan(x[1]))
+    tag, f = minimal(tagged_floats, lambda x: math.isnan(x[1]))
     assert tag == 1
 
 

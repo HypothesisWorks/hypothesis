@@ -20,9 +20,9 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import Verbosity, HealthCheck, find, given, reject, \
-    settings
+from hypothesis import Verbosity, HealthCheck, given, reject, settings
 from hypothesis.errors import NoSuchExample
+from tests.common.debug import minimal
 from tests.common.utils import no_shrink
 
 
@@ -42,7 +42,7 @@ def test_explore_arbitrary_function(strat, data):
             return cache.setdefault(x, data.draw(st.booleans(), label=repr(x)))
 
     try:
-        find(
+        minimal(
             strat, predicate,
             settings=settings(database=None, verbosity=Verbosity.quiet)
         )

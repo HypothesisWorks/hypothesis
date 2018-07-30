@@ -25,7 +25,7 @@ from functools import reduce
 import pytest
 from flaky import flaky
 
-from hypothesis import find, assume, settings
+from hypothesis import assume, settings
 from tests.common import parametrize
 from tests.common.debug import minimal
 from hypothesis.strategies import just, sets, text, lists, tuples, \
@@ -137,7 +137,7 @@ def test_flatmap_rectangles():
     def lists_of_length(n):
         return lists(sampled_from('ab'), min_size=n, max_size=n)
 
-    xs = find(lengths.flatmap(
+    xs = minimal(lengths.flatmap(
         lambda w: lists(lists_of_length(w))), lambda x: ['a', 'b'] in x,
         settings=settings(database=None, max_examples=2000)
     )

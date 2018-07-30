@@ -17,9 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import Verbosity, find, note, given, settings
+from hypothesis import Verbosity, note, given, settings
 from hypothesis import strategies as st
 from hypothesis.errors import NoSuchExample, Unsatisfiable
+from tests.common.debug import minimal
 from tests.common.utils import no_shrink
 from hypothesis.internal.compat import hrange
 
@@ -64,7 +65,7 @@ def test_arbitrary_recursion(strategies):
             s.validate()
 
             try:
-                find(s, lambda x: True, settings=settings(
+                minimal(s, lambda x: True, settings=settings(
                     phases=no_shrink, database=None, verbosity=Verbosity.quiet,
                     max_examples=1,
                 ))

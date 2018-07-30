@@ -21,7 +21,7 @@ import pytest
 from flaky import flaky
 
 import hypothesis.strategies as st
-from hypothesis import find, given, assume
+from hypothesis import given, assume
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
 from hypothesis.internal.compat import hrange
@@ -36,12 +36,12 @@ def badly_draw_lists(draw, m=0):
 
 
 def test_simplify_draws():
-    assert find(badly_draw_lists(), lambda x: len(x) >= 3) == [0] * 3
+    assert minimal(badly_draw_lists(), lambda x: len(x) >= 3) == [0] * 3
 
 
 def test_can_pass_through_arguments():
-    assert find(badly_draw_lists(5), lambda x: True) == [0] * 5
-    assert find(badly_draw_lists(m=6), lambda x: True) == [0] * 6
+    assert minimal(badly_draw_lists(5), lambda x: True) == [0] * 5
+    assert minimal(badly_draw_lists(m=6), lambda x: True) == [0] * 6
 
 
 @st.composite
@@ -88,7 +88,7 @@ def test_can_use_pure_args():
     @st.composite
     def stuff(*args):
         return args[0](st.sampled_from(args[1:]))
-    assert find(stuff(1, 2, 3, 4, 5), lambda x: True) == 1
+    assert minimal(stuff(1, 2, 3, 4, 5), lambda x: True) == 1
 
 
 def test_composite_of_lists():
@@ -96,7 +96,7 @@ def test_composite_of_lists():
     def f(draw):
         return draw(st.integers()) + draw(st.integers())
 
-    assert find(st.lists(f()), lambda x: len(x) >= 10) == [0] * 10
+    assert minimal(st.lists(f()), lambda x: len(x) >= 10) == [0] * 10
 
 
 @flaky(min_passes=3, max_runs=5)
