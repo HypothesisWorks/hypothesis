@@ -783,19 +783,6 @@ class StateForActualGivenExecution(object):
                 key=lambda d: sort_key(d.buffer), reverse=True
             )
         else:
-            if timed_out:
-                note_deprecation((
-                    'Your tests are hitting the settings timeout (%.2fs). '
-                    'This functionality will go away in a future release '
-                    'and you should not rely on it. Instead, try setting '
-                    'max_examples to be some value lower than %d (the number '
-                    'of examples your test successfully ran here). Or, if you '
-                    'would prefer your tests to run to completion, regardless '
-                    'of how long they take, you can set the timeout value to '
-                    'hypothesis.unlimited.'
-                ) % (
-                    self.settings.timeout, runner.valid_examples),
-                    self.settings)
             if runner.valid_examples == 0:
                 if timed_out:
                     raise Timeout((

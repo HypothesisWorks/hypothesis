@@ -21,9 +21,10 @@ import time
 
 import pytest
 
-from hypothesis import given, reject, settings
-from hypothesis.errors import Timeout, HypothesisDeprecationWarning
-from tests.common.utils import fails, fails_with, validate_deprecation
+from hypothesis import find, given, reject, settings
+from hypothesis.errors import Timeout, NoSuchExample
+from tests.common.utils import fails, fails_with, validate_deprecation, \
+    checks_deprecated_behaviour
 from hypothesis.strategies import integers
 
 
@@ -61,6 +62,7 @@ with validate_deprecation():
 
 # The following tests exist to test that verifiers start their timeout
 # from when the test first executes, not from when it is defined.
+@checks_deprecated_behaviour
 @fails
 @given(integers())
 @timeout_settings
@@ -70,6 +72,7 @@ def test_slow_failing_test_1(x):
     calls[0] = 1
 
 
+@checks_deprecated_behaviour
 @fails
 @timeout_settings
 @given(integers())
@@ -79,6 +82,7 @@ def test_slow_failing_test_2(x):
     calls[1] = 1
 
 
+@checks_deprecated_behaviour
 @fails
 @given(integers())
 @timeout_settings
@@ -88,6 +92,7 @@ def test_slow_failing_test_3(x):
     calls[2] = 1
 
 
+@checks_deprecated_behaviour
 @fails
 @timeout_settings
 @given(integers())
@@ -101,17 +106,27 @@ with validate_deprecation():
     strict_timeout_settings = settings(timeout=60)
 
 
-# @checks_deprecated_behaviour only works if test passes otherwise
-@fails_with(HypothesisDeprecationWarning)
+@checks_deprecated_behaviour
 @strict_timeout_settings
 @given(integers())
 def test_deprecated_behaviour(i):
     time.sleep(100)
 
 
+@checks_deprecated_behaviour
 @fails_with(AssertionError)
 @strict_timeout_settings
 @given(integers())
 def test_does_not_hide_errors_with_deprecation(i):
     time.sleep(100)
     assert False
+
+
+def test_can_hit_timeout_in_find():
+    def f(x):
+        time.sleep(100)
+        return x >= 100
+
+    with pytest.raises(NoSuchExample):
+        with validate_deprecation():
+            find(integers(), f, settings=timeout_settings)
