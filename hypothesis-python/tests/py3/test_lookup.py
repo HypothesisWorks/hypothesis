@@ -26,8 +26,9 @@ import collections
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, find, given, infer, assume, settings
+from hypothesis import HealthCheck, given, infer, assume, settings
 from hypothesis.errors import NoExamples, InvalidArgument, ResolutionFailed
+from tests.common.debug import minimal
 from hypothesis.strategies import from_type
 from hypothesis.searchstrategy import types
 from hypothesis.internal.compat import ForwardRef, integer_types, \
@@ -158,7 +159,7 @@ def test_ItemsView():
 
 
 def test_Optional_minimises_to_None():
-    assert find(from_type(typing.Optional[int]), lambda ex: True) is None
+    assert minimal(from_type(typing.Optional[int]), lambda ex: True) is None
 
 
 @pytest.mark.parametrize('n', range(10))
@@ -268,10 +269,10 @@ def test_can_get_type_hints(thing):
 
 def test_force_builds_to_infer_strategies_for_default_args():
     # By default, leaves args with defaults and minimises to 2+4=6
-    assert find(st.builds(annotated_func), lambda ex: True) == 6
+    assert minimal(st.builds(annotated_func), lambda ex: True) == 6
     # Inferring integers() for args makes it minimise to zero
-    assert find(st.builds(annotated_func, b=infer, d=infer),
-                lambda ex: True) == 0
+    assert minimal(st.builds(annotated_func, b=infer, d=infer),
+                   lambda ex: True) == 0
 
 
 def non_annotated_func(a, b=2, *, c, d=4):

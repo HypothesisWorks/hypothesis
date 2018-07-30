@@ -17,7 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import find, given, settings
+from hypothesis import given, settings
+from tests.common.debug import find_any
 from hypothesis.strategies import sets, floats, randoms, integers
 
 
@@ -25,7 +26,7 @@ from hypothesis.strategies import sets, floats, randoms, integers
 @settings(max_examples=5, deadline=None)
 def test_can_draw_sets_of_hard_to_find_elements(rnd):
     rarebool = floats(0, 1).map(lambda x: x <= 0.05)
-    find(
+    find_any(
         sets(rarebool, min_size=2), lambda x: True,
         random=rnd, settings=settings(database=None))
 

@@ -17,13 +17,14 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import find, given
+from hypothesis import given
+from tests.common.debug import minimal
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import data, sets, integers, permutations
 
 
 def test_can_find_non_trivial_permutation():
-    x = find(
+    x = minimal(
         permutations(list(range(5))), lambda x: x[0] != 0
     )
 

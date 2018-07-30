@@ -20,8 +20,9 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import find, given
+from hypothesis import given
 from hypothesis.errors import InvalidArgument
+from tests.common.debug import minimal
 
 
 @given(st.recursive(st.booleans(), st.lists, max_leaves=10))
@@ -35,7 +36,7 @@ def test_respects_leaf_limit(xs):
 
 
 def test_can_find_nested():
-    x = find(
+    x = minimal(
         st.recursive(st.booleans(), lambda x: st.tuples(x, x)),
         lambda x: isinstance(x, tuple) and isinstance(x[0], tuple)
     )

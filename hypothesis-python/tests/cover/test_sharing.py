@@ -18,7 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
-from hypothesis import find, given
+from hypothesis import given
+from tests.common.debug import minimal, find_any
 
 x = st.shared(st.integers())
 
@@ -35,14 +36,14 @@ def test_different_instances_with_the_same_key_are_shared(a, b):
 
 
 def test_different_instances_are_not_shared():
-    find(
+    find_any(
         st.tuples(st.shared(st.integers()), st.shared(st.integers())),
         lambda x: x[0] != x[1]
     )
 
 
 def test_different_keys_are_not_shared():
-    find(
+    find_any(
         st.tuples(
             st.shared(st.integers(), key=1),
             st.shared(st.integers(), key=2)),
@@ -51,7 +52,7 @@ def test_different_keys_are_not_shared():
 
 
 def test_keys_and_default_are_not_shared():
-    find(
+    find_any(
         st.tuples(
             st.shared(st.integers(), key=1),
             st.shared(st.integers())),
@@ -60,7 +61,7 @@ def test_keys_and_default_are_not_shared():
 
 
 def test_can_simplify_shared_lists():
-    xs = find(
+    xs = minimal(
         st.lists(st.shared(st.integers())),
         lambda x: len(x) >= 10 and x[0] != 0
     )
@@ -68,7 +69,7 @@ def test_can_simplify_shared_lists():
 
 
 def test_simplify_shared_linked_to_size():
-    xs = find(
+    xs = minimal(
         st.lists(st.shared(st.integers())),
         lambda t: sum(t) >= 1000
     )

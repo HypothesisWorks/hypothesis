@@ -47,10 +47,11 @@ def minimal(
             return True
 
     def wrapped_condition(x):
-        if runtime:
-            runtime[0] += TIME_INCREMENT
-            if runtime[0] >= timeout_after:
-                raise Timeout()
+        if timeout_after is not None:
+            if runtime:
+                runtime[0] += TIME_INCREMENT
+                if runtime[0] >= timeout_after:
+                    raise Timeout()
         result = condition(x)
         if result and not runtime:
             runtime.append(0.0)
@@ -74,9 +75,7 @@ def find_any(
 ):
     settings = Settings(
         settings,
-        max_examples=10000,
-        phases=no_shrink,
-        database=None,
+        max_examples=10000, phases=no_shrink, database=None, timeout=unlimited
     )
 
     if condition is None:

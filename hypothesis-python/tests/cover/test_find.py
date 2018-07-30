@@ -24,26 +24,27 @@ import pytest
 from hypothesis import find
 from hypothesis import settings as Settings
 from hypothesis.errors import NoSuchExample
+from tests.common.debug import minimal
 from hypothesis.strategies import lists, floats, booleans, integers, \
     dictionaries
 
 
 def test_can_find_an_int():
-    assert find(integers(), lambda x: True) == 0
-    assert find(integers(), lambda x: x >= 13) == 13
+    assert minimal(integers(), lambda x: True) == 0
+    assert minimal(integers(), lambda x: x >= 13) == 13
 
 
 def test_can_find_list():
-    x = find(lists(integers()), lambda x: sum(x) >= 10)
+    x = minimal(lists(integers()), lambda x: sum(x) >= 10)
     assert sum(x) == 10
 
 
 def test_can_find_nan():
-    find(floats(), math.isnan)
+    minimal(floats(), math.isnan)
 
 
 def test_can_find_nans():
-    x = find(lists(floats()), lambda x: math.isnan(sum(x)))
+    x = minimal(lists(floats()), lambda x: math.isnan(sum(x)))
     if len(x) == 1:
         assert math.isnan(x[0])
     else:
@@ -69,6 +70,6 @@ def test_condition_is_name():
 
 
 def test_find_dictionary():
-    assert len(find(
+    assert len(minimal(
         dictionaries(keys=integers(), values=integers()),
         lambda xs: any(kv[0] > kv[1] for kv in xs.items()))) == 1

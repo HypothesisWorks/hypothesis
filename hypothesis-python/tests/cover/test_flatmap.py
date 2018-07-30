@@ -19,7 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import find, given, assume, settings
+from hypothesis import given, assume, settings
+from tests.common.debug import minimal
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import just, text, lists, builds, floats, \
     tuples, booleans, integers
@@ -94,7 +95,7 @@ def test_mixed_list_flatmap():
         c = Counter(type(l) for l in ls)
         return len(c) >= 2 and min(c.values()) >= 3
 
-    result = find(s, criterion)
+    result = minimal(s, criterion)
     assert len(result) == 6
     assert set(result) == set([False, u''])
 
@@ -104,7 +105,7 @@ def test_can_shrink_through_a_binding(n):
     bool_lists = integers(0, 100).flatmap(
         lambda k: lists(booleans(), min_size=k, max_size=k))
 
-    assert find(
+    assert minimal(
         bool_lists, lambda x: len(list(filter(bool, x))) >= n
     ) == [True] * n
 
@@ -114,6 +115,6 @@ def test_can_delete_in_middle_of_a_binding(n):
     bool_lists = integers(1, 100).flatmap(
         lambda k: lists(booleans(), min_size=k, max_size=k))
 
-    assert find(
+    assert minimal(
         bool_lists, lambda x: x[0] and x[-1] and x.count(False) >= n
     ) == [True] + [False] * n + [True]
