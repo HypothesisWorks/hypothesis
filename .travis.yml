@@ -43,10 +43,9 @@ jobs:
     - env: TASK=check-rust-tests
 
     - stage: main
-      env: TASK=check-pypy
-    - env: TASK=check-py27
+      env: TASK=check-coverage
+    - env: TASK=check-pypy
     - env: TASK=check-py36
-    - env: TASK=check-quality
     - env: TASK=check-ruby-tests
 
     # Less important tests that will probably
@@ -54,6 +53,9 @@ jobs:
     # worth testing.
     - stage: extras
       env: TASK=check-unicode
+      env: TASK=check-pure-tracer
+    - env: TASK=check-py27
+    - env: TASK=check-quality
     - env: TASK=check-py27-typing
     - env: TASK=check-py34
     - env: TASK=check-py35
