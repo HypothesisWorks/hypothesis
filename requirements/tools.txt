@@ -42,7 +42,7 @@ pexpect==4.6.0            # via ipython
 pickleshare==0.7.4        # via ipython
 pip-tools==2.0.2
 pkginfo==1.4.2            # via twine
-pluggy==0.6.0             # via pytest, tox
+pluggy==0.7.1             # via pytest, tox
 prompt-toolkit==1.0.15    # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.5.4                 # via pytest, tox
