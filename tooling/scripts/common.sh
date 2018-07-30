@@ -14,7 +14,11 @@ export BUILD_RUNTIMES=${BUILD_RUNTIMES:-$HOME/.cache/hypothesis-build-runtimes}
 export BASE="$BUILD_RUNTIMES"
 export PYENV="$BASE/pyenv"
 export SNAKEPIT="$BASE/python-versions/"
-export VIRTUALENVS="$BASE/virtualenvs/"
+
+# Note: Deliberately ignoring BUILD_RUNTIMES configuration because we don't
+# want this to go in cache, because it takes up a huge amount of space and
+# slows everything down!
+export VIRTUALENVS="$ROOT/.runtimes/virtualenvs/"
 export RBENV_VERSION="2.5.1"
 export RBENV_ROOT="$BASE/.rbenv"
 export INSTALLED_RUBY_DIR="$RBENV_ROOT/versions/$RBENV_VERSION/"
