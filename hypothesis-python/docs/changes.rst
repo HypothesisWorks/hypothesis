@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.14:
+
+--------------------
+3.66.14 - 2018-07-30
+--------------------
+
+This release expands the deprecation of timeout from :ref:`3.16.0 <v3.16.0>` to
+also emit the deprecation warning in ``find`` or :doc:`stateful testing <stateful>`.
+
 .. _v3.66.13:
 
 --------------------
