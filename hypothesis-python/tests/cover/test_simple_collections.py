@@ -77,10 +77,11 @@ def test_minimize_long_list():
 
 
 def test_minimize_list_of_longish_lists():
+    size = 5
     xs = minimal(
         lists(lists(booleans())),
-        lambda x: len([t for t in x if any(t) and len(t) >= 3]) >= 10)
-    assert len(xs) == 10
+        lambda x: len([t for t in x if any(t) and len(t) >= 3]) >= size)
+    assert len(xs) == size
     for x in xs:
         assert len(x) == 3
         assert len([t for t in x if t]) == 1
@@ -238,12 +239,13 @@ def test_can_find_unique_lists_of_non_set_order():
 
 
 def test_can_find_sets_unique_by_incomplete_data():
+    size = 5
     ls = minimal(
         lists(lists(integers(min_value=0), min_size=2), unique_by=max),
-        lambda x: len(x) >= 10
+        lambda x: len(x) >= size
     )
-    assert len(ls) == 10
-    assert sorted(list(map(max, ls))) == list(range(10))
+    assert len(ls) == size
+    assert sorted(list(map(max, ls))) == list(range(size))
     for v in ls:
         assert 0 in v
 

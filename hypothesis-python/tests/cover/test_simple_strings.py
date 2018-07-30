@@ -86,9 +86,12 @@ def test_does_not_generate_surrogates(t):
 def test_does_not_simplify_into_surrogates():
     f = minimal(text(), lambda x: x >= u'\udfff')
     assert f == u'\ue000'
+
+    size = 5
+
     f = minimal(
-        text(min_size=10), lambda x: sum(t >= u'\udfff' for t in x) >= 10)
-    assert f == u'\ue000' * 10
+        text(min_size=size), lambda x: sum(t >= u'\udfff' for t in x) >= size)
+    assert f == u'\ue000' * size
 
 
 @given(text(alphabet=[u'a', u'b']))
