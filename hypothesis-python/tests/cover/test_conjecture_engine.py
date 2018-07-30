@@ -1033,7 +1033,9 @@ def test_can_zero_subintervals(monkeypatch):
             hbytes([3, 0, 0, 0, 1]) * 10
         ))
 
-    monkeypatch.setattr(Shrinker, 'shrink', fixate(Shrinker.zero_draws))
+    monkeypatch.setattr(
+        Shrinker, 'shrink', fixate(Shrinker.adaptive_example_deletion)
+    )
 
     @run_to_buffer
     def x(data):
