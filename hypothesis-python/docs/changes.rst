@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.18:
+
+--------------------
+3.66.18 - 2018-07-31
+--------------------
+
+This release is a very small internal refactoring which should have no user
+visible impact.
+
 .. _v3.66.17:
 
 --------------------
