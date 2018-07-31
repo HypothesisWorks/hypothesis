@@ -1317,6 +1317,10 @@ class Shrinker(object):
     def debug(self, msg):
         self.__engine.debug(msg)
 
+    @property
+    def random(self):
+        return self.__engine.random
+
     def shrink(self):
         """Run the full set of shrinks and update shrink_target.
 
@@ -1774,7 +1778,7 @@ class Shrinker(object):
             # Everything non-structural, we redraw uniformly at random.
             for i, (u, v) in enumerate(self.blocks):
                 if self.is_payload_block(i):
-                    attempt_buf[u:v] = uniform(self.__engine.random, v - u)
+                    attempt_buf[u:v] = uniform(self.random, v - u)
             attempt = self.cached_test_function(attempt_buf)
             if self.__predicate(attempt):
                 prev = self.shrink_target
@@ -2080,7 +2084,7 @@ class Shrinker(object):
             minimize(
                 block,
                 lambda b: self.try_shrinking_blocks(targets, b),
-                random=self.__engine.random, full=False
+                random=self.random, full=False
             )
 
     @shrink_pass
@@ -2101,7 +2105,7 @@ class Shrinker(object):
             minimize(
                 self.shrink_target.buffer[u:v],
                 lambda b: self.try_shrinking_blocks((i,), b),
-                random=self.__engine.random, full=False,
+                random=self.random, full=False,
             )
             i += 1
 
