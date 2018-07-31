@@ -17,3 +17,5 @@ jobs:
           key: v1-runtimes-{{ epoch }}
           paths:
             - ~/.cache/hypothesis-build-runtimes
+            - ~/.cache/pip
+            - /usr/local/Homebrew
