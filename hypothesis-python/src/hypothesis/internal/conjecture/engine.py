@@ -1270,6 +1270,8 @@ class Shrinker(object):
         self.update_shrink_target(initial)
         self.shrinks = 0
 
+        self.run_expensive_shrinks = False
+
     @property
     def calls(self):
         return self.__engine.call_count
@@ -1345,52 +1347,66 @@ class Shrinker(object):
         This method iterates to a fixed point and so is idempontent - calling
         it twice will have exactly the same effect as calling it once.
         """
-        run_expensive_shrinks = False
-
         prev = None
         while prev is not self.shrink_target:
             prev = self.shrink_target
+            self.single_greedy_shrink_iteration()
 
-            # We reset our tracking of what changed at the beginning of the
-            # loop so that we don't get distracted by things that change once
-            # and then are stable thereafter.
-            self.clear_change_tracking()
+    def cheap_greedy_shrink_passes(self):
+        """Runs all shrink passes that we consider "cheap".
 
-            self.remove_discarded()
-            self.adaptive_example_deletion()
-            self.zero_draws()
-            self.minimize_duplicated_blocks()
-            self.minimize_individual_blocks()
-            self.reorder_blocks()
-            self.lower_dependent_block_pairs()
-            self.lower_common_block_offset()
+        That is, safe to run on large examples and worth always running.
+        Generally these are expected case O(n log(n)) at worst, but some
+        do have quadratic worst case complexity.
+        """
+        self.remove_discarded()
+        self.adaptive_example_deletion()
+        self.zero_draws()
+        self.minimize_duplicated_blocks()
+        self.minimize_individual_blocks()
+        self.reorder_blocks()
+        self.lower_dependent_block_pairs()
+        self.lower_common_block_offset()
 
-            # Passes after this point are expensive: Prior to here they should
-            # all involve no more than about n log(n) shrinks, but after here
-            # they may be quadratic or worse. Running all of the passes until
-            # they make no changes is important for correctness, but nothing
-            # says we have to run all of them on each run! So if the fast
-            # passes still seem to be making useful changes, we restart the
-            # loop here and give them another go.
-            # To avoid the case where the expensive shrinks unlock a trivial
-            # change in one of the previous passes causing this to become much
-            # more expensive by doubling the number of times we have to run
-            # them to get to run the expensive passes again, we make this
-            # decision "sticky" - once it's been useful to run the expensive
-            # changes at least once, we always run them.
-            if prev is self.shrink_target:
-                run_expensive_shrinks = True
+    def expensive_greedy_shrink_passes(self):
+        """Runs all shrink passes that we consider "expensive".
 
-            if not run_expensive_shrinks:
-                continue
+        That is, we only want to run them once the cheap passes no
+        longer suffice. Often these are quadratic complexity or worse.
+        """
+        self.block_deletion()
+        self.reorder_examples()
+        self.shrink_offset_pairs()
+        self.interval_deletion_with_block_lowering()
+        self.pass_to_interval()
+        self.reorder_bytes()
+        self.minimize_block_pairs_retaining_sum()
 
-            self.block_deletion()
-            self.reorder_examples()
-            self.shrink_offset_pairs()
-            self.interval_deletion_with_block_lowering()
-            self.pass_to_interval()
-            self.reorder_bytes()
-            self.minimize_block_pairs_retaining_sum()
+    def single_greedy_shrink_iteration(self):
+        """Performs a single run through each greedy shrink pass, but does not
+        loop to achieve a fixed point."""
+        prev = self.shrink_target
+
+        # We reset our tracking of what changed at the beginning of the
+        # loop so that we don't get distracted by things that change once
+        # and then are stable thereafter.
+        self.clear_change_tracking()
+
+        self.cheap_greedy_shrink_passes()
+
+        # If the cheap greedy shrink passes didn't work, it's time to enable
+        # on the expensive ones.
+        # To avoid the case where the expensive shrinks unlock a trivial
+        # change in one of the previous passes causing this to become much
+        # more expensive by doubling the number of times we have to run
+        # them to get to run the expensive passes again, we make this
+        # decision "sticky" - once it's been useful to run the expensive
+        # changes at least once, we always run them.
+        if prev is self.shrink_target:
+            self.run_expensive_shrinks = True
+
+        if self.run_expensive_shrinks:
+            self.expensive_greedy_shrink_passes()
 
     @property
     def blocks(self):
