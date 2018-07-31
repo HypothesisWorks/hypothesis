@@ -10,9 +10,7 @@ jobs:
       - restore_cache:
          keys:
            - v1-runtimes-
-      - run: ./build.sh install-core
-      - run: ./build.sh check-py27
-      - run: ./build.sh check-py36
+      - run: rm -rf ~/.cache/hypothesis-build-runtimes/
       - save_cache:
           key: v1-runtimes-{{ epoch }}
           paths:
