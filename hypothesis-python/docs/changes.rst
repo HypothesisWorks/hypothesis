@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.19:
+
+--------------------
+3.66.19 - 2018-08-01
+--------------------
+
+This release slightly changes the format of some debugging information emitted
+during shrinking, and refactors some of the internal interfaces around that.
+
 .. _v3.66.18:
 
 --------------------
