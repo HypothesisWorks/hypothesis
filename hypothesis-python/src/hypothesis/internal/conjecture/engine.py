@@ -1713,8 +1713,8 @@ class Shrinker(object):
         if self.shrink_target is not None:
             current = self.shrink_target.buffer
             new = new_target.buffer
-            if sort_key(new) < sort_key(current):
-                self.shrinks += 1
+            assert sort_key(new) < sort_key(current)
+            self.shrinks += 1
             if new_target.blocks != self.shrink_target.blocks:
                 self.__changed_blocks = set()
             else:
