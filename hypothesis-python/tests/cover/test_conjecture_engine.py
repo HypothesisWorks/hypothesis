@@ -929,24 +929,6 @@ def test_automatic_discarding_is_turned_off_if_it_does_not_work(monkeypatch):
     assert calls[0] == 1
 
 
-def test_can_redraw_to_prevent_getting_stuck(monkeypatch):
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.cached_test_function(
-            [10] + ([0] * 9 + [1]) * 2
-        ))
-
-    @run_to_buffer
-    def x(data):
-        n = data.draw_bits(8)
-        x = data.draw_bytes(n)
-        y = data.draw_bytes(n)
-        if any(x) and any(y):
-            data.mark_interesting()
-
-    assert x == hbytes([1, 1, 1])
-
-
 @pytest.mark.parametrize('bits', [3, 9])
 @pytest.mark.parametrize('prefix', [b'', b'\0'])
 @pytest.mark.parametrize('seed', [0])
