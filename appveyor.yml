@@ -31,7 +31,7 @@ cache:
   - "C:\\Python27-x64"
   - "C:\\Python36"
   - "C:\\Python36-x64"
-  - "%LOCALAPPDATA%\pip\Cache"
+  - "%LOCALAPPDATA%\\pip\\Cache"
 
 # Appveyor "helpfully" ignores skip directives in the commit message body
 # https://www.appveyor.com/docs/how-to/filtering-commits/#commit-message
