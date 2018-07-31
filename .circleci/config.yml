@@ -18,3 +18,4 @@ jobs:
           paths:
             - ~/.cache/hypothesis-build-runtimes
             - ~/.cache/pip
+            - /usr/local/Homebrew
