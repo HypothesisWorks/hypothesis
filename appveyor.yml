@@ -26,6 +26,13 @@ environment:
       PYTHON_VERSION: "3.6.5"
       PYTHON_ARCH: "64"
 
+cache:
+  - "C:\\Python27"
+  - "C:\\Python27-x64"
+  - "C:\\Python36"
+  - "C:\\Python36-x64"
+  - "%LOCALAPPDATA%\\pip\\Cache"
+
 # Appveyor "helpfully" ignores skip directives in the commit message body
 # https://www.appveyor.com/docs/how-to/filtering-commits/#commit-message
 skip_commits:
