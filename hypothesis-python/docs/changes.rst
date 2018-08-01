@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.21:
+
+--------------------
+3.66.21 - 2018-08-01
+--------------------
+
+This patch is for downstream packagers - our tests now pass under
+:pypi:`pytest` 3.7.0 (released 2018-07-30).  There are no changes
+to the source of Hypothesis itself.
+
 .. _v3.66.20:
 
 --------------------
