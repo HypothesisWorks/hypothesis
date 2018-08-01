@@ -221,3 +221,19 @@ def test_does_not_shrink_across_one():
     # This test primarily exists to validate that we don't try to subtract one
     # from the starting point and trigger an internal exception.
     assert minimal_from(1.1, lambda x: x == 1.1 or 0 < x < 1) == 1.1
+
+
+@pytest.mark.parametrize('f', [2.0, 10000000.0])
+def test_converts_floats_to_integer_form(f):
+    assert flt.is_simple(f)
+
+    buf = int_to_bytes(flt.base_float_to_lex(f), 8)
+
+    def parse_buf(b):
+        return flt.lex_to_float(int_from_bytes(b))
+
+    shrunk = Lexical.shrink(
+        buf, lambda b: parse_buf(b) == f,
+        full=True, random=Random(0)
+    )
+    assert shrunk < buf
