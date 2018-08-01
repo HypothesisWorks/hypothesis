@@ -46,7 +46,14 @@ jobs:
       env: TASK=check-coverage
     - env: TASK=check-pypy
     - env: TASK=check-py36
+    - env: TASK=check-py27
     - env: TASK=check-ruby-tests
+    - env: TASK=check-quality
+    - env: TASK=check-py34
+    - env: TASK=check-py35
+    - env: TASK=check-py37
+      sudo: required
+      dist: xenial
 
     # Less important tests that will probably
     # pass whenever the above do but are still
@@ -54,14 +61,7 @@ jobs:
     - stage: extras
       env: TASK=check-unicode
       env: TASK=check-pure-tracer
-    - env: TASK=check-py27
-    - env: TASK=check-quality
     - env: TASK=check-py27-typing
-    - env: TASK=check-py34
-    - env: TASK=check-py35
-    - env: TASK=check-py37
-      sudo: required
-      dist: xenial
     - env: TASK=check-nose
     - env: TASK=check-pytest30
     - env: TASK=check-faker070
