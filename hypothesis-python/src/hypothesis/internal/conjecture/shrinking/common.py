@@ -94,8 +94,10 @@ class Shrinker(object):
         itself.
 
         It is these immutable versions that the shrinker will work on.
+
+        Defaults to just returning the value.
         """
-        raise NotImplementedError()
+        return value
 
     def check_invariants(self, value):
         """Make appropriate assertions about the value to ensure that it is

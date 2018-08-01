@@ -25,6 +25,7 @@ from hypothesis.internal.compat import ceil, floor, hbytes, hrange, \
 from hypothesis.internal.conjecture.floats import is_simple, \
     float_to_lex, lex_to_float
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
+from hypothesis.internal.conjecture.shrinking.integer import Integer
 
 
 """
@@ -96,10 +97,11 @@ class Lexical(Shrinker):
             prefix = self.current[:i]
             suffix = self.current[i + 1:]
 
-            minimize_int(
+            Integer.shrink(
                 self.current[i],
                 lambda c: self.current[i] == c or self.incorporate(
                     prefix + hbytes([c]) + suffix),
+                random=self.random
             )
 
     def incorporate_int(self, i):
@@ -180,9 +182,10 @@ class Lexical(Shrinker):
         return int_from_bytes(self.current)
 
     def minimize_as_integer(self, full=False):
-        minimize_int(
+        Integer.shrink(
             self.current_int,
             lambda c: c == self.current_int or self.incorporate_int(c),
+            random=self.random, full=full,
         )
 
     def sort(self):
@@ -239,30 +242,3 @@ class Lexical(Shrinker):
         self.rotate_suffixes()
         self.minimize_as_integer()
         self.partial_sort()
-
-
-def minimize_int(c, f):
-    """Return the smallest byte for which a function `f` returns True, starting
-    with the byte `c` as an unsigned integer."""
-    if c == 0:
-        return 0
-    if f(0):
-        return 0
-    if c == 1 or f(1):
-        return 1
-    elif c == 2:
-        return 2
-    if f(c - 1):
-        hi = c - 1
-    elif f(c - 2):
-        hi = c - 2
-    else:
-        return c
-    lo = 1
-    while lo + 1 < hi:
-        mid = (lo + hi) // 2
-        if f(mid):
-            hi = mid
-        else:
-            lo = mid
-    return hi

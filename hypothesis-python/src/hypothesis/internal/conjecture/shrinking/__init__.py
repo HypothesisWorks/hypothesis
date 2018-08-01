@@ -15,8 +15,9 @@
 #
 # END HEADER
 
+from hypothesis.internal.conjecture.shrinking.integer import Integer
 from hypothesis.internal.conjecture.shrinking.lexical import Lexical
 
 __all__ = [
-    'Lexical',
+    'Lexical', 'Integer',
 ]
