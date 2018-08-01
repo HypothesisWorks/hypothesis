@@ -17,11 +17,9 @@
 
 from __future__ import division, print_function, absolute_import
 
-import hypothesis.strategies as st
-from hypothesis import given, settings, unlimited
+import pytest
+
 from tests.common.debug import minimal
-from tests.common.utils import no_shrink
-from hypothesis._settings import Phase
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
@@ -39,23 +37,17 @@ class interval(SearchStrategy):
         )
 
 
-@given(
-    st.tuples(st.integers(), st.integers(), st.integers()).map(sorted),
-    st.random_module(),
-)
-@settings(
-    max_examples=100,
-    phases=no_shrink,
-    deadline=None,
-    database=None,
-    timeout=unlimited
-)
-def test_intervals_shrink_to_center(inter, rnd):
+@pytest.mark.parametrize('inter', [
+    (0, 5, 10),
+    (-10, 10, 10),
+    (0, 1, 1),
+    (1, 1, 2),
+])
+def test_intervals_shrink_to_center(inter):
     lower, center, upper = inter
     s = interval(lower, upper, center)
-    shrink = settings(phases=tuple(Phase))
-    assert minimal(s, lambda x: True, shrink) == center
+    assert minimal(s, lambda x: True) == center
     if lower < center:
-        assert minimal(s, lambda x: x < center, shrink) == center - 1
+        assert minimal(s, lambda x: x < center) == center - 1
     if center < upper:
-        assert minimal(s, lambda x: x > center, shrink) == center + 1
+        assert minimal(s, lambda x: x > center) == center + 1
