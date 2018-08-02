@@ -66,6 +66,7 @@ jobs:
     - env: TASK=check-pytest30
     - env: TASK=check-faker070
     - env: TASK=check-faker-latest
+    - env: TASK=check-django21
     - env: TASK=check-django20
     - env: TASK=check-django111
     - env: TASK=check-pandas19
