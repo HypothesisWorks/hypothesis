@@ -139,8 +139,11 @@ class Shrinker(object):
 
     def check_invariants(self, value):
         """Make appropriate assertions about the value to ensure that it is
-        valid for this shrinker."""
-        raise NotImplementedError()
+        valid for this shrinker.
+
+        Does nothing by default.
+        """
+        pass
 
     def short_circuit(self):
         """Possibly attempt to do some shrinking.
