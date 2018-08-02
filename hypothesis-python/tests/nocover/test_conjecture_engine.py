@@ -42,16 +42,21 @@ def test_lot_of_dead_nodes():
     assert x == hbytes([0, 1, 2, 3, 4])
 
 
-def test_saves_data_while_shrinking():
+def test_saves_data_while_shrinking(monkeypatch):
     key = b'hi there'
     n = 5
     db = InMemoryExampleDatabase()
     assert list(db.fetch(key)) == []
     seen = set()
 
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer([255] * 10)))
+
     def f(data):
-        x = data.draw_bytes(512)
-        if sum(x) >= 5000 and len(seen) < n:
+        x = data.draw_bytes(10)
+        if sum(x) >= 2000 and len(seen) < n:
             seen.add(hbytes(x))
         if hbytes(x) in seen:
             data.mark_interesting()
@@ -81,8 +86,15 @@ def test_maliciously_bad_generator(rnd, seed):
             data.mark_interesting()
 
 
-def test_can_discard():
-    n = 32
+def test_can_discard(monkeypatch):
+    n = 8
+
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer([
+                v for i in range(n) for v in [i, i]
+            ])))
 
     @run_to_buffer
     def x(data):
