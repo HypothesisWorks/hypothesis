@@ -38,7 +38,8 @@ from hypothesis.internal.reflection import proxies
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
-from hypothesis.internal.conjecture.minimizer import minimize, minimize_int
+from hypothesis.internal.conjecture.shrinking import Lexical
+from hypothesis.internal.conjecture.shrinking.lexical import minimize_int
 
 # Tell pytest to omit the body of this module from tracebacks
 # http://doc.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
@@ -2049,7 +2050,7 @@ class Shrinker(object):
             if len(targets) <= 1:
                 continue
 
-            minimize(
+            Lexical.shrink(
                 block,
                 lambda b: self.try_shrinking_blocks(targets, b),
                 random=self.random, full=False
@@ -2070,7 +2071,7 @@ class Shrinker(object):
         i = 0
         while i < len(self.blocks):
             u, v = self.blocks[i]
-            minimize(
+            Lexical.shrink(
                 self.shrink_target.buffer[u:v],
                 lambda b: self.try_shrinking_blocks((i,), b),
                 random=self.random, full=False,

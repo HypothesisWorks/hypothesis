@@ -29,7 +29,7 @@ from hypothesis.internal.compat import ceil, floor, hbytes, int_to_bytes, \
     int_from_bytes
 from hypothesis.internal.floats import float_to_int
 from hypothesis.internal.conjecture.data import ConjectureData
-from hypothesis.internal.conjecture.minimizer import minimize
+from hypothesis.internal.conjecture.shrinking import Lexical
 
 EXPONENTS = list(range(0, flt.MAX_EXPONENT + 1))
 assert len(EXPONENTS) == 2 ** 11
@@ -167,7 +167,7 @@ def minimal_from(start, condition):
     def parse_buf(b):
         return flt.lex_to_float(int_from_bytes(b))
 
-    shrunk = minimize(
+    shrunk = Lexical.shrink(
         buf, lambda b: condition(parse_buf(b)),
         full=True, random=Random(0)
     )
