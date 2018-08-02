@@ -241,13 +241,14 @@ def test_can_find_unique_lists_of_non_set_order():
 def test_can_find_sets_unique_by_incomplete_data():
     size = 5
     ls = minimal(
-        lists(lists(integers(min_value=0), min_size=2), unique_by=max),
+        lists(tuples(integers(), integers()), unique_by=max),
         lambda x: len(x) >= size
     )
     assert len(ls) == size
-    assert sorted(list(map(max, ls))) == list(range(size))
-    for v in ls:
-        assert 0 in v
+    values = sorted(list(map(max, ls)))
+    assert values[-1] - values[0] == size - 1
+    for u, v in ls:
+        assert u <= 0
 
 
 def test_can_draw_empty_list_from_unsatisfiable_strategy():
