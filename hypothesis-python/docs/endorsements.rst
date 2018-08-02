@@ -198,6 +198,20 @@ Thank you very much for creating the (probably) most powerful property-based
 testing framework.
 
 -------------------------------------------
+`Reposit Power <http://repositpower.com>`_
+-------------------------------------------
+
+With a micro-service architecture, testing between services is made easy using Hypothesis
+in integration testing. Ensuring everything is running smoothly is vital to help maintain
+a secure network of Virtual Power Plants.
+
+It allows us to find potential bugs and edge cases with relative ease
+and minimal overhead. As our architecture relies on services communicating effectively, Hypothesis
+allows us to strictly test for the kind of data which moves around our services, particularly
+our backend Python applications.
+
+
+-------------------------------------------
 `Your name goes here <http://example.com>`_
 -------------------------------------------
 
