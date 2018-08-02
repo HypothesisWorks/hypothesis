@@ -657,6 +657,7 @@ def test_can_increase_number_of_bytes_drawn_in_tail():
 
     runner = ConjectureRunner(
         f, settings=settings(
+            max_examples=100,
             buffer_size=11, suppress_health_check=HealthCheck.all()))
 
     runner.run()

@@ -29,8 +29,11 @@ from hypothesis import PrintSettings, given, reject, example, settings, \
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument
 from tests.common.utils import no_shrink, capture_out
+from hypothesis.internal.compat import hbytes
 
 
+@example(hbytes(20))  # shorter compressed
+@example(hbytes(3))   # shorter uncompressed
 @given(st.binary() | st.binary(min_size=100))
 def test_encoding_loop(b):
     assert decode_failure(encode_failure(b)) == b
@@ -105,7 +108,7 @@ def test_prints_reproduction_if_requested():
     @settings(print_blob=PrintSettings.ALWAYS, database=None)
     @given(st.integers())
     def test(i):
-        if failing_example[0] is None and i > 10 ** 6:
+        if failing_example[0] is None and i != 0:
             failing_example[0] = i
         assert i not in failing_example
 
