@@ -971,16 +971,15 @@ def test_exhaustive_enumeration(prefix, bits, seed):
 def test_depth_bounds_in_generation():
     depth = [0]
 
-    def tree(data, n):
+    def tails(data, n):
         depth[0] = max(depth[0], n)
         if data.draw_bits(8):
             data.start_example(SOME_LABEL)
-            tree(data, n + 1)
-            tree(data, n + 1)
+            tails(data, n + 1)
             data.stop_example()
 
     def f(data):
-        tree(data, 0)
+        tails(data, 0)
 
     runner = ConjectureRunner(
         f, settings=settings(database=None, max_examples=20))
