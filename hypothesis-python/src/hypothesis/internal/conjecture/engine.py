@@ -1269,6 +1269,8 @@ class Shrinker(object):
         self.update_shrink_target(initial)
         self.shrinks = 0
 
+        self.current_pass_depth = 0
+
         self.run_expensive_shrinks = False
 
     @property
@@ -1342,8 +1344,10 @@ class Shrinker(object):
         initial_shrinks = self.shrinks
         initial_calls = self.calls
         try:
+            self.current_pass_depth += 1
             yield
         finally:
+            self.current_pass_depth -= 1
             calls = self.calls - initial_calls
             shrinks = self.shrinks - initial_shrinks
             self.debug((
@@ -1353,7 +1357,7 @@ class Shrinker(object):
                 calls, 's' if calls != 1 else '',
                 shrinks, 's' if shrinks != 1 else '',
             ))
-        if not self.discarding_failed:
+        if not self.discarding_failed and self.current_pass_depth == 0:
             self.remove_discarded()
 
     def shrink(self):
