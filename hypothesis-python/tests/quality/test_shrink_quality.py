@@ -21,6 +21,7 @@ import sys
 from random import Random
 from fractions import Fraction
 from functools import reduce
+from collections import namedtuple
 
 import pytest
 from flaky import flaky
@@ -28,9 +29,9 @@ from flaky import flaky
 from hypothesis import assume, settings
 from tests.common import parametrize
 from tests.common.debug import minimal
-from hypothesis.strategies import just, sets, text, lists, tuples, \
-    booleans, integers, fractions, frozensets, dictionaries, \
-    sampled_from
+from hypothesis.strategies import just, none, sets, text, lists, builds, \
+    tuples, booleans, integers, fractions, frozensets, dictionaries, \
+    sampled_from, fixed_dictionaries
 from hypothesis.internal.compat import PY3, OrderedDict, hrange
 
 

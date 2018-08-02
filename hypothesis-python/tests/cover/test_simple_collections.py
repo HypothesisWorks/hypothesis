@@ -18,16 +18,13 @@
 from __future__ import division, print_function, absolute_import
 
 from random import Random
-from collections import namedtuple
 
 import pytest
-from flaky import flaky
 
 from hypothesis import given, settings
 from tests.common.debug import minimal, find_any
-from hypothesis.strategies import none, sets, text, lists, builds, \
-    tuples, booleans, integers, frozensets, dictionaries, \
-    fixed_dictionaries
+from hypothesis.strategies import none, sets, text, lists, tuples, \
+    booleans, integers, frozensets, dictionaries, fixed_dictionaries
 from hypothesis.internal.compat import OrderedDict
 
 
