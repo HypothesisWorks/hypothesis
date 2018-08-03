@@ -18,7 +18,6 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-import struct
 
 from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT, quiet_raise, \
     struct_pack, struct_unpack
@@ -36,25 +35,25 @@ STRUCT_FORMATS = {
 }
 
 
-def reinterpret_bits(x, from_, to):
-    try:
-        buf = struct_pack(from_, x)
-    except struct.error:  # pragma: no cover
-        if from_ == b'!e' and numpy is not None and not CAN_PACK_HALF_FLOAT:
+# There are two versions of this: the one that uses Numpy to support older
+# versions of Python, and the elegant one for new versions.  We use the new
+# one if Numpy is unavailable too, because it's slightly faster in all cases.
+if numpy and not CAN_PACK_HALF_FLOAT:  # pragma: no cover
+    def reinterpret_bits(x, from_, to):
+        if from_ == b'!e':
             arr = numpy.array([x], dtype='>f2')
             if numpy.isfinite(x) and not numpy.isfinite(arr[0]):
-                quiet_raise(OverflowError(
-                    'value=%r is unrepresentable as float16' % (x,)
-                ))
+                quiet_raise(OverflowError('%r too large for float16' % (x,)))
             buf = arr.tobytes()
         else:
-            raise
-    try:
-        return struct_unpack(to, buf)[0]
-    except struct.error:  # pragma: no cover
-        if to == b'!e' and numpy is not None and not CAN_PACK_HALF_FLOAT:
+            buf = struct_pack(from_, x)
+        if to == b'!e':
             return float(numpy.frombuffer(buf, dtype='>f2')[0])
-        raise
+        return struct_unpack(to, buf)[0]
+
+else:
+    def reinterpret_bits(x, from_, to):
+        return struct_unpack(to, struct_pack(from_, x))[0]
 
 
 def float_of(x, width):

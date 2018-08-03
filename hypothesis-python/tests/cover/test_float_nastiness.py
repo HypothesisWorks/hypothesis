@@ -198,6 +198,17 @@ def test_float_free_interval_is_invalid():
         st.floats(lo, hi).example()
 
 
+@given(st.floats(width=32, allow_infinity=False))
+def test_float32_can_exclude_infinity(x):
+    assert not math.isinf(x)
+
+
+@pytest.mark.skipif(not (numpy or CAN_PACK_HALF_FLOAT), reason='dependency')
+@given(st.floats(width=32, allow_infinity=False))
+def test_float16_can_exclude_infinity(x):
+    assert not math.isinf(x)
+
+
 @pytest.mark.parametrize('kwargs', [
     dict(min_value=10 ** 5, width=16),
     dict(max_value=10 ** 5, width=16),
