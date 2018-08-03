@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.24:
+
+--------------------
+3.66.24 - 2018-08-03
+--------------------
+
+This release changes how Hypothesis deletes data when shrinking in order to
+better handle deletion of large numbers of contiguous sequences. Most tests
+should see little change, but this will hopefully provide a significant
+speed up for :doc:`stateful testing <stateful>`.
+
 .. _v3.66.23:
 
 --------------------
