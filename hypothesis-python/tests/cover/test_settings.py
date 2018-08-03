@@ -163,7 +163,7 @@ def test_will_reload_profile_when_default_is_absent():
 
 def test_load_profile():
     settings.load_profile('default')
-    assert settings.default.max_examples == 100
+    assert settings.default.max_examples == original_default
     assert settings.default.stateful_step_count == 50
 
     settings.register_profile(
@@ -176,7 +176,7 @@ def test_load_profile():
 
     settings.load_profile('default')
 
-    assert settings.default.max_examples == 100
+    assert settings.default.max_examples == original_default
     assert settings.default.stateful_step_count == 50
 
 
