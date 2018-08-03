@@ -1882,10 +1882,12 @@ class Shrinker(object):
 
         First attempts to replace the example with its minimal possible version
         using zero_example. If the example is trivial (either because of that
-        or because it was anyway). Otherwise, attempts to minimize it by
-        deleting its children.
+        or because it was anyway) then we assume there's nothing we can
+        usefully do here and return early. Otherwise, we attempt to minimize it
+        by deleting its children.
 
-        If that fails, then recurses into the children.
+        If we do not make any successful changes, we recurse to the example's
+        children and attempt the same there.
         """
         self.zero_example(example_index)
 
