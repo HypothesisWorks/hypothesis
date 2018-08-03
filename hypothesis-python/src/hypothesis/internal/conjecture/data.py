@@ -50,6 +50,10 @@ class Example(object):
     index = attr.ib()
     start = attr.ib()
     end = attr.ib(default=None)
+
+    # An example is trivial if it contains any non-forced non-zero bytes. All
+    # examples start out as trivial and then get marked non-trivial when we
+    # see such a byte.
     trivial = attr.ib(default=True)
     discarded = attr.ib(default=None)
     children = attr.ib(default=attr.Factory(list))
