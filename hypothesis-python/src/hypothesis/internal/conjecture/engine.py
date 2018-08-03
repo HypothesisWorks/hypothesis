@@ -1484,7 +1484,7 @@ class Shrinker(object):
         return self.__intervals
 
     def zero_example(self, i):
-        """Attempt to replace each a draw call with its minimal possible value.
+        """Attempt to replace a draw call with its minimal possible value.
 
         This is intended as a fast-track to minimize whole sub-examples that
         don't matter as rapidly as possible. For example, suppose we had
