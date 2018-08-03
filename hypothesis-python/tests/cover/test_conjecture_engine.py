@@ -24,6 +24,7 @@ from random import seed as seed_random
 
 import pytest
 
+from mock import MagicMock
 from hypothesis import Phase, Verbosity, HealthCheck, settings, unlimited
 from hypothesis.errors import FailedHealthCheck
 from tests.common.utils import no_shrink, all_values, \
@@ -1033,7 +1034,9 @@ def test_can_zero_subintervals(monkeypatch):
             hbytes([3, 0, 0, 0, 1]) * 10
         ))
 
-    monkeypatch.setattr(Shrinker, 'shrink', fixate(Shrinker.zero_draws))
+    monkeypatch.setattr(
+        Shrinker, 'shrink', fixate(Shrinker.adaptive_example_deletion)
+    )
 
     @run_to_buffer
     def x(data):
@@ -1445,3 +1448,39 @@ def test_try_shrinking_blocks_ignores_overrun_blocks(monkeypatch):
             data.mark_interesting()
 
     assert list(x) == [2, 2, 1]
+
+
+def test_only_calls_discard_at_top_level_pass():
+    def tree(data):
+        data.start_example('tree')
+        result = 1
+        if data.draw_bits(1):
+            result += max(tree(data), tree(data))
+        data.stop_example()
+        return result
+
+    def f(data):
+        if tree(data) == 3:
+            data.mark_interesting()
+
+    runner = ConjectureRunner(f, settings=settings(
+        max_examples=1, buffer_size=1024,
+        database=None, suppress_health_check=HealthCheck.all(),
+    ))
+
+    runner.test_function(ConjectureData.for_buffer([
+        1, 0, 1, 0, 0,
+    ]))
+
+    assert runner.interesting_examples
+    last_data, = runner.interesting_examples.values()
+
+    shrinker = runner.new_shrinker(
+        last_data, lambda d: d.status == Status.INTERESTING
+    )
+
+    shrinker.remove_discarded = MagicMock(return_value=None)
+
+    shrinker.adaptive_example_deletion()
+
+    assert shrinker.remove_discarded.call_count == 1

@@ -47,9 +47,16 @@ class Status(IntEnum):
 class Example(object):
     depth = attr.ib()
     label = attr.ib()
+    index = attr.ib()
     start = attr.ib()
     end = attr.ib(default=None)
+
+    # An example is trivial if it contains any non-forced non-zero bytes. All
+    # examples start out as trivial and then get marked non-trivial when we
+    # see such a byte.
+    trivial = attr.ib(default=True)
     discarded = attr.ib(default=None)
+    children = attr.ib(default=attr.Factory(list))
 
     @property
     def length(self):
@@ -114,6 +121,7 @@ class ConjectureData(object):
         self.tags = set()
         self.draw_times = []
         self.__intervals = None
+        self.max_depth = 0
 
         self.examples = []
         self.example_stack = []
@@ -193,9 +201,17 @@ class ConjectureData(object):
         self.__assert_not_frozen('start_example')
         self.level += 1
         i = len(self.examples)
-        self.examples.append(Example(
-            depth=self.depth, label=label, start=self.index))
+        ex = Example(
+            index=i,
+            depth=self.depth, label=label, start=self.index,
+        )
+        self.examples.append(ex)
+        if self.example_stack:
+            p = self.example_stack[-1]
+            self.examples[p].children.append(ex)
         self.example_stack.append(i)
+        self.max_depth = max(self.max_depth, self.depth)
+        return ex
 
     def stop_example(self, discard=False):
         if self.frozen:
@@ -205,6 +221,9 @@ class ConjectureData(object):
         k = self.example_stack.pop()
         ex = self.examples[k]
         ex.end = self.index
+
+        if self.example_stack and not ex.trivial:
+            self.examples[self.example_stack[-1]].trivial = False
 
         # We don't want to count empty examples as discards even if the flag
         # says we should. This leads to situations like
@@ -268,6 +287,7 @@ class ConjectureData(object):
             buf = hbytes(buf)
             self.__write(buf)
             result = int_from_bytes(buf)
+
         assert bit_length(result) <= n
         return result
 
@@ -288,7 +308,9 @@ class ConjectureData(object):
             self.freeze()
             raise StopTest(self.testcounter)
 
-    def __write(self, result):
+    def __write(self, result, forced=False):
+        ex = self.start_example(DRAW_BYTES_LABEL)
+        ex.trivial = not forced and any(result)
         initial = self.index
         n = len(result)
         self.block_starts.setdefault(n, []).append(initial)
@@ -296,17 +318,16 @@ class ConjectureData(object):
         assert len(result) == n
         assert self.index == initial
         self.buffer.extend(result)
+        self.stop_example()
 
     def draw_bytes(self, n):
         self.__assert_not_frozen('draw_bytes')
         if n == 0:
             return hbytes(b'')
         self.__check_capacity(n)
-        self.start_example(DRAW_BYTES_LABEL)
         result = self._draw_bytes(self, n)
         assert len(result) == n
         self.__write(result)
-        self.stop_example()
         return hbytes(result)
 
     def mark_interesting(self, interesting_origin=None):
