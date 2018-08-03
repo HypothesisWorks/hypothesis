@@ -259,11 +259,10 @@ def test_minimize_list_of_longish_lists():
     size = 5
     xs = minimal(
         lists(lists(booleans())),
-        lambda x: len([t for t in x if any(t) and len(t) >= 3]) >= size)
+        lambda x: len([t for t in x if any(t) and len(t) >= 2]) >= size)
     assert len(xs) == size
     for x in xs:
-        assert len(x) == 3
-        assert len([t for t in x if t]) == 1
+        assert x == [False, True]
 
 
 def test_minimize_list_of_fairly_non_unique_ints():
