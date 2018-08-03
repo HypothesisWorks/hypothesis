@@ -1257,6 +1257,28 @@ def test_buffer_changes_during_pair_shrink(monkeypatch):
     assert x == hbytes([5, 1])
 
 
+def test_buffer_changes_during_pair_shrink_stays_interesting(monkeypatch):
+    monkeypatch.setattr(
+        Shrinker, 'shrink', lambda self: (
+            self.shrink_offset_pairs()
+        )
+    )
+
+    monkeypatch.setattr(
+        ConjectureRunner, 'generate_new_examples',
+        lambda runner: runner.test_function(
+            ConjectureData.for_buffer([12, 10])))
+
+    @run_to_buffer
+    def x(data):
+        m = data.draw_bits(8)
+        if m == 12:
+            data.draw_bits(8)
+        if m >= 9:
+            data.mark_interesting()
+    assert len(x) == 1
+
+
 def test_shrinking_blocks_from_common_offset(monkeypatch):
     monkeypatch.setattr(
         Shrinker, 'shrink', lambda self: (
