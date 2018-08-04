@@ -1458,7 +1458,6 @@ class Shrinker(object):
         self.shrink_offset_pairs()
         self.interval_deletion_with_block_lowering()
         self.pass_to_interval()
-        self.reorder_bytes()
         self.minimize_block_pairs_retaining_sum()
 
     def single_greedy_shrink_iteration(self):
@@ -2198,121 +2197,6 @@ class Shrinker(object):
                         if self.incorporate_new_buffer(new_attempt):
                             break
             i += 1
-
-    @shrink_pass
-    def reorder_bytes(self):
-        """This is a hyper-specific and moderately expensive shrink pass. It is
-        designed to do similar things to reorder_blocks, but it works in cases
-        where reorder_blocks may fail.
-
-        The idea is that we expect to have a *lot* of single byte blocks, and
-        they have very different meanings and interpretations. This means that
-        the reasonably cheap approach of doing what is basically insertion sort
-        on these blocks is unlikely to work.
-
-        So instead we try to identify the subset of the single-byte blocks that
-        we can freely move around and more aggressively put those into a sorted
-        order.
-
-        This is useful because e.g. we draw integers as single bytes, and if we
-        don't have a pass like that then we're unable to shrink from [10, 0] to
-        [0, 10].
-
-        In the event that we fail to do much sorting this is O(number of out of
-        order pairs), which is O(n^2) in the worst case. In order to offset we
-        try to do as much efficient sorting as possible to reduce the number of
-        out of order pairs before we get to that stage.
-        """
-        free_bytes = []
-
-        for i, (u, v) in enumerate(self.blocks):
-            if (
-                v == u + 1 and
-                u not in self.shrink_target.forced_indices
-            ):
-                free_bytes.append(u)
-
-        if not free_bytes:
-            return
-
-        original = self.shrink_target
-
-        def attempt(new_ordering):
-            assert len(new_ordering) == len(free_bytes)
-            assert len(self.shrink_target.buffer) == len(original.buffer)
-
-            attempt = bytearray(self.shrink_target.buffer)
-            for i, b in zip(free_bytes, new_ordering):
-                attempt[i] = b
-            return self.incorporate_new_buffer(attempt)
-
-        ordering = [self.shrink_target.buffer[i] for i in free_bytes]
-
-        if ordering == sorted(ordering):
-            return
-
-        if attempt(sorted(ordering)):
-            return True
-
-        n = len(ordering)
-
-        # We now try to sort the "high bytes". The idea here is that high bytes
-        # are more likely to be "payload" in some sense: Their value matters
-        # mostly in relation to the other values. Additionally they are likely
-        # to be moved around more in the reordering, so if we can get them
-        # sorted up front we will save a lot of time later.
-
-        # In order to do this we use binary search to find a value v such that
-        # we can sort all values >= v. We do this in at most 8 steps (usually
-        # less).
-
-        # Invariant: We can sort the set of bytes which are >= hi, we can't
-        # sort the set of bytes that are >= lo.
-
-        # But see comment below about how these invariants may occasionally be
-        # violated.
-        lo = min(ordering)
-        hi = max(ordering)
-        while lo + 1 < hi:
-            mid = (lo + hi) // 2
-            excessive = [i for i in hrange(n) if ordering[i] >= mid]
-            trial = list(ordering)
-            for i, b in zip(excessive, sorted(ordering[i] for i in excessive)):
-                trial[i] = b
-            if trial == ordering or attempt(trial):
-                if (
-                    len(self.shrink_target.buffer) !=
-                    len(original.buffer)
-                ):
-                    return
-                # Technically this could result in us violating our invariants
-                # if the bytes change too much. However if that happens the
-                # loop is still useful so we carry on as if it didn't.
-                ordering = [
-                    self.shrink_target.buffer[i] for i in free_bytes]
-                hi = mid
-            else:
-                lo = mid
-
-        i = 1
-        while i < n:
-            for k in hrange(i - 1, -1, -1):
-                if ordering[k] <= ordering[i]:
-                    continue
-                swapped = list(ordering)
-                swapped[k], swapped[i] = swapped[i], swapped[k]
-                if attempt(swapped):
-                    i = k
-                    if (
-                        len(self.shrink_target.buffer) !=
-                        len(original.buffer)
-                    ):
-                        return
-                    ordering = [
-                        self.shrink_target.buffer[i] for i in free_bytes]
-                    break
-            else:
-                i += 1
 
     @shrink_pass
     def minimize_block_pairs_retaining_sum(self):
