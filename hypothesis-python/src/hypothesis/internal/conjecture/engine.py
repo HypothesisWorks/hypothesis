@@ -1452,7 +1452,6 @@ class Shrinker(object):
         self.minimize_individual_blocks()
         self.reorder_blocks()
         self.lower_dependent_block_pairs()
-        self.lower_common_block_offset()
 
     def expensive_greedy_shrink_passes(self):
         """Runs all shrink passes that we consider "expensive".
@@ -1493,6 +1492,8 @@ class Shrinker(object):
 
         if self.run_expensive_shrinks:
             self.expensive_greedy_shrink_passes()
+
+        self.lower_common_block_offset()
 
     @property
     def blocks(self):
