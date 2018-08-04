@@ -22,8 +22,8 @@ from copy import deepcopy
 from functools import partial
 
 import pytest
-
 from mock import Mock, MagicMock, NonCallableMock, NonCallableMagicMock
+
 from tests.common.utils import raises
 from hypothesis.internal.compat import PY3, FullArgSpec, getfullargspec
 from hypothesis.internal.reflection import is_mock, proxies, arg_string, \
