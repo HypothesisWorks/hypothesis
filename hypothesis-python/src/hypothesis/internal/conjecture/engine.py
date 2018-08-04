@@ -1590,7 +1590,7 @@ class Shrinker(object):
         """A cheap version of pass_to_descendant that attempts to replace each
         example with one of its children."""
         for ex in self.each_non_trivial_example():
-            for child in children_of(ex):
+            for child in self.children_of(ex):
                 buf = self.shrink_target.buffer
                 self.try_replace_example(
                     self.shrink_target,
