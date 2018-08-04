@@ -1452,7 +1452,6 @@ class Shrinker(object):
         self.minimize_individual_blocks()
         self.lower_dependent_block_pairs()
         self.reorder_examples()
-        self.pass_to_child()
 
     def expensive_greedy_shrink_passes(self):
         """Runs all shrink passes that we consider "expensive".
@@ -1577,28 +1576,6 @@ class Shrinker(object):
         (including it it was already that string)."""
         replaced = self.__replace_example(self.shrink_target, i, replacement)
         return replaced is self.shrink_target
-
-    def children_of(self, example):
-        index = example.index
-        i = 0
-        while i < len(self.shrink_target.examples[index].children):
-            yield self.shrink_target.examples[index].children[i]
-            i += 1
-
-    @shrink_pass
-    def pass_to_child(self):
-        """A cheap version of pass_to_descendant that attempts to replace each
-        example with one of its children."""
-        for ex in self.each_non_trivial_example():
-            for child in self.children_of(ex):
-                buf = self.shrink_target.buffer
-                self.try_replace_example(
-                    ex.index,
-                    buf[child.start:child.end] +
-                    # Pad the child with zeros to add some possibility of
-                    # serendipity.
-                    hbytes(ex.length - child.length)
-                )
 
     @shrink_pass
     def pass_to_descendant(self):
