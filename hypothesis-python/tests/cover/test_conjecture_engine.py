@@ -23,8 +23,8 @@ from random import Random
 from random import seed as seed_random
 
 import pytest
-
 from mock import MagicMock
+
 from hypothesis import Phase, Verbosity, HealthCheck, settings, unlimited
 from hypothesis.errors import FailedHealthCheck
 from tests.common.utils import no_shrink, all_values, \
