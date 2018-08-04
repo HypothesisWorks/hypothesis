@@ -425,8 +425,12 @@ class ConjectureRunner(object):
         with local_settings(self.settings):
             debug_report(message)
 
+    @property
+    def report_debug_info(self):
+        return self.settings.verbosity >= Verbosity.debug
+
     def debug_data(self, data):
-        if self.settings.verbosity < Verbosity.debug:
+        if not self.report_debug_info:
             return
         buffer_parts = [u"["]
         for i, (u, v) in enumerate(data.blocks):
@@ -1217,10 +1221,7 @@ def shrink_pass(fn):
     give some uniform behaviour and logging."""
     @proxies(fn)
     def run(self, *args, **kwargs):
-        name = '%s(%s)' % (
-            fn.__name__, ', '.join(tuple(map(repr, args)) + tuple(sorted(
-                '%s=%r' % (k, v) for k, v in kwargs.items()))))
-        with self.in_shrink_pass(name):
+        with self.in_shrink_pass(fn.__name__):
             return fn(self, *args, **kwargs)
 
     return run
@@ -1269,9 +1270,13 @@ class Shrinker(object):
         self.update_shrink_target(initial)
         self.shrinks = 0
 
+        self.initial_calls = self.__engine.call_count
+
         self.current_pass_depth = 0
 
         self.run_expensive_shrinks = False
+
+        self.profiling = defaultdict(lambda: [0, 0])
 
     @property
     def calls(self):
@@ -1340,25 +1345,37 @@ class Shrinker(object):
     def in_shrink_pass(self, name):
         """Context manager declaring its body to be a single self-contained
         shrink pass."""
-        self.debug('Shrink Pass %s' % (name,))
+        if self.current_pass_depth == 0:
+            self.debug('Shrink Pass %s' % (name,))
+        try:
+            self.current_pass_depth += 1
+
+            # Don't attribute nested passes more than once.
+            if self.current_pass_depth > 1:
+                yield
+            else:
+                with self.attribute_calls_and_shrinks(name):
+                    yield
+        finally:
+            self.current_pass_depth -= 1
+
+        if self.current_pass_depth == 0:
+            self.debug('Shrink Pass %s completed.' % (name,))
+
+        if not self.discarding_failed and self.current_pass_depth == 0:
+            self.remove_discarded()
+
+    @contextmanager
+    def attribute_calls_and_shrinks(self, name):
         initial_shrinks = self.shrinks
         initial_calls = self.calls
         try:
-            self.current_pass_depth += 1
             yield
         finally:
-            self.current_pass_depth -= 1
             calls = self.calls - initial_calls
             shrinks = self.shrinks - initial_shrinks
-            self.debug((
-                'Shrink Pass %s completed. Made %d call%s and '
-                '%d shrink%s') % (
-                name,
-                calls, 's' if calls != 1 else '',
-                shrinks, 's' if shrinks != 1 else '',
-            ))
-        if not self.discarding_failed and self.current_pass_depth == 0:
-            self.remove_discarded()
+            self.profiling[name][0] += calls
+            self.profiling[name][1] += shrinks
 
     def shrink(self):
         """Run the full set of shrinks and update shrink_target.
@@ -1380,7 +1397,35 @@ class Shrinker(object):
         ):
             return
 
-        self.greedy_shrink()
+        try:
+            self.greedy_shrink()
+        finally:
+            if self.__engine.report_debug_info:
+                self.debug('---------------------')
+                self.debug('Shrink pass profiling')
+                self.debug('---------------------')
+                self.debug('')
+                calls = self.__engine.call_count - self.initial_calls
+                self.debug((
+                    'Shrinking made a total of %d call%s '
+                    'of which %d shrank.') % (
+                    calls, 's' if calls != 1 else '',
+                    self.shrinks,
+                ))
+                self.debug('')
+                self.debug('Individual breakdown:')
+                self.debug('')
+                for name, (calls, shrinks) in sorted(
+                    self.profiling.items(), key=lambda t: (t[1], t[0]),
+                    reverse=True
+                ):
+                    if calls == 0:
+                        continue
+
+                    self.debug((
+                        '  * %s made %d call%s of which %d shrank.'
+                    ) % (name, calls, 's' if calls != 1 else '', shrinks))
+                self.debug('')
 
     def greedy_shrink(self):
         """Run a full set of greedy shrinks (that is, ones that will only ever
@@ -1856,8 +1901,6 @@ class Shrinker(object):
         for u, v in reversed(discarded):
             del attempt[u:v]
 
-        previous_length = len(self.shrink_target.buffer)
-
         # We track whether discarding works because as long as it does we will
         # always want to run it whenever the option is available - whenever a
         # shrink ends up introducing new discarded data we can attempt to
@@ -1865,14 +1908,8 @@ class Shrinker(object):
         # in some way then that would be wasteful, so we turn off the automatic
         # discarding if this ever fails. When this next runs explicitly, it
         # will reset the flag if the status changes.
-        self.discarding_failed = not self.incorporate_new_buffer(attempt)
-
-        if not self.discarding_failed:
-            lost = previous_length - len(self.shrink_target.buffer)
-            assert lost > 0
-            self.debug(
-                'Discarded %d byte%s' % (lost, '' if lost == 1 else 's')
-            )
+        with self.attribute_calls_and_shrinks('remove_discarded'):
+            self.discarding_failed = not self.incorporate_new_buffer(attempt)
 
     @shrink_pass
     def adaptive_example_deletion(self, example_index=0):
