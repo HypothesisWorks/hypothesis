@@ -1321,6 +1321,9 @@ def test_buffer_changes_during_pair_shrink_stays_interesting(monkeypatch):
 def test_shrinking_blocks_from_common_offset(monkeypatch):
     monkeypatch.setattr(
         Shrinker, 'shrink', lambda self: (
+            # Run minimize_individual_blocks twice so we have both blocks show
+            # as changed regardless of which order this happens in.
+            self.minimize_individual_blocks(),
             self.minimize_individual_blocks(),
             self.lower_common_block_offset(),
         )
@@ -1335,9 +1338,9 @@ def test_shrinking_blocks_from_common_offset(monkeypatch):
     def x(data):
         m = data.draw_bits(8)
         n = data.draw_bits(8)
-        if abs(m - n) <= 1:
+        if abs(m - n) <= 1 and max(m, n) > 0:
             data.mark_interesting()
-    assert x == hbytes([1, 0])
+    assert sorted(x) == [0, 1]
 
 
 def test_handle_empty_draws(monkeypatch):
