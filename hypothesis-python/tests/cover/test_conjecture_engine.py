@@ -529,58 +529,6 @@ def test_can_shrink_variable_draws(n_large):
     assert sum(x[1:]) == target
 
 
-@pytest.mark.parametrize('n', [1, 5, 8, 15])
-def test_can_shrink_variable_draws_with_just_deletion(n, monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.interval_deletion_with_block_lowering
-    )
-    # Would normally be added by minimize_individual_blocks, but we skip
-    # that phase in this test.
-    monkeypatch.setattr(
-        Shrinker, 'is_shrinking_block', lambda self, i: i == 0
-    )
-
-    def gen(self):
-        data = ConjectureData.for_buffer(
-            [n] + [0] * (n - 1) + [1]
-        )
-        self.test_function(data)
-
-    monkeypatch.setattr(ConjectureRunner, 'generate_new_examples', gen)
-
-    @run_to_buffer
-    def x(data):
-        n = data.draw_bits(4)
-        b = [data.draw_bits(8) for _ in hrange(n)]
-        if any(b):
-            data.mark_interesting()
-    assert x == hbytes([1, 1])
-
-
-def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.interval_deletion_with_block_lowering
-    )
-    # Would normally be added by minimize_individual_blocks, but we skip
-    # that phase in this test.
-    monkeypatch.setattr(
-        Shrinker, 'is_shrinking_block', lambda self, i: i == 0
-    )
-
-    def gen(self):
-        data = ConjectureData.for_buffer(hbytes(10))
-        self.test_function(data)
-
-    monkeypatch.setattr(ConjectureRunner, 'generate_new_examples', gen)
-
-    @run_to_buffer
-    def x(data):
-        for _ in hrange(10):
-            data.draw_bytes(1)
-        data.mark_interesting()
-    assert x == hbytes(10)
-
-
 def test_run_nothing():
     def f(data):
         assert False

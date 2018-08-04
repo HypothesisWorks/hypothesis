@@ -92,6 +92,7 @@ TRIAL_SETTINGS = settings(
 
 @pytest.mark.parametrize('seed', [
     2282791295271755424, 1284235381287210546, 14202812238092722246,
+    26097,
 ])
 @pytest.mark.parametrize('size', [5, 10, 20])
 @pytest.mark.parametrize('p', [0.01, 0.1])
