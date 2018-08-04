@@ -994,7 +994,7 @@ def test_can_pass_to_a_child(monkeypatch):
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.cached_test_function(initial))
 
-    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.pass_to_child)
+    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.pass_to_descendant)
 
     @run_to_buffer
     def x(data):
