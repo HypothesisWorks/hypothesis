@@ -1448,9 +1448,9 @@ class Shrinker(object):
         """
         self.remove_discarded()
         self.adaptive_example_deletion()
-        self.minimize_duplicated_blocks()
         self.minimize_individual_blocks()
         self.lower_dependent_block_pairs()
+        self.reorder_examples()
         self.pass_to_child()
 
     def expensive_greedy_shrink_passes(self):
@@ -1460,7 +1460,8 @@ class Shrinker(object):
         longer suffice. Often these are quadratic complexity or worse.
         """
         self.block_deletion()
-        self.reorder_examples()
+        self.lower_dependent_block_pairs()
+        self.minimize_duplicated_blocks()
         self.shrink_offset_pairs()
         self.pass_to_descendant()
         self.minimize_block_pairs_retaining_sum()
