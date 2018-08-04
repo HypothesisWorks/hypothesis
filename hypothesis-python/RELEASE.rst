@@ -1,5 +1,6 @@
 RELEASE_TYPE: patch
 
-This release improves how Hypothesis handles reducing the size of integers'
-representation yet further, by covering a corner case that was missing in
-:ref:`3.66.28 <v3.66.28>`.
+This release improves the efficiency of how the shrinker reorders examples, by
+significantly limiting the set of transformations it will try. You may see some
+degradation in example quality (if you do, please tell us!) but mostly you
+should see much faster shrinking.
