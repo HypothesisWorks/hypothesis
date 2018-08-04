@@ -1450,7 +1450,6 @@ class Shrinker(object):
         self.remove_discarded()
         self.adaptive_example_deletion()
         self.minimize_individual_blocks()
-        self.reorder_examples()
 
     def expensive_greedy_shrink_passes(self):
         """Runs all shrink passes that we consider "expensive".
@@ -1458,12 +1457,18 @@ class Shrinker(object):
         That is, we only want to run them once the cheap passes no
         longer suffice. Often these are quadratic complexity or worse.
         """
+        self.reorder_examples()
         self.block_deletion()
         self.lower_dependent_block_pairs()
         self.minimize_duplicated_blocks()
         self.shrink_offset_pairs()
-        self.pass_to_descendant()
+
+    def emergency_measures(self):
+        """Passes that we really don't want to run unless we absolutely have
+        to."""
         self.minimize_block_pairs_retaining_sum()
+        self.pass_to_descendant()
+        self.interval_deletion_with_block_lowering()
 
     def single_greedy_shrink_iteration(self):
         """Performs a single run through each greedy shrink pass, but does not
@@ -1487,6 +1492,9 @@ class Shrinker(object):
             self.expensive_greedy_shrink_passes()
 
         self.lower_common_block_offset()
+
+        if prev is self.shrink_target:
+            self.emergency_measures()
 
     def initial_bulk_shrinks(self):
         self.bulk_block_zero()
@@ -1569,9 +1577,6 @@ class Shrinker(object):
         ex = data.examples[i]
         u = ex.start
         v = ex.end
-
-        if data.buffer[u:v] == replacement:
-            return data
 
         attempt = self.cached_test_function(
             data.buffer[:u] + replacement + data.buffer[v:]
@@ -1844,7 +1849,11 @@ class Shrinker(object):
 
         This method will attempt to do some small amount of work to delete data
         that occurs after the end of the blocks. This is useful for cases where
-        there is some size dependency on the value of a block.
+        there is some size dependency on the value of a block. The amount of
+        work done here is relatively small - most such dependencies will be
+        handled by the interval_deletion_with_block_lowering pass - but will be
+        effective when there is a large amount of redundant data after the
+        block to be lowered.
         """
         initial_attempt = bytearray(self.shrink_target.buffer)
         for i, block in enumerate(blocks):
@@ -1854,9 +1863,6 @@ class Shrinker(object):
             u, v = self.blocks[block]
             n = min(v - u, len(b))
             initial_attempt[v - n:v] = b[-n:]
-
-        start = self.shrink_target.blocks[blocks[0]][0]
-        end = self.shrink_target.blocks[blocks[-1]][1]
 
         initial_data = self.cached_test_function(initial_attempt)
 
@@ -1868,9 +1874,6 @@ class Shrinker(object):
         if initial_data.status < Status.VALID:
             return False
 
-        # We've shrunk inside our group of blocks, so we have no way to
-        # continue. (This only happens when shrinking more than one block at
-        # a time).
         if len(initial_data.buffer) < v:
             return False
 
@@ -1884,57 +1887,12 @@ class Shrinker(object):
 
         self.mark_shrinking(blocks)
 
-        regions_to_delete = set()
+        try_with_deleted = bytearray(initial_attempt)
+        del try_with_deleted[v:v + lost_data]
 
-        for ex in self.shrink_target.examples:
-            if ex.start > start:
-                continue
-            if ex.end <= end:
-                continue
+        if self.incorporate_new_buffer(try_with_deleted):
+            return True
 
-            replacement = initial_data.examples[ex.index]
-
-            # We ended up getting the end of this example wrong as a result of
-            # this shrink. Lets try and replace it with the correct length
-            # example here and now.
-            if (
-                replacement.length < ex.length and
-                replacement.end < len(initial_data.buffer) and
-                self.try_replace_example(
-                    ex.index,
-                    initial_data.buffer[replacement.start:replacement.end]
-                )
-            ):
-                return True
-
-            in_original = [
-                c for c in ex.children if c.start >= end
-            ]
-
-            in_replaced = [
-                c for c in replacement.children if c.start >= end
-            ]
-
-            if len(in_replaced) >= len(in_original) or not in_replaced:
-                continue
-
-            # We've found an example where some of the children went missing
-            # as a result of this change, and just replacing it with the data
-            # it would have had and removing the spillover didn't work. This
-            # means that some of its children towards the right must be
-            # important, so we try to arrange it so that it retains its
-            # rightmost children instead of its leftmost.
-            regions_to_delete.add((
-                in_original[0].start, in_original[-len(in_replaced)].start
-            ))
-
-        for u, v in sorted(
-            regions_to_delete, key=lambda x: x[1] - x[0], reverse=True
-        ):
-            try_with_deleted = bytearray(initial_attempt)
-            del try_with_deleted[u:v]
-            if self.incorporate_new_buffer(try_with_deleted):
-                return True
         return False
 
     def remove_discarded(self):
@@ -2139,6 +2097,68 @@ class Shrinker(object):
                 random=self.random, full=False,
             )
             i -= 1
+
+    @shrink_pass
+    def interval_deletion_with_block_lowering(self):
+        """This pass tries to delete each interval while replacing a block that
+        precedes that interval with its immediate two lexicographical
+        predecessors.
+
+        We only do this for blocks that are marked as shrinking - that
+        is, when we tried lowering them it resulted in a smaller example.
+        This makes it important that this runs after minimize_individual_blocks
+        (which populates those blocks).
+
+        The reason for this pass is that it guarantees that we can delete
+        elements of ls in the following scenario:
+
+        n = data.draw(st.integers(0, 10))
+        ls = data.draw(st.lists(st.integers(), min_size=n, max_size=n))
+
+        Replacing the block for n with its predecessor replaces n with n - 1,
+        and deleting a draw call in ls means that we draw exactly the desired
+        n - 1 elements for this list.
+
+        We actually also try replacing n with n - 2, as we will have intervals
+        for adjacent pairs of draws and that ensures that those will find the
+        right block lowering in this case too.
+
+        This is necessarily a somewhat expensive pass - worst case scenario it
+        tries len(blocks) * len(intervals) = O(len(buffer)^2 log(len(buffer)))
+        shrinks, so it's important that it runs late in the process when the
+        example size is small and most of the blocks that can be zeroed have
+        been.
+        """
+        i = 0
+        while i < len(self.intervals):
+            u, v = self.intervals[i]
+            changed = False
+            # This loop never exits normally because the r >= u branch will
+            # always trigger once we find a block inside the interval, hence
+            # the pragma.
+            for j, (r, s) in enumerate(  # pragma: no branch
+                self.blocks
+            ):
+                if r >= u:
+                    break
+                if not self.is_shrinking_block(j):
+                    continue
+                b = self.shrink_target.buffer[r:s]
+                if any(b):
+                    n = int_from_bytes(b)
+
+                    for m in hrange(max(n - 2, 0), n):
+                        c = int_to_bytes(m, len(b))
+                        attempt = bytearray(self.shrink_target.buffer)
+                        attempt[r:s] = c
+                        del attempt[u:v]
+                        if self.incorporate_new_buffer(attempt):
+                            changed = True
+                            break
+                    if changed:
+                        break
+            if not changed:
+                i += 1
 
     @shrink_pass
     def lower_dependent_block_pairs(self):
