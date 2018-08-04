@@ -1450,7 +1450,6 @@ class Shrinker(object):
         self.adaptive_example_deletion()
         self.minimize_duplicated_blocks()
         self.minimize_individual_blocks()
-        self.reorder_blocks()
         self.lower_dependent_block_pairs()
         self.lower_common_block_offset()
 
@@ -2065,62 +2064,6 @@ class Shrinker(object):
                 random=self.random, full=False,
             )
             i -= 1
-
-    @shrink_pass
-    def reorder_blocks(self):
-        """Attempt to reorder blocks of the same size so that lexically larger
-        values go later.
-
-        This is mostly useful for canonicalization of examples. e.g. if we have
-
-        x = data.draw(st.integers())
-        y = data.draw(st.integers())
-        assert x == y
-
-        Then by minimizing x and y individually this could give us either
-        x=0, y=1 or x=1, y=0. According to our sorting order, the former is a
-        better example, but if in our initial draw y was zero then we will not
-        get it.
-
-        When this pass runs it will swap the values of x and y if that occurs.
-
-        As well as canonicalization, this can also unblock other things. For
-        example suppose we have
-
-        n = data.draw(st.integers(0, 10))
-        ls = data.draw(st.lists(st.integers(), min_size=n, max_size=n))
-        assert len([x for x in ls if x != 0]) <= 1
-
-        We could end up with something like [1, 0, 0, 1] if we started from the
-        wrong place. This pass would reorder this to [0, 0, 1, 1]. Shrinking n
-        can then try to delete the lost bytes (see try_shrinking_blocks for how
-        this works), taking us immediately to [1, 1]. This is a less important
-        role for this pass, but still significant.
-        """
-        block_lengths = sorted(self.shrink_target.block_starts, reverse=True)
-        for n in block_lengths:
-            i = 1
-            while i < len(self.shrink_target.block_starts.get(n, ())):
-                j = i
-                while j > 0:
-                    buf = self.shrink_target.buffer
-                    blocks = self.shrink_target.block_starts[n]
-                    a_start = blocks[j - 1]
-                    b_start = blocks[j]
-                    a = buf[a_start:a_start + n]
-                    b = buf[b_start:b_start + n]
-                    if a <= b:
-                        break
-                    swapped = (
-                        buf[:a_start] + b + buf[a_start + n:b_start] +
-                        a + buf[b_start + n:])
-                    assert len(swapped) == len(buf)
-                    assert swapped < buf
-                    if self.incorporate_new_buffer(swapped):
-                        j -= 1
-                    else:
-                        break
-                i += 1
 
     @shrink_pass
     def interval_deletion_with_block_lowering(self):
