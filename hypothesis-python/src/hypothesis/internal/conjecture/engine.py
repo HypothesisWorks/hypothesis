@@ -1968,18 +1968,13 @@ class Shrinker(object):
         block of the [b], effectively joining the two lists together.
         """
         i = 0
-        while i < len(self.shrink_target.blocks):
-            j = min(i + 4, len(self.shrink_target.blocks) - 2)
-            while j >= i:
-                u, _ = self.shrink_target.blocks[i]
-                _, v = self.shrink_target.blocks[j]
-                if self.incorporate_new_buffer(
-                    self.shrink_target.buffer[:u] +
-                    self.shrink_target.buffer[v:]
-                ):
-                    break
-                j -= 1
-            else:
+        while i + 2 < len(self.shrink_target.blocks):
+            u, _ = self.shrink_target.blocks[i]
+            _, v = self.shrink_target.blocks[i + 1]
+            if not self.incorporate_new_buffer(
+                self.shrink_target.buffer[:u] +
+                self.shrink_target.buffer[v:]
+            ):
                 i += 1
 
     @shrink_pass
