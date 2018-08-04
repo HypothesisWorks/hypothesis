@@ -1441,6 +1441,7 @@ class Shrinker(object):
         do have quadratic worst case complexity.
         """
         self.remove_discarded()
+        self.pass_to_child()
         self.adaptive_example_deletion()
         self.minimize_duplicated_blocks()
         self.minimize_individual_blocks()
@@ -1454,13 +1455,13 @@ class Shrinker(object):
         self.block_deletion()
         self.reorder_examples()
         self.shrink_offset_pairs()
-        self.pass_to_interval()
         self.minimize_block_pairs_retaining_sum()
 
     def emergency_measures(self):
         """Passes that we really don't want to run unless we absolutely have
         to."""
         self.example_deletion_with_block_lowering()
+        self.pass_to_descendant()
 
     def single_greedy_shrink_iteration(self):
         """Performs a single run through each greedy shrink pass, but does not
@@ -1537,8 +1538,24 @@ class Shrinker(object):
         return replaced is self.shrink_target
 
     @shrink_pass
-    def pass_to_interval(self):
-        """Attempt to replace each interval with a subinterval.
+    def pass_to_child(self):
+        """A cheap version of pass_to_descendant that attempts to replace each
+        example with one of its children."""
+        for ex in self.each_non_trivial_example():
+            # No point trying to replace with the first child because we know
+            # it will just cause it to try to draw the second one!
+            for child in ex.children[1:]:
+                if child.label != ex.label:
+                    continue
+                buf = self.shrink_target.buffer
+                self.incorporate_new_buffer(
+                    buf[:ex.start] + buf[child.start:child.end] +
+                    buf[ex.end:]
+                )
+
+    @shrink_pass
+    def pass_to_descendant(self):
+        """Attempt to replace each example with a descendant example.
 
         This is designed to deal with strategies that call themselves
         recursively. For example, suppose we had:
@@ -1553,27 +1570,22 @@ class Shrinker(object):
 
         This is pretty expensive - it takes O(len(intervals)^2) - so we run it
         late in the process when we've got the number of intervals as far down
-        as possible.
+        as possible. A cheaper version is available in pass_to_child, which we
+        deploy more aggressively.
         """
-        i = 0
-        while i < len(self.shrink_target.examples):
-            ex = self.shrink_target.examples[i]
-            changed = False
+        for ex in self.each_non_trivial_example():
+            st = self.shrink_target
+            descendants = sorted(set(
+                st.buffer[d.start:d.end] for d in self.shrink_target.examples
+                if d.start >= ex.start and d.end <= ex.end and
+                d.length < ex.length
+            ), key=sort_key)
 
-            for j in hrange(i + 1, len(self.shrink_target.examples)):
-                child = self.shrink_target.examples[j]
-                if child.start >= ex.end:
+            for d in descendants:
+                if self.try_replace_example(
+                    ex.index, d + hbytes(ex.length - len(d))
+                ):
                     break
-                if child.length < ex.length:
-                    buf = self.shrink_target.buffer
-                    if self.incorporate_new_buffer(
-                        buf[:ex.start] + buf[child.start:child.end] +
-                        buf[ex.end:]
-                    ):
-                        changed = True
-                        break
-            if not changed:
-                i += 1
 
     def is_shrinking_block(self, i):
         """Checks whether block i has been previously marked as a shrinking
