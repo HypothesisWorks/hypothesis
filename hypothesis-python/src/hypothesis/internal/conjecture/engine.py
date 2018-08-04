@@ -1593,7 +1593,6 @@ class Shrinker(object):
             for child in self.children_of(ex):
                 buf = self.shrink_target.buffer
                 self.try_replace_example(
-                    self.shrink_target,
                     ex.index,
                     buf[child.start:child.end] +
                     # Pad the child with zeros to add some possibility of
