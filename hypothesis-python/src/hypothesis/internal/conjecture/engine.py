@@ -1444,7 +1444,6 @@ class Shrinker(object):
         self.adaptive_example_deletion()
         self.minimize_duplicated_blocks()
         self.minimize_individual_blocks()
-        self.lower_common_block_offset()
 
     def expensive_greedy_shrink_passes(self):
         """Runs all shrink passes that we consider "expensive".
@@ -1468,11 +1467,6 @@ class Shrinker(object):
         loop to achieve a fixed point."""
         prev = self.shrink_target
 
-        # We reset our tracking of what changed at the beginning of the
-        # loop so that we don't get distracted by things that change once
-        # and then are stable thereafter.
-        self.clear_change_tracking()
-
         self.cheap_greedy_shrink_passes()
 
         # If the cheap greedy shrink passes didn't work, it's time to enable
@@ -1495,6 +1489,8 @@ class Shrinker(object):
         # are in a fixed point, as they are too expensive to run regularly.
         if prev is self.shrink_target:
             self.emergency_measures()
+
+        self.lower_common_block_offset()
 
     @property
     def blocks(self):
@@ -1655,12 +1651,17 @@ class Shrinker(object):
 
         blocked = [current.buffer[u:v] for u, v in current.blocks]
 
-        changed = sorted(self.__changed_blocks)
+        changed = [
+            i for i in sorted(self.__changed_blocks)
+            if any(blocked[i]) and i not in self.shrink_target.forced_blocks
+        ]
+
+        if not changed:
+            return
 
         ints = [int_from_bytes(blocked[i]) for i in changed]
         offset = min(ints)
-        if offset == 0:
-            return
+        assert offset > 0
 
         for i in hrange(len(ints)):
             ints[i] -= offset
@@ -1671,7 +1672,9 @@ class Shrinker(object):
                 new_blocks[i] = int_to_bytes(v + o, len(blocked[i]))
             return self.incorporate_new_buffer(hbytes().join(new_blocks))
 
-        Integer.shrink(offset, reoffset, random=self.random)
+        new_offset = Integer.shrink(offset, reoffset, random=self.random)
+        if new_offset == offset:
+            self.clear_change_tracking()
 
     @shrink_pass
     def shrink_offset_pairs(self):
@@ -1753,6 +1756,9 @@ class Shrinker(object):
     def clear_change_tracking(self):
         self.__changed_blocks.clear()
 
+    def mark_changed(self, i):
+        self.__changed_blocks.add(i)
+
     def update_shrink_target(self, new_target):
         assert new_target.frozen
         if self.shrink_target is not None:
@@ -1761,14 +1767,14 @@ class Shrinker(object):
             assert sort_key(new) < sort_key(current)
             self.shrinks += 1
             if new_target.blocks != self.shrink_target.blocks:
-                self.__changed_blocks = set()
+                self.clear_change_tracking()
             else:
                 for i, (u, v) in enumerate(self.shrink_target.blocks):
                     if (
                         i not in self.__changed_blocks and
                         current[u:v] != new[u:v]
                     ):
-                        self.__changed_blocks.add(i)
+                        self.mark_changed(i)
         else:
             self.__changed_blocks = set()
 

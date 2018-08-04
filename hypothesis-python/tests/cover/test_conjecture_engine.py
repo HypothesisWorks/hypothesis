@@ -1699,3 +1699,31 @@ def test_does_not_try_to_delete_children_if_number_is_minimal():
         b = bytearray(initial)
         b[i] = 0
         assert hbytes(b) in seen
+
+
+def test_lower_common_block_offset_does_nothing_when_changed_blocks_are_zero():
+    @shrinking_from([1, 0, 1, 0])
+    def shrinker(data):
+        data.draw_bits(1)
+        data.draw_bits(1)
+        data.draw_bits(1)
+        data.draw_bits(1)
+        data.mark_interesting()
+    shrinker.mark_changed(1)
+    shrinker.mark_changed(3)
+    shrinker.lower_common_block_offset()
+    assert list(shrinker.shrink_target.buffer) == [1, 0, 1, 0]
+
+
+def test_lower_common_block_offset_ignores_zeros():
+    @shrinking_from([2, 2, 0])
+    def shrinker(data):
+        n = data.draw_bits(8)
+        data.draw_bits(8)
+        data.draw_bits(8)
+        if n > 0:
+            data.mark_interesting()
+    for i in range(3):
+        shrinker.mark_changed(i)
+    shrinker.lower_common_block_offset()
+    assert list(shrinker.shrink_target.buffer) == [1, 1, 0]
