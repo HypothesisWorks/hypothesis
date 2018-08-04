@@ -17,7 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
 from random import Random
 from fractions import Fraction
 from functools import reduce
