@@ -2011,15 +2011,15 @@ class Shrinker(object):
 
         then in our shrunk example, x = 10 rather than say 97.
         """
-        i = 0
-        while i < len(self.blocks):
+        i = len(self.blocks) - 1
+        while i >= 0:
             u, v = self.blocks[i]
             Lexical.shrink(
                 self.shrink_target.buffer[u:v],
                 lambda b: self.try_shrinking_blocks((i,), b),
                 random=self.random, full=False,
             )
-            i += 1
+            i -= 1
 
     @shrink_pass
     def reorder_blocks(self):
