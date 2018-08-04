@@ -1491,6 +1491,21 @@ class Shrinker(object):
 
     def initial_bulk_shrinks(self):
         self.bulk_block_zero()
+        self.adaptive_zero()
+
+    @shrink_pass
+    def adaptive_zero(self):
+        def accept(indices):
+            buf = self.shrink_target.buffer
+            attempt = hbytes([
+                0 if i not in indices else v
+                for i, v in enumerate(buf)
+            ])
+            return buf == attempt or self.incorporate_new_buffer(attempt)
+        Length.shrink(
+            tuple(hrange(len(self.shrink_target.buffer))), accept,
+            random=self.random
+        )
 
     @shrink_pass
     def bulk_block_zero(self):
