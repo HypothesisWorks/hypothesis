@@ -22,6 +22,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 from hypothesis.errors import Frozen
+from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.data import Status, StopTest, \
     ConjectureData
 from hypothesis.searchstrategy.strategies import SearchStrategy
@@ -126,3 +127,23 @@ def test_empty_discards_do_not_count():
     x.stop_example(discard=True)
     x.freeze()
     assert not x.has_discards
+
+
+def test_triviality():
+    d = ConjectureData.for_buffer([1, 0, 1])
+
+    d.start_example(1)
+    d.draw_bits(1)
+    d.draw_bits(1)
+    d.stop_example(1)
+
+    d.write(hbytes([2]))
+    d.freeze()
+
+    def eg(u, v):
+        return [ex for ex in d.examples if ex.start == u and ex.end == v][0]
+
+    assert not eg(0, 2).trivial
+    assert not eg(0, 1).trivial
+    assert eg(1, 2).trivial
+    assert eg(2, 3).trivial
