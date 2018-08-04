@@ -17,7 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
 from random import Random
 from fractions import Fraction
 from functools import reduce
@@ -32,7 +31,7 @@ from tests.common.debug import minimal
 from hypothesis.strategies import just, none, sets, text, lists, builds, \
     tuples, booleans, integers, fractions, frozensets, dictionaries, \
     sampled_from, fixed_dictionaries
-from hypothesis.internal.compat import PY3, OrderedDict, hrange
+from hypothesis.internal.compat import OrderedDict, hrange
 
 
 def test_integers_from_minimizes_leftwards():
@@ -192,12 +191,6 @@ def test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe():
         timeout_after=60,
     )
     assert x == target
-
-
-@pytest.mark.skipif(PY3, reason=u'Python 3 has better integers')
-def test_minimize_long():
-    assert minimal(
-        integers(), lambda x: type(x).__name__ == u'long') == sys.maxint + 1
 
 
 def test_find_large_union_list():

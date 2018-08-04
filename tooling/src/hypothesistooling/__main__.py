@@ -420,7 +420,6 @@ standard_tox_task('pure-tracer')
 @task()
 def check_quality():
     run_tox('quality', PY36)
-    run_tox('quality2', PY27)
 
 
 examples_task = task(if_changed=(hp.PYTHON_SRC, os.path.join(
