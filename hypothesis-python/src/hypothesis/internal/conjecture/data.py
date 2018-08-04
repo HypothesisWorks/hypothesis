@@ -105,6 +105,7 @@ class ConjectureData(object):
         self.level = 0
         self.block_starts = {}
         self.blocks = []
+        self.block_labels = []
         self.buffer = bytearray()
         self.output = u''
         self.status = Status.VALID
@@ -309,12 +310,14 @@ class ConjectureData(object):
             raise StopTest(self.testcounter)
 
     def __write(self, result, forced=False):
+        parent_label = self.examples[self.example_stack[-1]].label
         ex = self.start_example(DRAW_BYTES_LABEL)
         ex.trivial = forced or not any(result)
         initial = self.index
         n = len(result)
         self.block_starts.setdefault(n, []).append(initial)
         self.blocks.append((initial, initial + n))
+        self.block_labels.append(parent_label)
         assert len(result) == n
         assert self.index == initial
         self.buffer.extend(result)

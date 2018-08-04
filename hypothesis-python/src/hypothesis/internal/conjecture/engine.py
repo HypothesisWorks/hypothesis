@@ -1434,6 +1434,7 @@ class Shrinker(object):
         This method iterates to a fixed point and so is idempontent - calling
         it twice will have exactly the same effect as calling it once.
         """
+        self.initial_bulk_shrinks()
         prev = None
         while prev is not self.shrink_target:
             prev = self.shrink_target
@@ -1488,6 +1489,32 @@ class Shrinker(object):
             self.expensive_greedy_shrink_passes()
 
         self.lower_common_block_offset()
+
+    def initial_bulk_shrinks(self):
+        self.bulk_block_zero()
+
+    @shrink_pass
+    def bulk_block_zero(self):
+        labels_done = set()
+
+        prev = None
+        while True:
+            if prev is not self.shrink_target:
+                prev = self.shrink_target
+                counts = Counter()
+                for (u, v), l in zip(prev.blocks, prev.block_labels):
+                    if l not in labels_done:
+                        counts[l] += (v - u)
+            if not counts:
+                break
+            target = max(counts, key=counts.__getitem__)
+            del counts[target]
+
+            attempt = bytearray(prev.buffer)
+            for (u, v), l in zip(prev.blocks, prev.block_labels):
+                if l == target:
+                    attempt[u:v] = hbytes(v - u)
+            self.incorporate_new_buffer(attempt)
 
     @property
     def blocks(self):
