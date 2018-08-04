@@ -785,26 +785,6 @@ def test_shrinks_both_interesting_examples(monkeypatch):
     assert runner.interesting_examples[1].buffer == hbytes([1])
 
 
-def test_reorder_blocks(monkeypatch):
-    target = hbytes([1, 2, 3])
-
-    def generate_new_examples(self):
-        self.test_function(ConjectureData.for_buffer(hbytes(reversed(target))))
-
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples', generate_new_examples)
-    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.reorder_blocks)
-
-    @run_to_buffer
-    def x(data):
-        if sorted(
-            data.draw_bits(8) for _ in hrange(len(target))
-        ) == sorted(target):
-            data.mark_interesting()
-
-    assert x == target
-
-
 def test_duplicate_blocks_that_go_away(monkeypatch):
     monkeypatch.setattr(
         Shrinker, 'shrink', Shrinker.minimize_duplicated_blocks)
