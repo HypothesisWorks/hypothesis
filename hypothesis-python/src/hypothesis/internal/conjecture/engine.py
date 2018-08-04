@@ -1578,16 +1578,21 @@ class Shrinker(object):
         replaced = self.__replace_example(self.shrink_target, i, replacement)
         return replaced is self.shrink_target
 
+    def children_of(self, example):
+        index = ex.index
+        i = 0
+        while i < len(self.shrink_target.examples[index].children):
+            yield self.shrink_target.examples[index].children[i]
+            i += 1
+
     @shrink_pass
     def pass_to_child(self):
         """A cheap version of pass_to_descendant that attempts to replace each
         example with one of its children."""
         for ex in self.each_non_trivial_example():
-            # No point trying to replace with the first child because we know
-            # it will just cause it to try to draw the second one!
-            for child in ex.children:
+            for child in children_of(ex):
                 buf = self.shrink_target.buffer
-                self.__replace_example(
+                self.try_replace_example(
                     self.shrink_target,
                     ex.index,
                     buf[child.start:child.end] +
