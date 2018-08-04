@@ -1579,7 +1579,7 @@ class Shrinker(object):
         return replaced is self.shrink_target
 
     def children_of(self, example):
-        index = ex.index
+        index = example.index
         i = 0
         while i < len(self.shrink_target.examples[index].children):
             yield self.shrink_target.examples[index].children[i]
