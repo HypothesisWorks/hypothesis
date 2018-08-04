@@ -1450,7 +1450,6 @@ class Shrinker(object):
         self.remove_discarded()
         self.adaptive_example_deletion()
         self.minimize_individual_blocks()
-        self.lower_dependent_block_pairs()
         self.reorder_examples()
 
     def expensive_greedy_shrink_passes(self):
@@ -1496,14 +1495,16 @@ class Shrinker(object):
     @shrink_pass
     def adaptive_zero(self):
         def accept(indices):
+            indices = set(indices)
             buf = self.shrink_target.buffer
-            attempt = hbytes([
-                0 if i not in indices else v
-                for i, v in enumerate(buf)
-            ])
+            attempt = bytearray(buf)
+            for i, (u, v) in enumerate(self.shrink_target.blocks):
+                if i not in indices:
+                    attempt[u:v] = hbytes(v - u)
+            attempt = hbytes(attempt)
             return buf == attempt or self.incorporate_new_buffer(attempt)
         Length.shrink(
-            tuple(hrange(len(self.shrink_target.buffer))), accept,
+            tuple(hrange(len(self.shrink_target.blocks))), accept,
             random=self.random
         )
 
