@@ -1426,7 +1426,7 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
         if result >= 32768 and cap == 1:
             data.mark_interesting()
 
-    shrinker.lower_dependent_block_pairs()
+    shrinker.minimize_individual_blocks()
     assert list(shrinker.shrink_target.buffer) == [
         1, 1, 0, 1, 0, 0, 1
     ]
@@ -1603,7 +1603,7 @@ def test_dependent_block_pairs_can_lower_to_zero():
 
         if n == 1:
             data.mark_interesting()
-    shrinker.lower_dependent_block_pairs()
+    shrinker.minimize_individual_blocks()
     assert list(shrinker.shrink_target.buffer) == [0, 1]
 
 
@@ -1615,7 +1615,7 @@ def test_handle_size_too_large_during_dependent_lowering():
             data.mark_interesting()
         else:
             data.draw_bits(8)
-    shrinker.lower_dependent_block_pairs()
+    shrinker.minimize_individual_blocks()
 
 
 def test_adaptive_deletion_will_zero_blocks():
@@ -1676,3 +1676,20 @@ def test_non_trivial_examples_boundaries_can_change():
     shrinker.incorporate_new_buffer([1, 1, 1])
     assert next(it).length == 2
     assert next(it).length == 1
+
+
+def test_block_may_grow_during_lexical_shrinking():
+    initial = hbytes([2, 1, 1])
+
+    @shrinking_from(initial)
+    def shrinker(data):
+        n = data.draw_bits(8)
+        if n == 2:
+            data.draw_bits(8)
+            data.draw_bits(8)
+        else:
+            data.draw_bits(16)
+        data.mark_interesting()
+
+    shrinker.minimize_individual_blocks()
+    assert list(shrinker.shrink_target.buffer) == [0, 0, 0]

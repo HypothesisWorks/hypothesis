@@ -1444,7 +1444,6 @@ class Shrinker(object):
         self.adaptive_example_deletion()
         self.minimize_duplicated_blocks()
         self.minimize_individual_blocks()
-        self.lower_dependent_block_pairs()
         self.lower_common_block_offset()
 
     def expensive_greedy_shrink_passes(self):
@@ -1821,11 +1820,7 @@ class Shrinker(object):
 
         This method will attempt to do some small amount of work to delete data
         that occurs after the end of the blocks. This is useful for cases where
-        there is some size dependency on the value of a block. The amount of
-        work done here is relatively small - most such dependencies will be
-        handled by the interval_deletion_with_block_lowering pass - but will be
-        effective when there is a large amount of redundant data after the
-        block to be lowered.
+        there is some size dependency on the value of a block.
         """
         initial_attempt = bytearray(self.shrink_target.buffer)
         for i, block in enumerate(blocks):
@@ -1835,6 +1830,9 @@ class Shrinker(object):
             u, v = self.blocks[block]
             n = min(v - u, len(b))
             initial_attempt[v - n:v] = b[-n:]
+
+        start = self.shrink_target.blocks[blocks[0]][0]
+        end = self.shrink_target.blocks[blocks[-1]][1]
 
         initial_data = self.cached_test_function(initial_attempt)
 
@@ -1846,6 +1844,9 @@ class Shrinker(object):
         if initial_data.status < Status.VALID:
             return False
 
+        # We've shrunk inside our group of blocks, so we have no way to
+        # continue. (This only happens when shrinking more than one block at
+        # a time).
         if len(initial_data.buffer) < v:
             return False
 
@@ -1859,12 +1860,66 @@ class Shrinker(object):
 
         self.mark_shrinking(blocks)
 
-        try_with_deleted = bytearray(initial_attempt)
-        del try_with_deleted[v:v + lost_data]
+        # We now look for contiguous regions to delete that might help fix up
+        # this failed shrink. We only look for contiguous regions of the right
+        # lengths because doing anything more than that starts to get very
+        # expensive. See example_deletion_with_block_lowering for where we
+        # try to be more aggressive.
+        regions_to_delete = set()
 
-        if self.incorporate_new_buffer(try_with_deleted):
-            return True
+        for j in (blocks[-1] + 1, blocks[-1] + 2):
+            if j >= min(len(initial_data.blocks), len(self.blocks)):
+                continue
+            # We look for a block very shortly after the last one that has
+            # lost some of its size, and try to delete from the beginning so
+            # that it retains the same integer value. This is a bit of a hyper
+            # specific trick designed to make our integers() strategy shrink
+            # well.
+            r1, s1 = self.shrink_target.blocks[j]
+            r2, s2 = initial_data.blocks[j]
+            lost = (s1 - r1) - (s2 - r2)
+            # Apparently a coverage bug? An assert False in the body of this
+            # will reliably fail, but it shows up as uncovered.
+            if lost <= 0 or r1 != r2:  # pragma: no cover
+                continue
+            regions_to_delete.add((r1, r1 + lost))
 
+        for ex in self.shrink_target.examples:
+            if ex.start > start:
+                continue
+            if ex.end <= end:
+                continue
+
+            replacement = initial_data.examples[ex.index]
+
+            in_original = [
+                c for c in ex.children if c.start >= end
+            ]
+
+            in_replaced = [
+                c for c in replacement.children if c.start >= end
+            ]
+
+            if len(in_replaced) >= len(in_original) or not in_replaced:
+                continue
+
+            # We've found an example where some of the children went missing
+            # as a result of this change, and just replacing it with the data
+            # it would have had and removing the spillover didn't work. This
+            # means that some of its children towards the right must be
+            # important, so we try to arrange it so that it retains its
+            # rightmost children instead of its leftmost.
+            regions_to_delete.add((
+                in_original[0].start, in_original[-len(in_replaced)].start
+            ))
+
+        for u, v in sorted(
+            regions_to_delete, key=lambda x: x[1] - x[0], reverse=True
+        ):
+            try_with_deleted = bytearray(initial_attempt)
+            del try_with_deleted[u:v]
+            if self.incorporate_new_buffer(try_with_deleted):
+                return True
         return False
 
     def remove_discarded(self):
@@ -2137,77 +2192,6 @@ class Shrinker(object):
                         break
             if not changed:
                 i += 1
-
-    @shrink_pass
-    def lower_dependent_block_pairs(self):
-        """This is a fairly specific shrink pass that is mostly specialised for
-        our integers strategy, though is probably useful in other places.
-
-        It looks for adjacent pairs of blocks where lowering the value of the
-        first changes the size of the second. Where this happens, we may lose
-        interestingness because this takes the prefix rather than the suffix
-        of the next block, so if lowering the block produces an uninteresting
-        value and this change happens, we try replacing the second block with
-        its suffix and shrink again.
-
-        For example suppose we had:
-
-            m = data.draw_bits(8)
-            n = data.draw_bits(m)
-
-        And initially we draw m = 9, n = 1. This gives us the bytes [9, 0, 1].
-        If we lower 9 to 8 then we now read [9, 0], because the block size of
-        the n has changed. This pass allows us to also try [9, 1], which
-        corresponds to m=8, n=1 as desired.
-
-        This should *mostly* be handled by the minimize_individual_blocks pass,
-        but that won't always work because its length heuristic can be wrong if
-        the changes to the next block have knock on size changes, while this
-        one triggers more reliably.
-        """
-        i = 0
-        while i + 1 < len(self.blocks):
-            for offset in (2, 1):
-                u, v = self.blocks[i]
-                b = int_from_bytes(self.shrink_target.buffer[u:v])
-                lowered = b - offset
-                if lowered < 0:
-                    continue
-                attempt = bytearray(self.shrink_target.buffer)
-                attempt[u:v] = int_to_bytes(lowered, v - u)
-                attempt = hbytes(attempt)
-                shrunk = self.cached_test_function(attempt)
-                if shrunk is not self.shrink_target:
-                    for j in (i + 1, i + 2):
-                        if j >= min(len(self.blocks), len(shrunk.blocks)):
-                            break
-                        u, v = self.blocks[j]
-                        r, s = shrunk.blocks[j]
-
-                        new_length = s - r
-                        old_length = v - u
-                        lost = old_length - new_length
-                        if lost <= 0:
-                            continue
-
-                        previous_value = int_from_bytes(
-                            self.shrink_target.buffer[u:v])
-
-                        new_length = s - r
-                        lost = (v - u) - new_length
-
-                        # We couldn't fit the value in the new block anyway.
-                        if previous_value.bit_length() > 8 * new_length:
-                            continue
-
-                        new_attempt = bytearray(attempt)
-                        new_attempt[r:s] = int_to_bytes(
-                            previous_value, new_length
-                        )
-                        del new_attempt[s:s + lost]
-                        if self.incorporate_new_buffer(new_attempt):
-                            break
-            i += 1
 
     @shrink_pass
     def minimize_block_pairs_retaining_sum(self):
