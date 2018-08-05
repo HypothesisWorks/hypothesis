@@ -1456,9 +1456,13 @@ class Shrinker(object):
         self.block_deletion()
         self.reorder_examples()
         self.shrink_offset_pairs()
-        self.interval_deletion_with_block_lowering()
         self.pass_to_interval()
         self.minimize_block_pairs_retaining_sum()
+
+    def emergency_measures(self):
+        """Passes that we really don't want to run unless we absolutely have
+        to."""
+        self.interval_deletion_with_block_lowering()
 
     def single_greedy_shrink_iteration(self):
         """Performs a single run through each greedy shrink pass, but does not
@@ -1485,6 +1489,13 @@ class Shrinker(object):
 
         if self.run_expensive_shrinks:
             self.expensive_greedy_shrink_passes()
+
+        # If absolutely nothing has worked we run emergency measures shrink
+        # passes that are designed to get us unstuck from local minima. Even
+        # once these have worked once we still only run them if we think we
+        # are in a fixed point, as they are too expensive to run regularly.
+        if prev is self.shrink_target:
+            self.emergency_measures()
 
     @property
     def blocks(self):
