@@ -58,7 +58,7 @@ class Length(Shrinker):
             i = len(self.current) - 1 - j
             start = self.current
             find_integer(
-                lambda k: k <= i and self.consider(
+                lambda k: k <= i + 1 and self.consider(
                     start[:i + 1 - k] + start[i + 1:]
                 )
             )

@@ -296,7 +296,7 @@ class ConjectureData(object):
         self.__check_capacity(len(string))
         assert isinstance(string, hbytes)
         original = self.index
-        self.__write(string)
+        self.__write(string, forced=True)
         self.forced_indices.update(hrange(original, self.index))
         self.forced_blocks.add(len(self.blocks) - 1)
         return string
@@ -310,7 +310,7 @@ class ConjectureData(object):
 
     def __write(self, result, forced=False):
         ex = self.start_example(DRAW_BYTES_LABEL)
-        ex.trivial = not forced and any(result)
+        ex.trivial = forced or not any(result)
         initial = self.index
         n = len(result)
         self.block_starts.setdefault(n, []).append(initial)

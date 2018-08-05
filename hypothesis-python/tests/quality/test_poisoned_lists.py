@@ -95,7 +95,7 @@ TRIAL_SETTINGS = settings(
 ])
 @pytest.mark.parametrize('size', [5, 10, 20])
 @pytest.mark.parametrize('p', [0.01, 0.1])
-@pytest.mark.parametrize('strategy_class', [LinearLists, Matrices])
+@pytest.mark.parametrize('strategy_class', [LinearLists])
 def test_minimal_poisoned_containers(seed, size, p, strategy_class):
     elements = Poisoned(p)
     strategy = strategy_class(elements, size)

@@ -732,23 +732,29 @@ def test_saves_negated_examples_in_covering():
 def test_can_delete_intervals(monkeypatch):
     def generate_new_examples(self):
         self.test_function(
-            ConjectureData.for_buffer(hbytes([255] * 10 + [0])))
+            ConjectureData.for_buffer(hbytes([255] * 10 + [1, 3])))
 
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples', generate_new_examples)
     monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.adaptive_example_deletion
+        Shrinker, 'shrink', fixate(Shrinker.adaptive_example_deletion)
     )
 
     def f(data):
-        if data.draw_bits(1):
-            while data.draw_bits(8):
-                pass
+        while True:
+            n = data.draw_bits(8)
+            if n == 255:
+                continue
+            elif n == 1:
+                break
+            else:
+                data.mark_invalid()
+        if data.draw_bits(8) == 3:
             data.mark_interesting()
     runner = ConjectureRunner(f, settings=settings(database=None))
     runner.run()
     x, = runner.interesting_examples.values()
-    assert x.buffer == hbytes([1, 0])
+    assert x.buffer == hbytes([1, 3])
 
 
 def test_detects_too_small_block_starts():
