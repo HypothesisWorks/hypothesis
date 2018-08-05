@@ -38,7 +38,8 @@ from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
 from hypothesis.internal.conjecture.utils import Sampler, \
     calc_label_from_name
 from hypothesis.internal.conjecture.engine import Negated, Shrinker, \
-    ExitReason, RunIsComplete, ConjectureRunner, universal
+    StopTest, ExitReason, RunIsComplete, TargetSelector, \
+    ConjectureRunner, universal
 
 SOME_LABEL = calc_label_from_name('some label')
 
@@ -1560,3 +1561,156 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
     assert list(shrinker.shrink_target.buffer) == [
         1, 1, 0, 1, 0, 0, 1
     ]
+
+
+def test_database_clears_secondary_key():
+    key = b'key'
+    database = InMemoryExampleDatabase()
+
+    def f(data):
+        if data.draw_bits(8) == 10:
+            data.mark_interesting()
+        else:
+            data.mark_invalid()
+
+    runner = ConjectureRunner(f, settings=settings(
+        max_examples=1, buffer_size=1024,
+        database=database, suppress_health_check=HealthCheck.all(),
+    ), database_key=key)
+
+    for i in range(10):
+        database.save(runner.secondary_key, hbytes([i]))
+
+    runner.test_function(ConjectureData.for_buffer(hbytes([10])))
+    assert runner.interesting_examples
+
+    assert len(set(database.fetch(key))) == 1
+    assert len(set(database.fetch(runner.secondary_key))) == 10
+
+    runner.clear_secondary_key()
+
+    assert len(set(database.fetch(key))) == 1
+    assert len(set(database.fetch(runner.secondary_key))) == 0
+
+
+def test_database_uses_values_from_secondary_key():
+    key = b'key'
+    database = InMemoryExampleDatabase()
+
+    def f(data):
+        if data.draw_bits(8) >= 5:
+            data.mark_interesting()
+        else:
+            data.mark_invalid()
+
+    runner = ConjectureRunner(f, settings=settings(
+        max_examples=1, buffer_size=1024,
+        database=database, suppress_health_check=HealthCheck.all(),
+    ), database_key=key)
+
+    for i in range(10):
+        database.save(runner.secondary_key, hbytes([i]))
+
+    runner.test_function(ConjectureData.for_buffer(hbytes([10])))
+    assert runner.interesting_examples
+
+    assert len(set(database.fetch(key))) == 1
+    assert len(set(database.fetch(runner.secondary_key))) == 10
+
+    runner.clear_secondary_key()
+
+    assert len(set(database.fetch(key))) == 1
+    assert set(
+        map(int_from_bytes, database.fetch(runner.secondary_key))
+    ) == set(range(6, 11))
+
+    v, = runner.interesting_examples.values()
+
+    assert list(v.buffer) == [5]
+
+
+def test_exit_because_max_iterations():
+
+    def f(data):
+        data.draw_bits(64)
+        data.mark_invalid()
+
+    runner = ConjectureRunner(f, settings=settings(
+        max_examples=1, buffer_size=1024,
+        database=None, suppress_health_check=HealthCheck.all(),
+    ))
+
+    runner.run()
+
+    assert runner.call_count <= 1000
+    assert runner.exit_reason == ExitReason.max_iterations
+
+
+def test_target_selector_tags():
+    selector = TargetSelector(Random(0))
+
+    tag1 = 'some tag'
+    tag2 = 'some other tag'
+
+    data = ConjectureData.for_buffer(hbytes(10))
+    try:
+        data.draw_bits(10)
+        data.add_tag(tag1)
+        data.mark_interesting()
+    except StopTest:
+        pass
+
+    assert selector.has_tag(universal, data)
+    assert selector.has_tag(tag1, data)
+    assert selector.has_tag(Negated(tag2), data)
+    assert not selector.has_tag(Negated(tag1), data)
+    assert not selector.has_tag(tag2, data)
+
+
+def test_skips_non_payload_blocks_when_reducing_sum():
+    @shrinking_from([10, 10, 10])
+    def shrinker(data):
+        if sum([data.draw_bits(8) for _ in range(3)]) == 30:
+            data.mark_interesting()
+
+    shrinker.is_payload_block = lambda b: b != 1
+    shrinker.minimize_block_pairs_retaining_sum()
+    assert list(shrinker.shrink_target.buffer) == [0, 10, 20]
+
+
+def test_does_not_include_empty_examples_in_intervals():
+    @shrinking_from([0, 0])
+    def shrinker(data):
+        data.draw_bits(1)
+        data.start_example(0)
+        data.stop_example(0)
+        data.draw_bits(1)
+        data.mark_interesting()
+
+    assert all(u < v for u, v in shrinker.intervals)
+    assert any(ex.length == 0 for ex in shrinker.shrink_target.examples)
+
+
+def test_dependent_block_pairs_can_lower_to_zero():
+    @shrinking_from([1, 0, 1])
+    def shrinker(data):
+        if data.draw_bits(1):
+            n = data.draw_bits(16)
+        else:
+            n = data.draw_bits(8)
+
+        if n == 1:
+            data.mark_interesting()
+    shrinker.lower_dependent_block_pairs()
+    assert list(shrinker.shrink_target.buffer) == [0, 1]
+
+
+def test_handle_size_too_large_during_dependent_lowering():
+    @shrinking_from([1, 255, 0])
+    def shrinker(data):
+        if data.draw_bits(1):
+            data.draw_bits(16)
+            data.mark_interesting()
+        else:
+            data.draw_bits(8)
+    shrinker.lower_dependent_block_pairs()
