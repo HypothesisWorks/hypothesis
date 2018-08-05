@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.25:
+
+--------------------
+3.66.25 - 2018-08-05
+--------------------
+
+This release fixes several bugs that were introduced to the shrinker in
+:ref:`3.66.24 <v3.66.24>` which would have caused it to behave significantly
+less well than advertised. With any luck you should *actually* see the promised
+benefits now.
+
 .. _v3.66.24:
 
 --------------------
