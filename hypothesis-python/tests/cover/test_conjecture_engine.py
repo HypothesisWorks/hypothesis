@@ -533,35 +533,24 @@ def test_can_shrink_variable_draws(n_large):
 
 @pytest.mark.parametrize('n', [1, 5, 8, 15])
 def test_can_shrink_variable_draws_with_just_deletion(n, monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.interval_deletion_with_block_lowering
-    )
-    # Would normally be added by minimize_individual_blocks, but we skip
-    # that phase in this test.
-    monkeypatch.setattr(
-        Shrinker, 'is_shrinking_block', lambda self, i: i == 0
-    )
-
-    def gen(self):
-        data = ConjectureData.for_buffer(
-            [n] + [0] * (n - 1) + [1]
-        )
-        self.test_function(data)
-
-    monkeypatch.setattr(ConjectureRunner, 'generate_new_examples', gen)
-
-    @run_to_buffer
-    def x(data):
+    @shrinking_from([n] + [0] * (n - 1) + [1])
+    def shrinker(data):
         n = data.draw_bits(4)
         b = [data.draw_bits(8) for _ in hrange(n)]
         if any(b):
             data.mark_interesting()
-    assert x == hbytes([1, 1])
+
+    # We normally would have populated this in minimize_individual_blocks
+    shrinker.is_shrinking_block = lambda x: True
+
+    fixate(Shrinker.example_deletion_with_block_lowering)(shrinker)
+
+    assert list(shrinker.shrink_target.buffer) == [1, 1]
 
 
 def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
     monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.interval_deletion_with_block_lowering
+        Shrinker, 'shrink', Shrinker.example_deletion_with_block_lowering
     )
     # Would normally be added by minimize_individual_blocks, but we skip
     # that phase in this test.
@@ -1578,19 +1567,6 @@ def test_skips_non_payload_blocks_when_reducing_sum():
     shrinker.is_payload_block = lambda b: b != 1
     shrinker.minimize_block_pairs_retaining_sum()
     assert list(shrinker.shrink_target.buffer) == [0, 10, 20]
-
-
-def test_does_not_include_empty_examples_in_intervals():
-    @shrinking_from([0, 0])
-    def shrinker(data):
-        data.draw_bits(1)
-        data.start_example(0)
-        data.stop_example(0)
-        data.draw_bits(1)
-        data.mark_interesting()
-
-    assert all(u < v for u, v in shrinker.intervals)
-    assert any(ex.length == 0 for ex in shrinker.shrink_target.examples)
 
 
 def test_dependent_block_pairs_can_lower_to_zero():

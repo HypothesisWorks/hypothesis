@@ -1461,7 +1461,7 @@ class Shrinker(object):
     def emergency_measures(self):
         """Passes that we really don't want to run unless we absolutely have
         to."""
-        self.interval_deletion_with_block_lowering()
+        self.example_deletion_with_block_lowering()
 
     def single_greedy_shrink_iteration(self):
         """Performs a single run through each greedy shrink pass, but does not
@@ -1499,36 +1499,6 @@ class Shrinker(object):
     @property
     def blocks(self):
         return self.shrink_target.blocks
-
-    @property
-    def intervals(self):
-        if self.__intervals is None:
-            target = self.shrink_target
-            intervals = set(target.blocks)
-            intervals.add((0, target.index))
-            intervals.update(
-                (ex.start, ex.end) for ex in target.examples
-                if ex.start < ex.end
-            )
-            intervals_by_level = {}
-            for ex in target.examples:
-                if ex.start < ex.end:
-                    intervals_by_level.setdefault(ex.depth, []).append(ex)
-            for l in intervals_by_level.values():
-                for e1, e2 in zip(l, l[1:]):
-                    if (
-                        not (e1.discarded or e2.discarded) and
-                        e1.end == e2.start
-                    ):
-                        intervals.add((e1.start, e2.end))
-            for i in hrange(len(target.blocks) - 1):
-                intervals.add((target.blocks[i][0], target.blocks[i + 1][1]))
-            # Intervals are sorted as longest first, then by interval start.
-            self.__intervals = tuple(sorted(
-                set(intervals),
-                key=lambda se: (se[0] - se[1], se[0])
-            ))
-        return self.__intervals
 
     def replace_example(self, data, i, replacement):
         """Tries to replace the current example in data at index i with the
@@ -2146,66 +2116,45 @@ class Shrinker(object):
             i -= 1
 
     @shrink_pass
-    def interval_deletion_with_block_lowering(self):
-        """This pass tries to delete each interval while replacing a block that
-        precedes that interval with its immediate two lexicographical
-        predecessors.
+    def example_deletion_with_block_lowering(self):
+        """Sometimes we get stuck where there is data that we could easily
+        delete, but it changes the number of examples generated, so we have to
+        change that at the same time.
 
-        We only do this for blocks that are marked as shrinking - that
-        is, when we tried lowering them it resulted in a smaller example.
-        This makes it important that this runs after minimize_individual_blocks
-        (which populates those blocks).
+        We handle most of the common cases in try_shrinking_blocks which is
+        pretty good at clearing out large contiguous blocks of dead space,
+        but it fails when there is data that has to stay in particular places
+        in the list.
 
-        The reason for this pass is that it guarantees that we can delete
-        elements of ls in the following scenario:
-
-        n = data.draw(st.integers(0, 10))
-        ls = data.draw(st.lists(st.integers(), min_size=n, max_size=n))
-
-        Replacing the block for n with its predecessor replaces n with n - 1,
-        and deleting a draw call in ls means that we draw exactly the desired
-        n - 1 elements for this list.
-
-        We actually also try replacing n with n - 2, as we will have intervals
-        for adjacent pairs of draws and that ensures that those will find the
-        right block lowering in this case too.
-
-        This is necessarily a somewhat expensive pass - worst case scenario it
-        tries len(blocks) * len(intervals) = O(len(buffer)^2 log(len(buffer)))
-        shrinks, so it's important that it runs late in the process when the
-        example size is small and most of the blocks that can be zeroed have
-        been.
+        This pass exists as an emergency procedure to get us unstuck. For every
+        example and every block not inside that example it tries deleting the
+        example and modifying the block's value by one in either direction.
         """
         i = 0
-        while i < len(self.intervals):
-            u, v = self.intervals[i]
-            changed = False
-            # This loop never exits normally because the r >= u branch will
-            # always trigger once we find a block inside the interval, hence
-            # the pragma.
-            for j, (r, s) in enumerate(  # pragma: no branch
-                self.blocks
-            ):
-                if r >= u:
-                    break
-                if not self.is_shrinking_block(j):
-                    continue
-                b = self.shrink_target.buffer[r:s]
-                if any(b):
-                    n = int_from_bytes(b)
-
-                    for m in hrange(max(n - 2, 0), n):
-                        c = int_to_bytes(m, len(b))
-                        attempt = bytearray(self.shrink_target.buffer)
-                        attempt[r:s] = c
-                        del attempt[u:v]
-                        if self.incorporate_new_buffer(attempt):
-                            changed = True
-                            break
-                    if changed:
-                        break
-            if not changed:
+        while i < len(self.shrink_target.blocks):
+            if not self.is_shrinking_block(i):
                 i += 1
+                continue
+
+            u, v = self.blocks[i]
+
+            j = 0
+            while j < len(self.shrink_target.examples):
+                n = int_from_bytes(self.shrink_target.buffer[u:v])
+                if n == 0:
+                    break
+                ex = self.shrink_target.examples[j]
+                if ex.start < v or ex.length == 0:
+                    j += 1
+                    continue
+
+                buf = bytearray(self.shrink_target.buffer)
+                buf[u:v] = int_to_bytes(n - 1, v - u)
+                del buf[ex.start:ex.end]
+                if not self.incorporate_new_buffer(buf):
+                    j += 1
+
+            i += 1
 
     @shrink_pass
     def minimize_block_pairs_retaining_sum(self):
