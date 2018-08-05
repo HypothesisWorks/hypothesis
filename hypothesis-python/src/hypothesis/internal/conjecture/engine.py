@@ -1525,17 +1525,17 @@ class Shrinker(object):
             if prev is not self.shrink_target:
                 prev = self.shrink_target
                 counts = Counter()
-                for (u, v), l in zip(prev.blocks, prev.block_labels):
-                    if l not in labels_done:
-                        counts[l] += (v - u)
+                for (u, v), label in zip(prev.blocks, prev.block_labels):
+                    if label not in labels_done:
+                        counts[label] += (v - u)
             if not counts:
                 break
             target = max(counts, key=counts.__getitem__)
             del counts[target]
 
             attempt = bytearray(prev.buffer)
-            for (u, v), l in zip(prev.blocks, prev.block_labels):
-                if l == target:
+            for (u, v), label in zip(prev.blocks, prev.block_labels):
+                if label == target:
                     attempt[u:v] = hbytes(v - u)
             self.incorporate_new_buffer(attempt)
 
