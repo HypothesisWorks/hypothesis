@@ -1898,8 +1898,44 @@ class Shrinker(object):
         with self.attribute_calls_and_shrinks('remove_discarded'):
             self.discarding_failed = not self.incorporate_new_buffer(attempt)
 
+    def each_non_trivial_example(self):
+        """Iterates over all non-trivial examples in the current shrink target,
+        with care taken to ensure that every example yielded is current.
+
+        Makes the assumption that no modifications will be made to the
+        shrink target prior to the currently yielded example. If this
+        assumption is violated this will probably raise an error, so
+        don't do that.
+        """
+        stack = [0]
+
+        while stack:
+            target = stack.pop()
+            if isinstance(target, tuple):
+                parent, i = target
+                parent = self.shrink_target.examples[parent]
+                if i < len(parent.children):
+                    example_index = parent.children[i].index
+                else:
+                    continue
+            else:
+                example_index = target
+
+            ex = self.shrink_target.examples[example_index]
+
+            if ex.trivial:
+                continue
+
+            yield ex
+
+            if ex.trivial:
+                return
+
+            for i in range(len(ex.children)):
+                stack.append((example_index, i))
+
     @shrink_pass
-    def adaptive_example_deletion(self, example_index=0):
+    def adaptive_example_deletion(self):
         """Recursive deletion pass that tries to make the example located at
         example_index as small as possible. This is the main point at which we
         try to lower the size of the data.
@@ -1913,36 +1949,21 @@ class Shrinker(object):
         If we do not make any successful changes, we recurse to the example's
         children and attempt the same there.
         """
-        self.zero_example(example_index)
-
-        ex = self.shrink_target.examples[example_index]
-        if ex.trivial or not ex.children:
-            return
-
-        st = self.shrink_target
-        prefix = st.buffer[:ex.start]
-        suffix = st.buffer[ex.end:]
-        pieces = [
-            st.buffer[c.start:c.end]
-            for c in ex.children
-        ]
-        Length.shrink(
-            pieces, lambda ls: self.incorporate_new_buffer(
-                prefix + hbytes().join(ls) + suffix
-            ), random=self.random
-        )
-
-        # We only descend into the children if we are unable to delete any of
-        # the current example. This prevents us from trying too many fine
-        # grained changes too soon.
-        if self.shrink_target is st:
-            i = 0
-            while i < len(self.shrink_target.examples[example_index].children):
-                self.adaptive_example_deletion(
-                    self.shrink_target.examples[example_index].
-                    children[-1 - i].index
-                )
-                i += 1
+        for ex in self.each_non_trivial_example():
+            if self.try_replace_example(ex.index, hbytes(ex.length)):
+                continue
+            st = self.shrink_target
+            prefix = st.buffer[:ex.start]
+            suffix = st.buffer[ex.end:]
+            pieces = [
+                st.buffer[c.start:c.end]
+                for c in ex.children
+            ]
+            Length.shrink(
+                pieces, lambda ls: self.incorporate_new_buffer(
+                    prefix + hbytes().join(ls) + suffix
+                ), random=self.random
+            )
 
     @shrink_pass
     def block_deletion(self):
