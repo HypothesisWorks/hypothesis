@@ -2209,7 +2209,7 @@ class Shrinker(object):
                 u, v = self.blocks[i]
                 b = int_from_bytes(self.shrink_target.buffer[u:v])
                 lowered = b - offset
-                if lowered <= 0:
+                if lowered < 0:
                     continue
                 attempt = bytearray(self.shrink_target.buffer)
                 attempt[u:v] = int_to_bytes(lowered, v - u)
