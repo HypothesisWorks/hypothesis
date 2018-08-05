@@ -2217,7 +2217,7 @@ class Shrinker(object):
                 shrunk = self.cached_test_function(attempt)
                 if shrunk is not self.shrink_target:
                     for j in (i + 1, i + 2):
-                        if j >= len(self.blocks):
+                        if j >= min(len(self.blocks), len(shrunk.blocks)):
                             break
                         u, v = self.blocks[j]
                         r, s = shrunk.blocks[j]
