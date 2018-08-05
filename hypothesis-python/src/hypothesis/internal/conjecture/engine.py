@@ -2205,24 +2205,47 @@ class Shrinker(object):
         """
         i = 0
         while i + 1 < len(self.blocks):
-            u, v = self.blocks[i]
-            i += 1
-
-            b = int_from_bytes(self.shrink_target.buffer[u:v])
-            if b > 0:
+            for offset in (2, 1):
+                u, v = self.blocks[i]
+                b = int_from_bytes(self.shrink_target.buffer[u:v])
+                lowered = b - offset
+                if lowered <= 0:
+                    continue
                 attempt = bytearray(self.shrink_target.buffer)
-                attempt[u:v] = int_to_bytes(b - 1, v - u)
+                attempt[u:v] = int_to_bytes(lowered, v - u)
                 attempt = hbytes(attempt)
                 shrunk = self.cached_test_function(attempt)
-                if (
-                    shrunk is not self.shrink_target and
-                    i < len(shrunk.blocks) and
-                    shrunk.blocks[i][1] < self.blocks[i][1]
-                ):
-                    _, r = self.blocks[i]
-                    k = shrunk.blocks[i][1] - shrunk.blocks[i][0]
-                    buf = attempt[:v] + self.shrink_target.buffer[r - k:]
-                    self.incorporate_new_buffer(buf)
+                if shrunk is not self.shrink_target:
+                    for j in (i + 1, i + 2):
+                        if j >= min(len(self.blocks), len(shrunk.blocks)):
+                            break
+                        u, v = self.blocks[j]
+                        r, s = shrunk.blocks[j]
+
+                        new_length = s - r
+                        old_length = v - u
+                        lost = old_length - new_length
+                        if lost <= 0:
+                            continue
+
+                        previous_value = int_from_bytes(
+                            self.shrink_target.buffer[u:v])
+
+                        new_length = s - r
+                        lost = (v - u) - new_length
+
+                        # We couldn't fit the value in the new block anyway.
+                        if previous_value.bit_length() > 8 * new_length:
+                            continue
+
+                        new_attempt = bytearray(attempt)
+                        new_attempt[r:s] = int_to_bytes(
+                            previous_value, new_length
+                        )
+                        del new_attempt[s:s + lost]
+                        if self.incorporate_new_buffer(new_attempt):
+                            break
+            i += 1
 
     @shrink_pass
     def reorder_bytes(self):
