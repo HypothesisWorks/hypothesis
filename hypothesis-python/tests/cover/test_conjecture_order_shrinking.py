@@ -24,6 +24,7 @@ from hypothesis import given, example
 from hypothesis.internal.conjecture.shrinking import Ordering
 
 
+@example([0, 0])
 @example([0, 1, -1])
 @given(st.lists(st.integers()))
 def test_shrinks_down_to_sorted_the_slow_way(ls):
