@@ -1563,6 +1563,39 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
     ]
 
 
+def test_finding_a_minimal_balanced_binary_tree():
+    # Tests iteration while the shape of the thing being iterated over can
+    # change. In particular the current example can go from trivial to non
+    # trivial.
+
+    def tree(data):
+        # Returns height of a binary tree and whether it is height balanced.
+        data.start_example('tree')
+        n = data.draw_bits(1)
+        if n == 0:
+            result = (1, True)
+        else:
+            h1, b1 = tree(data)
+            h2, b2 = tree(data)
+            result = (1 + max(h1, h2), b1 and b2 and abs(h1 - h2) <= 1)
+        data.stop_example('tree')
+        return result
+
+    # Starting from an unbalanced tree of depth six
+    @shrinking_from([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
+    def shrinker(data):
+        _, b = tree(data)
+        if not b:
+            data.mark_interesting()
+
+    shrinker.adaptive_example_deletion()
+    shrinker.reorder_examples()
+
+    assert list(shrinker.shrink_target.buffer) == [
+        1, 0, 1, 0, 1, 0, 0
+    ]
+
+
 def test_database_clear_secondary_key():
     key = b'key'
     database = InMemoryExampleDatabase()
