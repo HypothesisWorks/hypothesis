@@ -1821,11 +1821,7 @@ class Shrinker(object):
 
         This method will attempt to do some small amount of work to delete data
         that occurs after the end of the blocks. This is useful for cases where
-        there is some size dependency on the value of a block. The amount of
-        work done here is relatively small - most such dependencies will be
-        handled by the interval_deletion_with_block_lowering pass - but will be
-        effective when there is a large amount of redundant data after the
-        block to be lowered.
+        there is some size dependency on the value of a block.
         """
         initial_attempt = bytearray(self.shrink_target.buffer)
         for i, block in enumerate(blocks):
@@ -1835,6 +1831,9 @@ class Shrinker(object):
             u, v = self.blocks[block]
             n = min(v - u, len(b))
             initial_attempt[v - n:v] = b[-n:]
+
+        start = self.shrink_target.blocks[blocks[0]][0]
+        end = self.shrink_target.blocks[blocks[-1]][1]
 
         initial_data = self.cached_test_function(initial_attempt)
 
@@ -1846,6 +1845,9 @@ class Shrinker(object):
         if initial_data.status < Status.VALID:
             return False
 
+        # We've shrunk inside our group of blocks, so we have no way to
+        # continue. (This only happens when shrinking more than one block at
+        # a time).
         if len(initial_data.buffer) < v:
             return False
 
@@ -1859,12 +1861,57 @@ class Shrinker(object):
 
         self.mark_shrinking(blocks)
 
-        try_with_deleted = bytearray(initial_attempt)
-        del try_with_deleted[v:v + lost_data]
+        regions_to_delete = set()
 
-        if self.incorporate_new_buffer(try_with_deleted):
-            return True
+        for ex in self.shrink_target.examples:
+            if ex.start > start:
+                continue
+            if ex.end <= end:
+                continue
 
+            replacement = initial_data.examples[ex.index]
+
+            # We ended up getting the end of this example wrong as a result of
+            # this shrink. Lets try and replace it with the correct length
+            # example here and now.
+            if (
+                replacement.length < ex.length and
+                replacement.end < len(initial_data.buffer) and
+                self.try_replace_example(
+                    ex.index,
+                    initial_data.buffer[replacement.start:replacement.end]
+                )
+            ):
+                return True
+
+            in_original = [
+                c for c in ex.children if c.start >= end
+            ]
+
+            in_replaced = [
+                c for c in replacement.children if c.start >= end
+            ]
+
+            if len(in_replaced) >= len(in_original) or not in_replaced:
+                continue
+
+            # We've found an example where some of the children went missing
+            # as a result of this change, and just replacing it with the data
+            # it would have had and removing the spillover didn't work. This
+            # means that some of its children towards the right must be
+            # important, so we try to arrange it so that it retains its
+            # rightmost children instead of its leftmost.
+            regions_to_delete.add((
+                in_original[0].start, in_original[-len(in_replaced)].start
+            ))
+
+        for u, v in sorted(
+            regions_to_delete, key=lambda x: x[1] - x[0], reverse=True
+        ):
+            try_with_deleted = bytearray(initial_attempt)
+            del try_with_deleted[u:v]
+            if self.incorporate_new_buffer(try_with_deleted):
+                return True
         return False
 
     def remove_discarded(self):

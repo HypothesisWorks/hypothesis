@@ -26,8 +26,8 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis import settings, unlimited
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import ceil, hrange
-from hypothesis.internal.conjecture.engine import ConjectureData, \
-    ConjectureRunner, uniform
+from hypothesis.internal.conjecture.engine import Shrinker, \
+    ConjectureData, ConjectureRunner, uniform
 
 POISON = 'POISON'
 
@@ -92,11 +92,18 @@ TRIAL_SETTINGS = settings(
 
 @pytest.mark.parametrize('seed', [
     2282791295271755424, 1284235381287210546, 14202812238092722246,
+    26097,
 ])
 @pytest.mark.parametrize('size', [5, 10, 20])
 @pytest.mark.parametrize('p', [0.01, 0.1])
 @pytest.mark.parametrize('strategy_class', [LinearLists, Matrices])
-def test_minimal_poisoned_containers(seed, size, p, strategy_class):
+def test_minimal_poisoned_containers(
+    seed, size, p, strategy_class, monkeypatch
+):
+    # Disable emergency measures for these tests, as they're ones that we
+    # should be able to perform without them.
+    monkeypatch.setattr(Shrinker, 'emergency_measures', lambda self: None)
+
     elements = Poisoned(p)
     strategy = strategy_class(elements, size)
 
