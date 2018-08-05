@@ -1528,53 +1528,40 @@ class Shrinker(object):
             ))
         return self.__intervals
 
-    def zero_example(self, i):
-        """Attempt to replace a draw call with its minimal possible value.
+    def __replace_example(self, data, i, replacement):
+        ex = data.examples[i]
+        u = ex.start
+        v = ex.end
 
-        This is intended as a fast-track to minimize whole sub-examples that
-        don't matter as rapidly as possible. For example, suppose we had
-        something like the following:
+        # Truncate the replacement down to the right length if it's too long,
+        # pad it with zeroes if it's too short.
+        replacement = replacement[:v - u]
+        replacement += hbytes(v - u - len(replacement))
 
-        ls = data.draw(st.lists(st.lists(st.integers())))
-        assert len(ls) >= 10
+        existing = data.buffer[u:v]
+        if replacement == existing:
+            return data
 
-        Then each of the elements of ls need to be minimized, and we can do
-        that by deleting individual values from them, but we'd much rather do
-        it fast rather than slow - deleting elements one at a time takes
-        sum(map(len, ls)) shrinks, and ideally we'd do this in len(ls) shrinks
-        as we try to replace each element with [].
-
-        This pass does that by identifying the size of the "natural smallest"
-        element here. It first tries replacing an entire interval with zero.
-        This will sometimes work (e.g. when the interval is a block), but often
-        what will happen is that there will be leftover zeros that spill over
-        into the next example and ruin things - e.g. here if ls[0] is non-empty
-        and we replace it with all zero, some of the extra zeros will be
-        interpreted as terminating ls and will shrink it down to a one element
-        list, causing the test to pass.
-
-        So what we do instead is that once we've evaluated that shrink, we use
-        the size of the intervals there to find other possible sizes that we
-        could try replacing the interval with. In this case we'd spot that
-        there is a one-byte interval starting at right place for ls[i] and try
-        to replace it with that. This will successfully replace ls[i] with []
-        as desired.
-        """
-        ex = self.shrink_target.examples[i]
-        if not ex.trivial:
-            buf = self.shrink_target.buffer
-            prefix = buf[:ex.start]
-            suffix = buf[ex.end:]
+        attempt = self.cached_test_function(
+            data.buffer[:u] + replacement + data.buffer[v:]
+        )
+        used = attempt.examples[i].length
+        if (
+            not self.__predicate(attempt) and
+            used < len(replacement) and
+            attempt.examples[i].length < len(attempt.buffer)
+        ):
             attempt = self.cached_test_function(
-                prefix + hbytes(ex.length) + suffix
+                data.buffer[:u] + replacement[:used] + data.buffer[v:]
             )
-            if attempt.status == Status.VALID:
-                replacement = attempt.examples[i]
-                assert replacement.start == ex.start
-                if replacement.length < ex.length:
-                    self.incorporate_new_buffer(
-                        prefix + hbytes(replacement.length) + suffix
-                    )
+        return attempt
+
+    def try_replace_example(self, i, replacement):
+        """Attempts to replace the region corresponding to the example at
+        position i with the string replacement, returning True if it succeeds
+        (including it it was already that string)."""
+        replaced = self.__replace_example(self.shrink_target, i, replacement)
+        return replaced is self.shrink_target
 
     @shrink_pass
     def pass_to_interval(self):
