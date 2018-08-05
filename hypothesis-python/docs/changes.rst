@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.27:
+
+--------------------
+3.66.27 - 2018-08-05
+--------------------
+
+This release changes the order in which Hypothesis chooses parts of the test case
+to shrink. For typical usage this should be a significant performance improvement on
+large examples. It is unlikely to have a major impact on example quality, but where
+it does change the result it should usually be an improvement.
+
 .. _v3.66.26:
 
 --------------------
