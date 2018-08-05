@@ -21,8 +21,9 @@ from random import Random
 
 import hypothesis.strategies as st
 from hypothesis import Phase, Verbosity, HealthCheck, note, given, \
-    assume, reject, settings, unlimited
-from hypothesis.internal.compat import ceil, hbytes
+    assume, reject, example, settings, unlimited
+from hypothesis.internal.compat import hbytes
+from hypothesis.searchstrategy.numbers import WideRangeIntStrategy
 from hypothesis.internal.conjecture.data import StopTest, ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
@@ -43,6 +44,7 @@ def problems(draw):
             pass
 
 
+@example(problem=(32768, b'\x03\x01\x00\x00\x00\x00\x00\x01\x00\x02\x01'))
 @settings(
     suppress_health_check=HealthCheck.all(), timeout=unlimited, deadline=None,
 )
@@ -92,4 +94,10 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
     #   bit, n needs (1 + n.bit_length()) / 8 bytes (rounded up). But we only
     #   have power of two sizes, so it may be up to a factor of two more than
     #   that.
-    assert len(v.buffer) <= 2 + 2 * max(1, ceil((1 + n.bit_length()) / 8))
+
+    bits_needed = 1 + n.bit_length()
+    actual_bits_needed = min(
+        [s for s in WideRangeIntStrategy.sizes if s >= bits_needed])
+    bytes_needed = actual_bits_needed // 8
+    # 3 extra bytes: two for the sampler, one for the capping value.
+    assert len(v.buffer) == 3 + bytes_needed

@@ -35,7 +35,8 @@ from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     ConjectureData
-from hypothesis.internal.conjecture.utils import calc_label_from_name
+from hypothesis.internal.conjecture.utils import Sampler, \
+    calc_label_from_name
 from hypothesis.internal.conjecture.engine import Negated, Shrinker, \
     ExitReason, RunIsComplete, ConjectureRunner, universal
 
@@ -1515,3 +1516,47 @@ def test_only_calls_discard_at_top_level_pass():
     shrinker.adaptive_example_deletion()
 
     assert shrinker.remove_discarded.call_count == 1
+
+
+def shrinking_from(start):
+    def accept(f):
+        with deterministic_PRNG():
+            runner = ConjectureRunner(f, settings=settings(
+                max_examples=5000, buffer_size=1024,
+                database=None, suppress_health_check=HealthCheck.all(),
+            ))
+            runner.test_function(ConjectureData.for_buffer(start))
+            assert runner.interesting_examples
+            last_data, = runner.interesting_examples.values()
+            return runner.new_shrinker(
+                last_data, lambda d: d.status == Status.INTERESTING
+            )
+    return accept
+
+
+def test_dependent_block_pairs_is_up_to_shrinking_integers():
+    # Unit test extracted from a failure in tests/nocover/test_integers.py
+    distribution = Sampler([
+        4.0, 8.0, 1.0, 1.0, 0.5
+    ])
+
+    sizes = [8, 16, 32, 64, 128]
+
+    @shrinking_from(b'\x03\x01\x00\x00\x00\x00\x00\x01\x00\x02\x01')
+    def shrinker(data):
+        size = sizes[distribution.sample(data)]
+        result = data.draw_bits(size)
+        sign = (-1) ** (result & 1)
+        result = (result >> 1) * sign
+        cap = data.draw_bits(8)
+
+        print('RESULT', result, 'CAP', cap)
+        print(list(data.buffer))
+
+        if result >= 32768 and cap == 1:
+            data.mark_interesting()
+
+    shrinker.lower_dependent_block_pairs()
+    assert list(shrinker.shrink_target.buffer) == [
+        1, 1, 0, 1, 0, 0, 1
+    ]
