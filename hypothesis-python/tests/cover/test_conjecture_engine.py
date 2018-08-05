@@ -1775,3 +1775,16 @@ def test_lower_common_block_offset_ignores_zeros():
         shrinker.mark_changed(i)
     shrinker.lower_common_block_offset()
     assert list(shrinker.shrink_target.buffer) == [1, 1, 0]
+
+
+def test_pandas_hack():
+    @shrinking_from([1, 1, 1, 7])
+    def shrinker(data):
+        n = data.draw_bits(1)
+        if n:
+            data.draw_bits(1)
+            data.draw_bits(1)
+        if data.draw_bits(8) == 7:
+            data.mark_interesting()
+    shrinker.pandas_hack()
+    assert list(shrinker.shrink_target.buffer) == [0, 7]

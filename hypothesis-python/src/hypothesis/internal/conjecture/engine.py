@@ -1462,6 +1462,7 @@ class Shrinker(object):
         to."""
         self.example_deletion_with_block_lowering()
         self.pass_to_descendant()
+        self.pandas_hack()
 
     def single_greedy_shrink_iteration(self):
         """Performs a single run through each greedy shrink pass, but does not
@@ -1852,7 +1853,7 @@ class Shrinker(object):
         # lengths because doing anything more than that starts to get very
         # expensive. See example_deletion_with_block_lowering for where we
         # try to be more aggressive.
-        regions_to_delete = set()
+        regions_to_delete = {(end, end + lost_data)}
 
         for j in (blocks[-1] + 1, blocks[-1] + 2):
             if j >= min(len(initial_data.blocks), len(self.blocks)):
@@ -2258,3 +2259,32 @@ class Shrinker(object):
         reliably fail with ``x=""``, ``y="0"``.
         """
         self.example_wise_shrink(Ordering, key=sort_key)
+
+    @shrink_pass
+    def pandas_hack(self):
+        """This pass is hackish and silly. Specific pandas dataframe tests were
+        failing to shrink for slightly complex reasons, and I didn't want to
+        invest the time into a general purpose solution, but observed that this
+        particular sequence of operations (lower a block by one and delete the
+        two following blocks) would get it out of its local minimum so decided
+        to just straight up add it.
+
+        Note that we do not check here whether the block is shrinking.
+        In the case where this manifested the problem was that lowering
+        the block resulted in exactly the same amount of data being
+        read, but it was interpreted differently.
+        """
+        i = 0
+        while i + 2 < len(self.shrink_target.blocks):
+            st = self.shrink_target
+            u, v = st.blocks[i]
+            n = int_from_bytes(st.buffer[u:v])
+            if n > 0:
+                _, s = st.blocks[i + 2]
+                attempt = bytearray(st.buffer)
+                attempt[u:v] = int_to_bytes(n - 1, v - u)
+                del attempt[v:s]
+                if not self.incorporate_new_buffer(attempt):
+                    i += 1
+            else:
+                i += 1
