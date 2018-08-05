@@ -51,6 +51,7 @@ def problems(draw):
 @given(problems())
 def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
     n, blob = problem
+    blob = hbytes(blob)
     try:
         d = ConjectureData.for_buffer(blob)
         k = d.draw(st.integers())
