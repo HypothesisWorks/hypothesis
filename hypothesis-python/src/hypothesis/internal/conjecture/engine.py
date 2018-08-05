@@ -1273,8 +1273,6 @@ class Shrinker(object):
 
         self.current_pass_depth = 0
 
-        self.run_expensive_shrinks = False
-
         self.profiling = defaultdict(lambda: [0, 0])
 
     @property
@@ -1433,62 +1431,54 @@ class Shrinker(object):
             prev = self.shrink_target
             self.single_greedy_shrink_iteration()
 
-    def cheap_greedy_shrink_passes(self):
-        """Runs all shrink passes that we consider "cheap".
-
-        That is, safe to run on large examples and worth always running.
-        Generally these are expected case O(n log(n)) at worst, but some
-        do have quadratic worst case complexity.
-        """
-        self.remove_discarded()
+    def primary_shrink_passes(self):
+        """The "main" shrink passes that we expect to do most of the heavy
+        lifting."""
         self.pass_to_child()
         self.adaptive_example_deletion()
         self.minimize_duplicated_blocks()
         self.minimize_individual_blocks()
-
-    def expensive_greedy_shrink_passes(self):
-        """Runs all shrink passes that we consider "expensive".
-
-        That is, we only want to run them once the cheap passes no
-        longer suffice. Often these are quadratic complexity or worse.
-        """
-        self.block_deletion()
         self.reorder_examples()
-        self.shrink_offset_pairs()
-        self.minimize_block_pairs_retaining_sum()
 
     def emergency_measures(self):
-        """Passes that we really don't want to run unless we absolutely have
-        to."""
+        """Shrink passes that we'd really rather not run if we could get
+        without ithem, but which do something important that none of the main
+        shrink passes can manage.
+
+        Typical reasons for inclusion in this section:
+
+            * Very slow (Quadratic or worse typical behaviour).
+            * Stupid hacks that exist to deal with special cases that we've
+              run into.
+        """
+        self.block_deletion()
         self.example_deletion_with_block_lowering()
         self.pass_to_descendant()
         self.pandas_hack()
+        self.shrink_offset_pairs()
+        self.minimize_block_pairs_retaining_sum()
 
     def single_greedy_shrink_iteration(self):
         """Performs a single run through each greedy shrink pass, but does not
         loop to achieve a fixed point."""
         prev = self.shrink_target
 
-        self.cheap_greedy_shrink_passes()
+        # Normally we call remove_discarded after every shrink pass, but if we
+        # find ourselves in a situation where it didn't work we turn it off.
+        # We explictly call it at the beginning of each loop so as to reset its
+        # state as to whether it works or not.
+        self.remove_discarded()
 
-        # If the cheap greedy shrink passes didn't work, it's time to enable
-        # on the expensive ones.
-        # To avoid the case where the expensive shrinks unlock a trivial
-        # change in one of the previous passes causing this to become much
-        # more expensive by doubling the number of times we have to run
-        # them to get to run the expensive passes again, we make this
-        # decision "sticky" - once it's been useful to run the expensive
-        # changes at least once, we always run them.
-        if prev is self.shrink_target:
-            self.run_expensive_shrinks = True
-
-        if self.run_expensive_shrinks:
-            self.expensive_greedy_shrink_passes()
+        # Always run the primary shrink passes.
+        self.primary_shrink_passes()
 
         # If absolutely nothing has worked we run emergency measures shrink
         # passes that are designed to get us unstuck from local minima. Even
         # once these have worked once we still only run them if we think we
-        # are in a fixed point, as they are too expensive to run regularly.
+        # are in a fixed point, as they are too expensive to run regularly -
+        # this might cause us to run the primary and secondary shrink passes a
+        # few more times, but it would have to cause us to run them an
+        # extremely large number of extra times to be a net loss.
         if prev is self.shrink_target:
             self.emergency_measures()
 
