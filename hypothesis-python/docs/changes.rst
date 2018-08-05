@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.28:
+
+--------------------
+3.66.28 - 2018-08-05
+--------------------
+
+This release improves how Hypothesis handles reducing the size of integers'
+representation. This change should mostly be invisible as it's purely about
+the underlying representation and not the generated value, but it may result
+in some improvements to shrink performance.
+
 .. _v3.66.27:
 
 --------------------
