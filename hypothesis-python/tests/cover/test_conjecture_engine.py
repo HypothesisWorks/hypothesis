@@ -1714,3 +1714,63 @@ def test_handle_size_too_large_during_dependent_lowering():
         else:
             data.draw_bits(8)
     shrinker.lower_dependent_block_pairs()
+
+
+def test_adaptive_deletion_will_zero_blocks():
+    @shrinking_from([1, 1, 1])
+    def shrinker(data):
+        n = data.draw_bits(1)
+        data.draw_bits(1)
+        m = data.draw_bits(1)
+        if n == m == 1:
+            data.mark_interesting()
+    shrinker.adaptive_example_deletion()
+    assert list(shrinker.shrink_target.buffer) == [1, 0, 1]
+
+
+def test_non_trivial_examples():
+    initial = hbytes([1, 0, 1])
+
+    @shrinking_from(initial)
+    def shrinker(data):
+        data.draw_bits(1)
+        data.draw_bits(1)
+        data.draw_bits(1)
+        data.mark_interesting()
+
+    assert {
+        (ex.start, ex.end) for ex in shrinker.each_non_trivial_example()
+    } == {(0, 3), (0, 1), (2, 3)}
+
+
+def test_become_trivial_during_shrinking():
+    @shrinking_from([1, 1, 1])
+    def shrinker(data):
+        data.draw_bits(1)
+        data.draw_bits(1)
+        data.draw_bits(1)
+        data.mark_interesting()
+
+    for ex in shrinker.each_non_trivial_example():
+        assert ex.length == 3
+        shrinker.incorporate_new_buffer(hbytes(3))
+
+
+def test_non_trivial_examples_boundaries_can_change():
+    initial = hbytes([2, 1, 1])
+
+    @shrinking_from(initial)
+    def shrinker(data):
+        n = data.draw_bits(8)
+        if n == 2:
+            data.draw_bits(8)
+            data.draw_bits(8)
+        else:
+            data.draw_bits(16)
+        data.mark_interesting()
+
+    it = shrinker.each_non_trivial_example()
+    assert next(it).length == 3
+    shrinker.incorporate_new_buffer([1, 1, 1])
+    assert next(it).length == 2
+    assert next(it).length == 1
