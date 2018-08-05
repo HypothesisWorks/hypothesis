@@ -17,3 +17,5 @@ pyupio
 django
 numpy
 IPython
+mock
+flaky

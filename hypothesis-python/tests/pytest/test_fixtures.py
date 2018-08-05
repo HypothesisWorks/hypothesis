@@ -18,8 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
-
 from mock import Mock, create_autospec
+
 from hypothesis import given, example
 from tests.common.utils import fails
 from hypothesis.strategies import integers
