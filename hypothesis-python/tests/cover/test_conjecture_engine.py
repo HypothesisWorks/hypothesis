@@ -1460,9 +1460,6 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
         result = (result >> 1) * sign
         cap = data.draw_bits(8)
 
-        print('RESULT', result, 'CAP', cap)
-        print(list(data.buffer))
-
         if result >= 32768 and cap == 1:
             data.mark_interesting()
 
