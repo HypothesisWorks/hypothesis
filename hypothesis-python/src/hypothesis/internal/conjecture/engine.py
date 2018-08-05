@@ -39,7 +39,7 @@ from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
 from hypothesis.internal.conjecture.shrinking import Length, Integer, \
-    Lexical
+    Lexical, Ordering
 
 # Tell pytest to omit the body of this module from tracebacks
 # http://doc.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
@@ -425,8 +425,12 @@ class ConjectureRunner(object):
         with local_settings(self.settings):
             debug_report(message)
 
+    @property
+    def report_debug_info(self):
+        return self.settings.verbosity >= Verbosity.debug
+
     def debug_data(self, data):
-        if self.settings.verbosity < Verbosity.debug:
+        if not self.report_debug_info:
             return
         buffer_parts = [u"["]
         for i, (u, v) in enumerate(data.blocks):
@@ -1217,10 +1221,7 @@ def shrink_pass(fn):
     give some uniform behaviour and logging."""
     @proxies(fn)
     def run(self, *args, **kwargs):
-        name = '%s(%s)' % (
-            fn.__name__, ', '.join(tuple(map(repr, args)) + tuple(sorted(
-                '%s=%r' % (k, v) for k, v in kwargs.items()))))
-        with self.in_shrink_pass(name):
+        with self.in_shrink_pass(fn.__name__):
             return fn(self, *args, **kwargs)
 
     return run
@@ -1269,9 +1270,13 @@ class Shrinker(object):
         self.update_shrink_target(initial)
         self.shrinks = 0
 
+        self.initial_calls = self.__engine.call_count
+
         self.current_pass_depth = 0
 
         self.run_expensive_shrinks = False
+
+        self.profiling = defaultdict(lambda: [0, 0])
 
     @property
     def calls(self):
@@ -1340,25 +1345,37 @@ class Shrinker(object):
     def in_shrink_pass(self, name):
         """Context manager declaring its body to be a single self-contained
         shrink pass."""
-        self.debug('Shrink Pass %s' % (name,))
+        if self.current_pass_depth == 0:
+            self.debug('Shrink Pass %s' % (name,))
+        try:
+            self.current_pass_depth += 1
+
+            # Don't attribute nested passes more than once.
+            if self.current_pass_depth > 1:
+                yield
+            else:
+                with self.attribute_calls_and_shrinks(name):
+                    yield
+        finally:
+            self.current_pass_depth -= 1
+
+        if self.current_pass_depth == 0:
+            self.debug('Shrink Pass %s completed.' % (name,))
+
+        if not self.discarding_failed and self.current_pass_depth == 0:
+            self.remove_discarded()
+
+    @contextmanager
+    def attribute_calls_and_shrinks(self, name):
         initial_shrinks = self.shrinks
         initial_calls = self.calls
         try:
-            self.current_pass_depth += 1
             yield
         finally:
-            self.current_pass_depth -= 1
             calls = self.calls - initial_calls
             shrinks = self.shrinks - initial_shrinks
-            self.debug((
-                'Shrink Pass %s completed. Made %d call%s and '
-                '%d shrink%s') % (
-                name,
-                calls, 's' if calls != 1 else '',
-                shrinks, 's' if shrinks != 1 else '',
-            ))
-        if not self.discarding_failed and self.current_pass_depth == 0:
-            self.remove_discarded()
+            self.profiling[name][0] += calls
+            self.profiling[name][1] += shrinks
 
     def shrink(self):
         """Run the full set of shrinks and update shrink_target.
@@ -1380,7 +1397,35 @@ class Shrinker(object):
         ):
             return
 
-        self.greedy_shrink()
+        try:
+            self.greedy_shrink()
+        finally:
+            if self.__engine.report_debug_info:
+                self.debug('---------------------')
+                self.debug('Shrink pass profiling')
+                self.debug('---------------------')
+                self.debug('')
+                calls = self.__engine.call_count - self.initial_calls
+                self.debug((
+                    'Shrinking made a total of %d call%s '
+                    'of which %d shrank.') % (
+                    calls, 's' if calls != 1 else '',
+                    self.shrinks,
+                ))
+                self.debug('')
+                self.debug('Individual breakdown:')
+                self.debug('')
+                for name, (calls, shrinks) in sorted(
+                    self.profiling.items(), key=lambda t: (t[1], t[0]),
+                    reverse=True
+                ):
+                    if calls == 0:
+                        continue
+
+                    self.debug((
+                        '  * %s made %d call%s of which %d shrank.'
+                    ) % (name, calls, 's' if calls != 1 else '', shrinks))
+                self.debug('')
 
     def greedy_shrink(self):
         """Run a full set of greedy shrinks (that is, ones that will only ever
@@ -1389,6 +1434,7 @@ class Shrinker(object):
         This method iterates to a fixed point and so is idempontent - calling
         it twice will have exactly the same effect as calling it once.
         """
+        self.initial_bulk_shrinks()
         prev = None
         while prev is not self.shrink_target:
             prev = self.shrink_target
@@ -1403,11 +1449,7 @@ class Shrinker(object):
         """
         self.remove_discarded()
         self.adaptive_example_deletion()
-        self.minimize_duplicated_blocks()
         self.minimize_individual_blocks()
-        self.reorder_blocks()
-        self.lower_dependent_block_pairs()
-        self.lower_common_block_offset()
 
     def expensive_greedy_shrink_passes(self):
         """Runs all shrink passes that we consider "expensive".
@@ -1415,23 +1457,23 @@ class Shrinker(object):
         That is, we only want to run them once the cheap passes no
         longer suffice. Often these are quadratic complexity or worse.
         """
-        self.block_deletion()
         self.reorder_examples()
+        self.block_deletion()
+        self.lower_dependent_block_pairs()
+        self.minimize_duplicated_blocks()
         self.shrink_offset_pairs()
-        self.interval_deletion_with_block_lowering()
-        self.pass_to_interval()
-        self.reorder_bytes()
+
+    def emergency_measures(self):
+        """Passes that we really don't want to run unless we absolutely have
+        to."""
         self.minimize_block_pairs_retaining_sum()
+        self.pass_to_descendant()
+        self.interval_deletion_with_block_lowering()
 
     def single_greedy_shrink_iteration(self):
         """Performs a single run through each greedy shrink pass, but does not
         loop to achieve a fixed point."""
         prev = self.shrink_target
-
-        # We reset our tracking of what changed at the beginning of the
-        # loop so that we don't get distracted by things that change once
-        # and then are stable thereafter.
-        self.clear_change_tracking()
 
         self.cheap_greedy_shrink_passes()
 
@@ -1448,6 +1490,54 @@ class Shrinker(object):
 
         if self.run_expensive_shrinks:
             self.expensive_greedy_shrink_passes()
+
+        self.lower_common_block_offset()
+
+        if prev is self.shrink_target:
+            self.emergency_measures()
+
+    def initial_bulk_shrinks(self):
+        self.bulk_block_zero()
+        self.adaptive_zero()
+
+    @shrink_pass
+    def adaptive_zero(self):
+        def accept(indices):
+            indices = set(indices)
+            buf = self.shrink_target.buffer
+            attempt = bytearray(buf)
+            for i, (u, v) in enumerate(self.shrink_target.blocks):
+                if i not in indices:
+                    attempt[u:v] = hbytes(v - u)
+            attempt = hbytes(attempt)
+            return buf == attempt or self.incorporate_new_buffer(attempt)
+        Length.shrink(
+            tuple(hrange(len(self.shrink_target.blocks))), accept,
+            random=self.random
+        )
+
+    @shrink_pass
+    def bulk_block_zero(self):
+        labels_done = set()
+
+        prev = None
+        while True:
+            if prev is not self.shrink_target:
+                prev = self.shrink_target
+                counts = Counter()
+                for (u, v), label in zip(prev.blocks, prev.block_labels):
+                    if label not in labels_done:
+                        counts[label] += (v - u)
+            if not counts:
+                break
+            target = max(counts, key=counts.__getitem__)
+            del counts[target]
+
+            attempt = bytearray(prev.buffer)
+            for (u, v), label in zip(prev.blocks, prev.block_labels):
+                if label == target:
+                    attempt[u:v] = hbytes(v - u)
+            self.incorporate_new_buffer(attempt)
 
     @property
     def blocks(self):
@@ -1483,57 +1573,34 @@ class Shrinker(object):
             ))
         return self.__intervals
 
-    def zero_example(self, i):
-        """Attempt to replace a draw call with its minimal possible value.
+    def __replace_example(self, data, i, replacement):
+        ex = data.examples[i]
+        u = ex.start
+        v = ex.end
 
-        This is intended as a fast-track to minimize whole sub-examples that
-        don't matter as rapidly as possible. For example, suppose we had
-        something like the following:
-
-        ls = data.draw(st.lists(st.lists(st.integers())))
-        assert len(ls) >= 10
-
-        Then each of the elements of ls need to be minimized, and we can do
-        that by deleting individual values from them, but we'd much rather do
-        it fast rather than slow - deleting elements one at a time takes
-        sum(map(len, ls)) shrinks, and ideally we'd do this in len(ls) shrinks
-        as we try to replace each element with [].
-
-        This pass does that by identifying the size of the "natural smallest"
-        element here. It first tries replacing an entire interval with zero.
-        This will sometimes work (e.g. when the interval is a block), but often
-        what will happen is that there will be leftover zeros that spill over
-        into the next example and ruin things - e.g. here if ls[0] is non-empty
-        and we replace it with all zero, some of the extra zeros will be
-        interpreted as terminating ls and will shrink it down to a one element
-        list, causing the test to pass.
-
-        So what we do instead is that once we've evaluated that shrink, we use
-        the size of the intervals there to find other possible sizes that we
-        could try replacing the interval with. In this case we'd spot that
-        there is a one-byte interval starting at right place for ls[i] and try
-        to replace it with that. This will successfully replace ls[i] with []
-        as desired.
-        """
-        ex = self.shrink_target.examples[i]
-        if not ex.trivial:
-            buf = self.shrink_target.buffer
-            prefix = buf[:ex.start]
-            suffix = buf[ex.end:]
+        attempt = self.cached_test_function(
+            data.buffer[:u] + replacement + data.buffer[v:]
+        )
+        used = attempt.examples[i].length
+        if (
+            used < len(replacement) and
+            attempt.examples[i].length < len(attempt.buffer)
+        ):
             attempt = self.cached_test_function(
-                prefix + hbytes(ex.length) + suffix
+                data.buffer[:u] + replacement[:used] + data.buffer[v:]
             )
-            if attempt.status == Status.VALID:
-                replacement = attempt.examples[i]
-                assert replacement.start == ex.start
-                if replacement.length < ex.length:
-                    self.incorporate_new_buffer(
-                        prefix + hbytes(replacement.length) + suffix
-                    )
+        return attempt
+
+    def try_replace_example(self, i, replacement):
+        """Attempts to replace the region corresponding to the example at
+        position i with the string replacement, returning True if it succeeds
+        (including it it was already that string)."""
+        replaced = self.__replace_example(self.shrink_target, i, replacement)
+        return replaced is self.shrink_target
 
     @shrink_pass
-    def pass_to_interval(self):
-        """Attempt to replace each interval with a subinterval.
+    def pass_to_descendant(self):
+        """Attempt to replace each example with a descendant example.
 
         This is designed to deal with strategies that call themselves
         recursively. For example, suppose we had:
@@ -1548,27 +1615,22 @@ class Shrinker(object):
 
         This is pretty expensive - it takes O(len(intervals)^2) - so we run it
         late in the process when we've got the number of intervals as far down
-        as possible.
+        as possible. A cheaper version is available in pass_to_child, which we
+        deploy more aggressively.
         """
-        i = 0
-        while i < len(self.shrink_target.examples):
-            ex = self.shrink_target.examples[i]
-            changed = False
+        for ex in self.each_non_trivial_example():
+            st = self.shrink_target
+            descendants = sorted(set(
+                st.buffer[d.start:d.end] for d in self.shrink_target.examples
+                if d.start >= ex.start and d.end <= ex.end and
+                d.length < ex.length
+            ), key=sort_key)
 
-            for j in hrange(i + 1, len(self.shrink_target.examples)):
-                child = self.shrink_target.examples[j]
-                if child.start >= ex.end:
+            for d in descendants:
+                if self.try_replace_example(
+                    ex.index, d + hbytes(ex.length - len(d))
+                ):
                     break
-                if child.length < ex.length:
-                    buf = self.shrink_target.buffer
-                    if self.incorporate_new_buffer(
-                        buf[:ex.start] + buf[child.start:child.end] +
-                        buf[ex.end:]
-                    ):
-                        changed = True
-                        break
-            if not changed:
-                i += 1
 
     def is_shrinking_block(self, i):
         """Checks whether block i has been previously marked as a shrinking
@@ -1646,12 +1708,17 @@ class Shrinker(object):
 
         blocked = [current.buffer[u:v] for u, v in current.blocks]
 
-        changed = sorted(self.__changed_blocks)
+        changed = [
+            i for i in sorted(self.__changed_blocks)
+            if any(blocked[i]) and i not in self.shrink_target.forced_blocks
+        ]
+
+        if not changed:
+            return
 
         ints = [int_from_bytes(blocked[i]) for i in changed]
         offset = min(ints)
-        if offset == 0:
-            return
+        assert offset > 0
 
         for i in hrange(len(ints)):
             ints[i] -= offset
@@ -1662,7 +1729,9 @@ class Shrinker(object):
                 new_blocks[i] = int_to_bytes(v + o, len(blocked[i]))
             return self.incorporate_new_buffer(hbytes().join(new_blocks))
 
-        Integer.shrink(offset, reoffset, random=self.random)
+        new_offset = Integer.shrink(offset, reoffset, random=self.random)
+        if new_offset == offset:
+            self.clear_change_tracking()
 
     @shrink_pass
     def shrink_offset_pairs(self):
@@ -1752,7 +1821,7 @@ class Shrinker(object):
             assert sort_key(new) < sort_key(current)
             self.shrinks += 1
             if new_target.blocks != self.shrink_target.blocks:
-                self.__changed_blocks = set()
+                self.clear_change_tracking()
             else:
                 for i, (u, v) in enumerate(self.shrink_target.blocks):
                     if (
@@ -1856,8 +1925,6 @@ class Shrinker(object):
         for u, v in reversed(discarded):
             del attempt[u:v]
 
-        previous_length = len(self.shrink_target.buffer)
-
         # We track whether discarding works because as long as it does we will
         # always want to run it whenever the option is available - whenever a
         # shrink ends up introducing new discarded data we can attempt to
@@ -1865,17 +1932,47 @@ class Shrinker(object):
         # in some way then that would be wasteful, so we turn off the automatic
         # discarding if this ever fails. When this next runs explicitly, it
         # will reset the flag if the status changes.
-        self.discarding_failed = not self.incorporate_new_buffer(attempt)
+        with self.attribute_calls_and_shrinks('remove_discarded'):
+            self.discarding_failed = not self.incorporate_new_buffer(attempt)
 
-        if not self.discarding_failed:
-            lost = previous_length - len(self.shrink_target.buffer)
-            assert lost > 0
-            self.debug(
-                'Discarded %d byte%s' % (lost, '' if lost == 1 else 's')
-            )
+    def each_non_trivial_example(self):
+        """Iterates over all non-trivial examples in the current shrink target,
+        with care taken to ensure that every example yielded is current.
+
+        Makes the assumption that no modifications will be made to the
+        shrink target prior to the currently yielded example. If this
+        assumption is violated this will probably raise an error, so
+        don't do that.
+        """
+        stack = [0]
+
+        while stack:
+            target = stack.pop()
+            if isinstance(target, tuple):
+                parent, i = target
+                parent = self.shrink_target.examples[parent]
+                if i < len(parent.children):
+                    example_index = parent.children[i].index
+                else:
+                    continue
+            else:
+                example_index = target
+
+            ex = self.shrink_target.examples[example_index]
+
+            if ex.trivial:
+                continue
+
+            yield ex
+
+            if ex.trivial:
+                return
+
+            for i in range(len(ex.children)):
+                stack.append((example_index, i))
 
     @shrink_pass
-    def adaptive_example_deletion(self, example_index=0):
+    def adaptive_example_deletion(self):
         """Recursive deletion pass that tries to make the example located at
         example_index as small as possible. This is the main point at which we
         try to lower the size of the data.
@@ -1889,36 +1986,21 @@ class Shrinker(object):
         If we do not make any successful changes, we recurse to the example's
         children and attempt the same there.
         """
-        self.zero_example(example_index)
-
-        ex = self.shrink_target.examples[example_index]
-        if ex.trivial or not ex.children:
-            return
-
-        st = self.shrink_target
-        prefix = st.buffer[:ex.start]
-        suffix = st.buffer[ex.end:]
-        pieces = [
-            st.buffer[c.start:c.end]
-            for c in ex.children
-        ]
-        Length.shrink(
-            pieces, lambda ls: self.incorporate_new_buffer(
-                prefix + hbytes().join(ls) + suffix
-            ), random=self.random
-        )
-
-        # We only descend into the children if we are unable to delete any of
-        # the current example. This prevents us from trying too many fine
-        # grained changes too soon.
-        if self.shrink_target is st:
-            i = 0
-            while i < len(self.shrink_target.examples[example_index].children):
-                self.adaptive_example_deletion(
-                    self.shrink_target.examples[example_index].
-                    children[-1 - i].index
-                )
-                i += 1
+        for ex in self.each_non_trivial_example():
+            if self.try_replace_example(ex.index, hbytes(ex.length)):
+                continue
+            st = self.shrink_target
+            prefix = st.buffer[:ex.start]
+            suffix = st.buffer[ex.end:]
+            pieces = [
+                st.buffer[c.start:c.end]
+                for c in ex.children
+            ]
+            Length.shrink(
+                pieces, lambda ls: self.incorporate_new_buffer(
+                    prefix + hbytes().join(ls) + suffix
+                ), random=self.random
+            )
 
     @shrink_pass
     def block_deletion(self):
@@ -1933,18 +2015,13 @@ class Shrinker(object):
         block of the [b], effectively joining the two lists together.
         """
         i = 0
-        while i < len(self.shrink_target.blocks):
-            j = min(i + 4, len(self.shrink_target.blocks) - 2)
-            while j >= i:
-                u, _ = self.shrink_target.blocks[i]
-                _, v = self.shrink_target.blocks[j]
-                if self.incorporate_new_buffer(
-                    self.shrink_target.buffer[:u] +
-                    self.shrink_target.buffer[v:]
-                ):
-                    break
-                j -= 1
-            else:
+        while i + 2 < len(self.shrink_target.blocks):
+            u, _ = self.shrink_target.blocks[i]
+            _, v = self.shrink_target.blocks[i + 1]
+            if not self.incorporate_new_buffer(
+                self.shrink_target.buffer[:u] +
+                self.shrink_target.buffer[v:]
+            ):
                 i += 1
 
     @shrink_pass
@@ -2011,71 +2088,15 @@ class Shrinker(object):
 
         then in our shrunk example, x = 10 rather than say 97.
         """
-        i = 0
-        while i < len(self.blocks):
+        i = len(self.blocks) - 1
+        while i >= 0:
             u, v = self.blocks[i]
             Lexical.shrink(
                 self.shrink_target.buffer[u:v],
                 lambda b: self.try_shrinking_blocks((i,), b),
                 random=self.random, full=False,
             )
-            i += 1
-
-    @shrink_pass
-    def reorder_blocks(self):
-        """Attempt to reorder blocks of the same size so that lexically larger
-        values go later.
-
-        This is mostly useful for canonicalization of examples. e.g. if we have
-
-        x = data.draw(st.integers())
-        y = data.draw(st.integers())
-        assert x == y
-
-        Then by minimizing x and y individually this could give us either
-        x=0, y=1 or x=1, y=0. According to our sorting order, the former is a
-        better example, but if in our initial draw y was zero then we will not
-        get it.
-
-        When this pass runs it will swap the values of x and y if that occurs.
-
-        As well as canonicalization, this can also unblock other things. For
-        example suppose we have
-
-        n = data.draw(st.integers(0, 10))
-        ls = data.draw(st.lists(st.integers(), min_size=n, max_size=n))
-        assert len([x for x in ls if x != 0]) <= 1
-
-        We could end up with something like [1, 0, 0, 1] if we started from the
-        wrong place. This pass would reorder this to [0, 0, 1, 1]. Shrinking n
-        can then try to delete the lost bytes (see try_shrinking_blocks for how
-        this works), taking us immediately to [1, 1]. This is a less important
-        role for this pass, but still significant.
-        """
-        block_lengths = sorted(self.shrink_target.block_starts, reverse=True)
-        for n in block_lengths:
-            i = 1
-            while i < len(self.shrink_target.block_starts.get(n, ())):
-                j = i
-                while j > 0:
-                    buf = self.shrink_target.buffer
-                    blocks = self.shrink_target.block_starts[n]
-                    a_start = blocks[j - 1]
-                    b_start = blocks[j]
-                    a = buf[a_start:a_start + n]
-                    b = buf[b_start:b_start + n]
-                    if a <= b:
-                        break
-                    swapped = (
-                        buf[:a_start] + b + buf[a_start + n:b_start] +
-                        a + buf[b_start + n:])
-                    assert len(swapped) == len(buf)
-                    assert swapped < buf
-                    if self.incorporate_new_buffer(swapped):
-                        j -= 1
-                    else:
-                        break
-                i += 1
+            i -= 1
 
     @shrink_pass
     def interval_deletion_with_block_lowering(self):
@@ -2188,121 +2209,6 @@ class Shrinker(object):
                     self.incorporate_new_buffer(buf)
 
     @shrink_pass
-    def reorder_bytes(self):
-        """This is a hyper-specific and moderately expensive shrink pass. It is
-        designed to do similar things to reorder_blocks, but it works in cases
-        where reorder_blocks may fail.
-
-        The idea is that we expect to have a *lot* of single byte blocks, and
-        they have very different meanings and interpretations. This means that
-        the reasonably cheap approach of doing what is basically insertion sort
-        on these blocks is unlikely to work.
-
-        So instead we try to identify the subset of the single-byte blocks that
-        we can freely move around and more aggressively put those into a sorted
-        order.
-
-        This is useful because e.g. we draw integers as single bytes, and if we
-        don't have a pass like that then we're unable to shrink from [10, 0] to
-        [0, 10].
-
-        In the event that we fail to do much sorting this is O(number of out of
-        order pairs), which is O(n^2) in the worst case. In order to offset we
-        try to do as much efficient sorting as possible to reduce the number of
-        out of order pairs before we get to that stage.
-        """
-        free_bytes = []
-
-        for i, (u, v) in enumerate(self.blocks):
-            if (
-                v == u + 1 and
-                u not in self.shrink_target.forced_indices
-            ):
-                free_bytes.append(u)
-
-        if not free_bytes:
-            return
-
-        original = self.shrink_target
-
-        def attempt(new_ordering):
-            assert len(new_ordering) == len(free_bytes)
-            assert len(self.shrink_target.buffer) == len(original.buffer)
-
-            attempt = bytearray(self.shrink_target.buffer)
-            for i, b in zip(free_bytes, new_ordering):
-                attempt[i] = b
-            return self.incorporate_new_buffer(attempt)
-
-        ordering = [self.shrink_target.buffer[i] for i in free_bytes]
-
-        if ordering == sorted(ordering):
-            return
-
-        if attempt(sorted(ordering)):
-            return True
-
-        n = len(ordering)
-
-        # We now try to sort the "high bytes". The idea here is that high bytes
-        # are more likely to be "payload" in some sense: Their value matters
-        # mostly in relation to the other values. Additionally they are likely
-        # to be moved around more in the reordering, so if we can get them
-        # sorted up front we will save a lot of time later.
-
-        # In order to do this we use binary search to find a value v such that
-        # we can sort all values >= v. We do this in at most 8 steps (usually
-        # less).
-
-        # Invariant: We can sort the set of bytes which are >= hi, we can't
-        # sort the set of bytes that are >= lo.
-
-        # But see comment below about how these invariants may occasionally be
-        # violated.
-        lo = min(ordering)
-        hi = max(ordering)
-        while lo + 1 < hi:
-            mid = (lo + hi) // 2
-            excessive = [i for i in hrange(n) if ordering[i] >= mid]
-            trial = list(ordering)
-            for i, b in zip(excessive, sorted(ordering[i] for i in excessive)):
-                trial[i] = b
-            if trial == ordering or attempt(trial):
-                if (
-                    len(self.shrink_target.buffer) !=
-                    len(original.buffer)
-                ):
-                    return
-                # Technically this could result in us violating our invariants
-                # if the bytes change too much. However if that happens the
-                # loop is still useful so we carry on as if it didn't.
-                ordering = [
-                    self.shrink_target.buffer[i] for i in free_bytes]
-                hi = mid
-            else:
-                lo = mid
-
-        i = 1
-        while i < n:
-            for k in hrange(i - 1, -1, -1):
-                if ordering[k] <= ordering[i]:
-                    continue
-                swapped = list(ordering)
-                swapped[k], swapped[i] = swapped[i], swapped[k]
-                if attempt(swapped):
-                    i = k
-                    if (
-                        len(self.shrink_target.buffer) !=
-                        len(original.buffer)
-                    ):
-                        return
-                    ordering = [
-                        self.shrink_target.buffer[i] for i in free_bytes]
-                    break
-            else:
-                i += 1
-
-    @shrink_pass
     def minimize_block_pairs_retaining_sum(self):
         """This pass minimizes pairs of blocks subject to the constraint that
         their sum when interpreted as integers remains the same. This allow us
@@ -2385,23 +2291,20 @@ class Shrinker(object):
         ``x="", ``y="0"``, or the other way around. With reordering it will
         reliably fail with ``x=""``, ``y="0"``.
         """
-        i = 0
-        while i < len(self.shrink_target.examples):
-            j = i + 1
-            while j < len(self.shrink_target.examples):
-                ex1 = self.shrink_target.examples[i]
-                ex2 = self.shrink_target.examples[j]
-                if ex1.label == ex2.label and ex2.start >= ex1.end:
-                    buf = self.shrink_target.buffer
-                    attempt = (
-                        buf[:ex1.start] +
-                        buf[ex2.start:ex2.end] +
-                        buf[ex1.end:ex2.start] +
-                        buf[ex1.start:ex1.end] +
-                        buf[ex2.end:]
-                    )
-                    assert len(attempt) == len(buf)
-                    if attempt < buf:
-                        self.incorporate_new_buffer(attempt)
-                j += 1
-            i += 1
+        for ex in self.each_non_trivial_example():
+            st = self.shrink_target
+            prefix = st.buffer[:ex.start]
+            suffix = st.buffer[ex.end:]
+            pieces = [
+                st.buffer[c.start:c.end]
+                for c in ex.children
+            ]
+
+            def accept(ls):
+                return self.incorporate_new_buffer(
+                    prefix + hbytes().join(ls) + suffix
+                )
+
+            Ordering.shrink(
+                pieces, accept, random=self.random, key=sort_key
+            )

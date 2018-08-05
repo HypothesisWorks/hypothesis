@@ -23,8 +23,8 @@ from random import Random
 from random import seed as seed_random
 
 import pytest
-
 from mock import MagicMock
+
 from hypothesis import Phase, Verbosity, HealthCheck, settings, unlimited
 from hypothesis.errors import FailedHealthCheck
 from tests.common.utils import no_shrink, all_values, \
@@ -784,26 +784,6 @@ def test_shrinks_both_interesting_examples(monkeypatch):
     assert runner.interesting_examples[1].buffer == hbytes([1])
 
 
-def test_reorder_blocks(monkeypatch):
-    target = hbytes([1, 2, 3])
-
-    def generate_new_examples(self):
-        self.test_function(ConjectureData.for_buffer(hbytes(reversed(target))))
-
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples', generate_new_examples)
-    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.reorder_blocks)
-
-    @run_to_buffer
-    def x(data):
-        if sorted(
-            data.draw_bits(8) for _ in hrange(len(target))
-        ) == sorted(target):
-            data.mark_interesting()
-
-    assert x == target
-
-
 def test_duplicate_blocks_that_go_away(monkeypatch):
     monkeypatch.setattr(
         Shrinker, 'shrink', Shrinker.minimize_duplicated_blocks)
@@ -1057,7 +1037,7 @@ def test_can_zero_subintervals(monkeypatch):
     assert x == hbytes([0, 1]) * 10
 
 
-def test_can_pass_to_a_subinterval(monkeypatch):
+def test_can_pass_to_a_child(monkeypatch):
     marker = hbytes([4, 3, 2, 1])
 
     initial = hbytes(len(marker) * 4) + marker
@@ -1066,7 +1046,7 @@ def test_can_pass_to_a_subinterval(monkeypatch):
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.cached_test_function(initial))
 
-    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.pass_to_interval)
+    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.pass_to_descendant)
 
     @run_to_buffer
     def x(data):
@@ -1080,115 +1060,37 @@ def test_can_pass_to_a_subinterval(monkeypatch):
     assert x == marker
 
 
-def test_can_handle_size_changing_in_reordering(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
+def test_can_pass_to_an_indirect_descendant(monkeypatch):
+    initial = hbytes([
+        1, 10,
+        0, 0,
+        1, 0,
+        0, 10,
+        0, 0,
+    ])
+
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer(hbytes([13, 7, 0]))))
+        lambda runner: runner.cached_test_function(initial))
+
+    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.pass_to_descendant)
+
+    def tree(data):
+        data.start_example(1)
+        n = data.draw_bits(1)
+        label = data.draw_bits(8)
+        if n:
+            tree(data)
+            tree(data)
+        data.stop_example(1)
+        return label
 
     @run_to_buffer
     def x(data):
-        n = data.draw_bits(8)
-        if n == 0:
-            data.mark_invalid()
-        if n != 7:
-            data.draw_bits(8)
-        data.draw_bits(8)
-        data.mark_interesting()
-
-    assert x == hbytes([7, 13])
-
-
-def test_can_handle_size_changing_in_reordering_with_unsortable_bits(
-    monkeypatch
-):
-    """Forces the reordering to pass to run its quadratic comparison of every
-    pair and changes the size during that pass."""
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer(hbytes([13, 14, 7, 3]))))
-
-    @run_to_buffer
-    def x(data):
-        n = data.draw_bits(8)
-        if n not in (7, 13):
-            data.mark_invalid()
-
-        # Having this marker here means that sorting the high bytes will move
-        # this one to the right, which will make the test case invalid.
-        if data.draw_bits(8) != 14:
-            data.mark_invalid()
-        if n != 7:
-            data.draw_bits(8)
-        data.draw_bits(8)
-        data.mark_interesting()
-
-    assert x == hbytes([7, 14, 13])
-
-
-def test_will_immediately_reorder_to_sorted(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer(hbytes(list(range(10, 0, -1))))))
-
-    @run_to_buffer
-    def x(data):
-        for _ in hrange(10):
-            data.draw_bits(8)
-        data.mark_interesting()
-
-    assert x == hbytes(list(hrange(1, 11)))
-
-
-def test_reorder_can_fail_to_sort(monkeypatch):
-    target = hbytes([1, 0, 0, 3, 2, 1])
-
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer(target)))
-
-    @run_to_buffer
-    def x(data):
-        for _ in hrange(len(target)):
-            data.draw_bits(8)
-        if hbytes(data.buffer) == target:
+        if tree(data) == 10:
             data.mark_interesting()
 
-    assert x == target
-
-
-def test_reordering_interaction_with_writing(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer([3, 2, 1])))
-
-    @run_to_buffer
-    def x(data):
-        m = data.draw_bits(8)
-        if m == 2:
-            data.write(hbytes(2))
-        elif m == 1:
-            data.mark_invalid()
-        else:
-            data.draw_bits(8)
-            data.draw_bits(8)
-        data.mark_interesting()
-
-    assert x == hbytes([0, 0, 2])
+    assert list(x) == [0, 10]
 
 
 def test_shrinking_block_pairs(monkeypatch):
@@ -1288,6 +1190,9 @@ def test_buffer_changes_during_pair_shrink_stays_interesting(monkeypatch):
 def test_shrinking_blocks_from_common_offset(monkeypatch):
     monkeypatch.setattr(
         Shrinker, 'shrink', lambda self: (
+            # Run minimize_individual_blocks twice so we have both blocks show
+            # as changed regardless of which order this happens in.
+            self.minimize_individual_blocks(),
             self.minimize_individual_blocks(),
             self.lower_common_block_offset(),
         )
@@ -1302,9 +1207,9 @@ def test_shrinking_blocks_from_common_offset(monkeypatch):
     def x(data):
         m = data.draw_bits(8)
         n = data.draw_bits(8)
-        if abs(m - n) <= 1:
+        if abs(m - n) <= 1 and max(m, n) > 0:
             data.mark_interesting()
-    assert x == hbytes([1, 0])
+    assert sorted(x) == [0, 1]
 
 
 def test_handle_empty_draws(monkeypatch):
@@ -1435,7 +1340,7 @@ def test_block_deletion_can_delete_short_ranges(monkeypatch):
         ConjectureRunner, 'generate_new_examples',
         lambda runner: runner.test_function(
             ConjectureData.for_buffer([
-                v for i in range(5) for _ in range(i + 1) for v in [0, i]])))
+                v for i in range(5) for _ in range(2) for v in [0, i]])))
 
     monkeypatch.setattr(Shrinker, 'shrink', Shrinker.block_deletion)
 
@@ -1443,13 +1348,13 @@ def test_block_deletion_can_delete_short_ranges(monkeypatch):
     def x(data):
         while True:
             n = data.draw_bits(16)
-            for _ in range(n):
-                if data.draw_bits(16) != n:
-                    data.mark_invalid()
+            m = data.draw_bits(16)
+            if n != m:
+                data.mark_invalid()
             if n == 4:
                 data.mark_interesting()
 
-    assert list(x) == [0, 4] * 5
+    assert list(x) == [0, 4, 0, 4]
 
 
 def test_try_shrinking_blocks_ignores_overrun_blocks(monkeypatch):

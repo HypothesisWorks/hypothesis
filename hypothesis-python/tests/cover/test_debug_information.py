@@ -30,7 +30,7 @@ def test_reports_passes():
     @given(st.integers())
     @settings(verbosity=Verbosity.debug)
     def test(i):
-        assert i < 10000
+        assert i < 10
 
     with capture_out() as out:
         with pytest.raises(AssertionError):
@@ -42,11 +42,11 @@ def test_reports_passes():
     assert 'calls' in value
     assert 'shrinks' in value
 
-    shrinks_info = re.compile(r"call(s?) and ([0-9]+) shrink(s?)")
+    shrinks_info = re.compile(r"call(s?) of which ([0-9]+) shrank")
 
     for l in value.splitlines():
         m = shrinks_info.search(l)
         if m is not None and int(m.group(2)) != 0:
             break
     else:
-        assert False, 'No reports of successful shrinks!'
+        assert False, value
