@@ -1563,7 +1563,7 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
     ]
 
 
-def test_database_clear_secondary_key():
+def test_database_clears_secondary_key():
     key = b'key'
     database = InMemoryExampleDatabase()
 
@@ -1591,6 +1591,42 @@ def test_database_clear_secondary_key():
 
     assert len(set(database.fetch(key))) == 1
     assert len(set(database.fetch(runner.secondary_key))) == 0
+
+
+def test_database_uses_values_from_secondary_key():
+    key = b'key'
+    database = InMemoryExampleDatabase()
+
+    def f(data):
+        if data.draw_bits(8) >= 5:
+            data.mark_interesting()
+        else:
+            data.mark_invalid()
+
+    runner = ConjectureRunner(f, settings=settings(
+        max_examples=1, buffer_size=1024,
+        database=database, suppress_health_check=HealthCheck.all(),
+    ), database_key=key)
+
+    for i in range(10):
+        database.save(runner.secondary_key, hbytes([i]))
+
+    runner.test_function(ConjectureData.for_buffer(hbytes([10])))
+    assert runner.interesting_examples
+
+    assert len(set(database.fetch(key))) == 1
+    assert len(set(database.fetch(runner.secondary_key))) == 10
+
+    runner.clear_secondary_key()
+
+    assert len(set(database.fetch(key))) == 1
+    assert set(
+        map(int_from_bytes, database.fetch(runner.secondary_key))
+    ) == set(range(6, 11))
+
+    v, = runner.interesting_examples.values()
+
+    assert list(v.buffer) == [5]
 
 
 def test_exit_because_max_iterations():

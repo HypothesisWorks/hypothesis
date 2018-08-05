@@ -861,22 +861,21 @@ class ConjectureRunner(object):
                 self.settings.database.fetch(self.secondary_key),
                 key=sort_key
             )
-            cap = max(
-                sort_key(v.buffer)
-                for v in self.interesting_examples.values()
-            )
             for c in corpus:
-                if sort_key(c) >= cap:
+                primary = {
+                    v.buffer for v in self.interesting_examples.values()
+                }
+
+                cap = max(map(sort_key, primary))
+
+                if sort_key(c) > cap:
                     break
                 else:
-                    data = self.cached_test_function(c)
-                    if (
-                        data.status != Status.INTERESTING or
-                        self.interesting_examples[data.interesting_origin]
-                        is not data
-                    ):
-                        self.settings.database.delete(
-                            self.secondary_key, c)
+                    self.cached_test_function(c)
+                    # We unconditionally remove c from the secondary key as it
+                    # is either now primary or worse than our primary example
+                    # of this reason for interestingness.
+                    self.settings.database.delete(self.secondary_key, c)
 
     def shrink(self, example, predicate):
         s = self.new_shrinker(example, predicate)
