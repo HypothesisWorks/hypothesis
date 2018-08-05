@@ -75,13 +75,13 @@ class Shrinker(object):
         self.__seen = set()
 
     @classmethod
-    def shrink(cls, initial, predicate, random, full=False):
+    def shrink(cls, initial, predicate, random, full=False, **kwargs):
         """Shrink the value ``initial`` subject to the constraint that it
         satisfies ``predicate``.
 
         Returns the shrunk value.
         """
-        shrinker = cls(initial, predicate, random, full)
+        shrinker = cls(initial, predicate, random, full, **kwargs)
         shrinker.run()
         return shrinker.current
 
