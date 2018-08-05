@@ -1344,24 +1344,19 @@ class Shrinker(object):
     def in_shrink_pass(self, name):
         """Context manager declaring its body to be a single self-contained
         shrink pass."""
-        if self.current_pass_depth == 0:
-            self.debug('Shrink Pass %s' % (name,))
+        # We don't currently have any recursive shrink passes
+        assert self.current_pass_depth == 0
+        self.debug('Shrink Pass %s' % (name,))
         try:
             self.current_pass_depth += 1
-
-            # Don't attribute nested passes more than once.
-            if self.current_pass_depth > 1:
+            with self.attribute_calls_and_shrinks(name):
                 yield
-            else:
-                with self.attribute_calls_and_shrinks(name):
-                    yield
         finally:
             self.current_pass_depth -= 1
 
-        if self.current_pass_depth == 0:
-            self.debug('Shrink Pass %s completed.' % (name,))
+        self.debug('Shrink Pass %s completed.' % (name,))
 
-        if not self.discarding_failed and self.current_pass_depth == 0:
+        if not self.discarding_failed:
             self.remove_discarded()
 
     @contextmanager
