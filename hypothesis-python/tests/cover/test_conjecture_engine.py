@@ -38,7 +38,8 @@ from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
 from hypothesis.internal.conjecture.utils import Sampler, \
     calc_label_from_name
 from hypothesis.internal.conjecture.engine import Negated, Shrinker, \
-    ExitReason, RunIsComplete, ConjectureRunner, universal
+    StopTest, ExitReason, RunIsComplete, TargetSelector, \
+    ConjectureRunner, universal
 
 SOME_LABEL = calc_label_from_name('some label')
 
@@ -785,26 +786,6 @@ def test_shrinks_both_interesting_examples(monkeypatch):
     assert runner.interesting_examples[1].buffer == hbytes([1])
 
 
-def test_reorder_blocks(monkeypatch):
-    target = hbytes([1, 2, 3])
-
-    def generate_new_examples(self):
-        self.test_function(ConjectureData.for_buffer(hbytes(reversed(target))))
-
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples', generate_new_examples)
-    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.reorder_blocks)
-
-    @run_to_buffer
-    def x(data):
-        if sorted(
-            data.draw_bits(8) for _ in hrange(len(target))
-        ) == sorted(target):
-            data.mark_interesting()
-
-    assert x == target
-
-
 def test_duplicate_blocks_that_go_away(monkeypatch):
     monkeypatch.setattr(
         Shrinker, 'shrink', Shrinker.minimize_duplicated_blocks)
@@ -1079,117 +1060,6 @@ def test_can_pass_to_a_subinterval(monkeypatch):
             data.mark_interesting()
 
     assert x == marker
-
-
-def test_can_handle_size_changing_in_reordering(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer(hbytes([13, 7, 0]))))
-
-    @run_to_buffer
-    def x(data):
-        n = data.draw_bits(8)
-        if n == 0:
-            data.mark_invalid()
-        if n != 7:
-            data.draw_bits(8)
-        data.draw_bits(8)
-        data.mark_interesting()
-
-    assert x == hbytes([7, 13])
-
-
-def test_can_handle_size_changing_in_reordering_with_unsortable_bits(
-    monkeypatch
-):
-    """Forces the reordering to pass to run its quadratic comparison of every
-    pair and changes the size during that pass."""
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer(hbytes([13, 14, 7, 3]))))
-
-    @run_to_buffer
-    def x(data):
-        n = data.draw_bits(8)
-        if n not in (7, 13):
-            data.mark_invalid()
-
-        # Having this marker here means that sorting the high bytes will move
-        # this one to the right, which will make the test case invalid.
-        if data.draw_bits(8) != 14:
-            data.mark_invalid()
-        if n != 7:
-            data.draw_bits(8)
-        data.draw_bits(8)
-        data.mark_interesting()
-
-    assert x == hbytes([7, 14, 13])
-
-
-def test_will_immediately_reorder_to_sorted(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer(hbytes(list(range(10, 0, -1))))))
-
-    @run_to_buffer
-    def x(data):
-        for _ in hrange(10):
-            data.draw_bits(8)
-        data.mark_interesting()
-
-    assert x == hbytes(list(hrange(1, 11)))
-
-
-def test_reorder_can_fail_to_sort(monkeypatch):
-    target = hbytes([1, 0, 0, 3, 2, 1])
-
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer(target)))
-
-    @run_to_buffer
-    def x(data):
-        for _ in hrange(len(target)):
-            data.draw_bits(8)
-        if hbytes(data.buffer) == target:
-            data.mark_interesting()
-
-    assert x == target
-
-
-def test_reordering_interaction_with_writing(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_bytes)
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer([3, 2, 1])))
-
-    @run_to_buffer
-    def x(data):
-        m = data.draw_bits(8)
-        if m == 2:
-            data.write(hbytes(2))
-        elif m == 1:
-            data.mark_invalid()
-        else:
-            data.draw_bits(8)
-            data.draw_bits(8)
-        data.mark_interesting()
-
-    assert x == hbytes([0, 0, 2])
 
 
 def test_shrinking_block_pairs(monkeypatch):
@@ -1560,3 +1430,153 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
     assert list(shrinker.shrink_target.buffer) == [
         1, 1, 0, 1, 0, 0, 1
     ]
+
+
+def test_finding_a_minimal_balanced_binary_tree():
+    # Tests iteration while the shape of the thing being iterated over can
+    # change. In particular the current example can go from trivial to non
+    # trivial.
+
+    def tree(data):
+        # Returns height of a binary tree and whether it is height balanced.
+        data.start_example('tree')
+        n = data.draw_bits(1)
+        if n == 0:
+            result = (1, True)
+        else:
+            h1, b1 = tree(data)
+            h2, b2 = tree(data)
+            result = (1 + max(h1, h2), b1 and b2 and abs(h1 - h2) <= 1)
+        data.stop_example('tree')
+        return result
+
+    # Starting from an unbalanced tree of depth six
+    @shrinking_from([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
+    def shrinker(data):
+        _, b = tree(data)
+        if not b:
+            data.mark_interesting()
+
+    shrinker.adaptive_example_deletion()
+    shrinker.reorder_examples()
+
+    assert list(shrinker.shrink_target.buffer) == [
+        1, 0, 1, 0, 1, 0, 0
+    ]
+
+
+def test_database_clear_secondary_key():
+    key = b'key'
+    database = InMemoryExampleDatabase()
+
+    def f(data):
+        if data.draw_bits(8) == 10:
+            data.mark_interesting()
+        else:
+            data.mark_invalid()
+
+    runner = ConjectureRunner(f, settings=settings(
+        max_examples=1, buffer_size=1024,
+        database=database, suppress_health_check=HealthCheck.all(),
+    ), database_key=key)
+
+    for i in range(10):
+        database.save(runner.secondary_key, hbytes([i]))
+
+    runner.test_function(ConjectureData.for_buffer(hbytes([10])))
+    assert runner.interesting_examples
+
+    assert len(set(database.fetch(key))) == 1
+    assert len(set(database.fetch(runner.secondary_key))) == 10
+
+    runner.clear_secondary_key()
+
+    assert len(set(database.fetch(key))) == 1
+    assert len(set(database.fetch(runner.secondary_key))) == 0
+
+
+def test_exit_because_max_iterations():
+
+    def f(data):
+        data.draw_bits(64)
+        data.mark_invalid()
+
+    runner = ConjectureRunner(f, settings=settings(
+        max_examples=1, buffer_size=1024,
+        database=None, suppress_health_check=HealthCheck.all(),
+    ))
+
+    runner.run()
+
+    assert runner.call_count <= 1000
+    assert runner.exit_reason == ExitReason.max_iterations
+
+
+def test_target_selector_tags():
+    selector = TargetSelector(Random(0))
+
+    tag1 = 'some tag'
+    tag2 = 'some other tag'
+
+    data = ConjectureData.for_buffer(hbytes(10))
+    try:
+        data.draw_bits(10)
+        data.add_tag(tag1)
+        data.mark_interesting()
+    except StopTest:
+        pass
+
+    assert selector.has_tag(universal, data)
+    assert selector.has_tag(tag1, data)
+    assert selector.has_tag(Negated(tag2), data)
+    assert not selector.has_tag(Negated(tag1), data)
+    assert not selector.has_tag(tag2, data)
+
+
+def test_skips_non_payload_blocks_when_reducing_sum():
+    @shrinking_from([10, 10, 10])
+    def shrinker(data):
+        if sum([data.draw_bits(8) for _ in range(3)]) == 30:
+            data.mark_interesting()
+
+    shrinker.is_payload_block = lambda b: b != 1
+    shrinker.minimize_block_pairs_retaining_sum()
+    assert list(shrinker.shrink_target.buffer) == [0, 10, 20]
+
+
+def test_does_not_include_empty_examples_in_intervals():
+    @shrinking_from([0, 0])
+    def shrinker(data):
+        data.draw_bits(1)
+        data.start_example(0)
+        data.stop_example(0)
+        data.draw_bits(1)
+        data.mark_interesting()
+
+    assert all(u < v for u, v in shrinker.intervals)
+    assert any(ex.length == 0 for ex in shrinker.shrink_target.examples)
+
+
+def test_dependent_block_pairs_can_lower_to_zero():
+    @shrinking_from([1, 0, 1])
+    def shrinker(data):
+        if data.draw_bits(1):
+            n = data.draw_bits(16)
+        else:
+            n = data.draw_bits(8)
+
+        if n == 1:
+            data.mark_interesting()
+    shrinker.lower_dependent_block_pairs()
+    assert list(shrinker.shrink_target.buffer) == [0, 1]
+
+
+def test_handle_size_too_large_during_dependent_lowering():
+    @shrinking_from([1, 255, 0])
+    def shrinker(data):
+        if data.draw_bits(1):
+            data.draw_bits(16)
+            data.mark_interesting()
+        else:
+            data.draw_bits(8)
+    shrinker.lower_dependent_block_pairs()
