@@ -39,7 +39,7 @@ from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
 from hypothesis.internal.conjecture.shrinking import Length, Integer, \
-    Lexical
+    Lexical, Ordering
 
 # Tell pytest to omit the body of this module from tracebacks
 # http://doc.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
@@ -1933,6 +1933,22 @@ class Shrinker(object):
             for i in range(len(ex.children)):
                 stack.append((example_index, i))
 
+    def example_wise_shrink(self, shrinker, **kwargs):
+        """Runs a sequence shrinker on the children of each example."""
+        for ex in self.each_non_trivial_example():
+            st = self.shrink_target
+            pieces = [
+                st.buffer[c.start:c.end]
+                for c in ex.children
+            ]
+            if not pieces:
+                pieces = [st.buffer[ex.start:ex.end]]
+            shrinker.shrink(
+                pieces, lambda ls: self.try_replace_example(
+                    ex.index, hbytes().join(ls),
+                ), random=self.random, **kwargs
+            )
+
     @shrink_pass
     def adaptive_example_deletion(self):
         """Recursive deletion pass that tries to make the example located at
@@ -1948,21 +1964,7 @@ class Shrinker(object):
         If we do not make any successful changes, we recurse to the example's
         children and attempt the same there.
         """
-        for ex in self.each_non_trivial_example():
-            if self.try_replace_example(ex.index, hbytes(ex.length)):
-                continue
-            st = self.shrink_target
-            prefix = st.buffer[:ex.start]
-            suffix = st.buffer[ex.end:]
-            pieces = [
-                st.buffer[c.start:c.end]
-                for c in ex.children
-            ]
-            Length.shrink(
-                pieces, lambda ls: self.incorporate_new_buffer(
-                    prefix + hbytes().join(ls) + suffix
-                ), random=self.random
-            )
+        self.example_wise_shrink(Length)
 
     @shrink_pass
     def block_deletion(self):
@@ -2452,23 +2454,4 @@ class Shrinker(object):
         ``x="", ``y="0"``, or the other way around. With reordering it will
         reliably fail with ``x=""``, ``y="0"``.
         """
-        i = 0
-        while i < len(self.shrink_target.examples):
-            j = i + 1
-            while j < len(self.shrink_target.examples):
-                ex1 = self.shrink_target.examples[i]
-                ex2 = self.shrink_target.examples[j]
-                if ex1.label == ex2.label and ex2.start >= ex1.end:
-                    buf = self.shrink_target.buffer
-                    attempt = (
-                        buf[:ex1.start] +
-                        buf[ex2.start:ex2.end] +
-                        buf[ex1.end:ex2.start] +
-                        buf[ex1.start:ex1.end] +
-                        buf[ex2.end:]
-                    )
-                    assert len(attempt) == len(buf)
-                    if attempt < buf:
-                        self.incorporate_new_buffer(attempt)
-                j += 1
-            i += 1
+        self.example_wise_shrink(Ordering, key=sort_key)

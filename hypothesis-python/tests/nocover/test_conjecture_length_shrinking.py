@@ -34,3 +34,7 @@ def test_shrinks_down_to_size(m, n):
         [0] * n + [1], lambda ls: len(ls) >= m + 1 and ls[-1] == 1,
         random=Random(0)
     ) == (0,) * m + (1,)
+
+
+def test_will_shrink_to_zero():
+    assert Length.shrink([1], lambda x: True, random=Random(0)) == ()
