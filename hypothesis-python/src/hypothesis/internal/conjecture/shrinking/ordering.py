@@ -17,8 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.internal.conjecture.shrinking.common import Shrinker, \
-    find_integer
+from hypothesis.internal.conjecture.shrinking.common import Shrinker
 
 
 def identity(v):
@@ -59,13 +58,28 @@ class Ordering(Shrinker):
             # care about those so much.
             original = self.current
 
-            def push_back(k):
-                if k > i:
-                    return False
-                j = i - k
+            insertion_points = [
+                j for j in range(i)
+                if self.key(self.current[j]) > self.key(self.current[i])
+            ]
+
+            def push_back_to(t):
+                if t >= len(insertion_points):
+                    return True
+                j = insertion_points[t]
                 attempt = list(original)
                 del attempt[i]
                 attempt.insert(j, original[i])
                 return self.consider(attempt)
 
-            find_integer(push_back)
+            if push_back_to(0) or push_back_to(1):
+                continue
+
+            lo = 1
+            hi = len(insertion_points)
+            while lo + 1 < hi:
+                mid = (lo + hi) // 2
+                if push_back_to(mid):
+                    hi = mid
+                else:
+                    lo = mid
