@@ -1229,6 +1229,14 @@ def shrink_pass(fn):
     return run
 
 
+@attr.s(slots=True)
+class ProfilingResult(object):
+    runs = attr.ib(default=0)
+    calls = attr.ib(default=0)
+    shrinks = attr.ib(default=0)
+    deletions = attr.ib(default=0)
+
+
 class Shrinker(object):
     """A shrinker is a child object of a ConjectureRunner which is designed to
     manage the associated state of a particular shrink problem.
@@ -1276,7 +1284,8 @@ class Shrinker(object):
 
         self.current_pass_depth = 0
 
-        self.profiling = defaultdict(lambda: [0, 0])
+        self.profiling = defaultdict(ProfilingResult)
+        self.secondary_passes_enabled = False
 
     @property
     def calls(self):
@@ -1364,13 +1373,18 @@ class Shrinker(object):
     def attribute_calls_and_shrinks(self, name):
         initial_shrinks = self.shrinks
         initial_calls = self.calls
+        size = len(self.shrink_target.buffer)
         try:
             yield
         finally:
             calls = self.calls - initial_calls
             shrinks = self.shrinks - initial_shrinks
-            self.profiling[name][0] += calls
-            self.profiling[name][1] += shrinks
+            deletions = size - len(self.shrink_target.buffer)
+            p = self.profiling[name]
+            p.calls += calls
+            p.shrinks += shrinks
+            p.deletions += deletions
+            p.runs += 1
 
     def shrink(self):
         """Run the full set of shrinks and update shrink_target.
@@ -1407,19 +1421,39 @@ class Shrinker(object):
                     calls, 's' if calls != 1 else '',
                     self.shrinks,
                 ))
-                self.debug('')
-                self.debug('Individual breakdown:')
-                self.debug('')
-                for name, (calls, shrinks) in sorted(
-                    self.profiling.items(), key=lambda t: (t[1], t[0]),
-                    reverse=True
-                ):
-                    if calls == 0:
-                        continue
+                for useful in [True, False]:
+                    self.debug('')
+                    if useful:
+                        self.debug('Useful passes:')
+                    else:
+                        self.debug('Useless passes:')
+                    self.debug('')
+                    for name, p in sorted(
+                        self.profiling.items(),
+                        key=lambda t: (
+                            t[1].shrinks == 0,
+                            -t[1].calls, -t[1].runs,
+                            t[1].deletions, t[1].shrinks,
+                        ),
+                    ):
+                        if p.calls == 0:
+                            continue
+                        if (p.shrinks != 0) != useful:
+                            continue
 
-                    self.debug((
-                        '  * %s made %d call%s of which %d shrank.'
-                    ) % (name, calls, 's' if calls != 1 else '', shrinks))
+                        def s(n):
+                            return 's' if n != 1 else ''
+
+                        self.debug((
+                            '  * %s ran %d time%s, making %d call%s of which '
+                            '%d shrank, deleting %d byte%s.'
+                        ) % (
+                            name,
+                            p.runs, s(p.runs),
+                            p.calls, s(p.calls),
+                            p.shrinks,
+                            p.deletions, s(p.deletions),
+                        ))
                 self.debug('')
 
     def greedy_shrink(self):
