@@ -26,6 +26,7 @@ from hypothesis.internal.conjecture.floats import is_simple, \
     float_to_lex, lex_to_float
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
 from hypothesis.internal.conjecture.shrinking.integer import Integer
+from hypothesis.internal.conjecture.shrinking.ordering import Ordering
 
 
 """
@@ -191,24 +192,11 @@ class Lexical(Shrinker):
     def sort(self):
         return self.consider(hbytes(sorted(self.current)))
 
-    # Sometimes data can be sorted, except that some elements need to remain
-    # in constant locations to preserve invariants that the minimizer can't be
-    # aware of. Attempt to do as much sorting as possible.
-    # This does not try to bring elements 'across' stationary elements.
     def partial_sort(self):
-        any_sorting_done = False
-        ps = list(self.current)
-        for i in hrange(self.size - 1):
-            j = i + 1
-            while j > 0 and ps[j - 1] > ps[j]:
-                prev_list = ps[:]
-                ps[j], ps[j - 1] = ps[j - 1], ps[j]
-                if self.incorporate(hbytes(ps)):
-                    any_sorting_done = True
-                else:  # Restore to the last usable found example
-                    ps = prev_list
-                j = j - 1
-        return any_sorting_done
+        Ordering.shrink(
+            self.current, self.consider,
+            random=self.random,
+        )
 
     def short_circuit(self):
         # Initial checks as to whether the two smallest possible buffers of

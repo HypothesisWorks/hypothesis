@@ -20,11 +20,12 @@ from __future__ import division, print_function, absolute_import
 from random import Random
 
 import hypothesis.strategies as st
-from hypothesis import Phase, Verbosity, HealthCheck, note, given, \
-    assume, reject, example, settings, unlimited
+from hypothesis import Phase, Verbosity, HealthCheck, given, assume, \
+    reject, example, settings, unlimited
 from hypothesis.internal.compat import hbytes
 from hypothesis.searchstrategy.numbers import WideRangeIntStrategy
-from hypothesis.internal.conjecture.data import StopTest, ConjectureData
+from hypothesis.internal.conjecture.data import Status, StopTest, \
+    ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
 
@@ -47,6 +48,7 @@ def problems(draw):
 @example(problem=(32768, b'\x03\x01\x00\x00\x00\x00\x00\x01\x00\x02\x01'))
 @settings(
     suppress_health_check=HealthCheck.all(), timeout=unlimited, deadline=None,
+    max_examples=10,
 )
 @given(problems())
 def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
@@ -77,12 +79,16 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
 
     assert runner.interesting_examples
 
-    runner.run()
-
     v, = runner.interesting_examples.values()
 
-    runner.debug = note
-    runner.debug_data(v)
+    shrinker = runner.new_shrinker(v, lambda x: x.status == Status.INTERESTING)
+
+    shrinker.single_greedy_shrink_iteration = \
+        shrinker.minimize_individual_blocks
+
+    shrinker.shrink()
+
+    v = shrinker.shrink_target
 
     m = ConjectureData.for_buffer(v.buffer).draw(st.integers())
     assert m == n
@@ -95,7 +101,6 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
     #   bit, n needs (1 + n.bit_length()) / 8 bytes (rounded up). But we only
     #   have power of two sizes, so it may be up to a factor of two more than
     #   that.
-
     bits_needed = 1 + n.bit_length()
     actual_bits_needed = min(
         [s for s in WideRangeIntStrategy.sizes if s >= bits_needed])

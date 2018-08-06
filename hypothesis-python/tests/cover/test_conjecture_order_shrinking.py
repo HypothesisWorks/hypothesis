@@ -21,20 +21,18 @@ from random import Random
 
 import hypothesis.strategies as st
 from hypothesis import given, example
-from hypothesis.internal.conjecture.shrinking import Length
-
-sizes = st.integers(0, 100)
+from hypothesis.internal.conjecture.shrinking import Ordering
 
 
-@example(m=0, n=1)
-@given(sizes, sizes)
-def test_shrinks_down_to_size(m, n):
-    m, n = sorted((m, n))
-    assert Length.shrink(
-        [0] * n + [1], lambda ls: len(ls) >= m + 1 and ls[-1] == 1,
-        random=Random(0)
-    ) == (0,) * m + (1,)
-
-
-def test_will_shrink_to_zero():
-    assert Length.shrink([1], lambda x: True, random=Random(0)) == ()
+@example([0, 1, 1, 1, 1, 1, 1, 0])
+@example([0, 0])
+@example([0, 1, -1])
+@given(st.lists(st.integers()))
+def test_shrinks_down_to_sorted_the_slow_way(ls):
+    # We normally would short-circuit and find that we can sort this
+    # automatically, but here we test that a single run_step could put the
+    # list in sorted order anyway if it had to, and that that is just an
+    # optimisation.
+    shrinker = Ordering(ls, lambda ls: True, random=Random(0), full=False)
+    shrinker.run_step()
+    assert list(shrinker.current) == sorted(ls)
