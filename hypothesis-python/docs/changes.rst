@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.30:
+
+--------------------
+3.66.30 - 2018-08-06
+--------------------
+
+"Bug fixes and performance improvements".
+
+This release is a fairly major overhaul of the shrinker designed to improve
+its behaviour on large examples, especially around stateful testing. You
+should hopefully see shrinking become much faster, with little to no quality
+degradation (in some cases quality may even improve).
+
 .. _v3.66.29:
 
 --------------------
