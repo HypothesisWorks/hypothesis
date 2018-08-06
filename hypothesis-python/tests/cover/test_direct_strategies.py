@@ -422,3 +422,18 @@ def test_empty_elements_with_max_size_is_deprecated():
 @checks_deprecated_behaviour
 def test_average_size_is_deprecated():
     ds.lists(ds.integers(), average_size=1).example()
+
+
+@pytest.mark.parametrize('parameter_name', ['min_value', 'max_value'])
+@pytest.mark.parametrize('value', [-1, 0, 1])
+def test_no_infinity_for_min_max_values(value, parameter_name):
+    kwargs = {
+        'allow_infinity': False,
+        parameter_name: value,
+    }
+
+    @given(ds.floats(**kwargs))
+    def test_not_infinite(xs):
+        assert not math.isinf(xs)
+
+    test_not_infinite()
