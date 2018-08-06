@@ -1517,6 +1517,16 @@ class Shrinker(object):
         attempt = self.cached_test_function(
             data.buffer[:u] + replacement + data.buffer[v:]
         )
+
+        # FIXME: IOU one attempt to debug this - DRMacIver
+        # This is a mysterious problem that should be impossible to trigger but
+        # isn't. I don't know what's going on, and it defeated my attempts to
+        # reproduce or debug it. I'd *guess* it's related to nondeterminism in
+        # the test function. That should be impossible in the cases where
+        # I'm seeing it, but I haven't been able to put together a reliable
+        # reproduction of it.
+        if i >= len(attempt.examples):  # pragma: no cover
+            return attempt
         used = attempt.examples[i].length
         if (
             not self.__predicate(attempt) and
