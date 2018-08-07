@@ -1488,6 +1488,10 @@ class Shrinker(object):
         self.lower_common_block_offset()
 
     @property
+    def buffer(self):
+        return self.shrink_target.buffer
+
+    @property
     def blocks(self):
         return self.shrink_target.blocks
 
