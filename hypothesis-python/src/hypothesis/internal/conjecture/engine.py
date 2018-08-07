@@ -2026,12 +2026,9 @@ class Shrinker(object):
             for i in range(len(ex.children)):
                 stack.append((example_index, i))
 
-    def example_wise_shrink(self, shrinker, short_circuit=None, **kwargs):
+    def example_wise_shrink(self, shrinker, **kwargs):
         """Runs a sequence shrinker on the children of each example."""
         for ex in self.each_non_trivial_example():
-            if short_circuit is not None and short_circuit(ex):
-                continue
-
             st = self.shrink_target
             pieces = [
                 st.buffer[c.start:c.end]
@@ -2060,19 +2057,7 @@ class Shrinker(object):
         If we do not make any successful changes, we recurse to the example's
         children and attempt the same there.
         """
-        def short_circuit(ex):
-            """Short circuits the shrink if the minimal example in this
-            position has the same number of children as the current example.
-
-            This allows us to avoid doing lots of little fine grained
-            shrinks that will never achieve anything.
-            """
-            shrunk = self.replace_example(
-                self.shrink_target, ex.index, hbytes()
-            )
-            return len(shrunk.examples[ex.index].children) == len(ex.children)
-
-        self.example_wise_shrink(Length, short_circuit=short_circuit)
+        self.example_wise_shrink(Length)
 
     @shrink_pass
     def block_deletion(self):

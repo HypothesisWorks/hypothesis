@@ -1729,36 +1729,6 @@ def test_block_may_grow_during_lexical_shrinking():
     assert list(shrinker.shrink_target.buffer) == [0, 0, 0]
 
 
-def test_does_not_try_to_delete_children_if_number_is_minimal():
-    n = 5
-
-    seen = set()
-
-    initial = hbytes(list(hrange(n)))
-
-    @shrinking_from(initial)
-    def shrinker(data):
-        good = True
-        for i in hrange(n):
-            data.start_example(1)
-            if i != data.draw_bits(8):
-                good = False
-            data.stop_example()
-        if good:
-            data.mark_interesting()
-        else:
-            seen.add(hbytes(data.buffer))
-
-    shrinker.adaptive_example_deletion()
-
-    assert len(seen) == n
-    assert hbytes(n) in seen
-    for i in range(1, n):
-        b = bytearray(initial)
-        b[i] = 0
-        assert hbytes(b) in seen
-
-
 def test_lower_common_block_offset_does_nothing_when_changed_blocks_are_zero():
     @shrinking_from([1, 0, 1, 0])
     def shrinker(data):
