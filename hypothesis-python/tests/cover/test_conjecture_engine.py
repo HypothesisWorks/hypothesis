@@ -19,11 +19,11 @@ from __future__ import division, print_function, absolute_import
 
 import re
 import time
+import itertools
 from random import Random
 from random import seed as seed_random
 
 import pytest
-from mock import MagicMock
 
 from hypothesis import Phase, Verbosity, HealthCheck, settings, unlimited
 from hypothesis.errors import FailedHealthCheck
@@ -39,7 +39,7 @@ from hypothesis.internal.conjecture.utils import Sampler, \
     calc_label_from_name
 from hypothesis.internal.conjecture.engine import Negated, Shrinker, \
     StopTest, ExitReason, RunIsComplete, TargetSelector, \
-    ConjectureRunner, universal
+    ConjectureRunner, PassClassification, universal
 
 SOME_LABEL = calc_label_from_name('some label')
 
@@ -850,41 +850,48 @@ def fixate(f):
     return accept
 
 
-def test_automatic_discarding_is_turned_off_if_it_does_not_work(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', fixate(Shrinker.minimize_individual_blocks))
-    target = hbytes([0, 1]) * 5 + hbytes([11])
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer(target))
-    )
-
-    existing = Shrinker.remove_discarded
-
-    calls = [0]
-
-    def remove_discarded(self):
-        calls[0] += 1
-        return existing(self)
-
-    monkeypatch.setattr(Shrinker, 'remove_discarded', remove_discarded)
-
-    @run_to_buffer
-    def x(data):
-        count = 0
+def test_can_remove_discarded_data():
+    @shrinking_from(hbytes([0] * 10) + hbytes([11]))
+    def shrinker(data):
         while True:
             data.start_example(SOME_LABEL)
             b = data.draw_bits(8)
-            if not b:
-                count += 1
             data.stop_example(discard=(b == 0))
             if b == 11:
                 break
-        if count >= 5:
-            data.mark_interesting()
-    assert x == hbytes([0]) * 10 + hbytes([11])
-    assert calls[0] == 1
+        data.mark_interesting()
+    shrinker.run_shrink_pass('remove_discarded')
+    assert list(shrinker.buffer) == [11]
+
+
+def test_discarding_iterates_to_fixed_point():
+    @shrinking_from(hbytes([1] * 10) + hbytes([0]))
+    def shrinker(data):
+        data.start_example(0)
+        data.draw_bits(1)
+        data.stop_example(discard=True)
+        while data.draw_bits(1):
+            pass
+        data.mark_interesting()
+    shrinker.run_shrink_pass('remove_discarded')
+    assert list(shrinker.buffer) == [1, 0]
+
+
+def shrink_pass(name):
+    def run(self):
+        self.run_shrink_pass(name)
+    return run
+
+
+def test_discarding_can_fail(monkeypatch):
+    @shrinking_from(hbytes([1]))
+    def shrinker(data):
+        data.start_example(0)
+        data.draw_bits(1)
+        data.stop_example(discard=True)
+        data.mark_interesting()
+    shrinker.remove_discarded()
+    assert shrinker.shrink_target.has_discards
 
 
 @pytest.mark.parametrize('bits', [3, 9])
@@ -984,18 +991,8 @@ def test_handles_nesting_of_discard_correctly(monkeypatch):
 
 
 def test_can_zero_subintervals(monkeypatch):
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.cached_test_function(
-            hbytes([3, 0, 0, 0, 1]) * 10
-        ))
-
-    monkeypatch.setattr(
-        Shrinker, 'shrink', fixate(Shrinker.adaptive_example_deletion)
-    )
-
-    @run_to_buffer
-    def x(data):
+    @shrinking_from(hbytes([3, 0, 0, 0, 1]) * 10)
+    def shrinker(data):
         for _ in hrange(10):
             data.start_example(SOME_LABEL)
             n = data.draw_bits(8)
@@ -1004,7 +1001,8 @@ def test_can_zero_subintervals(monkeypatch):
             if data.draw_bits(8) != 1:
                 return
         data.mark_interesting()
-    assert x == hbytes([0, 1]) * 10
+    shrinker.run_shrink_pass('zero_examples')
+    assert list(shrinker.buffer) == [0, 1] * 10
 
 
 def test_can_pass_to_a_child(monkeypatch):
@@ -1323,28 +1321,6 @@ def test_permits_but_ignores_raising_order(monkeypatch):
     assert list(x) == [1]
 
 
-def test_block_deletion_can_delete_short_ranges(monkeypatch):
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer([
-                v for i in range(5) for _ in range(i + 1) for v in [0, i]])))
-
-    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.block_deletion)
-
-    @run_to_buffer
-    def x(data):
-        while True:
-            n = data.draw_bits(16)
-            for _ in range(n):
-                if data.draw_bits(16) != n:
-                    data.mark_invalid()
-            if n == 4:
-                data.mark_interesting()
-
-    assert list(x) == [0, 4] * 5
-
-
 def test_try_shrinking_blocks_ignores_overrun_blocks(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
@@ -1369,42 +1345,6 @@ def test_try_shrinking_blocks_ignores_overrun_blocks(monkeypatch):
             data.mark_interesting()
 
     assert list(x) == [2, 2, 1]
-
-
-def test_only_calls_discard_at_top_level_pass():
-    def tree(data):
-        data.start_example('tree')
-        result = 1
-        if data.draw_bits(1):
-            result += max(tree(data), tree(data))
-        data.stop_example()
-        return result
-
-    def f(data):
-        if tree(data) == 3:
-            data.mark_interesting()
-
-    runner = ConjectureRunner(f, settings=settings(
-        max_examples=1, buffer_size=1024,
-        database=None, suppress_health_check=HealthCheck.all(),
-    ))
-
-    runner.test_function(ConjectureData.for_buffer([
-        1, 0, 1, 0, 0,
-    ]))
-
-    assert runner.interesting_examples
-    last_data, = runner.interesting_examples.values()
-
-    shrinker = runner.new_shrinker(
-        last_data, lambda d: d.status == Status.INTERESTING
-    )
-
-    shrinker.remove_discarded = MagicMock(return_value=None)
-
-    shrinker.adaptive_example_deletion()
-
-    assert shrinker.remove_discarded.call_count == 1
 
 
 def shrinking_from(start):
@@ -1621,7 +1561,7 @@ def test_handle_size_too_large_during_dependent_lowering():
     shrinker.minimize_individual_blocks()
 
 
-def test_adaptive_deletion_will_zero_blocks():
+def test_zero_examples_will_zero_blocks():
     @shrinking_from([1, 1, 1])
     def shrinker(data):
         n = data.draw_bits(1)
@@ -1629,7 +1569,7 @@ def test_adaptive_deletion_will_zero_blocks():
         m = data.draw_bits(1)
         if n == m == 1:
             data.mark_interesting()
-    shrinker.adaptive_example_deletion()
+    shrinker.run_shrink_pass('zero_examples')
     assert list(shrinker.shrink_target.buffer) == [1, 0, 1]
 
 
@@ -1757,14 +1697,49 @@ def test_lower_common_block_offset_ignores_zeros():
     assert list(shrinker.shrink_target.buffer) == [1, 1, 0]
 
 
-def test_pandas_hack():
-    @shrinking_from([1, 1, 1, 7])
+def test_shrink_passes_behave_sensibly_with_standard_operators():
+    @shrinking_from(hbytes([1]))
     def shrinker(data):
-        n = data.draw_bits(1)
-        if n:
-            data.draw_bits(1)
-            data.draw_bits(1)
-        if data.draw_bits(8) == 7:
+        if data.draw_bits(1):
             data.mark_interesting()
-    shrinker.pandas_hack()
-    assert list(shrinker.shrink_target.buffer) == [0, 7]
+
+    passes = shrinker.passes
+
+    lookup = {p: p for p in passes}
+    for p in passes:
+        assert lookup[p] is p
+
+    for p, q in itertools.combinations(passes, 2):
+        assert p < q
+        assert p != q
+
+
+def test_shrink_pass_may_go_from_solid_to_dubious():
+
+    initial = hbytes([0, 1, 0, 0, 2, 3])
+
+    @shrinking_from(initial)
+    def shrinker(data):
+        n = len(initial) - 1 - data.draw_bits(1)
+        for _ in range(n):
+            data.draw_bits(8)
+        data.mark_interesting()
+
+    sp = shrinker.shrink_pass('adaptive_example_deletion')
+    assert sp.classification == PassClassification.CANDIDATE
+    shrinker.run_shrink_pass(sp)
+    assert sp.classification == PassClassification.HOPEFUL
+    shrinker.run_shrink_pass(sp)
+    assert sp.classification == PassClassification.DUBIOUS
+
+
+def test_runs_adaptive_delete_on_first_pass_if_discarding_does_not_work():
+
+    @shrinking_from([0, 1])
+    def shrinker(data):
+        while not data.draw_bits(1):
+            pass
+        data.mark_interesting()
+
+    shrinker.single_greedy_shrink_iteration()
+    assert list(shrinker.buffer) == [1]
