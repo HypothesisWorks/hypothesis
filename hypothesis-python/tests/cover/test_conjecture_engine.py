@@ -850,27 +850,6 @@ def fixate(f):
     return accept
 
 
-def test_discarding_runs_automatically(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', fixate(Shrinker.minimize_individual_blocks))
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer(hbytes([1] * 10) + hbytes([11])))
-    )
-
-    @run_to_buffer
-    def x(data):
-        while True:
-            data.start_example(SOME_LABEL)
-            b = data.draw_bits(8)
-            data.stop_example(discard=(b == 0))
-            if b == 11:
-                break
-        data.mark_interesting()
-    assert x == hbytes(hbytes([11]))
-
-
 def test_automatic_discarding_is_turned_off_if_it_does_not_work(monkeypatch):
     monkeypatch.setattr(
         Shrinker, 'shrink', fixate(Shrinker.minimize_individual_blocks))
@@ -1680,6 +1659,37 @@ def test_become_trivial_during_shrinking():
     for ex in shrinker.each_non_trivial_example():
         assert ex.length == 3
         shrinker.incorporate_new_buffer(hbytes(3))
+
+
+def test_continues_iterating_if_an_example_becomes_trivial():
+    @shrinking_from([1, 1, 1])
+    def shrinker(data):
+        data.draw_bits(1)
+        data.draw_bits(1)
+        data.draw_bits(1)
+        data.mark_interesting()
+
+    endpoints = set()
+    for ex in shrinker.each_non_trivial_example():
+        endpoints.add((ex.start, ex.end))
+        if ex.start == 1:
+            shrinker.incorporate_new_buffer([1, 0, 1])
+    assert endpoints == {(0, 3), (0, 1), (1, 2), (2, 3)}
+
+
+def test_each_non_trivial_example_includes_each_non_trivial_example():
+    @shrinking_from([1, 0, 1])
+    def shrinker(data):
+        data.draw_bits(1)
+        data.draw_bits(1)
+        data.draw_bits(1)
+        data.mark_interesting()
+
+    endpoints = {
+        (ex.start, ex.end) for ex in shrinker.each_non_trivial_example()
+    }
+
+    assert endpoints == {(0, 3), (0, 1), (2, 3)}
 
 
 def test_non_trivial_examples_boundaries_can_change():

@@ -1977,7 +1977,7 @@ class Shrinker(object):
             ex = self.shrink_target.examples[example_index]
 
             if ex.trivial:
-                return
+                continue
 
             for i in range(len(ex.children)):
                 stack.append((example_index, i))
