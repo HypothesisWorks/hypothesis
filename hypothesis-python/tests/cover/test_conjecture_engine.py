@@ -371,7 +371,7 @@ def test_fully_exhaust_base(monkeypatch):
     seen = set()
 
     def f(data):
-        key = data.draw_bytes(2)
+        key = (data.draw_bits(2), data.draw_bits(2))
         assert key not in seen
         seen.add(key)
 
@@ -379,7 +379,7 @@ def test_fully_exhaust_base(monkeypatch):
         max_examples=10000, phases=no_shrink, buffer_size=1024, database=None,
     ))
 
-    for c in hrange(256):
+    for c in hrange(4):
         runner.cached_test_function([0, c])
 
     assert 1 in runner.dead
