@@ -31,8 +31,7 @@ from hypothesis import settings as Settings
 from hypothesis._settings import local_settings, note_deprecation
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import Counter, ceil, hbytes, hrange, \
-    int_to_text, int_to_bytes, benchmark_time, int_from_bytes, \
-    to_bytes_sequence, unicode_safe_repr
+    int_to_bytes, benchmark_time, int_from_bytes, to_bytes_sequence
 from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
@@ -434,25 +433,37 @@ class ConjectureRunner(object):
     def debug_data(self, data):
         if not self.report_debug_info:
             return
-        buffer_parts = [u"["]
-        for i, (u, v) in enumerate(data.blocks):
-            if i > 0:
-                buffer_parts.append(u" || ")
-            buffer_parts.append(
-                u', '.join(int_to_text(int(i)) for i in data.buffer[u:v]))
-        buffer_parts.append(u']')
 
-        status = unicode_safe_repr(data.status)
+        stack = [[]]
+
+        def go(ex):
+            if ex.length == 0:
+                return
+            if len(ex.children) == 0:
+                stack[-1].append(int_from_bytes(
+                    data.buffer[ex.start:ex.end]
+                ))
+            else:
+                node = []
+                stack.append(node)
+
+                for v in ex.children:
+                    go(v)
+                stack.pop()
+                if len(node) == 1:
+                    stack[-1].extend(node)
+                else:
+                    stack[-1].append(node)
+        go(data.examples[0])
+        assert len(stack) == 1
+
+        status = repr(data.status)
 
         if data.status == Status.INTERESTING:
-            status = u'%s (%s)' % (
-                status, unicode_safe_repr(data.interesting_origin,))
+            status = '%s (%r)' % (status, data.interesting_origin,)
 
-        self.debug(u'%d bytes %s -> %s, %s' % (
-            data.index,
-            u''.join(buffer_parts),
-            status,
-            data.output,
+        self.debug('%d bytes %r -> %s, %s' % (
+            data.index, stack[0], status, data.output,
         ))
 
     def run(self):
