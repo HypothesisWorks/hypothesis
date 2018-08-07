@@ -1217,6 +1217,48 @@ class TargetSelector(object):
         return t, result
 
 
+def block_program(description):
+    """Mini-DSL for block rewriting. A sequence of commands that will be run
+    over all contiguous sequences of blocks of the description length in order.
+    Commands are:
+
+        * ".", keep this block unchanged
+        * "-", subtract one from this block.
+        * "0", replace this block with zero
+        * "X", delete this block
+
+    If a command does not apply (currently only because it's - on a zero
+    block) the block will be silently skipped over. As a side effect of
+    running a block program its score will be updated.
+    """
+
+    def run(self):
+        n = len(description)
+        i = 0
+        while i + n <= len(self.shrink_target.blocks):
+            attempt = bytearray(self.shrink_target.buffer)
+            failed = False
+            for k, d in reversed(list(enumerate(description))):
+                j = i + k
+                u, v = self.blocks[j]
+                if d == '-':
+                    value = int_from_bytes(attempt[u:v])
+                    if value == 0:
+                        failed = True
+                        break
+                    else:
+                        attempt[u:v] = int_to_bytes(value - 1, v - u)
+                elif d == 'X':
+                    del attempt[u:v]
+                else:  # pragma: no cover
+                    assert False, 'Unrecognised command %r' % (d,)
+            if failed or not self.incorporate_new_buffer(attempt):
+                i += 1
+    run.command = description
+    run.__name__ = 'block_program(%r)' % (description,)
+    return run
+
+
 class PassClassification(Enum):
     CANDIDATE = 0
     HOPEFUL = 1
@@ -1291,6 +1333,8 @@ class Shrinker(object):
     ]
 
     EMERGENCY_PASSES = [
+        block_program('-XX'),
+        block_program('XX'),
         'example_deletion_with_block_lowering',
         'pass_to_descendant',
         'shrink_offset_pairs',

@@ -39,7 +39,7 @@ from hypothesis.internal.conjecture.utils import Sampler, \
     calc_label_from_name
 from hypothesis.internal.conjecture.engine import Negated, Shrinker, \
     StopTest, ExitReason, RunIsComplete, TargetSelector, \
-    ConjectureRunner, PassClassification, universal
+    ConjectureRunner, PassClassification, universal, block_program
 
 SOME_LABEL = calc_label_from_name('some label')
 
@@ -1321,6 +1321,23 @@ def test_permits_but_ignores_raising_order(monkeypatch):
     assert list(x) == [1]
 
 
+def test_block_deletion_can_delete_short_ranges(monkeypatch):
+    @shrinking_from([
+        v for i in range(5) for _ in range(i + 1) for v in [0, i]]
+    )
+    def shrinker(data):
+        while True:
+            n = data.draw_bits(16)
+            for _ in range(n):
+                if data.draw_bits(16) != n:
+                    data.mark_invalid()
+            if n == 4:
+                data.mark_interesting()
+    for i in range(1, 5):
+        block_program('X' * i)(shrinker)
+    assert list(shrinker.shrink_target.buffer) == [0, 4] * 5
+
+
 def test_try_shrinking_blocks_ignores_overrun_blocks(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples',
@@ -1695,6 +1712,87 @@ def test_lower_common_block_offset_ignores_zeros():
         shrinker.mark_changed(i)
     shrinker.lower_common_block_offset()
     assert list(shrinker.shrink_target.buffer) == [1, 1, 0]
+
+
+def test_pandas_hack():
+    @shrinking_from([2, 1, 1, 7])
+    def shrinker(data):
+        n = data.draw_bits(8)
+        m = data.draw_bits(8)
+        if n == 1:
+            if m == 7:
+                data.mark_interesting()
+        data.draw_bits(8)
+        if data.draw_bits(8) == 7:
+            data.mark_interesting()
+    shrinker.run_shrink_pass("block_program('-XX')")
+    assert list(shrinker.shrink_target.buffer) == [1, 7]
+
+
+def test_passes_can_come_back_to_life():
+    initial = hbytes([1, 2, 3, 4, 5, 6])
+    buf1 = hbytes([0, 2, 3, 4, 5, 6])
+    buf2 = hbytes([0, 2, 3, 4, 0, 0])
+
+    good = {
+        initial, buf1, buf2
+    }
+
+    @shrinking_from(initial)
+    def shrinker(data):
+        string = hbytes([data.draw_bits(8) for _ in range(6)])
+        if string in good:
+            data.mark_interesting()
+
+    shrinker.clear_passes()
+    shrinker.add_new_pass(block_program('--'))
+    shrinker.add_new_pass(block_program('-'))
+
+    shrinker.single_greedy_shrink_iteration()
+    assert shrinker.shrink_target.buffer == buf1
+
+    shrinker.single_greedy_shrink_iteration()
+    assert shrinker.shrink_target.buffer == buf2
+
+
+def test_will_enable_previously_bad_passes_when_failing_to_shrink():
+    # We lead the shrinker down the garden path a bit where it keeps making
+    # progress but only lexically. When it finally gets down to the minimum
+    good = {
+        hbytes([1, 2, 3, 4, 5, 6]),
+        hbytes([1, 2, 3, 4, 5, 0]),
+        hbytes([1, 2, 0, 4, 5, 0]),
+        hbytes([1, 2, 0, 4, 0, 0]),
+        hbytes([0, 2, 0, 4, 0, 0]),
+        hbytes([0, 0, 0, 4, 0, 0]),
+    }
+
+    initial = max(good)
+    final = min(good)
+
+    @shrinking_from(initial + hbytes([0, 7]))
+    def shrinker(data):
+        string = hbytes([data.draw_bits(8) for _ in range(6)])
+        if string in good:
+            n = 0
+            while data.draw_bits(8) != 7:
+                n += 1
+            if not (string == final or n > 0):
+                data.mark_invalid()
+            data.mark_interesting()
+
+    # In order to get to the minimized result we want to run both of these,
+    # but the second pass starts out as disabled (and anyway won't work until
+    # the first has hit fixity).
+    shrinker.passes = [
+        [0, 0, block_program('0')],
+        [-1, 1, block_program('X')],
+    ]
+    shrinker.greedy_preamble = lambda: None
+
+    shrinker.shrink()
+
+    assert shrinker.shrink_target.buffer == final + hbytes([7])
 
 
 def test_shrink_passes_behave_sensibly_with_standard_operators():
