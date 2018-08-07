@@ -20,10 +20,9 @@ multiple times and you don't want them to interfere with each other). Test cases
 on these classes that do not use
 :func:`@given <hypothesis.given>` will be run as normal.
 
-I strongly recommend not using
-:class:`~hypothesis.extra.django.TransactionTestCase`
-unless you really have to.
-Because Hypothesis runs this in a loop the performance problems it normally has
+We recommend avoiding :class:`~hypothesis.extra.django.TransactionTestCase`
+unless you really have to run each test case in a database transaction.
+Because Hypothesis runs this in a loop, the performance problems it normally has
 are significantly exacerbated and your tests will be really slow.
 If you are using :class:`~hypothesis.extra.django.TransactionTestCase`,
 you may need to use ``@settings(suppress_health_check=[HealthCheck.too_slow])``
@@ -34,7 +33,8 @@ a strategy for Django models:
 
 .. autofunction:: hypothesis.extra.django.models.models
 
-For example, using the trivial django project I have for testing:
+For example, using `the trivial django project we have for testing
+<https://github.com/HypothesisWorks/hypothesis/blob/master/hypothesis-python/tests/django/toystore/models.py>`_:
 
 .. code-block:: python
 
