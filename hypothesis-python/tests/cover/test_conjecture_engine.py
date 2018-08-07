@@ -470,11 +470,11 @@ def test_returns_written():
     assert value == written
 
 
-def fails_health_check(label):
+def fails_health_check(label, **kwargs):
     def accept(f):
         runner = ConjectureRunner(f, settings=settings(
             max_examples=100, phases=no_shrink, buffer_size=1024,
-            database=None,
+            database=None, **kwargs
         ))
 
         with pytest.raises(FailedHealthCheck) as e:
@@ -511,7 +511,7 @@ def test_fails_health_check_for_slow_draws():
 
 
 def test_fails_healthcheck_for_hung_test():
-    @fails_health_check(HealthCheck.hung_test)
+    @fails_health_check(HealthCheck.hung_test, timeout=unlimited)
     def _(data):
         data.draw_bytes(1)
         time.sleep(3600)
