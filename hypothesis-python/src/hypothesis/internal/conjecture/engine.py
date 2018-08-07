@@ -401,7 +401,10 @@ class ConjectureRunner(object):
             self.settings.database.save(key, hbytes(buffer))
 
     def downgrade_buffer(self, buffer):
-        if self.settings.database is not None:
+        if (
+            self.settings.database is not None and
+            self.database_key is not None
+        ):
             self.settings.database.move(
                 self.database_key, self.secondary_key, buffer)
 
