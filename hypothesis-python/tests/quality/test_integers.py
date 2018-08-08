@@ -45,10 +45,12 @@ def problems(draw):
             pass
 
 
+@example((2, b'\x00\x00\n\x01'))
+@example((1, b'\x00\x00\x06\x01'))
 @example(problem=(32768, b'\x03\x01\x00\x00\x00\x00\x00\x01\x00\x02\x01'))
 @settings(
     suppress_health_check=HealthCheck.all(), timeout=unlimited, deadline=None,
-    max_examples=10,
+    max_examples=10, verbosity=Verbosity.normal
 )
 @given(problems())
 def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
@@ -72,8 +74,8 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
 
     runner = ConjectureRunner(f, random=Random(0), settings=settings(
         suppress_health_check=HealthCheck.all(), timeout=unlimited,
-        phases=(Phase.shrink,), database=None, verbosity=Verbosity.quiet
-    ))
+        phases=(Phase.shrink,), database=None, verbosity=Verbosity.debug
+    ), database_key=None)
 
     runner.test_function(ConjectureData.for_buffer(blob))
 
@@ -83,8 +85,8 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
 
     shrinker = runner.new_shrinker(v, lambda x: x.status == Status.INTERESTING)
 
-    shrinker.single_greedy_shrink_iteration = \
-        shrinker.minimize_individual_blocks
+    shrinker.clear_passes()
+    shrinker.add_new_pass('minimize_individual_blocks')
 
     shrinker.shrink()
 

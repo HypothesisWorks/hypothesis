@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import time
 
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import hbytes, hrange
 
 
 class _Slow(SearchStrategy):
@@ -39,7 +39,9 @@ class HardToShrink(SearchStrategy):
         self.accepted = set()
 
     def do_draw(self, data):
-        x = data.draw_bytes(100)
+        x = hbytes([
+            data.draw_bits(8) for _ in range(100)
+        ])
         if x in self.accepted:
             return True
         ls = self.__last

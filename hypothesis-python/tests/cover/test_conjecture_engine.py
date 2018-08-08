@@ -597,23 +597,29 @@ def test_note_events(event):
     assert runner.event_call_counts[str(event)] == runner.call_count > 0
 
 
-@pytest.mark.parametrize('count', [1, 3])
-def test_debug_data(capsys, count):
+def test_debug_data(capsys):
+    buf = [0, 1, 2]
+
     def f(data):
-        for _ in hrange(count):
-            data.draw_bytes(1)
-        if sum(data.buffer) > 10:
-            data.mark_interesting()
+        for x in hbytes(buf):
+            if data.draw_bits(8) != x:
+                data.mark_invalid()
+            data.start_example(1)
+            data.stop_example()
+        data.mark_interesting()
 
     runner = ConjectureRunner(f, settings=settings(
         max_examples=5000, buffer_size=1024,
         database=None, suppress_health_check=HealthCheck.all(),
         verbosity=Verbosity.debug
     ))
+    runner.test_function(ConjectureData.for_buffer(buf))
     runner.run()
 
     out, _ = capsys.readouterr()
     assert re.match(u'\\d+ bytes \\[.*\\] -> ', out)
+    assert 'INTERESTING' in out
+    assert '[]' not in out
 
 
 def test_zeroes_bytes_above_bound():
@@ -797,16 +803,8 @@ def test_duplicate_blocks_that_go_away(monkeypatch):
 
 
 def test_accidental_duplication(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.minimize_duplicated_blocks)
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer(hbytes([18] * 20)))
-    )
-
-    @run_to_buffer
-    def x(data):
+    @shrinking_from([18] * 20)
+    def shrinker(data):
         x = data.draw_bits(8)
         y = data.draw_bits(8)
         if x != y:
@@ -816,7 +814,10 @@ def test_accidental_duplication(monkeypatch):
         b = [data.draw_bytes(1) for _ in hrange(x)]
         if len(set(b)) == 1:
             data.mark_interesting()
-    assert x == hbytes([5] * 7)
+    shrinker.clear_passes()
+    shrinker.add_new_pass('minimize_duplicated_blocks')
+    shrinker.shrink()
+    assert list(shrinker.buffer) == [5] * 7
 
 
 def test_discarding(monkeypatch):
@@ -1059,19 +1060,21 @@ def test_shrinking_block_pairs(monkeypatch):
     assert x == hbytes([2, 0])
 
 
+def shrink(buffer, *passes):
+    def accept(f):
+        shrinker = shrinking_from(buffer)(f)
+
+        prev = None
+        while shrinker.shrink_target is not prev:
+            prev = shrinker.shrink_target
+            for p in passes:
+                shrinker.run_shrink_pass(p)
+        return list(shrinker.buffer)
+    return accept
+
+
 def test_non_minimal_pair_shrink(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', lambda self: (
-            self.shrink_offset_pairs()
-        )
-    )
-
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer([12, 10])))
-
-    @run_to_buffer
+    @shrink([12, 10], 'shrink_offset_pairs')
     def x(data):
         m = data.draw_bits(8)
         if m < 5:
@@ -1081,22 +1084,12 @@ def test_non_minimal_pair_shrink(monkeypatch):
         n = data.draw_bits(8)
         if m == n + 2:
             data.mark_interesting()
-    assert x == hbytes([5])
+
+    assert x == [5]
 
 
 def test_buffer_changes_during_pair_shrink(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', lambda self: (
-            self.shrink_offset_pairs()
-        )
-    )
-
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer([12, 10])))
-
-    @run_to_buffer
+    @shrink([12, 10], 'shrink_offset_pairs')
     def x(data):
         m = data.draw_bits(8)
         if m < 5:
@@ -1107,7 +1100,7 @@ def test_buffer_changes_during_pair_shrink(monkeypatch):
         n = data.draw_bits(8)
         if m == n + 2:
             data.mark_interesting()
-    assert x == hbytes([5, 1])
+    assert x == [5, 1]
 
 
 def test_buffer_changes_during_pair_shrink_stays_interesting(monkeypatch):
@@ -1690,8 +1683,8 @@ def test_pandas_hack():
 
 def test_passes_can_come_back_to_life():
     initial = hbytes([1, 2, 3, 4, 5, 6])
-    buf1 = hbytes([0, 2, 3, 4, 5, 6])
-    buf2 = hbytes([0, 2, 3, 4, 0, 0])
+    buf1 = hbytes([0, 1, 3, 4, 5, 6])
+    buf2 = hbytes([0, 1, 3, 4, 4, 6])
 
     good = {
         initial, buf1, buf2
@@ -1800,3 +1793,14 @@ def test_runs_adaptive_delete_on_first_pass_if_discarding_does_not_work():
 
     shrinker.single_greedy_shrink_iteration()
     assert list(shrinker.buffer) == [1]
+
+
+def test_alphabet_minimization():
+    @shrink(list(hrange(11)), 'alphabet_minimize')
+    def x(data):
+        n = 0
+        for _ in hrange(10):
+            n += (-1) ** (data.draw_bits(8) & 1)
+        if n == 0 and data.draw_bits(8) == 10:
+            data.mark_interesting()
+    assert x == [0, 1] * 5 + [10]
