@@ -1005,47 +1005,6 @@ def test_can_zero_subintervals(monkeypatch):
     assert list(shrinker.buffer) == [0, 1] * 10
 
 
-def test_can_pass_to_a_child(monkeypatch):
-    marker = hbytes([4, 3, 2, 1])
-
-    initial = hbytes(len(marker) * 4) + marker
-
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.cached_test_function(initial))
-
-    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.pass_to_child)
-
-    @run_to_buffer
-    def x(data):
-        data.start_example(1)
-        while True:
-            data.start_example(1)
-            b = data.draw_bytes(len(marker))
-            data.stop_example(1)
-            if any(b):
-                break
-        data.stop_example()
-        if hbytes(data.buffer) in (marker, initial):
-            data.mark_interesting()
-    assert x == marker
-
-
-def test_pass_to_child_only_passes_to_same_label():
-    @shrinking_from(list(range(10)))
-    def shrinker(data):
-        data.start_example(1)
-        data.draw_bits(1)
-        data.start_example(2)
-        data.draw_bits(1)
-        data.stop_example()
-        data.stop_example()
-        data.mark_interesting()
-    initial = shrinker.calls
-    shrinker.pass_to_child()
-    assert shrinker.calls == initial
-
-
 def test_can_pass_to_an_indirect_descendant(monkeypatch):
     initial = hbytes([
         1, 10,

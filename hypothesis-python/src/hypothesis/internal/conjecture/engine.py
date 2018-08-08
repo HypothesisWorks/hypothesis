@@ -1335,10 +1335,9 @@ class Shrinker(object):
     """
 
     DEFAULT_PASSES = [
-        'remove_discarded',
-        'adaptive_example_deletion',
+        'pass_to_descendant',
         'zero_examples',
-        'pass_to_child',
+        'adaptive_example_deletion',
         'reorder_examples',
         'minimize_duplicated_blocks',
         'minimize_individual_blocks',
@@ -1348,7 +1347,6 @@ class Shrinker(object):
         block_program('-XX'),
         block_program('XX'),
         'example_deletion_with_block_lowering',
-        'pass_to_descendant',
         'shrink_offset_pairs',
         'minimize_block_pairs_retaining_sum',
     ]
@@ -1714,6 +1712,8 @@ class Shrinker(object):
 
         self.requeue_passes()
 
+        self.run_shrink_pass('remove_discarded')
+
         # First run the entire set of solid passes (ones that have previously
         # made changes). It's important that we run all of them, not just one,
         # as typically each pass may unlock others.
@@ -1766,71 +1766,6 @@ class Shrinker(object):
     def blocks(self):
         return self.shrink_target.blocks
 
-    def replace_example(self, data, i, replacement):
-        """Tries to replace the current example in data at index i with the
-        byte string replacement, returning the result.
-
-        Will truncate and pad replacement as necessary to try to get the
-        example boundary exact if the initial replacement didn't work.
-        """
-        ex = data.examples[i]
-        u = ex.start
-        v = ex.end
-        # Truncate the replacement down to the right length if it's too long,
-        # pad it with zeroes if it's too short.
-        replacement = replacement[:v - u]
-        replacement += hbytes(v - u - len(replacement))
-
-        existing = data.buffer[u:v]
-        if replacement == existing:
-            return data
-
-        attempt = self.cached_test_function(
-            data.buffer[:u] + replacement + data.buffer[v:]
-        )
-
-        # FIXME: IOU one attempt to debug this - DRMacIver
-        # This is a mysterious problem that should be impossible to trigger but
-        # isn't. I don't know what's going on, and it defeated my attempts to
-        # reproduce or debug it. I'd *guess* it's related to nondeterminism in
-        # the test function. That should be impossible in the cases where
-        # I'm seeing it, but I haven't been able to put together a reliable
-        # reproduction of it.
-        if i >= len(attempt.examples):  # pragma: no cover
-            return attempt
-        used = attempt.examples[i].length
-        if (
-            not self.__predicate(attempt) and
-            used < len(replacement) and
-            attempt.examples[i].length < len(attempt.buffer)
-        ):
-            attempt = self.cached_test_function(
-                data.buffer[:u] + replacement[:used] + data.buffer[v:]
-            )
-        return attempt
-
-    def try_replace_example(self, i, replacement):
-        """Attempts to replace the region corresponding to the example at
-        position i with the string replacement, returning True if it succeeds
-        (including it it was already that string)."""
-        replaced = self.replace_example(self.shrink_target, i, replacement)
-        return replaced is self.shrink_target
-
-    def pass_to_child(self):
-        """A cheap version of pass_to_descendant that attempts to replace each
-        example with one of its children."""
-        for ex in self.each_non_trivial_example():
-            # No point trying to replace with the first child because we know
-            # it will just cause it to try to draw the second one!
-            for child in ex.children[1:]:
-                if child.label != ex.label:
-                    continue
-                buf = self.shrink_target.buffer
-                self.incorporate_new_buffer(
-                    buf[:ex.start] + buf[child.start:child.end] +
-                    buf[ex.end:]
-                )
-
     def pass_to_descendant(self):
         """Attempt to replace each example with a descendant example.
 
@@ -1847,20 +1782,19 @@ class Shrinker(object):
 
         This is pretty expensive - it takes O(len(intervals)^2) - so we run it
         late in the process when we've got the number of intervals as far down
-        as possible. A cheaper version is available in pass_to_child, which we
-        deploy more aggressively.
+        as possible.
         """
         for ex in self.each_non_trivial_example():
             st = self.shrink_target
             descendants = sorted(set(
                 st.buffer[d.start:d.end] for d in self.shrink_target.examples
                 if d.start >= ex.start and d.end <= ex.end and
-                d.length < ex.length
+                d.length < ex.length and d.label == ex.label
             ), key=sort_key)
 
             for d in descendants:
-                if self.try_replace_example(
-                    ex.index, d + hbytes(ex.length - len(d))
+                if self.incorporate_new_buffer(
+                    self.buffer[:ex.start] + d + self.buffer[ex.end:]
                 ):
                     break
 
@@ -2287,7 +2221,33 @@ class Shrinker(object):
     def zero_examples(self):
         """Attempt to replace each example with a minimal version of itself."""
         for ex in self.each_non_trivial_example():
-            self.try_replace_example(ex.index, hbytes(ex.length))
+            u = ex.start
+            v = ex.end
+            attempt = self.cached_test_function(
+                self.buffer[:u] + hbytes(v - u) + self.buffer[v:]
+            )
+
+            # FIXME: IOU one attempt to debug this - DRMacIver
+            # This is a mysterious problem that should be impossible to trigger
+            # but isn't. I don't know what's going on, and it defeated my
+            # my attempts to reproduce or debug it. I'd *guess* it's related to
+            # nondeterminism in the test function. That should be impossible in
+            # the cases where I'm seeing it, but I haven't been able to put
+            # together a reliable reproduction of it.
+            if ex.index >= len(attempt.examples):  # pragma: no cover
+                continue
+
+            in_replacement = attempt.examples[ex.index]
+            used = in_replacement.length
+
+            if (
+                not self.__predicate(attempt) and
+                in_replacement.end < len(attempt.buffer) and
+                used < ex.length
+            ):
+                self.incorporate_new_buffer(
+                    self.buffer[:u] + hbytes(used) + self.buffer[v:]
+                )
 
     def minimize_duplicated_blocks(self):
         """Find blocks that have been duplicated in multiple places and attempt
