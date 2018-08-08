@@ -1275,6 +1275,7 @@ class PassClassification(Enum):
     HOPEFUL = 1
     DUBIOUS = 2
     AVOID = 3
+    SPECIAL = 4
 
 
 @total_ordering
@@ -1385,6 +1386,7 @@ class Shrinker(object):
         self.initial_calls = self.__engine.call_count
 
         self.current_pass_depth = 0
+        self.passes_by_name = {}
         self.clear_passes()
 
         for p in Shrinker.DEFAULT_PASSES:
@@ -1393,13 +1395,21 @@ class Shrinker(object):
         for p in Shrinker.EMERGENCY_PASSES:
             self.add_new_pass(p, classification=PassClassification.AVOID)
 
+        self.add_new_pass(
+            'lower_common_block_offset',
+            classification=PassClassification.SPECIAL
+        )
+
     def clear_passes(self):
         """Reset all passes on the shrinker, leaving it in a blank state.
 
         This is mostly useful for testing.
         """
+        # Note that we deliberately do not clear passes_by_name. This means
+        # that we can still look up and explicitly run the standard passes,
+        # they just won't be avaiable by default.
+
         self.passes = []
-        self.passes_by_name = {}
         self.passes_awaiting_requeue = []
         self.pass_queues = {c: [] for c in PassClassification}
 
@@ -1417,7 +1427,6 @@ class Shrinker(object):
             self.known_programs.add(run.command)
         self.passes.append(p)
         self.passes_awaiting_requeue.append(p)
-        assert p.name not in self.passes_by_name
         self.passes_by_name[p.name] = p
 
     def shrink_pass(self, name):
@@ -1573,11 +1582,14 @@ class Shrinker(object):
         # When a run succeeds, a pass will follow an arrow to a better class.
         # When it fails, it will follow an arrow to a worse one.
         # If no such arrow is available, it stays where it is.
+        #
+        # We also have the classification SPECIAL for passes that do not get
+        # run as part of the normal process.
         previous = sp.classification
 
         # If the pass didn't actually do anything we don't reclassify it. This
         # is for things like remove_discarded which often are inapplicable.
-        if calls > 0:
+        if calls > 0 and sp.classification != PassClassification.SPECIAL:
             if shrinks == 0:
                 if sp.successes > 0:
                     sp.classification = PassClassification.DUBIOUS
@@ -1677,7 +1689,7 @@ class Shrinker(object):
         it twice will have exactly the same effect as calling it once.
         """
         while self.single_greedy_shrink_iteration():
-            self.lower_common_block_offset()
+            self.run_shrink_pass('lower_common_block_offset')
 
     def single_greedy_shrink_iteration(self):
         """Performs a single run through each greedy shrink pass, but does not
