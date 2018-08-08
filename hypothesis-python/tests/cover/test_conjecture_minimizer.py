@@ -61,7 +61,7 @@ def test_can_sort_bytes_by_reordering_partially2():
     start = hbytes([5, 4, 3, 2, 1, 0])
     finish = Lexical.shrink(
         start, lambda x: Counter(x) == Counter(start) and x[0] > x[2],
-        random=Random(0),
+        random=Random(0), full=True,
     )
     assert finish <= hbytes([1, 2, 0, 3, 4, 5])
 

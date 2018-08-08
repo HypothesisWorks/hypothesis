@@ -17,11 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-import pytest
-
 import hypothesis.strategies as st
-from hypothesis import Verbosity, HealthCheck, core, find, given, assume, \
-    settings, unlimited
+from hypothesis import core, find, given, assume, settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from tests.common.utils import all_values, non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
@@ -121,59 +118,6 @@ def test_respects_max_examples_in_database_usage():
     counter[0] = 0
     stuff()
     assert counter == [10]
-
-
-def test_clears_out_everything_smaller_than_the_interesting_example():
-    target = None
-
-    # We retry the test run a few times to get a large enough initial
-    # set of examples that we're not going to explore them all in the
-    # initial run.
-    last_sum = [None]
-
-    database = InMemoryExampleDatabase()
-
-    seen = set()
-
-    @settings(
-        database=database, verbosity=Verbosity.quiet, max_examples=100,
-        timeout=unlimited, suppress_health_check=[HealthCheck.hung_test],
-    )
-    @given(st.binary(min_size=10, max_size=10))
-    def test(b):
-        if target is not None:
-            if len(seen) < 30:
-                seen.add(b)
-            if b in seen:
-                return
-            if b >= target:
-                raise ValueError()
-            return
-        b = hbytes(b)
-        s = sum(b)
-        if (
-            (last_sum[0] is None and s > 1000) or
-            (last_sum[0] is not None and s >= last_sum[0] - 1)
-        ):
-            last_sum[0] = s
-            raise ValueError()
-
-    with pytest.raises(ValueError):
-        test()
-
-    saved = non_covering_examples(database)
-    assert len(saved) > 30
-
-    target = sorted(saved)[len(saved) // 2]
-
-    with pytest.raises(ValueError):
-        test()
-
-    saved = non_covering_examples(database)
-    assert target in saved or target in seen
-
-    for s in saved:
-        assert s >= target
 
 
 def test_does_not_use_database_when_seed_is_forced(monkeypatch):

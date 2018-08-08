@@ -17,8 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.internal.conjecture.shrinking.common import Shrinker, \
-    find_integer
+from hypothesis.internal.conjecture.shrinking.common import Shrinker
 
 
 def identity(v):
@@ -32,8 +31,7 @@ class Ordering(Shrinker):
     the elements of the sequence.
     """
 
-    def __init__(self, initial, predicate, random, full, key=identity):
-        super(Ordering, self).__init__(initial, predicate, random, full)
+    def setup(self, key=identity):
         self.key = key
 
     def make_immutable(self, value):
@@ -51,6 +49,9 @@ class Ordering(Shrinker):
         assert sorted(value) == sorted(self.current)
 
     def run_step(self):
+        self.reinsert()
+
+    def reinsert(self):
         for i in range(len(self.current)):
             # This is essentially insertion sort, but unlike normal insertion
             # sort because of our use of find_integer we only perform
@@ -59,13 +60,32 @@ class Ordering(Shrinker):
             # care about those so much.
             original = self.current
 
-            def push_back(k):
-                if k > i:
-                    return False
-                j = i - k
-                attempt = list(original)
-                del attempt[i]
-                attempt.insert(j, original[i])
-                return self.consider(attempt)
+            insertion_points = [
+                j for j in range(i)
+                if self.key(self.current[j]) > self.key(self.current[i])
+            ]
 
-            find_integer(push_back)
+            def push_back_to(t):
+                if t >= len(insertion_points):
+                    return True
+                j = insertion_points[t]
+                reinserted = list(original)
+                del reinserted[i]
+                reinserted.insert(j, original[i])
+                if self.consider(reinserted):
+                    return
+                swapped = list(self.current)
+                swapped[i], swapped[j] = swapped[j], swapped[i]
+                return self.consider(swapped)
+
+            if push_back_to(0) or push_back_to(1):
+                continue
+
+            lo = 1
+            hi = len(insertion_points)
+            while lo + 1 < hi:
+                mid = (lo + hi) // 2
+                if push_back_to(mid):
+                    hi = mid
+                else:
+                    lo = mid
