@@ -1430,6 +1430,8 @@ class Shrinker(object):
         self.passes_by_name[p.name] = p
 
     def shrink_pass(self, name):
+        if hasattr(Shrinker, name) and name not in self.passes_by_name:
+            self.add_new_pass(name, classification=PassClassification.SPECIAL)
         return self.passes_by_name[name]
 
     def requeue_passes(self):
@@ -1476,6 +1478,11 @@ class Shrinker(object):
     @property
     def calls(self):
         return self.__engine.call_count
+
+    def consider_new_buffer(self, buffer):
+        buffer = hbytes(buffer)
+        return buffer.startswith(self.buffer) or \
+            self.incorporate_new_buffer(buffer)
 
     def incorporate_new_buffer(self, buffer):
         buffer = hbytes(buffer[:self.shrink_target.index])
@@ -1688,6 +1695,7 @@ class Shrinker(object):
         This method iterates to a fixed point and so is idempontent - calling
         it twice will have exactly the same effect as calling it once.
         """
+        self.run_shrink_pass('alphabet_minimize')
         while self.single_greedy_shrink_iteration():
             self.run_shrink_pass('lower_common_block_offset')
 
@@ -2475,3 +2483,33 @@ class Shrinker(object):
         reliably fail with ``x=""``, ``y="0"``.
         """
         self.example_wise_shrink(Ordering, key=sort_key)
+
+    def alphabet_minimize(self):
+        """Attempts to replace most bytes in the buffer with 0 or 1. The main
+        benefit of this is that it significantly increases our cache hit rate
+        by making things that are equivalent more likely to have the same
+        representation.
+
+        We only run this once rather than as part of the main passes as
+        once it's done its magic it's unlikely to ever be useful again.
+        It's important that it runs first though, because it makes
+        everything that comes after it faster because of the cache hits.
+        """
+        for c in (1, 0):
+            alphabet = set(self.buffer) - set(hrange(c + 1))
+
+            if not alphabet:
+                continue
+
+            def clear_to(reduced):
+                reduced = set(reduced)
+                attempt = hbytes([
+                    b if b <= c or b in reduced else c
+                    for b in self.buffer
+                ])
+                return self.consider_new_buffer(attempt)
+
+            Length.shrink(
+                sorted(alphabet), clear_to,
+                random=self.random,
+            )
