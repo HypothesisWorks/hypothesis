@@ -77,27 +77,6 @@ class Integer(Shrinker):
     def size(self):
         return self.current.bit_length()
 
-    def mask_low_bits(self):
-        def try_mask(k):
-            mask = (1 << k) - 1
-            masked = self.current & mask
-            return self.consider(masked)
-
-        if not try_mask(self.size - 1):
-            return
-
-        lo = 1
-        while not try_mask(lo * 2):
-            lo *= 2
-        assert not try_mask(lo)
-
-        while lo + 1 < self.size:
-            mid = lo + (self.size - lo) // 2
-            if try_mask(mid):
-                assert self.size <= mid
-            else:
-                lo = mid
-
     def shrink_by_multiples(self, k):
         base = self.current
 
