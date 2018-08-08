@@ -65,14 +65,34 @@ class Shrinker(object):
     satisfy, and attempts to improve it in some direction, making it smaller
     and simpler."""
 
-    def __init__(self, initial, predicate, random, full):
+    def __init__(
+        self, initial, predicate, random, full, debug=False, name=None
+    ):
         self.current = self.make_immutable(initial)
+        self.initial = self.current
         self.random = random
         self.full = full
         self.changes = 0
+        self.name = name
 
         self.__predicate = predicate
         self.__seen = set()
+        self.debugging_enabled = debug
+        self.setup()
+
+    def __repr__(self):
+        return '%s(%sinitial=%r, current=%r)' % (
+            type(self).__name__,
+            '' if self.name is None else 'name=%s, ' % (self.name,),
+            self.initial, self.current
+        )
+
+    def setup(self):
+        pass
+
+    def debug(self, *args):
+        if self.debugging_enabled:
+            print('DEBUG', self, *args)
 
     @classmethod
     def shrink(cls, initial, predicate, random, full=False, **kwargs):
@@ -100,6 +120,7 @@ class Shrinker(object):
                 self.run_step()
         else:
             self.run_step()
+        self.debug('COMPLETE')
 
     def incorporate(self, value):
         """Try using ``value`` as a possible candidate improvement.
@@ -114,6 +135,7 @@ class Shrinker(object):
             return False
         self.__seen.add(value)
         if self.__predicate(value):
+            self.debug('shrinking to %r' % (value,))
             self.changes += 1
             self.current = value
             return True
