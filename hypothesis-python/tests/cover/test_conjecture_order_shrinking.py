@@ -36,3 +36,21 @@ def test_shrinks_down_to_sorted_the_slow_way(ls):
     shrinker = Ordering(ls, lambda ls: True, random=Random(0), full=False)
     shrinker.run_step()
     assert list(shrinker.current) == sorted(ls)
+
+
+def test_can_partially_sort_a_list():
+    finish = Ordering.shrink(
+        [5, 4, 3, 2, 1, 0],
+        lambda x: x[0] > x[-1],
+        random=Random(0),
+    )
+    assert finish == (1, 2, 3, 4, 5, 0)
+
+
+def test_can_partially_sort_a_list_2():
+    finish = Ordering.shrink(
+        [5, 4, 3, 2, 1, 0],
+        lambda x: x[0] > x[2],
+        random=Random(0), full=True
+    )
+    assert finish <= (1, 2, 0, 3, 4, 5)

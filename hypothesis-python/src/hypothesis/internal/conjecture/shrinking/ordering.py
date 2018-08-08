@@ -50,6 +50,9 @@ class Ordering(Shrinker):
         assert sorted(value) == sorted(self.current)
 
     def run_step(self):
+        self.reinsert()
+
+    def reinsert(self):
         for i in range(len(self.current)):
             # This is essentially insertion sort, but unlike normal insertion
             # sort because of our use of find_integer we only perform
@@ -67,10 +70,14 @@ class Ordering(Shrinker):
                 if t >= len(insertion_points):
                     return True
                 j = insertion_points[t]
-                attempt = list(original)
-                del attempt[i]
-                attempt.insert(j, original[i])
-                return self.consider(attempt)
+                reinserted = list(original)
+                del reinserted[i]
+                reinserted.insert(j, original[i])
+                if self.consider(reinserted):
+                    return
+                swapped = list(self.current)
+                swapped[i], swapped[j] = swapped[j], swapped[i]
+                return self.consider(swapped)
 
             if push_back_to(0) or push_back_to(1):
                 continue
