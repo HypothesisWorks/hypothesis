@@ -1426,6 +1426,7 @@ class Shrinker(object):
         self.passes.append(p)
         self.passes_awaiting_requeue.append(p)
         self.passes_by_name[p.name] = p
+        return p
 
     def shrink_pass(self, name):
         if hasattr(Shrinker, name) and name not in self.passes_by_name:
@@ -1724,7 +1725,7 @@ class Shrinker(object):
         # just making shrinks - it's a much better sense of progress. We can
         # make only O(n) length reductions but we can make exponentially many
         # shrinks).
-        if len(self.shrink_target.buffer) < len(initial.buffer):
+        if len(self.buffer) < len(initial.buffer):
             return True
 
         # If we're stuck on length reductions then we pull in one candiate pass

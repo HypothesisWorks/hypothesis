@@ -39,7 +39,8 @@ from hypothesis.internal.conjecture.utils import Sampler, \
     calc_label_from_name
 from hypothesis.internal.conjecture.engine import Negated, Shrinker, \
     StopTest, ExitReason, RunIsComplete, TargetSelector, \
-    ConjectureRunner, PassClassification, universal, block_program
+    ConjectureRunner, PassClassification, sort_key, universal, \
+    block_program
 
 SOME_LABEL = calc_label_from_name('some label')
 
@@ -1712,11 +1713,11 @@ def test_will_enable_previously_bad_passes_when_failing_to_shrink():
     # progress but only lexically. When it finally gets down to the minimum
     good = {
         hbytes([1, 2, 3, 4, 5, 6]),
-        hbytes([1, 2, 3, 4, 5, 0]),
-        hbytes([1, 2, 0, 4, 5, 0]),
-        hbytes([1, 2, 0, 4, 0, 0]),
-        hbytes([0, 2, 0, 4, 0, 0]),
-        hbytes([0, 0, 0, 4, 0, 0]),
+        hbytes([1, 2, 3, 4, 5, 5]),
+        hbytes([1, 2, 2, 4, 5, 5]),
+        hbytes([1, 2, 2, 4, 4, 5]),
+        hbytes([0, 2, 2, 4, 4, 5]),
+        hbytes([0, 1, 2, 4, 4, 5]),
     }
 
     initial = max(good)
@@ -1736,11 +1737,9 @@ def test_will_enable_previously_bad_passes_when_failing_to_shrink():
     # In order to get to the minimized result we want to run both of these,
     # but the second pass starts out as disabled (and anyway won't work until
     # the first has hit fixity).
-    shrinker.passes = [
-        [0, 0, block_program('0')],
-        [-1, 1, block_program('X')],
-    ]
-    shrinker.greedy_preamble = lambda: None
+    shrinker.clear_passes()
+    shrinker.add_new_pass(block_program('-'))
+    shrinker.add_new_pass(block_program('X'))
 
     shrinker.shrink()
 
@@ -1804,3 +1803,30 @@ def test_alphabet_minimization():
         if n == 0 and data.draw_bits(8) == 10:
             data.mark_interesting()
     assert x == [0, 1] * 5 + [10]
+
+
+def test_keeps_using_solid_passes_while_they_shrink_size():
+    good = {
+        hbytes([0, 1, 2, 3, 4, 5]),
+        hbytes([0, 1, 2, 3, 5]),
+        hbytes([0, 1, 3, 5]),
+        hbytes([1, 3, 5]),
+        hbytes([1, 5]),
+    }
+    initial = max(good, key=sort_key)
+
+    @shrinking_from(initial)
+    def shrinker(data):
+        while True:
+            data.draw_bits(8)
+            if hbytes(data.buffer) in good:
+                data.mark_interesting()
+    shrinker.clear_passes()
+
+    d1 = shrinker.add_new_pass(block_program('X'))
+    d2 = shrinker.add_new_pass(block_program('-'))
+
+    for _ in range(3):
+        shrinker.single_greedy_shrink_iteration()
+        assert d1.classification == PassClassification.HOPEFUL
+        assert d2.classification == PassClassification.CANDIDATE
