@@ -31,8 +31,7 @@ class Ordering(Shrinker):
     the elements of the sequence.
     """
 
-    def __init__(self, initial, predicate, random, full, key=identity):
-        super(Ordering, self).__init__(initial, predicate, random, full)
+    def setup(self, key=identity):
         self.key = key
 
     def make_immutable(self, value):

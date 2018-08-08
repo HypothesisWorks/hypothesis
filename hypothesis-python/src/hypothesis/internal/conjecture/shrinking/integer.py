@@ -18,7 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 from hypothesis.internal.compat import hrange
-from hypothesis.internal.conjecture.shrinking.common import Shrinker
+from hypothesis.internal.conjecture.shrinking.common import Shrinker, \
+    find_integer
 
 
 """
@@ -27,20 +28,22 @@ This module implements a shrinker for non-negative integers.
 
 
 class Integer(Shrinker):
-    """Attempts to find a smaller sequence satisfying f. Will only perform
-    linearly many evaluations, and does not loop to a fixed point.
+    """Attempts to find a smaller integer. Guaranteed things to try ``0``,
 
-    Guarantees made at a fixed point:
-
-        1. No individual element may be deleted.
-        2. No *adjacent* pair of elements may be deleted.
+    ``1``, ``initial - 1``, ``initial - 2``. Plenty of optimisations beyond
+    that but those are the guaranteed ones.
     """
 
     def short_circuit(self):
-        for i in hrange(3):
+        for i in hrange(2):
             if self.consider(i):
                 return True
-        return False
+        self.mask_high_bits()
+        if self.size > 8:
+            # see if we can squeeze the integer into a single byte.
+            self.consider(self.current >> (self.size - 8))
+            self.consider(self.current & 0xff)
+        return self.current == 2
 
     def check_invariants(self, value):
         assert value >= 0
@@ -49,12 +52,57 @@ class Integer(Shrinker):
         return left < right
 
     def run_step(self):
-        assert self.current > 2
-        self.consider(self.current - 2)
-        self.consider(self.current - 1)
-        assert self.current > 2
-        lo = 2
-        while lo + 1 < self.current:
-            mid = (lo + self.current) // 2
-            if not self.consider(mid):
+        self.shift_right()
+        self.shrink_by_multiples(2)
+        self.shrink_by_multiples(1)
+
+    def shift_right(self):
+        base = self.current
+        find_integer(lambda k: k <= self.size and self.consider(
+            base >> k
+        ))
+
+    def mask_high_bits(self):
+        base = self.current
+        n = base.bit_length()
+
+        @find_integer
+        def try_mask(k):
+            if k >= n:
+                return False
+            mask = (1 << (n - k)) - 1
+            return self.consider(mask & base)
+
+    @property
+    def size(self):
+        return self.current.bit_length()
+
+    def mask_low_bits(self):
+        def try_mask(k):
+            mask = (1 << k) - 1
+            masked = self.current & mask
+            return self.consider(masked)
+
+        if not try_mask(self.size - 1):
+            return
+
+        lo = 1
+        while not try_mask(lo * 2):
+            lo *= 2
+        assert not try_mask(lo)
+
+        while lo + 1 < self.size:
+            mid = lo + (self.size - lo) // 2
+            if try_mask(mid):
+                assert self.size <= mid
+            else:
                 lo = mid
+
+    def shrink_by_multiples(self, k):
+        base = self.current
+
+        @find_integer
+        def shrunk(n):
+            attempt = base - n * k
+            return attempt >= 0 and self.consider(attempt)
+        return shrunk > 0
