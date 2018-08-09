@@ -2054,8 +2054,11 @@ def data():
     return DataStrategy()
 
 
-def register_type_strategy(custom_type, strategy):
-    # type: (type, Union[SearchStrategy, Callable[[type], SearchStrategy]]) -> None
+def register_type_strategy(
+    custom_type,  # type: type
+    strategy,  # type: Union[SearchStrategy, Callable[[type], SearchStrategy]]
+):
+    # type: (...) -> None
     """Add an entry to the global type-to-strategy lookup.
 
     This lookup is used in :func:`~hypothesis.strategies.builds` and
