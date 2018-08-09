@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.32:
+
+--------------------
+3.66.32 - 2018-08-09
+--------------------
+
+This release adds type hints to the :func:`~hypothesis.example` and
+:func:`~hypothesis.seed` decorators, and fixes the type hint on
+:func:`~hypothesis.strategies.register_type_strategy`. The second argument to
+:func:`~hypothesis.strategies.register_type_strategy` must either be a
+``SearchStrategy``, or a callable which takes a ``type`` and returns a
+``SearchStrategy``.
+
 .. _v3.66.31:
 
 --------------------
