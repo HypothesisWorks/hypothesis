@@ -77,8 +77,8 @@ except ImportError:  # pragma: no cover
 
 if False:
     from typing import (  # noqa
-        Any, Dict, Callable, Hashable, Optional, Union, TypeVar,  # noqa
-    )  # noqa
+        Any, Dict, Callable, Hashable, Optional, Union, TypeVar,
+    )
     from hypothesis.utils.conventions import InferType  # noqa
 
     T = TypeVar('T')
