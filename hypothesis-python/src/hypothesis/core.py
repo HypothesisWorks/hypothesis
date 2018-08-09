@@ -76,8 +76,9 @@ except ImportError:  # pragma: no cover
     from coverage.collector import FileDisposition
 
 if False:
-    from typing import Any, Dict, Callable, Hashable, Optional, \  # noqa
-        Union, TypeVar  # noqa
+    from typing import (  # noqa
+        Any, Dict, Callable, Hashable, Optional, Union, TypeVar,  # noqa
+    )  # noqa
     from hypothesis.utils.conventions import InferType  # noqa
 
     T = TypeVar('T')
