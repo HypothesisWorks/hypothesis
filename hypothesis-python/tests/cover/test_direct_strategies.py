@@ -438,6 +438,7 @@ def test_no_infinity_for_min_max_values(value, parameter_name):
 
     test_not_infinite()
 
+
 @pytest.mark.parametrize('parameter_name', ['min_value', 'max_value'])
 @pytest.mark.parametrize('value', [-1, 0, 1])
 def test_no_nan_for_min_max_values(value, parameter_name):
