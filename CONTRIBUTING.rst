@@ -180,6 +180,7 @@ their individual contributions.
 * `Jeremy Thurgood <https://github.com/jerith>`_
 * `J.J. Green <http://soliton.vm.bytemark.co.uk/pub/jjg/>`_
 * `JP Viljoen <https://github.com/froztbyte>`_ (froztbyte@froztbyte.net)
+* `Joey Tuong <https://github.com/tetrapus>`_
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (jonty@jonty.co.uk)
 * `jwg4 <https://www.github.com/jwg4>`_
 * `kbara <https://www.github.com/kbara>`_

@@ -76,8 +76,12 @@ except ImportError:  # pragma: no cover
     from coverage.collector import FileDisposition
 
 if False:
-    from typing import Any, Dict, Callable, Optional, Union  # noqa
+    from typing import (  # noqa
+        Any, Dict, Callable, Hashable, Optional, Union, TypeVar,
+    )
     from hypothesis.utils.conventions import InferType  # noqa
+
+    TestFunc = TypeVar('TestFunc', bound=Callable)
 
 
 running_under_pytest = False
@@ -95,6 +99,7 @@ class Example(object):
 
 
 def example(*args, **kwargs):
+    # type: (*Any, **Any) -> Callable[[TestFunc], TestFunc]
     """A decorator which ensures a specific example is always tested."""
     if args and kwargs:
         raise InvalidArgument(
@@ -114,6 +119,7 @@ def example(*args, **kwargs):
 
 
 def seed(seed):
+    # type: (Hashable) -> Callable[[TestFunc], TestFunc]
     """seed: Start the test execution from a specific seed.
 
     May be any hashable object. No exact meaning for seed is provided
