@@ -466,7 +466,7 @@ def floats(
     elif min_value is not None:
         if min_value < 0:
             result = floats(
-                min_value=0.0
+                min_value=0.0, allow_infinity=allow_infinity
             ) | floats(min_value=min_value, max_value=-0.0)
         else:
             result = (
@@ -483,7 +483,7 @@ def floats(
             result = floats(
                 min_value=0.0,
                 max_value=max_value,
-            ) | floats(max_value=-0.0)
+            ) | floats(max_value=-0.0, allow_infinity=allow_infinity)
         else:
             result = (
                 floats(allow_infinity=allow_infinity, allow_nan=False).map(
