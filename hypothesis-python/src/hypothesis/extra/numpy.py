@@ -54,9 +54,18 @@ def from_dtype(dtype):
     if dtype.kind == u'b':
         result = st.booleans()  # type: SearchStrategy[Any]
     elif dtype.kind == u'f':
-        result = st.floats()
+        if dtype.itemsize == 2:
+            result = st.floats(width=16)
+        elif dtype.itemsize == 4:
+            result = st.floats(width=32)
+        else:
+            result = st.floats()
     elif dtype.kind == u'c':
-        result = st.complex_numbers()
+        if dtype.itemsize == 8:
+            float32 = st.floats(width=32)
+            result = st.builds(complex, float32, float32)
+        else:
+            result = st.complex_numbers()
     elif dtype.kind in (u'S', u'a'):
         # Numpy strings are null-terminated; only allow round-trippable values.
         # `itemsize == 0` means 'fixed length determined at array creation'
