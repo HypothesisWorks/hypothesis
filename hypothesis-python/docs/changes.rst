@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.66.33:
+
+--------------------
+3.66.33 - 2018-08-10
+--------------------
+
+This release fixes a bug in :func:`~hypotheses.strategies.floats`, where
+setting ``allow_infinity=False`` and exactly one of ``min_value`` and
+``max_value`` would allow infinite values to be generated.
+
 .. _v3.66.32:
 
 --------------------
