@@ -28,6 +28,8 @@ except ImportError:
     numpy = None
 
 
+# Format codes for (int, float) sized types, used for byte-wise casts.
+# See https://docs.python.org/3/library/struct.html#format-characters
 STRUCT_FORMATS = {
     16: (b'!H', b'!e'),  # Note: 'e' is new in Python 3.6, so we have helpers
     32: (b'!I', b'!f'),
@@ -35,8 +37,8 @@ STRUCT_FORMATS = {
 }
 
 
-# There are two versions of this: the one that uses Numpy to support older
-# versions of Python, and the elegant one for new versions.  We use the new
+# There are two versions of this: the one that uses Numpy to support Python
+# 3.5 and earlier, and the elegant one for new versions.  We use the new
 # one if Numpy is unavailable too, because it's slightly faster in all cases.
 if numpy and not CAN_PACK_HALF_FLOAT:  # pragma: no cover
     def reinterpret_bits(x, from_, to):

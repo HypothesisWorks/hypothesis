@@ -17,13 +17,13 @@
 
 from __future__ import division, print_function, absolute_import
 
+import sys
 import enum
 import math
 import random
 import string
 import datetime as dt
 import operator
-from sys import version_info as python_version_info
 from uuid import UUID
 from decimal import Context, Decimal, localcontext
 from inspect import isclass, isfunction
@@ -402,8 +402,8 @@ def floats(
     required to represent the generated float. Valid values are 16, 32, or 64.
     Passing ``width=32`` will still use the builtin 64-bit ``float`` class,
     but always for values which can be exactly represented as a 32-bit float.
-    Half-precision floats (``width=16``) require either Numpy, or Python 3.6+
-    where this type is supported by the :mod:`python:struct` module.
+    Half-precision floats (``width=16``) are only supported on Python 3.6, or
+    if Numpy is installed.
 
     Examples from this strategy have a complicated and hard to explain
     shrinking behaviour, but it tries to improve "human readability". Finite
@@ -425,10 +425,9 @@ def floats(
             'Got width=%r, but the only valid values are the integers 16, '
             '32, and 64.' % (width,)
         )
-    if width == 16 and python_version_info[:2] < (3, 6) and numpy is None:
+    if width == 16 and sys.version_info[:2] < (3, 6) and numpy is None:
         raise InvalidArgument(  # pragma: no cover
-            'width=16 requires either Numpy, or Python >= 3.6 so it can use '
-            "the struct module's new 'e' format."
+            'width=16 requires either Numpy, or Python >= 3.6'
         )
 
     check_valid_bound(min_value, 'min_value')
