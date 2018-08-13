@@ -102,7 +102,6 @@ class ConjectureData(object):
         self.is_find = False
         self._draw_bytes = draw_bytes
         self.overdraw = 0
-        self.level = 0
         self.block_starts = {}
         self.blocks = []
         self.buffer = bytearray()
@@ -142,7 +141,7 @@ class ConjectureData(object):
     def depth(self):
         # We always have a single example wrapping everything. We want to treat
         # that as depth 0 rather than depth 1.
-        return self.level - 1
+        return len(self.example_stack) - 1
 
     @property
     def index(self):
@@ -199,11 +198,12 @@ class ConjectureData(object):
 
     def start_example(self, label):
         self.__assert_not_frozen('start_example')
-        self.level += 1
+
         i = len(self.examples)
+        new_depth = self.depth + 1
         ex = Example(
             index=i,
-            depth=self.depth, label=label, start=self.index,
+            depth=new_depth, label=label, start=self.index,
         )
         self.examples.append(ex)
         if self.example_stack:
@@ -216,7 +216,6 @@ class ConjectureData(object):
     def stop_example(self, discard=False):
         if self.frozen:
             return
-        self.level -= 1
 
         k = self.example_stack.pop()
         ex = self.examples[k]
