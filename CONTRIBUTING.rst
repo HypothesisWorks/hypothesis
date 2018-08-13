@@ -200,6 +200,7 @@ their individual contributions.
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
 * `Sam Hames <https://www.github.com/SamHames>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
+* `Stuart Cook <https://www.github.com/Zalathar>`_
 * `Sushobhit <https://github.com/sushobhit27>`_ (sushobhitsolanki@gmail.com)
 * `Tariq Khokhar <https://www.github.com/tkb>`_ (tariq@khokhar.net)
 * `Tim Martin <https://www.github.com/timmartin>`_ (tim@asymptotic.co.uk)
