@@ -11,7 +11,7 @@ autoflake==1.2            # via pyformat
 autopep8==1.3.5           # via pyformat
 babel==2.6.0              # via sphinx
 backcall==0.1.0           # via ipython
-certifi==2018.4.16        # via requests
+certifi==2018.8.13        # via requests
 chardet==3.0.4            # via requests
 click==6.7                # via pip-tools, pyupio, safety
 coverage==4.5.1
@@ -38,7 +38,7 @@ mock==2.0.0
 more-itertools==4.3.0     # via pytest
 mypy==0.620
 numpy==1.15.0
-packaging==17.1           # via dparse, pyupio, safety, sphinx, tox
+packaging==17.1           # via dparse, pyupio, safety, sphinx
 parso==0.3.0              # via jedi
 pbr==4.2.0                # via mock
 pexpect==4.6.0            # via ipython
@@ -73,7 +73,7 @@ snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.1
 sphinx==1.7.6
 sphinxcontrib-websupport==1.1.0  # via sphinx
-tox==3.1.3
+tox==3.2.1
 tqdm==4.24.0              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.11.0
