@@ -147,3 +147,21 @@ def test_triviality():
     assert not eg(0, 1).trivial
     assert eg(1, 2).trivial
     assert eg(2, 3).trivial
+
+
+def test_example_depth_marking():
+    d = ConjectureData.for_buffer(hbytes(24))
+
+    # These draw sizes are chosen so that each example has a unique length.
+    d.draw_bytes(2)
+    d.start_example('inner')
+    d.draw_bytes(3)
+    d.draw_bytes(6)
+    d.stop_example()
+    d.draw_bytes(12)
+    d.freeze()
+
+    depths = set((ex.length, ex.depth) for ex in d.examples)
+    assert depths == set([
+        (2, 1), (3, 2), (6, 2), (9, 1), (12, 1), (23, 0)
+    ])
