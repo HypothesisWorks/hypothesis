@@ -12,7 +12,7 @@ This is a guide to how to work on Hypothesis internals,
 with a particular focus on helping people who are new to it.
 Right now it is very rudimentary and is intended primarily for people who are
 looking to get started writing shrink passes as part of our `current outreach
-program to get more people doing that <https://github.com/HypothesisWorks/hypothesis-python/issues/1093>`_,
+program to get more people doing that <https://github.com/HypothesisWorks/hypothesis/issues/1093>`_,
 but it will expand over time.
 
 ------------------------
@@ -74,7 +74,7 @@ Useful Files to Know About
 --------------------------
 
 The code associated with Conjecture lives in
-`src/hypothesis/internal/conjecture <https://github.com/HypothesisWorks/hypothesis-python/tree/master/src/hypothesis/internal/conjecture>`_.
+`src/hypothesis/internal/conjecture <https://github.com/HypothesisWorks/hypothesis/tree/master/hypothesis-python/src/hypothesis/internal/conjecture>`_.
 There are a number of files in there,
 but the most important ones are ``engine.py`` and ``data.py``.
 ``data.py`` defines the core type that is used to represent test cases,
@@ -98,13 +98,13 @@ the `testing guide <testing-hypothesis.rst>`_, but there are a couple
 of areas that it's worth specifically highlighting for making changes
 to the engine:
 
-The first is `tests/cover/test_conjecture_engine.py <https://github.com/HypothesisWorks/hypothesis-python/blob/master/tests/cover/test_conjecture_engine.py>`_,
+The first is `tests/cover/test_conjecture_engine.py <https://github.com/HypothesisWorks/hypothesis/blob/master/hypothesis-python/tests/cover/test_conjecture_engine.py>`_,
 which is a set of unit tests designed to put the engine into particular scenarios to exercise specific behaviours,
 with a goal of achieving 100% coverage on it in isolation (though it currently does not quite achieve that for some specific edge cases.
 We may fix and enforce this later).
 
 The other set of tests that are worth knowing about are the quality tests,
-in `tests/quality <https://github.com/HypothesisWorks/hypothesis-python/tree/master/tests/quality>`_.
+in `tests/quality <https://github.com/HypothesisWorks/hypothesis/tree/master/hypothesis-python/tests/quality>`_.
 These assert specific hard to satisfy properties about the examples that Hypothesis finds -
 either their existence, or something about the final shrunk result.
 
@@ -329,7 +329,7 @@ The best way of getting started on working on the engine is to work on the
 shrinker. This is because it has the most well defined problems, the best
 documented code among the engine, and it's generally fun to work on.
 
-If you have not already done so, check out `Issue #1093 <https://github.com/HypothesisWorks/hypothesis-python/issues/1093>`_,
+If you have not already done so, check out `Issue #1093 <https://github.com/HypothesisWorks/hypothesis/issues/1093>`_,
 which collates a number of other issues about shrink quality that are good starting
 points for people.
 
