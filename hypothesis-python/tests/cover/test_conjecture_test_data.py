@@ -57,7 +57,7 @@ def test_can_draw_zero_bytes():
 
 
 def test_draw_past_end_sets_overflow():
-    x = ConjectureData.for_buffer(bytes(5))
+    x = ConjectureData.for_buffer(hbytes(5))
     with pytest.raises(StopTest) as e:
         x.draw_bytes(6)
     assert e.value.testcounter == x.testcounter
