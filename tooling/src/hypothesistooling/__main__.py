@@ -295,18 +295,6 @@ def documentation():
         ])
 
 
-@task(if_changed=hp.HYPOTHESIS_PYTHON)
-def doctest():
-    os.chdir(hp.HYPOTHESIS_PYTHON)
-    env = dict(os.environ)
-    env['PYTHONPATH'] = 'src'
-
-    pip_tool(
-        'sphinx-build', '-W', '-b', 'doctest', '-d', 'docs/_build/doctrees',
-        'docs', 'docs/_build/html', env=env,
-    )
-
-
 def run_tox(task, version):
     python = install.python_executable(version)
 
