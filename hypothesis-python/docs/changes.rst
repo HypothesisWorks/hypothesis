@@ -21,6 +21,20 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.68.0:
+
+-------------------
+3.68.0 - 2018-08-15
+-------------------
+
+:func:`~hypothesis.extra.numpy.arrays` now checks that integer and float
+values drawn from ``elements`` and ``fill`` strategies can be safely cast
+to the dtype of the array, and emits a warning otherwise (:issue:`1385`).
+
+Elements in the resulting array could previously violate constraints on
+the elements strategy due to floating-point overflow or truncation of
+integers to fit smaller types.
+
 .. _v3.67.1:
 
 -------------------
