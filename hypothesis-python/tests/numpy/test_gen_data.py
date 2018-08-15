@@ -28,13 +28,15 @@ import hypothesis.extra.numpy as nps
 from hypothesis import given, assume, settings
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal, find_any
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import text_type, binary_type
 
 STANDARD_TYPES = list(map(np.dtype, [
-    u'int8', u'int32', u'int64',
-    u'float', u'float32', u'float64',
-    complex,
+    u'int8', u'int16', u'int32', u'int64',
+    u'uint8', u'uint16', u'uint32', u'uint64',
+    u'float', u'float16', u'float32', u'float64',
+    u'complex64', u'complex128',
     u'datetime64', u'timedelta64',
     bool, text_type, binary_type
 ]))
@@ -300,3 +302,30 @@ def test_all_inferred_scalar_strategies_roundtrip(data, dtype):
     assume(ex == ex)  # If not, the roundtrip test *should* fail!  (eg NaN)
     arr[0] = ex
     assert arr[0] == ex
+
+
+@pytest.mark.parametrize('fill', [False, True])
+@checks_deprecated_behaviour
+@given(st.data())
+def test_overflowing_integers_are_deprecated(fill, data):
+    kw = dict(elements=st.just(300))
+    if fill:
+        kw = dict(elements=st.nothing(), fill=kw['elements'])
+    arr = data.draw(nps.arrays(dtype='int8', shape=(1,), **kw))
+    assert arr[0] == (300 % 256)
+
+
+@pytest.mark.parametrize('fill', [False, True])
+@checks_deprecated_behaviour
+@given(st.data())
+def test_overflowing_floats_are_deprecated(fill, data):
+    kw = dict(elements=st.floats(min_value=65520, allow_infinity=False))
+    if fill:
+        kw = dict(elements=st.nothing(), fill=kw['elements'])
+    arr = data.draw(nps.arrays(dtype='float16', shape=(1,), **kw))
+    assert np.isinf(arr[0])
+
+
+@given(nps.arrays(dtype='float16', shape=(1,)))
+def test_inferred_floats_do_not_overflow(arr):
+    pass

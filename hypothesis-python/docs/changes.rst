@@ -53,7 +53,7 @@ if you are running Python 3.5 or earlier.
 3.66.33 - 2018-08-10
 --------------------
 
-This release fixes a bug in :func:`~hypotheses.strategies.floats`, where
+This release fixes a bug in :func:`~hypothesis.strategies.floats`, where
 setting ``allow_infinity=False`` and exactly one of ``min_value`` and
 ``max_value`` would allow infinite values to be generated.
 
