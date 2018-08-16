@@ -945,6 +945,10 @@ class ConjectureRunner(object):
             except KeyError:
                 pass
             try:
+                c = c & self.capped[node_index]
+            except KeyError:
+                pass
+            try:
                 node_index = self.tree[node_index][c]
             except KeyError:
                 break
