@@ -939,14 +939,11 @@ class ConjectureRunner(object):
 
     def cached_test_function(self, buffer):
         node_index = 0
-        for i in hrange(self.settings.buffer_size):
+        for i in hrange(len(buffer)):
             try:
                 c = self.forced[node_index]
             except KeyError:
-                if i < len(buffer):
-                    c = buffer[i]
-                else:
-                    c = 0
+                c = buffer[i]
             try:
                 node_index = self.tree[node_index][c]
             except KeyError:
