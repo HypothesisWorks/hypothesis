@@ -151,3 +151,23 @@ def test_regression_1():
     assert list(x)[:-2] == [1, 2, 1, 0, 0, 0, 0, 0]
 
     assert int_from_bytes(x[-2:]) in (254, 512)
+
+
+@given(st.integers(0, 255), st.integers(0, 255))
+def test_prescreen_with_capped_byte_agrees_with_results(byte_a, byte_b):
+    def f(data):
+        data.draw_bits(2)
+
+    runner = ConjectureRunner(f)
+
+    data_a = ConjectureData.for_buffer(hbytes([byte_a]))
+    data_b = ConjectureData.for_buffer(hbytes([byte_b]))
+
+    runner.test_function(data_a)
+    prescreen_b = runner.prescreen_buffer(hbytes([byte_b]))
+    # Always test buffer B, to check whether the prescreen was correct.
+    runner.test_function(data_b)
+
+    # If the prescreen passed, then the buffers should be different.
+    # If it failed, then the buffers should be the same.
+    assert prescreen_b == (data_a.buffer != data_b.buffer)
