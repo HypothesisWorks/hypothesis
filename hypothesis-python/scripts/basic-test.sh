@@ -4,14 +4,6 @@ set -e -o xtrace
 HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$HERE/.."
 
-# We run a reduced set of tests on OSX mostly so the CI runs in vaguely
-# reasonable time.
-if [[ "$(uname -s)" == 'Darwin' ]]; then
-    DARWIN=true
-else
-    DARWIN=false
-fi
-
 python -c '
 import os
 for k, v in sorted(dict(os.environ).items()):
@@ -35,7 +27,10 @@ else
   $PYTEST "tests/py3"
 fi
 
-if [ "$DARWIN" = true ]; then
+# We run a reduced set of tests on the macOS CI so that it runs in vaguely
+# reasonable time.
+if [ "$CIRCLECI" = true ]; then
+  echo Skipping the rest of the test suite on CircleCI.
   exit 0
 fi
 
