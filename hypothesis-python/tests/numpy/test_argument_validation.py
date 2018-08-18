@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import numpy
 import pytest
 
 import hypothesis.strategies as st
@@ -53,6 +54,10 @@ def e(a, **kwargs):
         e(nps.unsigned_integer_dtypes, endianness=3),
         e(nps.unsigned_integer_dtypes, sizes=()),
         e(nps.unsigned_integer_dtypes, sizes=(3,)),
+        e(nps.from_dtype, dtype='float64'),
+        e(nps.from_dtype, dtype=float),
+        e(nps.from_dtype, dtype=numpy.int8),
+        e(nps.from_dtype, dtype=1),
     ]
 )
 def test_raise_invalid_argument(function, kwargs):

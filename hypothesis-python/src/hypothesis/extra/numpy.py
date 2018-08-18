@@ -31,6 +31,7 @@ from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
+from hypothesis.internal.validation import check_type
 
 if False:
     from typing import Any, Union, Sequence, Tuple  # noqa
@@ -42,6 +43,8 @@ TIME_RESOLUTIONS = tuple('Y  M  D  h  m  s  ms  us  ns  ps  fs  as'.split())
 @st.defines_strategy_with_reusable_values
 def from_dtype(dtype):
     # type: (np.dtype) -> st.SearchStrategy[Any]
+    """Creates a strategy which can generate any value of the given dtype."""
+    check_type(np.dtype, dtype, 'dtype')
     # Compound datatypes, eg 'f4,f4,f4'
     if dtype.names is not None:
         # mapping np.void.type over a strategy is nonsense, so return now.
