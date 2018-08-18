@@ -99,7 +99,7 @@ def test_does_print_verbose_in_debug():
 def test_can_report_when_system_locale_is_ascii(monkeypatch):
     import io
     read, write = os.pipe()
-    read = io.open(read, 'r', encoding='ascii')
-    write = io.open(write, 'w', encoding='ascii')
-    monkeypatch.setattr(sys, 'stdout', write)
-    reporting.default(u"☃")
+    with io.open(read, 'r', encoding='ascii') as read:
+        with io.open(write, 'w', encoding='ascii') as write:
+            monkeypatch.setattr(sys, 'stdout', write)
+            reporting.default(u"☃")
