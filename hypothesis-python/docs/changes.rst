@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.68.1:
+
+-------------------
+3.68.1 - 2018-08-18
+-------------------
+
+This patch documents the :func:`~hypothesis.extra.numpy.from_dtype` function,
+which infers a strategy for :class:`numpy:numpy.dtype`s.  This is used in
+:func:`~hypothesis.extra.numpy.arrays`, but can also be used directly when
+creating e.g. Pandas objects.
+
 .. _v3.68.0:
 
 -------------------
