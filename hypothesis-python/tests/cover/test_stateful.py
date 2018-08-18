@@ -25,7 +25,7 @@ from _pytest.outcomes import Failed, Skipped
 
 from hypothesis import assume
 from hypothesis import settings as Settings
-from hypothesis.errors import Flaky, InvalidDefinition
+from hypothesis.errors import Flaky, InvalidArgument, InvalidDefinition
 from hypothesis.control import current_build_context
 from tests.common.utils import raises, capture_out, \
     checks_deprecated_behaviour
@@ -95,17 +95,17 @@ Split = namedtuple(u'Split', (u'left', u'right'))
 
 
 class BalancedTrees(RuleBasedStateMachine):
-    trees = u'BinaryTree'
+    trees = Bundle(u'BinaryTree')
 
     @rule(target=trees, x=booleans())
     def leaf(self, x):
         return Leaf(x)
 
-    @rule(target=trees, left=Bundle(trees), right=Bundle(trees))
+    @rule(target=trees, left=trees, right=trees)
     def split(self, left, right):
         return Split(left, right)
 
-    @rule(tree=Bundle(trees))
+    @rule(tree=trees)
     def test_is_balanced(self, tree):
         if isinstance(tree, Leaf):
             return
@@ -1000,3 +1000,27 @@ def test_steps_not_printed_with_pytest_skip(capsys):
         run_state_machine_as_test(RaisesProblem)
     out, _ = capsys.readouterr()
     assert '' == out
+
+
+@checks_deprecated_behaviour
+def test_rule_deprecation_targets_and_target():
+    k, v = Bundle('k'), Bundle('v')
+    rule(targets=(k,), target=v)
+
+
+@checks_deprecated_behaviour
+def test_rule_deprecation_bundle_by_name():
+    Bundle('k')
+    rule(target='k')
+
+
+def test_rule_non_bundle_target():
+    with pytest.raises(InvalidArgument):
+        rule(target=integers())
+
+
+def test_rule_non_bundle_target_oneof():
+    k, v = Bundle('k'), Bundle('v')
+    pattern = r'.+ `one_of(a, b)` or `a | b` .+'
+    with pytest.raises(InvalidArgument, match=pattern):
+        rule(target=k | v)
