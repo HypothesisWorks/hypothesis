@@ -927,7 +927,7 @@ class ConjectureRunner(object):
             except KeyError:
                 pass
             try:
-                b = min(b, self.capped[node_index])
+                b = b & self.capped[node_index]
             except KeyError:
                 pass
             try:
