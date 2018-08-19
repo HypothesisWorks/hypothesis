@@ -38,7 +38,7 @@ avoid unnecesary work in some cases.
 -------------------
 
 This patch documents the :func:`~hypothesis.extra.numpy.from_dtype` function,
-which infers a strategy for :class:`numpy:numpy.dtype`s.  This is used in
+which infers a strategy for :class:`numpy:numpy.dtype`\ s.  This is used in
 :func:`~hypothesis.extra.numpy.arrays`, but can also be used directly when
 creating e.g. Pandas objects.
 
@@ -517,7 +517,7 @@ only allow installation with compatible versions of coverage.
 This patch ensures that :doc:`stateful tests <stateful>` which raise an
 error from a :pypi:`pytest` helper still print the sequence of steps
 taken to reach that point (:issue:`1372`).  This reporting was previously
-broken because the helpers inherit directly from ``BaseException``, and
+broken because the helpers inherit directly from :class:`python:BaseException`, and
 therefore require special handling to catch without breaking e.g. the use
 of ctrl-C to quit the test.
 
@@ -620,10 +620,10 @@ Thanks to Tim Martin for this contribution.
 3.60.0 - 2018-06-20
 -------------------
 
-This release add ``initialize`` decorator for stateful testing
-(originally discussed in :issue:`1216`). ``initialize`` act as a special rule
-that is only called once, and all ``initialize`` rules are guaranteed to be
-called before any normal rule is called.
+This release adds the :func:`@initialize <hypothesis.stateful.initialize>`
+decorator for stateful testing (originally discussed in :issue:`1216`).
+All :func:`@initialize <hypothesis.stateful.initialize>` rules will be called
+once each in an arbitrary order before any normal rule is called.
 
 .. _v3.59.3:
 
@@ -685,9 +685,7 @@ Thanks to Luke for contributing.
 -------------------
 
 This adds a new extra :py:func:`~hypothesis.extra.dateutil.timezones` strategy
-that generates dateutil timezones.
-
-Depends on :pypi:`python-dateutil`.
+that generates :pypi:`dateutil timezones <python-dateutil>`.
 
 Thanks to Conrad for contributing.
 
@@ -736,8 +734,8 @@ a new release tagging scheme.
 -------------------
 
 This release provides a performance improvement for most tests, but in
-particular users of ``sampled_from`` who don't have numpy installed should see
-a significant performance improvement.
+particular users of :func:`~hypothesis.strategies.sampled_from` who don't
+have numpy installed should see a significant performance improvement.
 
 .. _v3.56.6:
 
@@ -884,10 +882,10 @@ It has no other user visible effects.
 3.55.1 - 2018-04-06
 -------------------
 
-This patch relaxes constraints on the expected values returned
-by the standard library function :func:`hypot` and the internal
-helper function :func:`~hypotheses.internal.cathetus`, this to
-fix near-exact test-failures on some 32-bit systems.
+This patch relaxes constraints in our tests on the expected values returned
+by the standard library function :func:`~python:math.hypot` and the internal
+helper function :func:`~hypothesis.internal.cathetus`, to fix near-exact
+test failures on some 32-bit systems used by downstream packagers.
 
 .. _v3.55.0:
 
@@ -915,10 +913,10 @@ This release includes several improvements to the handling of the
 3.54.0 - 2018-04-04
 -------------------
 
-This release improves the :func:`~hypotheses.strategies.complex_numbers`
+This release improves the :func:`~hypothesis.strategies.complex_numbers`
 strategy, which now supports ``min_magnitude`` and ``max_magnitude``
 arguments, along with ``allow_nan`` and ``allow_infinity`` like for
-:func:`~hypotheses.strategies.floats`.
+:func:`~hypothesis.strategies.floats`.
 
 Thanks to J.J. Green for this feature.
 
@@ -1571,7 +1569,7 @@ would show up normally.
 3.44.0 - 2017-12-17
 -------------------
 
-This release adds a new feature: The :ref:`@reproduce_failure decorator <reproduce_failure>`,
+This release adds a new feature: The :func:`@reproduce_failure <hypothesis.reproduce_failure>` decorator,
 designed to make it easy to use Hypothesis's binary format for examples to
 reproduce a problem locally without having to share your example database
 between machines.
@@ -2657,7 +2655,7 @@ as well.
 
 This release fixes a bug introduced in :ref:`3.18.0 <v3.18.0>`. If the arguments
 ``whitelist_characters`` and ``blacklist_characters`` to
-:func:`~hypothesis.strategies.characters` both contained elements, then an
+:func:`~hypothesis.strategies.characters` contained overlapping elements, then an
 ``InvalidArgument`` exception would be raised.
 
 Thanks to Zac Hatfield-Dodds for reporting and fixing this.
@@ -2928,7 +2926,7 @@ include Hypothesis internals for test functions decorated with :func:`@given <hy
 
 This is a feature release, adding datetime-related strategies to the core strategies.
 
-:func:`~hypotheses.extra.pytz.timezones` allows you to sample pytz timezones from
+:func:`~hypothesis.extra.pytz.timezones` allows you to sample pytz timezones from
 the Olsen database.  Use directly in a recipe for tz-aware datetimes, or
 compose with :func:`~hypothesis.strategies.none` to allow a mix of aware and naive output.
 
@@ -3006,9 +3004,9 @@ compiled without SQLite support (such as BSD or Jython).
 3.8.4 - 2017-05-16
 ------------------
 
-This is a compatibility bugfix release.  ``sampled_from`` no longer raises
-a deprecation warning when sampling from an ``Enum``, as all enums have a
-reliable iteration order.
+This is a compatibility bugfix release.  :func:`~hypothesis.strategies.sampled_from`
+no longer raises a deprecation warning when sampling from an
+:class:`python:enum.Enum`, as all enums have a reliable iteration order.
 
 .. _v3.8.3:
 
@@ -3261,7 +3259,7 @@ Additionally there have been some minor bug fixes:
 
 * In some cases Hypothesis should produce fewer duplicate examples (this will mostly
   only affect cases with a single parameter).
-* py.test command line parameters are now under an option group for Hypothesis (thanks
+* :pypi:`pytest` command line parameters are now under an option group for Hypothesis (thanks
   to David Keijser for fixing this)
 * Hypothesis would previously error if you used :pep:`3107` function annotations on your tests under
   Python 3.4.

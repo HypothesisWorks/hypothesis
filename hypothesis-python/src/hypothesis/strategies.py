@@ -572,7 +572,7 @@ def sampled_from(elements):
 def sampled_from(elements):
     """Returns a strategy which generates any value present in ``elements``.
 
-    Note that as with :func:`~hypotheses.strategies.just`, values will not be
+    Note that as with :func:`~hypothesis.strategies.just`, values will not be
     copied and thus you should be careful of using mutable data.
 
     ``sampled_from`` supports ordered collections, as well as

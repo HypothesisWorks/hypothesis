@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import subprocess
 
 import hypothesistooling as tools
 import hypothesistooling.projects.hypothesispython as hp
@@ -41,3 +42,18 @@ def test_passes_rst_lint():
 
 def test_passes_flake8():
     pip_tool('flake8', '--select=W191,W291,W292,W293,W391', *ALL_RST)
+
+
+def test_crossref_type():
+    """Checks for a common typo in Sphinx cross-references.
+
+    This greps for things that look like the start of a cross-reference:
+    backtick, maybe tilde, and (incorrectly!) the plural form of
+    hypothesis. We assert that the exit code is non-zero (i.e. no
+    matches found), and run the command across the whole Python
+    directory to catch docs, docstrings, and even RELEASE.rst if
+    present.
+    """
+    assert subprocess.call([
+        'git', 'grep', '--line-number', '--perl-regexp', '`~?hypotheses'
+    ], cwd=hp.HYPOTHESIS_PYTHON)
