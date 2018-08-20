@@ -35,21 +35,23 @@ import attr
 
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.core import EXCEPTIONS_TO_FAIL, find
-from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
-    HypothesisException
+from hypothesis.errors import Flaky, NoSuchExample, InvalidArgument, \
+    InvalidDefinition, HypothesisException
 from hypothesis.control import BuildContext
 from hypothesis._settings import Verbosity
 from hypothesis._settings import settings as Settings
+from hypothesis._settings import note_deprecation
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.strategies import just, one_of, runner, tuples, \
     fixed_dictionaries
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
-from hypothesis.internal.compat import int_to_bytes
+from hypothesis.internal.compat import int_to_bytes, string_types
 from hypothesis.internal.reflection import proxies, nicerepr
 from hypothesis.internal.conjecture.data import StopTest
 from hypothesis.internal.conjecture.utils import integer_range, \
     calc_label_from_name
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.searchstrategy.strategies import OneOfStrategy, \
+    SearchStrategy
 
 STATE_MACHINE_RUN_LABEL = calc_label_from_name('another state machine step')
 
@@ -323,6 +325,43 @@ class Bundle(SearchStrategy):
         return machine.names_to_values[reference.name]
 
 
+def _convert_targets(targets, target):
+    """Single validator and convertor for target arguments."""
+    if target is not None:
+        if targets:
+            note_deprecation(
+                'Passing both targets=%r and target=%r is redundant, and '
+                'will become an error in a future version of Hypothesis.  '
+                'Pass targets=%r instead.'
+                % (targets, target, tuple(targets) + (target,))
+            )
+        targets = tuple(targets) + (target,)
+
+    converted_targets = []
+    for t in targets:
+        if isinstance(t, string_types):
+            note_deprecation(
+                'Got %r as a target, but passing the name of a Bundle is '
+                'deprecated - please pass the Bundle directly.' % (t,)
+            )
+        elif not isinstance(t, Bundle):
+            msg = 'Got invalid target %r of type %r, but all targets must ' \
+                'be either a Bundle or the name of a Bundle.'
+            if isinstance(t, OneOfStrategy):
+                msg += (
+                    '\nIt looks like you passed `one_of(a, b)` or `a | b` as '
+                    'a target.  You should instead pass `targets=(a, b)` to '
+                    'add the return value of this rule to both the `a` and '
+                    '`b` bundles, or define a rule for each target if it '
+                    'should be added to exactly one.'
+                )
+            raise InvalidArgument(msg % (t, type(t)))
+        while isinstance(t, Bundle):
+            t = t.name
+        converted_targets.append(t)
+    return tuple(converted_targets)
+
+
 RULE_MARKER = u'hypothesis_stateful_rule'
 INITIALIZE_RULE_MARKER = u'hypothesis_stateful_initialize_rule'
 PRECONDITION_MARKER = u'hypothesis_stateful_precondition'
@@ -334,21 +373,18 @@ def rule(targets=(), target=None, **kwargs):
     targets will define where the end result of this function should go. If
     both are empty then the end result will be discarded.
 
-    targets may either be a Bundle or the name of a Bundle.
+    ``target`` must be a Bundle, or if the result should go to multiple
+    bundles you can pass a tuple of them as the ``targets`` argument.
+    It is invalid to use both arguments for a single rule.  If the result
+    should go to exactly one of several bundles, define a separate rule for
+    each case.
 
     kwargs then define the arguments that will be passed to the function
     invocation. If their value is a Bundle then values that have previously
     been produced for that bundle will be provided, if they are anything else
     it will be turned into a strategy and values from that will be provided.
     """
-    if target is not None:
-        targets += (target,)
-
-    converted_targets = []
-    for t in targets:
-        while isinstance(t, Bundle):
-            t = t.name
-        converted_targets.append(t)
+    converted_targets = _convert_targets(targets, target)
 
     def accept(f):
         existing_rule = getattr(f, RULE_MARKER, None)
@@ -359,7 +395,7 @@ def rule(targets=(), target=None, **kwargs):
                 Settings.default,
             )
         precondition = getattr(f, PRECONDITION_MARKER, None)
-        rule = Rule(targets=tuple(converted_targets), arguments=kwargs,
+        rule = Rule(targets=converted_targets, arguments=kwargs,
                     function=f, precondition=precondition)
 
         @proxies(f)
@@ -379,14 +415,7 @@ def initialize(targets=(), target=None, **kwargs):
     methods will be called before any rule decorated methods, in an
     arbitrary order.
     """
-    if target is not None:
-        targets += (target,)
-
-    converted_targets = []
-    for t in targets:
-        while isinstance(t, Bundle):
-            t = t.name
-        converted_targets.append(t)
+    converted_targets = _convert_targets(targets, target)
 
     def accept(f):
         existing_rule = getattr(f, RULE_MARKER, None)
@@ -402,7 +431,7 @@ def initialize(targets=(), target=None, **kwargs):
                 'An initialization rule cannot have a precondition. ',
                 Settings.default,
             )
-        rule = Rule(targets=tuple(converted_targets), arguments=kwargs,
+        rule = Rule(targets=converted_targets, arguments=kwargs,
                     function=f, precondition=precondition)
 
         @proxies(f)
