@@ -110,39 +110,39 @@ anything with external dependencies just goes in ``hypothesis.extra``.
 The build
 ~~~~~~~~~
 
-The build is orchestrated by a giant Makefile which handles installation of the relevant pythons.
-Actually running the tests is managed by `tox <https://tox.readthedocs.io/en/latest/>`_, but the Makefile
+The build is driven by a ``build.sh`` shell script, which delegates to a custom Python-based build system.
+Actually running the tests is managed by `tox <https://tox.readthedocs.io/en/latest/>`_, but the build system
 will call out to the relevant tox environments so you mostly don't have to know anything about that
-unless you want to make changes to the test config. You also mostly don't need to know anything about make
-except to type 'make' followed by the name of the task you want to run.
+unless you want to make changes to the test config. You also mostly don't need to know anything about the build system
+except to type ``./build.sh`` followed by the name of the task you want to run.
 
 All of it will be checked on CI so you don't *have* to run anything locally, but you might
 find it useful to do so: A full Travis run takes about twenty minutes, and there's often a queue,
 so running a smaller set of tests locally can be helpful.
 
-The makefile should be "fairly" portable, but is currently only known to work on Linux or OS X. It *might* work
+The build system should be "fairly" portable, but is currently only known to work on Linux or OS X. It *might* work
 on a BSD or on Windows with cygwin installed, but it hasn't been tried. If you try it and find it doesn't
 work, please do submit patches to fix that.
 
 Some notable commands:
 
-'make format' will reformat your code according to the Hypothesis coding style. You should use this before each
+``./build.sh check-coverage`` will verify 100% code coverage by running a
+curated subset of the test suite.
+
+``./build.sh check-py36`` (etc.) will run most of the test suite against a
+particular python version.
+
+``./build.sh format`` will reformat your code according to the Hypothesis coding style. You should use this before each
 commit ideally, but you only really have to use it when you want your code to be ready to merge.
 
-You can also use 'make check-format', which will run format and some linting and will then error if you have a
+You can also use ``./build.sh check-format``, which will run format and some linting and will then error if you have a
 git diff. Note: This will error even if you started with a git diff, so if you've got any uncommitted changes
 this will necessarily report an error.
 
-'make check' will run check-format and all of the tests. Warning: This will take a *very* long time. On Travis the
-build currently takes more than an hour of total time (it runs in parallel on Travis so you don't have to wait
-quite that long). If you've got a multi-core machine you can run 'make -j 2' (or any higher number if you want
-more) to run 2 jobs in parallel, but to be honest you're probably better off letting Travis run this step.
-
-You can also run a number of finer grained make tasks - check ``.travis.yml`` for a short list and
-the Makefile for details.
+Look in ``.travis.yml`` for a short list of other supported build tasks.
 
 Note: The build requires a lot of different versions of python, so rather than have you install them yourself,
-the makefile will install them itself in a local directory. This means that the first time you run a task you
+the build system will install them itself in a local directory. This means that the first time you run a task you
 may have to wait a while as the build downloads and installs the right version of python for you.
 
 --------------------
