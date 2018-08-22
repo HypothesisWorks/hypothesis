@@ -91,6 +91,13 @@ class ConjectureRunner(object):
 
         self.target_selector = TargetSelector(self.random)
 
+        # Previously-tested byte streams are recorded in a prefix tree, so that
+        # we can:
+        # - Avoid testing the same stream twice (in some cases).
+        # - Avoid testing a prefix of a past stream (in some cases),
+        #   since that should only result in overrun.
+        # - Generate stream prefixes that we haven't tried before.
+
         # Tree nodes are stored in an array to prevent heavy nesting of data
         # structures. Branches are dicts mapping bytes to child nodes (which
         # will in general only be partially populated). Leaves are
@@ -171,27 +178,47 @@ class ConjectureRunner(object):
         if data.status == Status.VALID:
             self.valid_examples += 1
 
+        # Record the test result in the tree, to avoid unnecessary work in
+        # the future.
+
+        # First, iterate through the result's buffer, to create the node that
+        # will hold this result. Also note any forced or masked bytes.
         tree_node = self.tree[0]
         indices = []
         node_index = 0
         for i, b in enumerate(data.buffer):
+            # We build a list of all the node indices visited on our path
+            # through the tree, since we'll need to refer to them later.
             indices.append(node_index)
+
+            # If this buffer position was forced or masked, then mark its
+            # corresponding node as forced/masked.
             if i in data.forced_indices:
                 self.forced[node_index] = b
             try:
                 self.masks[node_index] = data.masked_indices[i]
             except KeyError:
                 pass
+
             try:
+                # Use the current byte to find the next node on our path.
                 node_index = tree_node[b]
             except KeyError:
+                # That node doesn't exist yet, so create it.
                 node_index = len(self.tree)
+                # Create a new branch node. If this should actually be a leaf
+                # node, it will be overwritten when we store the result.
                 self.tree.append({})
                 tree_node[b] = node_index
+
             tree_node = self.tree[node_index]
+
             if node_index in self.dead:
+                # This part of the tree has already been marked as dead, so
+                # there's no need to traverse any deeper.
                 break
 
+        # At each node that begins a block, record the size of that block.
         for u, v in data.blocks:
             # This can happen if we hit a dead node when walking the buffer.
             # In that case we already have this section of the tree mapped.
@@ -199,12 +226,23 @@ class ConjectureRunner(object):
                 break
             self.block_sizes[indices[u]] = v - u
 
+        # Forcibly mark all nodes beyond the zero-bound point as dead,
+        # because we don't intend to try any other values there.
         self.dead.update(indices[self.cap:])
 
+        # Now store this result in the tree (if appropriate), and check if
+        # any nodes need to be marked as dead.
         if data.status != Status.OVERRUN and node_index not in self.dead:
+            # Mark this node as dead, because it produced a result.
+            # Trying to explore suffixes of it would not be helpful.
             self.dead.add(node_index)
+            # Store the result in the tree as a leaf. This will overwrite the
+            # branch node that was created during traversal.
             self.tree[node_index] = data
 
+            # Review the traversed nodes, to see if any should be marked
+            # as dead. We check them in reverse order, because as soon as we
+            # find a live node, all nodes before it must still be live too.
             for j in reversed(indices):
                 mask = self.masks.get(j, 0xff)
                 assert _is_simple_mask(mask)
@@ -214,10 +252,18 @@ class ConjectureRunner(object):
                     len(self.tree[j]) < max_size and
                     j not in self.forced
                 ):
+                    # There are still byte values to explore at this node,
+                    # so it isn't dead yet.
                     break
                 if set(self.tree[j].values()).issubset(self.dead):
+                    # Everything beyond this node is known to be dead,
+                    # and there are no more values to explore here (see above),
+                    # so this node must be dead too.
                     self.dead.add(j)
                 else:
+                    # Even though all of this node's possible values have been
+                    # tried, there are still some deeper nodes that remain
+                    # alive, so this node isn't dead yet.
                     break
 
         if data.status == Status.INTERESTING:
@@ -275,27 +321,47 @@ class ConjectureRunner(object):
         self.record_for_health_check(data)
 
     def generate_novel_prefix(self):
+        """Uses the tree to proactively generate a starting sequence of bytes
+        that we haven't explored yet for this test.
+
+        When this method is called, we assume that there must be at
+        least one novel prefix left to find. If there were not, then the
+        test run should have already stopped due to tree exhaustion.
+        """
         prefix = bytearray()
         node = 0
         while True:
             assert len(prefix) < self.cap
             assert node not in self.dead
 
+            # Figure out the range of byte values we should be trying.
+            # Normally this will be 0-255, unless the current position has a
+            # mask.
             mask = self.masks.get(node, 0xff)
             assert _is_simple_mask(mask)
             upper_bound = mask + 1
 
             try:
                 c = self.forced[node]
+                # This position has a forced byte value, so trying a different
+                # value wouldn't be helpful. Just add the forced byte, and
+                # move on to the next position.
                 prefix.append(c)
                 node = self.tree[node][c]
                 continue
             except KeyError:
                 pass
+
+            # Provisionally choose the next byte value.
+            # This will change later if we find that it was a bad choice.
             c = self.random.randrange(0, upper_bound)
+
             try:
                 next_node = self.tree[node][c]
                 if next_node in self.dead:
+                    # Whoops, the byte value we chose for this position has
+                    # already been fully explored. Let's pick a new value, and
+                    # this time choose a value that's definitely still alive.
                     choices = [
                         b for b in hrange(upper_bound)
                         if self.tree[node].get(b) not in self.dead
@@ -304,9 +370,13 @@ class ConjectureRunner(object):
                     c = self.random.choice(choices)
                     node = self.tree[node][c]
                 else:
+                    # The byte value we chose is in the tree, but it still has
+                    # some unexplored descendants, so it's a valid choice.
                     node = next_node
                 prefix.append(c)
             except KeyError:
+                # The byte value we chose isn't in the tree at this position,
+                # which means we've successfully found a novel prefix.
                 prefix.append(c)
                 break
         assert node not in self.dead
@@ -895,10 +965,16 @@ class ConjectureRunner(object):
         This is purely an optimisation to try to reduce the number of tests we
         run. "return True" would be a valid but inefficient implementation.
         """
+
+        # Traverse the tree, to see if we have already tried this buffer
+        # (or a prefix of it).
         node_index = 0
         n = len(buffer)
         for k, b in enumerate(buffer):
             if node_index in self.dead:
+                # This buffer (or a prefix of it) has already been tested,
+                # or has already had its descendants fully explored.
+                # Testing it again would not be helpful.
                 return False
             try:
                 # The block size at that point provides a lower bound on how
@@ -909,6 +985,10 @@ class ConjectureRunner(object):
                     return False
             except KeyError:
                 pass
+
+            # If there's a forced value or a mask at this position, then
+            # pretend that the buffer already contains a matching value,
+            # because the test function is going to do the same.
             try:
                 b = self.forced[node_index]
             except KeyError:
@@ -917,16 +997,31 @@ class ConjectureRunner(object):
                 b = b & self.masks[node_index]
             except KeyError:
                 pass
+
             try:
                 node_index = self.tree[node_index][b]
             except KeyError:
+                # The buffer wasn't in the tree, which means we haven't tried
+                # it. That makes it a possible candidate.
                 return True
         else:
+            # We ran out of buffer before reaching a leaf or a missing node.
+            # That means the test function is going to draw beyond the end
+            # of this buffer, which makes it a bad candidate.
             return False
 
     def cached_test_function(self, buffer):
+        """Checks the tree to see if we've tested this buffer, and returns the
+        previous result if we have.
+
+        Otherwise we call through to ``test_function``, and return a
+        fresh result.
+        """
         node_index = 0
         for c in buffer:
+            # If there's a forced value or a mask at this position, then
+            # pretend that the buffer already contains a matching value,
+            # because the test function is going to do the same.
             try:
                 c = self.forced[node_index]
             except KeyError:
@@ -935,13 +1030,28 @@ class ConjectureRunner(object):
                 c = c & self.masks[node_index]
             except KeyError:
                 pass
+
             try:
                 node_index = self.tree[node_index][c]
             except KeyError:
+                # The byte at this position isn't in the tree, which means
+                # we haven't tested this buffer. Break out of the tree
+                # traversal, and run the test function normally.
                 break
             node = self.tree[node_index]
             if isinstance(node, ConjectureData):
+                # This buffer (or a prefix of it) has already been tested.
+                # Return the stored result instead of trying it again.
                 return node
+        else:
+            # Falling off the end of this loop means that we're about to test
+            # a prefix of a previously-tested byte stream. The test is going
+            # to draw beyond the end of the buffer, and fail due to overrun.
+            # Currently there is no special handling for this case.
+            pass
+
+        # We didn't find a match in the tree, so we need to run the test
+        # function normally.
         result = ConjectureData.for_buffer(buffer)
         self.test_function(result)
         return result
