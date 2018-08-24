@@ -59,6 +59,7 @@ extras = {
     'fakefactory': ['Faker>=0.7'],
     'numpy': ['numpy>=1.9.0'],
     'pytest': ['pytest>=3.0'],
+    'dpcontracts': ['dpcontracts>=0.4'],
     # We only support Django versions with upstream support - see
     # https://www.djangoproject.com/download/#supported-versions
     'django': ['pytz', 'django>=1.11'],

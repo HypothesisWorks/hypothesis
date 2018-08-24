@@ -25,6 +25,10 @@ pip install ".[pytz, dateutil]"
 $PYTEST tests/datetime/
 pip uninstall -y pytz python-dateutil
 
+pip install ".[dpcontracts]"
+$PYTEST tests/dpcontracts/
+pip uninstall -y dpcontracts
+
 if [ "$(python -c 'import sys; print(sys.version_info[0] == 2)')" = "True" ] ; then
   $PYTEST "tests/py2"
 else
