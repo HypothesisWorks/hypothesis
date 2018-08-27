@@ -65,6 +65,15 @@ def pytest_addoption(parser):
     )
 
 
+def pytest_report_header(config):
+    profile = config.getoption(LOAD_PROFILE_OPTION)
+    if not profile:
+        profile = 'default'
+    from hypothesis import settings
+    from hypothesis.version import __version__
+    return 'hypothesis %s: (%s)' % (__version__, settings.get_profile(profile))
+
+
 def pytest_configure(config):
     core.running_under_pytest = True
     from hypothesis import settings
