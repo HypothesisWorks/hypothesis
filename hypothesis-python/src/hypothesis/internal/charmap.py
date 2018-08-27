@@ -82,7 +82,7 @@ def charmap():
                     pickle.dump(sorted(_charmap.items()), o,
                                 pickle.HIGHEST_PROTOCOL)
                 os.rename(tmpfile, f)
-            except Exception:  # pragma: no cover
+            except Exception:
                 pass
     assert _charmap is not None
     return _charmap
