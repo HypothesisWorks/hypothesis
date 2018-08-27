@@ -53,7 +53,7 @@ hypothesis[fakefactory]
     Hypothesis strategies, which are more effective at both finding and
     shrinking failing examples for your tests.
 
-    The :func:`~hypothesis.strategies.from_regex`,
+    The :func:`~hypothesis.strategies.from_regex`, :func:`~hypothesis.strategies.emails`,
     :func:`~hypothesis.strategies.text` (with some specific alphabet), and
     :func:`~hypothesis.strategies.sampled_from` strategies may be particularly
     useful.
