@@ -116,10 +116,10 @@ class ConjectureRunner(object):
         # point. Corresponds to data.write() calls.
         self.forced = {}
 
-        # Maps tree indices to the maximum byte that is valid at that point.
-        # Currently this is only used inside draw_bits, but it potentially
+        # Maps tree indices to a mask that restricts bytes at that point.
+        # Currently this is only updated by draw_bits, but it potentially
         # could get used elsewhere.
-        self.capped = {}
+        self.masks = {}
 
         # Where a tree node consists of the beginning of a block we track the
         # size of said block. This allows us to tell when an example is too
@@ -196,7 +196,7 @@ class ConjectureRunner(object):
             if i in data.forced_indices:
                 self.forced[node_index] = b
             try:
-                self.capped[node_index] = data.capped_indices[i]
+                self.masks[node_index] = data.masked_indices[i]
             except KeyError:
                 pass
             try:
@@ -223,8 +223,12 @@ class ConjectureRunner(object):
             self.tree[node_index] = data
 
             for j in reversed(indices):
+                mask = self.masks.get(j, 0xff)
+                assert _is_simple_mask(mask)
+                max_size = mask + 1
+
                 if (
-                    len(self.tree[j]) < self.capped.get(j, 255) + 1 and
+                    len(self.tree[j]) < max_size and
                     j not in self.forced
                 ):
                     break
@@ -293,7 +297,11 @@ class ConjectureRunner(object):
         while True:
             assert len(prefix) < self.cap
             assert node not in self.dead
-            upper_bound = self.capped.get(node, 255) + 1
+
+            mask = self.masks.get(node, 0xff)
+            assert _is_simple_mask(mask)
+            upper_bound = mask + 1
+
             try:
                 c = self.forced[node]
                 prefix.append(c)
@@ -927,7 +935,7 @@ class ConjectureRunner(object):
             except KeyError:
                 pass
             try:
-                b = b & self.capped[node_index]
+                b = b & self.masks[node_index]
             except KeyError:
                 pass
             try:
@@ -945,7 +953,7 @@ class ConjectureRunner(object):
             except KeyError:
                 pass
             try:
-                c = c & self.capped[node_index]
+                c = c & self.masks[node_index]
             except KeyError:
                 pass
             try:
@@ -969,6 +977,16 @@ class ConjectureRunner(object):
         result = str(event)
         self.events_to_strings[event] = result
         return result
+
+
+def _is_simple_mask(mask):
+    """A simple mask is ``(2 ** n - 1)`` for some ``n``, so it has the effect
+    of keeping the lowest ``n`` bits and discarding the rest.
+
+    A mask in this form can produce any integer between 0 and the mask itself
+    (inclusive), and the total number of these values is ``(mask + 1)``.
+    """
+    return (mask & (mask + 1)) == 0
 
 
 def _draw_predecessor(rnd, xs):

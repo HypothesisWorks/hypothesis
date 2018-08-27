@@ -115,7 +115,7 @@ class ConjectureData(object):
         self.events = set()
         self.forced_indices = set()
         self.forced_blocks = set()
-        self.capped_indices = {}
+        self.masked_indices = {}
         self.interesting_origin = None
         self.tags = set()
         self.draw_times = []
@@ -282,7 +282,7 @@ class ConjectureData(object):
             assert len(buf) == n_bytes
             mask = (1 << (n % 8)) - 1
             buf[0] &= mask
-            self.capped_indices[self.index] = mask
+            self.masked_indices[self.index] = mask
             buf = hbytes(buf)
             self.__write(buf)
             result = int_from_bytes(buf)
