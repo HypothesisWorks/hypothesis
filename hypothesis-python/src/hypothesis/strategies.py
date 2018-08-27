@@ -112,7 +112,7 @@ __all__ = [
     'characters', 'text', 'from_regex', 'binary', 'uuids',
     'tuples', 'lists', 'sets', 'frozensets', 'iterables',
     'dictionaries', 'fixed_dictionaries',
-    'sampled_from', 'permutations',
+    'sampled_from', 'permutations', 'subsequence_of',
     'datetimes', 'dates', 'times', 'timedeltas',
     'builds',
     'randoms', 'random_module',
@@ -1807,6 +1807,37 @@ def composite(f):
         return CompositeStrategy(f, label, args, kwargs)
     accept.__module__ = f.__module__
     return accept
+
+
+@defines_strategy
+@composite
+def subsequence_of(
+    draw,  # type: ignore
+    elements,  # type: SearchStrategy[Ex]
+    min_size=None,  # type: int
+    average_size=None,  # type: int
+    max_size=None,  # type: int
+):
+    # type: (...) -> List[Ex]
+    """Returns a strategy which generates sub-sequences of the elements
+    sequence.
+    """
+    check_valid_sizes(min_size, average_size, max_size)
+
+    # TODO: fix hax to always get numerical constraints.
+    min_size = 0 if min_size is None else min_size
+    max_size = len(elements) if max_size is None else max_size
+
+    def element_mask():
+        # type: () -> List[bool]
+        always_size = min_size
+        never_size = len(elements) - max_size
+        maybe_size = len(elements) - always_size - never_size
+        choices = ([True] * always_size + [draw(booleans()) for _ in range(maybe_size)] + [False] * never_size)
+        assert len(elements) == len(choices)
+        return draw(permutations(choices))
+
+    return [element for (element, include) in zip(elements, element_mask()) if include]
 
 
 @defines_strategy_with_reusable_values
