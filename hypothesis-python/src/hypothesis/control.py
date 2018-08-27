@@ -25,7 +25,6 @@ from hypothesis.errors import CleanupFailed, InvalidArgument, \
 from hypothesis.reporting import report
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
-
 if False:
     from typing import Any, AnyStr  # noqa
 

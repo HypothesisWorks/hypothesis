@@ -130,7 +130,7 @@ def test_current_build_context_is_current():
 
 
 def test_prints_all_notes_in_verbose_mode():
-    # slightly roundabout because @example messes with verbosity
+    # slightly roundabout because @example messes with verbosity - see #1521
     generated_integers = []
 
     def notefmt(x):
