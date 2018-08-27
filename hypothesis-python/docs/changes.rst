@@ -21,6 +21,20 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.69.3:
+
+-------------------
+3.69.3 - 2018-08-27
+-------------------
+
+This patch handles passing an empty :class:`python:enum.Enum` to
+:func:`~hypothesis.strategies.from_type` returns 
+:func:`~hypothesis.strategies.nothing`, instead of raising an 
+internal :class:`python:AssertionError`.
+
+Thanks to Paul Amazona (@whatevergeek) for writing this patch at the 
+PyCon Australia sprints!
+
 .. _v3.69.2:
 
 -------------------
