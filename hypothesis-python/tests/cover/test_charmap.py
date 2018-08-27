@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
+import tempfile
 import unicodedata
 
 import hypothesis.strategies as st
@@ -169,3 +170,17 @@ def test_regenerate_broken_charmap_file():
 
 def test_exclude_characters_are_included_in_key():
     assert cm.query() != cm.query(exclude_characters='0')
+
+
+def test_error_writing_charmap_file_is_suppressed(monkeypatch):
+    def broken_mkstemp(dir):
+        raise RuntimeError()
+
+    monkeypatch.setattr(tempfile, 'mkstemp', broken_mkstemp)
+
+    cm._charmap = None
+
+    file_loc = cm.charmap_file()
+    os.unlink(file_loc)
+
+    cm.charmap()
