@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.69.6:
+
+-------------------
+3.69.6 - 2018-08-27
+-------------------
+
+This patch improves the testing of some internal caching.  It should have
+no user-visible effect.
+
 .. _v3.69.5:
 
 -------------------
