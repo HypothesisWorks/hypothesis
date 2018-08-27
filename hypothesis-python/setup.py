@@ -120,4 +120,5 @@ setuptools.setup(
         'pytest11': ['hypothesispytest = hypothesis.extra.pytestplugin'],
     },
     long_description=open(README).read(),
+    keywords='python testing fuzzing property-based-testing',
 )
