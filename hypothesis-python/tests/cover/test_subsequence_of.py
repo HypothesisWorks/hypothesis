@@ -24,7 +24,6 @@ from tests.common.debug import assert_no_examples
 
 def test_subsequence_of_empty():
     sub_seq_strat = st.lists(st.none(), max_size=0)
-    # assert strat.is_empty  # See #1517
     assert_no_examples(sub_seq_strat)
 
 
@@ -67,8 +66,6 @@ def test_subsequence_original_elements_not_over_produced(data, seq):
 
 @given(st.data(), st.lists(st.integers()))
 def test_subsequence_max_size_constraint(data, seq):
-    # Make a maximum length constraint of the subsequence, that's no
-    # longer than the main sequence too.
     max_size_strat = st.integers(min_value=0, max_value=len(seq))
     max_size = data.draw(max_size_strat)
 
@@ -80,8 +77,6 @@ def test_subsequence_max_size_constraint(data, seq):
 
 @given(st.data(), st.lists(st.integers()))
 def test_subsequence_min_size_constraint(data, seq):
-    # Make a maximum length constraint of the subsequence, that's no
-    # longer than the main sequence too.
     min_size_strat = st.integers(min_value=0, max_value=len(seq))
     min_size = data.draw(min_size_strat)
 
@@ -93,8 +88,6 @@ def test_subsequence_min_size_constraint(data, seq):
 
 @given(st.data(), st.lists(st.integers()))
 def test_subsequence_min_max_size_constraint(data, seq):
-    # Make a maximum length constraint of the subsequence, that's no
-    # longer than the main sequence too.
     min_size_strat = st.integers(min_value=0, max_value=len(seq))
     min_size = data.draw(min_size_strat)
 
