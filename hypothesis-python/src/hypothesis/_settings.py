@@ -321,6 +321,14 @@ class settings(
                 bits.append('%s=%r' % (name, value))
         return 'settings(%s)' % ', '.join(sorted(bits))
 
+    def __str__(self):
+        bits = []
+        for name, setting in all_settings.items():
+            value = getattr(self, name)
+            if value != setting.default and not setting.hide_repr:
+                bits.append('%s=%r' % (name, value))
+        return ' '.join(sorted(bits))
+
     def __enter__(self):
         note_deprecation(
             'Settings should be determined only by global state or with the '
