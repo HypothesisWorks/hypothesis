@@ -19,11 +19,14 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
+from hypothesis import Verbosity, given, settings, reporting
+from hypothesis.strategies import integers
 from hypothesis.errors import CleanupFailed, InvalidArgument
 from hypothesis.control import BuildContext, note, event, cleanup, \
     current_build_context, _current_build_context
 from tests.common.utils import capture_out
 from hypothesis.internal.conjecture.data import ConjectureData as TD
+from hypothesis.internal.compat import print_unicode
 
 
 def bc():
@@ -124,3 +127,28 @@ def test_raises_if_current_build_context_out_of_context():
 def test_current_build_context_is_current():
     with bc() as a:
         assert current_build_context() is a
+
+
+def test_prints_all_notes_in_verbose_mode():
+    # slightly roundabout because @example messes with verbosity
+    generated_integers = []
+
+    def notefmt(x):
+        return 'x -> %d' % (x,)
+
+    @settings(verbosity=Verbosity.debug)
+    @given(integers(1, 10))
+    def test(x):
+        generated_integers.append(x)
+        note(notefmt(x))
+        assert x < 5
+
+    with capture_out() as out:
+        with reporting.with_reporter(reporting.default):
+            with pytest.raises(AssertionError):
+                test()
+    v = out.getvalue()
+    print_unicode("eric:" + v)
+    for x in generated_integers:
+        assert notefmt(x) in v
+
