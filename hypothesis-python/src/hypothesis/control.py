@@ -19,10 +19,12 @@ from __future__ import division, print_function, absolute_import
 
 import traceback
 
+from hypothesis import Verbosity, settings
 from hypothesis.errors import CleanupFailed, InvalidArgument, \
     UnsatisfiedAssumption
 from hypothesis.reporting import report
 from hypothesis.utils.dynamicvariables import DynamicVariable
+
 
 if False:
     from typing import Any, AnyStr  # noqa
@@ -114,7 +116,7 @@ def note(value):
         raise InvalidArgument(
             'Cannot make notes outside of a test')
     context.notes.append(value)
-    if context.is_final:
+    if context.is_final or settings.default.verbosity >= Verbosity.verbose:
         report(value)
 
 
