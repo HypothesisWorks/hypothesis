@@ -203,7 +203,7 @@ def test_examples_are_tried_in_order():
         with reporting.with_reporter(reporting.default):
             test()
     ls = out.getvalue().splitlines()
-    assert ls == [u"x -> 1", 'x -> 2', 'x -> 3']
+    assert ls == [u"x -> 1", u"x -> 2", u"x -> 3"]
 
 
 def test_prints_note_in_failing_example():
