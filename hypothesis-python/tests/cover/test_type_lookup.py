@@ -153,7 +153,7 @@ def test_given_can_infer_on_py2():
     given(a=infer)(inner)()
 
 
-class EmptyEnum(enum.Enum): 
+class EmptyEnum(enum.Enum):
     pass
 
 
