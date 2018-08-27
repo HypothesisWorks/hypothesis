@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import enum
+
 import pytest
 
 import hypothesis.strategies as st
@@ -149,3 +151,11 @@ def test_given_can_infer_on_py2():
         pass
     inner.__annotations__ = {'a': int}
     given(a=infer)(inner)()
+
+
+class EmptyEnum(enum.Enum):
+    pass
+
+
+def test_error_if_enum_is_empty():
+    assert st.from_type(EmptyEnum).is_empty

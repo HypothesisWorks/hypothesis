@@ -1298,7 +1298,6 @@ def from_type(thing):
     # If we don't have a strategy registered for this type or any subtype, we
     # may be able to fall back on type annotations.
     if issubclass(thing, enum.Enum):
-        assert len(thing), repr(thing) + ' has no members to sample'
         return sampled_from(thing)
     # If we know that builds(thing) will fail, give a better error message
     required = required_args(thing)
