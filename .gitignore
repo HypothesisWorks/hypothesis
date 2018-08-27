@@ -25,6 +25,8 @@ _build
 .coverage
 .pypirc
 htmlcov
+build
+dist
 
 # encrypted files
 secrets.tar
