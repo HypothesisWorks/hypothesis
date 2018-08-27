@@ -24,8 +24,8 @@ import base64
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import PrintSettings, given, reject, example, settings, \
-    __version__, reproduce_failure
+from hypothesis import Verbosity, PrintSettings, given, reject, \
+    example, settings, reporting, __version__, reproduce_failure
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument, \
     UnsatisfiedAssumption
@@ -210,3 +210,17 @@ def test_raises_invalid_if_wrong_version():
 
     with pytest.raises(InvalidArgument):
         test()
+
+
+def test_does_not_print_reproduction_if_verbosity_set_to_quiet():
+    @given(st.data())
+    @settings(verbosity=Verbosity.quiet)
+    def test_always_fails(_):
+        assert False
+
+    with reporting.with_reporter(reporting.default):
+        with pytest.raises(AssertionError):
+            with capture_out() as out:
+                test_always_fails()
+
+    assert '@reproduce_failure' not in out.getvalue()

@@ -802,11 +802,12 @@ class PrintSettings(Enum):
     """Make an educated guess as to whether it would be appropriate to print
     the blob.
 
-    The current rules are that this will print if both:
+    The current rules are that this will print if:
 
     1. The output from Hypothesis appears to be unsuitable for use with
        :func:`~hypothesis.example`.
-    2. The output is not too long."""
+    2. The output is not too long.
+    3. Verbosity is at least normal."""
 
     ALWAYS = 2
     """Always print a blob on failure."""
