@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 import gzip
-import pickle
+import json
 import tempfile
 import unicodedata
 
@@ -37,7 +37,7 @@ if False:
 def charmap_file():
     return os.path.join(
         storage_directory('unicodedata', unicodedata.unidata_version),
-        'charmap.pickle.gz'
+        'charmap.json.gz'
     )
 
 
@@ -59,7 +59,7 @@ def charmap():
         f = charmap_file()
         try:
             with gzip.GzipFile(f, 'rb') as i:
-                _charmap = dict(pickle.load(i))
+                _charmap = dict(json.loads(i))
 
         except Exception:
             tmp_charmap = {}
@@ -79,12 +79,20 @@ def charmap():
                 os.close(fd)
                 # Explicitly set the mtime to get reproducible output
                 with gzip.GzipFile(tmpfile, 'wb', mtime=1) as o:
-                    pickle.dump(sorted(_charmap.items()), o,
-                                pickle.HIGHEST_PROTOCOL)
+                    result = json.dumps(sorted(_charmap.items()))
+                    o.write(result.encode())
+
                 os.rename(tmpfile, f)
             except Exception:
                 pass
     assert _charmap is not None
+
+    # each value is a tuple of 2-tuples (that is, tuples of length 2)
+    # and that both elements of that tuple are integers.
+    for vs in _charmap.values():
+        for tup in vs:
+            assert len(tup) == 2
+            assert all([isinstance(elem, int) for elem in tup])
     return _charmap
 
 
