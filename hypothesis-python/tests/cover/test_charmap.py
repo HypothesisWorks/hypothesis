@@ -178,7 +178,13 @@ def test_error_writing_charmap_file_is_suppressed(monkeypatch):
 
     monkeypatch.setattr(tempfile, 'mkstemp', broken_mkstemp)
 
-    cm._charmap = None
-    os.unlink(cm.charmap_file())
+    try:
+        # Cache the charmap to avoid a performance hit the next time
+        # somebody tries to use it.
+        saved = cm._charmap
+        cm._charmap = None
+        os.unlink(cm.charmap_file())
 
-    cm.charmap()
+        cm.charmap()
+    finally:
+        cm._charmap = saved
