@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.69.4:
+
+-------------------
+3.69.4 - 2018-08-27
+-------------------
+
+This change improves the core engine's ability to avoid unnecessary work,
+by consulting its cache of previously-tried inputs in more cases.
+
 .. _v3.69.3:
 
 -------------------
