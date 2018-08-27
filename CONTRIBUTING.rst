@@ -189,6 +189,7 @@ their individual contributions.
 * `Alex Willmer <https://github.com/moreati>`_ (alex@moreati.org.uk)
 * `Ben Peterson <https://github.com/killthrush>`_ (killthrush@hotmail.com)
 * `Benjamin Lee <https://github.com/Benjamin-Lee>`_ (benjamindlee@me.com)
+* `Bex Dunn <https://github.com/BexDunn>`_(bex.dunn@gmail.com)
 * `Bill Tucker <https://github.com/imbilltucker>`_ (imbilltucker@gmail.com)
 * `Buck Evan, copyright Google LLC <https://github.com/bukzor>`_
 * `Cameron McGill <https://www.github.com/Cameron-JM>`_
