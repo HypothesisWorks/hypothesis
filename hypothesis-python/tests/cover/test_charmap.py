@@ -179,8 +179,6 @@ def test_error_writing_charmap_file_is_suppressed(monkeypatch):
     monkeypatch.setattr(tempfile, 'mkstemp', broken_mkstemp)
 
     cm._charmap = None
-
-    file_loc = cm.charmap_file()
-    os.unlink(file_loc)
+    os.unlink(cm.charmap_file())
 
     cm.charmap()
