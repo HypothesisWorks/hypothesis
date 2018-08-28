@@ -203,6 +203,7 @@ their individual contributions.
 * `Peadar Coyle <http://www.github.com/springcoil>`_ (peadarcoyle@gmail.com)
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
 * `Sam Hames <https://www.github.com/SamHames>`_
+* `Sanyam Khurana <https://github.com/CuriousLearner>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
 * `Stuart Cook <https://www.github.com/Zalathar>`_
 * `Sushobhit <https://github.com/sushobhit27>`_ (sushobhitsolanki@gmail.com)

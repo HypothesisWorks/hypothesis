@@ -17,12 +17,11 @@
 
 from __future__ import division, print_function, absolute_import
 
-import unicodedata
 from random import Random
 
 import pytest
 
-from hypothesis import given, settings
+from hypothesis import given
 from tests.common.debug import minimal
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import text, binary, tuples, characters
@@ -75,12 +74,6 @@ def test_binary_respects_changes_in_size():
     def test_foo(x):
         assert len(x) <= 10
     test_foo()
-
-
-@given(text(min_size=1, max_size=1))
-@settings(max_examples=2000)
-def test_does_not_generate_surrogates(t):
-    assert unicodedata.category(t) != u'Cs'
 
 
 def test_does_not_simplify_into_surrogates():
