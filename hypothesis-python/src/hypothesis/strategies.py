@@ -1830,14 +1830,14 @@ def subsequence_of(
 
     def element_mask():
         # type: () -> List[bool]
-        always_size = min_size
-        never_size = len(elements) - max_size
-        maybe_size = len(elements) - always_size - never_size
-        choices = ([True] * always_size + [draw(booleans()) for _ in range(maybe_size)] + [False] * never_size)
+        num_include = draw(integers(min_size, max_size))
+        num_exclude = len(elements) - num_include
+        choices = [True] * num_include + [False] * num_exclude
         assert len(elements) == len(choices)
         return draw(permutations(choices))
 
-    return [element for (element, include) in zip(elements, element_mask()) if include]
+    element_includes = zip(elements, element_mask())
+    return [element for element, include in element_includes if include]
 
 
 @defines_strategy_with_reusable_values
