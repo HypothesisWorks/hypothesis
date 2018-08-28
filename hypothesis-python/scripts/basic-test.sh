@@ -38,9 +38,7 @@ if [ "$(python -c 'import sys; print(sys.version_info[:2] in ((2, 7), (3, 6)))')
   exit 0
 fi
 
-for f in tests/nocover/test_*.py; do
-  $PYTEST "$f"
-done
+$PYTEST tests/nocover/
 
 # fake-factory doesn't have a correct universal wheel
 pip install --no-binary :all: faker
