@@ -20,3 +20,4 @@ IPython
 mock
 flaky
 toml
+bandit
