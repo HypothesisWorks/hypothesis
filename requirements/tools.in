@@ -19,3 +19,4 @@ numpy
 IPython
 mock
 flaky
+toml
