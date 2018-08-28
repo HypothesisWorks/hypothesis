@@ -25,7 +25,6 @@ from hypothesis.control import BuildContext, note, event, cleanup, \
     current_build_context, _current_build_context
 from tests.common.utils import capture_out
 from hypothesis.strategies import integers
-from hypothesis.internal.compat import print_unicode
 from hypothesis.internal.conjecture.data import ConjectureData as TD
 
 
@@ -148,6 +147,5 @@ def test_prints_all_notes_in_verbose_mode():
             with pytest.raises(AssertionError):
                 test()
     v = out.getvalue()
-    print_unicode("eric:" + v)
     for x in generated_integers:
         assert notefmt(x) in v
