@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.69.8:
+
+-------------------
+3.69.8 - 2018-08-28
+-------------------
+
+This is an internal change which replaces pickle with json to prevent possible
+security issues.
+
+Thanks to Vidya Rani D G (@vidyarani-dg) for writing this patch at the
+PyCon Australia sprints!
+
 .. _v3.69.7:
 
 -------------------
