@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.69.7:
+
+-------------------
+3.69.7 - 2018-08-28
+-------------------
+
+This patch ensures that :func:`~hypothesis.note` prints when verbosity
+is set to ``Verbosity.verbose``
+
+Thanks to Tom McDermott for writing this patch at
+the PyCon Australia sprints!
+
 .. _v3.69.6:
 
 -------------------
