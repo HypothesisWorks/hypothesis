@@ -94,3 +94,12 @@ def test_update_changelog(tmpdir):
         str(path), 'A test project', '1.2.3', 'some stuff happened'
     )
     assert path.read().strip() == TEST_CHANGELOG.strip()
+
+
+def test_changelog_parsing_strips_trailing_whitespace():
+    header = 'RELEASE_TYPE: patch\n\n'
+    contents = 'Adds a feature\n    indented.\n'
+    level, out = parse_release(
+        header + contents.replace('feature', 'feature    ')
+    )
+    assert contents.strip() == out
