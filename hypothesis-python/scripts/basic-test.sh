@@ -17,6 +17,10 @@ PYTEST="python -m pytest -n2"
 
 $PYTEST --runpytest=subprocess tests/pytest
 
+# Run some tests without docstrings or assertions, to catch bugs
+# like issue #822 in one of the test decorators.  See also #1541.
+PYTHONOPTIMIZE=2 $PYTEST tests/cover/test_testdecorators.py
+
 pip install ".[pytz, dateutil]"
 $PYTEST tests/datetime/
 pip uninstall -y pytz python-dateutil
