@@ -84,8 +84,7 @@ def charmap():
             except Exception:
                 pass
 
-        # This line converting to tuples needs to be moved down from
-        # line 73 now, to below the json.load, i.e. just before the assertions.
+        # convert between lists and tuples
         _charmap = {k: tuple(tuple(pair) for pair in pairs)
                     for k, pairs in tmp_charmap.items()}
         # each value is a tuple of 2-tuples (that is, tuples of length 2)
