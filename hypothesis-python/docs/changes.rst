@@ -21,6 +21,20 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.69.9:
+
+-------------------
+3.69.9 - 2018-08-28
+-------------------
+
+This patch improves the packaging of the Python package by adding 
+``LICENSE.txt`` to the sdist (:issue:`1311`), clarifying the minimum
+supported versions of :pypi:`pytz` and :pypi:`dateutil <python-dateutil>`
+(:issue:`1383`), and adds keywords to the metadata (:issue:`1520`).
+
+Thanks to Graham Williamson (@00willo) for writing this patch at the PyCon
+Australia sprints!
+
 .. _v3.69.8:
 
 -------------------
