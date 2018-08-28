@@ -48,21 +48,16 @@ $PYTEST tests/fakefactory/
 pip uninstall -y faker
 
 if [ "$(python -c 'import platform; print(platform.python_implementation())')" != "PyPy" ]; then
-  if [ "$(python -c 'import sys; print(sys.version_info[0] == 2 or sys.version_info[:2] >= (3, 4))')" == "True" ] ; then
-    pip install .[django]
-    HYPOTHESIS_DJANGO_USETZ=TRUE python -m tests.django.manage test tests.django
-    HYPOTHESIS_DJANGO_USETZ=FALSE python -m tests.django.manage test tests.django
-    pip uninstall -y django pytz
-  fi
+  pip install .[django]
+  HYPOTHESIS_DJANGO_USETZ=TRUE python -m tests.django.manage test tests.django
+  HYPOTHESIS_DJANGO_USETZ=FALSE python -m tests.django.manage test tests.django
+  pip uninstall -y django pytz
 
-  if [ "$(python -c 'import sys; print(sys.version_info[:2] in ((2, 7), (3, 6)))')" = "True" ] ; then
-    pip install numpy
-    $PYTEST tests/numpy
+  pip install numpy
+  $PYTEST tests/numpy
 
-    pip install pandas
+  pip install pandas
+  $PYTEST tests/pandas
 
-    $PYTEST tests/pandas
-
-    pip uninstall -y numpy pandas
-  fi
+  pip uninstall -y numpy pandas
 fi
