@@ -59,7 +59,7 @@ def charmap():
         f = charmap_file()
         try:
             with gzip.GzipFile(f, 'rb') as i:
-                _charmap = dict(json.loads(i))
+                tmp_charmap = dict(json.loads(i))
 
         except Exception:
             tmp_charmap = {}
@@ -70,8 +70,6 @@ def charmap():
                     rs[-1][-1] += 1
                 else:
                     rs.append([i, i])
-            _charmap = {k: tuple(tuple(pair) for pair in pairs)
-                        for k, pairs in tmp_charmap.items()}
 
             try:
                 # Write the Unicode table atomically
@@ -79,20 +77,26 @@ def charmap():
                 os.close(fd)
                 # Explicitly set the mtime to get reproducible output
                 with gzip.GzipFile(tmpfile, 'wb', mtime=1) as o:
-                    result = json.dumps(sorted(_charmap.items()))
+                    result = json.dumps(sorted(tmp_charmap.items()))
                     o.write(result.encode())
 
                 os.rename(tmpfile, f)
             except Exception:
                 pass
-    assert _charmap is not None
 
-    # each value is a tuple of 2-tuples (that is, tuples of length 2)
-    # and that both elements of that tuple are integers.
-    for vs in _charmap.values():
-        for tup in vs:
-            assert len(tup) == 2
-            assert all([isinstance(elem, int) for elem in tup])
+        # This line converting to tuples needs to be moved down from
+        # line 73 now, to below the json.load, i.e. just before the assertions.
+        _charmap = {k: tuple(tuple(pair) for pair in pairs)
+                    for k, pairs in tmp_charmap.items()}
+        # each value is a tuple of 2-tuples (that is, tuples of length 2)
+        # and that both elements of that tuple are integers.
+        for vs in _charmap.values():
+            ints = list(sum(vs, ()))
+            assert all([isinstance(x, int) for x in ints])
+            assert ints == sorted(ints)
+            assert all([len(tup) == 2 for tup in vs])
+
+    assert _charmap is not None
     return _charmap
 
 
