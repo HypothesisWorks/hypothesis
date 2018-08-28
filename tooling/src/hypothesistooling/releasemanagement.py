@@ -137,7 +137,7 @@ def parse_release_file(filename):
 
 
 def parse_release_file_contents(release_contents, filename):
-    release_lines = release_contents.split('\n')
+    release_lines = [l.rstrip() for l in release_contents.split('\n')]
 
     m = RELEASE_TYPE.match(release_lines[0])
     if m is not None:
