@@ -24,8 +24,8 @@ import base64
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import Verbosity, PrintSettings, given, reject, \
-    example, settings, reporting, __version__, reproduce_failure
+from hypothesis import Verbosity, PrintSettings, given, reject, example, \
+    settings, reporting, __version__, reproduce_failure
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument, \
     UnsatisfiedAssumption

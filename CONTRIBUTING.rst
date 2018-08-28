@@ -190,6 +190,7 @@ their individual contributions.
 * `Ben Peterson <https://github.com/killthrush>`_ (killthrush@hotmail.com)
 * `Bill Tucker <https://github.com/imbilltucker>`_ (imbilltucker@gmail.com)
 * `Buck Evan, copyright Google LLC <https://github.com/bukzor>`_
+* `Cameron McGill <https://www.github.com/Cameron-JM>`_
 * `Charles O'Farrell <https://www.github.com/charleso>`_
 * `Charlie Tanksley <https://www.github.com/charlietanksley>`_
 * `Chase Garner <https://www.github.com/chasegarner>`_ (chase@garner.red)

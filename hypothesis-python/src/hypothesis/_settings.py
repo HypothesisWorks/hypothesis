@@ -805,8 +805,8 @@ class PrintSettings(Enum):
     The current rules are that this will print if:
 
     1. The output from Hypothesis appears to be unsuitable for use with
-       :func:`~hypothesis.example`.
-    2. The output is not too long.
+       :func:`~hypothesis.example`, and
+    2. The output is not too long, and
     3. Verbosity is at least normal."""
 
     ALWAYS = 2
