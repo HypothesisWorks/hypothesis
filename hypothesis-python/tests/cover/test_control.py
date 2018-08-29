@@ -130,16 +130,14 @@ def test_current_build_context_is_current():
 
 def test_prints_all_notes_in_verbose_mode():
     # slightly roundabout because @example messes with verbosity - see #1521
-    generated_integers = []
+    messages = set()
 
-    def notefmt(x):
-        return 'x -> %d' % (x,)
-
-    @settings(verbosity=Verbosity.debug)
+    @settings(verbosity=Verbosity.debug, database=None)
     @given(integers(1, 10))
     def test(x):
-        generated_integers.append(x)
-        note(notefmt(x))
+        msg = 'x -> %d' % (x,)
+        note(msg)
+        messages.add(msg)
         assert x < 5
 
     with capture_out() as out:
@@ -147,5 +145,5 @@ def test_prints_all_notes_in_verbose_mode():
             with pytest.raises(AssertionError):
                 test()
     v = out.getvalue()
-    for x in generated_integers:
-        assert notefmt(x) in v
+    for x in sorted(messages):
+        assert x in v
