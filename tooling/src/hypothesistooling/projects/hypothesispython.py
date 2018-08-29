@@ -25,8 +25,6 @@ import subprocess
 
 import hypothesistooling as tools
 import hypothesistooling.releasemanagement as rm
-from hypothesistooling.releasemanagement import bump_version_info, \
-    replace_assignment, release_date_string
 
 PACKAGE_NAME = 'hypothesis-python'
 
@@ -92,17 +90,17 @@ def update_changelog_and_version():
 
     release_type, release_contents = parse_release_file()
 
-    new_version_string, new_version_info = bump_version_info(
+    new_version_string, new_version_info = rm.bump_version_info(
         __version_info__, release_type)
 
     __version_info__ = new_version_info
     __version__ = new_version_string
 
-    replace_assignment(
+    rm.replace_assignment(
         VERSION_FILE, '__version_info__', repr(new_version_info))
 
     heading_for_new_version = ' - '.join((
-        new_version_string, release_date_string()))
+        new_version_string, rm.release_date_string()))
     border_for_new_version = '-' * len(heading_for_new_version)
 
     new_changelog_parts = [
