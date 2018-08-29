@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.69.11:
+
+--------------------
+3.69.11 - 2018-08-29
+--------------------
+
+This patch will hide all logging messages produced by test cases before the
+final test.
+
 .. _v3.69.10:
 
 --------------------
