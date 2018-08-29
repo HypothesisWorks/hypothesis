@@ -155,7 +155,7 @@ def bar(x):
     cov = Coverage(
         config_file=False, data_file=str(testdir.tmpdir.join('.coverage')),
         branch=branch, timid=timid,
-        source=[testdir.tmpdir],
+        source=[str(testdir.tmpdir)],
     )
     cov._warn = escalate_warning
     cov.start()
