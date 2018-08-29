@@ -39,6 +39,7 @@ RELEASE_FILE = os.path.join(BASE_DIR, 'RELEASE.md')
 CHANGELOG_FILE = os.path.join(BASE_DIR, 'CHANGELOG.md')
 GEMSPEC_FILE = os.path.join(BASE_DIR, 'hypothesis-specs.gemspec')
 CARGO_FILE = os.path.join(BASE_DIR, 'Cargo.toml')
+GEMFILE_LOCK_FILE = os.path.join(BASE_DIR, 'Gemfile.lock')
 CONJECTURE_CARGO_FILE = cr.CARGO_FILE
 
 RUST_SRC = os.path.join(BASE_DIR, 'src')

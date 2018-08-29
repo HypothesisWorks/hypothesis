@@ -663,7 +663,7 @@ class StateForActualGivenExecution(object):
         original_save_data = collector.save_data
 
         def save_data(covdata):
-            original_save_data(covdata)
+            result = original_save_data(covdata)
             if collector.branch:
                 covdata.add_arcs({
                     filename: {
@@ -679,6 +679,7 @@ class StateForActualGivenExecution(object):
                     for filename in self.files_to_propagate
                 })
             collector.save_data = original_save_data
+            return result
         collector.save_data = save_data
 
     def evaluate_test_data(self, data):

@@ -17,6 +17,9 @@
 
 from __future__ import division, print_function, absolute_import
 
+import os
+import importlib
+
 import pytest
 from coverage import Coverage
 
@@ -26,6 +29,9 @@ from hypothesis.core import escalate_warning
 from tests.common.utils import all_values
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hrange
+
+pytest_plugins = str('pytester')
+
 
 pytestmark = pytest.mark.skipif(
     not settings.default.use_coverage,
@@ -118,3 +124,45 @@ def test_does_not_trace_files_outside_inclusion(tmpdir, branch, timid):
 
     data = cov.get_data()
     assert len(list(data.measured_files())) == 1
+
+
+@pytest.mark.parametrize('branch', [False, True])
+@pytest.mark.parametrize('timid', [False, True])
+def test_coverage_includes_unexecuted_files(testdir, branch, timid):
+    # Setup two files under test in a Python package.
+    # One will be imported explicitly (foo), one will not (bar)
+    testdir.syspathinsert()
+    testdir.tmpdir.ensure('__init__.py')
+
+    testdir.tmpdir.ensure('foo.py').write('''
+def foo(x):
+    return x
+''')
+
+    testdir.tmpdir.ensure('bar.py').write('''
+def bar(x):
+    return x
+''')
+
+    # Setup a function to exercise the functionality in `foo` only
+    @given(st.booleans())
+    def test(a):
+        package = testdir.tmpdir.pyimport()
+        foo = importlib.import_module('foo', package.__name__)
+        foo.foo(a)
+
+    # Exercise test function, restricting coverage to just our custom package
+    cov = Coverage(
+        config_file=False, data_file=str(testdir.tmpdir.join('.coverage')),
+        branch=branch, timid=timid,
+        source=[str(testdir.tmpdir)],
+    )
+    cov._warn = escalate_warning
+    cov.start()
+    test()
+    cov.stop()
+
+    # Verify
+    data = cov.get_data()
+    filenames = {os.path.split(f)[1] for f in data.measured_files()}
+    assert filenames == {'__init__.py', 'bar.py', 'foo.py'}

@@ -73,6 +73,7 @@ snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.1
 sphinx==1.7.7
 sphinxcontrib-websupport==1.1.0  # via sphinx
+toml==0.9.4
 tox==3.2.1
 tqdm==4.25.0              # via pyupio, twine
 traitlets==4.3.2          # via ipython
