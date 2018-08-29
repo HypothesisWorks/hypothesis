@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import logging
 import traceback
 
 from hypothesis import Verbosity, settings
@@ -66,14 +67,20 @@ class BuildContext(object):
         self.close_on_capture = close_on_capture
         self.close_on_del = False
         self.notes = []
+        self.original_logging_disable = logging.NOTSET
 
     def __enter__(self):
+        if not self.is_final:
+            self.original_logging_disable = logging.root.manager.disable
+            logging.disable(logging.CRITICAL)
         self.assign_variable = _current_build_context.with_value(self)
         self.assign_variable.__enter__()
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
         self.assign_variable.__exit__(exc_type, exc_value, tb)
+        if not self.is_final:
+            logging.disable(self.original_logging_disable)
         if self.close() and exc_type is None:
             raise CleanupFailed()
 

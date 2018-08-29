@@ -175,6 +175,7 @@ their individual contributions.
 * `Emmanuel Leblond <https://www.github.com/touilleMan>`_
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
+* `Gary Donovan <https://www.github.com/garyd203>`_
 * `Graham Williamson <https://github.com/00willo>`_
 * `Grant David Bachman <https://github.com/grantbachman>`_ (grantbachman@gmail.com)
 * `Gregory Petrosyan <https://github.com/flyingmutant>`_
