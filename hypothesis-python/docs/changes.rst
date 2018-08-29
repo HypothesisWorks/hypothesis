@@ -43,7 +43,7 @@ This patch improves the packaging of the Python package by adding
 supported versions of :pypi:`pytz` and :pypi:`dateutil <python-dateutil>`
 (:issue:`1383`), and adds keywords to the metadata (:issue:`1520`).
 
-Thanks to Graham Williamson (@00willo) for writing this patch at the PyCon
+Thanks to Graham Williamson for writing this patch at the PyCon
 Australia sprints!
 
 .. _v3.69.8:
@@ -55,8 +55,7 @@ Australia sprints!
 This is an internal change which replaces pickle with json to prevent possible
 security issues.
 
-Thanks to Vidya Rani D G (@vidyarani-dg) for writing this patch at the
-PyCon Australia sprints!
+Thanks to Vidya Rani D G for writing this patch at the PyCon Australia sprints!
 
 .. _v3.69.7:
 
@@ -64,8 +63,10 @@ PyCon Australia sprints!
 3.69.7 - 2018-08-28
 -------------------
 
-This patch ensures that :func:`~hypothesis.note` prints when verbosity
-is set to ``Verbosity.verbose``
+This patch ensures that :func:`~hypothesis.note` prints the note for every
+test case when the :obj:`~hypothesis.settings.verbosity` setting is
+``Verbosity.verbose``.  At normal verbosity it only prints from the final
+test case.
 
 Thanks to Tom McDermott for writing this patch at
 the PyCon Australia sprints!
@@ -108,7 +109,7 @@ This patch handles passing an empty :class:`python:enum.Enum` to
 :func:`~hypothesis.strategies.nothing`, instead of raising an
 internal :class:`python:AssertionError`.
 
-Thanks to Paul Amazona (@whatevergeek) for writing this patch at the
+Thanks to Paul Amazona for writing this patch at the
 PyCon Australia sprints!
 
 .. _v3.69.2:
