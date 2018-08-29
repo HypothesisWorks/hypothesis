@@ -17,8 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-import importlib
 import os
+import importlib
 
 import pytest
 from coverage import Coverage
@@ -26,9 +26,9 @@ from coverage import Coverage
 import hypothesis.strategies as st
 from hypothesis import given, settings
 from hypothesis.core import escalate_warning
+from tests.common.utils import all_values
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hrange
-from tests.common.utils import all_values
 
 pytest_plugins = str('pytester')
 

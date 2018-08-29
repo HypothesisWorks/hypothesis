@@ -27,7 +27,7 @@ information to the contrary.
 3.69.9 - 2018-08-28
 -------------------
 
-This patch improves the packaging of the Python package by adding 
+This patch improves the packaging of the Python package by adding
 ``LICENSE.txt`` to the sdist (:issue:`1311`), clarifying the minimum
 supported versions of :pypi:`pytz` and :pypi:`dateutil <python-dateutil>`
 (:issue:`1383`), and adds keywords to the metadata (:issue:`1520`).
