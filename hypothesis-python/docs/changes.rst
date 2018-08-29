@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.69.10:
+
+--------------------
+3.69.10 - 2018-08-29
+--------------------
+
+This patch fixes a bug that prevents coverage from reporting unexecuted
+Python files (:issue:`1085`).
+
+Thanks to Gary Donovan for writing this patch at the PyCon Australia sprints!
+
 .. _v3.69.9:
 
 -------------------
