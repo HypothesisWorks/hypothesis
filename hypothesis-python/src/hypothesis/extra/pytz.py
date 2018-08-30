@@ -15,7 +15,12 @@
 #
 # END HEADER
 
-"""This module provides ``pytz`` timezones.
+"""
+----------------
+hypothesis[pytz]
+----------------
+
+This module provides :pypi:`pytz` timezones.
 
 You can use this strategy to make
 :py:func:`hypothesis.strategies.datetimes` and
