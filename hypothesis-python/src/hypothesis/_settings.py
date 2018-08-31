@@ -325,7 +325,7 @@ class settings(
         bits = []
         for name, setting in all_settings.items():
             value = getattr(self, name)
-            if value != setting.default and not setting.hide_repr:
+            if value != setting.default:
                 bits.append('%s=%r' % (name, value))
         return ' '.join(sorted(bits))
 
