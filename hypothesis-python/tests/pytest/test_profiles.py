@@ -17,8 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-import re
-
+from hypothesis.version import __version__
 from hypothesis.extra.pytestplugin import LOAD_PROFILE_OPTION
 
 pytest_plugins = str('pytester')
@@ -44,19 +43,5 @@ def test_runs_reporting_hook(testdir):
     result = testdir.runpytest(script, LOAD_PROFILE_OPTION, 'test')
     out = '\n'.join(result.stdout.lines)
     assert '1 passed' in out
-
-
-def test_pytest_report_header_reports_version(testdir):
-    script = testdir.makepyfile(TESTSUITE)
-    testdir.makeconftest(CONFTEST)
-    result = testdir.runpytest(script, LOAD_PROFILE_OPTION, 'test')
-    out = '\n'.join(result.stdout.lines)
-    assert re.search(r'hypothesis \d+\.\d+\.\d+', out)
-
-
-def test_pytest_report_header_reports_settings(testdir):
-    script = testdir.makepyfile(TESTSUITE)
-    testdir.makeconftest(CONFTEST)
-    result = testdir.runpytest(script, LOAD_PROFILE_OPTION, 'test')
-    out = '\n'.join(result.stdout.lines)
     assert 'max_examples=1' in out
+    assert __version__ in out
