@@ -51,7 +51,7 @@ def test_pytest_report_header_reports_version(testdir):
     testdir.makeconftest(CONFTEST)
     result = testdir.runpytest(script, LOAD_PROFILE_OPTION, 'test')
     out = '\n'.join(result.stdout.lines)
-    assert re.search('hypothesis \\d+.\\d+.\\d+', out)
+    assert re.search(r'hypothesis \d+\.\d+\.\d+', out)
 
 
 def test_pytest_report_header_reports_settings(testdir):
