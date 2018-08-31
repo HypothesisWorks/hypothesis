@@ -1,3 +1,9 @@
+# Hypothesis for Ruby 0.1.1 (2018-08-31)
+
+This release fixes minor documentation issues.
+
+Thanks to Tessa Bradbury for this contribution.
+
 # Hypothesis for Ruby 0.1.0 (2018-07-16)
 
 This release adds support for reporting multiple exceptions when Hypothesis
