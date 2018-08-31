@@ -206,6 +206,7 @@ their individual contributions.
 * `Stuart Cook <https://www.github.com/Zalathar>`_
 * `Sushobhit <https://github.com/sushobhit27>`_ (sushobhitsolanki@gmail.com)
 * `Tariq Khokhar <https://www.github.com/tkb>`_ (tariq@khokhar.net)
+* `Tessa Bradbury <https://www.github.com/tessereth>`_
 * `Tim Martin <https://www.github.com/timmartin>`_ (tim@asymptotic.co.uk)
 * `Tom McDermott <https://www.github.com/sponster-au>`_ (sponster@gmail.com)
 * `Vidya Rani <https://www.github.com/vidyarani-dg>`_ (vidyarani.d.g@gmail.com)
