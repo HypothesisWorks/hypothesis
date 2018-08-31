@@ -321,7 +321,7 @@ class settings(
                 bits.append('%s=%r' % (name, value))
         return 'settings(%s)' % ', '.join(sorted(bits))
 
-    def __str__(self):
+    def show_changed(self):
         bits = []
         for name, setting in all_settings.items():
             value = getattr(self, name)

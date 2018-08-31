@@ -71,7 +71,8 @@ def pytest_report_header(config):
         profile = 'default'
     from hypothesis import settings
     from hypothesis.version import __version__
-    return 'hypothesis %s: (%s)' % (__version__, settings.get_profile(profile))
+    settings_str = settings.get_profile(profile).show_changed()
+    return 'hypothesis %s: (%s)' % (__version__, settings_str)
 
 
 def pytest_configure(config):
