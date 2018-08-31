@@ -19,7 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-import hypothesis.core as core
+from hypothesis import core, settings
+from hypothesis.version import __version__
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
 from hypothesis.statistics import collector
@@ -69,15 +70,12 @@ def pytest_report_header(config):
     profile = config.getoption(LOAD_PROFILE_OPTION)
     if not profile:
         profile = 'default'
-    from hypothesis import settings
-    from hypothesis.version import __version__
     settings_str = settings.get_profile(profile).show_changed()
     return 'hypothesis %s: (%s)' % (__version__, settings_str)
 
 
 def pytest_configure(config):
     core.running_under_pytest = True
-    from hypothesis import settings
     profile = config.getoption(LOAD_PROFILE_OPTION)
     if profile:
         settings.load_profile(profile)
