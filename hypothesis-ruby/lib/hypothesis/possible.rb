@@ -111,7 +111,7 @@ module Hypothesis
   # two names: A singular and a plural name. These are
   # simply aliases and are identical in every way, but are
   # provided to improve readability. For example
-  # `any integer` reads better than `given integers`
+  # `any integer` reads better than `any integers`
   # but `arrays(of: integers)` reads better than
   # `arrays(of: integer)`.
   module Possibilities
@@ -124,7 +124,7 @@ module Hypothesis
     # built_as lets you chain multiple Possible values together,
     # by providing whatever value results from its block.
     #
-    # For example the following provides a array plus some
+    # For example the following provides an array plus some
     # element from that array:
     #
     # ```ruby
@@ -135,6 +135,7 @@ module Hypothesis
     #     assume ls.size > 0
     #     i = any element_of(ls)
     #     [ls, i]
+    #   end
     # ```
     #
     # @return [Possible] A Possible whose possible values are
@@ -177,7 +178,7 @@ module Hypothesis
     #   valid.
     # @param min_size [Integer] The smallest valid length for a
     #   provided string
-    # @param max_size [Integer] The smallest valid length for a
+    # @param max_size [Integer] The largest valid length for a
     #   provided string
     def strings(codepoints: nil, min_size: 0, max_size: 10)
       codepoints = self.codepoints if codepoints.nil?
@@ -263,9 +264,9 @@ module Hypothesis
     alias array_of_shape arrays_of_shape
 
     # A Possible Array of variable shape.
-    # This is used for arrays where all of the elements come from
-    # the size may vary and the same values are possible at any position.
-    # For example, arrays(booleans) might provide [false, true, false].
+    # This is used for arrays where the size may vary and the same values
+    # are possible at any position.
+    # For example, arrays(of: booleans) might provide [false, true, false].
     # @return [Possible]
     # @param of [Possible] The possible elements of the array.
     # @param min_size [Integer] The smallest valid size of a provided array
