@@ -22,6 +22,7 @@ import string
 
 import hypothesis.strategies as st
 from hypothesis import given, assume, reject
+from tests.common.debug import assert_no_examples, assert_all_examples
 from hypothesis.searchstrategy.regex import base_regex_strategy
 
 
@@ -84,3 +85,11 @@ def test_fuzz_stuff(data):
 
     ex = data.draw(st.from_regex(regex))
     assert regex.search(ex)
+
+
+def test_negative_lookbehind():
+    # no efficient support
+    strategy = st.from_regex(u'[abc]*(?<!abc)d')
+
+    assert_all_examples(strategy, lambda s: not s.endswith(u'abcd'))
+    assert_no_examples(strategy, lambda s: s.endswith(u'abcd'))
