@@ -23,8 +23,7 @@ from collections import namedtuple
 
 import hypothesis.reporting as reporting
 from hypothesis import Verbosity, HealthCheck, note, given, assume, \
-    reject, settings
-from hypothesis.errors import Unsatisfiable
+    settings
 from tests.common.utils import fails, raises, no_shrink, fails_with, \
     capture_out
 from hypothesis.strategies import data, just, sets, text, lists, binary, \
@@ -167,33 +166,6 @@ def test_does_not_catch_interrupt_during_falsify():
             raise KeyboardInterrupt()
     with raises(KeyboardInterrupt):
         flaky_base_exception()
-
-
-def test_contains_the_test_function_name_in_the_exception_string():
-    look_for_one = settings(
-        max_examples=1, suppress_health_check=HealthCheck.all())
-
-    @given(integers())
-    @look_for_one
-    def this_has_a_totally_unique_name(x):
-        reject()
-
-    with raises(Unsatisfiable) as e:
-        this_has_a_totally_unique_name()
-    assert this_has_a_totally_unique_name.__name__ in e.value.args[0]
-
-    class Foo(object):
-
-        @given(integers())
-        @look_for_one
-        def this_has_a_unique_name_and_lives_on_a_class(self, x):
-            reject()
-
-    with raises(Unsatisfiable) as e:
-        Foo().this_has_a_unique_name_and_lives_on_a_class()
-    assert (
-        Foo.this_has_a_unique_name_and_lives_on_a_class.__name__
-    ) in e.value.args[0]
 
 
 @given(lists(integers(), unique=True), integers())
