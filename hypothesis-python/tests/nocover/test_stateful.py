@@ -20,8 +20,8 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from tests.common.utils import raises, capture_out
+from tests.cover.test_stateful import bad_machines
 from hypothesis.internal.compat import print_unicode
-from hypothesis.tests.cover.test_stateful import bad_machines
 
 
 @pytest.mark.parametrize(
