@@ -557,13 +557,14 @@ class StateForActualGivenExecution(object):
                     ):
                         self.__warned_deadline = True
                         note_deprecation((
-                            'Test took %.2fms to run. In future the default '
-                            'deadline setting will be 200ms, which will '
-                            'make this an error. You can set deadline to '
+                            'Test: %s took %.2fms to run. In future the '
+                            'default deadline setting will be 200ms, which '
+                            'will make this an error. You can set deadline to '
                             'an explicit value of e.g. %d to turn tests '
                             'slower than this into an error, or you can set '
                             'it to None to disable this check entirely.') % (
-                                runtime, ceil(runtime / 100) * 100,
+                                self.test.__name__, runtime,
+                                ceil(runtime / 100) * 100,
                         ))
                 else:
                     current_deadline = self.settings.deadline
@@ -767,18 +768,19 @@ class StateForActualGivenExecution(object):
 
         if runner.used_examples_from_database:
             if self.settings.derandomize:
-                note_deprecation(
+                note_deprecation((
                     'In future derandomize will imply database=None, but your '
-                    'test is currently using examples from the database. To '
-                    'get the future behaviour, update your settings to '
-                    'include database=None.'
+                    'test: %s is currently using examples from the database. '
+                    'To get the future behaviour, update your settings to '
+                    'include database=None.') % (self.test.__name__, )
                 )
             if self.__had_seed:
-                note_deprecation(
+                note_deprecation((
                     'In future use of @seed will imply database=None in your '
-                    'settings, but your test is currently using examples from '
-                    'the database. To get the future behaviour, update your '
-                    'settings for this test to include database=None.'
+                    'settings, but your test: %s is currently using examples '
+                    'from the database. To get the future behaviour, update '
+                    'your settings for this test to include database=None.')
+                    % (self.test.__name__,)
                 )
 
         timed_out = runner.exit_reason == ExitReason.timeout
