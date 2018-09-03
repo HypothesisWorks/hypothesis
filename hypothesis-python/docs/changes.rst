@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.70.1:
+
+-------------------
+3.70.1 - 2018-09-03
+-------------------
+
+This patch updates hypothesis to report its version and settings when run with
+pytest. (:issue:`1223`).
+
+Thanks to Jack Massey for this feature.
+
 .. _v3.70.0:
 
 -------------------
