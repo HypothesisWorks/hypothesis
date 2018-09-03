@@ -354,12 +354,12 @@ plans for some fully featured things around this, but right now they're
 probably quite far down the line.
 
 But you can do a lot yourself without any explicit support! Here's a script
-I wrote to throw random data against the API for an entirely fictitious service
+I wrote to throw arbitrary data against the API for an entirely fictitious service
 called Waspfinder (this is only lightly obfuscated and you can easily figure
 out who I'm actually talking about, but I don't want you to run this code and
 hammer their API without their permission).
 
-All this does is use Hypothesis to generate random JSON data matching the
+All this does is use Hypothesis to generate arbitrary JSON data matching the
 format their API asks for and check for 500 errors. More advanced tests which
 then use the result and go on to do other things are definitely also possible.
 The :pypi:`swagger-conformance` package provides an excellent example of this!

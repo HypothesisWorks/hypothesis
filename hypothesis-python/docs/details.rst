@@ -302,10 +302,9 @@ The gory details of given parameters
 
 .. autofunction:: hypothesis.given
 
-The :func:`@given <hypothesis.given>` decorator may be used
-to specify which arguments of a function should
-be parametrized over. You can use either positional or keyword arguments or a mixture
-of the two.
+The :func:`@given <hypothesis.given>` decorator may be used to specify
+which arguments of a function should be parametrized over. You can use
+either positional or keyword arguments, but not a mixture of both.
 
 For example all of the following are valid uses:
 

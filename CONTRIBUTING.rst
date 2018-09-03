@@ -33,6 +33,34 @@ The process for submitting source code PRs is generally more involved
 If you're planning a larger change, the contributor guides (in the ``guides/``
 directory) will make sure you're on the right track.
 
+----------------------------------
+Installing from source and testing
+----------------------------------
+
+If you want to install directly from the source code (e.g. because you want to
+make changes and install the changed version) you can do this with:
+
+.. code:: bash
+
+  pip install -r requirements/test.txt
+  pip install -r requirements/tools.txt
+  pip install -e hypothesis-python/
+
+  # You don't need to run the tests, but here's the command:
+  pytest hypothesis-python/tests/cover/
+
+You may wish to do all of this in a
+`virtualenv <https://virtualenv.pypa.io/en/latest/>`_. For example:
+
+.. code:: bash
+
+  virtualenv venv
+  source venv/bin/activate
+  pip install hypothesis
+
+Will create an isolated environment where you can install and try out
+Hypothesis without affecting your system packages.
+
 -----------------------
 Copyright and Licensing
 -----------------------
@@ -63,6 +91,8 @@ first! Come `join us on IRC <https://hypothesis.readthedocs.io/en/latest/communi
 or open an issue. If it's really small feel free to open a work in progress pull request sketching
 out the idea, but it's best to get feedback from the Hypothesis maintainers
 before sinking a bunch of work into it.
+If you're working on an existing issue, leave a comment so we can try to avoid
+duplicating your work before you open a pull request.
 
 In general work-in-progress pull requests are totally welcome if you want early feedback
 or help with some of the tricky details. Don't be afraid to ask for help.
