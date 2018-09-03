@@ -29,7 +29,7 @@ flaky==3.4.0
 gitdb2==2.0.4             # via gitpython
 gitpython==2.1.11         # via bandit
 idna==2.7                 # via requests
-imagesize==1.0.0          # via sphinx
+imagesize==1.1.0          # via sphinx
 ipython-genutils==0.2.0   # via traitlets
 ipython==6.5.0
 isort==4.3.4
