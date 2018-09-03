@@ -329,7 +329,7 @@ class settings(
             value = getattr(self, name)
             if value != setting.default:
                 bits.append('%s=%r' % (name, value))
-        return ' '.join(sorted(bits))
+        return ', '.join(sorted(bits))
 
     def __enter__(self):
         note_deprecation(
