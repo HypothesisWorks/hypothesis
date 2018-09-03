@@ -2021,7 +2021,6 @@ class Shrinker(object):
 
         self.shrink_target = new_target
         self.__shrinking_block_cache = {}
-        self.__intervals = None
 
     def try_shrinking_blocks(self, blocks, b):
         """Attempts to replace each block in the blocks list with b. Returns
