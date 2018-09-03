@@ -21,6 +21,28 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.70.0:
+
+-------------------
+3.70.0 - 2018-09-01
+-------------------
+
+This release adds a ``fullmatch`` argument to
+:func:`~hypothesis.strategies.from_regex`.  When ``fullmatch=True``, the
+whole example will match the regex pattern as for :func:`python:re.fullmatch`.
+
+Thanks to Jakub Nabaglo for writing this patch at the PyCon Australia sprints!
+
+.. _v3.69.12:
+
+--------------------
+3.69.12 - 2018-08-30
+--------------------
+
+This release reverts the changes to logging handling in 3.69.11,
+which broke test that use the :pypi:`pytest` ``caplog`` fixture
+internally because all logging was disabled (:issue:`1546`).
+
 .. _v3.69.11:
 
 --------------------

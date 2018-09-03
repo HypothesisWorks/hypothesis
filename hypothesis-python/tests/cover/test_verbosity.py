@@ -98,15 +98,15 @@ def test_prints_initial_attempts_on_find():
 def test_includes_intermediate_results_in_verbose_mode():
     with capture_verbosity() as o:
         @fails
-        @settings(verbosity=Verbosity.verbose)
-        @given(lists(integers()))
+        @settings(verbosity=Verbosity.verbose, database=None)
+        @given(lists(integers(), min_size=1))
         def test_foo(x):
             assert sum(x) < 1000000
 
         test_foo()
     lines = o.getvalue().splitlines()
     assert len([l for l in lines if u'example' in l]) > 2
-    assert len([l for l in lines if u'AssertionError' in l])
+    assert [l for l in lines if u'AssertionError' in l]
 
 
 PRINT_VERBOSITY = """

@@ -180,6 +180,7 @@ their individual contributions.
 * `Grant David Bachman <https://github.com/grantbachman>`_ (grantbachman@gmail.com)
 * `Gregory Petrosyan <https://github.com/flyingmutant>`_
 * `Jack Massey <https://github.com/massey101>`_
+* `Jakub Nabaglo <https://github.com/nbgl>`_ (j@nab.gl)
 * `Jeremy Thurgood <https://github.com/jerith>`_
 * `J.J. Green <http://soliton.vm.bytemark.co.uk/pub/jjg/>`_
 * `JP Viljoen <https://github.com/froztbyte>`_ (froztbyte@froztbyte.net)
@@ -203,10 +204,12 @@ their individual contributions.
 * `Peadar Coyle <http://www.github.com/springcoil>`_ (peadarcoyle@gmail.com)
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
 * `Sam Hames <https://www.github.com/SamHames>`_
+* `Sanyam Khurana <https://github.com/CuriousLearner>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
 * `Stuart Cook <https://www.github.com/Zalathar>`_
 * `Sushobhit <https://github.com/sushobhit27>`_ (sushobhitsolanki@gmail.com)
 * `Tariq Khokhar <https://www.github.com/tkb>`_ (tariq@khokhar.net)
+* `Tessa Bradbury <https://www.github.com/tessereth>`_
 * `Tim Martin <https://www.github.com/timmartin>`_ (tim@asymptotic.co.uk)
 * `Tom McDermott <https://www.github.com/sponster-au>`_ (sponster@gmail.com)
 * `Vidya Rani <https://www.github.com/vidyarani-dg>`_ (vidyarani.d.g@gmail.com)

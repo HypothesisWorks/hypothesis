@@ -25,6 +25,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given, assume
+from hypothesis.errors import InvalidArgument
 from tests.common.debug import find_any, assert_no_examples, \
     assert_all_examples
 from hypothesis.internal.compat import PY3, hrange, hunichr
@@ -388,3 +389,38 @@ def test_issue_992_regression(data):
             \.    # the decimal point
             \d *  # some fractional digits""", re.VERBOSE))
     data.draw(strat)
+
+
+@pytest.mark.parametrize('pattern,matching_str', [
+    (u'a', u'a'),
+    (u'[Aa]', u'A'),
+    (u'[ab]*', u'abb'),
+    (b'[Aa]', b'A'),
+    (b'[ab]*', b'abb'),
+    (re.compile(u'[ab]*', re.IGNORECASE), u'aBb'),
+    (re.compile(b'[ab]', re.IGNORECASE), b'A'),
+])
+def test_fullmatch_generates_example(pattern, matching_str):
+    find_any(st.from_regex(pattern, fullmatch=True),
+             lambda s: s == matching_str)
+
+
+@pytest.mark.parametrize('pattern,eqiv_pattern', [
+    (u'a', u'\\Aa\\Z'),
+    (u'[Aa]', u'\\A[Aa]\\Z'),
+    (u'[ab]*', u'\\A[ab]*\\Z'),
+    (b'[Aa]', br'\A[Aa]\Z'),
+    (b'[ab]*', br'\A[ab]*\Z'),
+    (re.compile(u'[ab]*', re.IGNORECASE),
+     re.compile(u'\\A[ab]*\\Z', re.IGNORECASE)),
+    (re.compile(br'[ab]', re.IGNORECASE),
+     re.compile(br'\A[ab]\Z', re.IGNORECASE))
+])
+def test_fullmatch_matches(pattern, eqiv_pattern):
+    assert_all_examples(st.from_regex(pattern, fullmatch=True),
+                        lambda s: re.match(eqiv_pattern, s))
+
+
+def test_fullmatch_must_be_bool():
+    with pytest.raises(InvalidArgument):
+        st.from_regex('a', fullmatch=None).validate()

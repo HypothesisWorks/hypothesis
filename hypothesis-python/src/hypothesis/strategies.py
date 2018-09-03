@@ -1002,8 +1002,8 @@ def text(
 
 @cacheable
 @defines_strategy
-def from_regex(regex):
-    # type: (Union[AnyStr, Pattern[AnyStr]]) -> SearchStrategy[AnyStr]
+def from_regex(regex, fullmatch=False):
+    # type: (Union[AnyStr, Pattern[AnyStr]], bool) -> SearchStrategy[AnyStr]
     """Generates strings that contain a match for the given regex (i.e. ones
     for which :func:`re.search` will return a non-None result).
 
@@ -1025,14 +1025,17 @@ def from_regex(regex):
     boundary markers. So e.g. ``r"\\A.\\Z"`` will return a single character
     string, while ``"."`` will return any string, and ``r"\\A.$"`` will return
     a single character optionally followed by a ``"\\n"``.
+    Alternatively, passing ``fullmatch=True`` will ensure that the whole
+    string is a match, as if you had used the ``\\A`` and ``\\Z`` markers.
 
     Examples from this strategy shrink towards shorter strings and lower
-    character values.
+    character values, with exact behaviour that may depend on the pattern.
     """
+    check_type(bool, fullmatch, 'fullmatch')
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.searchstrategy.regex import regex_strategy
-    return regex_strategy(regex)
+    return regex_strategy(regex, fullmatch)
 
 
 @cacheable

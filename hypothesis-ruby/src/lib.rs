@@ -1,8 +1,5 @@
 // "Bridging" root code that exists exclusively to provide
-// a ruby -> Hypothesis engine binding. Long term the code
-// in here is the only code that is going to stay in this
-// crate, and everything else is going to get factored out
-// into its own.
+// a ruby -> Hypothesis engine binding.
 
 #![recursion_limit = "256"]
 #![deny(warnings, missing_debug_implementations)]

@@ -14,6 +14,7 @@
 # python
 
 *.pyc
+*.pyo
 venv*
 .cache
 .pytest_cache

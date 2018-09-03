@@ -17,5 +17,18 @@
 
 from __future__ import division, print_function, absolute_import
 
-__version_info__ = (3, 70, 0)
-__version__ = '.'.join(map(str, __version_info__))
+import pytest
+
+from hypothesis import HealthCheck, given, reject, settings
+from hypothesis.errors import Unsatisfiable
+from hypothesis.strategies import integers
+
+
+def test_raises_unsatisfiable_if_all_false():
+    @given(integers())
+    @settings(max_examples=50, suppress_health_check=HealthCheck.all())
+    def test_assume_false(x):
+        reject()
+
+    with pytest.raises(Unsatisfiable):
+        test_assume_false()
