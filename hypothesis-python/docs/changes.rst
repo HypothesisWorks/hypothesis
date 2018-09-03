@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.70.2:
+
+-------------------
+3.70.2 - 2018-09-03
+-------------------
+
+This patch fixes an internal bug where a corrupted argument to
+:func:`@reproduce_failure <hypothesis.reproduce_failure>` could raise
+the wrong type of error.  Thanks again to Paweł T. Jochym, who maintains
+Hypothesis on `conda-forge <https://conda-forge.org/>`_ and consistently
+provides excellent bug reports including :issue:`1558`.
+
 .. _v3.70.1:
 
 -------------------
