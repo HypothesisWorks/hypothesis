@@ -119,7 +119,6 @@ class ConjectureData(object):
         self.interesting_origin = None
         self.tags = set()
         self.draw_times = []
-        self.__intervals = None
         self.max_depth = 0
 
         self.examples = []
