@@ -179,6 +179,7 @@ their individual contributions.
 * `Graham Williamson <https://github.com/00willo>`_
 * `Grant David Bachman <https://github.com/grantbachman>`_ (grantbachman@gmail.com)
 * `Gregory Petrosyan <https://github.com/flyingmutant>`_
+* `Jack Massey <https://github.com/massey101>`_
 * `Jakub Nabaglo <https://github.com/nbgl>`_ (j@nab.gl)
 * `Jeremy Thurgood <https://github.com/jerith>`_
 * `J.J. Green <http://soliton.vm.bytemark.co.uk/pub/jjg/>`_

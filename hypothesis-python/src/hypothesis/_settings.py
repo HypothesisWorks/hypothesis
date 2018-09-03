@@ -317,9 +317,19 @@ class settings(
         bits = []
         for name, setting in all_settings.items():
             value = getattr(self, name)
+            # The only settings that are not shown are those that are
+            # deprecated and left at their default values.
             if value != setting.default or not setting.hide_repr:
                 bits.append('%s=%r' % (name, value))
         return 'settings(%s)' % ', '.join(sorted(bits))
+
+    def show_changed(self):
+        bits = []
+        for name, setting in all_settings.items():
+            value = getattr(self, name)
+            if value != setting.default:
+                bits.append('%s=%r' % (name, value))
+        return ', '.join(sorted(bits, key=len))
 
     def __enter__(self):
         note_deprecation(
