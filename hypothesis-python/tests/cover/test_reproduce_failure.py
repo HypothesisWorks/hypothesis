@@ -27,7 +27,8 @@ import hypothesis.strategies as st
 from hypothesis import PrintSettings, given, reject, example, settings, \
     __version__, reproduce_failure
 from hypothesis.core import decode_failure, encode_failure
-from hypothesis.errors import DidNotReproduce, InvalidArgument
+from hypothesis.errors import DidNotReproduce, InvalidArgument, \
+    UnsatisfiedAssumption
 from tests.common.utils import no_shrink, capture_out
 from hypothesis.internal.compat import hbytes
 
@@ -41,13 +42,18 @@ def test_encoding_loop(b):
 
 @example(base64.b64encode(b'\2\3\4'))
 @example(b'\t')
+@example(base64.b64encode(b'\1\0'))  # zlib error
 @given(st.binary())
 def test_decoding_may_fail(t):
     try:
         decode_failure(t)
         reject()
+    except UnsatisfiedAssumption:
+        raise  # don't silence the reject()
     except InvalidArgument:
         pass
+    except Exception as e:
+        assert False, 'decoding failed with %r, not InvalidArgument' % (e,)
 
 
 def test_reproduces_the_failure():

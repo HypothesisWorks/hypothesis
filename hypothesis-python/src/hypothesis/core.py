@@ -176,7 +176,12 @@ def decode_failure(blob):
     if prefix == b'\0':
         return buffer[1:]
     elif prefix == b'\1':
-        return zlib.decompress(buffer[1:])
+        try:
+            return zlib.decompress(buffer[1:])
+        except zlib.error:
+            raise InvalidArgument(
+                'Invalid zlib compression for blob %r' % (blob,)
+            )
     else:
         raise InvalidArgument(
             'Could not decode blob %r: Invalid start byte %r' % (
