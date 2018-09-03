@@ -72,7 +72,7 @@ def pytest_report_header(config):
     settings_str = settings.get_profile(profile).show_changed()
     if settings_str != '':
         settings_str = ' -> %s' % (settings_str)
-    return 'hypothesis profile %s%s' % (profile, settings_str)
+    return 'hypothesis profile %r%s' % (profile, settings_str)
 
 
 def pytest_configure(config):
