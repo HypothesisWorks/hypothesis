@@ -255,6 +255,19 @@ def fix_doctests():
 
 
 @task()
+def pyup_fix_requirements():
+    if not tools.IS_PULL_REQUEST:
+        print('Not fixing requirements as not a pull request')
+        sys.exit(0)
+
+    if not tools.current_branch().startswith('pyup-scheduled-update'):
+        print('Not fixing requirements as not a pyup pull request')
+        sys.exit(0)
+
+    print('Fixing requirements!')
+
+
+@task()
 def compile_requirements(upgrade=False):
     if upgrade:
         extra = ['--upgrade']
