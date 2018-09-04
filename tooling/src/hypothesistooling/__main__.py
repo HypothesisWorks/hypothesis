@@ -303,9 +303,9 @@ def maybe_push_pyup_requirements_commit():
         print('Pushing to GitHub')
         subprocess.check_call([
             'ssh-agent', 'sh', '-c',
-            'ssh-add %s && ' % (shlex.quote(DEPLOY_KEY),) +
+            'ssh-add %s && ' % (shlex.quote(tools.DEPLOY_KEY),) +
             'git push ssh-origin HEAD:master'
-        )
+        ])
 
 
 @task()
