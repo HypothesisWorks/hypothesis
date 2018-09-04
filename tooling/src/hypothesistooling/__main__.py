@@ -317,15 +317,12 @@ def push_pyup_requirements_commit():
 
 @task()
 def check_requirements():
-    print('@@AWLC is_pyup_branch() = %r' % is_pyup_branch())
     if is_pyup_branch():
         compile_requirements(upgrade=True)
     else:
         compile_requirements(upgrade=False)
 
-    print('@@AWLC tools.has_changes = %r' % tools.has_changes('requirements'))
-
-    if tools.has_changes('requirements'):
+    if tools.has_uncommitted_changes('requirements'):
         push_pyup_requirements_commit()
         sys.exit(1)
     else:
