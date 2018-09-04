@@ -277,7 +277,11 @@ def upgrade_requirements():
     compile_requirements(upgrade=True)
 
 
-def maybe_push_pyup_requirements_commit():
+def is_pyup_branch():
+    return tools.current_branch().startswith('pyup-scheduled-update')
+
+
+def push_pyup_requirements_commit():
     """
     Because pyup updates each package individually, it can create a
     requirements.txt with an incompatible set of versions.
@@ -286,7 +290,7 @@ def maybe_push_pyup_requirements_commit():
     and this is a PR where pyup is running, push a consistent set of
     versions as a new commit to the PR.
     """
-    if tools.current_branch().startswith('pyup-scheduled-update'):
+    if is_pyup_branch():
         print('Pushing new requirements, as this is a pyup pull request')
 
         print('Decrypting secrets')
@@ -310,7 +314,10 @@ def maybe_push_pyup_requirements_commit():
 
 @task()
 def check_requirements():
-    compile_requirements()
+    if is_pyup_branch():
+        compile_requirements(upgrade=True)
+    else:
+        compile_requirements(upgrade=False)
 
     if tools.has_changes('requirements'):
         maybe_push_pyup_requirements_commit()
