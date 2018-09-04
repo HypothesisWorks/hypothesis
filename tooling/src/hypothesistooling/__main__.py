@@ -278,6 +278,7 @@ def upgrade_requirements():
 
 
 def is_pyup_branch():
+    print('@@AWLC current_branch() = %r' % tools.current_branch())
     return tools.current_branch().startswith('pyup-scheduled-update')
 
 
@@ -314,13 +315,16 @@ def push_pyup_requirements_commit():
 
 @task()
 def check_requirements():
+    print('@@AWLC is_pyup_branch() = %r' % is_pyup_branch())
     if is_pyup_branch():
         compile_requirements(upgrade=True)
     else:
         compile_requirements(upgrade=False)
 
+    print('@@AWLC tools.has_changes = %r' % tools.has_changes('requirements'))
+
     if tools.has_changes('requirements'):
-        maybe_push_pyup_requirements_commit()
+        push_pyup_requirements_commit()
         sys.exit(1)
     else:
         sys.exit(0)
