@@ -278,8 +278,10 @@ def upgrade_requirements():
 
 
 def is_pyup_branch():
-    print('@@AWLC current_branch() = %r' % tools.current_branch())
-    return tools.current_branch().startswith('pyup-scheduled-update')
+    return (
+        os.environ['TRAVIS_EVENT_TYPE'] == 'pull_request' and
+        os.environ['TRAVIS_PULL_REQUEST_BRANCH'].startswith('pyup-scheduled-update')
+    )
 
 
 def push_pyup_requirements_commit():
