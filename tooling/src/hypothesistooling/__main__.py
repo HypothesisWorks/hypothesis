@@ -311,7 +311,7 @@ def push_pyup_requirements_commit():
         subprocess.check_call([
             'ssh-agent', 'sh', '-c',
             'ssh-add %s && ' % (shlex.quote(tools.DEPLOY_KEY),) +
-            'git push ssh-origin HEAD:master'
+            'git push ssh-origin HEAD:%s' % os.environ['TRAVIS_PULL_REQUEST_BRANCH']
         ])
 
 
