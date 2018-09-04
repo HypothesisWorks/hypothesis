@@ -44,14 +44,14 @@ def task(if_changed=()):
         if_changed = (if_changed,)
 
     def accept(fn):
-        def wrapped(*args):
+        def wrapped(*args, **kwargs):
             if if_changed and tools.IS_PULL_REQUEST:
                 if not tools.has_changes(if_changed + BUILD_FILES):
                     print('Skipping task due to no changes in %s' % (
                         ', '.join(if_changed),
                     ))
                     return
-            fn(*args)
+            fn(*args, **kwargs)
         wrapped.__name__ = fn.__name__
 
         name = fn.__name__.replace('_', '-')
