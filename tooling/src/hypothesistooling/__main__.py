@@ -289,6 +289,9 @@ def push_pyup_requirements_commit():
     Because pyup updates each package individually, it can create a
     requirements.txt with an incompatible set of versions.
 
+    Depending on the changes, pyup might also have introduced
+    whitespace errors.
+
     If we've recompiled requirements.txt in Travis and made changes,
     and this is a PR where pyup is running, push a consistent set of
     versions as a new commit to the PR.
