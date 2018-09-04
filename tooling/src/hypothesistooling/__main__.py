@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
+import shlex
 import subprocess
 from glob import glob
 from datetime import datetime
@@ -258,19 +259,6 @@ def fix_doctests():
 
 
 @task()
-def pyup_fix_requirements():
-    if not tools.IS_PULL_REQUEST:
-        print('Not fixing requirements as not a pull request')
-        sys.exit(0)
-
-    if not tools.current_branch().startswith('pyup-scheduled-update'):
-        print('Not fixing requirements as not a pyup pull request')
-        sys.exit(0)
-
-    print('Fixing requirements!')
-
-
-@task()
 def compile_requirements(upgrade=False):
     if upgrade:
         extra = ['--upgrade']
@@ -289,10 +277,46 @@ def upgrade_requirements():
     compile_requirements(upgrade=True)
 
 
+def maybe_push_pyup_requirements_commit():
+    """
+    Because pyup updates each package individually, it can create a
+    requirements.txt with an incompatible set of versions.
+
+    If we've recompiled requirements.txt in Travis and made changes,
+    and this is a PR where pyup is running, push a consistent set of
+    versions as a new commit to the PR.
+    """
+    if tools.current_branch().startswith('pyup-scheduled-update'):
+        print('Pushing new requirements, as this is a pyup pull request')
+
+        print('Decrypting secrets')
+        tools.decrypt_secrets()
+        tools.configure_git()
+
+        print('Creating commit')
+        tools.git('add', '--update', 'requirements')
+        tools.git(
+            'commit', '-m',
+            'Bump requirements for pyup pull request'
+        )
+
+        print('Pushing to GitHub')
+        subprocess.check_call([
+            'ssh-agent', 'sh', '-c',
+            'ssh-add %s && ' % (shlex.quote(DEPLOY_KEY),) +
+            'git push ssh-origin HEAD:master'
+        )
+
+
 @task()
 def check_requirements():
     compile_requirements()
-    check_not_changed()
+
+    if tools.has_changes('requirements'):
+        maybe_push_pyup_requirements_commit()
+        sys.exit(1)
+    else:
+        sys.exit(0)
 
 
 @task(if_changed=hp.HYPOTHESIS_PYTHON)
