@@ -54,7 +54,10 @@ def task(if_changed=()):
         wrapped.__name__ = fn.__name__
 
         name = fn.__name__.replace('_', '-')
-        TASKS[name] = wrapped
+
+        if name != '<lambda>':
+            TASKS[name] = wrapped
+
         return wrapped
     return accept
 
