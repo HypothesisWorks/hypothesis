@@ -170,7 +170,7 @@ by consulting its cache of previously-tried inputs in more cases.
 -------------------
 
 This patch handles passing an empty :class:`python:enum.Enum` to
-:func:`~hypothesis.strategies.from_type` returns
+:func:`~hypothesis.strategies.from_type` by returning
 :func:`~hypothesis.strategies.nothing`, instead of raising an
 internal :class:`python:AssertionError`.
 
