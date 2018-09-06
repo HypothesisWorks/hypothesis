@@ -62,24 +62,25 @@ def test_default_health_check_can_weaken_specific():
 
 
 def test_suppressing_filtering_health_check():
-    count = [0]
+    forbidden = set()
 
-    def too_soon(x):
-        count[0] += 1
-        return count[0] >= 200
+    def unhealthy_filter(x):
+        if len(forbidden) < 200:
+            forbidden.add(x)
+        return x not in forbidden
 
-    @given(st.integers().filter(too_soon))
+    @given(st.integers().filter(unhealthy_filter))
     def test1(x):
         raise ValueError()
 
     with raises(FailedHealthCheck):
         test1()
 
-    count[0] = 0
+    forbidden = set()
 
     @settings(suppress_health_check=[
         HealthCheck.filter_too_much, HealthCheck.too_slow])
-    @given(st.integers().filter(too_soon))
+    @given(st.integers().filter(unhealthy_filter))
     def test2(x):
         raise ValueError()
 
