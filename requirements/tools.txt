@@ -6,9 +6,9 @@
 #
 alabaster==0.7.11         # via sphinx
 atomicwrites==1.2.0       # via pytest
-attrs==18.1.0
+attrs==18.2.0
 autoflake==1.2            # via pyformat
-autopep8==1.3.5           # via pyformat
+autopep8==1.4           # via pyformat
 babel==2.6.0              # via sphinx
 backcall==0.1.0           # via ipython
 bandit==1.5.0
@@ -17,7 +17,7 @@ chardet==3.0.4            # via requests
 click==6.7                # via pip-tools, pyupio, safety
 coverage==4.5.1
 decorator==4.3.0          # via ipython, traitlets
-django==2.1
+django==2.1.1
 docformatter==1.0         # via pyformat
 docutils==0.14            # via restructuredtext-lint, sphinx
 dparse==0.4.1             # via pyupio, safety
@@ -29,7 +29,7 @@ flaky==3.4.0
 gitdb2==2.0.4             # via gitpython
 gitpython==2.1.11         # via bandit
 idna==2.7                 # via requests
-imagesize==1.0.0          # via sphinx
+imagesize==1.1.0          # via sphinx
 ipython-genutils==0.2.0   # via traitlets
 ipython==6.5.0
 isort==4.3.4
@@ -49,18 +49,18 @@ pickleshare==0.7.4        # via ipython
 pip-tools==2.0.2
 pkginfo==1.4.2            # via twine
 pluggy==0.7.1             # via pytest, tox
-prompt-toolkit==1.0.15    # via ipython
+prompt-toolkit==2.0.4    # via ipython
 ptyprocess==0.6.0         # via pexpect
-py==1.5.4                 # via pytest, tox
-pycodestyle==2.3.1        # via autopep8, flake8
+py==1.6.0                 # via pytest, tox
+pycodestyle==2.4.0        # via autopep8, flake8
 pydocstyle==2.1.1         # via flake8-docstrings
-pyflakes==1.6.0           # via autoflake, flake8
+pyflakes==2.0.0           # via autoflake, flake8
 pyformat==0.7
 pygithub==1.40            # via pyupio
 pygments==2.2.0           # via ipython, sphinx
 pyjwt==1.6.4              # via pygithub
 pyparsing==2.2.0          # via packaging
-pytest==3.7.2
+pytest==3.7.4
 python-dateutil==2.7.3
 python-gitlab==1.6.0      # via pyupio
 pytz==2018.5              # via babel, django
@@ -75,7 +75,7 @@ six==1.11.0               # via bandit, dparse, mock, more-itertools, packaging,
 smmap2==2.0.4             # via gitdb2
 snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.1
-sphinx==1.7.7
+sphinx==1.7.8
 sphinxcontrib-websupport==1.1.0  # via sphinx
 stevedore==1.29.0         # via bandit
 toml==0.9.4
