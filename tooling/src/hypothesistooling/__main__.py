@@ -280,13 +280,13 @@ def upgrade_requirements():
 def is_pyup_branch():
     return (
         os.environ['TRAVIS_EVENT_TYPE'] == 'pull_request' and
-        os.environ['TRAVIS_PULL_REQUEST_BRANCH'].startswith('pyup-scheduled-update')
+        os.environ['TRAVIS_PULL_REQUEST_BRANCH'].startswith(
+            'pyup-scheduled-update')
     )
 
 
 def push_pyup_requirements_commit():
-    """
-    Because pyup updates each package individually, it can create a
+    """Because pyup updates each package individually, it can create a
     requirements.txt with an incompatible set of versions.
 
     Depending on the changes, pyup might also have introduced
@@ -314,7 +314,9 @@ def push_pyup_requirements_commit():
         subprocess.check_call([
             'ssh-agent', 'sh', '-c',
             'ssh-add %s && ' % (shlex.quote(tools.DEPLOY_KEY),) +
-            'git push ssh-origin HEAD:%s' % os.environ['TRAVIS_PULL_REQUEST_BRANCH']
+            'git push ssh-origin HEAD:%s' % (
+                os.environ['TRAVIS_PULL_REQUEST_BRANCH'],
+            )
         ])
 
 
