@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
+import shlex
 import subprocess
 from glob import glob
 from datetime import datetime
@@ -43,18 +44,21 @@ def task(if_changed=()):
         if_changed = (if_changed,)
 
     def accept(fn):
-        def wrapped(*args):
+        def wrapped(*args, **kwargs):
             if if_changed and tools.IS_PULL_REQUEST:
                 if not tools.has_changes(if_changed + BUILD_FILES):
                     print('Skipping task due to no changes in %s' % (
                         ', '.join(if_changed),
                     ))
                     return
-            fn(*args)
+            fn(*args, **kwargs)
         wrapped.__name__ = fn.__name__
 
         name = fn.__name__.replace('_', '-')
-        TASKS[name] = wrapped
+
+        if name != '<lambda>':
+            TASKS[name] = wrapped
+
         return wrapped
     return accept
 
@@ -273,10 +277,61 @@ def upgrade_requirements():
     compile_requirements(upgrade=True)
 
 
+def is_pyup_branch():
+    return (
+        os.environ['TRAVIS_EVENT_TYPE'] == 'pull_request' and
+        os.environ['TRAVIS_PULL_REQUEST_BRANCH'].startswith(
+            'pyup-scheduled-update')
+    )
+
+
+def push_pyup_requirements_commit():
+    """Because pyup updates each package individually, it can create a
+    requirements.txt with an incompatible set of versions.
+
+    Depending on the changes, pyup might also have introduced
+    whitespace errors.
+
+    If we've recompiled requirements.txt in Travis and made changes,
+    and this is a PR where pyup is running, push a consistent set of
+    versions as a new commit to the PR.
+    """
+    if is_pyup_branch():
+        print('Pushing new requirements, as this is a pyup pull request')
+
+        print('Decrypting secrets')
+        tools.decrypt_secrets()
+        tools.configure_git()
+
+        print('Creating commit')
+        tools.git('add', '--update', 'requirements')
+        tools.git(
+            'commit', '-m',
+            'Bump requirements for pyup pull request'
+        )
+
+        print('Pushing to GitHub')
+        subprocess.check_call([
+            'ssh-agent', 'sh', '-c',
+            'ssh-add %s && ' % (shlex.quote(tools.DEPLOY_KEY),) +
+            'git push ssh-origin HEAD:%s' % (
+                os.environ['TRAVIS_PULL_REQUEST_BRANCH'],
+            )
+        ])
+
+
 @task()
 def check_requirements():
-    compile_requirements()
-    check_not_changed()
+    if is_pyup_branch():
+        compile_requirements(upgrade=True)
+    else:
+        compile_requirements(upgrade=False)
+
+    if tools.has_uncommitted_changes('requirements'):
+        push_pyup_requirements_commit()
+        sys.exit(1)
+    else:
+        sys.exit(0)
 
 
 @task(if_changed=hp.HYPOTHESIS_PYTHON)

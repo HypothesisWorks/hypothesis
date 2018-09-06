@@ -5,16 +5,16 @@
 #    pip-compile --output-file requirements/test.txt requirements/test.in
 #
 apipkg==1.5               # via execnet
-atomicwrites==1.2.0       # via pytest
-attrs==18.1.0
+atomicwrites==1.2.1       # via pytest
+attrs==18.2.0
 execnet==1.5.0            # via pytest-xdist
 flaky==3.4.0
 mock==2.0.0
 more-itertools==4.3.0     # via pytest
 pbr==4.2.0                # via mock
 pluggy==0.7.1             # via pytest
-py==1.5.4                 # via pytest
+py==1.6.0                 # via pytest
 pytest-forked==0.2        # via pytest-xdist
 pytest-xdist==1.23.0
-pytest==3.7.2
+pytest==3.8.0
 six==1.11.0               # via mock, more-itertools, pytest, pytest-xdist
