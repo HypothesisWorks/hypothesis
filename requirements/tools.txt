@@ -5,10 +5,10 @@
 #    pip-compile --output-file requirements/tools.txt requirements/tools.in
 #
 alabaster==0.7.11         # via sphinx
-atomicwrites==1.2.0       # via pytest
+atomicwrites==1.2.1       # via pytest
 attrs==18.2.0
 autoflake==1.2            # via pyformat
-autopep8==1.4           # via pyformat
+autopep8==1.4             # via pyformat
 babel==2.6.0              # via sphinx
 backcall==0.1.0           # via ipython
 bandit==1.5.0
@@ -42,25 +42,25 @@ more-itertools==4.3.0     # via pytest
 mypy==0.620
 numpy==1.15.1
 packaging==17.1           # via dparse, pyupio, safety, sphinx
-parso==0.3.0              # via jedi
+parso==0.3.1              # via jedi
 pbr==4.2.0                # via mock, stevedore
 pexpect==4.6.0            # via ipython
 pickleshare==0.7.4        # via ipython
 pip-tools==2.0.2
 pkginfo==1.4.2            # via twine
 pluggy==0.7.1             # via pytest, tox
-prompt-toolkit==2.0.4    # via ipython
+prompt-toolkit==1.0.15    # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.6.0                 # via pytest, tox
-pycodestyle==2.4.0        # via autopep8, flake8
+pycodestyle==2.3.1        # via autopep8, flake8
 pydocstyle==2.1.1         # via flake8-docstrings
-pyflakes==2.0.0           # via autoflake, flake8
+pyflakes==1.6.0           # via autoflake, flake8
 pyformat==0.7
 pygithub==1.40            # via pyupio
 pygments==2.2.0           # via ipython, sphinx
 pyjwt==1.6.4              # via pygithub
 pyparsing==2.2.0          # via packaging
-pytest==3.7.4
+pytest==3.8.0
 python-dateutil==2.7.3
 python-gitlab==1.6.0      # via pyupio
 pytz==2018.5              # via babel, django
@@ -75,7 +75,7 @@ six==1.11.0               # via bandit, dparse, mock, more-itertools, packaging,
 smmap2==2.0.4             # via gitdb2
 snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.1
-sphinx==1.7.8
+sphinx==1.7.9
 sphinxcontrib-websupport==1.1.0  # via sphinx
 stevedore==1.29.0         # via bandit
 toml==0.9.4
@@ -86,6 +86,6 @@ twine==1.11.0
 typed-ast==1.1.0          # via mypy
 unify==0.4                # via pyformat
 untokenize==0.1.1         # via docformatter, unify
-urllib3==1.22             # via requests
+urllib3==1.23             # via requests
 virtualenv==16.0.0        # via tox
 wcwidth==0.1.7            # via prompt-toolkit
