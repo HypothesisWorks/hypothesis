@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.70.4:
+
+-------------------
+3.70.4 - 2018-09-08
+-------------------
+
+This patch changes the behaviour of :func:`~hypothesis.reproduce_failure`
+so that blobs are only printed in quiet mode when the
+:obj:`~hypothesis.settings.print_blob` setting is set to ``ALWAYS``.
+
+Thanks to Cameron McGill for writing this patch at the PyCon Australia sprints!
+
 .. _v3.70.3:
 
 -------------------
