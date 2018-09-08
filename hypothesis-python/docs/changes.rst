@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.71.0:
+
+-------------------
+3.71.0 - 2018-09-08
+-------------------
+
+This release deprecates the coverage-guided testing functionality,
+as it has proven brittle and does not really pull its weight.
+
+We intend to replace it with something more useful in the future,
+but the feature in its current form does not seem to be worth the cost of using,
+and whatever replaces it will likely look very different.
+
 .. _v3.70.4:
 
 -------------------
