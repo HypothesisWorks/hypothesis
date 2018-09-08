@@ -57,16 +57,12 @@ def minimal(
             runtime.append(0.0)
         return result
 
-    try:
-        orig = sys.gettrace()
-        return find(
-            definition,
-            wrapped_condition,
-            settings=settings,
-            random=random,
-        )
-    finally:
-        sys.settrace(orig)
+    return find(
+        definition,
+        wrapped_condition,
+        settings=settings,
+        random=random,
+    )
 
 
 def find_any(

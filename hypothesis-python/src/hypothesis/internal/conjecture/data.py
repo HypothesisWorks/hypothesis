@@ -25,7 +25,6 @@ import attr
 from hypothesis.errors import Frozen, StopTest, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
     bit_length, benchmark_time, int_from_bytes, unicode_safe_repr
-from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.escalation import mark_for_escalation
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 
@@ -161,15 +160,7 @@ class ConjectureData(object):
         if self.depth >= MAX_DEPTH:
             self.mark_invalid()
 
-        if self.depth == 0 and not IN_COVERAGE_TESTS:  # pragma: no cover
-            original_tracer = sys.gettrace()
-            try:
-                sys.settrace(None)
-                return self.__draw(strategy, label=label)
-            finally:
-                sys.settrace(original_tracer)
-        else:
-            return self.__draw(strategy, label=label)
+        return self.__draw(strategy, label=label)
 
     def __draw(self, strategy, label):
         at_top_level = self.depth == 0
