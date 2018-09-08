@@ -858,6 +858,7 @@ class StateForActualGivenExecution(object):
                     if (
                         self.settings.print_blob is PrintSettings.ALWAYS or (
                             self.settings.print_blob is PrintSettings.INFER and
+                            self.settings.verbosity >= Verbosity.normal and
                             not can_use_repr and
                             len(failure_blob) < 200
                         )
