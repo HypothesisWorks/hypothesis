@@ -457,7 +457,6 @@ for n in [19, 20, 21, 22, 23]:
     standard_tox_task('pandas%d' % (n,))
 
 standard_tox_task('coverage')
-standard_tox_task('pure-tracer')
 
 
 @task()

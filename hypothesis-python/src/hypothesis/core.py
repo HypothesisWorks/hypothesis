@@ -34,9 +34,6 @@ from random import Random
 from unittest import TestCase
 
 import attr
-from coverage import CoverageData
-from coverage.files import canonical_filename
-from coverage.collector import Collector
 
 import hypothesis.strategies as st
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
@@ -54,11 +51,10 @@ from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import ceil, hbytes, qualname, \
     str_to_bytes, benchmark_time, get_type_hints, getfullargspec, \
-    int_from_bytes, encoded_filepath, bad_django_TestCase
+    int_from_bytes, bad_django_TestCase
 from hypothesis.internal.entropy import deterministic_PRNG
-from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.utils.conventions import infer, not_set
-from hypothesis.internal.escalation import is_hypothesis_file, \
+from hypothesis.internal.escalation import \
     escalate_hypothesis_internal_error
 from hypothesis.internal.reflection import is_mock, proxies, nicerepr, \
     arg_string, impersonate, function_digest, fully_qualified_name, \
@@ -69,11 +65,6 @@ from hypothesis.internal.conjecture.data import StopTest, ConjectureData
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.internal.conjecture.engine import ExitReason, \
     ConjectureRunner, sort_key
-
-try:
-    from coverage.tracer import CFileDisposition as FileDisposition
-except ImportError:  # pragma: no cover
-    from coverage.collector import FileDisposition
 
 if False:
     from typing import (  # noqa
@@ -433,47 +424,6 @@ ROOT = os.path.dirname(__file__)
 STDLIB = os.path.dirname(os.__file__)
 
 
-def hypothesis_check_include(filename):  # pragma: no cover
-    if is_hypothesis_file(filename):
-        return False
-    return filename.endswith('.py')
-
-
-def escalate_warning(msg, slug=None):  # pragma: no cover
-    if slug is not None:
-        msg = '%s (%s)' % (msg, slug)
-    raise AssertionError(
-        'Unexpected warning from coverage: %s' % (msg,)
-    )
-
-
-class Arc(object):
-    __slots__ = ('filename', 'source', 'target')
-
-    def __init__(self, filename, source, target):
-        self.filename = filename
-        self.source = source
-        self.target = target
-
-
-ARC_CACHE = {}  # type: Dict[str, Dict[Any, Dict[Any, Arc]]]
-
-
-def arc(filename, source, target):
-    try:
-        return ARC_CACHE[filename][source][target]
-    except KeyError:
-        result = Arc(filename, source, target)
-        ARC_CACHE.setdefault(
-            filename, {}).setdefault(source, {})[target] = result
-        return result
-
-
-in_given = False
-
-FORCE_PURE_TRACER = os.getenv('HYPOTHESIS_FORCE_PURE_TRACER') == 'true'
-
-
 class StateForActualGivenExecution(object):
 
     def __init__(
@@ -487,53 +437,15 @@ class StateForActualGivenExecution(object):
         self.__was_flaky = False
         self.random = random
         self.__warned_deadline = False
-        self.__existing_collector = None
         self.__test_runtime = None
         self.__had_seed = had_seed
 
         self.test = test
 
-        self.coverage_data = CoverageData()
         self.files_to_propagate = set()
         self.failed_normally = False
 
         self.used_examples_from_database = False
-
-        if settings.use_coverage and not IN_COVERAGE_TESTS:  # pragma: no cover
-            if Collector._collectors:
-                parent = Collector._collectors[-1]
-
-                # We include any files the collector has already decided to
-                # trace whether or not on re-investigation we still think it
-                # wants to trace them. The reason for this is that in some
-                # cases coverage gets the wrong answer when we run it
-                # ourselves due to reasons that are our fault but are hard to
-                # fix (we lie about where certain functions come from).
-                # This causes us to not record the actual test bodies as
-                # covered. But if we intended to trace test bodies then the
-                # file must already have been traced when getting to this point
-                # and so will already be in the collector's data. Hence we can
-                # use that information to get the correct answer here.
-                # See issue 997 for more context.
-                self.files_to_propagate = set(parent.data)
-                self.hijack_collector(parent)
-
-            self.collector = Collector(
-                branch=True,
-                timid=FORCE_PURE_TRACER,
-                should_trace=self.should_trace,
-                check_include=hypothesis_check_include,
-                concurrency='thread',
-                warn=escalate_warning,
-            )
-            self.collector.reset()
-
-            # Hide the other collectors from this one so it doesn't attempt to
-            # pause them (we're doing trace function management ourselves so
-            # this will just cause problems).
-            self.collector._collectors = []
-        else:
-            self.collector = None
 
     def execute(
         self, data,
@@ -601,16 +513,8 @@ class StateForActualGivenExecution(object):
                             lambda: 'Trying example: %s(%s)' % (
                                 test.__name__, arg_string(test, args, kwargs)))
 
-                    if self.collector is None or not collect:
-                        with deterministic_PRNG():
-                            return test(*args, **kwargs)
-                    else:  # pragma: no cover
-                        try:
-                            self.collector.start()
-                            with deterministic_PRNG():
-                                return test(*args, **kwargs)
-                        finally:
-                            self.collector.stop()
+                    with deterministic_PRNG():
+                        return test(*args, **kwargs)
 
         result = self.test_runner(data, run)
         if expected_failure is not None:
@@ -643,74 +547,9 @@ class StateForActualGivenExecution(object):
             ) % (test.__name__, text_repr[0],))
         return result
 
-    def should_trace(self, original_filename, frame):  # pragma: no cover
-        disp = FileDisposition()
-        assert original_filename is not None
-        disp.original_filename = original_filename
-        disp.canonical_filename = encoded_filepath(
-            canonical_filename(original_filename))
-        disp.source_filename = disp.canonical_filename
-        disp.reason = ''
-        disp.file_tracer = None
-        disp.has_dynamic_filename = False
-        disp.trace = hypothesis_check_include(disp.canonical_filename)
-        if not disp.trace:
-            disp.reason = 'hypothesis internal reasons'
-        elif self.__existing_collector is not None:
-            check = self.__existing_collector.should_trace(
-                original_filename, frame)
-            if check.trace:
-                self.files_to_propagate.add(check.canonical_filename)
-        return disp
-
-    def hijack_collector(self, collector):  # pragma: no cover
-        self.__existing_collector = collector
-        original_save_data = collector.save_data
-
-        def save_data(covdata):
-            result = original_save_data(covdata)
-            if collector.branch:
-                covdata.add_arcs({
-                    filename: {
-                        arc: None
-                        for arc in self.coverage_data.arcs(filename) or ()}
-                    for filename in self.files_to_propagate
-                })
-            else:
-                covdata.add_lines({
-                    filename: {
-                        line: None
-                        for line in self.coverage_data.lines(filename) or ()}
-                    for filename in self.files_to_propagate
-                })
-            collector.save_data = original_save_data
-            return result
-        collector.save_data = save_data
-
     def evaluate_test_data(self, data):
         try:
-            if self.collector is None:
-                result = self.execute(data)
-            else:  # pragma: no cover
-                # This should always be a no-op, but the coverage tracer has
-                # a bad habit of resurrecting itself.
-                original = sys.gettrace()
-                sys.settrace(None)
-                try:
-                    self.collector.data = {}
-                    result = self.execute(data, collect=True)
-                finally:
-                    sys.settrace(original)
-                    covdata = CoverageData()
-                    self.collector.save_data(covdata)
-                    self.coverage_data.update(covdata)
-                    for filename in covdata.measured_files():
-                        if is_hypothesis_file(filename):
-                            continue
-                        data.tags.update(
-                            arc(filename, source, target)
-                            for source, target in covdata.arcs(filename)
-                        )
+            result = self.execute(data)
             if result is not None:
                 fail_health_check(self.settings, (
                     'Tests run under @given should return None, but '
@@ -745,26 +584,16 @@ class StateForActualGivenExecution(object):
         else:
             database_key = None
         self.start_time = benchmark_time()
-        global in_given
         runner = ConjectureRunner(
             self.evaluate_test_data,
             settings=self.settings, random=self.random,
             database_key=database_key,
         )
-
-        if in_given or self.collector is None:
+        try:
             runner.run()
-        else:  # pragma: no cover
-            in_given = True
-            original_trace = sys.gettrace()
-            try:
-                sys.settrace(None)
-                runner.run()
-            finally:
-                in_given = False
-                sys.settrace(original_trace)
-                self.used_examples_from_database = \
-                    runner.used_examples_from_database
+        finally:
+            self.used_examples_from_database = \
+                runner.used_examples_from_database
         note_engine_for_statistics(runner)
         run_time = benchmark_time() - self.start_time
 

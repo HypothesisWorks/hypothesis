@@ -71,10 +71,7 @@ def run():
 
     settings.register_profile('default', settings(
         max_examples=10 if IN_COVERAGE_TESTS else not_set,
-        timeout=unlimited, use_coverage=not IN_COVERAGE_TESTS))
-
-    settings.register_profile('with_coverage', settings(
-        timeout=unlimited, use_coverage=True,
+        timeout=unlimited,
     ))
 
     settings.register_profile(

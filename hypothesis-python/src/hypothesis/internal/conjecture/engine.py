@@ -22,7 +22,6 @@ from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
 from functools import total_ordering
-from collections import defaultdict
 
 import attr
 
@@ -32,7 +31,6 @@ from hypothesis._settings import local_settings, note_deprecation
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import Counter, ceil, hbytes, hrange, \
     int_to_bytes, benchmark_time, int_from_bytes, to_bytes_sequence
-from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
@@ -170,23 +168,8 @@ class ConjectureRunner(object):
 
         self.debug_data(data)
 
-        tags = frozenset(data.tags)
-        data.tags = self.tag_intern_table.setdefault(tags, tags)
-
         if data.status == Status.VALID:
             self.valid_examples += 1
-            for t in data.tags:
-                existing = self.covering_examples.get(t)
-                if (
-                    existing is None or
-                    sort_key(data.buffer) < sort_key(existing.buffer)
-                ):
-                    self.covering_examples[t] = data
-                    if self.database is not None:
-                        self.database.save(self.covering_key, data.buffer)
-                        if existing is not None:
-                            self.database.delete(
-                                self.covering_key, existing.buffer)
 
         tree_node = self.tree[0]
         indices = []
@@ -740,10 +723,7 @@ class ConjectureRunner(object):
             self.test_function(last_data)
             last_data.freeze()
 
-            if len(self.covering_examples) > targets_found:
-                count = 0
-            else:
-                count += 1
+            count += 1
 
         mutations = 0
         mutator = self._new_mutator()
@@ -790,7 +770,7 @@ class ConjectureRunner(object):
                 self.test_function(data)
                 data.freeze()
             else:
-                target, origin = self.target_selector.select()
+                origin = self.target_selector.select()
                 mutations += 1
                 targets_found = len(self.covering_examples)
                 data = ConjectureData(
@@ -806,7 +786,6 @@ class ConjectureRunner(object):
                     mutations = 0
                 elif (
                     data.status < origin.status or
-                    not self.target_selector.has_tag(target, data) or
                     mutations >= 10
                 ):
                     # Cap the variations of a single example and move on to
@@ -1025,123 +1004,10 @@ def uniform(random, n):
     return int_to_bytes(random.getrandbits(n * 8), n)
 
 
-class SampleSet(object):
-    """Set data type with the ability to sample uniformly at random from it.
-
-    The mechanism is that we store the set in two parts: A mapping of
-    values to their index in an array. Sampling uniformly at random then
-    becomes simply a matter of sampling from the array, but we can use
-    the index for efficient lookup to add and remove values.
-    """
-
-    __slots__ = ('__values', '__index')
-
-    def __init__(self):
-        self.__values = []
-        self.__index = {}
-
-    def __len__(self):
-        return len(self.__values)
-
-    def __repr__(self):
-        return 'SampleSet(%r)' % (self.__values,)
-
-    def add(self, value):
-        assert value not in self.__index
-        # Adding simply consists of adding the value to the end of the array
-        # and updating the index.
-        self.__index[value] = len(self.__values)
-        self.__values.append(value)
-
-    def remove(self, value):
-        # To remove a value we first remove it from the index. But this leaves
-        # us with the value still in the array, so we have to fix that. We
-        # can't simply remove the value from the array, as that would a) Be an
-        # O(n) operation and b) Leave the index completely wrong for every
-        # value after that index.
-        # So what we do is we take the last element of the array and place it
-        # in the position of the value we just deleted (if the value was not
-        # already the last element of the array. If it was then we don't have
-        # to do anything extra). This reorders the array, but that's OK because
-        # we don't care about its order, we just need to sample from it.
-        i = self.__index.pop(value)
-        last = self.__values.pop()
-        if i < len(self.__values):
-            self.__values[i] = last
-            self.__index[last] = i
-
-    def choice(self, random):
-        return random.choice(self.__values)
-
-
-class Negated(object):
-    __slots__ = ('tag',)
-
-    def __init__(self, tag):
-        self.tag = tag
-
-
-NEGATED_CACHE = {}  # type: dict
-
-
-def negated(tag):
-    try:
-        return NEGATED_CACHE[tag]
-    except KeyError:
-        result = Negated(tag)
-        NEGATED_CACHE[tag] = result
-        return result
-
-
-universal = UniqueIdentifier('universal')
-
-
 class TargetSelector(object):
     """Data structure for selecting targets to use for mutation.
 
-    The goal is to do a good job of exploiting novelty in examples without
-    getting too obsessed with any particular novel factor.
-
-    Roughly speaking what we want to do is give each distinct coverage target
-    equal amounts of time. However some coverage targets may be harder to fuzz
-    than others, or may only appear in a very small minority of examples, so we
-    don't want to let those dominate the testing.
-
-    Targets are selected according to the following rules:
-
-    1. We ideally want valid examples as our starting point. We ignore
-       interesting examples entirely, and other than that we restrict ourselves
-       to the best example status we've seen so far. If we've only seen
-       OVERRUN examples we use those. If we've seen INVALID but not VALID
-       examples we use those. Otherwise we use VALID examples.
-    2. Among the examples we've seen with the right status, when asked to
-       select a target, we select a coverage target and return that along with
-       an example exhibiting that target uniformly at random.
-
-    Coverage target selection proceeds as follows:
-
-    1. Whenever we return an example from select, we update the usage count of
-       each of its tags.
-    2. Whenever we see an example, we add it to the list of examples for all of
-       its tags.
-    3. When selecting a tag, we select one with a minimal usage count. Among
-       those of minimal usage count we select one with the fewest examples.
-       Among those, we select one uniformly at random.
-
-    This has the following desirable properties:
-
-    1. When two coverage targets are intrinsically linked (e.g. when you have
-       multiple lines in a conditional so that either all or none of them will
-       be covered in a conditional) they are naturally deduplicated.
-    2. Popular coverage targets will largely be ignored for considering what
-       test to run - if every example exhibits a coverage target, picking an
-       example because of that target is rather pointless.
-    3. When we discover new coverage targets we immediately exploit them until
-       we get to the point where we've spent about as much time on them as the
-       existing targets.
-    4. Among the interesting deduplicated coverage targets we essentially
-       round-robin between them, but with a more consistent distribution than
-       uniformly at random, which is important particularly for short runs.
+    Mostly vestigial.
     """
 
     def __init__(self, random):
@@ -1150,15 +1016,7 @@ class TargetSelector(object):
         self.reset()
 
     def reset(self):
-        self.examples_by_tags = defaultdict(list)
-        self.tag_usage_counts = Counter()
-        self.tags_by_score = defaultdict(SampleSet)
-        self.scores_by_tag = {}
-        self.scores = []
-        self.mutation_counts = 0
-        self.example_counts = 0
-        self.non_universal_tags = set()
-        self.universal_tags = None
+        self.examples = []
 
     def add(self, data):
         if data.status == Status.INTERESTING:
@@ -1168,83 +1026,10 @@ class TargetSelector(object):
         if data.status > self.best_status:
             self.best_status = data.status
             self.reset()
-
-        if self.universal_tags is None:
-            self.universal_tags = set(data.tags)
-        else:
-            not_actually_universal = self.universal_tags - data.tags
-            for t in not_actually_universal:
-                self.universal_tags.remove(t)
-                self.non_universal_tags.add(t)
-                self.examples_by_tags[t] = list(
-                    self.examples_by_tags[universal]
-                )
-
-        new_tags = data.tags - self.non_universal_tags
-
-        for t in new_tags:
-            self.non_universal_tags.add(t)
-            self.examples_by_tags[negated(t)] = list(
-                self.examples_by_tags[universal]
-            )
-
-        self.example_counts += 1
-        for t in self.tags_for(data):
-            self.examples_by_tags[t].append(data)
-            self.rescore(t)
-
-    def has_tag(self, tag, data):
-        if tag is universal:
-            return True
-        if isinstance(tag, Negated):
-            return tag.tag not in data.tags
-        return tag in data.tags
-
-    def tags_for(self, data):
-        yield universal
-        for t in data.tags:
-            yield t
-        for t in self.non_universal_tags:
-            if t not in data.tags:
-                yield negated(t)
-
-    def rescore(self, tag):
-        new_score = (
-            self.tag_usage_counts[tag], len(self.examples_by_tags[tag]))
-        try:
-            old_score = self.scores_by_tag[tag]
-        except KeyError:
-            pass
-        else:
-            self.tags_by_score[old_score].remove(tag)
-        self.scores_by_tag[tag] = new_score
-
-        sample = self.tags_by_score[new_score]
-        if len(sample) == 0:
-            heapq.heappush(self.scores, new_score)
-        sample.add(tag)
-
-    def select_tag(self):
-        while True:
-            peek = self.scores[0]
-            sample = self.tags_by_score[peek]
-            if len(sample) == 0:
-                heapq.heappop(self.scores)
-            else:
-                return sample.choice(self.random)
-
-    def select_example_for_tag(self, t):
-        return self.random.choice(self.examples_by_tags[t])
+        self.examples.append(data)
 
     def select(self):
-        t = self.select_tag()
-        self.mutation_counts += 1
-        result = self.select_example_for_tag(t)
-        assert self.has_tag(t, result)
-        for s in self.tags_for(result):
-            self.tag_usage_counts[s] += 1
-            self.rescore(s)
-        return t, result
+        return self.random.choice(self.examples)
 
 
 def block_program(description):

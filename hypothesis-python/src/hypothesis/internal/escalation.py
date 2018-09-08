@@ -20,8 +20,6 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 
-import coverage
-
 import hypothesis
 from hypothesis.errors import StopTest, DeadlineExceeded, \
     HypothesisException, UnsatisfiedAssumption
@@ -57,7 +55,6 @@ FILE_CACHE = {}  # type: Dict[bytes, bool]
 
 
 is_hypothesis_file = belongs_to(hypothesis)
-is_coverage_file = belongs_to(coverage)
 
 HYPOTHESIS_CONTROL_EXCEPTIONS = (
     DeadlineExceeded, StopTest, UnsatisfiedAssumption
@@ -80,9 +77,4 @@ def escalate_hypothesis_internal_error():
     if is_hypothesis_file(filepath) and not isinstance(
         e, (HypothesisException,) + HYPOTHESIS_CONTROL_EXCEPTIONS,
     ):
-        raise
-    # This is so that if we do something wrong and trigger an internal Coverage
-    # error we don't try to catch it. It should be impossible to trigger, but
-    # you never know.
-    if is_coverage_file(filepath):  # pragma: no cover
         raise

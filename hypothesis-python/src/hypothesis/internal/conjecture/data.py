@@ -17,7 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
 from enum import IntEnum
 
 import attr
@@ -25,7 +24,6 @@ import attr
 from hypothesis.errors import Frozen, StopTest, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
     bit_length, benchmark_time, int_from_bytes, unicode_safe_repr
-from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.escalation import mark_for_escalation
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 
@@ -61,23 +59,6 @@ class Example(object):
     @property
     def length(self):
         return self.end - self.start
-
-
-@attr.s(hash=False, cmp=False, slots=True)
-class StructuralTag(object):
-    label = attr.ib()
-
-
-STRUCTURAL_TAGS = {}  # type: dict
-
-
-def structural_tag(label):
-    try:
-        return STRUCTURAL_TAGS[label]
-    except KeyError:
-        result = StructuralTag(label)
-        STRUCTURAL_TAGS[label] = result
-        return result
 
 
 global_test_counter = 0
@@ -117,7 +98,6 @@ class ConjectureData(object):
         self.forced_blocks = set()
         self.masked_indices = {}
         self.interesting_origin = None
-        self.tags = set()
         self.draw_times = []
         self.max_depth = 0
 
@@ -132,9 +112,6 @@ class ConjectureData(object):
             raise Frozen(
                 'Cannot call %s on frozen ConjectureData' % (
                     name,))
-
-    def add_tag(self, tag):
-        self.tags.add(tag)
 
     @property
     def depth(self):
@@ -165,15 +142,7 @@ class ConjectureData(object):
         if self.depth >= MAX_DEPTH:
             self.mark_invalid()
 
-        if self.depth == 0 and not IN_COVERAGE_TESTS:  # pragma: no cover
-            original_tracer = sys.gettrace()
-            try:
-                sys.settrace(None)
-                return self.__draw(strategy, label=label)
-            finally:
-                sys.settrace(original_tracer)
-        else:
-            return self.__draw(strategy, label=label)
+        return self.__draw(strategy, label=label)
 
     def __draw(self, strategy, label):
         at_top_level = self.depth == 0
@@ -262,7 +231,6 @@ class ConjectureData(object):
                 if ex.discarded:
                     discards.append((ex.start, ex.end))
                     continue
-                self.tags.add(structural_tag(ex.label))
 
         self.buffer = hbytes(self.buffer)
         self.events = frozenset(self.events)

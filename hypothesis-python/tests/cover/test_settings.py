@@ -28,7 +28,8 @@ import hypothesis.strategies as st
 from hypothesis import given, unlimited
 from hypothesis.errors import InvalidState, InvalidArgument, \
     HypothesisDeprecationWarning
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import validate_deprecation, \
+    checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
 from hypothesis._settings import Verbosity, settings, default_variable, \
@@ -379,3 +380,9 @@ def test_database_is_reference_preserved():
     s = settings(database=not_set)
 
     assert s.database is s.database
+
+
+@pytest.mark.parametrize('value', [False, True])
+def test_setting_use_coverage_is_deprecated(value):
+    with validate_deprecation():
+        settings(use_coverage=value)

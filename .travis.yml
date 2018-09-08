@@ -60,7 +60,6 @@ jobs:
     # worth testing.
     - stage: extras
       env: TASK=check-unicode
-      env: TASK=check-pure-tracer
     - env: TASK=check-py27-typing
     - env: TASK=check-nose
     - env: TASK=check-pytest30
