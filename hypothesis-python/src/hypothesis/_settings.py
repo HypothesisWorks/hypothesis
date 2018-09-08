@@ -778,8 +778,7 @@ deadline and have not explicitly set a deadline yourself.
 
 settings._define_setting(
     'use_coverage',
-    default=False,
-    future_default=False,
+    default=not_set,
     deprecation_message="""
 use_coverage no longer does anything and can be removed from your settings.
 """,
