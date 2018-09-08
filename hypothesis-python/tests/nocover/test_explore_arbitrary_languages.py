@@ -117,7 +117,7 @@ def run_language_test_for(root, data, seed):
 @settings(
     max_examples=100, suppress_health_check=HealthCheck.all(),
     deadline=None, timeout=unlimited,
-    use_coverage=False, phases=set(Phase) - {Phase.shrink},
+    phases=set(Phase) - {Phase.shrink},
 )
 @given(st.data())
 def test_explore_an_arbitrary_language(data):

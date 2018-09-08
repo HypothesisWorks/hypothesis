@@ -44,8 +44,7 @@ def test_can_shrink_in_variable_sized_context(n):
 @example(1.7976931348623157e+308)
 @example(1.5)
 @given(st.floats(min_value=0, allow_infinity=False, allow_nan=False))
-@settings(use_coverage=False, deadline=None,
-          suppress_health_check=HealthCheck.all())
+@settings(deadline=None, suppress_health_check=HealthCheck.all())
 def test_shrinks_downwards_to_integers(f):
     g = minimal(
         st.floats(), lambda x: x >= f, random=Random(0),
@@ -56,7 +55,7 @@ def test_shrinks_downwards_to_integers(f):
 
 @example(1)
 @given(st.integers(1, 2 ** 16 - 1))
-@settings(use_coverage=False, deadline=None,
+@settings(deadline=None,
           suppress_health_check=HealthCheck.all(), max_examples=10)
 def test_shrinks_downwards_to_integers_when_fractional(b):
     g = minimal(
