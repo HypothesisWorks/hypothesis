@@ -17,8 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
-
 from hypothesis import find, given, assume, reject
 from hypothesis import settings as Settings
 from hypothesis import unlimited

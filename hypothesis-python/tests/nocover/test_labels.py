@@ -18,9 +18,6 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
-from hypothesis.internal.compat import hbytes
-from hypothesis.internal.conjecture.data import Status, StructuralTag, \
-    ConjectureData
 
 
 def test_labels_are_cached():

@@ -22,7 +22,6 @@ from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
 from functools import total_ordering
-from collections import defaultdict
 
 import attr
 
@@ -32,7 +31,6 @@ from hypothesis._settings import local_settings, note_deprecation
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import Counter, ceil, hbytes, hrange, \
     int_to_bytes, benchmark_time, int_from_bytes, to_bytes_sequence
-from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData

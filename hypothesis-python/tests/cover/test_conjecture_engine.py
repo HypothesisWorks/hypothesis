@@ -27,8 +27,7 @@ import pytest
 
 from hypothesis import Phase, Verbosity, HealthCheck, settings, unlimited
 from hypothesis.errors import FailedHealthCheck
-from tests.common.utils import no_shrink, all_values, \
-    checks_deprecated_behaviour
+from tests.common.utils import no_shrink, checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from tests.common.strategies import SLOW, HardToShrink
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
@@ -37,9 +36,9 @@ from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     ConjectureData
 from hypothesis.internal.conjecture.utils import Sampler, \
     calc_label_from_name
-from hypothesis.internal.conjecture.engine import Shrinker, StopTest, \
-    ExitReason, RunIsComplete, ConjectureRunner, PassClassification, \
-    sort_key, block_program
+from hypothesis.internal.conjecture.engine import Shrinker, ExitReason, \
+    RunIsComplete, ConjectureRunner, PassClassification, sort_key, \
+    block_program
 
 SOME_LABEL = calc_label_from_name('some label')
 
