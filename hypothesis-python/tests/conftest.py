@@ -75,9 +75,3 @@ def consistently_increment_time(monkeypatch):
         assert sys.version_info[0] == 2
     monkeypatch.setattr(time_module, 'sleep', sleep)
     monkeypatch.setattr(time_module, 'freeze', freeze, raising=False)
-
-
-if not IN_COVERAGE_TESTS:
-    @pytest.fixture(scope=u'function', autouse=True)
-    def validate_lack_of_trace_function():
-        assert sys.gettrace() is None

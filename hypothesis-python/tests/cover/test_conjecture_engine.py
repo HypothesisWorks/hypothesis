@@ -37,10 +37,9 @@ from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     ConjectureData
 from hypothesis.internal.conjecture.utils import Sampler, \
     calc_label_from_name
-from hypothesis.internal.conjecture.engine import Negated, Shrinker, \
-    StopTest, ExitReason, RunIsComplete, TargetSelector, \
-    ConjectureRunner, PassClassification, sort_key, universal, \
-    block_program
+from hypothesis.internal.conjecture.engine import Shrinker, StopTest, \
+    ExitReason, RunIsComplete, ConjectureRunner, PassClassification, \
+    sort_key, block_program
 
 SOME_LABEL = calc_label_from_name('some label')
 
@@ -388,64 +387,6 @@ def test_fully_exhaust_base(monkeypatch):
     runner.run()
 
 
-def test_will_save_covering_examples():
-    tags = {}
-
-    def tagged(data):
-        b = hbytes(data.draw_bytes(4))
-        try:
-            tag = tags[b]
-        except KeyError:
-            if len(tags) < 10:
-                tag = len(tags)
-                tags[b] = tag
-            else:
-                tag = None
-        if tag is not None:
-            data.add_tag(tag)
-
-    db = InMemoryExampleDatabase()
-    runner = ConjectureRunner(tagged, settings=settings(
-        max_examples=100, phases=no_shrink, buffer_size=1024, database=db,
-    ), database_key=b'stuff')
-    runner.run()
-    assert len(all_values(db)) == len(tags)
-
-
-def test_will_shrink_covering_examples():
-    best = [None]
-    replaced = []
-
-    def tagged(data):
-        b = hbytes(data.draw_bytes(4))
-        if any(b):
-            data.add_tag('nonzero')
-            if best[0] is None:
-                best[0] = b
-            elif b < best[0]:
-                replaced.append(best[0])
-                best[0] = b
-
-    db = InMemoryExampleDatabase()
-    runner = ConjectureRunner(tagged, settings=settings(
-        max_examples=100, phases=no_shrink, buffer_size=1024, database=db,
-    ), database_key=b'stuff')
-    runner.run()
-    saved = set(all_values(db))
-    assert best[0] in saved
-    for r in replaced:
-        assert r not in saved
-
-
-def test_can_cover_without_a_database_key():
-    def tagged(data):
-        data.add_tag(0)
-
-    runner = ConjectureRunner(tagged, settings=settings(), database_key=None)
-    runner.run()
-    assert len(runner.covering_examples) == 1
-
-
 def test_saves_on_interrupt():
     def interrupts(data):
         raise KeyboardInterrupt()
@@ -709,22 +650,6 @@ def test_clears_out_its_database_on_shrinking(
     for b in db.fetch(runner.secondary_key):
         assert b[0] >= 127
     assert len(list(db.fetch(runner.database_key))) == 1
-
-
-def test_saves_negated_examples_in_covering():
-    """Check that every key in examples_by_tags is either the universal tag or
-    a Negated of some other key in the dict."""
-    def f(data):
-        if data.draw_bits(8) & 1:
-            data.add_tag('hi')
-
-    runner = ConjectureRunner(f)
-    runner.run()
-    tags = set(runner.target_selector.examples_by_tags)
-    negated_tags = {t for t in tags if isinstance(t, Negated)}
-    not_universal_or_negated = tags - negated_tags - {universal}
-    assert not_universal_or_negated > set()
-    assert {t.tag for t in negated_tags} == not_universal_or_negated
 
 
 def test_can_delete_intervals(monkeypatch):
@@ -1472,27 +1397,6 @@ def test_exit_because_max_iterations():
 
     assert runner.call_count <= 1000
     assert runner.exit_reason == ExitReason.max_iterations
-
-
-def test_target_selector_tags():
-    selector = TargetSelector(Random(0))
-
-    tag1 = 'some tag'
-    tag2 = 'some other tag'
-
-    data = ConjectureData.for_buffer(hbytes(10))
-    try:
-        data.draw_bits(10)
-        data.add_tag(tag1)
-        data.mark_interesting()
-    except StopTest:
-        pass
-
-    assert selector.has_tag(universal, data)
-    assert selector.has_tag(tag1, data)
-    assert selector.has_tag(Negated(tag2), data)
-    assert not selector.has_tag(Negated(tag1), data)
-    assert not selector.has_tag(tag2, data)
 
 
 def test_skips_non_payload_blocks_when_reducing_sum():

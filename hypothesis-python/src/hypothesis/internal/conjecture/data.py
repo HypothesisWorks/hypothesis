@@ -117,7 +117,6 @@ class ConjectureData(object):
         self.forced_blocks = set()
         self.masked_indices = {}
         self.interesting_origin = None
-        self.tags = set()
         self.draw_times = []
         self.max_depth = 0
 
@@ -132,9 +131,6 @@ class ConjectureData(object):
             raise Frozen(
                 'Cannot call %s on frozen ConjectureData' % (
                     name,))
-
-    def add_tag(self, tag):
-        self.tags.add(tag)
 
     @property
     def depth(self):
@@ -262,7 +258,6 @@ class ConjectureData(object):
                 if ex.discarded:
                     discards.append((ex.start, ex.end))
                     continue
-                self.tags.add(structural_tag(ex.label))
 
         self.buffer = hbytes(self.buffer)
         self.events = frozenset(self.events)
