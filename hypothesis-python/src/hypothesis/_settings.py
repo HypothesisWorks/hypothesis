@@ -778,15 +778,14 @@ deadline and have not explicitly set a deadline yourself.
 
 settings._define_setting(
     'use_coverage',
-    default=True,
+    default=False,
+    future_default=False,
+    deprecation_message="""
+use_coverage no longer does anything and can be removed from your settings.
+""",
     description="""
-Whether to use coverage information to improve Hypothesis's ability to find
-bugs.
-
-You should generally leave this turned on unless your code performs
-poorly when run under coverage. If you turn it off, please file a bug report
-or add a comment to an existing one about the problem that prompted you to do
-so.
+A flag to enable a feature that no longer exists. This setting is present
+only for backwards compatibility purposes.
 """
 )
 
