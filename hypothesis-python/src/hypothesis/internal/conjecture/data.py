@@ -61,23 +61,6 @@ class Example(object):
         return self.end - self.start
 
 
-@attr.s(hash=False, cmp=False, slots=True)
-class StructuralTag(object):
-    label = attr.ib()
-
-
-STRUCTURAL_TAGS = {}  # type: dict
-
-
-def structural_tag(label):
-    try:
-        return STRUCTURAL_TAGS[label]
-    except KeyError:
-        result = StructuralTag(label)
-        STRUCTURAL_TAGS[label] = result
-        return result
-
-
 global_test_counter = 0
 
 
