@@ -1160,19 +1160,13 @@ def pop_random(random, values):
     elements."""
 
     # We pick the element at a random index. Rather than removing that element
-    # from the list (which would be an O(n) operation), we pop the last element
-    # from the list and overwrite the chosen index. This changes the order of
+    # from the list (which would be an O(n) operation), we swap it to the end
+    # and return the last element of the list. This changes the order of
     # the elements, but as long as these elements are only accessed through
     # random sampling that doesn't matter.
     i = random.randrange(0, len(values))
-    result = values[i]
-    end = values.pop()
-
-    # If i was already the last index in the list then there's no need to
-    # overwrite the value there.
-    if i < len(values):
-        values[i] = end
-    return result
+    values[i], values[-1] = values[-1], values[i]
+    return values.pop()
 
 
 class TargetSelector(object):
