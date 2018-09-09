@@ -45,6 +45,9 @@ __tracebackhide__ = True
 HUNG_TEST_TIME_LIMIT = 5 * 60
 MAX_SHRINKS = 500
 
+CACHE_RESET_FREQUENCY = 1000
+MUTATION_POOL_SIZE = 100
+
 
 @attr.s
 class HealthCheckState(object):
@@ -91,6 +94,17 @@ class ConjectureRunner(object):
 
         self.target_selector = TargetSelector(self.random)
 
+        self.interesting_examples = {}
+        self.covering_examples = {}
+
+        self.shrunk_examples = set()
+
+        self.health_check_state = None
+
+        self.used_examples_from_database = False
+        self.reset_tree_to_empty()
+
+    def reset_tree_to_empty(self):
         # Previously-tested byte streams are recorded in a prefix tree, so that
         # we can:
         # - Avoid testing the same stream twice (in some cases).
@@ -134,17 +148,6 @@ class ConjectureRunner(object):
         # buffer contents.
         self.block_sizes = {}
 
-        self.interesting_examples = {}
-        self.covering_examples = {}
-
-        self.shrunk_examples = set()
-
-        self.tag_intern_table = {}
-
-        self.health_check_state = None
-
-        self.used_examples_from_database = False
-
     def __tree_is_exhausted(self):
         return 0 in self.dead
 
@@ -180,6 +183,44 @@ class ConjectureRunner(object):
 
         # Record the test result in the tree, to avoid unnecessary work in
         # the future.
+
+        # The tree has two main uses:
+
+        # 1. It is mildly useful in some cases during generation where there is
+        #    a high probability of duplication but it is possible to generate
+        #    many examples. e.g. if we had input of the form none() | text()
+        #    then we would generate duplicates 50% of the time, and would
+        #    like to avoid that and spend more time exploring the text() half
+        #    of the search space. The tree allows us to predict in advance if
+        #    the test would lead to a duplicate and avoid that.
+        # 2. When shrinking it is *extremely* useful to be able to anticipate
+        #    duplication, because we try many similar and smaller test cases,
+        #    and these will tend to have a very high duplication rate. This is
+        #    where the tree usage really shines.
+        #
+        # Unfortunately, as well as being the less useful type of tree usage,
+        # the first type is also the most expensive! Once we've entered shrink
+        # mode our time remaining is essentially bounded - we're just here
+        # until we've found the minimal example. In exploration mode, we might
+        # be early on in a very long-running processs, and keeping everything
+        # we've ever seen lying around ends up bloating our memory usage
+        # substantially by causing us to use O(max_examples) memory.
+        #
+        # As a compromise, what we do is reset the cache every so often. This
+        # keeps our memory usage bounded. It has a few unfortunate failure
+        # modes in that it means that we can't always detect when we should
+        # have stopped - if we are exploring a language which has only slightly
+        # more than cache reset frequency number of members, we will end up
+        # exploring indefinitely when we could have stopped. However, this is
+        # a fairly unusual case - thanks to exponential blow-ups in language
+        # size, most languages are either very large (possibly infinite) or
+        # very small. Nevertheless we want CACHE_RESET_FREQUENCY to be quite
+        # high to avoid this case coming up in practice.
+        if (
+            self.call_count % CACHE_RESET_FREQUENCY == 0 and
+            not self.interesting_examples
+        ):
+            self.reset_tree_to_empty()
 
         # First, iterate through the result's buffer, to create the node that
         # will hold this result. Also note any forced or masked bytes.
@@ -1114,19 +1155,53 @@ def uniform(random, n):
     return int_to_bytes(random.getrandbits(n * 8), n)
 
 
+def pop_random(random, values):
+    """Remove a random element of values, possibly changing the ordering of its
+    elements."""
+
+    # We pick the element at a random index. Rather than removing that element
+    # from the list (which would be an O(n) operation), we swap it to the end
+    # and return the last element of the list. This changes the order of
+    # the elements, but as long as these elements are only accessed through
+    # random sampling that doesn't matter.
+    i = random.randrange(0, len(values))
+    values[i], values[-1] = values[-1], values[i]
+    return values.pop()
+
+
 class TargetSelector(object):
     """Data structure for selecting targets to use for mutation.
 
-    Mostly vestigial.
+    The main purpose of the TargetSelector is to maintain a pool of "reasonably
+    useful" examples, while keeping the pool of bounded size.
+
+    In particular it ensures:
+
+    1. We only retain examples of the best status we've seen so far (not
+       counting INTERESTING, which is special).
+    2. We preferentially return examples we've never returned before when
+       select() is called.
+    3. The number of retained examples is never more than self.pool_size, with
+       past examples discarded automatically, preferring ones that we have
+       already explored from.
+
+    These invariants are fairly heavily prone to change - they're not
+    especially well validated as being optimal, and are mostly just a decent
+    compromise between diversity and keeping the pool size bounded.
     """
 
-    def __init__(self, random):
+    def __init__(self, random, pool_size=MUTATION_POOL_SIZE):
         self.random = random
         self.best_status = Status.OVERRUN
+        self.pool_size = pool_size
         self.reset()
 
+    def __len__(self):
+        return len(self.fresh_examples) + len(self.used_examples)
+
     def reset(self):
-        self.examples = []
+        self.fresh_examples = []
+        self.used_examples = []
 
     def add(self, data):
         if data.status == Status.INTERESTING:
@@ -1136,10 +1211,25 @@ class TargetSelector(object):
         if data.status > self.best_status:
             self.best_status = data.status
             self.reset()
-        self.examples.append(data)
+
+        # Note that technically data could be a duplicate. This rarely happens
+        # (only if we've exceeded the CACHE_RESET_FREQUENCY number of test
+        # function calls), but it's certainly possible. This could result in
+        # us having the same example multiple times, possibly spread over both
+        # lists. We could check for this, but it's not a major problem so we
+        # don't bother.
+        self.fresh_examples.append(data)
+        if len(self) > self.pool_size:
+            pop_random(self.random, self.used_examples or self.fresh_examples)
+            assert self.pool_size == len(self)
 
     def select(self):
-        return self.random.choice(self.examples)
+        if self.fresh_examples:
+            result = pop_random(self.random, self.fresh_examples)
+            self.used_examples.append(result)
+            return result
+        else:
+            return self.random.choice(self.used_examples)
 
 
 def block_program(description):

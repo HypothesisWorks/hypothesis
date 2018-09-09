@@ -35,11 +35,11 @@ from hypothesis.internal.conjecture.engine import RunIsComplete, \
 def test_lot_of_dead_nodes():
     @run_to_buffer
     def x(data):
-        for i in range(5):
+        for i in range(4):
             if data.draw_bytes(1)[0] != i:
                 data.mark_invalid()
         data.mark_interesting()
-    assert x == hbytes([0, 1, 2, 3, 4])
+    assert x == hbytes([0, 1, 2, 3])
 
 
 def test_saves_data_while_shrinking(monkeypatch):
