@@ -46,6 +46,7 @@ HUNG_TEST_TIME_LIMIT = 5 * 60
 MAX_SHRINKS = 500
 
 CACHE_RESET_FREQUENCY = 1000
+MUTATION_POOL_SIZE = 100
 
 
 @attr.s
@@ -1154,19 +1155,48 @@ def uniform(random, n):
     return int_to_bytes(random.getrandbits(n * 8), n)
 
 
+def pop_random(random, values):
+    i = random.randrange(0, len(values))
+    result = values[i]
+    end = values.pop()
+    if i < len(values):
+        values[i] = end
+    return result
+
+
 class TargetSelector(object):
     """Data structure for selecting targets to use for mutation.
 
-    Mostly vestigial.
+    The main purpose of the TargetSelector is to maintain a pool of "reasonably
+    useful" examples, while keeping the pool of bounded size.
+
+    In particular it ensures:
+
+    1. We only retain examples of the best status we've seen so far (not
+       counting INTERESTING, which is special).
+    2. We preferentially return examples we've never returned before when
+       select() is called.
+    3. The number of retained examples is never more than self.pool_size, with
+       past examples discarded automatically, preferring ones that we have
+       already explored from.
+
+    These invariants are fairly heavily prone to change - they're not
+    especially well validated as being optimal, and are mostly just a decent
+    compromise between diversity and keeping the pool size bounded.
     """
 
-    def __init__(self, random):
+    def __init__(self, random, pool_size=MUTATION_POOL_SIZE):
         self.random = random
         self.best_status = Status.OVERRUN
+        self.pool_size = pool_size
         self.reset()
 
+    def __len__(self):
+        return len(self.fresh_examples) + len(self.used_examples)
+
     def reset(self):
-        self.examples = []
+        self.fresh_examples = []
+        self.used_examples = []
 
     def add(self, data):
         if data.status == Status.INTERESTING:
@@ -1176,10 +1206,18 @@ class TargetSelector(object):
         if data.status > self.best_status:
             self.best_status = data.status
             self.reset()
-        self.examples.append(data)
+        self.fresh_examples.append(data)
+        if len(self) > self.pool_size:
+            pop_random(self.random, self.used_examples or self.fresh_examples)
+            assert self.pool_size == len(self)
 
     def select(self):
-        return self.random.choice(self.examples)
+        if self.fresh_examples:
+            result = pop_random(self.random, self.fresh_examples)
+            self.used_examples.append(result)
+            return result
+        else:
+            return self.random.choice(self.used_examples)
 
 
 def block_program(description):

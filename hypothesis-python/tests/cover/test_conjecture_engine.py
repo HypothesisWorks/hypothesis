@@ -23,6 +23,7 @@ import itertools
 from random import Random
 from random import seed as seed_random
 
+import attr
 import pytest
 
 import hypothesis.internal.conjecture.engine as engine_module
@@ -38,8 +39,8 @@ from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
 from hypothesis.internal.conjecture.utils import Sampler, \
     calc_label_from_name
 from hypothesis.internal.conjecture.engine import Shrinker, ExitReason, \
-    RunIsComplete, ConjectureRunner, PassClassification, sort_key, \
-    block_program
+    RunIsComplete, TargetSelector, ConjectureRunner, PassClassification, \
+    sort_key, block_program
 
 SOME_LABEL = calc_label_from_name('some label')
 
@@ -1780,3 +1781,37 @@ def test_will_not_reset_the_tree_after_interesting_example(monkeypatch):
         t = len(runner.tree)
         runner.shrink_interesting_examples()
         assert len(runner.tree) > t
+
+
+fake_data_counter = 0
+
+
+@attr.s()
+class FakeData(object):
+    status = attr.ib(default=Status.VALID)
+    global_identifer = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        global fake_data_counter
+        fake_data_counter += 1
+        self.global_identifier = fake_data_counter
+
+
+def test_target_selector_will_maintain_a_bounded_pool():
+    selector = TargetSelector(random=Random(0), pool_size=3)
+
+    for i in range(100):
+        selector.add(FakeData())
+        assert len(selector) == min(i + 1, 3)
+
+
+def test_target_selector_will_use_novel_examples_preferentially():
+    selector = TargetSelector(random=Random(0), pool_size=3)
+    seen = set()
+
+    for i in range(100):
+        selector.add(FakeData())
+        assert len(selector) == min(i + 1, 3)
+        t = selector.select().global_identifier
+        assert t not in seen
+        seen.add(t)
