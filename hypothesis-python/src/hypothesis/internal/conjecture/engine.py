@@ -186,7 +186,7 @@ class ConjectureRunner(object):
 
         # The tree has two main uses:
 
-        # 1. it is mildly useful in some cases during generation where there is
+        # 1. It is mildly useful in some cases during generation where there is
         #    a high probability of duplication but it is possible to generate
         #    many examples. e.g. if we had input of the form none() | text()
         #    then we would generate duplicates 50% of the time, and would
