@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.71.1:
+
+-------------------
+3.71.1 - 2018-09-09
+-------------------
+
+This patch adds internal comments to some tree traversals in the core engine.
+There is no user-visible change.
+
 .. _v3.71.0:
 
 -------------------
