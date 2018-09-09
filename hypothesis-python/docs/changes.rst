@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.71.2:
+
+-------------------
+3.71.2 - 2018-09-10
+-------------------
+
+This release makes Hypothesis's memory usage substantially smaller for tests with many
+examples, by bounding the number of past examples it keeps around.
+
+You will not see much difference unless you are running tests with :obj:`~hypothesis.settings.max_examples`
+set to well over ``1000``, but if you do have such tests then you should see memory usage mostly plateau
+where previously it would have grown linearly with time.
+
 .. _v3.71.1:
 
 -------------------
