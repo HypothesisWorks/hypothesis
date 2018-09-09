@@ -46,7 +46,7 @@ def test_slow(x):
 @settings(max_examples=100, suppress_health_check=HealthCheck.all())
 @given(integers())
 def test_iterations(x):
-    assume(x % 50 == 0)
+    assume(x == 0)
 """
 
 
