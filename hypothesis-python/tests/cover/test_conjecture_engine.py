@@ -25,6 +25,7 @@ from random import seed as seed_random
 
 import pytest
 
+import hypothesis.internal.conjecture.engine as engine_module
 from hypothesis import Phase, Verbosity, HealthCheck, settings, unlimited
 from hypothesis.errors import FailedHealthCheck
 from tests.common.utils import no_shrink, checks_deprecated_behaviour
@@ -1733,3 +1734,49 @@ def test_keeps_using_solid_passes_while_they_shrink_size():
         shrinker.single_greedy_shrink_iteration()
         assert d1.classification == PassClassification.HOPEFUL
         assert d2.classification == PassClassification.CANDIDATE
+
+
+def test_will_reset_the_tree_as_it_goes(monkeypatch):
+    monkeypatch.setattr(engine_module, 'CACHE_RESET_FREQUENCY', 3)
+
+    def f(data):
+        data.draw_bits(8)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(f, settings=settings(
+            database=None, suppress_health_check=HealthCheck.all(),
+        ))
+
+        def step(n):
+            runner.test_function(ConjectureData.for_buffer([n]))
+
+        step(0)
+        step(1)
+        assert len(runner.tree[0]) > 1
+        step(2)
+        assert len(runner.tree[0]) == 1
+
+
+def test_will_not_reset_the_tree_after_interesting_example(monkeypatch):
+    monkeypatch.setattr(engine_module, 'CACHE_RESET_FREQUENCY', 3)
+
+    def f(data):
+        if data.draw_bits(8) == 7:
+            data.mark_interesting()
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(f, settings=settings(
+            database=None, suppress_health_check=HealthCheck.all(),
+        ))
+
+        def step(n):
+            runner.test_function(ConjectureData.for_buffer([n]))
+
+        step(0)
+        step(1)
+        assert len(runner.tree) > 1
+        step(7)
+        assert len(runner.tree) > 1
+        t = len(runner.tree)
+        runner.shrink_interesting_examples()
+        assert len(runner.tree) > t

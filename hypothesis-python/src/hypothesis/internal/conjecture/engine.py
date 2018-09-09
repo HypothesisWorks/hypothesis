@@ -45,6 +45,8 @@ __tracebackhide__ = True
 HUNG_TEST_TIME_LIMIT = 5 * 60
 MAX_SHRINKS = 500
 
+CACHE_RESET_FREQUENCY = 1000
+
 
 @attr.s
 class HealthCheckState(object):
@@ -91,6 +93,17 @@ class ConjectureRunner(object):
 
         self.target_selector = TargetSelector(self.random)
 
+        self.interesting_examples = {}
+        self.covering_examples = {}
+
+        self.shrunk_examples = set()
+
+        self.health_check_state = None
+
+        self.used_examples_from_database = False
+        self.reset_tree_to_empty()
+
+    def reset_tree_to_empty(self):
         # Previously-tested byte streams are recorded in a prefix tree, so that
         # we can:
         # - Avoid testing the same stream twice (in some cases).
@@ -134,17 +147,6 @@ class ConjectureRunner(object):
         # buffer contents.
         self.block_sizes = {}
 
-        self.interesting_examples = {}
-        self.covering_examples = {}
-
-        self.shrunk_examples = set()
-
-        self.tag_intern_table = {}
-
-        self.health_check_state = None
-
-        self.used_examples_from_database = False
-
     def __tree_is_exhausted(self):
         return 0 in self.dead
 
@@ -180,6 +182,44 @@ class ConjectureRunner(object):
 
         # Record the test result in the tree, to avoid unnecessary work in
         # the future.
+
+        # The tree has two main uses:
+
+        # 1. it is mildly useful in some cases during generation where there is
+        #    a high probability of duplication but it is possible to generate
+        #    many examples. e.g. if we had input of the form none() | text()
+        #    then we would generate duplicates 50% of the time, and would
+        #    like to avoid that and spend more time exploring the text() half
+        #    of the search space. The tree allows us to predict in advance if
+        #    the test would lead to a duplicate and avoid that.
+        # 2. When shrinking it is *extremely* useful to be able to anticipate
+        #    duplication, because we try many similar and smaller test cases,
+        #    and these will tend to have a very high duplication rate. This is
+        #    where the tree usage really shines.
+        #
+        # Unfortunately, as well as being the less useful type of tree usage,
+        # the first type is also the most expensive! Once we've entered shrink
+        # mode our time remaining is essentially bounded - we're just here
+        # until we've found the minimal example. In exploration mode, we might
+        # be early on in a very long-running processs, and keeping everything
+        # we've ever seen lying around ends up bloating our memory usage
+        # substantially by causing us to use O(max_examples) memory.
+        #
+        # As a compromise, what we do is reset the cache every so often. This
+        # keeps our memory usage bounded. It has a few unfortunate failure
+        # modes in that it means that we can't always detect when we should
+        # have stopped - if we are exploring a language which has only slightly
+        # more than cache reset frequency number of members, we will end up
+        # exploring indefinitely when we could have stopped. However, this is
+        # a fairly unusual case - thanks to exponential blow-ups in language
+        # size, most languages are either very large (possibly infinite) or
+        # very small. Nevertheless we want CACHE_RESET_FREQUENCY to be quite
+        # high to avoid this case coming up in practice.
+        if (
+            self.call_count % CACHE_RESET_FREQUENCY == 0 and
+            not self.interesting_examples
+        ):
+            self.reset_tree_to_empty()
 
         # First, iterate through the result's buffer, to create the node that
         # will hold this result. Also note any forced or masked bytes.
