@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.71.3:
+
+-------------------
+3.71.3 - 2018-09-10
+-------------------
+
+This release adds the test name to some deprecation warnings,
+for easier debugging.
+
+Thanks to Sanyam Khurana for the patch!
+
 .. _v3.71.2:
 
 -------------------
