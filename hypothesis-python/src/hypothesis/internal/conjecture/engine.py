@@ -1211,6 +1211,13 @@ class TargetSelector(object):
         if data.status > self.best_status:
             self.best_status = data.status
             self.reset()
+
+        # Note that technically data could be a duplicate. This rarely happens
+        # (only if we've exceeded the CACHE_RESET_FREQUENCY number of test
+        # function calls), but it's certainly possible. This could result in
+        # us having the same example multiple times, possibly spread over both
+        # lists. We could check for this, but it's not a major problem so we
+        # don't bother.
         self.fresh_examples.append(data)
         if len(self) > self.pool_size:
             pop_random(self.random, self.used_examples or self.fresh_examples)
