@@ -1156,9 +1156,20 @@ def uniform(random, n):
 
 
 def pop_random(random, values):
+    """Remove a random element of values, possibly changing the ordering of its
+    elements."""
+
+    # We pick the element at a random index. Rather than removing that element
+    # from the list (which would be an O(n) operation), we pop the last element
+    # from the list and overwrite the chosen index. This changes the order of
+    # the elements, but as long as these elements are only accessed through
+    # random sampling that doesn't matter.
     i = random.randrange(0, len(values))
     result = values[i]
     end = values.pop()
+
+    # If i was already the last index in the list then there's no need to
+    # overwrite the value there.
     if i < len(values):
         values[i] = end
     return result
