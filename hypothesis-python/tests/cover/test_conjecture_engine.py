@@ -1815,3 +1815,20 @@ def test_target_selector_will_use_novel_examples_preferentially():
         t = selector.select().global_identifier
         assert t not in seen
         seen.add(t)
+
+
+def test_target_selector_will_eventually_reuse_examples():
+    selector = TargetSelector(random=Random(0), pool_size=2)
+    seen = set()
+
+    selector.add(FakeData())
+    selector.add(FakeData())
+
+    for _ in range(2):
+        x = selector.select()
+        assert x.global_identifier not in seen
+        seen.add(x.global_identifier)
+
+    for _ in range(2):
+        x = selector.select()
+        assert x.global_identifier in seen
