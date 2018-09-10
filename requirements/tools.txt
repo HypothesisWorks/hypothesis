@@ -11,7 +11,7 @@ autoflake==1.2            # via pyformat
 autopep8==1.4             # via pyformat
 babel==2.6.0              # via sphinx
 backcall==0.1.0           # via ipython
-bandit==1.5.0
+bandit==1.5.1
 certifi==2018.8.24        # via requests
 chardet==3.0.4            # via requests
 click==6.7                # via pip-tools, pyupio, safety
@@ -56,7 +56,7 @@ pycodestyle==2.3.1        # via autopep8, flake8
 pydocstyle==2.1.1         # via flake8-docstrings
 pyflakes==1.6.0           # via autoflake, flake8
 pyformat==0.7
-pygithub==1.40            # via pyupio
+pygithub==1.43            # via pyupio
 pygments==2.2.0           # via ipython, sphinx
 pyjwt==1.6.4              # via pygithub
 pyparsing==2.2.0          # via packaging
@@ -78,7 +78,7 @@ sphinx-rtd-theme==0.4.1
 sphinx==1.7.9
 sphinxcontrib-websupport==1.1.0  # via sphinx
 stevedore==1.29.0         # via bandit
-toml==0.9.4
+toml==0.9.6
 tox==3.2.1
 tqdm==4.25.0              # via pyupio, twine
 traitlets==4.3.2          # via ipython
