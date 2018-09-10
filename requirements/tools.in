@@ -15,6 +15,7 @@ pyformat
 pytest
 python-dateutil
 pyupio
+requests
 restructuredtext-lint
 sphinx
 sphinx-rtd-theme
