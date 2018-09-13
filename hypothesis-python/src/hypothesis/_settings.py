@@ -110,12 +110,23 @@ class settingsMeta(type):
             assert default_variable.value is not None
         return default_variable.value
 
-    @default.setter
-    def default(self, value):
-        raise AttributeError('Cannot assign settings.default')
-
     def _assign_default_internal(self, value):
         default_variable.value = value
+
+    def __setattr__(self, name, value):
+        if name == 'default':
+            raise AttributeError(
+                'Cannot assign to the property settings.default - '
+                'consider using settings.load_profile instead.'
+            )
+        elif not (isinstance(value, settingsProperty) or name.startswith('_')):
+            raise AttributeError(
+                'Cannot assign hypothesis.settings.%s=%r - the settings '
+                'class is immutable.  You can change the global default '
+                'settings with settings.load_profile, or use @settings(...) '
+                'to decorate your test instead.' % (name, value)
+            )
+        return type.__setattr__(self, name, value)
 
 
 class settings(
