@@ -23,6 +23,8 @@ import sys
 import shutil
 import subprocess
 
+import requests
+
 import hypothesistooling as tools
 import hypothesistooling.releasemanagement as rm
 
@@ -146,6 +148,21 @@ def upload_distribution():
         '--config-file', tools.PYPIRC,
         os.path.join(DIST, '*'),
     ])
+    # Create a GitHub release, to trigger Zenodo DOI minting.  See
+    # https://developer.github.com/v3/repos/releases/#create-a-release
+    requests.post(
+        'https://api.github.com/repos/HypothesisWorks/hypothesis/releases',
+        json=dict(
+            tag_name=tag_name(),
+            name='Hypothesis for Python - version ' + current_version(),
+            body=('You can [read the changelog for this release here]('
+                  'https://hypothesis.readthedocs.io/en/latest/changes.html#v'
+                  '%s).' % (current_version().replace('.', '-'),)),
+        ),
+        timeout=120,  # seconds
+        # Scoped personal access token, stored in Travis environ variable
+        auth=('Zac-HD', os.environ['Zac-release-token']),
+    ).raise_for_status()
 
 
 def current_version():

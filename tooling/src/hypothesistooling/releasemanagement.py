@@ -27,25 +27,21 @@ like a nice tidy reusable set of functionality.
 from __future__ import division, print_function, absolute_import
 
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import hypothesistooling as tools
+
+__RELEASE_DATE_STRING = None
 
 
 def release_date_string():
     """Returns a date string that represents what should be considered "today"
-    for the purposes of releasing. It is always measured in UTC, but if it's in
-    the last hour of the day it will actually be considered tomorrow.
-
-    The reason for counting it as the later day is that it ensures that
-    (unless our release process takes more than 23 hours) this value
-    remains consistent throughout the entire release.
-    """
-    now = datetime.utcnow()
-
-    return max([
-        d.strftime('%Y-%m-%d') for d in (now, now + timedelta(hours=1))
-    ])
+    for the purposes of releasing, and ensure that we don't change part way
+    through a release."""
+    global __RELEASE_DATE_STRING
+    if __RELEASE_DATE_STRING is None:
+        __RELEASE_DATE_STRING = datetime.utcnow().strftime('%Y-%m-%d')
+    return __RELEASE_DATE_STRING
 
 
 def assignment_matcher(name):
