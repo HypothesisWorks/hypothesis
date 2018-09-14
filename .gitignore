@@ -28,6 +28,7 @@ _build
 htmlcov
 build
 dist
+.doctrees/
 
 # encrypted files
 secrets.tar
