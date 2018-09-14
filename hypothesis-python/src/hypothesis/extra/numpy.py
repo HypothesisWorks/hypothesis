@@ -289,11 +289,11 @@ def arrays(
     unique=False,  # type: bool
 ):
     # type: (...) -> st.SearchStrategy[np.ndarray]
-    """Returns a strategy for generating :class:`numpy's
-    ndarrays<numpy.ndarray>`.
+    r"""Returns a strategy for generating :class:`numpy:numpy.ndarray`\ s.
 
-    * ``dtype`` may be any valid input to :class:`numpy.dtype <numpy.dtype>`
-      (this includes ``dtype`` objects), or a strategy that generates such
+    * ``dtype`` may be any valid input to
+      :class:`numpy.dtype <numpy:numpy.dtype>` (this includes
+      :class:`~numpy:numpy.dtype` objects), or a strategy that generates such
       values.
     * ``shape`` may be an integer >= 0, a tuple of length >= 0 of such
       integers, or a strategy that generates such values.
@@ -305,13 +305,13 @@ def arrays(
     * ``fill`` is a strategy that may be used to generate a single background
       value for the array. If None, a suitable default will be inferred
       based on the other arguments. If set to
-      :func:`st.nothing() <hypothesis.strategies.nothing>` then filling
+      :func:`~hypothesis.strategies.nothing` then filling
       behaviour will be disabled entirely and every element will be generated
       independently.
     * ``unique`` specifies if the elements of the array should all be
       distinct from one another. Note that in this case multiple NaN values
       may still be allowed. If fill is also set, the only valid values for
-      it to return are NaN values (anything for which :func:`numpy.isnan`
+      it to return are NaN values (anything for which :obj:`numpy:numpy.isnan`
       returns True. So e.g. for complex numbers (nan+1j) is also a valid fill).
       Note that if unique is set to True the generated values must be hashable.
 

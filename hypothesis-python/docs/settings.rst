@@ -59,7 +59,9 @@ Hypothesis divides tests into four logically distinct phases:
    one (explicit examples cannot be shrunk).
 
 The phases setting provides you with fine grained control over which of these run,
-with each phase corresponding to a value on the :class:`~hypothesis._settings.Phase` enum:
+with each phase corresponding to a value on the :class:`~hypothesis.Phase` enum:
+
+.. class:: hypothesis.Phase
 
 1. ``Phase.explicit`` controls whether explicit examples are run.
 2. ``Phase.reuse`` controls whether previous examples will be reused.
@@ -79,7 +81,7 @@ Seeing intermediate result
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To see what's going on while Hypothesis runs your tests, you can turn
-up the verbosity setting. This works with both :func:`~hypothesis.core.find`
+up the verbosity setting. This works with both :func:`~hypothesis.find`
 and :func:`@given <hypothesis.given>`.
 
 .. doctest::
@@ -175,6 +177,9 @@ so you are more likely to find bugs.
 
 Hypothesis allows you to define different settings profiles. These profiles
 can be loaded at any time.
+
+.. autoclass:: hypothesis.settings
+    :members: register_profile, get_profile, load_profile
 
 Loading a profile changes the default settings but will not change the behavior
 of tests that explicitly change the settings.

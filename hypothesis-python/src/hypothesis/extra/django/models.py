@@ -189,7 +189,7 @@ def models(
     - for best results, make sure your validators are derived from Django's
     and therefore have the known types and attributes.
     Passing a keyword argument skips inference for that field; pass a strategy
-    or pass :const:`hypothesis.extra.django.models.default_value` to skip
+    or pass ``hypothesis.extra.django.models.default_value`` to skip
     inference for that field.
 
     Foreign keys are not automatically derived. If they're nullable they will

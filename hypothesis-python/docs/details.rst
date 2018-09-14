@@ -22,6 +22,8 @@ Sometimes this isn't enough, either because you have values with a ``repr`` that
 isn't very descriptive or because you need to see the output of some
 intermediate steps of your test. That's where the ``note`` function comes in:
 
+.. autofunction:: hypothesis.note
+
 .. doctest::
 
     >>> from hypothesis import given, note, strategies as st
@@ -271,7 +273,7 @@ Defining strategies
 ---------------------
 
 The type of object that is used to explore the examples given to your test
-function is called a :class:`~hypothesis.SearchStrategy`.
+function is called a :class:`~hypothesis.strategies.SearchStrategy`.
 These are created using the functions
 exposed in the :mod:`hypothesis.strategies` module.
 
@@ -541,6 +543,8 @@ argument, to force this inference for arguments with a default value.
     >>> builds(func).example()
     [-6993, '']
 
+.. data:: hypothesis.infer
+
 :func:`@given <hypothesis.given>` does not perform any implicit inference
 for required arguments, as this would break compatibility with pytest fixtures.
 :const:`~hypothesis.infer` can be used as a keyword argument to explicitly
@@ -616,7 +620,9 @@ supported use-case, again on a best-effort provisional basis.  For example:
 
     def foo_strategy() -> SearchStrategy[Foo]: ...
 
-:class:`hypothesis.strategies.SearchStrategy` is the type of all strategy
+.. class:: hypothesis.strategies.SearchStrategy
+
+:class:`~hypothesis.strategies.SearchStrategy` is the type of all strategy
 objects.  It is a generic type, and covariant in the type of the examples
 it creates.  For example:
 
