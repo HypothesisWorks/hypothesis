@@ -22,11 +22,11 @@ import math
 import heapq
 import hashlib
 from fractions import Fraction
-from collections import Sequence, OrderedDict
+from collections import OrderedDict
 
 from hypothesis._settings import note_deprecation
-from hypothesis.internal.compat import floor, hbytes, hrange, qualname, \
-    bit_length, str_to_bytes, int_from_bytes
+from hypothesis.internal.compat import abc, floor, hbytes, hrange, \
+    qualname, bit_length, str_to_bytes, int_from_bytes
 from hypothesis.internal.floats import int_to_float
 
 LABEL_MASK = 2 ** 64 - 1
@@ -126,7 +126,7 @@ def check_sample(values, strategy_name):
                 'want to sample slices.  Sampling a multi-dimensional '
                 'array will be an error in a future version of Hypothesis.'
             ).format(ndim=values.ndim, shape=values.shape))
-    elif not isinstance(values, (OrderedDict, Sequence, enum.EnumMeta)):
+    elif not isinstance(values, (OrderedDict, abc.Sequence, enum.EnumMeta)):
         note_deprecation(
             'Cannot sample from {values}, not an ordered collection. '
             'Hypothesis goes to some length to ensure that the {strategy} '
