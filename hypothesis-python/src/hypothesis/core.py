@@ -561,7 +561,6 @@ class StateForActualGivenExecution(object):
                     'Tests run under @given should return None, but '
                     '%s returned %r instead.'
                 ) % (self.test.__name__, result), HealthCheck.return_value)
-            return False
         except UnsatisfiedAssumption:
             data.mark_invalid()
         except (
