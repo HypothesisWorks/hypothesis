@@ -29,7 +29,6 @@ from decimal import Context, Decimal, localcontext
 from inspect import isclass, isfunction
 from fractions import Fraction
 from functools import reduce
-from collections import Sequence
 
 import attr
 
@@ -39,7 +38,7 @@ from hypothesis.control import note, assume, reject, cleanup, \
 from hypothesis._settings import note_deprecation
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.searchstrategy import SearchStrategy, check_strategy
-from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
+from hypothesis.internal.compat import abc, gcd, ceil, floor, hrange, \
     string_types, get_type_hints, getfullargspec, typing_root_type, \
     implements_iterator
 from hypothesis.internal.floats import next_up, float_of, next_down, \
@@ -970,7 +969,7 @@ def text(
     elif isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:
-        if not isinstance(alphabet, Sequence):
+        if not isinstance(alphabet, abc.Sequence):
             note_deprecation(
                 'alphabet must be an ordered sequence, or tests may be '
                 'flaky and shrinking weaker, but a %r is not a type of '

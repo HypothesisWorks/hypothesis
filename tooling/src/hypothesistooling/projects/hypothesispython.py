@@ -161,7 +161,7 @@ def upload_distribution():
         ),
         timeout=120,  # seconds
         # Scoped personal access token, stored in Travis environ variable
-        auth=('Zac-HD', os.environ['Zac-release-token']),
+        auth=('Zac-HD', os.environ['Zac_release_token']),
     ).raise_for_status()
 
 
