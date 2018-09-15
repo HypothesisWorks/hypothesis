@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.71.5:
+
+-------------------
+3.71.5 - 2018-09-15
+-------------------
+
+This patch fixes a ``DeprecationWarning`` added in Python 3.8 (:issue:`1576`).
+
+Thanks to tirkarthi for this contribution!
+
 .. _v3.71.4:
 
 -------------------
