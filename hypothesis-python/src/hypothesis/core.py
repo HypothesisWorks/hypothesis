@@ -283,19 +283,18 @@ def execute_explicit_examples(
         example_string = '%s(%s)' % (
             test.__name__, arg_string(test, arguments, example_kwargs)
         )
-        try:
-            with BuildContext(None) as b:
-                if settings.verbosity >= Verbosity.verbose:
-                    report('Trying example: ' + example_string)
-                test_runner(
-                    None,
-                    lambda data: test(*arguments, **example_kwargs)
-                )
-        except BaseException:
-            report('Falsifying example: ' + example_string)
-            for n in b.notes:
-                report(n)
-            raise
+        with local_settings(settings):
+            try:
+                with BuildContext(None) as b:
+                    verbose_report('Trying example: ' + example_string)
+                    test_runner(
+                        None, lambda data: test(*arguments, **example_kwargs)
+                    )
+            except BaseException:
+                report('Falsifying example: ' + example_string)
+                for n in b.notes:
+                    report(n)
+                raise
 
 
 def get_random_for_wrapped_test(test, wrapped_test):
@@ -921,16 +920,17 @@ def given(
                 generated_seed = \
                     wrapped_test._hypothesis_internal_use_generated_seed
                 if generated_seed is not None and not state.failed_normally:
-                    if running_under_pytest:
-                        report((
-                            'You can add @seed(%(seed)d) to this test or run '
-                            'pytest with --hypothesis-seed=%(seed)d to '
-                            'reproduce this failure.') % {
-                                'seed': generated_seed},)
-                    else:
-                        report((
-                            'You can add @seed(%d) to this test to reproduce '
-                            'this failure.') % (generated_seed,))
+                    with local_settings(settings):
+                        if running_under_pytest:
+                            report(
+                                'You can add @seed(%(seed)d) to this test or '
+                                'run pytest with --hypothesis-seed=%(seed)d '
+                                'to reproduce this failure.' % {
+                                    'seed': generated_seed})
+                        else:
+                            report(
+                                'You can add @seed(%d) to this test to '
+                                'reproduce this failure.' % (generated_seed,))
                 raise
 
         for attrib in dir(test):

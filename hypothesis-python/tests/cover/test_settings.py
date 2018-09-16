@@ -25,7 +25,7 @@ from tempfile import mkdtemp
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, unlimited
+from hypothesis import given, example, unlimited
 from hypothesis.errors import InvalidState, InvalidArgument, \
     HypothesisDeprecationWarning
 from tests.common.utils import validate_deprecation, \
@@ -386,3 +386,11 @@ def test_database_is_reference_preserved():
 def test_setting_use_coverage_is_deprecated(value):
     with validate_deprecation():
         settings(use_coverage=value)
+
+
+@settings(verbosity=Verbosity.verbose)
+@example(x=99)
+@given(st.integers())
+def test_settings_apply_for_explicit_examples(x):
+    # Regression test for #1521
+    assert settings.default.verbosity == Verbosity.verbose

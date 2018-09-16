@@ -66,13 +66,13 @@ def test_finds_single_element_strings():
 def test_binary_respects_changes_in_size():
     @given(binary())
     def test_foo(x):
-        assert len(x) <= 10
+        assert len(x) <= 5
     with pytest.raises(AssertionError):
         test_foo()
 
-    @given(binary(max_size=10))
+    @given(binary(max_size=5))
     def test_foo(x):
-        assert len(x) <= 10
+        assert len(x) <= 5
     test_foo()
 
 
