@@ -283,19 +283,18 @@ def execute_explicit_examples(
         example_string = '%s(%s)' % (
             test.__name__, arg_string(test, arguments, example_kwargs)
         )
-        try:
-            with BuildContext(None) as b:
-                if settings.verbosity >= Verbosity.verbose:
-                    report('Trying example: ' + example_string)
-                test_runner(
-                    None,
-                    lambda data: test(*arguments, **example_kwargs)
-                )
-        except BaseException:
-            report('Falsifying example: ' + example_string)
-            for n in b.notes:
-                report(n)
-            raise
+        with local_settings(settings):
+            try:
+                with BuildContext(None) as b:
+                    verbose_report('Trying example: ' + example_string)
+                    test_runner(
+                        None, lambda data: test(*arguments, **example_kwargs)
+                    )
+            except BaseException:
+                report('Falsifying example: ' + example_string)
+                for n in b.notes:
+                    report(n)
+                raise
 
 
 def get_random_for_wrapped_test(test, wrapped_test):
