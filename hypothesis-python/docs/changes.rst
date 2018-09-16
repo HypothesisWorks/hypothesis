@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.71.6:
+
+-------------------
+3.71.6 - 2018-09-16
+-------------------
+
+This patch fixes two bugs (:issue:`944` and :issue:`1521`), where messages
+about :func:`@seed <hypothesis.seed` did not check the current verbosity
+setting, and the wrong settings were active while executing
+:ref:`explicit examples <providing-explicit-examples>`.
+
 .. _v3.71.5:
 
 -------------------
