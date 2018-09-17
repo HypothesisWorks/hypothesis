@@ -453,7 +453,7 @@ def floats(
         max_value = next_down(max_value, width)
         assert max_value < max_arg  # type: ignore
     if min_value is not None and max_value is not None and \
-            min_value > max_value:  # type: ignore
+            min_value > max_value:
         raise InvalidArgument(
             'There are no %s-bit floating-point values between min_value=%r '
             'and max_value=%r' % (width, min_arg, max_arg))

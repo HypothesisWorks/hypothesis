@@ -92,7 +92,7 @@ def pytest_configure(config):
         'hypothesis: Tests which use hypothesis.')
 
 
-gathered_statistics = OrderedDict()
+gathered_statistics = OrderedDict()  # type: dict
 
 
 @pytest.mark.hookwrapper
