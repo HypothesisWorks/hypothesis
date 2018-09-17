@@ -1904,7 +1904,8 @@ class Shrinker(object):
             self.clear_change_tracking()
 
     def shrink_offset_pairs(self):
-        """Lower any two blocks offset from each other the same ammount.
+        """Lowers pairs of blocks that need to maintain a constant difference
+        between their respective values.
 
         Before this shrink pass, two blocks explicitly offset from each
         other would not get minimized properly:
@@ -1914,7 +1915,7 @@ class Shrinker(object):
 
         This expensive (O(n^2)) pass goes through every pair of non-zero
         blocks in the current shrink target and sees if the shrink
-        target can be improved by applying an offset to both of them.
+        target can be improved by applying a negative offset to both of them.
         """
 
         def int_from_block(i):
