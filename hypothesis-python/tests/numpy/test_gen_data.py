@@ -329,3 +329,11 @@ def test_overflowing_floats_are_deprecated(fill, data):
 @given(nps.arrays(dtype='float16', shape=(1,)))
 def test_inferred_floats_do_not_overflow(arr):
     pass
+
+
+@given(nps.arrays(
+    dtype='float16', shape=10, unique=True,
+    elements=st.integers(1, 9), fill=st.just(np.nan)
+))
+def test_unique_array_with_fill_can_use_all_elements(arr):
+    assume(len(set(arr)) == arr.size)
