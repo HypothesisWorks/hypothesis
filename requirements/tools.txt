@@ -17,6 +17,7 @@ chardet==3.0.4            # via requests
 click==6.7                # via pip-tools, pyupio, safety
 coverage==4.5.1
 decorator==4.3.0          # via ipython, traitlets
+deprecated==1.2.3         # via pygithub
 django==2.1.1
 docformatter==1.0         # via pyformat
 docutils==0.14            # via restructuredtext-lint, sphinx
@@ -39,7 +40,8 @@ markupsafe==1.0           # via jinja2
 mccabe==0.6.1             # via flake8
 mock==2.0.0
 more-itertools==4.3.0     # via pytest
-mypy==0.620
+mypy-extensions==0.4.1    # via mypy
+mypy==0.630
 numpy==1.15.1
 packaging==17.1           # via dparse, pyupio, safety, sphinx
 parso==0.3.1              # via jedi
@@ -56,7 +58,7 @@ pycodestyle==2.3.1        # via autopep8, flake8
 pydocstyle==2.1.1         # via flake8-docstrings
 pyflakes==1.6.0           # via autoflake, flake8
 pyformat==0.7
-pygithub==1.43            # via pyupio
+pygithub==1.43.2          # via pyupio
 pygments==2.2.0           # via ipython, sphinx
 pyjwt==1.6.4              # via pygithub
 pyparsing==2.2.0          # via packaging
@@ -79,8 +81,8 @@ sphinx==1.8.0
 sphinxcontrib-websupport==1.1.0  # via sphinx
 stevedore==1.29.0         # via bandit
 toml==0.9.6
-tox==3.2.1
-tqdm==4.25.0              # via pyupio, twine
+tox==3.3.0
+tqdm==4.26.0              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.11.0
 typed-ast==1.1.0          # via mypy
@@ -89,3 +91,4 @@ untokenize==0.1.1         # via docformatter, unify
 urllib3==1.23             # via requests
 virtualenv==16.0.0        # via tox
 wcwidth==0.1.7            # via prompt-toolkit
+wrapt==1.10.11            # via deprecated
