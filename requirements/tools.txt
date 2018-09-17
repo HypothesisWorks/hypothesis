@@ -56,7 +56,7 @@ pycodestyle==2.4.0        # via autopep8, flake8
 pydocstyle==2.1.1         # via flake8-docstrings
 pyflakes==2.0.0           # via autoflake, flake8
 pyformat==0.7
-pygithub==1.43            # via pyupio
+pygithub==1.43.2            # via pyupio
 pygments==2.2.0           # via ipython, sphinx
 pyjwt==1.6.4              # via pygithub
 pyparsing==2.2.0          # via packaging
