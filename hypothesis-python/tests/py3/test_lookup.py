@@ -441,3 +441,9 @@ def test_resolving_recursive_type():
         # https://github.com/HypothesisWorks/hypothesis-python/issues/1074
         assert sys.version_info[:2] == (3, 5)
         pytest.skip('Could not find type hints to resolve')
+
+
+@given(from_type(typing.Tuple[()]))
+def test_resolves_empty_Tuple_issue_1583_regression(ex):
+    # See e.g. https://github.com/python/mypy/commit/71332d58
+    assert ex == ()
