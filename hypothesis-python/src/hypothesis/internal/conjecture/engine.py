@@ -1916,10 +1916,11 @@ class Shrinker(object):
         blocks in the current shrink target and sees if the shrink
         target can be improved by applying an offset to both of them.
         """
-        current = [self.shrink_target.buffer[u:v] for u, v in self.blocks]
 
         def int_from_block(i):
-            return int_from_bytes(current[i])
+            u, v = self.blocks[i]
+            block_bytes = self.shrink_target.buffer[u:v]
+            return int_from_bytes(block_bytes)
 
         def block_len(i):
             u, v = self.blocks[i]
@@ -1951,16 +1952,13 @@ class Shrinker(object):
         while i < len(self.blocks):
             if self.is_payload_block(i) and int_from_block(i) > 0:
                 j = i + 1
-                while j < len(self.shrink_target.blocks):
+                while j < len(self.blocks):
                     block_val = int_from_block(j)
                     i_block_val = int_from_block(i)
                     if self.is_payload_block(j) \
                        and block_val > 0 and i_block_val > 0:
                         offset = min(int_from_block(i),
                                      int_from_block(j))
-                        # Save current before shrinking
-                        current = [self.shrink_target.buffer[u:v]
-                                   for u, v in self.blocks]
                         Integer.shrink(
                             offset, lambda o: reoffset_pair((i, j), o),
                             random=self.random
