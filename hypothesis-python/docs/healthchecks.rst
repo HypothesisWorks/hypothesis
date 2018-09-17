@@ -27,3 +27,19 @@ Using a value of ``HealthCheck.all()`` will disable all health checks.
 .. autoclass:: HealthCheck
    :undoc-members:
    :inherited-members:
+
+
+------------
+Deprecations
+------------
+
+We also use a range of custom exception and warning types, so you can see
+exactly where an error came from - or turn only our warnings into errors.
+
+.. autoclass:: hypothesis.errors.HypothesisDeprecationWarning
+
+Deprecated features will be continue to emit warnings for at least six
+months, and then be removed in the following major release.
+Note however that not all warnings are subject to this grace period;
+sometimes we strengthen validation by adding a warning and these may
+become errors immediately at a major release.

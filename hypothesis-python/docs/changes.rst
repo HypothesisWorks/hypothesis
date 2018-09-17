@@ -28,7 +28,7 @@ information to the contrary.
 -------------------
 
 This patch fixes two bugs (:issue:`944` and :issue:`1521`), where messages
-about :func:`@seed <hypothesis.seed` did not check the current verbosity
+about :func:`@seed <hypothesis.seed>` did not check the current verbosity
 setting, and the wrong settings were active while executing
 :ref:`explicit examples <providing-explicit-examples>`.
 
@@ -993,7 +993,7 @@ arbitrary. This may cause different results between runs.
 3.56.10 - 2018-05-16
 --------------------
 
-This release makes :obj:`~hypothesis.settings.define_setting`
+This release makes ``hypothesis.settings.define_setting``
 a private method, which has the effect of hiding it from the
 documentation.
 
@@ -1082,7 +1082,7 @@ satisfy assumption, and disabling health checks).
 -------------------
 
 This release fixes a problem that was introduced in :ref:`3.56.0 <v3.56.0>`:
-Use of the :envvar:`HYPOTHESIS_VERBOSITY_LEVEL` environment variable was, rather
+Use of the ``HYPOTHESIS_VERBOSITY_LEVEL`` environment variable was, rather
 than deprecated, actually broken due to being read before various setup
 the deprecation path needed was done. It now works correctly (and emits a
 deprecation warning).
@@ -1107,9 +1107,9 @@ knowledge of our internals (:issue:`535`).
   than a user-controlled setting.
 - :obj:`~hypothesis.settings.min_satisfying_examples` is deprecated and
   disabled, due to overlap with the
-  :obj:`~hypothesis.settings.HealthCheck.filter_too_much` healthcheck
+  :obj:`~hypothesis.HealthCheck.filter_too_much` healthcheck
   and poor interaction with :obj:`~hypothesis.settings.max_examples`.
-- :envvar:`HYPOTHESIS_VERBOSITY_LEVEL` is now deprecated.  Set
+- ``HYPOTHESIS_VERBOSITY_LEVEL`` is now deprecated.  Set
   :obj:`~hypothesis.settings.verbosity` through the profile system instead.
 - Examples tried by :func:`~hypothesis.find` are now reported at ``debug``
   verbosity level (as well as ``verbose`` level).
@@ -1172,7 +1172,7 @@ It has no other user visible effects.
 
 This patch relaxes constraints in our tests on the expected values returned
 by the standard library function :func:`~python:math.hypot` and the internal
-helper function :func:`~hypothesis.internal.cathetus`, to fix near-exact
+helper function ``cathetus``, to fix near-exact
 test failures on some 32-bit systems used by downstream packagers.
 
 .. _v3.55.0:
@@ -1187,7 +1187,7 @@ This release includes several improvements to the handling of the
 - The :obj:`~hypothesis.settings.database_file` setting was a historical
   artefact, and you should just use :obj:`~hypothesis.settings.database`
   directly.
-- The :envvar:`HYPOTHESIS_DATABASE_FILE` environment variable is
+- The ``HYPOTHESIS_DATABASE_FILE`` environment variable is
   deprecated, in favor of :meth:`~hypothesis.settings.load_profile` and
   the :obj:`~hypothesis.settings.database` setting.
 - If you have not configured the example database at all and the default
@@ -1409,7 +1409,7 @@ with the standard library :mod:`python:unittest` module:
 
 - Applying :func:`@given <hypothesis.given>` to a non-test method which is
   overridden from :class:`python:unittest.TestCase`, such as ``setUp``,
-  raises :attr:`a new health check <hypothesis.settings.not_a_test_method>`.
+  raises :attr:`a new health check <hypothesis.HealthCheck.not_a_test_method>`.
   (:issue:`991`)
 - Using :meth:`~python:unittest.TestCase.subTest` within a test decorated
   with :func:`@given <hypothesis.given>` would leak intermediate results
@@ -1475,7 +1475,7 @@ existing code), and all other input is deprecated.
 3.45.5 - 2018-02-26
 -------------------
 
-This patch improves strategy inference in :mod:`hypothesis.extra.django`
+This patch improves strategy inference in ``hypothesis.extra.django``
 to account for some validators in addition to field type - see
 :issue:`1116` for ongoing work in this space.
 
@@ -2245,7 +2245,7 @@ This is a bugfix release:
 -------------------
 
 This release supports strategy inference for more field types in Django
-:func:`~hypothesis.extra.django.models` - you can now omit an argument for
+:func:`~hypothesis.extra.django.models.models` - you can now omit an argument for
 Date, Time, Duration, Slug, IP Address, and UUID fields.  (:issue:`642`)
 
 Strategy generation for fields with grouped choices now selects choices from
@@ -2523,7 +2523,7 @@ This release is an internal change that affects how Hypothesis handles
 calculating certain properties of strategies.
 
 The primary effect of this is that it fixes a bug where use of
-:func:`~hypothesis.deferred` could sometimes trigger an internal assertion
+:func:`~hypothesis.strategies.deferred` could sometimes trigger an internal assertion
 error. However the fix for this bug involved some moderately deep changes to
 how Hypothesis handles certain constructs so you may notice some additional
 knock-on effects.
@@ -2765,7 +2765,7 @@ This work was funded by `Stripe <https://stripe.com/>`_.
 
 This release fixes some extremely specific circumstances that probably have
 never occurred in the wild where users of
-:func:`~hypothesis.searchstrategy.deferred` might have seen a RuntimeError from
+:func:`~hypothesis.strategies.deferred` might have seen a :class:`python:RuntimeError` from
 too much recursion, usually in cases where no valid example could have been
 generated anyway.
 
@@ -3578,7 +3578,7 @@ This is a bug fix release, fixing a number of problems with the settings system:
 This is a bug fix release for a single bug:
 
 * On Windows when running two Hypothesis processes in parallel (e.g. using
-  pytest-xdist) they could race with each other and one would raise an exception
+  :pypi:`pytest-xdist`) they could race with each other and one would raise an exception
   due to the non-atomic nature of file renaming on Windows and the fact that you
   can't rename over an existing file. This is now fixed.
 
@@ -3590,8 +3590,9 @@ This is a bug fix release for a single bug:
 
 This release is entirely provided by `Lucas Wiman <https://github.com/lucaswiman>`_:
 
-Strategies constructed by :func:`~hypothesis.extra.django.models` will now respect much more of
-Django's validations out of the box. Wherever possible :meth:`~django:django.db.models.Model.full_clean` should
+Strategies constructed by :func:`~hypothesis.extra.django.models.models`
+will now respect much more of Django's validations out of the box.
+Wherever possible, :meth:`~django:django.db.models.Model.full_clean` should
 succeed.
 
 In particular:

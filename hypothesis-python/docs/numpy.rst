@@ -9,7 +9,7 @@ numpy
 -----
 
 Hypothesis offers a number of strategies for `NumPy <http://www.numpy.org/>`_ testing,
-available in the :mod:`hypothesis[numpy]` :doc:`extra </extras>`.
+available in the ``hypothesis[numpy]`` :doc:`extra </extras>`.
 It lives in the ``hypothesis.extra.numpy`` package.
 
 The centerpiece is the :func:`~hypothesis.extra.numpy.arrays` strategy, which generates arrays with

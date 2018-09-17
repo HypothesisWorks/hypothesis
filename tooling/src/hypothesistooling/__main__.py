@@ -341,8 +341,9 @@ def documentation():
         if hp.has_release():
             hp.update_changelog_and_version()
         pip_tool(
-            'sphinx-build', '-W', '-b', 'html', '-d', 'docs/_build/doctrees',
-            'docs', 'docs/_build/html'
+            # See http://www.sphinx-doc.org/en/stable/man/sphinx-build.html
+            'sphinx-build', '-n', '-W', '--keep-going', '-T', '-E',
+            '-b', 'html', 'docs', 'docs/_build/html'
         )
     finally:
         subprocess.check_call([

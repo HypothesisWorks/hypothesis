@@ -869,7 +869,7 @@ def characters(
       exception.
 
     The ``_codepoint`` arguments must be integers between zero and
-    :obj:`python:sys.max_unicode`.  The ``_characters`` arguments must be
+    :obj:`python:sys.maxunicode`.  The ``_characters`` arguments must be
     collections of length-one unicode strings, such as a unicode string.
 
     The ``_categories`` arguments must be used to specify either the
@@ -1004,14 +1004,14 @@ def text(
 def from_regex(regex, fullmatch=False):
     # type: (Union[AnyStr, Pattern[AnyStr]], bool) -> SearchStrategy[AnyStr]
     """Generates strings that contain a match for the given regex (i.e. ones
-    for which :func:`re.search` will return a non-None result).
+    for which :func:`python:re.search` will return a non-None result).
 
     ``regex`` may be a pattern or :func:`compiled regex <python:re.compile>`.
     Both byte-strings and unicode strings are supported, and will generate
     examples of the same type.
 
-    You can use regex flags such as :const:`re.IGNORECASE`, :const:`re.DOTALL`
-    or :const:`re.UNICODE` to control generation. Flags can be passed either
+    You can use regex flags such as :obj:`python:re.IGNORECASE` or
+    :obj:`python:re.DOTALL` to control generation. Flags can be passed either
     in compiled regex or inside the pattern with a ``(?iLmsux)`` group.
 
     Some regular expressions are only partly supported - the underlying
@@ -1463,7 +1463,7 @@ def decimals(
     places=None,  # type: int
 ):
     # type: (...) -> SearchStrategy[Decimal]
-    """Generates instances of :class:`decimals.Decimal`, which may be:
+    """Generates instances of :class:`python:decimal.Decimal`, which may be:
 
     - A finite rational number, between ``min_value`` and ``max_value``.
     - Not a Number, if ``allow_nan`` is True.  None means "allow NaN, unless
