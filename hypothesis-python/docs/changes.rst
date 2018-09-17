@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.71.8:
+
+-------------------
+3.71.8 - 2018-09-17
+-------------------
+
+This patch fixes a rare bug that would cause a particular shrinker pass to
+raise an IndexError, if a shrink improvement changed the underlying data
+in an unexpected way.
+
 .. _v3.71.7:
 
 -------------------
