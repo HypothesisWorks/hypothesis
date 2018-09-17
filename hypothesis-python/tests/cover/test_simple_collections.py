@@ -124,6 +124,17 @@ def test_lists_of_lower_bounded_length(n):
 
 
 def test_can_find_unique_lists_of_non_set_order():
+    # This test checks that our strategy for unique lists doesn't accidentally
+    # depend on the iteration order of sets.
+    #
+    # Unfortunately, that means that *this* test has to rely on set iteration
+    # order. That makes it tricky to debug on CPython, because set iteration
+    # order changes every time the process is launched.
+    #
+    # To get around this, define the PYTHONHASHSEED environment variable to
+    # a consistent value. This could be 0, or it could be the PYTHONHASHSEED
+    # value listed in a failure log from CI.
+
     ls = minimal(
         lists(text(), unique=True),
         lambda x: list(set(reversed(x))) != x
