@@ -57,6 +57,34 @@ def run_to_buffer(f):
         return hbytes(last_data.buffer)
 
 
+def shrink_to_data(buffer):
+    """Decorator that takes a test function and an interesting input buffer,
+    and runs the shrinker on that buffer."""
+
+    def decorator(f):
+        runner = ConjectureRunner(
+            f,
+            random=Random(0),
+            settings=settings(
+                phases=[Phase.shrink],
+                database=None,
+            ),
+        )
+
+        # Explicitly test the given buffer, so that the shrinker has
+        # a starting point.
+        data = ConjectureData.for_buffer(buffer)
+        runner.test_function(data)
+        assert data.status == Status.INTERESTING, \
+            'Initial buffer was not interesting'
+
+        runner.run()
+
+        return runner.interesting_examples[data.interesting_origin]
+
+    return decorator
+
+
 def test_can_index_results():
     @run_to_buffer
     def f(data):
