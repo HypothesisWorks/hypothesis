@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.71.7:
+
+-------------------
+3.71.7 - 2018-09-17
+-------------------
+
+This release fixes the broken cross-references in our docs,
+and adds a CI check so we don't add new ones.
+
 .. _v3.71.6:
 
 -------------------
