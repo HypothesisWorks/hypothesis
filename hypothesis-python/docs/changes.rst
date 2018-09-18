@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.71.10:
+
+--------------------
+3.71.10 - 2018-09-18
+--------------------
+
+This patch allows :func:`~hypothesis.strategies.from_type` to handle the
+empty tuple type, :obj:`typing.Tuple[()] <python:typing.Tuple>`.
+
 .. _v3.71.9:
 
 -------------------
