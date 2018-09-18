@@ -83,6 +83,8 @@ def from_typing_type(thing):
         if getattr(thing, '__tuple_use_ellipsis__', False) or \
                 len(elem_types) == 2 and elem_types[-1] is Ellipsis:
             return st.lists(st.from_type(elem_types[0])).map(tuple)
+        elif len(elem_types) == 1 and elem_types[0] == ():
+            return st.tuples()  # Empty tuple; see issue #1583
         return st.tuples(*map(st.from_type, elem_types))
     if isinstance(thing, typing.TypeVar):
         if getattr(thing, '__bound__', None) is not None:
