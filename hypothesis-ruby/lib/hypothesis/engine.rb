@@ -2,7 +2,7 @@
 
 require 'helix_runtime'
 
-require_relative 'hypothesis-ruby/native'
+require_relative '../hypothesis-ruby/native'
 
 require 'rspec/expectations'
 
