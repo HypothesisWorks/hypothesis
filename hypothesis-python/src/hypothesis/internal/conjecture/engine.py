@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import math
 import heapq
 from enum import Enum
 from random import Random, getrandbits
@@ -102,6 +103,9 @@ class ConjectureRunner(object):
 
         self.used_examples_from_database = False
         self.reset_tree_to_empty()
+
+        self.finish_if_after_time = float('inf')
+        self.examples_at_last_bug = self.settings.max_examples
 
     def reset_tree_to_empty(self):
         # Previously-tested byte streams are recorded in a prefix tree, so that
@@ -320,6 +324,11 @@ class ConjectureRunner(object):
                     changed = True
 
             if changed:
+                if key not in self.interesting_examples:
+                    self.examples_at_last_bug = self.valid_examples
+                    self.finish_if_after_time = min([
+                        self.finish_if_after_time, benchmark_time() + 10
+                    ])
                 self.save_buffer(data.buffer)
                 self.interesting_examples[key] = data
                 self.shrunk_examples.discard(key)
@@ -809,9 +818,12 @@ class ConjectureRunner(object):
 
         self.health_check_state = HealthCheckState()
 
-        count = 0
-        while not self.interesting_examples and (
-            count < 10 or self.health_check_state is not None
+        # We continue trying new examples until 10 seconds after finding the
+        # first bug, or when we've tried many fruitless examples after the
+        # *last* bug.  Non-bug exit cases are handled in self.test_function.
+        while (
+            benchmark_time() < self.finish_if_after_time and
+            self.valid_examples < max([10, 2 * self.examples_at_last_bug])
         ):
             prefix = self.generate_novel_prefix()
 
@@ -830,8 +842,6 @@ class ConjectureRunner(object):
             )
             self.test_function(last_data)
             last_data.freeze()
-
-            count += 1
 
         mutations = 0
         mutator = self._new_mutator()
