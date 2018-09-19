@@ -25,10 +25,11 @@ from tempfile import mkdtemp
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, unlimited
+from hypothesis import given, example, unlimited
 from hypothesis.errors import InvalidState, InvalidArgument, \
     HypothesisDeprecationWarning
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import validate_deprecation, \
+    checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
 from hypothesis._settings import Verbosity, settings, default_variable, \
@@ -69,12 +70,14 @@ def test_respects_none_database():
     assert settings(database=None).database is None
 
 
+@checks_deprecated_behaviour
 def test_settings_can_be_used_as_context_manager_to_change_defaults():
     with settings(max_examples=12):
         assert settings.default.max_examples == 12
     assert settings.default.max_examples == original_default
 
 
+@checks_deprecated_behaviour
 def test_can_repeatedly_push_the_same_thing():
     s = settings(max_examples=12)
     t = settings(max_examples=17)
@@ -118,6 +121,13 @@ def test_perform_health_check_setting_is_deprecated():
     assert s.suppress_health_check
 
 
+@checks_deprecated_behaviour
+@given(st.integers(0, 10000))
+def test_max_shrinks_setting_is_deprecated(n):
+    s = settings(max_shrinks=n)
+    assert s.max_shrinks == n
+
+
 def test_can_set_verbosity():
     settings(verbosity=Verbosity.quiet)
     settings(verbosity=Verbosity.normal)
@@ -129,6 +139,7 @@ def test_can_not_set_verbosity_to_non_verbosity():
         settings(verbosity='kittens')
 
 
+@checks_deprecated_behaviour
 @pytest.mark.parametrize('db', [None, ExampleDatabase()])
 def test_inherits_an_empty_database(db):
     assert settings.default.database is not None
@@ -153,28 +164,31 @@ def test_will_reload_profile_when_default_is_absent():
 
 def test_load_profile():
     settings.load_profile('default')
-    assert settings.default.max_examples == 100
-    assert settings.default.max_shrinks == 500
+    assert settings.default.max_examples == original_default
+    assert settings.default.stateful_step_count == 50
 
-    settings.register_profile('test', settings(max_examples=10), max_shrinks=5)
+    settings.register_profile(
+        'test', settings(max_examples=10), stateful_step_count=5
+    )
     settings.load_profile('test')
 
     assert settings.default.max_examples == 10
-    assert settings.default.max_shrinks == 5
+    assert settings.default.stateful_step_count == 5
 
     settings.load_profile('default')
 
-    assert settings.default.max_examples == 100
-    assert settings.default.max_shrinks == 500
+    assert settings.default.max_examples == original_default
+    assert settings.default.stateful_step_count == 50
 
 
 @checks_deprecated_behaviour
 def test_nonstring_profile_names_deprecated():
-    settings.register_profile(5, max_shrinks=5)
+    settings.register_profile(5, stateful_step_count=5)
     settings.load_profile(5)
-    assert settings.default.max_shrinks == 5
+    assert settings.default.stateful_step_count == 5
 
 
+@checks_deprecated_behaviour
 def test_loading_profile_keeps_expected_behaviour():
     settings.register_profile('ci', settings(max_examples=10000))
     settings.load_profile('ci')
@@ -235,6 +249,7 @@ def test_can_have_none_database():
     assert settings(database=None).database is None
 
 
+@checks_deprecated_behaviour
 @pytest.mark.parametrize('db', [None, ExampleDatabase(':memory:')])
 def test_database_type_must_be_ExampleDatabase(db):
     with settings(database=db):
@@ -365,3 +380,17 @@ def test_database_is_reference_preserved():
     s = settings(database=not_set)
 
     assert s.database is s.database
+
+
+@pytest.mark.parametrize('value', [False, True])
+def test_setting_use_coverage_is_deprecated(value):
+    with validate_deprecation():
+        settings(use_coverage=value)
+
+
+@settings(verbosity=Verbosity.verbose)
+@example(x=99)
+@given(st.integers())
+def test_settings_apply_for_explicit_examples(x):
+    # Regression test for #1521
+    assert settings.default.verbosity == Verbosity.verbose

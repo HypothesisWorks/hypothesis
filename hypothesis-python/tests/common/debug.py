@@ -17,11 +17,11 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
-
 from hypothesis import find, given, assume, reject
 from hypothesis import settings as Settings
+from hypothesis import unlimited
 from hypothesis.errors import NoSuchExample, Unsatisfiable
+from tests.common.utils import no_shrink
 
 TIME_INCREMENT = 0.01
 
@@ -35,10 +35,7 @@ def minimal(
         settings=None, timeout_after=10, random=None
 ):
     settings = Settings(
-        settings,
-        max_examples=50000,
-        max_shrinks=5000,
-        database=None,
+        settings, max_examples=50000, database=None, timeout=unlimited,
     )
 
     runtime = []
@@ -48,25 +45,22 @@ def minimal(
             return True
 
     def wrapped_condition(x):
-        if runtime:
-            runtime[0] += TIME_INCREMENT
-            if runtime[0] >= timeout_after:
-                raise Timeout()
+        if timeout_after is not None:
+            if runtime:
+                runtime[0] += TIME_INCREMENT
+                if runtime[0] >= timeout_after:
+                    raise Timeout()
         result = condition(x)
         if result and not runtime:
             runtime.append(0.0)
         return result
 
-    try:
-        orig = sys.gettrace()
-        return find(
-            definition,
-            wrapped_condition,
-            settings=settings,
-            random=random,
-        )
-    finally:
-        sys.settrace(orig)
+    return find(
+        definition,
+        wrapped_condition,
+        settings=settings,
+        random=random,
+    )
 
 
 def find_any(
@@ -75,9 +69,7 @@ def find_any(
 ):
     settings = Settings(
         settings,
-        max_examples=10000,
-        max_shrinks=0000,
-        database=None,
+        max_examples=10000, phases=no_shrink, database=None, timeout=unlimited
     )
 
     if condition is None:
@@ -101,7 +93,7 @@ def assert_no_examples(strategy, condition=None):
             assume(condition(x))
 
     try:
-        result = find(strategy, predicate, settings=Settings(max_shrinks=1))
+        result = find(strategy, predicate, settings=Settings(phases=no_shrink))
         assert False, 'Expected no results but found %r' % (result,)
     except (Unsatisfiable, NoSuchExample):
         pass

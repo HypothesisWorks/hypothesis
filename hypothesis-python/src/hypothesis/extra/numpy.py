@@ -23,11 +23,15 @@ import numpy as np
 
 import hypothesis.strategies as st
 import hypothesis.internal.conjecture.utils as cu
+from hypothesis import Verbosity
 from hypothesis.errors import InvalidArgument
+from hypothesis._settings import note_deprecation
+from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
+from hypothesis.internal.validation import check_type
 
 if False:
     from typing import Any, Union, Sequence, Tuple  # noqa
@@ -39,6 +43,8 @@ TIME_RESOLUTIONS = tuple('Y  M  D  h  m  s  ms  us  ns  ps  fs  as'.split())
 @st.defines_strategy_with_reusable_values
 def from_dtype(dtype):
     # type: (np.dtype) -> st.SearchStrategy[Any]
+    """Creates a strategy which can generate any value of the given dtype."""
+    check_type(np.dtype, dtype, 'dtype')
     # Compound datatypes, eg 'f4,f4,f4'
     if dtype.names is not None:
         # mapping np.void.type over a strategy is nonsense, so return now.
@@ -54,9 +60,18 @@ def from_dtype(dtype):
     if dtype.kind == u'b':
         result = st.booleans()  # type: SearchStrategy[Any]
     elif dtype.kind == u'f':
-        result = st.floats()
+        if dtype.itemsize == 2:
+            result = st.floats(width=16)
+        elif dtype.itemsize == 4:
+            result = st.floats(width=32)
+        else:
+            result = st.floats()
     elif dtype.kind == u'c':
-        result = st.complex_numbers()
+        if dtype.itemsize == 8:
+            float32 = st.floats(width=32)
+            result = st.builds(complex, float32, float32)
+        else:
+            result = st.complex_numbers()
     elif dtype.kind in (u'S', u'a'):
         # Numpy strings are null-terminated; only allow round-trippable values.
         # `itemsize == 0` means 'fixed length determined at array creation'
@@ -117,9 +132,43 @@ class ArrayStrategy(SearchStrategy):
         self.element_strategy = element_strategy
         self.unique = unique
 
+        # Used by self.insert_element to check that the value can be stored
+        # in the array without e.g. overflowing.  See issue #1385.
+        if dtype.kind in (u'i', u'u'):
+            self.check_cast = lambda x: np.can_cast(x, self.dtype, 'safe')
+        elif dtype.kind == u'f' and dtype.itemsize == 2:
+            max_f2 = (2. - 2 ** -10) * 2 ** 15
+            self.check_cast = lambda x: \
+                (not np.isfinite(x)) or (-max_f2 <= x <= max_f2)
+        elif dtype.kind == u'f' and dtype.itemsize == 4:
+            max_f4 = (2. - 2 ** -23) * 2 ** 127
+            self.check_cast = lambda x: \
+                (not np.isfinite(x)) or (-max_f4 <= x <= max_f4)
+        else:
+            self.check_cast = lambda x: True
+
+    def set_element(self, data, result, idx, strategy=None):
+        strategy = strategy or self.element_strategy
+        val = data.draw(strategy)
+        if self._report_overflow and not self.check_cast(val):
+            note_deprecation(
+                'Generated array element %r from %r cannot be represented as '
+                'dtype %r without overflow or underflow.  Consider using a '
+                'more precise strategy, as this will be an error in a future '
+                'version of Hypothesis.' % (val, strategy, self.dtype)
+            )
+            # Because the message includes the value of the generated element,
+            # it would be easy to spam users with thousands of warnings.
+            # We therefore only warn once per draw, unless in verbose mode.
+            self._report_overflow = current_verbosity() >= Verbosity.verbose
+        result[idx] = val
+
     def do_draw(self, data):
         if 0 in self.shape:
             return np.zeros(dtype=self.dtype, shape=self.shape)
+
+        # Reset this flag for each test case to emit warnings from set_element
+        self._report_overflow = True
 
         # This could legitimately be a np.empty, but the performance gains for
         # that would be so marginal that there's really not much point risking
@@ -145,7 +194,7 @@ class ArrayStrategy(SearchStrategy):
                     # uniqueness after numpy has converted it to the relevant
                     # type for us. Because we don't increment the counter on
                     # a duplicate we will overwrite it on the next draw.
-                    result[i] = data.draw(self.element_strategy)
+                    self.set_element(data, result, i)
                     if result[i] not in seen:
                         seen.add(result[i])
                         i += 1
@@ -153,7 +202,7 @@ class ArrayStrategy(SearchStrategy):
                         elements.reject()
             else:
                 for i in hrange(len(result)):
-                    result[i] = data.draw(self.element_strategy)
+                    self.set_element(data, result, i)
         else:
             # We draw numpy arrays as "sparse with an offset". We draw a
             # collection of index assignments within the array and assign
@@ -179,7 +228,7 @@ class ArrayStrategy(SearchStrategy):
                 if not needs_fill[i]:
                     elements.reject()
                     continue
-                result[i] = data.draw(self.element_strategy)
+                self.set_element(data, result, i)
                 if self.unique:
                     if result[i] in seen:
                         elements.reject()
@@ -200,7 +249,7 @@ class ArrayStrategy(SearchStrategy):
                 # it and putmask will do the right thing by repeating the
                 # values of the array across the mask.
                 one_element = np.zeros(shape=1, dtype=self.dtype)
-                one_element[0] = data.draw(self.fill)
+                self.set_element(data, one_element, 0, self.fill)
                 fill_value = one_element[0]
                 if self.unique:
                     try:
@@ -240,11 +289,11 @@ def arrays(
     unique=False,  # type: bool
 ):
     # type: (...) -> st.SearchStrategy[np.ndarray]
-    """Returns a strategy for generating :class:`numpy's
-    ndarrays<numpy.ndarray>`.
+    r"""Returns a strategy for generating :class:`numpy:numpy.ndarray`\ s.
 
-    * ``dtype`` may be any valid input to :class:`numpy.dtype <numpy.dtype>`
-      (this includes ``dtype`` objects), or a strategy that generates such
+    * ``dtype`` may be any valid input to
+      :class:`numpy.dtype <numpy:numpy.dtype>` (this includes
+      :class:`~numpy:numpy.dtype` objects), or a strategy that generates such
       values.
     * ``shape`` may be an integer >= 0, a tuple of length >= 0 of such
       integers, or a strategy that generates such values.
@@ -256,13 +305,13 @@ def arrays(
     * ``fill`` is a strategy that may be used to generate a single background
       value for the array. If None, a suitable default will be inferred
       based on the other arguments. If set to
-      :func:`st.nothing() <hypothesis.strategies.nothing>` then filling
+      :func:`~hypothesis.strategies.nothing` then filling
       behaviour will be disabled entirely and every element will be generated
       independently.
     * ``unique`` specifies if the elements of the array should all be
       distinct from one another. Note that in this case multiple NaN values
       may still be allowed. If fill is also set, the only valid values for
-      it to return are NaN values (anything for which :func:`numpy.isnan`
+      it to return are NaN values (anything for which :obj:`numpy:numpy.isnan`
       returns True. So e.g. for complex numbers (nan+1j) is also a valid fill).
       Note that if unique is set to True the generated values must be hashable.
 

@@ -125,6 +125,36 @@ And the following would run all tests under `tests/cover`:
 
     python -m pytest tests/cover
 
+
+~~~~~~~~~~~
+Test Layout
+~~~~~~~~~~~
+
+The top level structure of the tests in Hypothesis looks as follows:
+
+* ``cover`` contains tests that we measure coverage for. This is intended to
+  be a fairly minimal and fast set of tests that still gives pretty good
+  confidence in the behaviour of the test suite. It is currently failing at
+  both "minimal" and "fast", but we're trying to move it back in that
+  direction. Try not to add tests to this unless they're actually to cover
+  some specific target.
+* ``nocover`` is a general dumping ground for slower tests that aren't needed
+  to achieve coverage.
+* ``quality`` is for expensive tests about the distribution or shrinking of
+  examples. These will only be run on one Python version.
+* ``py2`` and ``py3`` are for tests which only run on one major version of
+  Python. You can also write these in other directories using
+  ``pytest.mark.skipif``, but these directories are useful for things that
+  require a version-specific syntax.
+* The remaining test directories are for testing specific extras modules and
+  should have the same name.
+
+As a rule of thumb when writing new tests, they should go in nocover unless
+they are for a specific extras module or to deliberately target a particular
+line for coverage. In the latter case, prefer fast unit tests over larger and
+slower integration tests (we are not currently very good at this).
+
+
 ~~~~~~~~~~~~~~~~
 Useful Arguments
 ~~~~~~~~~~~~~~~~

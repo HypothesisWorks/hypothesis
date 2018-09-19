@@ -98,7 +98,7 @@ a passing test to).
         return []
 
 If we wanted to make sure this example was always checked we could add it in
-explicitly:
+explicitly by using the :func:`@example <hypothesis.example>` decorator:
 
 .. code:: python
 
@@ -110,10 +110,11 @@ explicitly:
   def test_decode_inverts_encode(s):
       assert decode(encode(s)) == s
 
-You don't have to do this, but it can be useful both for clarity purposes and
-for reliably hitting hard to find examples. Also in local development
-Hypothesis will just remember and reuse the examples anyway, but there's not
-currently a very good workflow for sharing those in your CI.
+This can be useful to show other developers (or your future self) what kinds
+of data are valid inputs, or to ensure that particular edge cases such as
+``""`` are tested every time.  It's also great for regression tests because
+although Hypothesis will :doc:`remember failing examples <database>`,
+we don't recommend distributing that database.
 
 It's also worth noting that both example and given support keyword arguments as
 well as positional. The following would have worked just as well:
@@ -177,33 +178,12 @@ Hypothesis is :pypi:`available on pypi as "hypothesis" <hypothesis>`. You can in
 
   pip install hypothesis
 
+You can install the dependencies for :doc:`optional extensions <extras>` with
+e.g. ``pip install hypothesis[pandas,django]``.
+
 If you want to install directly from the source code (e.g. because you want to
-make changes and install the changed version) you can do this with:
-
-.. code:: bash
-
-  pip install -e .
-
-You should probably run the tests first to make sure nothing is broken. You can
-do this with:
-
-.. code:: bash
-
-  python setup.py test
-
-Note that if they're not already installed this will try to install the test
-dependencies.
-
-You may wish to do all of this in a `virtualenv <https://virtualenv.pypa.io/en/latest/>`_. For example:
-
-.. code:: bash
-
-  virtualenv venv
-  source venv/bin/activate
-  pip install hypothesis
-
-Will create an isolated environment for you to try hypothesis out in without
-affecting your system installed packages.
+make changes and install the changed version), check out the instructions in
+:gh-file:`CONTRIBUTING.rst`.
 
 -------------
 Running tests
@@ -294,7 +274,7 @@ using Hypothesis. The best way to learn is by doing, so go have a try.
 If you're stuck for ideas for how to use this sort of test for your code, here
 are some good starting points:
 
-1. Try just calling functions with appropriate random data and see if they
+1. Try just calling functions with appropriate arbitrary data and see if they
    crash. You may be surprised how often this works. e.g. note that the first
    bug we found in the encoding example didn't even get as far as our
    assertion: It crashed because it couldn't handle the data we gave it, not

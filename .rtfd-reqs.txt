@@ -1,2 +1,1 @@
-hypothesis-python/
-django
+hypothesis-python/[all]

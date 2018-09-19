@@ -26,8 +26,9 @@ from datetime import date, time, datetime, timedelta
 import pytest
 
 import hypothesis.strategies as ds
-from hypothesis import find, given, settings
+from hypothesis import given, settings
 from hypothesis.errors import InvalidArgument
+from tests.common.debug import minimal
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.internal.reflection import nicerepr
 
@@ -325,40 +326,40 @@ def test_decimal_is_in_bounds(x):
 
 
 def test_float_can_find_max_value_inf():
-    assert find(
+    assert minimal(
         ds.floats(max_value=float('inf')), lambda x: math.isinf(x)
     ) == float('inf')
-    assert find(
+    assert minimal(
         ds.floats(min_value=0.0), lambda x: math.isinf(x)) == float('inf')
 
 
 def test_float_can_find_min_value_inf():
-    find(ds.floats(), lambda x: x < 0 and math.isinf(x))
-    find(
+    minimal(ds.floats(), lambda x: x < 0 and math.isinf(x))
+    minimal(
         ds.floats(min_value=float('-inf'), max_value=0.0),
         lambda x: math.isinf(x))
 
 
 def test_can_find_none_list():
-    assert find(ds.lists(ds.none()), lambda x: len(x) >= 3) == [None] * 3
+    assert minimal(ds.lists(ds.none()), lambda x: len(x) >= 3) == [None] * 3
 
 
 def test_fractions():
-    assert find(ds.fractions(), lambda f: f >= 1) == 1
+    assert minimal(ds.fractions(), lambda f: f >= 1) == 1
 
 
 def test_decimals():
-    assert find(ds.decimals(), lambda f: f.is_finite() and f >= 1) == 1
+    assert minimal(ds.decimals(), lambda f: f.is_finite() and f >= 1) == 1
 
 
 def test_non_float_decimal():
-    find(
+    minimal(
         ds.decimals(),
         lambda d: d.is_finite() and decimal.Decimal(float(d)) != d)
 
 
 def test_produces_dictionaries_of_at_least_minimum_size():
-    t = find(
+    t = minimal(
         ds.dictionaries(ds.booleans(), ds.integers(), min_size=2),
         lambda x: True)
     assert t == {False: 0, True: 0}
@@ -399,7 +400,7 @@ def test_iterables_are_exhaustible(it):
 
 
 def test_minimal_iterable():
-    assert list(find(ds.iterables(ds.integers()), lambda x: True)) == []
+    assert list(minimal(ds.iterables(ds.integers()), lambda x: True)) == []
 
 
 @checks_deprecated_behaviour
@@ -421,3 +422,33 @@ def test_empty_elements_with_max_size_is_deprecated():
 @checks_deprecated_behaviour
 def test_average_size_is_deprecated():
     ds.lists(ds.integers(), average_size=1).example()
+
+
+@pytest.mark.parametrize('parameter_name', ['min_value', 'max_value'])
+@pytest.mark.parametrize('value', [-1, 0, 1])
+def test_no_infinity_for_min_max_values(value, parameter_name):
+    kwargs = {
+        'allow_infinity': False,
+        parameter_name: value,
+    }
+
+    @given(ds.floats(**kwargs))
+    def test_not_infinite(xs):
+        assert not math.isinf(xs)
+
+    test_not_infinite()
+
+
+@pytest.mark.parametrize('parameter_name', ['min_value', 'max_value'])
+@pytest.mark.parametrize('value', [-1, 0, 1])
+def test_no_nan_for_min_max_values(value, parameter_name):
+    kwargs = {
+        'allow_nan': False,
+        parameter_name: value,
+    }
+
+    @given(ds.floats(**kwargs))
+    def test_not_nan(xs):
+        assert not math.isnan(xs)
+
+    test_not_nan()

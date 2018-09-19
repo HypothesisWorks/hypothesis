@@ -21,14 +21,15 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import Verbosity, HealthCheck, find, given, reject, \
-    settings
+    settings, unlimited
 from hypothesis.errors import NoSuchExample
+from tests.common.utils import no_shrink
 
 
 @pytest.mark.parametrize('strat', [st.text(min_size=5)])
 @settings(
-    max_shrinks=0, deadline=None, suppress_health_check=[
-        HealthCheck.too_slow, HealthCheck.hung_test]
+    phases=no_shrink, deadline=None,
+    suppress_health_check=HealthCheck.all()
 )
 @given(st.data())
 def test_explore_arbitrary_function(strat, data):
@@ -44,7 +45,9 @@ def test_explore_arbitrary_function(strat, data):
         find(
             strat, predicate,
             settings=settings(
-                database=None, verbosity=Verbosity.quiet, max_shrinks=1000)
+                max_examples=10, database=None, timeout=unlimited,
+                verbosity=Verbosity.quiet,
+            )
         )
     except NoSuchExample:
         reject()

@@ -1,0 +1,2 @@
+# Include the license file
+include LICENSE.txt

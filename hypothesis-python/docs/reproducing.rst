@@ -3,9 +3,17 @@ Reproducing Failures
 ====================
 
 One of the things that is often concerning for people using randomized testing
-like Hypothesis is the question of how to reproduce failing test cases.
+is the question of how to reproduce failing test cases.
 
-Fortunately Hypothesis has a number of features in support of this. The one you
+.. note::
+    It is better to think about the data Hypothesis generates as being
+    *arbitrary*, rather than *random*.  We deliberately generate any valid
+    data that seems likely to cause errors, so you shouldn't rely on any
+    expected distribution of or relationships between generated data.
+    You can read about "swarm testing" and "coverage guided fuzzing" if
+    you're interested, because you don't need to know for Hypothesis!
+
+Fortunately Hypothesis has a number of features to support reproducing test failures. The one you
 will use most commonly when developing locally is :doc:`the example database <database>`,
 which means that you shouldn't have to think about the problem at all for local
 use - test failures will just automatically reproduce without you having to do
@@ -59,6 +67,8 @@ positional and keyword arguments.
 Either are fine, and you can use one in one example and the other in another
 example if for some reason you really want to, but a single example must be
 consistent.
+
+.. _reproducing-with-seed:
 
 -------------------------------------
 Reproducing a test run with ``@seed``

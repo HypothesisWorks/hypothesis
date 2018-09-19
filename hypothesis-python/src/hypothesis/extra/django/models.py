@@ -32,8 +32,8 @@ import hypothesis.strategies as st
 from hypothesis import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
-from hypothesis.provisional import emails, ip4_addr_strings, \
-    ip6_addr_strings
+from hypothesis.strategies import emails
+from hypothesis.provisional import ip4_addr_strings, ip6_addr_strings
 from hypothesis.utils.conventions import DefaultValueType
 
 if False:
@@ -189,7 +189,7 @@ def models(
     - for best results, make sure your validators are derived from Django's
     and therefore have the known types and attributes.
     Passing a keyword argument skips inference for that field; pass a strategy
-    or pass :const:`hypothesis.extra.django.models.default_value` to skip
+    or pass ``hypothesis.extra.django.models.default_value`` to skip
     inference for that field.
 
     Foreign keys are not automatically derived. If they're nullable they will
@@ -213,6 +213,21 @@ def models(
         raise InvalidArgument(
             u'Missing arguments for mandatory field%s %s for model %s'
             % (u's' if missed else u'', u', '.join(missed), model.__name__))
+
+    for field in result:
+        if model._meta.get_field(field).primary_key:
+            # The primary key is generated as part of the strategy. We
+            # want to find any existing row with this primary key and
+            # overwrite its contents.
+            kwargs = {field: result.pop(field)}
+            kwargs['defaults'] = st.fixed_dictionaries(result)
+            return _models_impl(
+                st.builds(model.objects.update_or_create, **kwargs)
+            )
+
+    # The primary key is not generated as part of the strategy, so we
+    # just match against any row that has the same value for all
+    # fields.
     return _models_impl(st.builds(model.objects.get_or_create, **result))
 
 

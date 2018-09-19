@@ -24,7 +24,6 @@ from flaky import flaky
 
 import hypothesis.strategies as s
 from hypothesis import find, given, reject, settings
-from hypothesis.core import arc
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from tests.common.utils import checks_deprecated_behaviour
 
@@ -76,7 +75,7 @@ def test_can_time_out_in_simplify():
     )
     finish = time.time()
     run_time = finish - start
-    assert run_time <= 0.3
+    assert run_time <= 0.4
 
 
 some_normal_settings = settings()
@@ -90,7 +89,3 @@ def test_is_not_normally_default():
 @some_normal_settings
 def test_settings_are_default_in_given(x):
     assert settings.default is some_normal_settings
-
-
-def test_arc_is_memoized():
-    assert arc('foo', 1, 2) is arc('foo', 1, 2)

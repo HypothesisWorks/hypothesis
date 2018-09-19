@@ -21,7 +21,7 @@ import math
 
 from hypothesis.utils.dynamicvariables import DynamicVariable
 from hypothesis.internal.conjecture.data import Status
-from hypothesis.internal.conjecture.engine import ExitReason
+from hypothesis.internal.conjecture.engine import MAX_SHRINKS, ExitReason
 
 collector = DynamicVariable(None)
 
@@ -62,6 +62,8 @@ class Statistics(object):
             self.exit_reason = 'nothing left to do'
         elif engine.exit_reason == ExitReason.flaky:
             self.exit_reason = 'test was flaky'
+        elif engine.exit_reason == ExitReason.max_shrinks:
+            self.exit_reason = 'shrunk example %s times' % (MAX_SHRINKS,)
         elif engine.exit_reason == ExitReason.max_iterations:
             self.exit_reason = ((
                 'settings.max_examples={}, but < 10% of examples satisfied '
@@ -85,8 +87,15 @@ class Statistics(object):
         total_runtime = math.fsum(engine.all_runtimes)
         total_drawtime = math.fsum(engine.all_drawtimes)
 
-        if total_drawtime == 0.0:
+        if total_drawtime == 0.0 and total_runtime >= 0.0:
             self.draw_time_percentage = '~ 0%'
+        elif total_drawtime < 0.0 or total_runtime <= 0.0:
+            # This weird condition is possible in two ways:
+            # 1.  drawtime and/or runtime are negative, due to clock changes
+            #     on Python 2 or old OSs (we use monotonic() where available)
+            # 2.  floating-point issues *very rarely* cause math.fsum to be
+            #     off by the lowest bit, so drawtime==0 and runtime!=0, eek!
+            self.draw_time_percentage = 'NaN'
         else:
             draw_time_percentage = 100.0 * min(
                 1, total_drawtime / total_runtime)

@@ -28,26 +28,30 @@ from __future__ import division, print_function, absolute_import
 
 import inspect
 import traceback
+from copy import copy
 from unittest import TestCase
 
 import attr
 
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis.core import find
-from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
-    HypothesisException
+from hypothesis.core import EXCEPTIONS_TO_FAIL, find
+from hypothesis.errors import Flaky, NoSuchExample, InvalidArgument, \
+    InvalidDefinition, HypothesisException
 from hypothesis.control import BuildContext
 from hypothesis._settings import Verbosity
 from hypothesis._settings import settings as Settings
+from hypothesis._settings import note_deprecation
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.strategies import just, one_of, runner, tuples, \
     fixed_dictionaries
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
+from hypothesis.internal.compat import int_to_bytes, string_types
 from hypothesis.internal.reflection import proxies, nicerepr
 from hypothesis.internal.conjecture.data import StopTest
 from hypothesis.internal.conjecture.utils import integer_range, \
     calc_label_from_name
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.searchstrategy.strategies import OneOfStrategy, \
+    SearchStrategy
 
 STATE_MACHINE_RUN_LABEL = calc_label_from_name('another state machine step')
 
@@ -76,7 +80,7 @@ def find_breaking_runner(state_machine_factory, settings=None):
             return False
         except HypothesisException:
             raise
-        except Exception:
+        except EXCEPTIONS_TO_FAIL:
             verbose_report(traceback.format_exc)
             return True
     if settings is None:
@@ -174,7 +178,7 @@ class GenericStateMachine(object):
         """Called after a run has finished executing to clean up any necessary
         state.
 
-        Does nothing by default
+        Does nothing by default.
         """
         pass
 
@@ -273,6 +277,20 @@ class Rule(object):
     function = attr.ib()
     arguments = attr.ib()
     precondition = attr.ib()
+    bundles = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        arguments = {}
+        bundles = []
+        for k, v in sorted(self.arguments.items()):
+            assert not isinstance(v, BundleReferenceStrategy)
+            if isinstance(v, Bundle):
+                bundles.append(v)
+                arguments[k] = BundleReferenceStrategy(v.name)
+            else:
+                arguments[k] = v
+        self.bundles = tuple(bundles)
+        self.arguments_strategy = fixed_dictionaries(arguments)
 
 
 self_strategy = runner()
@@ -287,7 +305,12 @@ class BundleReferenceStrategy(SearchStrategy):
         bundle = machine.bundle(self.name)
         if not bundle:
             data.mark_invalid()
-        return bundle[integer_range(data, 0, len(bundle) - 1)]
+        # Shrink towards the right rather than the left. This makes it easier
+        # to delete data generated earlier, as when the error is towards the
+        # end there can be a lot of hard to remove padding.
+        return bundle[
+            integer_range(data, 0, len(bundle) - 1, center=len(bundle))
+        ]
 
 
 class Bundle(SearchStrategy):
@@ -302,7 +325,45 @@ class Bundle(SearchStrategy):
         return machine.names_to_values[reference.name]
 
 
+def _convert_targets(targets, target):
+    """Single validator and convertor for target arguments."""
+    if target is not None:
+        if targets:
+            note_deprecation(
+                'Passing both targets=%r and target=%r is redundant, and '
+                'will become an error in a future version of Hypothesis.  '
+                'Pass targets=%r instead.'
+                % (targets, target, tuple(targets) + (target,))
+            )
+        targets = tuple(targets) + (target,)
+
+    converted_targets = []
+    for t in targets:
+        if isinstance(t, string_types):
+            note_deprecation(
+                'Got %r as a target, but passing the name of a Bundle is '
+                'deprecated - please pass the Bundle directly.' % (t,)
+            )
+        elif not isinstance(t, Bundle):
+            msg = 'Got invalid target %r of type %r, but all targets must ' \
+                'be either a Bundle or the name of a Bundle.'
+            if isinstance(t, OneOfStrategy):
+                msg += (
+                    '\nIt looks like you passed `one_of(a, b)` or `a | b` as '
+                    'a target.  You should instead pass `targets=(a, b)` to '
+                    'add the return value of this rule to both the `a` and '
+                    '`b` bundles, or define a rule for each target if it '
+                    'should be added to exactly one.'
+                )
+            raise InvalidArgument(msg % (t, type(t)))
+        while isinstance(t, Bundle):
+            t = t.name
+        converted_targets.append(t)
+    return tuple(converted_targets)
+
+
 RULE_MARKER = u'hypothesis_stateful_rule'
+INITIALIZE_RULE_MARKER = u'hypothesis_stateful_initialize_rule'
 PRECONDITION_MARKER = u'hypothesis_stateful_precondition'
 INVARIANT_MARKER = u'hypothesis_stateful_invariant'
 
@@ -312,31 +373,29 @@ def rule(targets=(), target=None, **kwargs):
     targets will define where the end result of this function should go. If
     both are empty then the end result will be discarded.
 
-    targets may either be a Bundle or the name of a Bundle.
+    ``target`` must be a Bundle, or if the result should go to multiple
+    bundles you can pass a tuple of them as the ``targets`` argument.
+    It is invalid to use both arguments for a single rule.  If the result
+    should go to exactly one of several bundles, define a separate rule for
+    each case.
 
     kwargs then define the arguments that will be passed to the function
     invocation. If their value is a Bundle then values that have previously
     been produced for that bundle will be provided, if they are anything else
     it will be turned into a strategy and values from that will be provided.
     """
-    if target is not None:
-        targets += (target,)
-
-    converted_targets = []
-    for t in targets:
-        while isinstance(t, Bundle):
-            t = t.name
-        converted_targets.append(t)
+    converted_targets = _convert_targets(targets, target)
 
     def accept(f):
         existing_rule = getattr(f, RULE_MARKER, None)
-        if existing_rule is not None:
+        existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
+        if existing_rule is not None or existing_initialize_rule is not None:
             raise InvalidDefinition(
                 'A function cannot be used for two distinct rules. ',
                 Settings.default,
             )
         precondition = getattr(f, PRECONDITION_MARKER, None)
-        rule = Rule(targets=tuple(converted_targets), arguments=kwargs,
+        rule = Rule(targets=converted_targets, arguments=kwargs,
                     function=f, precondition=precondition)
 
         @proxies(f)
@@ -344,6 +403,42 @@ def rule(targets=(), target=None, **kwargs):
             return f(*args, **kwargs)
 
         setattr(rule_wrapper, RULE_MARKER, rule)
+        return rule_wrapper
+    return accept
+
+
+def initialize(targets=(), target=None, **kwargs):
+    """Decorator for RuleBasedStateMachine.
+
+    An initialize decorator behaves like a rule, but the decorated
+    method is called at most once in a run. All initialize decorated
+    methods will be called before any rule decorated methods, in an
+    arbitrary order.
+    """
+    converted_targets = _convert_targets(targets, target)
+
+    def accept(f):
+        existing_rule = getattr(f, RULE_MARKER, None)
+        existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
+        if existing_rule is not None or existing_initialize_rule is not None:
+            raise InvalidDefinition(
+                'A function cannot be used for two distinct rules. ',
+                Settings.default,
+            )
+        precondition = getattr(f, PRECONDITION_MARKER, None)
+        if precondition:
+            raise InvalidDefinition(
+                'An initialization rule cannot have a precondition. ',
+                Settings.default,
+            )
+        rule = Rule(targets=converted_targets, arguments=kwargs,
+                    function=f, precondition=precondition)
+
+        @proxies(f)
+        def rule_wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+
+        setattr(rule_wrapper, INITIALIZE_RULE_MARKER, rule)
         return rule_wrapper
     return accept
 
@@ -377,6 +472,13 @@ def precondition(precond):
         @proxies(f)
         def precondition_wrapper(*args, **kwargs):
             return f(*args, **kwargs)
+
+        existing_initialize_rule = getattr(f, INITIALIZE_RULE_MARKER, None)
+        if existing_initialize_rule is not None:
+            raise InvalidDefinition(
+                'An initialization rule cannot have a precondition. ',
+                Settings.default,
+            )
 
         rule = getattr(f, RULE_MARKER, None)
         if rule is None:
@@ -435,6 +537,78 @@ def invariant():
     return accept
 
 
+LOOP_LABEL = cu.calc_label_from_name('RuleStrategy loop iteration')
+
+
+class RuleStrategy(SearchStrategy):
+    def __init__(self, machine):
+        SearchStrategy.__init__(self)
+        self.machine = machine
+        self.rules = list(machine.rules())
+
+        # The order is a bit arbitrary. Primarily we're trying to group rules
+        # that write to the same location together, and to put rules with no
+        # target first as they have less effect on the structure. We order from
+        # fewer to more arguments on grounds that it will plausibly need less
+        # data. This probably won't work especially well and we could be
+        # smarter about it, but it's better than just doing it in definition
+        # order.
+        self.rules.sort(key=lambda rule: (
+            sorted(rule.targets), len(rule.arguments),
+            rule.function.__name__,
+        ))
+
+    def do_draw(self, data):
+        # This strategy is slightly strange in its implementation.
+        # We don't want the interpretation of the rule we draw to change based
+        # on whether other rules satisfy their preconditions or have data in
+        # their bundles. Therefore the index into the rule list needs to stay
+        # stable. BUT we don't want to draw invalid rules. So what we do is we
+        # draw an index. We *could* just loop until it's valid, but if most
+        # rules are invalid then that could result in a very long loop.
+        # So what we do is the following:
+        #
+        #   1. We first draw a rule unconditionally, and check if it's valid.
+        #      If it is, great. Nothing more to do, that's our rule.
+        #   2. If it is invalid, we now calculate the list of valid rules and
+        #      draw from that list (if there are none, that's an error in the
+        #      definition of the machine and we complain to the user about it).
+        #   3. Once we've drawn a valid rule, we write that back to the byte
+        #      stream. As a result, when shrinking runs the shrinker can delete
+        #      the initial failed draw + the draw that lead to us finding an
+        #      index into valid_rules, leaving just the written value of i.
+        #      When this is run, it will look as we got lucky and just happened
+        #      to pick a valid rule.
+        #
+        # Easy, right?
+        n = len(self.rules)
+        i = cu.integer_range(data, 0, n - 1)
+        u, v = data.blocks[-1]
+        block_length = v - u
+        rule = self.rules[i]
+        if not self.is_valid(rule):
+            valid_rules = [
+                j for j, r in enumerate(self.rules) if self.is_valid(r)
+            ]
+            if not valid_rules:
+                raise InvalidDefinition(
+                    u'No progress can be made from state %r' % (self.machine,)
+                )
+            i = valid_rules[cu.integer_range(data, 0, len(valid_rules) - 1)]
+            data.write(int_to_bytes(i, block_length))
+            rule = self.rules[i]
+        return (rule, data.draw(rule.arguments_strategy))
+
+    def is_valid(self, rule):
+        if rule.precondition and not rule.precondition(self.machine):
+            return False
+        for b in rule.bundles:
+            bundle = self.machine.bundle(b.name)
+            if not bundle:
+                return False
+        return True
+
+
 class RuleBasedStateMachine(GenericStateMachine):
     """A RuleBasedStateMachine gives you a more structured way to define state
     machines.
@@ -449,6 +623,8 @@ class RuleBasedStateMachine(GenericStateMachine):
     _rules_per_class = {}  # type: Dict[type, List[classmethod]]
     _invariants_per_class = {}  # type: Dict[type, List[classmethod]]
     _base_rules_per_class = {}  # type: Dict[type, List[classmethod]]
+    _initializers_per_class = {}  # type: Dict[type, List[classmethod]]
+    _base_initializers_per_class = {}  # type: Dict[type, List[classmethod]]
 
     def __init__(self):
         if not self.rules():
@@ -460,6 +636,8 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.names_to_values = {}  # type: Dict[Text, Any]
         self.__stream = CUnicodeIO()
         self.__printer = RepresentationPrinter(self.__stream)
+        self._initialize_rules_to_run = copy(self.initialize_rules())
+        self.__rules_strategy = RuleStrategy(self)
 
     def __pretty(self, value):
         if isinstance(value, VarReference):
@@ -489,6 +667,23 @@ class RuleBasedStateMachine(GenericStateMachine):
 
     def bundle(self, name):
         return self.bundles.setdefault(name, [])
+
+    @classmethod
+    def initialize_rules(cls):
+        try:
+            return cls._initializers_per_class[cls]
+        except KeyError:
+            pass
+
+        for k, v in inspect.getmembers(cls):
+            r = getattr(v, INITIALIZE_RULE_MARKER, None)
+            if r is not None:
+                cls.define_initialize_rule(
+                    r.targets, r.function, r.arguments, r.precondition,
+                )
+        cls._initializers_per_class[cls] = \
+            cls._base_initializers_per_class.pop(cls, [])
+        return cls._initializers_per_class[cls]
 
     @classmethod
     def rules(cls):
@@ -522,6 +717,23 @@ class RuleBasedStateMachine(GenericStateMachine):
         return cls._invariants_per_class[cls]
 
     @classmethod
+    def define_initialize_rule(
+            cls, targets, function, arguments, precondition=None):
+        converted_arguments = {}
+        for k, v in arguments.items():
+            converted_arguments[k] = v
+        if cls in cls._initializers_per_class:
+            target = cls._initializers_per_class[cls]
+        else:
+            target = cls._base_initializers_per_class.setdefault(cls, [])
+
+        return target.append(
+            Rule(
+                targets, function, converted_arguments, precondition,
+            )
+        )
+
+    @classmethod
     def define_rule(cls, targets, function, arguments, precondition=None):
         converted_arguments = {}
         for k, v in arguments.items():
@@ -538,30 +750,14 @@ class RuleBasedStateMachine(GenericStateMachine):
         )
 
     def steps(self):
-        strategies = []
-        for rule in self.rules():
-            converted_arguments = {}
-            valid = True
-            if rule.precondition and not rule.precondition(self):
-                continue
-            for k, v in sorted(rule.arguments.items()):
-                if isinstance(v, Bundle):
-                    bundle = self.bundle(v.name)
-                    if not bundle:
-                        valid = False
-                        break
-                    v = BundleReferenceStrategy(v.name)
-                converted_arguments[k] = v
-            if valid:
-                strategies.append(tuples(
-                    just(rule), fixed_dictionaries(converted_arguments)
-                ))
-        if not strategies:
-            raise InvalidDefinition(
-                u'No progress can be made from state %r' % (self,)
-            )
+        # Pick initialize rules first
+        if self._initialize_rules_to_run:
+            return one_of([
+                tuples(just(rule), fixed_dictionaries(rule.arguments))
+                for rule in self._initialize_rules_to_run
+            ])
 
-        return one_of(strategies)
+        return self.__rules_strategy
 
     def print_start(self):
         report(u'state = %s()' % (self.__class__.__name__,))
@@ -596,6 +792,8 @@ class RuleBasedStateMachine(GenericStateMachine):
             )
             for target in rule.targets:
                 self.bundle(target).append(VarReference(name))
+        if self._initialize_rules_to_run:
+            self._initialize_rules_to_run.remove(rule)
 
     def check_invariants(self):
         for invar in self.invariants():

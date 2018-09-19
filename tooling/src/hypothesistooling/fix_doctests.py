@@ -29,6 +29,7 @@ from distutils.version import StrictVersion
 
 import hypothesistooling as tools
 from hypothesistooling.scripts import tool_path
+from hypothesistooling.projects.hypothesispython import BASE_DIR
 
 SPHINXBUILD = tool_path('sphinx-build')
 
@@ -59,8 +60,9 @@ class FailingExample(object):
         self.line = None if '?' in line else int(line)
         # Select the expected and returned output of the test
         got = lines.index('Got:')
-        self.expected_lines = \
-            dedent_lines(lines[lines.index('Expected:') + 1:got])
+        self.expected_lines = dedent_lines(
+            lines[lines.index('Expected:') + 1:got], force_newline=False
+        )
         self.got_lines = dedent_lines(lines[got + 1:])
         self.checked_ok = None
         self.adjust()
@@ -73,7 +75,7 @@ class FailingExample(object):
         if self.line is None and self.file.endswith('.rst'):
             # Sphinx reports an unknown line number when the doctest is
             # included from a docstring, so docutils must have misreported the
-            # file location.  We thus force it to the most likley candidate:
+            # file location.  We thus force it to the most likely candidate:
             self.file = 'src/hypothesis/strategies.py'
         with open(self.file) as f:
             lines = f.read().split('\n')
@@ -81,7 +83,7 @@ class FailingExample(object):
             # The raw line number is the first line of *input*, so adjust to
             # first line of output by skipping lines which start with a prompt
             while self.line < len(lines):
-                if lines[self.line].lstrip()[:4] not in ('>>> ', '... '):
+                if not lines[self.line].lstrip().startswith(('>>>', '...')):
                     break
                 self.line += 1
         else:
@@ -91,13 +93,15 @@ class FailingExample(object):
             self.line = 0
             while self.expected_lines[0] in stripped[self.line:]:
                 self.line = stripped[self.line:].index(self.expected_lines[0])
-                candidate = dedent_lines(lines[self.indices], False)
+                candidate = dedent_lines(lines[self.indices],
+                                         force_newline=False)
                 if candidate == self.expected_lines:
                     break
                 self.line += 1
         # Finally, set the flag for location quality
-        self.checked_ok = \
-            dedent_lines(lines[self.indices], False) == self.expected_lines
+        self.checked_ok = self.expected_lines == dedent_lines(
+            lines[self.indices], force_newline=False
+        )
 
     def __repr__(self):
         return '{}\nExpected: {!r:.60}\nGot:      {!r:.60}'.format(
@@ -108,7 +112,7 @@ def get_doctest_output():
     # Return a dict of filename: list of examples, sorted from last to first
     # so that replacing them in sequence works
     command = run([SPHINXBUILD, '-b', 'doctest', 'docs', 'docs/_build'],
-                  stdout=PIPE, stderr=PIPE, encoding='utf-8')
+                  stdout=PIPE, stderr=PIPE, encoding='utf-8', cwd=BASE_DIR)
     output = [FailingExample(c) for c in command.stdout.split('*' * 70)
               if c.strip().startswith('File "')]
     if not all(ex.checked_ok for ex in output):
@@ -125,12 +129,12 @@ def get_doctest_output():
 def indent_like(lines, like):
     """Indent ``lines`` to the same level as ``like``."""
     prefix = len(like[0].rstrip()) - len(dedent_lines(like)[0].rstrip())
-    return [prefix * ' ' + l for l in dedent_lines(lines, force_newline=True)]
+    return [prefix * ' ' + l for l in dedent_lines(lines, force_newline=True)
+            if l.strip()]
 
 
 def main():
-    os.chdir(tools.ROOT)
-    version = run([SPHINXBUILD, '--version'], stdout=PIPE,
+    version = run([SPHINXBUILD, '--version'], stdout=PIPE, cwd=BASE_DIR,
                   encoding='utf-8').stdout.lstrip('sphinx-build ')
     if StrictVersion(version) < '1.7':
         print('This script requires Sphinx 1.7 or later; got %s.\n' % version)
@@ -139,7 +143,7 @@ def main():
     if not failing:
         print('All doctests are OK')
         sys.exit(0)
-    if tools.has_uncommitted_changes('.'):
+    if tools.has_uncommitted_changes(BASE_DIR):
         print('Cannot fix doctests in place with uncommited changes')
         sys.exit(1)
 

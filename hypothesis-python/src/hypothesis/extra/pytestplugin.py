@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-import hypothesis.core as core
+from hypothesis import core, settings
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
 from hypothesis.statistics import collector
@@ -65,9 +65,18 @@ def pytest_addoption(parser):
     )
 
 
+def pytest_report_header(config):
+    profile = config.getoption(LOAD_PROFILE_OPTION)
+    if not profile:
+        profile = 'default'
+    settings_str = settings.get_profile(profile).show_changed()
+    if settings_str != '':
+        settings_str = ' -> %s' % (settings_str)
+    return 'hypothesis profile %r%s' % (profile, settings_str)
+
+
 def pytest_configure(config):
     core.running_under_pytest = True
-    from hypothesis import settings
     profile = config.getoption(LOAD_PROFILE_OPTION)
     if profile:
         settings.load_profile(profile)
@@ -83,7 +92,7 @@ def pytest_configure(config):
         'hypothesis: Tests which use hypothesis.')
 
 
-gathered_statistics = OrderedDict()
+gathered_statistics = OrderedDict()  # type: dict
 
 
 @pytest.mark.hookwrapper

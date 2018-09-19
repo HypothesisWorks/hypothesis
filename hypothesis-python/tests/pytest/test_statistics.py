@@ -43,10 +43,10 @@ def test_slow(x):
     time.sleep(0.1)
 
 
-@settings(max_examples=1000, suppress_health_check=HealthCheck.all())
+@settings(max_examples=100, suppress_health_check=HealthCheck.all())
 @given(integers())
 def test_iterations(x):
-    assume(x % 50 == 0)
+    assume(x == 0)
 """
 
 
@@ -64,7 +64,7 @@ def test_prints_statistics_given_option(testdir):
     assert 'Hypothesis Statistics' in out
     assert 'timeout=0.2' in out
     assert 'max_examples=100' in out
-    assert 'HypothesisDeprecationWarning' in out
+    assert '< 10% of examples satisfied assumptions' in out
 
 
 UNITTEST_TESTSUITE = """

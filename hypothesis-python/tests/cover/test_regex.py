@@ -25,6 +25,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given, assume
+from hypothesis.errors import InvalidArgument
 from tests.common.debug import find_any, assert_no_examples, \
     assert_all_examples
 from hypothesis.internal.compat import PY3, hrange, hunichr
@@ -131,10 +132,10 @@ def test_can_generate(pattern, encode):
 
 
 @pytest.mark.parametrize('pattern', [
-    re.compile(u'a', re.IGNORECASE),
-    u'(?i)a',
-    re.compile(u'[ab]', re.IGNORECASE),
-    u'(?i)[ab]',
+    re.compile(u'\\Aa\\Z', re.IGNORECASE),
+    u'(?i)\\Aa\\Z',
+    re.compile(u'\\A[ab]\\Z', re.IGNORECASE),
+    u'(?i)\\A[ab]\\Z',
 ])
 def test_literals_with_ignorecase(pattern):
     strategy = st.from_regex(pattern)
@@ -155,15 +156,19 @@ def test_not_literal_with_ignorecase(pattern):
 
 
 def test_any_doesnt_generate_newline():
-    assert_all_examples(st.from_regex(u'.'), lambda s: s != u'\n')
+    assert_all_examples(st.from_regex(u'\\A.\\Z'), lambda s: s != u'\n')
 
 
-@pytest.mark.parametrize('pattern', [re.compile(u'.', re.DOTALL), u'(?s).'])
+@pytest.mark.parametrize('pattern', [
+    re.compile(u'\\A.\\Z', re.DOTALL), u'(?s)\\A.\\Z'
+])
 def test_any_with_dotall_generate_newline(pattern):
     find_any(st.from_regex(pattern), lambda s: s == u'\n')
 
 
-@pytest.mark.parametrize('pattern', [re.compile(b'.', re.DOTALL), b'(?s).'])
+@pytest.mark.parametrize('pattern', [
+    re.compile(b'\\A.\\Z', re.DOTALL), b'(?s)\\A.\\Z'
+])
 def test_any_with_dotall_generate_newline_binary(pattern):
     find_any(st.from_regex(pattern), lambda s: s == b'\n')
 
@@ -214,7 +219,7 @@ def test_end_with_terminator_does_not_pad():
 
 
 def test_end():
-    strategy = st.from_regex(u'abc$')
+    strategy = st.from_regex(u'\\Aabc$')
 
     find_any(strategy, lambda s: s == u'abc')
     find_any(strategy, lambda s: s == u'abc\n')
@@ -303,7 +308,7 @@ def test_group_backref_may_not_be_present(s):
 @pytest.mark.skipif(sys.version_info[:2] < (3, 6),
                     reason='requires Python 3.6')
 def test_subpattern_flags():
-    strategy = st.from_regex(u'(?i)a(?-i:b)')
+    strategy = st.from_regex(u'(?i)\\Aa(?-i:b)\\Z')
 
     # "a" is case insensitive
     find_any(strategy, lambda s: s[0] == u'a')
@@ -384,3 +389,38 @@ def test_issue_992_regression(data):
             \.    # the decimal point
             \d *  # some fractional digits""", re.VERBOSE))
     data.draw(strat)
+
+
+@pytest.mark.parametrize('pattern,matching_str', [
+    (u'a', u'a'),
+    (u'[Aa]', u'A'),
+    (u'[ab]*', u'abb'),
+    (b'[Aa]', b'A'),
+    (b'[ab]*', b'abb'),
+    (re.compile(u'[ab]*', re.IGNORECASE), u'aBb'),
+    (re.compile(b'[ab]', re.IGNORECASE), b'A'),
+])
+def test_fullmatch_generates_example(pattern, matching_str):
+    find_any(st.from_regex(pattern, fullmatch=True),
+             lambda s: s == matching_str)
+
+
+@pytest.mark.parametrize('pattern,eqiv_pattern', [
+    (u'a', u'\\Aa\\Z'),
+    (u'[Aa]', u'\\A[Aa]\\Z'),
+    (u'[ab]*', u'\\A[ab]*\\Z'),
+    (b'[Aa]', br'\A[Aa]\Z'),
+    (b'[ab]*', br'\A[ab]*\Z'),
+    (re.compile(u'[ab]*', re.IGNORECASE),
+     re.compile(u'\\A[ab]*\\Z', re.IGNORECASE)),
+    (re.compile(br'[ab]', re.IGNORECASE),
+     re.compile(br'\A[ab]\Z', re.IGNORECASE))
+])
+def test_fullmatch_matches(pattern, eqiv_pattern):
+    assert_all_examples(st.from_regex(pattern, fullmatch=True),
+                        lambda s: re.match(eqiv_pattern, s))
+
+
+def test_fullmatch_must_be_bool():
+    with pytest.raises(InvalidArgument):
+        st.from_regex('a', fullmatch=None).validate()

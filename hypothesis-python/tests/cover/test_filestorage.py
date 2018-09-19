@@ -36,8 +36,8 @@ def teardown_function(function):
     previous_home_dir = None
 
 
-def test_homedir_exists_automatically():
-    assert os.path.exists(fs.hypothesis_home_dir())
+def test_defaults_to_the_default():
+    assert fs.hypothesis_home_dir() == fs.__hypothesis_home_directory_default
 
 
 def test_can_set_homedir_and_it_will_exist(tmpdir):

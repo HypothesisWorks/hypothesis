@@ -33,6 +33,34 @@ The process for submitting source code PRs is generally more involved
 If you're planning a larger change, the contributor guides (in the ``guides/``
 directory) will make sure you're on the right track.
 
+----------------------------------
+Installing from source and testing
+----------------------------------
+
+If you want to install directly from the source code (e.g. because you want to
+make changes and install the changed version) you can do this with:
+
+.. code:: bash
+
+  pip install -r requirements/test.txt
+  pip install -r requirements/tools.txt
+  pip install -e hypothesis-python/
+
+  # You don't need to run the tests, but here's the command:
+  pytest hypothesis-python/tests/cover/
+
+You may wish to do all of this in a
+`virtualenv <https://virtualenv.pypa.io/en/latest/>`_. For example:
+
+.. code:: bash
+
+  virtualenv venv
+  source venv/bin/activate
+  pip install hypothesis
+
+Will create an isolated environment where you can install and try out
+Hypothesis without affecting your system packages.
+
 -----------------------
 Copyright and Licensing
 -----------------------
@@ -63,6 +91,8 @@ first! Come `join us on IRC <https://hypothesis.readthedocs.io/en/latest/communi
 or open an issue. If it's really small feel free to open a work in progress pull request sketching
 out the idea, but it's best to get feedback from the Hypothesis maintainers
 before sinking a bunch of work into it.
+If you're working on an existing issue, leave a comment so we can try to avoid
+duplicating your work before you open a pull request.
 
 In general work-in-progress pull requests are totally welcome if you want early feedback
 or help with some of the tricky details. Don't be afraid to ask for help.
@@ -110,39 +140,39 @@ anything with external dependencies just goes in ``hypothesis.extra``.
 The build
 ~~~~~~~~~
 
-The build is orchestrated by a giant Makefile which handles installation of the relevant pythons.
-Actually running the tests is managed by `tox <https://tox.readthedocs.io/en/latest/>`_, but the Makefile
+The build is driven by a ``build.sh`` shell script, which delegates to a custom Python-based build system.
+Actually running the tests is managed by `tox <https://tox.readthedocs.io/en/latest/>`_, but the build system
 will call out to the relevant tox environments so you mostly don't have to know anything about that
-unless you want to make changes to the test config. You also mostly don't need to know anything about make
-except to type 'make' followed by the name of the task you want to run.
+unless you want to make changes to the test config. You also mostly don't need to know anything about the build system
+except to type ``./build.sh`` followed by the name of the task you want to run.
 
 All of it will be checked on CI so you don't *have* to run anything locally, but you might
 find it useful to do so: A full Travis run takes about twenty minutes, and there's often a queue,
 so running a smaller set of tests locally can be helpful.
 
-The makefile should be "fairly" portable, but is currently only known to work on Linux or OS X. It *might* work
+The build system should be "fairly" portable, but is currently only known to work on Linux or OS X. It *might* work
 on a BSD or on Windows with cygwin installed, but it hasn't been tried. If you try it and find it doesn't
 work, please do submit patches to fix that.
 
 Some notable commands:
 
-'make format' will reformat your code according to the Hypothesis coding style. You should use this before each
+``./build.sh check-coverage`` will verify 100% code coverage by running a
+curated subset of the test suite.
+
+``./build.sh check-py36`` (etc.) will run most of the test suite against a
+particular python version.
+
+``./build.sh format`` will reformat your code according to the Hypothesis coding style. You should use this before each
 commit ideally, but you only really have to use it when you want your code to be ready to merge.
 
-You can also use 'make check-format', which will run format and some linting and will then error if you have a
+You can also use ``./build.sh check-format``, which will run format and some linting and will then error if you have a
 git diff. Note: This will error even if you started with a git diff, so if you've got any uncommitted changes
 this will necessarily report an error.
 
-'make check' will run check-format and all of the tests. Warning: This will take a *very* long time. On Travis the
-build currently takes more than an hour of total time (it runs in parallel on Travis so you don't have to wait
-quite that long). If you've got a multi-core machine you can run 'make -j 2' (or any higher number if you want
-more) to run 2 jobs in parallel, but to be honest you're probably better off letting Travis run this step.
-
-You can also run a number of finer grained make tasks - check ``.travis.yml`` for a short list and
-the Makefile for details.
+Look in ``.travis.yml`` for a short list of other supported build tasks.
 
 Note: The build requires a lot of different versions of python, so rather than have you install them yourself,
-the makefile will install them itself in a local directory. This means that the first time you run a task you
+the build system will install them itself in a local directory. This means that the first time you run a task you
 may have to wait a while as the build downloads and installs the right version of python for you.
 
 --------------------
@@ -158,31 +188,42 @@ their individual contributions.
 * `Alex Stapleton <https://www.github.com/public>`_
 * `Alex Willmer <https://github.com/moreati>`_ (alex@moreati.org.uk)
 * `Ben Peterson <https://github.com/killthrush>`_ (killthrush@hotmail.com)
+* `Bill Tucker <https://github.com/imbilltucker>`_ (imbilltucker@gmail.com)
 * `Buck Evan, copyright Google LLC <https://github.com/bukzor>`_
+* `Cameron McGill <https://www.github.com/Cameron-JM>`_
 * `Charles O'Farrell <https://www.github.com/charleso>`_
 * `Charlie Tanksley <https://www.github.com/charlietanksley>`_
 * `Chase Garner <https://www.github.com/chasegarner>`_ (chase@garner.red)
 * `Chris Down  <https://chrisdown.name>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (ch.martin@gmail.com)
+* `Conrad Ho <https://www.github.com/conradho>`_ (conrad.alwin.ho@gmail.com)
 * `Cory Benfield <https://www.github.com/Lukasa>`_
 * `Cristi Cobzarenco <https://github.com/cristicbz>`_ (cristi@reinfer.io)
 * `David Bonner <https://github.com/rascalking>`_ (dbonner@gmail.com)
 * `David Chudzicki <https://github.com/dchudz>`_ (dchudz@gmail.com)
 * `Derek Gustafson <https://www.github.com/degustaf>`_
 * `Dion Misic <https://www.github.com/kingdion>`_ (dion.misic@gmail.com)
+* `Emmanuel Leblond <https://www.github.com/touilleMan>`_
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
+* `Gary Donovan <https://www.github.com/garyd203>`_
+* `Graham Williamson <https://github.com/00willo>`_
 * `Grant David Bachman <https://github.com/grantbachman>`_ (grantbachman@gmail.com)
 * `Gregory Petrosyan <https://github.com/flyingmutant>`_
+* `Jack Massey <https://github.com/massey101>`_
+* `Jakub Nabaglo <https://github.com/nbgl>`_ (j@nab.gl)
 * `Jeremy Thurgood <https://github.com/jerith>`_
 * `J.J. Green <http://soliton.vm.bytemark.co.uk/pub/jjg/>`_
 * `JP Viljoen <https://github.com/froztbyte>`_ (froztbyte@froztbyte.net)
+* `Joey Tuong <https://github.com/tetrapus>`_
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (jonty@jonty.co.uk)
 * `jwg4 <https://www.github.com/jwg4>`_
+* `Karthikeyan Singaravelan <https://www.github.com/tirkarthi>`_ (tir.karthi@gmail.com)
 * `kbara <https://www.github.com/kbara>`_
 * `Kyle Reeve <https://www.github.com/kreeve>`_ (krzw92@gmail.com)
 * `Lee Begg <https://www.github.com/llnz2>`_
 * `Louis Taylor <https://github.com/kragniz>`_
+* `Luke Barone-Adesi <https://github.com/baluke>`_
 * `marekventur <https://www.github.com/marekventur>`_
 * `Marius Gedminas <https://www.github.com/mgedmin>`_ (marius@gedmin.as)
 * `Markus Unterwaditzer <http://github.com/untitaker/>`_ (markus@unterwaditzer.net)
@@ -191,11 +232,19 @@ their individual contributions.
 * `Maxim Kulkin <https://www.github.com/maximkulkin>`_ (maxim.kulkin@gmail.com)
 * `mulkieran <https://www.github.com/mulkieran>`_
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
+* `Paul Lorett Amazona <https://github.com/whatevergeek>`_
 * `Peadar Coyle <http://www.github.com/springcoil>`_ (peadarcoyle@gmail.com)
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
 * `Sam Hames <https://www.github.com/SamHames>`_
+* `Sanyam Khurana <https://github.com/CuriousLearner>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
+* `Stuart Cook <https://www.github.com/Zalathar>`_
+* `Sushobhit <https://github.com/sushobhit27>`_ (sushobhitsolanki@gmail.com)
 * `Tariq Khokhar <https://www.github.com/tkb>`_ (tariq@khokhar.net)
+* `Tessa Bradbury <https://www.github.com/tessereth>`_
+* `Tim Martin <https://www.github.com/timmartin>`_ (tim@asymptotic.co.uk)
+* `Tom McDermott <https://www.github.com/sponster-au>`_ (sponster@gmail.com)
+* `Vidya Rani <https://www.github.com/vidyarani-dg>`_ (vidyarani.d.g@gmail.com)
 * `Will Hall <https://www.github.com/wrhall>`_ (wrsh07@gmail.com)
 * `Will Thompson <https://www.github.com/wjt>`_ (will@willthompson.co.uk)
 * `Zac Hatfield-Dodds <https://www.github.com/Zac-HD>`_ (zac.hatfield.dodds@gmail.com)

@@ -59,7 +59,9 @@ Hypothesis divides tests into four logically distinct phases:
    one (explicit examples cannot be shrunk).
 
 The phases setting provides you with fine grained control over which of these run,
-with each phase corresponding to a value on the :class:`~hypothesis._settings.Phase` enum:
+with each phase corresponding to a value on the :class:`~hypothesis.Phase` enum:
+
+.. class:: hypothesis.Phase
 
 1. ``Phase.explicit`` controls whether explicit examples are run.
 2. ``Phase.reuse`` controls whether previous examples will be reused.
@@ -79,7 +81,7 @@ Seeing intermediate result
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To see what's going on while Hypothesis runs your tests, you can turn
-up the verbosity setting. This works with both :func:`~hypothesis.core.find`
+up the verbosity setting. This works with both :func:`~hypothesis.find`
 and :func:`@given <hypothesis.given>`.
 
 .. doctest::
@@ -89,16 +91,25 @@ and :func:`@given <hypothesis.given>`.
     >>> find(lists(integers()), any, settings=settings(verbosity=Verbosity.verbose))
     Tried non-satisfying example []
     Found satisfying example [-1198601713, -67, 116, -29578]
-    Shrunk example to [-67, 116, -29578]
-    Shrunk example to [116, -29578]
-    Shrunk example to [-29578]
-    Shrunk example to [-115]
-    Shrunk example to [115]
-    Shrunk example to [-57]
-    Shrunk example to [29]
-    Shrunk example to [-14]
-    Shrunk example to [-7]
+    Shrunk example to [-1198601713, -67, 0, -29578]
+    Shrunk example to [-1198601713, -67, 0, -138]
+    Shrunk example to [-1198601600, -67, 0, -138]
+    Shrunk example to [-1191228800, -67, 0, -138]
+    Shrunk example to [-8435072, -67, 0, -138]
+    Shrunk example to [-8435072, 0, 0, -138]
+    Shrunk example to [-8421504, 0, 0, -138]
+    Shrunk example to [-8421504, 0, 0, -128]
+    Shrunk example to [-8421504, 0, 0]
+    Shrunk example to [-8421504, 0]
+    Shrunk example to [-8421504]
+    Shrunk example to [-32896]
+    Shrunk example to [-128]
+    Shrunk example to [64]
+    Shrunk example to [32]
+    Shrunk example to [16]
+    Shrunk example to [8]
     Shrunk example to [4]
+    Shrunk example to [3]
     Shrunk example to [2]
     Shrunk example to [1]
     [1]
@@ -151,40 +162,7 @@ right, all newly created settings objects which are not explicitly based off
 another settings are based off the default, so will inherit any values that are
 not explicitly set from it.
 
-You can change the defaults by using profiles (see next section), but you can
-also override them locally by using a settings object as a :ref:`context manager <python:context-managers>`
-
-
-.. doctest::
-
-    >>> with settings(max_examples=150):
-    ...     print(settings.default.max_examples)
-    ...     print(settings().max_examples)
-    150
-    150
-    >>> settings().max_examples
-    100
-
-Note that after the block exits the default is returned to normal.
-
-You can use this by nesting test definitions inside the context:
-
-.. code:: python
-
-    from hypothesis import given, settings
-
-    with settings(max_examples=500):
-        @given(integers())
-        def test_this_thoroughly(x):
-            pass
-
-All settings objects created or tests defined inside the block will inherit their
-defaults from the settings object used as the context. You can still override them
-with custom defined settings of course.
-
-Warning: If you use define test functions which don't use :func:`@given <hypothesis.given>`
-inside a context block, these will not use the enclosing settings. This is because the context
-manager only affects the definition, not the execution of the function.
+You can change the defaults by using profiles.
 
 .. _settings_profiles:
 
@@ -199,6 +177,9 @@ so you are more likely to find bugs.
 
 Hypothesis allows you to define different settings profiles. These profiles
 can be loaded at any time.
+
+.. autoclass:: hypothesis.settings
+    :members: register_profile, get_profile, load_profile
 
 Loading a profile changes the default settings but will not change the behavior
 of tests that explicitly change the settings.

@@ -23,7 +23,6 @@ from __future__ import division, print_function, absolute_import
 import os
 import ast
 import sys
-import time
 import zlib
 import base64
 import random as rnd_module
@@ -35,9 +34,6 @@ from random import Random
 from unittest import TestCase
 
 import attr
-from coverage import CoverageData
-from coverage.files import canonical_filename
-from coverage.collector import Collector
 
 import hypothesis.strategies as st
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
@@ -49,16 +45,16 @@ from hypothesis.version import __version__
 from hypothesis._settings import Phase, Verbosity, HealthCheck, \
     PrintSettings
 from hypothesis._settings import settings as Settings
-from hypothesis._settings import note_deprecation
+from hypothesis._settings import local_settings, note_deprecation
 from hypothesis.executors import new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import ceil, hbytes, qualname, \
     str_to_bytes, benchmark_time, get_type_hints, getfullargspec, \
-    int_from_bytes, encoded_filepath, bad_django_TestCase
-from hypothesis.internal.coverage import IN_COVERAGE_TESTS
+    int_from_bytes, bad_django_TestCase
+from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.utils.conventions import infer, not_set
-from hypothesis.internal.escalation import is_hypothesis_file, \
+from hypothesis.internal.escalation import \
     escalate_hypothesis_internal_error
 from hypothesis.internal.reflection import is_mock, proxies, nicerepr, \
     arg_string, impersonate, function_digest, fully_qualified_name, \
@@ -70,14 +66,13 @@ from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.internal.conjecture.engine import ExitReason, \
     ConjectureRunner, sort_key
 
-try:
-    from coverage.tracer import CFileDisposition as FileDisposition
-except ImportError:  # pragma: no cover
-    from coverage.collector import FileDisposition
-
 if False:
-    from typing import Any, Dict, Callable, Optional, Union  # noqa
+    from typing import (  # noqa
+        Any, Dict, Callable, Hashable, Optional, Union, TypeVar,
+    )
     from hypothesis.utils.conventions import InferType  # noqa
+
+    TestFunc = TypeVar('TestFunc', bound=Callable)
 
 
 running_under_pytest = False
@@ -95,6 +90,7 @@ class Example(object):
 
 
 def example(*args, **kwargs):
+    # type: (*Any, **Any) -> Callable[[TestFunc], TestFunc]
     """A decorator which ensures a specific example is always tested."""
     if args and kwargs:
         raise InvalidArgument(
@@ -114,6 +110,7 @@ def example(*args, **kwargs):
 
 
 def seed(seed):
+    # type: (Hashable) -> Callable[[TestFunc], TestFunc]
     """seed: Start the test execution from a specific seed.
 
     May be any hashable object. No exact meaning for seed is provided
@@ -170,7 +167,12 @@ def decode_failure(blob):
     if prefix == b'\0':
         return buffer[1:]
     elif prefix == b'\1':
-        return zlib.decompress(buffer[1:])
+        try:
+            return zlib.decompress(buffer[1:])
+        except zlib.error:
+            raise InvalidArgument(
+                'Invalid zlib compression for blob %r' % (blob,)
+            )
     else:
         raise InvalidArgument(
             'Could not decode blob %r: Invalid start byte %r' % (
@@ -281,19 +283,18 @@ def execute_explicit_examples(
         example_string = '%s(%s)' % (
             test.__name__, arg_string(test, arguments, example_kwargs)
         )
-        try:
-            with BuildContext(None) as b:
-                if settings.verbosity >= Verbosity.verbose:
-                    report('Trying example: ' + example_string)
-                test_runner(
-                    None,
-                    lambda data: test(*arguments, **example_kwargs)
-                )
-        except BaseException:
-            report('Falsifying example: ' + example_string)
-            for n in b.notes:
-                report(n)
-            raise
+        with local_settings(settings):
+            try:
+                with BuildContext(None) as b:
+                    verbose_report('Trying example: ' + example_string)
+                    test_runner(
+                        None, lambda data: test(*arguments, **example_kwargs)
+                    )
+            except BaseException:
+                report('Falsifying example: ' + example_string)
+                for n in b.notes:
+                    report(n)
+                raise
 
 
 def get_random_for_wrapped_test(test, wrapped_test):
@@ -384,7 +385,25 @@ def skip_exceptions_to_reraise():
     return tuple(sorted(exceptions, key=str))
 
 
-exceptions_to_reraise = skip_exceptions_to_reraise()
+EXCEPTIONS_TO_RERAISE = skip_exceptions_to_reraise()
+
+
+def failure_exceptions_to_catch():
+    """Return a tuple of exceptions meaning 'this test has failed', to catch.
+
+    This is intended to cover most common test runners; if you would
+    like another to be added please open an issue or pull request.
+    """
+    exceptions = [Exception]
+    try:  # pragma: no cover
+        from _pytest.outcomes import Failed
+        exceptions.append(Failed)
+    except ImportError:
+        pass
+    return tuple(exceptions)
+
+
+EXCEPTIONS_TO_FAIL = failure_exceptions_to_catch()
 
 
 def new_given_argspec(original_argspec, generator_kwargs):
@@ -404,47 +423,6 @@ ROOT = os.path.dirname(__file__)
 STDLIB = os.path.dirname(os.__file__)
 
 
-def hypothesis_check_include(filename):  # pragma: no cover
-    if is_hypothesis_file(filename):
-        return False
-    return filename.endswith('.py')
-
-
-def escalate_warning(msg, slug=None):  # pragma: no cover
-    if slug is not None:
-        msg = '%s (%s)' % (msg, slug)
-    raise AssertionError(
-        'Unexpected warning from coverage: %s' % (msg,)
-    )
-
-
-class Arc(object):
-    __slots__ = ('filename', 'source', 'target')
-
-    def __init__(self, filename, source, target):
-        self.filename = filename
-        self.source = source
-        self.target = target
-
-
-ARC_CACHE = {}  # type: Dict[str, Dict[Any, Dict[Any, Arc]]]
-
-
-def arc(filename, source, target):
-    try:
-        return ARC_CACHE[filename][source][target]
-    except KeyError:
-        result = Arc(filename, source, target)
-        ARC_CACHE.setdefault(
-            filename, {}).setdefault(source, {})[target] = result
-        return result
-
-
-in_given = False
-
-FORCE_PURE_TRACER = os.getenv('HYPOTHESIS_FORCE_PURE_TRACER') == 'true'
-
-
 class StateForActualGivenExecution(object):
 
     def __init__(
@@ -458,53 +436,15 @@ class StateForActualGivenExecution(object):
         self.__was_flaky = False
         self.random = random
         self.__warned_deadline = False
-        self.__existing_collector = None
         self.__test_runtime = None
         self.__had_seed = had_seed
 
         self.test = test
 
-        self.coverage_data = CoverageData()
         self.files_to_propagate = set()
         self.failed_normally = False
 
         self.used_examples_from_database = False
-
-        if settings.use_coverage and not IN_COVERAGE_TESTS:  # pragma: no cover
-            if Collector._collectors:
-                parent = Collector._collectors[-1]
-
-                # We include any files the collector has already decided to
-                # trace whether or not on re-investigation we still think it
-                # wants to trace them. The reason for this is that in some
-                # cases coverage gets the wrong answer when we run it
-                # ourselves due to reasons that are our fault but are hard to
-                # fix (we lie about where certain functions come from).
-                # This causes us to not record the actual test bodies as
-                # covered. But if we intended to trace test bodies then the
-                # file must already have been traced when getting to this point
-                # and so will already be in the collector's data. Hence we can
-                # use that information to get the correct answer here.
-                # See issue 997 for more context.
-                self.files_to_propagate = set(parent.data)
-                self.hijack_collector(parent)
-
-            self.collector = Collector(
-                branch=True,
-                timid=FORCE_PURE_TRACER,
-                should_trace=self.should_trace,
-                check_include=hypothesis_check_include,
-                concurrency='thread',
-                warn=escalate_warning,
-            )
-            self.collector.reset()
-
-            # Hide the other collectors from this one so it doesn't attempt to
-            # pause them (we're doing trace function management ourselves so
-            # this will just cause problems).
-            self.collector._collectors = []
-        else:
-            self.collector = None
 
     def execute(
         self, data,
@@ -533,13 +473,14 @@ class StateForActualGivenExecution(object):
                     ):
                         self.__warned_deadline = True
                         note_deprecation((
-                            'Test took %.2fms to run. In future the default '
-                            'deadline setting will be 200ms, which will '
-                            'make this an error. You can set deadline to '
+                            'Test: %s took %.2fms to run. In future the '
+                            'default deadline setting will be 200ms, which '
+                            'will make this an error. You can set deadline to '
                             'an explicit value of e.g. %d to turn tests '
                             'slower than this into an error, or you can set '
                             'it to None to disable this check entirely.') % (
-                                runtime, ceil(runtime / 100) * 100,
+                                self.test.__name__, runtime,
+                                ceil(runtime / 100) * 100,
                         ))
                 else:
                     current_deadline = self.settings.deadline
@@ -552,10 +493,10 @@ class StateForActualGivenExecution(object):
         def run(data):
             if not hasattr(data, 'can_reproduce_example_from_repr'):
                 data.can_reproduce_example_from_repr = True
-            with self.settings:
+            with local_settings(self.settings):
                 with BuildContext(data, is_final=is_final):
-                    rnd_module.seed(0)
-                    args, kwargs = data.draw(self.search_strategy)
+                    with deterministic_PRNG():
+                        args, kwargs = data.draw(self.search_strategy)
                     if expected_failure is not None:
                         text_repr[0] = arg_string(test, args, kwargs)
 
@@ -572,14 +513,8 @@ class StateForActualGivenExecution(object):
                             lambda: 'Trying example: %s(%s)' % (
                                 test.__name__, arg_string(test, args, kwargs)))
 
-                    if self.collector is None or not collect:
+                    with deterministic_PRNG():
                         return test(*args, **kwargs)
-                    else:  # pragma: no cover
-                        try:
-                            self.collector.start()
-                            return test(*args, **kwargs)
-                        finally:
-                            self.collector.stop()
 
         result = self.test_runner(data, run)
         if expected_failure is not None:
@@ -612,73 +547,9 @@ class StateForActualGivenExecution(object):
             ) % (test.__name__, text_repr[0],))
         return result
 
-    def should_trace(self, original_filename, frame):  # pragma: no cover
-        disp = FileDisposition()
-        assert original_filename is not None
-        disp.original_filename = original_filename
-        disp.canonical_filename = encoded_filepath(
-            canonical_filename(original_filename))
-        disp.source_filename = disp.canonical_filename
-        disp.reason = ''
-        disp.file_tracer = None
-        disp.has_dynamic_filename = False
-        disp.trace = hypothesis_check_include(disp.canonical_filename)
-        if not disp.trace:
-            disp.reason = 'hypothesis internal reasons'
-        elif self.__existing_collector is not None:
-            check = self.__existing_collector.should_trace(
-                original_filename, frame)
-            if check.trace:
-                self.files_to_propagate.add(check.canonical_filename)
-        return disp
-
-    def hijack_collector(self, collector):  # pragma: no cover
-        self.__existing_collector = collector
-        original_save_data = collector.save_data
-
-        def save_data(covdata):
-            original_save_data(covdata)
-            if collector.branch:
-                covdata.add_arcs({
-                    filename: {
-                        arc: None
-                        for arc in self.coverage_data.arcs(filename) or ()}
-                    for filename in self.files_to_propagate
-                })
-            else:
-                covdata.add_lines({
-                    filename: {
-                        line: None
-                        for line in self.coverage_data.lines(filename) or ()}
-                    for filename in self.files_to_propagate
-                })
-            collector.save_data = original_save_data
-        collector.save_data = save_data
-
     def evaluate_test_data(self, data):
         try:
-            if self.collector is None:
-                result = self.execute(data)
-            else:  # pragma: no cover
-                # This should always be a no-op, but the coverage tracer has
-                # a bad habit of resurrecting itself.
-                original = sys.gettrace()
-                sys.settrace(None)
-                try:
-                    self.collector.data = {}
-                    result = self.execute(data, collect=True)
-                finally:
-                    sys.settrace(original)
-                    covdata = CoverageData()
-                    self.collector.save_data(covdata)
-                    self.coverage_data.update(covdata)
-                    for filename in covdata.measured_files():
-                        if is_hypothesis_file(filename):
-                            continue
-                        data.tags.update(
-                            arc(filename, source, target)
-                            for source, target in covdata.arcs(filename)
-                        )
+            result = self.execute(data)
             if result is not None:
                 fail_health_check(self.settings, (
                     'Tests run under @given should return None, but '
@@ -690,7 +561,7 @@ class StateForActualGivenExecution(object):
         except (
             HypothesisDeprecationWarning, FailedHealthCheck,
             StopTest,
-        ) + exceptions_to_reraise:
+        ) + EXCEPTIONS_TO_RERAISE:
             raise
         except Exception as e:
             escalate_hypothesis_internal_error()
@@ -712,46 +583,37 @@ class StateForActualGivenExecution(object):
             database_key = str_to_bytes(fully_qualified_name(self.test))
         else:
             database_key = None
-        self.start_time = time.time()
-        global in_given
+        self.start_time = benchmark_time()
         runner = ConjectureRunner(
             self.evaluate_test_data,
             settings=self.settings, random=self.random,
             database_key=database_key,
         )
-
-        if in_given or self.collector is None:
+        try:
             runner.run()
-        else:  # pragma: no cover
-            in_given = True
-            original_trace = sys.gettrace()
-            try:
-                sys.settrace(None)
-                runner.run()
-            finally:
-                in_given = False
-                sys.settrace(original_trace)
-                self.used_examples_from_database = \
-                    runner.used_examples_from_database
+        finally:
+            self.used_examples_from_database = \
+                runner.used_examples_from_database
         note_engine_for_statistics(runner)
-        run_time = time.time() - self.start_time
+        run_time = benchmark_time() - self.start_time
 
         self.used_examples_from_database = runner.used_examples_from_database
 
         if runner.used_examples_from_database:
             if self.settings.derandomize:
-                note_deprecation(
+                note_deprecation((
                     'In future derandomize will imply database=None, but your '
-                    'test is currently using examples from the database. To '
-                    'get the future behaviour, update your settings to '
-                    'include database=None.'
+                    'test: %s is currently using examples from the database. '
+                    'To get the future behaviour, update your settings to '
+                    'include database=None.') % (self.test.__name__, )
                 )
             if self.__had_seed:
-                note_deprecation(
+                note_deprecation((
                     'In future use of @seed will imply database=None in your '
-                    'settings, but your test is currently using examples from '
-                    'the database. To get the future behaviour, update your '
-                    'settings for this test to include database=None.'
+                    'settings, but your test: %s is currently using examples '
+                    'from the database. To get the future behaviour, update '
+                    'your settings for this test to include database=None.')
+                    % (self.test.__name__,)
                 )
 
         timed_out = runner.exit_reason == ExitReason.timeout
@@ -763,19 +625,6 @@ class StateForActualGivenExecution(object):
                 key=lambda d: sort_key(d.buffer), reverse=True
             )
         else:
-            if timed_out:
-                note_deprecation((
-                    'Your tests are hitting the settings timeout (%.2fs). '
-                    'This functionality will go away in a future release '
-                    'and you should not rely on it. Instead, try setting '
-                    'max_examples to be some value lower than %d (the number '
-                    'of examples your test successfully ran here). Or, if you '
-                    'would prefer your tests to run to completion, regardless '
-                    'of how long they take, you can set the timeout value to '
-                    'hypothesis.unlimited.'
-                ) % (
-                    self.settings.timeout, runner.valid_examples),
-                    self.settings)
             if runner.valid_examples == 0:
                 if timed_out:
                     raise Timeout((
@@ -839,6 +688,7 @@ class StateForActualGivenExecution(object):
                     if (
                         self.settings.print_blob is PrintSettings.ALWAYS or (
                             self.settings.print_blob is PrintSettings.INFER and
+                            self.settings.verbosity >= Verbosity.normal and
                             not can_use_repr and
                             len(failure_blob) < 200
                         )
@@ -891,6 +741,25 @@ def fake_subTest(self, msg=None, **__):
     yield
 
 
+@attr.s()
+class HypothesisHandle(object):
+    """This object is provided as the .hypothesis attribute on @given tests.
+
+    Downstream users can reassign its attributes to insert custom logic into
+    the execution of each case, for example by converting an async into a
+    sync function.
+
+    This must be an attribute of an attribute, because reassignment of a
+    first-level attribute would not be visible to Hypothesis if the function
+    had been decorated before the assignment.
+
+    See https://github.com/HypothesisWorks/hypothesis/issues/1257 for more
+    information.
+    """
+
+    inner_test = attr.ib()
+
+
 def given(
     *given_arguments,  # type: Union[SearchStrategy, InferType]
     **given_kwargs  # type: Union[SearchStrategy, InferType]
@@ -936,15 +805,17 @@ def given(
             # Tell pytest to omit the body of this function from tracebacks
             __tracebackhide__ = True
 
+            test = wrapped_test.hypothesis.inner_test
+
             if getattr(test, 'is_hypothesis_test', False):
-                note_deprecation(
-                    'You have applied @given to a test more than once. In '
+                note_deprecation((
+                    'You have applied @given to test: %s more than once. In '
                     'future this will be an error. Applying @given twice '
                     'wraps the test twice, which can be extremely slow. A '
                     'similar effect can be gained by combining the arguments '
                     'of the two calls to given. For example, instead of '
                     '@given(booleans()) @given(integers()), you could write '
-                    '@given(booleans(), integers())'
+                    '@given(booleans(), integers())') % (test.__name__, )
                 )
 
             settings = wrapped_test._hypothesis_internal_use_settings
@@ -1049,16 +920,17 @@ def given(
                 generated_seed = \
                     wrapped_test._hypothesis_internal_use_generated_seed
                 if generated_seed is not None and not state.failed_normally:
-                    if running_under_pytest:
-                        report((
-                            'You can add @seed(%(seed)d) to this test or run '
-                            'pytest with --hypothesis-seed=%(seed)d to '
-                            'reproduce this failure.') % {
-                                'seed': generated_seed},)
-                    else:
-                        report((
-                            'You can add @seed(%d) to this test to reproduce '
-                            'this failure.') % (generated_seed,))
+                    with local_settings(settings):
+                        if running_under_pytest:
+                            report(
+                                'You can add @seed(%(seed)d) to this test or '
+                                'run pytest with --hypothesis-seed=%(seed)d '
+                                'to reproduce this failure.' % {
+                                    'seed': generated_seed})
+                        else:
+                            report(
+                                'You can add @seed(%d) to this test to '
+                                'reproduce this failure.' % (generated_seed,))
                 raise
 
         for attrib in dir(test):
@@ -1077,6 +949,7 @@ def given(
         wrapped_test._hypothesis_internal_use_reproduce_failure = getattr(
             test, '_hypothesis_internal_use_reproduce_failure', None
         )
+        wrapped_test.hypothesis = HypothesisHandle(test)
         return wrapped_test
     return run_test_with_generator
 
@@ -1091,10 +964,8 @@ def find(
     # type: (...) -> Any
     """Returns the minimal example from the given strategy ``specifier`` that
     matches the predicate function ``condition``."""
-    settings = settings or Settings(
-        max_examples=2000,
-        max_shrinks=2000,
-    )
+    if settings is None:
+        settings = Settings(max_examples=2000)
     settings = Settings(settings, suppress_health_check=HealthCheck.all())
 
     if database_key is None and settings.database is not None:
@@ -1118,9 +989,10 @@ def find(
         with BuildContext(data):
             try:
                 data.is_find = True
-                result = data.draw(search)
-                data.note(result)
-                success = condition(result)
+                with deterministic_PRNG():
+                    result = data.draw(search)
+                    data.note(result)
+                    success = condition(result)
             except UnsatisfiedAssumption:
                 data.mark_invalid()
 
@@ -1145,19 +1017,20 @@ def find(
                     last_data[0] = data
         if success and not data.frozen:
             data.mark_interesting()
-    start = time.time()
+    start = benchmark_time()
     runner = ConjectureRunner(
         template_condition, settings=settings, random=random,
         database_key=database_key,
     )
     runner.run()
     note_engine_for_statistics(runner)
-    run_time = time.time() - start
+    run_time = benchmark_time() - start
     if runner.interesting_examples:
         data = ConjectureData.for_buffer(
             list(runner.interesting_examples.values())[0].buffer)
         with BuildContext(data):
-            return data.draw(search)
+            with deterministic_PRNG():
+                return data.draw(search)
     if runner.valid_examples == 0 and (
         runner.exit_reason != ExitReason.finished
     ):

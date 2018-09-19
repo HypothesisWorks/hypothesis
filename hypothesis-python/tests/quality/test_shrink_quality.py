@@ -17,21 +17,21 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
 from random import Random
 from fractions import Fraction
 from functools import reduce
+from collections import namedtuple
 
 import pytest
 from flaky import flaky
 
-from hypothesis import find, assume, settings
+from hypothesis import assume, settings
 from tests.common import parametrize
 from tests.common.debug import minimal
-from hypothesis.strategies import just, sets, text, lists, tuples, \
-    booleans, integers, fractions, frozensets, dictionaries, \
-    sampled_from
-from hypothesis.internal.compat import PY3, OrderedDict, hrange
+from hypothesis.strategies import just, none, sets, text, lists, builds, \
+    tuples, booleans, integers, fractions, frozensets, dictionaries, \
+    sampled_from, fixed_dictionaries
+from hypothesis.internal.compat import OrderedDict, hrange
 
 
 def test_integers_from_minimizes_leftwards():
@@ -137,7 +137,7 @@ def test_flatmap_rectangles():
     def lists_of_length(n):
         return lists(sampled_from('ab'), min_size=n, max_size=n)
 
-    xs = find(lengths.flatmap(
+    xs = minimal(lengths.flatmap(
         lambda w: lists(lists_of_length(w))), lambda x: ['a', 'b'] in x,
         settings=settings(database=None, max_examples=2000)
     )
@@ -193,12 +193,6 @@ def test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe():
     assert x == target
 
 
-@pytest.mark.skipif(PY3, reason=u'Python 3 has better integers')
-def test_minimize_long():
-    assert minimal(
-        integers(), lambda x: type(x).__name__ == u'long') == sys.maxint + 1
-
-
 def test_find_large_union_list():
     size = 10
 
@@ -246,3 +240,110 @@ def test_reordering_bytes(seed):
     )
 
     assert ls == sorted(ls)
+
+
+def test_minimize_long_list():
+    assert minimal(
+        lists(booleans(), min_size=50), lambda x: len(x) >= 70
+    ) == [False] * 70
+
+
+def test_minimize_list_of_longish_lists():
+    size = 5
+    xs = minimal(
+        lists(lists(booleans())),
+        lambda x: len([t for t in x if any(t) and len(t) >= 2]) >= size)
+    assert len(xs) == size
+    for x in xs:
+        assert x == [False, True]
+
+
+def test_minimize_list_of_fairly_non_unique_ints():
+    xs = minimal(lists(integers()), lambda x: len(set(x)) < len(x))
+    assert len(xs) == 2
+
+
+def test_list_with_complex_sorting_structure():
+    xs = minimal(
+        lists(lists(booleans())),
+        lambda x: [list(reversed(t)) for t in x] > x and len(x) > 3)
+    assert len(xs) == 4
+
+
+def test_list_with_wide_gap():
+    xs = minimal(lists(integers()), lambda x: x and (max(x) > min(x) + 10 > 0))
+    assert len(xs) == 2
+    xs.sort()
+    assert xs[1] == 11 + xs[0]
+
+
+def test_minimize_namedtuple():
+    T = namedtuple(u'T', (u'a', u'b'))
+    tab = minimal(
+        builds(T, integers(), integers()),
+        lambda x: x.a < x.b)
+    assert tab.b == tab.a + 1
+
+
+def test_minimize_dict():
+    tab = minimal(
+        fixed_dictionaries({u'a': booleans(), u'b': booleans()}),
+        lambda x: x[u'a'] or x[u'b']
+    )
+    assert not (tab[u'a'] and tab[u'b'])
+
+
+def test_minimize_list_of_sets():
+    assert minimal(
+        lists(sets(booleans())),
+        lambda x: len(list(filter(None, x))) >= 3) == (
+        [set((False,))] * 3
+    )
+
+
+def test_minimize_list_of_lists():
+    assert minimal(
+        lists(lists(integers())),
+        lambda x: len(list(filter(None, x))) >= 3) == (
+        [[0]] * 3
+    )
+
+
+def test_minimize_list_of_tuples():
+    xs = minimal(
+        lists(tuples(integers(), integers())), lambda x: len(x) >= 2)
+    assert xs == [(0, 0), (0, 0)]
+
+
+def test_minimize_multi_key_dicts():
+    assert minimal(
+        dictionaries(keys=booleans(), values=booleans()),
+        bool
+    ) == {False: False}
+
+
+def test_multiple_empty_lists_are_independent():
+    x = minimal(lists(lists(none(), max_size=0)), lambda t: len(t) >= 2)
+    u, v = x
+    assert u is not v
+
+
+def test_can_find_sets_unique_by_incomplete_data():
+    size = 5
+    ls = minimal(
+        lists(tuples(integers(), integers()), unique_by=max),
+        lambda x: len(x) >= size
+    )
+    assert len(ls) == size
+    values = sorted(list(map(max, ls)))
+    assert values[-1] - values[0] == size - 1
+    for u, v in ls:
+        assert u <= 0
+
+
+@pytest.mark.parametrize(u'n', range(10))
+def test_lists_forced_near_top(n):
+    assert minimal(
+        lists(integers(), min_size=n, max_size=n + 2),
+        lambda t: len(t) == n + 2
+    ) == [0] * (n + 2)

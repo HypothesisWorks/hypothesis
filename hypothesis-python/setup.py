@@ -53,11 +53,12 @@ assert __version__ is not None
 
 
 extras = {
-    'datetime': ['pytz'],
-    'pytz': ['pytz'],
+    'datetime': ['pytz>=2014.1'],
+    'pytz': ['pytz>=2014.1'],
+    'dateutil': ['python-dateutil>=1.4'],
     'fakefactory': ['Faker>=0.7'],
     'numpy': ['numpy>=1.9.0'],
-    'pytest': ['pytest>=2.8.0'],
+    'pytest': ['pytest>=3.0'],
     # We only support Django versions with upstream support - see
     # https://www.djangoproject.com/download/#supported-versions
     'django': ['pytz', 'django>=1.11'],
@@ -67,7 +68,7 @@ extras['faker'] = extras['fakefactory']
 extras['all'] = sorted(sum(extras.values(), []))
 
 
-install_requires = ['attrs>=16.0.0', 'coverage']
+install_requires = ['attrs>=16.0.0']
 # Using an environment marker on enum34 makes the dependency condition
 # independent of the build environemnt, which is important for wheels.
 # https://www.python.org/dev/peps/pep-0345/#environment-markers
@@ -85,7 +86,7 @@ setuptools.setup(
     author_email='david@drmaciver.com',
     packages=setuptools.find_packages(SOURCE),
     package_dir={'': SOURCE},
-    # package_data={'': ['py.typed']},  # un-comment to release type hints
+    package_data={'hypothesis': ['py.typed']},
     url=(
         'https://github.com/HypothesisWorks/hypothesis/'
         'tree/master/hypothesis-python'
@@ -109,12 +110,15 @@ setuptools.setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
         'Topic :: Software Development :: Testing',
+        'Framework :: Pytest',
     ],
     entry_points={
         'pytest11': ['hypothesispytest = hypothesis.extra.pytestplugin'],
     },
     long_description=open(README).read(),
+    keywords='python testing fuzzing property-based-testing',
 )

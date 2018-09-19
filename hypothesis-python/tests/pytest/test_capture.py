@@ -81,7 +81,8 @@ def test_output_emitting_unicode(testdir, monkeypatch):
         script, '--verbose', '--capture=no')
     out = '\n'.join(result.stdout.lines)
     assert 'test_emits_unicode' in out
-    assert escape_unicode_characters(hunichr(1001)) in out
+    assert hunichr(1001) in out or \
+        escape_unicode_characters(hunichr(1001)) in out
     assert result.ret == 0
 
 

@@ -71,6 +71,7 @@ intersphinx_mapping = {
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
     'pytest': ('https://docs.pytest.org/en/stable/', None),
     'django': ('https://django.readthedocs.io/en/stable/', None),
+    'attrs': ('http://www.attrs.org/en/stable/', None),
 }
 
 autodoc_mock_imports = ['pandas']
@@ -81,6 +82,7 @@ from hypothesis import *
 from hypothesis.strategies import *
 # Run deterministically, and don't save examples
 import random
+_random_state = random.getstate()
 random.seed(0)
 doctest_settings = settings(database=None, derandomize=True)
 settings.register_profile('doctests', doctest_settings)
@@ -88,6 +90,10 @@ settings.load_profile('doctests')
 # Never show deprecated behaviour in code examples
 import warnings
 warnings.filterwarnings('error', category=DeprecationWarning)
+'''
+
+doctest_global_cleanup = '''
+random.setstate(_random_state)
 '''
 
 # This config value must be a dictionary of external sites, mapping unique

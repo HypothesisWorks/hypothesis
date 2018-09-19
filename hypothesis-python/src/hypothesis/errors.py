@@ -163,6 +163,10 @@ class HypothesisDeprecationWarning(HypothesisWarning, FutureWarning):
 
     Actually inherits from FutureWarning, because DeprecationWarning is
     hidden by the default warnings filter.
+
+    You can configure the Python :mod:`python:warnings` to handle these
+    warnings differently to others, either turning them into errors or
+    suppressing them entirely.  Obviously we would prefer the former!
     """
 
 

@@ -23,7 +23,7 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
     UnsatisfiedAssumption
 from hypothesis.control import assume, _current_build_context
-from hypothesis._settings import note_deprecation
+from hypothesis._settings import Phase, note_deprecation
 from hypothesis.internal.compat import hrange, bit_length
 from hypothesis.internal.coverage import check_function
 from hypothesis.utils.conventions import UniqueIdentifier
@@ -84,7 +84,7 @@ class SearchStrategy(Generic[Ex]):
         The problem is that for properties that depend on each other, a naive
         calculation strategy may hit infinite recursion. Consider for example
         the property is_empty. A strategy defined as x = st.deferred(lambda x)
-        is certainly empty (in order ot draw a value from x we would have to
+        is certainly empty (in order to draw a value from x we would have to
         draw a value from x, for which we would have to draw a value from x,
         ...), but in order to calculate it the naive approach would end up
         calling x.is_empty in order to calculate x.is_empty in order to etc.
@@ -152,7 +152,7 @@ class SearchStrategy(Generic[Ex]):
 
                 # We track which strategies use which in the course of
                 # calculating their property value. If A ever uses B in
-                # the course of calculating its value, then whenveer the
+                # the course of calculating its value, then whenever the
                 # value of B changes we might need to update the value of
                 # A.
                 listeners = defaultdict(set)
@@ -299,9 +299,9 @@ class SearchStrategy(Generic[Ex]):
                 condition,
                 random=random,
                 settings=settings(
-                    max_shrinks=0,
                     database=None,
                     verbosity=Verbosity.quiet,
+                    phases=tuple(set(Phase) - {Phase.shrink}),
                 )
             )
         except (NoSuchExample, Unsatisfiable):

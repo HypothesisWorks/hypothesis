@@ -20,9 +20,10 @@ from __future__ import division, print_function, absolute_import
 import pytest
 from flaky import flaky
 
-from hypothesis import find, settings
+from hypothesis import settings
 from tests.common import standard_types
 from hypothesis.errors import NoSuchExample
+from tests.common.debug import minimal
 from hypothesis.strategies import lists
 
 
@@ -44,10 +45,10 @@ def test_can_collectively_minimize(spec):
         return False
 
     try:
-        xs = find(
+        xs = minimal(
             lists(spec, min_size=n, max_size=n),
             distinct_reprs,
-            settings=settings(max_shrinks=100, max_examples=2000))
+            settings=settings(max_examples=2000))
         assert len(xs) == n
         assert 2 <= len(set((map(repr, xs)))) <= 3
     except NoSuchExample:

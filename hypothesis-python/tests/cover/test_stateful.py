@@ -21,16 +21,17 @@ import inspect
 from collections import namedtuple, defaultdict
 
 import pytest
+from _pytest.outcomes import Failed, Skipped
 
 from hypothesis import assume
 from hypothesis import settings as Settings
-from hypothesis.errors import Flaky, InvalidDefinition
+from hypothesis.errors import Flaky, InvalidArgument, InvalidDefinition
 from hypothesis.control import current_build_context
 from tests.common.utils import raises, capture_out, \
     checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, GenericStateMachine, \
-    RuleBasedStateMachine, rule, invariant, precondition, \
+    RuleBasedStateMachine, rule, invariant, initialize, precondition, \
     run_state_machine_as_test
 from hypothesis.strategies import just, none, lists, binary, tuples, \
     choices, booleans, integers, sampled_from
@@ -94,17 +95,17 @@ Split = namedtuple(u'Split', (u'left', u'right'))
 
 
 class BalancedTrees(RuleBasedStateMachine):
-    trees = u'BinaryTree'
+    trees = Bundle(u'BinaryTree')
 
     @rule(target=trees, x=booleans())
     def leaf(self, x):
         return Leaf(x)
 
-    @rule(target=trees, left=Bundle(trees), right=Bundle(trees))
+    @rule(target=trees, left=trees, right=trees)
     def split(self, left, right):
         return Split(left, right)
 
-    @rule(tree=Bundle(trees))
+    @rule(tree=trees)
     def test_is_balanced(self, tree):
         if isinstance(tree, Leaf):
             return
@@ -214,9 +215,23 @@ class NotTheLastMachine(RuleBasedStateMachine):
         self.bye_called = True
 
 
+class PopulateMultipleTargets(RuleBasedStateMachine):
+    b1 = Bundle('b1')
+    b2 = Bundle('b2')
+
+    @rule(targets=(b1, b2))
+    def populate(self):
+        return 1
+
+    @rule(x=b1, y=b2)
+    def fail(self, x, y):
+        assert False
+
+
 bad_machines = (
     OrderedStateMachine, SetStateMachine, BalancedTrees,
     DepthMachine, RoseTreeStateMachine, NotTheLastMachine,
+    PopulateMultipleTargets,
 )
 
 for m in bad_machines:
@@ -390,12 +405,16 @@ def test_can_choose_in_a_machine():
     run_state_machine_as_test(ChoosingMachine)
 
 
-with Settings(max_examples=10):
-    TestGoodSets = GoodSet.TestCase
-    TestGivenLike = GivenLikeStateMachine.TestCase
-    TestDynamicMachine = DynamicMachine.TestCase
-    TestIntAdder = IntAdder.TestCase
-    TestPrecondition = PreconditionMachine.TestCase
+TestGoodSets = GoodSet.TestCase
+TestGivenLike = GivenLikeStateMachine.TestCase
+TestDynamicMachine = DynamicMachine.TestCase
+TestIntAdder = IntAdder.TestCase
+TestPrecondition = PreconditionMachine.TestCase
+
+
+for test_case in (TestGoodSets, TestGivenLike, TestDynamicMachine,
+                  TestIntAdder, TestPrecondition):
+    test_case.settings = Settings(max_examples=10)
 
 
 def test_picks_up_settings_at_first_use_of_testcase():
@@ -415,6 +434,7 @@ def test_new_rules_are_picked_up_before_and_after_rules_call():
     assert len(Foo.rules()) == 2
 
 
+@checks_deprecated_behaviour
 def test_settings_are_independent():
     s = Settings()
     orig = s.max_examples
@@ -771,3 +791,236 @@ def test_prints_equal_values_with_correct_variable_name():
     assert 'v1 = state.create()' in result
     assert 'v2 = state.transfer(source=v1)' in result
     assert 'state.fail(source=v2)' in result
+
+
+def test_initialize_rule():
+    class WithInitializeRules(RuleBasedStateMachine):
+        initialized = []
+
+        @initialize()
+        def initialize_a(self):
+            self.initialized.append('a')
+
+        @initialize()
+        def initialize_b(self):
+            self.initialized.append('b')
+
+        @initialize()
+        def initialize_c(self):
+            self.initialized.append('c')
+
+        @rule()
+        def fail_fast(self):
+            assert False
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            run_state_machine_as_test(WithInitializeRules)
+
+    assert set(WithInitializeRules.initialized[-3:]) == {'a', 'b', 'c'}
+    result = o.getvalue().splitlines()
+    assert result[0] == 'state = WithInitializeRules()'
+    # Initialize rules call order is shuffled
+    assert {result[1], result[2], result[3]} == {
+        'state.initialize_a()', 'state.initialize_b()', 'state.initialize_c()'
+    }
+    assert result[4] == 'state.fail_fast()'
+    assert result[5] == 'state.teardown()'
+
+
+def test_initialize_rule_populate_bundle():
+    class WithInitializeBundleRules(RuleBasedStateMachine):
+        a = Bundle('a')
+
+        @initialize(target=a, dep=just('dep'))
+        def initialize_a(self, dep):
+            return 'a v1 with (%s)' % dep
+
+        @rule(param=a)
+        def fail_fast(self, param):
+            assert False
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            run_state_machine_as_test(WithInitializeBundleRules)
+
+    result = o.getvalue()
+    assert result == """state = WithInitializeBundleRules()
+v1 = state.initialize_a(dep='dep')
+state.fail_fast(param=v1)
+state.teardown()
+"""
+
+
+def test_initialize_rule_dont_mix_with_precondition():
+    with pytest.raises(InvalidDefinition) as exc:
+        class BadStateMachine(RuleBasedStateMachine):
+
+            @precondition(lambda self: True)
+            @initialize()
+            def initialize(self):
+                pass
+
+    assert 'An initialization rule cannot have a precondition.' in str(
+        exc.value)
+
+    # Also test decorator application in reverse order
+
+    with pytest.raises(InvalidDefinition) as exc:
+        class BadStateMachineReverseOrder(RuleBasedStateMachine):
+
+            @initialize()
+            @precondition(lambda self: True)
+            def initialize(self):
+                pass
+
+    assert 'An initialization rule cannot have a precondition.' in str(
+        exc.value)
+
+
+def test_initialize_rule_dont_mix_with_regular_rule():
+    with pytest.raises(InvalidDefinition) as exc:
+        class BadStateMachine(RuleBasedStateMachine):
+
+            @rule()
+            @initialize()
+            def initialize(self):
+                pass
+
+    assert 'A function cannot be used for two distinct rules.' in str(
+        exc.value)
+
+
+def test_initialize_rule_cannot_be_double_applied():
+    with pytest.raises(InvalidDefinition) as exc:
+        class BadStateMachine(RuleBasedStateMachine):
+
+            @initialize()
+            @initialize()
+            def initialize(self):
+                pass
+
+    assert 'A function cannot be used for two distinct rules.' in str(
+        exc.value)
+
+
+def test_initialize_rule_in_state_machine_with_inheritance():
+    class ParentStateMachine(RuleBasedStateMachine):
+        initialized = []
+
+        @initialize()
+        def initialize_a(self):
+            self.initialized.append('a')
+
+    class ChildStateMachine(ParentStateMachine):
+
+        @initialize()
+        def initialize_b(self):
+            self.initialized.append('b')
+
+        @rule()
+        def fail_fast(self):
+            assert False
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            run_state_machine_as_test(ChildStateMachine)
+
+    assert set(ChildStateMachine.initialized[-2:]) == {'a', 'b'}
+    result = o.getvalue().splitlines()
+    assert result[0] == 'state = ChildStateMachine()'
+    # Initialize rules call order is shuffled
+    assert {result[1], result[2]} == {
+        'state.initialize_a()', 'state.initialize_b()'}
+    assert result[3] == 'state.fail_fast()'
+    assert result[4] == 'state.teardown()'
+
+
+def test_can_manually_call_initialize_rule():
+    class StateMachine(RuleBasedStateMachine):
+        initialize_called_counter = 0
+
+        @initialize()
+        def initialize(self):
+            self.initialize_called_counter += 1
+            return self.initialize_called_counter
+
+        @rule()
+        def fail_eventually(self):
+            assert self.initialize() == 2
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            run_state_machine_as_test(StateMachine)
+
+    result = o.getvalue()
+    assert result == """state = StateMachine()
+state.initialize()
+state.fail_eventually()
+state.fail_eventually()
+state.teardown()
+"""
+
+
+def test_new_initialize_rules_are_picked_up_before_and_after_rules_call():
+    class Foo(RuleBasedStateMachine):
+        pass
+    Foo.define_initialize_rule(
+        targets=(), function=lambda self: 1, arguments={}
+    )
+    assert len(Foo.initialize_rules()) == 1
+    Foo.define_initialize_rule(
+        targets=(), function=lambda self: 2, arguments={}
+    )
+    assert len(Foo.initialize_rules()) == 2
+
+
+def test_steps_printed_despite_pytest_fail(capsys):
+    # Test for https://github.com/HypothesisWorks/hypothesis/issues/1372
+    class RaisesProblem(RuleBasedStateMachine):
+
+        @rule()
+        def oops(self):
+            pytest.fail()
+
+    with pytest.raises(Failed):
+        run_state_machine_as_test(RaisesProblem)
+    out, _ = capsys.readouterr()
+    assert 'state = RaisesProblem()\nstate.oops()\nstate.teardown()\n' == out
+
+
+def test_steps_not_printed_with_pytest_skip(capsys):
+    class RaisesProblem(RuleBasedStateMachine):
+
+        @rule()
+        def skip_whole_test(self):
+            pytest.skip()
+
+    with pytest.raises(Skipped):
+        run_state_machine_as_test(RaisesProblem)
+    out, _ = capsys.readouterr()
+    assert '' == out
+
+
+@checks_deprecated_behaviour
+def test_rule_deprecation_targets_and_target():
+    k, v = Bundle('k'), Bundle('v')
+    rule(targets=(k,), target=v)
+
+
+@checks_deprecated_behaviour
+def test_rule_deprecation_bundle_by_name():
+    Bundle('k')
+    rule(target='k')
+
+
+def test_rule_non_bundle_target():
+    with pytest.raises(InvalidArgument):
+        rule(target=integers())
+
+
+def test_rule_non_bundle_target_oneof():
+    k, v = Bundle('k'), Bundle('v')
+    pattern = r'.+ `one_of(a, b)` or `a | b` .+'
+    with pytest.raises(InvalidArgument, match=pattern):
+        rule(target=k | v)

@@ -22,6 +22,8 @@ Sometimes this isn't enough, either because you have values with a ``repr`` that
 isn't very descriptive or because you need to see the output of some
 intermediate steps of your test. That's where the ``note`` function comes in:
 
+.. autofunction:: hypothesis.note
+
 .. doctest::
 
     >>> from hypothesis import given, note, strategies as st
@@ -36,8 +38,8 @@ intermediate steps of your test. That's where the ``note`` function comes in:
     ...     test_shuffle_is_noop()
     ... except AssertionError:
     ...     print('ls != ls2')
-    Falsifying example: test_shuffle_is_noop(ls=[0, 1], r=RandomWithSeed(18))
-    Shuffle: [1, 0]
+    Falsifying example: test_shuffle_is_noop(ls=[0, 0, 1], r=RandomWithSeed(0))
+    Shuffle: [0, 1, 0]
     ls != ls2
 
 The note is printed in the final run of the test in order to include any
@@ -271,7 +273,7 @@ Defining strategies
 ---------------------
 
 The type of object that is used to explore the examples given to your test
-function is called a :class:`~hypothesis.SearchStrategy`.
+function is called a :class:`~hypothesis.strategies.SearchStrategy`.
 These are created using the functions
 exposed in the :mod:`hypothesis.strategies` module.
 
@@ -302,10 +304,9 @@ The gory details of given parameters
 
 .. autofunction:: hypothesis.given
 
-The :func:`@given <hypothesis.given>` decorator may be used
-to specify which arguments of a function should
-be parametrized over. You can use either positional or keyword arguments or a mixture
-of the two.
+The :func:`@given <hypothesis.given>` decorator may be used to specify
+which arguments of a function should be parametrized over. You can use
+either positional or keyword arguments, but not a mixture of both.
 
 For example all of the following are valid uses:
 
@@ -378,6 +379,9 @@ will be passed to the function as normal and not be parametrized over.
 The function returned by given has all the same arguments as the original
 test, minus those that are filled in by :func:`@given <hypothesis.given>`.
 
+
+.. _custom-function-execution:
+
 -------------------------
 Custom function execution
 -------------------------
@@ -446,6 +450,33 @@ and should be rewritten as:
             return result
 
 
+An alternative hook is provided for use by test runner extensions such as
+:pypi:`pytest-trio`, which cannot use the ``execute_example`` method.
+This is **not** recommended for end-users - it is better to write a complete
+test function directly, perhaps by using a decorator to perform the same
+transformation before applying :func:`@given <hypothesis.given>`.
+
+.. code:: python
+
+    @given(x=integers())
+    @pytest.mark.trio
+    async def test(x):
+        ...
+    # Illustrative code, inside the pytest-trio plugin
+    test.hypothesis.inner_test = lambda x: trio.run(test, x)
+
+For authors of test runners however, assigning to the ``inner_test`` attribute
+of the ``hypothesis`` attribute of the test will replace the interior test.
+
+.. note::
+    The new ``inner_test`` must accept and pass through all the ``*args``
+    and ``**kwargs`` expected by the original test.
+
+If the end user has also specified a custom executor using the
+``execute_example`` method, it - and all other execution-time logic - will
+be applied to the *new* inner test assigned by the test runner.
+
+
 -------------------------------
 Using Hypothesis to find values
 -------------------------------
@@ -512,6 +543,8 @@ argument, to force this inference for arguments with a default value.
     >>> builds(func).example()
     [-6993, '']
 
+.. data:: hypothesis.infer
+
 :func:`@given <hypothesis.given>` does not perform any implicit inference
 for required arguments, as this would break compatibility with pytest fixtures.
 :const:`~hypothesis.infer` can be used as a keyword argument to explicitly
@@ -543,3 +576,91 @@ changes between Python 3.5.0 and 3.6.1, including at minor versions.  These
 are all supported on a best-effort basis, but you may encounter problems with
 an old version of the module.  Please report them to us, and consider
 updating to a newer version of Python as a workaround.
+
+
+.. _our-type-hints:
+
+------------------------------
+Type Annotations in Hypothesis
+------------------------------
+
+If you install Hypothesis and use :pypi:`mypy` 0.590+, or another
+:PEP:`561`-compatible tool, the type checker should automatically pick
+up our type hints.
+
+.. note::
+    Hypothesis' type hints may make breaking changes between minor releases.
+
+    Upstream tools and conventions about type hints remain in flux - for
+    example the :mod:`python:typing` module itself is provisional, and Mypy
+    has not yet reached version 1.0 - and we plan to support the latest
+    version of this ecosystem, as well as older versions where practical.
+
+    We may also find more precise ways to describe the type of various
+    interfaces, or change their type and runtime behaviour togther in a way
+    which is otherwise backwards-compatible.  We often omit type hints for
+    deprecated features or arguments, as an additional form of warning.
+
+There are known issues inferring the type of examples generated by
+:func:`~hypothesis.strategies.deferred`, :func:`~hypothesis.strategies.recursive`,
+:func:`~hypothesis.strategies.one_of`, :func:`~hypothesis.strategies.dictionaries`,
+and :func:`~hypothesis.strategies.fixed_dictionaries`.
+We will fix these, and require correspondingly newer versions of Mypy for type
+hinting, as the ecosystem improves.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Writing downstream type hints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Projects that :doc:`provide Hypothesis strategies <strategies>` and use
+type hints may wish to annotate their strategies too.  This *is* a
+supported use-case, again on a best-effort provisional basis.  For example:
+
+.. code:: python
+
+    def foo_strategy() -> SearchStrategy[Foo]: ...
+
+.. class:: hypothesis.strategies.SearchStrategy
+
+:class:`~hypothesis.strategies.SearchStrategy` is the type of all strategy
+objects.  It is a generic type, and covariant in the type of the examples
+it creates.  For example:
+
+- ``integers()`` is of type ``SearchStrategy[int]``.
+- ``lists(integers())`` is of type ``SearchStrategy[List[int]]``.
+- ``SearchStrategy[Dog]`` is a subtype of ``SearchStrategy[Animal]``
+  if ``Dog`` is a subtype of ``Animal`` (as seems likely).
+
+.. warning::
+    :class:`~hypothesis.strategies.SearchStrategy` **should only be used
+    in type hints.**  Please do not inherit from, compare to, or otherwise
+    use it in any way outside of type hints.  The only supported way to
+    construct objects of this type is to use the functions provided by the
+    :mod:`hypothesis.strategies` module!
+
+
+.. _pytest-plugin:
+
+----------------------------
+The Hypothesis pytest Plugin
+----------------------------
+
+Hypothesis includes a tiny plugin to improve integration with :pypi:`pytest`,
+which is activated by default (but does not affect other test runners).
+It aims to improve the integration between Hypothesis and Pytest by
+providing extra information and convenient access to config options.
+
+- ``pytest --hypothesis-show-statistics`` can be used to
+  :ref:`display test and data generation statistics <statistics>`.
+- ``pytest --hypothesis-profile=<profile name>`` can be used to
+  :ref:`load a settings profile <settings_profiles>`.
+- ``pytest --hypothesis-seed=<an int>`` can be used to
+  :ref:`reproduce a failure with a particular seed <reproducing-with-seed>`.
+
+Finally, all tests that are defined with Hypothesis automatically have
+``@pytest.mark.hypothesis`` applied to them.  See :ref:`here for information
+on working with markers <pytest:mark examples>`.
+
+.. note::
+    Pytest will load the plugin automatically if Hypothesis is installed.
+    You don't need to do anything at all to use it.

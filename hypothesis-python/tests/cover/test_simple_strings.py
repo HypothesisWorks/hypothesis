@@ -17,32 +17,33 @@
 
 from __future__ import division, print_function, absolute_import
 
-import unicodedata
 from random import Random
 
 import pytest
 
-from hypothesis import find, given, settings
+from hypothesis import given
+from tests.common.debug import minimal
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import text, binary, tuples, characters
 
 
 def test_can_minimize_up_to_zero():
-    s = find(text(), lambda x: any(lambda t: t <= u'0' for t in x))
+    s = minimal(text(), lambda x: any(lambda t: t <= u'0' for t in x))
     assert s == u'0'
 
 
 def test_minimizes_towards_ascii_zero():
-    s = find(text(), lambda x: any(t < u'0' for t in x))
+    s = minimal(text(), lambda x: any(t < u'0' for t in x))
     assert s == chr(ord(u'0') - 1)
 
 
 def test_can_handle_large_codepoints():
-    s = find(text(), lambda x: x >= u'☃')
+    s = minimal(text(), lambda x: x >= u'☃')
     assert s == u'☃'
 
 
 def test_can_find_mixed_ascii_and_non_ascii_strings():
-    s = find(
+    s = minimal(
         text(), lambda x: (
             any(t >= u'☃' for t in x) and
             any(ord(t) <= 127 for t in x)))
@@ -51,7 +52,7 @@ def test_can_find_mixed_ascii_and_non_ascii_strings():
 
 
 def test_will_find_ascii_examples_given_the_chance():
-    s = find(
+    s = minimal(
         tuples(text(max_size=1), text(max_size=1)),
         lambda x: x[0] and (x[0] < x[1]))
     assert ord(s[1]) == ord(s[0]) + 1
@@ -59,33 +60,31 @@ def test_will_find_ascii_examples_given_the_chance():
 
 
 def test_finds_single_element_strings():
-    assert find(text(), bool, random=Random(4)) == u'0'
+    assert minimal(text(), bool, random=Random(4)) == u'0'
 
 
 def test_binary_respects_changes_in_size():
     @given(binary())
     def test_foo(x):
-        assert len(x) <= 10
+        assert len(x) <= 5
     with pytest.raises(AssertionError):
         test_foo()
 
-    @given(binary(max_size=10))
+    @given(binary(max_size=5))
     def test_foo(x):
-        assert len(x) <= 10
+        assert len(x) <= 5
     test_foo()
 
 
-@given(text(min_size=1, max_size=1))
-@settings(max_examples=2000)
-def test_does_not_generate_surrogates(t):
-    assert unicodedata.category(t) != u'Cs'
-
-
 def test_does_not_simplify_into_surrogates():
-    f = find(text(), lambda x: x >= u'\udfff')
+    f = minimal(text(), lambda x: x >= u'\udfff')
     assert f == u'\ue000'
-    f = find(text(min_size=10), lambda x: sum(t >= u'\udfff' for t in x) >= 10)
-    assert f == u'\ue000' * 10
+
+    size = 5
+
+    f = minimal(
+        text(min_size=size), lambda x: sum(t >= u'\udfff' for t in x) >= size)
+    assert f == u'\ue000' * size
 
 
 @given(text(alphabet=[u'a', u'b']))
@@ -127,3 +126,18 @@ def test_fixed_size_bytes_just_draw_bytes():
 @given(text(max_size=10**6))
 def test_can_set_max_size_large(s):
     pass
+
+
+@checks_deprecated_behaviour
+def test_alphabet_is_not_a_sequence():
+    text(alphabet=set('abc')).example()
+
+
+@checks_deprecated_behaviour
+def test_alphabet_breaking_size_limit():
+    text(['a', 'c', 'ed', 'b', 'abc']).example()
+
+
+@checks_deprecated_behaviour
+def test_alphabet_non_string():
+    text([1, 2, 3]).example()

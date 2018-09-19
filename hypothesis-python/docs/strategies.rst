@@ -24,6 +24,8 @@ Some packages provide strategies directly:
 * :pypi:`hs-dbus-signature` - strategy to generate arbitrary
   `D-Bus signatures <https://dbus.freedesktop.org>`_.
 * :pypi:`hypothesis_sqlalchemy` - strategies to generate :pypi:`SQLAlchemy` objects.
+* :pypi:`hypothesis-ros` - strategies to generate messages and parameters for the `Robot Operating System <http://www.ros.org/>`_.
+* :pypi:`hypothesis-csv` - strategy to generate CSV files.
 
 Others provide a function to infer a strategy from some other schema:
 
@@ -43,6 +45,13 @@ Based on a `Swagger specification <https://swagger.io/>`_, it can build and
 run an entire test suite to check that the implementation matches the spec.
 The command-line version can test apps written in any language, simply by
 passing the file or URL path to the schema to check!
+
+`Trio <https://trio.readthedocs.io/>`_ is an async framework with "an obsessive
+focus on usability and correctness", so naturally it works with Hypothesis!
+:pypi:`pytest-trio` includes :ref:`a custom hook <custom-function-execution>`
+that allows ``@given(...)`` to work with Trio-style async test functions, and
+:pypi:`hypothesis-trio` includes stateful testing extensions to support
+concurrent programs.
 
 :pypi:`libarchimedes` makes it easy to use Hypothesis in
 `the Hy language <https://github.com/hylang/hy>`_, a Lisp embedded in Python.

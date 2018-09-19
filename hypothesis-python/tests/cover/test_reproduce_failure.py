@@ -24,13 +24,17 @@ import base64
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import PrintSettings, given, reject, example, settings, \
-    __version__, reproduce_failure
+from hypothesis import Verbosity, PrintSettings, given, reject, example, \
+    settings, __version__, reproduce_failure
 from hypothesis.core import decode_failure, encode_failure
-from hypothesis.errors import DidNotReproduce, InvalidArgument
-from tests.common.utils import capture_out
+from hypothesis.errors import DidNotReproduce, InvalidArgument, \
+    UnsatisfiedAssumption
+from tests.common.utils import no_shrink, capture_out
+from hypothesis.internal.compat import hbytes
 
 
+@example(hbytes(20))  # shorter compressed
+@example(hbytes(3))   # shorter uncompressed
 @given(st.binary() | st.binary(min_size=100))
 def test_encoding_loop(b):
     assert decode_failure(encode_failure(b)) == b
@@ -38,13 +42,18 @@ def test_encoding_loop(b):
 
 @example(base64.b64encode(b'\2\3\4'))
 @example(b'\t')
+@example(base64.b64encode(b'\1\0'))  # zlib error
 @given(st.binary())
 def test_decoding_may_fail(t):
     try:
         decode_failure(t)
         reject()
+    except UnsatisfiedAssumption:
+        raise  # don't silence the reject()
     except InvalidArgument:
         pass
+    except Exception as e:
+        assert False, 'decoding failed with %r, not InvalidArgument' % (e,)
 
 
 def test_reproduces_the_failure():
@@ -105,7 +114,7 @@ def test_prints_reproduction_if_requested():
     @settings(print_blob=PrintSettings.ALWAYS, database=None)
     @given(st.integers())
     def test(i):
-        if failing_example[0] is None and i > 10 ** 6:
+        if failing_example[0] is None and i != 0:
             failing_example[0] = i
         assert i not in failing_example
 
@@ -147,7 +156,7 @@ def test_does_print_reproduction_for_simple_data_examples_by_default():
 
 
 def test_does_not_print_reproduction_for_large_data_examples_by_default():
-    @settings(max_shrinks=0)
+    @settings(phases=no_shrink)
     @given(st.data())
     def test(data):
         b = data.draw(st.binary(min_size=1000, max_size=1000))
@@ -201,3 +210,16 @@ def test_raises_invalid_if_wrong_version():
 
     with pytest.raises(InvalidArgument):
         test()
+
+
+def test_does_not_print_reproduction_if_verbosity_set_to_quiet():
+    @given(st.data())
+    @settings(verbosity=Verbosity.quiet)
+    def test_always_fails(data):
+        assert data.draw(st.just(False))
+
+    with capture_out() as out:
+        with pytest.raises(AssertionError):
+            test_always_fails()
+
+    assert '@reproduce_failure' not in out.getvalue()

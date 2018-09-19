@@ -27,7 +27,7 @@ if __name__ == u'__main__':
     run()
 
     settings.register_profile('default', settings(
-        timeout=unlimited, use_coverage=False,
+        timeout=unlimited,
         suppress_health_check=[HealthCheck.too_slow],
     ))
 

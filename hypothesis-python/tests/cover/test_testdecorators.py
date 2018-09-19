@@ -22,10 +22,10 @@ import threading
 from collections import namedtuple
 
 import hypothesis.reporting as reporting
-from hypothesis import Verbosity, HealthCheck, note, seed, given, assume, \
-    reject, settings
-from hypothesis.errors import Unsatisfiable
-from tests.common.utils import fails, raises, fails_with, capture_out
+from hypothesis import Verbosity, HealthCheck, note, given, assume, \
+    settings
+from tests.common.utils import fails, raises, no_shrink, fails_with, \
+    capture_out
 from hypothesis.strategies import data, just, sets, text, lists, binary, \
     builds, floats, one_of, booleans, integers, frozensets, sampled_from
 
@@ -168,33 +168,6 @@ def test_does_not_catch_interrupt_during_falsify():
         flaky_base_exception()
 
 
-def test_contains_the_test_function_name_in_the_exception_string():
-    look_for_one = settings(
-        max_examples=1, suppress_health_check=HealthCheck.all())
-
-    @given(integers())
-    @look_for_one
-    def this_has_a_totally_unique_name(x):
-        reject()
-
-    with raises(Unsatisfiable) as e:
-        this_has_a_totally_unique_name()
-    assert this_has_a_totally_unique_name.__name__ in e.value.args[0]
-
-    class Foo(object):
-
-        @given(integers())
-        @look_for_one
-        def this_has_a_unique_name_and_lives_on_a_class(self, x):
-            reject()
-
-    with raises(Unsatisfiable) as e:
-        Foo().this_has_a_unique_name_and_lives_on_a_class()
-    assert (
-        Foo.this_has_a_unique_name_and_lives_on_a_class.__name__
-    ) in e.value.args[0]
-
-
 @given(lists(integers(), unique=True), integers())
 def test_removing_an_element_from_a_unique_list(xs, y):
     assume(len(set(xs)) == len(xs))
@@ -254,13 +227,13 @@ def test_prints_on_failure_by_default():
 
 
 def test_does_not_print_on_success():
-    with settings(verbosity=Verbosity.normal):
-        @given(integers())
-        def test_is_an_int(x):
-            return
+    @settings(verbosity=Verbosity.normal)
+    @given(integers())
+    def test_is_an_int(x):
+        return
 
-        with capture_out() as out:
-            test_is_an_int()
+    with capture_out() as out:
+        test_is_an_int()
     out = out.getvalue()
     lines = [l.strip() for l in out.split(u'\n')]
     assert all(not l for l in lines), lines
@@ -329,21 +302,6 @@ def test_has_ascii(x):
         u'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ \t\n'
     )
     assert any(c in ascii_characters for c in x)
-
-
-def test_uses_provided_seed():
-    import random
-    random.seed(0)
-    initial = random.getstate()
-
-    @given(integers())
-    @seed(42)
-    @settings(database=None)
-    def test_foo(x):
-        pass
-
-    test_foo()
-    assert hash(repr(random.getstate())) == hash(repr(initial))
 
 
 def test_can_derandomize():
@@ -437,17 +395,16 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
     failing = [0]
 
     @given(integers())
-    @settings(max_shrinks=0, max_examples=100)
+    @settings(phases=no_shrink, max_examples=100, verbosity=Verbosity.normal)
     def foo(x):
         if x > 11:
             note('Lo')
             failing[0] += 1
             assert False
 
-    with settings(verbosity=Verbosity.normal):
-        with raises(AssertionError):
-            with capture_out() as out:
-                foo()
+    with raises(AssertionError):
+        with capture_out() as out:
+            foo()
     assert failing == [2]
     assert 'Falsifying example' in out.getvalue()
     assert 'Lo' in out.getvalue()

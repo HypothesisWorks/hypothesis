@@ -26,20 +26,25 @@ import collections
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import find, given, infer, assume
+from hypothesis import HealthCheck, given, infer, assume, settings
 from hypothesis.errors import NoExamples, InvalidArgument, ResolutionFailed
+from tests.common.debug import minimal
 from hypothesis.strategies import from_type
 from hypothesis.searchstrategy import types
-from hypothesis.internal.compat import integer_types, get_type_hints
+from hypothesis.internal.compat import ForwardRef, integer_types, \
+    get_type_hints, typing_root_type
 
 typing = pytest.importorskip('typing')
 sentinel = object()
 generics = sorted((t for t in types._global_type_lookup
-                   if isinstance(t, typing.GenericMeta)), key=str)
+                   if isinstance(t, typing_root_type)), key=str)
 
 
 @pytest.mark.parametrize('typ', generics)
 def test_resolve_typing_module(typ):
+    @settings(suppress_health_check=[
+        HealthCheck.too_slow, HealthCheck.filter_too_much
+    ])
     @given(from_type(typ))
     def inner(ex):
         if typ in (typing.BinaryIO, typing.TextIO):
@@ -49,6 +54,8 @@ def test_resolve_typing_module(typ):
             assert ex == ()
         elif isinstance(typ, typing._ProtocolMeta):
             pass
+        elif typ is typing.Type and not isinstance(typing.Type, type):
+            assert isinstance(ex, typing.TypeVar)
         else:
             try:
                 assert isinstance(ex, typ)
@@ -152,7 +159,7 @@ def test_ItemsView():
 
 
 def test_Optional_minimises_to_None():
-    assert find(from_type(typing.Optional[int]), lambda ex: True) is None
+    assert minimal(from_type(typing.Optional[int]), lambda ex: True) is None
 
 
 @pytest.mark.parametrize('n', range(10))
@@ -227,6 +234,21 @@ def test_resolves_weird_types(typ):
     from_type(typ).example()
 
 
+@pytest.mark.parametrize('var,expected', [
+    (typing.TypeVar('V'), object),
+    (typing.TypeVar('V', bound=int), int),
+    (typing.TypeVar('V', int, str), (int, str)),
+])
+@given(data=st.data())
+def test_typevar_type_is_consistent(data, var, expected):
+    strat = st.from_type(var)
+    v1 = data.draw(strat)
+    v2 = data.draw(strat)
+    assume(v1 != v2)  # Values may vary, just not types
+    assert type(v1) == type(v2)
+    assert isinstance(v1, expected)
+
+
 def annotated_func(a: int, b: int=2, *, c: int, d: int=4):
     return a + b + c + d
 
@@ -247,10 +269,10 @@ def test_can_get_type_hints(thing):
 
 def test_force_builds_to_infer_strategies_for_default_args():
     # By default, leaves args with defaults and minimises to 2+4=6
-    assert find(st.builds(annotated_func), lambda ex: True) == 6
+    assert minimal(st.builds(annotated_func), lambda ex: True) == 6
     # Inferring integers() for args makes it minimise to zero
-    assert find(st.builds(annotated_func, b=infer, d=infer),
-                lambda ex: True) == 0
+    assert minimal(st.builds(annotated_func, b=infer, d=infer),
+                   lambda ex: True) == 0
 
 
 def non_annotated_func(a, b=2, *, c, d=4):
@@ -367,13 +389,31 @@ def test_required_args(target, args, kwargs):
               **{k: st.just(v) for k, v in kwargs.items()}).example()
 
 
+AnnotatedNamedTuple = typing.NamedTuple('AnnotatedNamedTuple', [('a', str)])
+
+
+@given(st.builds(AnnotatedNamedTuple))
+def test_infers_args_for_namedtuple_builds(thing):
+    assert isinstance(thing.a, str)
+
+
+@given(st.from_type(AnnotatedNamedTuple))
+def test_infers_args_for_namedtuple_from_type(thing):
+    assert isinstance(thing.a, str)
+
+
+@given(st.builds(AnnotatedNamedTuple, a=st.none()))
+def test_override_args_for_namedtuple(thing):
+    assert thing.a is None
+
+
 @pytest.mark.parametrize('thing', [
     typing.Optional, typing.List, getattr(typing, 'Type', typing.Set)
 ])  # check Type if it's available, otherwise Set is redundant but harmless
 def test_cannot_resolve_bare_forward_reference(thing):
     with pytest.raises(InvalidArgument):
         t = thing['int']
-        if type(getattr(t, '__args__', [None])[0]) != typing._ForwardRef:
+        if type(getattr(t, '__args__', [None])[0]) != ForwardRef:
             assert sys.version_info[:2] == (3, 5)
             pytest.xfail('python 3.5 typing module is really weird')
         st.from_type(t).example()
@@ -401,3 +441,9 @@ def test_resolving_recursive_type():
         # https://github.com/HypothesisWorks/hypothesis-python/issues/1074
         assert sys.version_info[:2] == (3, 5)
         pytest.skip('Could not find type hints to resolve')
+
+
+@given(from_type(typing.Tuple[()]))
+def test_resolves_empty_Tuple_issue_1583_regression(ex):
+    # See e.g. https://github.com/python/mypy/commit/71332d58
+    assert ex == ()

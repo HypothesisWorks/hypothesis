@@ -46,20 +46,6 @@ def domains():
 
 
 @st.defines_strategy_with_reusable_values
-def emails():
-    """A strategy for email addresses.
-
-    See https://github.com/HypothesisWorks/hypothesis-python/issues/162
-    for work on a permanent replacement.
-    """
-    local_chars = string.ascii_letters + string.digits + "!#$%&'*+-/=^_`{|}~"
-    local_part = st.text(local_chars, min_size=1, max_size=64)
-    # TODO: include dot-atoms, quoted strings, escaped chars, etc in local part
-    return st.builds('{}@{}'.format, local_part, domains()).filter(
-        lambda addr: len(addr) <= 255)
-
-
-@st.defines_strategy_with_reusable_values
 def ip4_addr_strings():
     """A strategy for IPv4 address strings.
 

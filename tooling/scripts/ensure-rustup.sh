@@ -3,12 +3,14 @@
 set -o errexit
 set -o nounset
 
-if ! which rustup > /dev/null ; then 
+if ! command -v rustup > /dev/null ; then
   curl https://sh.rustup.rs -sSf | sh -s -- -y
 fi
 
-if ! rustup show | grep nightly > /dev/null ; then
-  rustup install nightly
+if ! rustup show | grep stable > /dev/null ; then
+  rustup install stable
 fi
 
-rustup update
+rustup default stable
+
+rustup update stable

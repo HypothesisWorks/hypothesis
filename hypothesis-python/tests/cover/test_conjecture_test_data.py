@@ -22,6 +22,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 from hypothesis.errors import Frozen
+from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.data import Status, StopTest, \
     ConjectureData
 from hypothesis.searchstrategy.strategies import SearchStrategy
@@ -56,7 +57,7 @@ def test_can_draw_zero_bytes():
 
 
 def test_draw_past_end_sets_overflow():
-    x = ConjectureData.for_buffer(bytes(5))
+    x = ConjectureData.for_buffer(hbytes(5))
     with pytest.raises(StopTest) as e:
         x.draw_bytes(6)
     assert e.value.testcounter == x.testcounter
@@ -126,3 +127,41 @@ def test_empty_discards_do_not_count():
     x.stop_example(discard=True)
     x.freeze()
     assert not x.has_discards
+
+
+def test_triviality():
+    d = ConjectureData.for_buffer([1, 0, 1])
+
+    d.start_example(1)
+    d.draw_bits(1)
+    d.draw_bits(1)
+    d.stop_example(1)
+
+    d.write(hbytes([2]))
+    d.freeze()
+
+    def eg(u, v):
+        return [ex for ex in d.examples if ex.start == u and ex.end == v][0]
+
+    assert not eg(0, 2).trivial
+    assert not eg(0, 1).trivial
+    assert eg(1, 2).trivial
+    assert eg(2, 3).trivial
+
+
+def test_example_depth_marking():
+    d = ConjectureData.for_buffer(hbytes(24))
+
+    # These draw sizes are chosen so that each example has a unique length.
+    d.draw_bytes(2)
+    d.start_example('inner')
+    d.draw_bytes(3)
+    d.draw_bytes(6)
+    d.stop_example()
+    d.draw_bytes(12)
+    d.freeze()
+
+    depths = set((ex.length, ex.depth) for ex in d.examples)
+    assert depths == set([
+        (2, 1), (3, 2), (6, 2), (9, 1), (12, 1), (23, 0)
+    ])

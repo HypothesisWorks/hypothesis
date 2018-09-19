@@ -1,3 +1,43 @@
+# Hypothesis for Ruby 0.1.1 (2018-08-31)
+
+This release fixes minor documentation issues.
+
+Thanks to Tessa Bradbury for this contribution.
+
+# Hypothesis for Ruby 0.1.0 (2018-07-16)
+
+This release adds support for reporting multiple exceptions when Hypothesis
+finds more than one way for the test to fail.
+
+# Hypothesis for Ruby 0.0.15 (2018-06-25)
+
+This release fixes an occasional `RuntimeError` that could occur
+when shrinking a failing test.
+
+# Hypothesis for Ruby 0.0.14 (2018-06-25)
+
+This release updates the release date to the correct date, as part of fixing a
+bug which caused the last couple of releases (0.0.11, 0.0.12, and 0.0.13) to
+have an incorrect date.
+
+# Hypothesis for Ruby 0.0.13 (2018-06-25)
+
+This release moves the core Rust engine into the separate Conjecture crate. It
+should have no user visible effect.
+
+# Hypothesis for Ruby 0.0.12 (2018-06-23)
+
+This release is the beginning of splitting out the Rust core of Hypothesis
+Ruby into a separate `conjecture` crate for the non-Ruby-specific components
+of it.
+
+It should have no user visible impact.
+
+# Hypothesis for Ruby 0.0.11 (2018-06-22)
+
+This release has no user-visible changes other than updating the gemspec's
+homepage attribute.
+
 ## Hypothesis for Ruby 0.0.10 (2018-04-26)
 
 This release is another update to shrinking:

@@ -22,6 +22,7 @@ import pytest
 from hypothesis import Verbosity, HealthCheck, given, assume, reject, \
     example, settings
 from hypothesis.errors import Flaky, Unsatisfiable, UnsatisfiedAssumption
+from tests.common.utils import no_shrink
 from hypothesis.strategies import lists, booleans, integers, composite, \
     random_module
 
@@ -103,7 +104,7 @@ def test_failure_sequence_inducing(building, testing, rnd):
     @given(integers().map(build))
     @settings(
         verbosity=Verbosity.quiet, database=None,
-        suppress_health_check=HealthCheck.all(), max_shrinks=0
+        suppress_health_check=HealthCheck.all(), phases=no_shrink
     )
     def test(x):
         try:

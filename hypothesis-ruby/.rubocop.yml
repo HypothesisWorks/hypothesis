@@ -26,3 +26,5 @@ Metrics/BlockLength:
   Enabled: false
 Lint/HandleExceptions:
   Enabled: false
+Style/GuardClause:
+  Enabled: false

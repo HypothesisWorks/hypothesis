@@ -62,23 +62,35 @@ def test_prints_output_by_default():
 
 
 def test_does_not_print_debug_in_verbose():
-    with settings(verbosity=Verbosity.verbose):
-        with capture_out() as o:
-            debug_report(u'Hi')
-    assert not o.getvalue()
+    @given(integers())
+    @settings(verbosity=Verbosity.verbose)
+    def f(x):
+        debug_report('Hi')
+
+    with capture_out() as o:
+        f()
+    assert u'Hi' not in o.getvalue()
 
 
 def test_does_print_debug_in_debug():
-    with settings(verbosity=Verbosity.debug):
-        with capture_out() as o:
-            debug_report(u'Hi')
+    @given(integers())
+    @settings(verbosity=Verbosity.debug)
+    def f(x):
+        debug_report('Hi')
+
+    with capture_out() as o:
+        f()
     assert u'Hi' in o.getvalue()
 
 
 def test_does_print_verbose_in_debug():
-    with settings(verbosity=Verbosity.debug):
-        with capture_out() as o:
-            verbose_report(u'Hi')
+    @given(integers())
+    @settings(verbosity=Verbosity.debug)
+    def f(x):
+        verbose_report('Hi')
+
+    with capture_out() as o:
+        f()
     assert u'Hi' in o.getvalue()
 
 
@@ -87,7 +99,7 @@ def test_does_print_verbose_in_debug():
 def test_can_report_when_system_locale_is_ascii(monkeypatch):
     import io
     read, write = os.pipe()
-    read = io.open(read, 'r', encoding='ascii')
-    write = io.open(write, 'w', encoding='ascii')
-    monkeypatch.setattr(sys, 'stdout', write)
-    reporting.default(u"☃")
+    with io.open(read, 'r', encoding='ascii') as read:
+        with io.open(write, 'w', encoding='ascii') as write:
+            monkeypatch.setattr(sys, 'stdout', write)
+            reporting.default(u"☃")

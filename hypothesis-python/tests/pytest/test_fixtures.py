@@ -18,8 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
-
 from mock import Mock, create_autospec
+
 from hypothesis import given, example
 from tests.common.utils import fails
 from hypothesis.strategies import integers
@@ -77,5 +77,5 @@ def test_can_inject_mock_via_fixture(mock_fixture, xs):
 
 @given(integers())
 def test_can_inject_autospecced_mock_via_fixture(spec_fixture, xs):
-    spec_fixture.bar.return_value = infinity()
+    spec_fixture.bar.return_value = float('inf')
     assert xs <= spec_fixture.bar()

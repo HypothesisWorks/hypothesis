@@ -26,7 +26,7 @@ import hypothesis.strategies as st
 from hypothesis import HealthCheck, given, settings
 from hypothesis.errors import InvalidArgument, FailedHealthCheck
 from hypothesis.control import assume
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import no_shrink, checks_deprecated_behaviour
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
@@ -53,33 +53,34 @@ def test_slow_generation_inline_fails_a_health_check():
 def test_default_health_check_can_weaken_specific():
     import random
 
+    @settings(suppress_health_check=HealthCheck.all())
     @given(st.lists(st.integers(), min_size=1))
     def test(x):
         random.choice(x)
 
-    with settings(suppress_health_check=HealthCheck.all()):
-        test()
+    test()
 
 
 def test_suppressing_filtering_health_check():
-    count = [0]
+    forbidden = set()
 
-    def too_soon(x):
-        count[0] += 1
-        return count[0] >= 200
+    def unhealthy_filter(x):
+        if len(forbidden) < 200:
+            forbidden.add(x)
+        return x not in forbidden
 
-    @given(st.integers().filter(too_soon))
+    @given(st.integers().filter(unhealthy_filter))
     def test1(x):
         raise ValueError()
 
     with raises(FailedHealthCheck):
         test1()
 
-    count[0] = 0
+    forbidden = set()
 
     @settings(suppress_health_check=[
         HealthCheck.filter_too_much, HealthCheck.too_slow])
-    @given(st.integers().filter(too_soon))
+    @given(st.integers().filter(unhealthy_filter))
     def test2(x):
         raise ValueError()
 
@@ -108,7 +109,7 @@ class fails_regularly(SearchStrategy):
 
 def test_filtering_most_things_fails_a_health_check():
     @given(fails_regularly())
-    @settings(database=None, max_shrinks=0)
+    @settings(database=None, phases=no_shrink)
     def test(x):
         pass
 
@@ -118,7 +119,7 @@ def test_filtering_most_things_fails_a_health_check():
 
 
 def test_large_data_will_fail_a_health_check():
-    @given(st.lists(st.binary(min_size=1024)))
+    @given(st.none() | st.binary(min_size=1024))
     @settings(database=None, buffer_size=1000)
     def test(x):
         pass

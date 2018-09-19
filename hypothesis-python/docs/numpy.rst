@@ -9,7 +9,7 @@ numpy
 -----
 
 Hypothesis offers a number of strategies for `NumPy <http://www.numpy.org/>`_ testing,
-available in the :mod:`hypothesis[numpy]` :doc:`extra </extras>`.
+available in the ``hypothesis[numpy]`` :doc:`extra </extras>`.
 It lives in the ``hypothesis.extra.numpy`` package.
 
 The centerpiece is the :func:`~hypothesis.extra.numpy.arrays` strategy, which generates arrays with
@@ -20,6 +20,7 @@ shapes and generate all kinds of fixed-size or compound dtypes.
 
 .. automodule:: hypothesis.extra.numpy
    :members:
+   :exclude-members: ArrayStrategy
 
 .. _hypothesis-pandas:
 
@@ -46,7 +47,7 @@ Supported Versions
 There is quite a lot of variation between pandas versions. We only
 commit to supporting the latest version of pandas, but older minor versions are
 supported on a "best effort" basis.  Hypothesis is currently tested against
-and confirmed working with Pandas 0.19, 0.20, 0.21, and 0.22.
+and confirmed working with Pandas 0.19, 0.20, 0.21, 0.22, and 0.23.
 
 Releases that are not the latest patch release of their minor version are not
 tested or officially supported, but will probably also work unless you hit a

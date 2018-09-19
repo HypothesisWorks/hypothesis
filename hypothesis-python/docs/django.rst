@@ -5,9 +5,11 @@ Hypothesis for Django users
 ===========================
 
 Hypothesis offers a number of features specific for Django testing, available
-in the :mod:`hypothesis[django]` :doc:`extra </extras>`.  This is tested
+in the ``hypothesis[django]`` :doc:`extra </extras>`.  This is tested
 against each supported series with mainstream or extended support -
 if you're still getting security patches, you can test with Hypothesis.
+
+.. class:: hypothesis.extra.django.TestCase
 
 Using it is quite straightforward: All you need to do is subclass
 :class:`hypothesis.extra.django.TestCase` or
@@ -20,10 +22,11 @@ multiple times and you don't want them to interfere with each other). Test cases
 on these classes that do not use
 :func:`@given <hypothesis.given>` will be run as normal.
 
-I strongly recommend not using
-:class:`~hypothesis.extra.django.TransactionTestCase`
-unless you really have to.
-Because Hypothesis runs this in a loop the performance problems it normally has
+.. class:: hypothesis.extra.django.TransactionTestCase
+
+We recommend avoiding :class:`~hypothesis.extra.django.TransactionTestCase`
+unless you really have to run each test case in a database transaction.
+Because Hypothesis runs this in a loop, the performance problems it normally has
 are significantly exacerbated and your tests will be really slow.
 If you are using :class:`~hypothesis.extra.django.TransactionTestCase`,
 you may need to use ``@settings(suppress_health_check=[HealthCheck.too_slow])``
@@ -34,7 +37,8 @@ a strategy for Django models:
 
 .. autofunction:: hypothesis.extra.django.models.models
 
-For example, using the trivial django project I have for testing:
+For example, using `the trivial django project we have for testing
+<https://github.com/HypothesisWorks/hypothesis/blob/master/hypothesis-python/tests/django/toystore/models.py>`_:
 
 .. code-block:: python
 
@@ -163,3 +167,19 @@ instead of generating one by passing ``fieldname=default_value`` to
     >>> x = models(DefaultCustomish, customish=default_value).example()
     >>> x.customish
     'b'
+
+.. _django-generating-primary-key:
+
+Generating primary key values
+=============================
+
+If your model includes a custom primary key that you want to generate
+using a strategy (rather than a default auto-increment primary key)
+then Hypothesis has to deal with the possibility of a duplicate
+primary key.
+
+If a model strategy generates a value for the primary key field,
+Hypothesis will create the model instance with
+:meth:`~django:django.db.models.query.QuerySet.update_or_create`,
+overwriting any existing instance in the database for this test case
+with the same primary key.

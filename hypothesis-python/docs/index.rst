@@ -25,7 +25,7 @@ Hypothesis lets you write tests which instead look like this:
 This is often called property based testing, and was popularised by the
 Haskell library `Quickcheck <https://hackage.haskell.org/package/QuickCheck>`_.
 
-It works by generating random data matching your specification and checking
+It works by generating arbitrary data matching your specification and checking
 that your guarantee still holds in that case. If it finds an example where it doesn't,
 it takes that example and cuts it down to size, simplifying it until it finds a
 much smaller example that still causes the problem. It then saves that example

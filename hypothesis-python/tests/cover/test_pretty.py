@@ -703,7 +703,8 @@ def test_re_evals():
         re.compile(r'hi'), re.compile(r'b\nc', re.MULTILINE),
         re.compile(br'hi', 0), re.compile(u'foo', re.MULTILINE | re.UNICODE),
     ]:
-        assert repr(eval(pretty.pretty(r), globals())) == repr(r)
+        r2 = eval(pretty.pretty(r), globals())
+        assert r.pattern == r2.pattern and r.flags == r2.flags
 
 
 class CustomStuff(object):

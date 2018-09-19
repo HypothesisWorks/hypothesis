@@ -1,0 +1,75 @@
+# coding=utf-8
+#
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis-python
+#
+# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# (david@drmaciver.com), but it contains contributions by others. See
+# CONTRIBUTING.rst for a full list of people who may hold copyright, and
+# consult the git log if you need to determine who owns an individual
+# contribution.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+#
+# END HEADER
+
+from __future__ import division, print_function, absolute_import
+
+import math
+
+import pytest
+
+from hypothesis import find
+from hypothesis import settings as Settings
+from hypothesis.errors import NoSuchExample
+from tests.common.debug import minimal
+from hypothesis.strategies import lists, floats, booleans, integers, \
+    dictionaries
+
+
+def test_can_find_an_int():
+    assert minimal(integers(), lambda x: True) == 0
+    assert minimal(integers(), lambda x: x >= 13) == 13
+
+
+def test_can_find_list():
+    x = minimal(lists(integers()), lambda x: sum(x) >= 10)
+    assert sum(x) == 10
+
+
+def test_can_find_nan():
+    minimal(floats(), math.isnan)
+
+
+def test_can_find_nans():
+    x = minimal(lists(floats()), lambda x: math.isnan(sum(x)))
+    if len(x) == 1:
+        assert math.isnan(x[0])
+    else:
+        assert 2 <= len(x) <= 3
+
+
+def test_condition_is_name():
+    settings = Settings(max_examples=20)
+    with pytest.raises(NoSuchExample) as e:
+        find(booleans(), lambda x: False, settings=settings)
+    assert 'lambda x:' in e.value.args[0]
+
+    with pytest.raises(NoSuchExample) as e:
+        find(integers(), lambda x: '☃' in str(x), settings=settings)
+    assert 'lambda x:' in e.value.args[0]
+
+    def bad(x):
+        return False
+
+    with pytest.raises(NoSuchExample) as e:
+        find(integers(), bad, settings=settings)
+    assert 'bad' in e.value.args[0]
+
+
+def test_find_dictionary():
+    assert len(minimal(
+        dictionaries(keys=integers(), values=integers()),
+        lambda xs: any(kv[0] > kv[1] for kv in xs.items()))) == 1

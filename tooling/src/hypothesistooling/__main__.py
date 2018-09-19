@@ -19,15 +19,17 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
-import random
-import shutil
+import shlex
 import subprocess
 from glob import glob
-from time import time, sleep
 from datetime import datetime
 
 import hypothesistooling as tools
 import hypothesistooling.installers as install
+import hypothesistooling.releasemanagement as rm
+import hypothesistooling.projects.conjecturerust as cr
+import hypothesistooling.projects.hypothesisruby as hr
+import hypothesistooling.projects.hypothesispython as hp
 from hypothesistooling import fix_doctests as fd
 from hypothesistooling.scripts import pip_tool
 
@@ -42,20 +44,29 @@ def task(if_changed=()):
         if_changed = (if_changed,)
 
     def accept(fn):
-        def wrapped():
+        def wrapped(*args, **kwargs):
             if if_changed and tools.IS_PULL_REQUEST:
                 if not tools.has_changes(if_changed + BUILD_FILES):
                     print('Skipping task due to no changes in %s' % (
                         ', '.join(if_changed),
                     ))
                     return
-            fn()
+            fn(*args, **kwargs)
         wrapped.__name__ = fn.__name__
 
         name = fn.__name__.replace('_', '-')
-        TASKS[name] = wrapped
+
+        if name != '<lambda>':
+            TASKS[name] = wrapped
+
         return wrapped
     return accept
+
+
+@task()
+def check_installed():
+    """No-op task that can be used to test for a successful install (so we
+    don't fail to run if a previous install failed midway)."""
 
 
 @task()
@@ -67,127 +78,58 @@ def lint():
     )
 
 
-@task(if_changed=tools.PYTHON_SRC)
-def check_type_hints():
-    pip_tool('mypy', tools.PYTHON_SRC)
+HEAD = tools.hash_for_name('HEAD')
+MASTER = tools.hash_for_name('origin/master')
 
 
-DIST = os.path.join(tools.HYPOTHESIS_PYTHON, 'dist')
-PENDING_STATUS = ('started', 'created')
+def do_release(package):
+    if not package.has_release():
+        print('No release for %s' % (package.__name__,))
+        return
+
+    os.chdir(package.BASE_DIR)
+
+    print('Updating changelog and version')
+    package.update_changelog_and_version()
+
+    print('Committing changes')
+    rm.commit_pending_release(package)
+
+    print('Building distribution')
+    package.build_distribution()
+
+    print('Looks good to release!')
+
+    tag_name = package.tag_name()
+
+    print('Creating tag %s' % (tag_name,))
+
+    tools.create_tag(tag_name)
+    tools.push_tag(tag_name)
+
+    print('Uploading distribution')
+    package.upload_distribution()
 
 
 @task()
 def deploy():
-    os.chdir(tools.HYPOTHESIS_PYTHON)
-
-    last_release = tools.latest_version()
-
-    print('Current version: %s. Latest released version: %s' % (
-        tools.__version__, last_release
-    ))
-
-    HEAD = tools.hash_for_name('HEAD')
-    MASTER = tools.hash_for_name('origin/master')
-    print('Current head:', HEAD)
+    print('Current head:  ', HEAD)
     print('Current master:', MASTER)
 
-    on_master = tools.is_ancestor(HEAD, MASTER)
-    has_release = tools.has_release()
-
-    if has_release:
-        print('Updating changelog and version')
-        tools.update_for_pending_release()
-
-    print('Building an sdist...')
-
-    if os.path.exists(DIST):
-        shutil.rmtree(DIST)
-
-    subprocess.check_output([
-        sys.executable, 'setup.py', 'sdist', '--dist-dir', DIST,
-    ])
-
-    if not on_master:
+    if not tools.is_ancestor(HEAD, MASTER):
         print('Not deploying due to not being on master')
         sys.exit(0)
 
-    if not has_release:
-        print('Not deploying due to no release')
-        sys.exit(0)
-
-    start_time = time()
-
-    prev_pending = None
-
-    # We time out after an hour, which is a stupidly long time and it should
-    # never actually take that long: A full Travis run only takes about 20-30
-    # minutes! This is really just here as a guard in case something goes
-    # wrong and we're not paying attention so as to not be too mean to Travis..
-    while time() <= start_time + 60 * 60:
-        jobs = tools.build_jobs()
-
-        failed_jobs = [
-            (k, v)
-            for k, vs in jobs.items()
-            if k not in PENDING_STATUS + ('passed',)
-            for v in vs
-        ]
-
-        if failed_jobs:
-            print('Failing this due to failure of jobs %s' % (
-                ', '.join('%s(%s)' % (s, j) for j, s in failed_jobs),
-            ))
-            sys.exit(1)
-        else:
-            pending = [j for s in PENDING_STATUS for j in jobs.get(s, ())]
-            try:
-                # This allows us to test the deploy job for a build locally.
-                pending.remove('deploy')
-            except ValueError:
-                pass
-            if pending:
-                still_pending = set(pending)
-                if prev_pending is None:
-                    print('Waiting for the following jobs to complete:')
-                    for p in sorted(still_pending):
-                        print(' * %s' % (p,))
-                    print()
-                else:
-                    completed = prev_pending - still_pending
-                    if completed:
-                        print('%s completed since last check.' % (
-                            ', '.join(sorted(completed)),))
-                prev_pending = still_pending
-                naptime = 10.0 * (2 + random.random())
-                print('Waiting %.2fs for %d more job%s to complete' % (
-                    naptime, len(pending), 's' if len(pending) > 1 else '',))
-                sleep(naptime)
-            else:
-                break
-    else:
-        print("We've been waiting for an hour. That seems bad. Failing now.")
-        sys.exit(1)
-
-    print('Looks good to release!')
-
-    if os.environ.get('TRAVIS_SECURE_ENV_VARS', None) != 'true':
-        print("But we don't have the keys to do it")
+    if not tools.has_travis_secrets():
+        print('Running without access to secure variables, so no deployment')
         sys.exit(0)
 
     print('Decrypting secrets')
     tools.decrypt_secrets()
+    tools.configure_git()
 
-    print('Release seems good. Pushing to github now.')
-
-    tools.create_tag_and_push()
-
-    print('Now uploading to pypi.')
-
-    subprocess.check_call([
-        sys.executable, '-m', 'twine', 'upload',
-        '--config-file', tools.PYPIRC,
-        os.path.join(DIST, '*'),
-    ])
+    for project in tools.all_projects():
+        do_release(project)
 
     sys.exit(0)
 
@@ -241,6 +183,9 @@ def format():
     files = tools.all_files() if format_all else changed
 
     files_to_format = [f for f in sorted(files) if should_format_file(f)]
+
+    if not files_to_format:
+        return
 
     for f in files_to_format:
         print(f)
@@ -332,49 +277,78 @@ def upgrade_requirements():
     compile_requirements(upgrade=True)
 
 
+def is_pyup_branch():
+    return (
+        os.environ['TRAVIS_EVENT_TYPE'] == 'pull_request' and
+        os.environ['TRAVIS_PULL_REQUEST_BRANCH'].startswith(
+            'pyup-scheduled-update')
+    )
+
+
+def push_pyup_requirements_commit():
+    """Because pyup updates each package individually, it can create a
+    requirements.txt with an incompatible set of versions.
+
+    Depending on the changes, pyup might also have introduced
+    whitespace errors.
+
+    If we've recompiled requirements.txt in Travis and made changes,
+    and this is a PR where pyup is running, push a consistent set of
+    versions as a new commit to the PR.
+    """
+    if is_pyup_branch():
+        print('Pushing new requirements, as this is a pyup pull request')
+
+        print('Decrypting secrets')
+        tools.decrypt_secrets()
+        tools.configure_git()
+
+        print('Creating commit')
+        tools.git('add', '--update', 'requirements')
+        tools.git(
+            'commit', '-m',
+            'Bump requirements for pyup pull request'
+        )
+
+        print('Pushing to GitHub')
+        subprocess.check_call([
+            'ssh-agent', 'sh', '-c',
+            'ssh-add %s && ' % (shlex.quote(tools.DEPLOY_KEY),) +
+            'git push ssh-origin HEAD:%s' % (
+                os.environ['TRAVIS_PULL_REQUEST_BRANCH'],
+            )
+        ])
+
+
 @task()
 def check_requirements():
-    compile_requirements()
-    check_not_changed()
+    if is_pyup_branch():
+        compile_requirements(upgrade=True)
+    else:
+        compile_requirements(upgrade=False)
 
-
-def update_changelog_for_docs():
-    if not tools.has_release():
-        return
-    if tools.has_uncommitted_changes(tools.CHANGELOG_FILE):
-        print(
-            'Cannot build documentation with uncommitted changes to '
-            'changelog and a pending release. Please commit your changes or '
-            'delete your release file.')
+    if tools.has_uncommitted_changes('requirements'):
+        push_pyup_requirements_commit()
         sys.exit(1)
-    tools.update_changelog_and_version()
+    else:
+        sys.exit(0)
 
 
-@task(if_changed=tools.HYPOTHESIS_PYTHON)
+@task(if_changed=hp.HYPOTHESIS_PYTHON)
 def documentation():
-    os.chdir(tools.HYPOTHESIS_PYTHON)
+    os.chdir(hp.HYPOTHESIS_PYTHON)
     try:
-        update_changelog_for_docs()
+        if hp.has_release():
+            hp.update_changelog_and_version()
         pip_tool(
-            'sphinx-build', '-W', '-b', 'html', '-d', 'docs/_build/doctrees',
-            'docs', 'docs/_build/html'
+            # See http://www.sphinx-doc.org/en/stable/man/sphinx-build.html
+            'sphinx-build', '-n', '-W', '--keep-going', '-T', '-E',
+            '-b', 'html', 'docs', 'docs/_build/html'
         )
     finally:
         subprocess.check_call([
             'git', 'checkout', 'docs/changes.rst', 'src/hypothesis/version.py'
         ])
-
-
-@task(if_changed=tools.HYPOTHESIS_PYTHON)
-def doctest():
-    os.chdir(tools.HYPOTHESIS_PYTHON)
-    env = dict(os.environ)
-    env['PYTHONPATH'] = 'src'
-
-    pip_tool(
-        'sphinx-build', '-W', '-b', 'doctest', '-d', 'docs/_build/doctrees',
-        'docs', 'docs/_build/html', env=env,
-    )
 
 
 def run_tox(task, version):
@@ -388,7 +362,7 @@ def run_tox(task, version):
     except FileExistsError:
         pass
 
-    os.chdir(tools.HYPOTHESIS_PYTHON)
+    os.chdir(hp.HYPOTHESIS_PYTHON)
     env = dict(os.environ)
     python = install.python_executable(version)
 
@@ -402,6 +376,7 @@ PY27 = '2.7.14'
 PY34 = '3.4.8'
 PY35 = '3.5.5'
 PY36 = '3.6.5'
+PY37 = '3.7.0'
 PYPY2 = 'pypy2.7-5.10.0'
 
 
@@ -415,12 +390,16 @@ ALIASES = {
     PYPY2: 'pypy',
 }
 
-for n in [PY27, PY34, PY35, PY36]:
+for n in [PY27, PY34, PY35, PY36, PY37]:
     major, minor, patch = n.split('.')
     ALIASES[n] = 'python%s.%s' % (major, minor)
 
 
-python_tests = task(if_changed=(tools.PYTHON_SRC, tools.PYTHON_TESTS))
+python_tests = task(if_changed=(
+    hp.PYTHON_SRC,
+    hp.PYTHON_TESTS,
+    os.path.join(hp.HYPOTHESIS_PYTHON, 'scripts'),
+))
 
 
 @python_tests
@@ -444,6 +423,11 @@ def check_py36():
 
 
 @python_tests
+def check_py37():
+    run_tox('py37-full', PY37)
+
+
+@python_tests
 def check_pypy():
     run_tox('pypy-full', PYPY2)
 
@@ -463,9 +447,10 @@ def standard_tox_task(name):
 
 
 standard_tox_task('nose')
-standard_tox_task('pytest28')
+standard_tox_task('pytest30')
 standard_tox_task('faker070')
 standard_tox_task('faker-latest')
+standard_tox_task('django21')
 standard_tox_task('django20')
 standard_tox_task('django111')
 
@@ -473,17 +458,15 @@ for n in [19, 20, 21, 22, 23]:
     standard_tox_task('pandas%d' % (n,))
 
 standard_tox_task('coverage')
-standard_tox_task('pure-tracer')
 
 
 @task()
 def check_quality():
     run_tox('quality', PY36)
-    run_tox('quality2', PY27)
 
 
-examples_task = task(if_changed=(tools.PYTHON_SRC, os.path.join(
-    tools.HYPOTHESIS_PYTHON, 'examples')
+examples_task = task(if_changed=(hp.PYTHON_SRC, os.path.join(
+    hp.HYPOTHESIS_PYTHON, 'examples')
 ))
 
 
@@ -516,32 +499,36 @@ def shell():
     IPython.start_ipython([])
 
 
-def bundle(*args):
-    subprocess.check_call([
-        install.BUNDLER_EXECUTABLE, *args
-    ])
-
-
 def ruby_task(fn):
-    def run():
-        install.ensure_rustup()
-        install.ensure_ruby()
-        os.chdir(tools.HYPOTHESIS_RUBY)
-        # Install in deployment mode so that it gets cached on Travis.
-        bundle('install', '--deployment')
-        fn()
-    run.__name__ = fn.__name__
-    return task(if_changed=(tools.HYPOTHESIS_RUBY,))(run)
+    return task(if_changed=(hr.HYPOTHESIS_RUBY,))(fn)
 
 
 @ruby_task
 def lint_ruby():
-    bundle('exec', 'rake', 'checkformat')
+    hr.rake_task('checkformat')
 
 
 @ruby_task
 def check_ruby_tests():
-    bundle('exec', 'rake', 'test')
+    hr.rake_task('test')
+
+
+@task()
+def python(*args):
+    os.execv(sys.executable, (sys.executable,) + args)
+
+
+@task()
+def bundle(*args):
+    hr.bundle(*args)
+
+
+rust_task = task(if_changed=(cr.BASE_DIR,))
+
+
+@rust_task
+def check_rust_tests():
+    cr.cargo('test')
 
 
 if __name__ == '__main__':
@@ -552,10 +539,20 @@ if __name__ == '__main__':
         )
         sys.exit(1)
 
-    task_to_run = os.environ.get('TASK')
-    if task_to_run is None:
+    if len(sys.argv) > 1:
         task_to_run = sys.argv[1]
+        args = sys.argv[2:]
+    else:
+        task_to_run = os.environ.get('TASK')
+        args = ()
+
+    if task_to_run is None:
+        print(
+            'No task specified. Either pass the task to run as an '
+            'argument or as an environment variable TASK.')
+        sys.exit(1)
+
     try:
-        TASKS[task_to_run]()
+        TASKS[task_to_run](*args)
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)

@@ -235,7 +235,7 @@ def base_regex_strategy(regex, parsed=None):
     ))
 
 
-def regex_strategy(regex):
+def regex_strategy(regex, fullmatch):
     if not hasattr(regex, 'pattern'):
         regex = re.compile(regex)
 
@@ -261,7 +261,9 @@ def regex_strategy(regex):
     right_pad = base_padding_strategy
     left_pad = base_padding_strategy
 
-    if parsed[-1][0] == sre.AT:
+    if fullmatch:
+        right_pad = empty
+    elif parsed[-1][0] == sre.AT:
         if parsed[-1][1] == sre.AT_END_STRING:
             right_pad = empty
         elif parsed[-1][1] == sre.AT_END:
@@ -272,7 +274,9 @@ def regex_strategy(regex):
                 )
             else:
                 right_pad = st.one_of(empty, newline)
-    if parsed[0][0] == sre.AT:
+    if fullmatch:
+        left_pad = empty
+    elif parsed[0][0] == sre.AT:
         if parsed[0][1] == sre.AT_BEGINNING_STRING:
             left_pad = empty
         elif parsed[0][1] == sre.AT_BEGINNING:

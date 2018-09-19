@@ -498,9 +498,9 @@ class GroupQueue(object):
 
 
 try:
-    _baseclass_reprs = (object.__repr__, types.InstanceType.__repr__)
+    _baseclass_reprs = (object.__repr__, types.InstanceType.__repr__)  # type: ignore
 except AttributeError:  # Python 3
-    _baseclass_reprs = (object.__repr__,)
+    _baseclass_reprs = (object.__repr__,)  # type: ignore
 
 
 def _default_pprint(obj, p, cycle):
@@ -761,7 +761,7 @@ def _exception_pprint(obj, p, cycle):
 try:
     _exception_base = BaseException
 except NameError:  # pragma: no cover
-    _exception_base = Exception
+    _exception_base = Exception  # type: ignore
 
 
 #: printers for builtin types
@@ -788,25 +788,24 @@ _type_pprinters = {
 }
 
 try:  # pragma: no cover
-    if types.DictProxyType != dict:
-        _type_pprinters[types.DictProxyType] = _dict_pprinter_factory(
+    if types.DictProxyType != dict:  # type: ignore
+        _type_pprinters[types.DictProxyType] = _dict_pprinter_factory(  # type: ignore
             '<dictproxy {', '}>')
-    _type_pprinters[types.ClassType] = _type_pprint
-    _type_pprinters[types.SliceType] = _repr_pprint
+    _type_pprinters[types.ClassType] = _type_pprint  # type: ignore
+    _type_pprinters[types.SliceType] = _repr_pprint  # type: ignore
 except AttributeError:  # Python 3
     _type_pprinters[slice] = _repr_pprint
 
 try:  # pragma: no cover
-    _type_pprinters[xrange] = _repr_pprint
-    _type_pprinters[long] = _repr_pprint
-    _type_pprinters[unicode] = _repr_pprint
+    _type_pprinters[xrange] = _repr_pprint  # type: ignore
+    _type_pprinters[long] = _repr_pprint  # type: ignore
+    _type_pprinters[unicode] = _repr_pprint  # type: ignore
 except NameError:
     _type_pprinters[range] = _repr_pprint
     _type_pprinters[bytes] = _repr_pprint
 
 #: printers for types specified by name
-_deferred_type_pprinters = {
-}
+_deferred_type_pprinters = {}  # type: ignore
 
 
 def for_type_by_name(type_module, type_name, func):

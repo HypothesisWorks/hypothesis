@@ -25,6 +25,7 @@ import math
 import time
 import array
 import codecs
+import inspect
 import platform
 import importlib
 from base64 import b64encode
@@ -32,18 +33,24 @@ from collections import namedtuple
 
 try:
     from collections import OrderedDict, Counter
-except ImportError:  # pragma: no cover
+except ImportError:
     from ordereddict import OrderedDict  # type: ignore
     from counter import Counter  # type: ignore
 
+try:
+    from collections import abc
+except ImportError:
+    import collections as abc  # type: ignore
+
 if False:
-    from typing import Type  # noqa
+    from typing import Type, Tuple  # noqa
 
 
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 PYPY = platform.python_implementation() == 'PyPy'
 CAN_UNPACK_BYTE_ARRAY = sys.version_info[:3] >= (2, 7, 4)
+CAN_PACK_HALF_FLOAT = sys.version_info[:2] >= (3, 6)
 
 WINDOWS = platform.system() == 'Windows'
 
@@ -55,6 +62,11 @@ if sys.version_info[:2] <= (2, 6):
 
 def bit_length(n):
     return n.bit_length()
+
+
+def quiet_raise(exc):
+    # Overridden by Py3 version, iff `raise XXX from None` is valid
+    raise exc
 
 
 if PY3:
@@ -144,12 +156,14 @@ else:
         assert i >= 0
         result = bytearray(size)
         j = size - 1
+        arg = i
         while i and j >= 0:
             result[j] = i & 255
             i >>= 8
             j -= 1
         if i:
-            raise OverflowError('int too big to convert')
+            raise OverflowError('i=%r cannot be represented in %r bytes'
+                                % (arg, size))
         return hbytes(result)
 
     int_to_byte = chr
@@ -224,9 +238,6 @@ else:
             x = x.encode(a_good_encoding())
         print(x)
 
-    def quiet_raise(exc):
-        raise exc
-
     def benchmark_time():
         return time.time()
 
@@ -270,12 +281,26 @@ def qualname(f):
         return f.__name__
 
 
+try:
+    import typing
+except ImportError:
+    typing_root_type = ()  # type: Tuple[type, ...]
+    ForwardRef = None
+else:
+    if hasattr(typing, '_Final'):  # new in Python 3.7
+        typing_root_type = (
+            typing._Final, typing._GenericAlias)  # type: ignore
+        ForwardRef = typing.ForwardRef  # type: ignore
+    else:
+        typing_root_type = (typing.TypingMeta, typing.TypeVar)  # type: ignore
+        ForwardRef = typing._ForwardRef  # type: ignore
+
+
 if PY2:
     FullArgSpec = namedtuple('FullArgSpec', 'args, varargs, varkw, defaults, '
                              'kwonlyargs, kwonlydefaults, annotations')
 
     def getfullargspec(func):
-        import inspect
         args, varargs, varkw, defaults = inspect.getargspec(func)
         return FullArgSpec(args, varargs, varkw, defaults, [], None,
                            getattr(func, '__annotations__', {}))
@@ -294,9 +319,10 @@ if sys.version_info[:2] < (3, 6):
         except TypeError:
             return {}
 else:
+    import typing
+
     def get_type_hints(thing):
         try:
-            import typing
             return typing.get_type_hints(thing)
         except TypeError:
             return {}

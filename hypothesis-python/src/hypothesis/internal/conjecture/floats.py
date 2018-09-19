@@ -209,7 +209,10 @@ def float_to_lex(f):
     if is_simple(f):
         assert f >= 0
         return int(f)
+    return base_float_to_lex(f)
 
+
+def base_float_to_lex(f):
     i = float_to_int(f)
     i &= ((1 << 63) - 1)
     exponent = i >> 52

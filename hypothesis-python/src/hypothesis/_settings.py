@@ -26,6 +26,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import warnings
 import threading
+import contextlib
 from enum import Enum, IntEnum, unique
 
 import attr
@@ -153,6 +154,11 @@ class settings(
                 kwargs['database'] = ExampleDatabase(kwargs['database_file'])
         if not kwargs.get('perform_health_check', True):
             kwargs['suppress_health_check'] = HealthCheck.all()
+        if kwargs.get('max_shrinks') == 0:
+            kwargs['phases'] = tuple(
+                p for p in _validate_phases(kwargs.get('phases'))
+                if p != Phase.shrink
+            )
         self._construction_complete = False
         deprecations = []
         defaults = parent or settings.default
@@ -311,11 +317,25 @@ class settings(
         bits = []
         for name, setting in all_settings.items():
             value = getattr(self, name)
+            # The only settings that are not shown are those that are
+            # deprecated and left at their default values.
             if value != setting.default or not setting.hide_repr:
                 bits.append('%s=%r' % (name, value))
         return 'settings(%s)' % ', '.join(sorted(bits))
 
+    def show_changed(self):
+        bits = []
+        for name, setting in all_settings.items():
+            value = getattr(self, name)
+            if value != setting.default:
+                bits.append('%s=%r' % (name, value))
+        return ', '.join(sorted(bits, key=len))
+
     def __enter__(self):
+        note_deprecation(
+            'Settings should be determined only by global state or with the '
+            '@settings decorator.'
+        )
         default_context_manager = default_variable.with_value(self)
         self.defaults_stack().append(default_context_manager)
         default_context_manager.__enter__()
@@ -380,6 +400,13 @@ class settings(
         settings._assign_default_internal(settings.get_profile(name))
 
 
+@contextlib.contextmanager
+def local_settings(s):
+    default_context_manager = default_variable.with_value(s)
+    with default_context_manager:
+        yield s
+
+
 @attr.s()
 class Setting(object):
     name = attr.ib()
@@ -439,11 +466,14 @@ your tests slower.
 
 settings._define_setting(
     'max_shrinks',
-    default=500,
+    default=not_set,
     description="""
-Once this many successful shrinks have been performed, Hypothesis will assume
-something has gone a bit wrong and give up rather than continuing to try to
-shrink the example.
+Passing ``max_shrinks=0`` disables the shrinking phase (see the ``phases``
+setting), but any other value has no effect and uses a general heuristic.
+""",
+    deprecation_message="""
+The max_shrinks setting has been disabled, as internal heuristics are more
+useful for this purpose than a user setting.
 """
 )
 
@@ -748,15 +778,13 @@ deadline and have not explicitly set a deadline yourself.
 
 settings._define_setting(
     'use_coverage',
-    default=True,
+    default=not_set,
+    deprecation_message="""
+use_coverage no longer does anything and can be removed from your settings.
+""",
     description="""
-Whether to use coverage information to improve Hypothesis's ability to find
-bugs.
-
-You should generally leave this turned on unless your code performs
-poorly when run under coverage. If you turn it off, please file a bug report
-or add a comment to an existing one about the problem that prompted you to do
-so.
+A flag to enable a feature that no longer exists. This setting is present
+only for backwards compatibility purposes.
 """
 )
 
@@ -772,11 +800,12 @@ class PrintSettings(Enum):
     """Make an educated guess as to whether it would be appropriate to print
     the blob.
 
-    The current rules are that this will print if both:
+    The current rules are that this will print if:
 
     1. The output from Hypothesis appears to be unsuitable for use with
-       :func:`~hypothesis.example`.
-    2. The output is not too long."""
+       :func:`~hypothesis.example`, and
+    2. The output is not too long, and
+    3. Verbosity is at least normal."""
 
     ALWAYS = 2
     """Always print a blob on failure."""

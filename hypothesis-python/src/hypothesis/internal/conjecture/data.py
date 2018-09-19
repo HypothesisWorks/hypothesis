@@ -17,7 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
 from enum import IntEnum
 
 import attr
@@ -25,7 +24,6 @@ import attr
 from hypothesis.errors import Frozen, StopTest, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
     bit_length, benchmark_time, int_from_bytes, unicode_safe_repr
-from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.escalation import mark_for_escalation
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 
@@ -39,35 +37,28 @@ class Status(IntEnum):
     VALID = 2
     INTERESTING = 3
 
+    def __repr__(self):
+        return 'Status.%s' % (self.name,)
+
 
 @attr.s(slots=True)
 class Example(object):
     depth = attr.ib()
     label = attr.ib()
+    index = attr.ib()
     start = attr.ib()
     end = attr.ib(default=None)
+
+    # An example is "trivial" if it only contains forced bytes and zero bytes.
+    # All examples start out as trivial, and then get marked non-trivial when
+    # we see a byte that is neither forced nor zero.
+    trivial = attr.ib(default=True)
     discarded = attr.ib(default=None)
+    children = attr.ib(default=attr.Factory(list))
 
     @property
     def length(self):
         return self.end - self.start
-
-
-@attr.s(hash=False, cmp=False, slots=True)
-class StructuralTag(object):
-    label = attr.ib()
-
-
-STRUCTURAL_TAGS = {}  # type: dict
-
-
-def structural_tag(label):
-    try:
-        return STRUCTURAL_TAGS[label]
-    except KeyError:
-        result = StructuralTag(label)
-        STRUCTURAL_TAGS[label] = result
-        return result
 
 
 global_test_counter = 0
@@ -92,7 +83,6 @@ class ConjectureData(object):
         self.is_find = False
         self._draw_bytes = draw_bytes
         self.overdraw = 0
-        self.level = 0
         self.block_starts = {}
         self.blocks = []
         self.buffer = bytearray()
@@ -105,11 +95,11 @@ class ConjectureData(object):
         self.start_time = benchmark_time()
         self.events = set()
         self.forced_indices = set()
-        self.capped_indices = {}
+        self.forced_blocks = set()
+        self.masked_indices = {}
         self.interesting_origin = None
-        self.tags = set()
         self.draw_times = []
-        self.__intervals = None
+        self.max_depth = 0
 
         self.examples = []
         self.example_stack = []
@@ -123,14 +113,11 @@ class ConjectureData(object):
                 'Cannot call %s on frozen ConjectureData' % (
                     name,))
 
-    def add_tag(self, tag):
-        self.tags.add(tag)
-
     @property
     def depth(self):
         # We always have a single example wrapping everything. We want to treat
         # that as depth 0 rather than depth 1.
-        return self.level - 1
+        return len(self.example_stack) - 1
 
     @property
     def index(self):
@@ -155,15 +142,7 @@ class ConjectureData(object):
         if self.depth >= MAX_DEPTH:
             self.mark_invalid()
 
-        if self.depth == 0 and not IN_COVERAGE_TESTS:  # pragma: no cover
-            original_tracer = sys.gettrace()
-            try:
-                sys.settrace(None)
-                return self.__draw(strategy, label=label)
-            finally:
-                sys.settrace(original_tracer)
-        else:
-            return self.__draw(strategy, label=label)
+        return self.__draw(strategy, label=label)
 
     def __draw(self, strategy, label):
         at_top_level = self.depth == 0
@@ -187,20 +166,31 @@ class ConjectureData(object):
 
     def start_example(self, label):
         self.__assert_not_frozen('start_example')
-        self.level += 1
+
         i = len(self.examples)
-        self.examples.append(Example(
-            depth=self.depth, label=label, start=self.index))
+        new_depth = self.depth + 1
+        ex = Example(
+            index=i,
+            depth=new_depth, label=label, start=self.index,
+        )
+        self.examples.append(ex)
+        if self.example_stack:
+            p = self.example_stack[-1]
+            self.examples[p].children.append(ex)
         self.example_stack.append(i)
+        self.max_depth = max(self.max_depth, self.depth)
+        return ex
 
     def stop_example(self, discard=False):
         if self.frozen:
             return
-        self.level -= 1
 
         k = self.example_stack.pop()
         ex = self.examples[k]
         ex.end = self.index
+
+        if self.example_stack and not ex.trivial:
+            self.examples[self.example_stack[-1]].trivial = False
 
         # We don't want to count empty examples as discards even if the flag
         # says we should. This leads to situations like
@@ -241,7 +231,6 @@ class ConjectureData(object):
                 if ex.discarded:
                     discards.append((ex.start, ex.end))
                     continue
-                self.tags.add(structural_tag(ex.label))
 
         self.buffer = hbytes(self.buffer)
         self.events = frozenset(self.events)
@@ -260,10 +249,11 @@ class ConjectureData(object):
             assert len(buf) == n_bytes
             mask = (1 << (n % 8)) - 1
             buf[0] &= mask
-            self.capped_indices[self.index] = mask
+            self.masked_indices[self.index] = mask
             buf = hbytes(buf)
             self.__write(buf)
             result = int_from_bytes(buf)
+
         assert bit_length(result) <= n
         return result
 
@@ -272,8 +262,9 @@ class ConjectureData(object):
         self.__check_capacity(len(string))
         assert isinstance(string, hbytes)
         original = self.index
-        self.__write(string)
+        self.__write(string, forced=True)
         self.forced_indices.update(hrange(original, self.index))
+        self.forced_blocks.add(len(self.blocks) - 1)
         return string
 
     def __check_capacity(self, n):
@@ -283,7 +274,9 @@ class ConjectureData(object):
             self.freeze()
             raise StopTest(self.testcounter)
 
-    def __write(self, result):
+    def __write(self, result, forced=False):
+        ex = self.start_example(DRAW_BYTES_LABEL)
+        ex.trivial = forced or not any(result)
         initial = self.index
         n = len(result)
         self.block_starts.setdefault(n, []).append(initial)
@@ -291,17 +284,16 @@ class ConjectureData(object):
         assert len(result) == n
         assert self.index == initial
         self.buffer.extend(result)
+        self.stop_example()
 
     def draw_bytes(self, n):
         self.__assert_not_frozen('draw_bytes')
         if n == 0:
             return hbytes(b'')
         self.__check_capacity(n)
-        self.start_example(DRAW_BYTES_LABEL)
         result = self._draw_bytes(self, n)
         assert len(result) == n
         self.__write(result)
-        self.stop_example()
         return hbytes(result)
 
     def mark_interesting(self, interesting_origin=None):

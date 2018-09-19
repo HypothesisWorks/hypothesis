@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'hypothesis/junkdrawer'
 require_relative 'hypothesis/errors'
 require_relative 'hypothesis/possible'
 require_relative 'hypothesis/testcase'
@@ -121,7 +122,7 @@ module Hypothesis
   # of the block is a *test case*.
   # A test case has three important features:
   #
-  # * *givens* are the result of a call to self.given, and are the
+  # * *givens* are the result of a call to self.any, and are the
   #   values that make up the test case. These might be values such
   #   as strings, integers, etc. or they might be values specific to
   #   your application such as a User object.

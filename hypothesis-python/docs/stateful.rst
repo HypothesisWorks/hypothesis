@@ -169,6 +169,61 @@ fewer examples with larger programs you could change the settings to:
 Which doubles the number of steps each program runs and halves the number of
 test cases that will be run.
 
+-----
+Rules
+-----
+
+As said earlier, rules are the most common feature used in RuleBasedStateMachine.
+They are defined by applying the :func:`~hypothesis.stateful.rule` decorator
+on a function.
+Note that RuleBasedStateMachine must have at least one rule defined and that
+a single function cannot be used to define multiple rules (this to avoid having
+multiple rules doing the same things).
+Due to the stateful execution method, rules generally cannot take arguments
+from other sources such as fixtures or ``pytest.mark.parametrize`` - consider
+providing them via a strategy such as :func:`~hypothesis.strategies.sampled_from`
+instead.
+
+.. autofunction:: hypothesis.stateful.rule
+
+-----------
+Initializes
+-----------
+
+Initializes are a special case of rules that are guaranteed to be run at most
+once at the beginning of a run (i.e. before any normal rule is called).
+Note if multiple initialize rules are defined, they may be called in any order,
+and that order will vary from run to run.
+
+Initializes are typically useful to populate bundles:
+
+.. autofunction:: hypothesis.stateful.initialize
+
+.. code:: python
+
+    import hypothesis.strategies as st
+    from hypothesis.stateful import RuleBasedStateMachine, Bundle, rule, initialize
+
+    name_strategy = st.text(min_size=1).filter(lambda x: "/" not in x)
+
+    class NumberModifier(RuleBasedStateMachine):
+
+        folders = Bundle('folders')
+        files = Bundle('files')
+
+        @initialize(target=folders)
+        def init_folders(self):
+            return '/'
+
+        @rule(target=folders, name=name_strategy)
+        def create_folder(self, parent, name):
+            return '%s/%s' % (parent, name)
+
+        @rule(target=files, name=name_strategy)
+        def create_file(self, parent, name):
+            return '%s/%s' % (parent, name)
+
+
 -------------
 Preconditions
 -------------

@@ -8,7 +8,8 @@ The only inclusion criterion right now is that if it's a Python library
 then it should be available on pypi.
 
 You can find hundreds more from `the Hypothesis page at libraries.io
-<https://libraries.io/pypi/hypothesis>`_.
+<https://libraries.io/pypi/hypothesis>`_, and over a thousand
+`on GitHub <https://github.com/HypothesisWorks/hypothesis/network/dependents>`_.
 
 * `aur <https://github.com/cdown/aur>`_
 * `argon2_cffi <https://github.com/hynek/argon2_cffi>`_

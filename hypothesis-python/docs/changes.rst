@@ -21,6 +21,999 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.71.10:
+
+--------------------
+3.71.10 - 2018-09-18
+--------------------
+
+This patch allows :func:`~hypothesis.strategies.from_type` to handle the
+empty tuple type, :obj:`typing.Tuple[()] <python:typing.Tuple>`.
+
+.. _v3.71.9:
+
+-------------------
+3.71.9 - 2018-09-17
+-------------------
+
+This patch updates some internal comments for :pypi:`mypy`.
+There is no user-visible effect, even for Mypy users.
+
+.. _v3.71.8:
+
+-------------------
+3.71.8 - 2018-09-17
+-------------------
+
+This patch fixes a rare bug that would cause a particular shrinker pass to
+raise an IndexError, if a shrink improvement changed the underlying data
+in an unexpected way.
+
+.. _v3.71.7:
+
+-------------------
+3.71.7 - 2018-09-17
+-------------------
+
+This release fixes the broken cross-references in our docs,
+and adds a CI check so we don't add new ones.
+
+.. _v3.71.6:
+
+-------------------
+3.71.6 - 2018-09-16
+-------------------
+
+This patch fixes two bugs (:issue:`944` and :issue:`1521`), where messages
+about :func:`@seed <hypothesis.seed>` did not check the current verbosity
+setting, and the wrong settings were active while executing
+:ref:`explicit examples <providing-explicit-examples>`.
+
+.. _v3.71.5:
+
+-------------------
+3.71.5 - 2018-09-15
+-------------------
+
+This patch fixes a ``DeprecationWarning`` added in Python 3.8 (:issue:`1576`).
+
+Thanks to tirkarthi for this contribution!
+
+.. _v3.71.4:
+
+-------------------
+3.71.4 - 2018-09-14
+-------------------
+
+This is a no-op release, which implements automatic DOI minting and code
+archival of Hypothesis via `Zenodo <https://zenodo.org/>`_. Thanks to
+CERN and the EU *Horizon 2020* programme for providing this service!
+
+Check our :gh-file:`CITATION` file for details, or head right on over to
+`doi.org/10.5281/zenodo.1412597 <https://doi.org/10.5281/zenodo.1412597>`_
+
+.. _v3.71.3:
+
+-------------------
+3.71.3 - 2018-09-10
+-------------------
+
+This release adds the test name to some deprecation warnings,
+for easier debugging.
+
+Thanks to Sanyam Khurana for the patch!
+
+.. _v3.71.2:
+
+-------------------
+3.71.2 - 2018-09-10
+-------------------
+
+This release makes Hypothesis's memory usage substantially smaller for tests with many
+examples, by bounding the number of past examples it keeps around.
+
+You will not see much difference unless you are running tests with :obj:`~hypothesis.settings.max_examples`
+set to well over ``1000``, but if you do have such tests then you should see memory usage mostly plateau
+where previously it would have grown linearly with time.
+
+.. _v3.71.1:
+
+-------------------
+3.71.1 - 2018-09-09
+-------------------
+
+This patch adds internal comments to some tree traversals in the core engine.
+There is no user-visible change.
+
+.. _v3.71.0:
+
+-------------------
+3.71.0 - 2018-09-08
+-------------------
+
+This release deprecates the coverage-guided testing functionality,
+as it has proven brittle and does not really pull its weight.
+
+We intend to replace it with something more useful in the future,
+but the feature in its current form does not seem to be worth the cost of using,
+and whatever replaces it will likely look very different.
+
+.. _v3.70.4:
+
+-------------------
+3.70.4 - 2018-09-08
+-------------------
+
+This patch changes the behaviour of :func:`~hypothesis.reproduce_failure`
+so that blobs are only printed in quiet mode when the
+:obj:`~hypothesis.settings.print_blob` setting is set to ``ALWAYS``.
+
+Thanks to Cameron McGill for writing this patch at the PyCon Australia sprints!
+
+.. _v3.70.3:
+
+-------------------
+3.70.3 - 2018-09-03
+-------------------
+
+This patch removes some unnecessary code from the internals.
+There is no user-visible change.
+
+.. _v3.70.2:
+
+-------------------
+3.70.2 - 2018-09-03
+-------------------
+
+This patch fixes an internal bug where a corrupted argument to
+:func:`@reproduce_failure <hypothesis.reproduce_failure>` could raise
+the wrong type of error.  Thanks again to Paweł T. Jochym, who maintains
+Hypothesis on `conda-forge <https://conda-forge.org/>`_ and consistently
+provides excellent bug reports including :issue:`1558`.
+
+.. _v3.70.1:
+
+-------------------
+3.70.1 - 2018-09-03
+-------------------
+
+This patch updates hypothesis to report its version and settings when run with
+pytest. (:issue:`1223`).
+
+Thanks to Jack Massey for this feature.
+
+.. _v3.70.0:
+
+-------------------
+3.70.0 - 2018-09-01
+-------------------
+
+This release adds a ``fullmatch`` argument to
+:func:`~hypothesis.strategies.from_regex`.  When ``fullmatch=True``, the
+whole example will match the regex pattern as for :func:`python:re.fullmatch`.
+
+Thanks to Jakub Nabaglo for writing this patch at the PyCon Australia sprints!
+
+.. _v3.69.12:
+
+--------------------
+3.69.12 - 2018-08-30
+--------------------
+
+This release reverts the changes to logging handling in 3.69.11,
+which broke test that use the :pypi:`pytest` ``caplog`` fixture
+internally because all logging was disabled (:issue:`1546`).
+
+.. _v3.69.11:
+
+--------------------
+3.69.11 - 2018-08-29
+--------------------
+
+This patch will hide all logging messages produced by test cases before the
+final, minimal, failing test case (:issue:`356`).
+
+Thanks to Gary Donovan for writing this patch at the PyCon Australia sprints!
+
+.. _v3.69.10:
+
+--------------------
+3.69.10 - 2018-08-29
+--------------------
+
+This patch fixes a bug that prevents coverage from reporting unexecuted
+Python files (:issue:`1085`).
+
+Thanks to Gary Donovan for writing this patch at the PyCon Australia sprints!
+
+.. _v3.69.9:
+
+-------------------
+3.69.9 - 2018-08-28
+-------------------
+
+This patch improves the packaging of the Python package by adding
+``LICENSE.txt`` to the sdist (:issue:`1311`), clarifying the minimum
+supported versions of :pypi:`pytz` and :pypi:`dateutil <python-dateutil>`
+(:issue:`1383`), and adds keywords to the metadata (:issue:`1520`).
+
+Thanks to Graham Williamson for writing this patch at the PyCon
+Australia sprints!
+
+.. _v3.69.8:
+
+-------------------
+3.69.8 - 2018-08-28
+-------------------
+
+This is an internal change which replaces pickle with json to prevent possible
+security issues.
+
+Thanks to Vidya Rani D G for writing this patch at the PyCon Australia sprints!
+
+.. _v3.69.7:
+
+-------------------
+3.69.7 - 2018-08-28
+-------------------
+
+This patch ensures that :func:`~hypothesis.note` prints the note for every
+test case when the :obj:`~hypothesis.settings.verbosity` setting is
+``Verbosity.verbose``.  At normal verbosity it only prints from the final
+test case.
+
+Thanks to Tom McDermott for writing this patch at
+the PyCon Australia sprints!
+
+.. _v3.69.6:
+
+-------------------
+3.69.6 - 2018-08-27
+-------------------
+
+This patch improves the testing of some internal caching.  It should have
+no user-visible effect.
+
+.. _v3.69.5:
+
+-------------------
+3.69.5 - 2018-08-27
+-------------------
+
+This change performs a small rename and refactoring in the core engine.
+There is no user-visible change.
+
+.. _v3.69.4:
+
+-------------------
+3.69.4 - 2018-08-27
+-------------------
+
+This change improves the core engine's ability to avoid unnecessary work,
+by consulting its cache of previously-tried inputs in more cases.
+
+.. _v3.69.3:
+
+-------------------
+3.69.3 - 2018-08-27
+-------------------
+
+This patch handles passing an empty :class:`python:enum.Enum` to
+:func:`~hypothesis.strategies.from_type` by returning
+:func:`~hypothesis.strategies.nothing`, instead of raising an
+internal :class:`python:AssertionError`.
+
+Thanks to Paul Amazona for writing this patch at the
+PyCon Australia sprints!
+
+.. _v3.69.2:
+
+-------------------
+3.69.2 - 2018-08-23
+-------------------
+
+This patch fixes a small mistake in an internal comment.
+There is no user-visible change.
+
+.. _v3.69.1:
+
+-------------------
+3.69.1 - 2018-08-21
+-------------------
+
+This change fixes a small bug in how the core engine consults its cache
+of previously-tried inputs. There is unlikely to be any user-visible change.
+
+.. _v3.69.0:
+
+-------------------
+3.69.0 - 2018-08-20
+-------------------
+
+This release improves argument validation for stateful testing.
+
+- If the target or targets of a :func:`~hypothesis.stateful.rule` are invalid,
+  we now raise a useful validation error rather than an internal exception.
+- Passing both the ``target`` and ``targets`` arguments is deprecated -
+  append the ``target`` bundle to the ``targets`` tuple of bundles instead.
+- Passing the name of a Bundle rather than the Bundle itself is also deprecated.
+
+.. _v3.68.3:
+
+-------------------
+3.68.3 - 2018-08-20
+-------------------
+
+This is a docs-only patch, fixing some typos and formatting issues.
+
+.. _v3.68.2:
+
+-------------------
+3.68.2 - 2018-08-19
+-------------------
+
+This change fixes a small bug in how the core engine caches the results of
+previously-tried inputs. The effect is unlikely to be noticeable, but it might
+avoid unnecesary work in some cases.
+
+.. _v3.68.1:
+
+-------------------
+3.68.1 - 2018-08-18
+-------------------
+
+This patch documents the :func:`~hypothesis.extra.numpy.from_dtype` function,
+which infers a strategy for :class:`numpy:numpy.dtype`\ s.  This is used in
+:func:`~hypothesis.extra.numpy.arrays`, but can also be used directly when
+creating e.g. Pandas objects.
+
+.. _v3.68.0:
+
+-------------------
+3.68.0 - 2018-08-15
+-------------------
+
+:func:`~hypothesis.extra.numpy.arrays` now checks that integer and float
+values drawn from ``elements`` and ``fill`` strategies can be safely cast
+to the dtype of the array, and emits a warning otherwise (:issue:`1385`).
+
+Elements in the resulting array could previously violate constraints on
+the elements strategy due to floating-point overflow or truncation of
+integers to fit smaller types.
+
+.. _v3.67.1:
+
+-------------------
+3.67.1 - 2018-08-14
+-------------------
+
+This release contains a tiny refactoring of the internals.
+There is no user-visible change.
+
+.. _v3.67.0:
+
+-------------------
+3.67.0 - 2018-08-10
+-------------------
+
+This release adds a ``width`` argument to :func:`~hypothesis.strategies.floats`,
+to generate lower-precision floating point numbers for e.g. Numpy arrays.
+
+The generated examples are always instances of Python's native ``float``
+type, which is 64bit, but passing ``width=32`` will ensure that all values
+can be exactly represented as 32bit floats.  This can be useful to avoid
+overflow (to +/- infinity), and for efficiency of generation and shrinking.
+
+Half-precision floats (``width=16``) are also supported, but require Numpy
+if you are running Python 3.5 or earlier.
+
+.. _v3.66.33:
+
+--------------------
+3.66.33 - 2018-08-10
+--------------------
+
+This release fixes a bug in :func:`~hypothesis.strategies.floats`, where
+setting ``allow_infinity=False`` and exactly one of ``min_value`` and
+``max_value`` would allow infinite values to be generated.
+
+.. _v3.66.32:
+
+--------------------
+3.66.32 - 2018-08-09
+--------------------
+
+This release adds type hints to the :func:`~hypothesis.example` and
+:func:`~hypothesis.seed` decorators, and fixes the type hint on
+:func:`~hypothesis.strategies.register_type_strategy`. The second argument to
+:func:`~hypothesis.strategies.register_type_strategy` must either be a
+``SearchStrategy``, or a callable which takes a ``type`` and returns a
+``SearchStrategy``.
+
+.. _v3.66.31:
+
+--------------------
+3.66.31 - 2018-08-08
+--------------------
+
+Another set of changes designed to improve the performance of shrinking on
+large examples. In particular the shrinker should now spend considerably less
+time running useless shrinks.
+
+.. _v3.66.30:
+
+--------------------
+3.66.30 - 2018-08-06
+--------------------
+
+"Bug fixes and performance improvements".
+
+This release is a fairly major overhaul of the shrinker designed to improve
+its behaviour on large examples, especially around stateful testing. You
+should hopefully see shrinking become much faster, with little to no quality
+degradation (in some cases quality may even improve).
+
+.. _v3.66.29:
+
+--------------------
+3.66.29 - 2018-08-05
+--------------------
+
+This release fixes two very minor bugs in the core engine:
+
+* it fixes a corner case that was missing in :ref:`3.66.28 <v3.66.28>`, which
+  should cause shrinking to work slightly better.
+* it fixes some logic for how shrinking interacts with the database that was
+  causing Hypothesis to be insufficiently aggressive about clearing out old
+  keys.
+
+.. _v3.66.28:
+
+--------------------
+3.66.28 - 2018-08-05
+--------------------
+
+This release improves how Hypothesis handles reducing the size of integers'
+representation. This change should mostly be invisible as it's purely about
+the underlying representation and not the generated value, but it may result
+in some improvements to shrink performance.
+
+.. _v3.66.27:
+
+--------------------
+3.66.27 - 2018-08-05
+--------------------
+
+This release changes the order in which Hypothesis chooses parts of the test case
+to shrink. For typical usage this should be a significant performance improvement on
+large examples. It is unlikely to have a major impact on example quality, but where
+it does change the result it should usually be an improvement.
+
+.. _v3.66.26:
+
+--------------------
+3.66.26 - 2018-08-05
+--------------------
+
+This release improves the debugging information that the shrinker emits about
+the operations it performs, giving better summary statistics about which
+passes resulted in test executions and whether they were successful.
+
+.. _v3.66.25:
+
+--------------------
+3.66.25 - 2018-08-05
+--------------------
+
+This release fixes several bugs that were introduced to the shrinker in
+:ref:`3.66.24 <v3.66.24>` which would have caused it to behave significantly
+less well than advertised. With any luck you should *actually* see the promised
+benefits now.
+
+.. _v3.66.24:
+
+--------------------
+3.66.24 - 2018-08-03
+--------------------
+
+This release changes how Hypothesis deletes data when shrinking in order to
+better handle deletion of large numbers of contiguous sequences. Most tests
+should see little change, but this will hopefully provide a significant
+speed up for :doc:`stateful testing <stateful>`.
+
+.. _v3.66.23:
+
+--------------------
+3.66.23 - 2018-08-02
+--------------------
+
+This release makes some internal changes to enable further improvements to the
+shrinker. You may see some changes in the final shrunk examples, but they are
+unlikely to be significant.
+
+.. _v3.66.22:
+
+--------------------
+3.66.22 - 2018-08-01
+--------------------
+
+This release adds some more internal caching to the shrinker. This should cause
+a significant speed up for shrinking, especially for stateful testing and
+large example sizes.
+
+.. _v3.66.21:
+
+--------------------
+3.66.21 - 2018-08-01
+--------------------
+
+This patch is for downstream packagers - our tests now pass under
+:pypi:`pytest` 3.7.0 (released 2018-07-30).  There are no changes
+to the source of Hypothesis itself.
+
+.. _v3.66.20:
+
+--------------------
+3.66.20 - 2018-08-01
+--------------------
+
+This release removes some functionality from the shrinker that was taking a
+considerable amount of time and does not appear to be useful any more due to
+a number of quality improvements in the shrinker.
+
+You may see some degradation in shrink quality as a result of this, but mostly
+shrinking should just get much faster.
+
+.. _v3.66.19:
+
+--------------------
+3.66.19 - 2018-08-01
+--------------------
+
+This release slightly changes the format of some debugging information emitted
+during shrinking, and refactors some of the internal interfaces around that.
+
+.. _v3.66.18:
+
+--------------------
+3.66.18 - 2018-07-31
+--------------------
+
+This release is a very small internal refactoring which should have no user
+visible impact.
+
+.. _v3.66.17:
+
+--------------------
+3.66.17 - 2018-07-31
+--------------------
+
+This release fixes a bug that could cause an ``IndexError`` to be raised from
+inside Hypothesis during shrinking. It is likely that it was impossible to
+trigger this bug in practice - it was only made visible by some currently
+unreleased work.
+
+.. _v3.66.16:
+
+--------------------
+3.66.16 - 2018-07-31
+--------------------
+
+This release is a very small internal refactoring which should have no user
+visible impact.
+
+.. _v3.66.15:
+
+--------------------
+3.66.15 - 2018-07-31
+--------------------
+
+This release makes Hypothesis's shrinking faster by removing some redundant
+work that it does when minimizing values in its internal representation.
+
+.. _v3.66.14:
+
+--------------------
+3.66.14 - 2018-07-30
+--------------------
+
+This release expands the deprecation of timeout from :ref:`3.16.0 <v3.16.0>` to
+also emit the deprecation warning in ``find`` or :doc:`stateful testing <stateful>`.
+
+.. _v3.66.13:
+
+--------------------
+3.66.13 - 2018-07-30
+--------------------
+
+This release adds an additional shrink pass that is able to reduce the size of
+examples in some cases where the transformation is non-obvious. In particular
+this will improve the quality of some examples which would have regressed in
+:ref:`3.66.12 <v3.66.12>`.
+
+.. _v3.66.12:
+
+--------------------
+3.66.12 - 2018-07-28
+--------------------
+
+This release changes how we group data together for shrinking. It should result
+in improved shrinker performance, especially in stateful testing.
+
+.. _v3.66.11:
+
+--------------------
+3.66.11 - 2018-07-28
+--------------------
+
+This patch modifies how which rule to run is selected during
+:doc:`rule based stateful testing <stateful>`. This should result in a slight
+performance increase during generation and a significant performance and
+quality improvement when shrinking.
+
+As a result of this change, some state machines which would previously have
+thrown an ``InvalidDefinition`` are no longer detected as invalid.
+
+.. _v3.66.10:
+
+--------------------
+3.66.10 - 2018-07-28
+--------------------
+
+This release weakens some minor functionality in the shrinker that had only
+modest benefit and made its behaviour much harder to reason about.
+
+This is unlikely to have much user visible effect, but it is possible that in
+some cases shrinking may get slightly slower. It is primarily to make it easier
+to work on the shrinker and pave the way for future work.
+
+.. _v3.66.9:
+
+-------------------
+3.66.9 - 2018-07-26
+-------------------
+
+This release improves the information that Hypothesis emits about its shrinking
+when :obj:`~hypothesis.settings.verbosity` is set to debug.
+
+.. _v3.66.8:
+
+-------------------
+3.66.8 - 2018-07-24
+-------------------
+
+This patch includes some minor fixes in the documentation, and updates
+the minimum version of :pypi:`pytest` to 3.0 (released August 2016).
+
+.. _v3.66.7:
+
+-------------------
+3.66.7 - 2018-07-24
+-------------------
+
+This release fixes a bug where difficult to shrink tests could sometimes
+trigger an internal assertion error inside the shrinker.
+
+.. _v3.66.6:
+
+-------------------
+3.66.6 - 2018-07-23
+-------------------
+
+This patch ensures that Hypothesis fully supports Python 3.7, by
+upgrading :func:`~hypothesis.strategies.from_type` (:issue:`1264`)
+and fixing some minor issues in our test suite (:issue:`1148`).
+
+.. _v3.66.5:
+
+-------------------
+3.66.5 - 2018-07-22
+-------------------
+
+This patch fixes the online docs for various extras, by ensuring that
+their dependencies are installed on readthedocs.io (:issue:`1326`).
+
+.. _v3.66.4:
+
+-------------------
+3.66.4 - 2018-07-20
+-------------------
+
+This release improves the shrinker's ability to reorder examples.
+
+For example, consider the following test:
+
+.. code-block:: python
+
+    import hypothesis.strategies as st
+    from hypothesis import given
+
+    @given(st.text(), st.text())
+    def test_non_equal(x, y):
+        assert x != y
+
+Previously this could have failed with either of ``x="", y="0"`` or
+``x="0", y=""``. Now it should always fail with ``x="", y="0"``.
+
+This will allow the shrinker to produce more consistent results, especially in
+cases where test cases contain some ordered collection whose actual order does
+not matter.
+
+.. _v3.66.3:
+
+-------------------
+3.66.3 - 2018-07-20
+-------------------
+
+This patch fixes inference in the :func:`~hypothesis.strategies.builds`
+strategy with subtypes of :class:`python:typing.NamedTuple`, where the
+``__init__`` method is not useful for introspection.  We now use the
+field types instead - thanks to James Uther for identifying this bug.
+
+.. _v3.66.2:
+
+-------------------
+3.66.2 - 2018-07-19
+-------------------
+
+This release improves the shrinker's ability to handle situations where there
+is an additive constraint between two values.
+
+For example, consider the following test:
+
+
+.. code-block:: python
+
+    import hypothesis.strategies as st
+    from hypothesis import given
+
+    @given(st.integers(), st.integers())
+    def test_does_not_exceed_100(m, n):
+        assert m + n < 100
+
+Previously this could have failed with almost any pair ``(m, n)`` with
+``0 <= m <= n`` and ``m + n == 100``. Now it should almost always fail with
+``m=0, n=100``.
+
+This is a relatively niche specialisation, but can be useful in situations
+where e.g. a bug is triggered by an integer overflow.
+
+.. _v3.66.1:
+
+-------------------
+3.66.1 - 2018-07-09
+-------------------
+
+This patch fixes a rare bug where an incorrect percentage drawtime
+could be displayed for a test, when the system clock was changed during
+a test running under Python 2 (we use :func:`python:time.monotonic`
+where it is available to avoid such problems).  It also fixes a possible
+zero-division error that can occur when the underlying C library
+double-rounds an intermediate value in :func:`python:math.fsum` and
+gets the least significant bit wrong.
+
+.. _v3.66.0:
+
+-------------------
+3.66.0 - 2018-07-05
+-------------------
+
+This release improves validation of the ``alphabet`` argument to the
+:func:`~hypothesis.strategies.text` strategy.  The following misuses
+are now deprecated, and will be an error in a future version:
+
+- passing an unordered collection (such as ``set('abc')``), which
+  violates invariants about shrinking and reproducibility
+- passing an alphabet sequence with elements that are not strings
+- passing an alphabet sequence with elements that are not of length one,
+  which violates any size constraints that may apply
+
+Thanks to Sushobhit for adding these warnings (:issue:`1329`).
+
+.. _v3.65.3:
+
+-------------------
+3.65.3 - 2018-07-04
+-------------------
+
+This release fixes a mostly theoretical bug where certain usage of the internal
+API could trigger an assertion error inside Hypothesis. It is unlikely that
+this problem is even possible to trigger through the public API.
+
+.. _v3.65.2:
+
+-------------------
+3.65.2 - 2018-07-04
+-------------------
+
+This release fixes dependency information for coverage.  Previously Hypothesis
+would allow installing :pypi:`coverage` with any version, but it only works
+with coverage 4.0 or later.
+
+We now specify the correct metadata in our ``setup.py``, so Hypothesis will
+only allow installation with compatible versions of coverage.
+
+.. _v3.65.1:
+
+-------------------
+3.65.1 - 2018-07-03
+-------------------
+
+This patch ensures that :doc:`stateful tests <stateful>` which raise an
+error from a :pypi:`pytest` helper still print the sequence of steps
+taken to reach that point (:issue:`1372`).  This reporting was previously
+broken because the helpers inherit directly from :class:`python:BaseException`, and
+therefore require special handling to catch without breaking e.g. the use
+of ctrl-C to quit the test.
+
+.. _v3.65.0:
+
+-------------------
+3.65.0 - 2018-06-30
+-------------------
+
+This release deprecates the :obj:`~hypothesis.settings.max_shrinks` setting
+in favor of an internal heuristic.  If you need to avoid shrinking examples,
+use the :obj:`~hypothesis.settings.phases` setting instead.  (:issue:`1235`)
+
+.. _v3.64.2:
+
+-------------------
+3.64.2 - 2018-06-27
+-------------------
+
+This release fixes a bug where an internal assertion error could sometimes be
+triggered while shrinking a failing test.
+
+.. _v3.64.1:
+
+-------------------
+3.64.1 - 2018-06-27
+-------------------
+
+This patch fixes type-checking errors in our vendored pretty-printer,
+which were ignored by our mypy config but visible for anyone else
+(whoops).  Thanks to Pi Delport for reporting :issue:`1359` so promptly.
+
+.. _v3.64.0:
+
+-------------------
+3.64.0 - 2018-06-26
+-------------------
+
+This release adds :ref:`an interface <custom-function-execution>`
+which can be used to insert a wrapper between the original test function and
+:func:`@given <hypothesis.given>` (:issue:`1257`).  This will be particularly
+useful for test runner extensions such as :pypi:`pytest-trio`, but is
+not recommended for direct use by other users of Hypothesis.
+
+.. _v3.63.0:
+
+-------------------
+3.63.0 - 2018-06-26
+-------------------
+
+This release adds a new mechanism to infer strategies for classes
+defined using :pypi:`attrs`, based on the the type, converter, or
+validator of each attribute.  This inference is now built in to
+:func:`~hypothesis.strategies.builds` and :func:`~hypothesis.strategies.from_type`.
+
+On Python 2, :func:`~hypothesis.strategies.from_type` no longer generates
+instances of ``int`` when passed ``long``, or vice-versa.
+
+.. _v3.62.0:
+
+-------------------
+3.62.0 - 2018-06-26
+-------------------
+
+This release adds :PEP:`484` type hints to Hypothesis on a provisional
+basis, using the comment-based syntax for Python 2 compatibility.  You
+can :ref:`read more about our type hints here <our-type-hints>`.
+
+It *also* adds the ``py.typed`` marker specified in :PEP:`561`.
+After you ``pip install hypothesis``, :pypi:`mypy` 0.590 or later
+will therefore type-check your use of our public interface!
+
+.. _v3.61.0:
+
+-------------------
+3.61.0 - 2018-06-24
+-------------------
+
+This release deprecates the use of :class:`~hypothesis.settings` as a
+context manager, the use of which is somewhat ambiguous.
+
+Users should define settings with global state or with the
+:func:`@settings(...) <hypothesis.settings>` decorator.
+
+.. _v3.60.1:
+
+-------------------
+3.60.1 - 2018-06-20
+-------------------
+
+Fixed a bug in generating an instance of a Django model from a
+strategy where the primary key is generated as part of the
+strategy. See :ref:`details here <django-generating-primary-key>`.
+
+Thanks to Tim Martin for this contribution.
+
+.. _v3.60.0:
+
+-------------------
+3.60.0 - 2018-06-20
+-------------------
+
+This release adds the :func:`@initialize <hypothesis.stateful.initialize>`
+decorator for stateful testing (originally discussed in :issue:`1216`).
+All :func:`@initialize <hypothesis.stateful.initialize>` rules will be called
+once each in an arbitrary order before any normal rule is called.
+
+.. _v3.59.3:
+
+-------------------
+3.59.3 - 2018-06-19
+-------------------
+
+This is a no-op release to take into account some changes to the release
+process. It should have no user visible effect.
+
+.. _v3.59.2:
+
+-------------------
+3.59.2 - 2018-06-18
+-------------------
+
+This adds support for partially sorting examples which cannot be fully sorted.
+For example, [5, 4, 3, 2, 1, 0] with a constraint that the first element needs
+to be larger than the last becomes [1, 2, 3, 4, 5, 0].
+
+Thanks to Luke for contributing.
+
+.. _v3.59.1:
+
+-------------------
+3.59.1 - 2018-06-16
+-------------------
+
+This patch uses :func:`python:random.getstate` and :func:`python:random.setstate`
+to restore the PRNG state after :func:`@given <hypothesis.given>` runs
+deterministic tests.  Without restoring state, you might have noticed problems
+such as :issue:`1266`.  The fix also applies to stateful testing (:issue:`702`).
+
+.. _v3.59.0:
+
+-------------------
+3.59.0 - 2018-06-14
+-------------------
+
+This release adds the :func:`~hypothesis.strategies.emails` strategy,
+which generates unicode strings representing an email address.
+
+Thanks to Sushobhit for moving this to the public API (:issue:`162`).
+
+.. _v3.58.1:
+
+-------------------
+3.58.1 - 2018-06-13
+-------------------
+
+This improves the shrinker. It can now reorder examples: 3 1 2 becomes 1 2 3.
+
+Thanks to Luke for contributing.
+
+.. _v3.58.0:
+
+-------------------
+3.58.0 - 2018-06-13
+-------------------
+
+This adds a new extra :py:func:`~hypothesis.extra.dateutil.timezones` strategy
+that generates :pypi:`dateutil timezones <python-dateutil>`.
+
+Thanks to Conrad for contributing.
+
 .. _v3.57.0:
 
 -------------------
@@ -37,7 +1030,7 @@ arbitrary. This may cause different results between runs.
 3.56.10 - 2018-05-16
 --------------------
 
-This release makes :obj:`~hypothesis.settings.define_setting`
+This release makes ``hypothesis.settings.define_setting``
 a private method, which has the effect of hiding it from the
 documentation.
 
@@ -66,8 +1059,8 @@ a new release tagging scheme.
 -------------------
 
 This release provides a performance improvement for most tests, but in
-particular users of ``sampled_from`` who don't have numpy installed should see
-a significant performance improvement.
+particular users of :func:`~hypothesis.strategies.sampled_from` who don't
+have numpy installed should see a significant performance improvement.
 
 .. _v3.56.6:
 
@@ -126,7 +1119,7 @@ satisfy assumption, and disabling health checks).
 -------------------
 
 This release fixes a problem that was introduced in :ref:`3.56.0 <v3.56.0>`:
-Use of the :envvar:`HYPOTHESIS_VERBOSITY_LEVEL` environment variable was, rather
+Use of the ``HYPOTHESIS_VERBOSITY_LEVEL`` environment variable was, rather
 than deprecated, actually broken due to being read before various setup
 the deprecation path needed was done. It now works correctly (and emits a
 deprecation warning).
@@ -151,9 +1144,9 @@ knowledge of our internals (:issue:`535`).
   than a user-controlled setting.
 - :obj:`~hypothesis.settings.min_satisfying_examples` is deprecated and
   disabled, due to overlap with the
-  :obj:`~hypothesis.settings.HealthCheck.filter_too_much` healthcheck
+  :obj:`~hypothesis.HealthCheck.filter_too_much` healthcheck
   and poor interaction with :obj:`~hypothesis.settings.max_examples`.
-- :envvar:`HYPOTHESIS_VERBOSITY_LEVEL` is now deprecated.  Set
+- ``HYPOTHESIS_VERBOSITY_LEVEL`` is now deprecated.  Set
   :obj:`~hypothesis.settings.verbosity` through the profile system instead.
 - Examples tried by :func:`~hypothesis.find` are now reported at ``debug``
   verbosity level (as well as ``verbose`` level).
@@ -214,10 +1207,10 @@ It has no other user visible effects.
 3.55.1 - 2018-04-06
 -------------------
 
-This patch relaxes constraints on the expected values returned
-by the standard library function :func:`hypot` and the internal
-helper function :func:`~hypotheses.internal.cathetus`, this to
-fix near-exact test-failures on some 32-bit systems.
+This patch relaxes constraints in our tests on the expected values returned
+by the standard library function :func:`~python:math.hypot` and the internal
+helper function ``cathetus``, to fix near-exact
+test failures on some 32-bit systems used by downstream packagers.
 
 .. _v3.55.0:
 
@@ -231,7 +1224,7 @@ This release includes several improvements to the handling of the
 - The :obj:`~hypothesis.settings.database_file` setting was a historical
   artefact, and you should just use :obj:`~hypothesis.settings.database`
   directly.
-- The :envvar:`HYPOTHESIS_DATABASE_FILE` environment variable is
+- The ``HYPOTHESIS_DATABASE_FILE`` environment variable is
   deprecated, in favor of :meth:`~hypothesis.settings.load_profile` and
   the :obj:`~hypothesis.settings.database` setting.
 - If you have not configured the example database at all and the default
@@ -245,10 +1238,10 @@ This release includes several improvements to the handling of the
 3.54.0 - 2018-04-04
 -------------------
 
-This release improves the :func:`~hypotheses.strategies.complex_numbers`
+This release improves the :func:`~hypothesis.strategies.complex_numbers`
 strategy, which now supports ``min_magnitude`` and ``max_magnitude``
 arguments, along with ``allow_nan`` and ``allow_infinity`` like for
-:func:`~hypotheses.strategies.floats`.
+:func:`~hypothesis.strategies.floats`.
 
 Thanks to J.J. Green for this feature.
 
@@ -453,7 +1446,7 @@ with the standard library :mod:`python:unittest` module:
 
 - Applying :func:`@given <hypothesis.given>` to a non-test method which is
   overridden from :class:`python:unittest.TestCase`, such as ``setUp``,
-  raises :attr:`a new health check <hypothesis.settings.not_a_test_method>`.
+  raises :attr:`a new health check <hypothesis.HealthCheck.not_a_test_method>`.
   (:issue:`991`)
 - Using :meth:`~python:unittest.TestCase.subTest` within a test decorated
   with :func:`@given <hypothesis.given>` would leak intermediate results
@@ -519,7 +1512,7 @@ existing code), and all other input is deprecated.
 3.45.5 - 2018-02-26
 -------------------
 
-This patch improves strategy inference in :mod:`hypothesis.extra.django`
+This patch improves strategy inference in ``hypothesis.extra.django``
 to account for some validators in addition to field type - see
 :issue:`1116` for ongoing work in this space.
 
@@ -901,7 +1894,7 @@ would show up normally.
 3.44.0 - 2017-12-17
 -------------------
 
-This release adds a new feature: The :ref:`@reproduce_failure decorator <reproduce_failure>`,
+This release adds a new feature: The :func:`@reproduce_failure <hypothesis.reproduce_failure>` decorator,
 designed to make it easy to use Hypothesis's binary format for examples to
 reproduce a problem locally without having to share your example database
 between machines.
@@ -1289,7 +2282,7 @@ This is a bugfix release:
 -------------------
 
 This release supports strategy inference for more field types in Django
-:func:`~hypothesis.extra.django.models` - you can now omit an argument for
+:func:`~hypothesis.extra.django.models.models` - you can now omit an argument for
 Date, Time, Duration, Slug, IP Address, and UUID fields.  (:issue:`642`)
 
 Strategy generation for fields with grouped choices now selects choices from
@@ -1567,7 +2560,7 @@ This release is an internal change that affects how Hypothesis handles
 calculating certain properties of strategies.
 
 The primary effect of this is that it fixes a bug where use of
-:func:`~hypothesis.deferred` could sometimes trigger an internal assertion
+:func:`~hypothesis.strategies.deferred` could sometimes trigger an internal assertion
 error. However the fix for this bug involved some moderately deep changes to
 how Hypothesis handles certain constructs so you may notice some additional
 knock-on effects.
@@ -1809,7 +2802,7 @@ This work was funded by `Stripe <https://stripe.com/>`_.
 
 This release fixes some extremely specific circumstances that probably have
 never occurred in the wild where users of
-:func:`~hypothesis.searchstrategy.deferred` might have seen a RuntimeError from
+:func:`~hypothesis.strategies.deferred` might have seen a :class:`python:RuntimeError` from
 too much recursion, usually in cases where no valid example could have been
 generated anyway.
 
@@ -1987,7 +2980,7 @@ as well.
 
 This release fixes a bug introduced in :ref:`3.18.0 <v3.18.0>`. If the arguments
 ``whitelist_characters`` and ``blacklist_characters`` to
-:func:`~hypothesis.strategies.characters` both contained elements, then an
+:func:`~hypothesis.strategies.characters` contained overlapping elements, then an
 ``InvalidArgument`` exception would be raised.
 
 Thanks to Zac Hatfield-Dodds for reporting and fixing this.
@@ -2258,7 +3251,7 @@ include Hypothesis internals for test functions decorated with :func:`@given <hy
 
 This is a feature release, adding datetime-related strategies to the core strategies.
 
-:func:`~hypotheses.extra.pytz.timezones` allows you to sample pytz timezones from
+:func:`~hypothesis.extra.pytz.timezones` allows you to sample pytz timezones from
 the Olsen database.  Use directly in a recipe for tz-aware datetimes, or
 compose with :func:`~hypothesis.strategies.none` to allow a mix of aware and naive output.
 
@@ -2336,9 +3329,9 @@ compiled without SQLite support (such as BSD or Jython).
 3.8.4 - 2017-05-16
 ------------------
 
-This is a compatibility bugfix release.  ``sampled_from`` no longer raises
-a deprecation warning when sampling from an ``Enum``, as all enums have a
-reliable iteration order.
+This is a compatibility bugfix release.  :func:`~hypothesis.strategies.sampled_from`
+no longer raises a deprecation warning when sampling from an
+:class:`python:enum.Enum`, as all enums have a reliable iteration order.
 
 .. _v3.8.3:
 
@@ -2591,7 +3584,7 @@ Additionally there have been some minor bug fixes:
 
 * In some cases Hypothesis should produce fewer duplicate examples (this will mostly
   only affect cases with a single parameter).
-* py.test command line parameters are now under an option group for Hypothesis (thanks
+* :pypi:`pytest` command line parameters are now under an option group for Hypothesis (thanks
   to David Keijser for fixing this)
 * Hypothesis would previously error if you used :pep:`3107` function annotations on your tests under
   Python 3.4.
@@ -2622,7 +3615,7 @@ This is a bug fix release, fixing a number of problems with the settings system:
 This is a bug fix release for a single bug:
 
 * On Windows when running two Hypothesis processes in parallel (e.g. using
-  pytest-xdist) they could race with each other and one would raise an exception
+  :pypi:`pytest-xdist`) they could race with each other and one would raise an exception
   due to the non-atomic nature of file renaming on Windows and the fact that you
   can't rename over an existing file. This is now fixed.
 
@@ -2634,8 +3627,9 @@ This is a bug fix release for a single bug:
 
 This release is entirely provided by `Lucas Wiman <https://github.com/lucaswiman>`_:
 
-Strategies constructed by :func:`~hypothesis.extra.django.models` will now respect much more of
-Django's validations out of the box. Wherever possible :meth:`~django:django.db.models.Model.full_clean` should
+Strategies constructed by :func:`~hypothesis.extra.django.models.models`
+will now respect much more of Django's validations out of the box.
+Wherever possible, :meth:`~django:django.db.models.Model.full_clean` should
 succeed.
 
 In particular:
@@ -3252,7 +4246,7 @@ Bug fixes:
   instead of its contexts. This is obviously silly. It now works with any sequence
   of things convertible to unicode strings.
 * @given will now work on methods whose definitions contains no explicit positional
-  arguments, only varargs (`bug #118 <https://github.com/HypothesisWorks/hypothesis-python/issues/118>`_).
+  arguments, only varargs (:issue:`118`).
   This may have some knock on effects because it means that @given no longer changes the
   argspec of functions other than by adding defaults.
 * Introduction of new @composite feature for more natural definition of strategies you'd
@@ -3890,7 +4884,7 @@ The one tiny bugfix:
 
 Codename: Hygienic macros or bust
 
-* You can now name an argument to @given 'f' and it won't break (issue #38)
+* You can now name an argument to @given 'f' and it won't break (:issue:`38`)
 * strategy_test_suite is now named strategy_test_suite as the documentation claims and not in fact strategy_test_suitee
 * Settings objects can now be used as a context manager to temporarily override the default values inside their context.
 

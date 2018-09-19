@@ -25,7 +25,10 @@ import pytest
 
 from hypothesis import HealthCheck, event, given, assume, example, settings
 from hypothesis import strategies as st
-from hypothesis.statistics import collector
+from hypothesis.statistics import Statistics, collector
+from hypothesis.internal.conjecture.data import Status
+from hypothesis.internal.conjecture.engine import ExitReason, \
+    ConjectureRunner
 
 
 def call_for_statistics(test_function):
@@ -179,3 +182,34 @@ def test_has_lambdas_in_output():
     assert any(
         'lambda x: x % 2 == 0' in e for e in stats.events
     )
+
+
+def test_stops_after_x_shrinks(monkeypatch):
+    # the max_shrinks argument is deprecated, but we still stop after some
+    # number - which we can reduce to zero to check that this works.
+    from hypothesis.internal.conjecture import engine
+    monkeypatch.setattr(engine, 'MAX_SHRINKS', 0)
+
+    @given(st.integers())
+    def test(n):
+        assert n < 100
+
+    stats = call_for_statistics(test)
+    assert 'shrunk example' in stats.exit_reason
+
+
+@pytest.mark.parametrize('drawtime,runtime', [
+    (1, 0), (-1, 0), (0, -1), (-1, -1),
+])
+def test_weird_drawtime_issues(drawtime, runtime):
+    # Regression test for #1346, where we don't have the expected relationship
+    # 0<=drawtime<= runtime due to changing clocks or floating-point issues.
+    engine = ConjectureRunner(lambda: None)
+    engine.exit_reason = ExitReason.finished
+    engine.status_runtimes[Status.VALID] = [0]
+
+    engine.all_drawtimes.append(drawtime)
+    engine.all_runtimes.extend([0, runtime])
+
+    stats = Statistics(engine)
+    assert stats.draw_time_percentage == 'NaN'

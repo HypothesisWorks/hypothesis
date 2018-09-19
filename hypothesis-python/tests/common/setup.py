@@ -21,7 +21,8 @@ import os
 from tempfile import mkdtemp
 from warnings import filterwarnings
 
-from hypothesis import settings, unlimited
+from hypothesis import Verbosity, settings, unlimited
+from hypothesis._settings import not_set
 from hypothesis.configuration import set_hypothesis_home_dir
 from hypothesis.internal.charmap import charmap, charmap_file
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
@@ -35,6 +36,16 @@ def run():
     # See https://github.com/numpy/numpy/pull/432
     filterwarnings('ignore', message='numpy.dtype size changed')
     filterwarnings('ignore', message='numpy.ufunc size changed')
+
+    # Imported by Pandas in version 1.9, but fixed in later versions.
+    filterwarnings(
+        'ignore',
+        message='Importing from numpy.testing.decorators is deprecated'
+    )
+    filterwarnings(
+        'ignore',
+        message='Importing from numpy.testing.nosetester is deprecated'
+    )
 
     new_home = mkdtemp()
     set_hypothesis_home_dir(new_home)
@@ -59,15 +70,15 @@ def run():
             )
 
     settings.register_profile('default', settings(
-        timeout=unlimited, use_coverage=not IN_COVERAGE_TESTS))
-
-    settings.register_profile('with_coverage', settings(
-        timeout=unlimited, use_coverage=True,
+        max_examples=10 if IN_COVERAGE_TESTS else not_set,
+        timeout=unlimited,
     ))
 
     settings.register_profile(
         'speedy', settings(
             max_examples=5,
         ))
+
+    settings.register_profile('debug', settings(verbosity=Verbosity.debug))
 
     settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'default'))

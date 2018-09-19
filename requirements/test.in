@@ -1,5 +1,5 @@
+attrs
 flaky
+mock
 pytest
 pytest-xdist
-mock
-attrs

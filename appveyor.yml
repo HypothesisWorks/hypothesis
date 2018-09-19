@@ -26,6 +26,13 @@ environment:
       PYTHON_VERSION: "3.6.5"
       PYTHON_ARCH: "64"
 
+cache:
+  - "C:\\Python27"
+  - "C:\\Python27-x64"
+  - "C:\\Python36"
+  - "C:\\Python36-x64"
+  - "%LOCALAPPDATA%\\pip\\Cache"
+
 # Appveyor "helpfully" ignores skip directives in the commit message body
 # https://www.appveyor.com/docs/how-to/filtering-commits/#commit-message
 skip_commits:
@@ -69,7 +76,7 @@ install:
   - "%CMD_IN_ENV% python setup.py bdist_wheel --dist-dir dist"
 
 deploy_script:
-  - ps: "if ($env:APPVEYOR_REPO_TAG -eq $TRUE) { python -m twine upload dist/* }"
+  - ps: 'if (($env:APPVEYOR_REPO_TAG -eq $TRUE) -and ($env:PYTHON_ARCH -eq "32")) { python -m twine upload dist/* }'
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
