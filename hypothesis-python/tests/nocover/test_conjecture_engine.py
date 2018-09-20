@@ -182,6 +182,21 @@ def test_shrink_offset_pairs_handles_block_structure_change():
     assert f == [10, 0, 0, 30]
 
 
+def test_retaining_sum_considers_zero_destination_blocks():
+    """Explicitly test that this shrink pass will try to move data into blocks
+    that are currently all-zero."""
+    @shrink([100, 0, 0], 'minimize_block_pairs_retaining_sum')
+    def f(data):
+        x = data.draw_bytes(1)[0]
+        data.draw_bytes(1)
+        y = data.draw_bytes(1)[0]
+
+        if x >= 10 and (x + y) == 100:
+            data.mark_interesting()
+
+    assert f == [10, 0, 90]
+
+
 @given(st.integers(0, 255), st.integers(0, 255))
 def test_prescreen_with_masked_byte_agrees_with_results(byte_a, byte_b):
     def f(data):
