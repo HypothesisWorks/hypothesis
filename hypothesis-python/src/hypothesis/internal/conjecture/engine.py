@@ -1774,6 +1774,29 @@ class Shrinker(object):
     def each_block_bounds(self):
         return self.shrink_target.each_block_bounds()
 
+    def each_pair_of_blocks(self, accept_first, accept_second):
+        """Yield each pair of blocks ``(a, b)``, such that ``a.index <
+        b.index``, but only if ``accept_first(a)`` and ``accept_second(b)`` are
+        both true."""
+        i = 0
+        while i < len(self.blocks):
+            j = i + 1
+            while j < len(self.blocks):
+                block_i = self.blocks[i]
+                if not accept_first(block_i):
+                    break
+                block_j = self.blocks[j]
+                if not accept_second(block_j):
+                    j += 1
+                    continue
+
+                yield (block_i, block_j)
+                # After this point, the shrink target could have changed,
+                # so blocks need to be re-checked.
+
+                j += 1
+            i += 1
+
     def pass_to_descendant(self):
         """Attempt to replace each example with a descendant example.
 
@@ -1951,23 +1974,24 @@ class Shrinker(object):
             buffer = hbytes().join(new_blocks)
             return self.incorporate_new_buffer(buffer)
 
-        i = 0
-        while i < len(self.blocks):
-            if self.is_payload_block(i) and int_from_block(i) > 0:
-                j = i + 1
-                while j < len(self.blocks):
-                    block_val = int_from_block(j)
-                    i_block_val = int_from_block(i)
-                    if self.is_payload_block(j) \
-                       and block_val > 0 and i_block_val > 0:
-                        offset = min(int_from_block(i),
-                                     int_from_block(j))
-                        Integer.shrink(
-                            offset, lambda o: reoffset_pair((i, j), o),
-                            random=self.random
-                        )
-                    j += 1
-            i += 1
+        def is_non_zero_payload(block):
+            return not block.all_zero and self.is_payload_block(block.index)
+
+        for block_i, block_j in self.each_pair_of_blocks(
+            is_non_zero_payload,
+            is_non_zero_payload,
+        ):
+            i = block_i.index
+            j = block_j.index
+
+            value_i = int_from_block(i)
+            value_j = int_from_block(j)
+
+            offset = min(value_i, value_j)
+            Integer.shrink(
+                offset, lambda o: reoffset_pair((i, j), o),
+                random=self.random,
+            )
 
     def mark_shrinking(self, blocks):
         """Mark each of these blocks as a shrinking block: That is, lowering
@@ -2390,48 +2414,47 @@ class Shrinker(object):
         This kind of scenario comes up reasonably often in the context of e.g.
         triggering overflow behaviour.
         """
-        i = 0
-        while i < len(self.shrink_target.blocks):
-            if self.is_payload_block(i):
-                j = i + 1
-                while j < len(self.shrink_target.blocks):
-                    u, v = self.shrink_target.blocks[i].bounds
-                    m = int_from_bytes(self.shrink_target.buffer[u:v])
-                    if m == 0:
-                        break
-                    r, s = self.shrink_target.blocks[j].bounds
-                    n = int_from_bytes(self.shrink_target.buffer[r:s])
+        for block_i, block_j in self.each_pair_of_blocks(
+            lambda block: (
+                self.is_payload_block(block.index) and
+                not block.all_zero
+            ),
+            lambda block: self.is_payload_block(block.index),
+        ):
+            if block_i.length != block_j.length:
+                continue
 
-                    if (
-                        s - r == v - u and
-                        self.is_payload_block(j)
-                    ):
-                        def trial(x, y):
-                            if s > len(self.shrink_target.buffer):
-                                return False
-                            attempt = bytearray(self.shrink_target.buffer)
-                            try:
-                                attempt[u:v] = int_to_bytes(x, v - u)
-                                attempt[r:s] = int_to_bytes(y, s - r)
-                            except OverflowError:
-                                return False
-                            return self.incorporate_new_buffer(attempt)
-                        # We first attempt to move 1 from m to n. If that works
-                        # then we treat that as a sign that it's worth trying
-                        # a more expensive minimization. But if m was already 1
-                        # (we know it's > 0) then there's no point continuing
-                        # because the value there is now zero.
-                        if trial(m - 1, n + 1) and m > 1:
-                            m = int_from_bytes(self.shrink_target.buffer[u:v])
-                            n = int_from_bytes(self.shrink_target.buffer[r:s])
+            u, v = block_i.bounds
+            r, s = block_j.bounds
 
-                            tot = m + n
-                            Integer.shrink(
-                                m, lambda x: trial(x, tot - x),
-                                random=self.random
-                            )
-                    j += 1
-            i += 1
+            m = int_from_bytes(self.shrink_target.buffer[u:v])
+            n = int_from_bytes(self.shrink_target.buffer[r:s])
+
+            def trial(x, y):
+                if s > len(self.shrink_target.buffer):
+                    return False
+                attempt = bytearray(self.shrink_target.buffer)
+                try:
+                    attempt[u:v] = int_to_bytes(x, v - u)
+                    attempt[r:s] = int_to_bytes(y, s - r)
+                except OverflowError:
+                    return False
+                return self.incorporate_new_buffer(attempt)
+
+            # We first attempt to move 1 from m to n. If that works
+            # then we treat that as a sign that it's worth trying
+            # a more expensive minimization. But if m was already 1
+            # (we know it's > 0) then there's no point continuing
+            # because the value there is now zero.
+            if trial(m - 1, n + 1) and m > 1:
+                m = int_from_bytes(self.shrink_target.buffer[u:v])
+                n = int_from_bytes(self.shrink_target.buffer[r:s])
+
+                tot = m + n
+                Integer.shrink(
+                    m, lambda x: trial(x, tot - x),
+                    random=self.random
+                )
 
     def reorder_examples(self):
         """This pass allows us to reorder pairs of examples which come from the
