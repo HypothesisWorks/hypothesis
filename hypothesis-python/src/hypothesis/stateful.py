@@ -583,7 +583,7 @@ class RuleStrategy(SearchStrategy):
         # Easy, right?
         n = len(self.rules)
         i = cu.integer_range(data, 0, n - 1)
-        u, v = data.blocks[-1]
+        u, v = data.blocks[-1].bounds
         block_length = v - u
         rule = self.rules[i]
         if not self.is_valid(rule):

@@ -260,7 +260,7 @@ class ConjectureRunner(object):
                 break
 
         # At each node that begins a block, record the size of that block.
-        for u, v in data.blocks:
+        for u, v in data.each_block_bounds():
             # This can happen if we hit a dead node when walking the buffer.
             # In that case we already have this section of the tree mapped.
             if u >= len(indices):
@@ -631,7 +631,7 @@ class ConjectureRunner(object):
             return hbytes([self.random.randint(0, 255)]) * n
 
         def redraw_last(data, n):
-            u = target_data[0].blocks[-1][0]
+            u = target_data[0].blocks[-1].start
             if data.index + n <= u:
                 return target_data[0].buffer[data.index:data.index + n]
             else:
@@ -1255,7 +1255,7 @@ def block_program(description):
             failed = False
             for k, d in reversed(list(enumerate(description))):
                 j = i + k
-                u, v = self.blocks[j]
+                u, v = self.blocks[j].bounds
                 if d == '-':
                     value = int_from_bytes(attempt[u:v])
                     if value == 0:
@@ -1771,6 +1771,9 @@ class Shrinker(object):
     def blocks(self):
         return self.shrink_target.blocks
 
+    def each_block_bounds(self):
+        return self.shrink_target.each_block_bounds()
+
     def pass_to_descendant(self):
         """Attempt to replace each example with a descendant example.
 
@@ -1820,7 +1823,7 @@ class Shrinker(object):
         t = self.shrink_target
         return self.__shrinking_block_cache.setdefault(
             i,
-            t.buffer[:t.blocks[i][0]] in self.__shrinking_prefixes
+            t.buffer[:t.blocks[i].start] in self.__shrinking_prefixes
         )
 
     def is_payload_block(self, i):
@@ -1835,7 +1838,7 @@ class Shrinker(object):
         """
         return not (
             self.is_shrinking_block(i) or
-            i in self.shrink_target.forced_blocks
+            self.shrink_target.blocks[i].forced
         )
 
     def lower_common_block_offset(self):
@@ -1876,11 +1879,11 @@ class Shrinker(object):
 
         current = self.shrink_target
 
-        blocked = [current.buffer[u:v] for u, v in current.blocks]
+        blocked = [current.buffer[u:v] for u, v in current.each_block_bounds()]
 
         changed = [
             i for i in sorted(self.__changed_blocks)
-            if any(blocked[i]) and i not in self.shrink_target.forced_blocks
+            if not self.shrink_target.blocks[i].trivial
         ]
 
         if not changed:
@@ -1919,13 +1922,12 @@ class Shrinker(object):
         """
 
         def int_from_block(i):
-            u, v = self.blocks[i]
+            u, v = self.blocks[i].bounds
             block_bytes = self.shrink_target.buffer[u:v]
             return int_from_bytes(block_bytes)
 
         def block_len(i):
-            u, v = self.blocks[i]
-            return v - u
+            return self.blocks[i].length
 
         # Try reoffseting every pair
         def reoffset_pair(pair, o):
@@ -1942,7 +1944,7 @@ class Shrinker(object):
             m = min([int_from_block(p) for p in valid_pair])
 
             new_blocks = [self.shrink_target.buffer[u:v]
-                          for u, v in self.blocks]
+                          for u, v in self.shrink_target.each_block_bounds()]
             for i in valid_pair:
                 new_blocks[i] = int_to_bytes(
                     int_from_block(i) + o - m, block_len(i))
@@ -1975,7 +1977,7 @@ class Shrinker(object):
             if self.__shrinking_block_cache.get(i) is True:
                 continue
             self.__shrinking_block_cache[i] = True
-            prefix = t.buffer[:t.blocks[i][0]]
+            prefix = t.buffer[:t.blocks[i].start]
             self.__shrinking_prefixes.add(prefix)
 
     def clear_change_tracking(self):
@@ -1991,10 +1993,16 @@ class Shrinker(object):
             new = new_target.buffer
             assert sort_key(new) < sort_key(current)
             self.shrinks += 1
-            if new_target.blocks != self.shrink_target.blocks:
+            if (
+                len(new_target.blocks) != len(self.shrink_target.blocks) or
+                list(new_target.each_block_bounds()) !=
+                    list(self.shrink_target.each_block_bounds())
+            ):
                 self.clear_change_tracking()
             else:
-                for i, (u, v) in enumerate(self.shrink_target.blocks):
+                for i, (u, v) in enumerate(
+                    self.shrink_target.each_block_bounds()
+                ):
                     if (
                         i not in self.__changed_blocks and
                         current[u:v] != new[u:v]
@@ -2026,12 +2034,12 @@ class Shrinker(object):
             if block >= len(self.blocks):
                 blocks = blocks[:i]
                 break
-            u, v = self.blocks[block]
+            u, v = self.blocks[block].bounds
             n = min(v - u, len(b))
             initial_attempt[v - n:v] = b[-n:]
 
-        start = self.shrink_target.blocks[blocks[0]][0]
-        end = self.shrink_target.blocks[blocks[-1]][1]
+        start = self.shrink_target.blocks[blocks[0]].start
+        end = self.shrink_target.blocks[blocks[-1]].end
 
         initial_data = self.cached_test_function(initial_attempt)
 
@@ -2074,8 +2082,8 @@ class Shrinker(object):
             # that it retains the same integer value. This is a bit of a hyper
             # specific trick designed to make our integers() strategy shrink
             # well.
-            r1, s1 = self.shrink_target.blocks[j]
-            r2, s2 = initial_data.blocks[j]
+            r1, s1 = self.shrink_target.blocks[j].bounds
+            r2, s2 = initial_data.blocks[j].bounds
             lost = (s1 - r1) - (s2 - r2)
             # Apparently a coverage bug? An assert False in the body of this
             # will reliably fail, but it shows up as uncovered.
@@ -2280,7 +2288,7 @@ class Shrinker(object):
 
         counts = Counter(
             canon(self.shrink_target.buffer[u:v])
-            for u, v in self.blocks
+            for u, v in self.each_block_bounds()
         )
         counts.pop(hbytes(), None)
         blocks = [buffer for buffer, count in counts.items() if count > 1]
@@ -2289,7 +2297,7 @@ class Shrinker(object):
         blocks.sort(key=lambda b: counts[b] * len(b), reverse=True)
         for block in blocks:
             targets = [
-                i for i, (u, v) in enumerate(self.blocks)
+                i for i, (u, v) in enumerate(self.each_block_bounds())
                 if canon(self.shrink_target.buffer[u:v]) == block
             ]
             # This can happen if some blocks have been lost in the previous
@@ -2316,7 +2324,7 @@ class Shrinker(object):
         """
         i = len(self.blocks) - 1
         while i >= 0:
-            u, v = self.blocks[i]
+            u, v = self.blocks[i].bounds
             Lexical.shrink(
                 self.shrink_target.buffer[u:v],
                 lambda b: self.try_shrinking_blocks((i,), b),
@@ -2344,7 +2352,7 @@ class Shrinker(object):
                 i += 1
                 continue
 
-            u, v = self.blocks[i]
+            u, v = self.blocks[i].bounds
 
             j = 0
             while j < len(self.shrink_target.examples):
@@ -2387,11 +2395,11 @@ class Shrinker(object):
             if self.is_payload_block(i):
                 j = i + 1
                 while j < len(self.shrink_target.blocks):
-                    u, v = self.shrink_target.blocks[i]
+                    u, v = self.shrink_target.blocks[i].bounds
                     m = int_from_bytes(self.shrink_target.buffer[u:v])
                     if m == 0:
                         break
-                    r, s = self.shrink_target.blocks[j]
+                    r, s = self.shrink_target.blocks[j].bounds
                     n = int_from_bytes(self.shrink_target.buffer[r:s])
 
                     if (
