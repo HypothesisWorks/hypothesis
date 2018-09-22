@@ -133,7 +133,7 @@ class ArrayStrategy(SearchStrategy):
         self.unique = unique
 
         # Used by self.insert_element to check that the value can be stored
-        # in the array without e.g. overflowing.  See issue #1385.
+        # in the array without e.g. overflowing.  See issues #1385 and #1591.
         if dtype.kind in (u'i', u'u'):
             self.check_cast = lambda x: np.can_cast(x, self.dtype, 'safe')
         elif dtype.kind == u'f' and dtype.itemsize == 2:
@@ -144,24 +144,36 @@ class ArrayStrategy(SearchStrategy):
             max_f4 = (2. - 2 ** -23) * 2 ** 127
             self.check_cast = lambda x: \
                 (not np.isfinite(x)) or (-max_f4 <= x <= max_f4)
+        elif dtype.kind == u'c' and dtype.itemsize == 8:
+            max_f4 = (2. - 2 ** -23) * 2 ** 127
+            self.check_cast = lambda x: (not np.isfinite(x)) or (
+                -max_f4 <= x.real <= max_f4 and -max_f4 <= x.imag <= max_f4
+            )
+        elif dtype.kind == u'U':
+            length = dtype.itemsize // 4
+            self.check_cast = \
+                lambda x: len(x) <= length and u'\0' not in x[length:]
+        elif dtype.kind in (u'S', u'a'):
+            self.check_cast = lambda x: len(x) <= dtype.itemsize and \
+                b'\0' not in x[dtype.itemsize:]
         else:
             self.check_cast = lambda x: True
 
     def set_element(self, data, result, idx, strategy=None):
         strategy = strategy or self.element_strategy
         val = data.draw(strategy)
+        result[idx] = val
         if self._report_overflow and not self.check_cast(val):
             note_deprecation(
                 'Generated array element %r from %r cannot be represented as '
-                'dtype %r without overflow or underflow.  Consider using a '
-                'more precise strategy, as this will be an error in a future '
-                'version of Hypothesis.' % (val, strategy, self.dtype)
+                'dtype %r - instead it becomes %r .  Consider using a more '
+                'precise strategy, as this will be an error in a future '
+                'version.' % (val, strategy, self.dtype, result[idx])
             )
             # Because the message includes the value of the generated element,
             # it would be easy to spam users with thousands of warnings.
             # We therefore only warn once per draw, unless in verbose mode.
             self._report_overflow = current_verbosity() >= Verbosity.verbose
-        result[idx] = val
 
     def do_draw(self, data):
         if 0 in self.shape:
