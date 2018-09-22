@@ -45,6 +45,7 @@ jobs:
     - stage: main
       env: TASK=check-coverage
     - env: TASK=check-pypy
+    - env: TASK=check-pypy3
     - env: TASK=check-py36
     - env: TASK=check-py27
     - env: TASK=check-ruby-tests
