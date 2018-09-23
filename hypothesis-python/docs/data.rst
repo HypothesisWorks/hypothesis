@@ -178,29 +178,15 @@ returns a new strategy for it. So for example:
 
     >>> from string import printable; from pprint import pprint
     >>> json = recursive(none() | booleans() | floats() | text(printable),
-    ... lambda children: lists(children) | dictionaries(text(printable), children))
+    ... lambda children: lists(children, 1) | dictionaries(text(printable), children, min_size=1))
     >>> pprint(json.example())
-    ['dy',
-     [None, True, 6.297399055778002e+16, False],
-     {'a{h\\:694K~{mY>a1yA:#CmDYb': None},
-     '\\kP!4',
-     {'#1J1': '',
-      'cx.': None,
-      "jv'A?qyp_sB\n$62g": [],
-      'qgnP': [False, -inf, 'la)']},
-     [],
-     {}]
+    [[1.175494351e-38, ']', 1.9, True, False, '.M}Xl', ''], True]
     >>> pprint(json.example())
-    {'': None,
-     '(Rt)': 1.192092896e-07,
-     ',': [],
-     '6': 2.2250738585072014e-308,
-     'HA=/': [],
-     'YU]gy8': inf,
-     'l': None,
-     'nK': False}
-    >>> pprint(json.example())
-    []
+    {'de(l': None,
+     'nK': {'(Rt)': None,
+            '+hoZh1YU]gy8': True,
+            '8z]EIFA06^l`i^': 'LFE{Q',
+            '9,': 'l{cA=/'}}
 
 That is, we start with our leaf data and then we augment it by allowing lists and dictionaries of anything we can generate as JSON data.
 
@@ -212,11 +198,9 @@ we wanted to only generate really small JSON we could do this as:
 
     >>> small_lists = recursive(booleans(), lists, max_leaves=5)
     >>> small_lists.example()
-    [False]
-    >>> small_lists.example()
     True
     >>> small_lists.example()
-    []
+    [False]
 
 .. _composite-strategies:
 
@@ -261,12 +245,12 @@ accept all the others in the expected order. Defaults are preserved.
     >>> list_and_index()
     list_and_index()
     >>> list_and_index().example()
-    ([-21904], 0)
+    ([15949, -35, 21764, 8167, 1607867656, -41, 104, 19, -90, 520116744169390387, 7107438879249457973], 0)
 
     >>> list_and_index(booleans())
     list_and_index(elements=booleans())
     >>> list_and_index(booleans()).example()
-    ([True], 0)
+    ([True, False], 0)
 
 Note that the repr will work exactly like it does for all the built-in
 strategies: it will be a function that you can call to get the strategy in
