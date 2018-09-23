@@ -199,9 +199,7 @@ specific tests.
 
 .. doctest::
 
-    >>> with settings.get_profile("ci"):
-    ...     print(settings().max_examples)
-    ...
+    >>> settings.get_profile("ci").max_examples
     1000
 
 Optionally, you may define the environment variable to load a profile for you.
