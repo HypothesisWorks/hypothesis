@@ -378,6 +378,7 @@ PY35 = '3.5.5'
 PY36 = '3.6.5'
 PY37 = '3.7.0'
 PYPY2 = 'pypy2.7-5.10.0'
+PYPY3 = 'pypy3.5-5.10.1'
 
 
 @task()
@@ -388,6 +389,7 @@ def install_core():
 
 ALIASES = {
     PYPY2: 'pypy',
+    PYPY3: 'pypy3',
 }
 
 for n in [PY27, PY34, PY35, PY36, PY37]:
@@ -430,6 +432,11 @@ def check_py37():
 @python_tests
 def check_pypy():
     run_tox('pypy-full', PYPY2)
+
+
+@python_tests
+def check_pypy3():
+    run_tox('pypy3-full', PYPY3)
 
 
 @python_tests

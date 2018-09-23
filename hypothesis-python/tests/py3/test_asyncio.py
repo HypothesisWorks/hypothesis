@@ -21,8 +21,11 @@ import asyncio
 import unittest
 from unittest import TestCase
 
+import pytest
+
 import hypothesis.strategies as st
 from hypothesis import given, assume
+from hypothesis.internal.compat import PYPY
 
 
 class TestAsyncio(TestCase):
@@ -54,6 +57,7 @@ class TestAsyncio(TestCase):
         if error is not None:
             raise error
 
+    @pytest.mark.skipif(PYPY, reason='Error in asyncio.new_event_loop()')
     @given(st.text())
     @asyncio.coroutine
     def test_foo(self, x):
