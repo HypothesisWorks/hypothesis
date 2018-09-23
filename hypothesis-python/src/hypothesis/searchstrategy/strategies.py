@@ -435,12 +435,17 @@ class OneOfStrategy(SearchStrategy):
         self.__element_strategies = None
         self.bias = bias
         self.__in_branches = False
-        if bias is not None:
-            assert 0 < bias < 1
-            self.sampler = cu.Sampler(
-                [bias ** i for i in range(len(strategies))])
-        else:
-            self.sampler = None
+        self.__sampler = None
+
+    @property
+    def sampler(self):
+        if self.__sampler is None:
+            assert self.bias is not None
+            assert 0 < self.bias < 1
+            self.__sampler = cu.Sampler([
+                self.bias ** i for i in range(len(self.element_strategies))
+            ])
+        return self.__sampler
 
     def calc_is_empty(self, recur):
         return all(recur(e) for e in self.original_strategies)
@@ -481,6 +486,7 @@ class OneOfStrategy(SearchStrategy):
     @property
     def branch_labels(self):
         self.element_strategies
+        assert len(self.__branch_labels) == len(self.element_strategies)
         return self.__branch_labels
 
     def calc_label(self):
@@ -495,10 +501,11 @@ class OneOfStrategy(SearchStrategy):
         if n == 1:
             return data.draw(self.element_strategies[0])
 
-        if self.sampler is None:
+        if self.bias is None:
             i = cu.integer_range(data, 0, n - 1)
         else:
             i = self.sampler.sample(data)
+            assert 0 <= i < n
 
         return data.draw(
             self.element_strategies[i], label=self.branch_labels[i])
