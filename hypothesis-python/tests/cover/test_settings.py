@@ -394,3 +394,10 @@ def test_setting_use_coverage_is_deprecated(value):
 def test_settings_apply_for_explicit_examples(x):
     # Regression test for #1521
     assert settings.default.verbosity == Verbosity.verbose
+
+
+def test_setattr_on_settings_singleton_is_error():
+    # https://github.com/pandas-dev/pandas/pull/22679#issuecomment-420750921
+    # Should be setting attributes on settings.default, not settings!
+    with pytest.raises(AttributeError):
+        settings.max_examples = 10
