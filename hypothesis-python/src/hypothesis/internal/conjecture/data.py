@@ -61,6 +61,28 @@ class Example(object):
         return self.end - self.start
 
 
+@attr.s(slots=True, frozen=True)
+class Block(object):
+    start = attr.ib()
+    end = attr.ib()
+    index = attr.ib()
+
+    forced = attr.ib()
+    all_zero = attr.ib()
+
+    @property
+    def bounds(self):
+        return (self.start, self.end)
+
+    @property
+    def length(self):
+        return self.end - self.start
+
+    @property
+    def trivial(self):
+        return self.forced or self.all_zero
+
+
 global_test_counter = 0
 
 
@@ -95,7 +117,6 @@ class ConjectureData(object):
         self.start_time = benchmark_time()
         self.events = set()
         self.forced_indices = set()
-        self.forced_blocks = set()
         self.masked_indices = {}
         self.interesting_origin = None
         self.draw_times = []
@@ -122,6 +143,9 @@ class ConjectureData(object):
     @property
     def index(self):
         return len(self.buffer)
+
+    def all_block_bounds(self):
+        return [block.bounds for block in self.blocks]
 
     def note(self, value):
         self.__assert_not_frozen('note')
@@ -264,7 +288,6 @@ class ConjectureData(object):
         original = self.index
         self.__write(string, forced=True)
         self.forced_indices.update(hrange(original, self.index))
-        self.forced_blocks.add(len(self.blocks) - 1)
         return string
 
     def __check_capacity(self, n):
@@ -276,11 +299,21 @@ class ConjectureData(object):
 
     def __write(self, result, forced=False):
         ex = self.start_example(DRAW_BYTES_LABEL)
-        ex.trivial = forced or not any(result)
         initial = self.index
         n = len(result)
-        self.block_starts.setdefault(n, []).append(initial)
-        self.blocks.append((initial, initial + n))
+
+        block = Block(
+            start=initial,
+            end=initial + n,
+            index=len(self.blocks),
+            forced=forced,
+            all_zero=not any(result),
+        )
+        ex.trivial = block.trivial
+
+        self.block_starts.setdefault(n, []).append(block.start)
+        self.blocks.append(block)
+        assert self.blocks[block.index] is block
         assert len(result) == n
         assert self.index == initial
         self.buffer.extend(result)

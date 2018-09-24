@@ -26,7 +26,8 @@ from hypothesis import strategies as st
 from tests.common.utils import no_shrink, non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
-from tests.cover.test_conjecture_engine import shrink, run_to_buffer
+from tests.cover.test_conjecture_engine import shrink, run_to_buffer, \
+    shrinking_from
 from hypothesis.internal.conjecture.data import Status, ConjectureData
 from hypothesis.internal.conjecture.engine import RunIsComplete, \
     ConjectureRunner
@@ -182,6 +183,21 @@ def test_shrink_offset_pairs_handles_block_structure_change():
     assert f == [10, 0, 0, 30]
 
 
+def test_retaining_sum_considers_zero_destination_blocks():
+    """Explicitly test that this shrink pass will try to move data into blocks
+    that are currently all-zero."""
+    @shrink([100, 0, 0], 'minimize_block_pairs_retaining_sum')
+    def f(data):
+        x = data.draw_bytes(1)[0]
+        data.draw_bytes(1)
+        y = data.draw_bytes(1)[0]
+
+        if x >= 10 and (x + y) == 100:
+            data.mark_interesting()
+
+    assert f == [10, 0, 90]
+
+
 @given(st.integers(0, 255), st.integers(0, 255))
 def test_prescreen_with_masked_byte_agrees_with_results(byte_a, byte_b):
     def f(data):
@@ -218,3 +234,76 @@ def test_cached_with_masked_byte_agrees_with_results(byte_a, byte_b):
     # If the cache found an old result, then it should match the real result.
     # If it did not, then it must be because A and B were different.
     assert (cached_a is cached_b) == (cached_a.buffer == data_b.buffer)
+
+
+def test_each_pair_of_blocks():
+    initial = hbytes([1, 1, 1])
+
+    @shrinking_from(initial)
+    def shrinker(data):
+        data.draw_bits(1)
+        data.draw_bits(1)
+        data.draw_bits(1)
+        data.mark_interesting()
+
+    bounds = [
+        (a.bounds, b.bounds) for a, b in shrinker.each_pair_of_blocks(
+            lambda block: True,
+            lambda block: True,
+        )
+    ]
+
+    assert bounds == [
+        ((0, 1), (1, 2)),
+        ((0, 1), (2, 3)),
+        ((1, 2), (2, 3)),
+    ]
+
+
+def test_each_pair_of_blocks_with_filters():
+    initial = hbytes(5)
+
+    @shrinking_from(initial)
+    def shrinker(data):
+        for x in range(5):
+            data.draw_bits(1)
+        data.mark_interesting()
+
+    blocks = [
+        (a.index, b.index) for a, b in shrinker.each_pair_of_blocks(
+            lambda block: block.index != 1,
+            lambda block: block.index != 3,
+        )
+    ]
+
+    assert blocks == [
+        (0, 1), (0, 2), (0, 4),
+        (2, 4),
+        (3, 4),
+    ]
+
+
+def test_each_pair_of_blocks_handles_change():
+    initial = hbytes([9] + [0] * 10)
+
+    @shrinking_from(initial)
+    def shrinker(data):
+        x = data.draw_bits(8)
+        for y in range(x):
+            data.draw_bits(1)
+        data.mark_interesting()
+
+    blocks = []
+    for a, b in shrinker.each_pair_of_blocks(
+        lambda block: True,
+        lambda block: True,
+    ):
+        if a.index == 0 and b.index == 6:
+            shrinker.incorporate_new_buffer(hbytes([3] + [0] * 10))
+        blocks.append((a.index, b.index))
+
+    assert blocks == [
+        (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6),
+        (1, 2), (1, 3),
+        (2, 3),
+    ]
