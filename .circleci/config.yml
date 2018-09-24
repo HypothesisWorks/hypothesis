@@ -5,16 +5,16 @@ jobs:
       xcode: 9.3.0
     steps:
       - checkout
-      - run: brew update
-      - run: brew install readline xz ncurses
       - restore_cache:
          keys:
-           - v2-runtimes-
+           - v3-runtimes-
+      - run: brew update
+      - run: brew install readline xz ncurses
       - run: ./build.sh install-core
       - run: ./build.sh check-py27
       - run: ./build.sh check-py36
       - save_cache:
-          key: v2-runtimes-{{ epoch }}
+          key: v3-runtimes-{{ epoch }}
           paths:
             - ~/.cache/hypothesis-build-runtimes
             - ~/.cache/pip
