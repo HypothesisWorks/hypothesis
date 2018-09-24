@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 require 'helix_runtime'
-require 'hypothesis-ruby/native'
+
+require_relative '../hypothesis-ruby/native'
+
 require 'rspec/expectations'
 
 module Hypothesis

@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'hypothesis/junkdrawer'
-require 'hypothesis/errors'
-require 'hypothesis/possible'
-require 'hypothesis/testcase'
-require 'hypothesis/engine'
-require 'hypothesis/world'
+require_relative 'hypothesis/junkdrawer'
+require_relative 'hypothesis/errors'
+require_relative 'hypothesis/possible'
+require_relative 'hypothesis/testcase'
+require_relative 'hypothesis/engine'
+require_relative 'hypothesis/world'
 
 # This is the main module for using Hypothesis.
 # It is expected that you will include this in your
