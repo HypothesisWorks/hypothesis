@@ -260,7 +260,7 @@ class ConjectureRunner(object):
                 break
 
         # At each node that begins a block, record the size of that block.
-        for u, v in data.each_block_bounds():
+        for u, v in data.all_block_bounds():
             # This can happen if we hit a dead node when walking the buffer.
             # In that case we already have this section of the tree mapped.
             if u >= len(indices):
@@ -1771,8 +1771,8 @@ class Shrinker(object):
     def blocks(self):
         return self.shrink_target.blocks
 
-    def each_block_bounds(self):
-        return self.shrink_target.each_block_bounds()
+    def all_block_bounds(self):
+        return self.shrink_target.all_block_bounds()
 
     def each_pair_of_blocks(self, accept_first, accept_second):
         """Yield each pair of blocks ``(a, b)``, such that ``a.index <
@@ -1902,7 +1902,7 @@ class Shrinker(object):
 
         current = self.shrink_target
 
-        blocked = [current.buffer[u:v] for u, v in current.each_block_bounds()]
+        blocked = [current.buffer[u:v] for u, v in current.all_block_bounds()]
 
         changed = [
             i for i in sorted(self.__changed_blocks)
@@ -1967,7 +1967,7 @@ class Shrinker(object):
             m = min([int_from_block(p) for p in valid_pair])
 
             new_blocks = [self.shrink_target.buffer[u:v]
-                          for u, v in self.shrink_target.each_block_bounds()]
+                          for u, v in self.shrink_target.all_block_bounds()]
             for i in valid_pair:
                 new_blocks[i] = int_to_bytes(
                     int_from_block(i) + o - m, block_len(i))
@@ -2019,13 +2019,13 @@ class Shrinker(object):
             self.shrinks += 1
             if (
                 len(new_target.blocks) != len(self.shrink_target.blocks) or
-                list(new_target.each_block_bounds()) !=
-                    list(self.shrink_target.each_block_bounds())
+                new_target.all_block_bounds() !=
+                    self.shrink_target.all_block_bounds()
             ):
                 self.clear_change_tracking()
             else:
                 for i, (u, v) in enumerate(
-                    self.shrink_target.each_block_bounds()
+                    self.shrink_target.all_block_bounds()
                 ):
                     if (
                         i not in self.__changed_blocks and
@@ -2312,7 +2312,7 @@ class Shrinker(object):
 
         counts = Counter(
             canon(self.shrink_target.buffer[u:v])
-            for u, v in self.each_block_bounds()
+            for u, v in self.all_block_bounds()
         )
         counts.pop(hbytes(), None)
         blocks = [buffer for buffer, count in counts.items() if count > 1]
@@ -2321,7 +2321,7 @@ class Shrinker(object):
         blocks.sort(key=lambda b: counts[b] * len(b), reverse=True)
         for block in blocks:
             targets = [
-                i for i, (u, v) in enumerate(self.each_block_bounds())
+                i for i, (u, v) in enumerate(self.all_block_bounds())
                 if canon(self.shrink_target.buffer[u:v]) == block
             ]
             # This can happen if some blocks have been lost in the previous

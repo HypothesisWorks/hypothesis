@@ -144,8 +144,8 @@ class ConjectureData(object):
     def index(self):
         return len(self.buffer)
 
-    def each_block_bounds(self):
-        return (block.bounds for block in self.blocks)
+    def all_block_bounds(self):
+        return [block.bounds for block in self.blocks]
 
     def note(self, value):
         self.__assert_not_frozen('note')
