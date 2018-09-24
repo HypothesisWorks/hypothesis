@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.71.11:
+
+--------------------
+3.71.11 - 2018-09-24
+--------------------
+
+This patch factors out some common code in the shrinker for iterating
+over pairs of data blocks. There should be no user-visible change.
+
 .. _v3.71.10:
 
 --------------------
