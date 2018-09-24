@@ -15,7 +15,12 @@
 #
 # END HEADER
 
-"""This module provides ``dateutil`` timezones.
+"""
+--------------------
+hypothesis[dateutil]
+--------------------
+
+This module provides ``dateutil`` timezones.
 
 You can use this strategy to make
 :py:func:`hypothesis.strategies.datetimes` and

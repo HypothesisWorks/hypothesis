@@ -15,7 +15,12 @@
 #
 # END HEADER
 
-"""This module provides deprecated time and date related strategies.
+"""
+--------------------
+hypothesis[datetime]
+--------------------
+
+This module provides deprecated time and date related strategies.
 
 It depends on the ``pytz`` package, which is stable enough that almost any
 version should be compatible - most updates are for the timezone database.

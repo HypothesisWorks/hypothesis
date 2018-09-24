@@ -2,6 +2,7 @@ attrs
 bandit
 coverage
 django
+dpcontracts
 flake8
 flake8-docstrings
 flaky

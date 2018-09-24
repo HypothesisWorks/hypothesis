@@ -18,25 +18,15 @@ you run into a bug with any of these please specify the dependency version.
 
 There are separate pages for :doc:`django` and :doc:`numpy`.
 
---------------------
-hypothesis[pytz]
---------------------
+
+.. automodule:: hypothesis.extra.dpcontracts
+   :members:
 
 .. automodule:: hypothesis.extra.pytz
    :members:
 
-
---------------------
-hypothesis[dateutil]
---------------------
-
 .. automodule:: hypothesis.extra.dateutil
    :members:
-
-
---------------------
-hypothesis[datetime]
---------------------
 
 .. automodule:: hypothesis.extra.datetime
    :members:
