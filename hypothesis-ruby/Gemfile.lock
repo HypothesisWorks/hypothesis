@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    hypothesis-specs (0.1.0)
+    hypothesis-specs (0.1.1)
       helix_runtime (~> 0.7.0)
       rake (>= 10.0, < 13.0)
 
@@ -69,4 +69,4 @@ DEPENDENCIES
   yard (~> 0.9.12)
 
 BUNDLED WITH
-   1.16.4
+   1.16.5
