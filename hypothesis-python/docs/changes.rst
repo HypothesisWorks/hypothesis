@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.72.0:
+
+-------------------
+3.72.0 - 2018-09-24
+-------------------
+
+This release makes setting attributes of the :class:`hypothesis.settings`
+class an explicit error.  This has never had any effect, but could mislead
+users who confused it with the current settings *instance*
+``hypothesis.settings.default`` (which is also immutable).  You can change
+the global settings with :ref:` settings profiles<settings_profiles>`.
+
 .. _v3.71.11:
 
 --------------------
