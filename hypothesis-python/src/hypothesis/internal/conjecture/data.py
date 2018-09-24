@@ -61,7 +61,7 @@ class Example(object):
         return self.end - self.start
 
 
-@attr.s(slots=True)
+@attr.s(slots=True, frozen=True)
 class Block(object):
     start = attr.ib()
     end = attr.ib()
