@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.73.0:
+
+-------------------
+3.73.0 - 2018-09-24
+-------------------
+
+This release adds the :func:`~hypothesis.extra.dpcontracts.fulfill` function,
+which is designed for testing code that uses :pypi:`dpcontracts` 0.4 or later
+for input validation.  This provides some syntactic sugar around use of
+:func:`~hypothesis.assume`, to automatically filter out and retry calls that
+cause a precondition check to fail (:issue:`1474`).
+
 .. _v3.72.0:
 
 -------------------
