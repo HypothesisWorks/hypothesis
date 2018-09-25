@@ -265,11 +265,10 @@ def compile_requirements(upgrade=False):
     else:
         extra = []
 
-    os.chdir(tools.ROOT)
-
     for f in glob(os.path.join('requirements', '*.in')):
         base, _ = os.path.splitext(f)
-        pip_tool('pip-compile', *extra, f, '--output-file', base + '.txt')
+        pip_tool('pip-compile', *extra, f, '--output-file', base + '.txt',
+                 cwd=tools.ROOT)
 
 
 @task()
@@ -336,19 +335,19 @@ def check_requirements():
 
 @task(if_changed=hp.HYPOTHESIS_PYTHON)
 def documentation():
-    os.chdir(hp.HYPOTHESIS_PYTHON)
     try:
         if hp.has_release():
             hp.update_changelog_and_version()
         pip_tool(
             # See http://www.sphinx-doc.org/en/stable/man/sphinx-build.html
             'sphinx-build', '-n', '-W', '--keep-going', '-T', '-E',
-            '-b', 'html', 'docs', 'docs/_build/html'
+            '-b', 'html', 'docs', 'docs/_build/html',
+            cwd=hp.HYPOTHESIS_PYTHON
         )
     finally:
         subprocess.check_call([
             'git', 'checkout', 'docs/changes.rst', 'src/hypothesis/version.py'
-        ])
+        ], cwd=hp.HYPOTHESIS_PYTHON)
 
 
 def run_tox(task, version):
@@ -362,14 +361,13 @@ def run_tox(task, version):
     except FileExistsError:
         pass
 
-    os.chdir(hp.HYPOTHESIS_PYTHON)
     env = dict(os.environ)
     python = install.python_executable(version)
 
     env['PATH'] = os.path.dirname(python) + ':' + env['PATH']
     print(env['PATH'])
 
-    pip_tool('tox', '-e', task, env=env)
+    pip_tool('tox', '-e', task, env=env, cwd=hp.HYPOTHESIS_PYTHON)
 
 
 PY27 = '2.7.14'
