@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.73.1:
+
+-------------------
+3.73.1 - 2018-09-25
+-------------------
+
+This patch substantially improves the distribution of data generated
+with :func:`~hypothesis.strategies.recursive`, and fixes a rare internal
+error (:issue:`1502`).
+
 .. _v3.73.0:
 
 -------------------
