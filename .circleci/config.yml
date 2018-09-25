@@ -5,11 +5,11 @@ jobs:
       xcode: 9.3.0
     steps:
       - checkout
+      - run: brew update
+      - run: brew install readline xz ncurses
       - restore_cache:
          keys:
            - v3-runtimes-
-      - run: brew update
-      - run: brew install readline xz ncurses
       - run: ./build.sh install-core
       - run: ./build.sh check-py27
       - run: ./build.sh check-py36
