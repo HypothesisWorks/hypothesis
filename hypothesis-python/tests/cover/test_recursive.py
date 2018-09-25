@@ -53,3 +53,8 @@ def test_recursive_call_validates_base_is_strategy():
     x = st.recursive(1, lambda x: st.none())
     with pytest.raises(InvalidArgument):
         x.example()
+
+
+@given(st.recursive(st.none(), lambda x: st.one_of(x, x)))
+def test_issue_1502_regression(s):
+    pass
