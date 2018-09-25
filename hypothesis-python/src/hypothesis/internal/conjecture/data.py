@@ -43,9 +43,34 @@ class Status(IntEnum):
 
 @attr.s(slots=True)
 class Example(object):
+    """Examples track the hierarchical structure of draws from the byte stream,
+    within a single test run.
+
+    Examples are created to mark regions of the byte stream that might be
+    useful to the shrinker, such as:
+    - The bytes used by a single draw from a strategy.
+    - Useful groupings within a strategy, such as individual list elements.
+    - Strategy-like helper functions that aren't first-class strategies.
+    - Each lowest-level draw of bits or bytes from the byte stream.
+    - A single top-level example that spans the entire input.
+
+    Example-tracking allows the shrinker to try "high-level" transformations,
+    such as rearranging or deleting the elements of a list, without having
+    to understand their exact representation in the byte stream.
+    """
+
+    # Depth of this example in the example tree. The top-level example has a
+    # depth of 0.
     depth = attr.ib()
+
+    # A label is an opaque value that associates each example with its
+    # approximate origin, such as a particular strategy class or a particular
+    # kind of draw.
     label = attr.ib()
+
+    # Index of this example inside the overall list of examples.
     index = attr.ib()
+
     start = attr.ib()
     end = attr.ib(default=None)
 
@@ -53,7 +78,14 @@ class Example(object):
     # All examples start out as trivial, and then get marked non-trivial when
     # we see a byte that is neither forced nor zero.
     trivial = attr.ib(default=True)
+
+    # True if we believe that the shrinker should be able to delete this
+    # example completely, without affecting the value produced by its enclosing
+    # strategy. Typically set when a rejection sampler decides to reject a
+    # generated value and try again.
     discarded = attr.ib(default=None)
+
+    # List of child examples, represented as indices into the example list.
     children = attr.ib(default=attr.Factory(list))
 
     @property
@@ -63,11 +95,27 @@ class Example(object):
 
 @attr.s(slots=True, frozen=True)
 class Block(object):
+    """Blocks track the flat list of lowest-level draws from the byte stream,
+    within a single test run.
+
+    Block-tracking allows the shrinker to try "low-level"
+    transformations, such as minimizing the numeric value of an
+    individual call to ``draw_bits``.
+    """
+
     start = attr.ib()
     end = attr.ib()
+
+    # Index of this block inside the overall list of blocks.
     index = attr.ib()
 
+    # True if this block's byte values were forced by a write operation.
+    # As long as the bytes before this block remain the same, modifying this
+    # block's bytes will have no effect.
     forced = attr.ib()
+
+    # True if this block's byte values are all 0. Reading this flag can be
+    # more convenient than explicitly checking a slice for non-zero bytes.
     all_zero = attr.ib()
 
     @property
@@ -126,7 +174,8 @@ class ConjectureData(object):
         self.example_stack = []
         self.has_discards = False
 
-        self.start_example(TOP_LABEL)
+        top = self.start_example(TOP_LABEL)
+        assert top.depth == 0
 
     def __assert_not_frozen(self, name):
         if self.frozen:
