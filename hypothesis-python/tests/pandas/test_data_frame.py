@@ -241,3 +241,11 @@ def test_uniqueness_does_not_affect_other_rows_2():
 def test_will_fill_missing_columns_in_tuple_row(df):
     for d in df['A']:
         assert d == 7
+
+
+@given(pdst.data_frames(
+    index=pdst.range_indexes(10, 10),
+    columns=[pdst.column(elements=st.integers(0, 9), fill=None, unique=True)],
+))
+def test_cen_generate_unique_columns(df):
+    assert set(df[0]) == set(range(10))
