@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.73.2:
+
+-------------------
+3.73.2 - 2018-09-26
+-------------------
+
+This patch fixes errors in the internal comments for one of the shrinker
+passes. There is no user-visible change.
+
 .. _v3.73.1:
 
 -------------------
