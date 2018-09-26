@@ -244,8 +244,7 @@ def check_format():
                 print(
                     '%s has incorrect start %r' % (f, start), file=sys.stderr)
                 bad = True
-    if bad:
-        sys.exit(1)
+    assert not bad
     check_not_changed()
 
 
@@ -328,9 +327,7 @@ def check_requirements():
 
     if tools.has_uncommitted_changes('requirements'):
         push_pyup_requirements_commit()
-        sys.exit(1)
-    else:
-        sys.exit(0)
+        raise RuntimeError('Pushed new requirements; check next build.')
 
 
 @task(if_changed=hp.HYPOTHESIS_PYTHON)
