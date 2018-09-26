@@ -2457,9 +2457,7 @@ class Shrinker(object):
                 )
 
     def reorder_examples(self):
-        """This pass allows us to reorder pairs of examples which come from the
-        same strategy (or strategies that happen to pun to the same label by
-        accident, but that shouldn't happen often).
+        """This pass allows us to reorder the children of each example.
 
         For example, consider the following:
 
@@ -2469,11 +2467,11 @@ class Shrinker(object):
             from hypothesis import given
 
             @given(st.text(), st.text())
-            def test_does_not_exceed_100(x, y):
+            def test_not_equal(x, y):
                 assert x != y
 
         Without the ability to reorder x and y this could fail either with
-        ``x="", ``y="0"``, or the other way around. With reordering it will
+        ``x=""``, ``y="0"``, or the other way around. With reordering it will
         reliably fail with ``x=""``, ``y="0"``.
         """
         self.example_wise_shrink(Ordering, key=sort_key)
