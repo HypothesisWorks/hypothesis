@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.73.3:
+
+-------------------
+3.73.3 - 2018-09-27
+-------------------
+
+Tracebacks involving :func:`@composite <hypothesis.strategies.composite>`
+are now slightly shorter due to some internal refactoring.
+
 .. _v3.73.2:
 
 -------------------
