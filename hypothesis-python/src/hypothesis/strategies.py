@@ -1758,13 +1758,7 @@ class CompositeStrategy(SearchStrategy):
         self.kwargs = kwargs
 
     def do_draw(self, data):
-        first_draw = [True]
-
-        def draw(strategy):
-            first_draw[0] = False
-            return data.draw(strategy)
-
-        return self.definition(draw, *self.args, **self.kwargs)
+        return self.definition(data.draw, *self.args, **self.kwargs)
 
     def calc_label(self):
         return self.__label
