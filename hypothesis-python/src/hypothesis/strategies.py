@@ -1574,11 +1574,11 @@ class PermutationStrategy(SearchStrategy):
         self.values = values
 
     def do_draw(self, data):
-        # Reversed Fisher-Yates shuffle. Reverse order so that it shrinks
-        # propertly: This way we prefer things that are lexicographically
-        # closer to the identity.
+        # Reversed Fisher-Yates shuffle: swap each element with itself or with
+        # a later element.  This shrinks i==j for each element, i.e. to no
+        # change.  We don't consider the last element as it's always a no-op.
         result = list(self.values)
-        for i in hrange(len(result)):
+        for i in hrange(len(result) - 1):
             j = integer_range(data, i, len(result) - 1)
             result[i], result[j] = result[j], result[i]
         return result
@@ -1758,13 +1758,7 @@ class CompositeStrategy(SearchStrategy):
         self.kwargs = kwargs
 
     def do_draw(self, data):
-        first_draw = [True]
-
-        def draw(strategy):
-            first_draw[0] = False
-            return data.draw(strategy)
-
-        return self.definition(draw, *self.args, **self.kwargs)
+        return self.definition(data.draw, *self.args, **self.kwargs)
 
     def calc_label(self):
         return self.__label
