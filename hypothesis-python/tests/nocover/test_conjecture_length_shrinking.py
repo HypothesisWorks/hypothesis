@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 from random import Random
+from itertools import chain
 
 import hypothesis.strategies as st
 from hypothesis import given, example
@@ -38,3 +39,20 @@ def test_shrinks_down_to_size(m, n):
 
 def test_will_shrink_to_zero():
     assert Length.shrink([1], lambda x: True, random=Random(0)) == ()
+
+
+def _concat(xs):
+    return tuple(chain.from_iterable(xs))
+
+
+@given(st.lists(st.integers(0, 20), min_size=1))
+def test_deletes_all_easily_deletable_elements(gap_sizes):
+    # For each "gap size" in the input, create that many 0s, followed by a 1.
+    # Then remove the last 1, so that there can be a gap at the end.
+    data = _concat([0] * g + [1] for g in gap_sizes)[:-1]
+    total = sum(data)
+
+    result = Length.shrink(data, lambda d: sum(d) == total)
+
+    # All 0s should have been deleted, leaving only the 1s.
+    assert result == (1,) * total
