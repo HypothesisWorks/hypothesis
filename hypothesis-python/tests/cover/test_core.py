@@ -21,6 +21,7 @@ import time
 
 import pytest
 from flaky import flaky
+from _pytest.outcomes import Failed, Skipped
 
 import hypothesis.strategies as s
 from hypothesis import find, given, reject, settings
@@ -89,3 +90,31 @@ def test_is_not_normally_default():
 @some_normal_settings
 def test_settings_are_default_in_given(x):
     assert settings.default is some_normal_settings
+
+
+def test_given_shrinks_pytest_helper_errors():
+    final_value = [None]
+
+    @given(s.integers())
+    def inner(x):
+        final_value[0] = x
+        if x > 100:
+            pytest.fail('x=%r is too big!' % x)
+
+    with pytest.raises(Failed):
+        inner()
+    assert final_value[0] == 101
+
+
+def test_pytest_skip_skips_shrinking():
+    values = []
+
+    @given(s.integers())
+    def inner(x):
+        values.append(x)
+        if x > 100:
+            pytest.skip('x=%r is too big!' % x)
+
+    with pytest.raises(Skipped):
+        inner()
+    assert len([x for x in values if x > 100]) == 1
