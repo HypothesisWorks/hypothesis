@@ -121,6 +121,11 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
                 machine.print_end()
             machine.teardown()
 
+    # Use a machine digest to identify stateful tests in the example database
+    run_state_machine.hypothesis.inner_test._hypothesis_internal_add_digest = function_digest(
+        state_machine_factory
+    )
+
     run_state_machine(state_machine_factory)
 
 
