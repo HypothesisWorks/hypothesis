@@ -17,15 +17,23 @@
 
 from __future__ import absolute_import, division, print_function
 
+import base64
 from collections import defaultdict, namedtuple
 
 import pytest
 from _pytest.outcomes import Failed, Skipped
 
-from hypothesis import PrintSettings, assume, seed, settings as Settings
+from hypothesis import (
+    PrintSettings,
+    __version__,
+    assume,
+    reproduce_failure,
+    seed,
+    settings as Settings,
+)
 from hypothesis.control import current_build_context
 from hypothesis.database import ExampleDatabase
-from hypothesis.errors import Flaky, InvalidArgument, InvalidDefinition
+from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDefinition
 from hypothesis.internal.compat import print_unicode
 from hypothesis.stateful import (
     Bundle,
@@ -1051,3 +1059,38 @@ def test_rule_non_bundle_target_oneof():
     pattern = r".+ `one_of(a, b)` or `a | b` .+"
     with pytest.raises(InvalidArgument, match=pattern):
         rule(target=k | v)
+
+
+def test_uses_seed(capsys):
+    @seed(0)
+    class TrivialMachine(RuleBasedStateMachine):
+        @rule()
+        def oops(self):
+            assert False
+
+    with pytest.raises(AssertionError):
+        run_state_machine_as_test(TrivialMachine)
+    out, _ = capsys.readouterr()
+    assert "@seed" not in out
+
+
+def test_reproduce_failure_works():
+    @reproduce_failure(__version__, base64.b64encode(b"\0\0\0"))
+    class TrivialMachine(RuleBasedStateMachine):
+        @rule()
+        def oops(self):
+            assert False
+
+    with pytest.raises(AssertionError):
+        run_state_machine_as_test(TrivialMachine)
+
+
+def test_reproduce_failure_fails_if_no_error():
+    @reproduce_failure(__version__, base64.b64encode(b"\0\0\0"))
+    class TrivialMachine(RuleBasedStateMachine):
+        @rule()
+        def ok(self):
+            assert True
+
+    with pytest.raises(DidNotReproduce):
+        run_state_machine_as_test(TrivialMachine)

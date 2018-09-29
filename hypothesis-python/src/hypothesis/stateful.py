@@ -125,6 +125,13 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
     run_state_machine.hypothesis.inner_test._hypothesis_internal_add_digest = function_digest(
         state_machine_factory
     )
+    # Copy some attributes so @seed and @reproduce_failure "just work"
+    run_state_machine._hypothesis_internal_use_seed = getattr(
+        state_machine_factory, "_hypothesis_internal_use_seed", None
+    )
+    run_state_machine._hypothesis_internal_use_reproduce_failure = getattr(
+        state_machine_factory, "_hypothesis_internal_use_reproduce_failure", None
+    )
 
     run_state_machine(state_machine_factory)
 
