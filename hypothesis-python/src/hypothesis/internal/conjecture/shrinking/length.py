@@ -53,13 +53,13 @@ class Length(Shrinker):
         return len(left) < len(right)
 
     def run_step(self):
-        j = 0
-        while j < len(self.current):
-            i = len(self.current) - 1 - j
+        skipped = 0
+        while skipped < len(self.current):
+            candidates = len(self.current) - skipped
             start = self.current
             find_integer(
-                lambda k: k <= i + 1 and self.consider(
-                    start[:i + 1 - k] + start[i + 1:]
+                lambda k: k <= candidates and self.consider(
+                    start[:candidates - k] + start[candidates:]
                 )
             )
-            j += 1
+            skipped += 1
