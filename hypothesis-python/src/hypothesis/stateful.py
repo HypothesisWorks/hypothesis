@@ -27,33 +27,31 @@ execution to date.
 from __future__ import absolute_import, division, print_function
 
 import inspect
-import traceback
 from copy import copy
 from unittest import TestCase
 
 import attr
 
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis._settings import Verbosity, note_deprecation, settings as Settings
-from hypothesis.control import BuildContext
-from hypothesis.core import EXCEPTIONS_TO_FAIL, find
-from hypothesis.errors import (
-    Flaky,
-    HypothesisException,
-    InvalidArgument,
-    InvalidDefinition,
-    NoSuchExample,
+import hypothesis.strategies as st
+from hypothesis._settings import (
+    HealthCheck,
+    Verbosity,
+    note_deprecation,
+    settings as Settings,
+    unlimited,
 )
+from hypothesis.control import current_build_context
+from hypothesis.core import given
+from hypothesis.errors import InvalidArgument, InvalidDefinition
 from hypothesis.internal.compat import int_to_bytes, string_types
-from hypothesis.internal.conjecture.data import StopTest
-from hypothesis.internal.conjecture.utils import calc_label_from_name, integer_range
-from hypothesis.internal.reflection import nicerepr, proxies
-from hypothesis.reporting import current_verbosity, report, verbose_report
+from hypothesis.internal.reflection import function_digest, nicerepr, proxies
+from hypothesis.internal.validation import check_type
+from hypothesis.reporting import current_verbosity, report
 from hypothesis.searchstrategy.strategies import OneOfStrategy, SearchStrategy
-from hypothesis.strategies import fixed_dictionaries, just, one_of, runner, tuples
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 
-STATE_MACHINE_RUN_LABEL = calc_label_from_name("another state machine step")
+STATE_MACHINE_RUN_LABEL = cu.calc_label_from_name("another state machine step")
 
 if False:
     from typing import Any, Dict, List, Text  # noqa
@@ -72,33 +70,6 @@ class TestCaseProperty(object):  # pragma: no cover
         raise AttributeError(u"Cannot delete TestCase")
 
 
-def find_breaking_runner(state_machine_factory, settings=None):
-    def is_breaking_run(runner):
-        try:
-            runner.run(state_machine_factory())
-            return False
-        except HypothesisException:
-            raise
-        except EXCEPTIONS_TO_FAIL:
-            verbose_report(traceback.format_exc)
-            return True
-
-    if settings is None:
-        try:
-            settings = state_machine_factory.TestCase.settings
-        except AttributeError:
-            settings = Settings.default
-
-    search_strategy = StateMachineSearchStrategy(settings)
-
-    return find(
-        search_strategy,
-        is_breaking_run,
-        settings=settings,
-        database_key=state_machine_factory.__name__.encode("utf-8"),
-    )
-
-
 def run_state_machine_as_test(state_machine_factory, settings=None):
     """Run a state machine definition as a test, either silently doing nothing
     or printing a minimal breaking program and raising an exception.
@@ -107,16 +78,50 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
     GenericStateMachine when called with no arguments - it can be a class or a
     function. settings will be used to control the execution of the test.
     """
-    try:
-        breaker = find_breaking_runner(state_machine_factory, settings)
-    except NoSuchExample:
-        return
-    try:
-        with BuildContext(None, is_final=True):
-            breaker.run(state_machine_factory(), print_steps=True)
-    except StopTest:
-        pass
-    raise Flaky(u"Run failed initially but succeeded on a second try")
+    if settings is None:
+        try:
+            settings = state_machine_factory.TestCase.settings
+            check_type(Settings, settings, "state_machine_factory.TestCase.settings")
+        except AttributeError:
+            settings = Settings(
+                timeout=unlimited,
+                deadline=None,
+                suppress_health_check=HealthCheck.all(),
+            )
+    check_type(Settings, settings, "settings")
+
+    @settings
+    @given(st.data())
+    def run_state_machine(factory, data):
+        machine = factory()
+        check_type(GenericStateMachine, machine, "state_machine_factory()")
+        data.conjecture_data.hypothesis_runner = machine
+
+        n_steps = settings.stateful_step_count
+        should_continue = cu.many(
+            data.conjecture_data, min_size=1, max_size=n_steps, average_size=n_steps
+        )
+
+        print_steps = (
+            current_build_context().is_final or current_verbosity() >= Verbosity.debug
+        )
+        try:
+            if print_steps:
+                machine.print_start()
+            machine.check_invariants()
+
+            while should_continue.more():
+                value = data.conjecture_data.draw(machine.steps())
+                if print_steps:
+                    machine.print_step(value)
+                machine.execute_step(value)
+                machine.check_invariants()
+        finally:
+            if print_steps:
+                machine.print_end()
+            machine.teardown()
+
+    run_state_machine(state_machine_factory)
 
 
 class GenericStateMachineMeta(type):
@@ -158,8 +163,6 @@ class GenericStateMachine(
     And if this ever produces an error it will shrink it down to a small
     sequence of example choices demonstrating that.
     """
-
-    find_breaking_runner = None  # type: classmethod
 
     def steps(self):
         """Return a SearchStrategy instance the defines the available next
@@ -214,7 +217,11 @@ class GenericStateMachine(
             pass
 
         class StateMachineTestCase(TestCase):
-            settings = Settings()
+            settings = Settings(
+                timeout=unlimited,
+                deadline=None,
+                suppress_health_check=HealthCheck.all(),
+            )
 
         # We define this outside of the class and assign it because you can't
         # assign attributes to instance method values in Python 2
@@ -230,54 +237,6 @@ class GenericStateMachine(
         )
         state_machine_class._test_case_cache[state_machine_class] = StateMachineTestCase
         return StateMachineTestCase
-
-
-GenericStateMachine.find_breaking_runner = classmethod(find_breaking_runner)
-
-
-class StateMachineRunner(object):
-    """A StateMachineRunner is a description of how to run a state machine.
-
-    It contains values that it will use to shape the examples.
-    """
-
-    def __init__(self, data, n_steps):
-        self.data = data
-        self.data.is_find = False
-        self.n_steps = n_steps
-
-    def run(self, state_machine, print_steps=None):
-        if print_steps is None:
-            print_steps = current_verbosity() >= Verbosity.debug
-        self.data.hypothesis_runner = state_machine
-
-        should_continue = cu.many(
-            self.data, min_size=1, max_size=self.n_steps, average_size=self.n_steps
-        )
-
-        try:
-            if print_steps:
-                state_machine.print_start()
-            state_machine.check_invariants()
-
-            while should_continue.more():
-                value = self.data.draw(state_machine.steps())
-                if print_steps:
-                    state_machine.print_step(value)
-                state_machine.execute_step(value)
-                state_machine.check_invariants()
-        finally:
-            if print_steps:
-                state_machine.print_end()
-            state_machine.teardown()
-
-
-class StateMachineSearchStrategy(SearchStrategy):
-    def __init__(self, settings=None):
-        self.program_size = (settings or Settings.default).stateful_step_count
-
-    def do_draw(self, data):
-        return StateMachineRunner(data, self.program_size)
 
 
 @attr.s()
@@ -299,10 +258,10 @@ class Rule(object):
             else:
                 arguments[k] = v
         self.bundles = tuple(bundles)
-        self.arguments_strategy = fixed_dictionaries(arguments)
+        self.arguments_strategy = st.fixed_dictionaries(arguments)
 
 
-self_strategy = runner()
+self_strategy = st.runner()
 
 
 class BundleReferenceStrategy(SearchStrategy):
@@ -317,7 +276,7 @@ class BundleReferenceStrategy(SearchStrategy):
         # Shrink towards the right rather than the left. This makes it easier
         # to delete data generated earlier, as when the error is towards the
         # end there can be a lot of hard to remove padding.
-        return bundle[integer_range(data, 0, len(bundle) - 1, center=len(bundle))]
+        return bundle[cu.integer_range(data, 0, len(bundle) - 1, center=len(bundle))]
 
 
 class Bundle(SearchStrategy):
@@ -759,9 +718,9 @@ class RuleBasedStateMachine(GenericStateMachine):
     def steps(self):
         # Pick initialize rules first
         if self._initialize_rules_to_run:
-            return one_of(
+            return st.one_of(
                 [
-                    tuples(just(rule), fixed_dictionaries(rule.arguments))
+                    st.tuples(st.just(rule), st.fixed_dictionaries(rule.arguments))
                     for rule in self._initialize_rules_to_run
                 ]
             )

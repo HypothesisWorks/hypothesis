@@ -17,13 +17,12 @@
 
 from __future__ import absolute_import, division, print_function
 
-import inspect
 from collections import defaultdict, namedtuple
 
 import pytest
 from _pytest.outcomes import Failed, Skipped
 
-from hypothesis import assume, settings as Settings
+from hypothesis import PrintSettings, assume, seed, settings as Settings
 from hypothesis.control import current_build_context
 from hypothesis.database import ExampleDatabase
 from hypothesis.errors import Flaky, InvalidArgument, InvalidDefinition
@@ -50,6 +49,8 @@ from hypothesis.strategies import (
     tuples,
 )
 from tests.common.utils import capture_out, checks_deprecated_behaviour, raises
+
+NO_BLOB_SETTINGS = Settings(print_blob=PrintSettings.NEVER)
 
 
 class SetStateMachine(GenericStateMachine):
@@ -288,7 +289,7 @@ def test_multiple_rules_same_func():
 
 class GivenLikeStateMachine(GenericStateMachine):
     def steps(self):
-        return lists(booleans())
+        return lists(booleans(), min_size=1)
 
     def execute_step(self, step):
         assume(any(step))
@@ -323,10 +324,7 @@ class FlakyStateMachine(GenericStateMachine):
         return just(())
 
     def execute_step(self, step):
-        assert not any(
-            t[3] == u"find_breaking_runner"
-            for t in inspect.getouterframes(inspect.currentframe())
-        )
+        assert current_build_context().is_final
 
 
 def test_flaky_raises_flaky():
@@ -419,7 +417,7 @@ for test_case in (
     TestIntAdder,
     TestPrecondition,
 ):
-    test_case.settings = Settings(max_examples=10)
+    test_case.settings = Settings(test_case.settings, max_examples=10)
 
 
 def test_picks_up_settings_at_first_use_of_testcase():
@@ -451,25 +449,24 @@ def test_settings_are_independent():
 
 
 def test_minimizes_errors_in_teardown():
+    counter = [0]
+
     class Foo(GenericStateMachine):
         def __init__(self):
-            self.counter = 0
+            counter[0] = 0
 
         def steps(self):
             return tuples()
 
         def execute_step(self, value):
-            self.counter += 1
+            counter[0] += 1
 
         def teardown(self):
-            assert not self.counter
+            assert not counter[0]
 
-    runner = Foo.find_breaking_runner()
-
-    f = Foo()
     with raises(AssertionError):
-        runner.run(f, print_steps=True)
-    assert f.counter == 1
+        run_state_machine_as_test(Foo)
+    assert counter[0] == 1
 
 
 class RequiresInit(GenericStateMachine):
@@ -522,6 +519,26 @@ def test_can_explicitly_pass_settings():
         FailsEventually.TestCase.settings = Settings(
             FailsEventually.TestCase.settings, stateful_step_count=5
         )
+
+
+def test_settings_argument_is_validated():
+    with pytest.raises(InvalidArgument):
+        run_state_machine_as_test(FailsEventually, settings=object())
+
+
+def test_runner_that_checks_factory_produced_a_machine():
+    with pytest.raises(InvalidArgument):
+        run_state_machine_as_test(object)
+
+
+def test_settings_attribute_is_validated():
+    real_settings = FailsEventually.TestCase.settings
+    try:
+        FailsEventually.TestCase.settings = object()
+        with pytest.raises(InvalidArgument):
+            run_state_machine_as_test(FailsEventually)
+    finally:
+        FailsEventually.TestCase.settings = real_settings
 
 
 def test_saves_failing_example_in_database():
@@ -785,7 +802,7 @@ def test_prints_equal_values_with_correct_variable_name():
 
     result = o.getvalue()
     for m in ["create", "transfer", "fail"]:
-        assert result.count(m) == 1
+        assert result.count("state." + m) == 1
     assert "v1 = state.create()" in result
     assert "v2 = state.transfer(source=v1)" in result
     assert "state.fail(source=v2)" in result
@@ -816,7 +833,7 @@ def test_initialize_rule():
             run_state_machine_as_test(WithInitializeRules)
 
     assert set(WithInitializeRules.initialized[-3:]) == {"a", "b", "c"}
-    result = o.getvalue().splitlines()
+    result = o.getvalue().splitlines()[1:]
     assert result[0] == "state = WithInitializeRules()"
     # Initialize rules call order is shuffled
     assert {result[1], result[2], result[3]} == {
@@ -840,6 +857,7 @@ def test_initialize_rule_populate_bundle():
         def fail_fast(self, param):
             assert False
 
+    WithInitializeBundleRules.TestCase.settings = NO_BLOB_SETTINGS
     with capture_out() as o:
         with pytest.raises(AssertionError):
             run_state_machine_as_test(WithInitializeBundleRules)
@@ -847,7 +865,10 @@ def test_initialize_rule_populate_bundle():
     result = o.getvalue()
     assert (
         result
-        == """state = WithInitializeBundleRules()
+        == """\
+Falsifying example: run_state_machine(\
+factory=WithInitializeBundleRules, data=data(...))
+state = WithInitializeBundleRules()
 v1 = state.initialize_a(dep='dep')
 state.fail_fast(param=v1)
 state.teardown()
@@ -925,7 +946,7 @@ def test_initialize_rule_in_state_machine_with_inheritance():
             run_state_machine_as_test(ChildStateMachine)
 
     assert set(ChildStateMachine.initialized[-2:]) == {"a", "b"}
-    result = o.getvalue().splitlines()
+    result = o.getvalue().splitlines()[1:]
     assert result[0] == "state = ChildStateMachine()"
     # Initialize rules call order is shuffled
     assert {result[1], result[2]} == {"state.initialize_a()", "state.initialize_b()"}
@@ -944,8 +965,9 @@ def test_can_manually_call_initialize_rule():
 
         @rule()
         def fail_eventually(self):
-            assert self.initialize() == 2
+            assert self.initialize() <= 2
 
+    StateMachine.TestCase.settings = NO_BLOB_SETTINGS
     with capture_out() as o:
         with pytest.raises(AssertionError):
             run_state_machine_as_test(StateMachine)
@@ -953,7 +975,9 @@ def test_can_manually_call_initialize_rule():
     result = o.getvalue()
     assert (
         result
-        == """state = StateMachine()
+        == """\
+Falsifying example: run_state_machine(factory=StateMachine, data=data(...))
+state = StateMachine()
 state.initialize()
 state.fail_eventually()
 state.fail_eventually()
@@ -982,7 +1006,15 @@ def test_steps_printed_despite_pytest_fail(capsys):
     with pytest.raises(Failed):
         run_state_machine_as_test(RaisesProblem)
     out, _ = capsys.readouterr()
-    assert "state = RaisesProblem()\nstate.oops()\nstate.teardown()\n" == out
+    assert (
+        """\
+Falsifying example: run_state_machine(factory=RaisesProblem, data=data(...))
+state = RaisesProblem()
+state.oops()
+state.teardown()
+"""
+        in out
+    )
 
 
 def test_steps_not_printed_with_pytest_skip(capsys):
@@ -994,7 +1026,7 @@ def test_steps_not_printed_with_pytest_skip(capsys):
     with pytest.raises(Skipped):
         run_state_machine_as_test(RaisesProblem)
     out, _ = capsys.readouterr()
-    assert "" == out
+    assert "state" not in out
 
 
 @checks_deprecated_behaviour

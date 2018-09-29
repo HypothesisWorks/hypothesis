@@ -2184,13 +2184,13 @@ def runner(default=not_set):
 class DataObject(object):
     def __init__(self, data):
         self.count = 0
-        self.data = data
+        self.conjecture_data = data
 
     def __repr__(self):
         return "data(...)"
 
     def draw(self, strategy, label=None):
-        result = self.data.draw(strategy)
+        result = self.conjecture_data.draw(strategy)
         self.count += 1
         if label is not None:
             note("Draw %d (%s): %r" % (self.count, label, result))
