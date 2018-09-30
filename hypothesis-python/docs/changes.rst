@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.73.4:
+
+-------------------
+3.73.4 - 2018-09-30
+-------------------
+
+This patch ensures that Hypothesis deprecation warnings display the code
+that emitted them when you're not running in ``-Werror`` mode (:issue:`652`).
+
 .. _v3.73.3:
 
 -------------------
