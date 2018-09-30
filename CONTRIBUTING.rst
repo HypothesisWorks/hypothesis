@@ -239,6 +239,7 @@ their individual contributions.
 * `Sanyam Khurana <https://github.com/CuriousLearner>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
 * `Stuart Cook <https://www.github.com/Zalathar>`_
+* `SuperStormer <https://github.com/SuperStormer>`_
 * `Sushobhit <https://github.com/sushobhit27>`_ (sushobhitsolanki@gmail.com)
 * `Tariq Khokhar <https://www.github.com/tkb>`_ (tariq@khokhar.net)
 * `Tessa Bradbury <https://www.github.com/tessereth>`_
