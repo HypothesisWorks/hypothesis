@@ -1615,8 +1615,8 @@ def datetimes(
     # type: (...) -> SearchStrategy[dt.datetime]
     """A strategy for generating datetimes, which may be timezone-aware.
 
-    This strategy works by drawing a naive datetime between ``min_datetime``
-    and ``max_datetime``, which must both be naive (have no timezone).
+    This strategy works by drawing a naive datetime between ``min_value``
+    and ``max_value``, which must both be naive (have no timezone).
 
     ``timezones`` must be a strategy that generates
     :class:`~python:datetime.tzinfo` objects (or None,
@@ -1681,7 +1681,7 @@ def dates(
     min_date=None, max_date=None,
 ):
     # type: (dt.date, dt.date, dt.date, dt.date) -> SearchStrategy[dt.date]
-    """A strategy for dates between ``min_date`` and ``max_date``.
+    """A strategy for dates between ``min_value`` and ``max_value``.
 
     Examples from this strategy shrink towards January 1st 2000.
     """
@@ -1706,7 +1706,7 @@ def times(
     max_time=None,  # type: dt.time
 ):
     # type: (...) -> SearchStrategy[dt.time]
-    """A strategy for times between ``min_time`` and ``max_time``.
+    """A strategy for times between ``min_value`` and ``max_value``.
 
     The ``timezones`` argument is handled as for :py:func:`datetimes`.
 
