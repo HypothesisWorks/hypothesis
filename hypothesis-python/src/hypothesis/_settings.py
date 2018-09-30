@@ -845,7 +845,7 @@ def note_deprecation(message, s=None):
     verbosity = s.verbosity
     warning = HypothesisDeprecationWarning(message)
     if verbosity > Verbosity.quiet:
-        warnings.warn(warning, stacklevel=3)
+        warnings.warn(warning, stacklevel=2)
 
 
 settings.register_profile('default', settings())
