@@ -198,7 +198,7 @@ Thank you very much for creating the (probably) most powerful property-based
 testing framework.
 
 -------------------------------------------
-`Reposit Power <http://repositpower.com>`_
+`Reposit Power <https://repositpower.com>`_
 -------------------------------------------
 
 With a micro-service architecture, testing between services is made easy using Hypothesis
