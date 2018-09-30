@@ -53,7 +53,7 @@ test to take this form, or ask the framework maintainer to support our
 
 In terms of what's actually *known* to work:
 
-  * Hypothesis integrates as smoothly with py.test and unittest as we can make it,
+  * Hypothesis integrates as smoothly with pytest and unittest as we can make it,
     and this is verified as part of the CI.
     Note however that :func:`@given <hypothesis.given>` should only be used on
     tests, not :class:`python:unittest.TestCase` setup or teardown methods.

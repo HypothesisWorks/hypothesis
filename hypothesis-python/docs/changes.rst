@@ -3839,7 +3839,7 @@ Minor bug fix release.
 3.0.5 - 2016-02-25
 ------------------
 
-* Fix a bug where Hypothesis would now error on py.test development versions.
+* Fix a bug where Hypothesis would now error on :pypi:`pytest` development versions.
 
 .. _v3.0.4:
 
@@ -3857,7 +3857,7 @@ Minor bug fix release.
 3.0.3 - 2016-02-23
 ------------------
 
-* Fix version parsing of py.test to work with py.test release candidates
+* Fix version parsing of pytest to work with pytest release candidates
 * More general handling of the health check problem where things could fail because
   of a cache miss - now one "free" example is generated before the start of the
   health check run.
@@ -4248,7 +4248,7 @@ and removes some internal API functionality so gets a minor version bump.
   function that uses destructuring arguments (it still won't work, but it will
   error more clearly),
 * A number of spelling corrections in error messages
-* py.test should no longer display the intermediate modules Hypothesis generates
+* :pypi:`pytest` should no longer display the intermediate modules Hypothesis generates
   when running in verbose mode
 * Hypothesis should now correctly handle printing objects with non-ascii reprs
   on python 3 when running in a locale that cannot handle ascii printing to

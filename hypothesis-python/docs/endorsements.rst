@@ -141,7 +141,7 @@ and code inspections had not. Since then I've been evangelizing for it at our fi
 --------------------------------------------
 
 I am using Hypothesis as an integral part of my Python workshops. Testing is an integral part of Python
-programming and whilst unittest and, better, py.test can handle example-based testing, property-based
+programming and whilst unittest and, better, pytest can handle example-based testing, property-based
 testing is increasingly far more important than example-base testing, and Hypothesis fits the bill.
 
 ---------------------------------------------
