@@ -36,6 +36,8 @@ If you're using something else and it doesn't work, do get in touch and I'll try
 to help, but unless you can come up with a way for me to run a CI server on that
 operating system it probably won't stay fixed due to the inevitable march of time.
 
+.. _framework-compatibility:
+
 ------------------
 Testing frameworks
 ------------------
@@ -61,14 +63,18 @@ In terms of what's actually *known* to work:
     with :func:`@given <hypothesis.given>` - just avoid passing a strategy for
     each argument that will be supplied by a fixture.  However, each fixture
     will run once for the whole function, not once per example.  Decorating a
-    fixture function is meaningless.
-  * Nose works fine with hypothesis, and this is tested as part of the CI. yield based
+    fixture function with :func:`@given <hypothesis.given>` is meaningless.
+  * The :func:`python:unittest.mock.patch` decorator works with
+    :func:`@given <hypothesis.given>`, but we recommend using it as a context
+    manager within the decorated test to ensure that the mock is per-test-case
+    and avoid poor interactions with Pytest fixtures.
+  * Nose works fine with Hypothesis, and this is tested as part of the CI. ``yield`` based
     tests simply won't work.
   * Integration with Django's testing requires use of the :ref:`hypothesis-django` package.
     The issue is that in Django's tests' normal mode of execution it will reset the
     database once per test rather than once per example, which is not what you want.
-  * Coverage works out of the box with Hypothesis - we use it to guide example
-    selection for user code, and Hypothesis has 100% branch coverage in its own tests.
+  * :pypi:`Coverage` works out of the box with Hypothesis; our own test suite has
+    100% branch coverage.
 
 -----------------
 Optional Packages
