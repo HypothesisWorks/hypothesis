@@ -16,7 +16,7 @@ bleach==2.1.4             # via readme-renderer
 certifi==2018.8.24        # via requests
 cffi==1.11.5              # via cmarkgfm
 chardet==3.0.4            # via requests
-click==6.7                # via pip-tools, pyupio, safety
+click==7.0                # via pip-tools, pyupio, safety
 cmarkgfm==0.4.2           # via readme-renderer
 coverage==4.5.1
 decorator==4.3.0          # via ipython, traitlets
