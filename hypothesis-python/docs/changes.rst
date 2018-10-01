@@ -21,6 +21,14 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.73.5:
+
+-------------------
+3.73.5 - 2018-10-01
+-------------------
+
+Changes the documentation for ``hypothesis.strategies.datetimes``, ``hypothesis.strategies.dates``, ``hypothesis.strategies.times`` to use the new parameter names ``min_value`` and ``max_value`` instead of the deprecated names
+
 .. _v3.73.4:
 
 -------------------
