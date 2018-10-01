@@ -821,6 +821,29 @@ class PrintSettings(Enum):
     ALWAYS = 2
     """Always print a blob on failure."""
 
+    def __repr__(self):
+        return 'PrintSettings.%s' % (self.name,)
+
+
+def _validate_print_blob(value):
+    if isinstance(value, bool):
+        if value:
+            replacement = PrintSettings.ALWAYS
+        else:
+            replacement = PrintSettings.NEVER
+
+        note_deprecation(
+            'Setting print_blob=%r is deprecated and will become an error '
+            'in a future version of Hypothesis. Use print_blob=%r instead.' % (
+                value, replacement,
+            )
+        )
+        return replacement
+
+    # Values that aren't bool or PrintSettings will be turned into hard errors
+    # by the 'options' check.
+    return value
+
 
 settings._define_setting(
     'print_blob',
@@ -831,7 +854,9 @@ failures.
 
 See :ref:`the documentation on @reproduce_failure <reproduce_failure>` for
 more details of this behaviour.
-"""
+""",
+    validator=_validate_print_blob,
+    options=tuple(PrintSettings),
 )
 
 settings.lock_further_definitions()
