@@ -52,7 +52,7 @@ packaging==18.0           # via dparse, pyupio, safety, sphinx
 parso==0.3.1              # via jedi
 pbr==4.2.0                # via mock, stevedore
 pexpect==4.6.0            # via ipython
-pickleshare==0.7.4        # via ipython
+pickleshare==0.7.5        # via ipython
 pip-tools==3.0.0
 pkginfo==1.4.2            # via twine
 pluggy==0.7.1             # via pytest, tox
