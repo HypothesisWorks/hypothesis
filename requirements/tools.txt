@@ -56,13 +56,13 @@ pickleshare==0.7.5        # via ipython
 pip-tools==3.0.0
 pkginfo==1.4.2            # via twine
 pluggy==0.7.1             # via pytest, tox
-prompt-toolkit==2.0.5    # via ipython
+prompt-toolkit==2.0.5     # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.6.0                 # via pytest, tox
-pycodestyle==2.4.0        # via autopep8, flake8
+pycodestyle==2.3.1        # via autopep8, flake8
 pycparser==2.19           # via cffi
 pydocstyle==2.1.1         # via flake8-docstrings
-pyflakes==2.0.0           # via autoflake, flake8
+pyflakes==1.6.0           # via autoflake, flake8
 pyformat==0.7
 pygithub==1.43.2          # via pyupio
 pygments==2.2.0           # via ipython, readme-renderer, sphinx
