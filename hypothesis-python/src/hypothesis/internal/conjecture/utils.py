@@ -20,7 +20,6 @@ from __future__ import absolute_import, division, print_function
 import enum
 import hashlib
 import heapq
-import math
 from collections import OrderedDict
 from fractions import Fraction
 
@@ -58,7 +57,6 @@ def combine_labels(*labels):
 
 
 INTEGER_RANGE_DRAW_LABEL = calc_label_from_name("another draw in integer_range()")
-GEOMETRIC_LABEL = calc_label_from_name("geometric()")
 BIASED_COIN_LABEL = calc_label_from_name("biased_coin()")
 SAMPLE_IN_SAMPLER_LABLE = calc_label_from_name("a sample() in Sampler")
 ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
@@ -163,18 +161,6 @@ FULL_FLOAT = int_to_float(FLOAT_PREFIX | ((2 << 53) - 1)) - 1
 
 def fractional_float(data):
     return (int_to_float(FLOAT_PREFIX | getrandbits(data, 52)) - 1) / FULL_FLOAT
-
-
-def geometric(data, p):
-    denom = math.log1p(-p)
-    data.start_example(GEOMETRIC_LABEL)
-    while True:
-        probe = fractional_float(data)
-        if probe < 1.0:
-            result = int(math.log1p(-probe) / denom)
-            assert result >= 0, (probe, p, result)
-            data.stop_example()
-            return result
 
 
 def boolean(data):

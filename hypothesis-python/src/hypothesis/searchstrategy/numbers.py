@@ -27,19 +27,6 @@ from hypothesis.internal.floats import sign
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
-class IntegersFromStrategy(SearchStrategy):
-    def __init__(self, lower_bound, average_size=100000.0):
-        super(IntegersFromStrategy, self).__init__()
-        self.lower_bound = lower_bound
-        self.average_size = average_size
-
-    def __repr__(self):
-        return "IntegersFromStrategy(%d)" % (self.lower_bound,)
-
-    def do_draw(self, data):
-        return int(self.lower_bound + d.geometric(data, 1.0 / self.average_size))
-
-
 class WideRangeIntStrategy(SearchStrategy):
 
     distribution = d.Sampler([4.0, 8.0, 1.0, 1.0, 0.5])

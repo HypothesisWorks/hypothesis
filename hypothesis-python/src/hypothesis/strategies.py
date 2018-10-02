@@ -105,7 +105,6 @@ from hypothesis.searchstrategy.numbers import (
     BoundedIntStrategy,
     FixedBoundedFloatStrategy,
     FloatStrategy,
-    IntegersFromStrategy,
     WideRangeIntStrategy,
 )
 from hypothesis.searchstrategy.recursive import RecursiveStrategy
@@ -437,10 +436,10 @@ def integers(min_value=None, max_value=None):
         if max_int_value is None:
             return WideRangeIntStrategy()
         else:
-            return IntegersFromStrategy(0).map(lambda x: max_int_value - x)
+            return WideRangeIntStrategy().map(lambda x: max_int_value - abs(x))
     else:
         if max_int_value is None:
-            return IntegersFromStrategy(min_int_value)
+            return WideRangeIntStrategy().map(lambda x: min_int_value + abs(x))
         else:
             assert min_int_value <= max_int_value
             if min_int_value == max_int_value:
