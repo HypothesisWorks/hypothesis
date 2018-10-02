@@ -24,7 +24,7 @@ import pytest
 from hypothesis import given, settings
 from tests.common.debug import minimal, find_any
 from hypothesis.strategies import none, sets, text, lists, tuples, \
-    booleans, integers, frozensets, dictionaries, fixed_dictionaries
+    booleans, integers, frozensets, fixed_dictionaries
 from hypothesis.internal.compat import OrderedDict
 
 
@@ -93,18 +93,6 @@ def test_sets_of_fixed_length(n):
     x = minimal(
         sets(integers(), min_size=n, max_size=n), lambda x: True)
     assert len(x) == n
-
-    if not n:
-        assert x == set()
-    else:
-        assert x == set(range(min(x), min(x) + n))
-
-
-@pytest.mark.parametrize(u'n', range(10))
-def test_dictionaries_of_fixed_length(n):
-    x = set(minimal(
-        dictionaries(integers(), booleans(), min_size=n, max_size=n),
-        lambda x: True).keys())
 
     if not n:
         assert x == set()

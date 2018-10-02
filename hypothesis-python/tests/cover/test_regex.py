@@ -278,14 +278,6 @@ def test_positive_lookahead():
         lambda s: s.startswith(u'abc')).example()
 
 
-def test_negative_lookbehind():
-    # no efficient support
-    strategy = st.from_regex(u'[abc]*(?<!abc)d')
-
-    assert_all_examples(strategy, lambda s: not s.endswith(u'abcd'))
-    assert_no_examples(strategy, lambda s: s.endswith(u'abcd'))
-
-
 def test_negative_lookahead():
     # no efficient support
     strategy = st.from_regex(u'^ab(?!cd)[abcd]*')

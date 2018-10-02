@@ -248,25 +248,6 @@ with_cheap_bad_machines = pytest.mark.parametrize(
 )
 
 
-@pytest.mark.parametrize(
-    u'machine',
-    bad_machines, ids=[t.__name__ for t in bad_machines]
-)
-def test_bad_machines_fail(machine):
-    test_class = machine.TestCase
-    try:
-        with capture_out() as o:
-            with raises(AssertionError):
-                test_class().runTest()
-    except Exception:
-        print_unicode(o.getvalue())
-        raise
-    v = o.getvalue()
-    print_unicode(v)
-    steps = [l for l in v.splitlines() if 'Step ' in l or 'state.' in l]
-    assert 1 <= len(steps) <= 50
-
-
 def test_multiple_rules_same_func():
     test_class = MultipleRulesSameFuncMachine.TestCase
     with capture_out() as o:
