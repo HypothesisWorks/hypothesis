@@ -436,9 +436,13 @@ def integers(min_value=None, max_value=None):
         if max_int_value is None:
             return WideRangeIntStrategy()
         else:
+            if max_int_value > 0:
+                return WideRangeIntStrategy().filter(lambda x: x <= max_int_value)
             return WideRangeIntStrategy().map(lambda x: max_int_value - abs(x))
     else:
         if max_int_value is None:
+            if min_int_value < 0:
+                return WideRangeIntStrategy().filter(lambda x: x >= min_int_value)
             return WideRangeIntStrategy().map(lambda x: min_int_value + abs(x))
         else:
             assert min_int_value <= max_int_value
