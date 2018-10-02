@@ -27,14 +27,6 @@ from hypothesis.internal.floats import sign
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
-class IntStrategy(SearchStrategy):
-    """A generic strategy for integer types that provides the basic methods
-    other than produce.
-
-    Subclasses should provide the produce method.
-    """
-
-
 class IntegersFromStrategy(SearchStrategy):
     def __init__(self, lower_bound, average_size=100000.0):
         super(IntegersFromStrategy, self).__init__()
@@ -48,7 +40,7 @@ class IntegersFromStrategy(SearchStrategy):
         return int(self.lower_bound + d.geometric(data, 1.0 / self.average_size))
 
 
-class WideRangeIntStrategy(IntStrategy):
+class WideRangeIntStrategy(SearchStrategy):
 
     distribution = d.Sampler([4.0, 8.0, 1.0, 1.0, 0.5])
 

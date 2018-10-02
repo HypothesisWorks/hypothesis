@@ -109,10 +109,6 @@ def integer_range(data, lower, upper, center=None):
     return int(result)
 
 
-def centered_integer_range(data, lower, upper, center):
-    return integer_range(data, lower, upper, center=center)
-
-
 try:
     from numpy import ndarray
 except ImportError:  # pragma: no cover
