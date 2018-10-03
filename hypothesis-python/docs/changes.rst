@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.74.2:
+
+-------------------
+3.74.2 - 2018-10-03
+-------------------
+
+This patch fixes :issue:`1153`, where time spent reifying a strategy was
+also counted in the time spent generating the first example.  Strategies
+are now fully constructed and validated before the timer is started.
+
 .. _v3.74.1:
 
 -------------------
