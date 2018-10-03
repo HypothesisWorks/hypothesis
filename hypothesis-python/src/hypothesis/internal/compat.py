@@ -374,7 +374,7 @@ def update_code_location(code, newfile, newlineno):
 
     Why do we want to do this? It's for really shallow reasons involving
     hiding the hypothesis_temporary_module code from test runners like
-    py.test's verbose mode. This is a vastly disproportionate terrible
+    pytest's verbose mode. This is a vastly disproportionate terrible
     hack that I've done purely for vanity, and if you're reading this
     code you're probably here because it's broken something and now
     you're angry at me. Sorry.
