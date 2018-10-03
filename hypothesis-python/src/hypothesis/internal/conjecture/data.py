@@ -177,14 +177,16 @@ class ConjectureData(object):
             if not at_top_level:
                 return strategy.do_draw(self)
             else:
-                start_time = benchmark_time()
                 try:
-                    return strategy.do_draw(self)
+                    strategy.validate()
+                    start_time = benchmark_time()
+                    try:
+                        return strategy.do_draw(self)
+                    finally:
+                        self.draw_times.append(benchmark_time() - start_time)
                 except BaseException as e:
                     mark_for_escalation(e)
                     raise
-                finally:
-                    self.draw_times.append(benchmark_time() - start_time)
         finally:
             self.stop_example()
 
