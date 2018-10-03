@@ -69,7 +69,7 @@ def test_emits_unicode():
 @pytest.mark.xfail(
     WINDOWS,
     reason=(
-        "Encoding issues in running the subprocess, possibly py.test's fault"))
+        "Encoding issues in running the subprocess, possibly pytest's fault"))
 @pytest.mark.skipif(
     PY2, reason="Output streams don't have encodings in python 2")
 def test_output_emitting_unicode(testdir, monkeypatch):

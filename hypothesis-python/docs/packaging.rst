@@ -72,8 +72,8 @@ If you want to test Hypothesis as part of your packaging you will probably not w
 Hypothesis itself uses for running its tests, because it has a lot of logic for installing and testing against
 different versions of Python.
 
-The tests must be run with py.test. A version more recent than 2.8.0 is strongly encouraged, but it may work
-with earlier versions (however py.test specific logic is disabled before 2.8.0).
+The tests must be run with pytest >= 3.0; check the :gh-file:`requirements/`
+directory for details.
 
 Tests are organised into a number of top level subdirectories of the tests/ directory.
 

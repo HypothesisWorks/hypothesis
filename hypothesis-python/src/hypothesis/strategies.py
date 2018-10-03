@@ -617,12 +617,13 @@ def lists(
     Hypothesis 1.x mean we no longer needed this hint to generate useful data.
 
     If unique is True (or something that evaluates to True), we compare direct
-    object equality, as if unique_by was `lambda x: x`. This comparison only
+    object equality, as if unique_by was ``lambda x: x``. This comparison only
     works for hashable types.
 
     if unique_by is not None it must be a function returning a hashable type
     when given a value drawn from elements. The resulting list will satisfy the
-    condition that for i != j, unique_by(result[i]) != unique_by(result[j]).
+    condition that for ``i`` != ``j``, ``unique_by(result[i])`` !=
+    ``unique_by(result[j])``.
 
     Examples from this strategy shrink by trying to remove elements from the
     list, and by shrinking each individual element of the list.
@@ -1830,8 +1831,8 @@ def complex_numbers(min_magnitude=0, max_magnitude=None,
 
     If you need to generate complex numbers with particular real and
     imaginary parts or relationships between parts, consider using
-    `builds(complex, ...) <hypothesis.strategies.builds>` or
-    `@composite <hypothesis.strategies.composite>` respectively.
+    :func:`builds(complex, ...) <hypothesis.strategies.builds>` or
+    :func:`@composite <hypothesis.strategies.composite>` respectively.
     """
     check_valid_magnitude(min_magnitude, 'min_magnitude')
     check_valid_magnitude(max_magnitude, 'max_magnitude')
@@ -2163,12 +2164,11 @@ def deferred(definition):
 @defines_strategy_with_reusable_values
 def emails():
     """A strategy for generating email addresses as unicode strings. The
-    address format is specific in :rfc:`5322#section-3.4.1`. Values shrink
+    address format is specified in :rfc:`5322#section-3.4.1`. Values shrink
     towards shorter local-parts and host domains.
 
     This strategy is useful for generating "user data" for tests, as
-    mishandling of email addresses is a common source of bugs. Future
-    updates will generate more complicated addresses allowed by the RFC.
+    mishandling of email addresses is a common source of bugs.
     """
     from hypothesis.provisional import domains
     local_chars = string.ascii_letters + string.digits + "!#$%&'*+-/=^_`{|}~"

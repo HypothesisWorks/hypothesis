@@ -378,6 +378,8 @@ will be passed to the function as normal and not be parametrized over.
 
 The function returned by given has all the same arguments as the original
 test, minus those that are filled in by :func:`@given <hypothesis.given>`.
+Check :ref:`the notes on framework compatibility <framework-compatibility>`
+to see how this affects other testing libraries you may be using.
 
 
 .. _custom-function-execution:
