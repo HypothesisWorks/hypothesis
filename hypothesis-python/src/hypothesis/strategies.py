@@ -966,7 +966,9 @@ def characters(
 @cacheable
 @defines_strategy_with_reusable_values
 def text(
-    alphabet=None,  # type: Union[Sequence[Text], SearchStrategy[Text]]
+    alphabet=characters(
+        blacklist_categories=('Cs',)
+    ),  # type: Union[Sequence[Text], SearchStrategy[Text]]
     min_size=0,   # type: int
     average_size=None,   # type: None
     max_size=None  # type: int
@@ -996,6 +998,7 @@ def text(
     """
     check_valid_sizes(min_size, average_size, max_size)
     if alphabet is None:
+        note_deprecation('alphabet=None is deprecated; just omit the argument')
         char_strategy = characters(blacklist_categories=('Cs',))
     elif not alphabet:
         if (min_size or 0) > 0:
