@@ -39,9 +39,9 @@ from hypothesis.control import note, assume, reject, cleanup, \
 from hypothesis._settings import note_deprecation
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.searchstrategy import SearchStrategy, check_strategy
-from hypothesis.internal.compat import abc, gcd, ceil, floor, hrange, \
-    string_types, get_type_hints, getfullargspec, typing_root_type, \
-    implements_iterator
+from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
+    text_type, string_types, get_type_hints, getfullargspec, \
+    typing_root_type, implements_iterator
 from hypothesis.internal.floats import next_up, float_of, next_down, \
     is_negative, float_to_int, int_to_float, count_between_floats
 from hypothesis.internal.charmap import as_general_categories
@@ -1002,14 +1002,9 @@ def text(
         char_strategy = characters(blacklist_categories=('Cs',))
     elif isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
+    elif not alphabet:
+        char_strategy = nothing()
     else:
-        if not isinstance(alphabet, abc.Sequence):
-            note_deprecation(
-                'alphabet must be an ordered sequence, or tests may be '
-                'flaky and shrinking weaker, but a %r is not a type of '
-                'sequence.  This will be an error in future.'
-                % (type(alphabet),)
-            )
         alphabet = list(alphabet)
         non_string = [c for c in alphabet if not isinstance(c, string_types)]
         if non_string:
@@ -1018,16 +1013,22 @@ def text(
                 'strings, which will be an error in future:  %r'
                 % (non_string,)
             )
-            alphabet = [str(c) for c in alphabet]
-        not_one_char = [c for c in alphabet
-                        if isinstance(c, string_types) and len(c) != 1]
+            alphabet = [
+                c if isinstance(c, string_types) else str(c) for c in alphabet
+            ]
+        not_one_char = [c for c in alphabet if len(c) != 1]
         if not_one_char:
             note_deprecation(
                 'The following elements in alphabet are not of length '
                 'one, which leads to violation of size constraints and '
                 'will be an error in future:  %r' % (not_one_char,)
             )
-        char_strategy = sampled_from(alphabet)
+        if all(len(c) == 1 and isinstance(c, text_type) for c in alphabet):
+            char_strategy = characters(whitelist_categories=(),
+                                       whitelist_characters=alphabet)
+        else:
+            alphabet.sort(key=lambda s: (len(s), s))
+            char_strategy = sampled_from(sorted(alphabet))
     if (max_size == 0 or char_strategy.is_empty) and not min_size:
         return just(u'')
     return StringStrategy(lists(
