@@ -1000,14 +1000,6 @@ def text(
     if alphabet is None:
         note_deprecation('alphabet=None is deprecated; just omit the argument')
         char_strategy = characters(blacklist_categories=('Cs',))
-    elif not alphabet:
-        if (min_size or 0) > 0:
-            raise InvalidArgument(
-                'Invalid min_size %r > 0 for empty alphabet' % (
-                    min_size,
-                )
-            )
-        return just(u'')
     elif isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:
@@ -1036,6 +1028,8 @@ def text(
                 'will be an error in future:  %r' % (not_one_char,)
             )
         char_strategy = sampled_from(alphabet)
+    if (max_size == 0 or char_strategy.is_empty) and not min_size:
+        return just(u'')
     return StringStrategy(lists(
         char_strategy, min_size=min_size, max_size=max_size
     ))
