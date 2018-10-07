@@ -4,6 +4,7 @@ coverage
 django
 dpcontracts
 flake8
+flake8-alfred
 flake8-docstrings
 flaky
 ipython
