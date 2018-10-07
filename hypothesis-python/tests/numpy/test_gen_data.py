@@ -262,8 +262,8 @@ def test_may_not_fill_with_non_nan_when_unique_is_set():
 
 def test_may_not_fill_with_non_nan_when_unique_is_set_and_type_is_not_number():
     @given(nps.arrays(
-        dtype=bytes, shape=10,
-        unique=True, fill=st.just(b'')))
+        dtype='U', shape=10,
+        unique=True, fill=st.just(u'')))
     def test(arr):
         pass
 
