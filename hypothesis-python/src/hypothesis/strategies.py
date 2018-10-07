@@ -601,7 +601,7 @@ def sampled_from(elements):
 @defines_strategy
 def lists(
     elements=None,  # type: SearchStrategy[Ex]
-    min_size=None,  # type: int
+    min_size=0,  # type: int
     average_size=None,  # type: int
     max_size=None,  # type: int
     unique_by=None,  # type: Callable[..., Any]
@@ -671,7 +671,7 @@ def lists(
 @defines_strategy
 def sets(
     elements=None,  # type: SearchStrategy[Ex]
-    min_size=None,   # type: int
+    min_size=0,   # type: int
     average_size=None,  # type: int
     max_size=None,  # type: int
 ):
@@ -701,7 +701,7 @@ def sets(
 @defines_strategy
 def frozensets(
     elements=None,  # type: SearchStrategy[Ex]
-    min_size=None,   # type: int
+    min_size=0,   # type: int
     average_size=None,  # type: int
     max_size=None,  # type: int
 ):
@@ -738,7 +738,7 @@ class PrettyIter(object):
 
 
 @defines_strategy
-def iterables(elements=None, min_size=None, average_size=None, max_size=None,
+def iterables(elements=None, min_size=0, average_size=None, max_size=None,
               unique_by=None, unique=False):
     """This has the same behaviour as lists, but returns iterables instead.
 
@@ -788,7 +788,7 @@ def dictionaries(
     keys,  # type: SearchStrategy[Ex]
     values,  # type: SearchStrategy[T]
     dict_class=dict,  # type: type
-    min_size=None,  # type: int
+    min_size=0,  # type: int
     average_size=None,  # type: int
     max_size=None,  # type: int
 ):
@@ -936,7 +936,7 @@ def characters(
 @defines_strategy_with_reusable_values
 def text(
     alphabet=None,  # type: Union[Sequence[Text], SearchStrategy[Text]]
-    min_size=None,   # type: int
+    min_size=0,   # type: int
     average_size=None,   # type: int
     max_size=None  # type: int
 ):
@@ -1041,7 +1041,7 @@ def from_regex(regex, fullmatch=False):
 @cacheable
 @defines_strategy_with_reusable_values
 def binary(
-    min_size=None, average_size=None, max_size=None
+    min_size=0, average_size=None, max_size=None
 ):
     # type: (int, int, int) -> SearchStrategy[bytes]
     """Generates the appropriate binary type (str in python 2, bytes in python
