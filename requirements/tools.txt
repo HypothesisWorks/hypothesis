@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file requirements/tools.txt requirements/tools.in
 #
-alabaster==0.7.11         # via sphinx
+alabaster==0.7.12         # via sphinx
 atomicwrites==1.2.1       # via pytest
 attrs==18.2.0
 autoflake==1.2            # via pyformat
