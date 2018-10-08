@@ -84,7 +84,7 @@ simplegeneric==0.8.1      # via ipython
 six==1.11.0               # via bandit, bleach, dparse, html5lib, mock, more-itertools, packaging, pip-tools, prompt-toolkit, pydocstyle, pytest, python-dateutil, python-gitlab, pyupio, readme-renderer, sphinx, stevedore, tox, traitlets
 smmap2==2.0.4             # via gitdb2
 snowballstemmer==1.2.1    # via pydocstyle, sphinx
-sphinx-rtd-theme==0.4.1
+sphinx-rtd-theme==0.4.2
 sphinx==1.8.1
 sphinxcontrib-websupport==1.1.0  # via sphinx
 stevedore==1.29.0         # via bandit
