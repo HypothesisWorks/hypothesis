@@ -88,7 +88,7 @@ sphinx-rtd-theme==0.4.2
 sphinx==1.8.1
 sphinxcontrib-websupport==1.1.0  # via sphinx
 stevedore==1.29.0         # via bandit
-toml==0.9.6
+toml==0.10.0
 tox==3.4.0
 tqdm==4.26.0              # via pyupio, twine
 traitlets==4.3.2          # via ipython
