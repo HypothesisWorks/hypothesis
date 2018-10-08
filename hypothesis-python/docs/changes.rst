@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.75.0:
+
+-------------------
+3.75.0 - 2018-10-08
+-------------------
+
+This release deprecates  the use of ``min_size=None``, setting the default
+``min_size`` to 0 (:issue: `1618`).
+
 .. _v3.74.3:
 
 -------------------
