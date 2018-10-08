@@ -21,9 +21,14 @@ import pytest
 
 from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
-from tests.common.utils import fails_with
+from tests.common.utils import fails_with, checks_deprecated_behaviour
 from hypothesis.strategies import sets, lists, floats, booleans, \
     integers, recursive, frozensets
+
+
+@checks_deprecated_behaviour
+def test_min_size_none_behavior():
+    lists(integers(), min_size=None).example()
 
 
 def test_errors_when_given_varargs():

@@ -222,6 +222,7 @@ their individual contributions.
 * `kbara <https://www.github.com/kbara>`_
 * `Kyle Reeve <https://www.github.com/kreeve>`_ (krzw92@gmail.com)
 * `Lee Begg <https://www.github.com/llnz2>`_
+* `Lisa Goeller <https://www.github.com/lgoeller>`_
 * `Louis Taylor <https://github.com/kragniz>`_
 * `Luke Barone-Adesi <https://github.com/baluke>`_
 * `marekventur <https://www.github.com/marekventur>`_
