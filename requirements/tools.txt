@@ -12,7 +12,7 @@ autopep8==1.4             # via pyformat
 babel==2.6.0              # via sphinx
 backcall==0.1.0           # via ipython
 bandit==1.5.1
-bleach==2.1.4             # via readme-renderer
+bleach==3.0.0             # via readme-renderer
 certifi==2018.8.24        # via requests
 cffi==1.11.5              # via cmarkgfm
 chardet==3.0.4            # via requests
