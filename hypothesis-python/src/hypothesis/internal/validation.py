@@ -110,7 +110,7 @@ def check_valid_size(value, name):
         if name == 'min_size':
             from hypothesis._settings import note_deprecation
             note_deprecation(
-               'min_size=None is deprecated; use min_size=0 instead.'
+                'min_size=None is deprecated; use min_size=0 instead.'
             )
         return
     check_type(integer_types + (float,), value)
