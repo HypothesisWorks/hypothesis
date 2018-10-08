@@ -72,7 +72,7 @@ def test_notes_repr():
 
 
 def test_can_mark_interesting():
-    x = ConjectureData.for_buffer(bytes())
+    x = ConjectureData.for_buffer(hbytes())
     with pytest.raises(StopTest):
         x.mark_interesting()
     assert x.frozen
@@ -80,12 +80,12 @@ def test_can_mark_interesting():
 
 
 def test_drawing_zero_bits_is_free():
-    x = ConjectureData.for_buffer(bytes())
+    x = ConjectureData.for_buffer(hbytes())
     assert x.draw_bits(0) == 0
 
 
 def test_can_mark_invalid():
-    x = ConjectureData.for_buffer(bytes())
+    x = ConjectureData.for_buffer(hbytes())
     with pytest.raises(StopTest):
         x.mark_invalid()
     assert x.frozen

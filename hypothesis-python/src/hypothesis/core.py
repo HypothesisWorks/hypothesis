@@ -50,8 +50,8 @@ from hypothesis.executors import new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import ceil, hbytes, qualname, \
-    str_to_bytes, benchmark_time, get_type_hints, getfullargspec, \
-    int_from_bytes, bad_django_TestCase
+    binary_type, str_to_bytes, benchmark_time, get_type_hints, \
+    getfullargspec, int_from_bytes, bad_django_TestCase
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.escalation import \
@@ -149,7 +149,9 @@ def reproduce_failure(version, blob):
 
 
 def encode_failure(buffer):
-    buffer = bytes(buffer)
+    # This needs to be a real bytes() instance, so we use binary_type()
+    # instead of hbytes() here.
+    buffer = binary_type(buffer)
     compressed = zlib.compress(buffer)
     if len(compressed) < len(buffer):
         buffer = b'\1' + compressed

@@ -28,7 +28,7 @@ import collections
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import PY2, ForwardRef, abc, text_type, \
-    typing_root_type
+    binary_type, typing_root_type
 
 
 def type_sorting_key(t):
@@ -133,7 +133,7 @@ _global_type_lookup = {
     fractions.Fraction: st.fractions(),
     decimal.Decimal: st.decimals(),
     text_type: st.text(),
-    bytes: st.binary(),
+    binary_type: st.binary(),
     datetime.datetime: st.datetimes(),
     datetime.date: st.dates(),
     datetime.time: st.times(),
