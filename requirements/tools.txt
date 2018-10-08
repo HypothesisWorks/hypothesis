@@ -51,7 +51,7 @@ mypy==0.630
 numpy==1.15.2
 packaging==18.0           # via dparse, pyupio, safety, sphinx
 parso==0.3.1              # via jedi
-pbr==4.2.0                # via mock, stevedore
+pbr==4.3.0                # via mock, stevedore
 pexpect==4.6.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pip-tools==3.1.0
