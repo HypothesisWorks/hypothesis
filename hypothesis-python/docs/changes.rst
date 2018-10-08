@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.74.3:
+
+-------------------
+3.74.3 - 2018-10-08
+-------------------
+
+This patch makes some small internal changes to comply with a new lint setting
+in the build. There should be no user-visible change.
+
 .. _v3.74.2:
 
 -------------------
