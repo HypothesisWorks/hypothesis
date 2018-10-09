@@ -332,6 +332,12 @@ def integers(min_value=None, max_value=None):
 
     min_int_value = None if min_value is None else ceil(min_value)
     max_int_value = None if max_value is None else floor(max_value)
+    
+    if min_value != min_int_value or max_value != max_int_value:
+        note_deprecation(
+            'One or both parameters cannot be represented exactly as an '
+            'integer. Please consider using floats() or fractions() instead.'
+        )
 
     if min_int_value is not None and max_int_value is not None and \
             min_int_value > max_int_value:

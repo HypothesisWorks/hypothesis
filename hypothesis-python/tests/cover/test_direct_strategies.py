@@ -27,7 +27,8 @@ import pytest
 
 import hypothesis.strategies as ds
 from hypothesis import given, settings
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
+
 from tests.common.debug import minimal
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.internal.reflection import nicerepr
@@ -61,7 +62,6 @@ def fn_ktest(*fnkwargs):
 @fn_ktest(
     (ds.integers, {'min_value': float('nan')}),
     (ds.integers, {'min_value': 2, 'max_value': 1}),
-    (ds.integers, {'min_value': 0.1, 'max_value': 0.2}),
     (ds.integers, {'min_value': float('nan')}),
     (ds.integers, {'max_value': float('nan')}),
     (ds.dates, {'min_value': 'fish'}),
@@ -163,8 +163,7 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.integers, {'min_value': 11}),
     (ds.integers, {'min_value': 11, 'max_value': 100}),
     (ds.integers, {'max_value': 0}),
-    (ds.integers, {'min_value': decimal.Decimal('1.5')}),
-    (ds.integers, {'min_value': -1.5, 'max_value': -0.5}),
+    (ds.integers, {'min_value': -2, 'max_value': -1}),
     (ds.decimals, {'min_value': 1.0, 'max_value': 1.5}),
     (ds.decimals, {'min_value': '1.0', 'max_value': '1.5'}),
     (ds.decimals, {'min_value': decimal.Decimal('1.5')}),
@@ -422,6 +421,10 @@ def test_empty_elements_with_max_size_is_deprecated():
 @checks_deprecated_behaviour
 def test_average_size_is_deprecated():
     ds.lists(ds.integers(), average_size=1).example()
+  
+@checks_deprecated_behaviour
+def test_inexact_integer_is_deprecated():
+    ds.integers(1.5, 2.5).example()
 
 
 @pytest.mark.parametrize('parameter_name', ['min_value', 'max_value'])
