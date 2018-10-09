@@ -21,6 +21,14 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.75.2:
+
+-------------------
+3.75.2 - 2018-10-09
+-------------------
+
+This patch avoids caching a trivial case, fixing :issue:`493`.
+
 .. _v3.75.1:
 
 -------------------
