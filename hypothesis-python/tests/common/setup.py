@@ -33,6 +33,9 @@ def run():
     filterwarnings('ignore', category=ImportWarning)
     filterwarnings('ignore', category=FutureWarning, module='pandas._version')
 
+    # Fixed in recent versions but allowed by pytest=3.0.0; see #1630
+    filterwarnings('ignore', category=DeprecationWarning, module='pluggy')
+
     # See https://github.com/numpy/numpy/pull/432
     filterwarnings('ignore', message='numpy.dtype size changed')
     filterwarnings('ignore', message='numpy.ufunc size changed')
