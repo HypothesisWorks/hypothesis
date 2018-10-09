@@ -65,6 +65,7 @@ from hypothesis.internal.conjecture.data import StopTest, ConjectureData
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.internal.conjecture.engine import ExitReason, \
     ConjectureRunner, sort_key
+from hypothesis.searchstrategy.collections import TupleStrategy
 
 if False:
     from typing import (  # noqa
@@ -341,12 +342,15 @@ def process_arguments_to_given(
 
     arguments = tuple(arguments)
 
-    search_strategy = st.tuples(
+    # We use TupleStrategy over tuples() here to avoid polluting
+    # st.STRATEGY_CACHE with references (see #493), and because this is
+    # trivial anyway if the fixed_dictionaries strategy is cacheable.
+    search_strategy = TupleStrategy((
         st.just(arguments),
         st.fixed_dictionaries(generator_kwargs).map(
             lambda args: dict(args, **kwargs)
         )
-    )
+    ))
 
     if selfy is not None:
         search_strategy = WithRunner(search_strategy, selfy)
