@@ -1,0 +1,88 @@
+# Azure Pipelines
+
+strategy:
+  matrix:
+    Py27-32:
+      PYTHON_VERSION: "2.7"
+      PYTHON_ARCH: "x86"
+    Py27-64:
+      PYTHON_VERSION: "2.7"
+      PYTHON_ARCH: "x64"
+    Py36-32:
+      PYTHON_VERSION: "3.6"
+      PYTHON_ARCH: "x86"
+    Py36-64:
+      PYTHON_VERSION: "3.6"
+      PYTHON_ARCH: "x64"
+
+# We need a match both for pushes to master, and our release tags which
+# trigger wheel builds.
+trigger:
+  branches:
+    include:
+      - master
+# TODO: tags matching /^\d+\.\d+\.\d+$/
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: $(PYTHON_VERSION)
+    architecture: $(PYTHON_ARCH)
+
+- powershell: |
+    Write-Host "Filesystem root:"
+    ls C:\
+
+    #Write-Host "Installed SDKs:"
+    #ls "C:\Program Files\Microsoft SDKs\Windows\"
+    ls "C:\Program Files\"
+  displayName: Echo environment details
+
+# Check that we have the expected version and architecture for Python
+- script: |
+    python --version
+    python -c "import struct; print(struct.calcsize('P') * 8)"
+    python -m pip.__main__ install --upgrade setuptools pip wheel twine
+    python -m pip.__main__ install setuptools -r../requirements/test.txt
+    python -m pip.__main__ install .[all]
+    python setup.py bdist_wheel --dist-dir dist
+  displayName: Check expected version and architecture
+  workingDirectory: $(Build.SourcesDirectory)/hypothesis-python
+
+# Build the compiled extension and run the project tests
+- script: |
+    python -m pytest -n 0 tests/cover
+    python -m pytest -n 0 tests/datetime
+    python -m pytest -n 0 tests/fakefactory
+    python -m pip.__main__ uninstall flaky -y
+    python -m pytest -n 0 tests/pytest -p pytester --runpytest subprocess --junitxml=test-results.xml
+  displayName: Test
+  workingDirectory: $(Build.SourcesDirectory)/hypothesis-python
+
+# Publish test results
+- task: PublishTestResults@2
+  inputs:
+    testResultsFiles: '**/test-results.xml'
+    testRunTitle: Python $(PYTHON_VERSION)
+  condition: succeededOrFailed()
+
+# Publish build artifacts
+- task: CopyFiles@2
+  inputs:
+    contents: '**\dist\*.whl'
+    targetFolder: $(Build.ArtifactStagingDirectory)
+- task: PublishBuildArtifacts@1
+  inputs:
+    artifactName: wheel
+    pathToPublish: $(Build.ArtifactStagingDirectory)
+    parallel: true
+
+# TODO: add back publish step
+# - powershell: |
+#     ps: if (($env:APPVEYOR_REPO_TAG -eq $TRUE) -and ($env:PYTHON_ARCH -eq "32")) { python -m twine upload dist/* }
+#   displayName: Publish
+
+# TODO: add back
+#   TWINE_USERNAME: DRMacIver
+#   TWINE_PASSWORD:
+#     secure: TpmpMHwgS4xxcbbzROle2xyb3i+VPP8cT5ZL4dF/UrA=
