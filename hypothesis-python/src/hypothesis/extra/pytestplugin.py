@@ -57,6 +57,7 @@ def pytest_addoption(parser):
     group.addoption(
         VERBOSITY_OPTION,
         action='store',
+        choices=[opt.name for opt in Verbosity],
         help='Override profile with verbosity setting specified'
     )
     group.addoption(
@@ -94,7 +95,6 @@ def pytest_configure(config):
             VERBOSITY_PROFILE_NAME, verbosity=verbosity_value
         )
         settings.load_profile(VERBOSITY_PROFILE_NAME)
-
     seed = config.getoption(SEED_OPTION)
     if seed is not None:
         try:
