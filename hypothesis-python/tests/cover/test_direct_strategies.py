@@ -27,7 +27,7 @@ import pytest
 
 import hypothesis.strategies as ds
 from hypothesis import given, settings
-from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
+from hypothesis.errors import InvalidArgument
 
 from tests.common.debug import minimal
 from tests.common.utils import checks_deprecated_behaviour
@@ -99,8 +99,6 @@ def fn_ktest(*fnkwargs):
     (ds.floats, {'min_value': complex(1, 2)}),
     (ds.floats, {'max_value': complex(1, 2)}),
     (ds.fractions, {'min_value': 2, 'max_value': 1}),
-    (ds.fractions, {'min_value': '1/3', 'max_value': '1/3',
-                    'max_denominator': 2}),
     (ds.fractions, {'min_value': float('nan')}),
     (ds.fractions, {'max_value': float('nan')}),
     (ds.fractions, {'max_denominator': 0}),
@@ -181,8 +179,8 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.fractions, {'min_value': 1.0}),
     (ds.fractions, {'min_value': decimal.Decimal('1.0')}),
     (ds.fractions, {'min_value': fractions.Fraction(1, 2)}),
-    (ds.fractions, {'min_value': '1/2', 'max_denominator': 1}),
-    (ds.fractions, {'max_value': '1/2', 'max_denominator': 1}),
+    (ds.fractions, {'min_value': '1/2', 'max_denominator': 2}),
+    (ds.fractions, {'max_value': '1/2', 'max_denominator': 3}),
     (ds.lists, {'elements': ds.nothing(), 'max_size': 0}),
     (ds.lists, {'elements': ds.integers()}),
     (ds.lists, {'elements': ds.integers(), 'max_size': 5}),
@@ -421,11 +419,22 @@ def test_empty_elements_with_max_size_is_deprecated():
 @checks_deprecated_behaviour
 def test_average_size_is_deprecated():
     ds.lists(ds.integers(), average_size=1).example()
+    
   
 @checks_deprecated_behaviour
 def test_inexact_integer_is_deprecated():
-    ds.integers(1.5, 2.5).example()
-
+    ds.integers(min_value=1.5, max_value=2.5).example()
+    
+    
+@checks_deprecated_behaviour
+def test_inexact_float_is_deprecated():
+    ds.floats(min_value=1.8, width=16).example()
+    
+    
+@checks_deprecated_behaviour
+def test_fraction_denominator_too_big():
+    ds.fractions(min_value='1/3', max_denominator=2).example()  
+    
 
 @pytest.mark.parametrize('parameter_name', ['min_value', 'max_value'])
 @pytest.mark.parametrize('value', [-1, 0, 1])

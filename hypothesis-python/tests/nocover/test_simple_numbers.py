@@ -220,7 +220,7 @@ class TestFloatsAreFloats(object):
     def test_unbounded(self, arg):
         assert isinstance(arg, float)
 
-    @given(floats(min_value=0, max_value=2 ** 64 - 1))
+    @given(floats(min_value=0, max_value=2 ** 64))
     def test_int_int(self, arg):
         assert isinstance(arg, float)
 
@@ -228,7 +228,7 @@ class TestFloatsAreFloats(object):
     def test_int_float(self, arg):
         assert isinstance(arg, float)
 
-    @given(floats(min_value=float(0), max_value=2 ** 64 - 1))
+    @given(floats(min_value=float(0), max_value=2 ** 64))
     def test_float_int(self, arg):
         assert isinstance(arg, float)
 
