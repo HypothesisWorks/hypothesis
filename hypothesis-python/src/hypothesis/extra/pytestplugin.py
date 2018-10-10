@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import core, settings
+from hypothesis import Verbosity, core, settings
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
 from hypothesis.statistics import collector
@@ -31,6 +31,7 @@ VERBOSITY_OPTION = '--hypothesis-verbosity'
 VERBOSITY_PROFILE_NAME = 'hypothesis-pytest-verbosity-option-profile'
 PRINT_STATISTICS_OPTION = '--hypothesis-show-statistics'
 SEED_OPTION = '--hypothesis-seed'
+
 
 class StoringReporter(object):
 
@@ -82,8 +83,6 @@ def pytest_report_header(config):
 
 
 def pytest_configure(config):
-    from hypothesis import settings
-    from hypothesis._settings import Verbosity
     core.running_under_pytest = True
     profile = config.getoption(LOAD_PROFILE_OPTION)
     if profile:
