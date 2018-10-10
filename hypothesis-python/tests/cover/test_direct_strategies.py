@@ -419,22 +419,22 @@ def test_empty_elements_with_max_size_is_deprecated():
 @checks_deprecated_behaviour
 def test_average_size_is_deprecated():
     ds.lists(ds.integers(), average_size=1).example()
-    
-  
+
+
 @checks_deprecated_behaviour
 def test_inexact_integer_is_deprecated():
     ds.integers(min_value=1.5, max_value=2.5).example()
-    
-    
+
+
 @checks_deprecated_behaviour
 def test_inexact_float_is_deprecated():
     ds.floats(min_value=1.8, width=16).example()
-    
-    
+
+
 @checks_deprecated_behaviour
 def test_fraction_denominator_too_big():
-    ds.fractions(min_value='1/3', max_denominator=2).example()  
-    
+    ds.fractions(min_value='1/3', max_denominator=2).example()
+
 
 @pytest.mark.parametrize('parameter_name', ['min_value', 'max_value'])
 @pytest.mark.parametrize('value', [-1, 0, 1])

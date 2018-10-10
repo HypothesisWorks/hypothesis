@@ -332,26 +332,25 @@ def integers(min_value=None, max_value=None):
 
     min_int_value = None if min_value is None else ceil(min_value)
     max_int_value = None if max_value is None else floor(max_value)
-    
+
     if min_value != min_int_value and max_value != max_int_value:
         note_deprecation(
             'min_value=%r and max_value=%r cannot be exactly represented as '
-            'an integer, which will be an error in a future version.' 
+            'an integer, which will be an error in a future version.'
             % (min_value, max_value)
         )
     elif min_value != min_int_value:
         note_deprecation(
             'min_value=%r cannot be exactly represented as an integer, which '
-            'will be an error in a future version.' 
+            'will be an error in a future version.'
             % (min_value)
         )
     elif max_value != max_int_value:
         note_deprecation(
             'max_value=%r cannot be exactly represented as an integer, which '
-            'will be an error in a future version.' 
+            'will be an error in a future version.'
             % (max_value)
         )
-        
 
     if min_int_value is not None and max_int_value is not None and \
             min_int_value > max_int_value:
@@ -459,23 +458,23 @@ def floats(
     if max_value is not None:
         max_value = float_of(max_value, width)
         assert isinstance(max_value, float)
-        
+
     if min_value != min_arg and max_value != max_arg:
         note_deprecation(
             'min_value=%r and max_value=%r cannot be exactly represented as '
-            'a float of width %d, which will be an error in a future version.' 
+            'a float of width %d, which will be an error in a future version.'
             % (min_value, max_value, width)
         )
     elif min_value != min_arg:
         note_deprecation(
             'min_value=%r cannot be exactly represented as a float of width '
-            '%d, which will be an error in a future version.' 
+            '%d, which will be an error in a future version.'
             % (min_value, width)
         )
     elif max_value != max_arg:
         note_deprecation(
             'max_value=%r cannot be exactly represented as a float of width '
-            '%d, which will be an error in a future version.' 
+            '%d, which will be an error in a future version.'
             % (max_value, width)
         )
 
@@ -1405,10 +1404,10 @@ def fractions(
                 note_deprecation(
                     'The value\'s denominator=%d is larger than the '
                     'max_denominator=%r, which will be an error in a future '
-                    'version.' 
+                    'version.'
                     % (value.denominator, max_denominator)
                 )
-                
+
             p0, q0, p1, q1 = 0, 1, 1, 0
             n, d = value.numerator, value.denominator
             while True:
