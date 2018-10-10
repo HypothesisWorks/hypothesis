@@ -28,7 +28,6 @@ import pytest
 import hypothesis.strategies as ds
 from hypothesis import given, settings
 from hypothesis.errors import InvalidArgument
-
 from tests.common.debug import minimal
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.internal.reflection import nicerepr
