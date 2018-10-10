@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.75.4:
+
+-------------------
+3.75.4 - 2018-10-10
+-------------------
+
+This patch adds more internal comments to the core engine's sequence-length
+shrinker. There should be no user-visible change.
+
 .. _v3.75.3:
 
 -------------------
