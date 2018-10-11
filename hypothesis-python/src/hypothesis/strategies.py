@@ -602,7 +602,7 @@ def sampled_from(elements):
 def lists(
     elements=None,  # type: SearchStrategy[Ex]
     min_size=0,  # type: int
-    average_size=None,  # type: int
+    average_size=None,  # type: None
     max_size=None,  # type: int
     unique_by=None,  # type: Callable[..., Any]
     unique=False,  # type: bool
@@ -672,7 +672,7 @@ def lists(
 def sets(
     elements=None,  # type: SearchStrategy[Ex]
     min_size=0,   # type: int
-    average_size=None,  # type: int
+    average_size=None,  # type: None
     max_size=None,  # type: int
 ):
     # type: (...) -> SearchStrategy[Set[Ex]]
@@ -702,7 +702,7 @@ def sets(
 def frozensets(
     elements=None,  # type: SearchStrategy[Ex]
     min_size=0,   # type: int
-    average_size=None,  # type: int
+    average_size=None,  # type: None
     max_size=None,  # type: int
 ):
     # type: (...) -> SearchStrategy[FrozenSet[Ex]]
@@ -789,7 +789,7 @@ def dictionaries(
     values,  # type: SearchStrategy[T]
     dict_class=dict,  # type: type
     min_size=0,  # type: int
-    average_size=None,  # type: int
+    average_size=None,  # type: None
     max_size=None,  # type: int
 ):
     # type: (...) -> SearchStrategy[Dict[Ex, T]]
@@ -937,7 +937,7 @@ def characters(
 def text(
     alphabet=None,  # type: Union[Sequence[Text], SearchStrategy[Text]]
     min_size=0,   # type: int
-    average_size=None,   # type: int
+    average_size=None,   # type: None
     max_size=None  # type: int
 ):
     # type: (...) -> SearchStrategy[Text]
