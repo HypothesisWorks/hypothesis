@@ -115,9 +115,8 @@ def check_valid_size(value, name):
         return
     if isinstance(value, float):
         note_deprecation(
-            'Float size are deprecated: {} should be an integer, got {}'.format(
-                name, value
-            )
+            'Float size are deprecated: '
+            '{} should be an integer, got {}'.format(name, value)
         )
     else:
         check_type(integer_types, value)
