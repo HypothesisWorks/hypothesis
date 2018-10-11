@@ -30,15 +30,18 @@ from hypothesis.strategies import sets, lists, floats, booleans, \
 def test_min_size_none_behavior():
     lists(integers(), min_size=None).example()
 
+
 @checks_deprecated_behaviour
 @given(lists(integers(), min_size=5.0))
 def test_min_size_float_behaviour(arr):
     assert len(arr) >= 5
 
+
 @checks_deprecated_behaviour
 @given(lists(integers(), max_size=5.0))
 def test_max_size_float_behaviour(arr):
     assert len(arr) <= 5
+
 
 def test_errors_when_given_varargs():
     @given(integers())
