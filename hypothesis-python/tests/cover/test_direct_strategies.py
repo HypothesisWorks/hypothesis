@@ -441,11 +441,32 @@ def test_inexact_float_is_deprecated(fn, kwargs):
 
 @checks_deprecated_behaviour
 @pytest.mark.parametrize('fn,kwargs', [
-    (ds.fractions, {'min_value': '1/2', 'max_denominator': 1}),
-    (ds.fractions, {'max_value': '1/2', 'max_denominator': 1})
+    (ds.fractions, {'min_value': '1/3', 'max_value': '1/2',
+                    'max_denominator': 2}),
+    (ds.fractions, {'min_value': '0', 'max_value': '1/3',
+                    'max_denominator': 2})
 ])
 def test_fraction_denominator_too_big(fn, kwargs):
     fn(**kwargs).example()
+
+
+@checks_deprecated_behaviour
+@pytest.mark.parametrize('fn,kwargs', [
+    (ds.integers, {'min_value': 0.1, 'max_value': 0.2})
+])
+def test_no_integers_in_bounds(fn, kwargs):
+    with pytest.raises(InvalidArgument):
+        fn(**kwargs).example()
+
+
+@checks_deprecated_behaviour
+@pytest.mark.parametrize('fn,kwargs', [
+    (ds.fractions, {'min_value': '1/3', 'max_value': '1/3',
+                    'max_denominator': 2})
+])
+def test_no_fractions_in_bounds(fn, kwargs):
+    with pytest.raises(InvalidArgument):
+        fn(**kwargs).example()
 
 
 @pytest.mark.parametrize('parameter_name', ['min_value', 'max_value'])

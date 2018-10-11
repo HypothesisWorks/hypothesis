@@ -1388,13 +1388,6 @@ def fractions(
             assert max_denominator is not None
             if value is None or value.denominator <= max_denominator:
                 return value, value
-            elif value.denominator > max_denominator:
-                note_deprecation(
-                    'The value\'s denominator=%r is larger than the '
-                    'max_denominator=%r, which will be an error in a future '
-                    'version.'
-                    % (value.denominator, max_denominator)
-                )
 
             p0, q0, p1, q1 = 0, 1, 1, 0
             n, d = value.numerator, value.denominator
@@ -1413,8 +1406,22 @@ def fractions(
         # Take the high approximation for min_value and low for max_value
         bounds = (max_denominator, min_value, max_value)
         if min_value is not None:
+            if min_value.denominator > max_denominator:
+                note_deprecation(
+                    'The min_value\'s denominator=%r is larger than the '
+                    'max_denominator=%r, which will be an error in a future '
+                    'version.'
+                    % (min_value.denominator, max_denominator)
+                )
             _, min_value = fraction_bounds(min_value)
         if max_value is not None:
+            if max_value.denominator > max_denominator:
+                note_deprecation(
+                    'The max_value\'s denominator=%r is larger than the '
+                    'max_denominator=%r, which will be an error in a future '
+                    'version.'
+                    % (max_value.denominator, max_denominator)
+                )
             max_value, _ = fraction_bounds(max_value)
 
         if min_value is not None and max_value is not None and \
