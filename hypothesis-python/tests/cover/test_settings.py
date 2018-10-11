@@ -428,6 +428,7 @@ def test_can_not_set_print_blob_to_non_print_settings(value):
 settings_step_count = 1
 
 
+@settings(stateful_step_count=settings_step_count)
 class StepCounter(RuleBasedStateMachine):
     def __init__(self):
         super(StepCounter, self).__init__()
@@ -439,10 +440,6 @@ class StepCounter(RuleBasedStateMachine):
 
     def teardown(self):
         assert self.step_count == settings_step_count
-
-
-StepCounter.TestCase.settings = settings(
-    stateful_step_count=settings_step_count)
 
 
 test_settings_apply_to_rule_based_state_machine = StepCounter.TestCase
