@@ -21,6 +21,7 @@ import os
 import sys
 import tempfile
 import unicodedata
+from itertools import chain
 
 import hypothesis.strategies as st
 import hypothesis.internal.charmap as cm
@@ -58,14 +59,15 @@ def assert_valid_range_list(ls):
     st.sets(st.sampled_from(cm.categories())) | st.none(),
 )
 def test_query_matches_categories(exclude, include):
-    values = cm.query(exclude, include)
-    assert_valid_range_list(values)
-    for u, v in values:
-        for i in (u, v, (u + v) // 2):
-            cat = unicodedata.category(hunichr(i))
-            if include is not None:
-                assert cat in include
-            assert cat not in exclude
+    cats = cm.query(exclude, include)
+    for values in cats:
+        assert_valid_range_list(values)
+        for u, v in values:
+            for i in (u, v, (u + v) // 2):
+                cat = unicodedata.category(hunichr(i))
+                if include is not None:
+                    assert cat in include
+                assert cat not in exclude
 
 
 @given(
@@ -75,11 +77,12 @@ def test_query_matches_categories(exclude, include):
 )
 def test_query_matches_categories_codepoints(exclude, include, m1, m2):
     m1, m2 = sorted((m1, m2))
-    values = cm.query(exclude, include, min_codepoint=m1, max_codepoint=m2)
-    assert_valid_range_list(values)
-    for u, v in values:
-        assert m1 <= u
-        assert v <= m2
+    cats = cm.query(exclude, include, min_codepoint=m1, max_codepoint=m2)
+    for values in cats:
+        assert_valid_range_list(values)
+        for u, v in values:
+            assert m1 <= u
+            assert v <= m2
 
 
 @given(st.sampled_from(cm.categories()), st.integers(0, sys.maxunicode))
@@ -87,7 +90,7 @@ def test_exclude_only_excludes_from_that_category(cat, i):
     c = hunichr(i)
     assume(unicodedata.category(c) != cat)
     intervals = cm.query(exclude_categories=(cat,))
-    assert any(a <= i <= b for a, b in intervals)
+    assert any(a <= i <= b for a, b in chain.from_iterable(intervals))
 
 
 def test_reload_charmap():

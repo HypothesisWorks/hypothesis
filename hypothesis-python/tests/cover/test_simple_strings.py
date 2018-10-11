@@ -17,13 +17,14 @@
 
 from __future__ import division, print_function, absolute_import
 
+import unicodedata
 from random import Random
 
 import pytest
 
 from hypothesis import given
 from tests.common.debug import minimal
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import fails, checks_deprecated_behaviour
 from hypothesis.strategies import text, binary, tuples, characters
 
 
@@ -141,3 +142,15 @@ def test_explicit_alphabet_None_is_deprecated():
 @checks_deprecated_behaviour
 def test_alphabet_non_string():
     text([1, 2, 3]).example()
+
+
+@fails
+@given(text(min_size=2))
+def test_can_find_non_NFC_normalised_strings_issue_341(s):
+    assert s == unicodedata.normalize('NFC', s)
+
+
+@fails
+@given(text(min_size=1))
+def test_can_find_non_NFD_normalised_strings_issue_341(s):
+    assert s == unicodedata.normalize('NFD', s)

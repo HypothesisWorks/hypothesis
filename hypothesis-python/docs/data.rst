@@ -177,16 +177,26 @@ returns a new strategy for it. So for example:
 .. doctest::
 
     >>> from string import printable; from pprint import pprint
-    >>> json = recursive(none() | booleans() | floats() | text(printable),
-    ... lambda children: lists(children, 1) | dictionaries(text(printable), children, min_size=1))
+    >>> nice_text = text(printable, max_size=3)
+    >>> json = recursive(none() | booleans() | floats() | nice_text,
+    ... lambda children: lists(children, 1) | dictionaries(nice_text, children, min_size=1))
     >>> pprint(json.example())
-    [[1.175494351e-38, ']', 1.9, True, False, '.M}Xl', ''], True]
+    {'^-$': {'': -4.4078854352852856e+16,
+             '3': None,
+             '_': False,
+             '`': '$',
+             '{': None}}
     >>> pprint(json.example())
-    {'de(l': None,
-     'nK': {'(Rt)': None,
-            '+hoZh1YU]gy8': True,
-            '8z]EIFA06^l`i^': 'LFE{Q',
-            '9,': 'l{cA=/'}}
+    {'': {'': -2.00001},
+     ' )\n': '',
+     '-': ['', True, None, True, nan, ''],
+     '-\x0c': {'': None, '`': None, 'h': True, '}O]': '^_['},
+     '9': {'': '',
+           ' \\': -1.192092896e-07,
+           '+$!': True,
+           '-': False,
+           '<}': -1.1,
+           '_': None}}
 
 That is, we start with our leaf data and then we augment it by allowing lists and dictionaries of anything we can generate as JSON data.
 

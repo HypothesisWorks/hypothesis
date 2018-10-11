@@ -19,11 +19,14 @@ from __future__ import division, print_function, absolute_import
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
-from hypothesis.internal.compat import hunichr, binary_type
+from hypothesis.internal.compat import hunichr, binary_type, int_to_bytes
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.internal.conjecture.utils import integer_range
+from hypothesis.internal.conjecture.utils import choice, integer_range, \
+    calc_label_from_name
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
+
+ONE_UNICODE_CHAR_LABEL = calc_label_from_name('one unicode character')
 
 
 class OneCharStringStrategy(SearchStrategy):
@@ -60,15 +63,38 @@ class OneCharStringStrategy(SearchStrategy):
                 'combination of arguments: ' + ', '.join(
                     '%s=%r' % arg for arg in arguments if arg[1] is not None)
             )
-        self.intervals = IntervalSet(intervals)
-        self.zero_point = self.intervals.index_above(ord('0'))
+        self.category_intervals = [IntervalSet(i) for i in intervals]
+        all_intervals = sorted(sum(intervals, ()), reverse=True)
+        self.all_intervals = IntervalSet(
+            charmap._union_intervals(all_intervals[:1], all_intervals[1:])
+        )
+
+    def get_char_idx(self, data, category):
+        return category[integer_range(
+            data, 0, len(category) - 1,
+            center=category.index_above(ord('0'))
+        )]
 
     def do_draw(self, data):
-        i = integer_range(
-            data, 0, len(self.intervals) - 1,
-            center=self.zero_point,
-        )
-        return hunichr(self.intervals[i])
+        # Drawing a unicode character uses the "shrink open" trick - we start
+        # by drawing a boolean (from eight bits), a category, and a character
+        # within that category.  Note that this is grouped in an example, so
+        # that it can be easily zeroed by the shrinker later.
+        data.start_example(ONE_UNICODE_CHAR_LABEL)
+        use_category = data.draw_bits(8) != 0
+        category = choice(data, self.category_intervals)
+        char_idx = self.get_char_idx(data, category)
+        data.stop_example()
+        # After generating by index-within-category, we want to shrink by
+        # codepoint instead.  We therefore write the bytes that would generate
+        # this char_idx by codepoint.  When the shrinker zeros out the first
+        # example the value of char_idx will be determined by the written
+        # bytes, and after that shrinking depends only on the codepoint.
+        if use_category:
+            data.write(int_to_bytes(self.all_intervals.index(char_idx), 4))
+        else:
+            char_idx = self.get_char_idx(data, self.all_intervals)
+        return hunichr(char_idx)
 
 
 class StringStrategy(MappedSearchStrategy):
