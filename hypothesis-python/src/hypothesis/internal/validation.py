@@ -119,7 +119,7 @@ def check_valid_size(value, name):
         from hypothesis._settings import note_deprecation
         note_deprecation(
             'Float size are deprecated: '
-            '{} should be an integer, got {}'.format(name, value)
+            '%s should be an integer, got %r' % (name, value)
         )
     else:
         check_type(integer_types, value)
