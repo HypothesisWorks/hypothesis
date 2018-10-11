@@ -31,6 +31,7 @@ from tests.common.debug import minimal, find_any
 from hypothesis.internal.compat import WINDOWS, CAN_PACK_HALF_FLOAT
 from hypothesis.internal.floats import next_up, next_down, float_to_int, \
     int_to_float
+from tests.common.utils import checks_deprecated_behaviour
 
 try:
     import numpy
@@ -180,22 +181,23 @@ def test_updown_roundtrip(val):
     assert val == next_down(next_up(val))
 
 
+@checks_deprecated_behaviour
 @given(st.data(), st.floats(allow_nan=False, allow_infinity=False))
 def test_floats_in_tiny_interval_within_bounds(data, center):
     assume(not (math.isinf(next_down(center)) or math.isinf(next_up(center))))
     lo = Decimal.from_float(next_down(center)).next_plus()
     hi = Decimal.from_float(next_up(center)).next_minus()
     assert float(lo) < lo < center < hi < float(hi)
-    with pytest.raises(HypothesisDeprecationWarning):
-        val = data.draw(st.floats(lo, hi))
-        assert lo < val < hi
+    val = data.draw(st.floats(lo, hi))
+    assert lo < val < hi
 
 
+@checks_deprecated_behaviour
 def test_float_free_interval_is_invalid():
     lo = (2 ** 54) + 1
     hi = lo + 2
     assert float(lo) < lo < hi < float(hi), 'There are no floats in [lo .. hi]'
-    with pytest.raises((InvalidArgument, HypothesisDeprecationWarning)):
+    with pytest.raises(InvalidArgument):
         st.floats(lo, hi).example()
 
 

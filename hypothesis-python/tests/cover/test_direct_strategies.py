@@ -421,18 +421,31 @@ def test_average_size_is_deprecated():
 
 
 @checks_deprecated_behaviour
-def test_inexact_integer_is_deprecated():
-    ds.integers(min_value=1.5, max_value=2.5).example()
+@pytest.mark.parametrize('fn,kwargs', [
+    (ds.integers, {'min_value': decimal.Decimal('1.5')}),
+    (ds.integers, {'max_value': decimal.Decimal('1.5')}),
+    (ds.integers, {'min_value': -1.5, 'max_value': -0.5})
+])
+def test_inexact_integer_is_deprecated(fn, kwargs):
+    fn(**kwargs).example()
 
 
 @checks_deprecated_behaviour
-def test_inexact_float_is_deprecated():
-    ds.floats(min_value=1.8, width=16).example()
+@pytest.mark.parametrize('fn,kwargs', [
+    (ds.floats, {'min_value': 1.8, 'width': 16}),
+    (ds.floats, {'max_value': 1.8, 'width': 16})
+])
+def test_inexact_float_is_deprecated(fn, kwargs):
+    fn(**kwargs).example()
 
 
 @checks_deprecated_behaviour
-def test_fraction_denominator_too_big():
-    ds.fractions(min_value='1/3', max_denominator=2).example()
+@pytest.mark.parametrize('fn,kwargs', [
+    (ds.fractions, {'min_value': '1/2', 'max_denominator': 1}),
+    (ds.fractions, {'max_value': '1/2', 'max_denominator': 1})
+])
+def test_fraction_denominator_too_big(fn, kwargs):
+    fn(**kwargs).example()
 
 
 @pytest.mark.parametrize('parameter_name', ['min_value', 'max_value'])
