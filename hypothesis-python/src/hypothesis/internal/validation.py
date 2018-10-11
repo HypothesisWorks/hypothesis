@@ -113,9 +113,9 @@ def check_valid_size(value, name):
                 'min_size=None is deprecated; use min_size=0 instead.'
             )
         return
-    if isinstance(value, float) and math.isnan(value):
-        raise InvalidArgument(u'Invalid size %s=%r' % (name, value))
     if isinstance(value, float):
+        if math.isnan(value):
+            raise InvalidArgument(u'Invalid size %s=%r' % (name, value))
         from hypothesis._settings import note_deprecation
         note_deprecation(
             'Float size are deprecated: '
