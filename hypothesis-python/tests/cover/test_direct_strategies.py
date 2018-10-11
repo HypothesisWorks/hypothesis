@@ -154,8 +154,12 @@ def fn_ktest(*fnkwargs):
                      'blacklist_categories': ['Nd']}),
 )
 def test_validates_keyword_arguments(fn, kwargs):
+    from hypothesis.errors import HypothesisDeprecationWarning
     with pytest.raises(InvalidArgument):
-        fn(**kwargs).example()
+        # pytest.warns filters out the warning. It doesn't ensure that it
+        # raises a warning.
+        with pytest.warns(HypothesisDeprecationWarning):
+            fn(**kwargs).example()
 
 
 @fn_ktest(
