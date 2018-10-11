@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.76.0:
+
+-------------------
+3.76.0 - 2018-10-11
+-------------------
+
+This release deprecates using floats for ``min_size`` and ``max_size``.
+
+The type hint for ``average_size`` arguments has been changed from
+``Optional[int]`` to None, because non-None values are always ignored and
+deprecated.
+
 .. _v3.75.4:
 
 -------------------
