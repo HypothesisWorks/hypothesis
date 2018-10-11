@@ -33,6 +33,7 @@ from tests.common.utils import validate_deprecation, \
     checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
+from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis._settings import Verbosity, PrintSettings, settings, \
     default_variable, note_deprecation
 from hypothesis.utils.conventions import not_set
@@ -422,3 +423,26 @@ def test_can_set_print_blob_to_deprecated_bool(value, replacement, suggestion):
 def test_can_not_set_print_blob_to_non_print_settings(value):
     with pytest.raises(InvalidArgument):
         settings(print_blob=value)
+
+
+settings_step_count = 1
+
+
+class StepCounter(RuleBasedStateMachine):
+    def __init__(self):
+        super(StepCounter, self).__init__()
+        self.step_count = 0
+
+    @rule()
+    def count_step(self):
+        self.step_count += 1
+
+    def teardown(self):
+        assert self.step_count == settings_step_count
+
+
+StepCounter.TestCase.settings = settings(
+    stateful_step_count=settings_step_count)
+
+
+test_settings_apply_to_rule_based_state_machine = StepCounter.TestCase
