@@ -24,8 +24,8 @@ import pytest
 
 from hypothesis import given
 from tests.common.debug import minimal
-from hypothesis.strategies import lists, floats, integers
 from tests.common.utils import checks_deprecated_behaviour
+from hypothesis.strategies import lists, floats, integers
 
 
 def test_minimize_negative_int():
