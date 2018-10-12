@@ -223,6 +223,10 @@ class settings(
                 'settings objects can be called as a decorator with @given, '
                 'but test=%r' % (test,)
             )
+        from hypothesis import stateful
+        if isinstance(test, type) and issubclass(test, stateful.GenericStateMachine):
+            test.TestCase.settings = self
+            return test
         if hasattr(test, '_hypothesis_internal_settings_applied'):
             note_deprecation(
                 '%s has already been decorated with a settings object, which '
