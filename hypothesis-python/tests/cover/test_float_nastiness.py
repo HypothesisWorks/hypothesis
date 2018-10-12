@@ -26,12 +26,13 @@ from flaky import flaky
 
 import hypothesis.strategies as st
 from hypothesis import given, assume, settings
-from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
+from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal, find_any
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.internal.compat import WINDOWS, CAN_PACK_HALF_FLOAT
 from hypothesis.internal.floats import next_up, next_down, float_to_int, \
     int_to_float
+import warnings
 
 try:
     import numpy
@@ -246,5 +247,8 @@ def test_no_single_floats_in_range():
     low = 2. ** 25 + 1
     high = low + 2
     st.floats(low, high).validate()  # Note: OK for 64bit floats
-    with pytest.raises((InvalidArgument, HypothesisDeprecationWarning)):
+    with pytest.raises(InvalidArgument):
+        """ Unrepresentable bounds are deprecated; but we're not
+        testing that here."""
+        warnings.simplefilter('ignore')
         st.floats(low, high, width=32).validate()
