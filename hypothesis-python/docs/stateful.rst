@@ -45,7 +45,7 @@ They're significantly more user friendly and should be good enough for most
 things you'd want to do.
 
 .. autoclass:: hypothesis.stateful.RuleBasedStateMachine
-   
+
 A rule is very similar to a normal ``@given`` based test in that it takes
 values drawn from strategies and passes them to a user defined test function.
 The key difference is that where ``@given`` based tests must be independent,
