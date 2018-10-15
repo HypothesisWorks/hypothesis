@@ -229,8 +229,9 @@ class settings(
                 attr_name = '_hypothesis_internal_settings_applied'
                 if getattr(test, attr_name, False):
                     raise InvalidArgument(
-                        'Applying the @settings decorator twice would overwrite '
-                        'the first version; merge their arguments instead.'
+                        'Applying the @settings decorator twice would'
+                        'overwrite the first version; merge their arguments '
+                        'instead.'
                     )
                 setattr(test, attr_name, True)
                 test.TestCase.settings = self

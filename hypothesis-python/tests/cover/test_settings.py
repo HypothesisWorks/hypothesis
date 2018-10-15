@@ -442,4 +442,20 @@ class StepCounter(RuleBasedStateMachine):
         assert self.step_count == settings_step_count
 
 
-test_settings_apply_to_rule_based_state_machine = StepCounter.TestCase
+test_settings_decorator_applies_to_rule_based_state_machine_class = \
+    StepCounter.TestCase
+
+
+def test_two_settings_decorators_applied_to_state_machine_class_raises_error():
+    with pytest.raises(InvalidArgument):
+        @settings()
+        @settings()
+        class StatefulTest(RuleBasedStateMachine):
+            pass
+
+
+def test_settings_decorator_appied_to_non_state_macine_class_raises_error():
+    with pytest.raises(InvalidArgument):
+        @settings()
+        class NonStateMachine:
+            pass
