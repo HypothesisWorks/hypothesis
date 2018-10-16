@@ -205,6 +205,7 @@ their individual contributions.
 * `Derek Gustafson <https://www.github.com/degustaf>`_
 * `Dion Misic <https://www.github.com/kingdion>`_ (dion.misic@gmail.com)
 * `Emmanuel Leblond <https://www.github.com/touilleMan>`_
+* `Felix Grünewald <https://www.github.com/fgruen>`_
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
 * `Gary Donovan <https://www.github.com/garyd203>`_

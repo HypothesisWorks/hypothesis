@@ -333,6 +333,19 @@ def integers(min_value=None, max_value=None):
     min_int_value = None if min_value is None else ceil(min_value)
     max_int_value = None if max_value is None else floor(max_value)
 
+    if min_value != min_int_value:
+        note_deprecation(
+            'min_value=%r cannot be exactly represented as an integer, which '
+            'will be an error in a future version.'
+            % (min_value)
+        )
+    if max_value != max_int_value:
+        note_deprecation(
+            'max_value=%r cannot be exactly represented as an integer, which '
+            'will be an error in a future version.'
+            % (max_value)
+        )
+
     if min_int_value is not None and max_int_value is not None and \
             min_int_value > max_int_value:
         raise InvalidArgument('No integers between min_value=%r and '
@@ -439,6 +452,21 @@ def floats(
     if max_value is not None:
         max_value = float_of(max_value, width)
         assert isinstance(max_value, float)
+
+    if min_value != min_arg:
+        note_deprecation(
+            'min_value=%r cannot be exactly represented as a float of width '
+            '%d, which will be an error in a future version. Use min_value=%r '
+            'instead.'
+            % (min_value, width, min_arg)
+        )
+    if max_value != max_arg:
+        note_deprecation(
+            'max_value=%r cannot be exactly represented as a float of width '
+            '%d, which will be an error in a future version. Use max_value=%r '
+            'instead'
+            % (max_value, width, max_arg)
+        )
 
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
     if min_value == float(u'-inf'):
@@ -1362,6 +1390,7 @@ def fractions(
             assert max_denominator is not None
             if value is None or value.denominator <= max_denominator:
                 return value, value
+
             p0, q0, p1, q1 = 0, 1, 1, 0
             n, d = value.numerator, value.denominator
             while True:
@@ -1379,8 +1408,22 @@ def fractions(
         # Take the high approximation for min_value and low for max_value
         bounds = (max_denominator, min_value, max_value)
         if min_value is not None:
+            if min_value.denominator > max_denominator:
+                note_deprecation(
+                    'The min_value=%r has a denominator greater than the '
+                    'max_denominator=%r, which will be an error in a future '
+                    'version.'
+                    % (min_value, max_denominator)
+                )
             _, min_value = fraction_bounds(min_value)
         if max_value is not None:
+            if max_value.denominator > max_denominator:
+                note_deprecation(
+                    'The max_value=%r has a denominator greater than the '
+                    'max_denominator=%r, which will be an error in a future '
+                    'version.'
+                    % (max_value, max_denominator)
+                )
             max_value, _ = fraction_bounds(max_value)
 
         if min_value is not None and max_value is not None and \
