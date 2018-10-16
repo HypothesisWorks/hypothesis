@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.76.1:
+
+-------------------
+3.76.1 - 2018-10-16
+-------------------
+
+This patch fixes some warnings added by recent releases of
+:pypi:`pydocstyle` and :pypi:`mypy`.
+
 .. _v3.76.0:
 
 -------------------
