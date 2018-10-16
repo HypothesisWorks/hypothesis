@@ -456,14 +456,16 @@ def floats(
     if min_value != min_arg:
         note_deprecation(
             'min_value=%r cannot be exactly represented as a float of width '
-            '%d, which will be an error in a future version.'
-            % (min_value, width)
+            '%d, which will be an error in a future version. Use min_value=%r '
+            'instead.'
+            % (min_value, width, min_arg)
         )
     if max_value != max_arg:
         note_deprecation(
             'max_value=%r cannot be exactly represented as a float of width '
-            '%d, which will be an error in a future version.'
-            % (max_value, width)
+            '%d, which will be an error in a future version. Use max_value=%r '
+            'instead'
+            % (max_value, width, max_arg)
         )
 
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')

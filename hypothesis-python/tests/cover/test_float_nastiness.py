@@ -250,5 +250,6 @@ def test_no_single_floats_in_range():
     with pytest.raises(InvalidArgument):
         """Unrepresentable bounds are deprecated; but we're not testing that
         here."""
-        warnings.simplefilter('ignore')
-        st.floats(low, high, width=32).validate()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            st.floats(low, high, width=32).validate()
