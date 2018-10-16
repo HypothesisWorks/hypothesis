@@ -24,6 +24,7 @@ this module can be modified.
 from __future__ import division, print_function, absolute_import
 
 import os
+import inspect
 import warnings
 import threading
 import contextlib
@@ -39,11 +40,6 @@ from hypothesis.internal.reflection import proxies, \
     get_pretty_function_description
 from hypothesis.internal.validation import try_convert
 from hypothesis.utils.dynamicvariables import DynamicVariable
-
-try:
-    from types import ClassType
-except ImportError:
-    ClassType = type
 
 if False:
     from typing import Any, Dict, List  # noqa
@@ -228,7 +224,7 @@ class settings(
                 'settings objects can be called as a decorator with @given, '
                 'but test=%r' % (test,)
             )
-        if isinstance(test, (type, ClassType)):
+        if inspect.isclass(test):
             from hypothesis.stateful import GenericStateMachine
             if issubclass(test, GenericStateMachine):
                 attr_name = '_hypothesis_internal_settings_applied'
