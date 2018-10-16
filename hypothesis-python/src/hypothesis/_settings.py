@@ -615,7 +615,7 @@ class HealthCheck(Enum):
     def all(cls):
         # type: () -> List[HealthCheck]
         bad = (HealthCheck.exception_in_generation, HealthCheck.random_module)
-        return [h for h in list(cls) if h not in bad]
+        return [h for h in list(cls) if h not in bad]  # type: ignore
 
     exception_in_generation = 0
     """Deprecated and no longer does anything. It used to convert errors in
