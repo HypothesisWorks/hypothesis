@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.77.0:
+
+-------------------
+3.77.0 - 2018-10-16
+-------------------
+
+This minor release adds functionality to :obj:`~hypothesis.settings` allowing
+it to be used as a decorator on :obj:`~hypothesis.stateful.RuleBasedStateMachine`
+and :obj:`~hypothesis.stateful.GenericStateMachine`.
+
+Thanks to Tyler Nickerson for this feature in #hacktoberfest!
+
 .. _v3.76.1:
 
 -------------------
