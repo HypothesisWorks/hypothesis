@@ -1410,19 +1410,19 @@ def fractions(
         if min_value is not None:
             if min_value.denominator > max_denominator:
                 note_deprecation(
-                    'The min_value\'s denominator=%r is larger than the '
+                    'The min_value=%r has a denominator greater than the '
                     'max_denominator=%r, which will be an error in a future '
                     'version.'
-                    % (min_value.denominator, max_denominator)
+                    % (min_value, max_denominator)
                 )
             _, min_value = fraction_bounds(min_value)
         if max_value is not None:
             if max_value.denominator > max_denominator:
                 note_deprecation(
-                    'The max_value\'s denominator=%r is larger than the '
+                    'The max_value=%r has a denominator greater than the '
                     'max_denominator=%r, which will be an error in a future '
                     'version.'
-                    % (max_value.denominator, max_denominator)
+                    % (max_value, max_denominator)
                 )
             max_value, _ = fraction_bounds(max_value)
 
