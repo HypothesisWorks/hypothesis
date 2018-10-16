@@ -251,5 +251,5 @@ def test_no_single_floats_in_range():
         """Unrepresentable bounds are deprecated; but we're not testing that
         here."""
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+            warnings.simplefilter('ignore')
             st.floats(low, high, width=32).validate()
