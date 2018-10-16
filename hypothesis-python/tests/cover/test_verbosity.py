@@ -64,7 +64,7 @@ def test_includes_progress_in_verbose_mode():
         def foo():
             find(
                 lists(integers()),
-                lambda x: sum(x) >= 1000000,
+                lambda x: sum(x) >= 100,
                 settings=settings(verbosity=Verbosity.verbose, database=None))
 
         foo()
