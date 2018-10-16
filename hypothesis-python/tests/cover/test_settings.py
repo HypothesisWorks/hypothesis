@@ -454,7 +454,7 @@ def test_two_settings_decorators_applied_to_state_machine_class_raises_error():
             pass
 
 
-def test_settings_decorator_appied_to_non_state_macine_class_raises_error():
+def test_settings_decorator_applied_to_non_state_machine_class_raises_error():
     with pytest.raises(InvalidArgument):
         @settings()
         class NonStateMachine:

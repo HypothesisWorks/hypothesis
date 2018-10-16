@@ -243,8 +243,8 @@ class settings(
                 return test
             else:
                 raise InvalidArgument(
-                    '@settings(...) can only be usead as a decorator on '
-                    'functions or subclasses of GenericStateMachine.'
+                    '@settings(...) can only be used as a decorator on '
+                    'functions, or on subclasses of GenericStateMachine.'
                 )
         if hasattr(test, '_hypothesis_internal_settings_applied'):
             note_deprecation(
