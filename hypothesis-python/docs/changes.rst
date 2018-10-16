@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.78.0:
+
+-------------------
+3.78.0 - 2018-10-16
+-------------------
+
+This release has deprecated the generation of integers, floats and fractions
+when the conversion of the upper and/ or lower bound is not 100% exact, e.g.
+when an integer gets passed a bound that is not a whole number. (:issue:`1625`)
+
+Thanks to Felix Grünewald for this patch during Hacktoberfest 2018.
+
 .. _v3.77.0:
 
 -------------------
