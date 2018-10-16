@@ -439,7 +439,7 @@ class StepCounter(RuleBasedStateMachine):
         self.step_count += 1
 
     def teardown(self):
-        assert self.step_count == settings_step_count
+        assert self.step_count <= settings_step_count
 
 
 test_settings_decorator_applies_to_rule_based_state_machine_class = \
