@@ -12,8 +12,8 @@ autopep8==1.4             # via pyformat
 babel==2.6.0              # via sphinx
 backcall==0.1.0           # via ipython
 bandit==1.5.1
-bleach==3.0.0             # via readme-renderer
-certifi==2018.8.24        # via requests
+bleach==3.0.2             # via readme-renderer
+certifi==2018.10.15       # via requests
 cffi==1.11.5              # via cmarkgfm
 chardet==3.0.4            # via requests
 click==7.0                # via pip-tools, pyupio, safety
@@ -33,7 +33,7 @@ flake8-polyfill==1.0.2    # via flake8-docstrings
 flake8==3.5.0
 flaky==3.4.0
 future==0.16.0            # via readme-renderer
-gitdb2==2.0.4             # via gitpython
+gitdb2==2.0.5             # via gitpython
 gitpython==2.1.11         # via bandit
 idna==2.7                 # via requests
 imagesize==1.1.0          # via sphinx
@@ -47,7 +47,7 @@ mccabe==0.6.1             # via flake8
 mock==2.0.0
 more-itertools==4.3.0     # via pytest
 mypy-extensions==0.4.1    # via mypy
-mypy==0.630
+mypy==0.641
 numpy==1.15.2
 packaging==18.0           # via dparse, pyupio, safety, sphinx
 parso==0.3.1              # via jedi
@@ -57,12 +57,12 @@ pickleshare==0.7.5        # via ipython
 pip-tools==3.1.0
 pkginfo==1.4.2            # via twine
 pluggy==0.7.1             # via pytest, tox
-prompt-toolkit==2.0.5     # via ipython
+prompt-toolkit==2.0.6     # via ipython
 ptyprocess==0.6.0         # via pexpect
-py==1.6.0                 # via pytest, tox
+py==1.7.0                 # via pytest, tox
 pycodestyle==2.3.1        # via autopep8, flake8
 pycparser==2.19           # via cffi
-pydocstyle==2.1.1         # via flake8-docstrings
+pydocstyle==3.0.0         # via flake8-docstrings
 pyflakes==1.6.0           # via autoflake, flake8
 pyformat==0.7
 pygithub==1.43.2          # via pyupio
@@ -82,15 +82,15 @@ restructuredtext-lint==1.1.3
 safety==1.8.4             # via pyupio
 simplegeneric==0.8.1      # via ipython
 six==1.11.0               # via bandit, bleach, dparse, mock, more-itertools, packaging, pip-tools, prompt-toolkit, pydocstyle, pytest, python-dateutil, python-gitlab, pyupio, readme-renderer, sphinx, stevedore, tox, traitlets
-smmap2==2.0.4             # via gitdb2
+smmap2==2.0.5             # via gitdb2
 snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.2
 sphinx==1.8.1
 sphinxcontrib-websupport==1.1.0  # via sphinx
 stevedore==1.29.0         # via bandit
 toml==0.10.0
-tox==3.5.1
-tqdm==4.26.0              # via pyupio, twine
+tox==3.5.2
+tqdm==4.27.0              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.12.1
 typed-ast==1.1.0          # via mypy

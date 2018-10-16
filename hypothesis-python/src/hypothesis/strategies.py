@@ -316,8 +316,8 @@ def one_of(*args):
 @defines_strategy_with_reusable_values
 def integers(min_value=None, max_value=None):
     # type: (Real, Real) -> SearchStrategy[int]
-    """Returns a strategy which generates integers (in Python 2 these may be
-    ints or longs).
+    """Returns a strategy which generates integers; in Python 2 these may be
+    ints or longs.
 
     If min_value is not None then all values will be >= min_value. If
     max_value is not None then all values will be <= max_value
@@ -865,7 +865,7 @@ def characters(
     - If ``whitelist_characters`` is specified, then any additional characters
       in that list will also be produced.
     - If ``blacklist_characters`` is specified, then any characters in
-      that list will be not be produced. Any overlap between \
+      that list will be not be produced. Any overlap between
       ``whitelist_characters`` and ``blacklist_characters`` will raise an
       exception.
 
@@ -1004,7 +1004,7 @@ def text(
 @defines_strategy
 def from_regex(regex, fullmatch=False):
     # type: (Union[AnyStr, Pattern[AnyStr]], bool) -> SearchStrategy[AnyStr]
-    """Generates strings that contain a match for the given regex (i.e. ones
+    r"""Generates strings that contain a match for the given regex (i.e. ones
     for which :func:`python:re.search` will return a non-None result).
 
     ``regex`` may be a pattern or :func:`compiled regex <python:re.compile>`.
@@ -1022,11 +1022,11 @@ def from_regex(regex, fullmatch=False):
     mainly includes (positive or negative) lookahead and lookbehind groups.
 
     If you want the generated string to match the whole regex you should use
-    boundary markers. So e.g. ``r"\\A.\\Z"`` will return a single character
-    string, while ``"."`` will return any string, and ``r"\\A.$"`` will return
-    a single character optionally followed by a ``"\\n"``.
+    boundary markers. So e.g. ``r"\A.\Z"`` will return a single character
+    string, while ``"."`` will return any string, and ``r"\A.$"`` will return
+    a single character optionally followed by a ``"\n"``.
     Alternatively, passing ``fullmatch=True`` will ensure that the whole
-    string is a match, as if you had used the ``\\A`` and ``\\Z`` markers.
+    string is a match, as if you had used the ``\A`` and ``\Z`` markers.
 
     Examples from this strategy shrink towards shorter strings and lower
     character values, with exact behaviour that may depend on the pattern.
