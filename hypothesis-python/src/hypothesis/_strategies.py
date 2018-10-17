@@ -552,7 +552,7 @@ def floats(
                 result = floats(min_value=0.0, max_value=max_value) | floats(
                     min_value=0.0, max_value=-min_value
                 ).map(operator.neg)
-        elif count_between_floats(min_value, max_value) > 1000:
+        elif count_between_floats(min_value, max_value, width=width) > 1000:
             result = FixedBoundedFloatStrategy(
                 lower_bound=min_value, upper_bound=max_value
             )
