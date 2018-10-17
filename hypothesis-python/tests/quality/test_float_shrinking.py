@@ -23,7 +23,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, Verbosity, assume, example, given, settings
-from hypothesis.internal.compat import ceil
+from hypothesis.internal.compat import ceil, floor
 from tests.common.debug import minimal
 
 
@@ -65,3 +65,17 @@ def test_shrinks_downwards_to_integers_when_fractional(b):
         settings=settings(verbosity=Verbosity.quiet),
     )
     assert g == b + 0.5
+
+
+@given(st.floats(min_value=0, allow_infinity=False))
+@settings(deadline=None, suppress_health_check=HealthCheck.all())
+def test_shrinks_integer_above_min_value(f):
+    g = minimal(st.floats(min_value=f))
+    assert g == ceil(f)
+
+
+@given(st.floats(max_value=0, allow_infinity=False))
+@settings(deadline=None, suppress_health_check=HealthCheck.all())
+def test_shrinks_integer_below_max_value(f):
+    g = minimal(st.floats(max_value=f))
+    assert g == floor(f)

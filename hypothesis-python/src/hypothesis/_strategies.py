@@ -535,6 +535,24 @@ def floats(
                 "max_value" % (allow_infinity)
             )
 
+    def reflect_about_max(x):
+        # In some cases, flipping the sign is enough to make all values valid.
+        if x <= max_value:
+            return x
+        if -x <= max_value:
+            return -x
+        # But if max_value < 0 and abs(x) < abs(max_value), we need to use an
+        # offset from the closest allowed integer, to preserve the shrinking
+        # pattern of minimising the denominator of any fractional part.
+        return floor(max_value) - abs(x)
+
+    def reflect_about_min(x):
+        if x >= min_value:
+            return x
+        if -x >= min_value:
+            return -x
+        return ceil(min_value) + abs(x)
+
     if min_value is None and max_value is None:
         result = FloatStrategy(
             allow_infinity=allow_infinity, allow_nan=allow_nan
@@ -565,28 +583,20 @@ def floats(
             )
     elif min_value is not None:
         assert isinstance(min_value, float)
-        if min_value < 0:
-            result = floats(min_value=0.0, allow_infinity=allow_infinity) | floats(
-                min_value=min_value, max_value=-0.0
-            )
-        else:
-            result = floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                lambda x: assume(not math.isnan(x))
-                and min_value + abs(x)  # type: ignore
-            )
+        if min_value == float("inf"):
+            return just(float("inf"))
+        result = FloatStrategy(allow_infinity=allow_infinity, allow_nan=False).map(
+            reflect_about_min
+        )
         if min_value == 0 and not is_negative(min_value):
             result = result.filter(lambda x: math.copysign(1.0, x) == 1)
     else:
         assert isinstance(max_value, float)
-        if max_value > 0:
-            result = floats(min_value=0.0, max_value=max_value) | floats(
-                max_value=-0.0, allow_infinity=allow_infinity
-            )
-        else:
-            result = floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                lambda x: assume(not math.isnan(x))
-                and max_value - abs(x)  # type: ignore
-            )
+        if max_value == float("-inf"):
+            return just(float("-inf"))
+        result = FloatStrategy(allow_infinity=allow_infinity, allow_nan=False).map(
+            reflect_about_max
+        )
         if max_value == 0 and is_negative(max_value):
             result = result.filter(is_negative)
 
