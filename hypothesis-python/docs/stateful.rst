@@ -164,7 +164,7 @@ fewer examples with larger programs you could change the settings to:
 
 .. code:: python
 
-  DatabaseComparison.settings = settings(max_examples=50, stateful_step_count=100)
+  DatabaseComparison.TestCase.settings = settings(max_examples=50, stateful_step_count=100)
 
 Which doubles the number of steps each program runs and halves the number of
 test cases that will be run.
