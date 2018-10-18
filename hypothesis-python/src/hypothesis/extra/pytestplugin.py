@@ -28,8 +28,6 @@ from hypothesis.internal.detection import is_hypothesis_test
 
 LOAD_PROFILE_OPTION = '--hypothesis-profile'
 VERBOSITY_OPTION = '--hypothesis-verbosity'
-# subsituted with the profile name and the verbosity level.
-VERBOSITY_PROFILE_NAME = '%s-with-%s-verbosity'
 PRINT_STATISTICS_OPTION = '--hypothesis-show-statistics'
 SEED_OPTION = '--hypothesis-seed'
 
@@ -92,7 +90,7 @@ def pytest_configure(config):
     verbosity_name = config.getoption(VERBOSITY_OPTION)
     if verbosity_name:
         verbosity_value = Verbosity[verbosity_name]
-        profile_name = VERBOSITY_PROFILE_NAME % (
+        profile_name = '%s-with-%s-verbosity' % (
             settings._current_profile, verbosity_name
         )
         # register_profile creates a new profile, exactly like the current one,
