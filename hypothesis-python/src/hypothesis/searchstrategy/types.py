@@ -191,7 +191,6 @@ else:
         typing.Sequence: st.lists(st.integers()),
         typing.Sized: st.lists(st.integers()),
         typing.Iterable: st.lists(st.integers()),
-        typing.Iterator: st.lists(st.integers()),
         typing.SupportsAbs: st.complex_numbers(),
         typing.SupportsComplex: st.complex_numbers(),
         typing.SupportsFloat: st.complex_numbers(),
