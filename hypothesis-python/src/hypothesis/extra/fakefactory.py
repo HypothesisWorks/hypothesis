@@ -79,8 +79,8 @@ class FakeFactoryStrategy(SearchStrategy):
         self.factories = {}
 
     def do_draw(self, data):
-        seed = data.draw_bytes(4)
-        random = Random(bytes(seed))
+        seed = data.draw_bits(32)
+        random = Random(seed)
         return self.gen_example(random)
 
     def factory_for(self, locale):

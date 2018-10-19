@@ -24,6 +24,7 @@ this module can be modified.
 from __future__ import division, print_function, absolute_import
 
 import os
+import inspect
 import warnings
 import threading
 import contextlib
@@ -223,6 +224,24 @@ class settings(
                 'settings objects can be called as a decorator with @given, '
                 'but test=%r' % (test,)
             )
+        if inspect.isclass(test):
+            from hypothesis.stateful import GenericStateMachine
+            if issubclass(test, GenericStateMachine):
+                attr_name = '_hypothesis_internal_settings_applied'
+                if getattr(test, attr_name, False):
+                    raise InvalidArgument(
+                        'Applying the @settings decorator twice would '
+                        'overwrite the first version; merge their arguments '
+                        'instead.'
+                    )
+                setattr(test, attr_name, True)
+                test.TestCase.settings = self
+                return test
+            else:
+                raise InvalidArgument(
+                    '@settings(...) can only be used as a decorator on '
+                    'functions, or on subclasses of GenericStateMachine.'
+                )
         if hasattr(test, '_hypothesis_internal_settings_applied'):
             note_deprecation(
                 '%s has already been decorated with a settings object, which '
@@ -615,7 +634,7 @@ class HealthCheck(Enum):
     def all(cls):
         # type: () -> List[HealthCheck]
         bad = (HealthCheck.exception_in_generation, HealthCheck.random_module)
-        return [h for h in list(cls) if h not in bad]
+        return [h for h in list(cls) if h not in bad]  # type: ignore
 
     exception_in_generation = 0
     """Deprecated and no longer does anything. It used to convert errors in
@@ -821,6 +840,29 @@ class PrintSettings(Enum):
     ALWAYS = 2
     """Always print a blob on failure."""
 
+    def __repr__(self):
+        return 'PrintSettings.%s' % (self.name,)
+
+
+def _validate_print_blob(value):
+    if isinstance(value, bool):
+        if value:
+            replacement = PrintSettings.ALWAYS
+        else:
+            replacement = PrintSettings.NEVER
+
+        note_deprecation(
+            'Setting print_blob=%r is deprecated and will become an error '
+            'in a future version of Hypothesis. Use print_blob=%r instead.' % (
+                value, replacement,
+            )
+        )
+        return replacement
+
+    # Values that aren't bool or PrintSettings will be turned into hard errors
+    # by the 'options' check.
+    return value
+
 
 settings._define_setting(
     'print_blob',
@@ -831,7 +873,9 @@ failures.
 
 See :ref:`the documentation on @reproduce_failure <reproduce_failure>` for
 more details of this behaviour.
-"""
+""",
+    validator=_validate_print_blob,
+    options=tuple(PrintSettings),
 )
 
 settings.lock_further_definitions()
@@ -845,7 +889,7 @@ def note_deprecation(message, s=None):
     verbosity = s.verbosity
     warning = HypothesisDeprecationWarning(message)
     if verbosity > Verbosity.quiet:
-        warnings.warn(warning, stacklevel=3)
+        warnings.warn(warning, stacklevel=2)
 
 
 settings.register_profile('default', settings())

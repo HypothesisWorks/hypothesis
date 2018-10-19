@@ -31,7 +31,13 @@ example that has failed on your CI, or otherwise share them between machines.
 Providing explicit examples
 ---------------------------
 
-You can explicitly ask Hypothesis to try a particular example, using
+The simplest way to reproduce a failed test is to ask Hypothesis to run the
+failing example it printed.  For example, if ``Falsifying example: test(n=1)``
+was printed you can decorate ``test`` with ``@example(n=1)``.
+
+``@example`` can also be used to ensure a specific example is *always* executed
+as a regression test or to cover some edge case - basically combining a
+Hypothesis test and a traditional parametrized test.
 
 .. autofunction:: hypothesis.example
 
@@ -81,6 +87,8 @@ Hypothesis will print out a seed that led to that failure, if the test is not
 already running with a fixed seed. You can then recreate that failure using either
 the ``@seed`` decorator or (if you are running :pypi:`pytest`) with
 ``--hypothesis-seed``.
+
+The seed will not be printed if you could simply use ``@example`` instead.
 
 .. _reproduce_failure:
 

@@ -112,7 +112,7 @@ Still here?  Here's a note on what to expect in each directory.
     for inference from type hints.
 
 ``pytest/``
-    Hypothesis has excellent integration with ``py.test``, though we are careful
+    Hypothesis has excellent integration with ``pytest``, though we are careful
     to support other test runners including unittest and nose.  This is where we
     test that our pytest integration is working properly.
 

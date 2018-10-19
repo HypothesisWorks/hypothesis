@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import math
+import warnings
 from decimal import Decimal
 
 import pytest
@@ -28,6 +29,7 @@ import hypothesis.strategies as st
 from hypothesis import given, assume, settings
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal, find_any
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.internal.compat import WINDOWS, CAN_PACK_HALF_FLOAT
 from hypothesis.internal.floats import next_up, next_down, float_to_int, \
     int_to_float
@@ -180,6 +182,7 @@ def test_updown_roundtrip(val):
     assert val == next_down(next_up(val))
 
 
+@checks_deprecated_behaviour
 @given(st.data(), st.floats(allow_nan=False, allow_infinity=False))
 def test_floats_in_tiny_interval_within_bounds(data, center):
     assume(not (math.isinf(next_down(center)) or math.isinf(next_up(center))))
@@ -190,6 +193,7 @@ def test_floats_in_tiny_interval_within_bounds(data, center):
     assert lo < val < hi
 
 
+@checks_deprecated_behaviour
 def test_float_free_interval_is_invalid():
     lo = (2 ** 54) + 1
     hi = lo + 2
@@ -244,4 +248,8 @@ def test_no_single_floats_in_range():
     high = low + 2
     st.floats(low, high).validate()  # Note: OK for 64bit floats
     with pytest.raises(InvalidArgument):
-        st.floats(low, high, width=32).validate()
+        """Unrepresentable bounds are deprecated; but we're not testing that
+        here."""
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            st.floats(low, high, width=32).validate()

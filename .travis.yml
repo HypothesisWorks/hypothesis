@@ -35,11 +35,9 @@ jobs:
     # Prechecks that we want to run first.
     - stage: precheck
       env: TASK=check-whole-repo-tests
-    - env: TASK=documentation
     - env: TASK=lint
     - env: TASK=lint-ruby
     - env: TASK=check-format
-    - env: TASK=check-requirements
     - env: TASK=check-rust-tests
 
     - stage: main

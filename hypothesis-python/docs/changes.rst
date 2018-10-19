@@ -21,6 +21,176 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.79.0:
+
+-------------------
+3.79.0 - 2018-10-18
+-------------------
+
+This release adds a CLI flag for verbosity ``--hypothesis-verbosity`` to
+the Hypothesis pytest plugin, applied after loading the profile specified by
+``--hypothesis-profile``. Valid options are the names of verbosity settings,
+quiet, normal, verbose or debug.
+
+Thanks to Bex Dunn for writing this patch at the PyCon Australia
+sprints!
+
+The pytest header now correctly reports the current profile if
+``--hypothesis-profile`` has been used.
+
+Thanks to Mathieu Paturel for the contribution at the Canberra Python
+Hacktoberfest.
+
+.. _v3.78.0:
+
+-------------------
+3.78.0 - 2018-10-16
+-------------------
+
+This release has deprecated the generation of integers, floats and fractions
+when the conversion of the upper and/ or lower bound is not 100% exact, e.g.
+when an integer gets passed a bound that is not a whole number. (:issue:`1625`)
+
+Thanks to Felix Grünewald for this patch during Hacktoberfest 2018.
+
+.. _v3.77.0:
+
+-------------------
+3.77.0 - 2018-10-16
+-------------------
+
+This minor release adds functionality to :obj:`~hypothesis.settings` allowing
+it to be used as a decorator on :obj:`~hypothesis.stateful.RuleBasedStateMachine`
+and :obj:`~hypothesis.stateful.GenericStateMachine`.
+
+Thanks to Tyler Nickerson for this feature in #hacktoberfest!
+
+.. _v3.76.1:
+
+-------------------
+3.76.1 - 2018-10-16
+-------------------
+
+This patch fixes some warnings added by recent releases of
+:pypi:`pydocstyle` and :pypi:`mypy`.
+
+.. _v3.76.0:
+
+-------------------
+3.76.0 - 2018-10-11
+-------------------
+
+This release deprecates using floats for ``min_size`` and ``max_size``.
+
+The type hint for ``average_size`` arguments has been changed from
+``Optional[int]`` to None, because non-None values are always ignored and
+deprecated.
+
+.. _v3.75.4:
+
+-------------------
+3.75.4 - 2018-10-10
+-------------------
+
+This patch adds more internal comments to the core engine's sequence-length
+shrinker. There should be no user-visible change.
+
+.. _v3.75.3:
+
+-------------------
+3.75.3 - 2018-10-09
+-------------------
+
+This patch adds additional comments to some of the core engine's internal
+data structures. There is no user-visible change.
+
+.. _v3.75.2:
+
+-------------------
+3.75.2 - 2018-10-09
+-------------------
+
+This patch avoids caching a trivial case, fixing :issue:`493`.
+
+.. _v3.75.1:
+
+-------------------
+3.75.1 - 2018-10-09
+-------------------
+
+This patch fixes a broken link in a docstring.
+Thanks to Benjamin Lee for this contribution!
+
+.. _v3.75.0:
+
+-------------------
+3.75.0 - 2018-10-08
+-------------------
+
+This release deprecates  the use of ``min_size=None``, setting the default
+``min_size`` to 0 (:issue: `1618`).
+
+.. _v3.74.3:
+
+-------------------
+3.74.3 - 2018-10-08
+-------------------
+
+This patch makes some small internal changes to comply with a new lint setting
+in the build. There should be no user-visible change.
+
+.. _v3.74.2:
+
+-------------------
+3.74.2 - 2018-10-03
+-------------------
+
+This patch fixes :issue:`1153`, where time spent reifying a strategy was
+also counted in the time spent generating the first example.  Strategies
+are now fully constructed and validated before the timer is started.
+
+.. _v3.74.1:
+
+-------------------
+3.74.1 - 2018-10-03
+-------------------
+
+This patch fixes some broken formatting and links in the documentation.
+
+.. _v3.74.0:
+
+-------------------
+3.74.0 - 2018-10-01
+-------------------
+
+This release checks that the value of the
+:attr:`~hypothesis.settings.print_blob` setting is a
+:class:`~hypothesis.PrintSettings` instance.
+
+Being able to specify a boolean value was not intended, and is now deprecated.
+In addition, specifying ``True`` will now cause the blob to always be printed,
+instead of causing it to be suppressed.
+
+Specifying any value that is not a :class:`~hypothesis.PrintSettings`
+or a boolean is now an error.
+
+.. _v3.73.5:
+
+-------------------
+3.73.5 - 2018-10-01
+-------------------
+
+Changes the documentation for ``hypothesis.strategies.datetimes``, ``hypothesis.strategies.dates``, ``hypothesis.strategies.times`` to use the new parameter names ``min_value`` and ``max_value`` instead of the deprecated names
+
+.. _v3.73.4:
+
+-------------------
+3.73.4 - 2018-09-30
+-------------------
+
+This patch ensures that Hypothesis deprecation warnings display the code
+that emitted them when you're not running in ``-Werror`` mode (:issue:`652`).
+
 .. _v3.73.3:
 
 -------------------
@@ -1847,7 +2017,7 @@ that have previously been missed.
 --------------------
 
 This patch avoids creating debug statements when debugging is disabled.
-Profiling suggests this is a 5-10% performance improvement (:issue:`1040`).
+Profiling suggests this is a 5-10% performance improvement (:pull:`1040`).
 
 .. _v3.44.9:
 
@@ -3805,7 +3975,7 @@ Minor bug fix release.
 3.0.5 - 2016-02-25
 ------------------
 
-* Fix a bug where Hypothesis would now error on py.test development versions.
+* Fix a bug where Hypothesis would now error on :pypi:`pytest` development versions.
 
 .. _v3.0.4:
 
@@ -3823,7 +3993,7 @@ Minor bug fix release.
 3.0.3 - 2016-02-23
 ------------------
 
-* Fix version parsing of py.test to work with py.test release candidates
+* Fix version parsing of pytest to work with pytest release candidates
 * More general handling of the health check problem where things could fail because
   of a cache miss - now one "free" example is generated before the start of the
   health check run.
@@ -4018,9 +4188,9 @@ Bug fixes:
 
 .. _v1.18.1:
 
------------------------------------------------------------------------
-`1.18.1 <https://hypothesis.readthedocs.io/en/1.18.0/>`_ - 2015-12-22
------------------------------------------------------------------------
+-------------------
+1.18.1 - 2015-12-22
+-------------------
 
 Two behind the scenes changes:
 
@@ -4035,9 +4205,9 @@ Two behind the scenes changes:
 
 .. _v1.18.0:
 
------------------------------------------------------------------------
-`1.18.0 <https://hypothesis.readthedocs.io/en/1.18.0/>`_ - 2015-12-21
------------------------------------------------------------------------
+-------------------
+1.18.0 - 2015-12-21
+-------------------
 
 Features:
 
@@ -4074,9 +4244,9 @@ Bug fixes:
 
 .. _v1.17.1:
 
------------------------------------------------------------------------
-`1.17.1 <https://hypothesis.readthedocs.io/en/1.17.1/>`_ - 2015-12-16
------------------------------------------------------------------------
+-------------------
+1.17.1 - 2015-12-16
+-------------------
 
 A small bug fix release, which fixes the fact that the 'note' function could
 not be used on tests which used the @example decorator to provide explicit
@@ -4084,9 +4254,9 @@ examples.
 
 .. _v1.17.0:
 
------------------------------------------------------------------------
-`1.17.0 <https://hypothesis.readthedocs.io/en/1.17.0/>`_ - 2015-12-15
------------------------------------------------------------------------
+-------------------
+1.17.0 - 2015-12-15
+-------------------
 
 This is actually the same release as 1.16.1, but 1.16.1 has been pulled because
 it contains the following additional change that was not intended to be in a
@@ -4100,9 +4270,9 @@ required a minor version bump):
 
 .. _v1.16.1:
 
------------------------------------------------------------------------
-`1.16.1 <https://hypothesis.readthedocs.io/en/1.16.1/>`_ - 2015-12-14
------------------------------------------------------------------------
+-------------------
+1.16.1 - 2015-12-14
+-------------------
 
 Note: This release has been removed.
 
@@ -4113,9 +4283,9 @@ this would break running setup.py test.
 
 .. _v1.16.0:
 
------------------------------------------------------------------------
-`1.16.0 <https://hypothesis.readthedocs.io/en/1.16.0/>`_ - 2015-12-08
------------------------------------------------------------------------
+-------------------
+1.16.0 - 2015-12-08
+-------------------
 
 There are no public API changes in this release but it includes a behaviour
 change that I wasn't comfortable putting in a patch release.
@@ -4135,9 +4305,9 @@ change that I wasn't comfortable putting in a patch release.
 
 .. _v1.15.0:
 
------------------------------------------------------------------------
-`1.15.0 <https://hypothesis.readthedocs.io/en/1.15.0/>`_ - 2015-11-24
------------------------------------------------------------------------
+-------------------
+1.15.0 - 2015-11-24
+-------------------
 
 A release with two new features.
 
@@ -4149,9 +4319,9 @@ A release with two new features.
 
 .. _v1.14.0:
 
------------------------------------------------------------------------
-`1.14.0 <https://hypothesis.readthedocs.io/en/1.14.0/>`_ - 2015-11-01
------------------------------------------------------------------------
+-------------------
+1.14.0 - 2015-11-01
+-------------------
 
 
 New features:
@@ -4174,9 +4344,9 @@ Bugs:
 
 .. _v1.13.0:
 
------------------------------------------------------------------------
-`1.13.0 <https://hypothesis.readthedocs.io/en/1.13.0/>`_ - 2015-10-29
------------------------------------------------------------------------
+-------------------
+1.13.0 - 2015-10-29
+-------------------
 
 This is quite a small release, but deprecates some public API functions
 and removes some internal API functionality so gets a minor version bump.
@@ -4195,9 +4365,9 @@ and removes some internal API functionality so gets a minor version bump.
 
 .. _v1.12.0:
 
------------------------------------------------------------------------
-`1.12.0 <https://hypothesis.readthedocs.io/en/1.12.0/>`_ - 2015-10-18
------------------------------------------------------------------------
+-------------------
+1.12.0 - 2015-10-18
+-------------------
 
 * Significantly improved performance of creating strategies using the functions
   from the hypothesis.strategies module by deferring the calculation of their
@@ -4214,7 +4384,7 @@ and removes some internal API functionality so gets a minor version bump.
   function that uses destructuring arguments (it still won't work, but it will
   error more clearly),
 * A number of spelling corrections in error messages
-* py.test should no longer display the intermediate modules Hypothesis generates
+* :pypi:`pytest` should no longer display the intermediate modules Hypothesis generates
   when running in verbose mode
 * Hypothesis should now correctly handle printing objects with non-ascii reprs
   on python 3 when running in a locale that cannot handle ascii printing to
@@ -4225,9 +4395,9 @@ and removes some internal API functionality so gets a minor version bump.
 
 .. _v1.11.4:
 
------------------------------------------------------------------------
-`1.11.4 <https://hypothesis.readthedocs.io/en/1.11.4/>`_ - 2015-09-27
------------------------------------------------------------------------
+-------------------
+1.11.4 - 2015-09-27
+-------------------
 
 * Hide modifications Hypothesis needs to make to sys.path by undoing them
   after we've imported the relevant modules. This is a workaround for issues
@@ -4243,9 +4413,9 @@ and removes some internal API functionality so gets a minor version bump.
 
 .. _v1.11.3:
 
------------------------------------------------------------------------
-`1.11.3 <https://hypothesis.readthedocs.io/en/1.11.3/>`_ - 2015-09-23
------------------------------------------------------------------------
+-------------------
+1.11.3 - 2015-09-23
+-------------------
 
 * Better argument validation for datetimes() strategy - previously setting
   max_year < datetime.MIN_YEAR or min_year > datetime.MAX_YEAR would not have
@@ -4255,9 +4425,9 @@ and removes some internal API functionality so gets a minor version bump.
 
 .. _v1.11.2:
 
------------------------------------------------------------------------
-`1.11.2 <https://hypothesis.readthedocs.io/en/1.11.2/>`_ - 2015-09-23
------------------------------------------------------------------------
+-------------------
+1.11.2 - 2015-09-23
+-------------------
 
 Bug fixes:
 
@@ -4283,9 +4453,9 @@ Misc:
 
 .. _v1.11.1:
 
------------------------------------------------------------------------
-`1.11.1 <https://hypothesis.readthedocs.io/en/1.11.1/>`_ - 2015-09-16
------------------------------------------------------------------------
+-------------------
+1.11.1 - 2015-09-16
+-------------------
 
 Bug fixes:
 
@@ -4299,9 +4469,9 @@ Bug fixes:
 
 .. _v1.11.0:
 
------------------------------------------------------------------------
-`1.11.0 <https://hypothesis.readthedocs.io/en/1.11.0/>`_ - 2015-08-31
------------------------------------------------------------------------
+-------------------
+1.11.0 - 2015-08-31
+-------------------
 
 * text() with a non-string alphabet would have used the repr() of the the alphabet
   instead of its contexts. This is obviously silly. It now works with any sequence
@@ -4315,9 +4485,9 @@ Bug fixes:
 
 .. _v1.10.6:
 
------------------------------------------------------------------------
-`1.10.6 <https://hypothesis.readthedocs.io/en/1.10.6/>`_ - 2015-08-26
------------------------------------------------------------------------
+-------------------
+1.10.6 - 2015-08-26
+-------------------
 
 Fix support for fixtures on Django 1.7.
 
@@ -4335,9 +4505,9 @@ Tiny bug fix release:
 
 .. _v1.10.3:
 
------------------------------------------------------------------------
-`1.10.3 <https://hypothesis.readthedocs.io/en/1.10.3/>`_ - 2015-08-19
------------------------------------------------------------------------
+-------------------
+1.10.3 - 2015-08-19
+-------------------
 
 Another small bug fix release.
 
@@ -4354,9 +4524,9 @@ Another small bug fix release.
 
 .. _v1.10.2:
 
------------------------------------------------------------------------
-`1.10.2 <https://hypothesis.readthedocs.io/en/1.10.2/>`_ - 2015-08-19
------------------------------------------------------------------------
+-------------------
+1.10.2 - 2015-08-19
+-------------------
 
 This is a small bug fix release:
 
@@ -4367,9 +4537,9 @@ This is a small bug fix release:
 
 .. _v1.10.0:
 
------------------------------------------------------------------------
-`1.10.0 <https://hypothesis.readthedocs.io/en/1.10.0/>`_ - 2015-08-04
------------------------------------------------------------------------
+-------------------
+1.10.0 - 2015-08-04
+-------------------
 
 This is just a bugfix and performance release, but it changes some
 semi-public APIs, hence the minor version bump.
@@ -4399,9 +4569,9 @@ semi-public APIs, hence the minor version bump.
 
 .. _v1.9.0:
 
----------------------------------------------------------------------
-`1.9.0 <https://hypothesis.readthedocs.io/en/1.9.0/>`_ - 2015-07-27
----------------------------------------------------------------------
+------------------
+1.9.0 - 2015-07-27
+------------------
 
 Codename: The great bundling.
 
@@ -4424,9 +4594,9 @@ the examples artificially simple but this proved to be a bad idea.
 
 .. _v1.8.5:
 
----------------------------------------------------------------------
-`1.8.5 <https://hypothesis.readthedocs.io/en/1.8.5/>`_ - 2015-07-24
----------------------------------------------------------------------
+------------------
+1.8.5 - 2015-07-24
+------------------
 
 This contains no functionality changes but fixes a mistake made with
 building the previous package that would have broken installation on
@@ -4434,9 +4604,9 @@ Windows.
 
 .. _v1.8.4:
 
----------------------------------------------------------------------
-`1.8.4 <https://hypothesis.readthedocs.io/en/1.8.4/>`_ - 2015-07-20
----------------------------------------------------------------------
+------------------
+1.8.4 - 2015-07-20
+------------------
 
 Bugs fixed:
 
@@ -4449,18 +4619,18 @@ Bugs fixed:
 
 .. _v1.8.3:
 
----------------------------------------------------------------------
-`1.8.3 <https://hypothesis.readthedocs.io/en/1.8.3/>`_ - 2015-07-20
----------------------------------------------------------------------
+------------------
+1.8.3 - 2015-07-20
+------------------
 
 "Falsifying example" would not have been printed when the failure came from an
 explicit example.
 
 .. _v1.8.2:
 
----------------------------------------------------------------------
-`1.8.2 <https://hypothesis.readthedocs.io/en/1.8.2/>`_ - 2015-07-18
----------------------------------------------------------------------
+------------------
+1.8.2 - 2015-07-18
+------------------
 
 Another small bugfix release:
 
@@ -4484,9 +4654,9 @@ worth having a workaround for.
 
 .. _v1.8.0:
 
----------------------------------------------------------------------
-`1.8.0 <https://hypothesis.readthedocs.io/en/1.8.0/>`_ - 2015-07-16
----------------------------------------------------------------------
+------------------
+1.8.0 - 2015-07-16
+------------------
 
 New features:
 
@@ -4514,9 +4684,9 @@ Bug fixes:
 
 .. _v1.7.2:
 
----------------------------------------------------------------------
-`1.7.2 <https://hypothesis.readthedocs.io/en/1.7.2/>`_ - 2015-07-10
----------------------------------------------------------------------
+------------------
+1.7.2 - 2015-07-10
+------------------
 
 This is purely a bug fix release:
 
@@ -4538,9 +4708,9 @@ This is purely a bug fix release:
 
 .. _v1.7.1:
 
----------------------------------------------------------------------
-`1.7.1 <https://hypothesis.readthedocs.io/en/1.7.1/>`_ - 2015-06-29
----------------------------------------------------------------------
+------------------
+1.7.1 - 2015-06-29
+------------------
 
 Codename: There is no 1.7.0.
 
@@ -4599,9 +4769,9 @@ a SearchStrategy instance rather than converting it to a strategy.
 
 .. _v1.6.0:
 
----------------------------------------------------------------------
-`1.6.0 <https://hypothesis.readthedocs.io/en/v1.6.0/>`_ - 2015-05-21
----------------------------------------------------------------------
+------------------
+1.6.0 - 2015-05-21
+------------------
 
 
 This is a smallish release designed to fix a number of bugs and smooth out
@@ -4633,9 +4803,9 @@ some weird behaviours.
 
 .. _v1.5.0:
 
----------------------------------------------------------------------
-`1.5.0 <https://hypothesis.readthedocs.io/en/v1.5.0/>`_ - 2015-05-14
----------------------------------------------------------------------
+------------------
+1.5.0 - 2015-05-14
+------------------
 
 
 Codename: Strategic withdrawal.
@@ -4676,9 +4846,9 @@ Other changes:
 
 .. _v1.4.0:
 
----------------------------------------------------------------------
-`1.4.0 <https://hypothesis.readthedocs.io/en/v1.4.0/>`_ - 2015-05-04
----------------------------------------------------------------------
+------------------
+1.4.0 - 2015-05-04
+------------------
 
 Codename: What a state.
 
@@ -4760,9 +4930,9 @@ Some minor quality improvements:
 
 .. _v1.3.0:
 
----------------------------------------------------------------------
-`1.3.0 <https://hypothesis.readthedocs.io/en/v1.3.0/>`_ - 2015-05-22
----------------------------------------------------------------------
+------------------
+1.3.0 - 2015-05-22
+------------------
 
 New features:
 
@@ -4792,9 +4962,9 @@ General improvements:
 
 .. _v1.2.1:
 
----------------------------------------------------------------------
-`1.2.1 <https://hypothesis.readthedocs.io/en/v1.2.1/>`_ - 2015-04-16
----------------------------------------------------------------------
+------------------
+1.2.1 - 2015-04-16
+------------------
 
 A small patch release for a bug in the new executors feature. Tests which require
 doing something to their result in order to fail would have instead reported as
@@ -4802,9 +4972,9 @@ flaky.
 
 .. _v1.2.0:
 
----------------------------------------------------------------------
-`1.2.0 <https://hypothesis.readthedocs.io/en/v1.2.0/>`_ - 2015-04-15
----------------------------------------------------------------------
+------------------
+1.2.0 - 2015-04-15
+------------------
 
 Codename: Finders keepers.
 
@@ -4837,9 +5007,9 @@ A bunch of new features and improvements.
 
 .. _v1.1.1:
 
----------------------------------------------------------------------
-`1.1.1 <https://hypothesis.readthedocs.io/en/v1.1.1/>`_ - 2015-04-07
----------------------------------------------------------------------
+------------------
+1.1.1 - 2015-04-07
+------------------
 
 Codename: Nothing to see here
 
@@ -4855,9 +5025,9 @@ I'd happened to have finished in time.
 
 .. _v1.1.0:
 
----------------------------------------------------------------------
-`1.1.0 <https://hypothesis.readthedocs.io/en/v1.1.0/>`_ - 2015-04-06
----------------------------------------------------------------------
+------------------
+1.1.0 - 2015-04-06
+------------------
 
 Codename: No-one mention the M word.
 
@@ -4882,9 +5052,9 @@ Codename: No-one mention the M word.
 
 .. _v1.0.0:
 
----------------------------------------------------------------------
-`1.0.0 <https://hypothesis.readthedocs.io/en/v1.0.0/>`_ - 2015-03-27
----------------------------------------------------------------------
+------------------
+1.0.0 - 2015-03-27
+------------------
 
 Codename: Blast-off!
 

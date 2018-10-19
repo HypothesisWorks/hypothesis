@@ -5,8 +5,8 @@ Some more examples
 This is a collection of examples of how to use Hypothesis in interesting ways.
 It's small for now but will grow over time.
 
-All of these examples are designed to be run under `py.test`_ (`nose`_ should probably
-work too).
+All of these examples are designed to be run under :pypi:`pytest`,
+and :pypi:`nose` should work too.
 
 ----------------------------------
 How not to sort by a partial order
@@ -100,7 +100,7 @@ First we need to define a strategy for Node:
   NodeStrategy = s.builds(
     Node,
     s.integers(),
-    s.lists(s.booleans(), average_size=5, max_size=10))
+    s.lists(s.booleans(), max_size=10))
 
 We want to generate *short* lists of values so that there's a decent chance of
 one being a prefix of the other (this is also why the choice of bool as the
@@ -459,6 +459,3 @@ The :pypi:`swagger-conformance` package provides an excellent example of this!
 
     if __name__ == '__main__':
         unittest.main()
-
-.. _py.test: https://docs.pytest.org/en/latest/
-.. _nose: https://nose.readthedocs.io/en/latest/

@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import re
 import sys
 import subprocess
 from tempfile import mkdtemp
@@ -32,8 +33,9 @@ from tests.common.utils import validate_deprecation, \
     checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
-from hypothesis._settings import Verbosity, settings, default_variable, \
-    note_deprecation
+from hypothesis.stateful import RuleBasedStateMachine, rule
+from hypothesis._settings import Verbosity, PrintSettings, settings, \
+    default_variable, note_deprecation
 from hypothesis.utils.conventions import not_set
 
 
@@ -401,3 +403,59 @@ def test_setattr_on_settings_singleton_is_error():
     # Should be setting attributes on settings.default, not settings!
     with pytest.raises(AttributeError):
         settings.max_examples = 10
+
+
+@pytest.mark.parametrize(('value', 'replacement', 'suggestion'), [
+    (False, PrintSettings.NEVER, 'PrintSettings.NEVER'),
+    (True, PrintSettings.ALWAYS, 'PrintSettings.ALWAYS'),
+])
+def test_can_set_print_blob_to_deprecated_bool(value, replacement, suggestion):
+    with pytest.warns(
+        HypothesisDeprecationWarning,
+        match=re.escape(suggestion),
+    ):
+        s = settings(print_blob=value)
+
+    assert s.print_blob == replacement
+
+
+@pytest.mark.parametrize('value', [0, 1, 'always'])
+def test_can_not_set_print_blob_to_non_print_settings(value):
+    with pytest.raises(InvalidArgument):
+        settings(print_blob=value)
+
+
+settings_step_count = 1
+
+
+@settings(stateful_step_count=settings_step_count)
+class StepCounter(RuleBasedStateMachine):
+    def __init__(self):
+        super(StepCounter, self).__init__()
+        self.step_count = 0
+
+    @rule()
+    def count_step(self):
+        self.step_count += 1
+
+    def teardown(self):
+        assert self.step_count <= settings_step_count
+
+
+test_settings_decorator_applies_to_rule_based_state_machine_class = \
+    StepCounter.TestCase
+
+
+def test_two_settings_decorators_applied_to_state_machine_class_raises_error():
+    with pytest.raises(InvalidArgument):
+        @settings()
+        @settings()
+        class StatefulTest(RuleBasedStateMachine):
+            pass
+
+
+def test_settings_decorator_applied_to_non_state_machine_class_raises_error():
+    with pytest.raises(InvalidArgument):
+        @settings()
+        class NonStateMachine:
+            pass

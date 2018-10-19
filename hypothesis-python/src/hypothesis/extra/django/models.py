@@ -125,7 +125,7 @@ def _get_strategy_for_field(f):
         strategy = st.sampled_from(choices)
     elif type(f) == dm.SlugField:
         strategy = st.text(alphabet=string.ascii_letters + string.digits,
-                           min_size=(None if f.blank else 1),
+                           min_size=(0 if f.blank else 1),
                            max_size=f.max_length)
     elif type(f) == dm.GenericIPAddressField:
         lookup = {'both': ip4_addr_strings() | ip6_addr_strings(),
@@ -135,7 +135,7 @@ def _get_strategy_for_field(f):
         strategy = st.text(
             alphabet=st.characters(blacklist_characters=u'\x00',
                                    blacklist_categories=('Cs',)),
-            min_size=(None if f.blank else 1),
+            min_size=(0 if f.blank else 1),
             max_size=f.max_length,
         )
         # We can infer a vastly more precise strategy by considering the

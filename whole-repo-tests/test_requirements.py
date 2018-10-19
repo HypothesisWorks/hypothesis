@@ -17,5 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-__version_info__ = (3, 79, 0)
-__version__ = '.'.join(map(str, __version_info__))
+from hypothesistooling.__main__ import check_requirements
+
+
+def test_requirements():
+    check_requirements()

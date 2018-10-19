@@ -316,8 +316,8 @@ def one_of(*args):
 @defines_strategy_with_reusable_values
 def integers(min_value=None, max_value=None):
     # type: (Real, Real) -> SearchStrategy[int]
-    """Returns a strategy which generates integers (in Python 2 these may be
-    ints or longs).
+    """Returns a strategy which generates integers; in Python 2 these may be
+    ints or longs.
 
     If min_value is not None then all values will be >= min_value. If
     max_value is not None then all values will be <= max_value
@@ -332,6 +332,19 @@ def integers(min_value=None, max_value=None):
 
     min_int_value = None if min_value is None else ceil(min_value)
     max_int_value = None if max_value is None else floor(max_value)
+
+    if min_value != min_int_value:
+        note_deprecation(
+            'min_value=%r cannot be exactly represented as an integer, which '
+            'will be an error in a future version.'
+            % (min_value)
+        )
+    if max_value != max_int_value:
+        note_deprecation(
+            'max_value=%r cannot be exactly represented as an integer, which '
+            'will be an error in a future version.'
+            % (max_value)
+        )
 
     if min_int_value is not None and max_int_value is not None and \
             min_int_value > max_int_value:
@@ -439,6 +452,21 @@ def floats(
     if max_value is not None:
         max_value = float_of(max_value, width)
         assert isinstance(max_value, float)
+
+    if min_value != min_arg:
+        note_deprecation(
+            'min_value=%r cannot be exactly represented as a float of width '
+            '%d, which will be an error in a future version. Use min_value=%r '
+            'instead.'
+            % (min_value, width, min_arg)
+        )
+    if max_value != max_arg:
+        note_deprecation(
+            'max_value=%r cannot be exactly represented as a float of width '
+            '%d, which will be an error in a future version. Use max_value=%r '
+            'instead'
+            % (max_value, width, max_arg)
+        )
 
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
     if min_value == float(u'-inf'):
@@ -601,8 +629,8 @@ def sampled_from(elements):
 @defines_strategy
 def lists(
     elements=None,  # type: SearchStrategy[Ex]
-    min_size=None,  # type: int
-    average_size=None,  # type: int
+    min_size=0,  # type: int
+    average_size=None,  # type: None
     max_size=None,  # type: int
     unique_by=None,  # type: Callable[..., Any]
     unique=False,  # type: bool
@@ -617,12 +645,13 @@ def lists(
     Hypothesis 1.x mean we no longer needed this hint to generate useful data.
 
     If unique is True (or something that evaluates to True), we compare direct
-    object equality, as if unique_by was `lambda x: x`. This comparison only
+    object equality, as if unique_by was ``lambda x: x``. This comparison only
     works for hashable types.
 
     if unique_by is not None it must be a function returning a hashable type
     when given a value drawn from elements. The resulting list will satisfy the
-    condition that for i != j, unique_by(result[i]) != unique_by(result[j]).
+    condition that for ``i`` != ``j``, ``unique_by(result[i])`` !=
+    ``unique_by(result[j])``.
 
     Examples from this strategy shrink by trying to remove elements from the
     list, and by shrinking each individual element of the list.
@@ -670,8 +699,8 @@ def lists(
 @defines_strategy
 def sets(
     elements=None,  # type: SearchStrategy[Ex]
-    min_size=None,   # type: int
-    average_size=None,  # type: int
+    min_size=0,   # type: int
+    average_size=None,  # type: None
     max_size=None,  # type: int
 ):
     # type: (...) -> SearchStrategy[Set[Ex]]
@@ -700,8 +729,8 @@ def sets(
 @defines_strategy
 def frozensets(
     elements=None,  # type: SearchStrategy[Ex]
-    min_size=None,   # type: int
-    average_size=None,  # type: int
+    min_size=0,   # type: int
+    average_size=None,  # type: None
     max_size=None,  # type: int
 ):
     # type: (...) -> SearchStrategy[FrozenSet[Ex]]
@@ -737,7 +766,7 @@ class PrettyIter(object):
 
 
 @defines_strategy
-def iterables(elements=None, min_size=None, average_size=None, max_size=None,
+def iterables(elements=None, min_size=0, average_size=None, max_size=None,
               unique_by=None, unique=False):
     """This has the same behaviour as lists, but returns iterables instead.
 
@@ -787,8 +816,8 @@ def dictionaries(
     keys,  # type: SearchStrategy[Ex]
     values,  # type: SearchStrategy[T]
     dict_class=dict,  # type: type
-    min_size=None,  # type: int
-    average_size=None,  # type: int
+    min_size=0,  # type: int
+    average_size=None,  # type: None
     max_size=None,  # type: int
 ):
     # type: (...) -> SearchStrategy[Dict[Ex, T]]
@@ -864,7 +893,7 @@ def characters(
     - If ``whitelist_characters`` is specified, then any additional characters
       in that list will also be produced.
     - If ``blacklist_characters`` is specified, then any characters in
-      that list will be not be produced. Any overlap between \
+      that list will be not be produced. Any overlap between
       ``whitelist_characters`` and ``blacklist_characters`` will raise an
       exception.
 
@@ -935,8 +964,8 @@ def characters(
 @defines_strategy_with_reusable_values
 def text(
     alphabet=None,  # type: Union[Sequence[Text], SearchStrategy[Text]]
-    min_size=None,   # type: int
-    average_size=None,   # type: int
+    min_size=0,   # type: int
+    average_size=None,   # type: None
     max_size=None  # type: int
 ):
     # type: (...) -> SearchStrategy[Text]
@@ -1003,7 +1032,7 @@ def text(
 @defines_strategy
 def from_regex(regex, fullmatch=False):
     # type: (Union[AnyStr, Pattern[AnyStr]], bool) -> SearchStrategy[AnyStr]
-    """Generates strings that contain a match for the given regex (i.e. ones
+    r"""Generates strings that contain a match for the given regex (i.e. ones
     for which :func:`python:re.search` will return a non-None result).
 
     ``regex`` may be a pattern or :func:`compiled regex <python:re.compile>`.
@@ -1021,11 +1050,11 @@ def from_regex(regex, fullmatch=False):
     mainly includes (positive or negative) lookahead and lookbehind groups.
 
     If you want the generated string to match the whole regex you should use
-    boundary markers. So e.g. ``r"\\A.\\Z"`` will return a single character
-    string, while ``"."`` will return any string, and ``r"\\A.$"`` will return
-    a single character optionally followed by a ``"\\n"``.
+    boundary markers. So e.g. ``r"\A.\Z"`` will return a single character
+    string, while ``"."`` will return any string, and ``r"\A.$"`` will return
+    a single character optionally followed by a ``"\n"``.
     Alternatively, passing ``fullmatch=True`` will ensure that the whole
-    string is a match, as if you had used the ``\\A`` and ``\\Z`` markers.
+    string is a match, as if you had used the ``\A`` and ``\Z`` markers.
 
     Examples from this strategy shrink towards shorter strings and lower
     character values, with exact behaviour that may depend on the pattern.
@@ -1040,7 +1069,7 @@ def from_regex(regex, fullmatch=False):
 @cacheable
 @defines_strategy_with_reusable_values
 def binary(
-    min_size=None, average_size=None, max_size=None
+    min_size=0, average_size=None, max_size=None
 ):
     # type: (int, int, int) -> SearchStrategy[bytes]
     """Generates the appropriate binary type (str in python 2, bytes in python
@@ -1361,6 +1390,7 @@ def fractions(
             assert max_denominator is not None
             if value is None or value.denominator <= max_denominator:
                 return value, value
+
             p0, q0, p1, q1 = 0, 1, 1, 0
             n, d = value.numerator, value.denominator
             while True:
@@ -1378,8 +1408,22 @@ def fractions(
         # Take the high approximation for min_value and low for max_value
         bounds = (max_denominator, min_value, max_value)
         if min_value is not None:
+            if min_value.denominator > max_denominator:
+                note_deprecation(
+                    'The min_value=%r has a denominator greater than the '
+                    'max_denominator=%r, which will be an error in a future '
+                    'version.'
+                    % (min_value, max_denominator)
+                )
             _, min_value = fraction_bounds(min_value)
         if max_value is not None:
+            if max_value.denominator > max_denominator:
+                note_deprecation(
+                    'The max_value=%r has a denominator greater than the '
+                    'max_denominator=%r, which will be an error in a future '
+                    'version.'
+                    % (max_value, max_denominator)
+                )
             max_value, _ = fraction_bounds(max_value)
 
         if min_value is not None and max_value is not None and \
@@ -1830,8 +1874,8 @@ def complex_numbers(min_magnitude=0, max_magnitude=None,
 
     If you need to generate complex numbers with particular real and
     imaginary parts or relationships between parts, consider using
-    `builds(complex, ...) <hypothesis.strategies.builds>` or
-    `@composite <hypothesis.strategies.composite>` respectively.
+    :func:`builds(complex, ...) <hypothesis.strategies.builds>` or
+    :func:`@composite <hypothesis.strategies.composite>` respectively.
     """
     check_valid_magnitude(min_magnitude, 'min_magnitude')
     check_valid_magnitude(max_magnitude, 'max_magnitude')
@@ -2163,12 +2207,11 @@ def deferred(definition):
 @defines_strategy_with_reusable_values
 def emails():
     """A strategy for generating email addresses as unicode strings. The
-    address format is specific in :rfc:`5322#section-3.4.1`. Values shrink
+    address format is specified in :rfc:`5322#section-3.4.1`. Values shrink
     towards shorter local-parts and host domains.
 
     This strategy is useful for generating "user data" for tests, as
-    mishandling of email addresses is a common source of bugs. Future
-    updates will generate more complicated addresses allowed by the RFC.
+    mishandling of email addresses is a common source of bugs.
     """
     from hypothesis.provisional import domains
     local_chars = string.ascii_letters + string.digits + "!#$%&'*+-/=^_`{|}~"
