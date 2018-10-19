@@ -150,7 +150,7 @@ _global_type_lookup = {
     type(NotImplemented): st.just(NotImplemented),
     bytearray: st.binary().map(bytearray),
     memoryview: st.binary().map(memoryview),
-    numbers.Real: st.floats()
+    numbers.Real: st.floats(),
     numbers.Rational: st.floats()
     # Pull requests with more types welcome!
 }
@@ -187,6 +187,11 @@ else:
         typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),  # type: ignore
         typing.io.TextIO: st.builds(io.StringIO, st.text()),  # type: ignore
         typing.Reversible: st.lists(st.integers()),
+        typing.Collection: st.lists(st.integers()),
+        typing.Sequence: st.lists(st.integers()),
+        typing.Sized: st.lists(st.integers()),
+        typing.Iterable: st.lists(st.integers()),
+        typing.Iterator: st.lists(st.integers()),
         typing.SupportsAbs: st.complex_numbers(),
         typing.SupportsComplex: st.complex_numbers(),
         typing.SupportsFloat: st.complex_numbers(),
