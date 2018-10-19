@@ -24,7 +24,7 @@ import datetime
 import fractions
 import functools
 import collections
-
+import numbers 
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import PY2, ForwardRef, abc, text_type, \
@@ -150,6 +150,8 @@ _global_type_lookup = {
     type(NotImplemented): st.just(NotImplemented),
     bytearray: st.binary().map(bytearray),
     memoryview: st.binary().map(memoryview),
+    numbers.Real: st.floats()
+    numbers.Rational: st.floats()
     # Pull requests with more types welcome!
 }
 
