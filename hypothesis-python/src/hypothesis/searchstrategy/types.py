@@ -152,9 +152,9 @@ _global_type_lookup = {
     memoryview: st.binary().map(memoryview),
     numbers.Real: st.floats(),
     numbers.Rational: st.fractions(),
-	numbers.Number: st.complex_numbers(),
-	numbers.Integral: st.integers(),
-	numbers.Complex: st.complex_numbers(),
+    numbers.Number: st.complex_numbers(),
+    numbers.Integral: st.integers(),
+    numbers.Complex: st.complex_numbers(),
     # Pull requests with more types welcome!
 }
 
