@@ -21,6 +21,20 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.79.1:
+
+-------------------
+3.79.1 - 2018-10-22
+-------------------
+
+The abstract number classes :class:`~python:numbers.Number`,
+:class:`~python:numbers.Complex`, :class:`~python:numbers.Real`,
+:class:`~python:numbers.Rational`, and :class:`~python:numbers.Integral`
+are now supported by the :func:`~hypothesis.strategies.from_type`
+strategy.  Previously, you would have to use
+:func:`~hypothesis.strategies.register_type_strategy` before they
+could be resolved (:issue:`1636`)
+
 .. _v3.79.0:
 
 -------------------
