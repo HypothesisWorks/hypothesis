@@ -25,6 +25,7 @@ import datetime
 import fractions
 import functools
 import collections
+
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import PY2, ForwardRef, abc, text_type, \
