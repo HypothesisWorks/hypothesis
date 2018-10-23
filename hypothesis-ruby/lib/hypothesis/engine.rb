@@ -15,8 +15,21 @@ module Hypothesis
 
     def initialize(name, options)
       seed = Random.rand(2**64 - 1)
+
+      begin
+        database = options.fetch(:database)
+      rescue KeyError
+        database = File.join(
+          Dir.pwd, '.hypothesis', 'examples'
+        )
+      end
+
+      if database == false
+        database = nil
+      end
+
       @core_engine = HypothesisCoreEngine.new(
-        name, seed, options.fetch(:max_examples)
+        name, database, seed, options.fetch(:max_examples)
       )
 
       @exceptions_to_tags = Hash.new { |h, k| h[k] = h.size }

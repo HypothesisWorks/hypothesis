@@ -10,6 +10,7 @@ use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::thread;
 
 use data::{DataSource, DataStream, Status, TestResult};
+use database::BoxedDatabase;
 use intminimize::minimize_integer;
 
 #[derive(Debug, Clone)]
@@ -509,6 +510,7 @@ pub struct Engine {
     // otherwise it is cleared on access.
     loop_response: Option<LoopCommand>,
     name: String,
+    database: BoxedDatabase,
 
     state: EngineState,
 
@@ -525,7 +527,7 @@ impl Clone for Engine {
 }
 
 impl Engine {
-    pub fn new(name: String, max_examples: u64, seed: &[u32]) -> Engine {
+    pub fn new(name: String, max_examples: u64, seed: &[u32], db: BoxedDatabase) -> Engine {
         let (send_local, recv_remote) = sync_channel(1);
         let (send_remote, recv_local) = sync_channel(1);
 
@@ -551,6 +553,7 @@ impl Engine {
 
         Engine {
             name: name,
+            database: db,
             loop_response: None,
             sender: send_local,
             receiver: recv_local,
@@ -688,11 +691,15 @@ impl Engine {
 mod tests {
   use super::*;
   use data::FailedDraw;
+  use database::NoDatabase;
 
   fn run_to_results<F>(mut f: F) -> Vec<TestResult>
     where F: FnMut(&mut DataSource) -> Result<Status, FailedDraw> {
     let seed: [u32; 2] = [0, 0];
-    let mut engine = Engine::new("run_to_results".to_string(), 1000, &seed);
+    let mut engine = Engine::new(
+        "run_to_results".to_string(), 1000, &seed,
+        Box::new(NoDatabase),
+    );
     while let Some(mut source) = engine.next_source() {
       if let Ok(status) = f(&mut source) {
         engine.mark_finished(source, status);

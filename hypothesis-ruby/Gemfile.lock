@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    hypothesis-specs (0.1.1)
+    hypothesis-specs (0.1.2)
       helix_runtime (~> 0.7.0)
       rake (>= 10.0, < 13.0)
 

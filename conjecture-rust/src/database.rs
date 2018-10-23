@@ -3,16 +3,21 @@ use std::fs;
 use std::io;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
+use std::fmt::Debug;
 
 pub type Key = str;
 
-pub trait Database {
+
+pub trait Database: Debug {
     fn save(&mut self, key: &Key, value: &[u8]) -> ();
     fn delete(&mut self, key: &Key, value: &[u8]) -> ();
     fn fetch(&mut self, key: &Key) -> Vec<Vec<u8>>;
 }
 
-pub struct NoDatabase();
+pub type BoxedDatabase = Box<Database>;
+
+#[derive(Debug)]
+pub struct NoDatabase;
 
 impl Database for NoDatabase {
     fn save(&mut self, _key: &Key, _value: &[u8]) -> () {}
@@ -22,6 +27,7 @@ impl Database for NoDatabase {
     }
 }
 
+#[derive(Debug)]
 pub struct DirectoryDatabase {
     path: PathBuf,
 }
@@ -51,7 +57,7 @@ impl DirectoryDatabase {
         let mut result = PathBuf::new();
         result.push(&self.path);
         result.push(&hashed_key[0..7]);
-        expect_io_error(io::ErrorKind::AlreadyExists, fs::create_dir(&result));
+        expect_io_error(io::ErrorKind::AlreadyExists, fs::create_dir_all(&result));
         result
     }
 
@@ -93,6 +99,7 @@ mod tests {
     use super::*;
     use tempdir::TempDir;
 
+    #[derive(Debug)]
     struct TestDatabase {
         _temp: TempDir,
         db: DirectoryDatabase,
