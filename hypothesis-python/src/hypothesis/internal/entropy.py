@@ -20,6 +20,11 @@ from __future__ import division, print_function, absolute_import
 import random
 import contextlib
 
+try:
+    import numpy.random as npr
+except ImportError:
+    npr = None
+
 
 @contextlib.contextmanager
 def deterministic_PRNG():
@@ -32,7 +37,13 @@ def deterministic_PRNG():
     """
     _random_state = random.getstate()
     random.seed(0)
+    # These branches are covered by tests/numpy/, not tests/cover/
+    if npr is not None:  # pragma: no cover
+        _npr_state = npr.get_state()
+        npr.seed(0)
     try:
         yield
     finally:
         random.setstate(_random_state)
+        if npr is not None:  # pragma: no cover
+            npr.set_state(_npr_state)

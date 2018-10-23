@@ -1125,10 +1125,14 @@ class RandomSeeder(object):
 class RandomModule(SearchStrategy):
     def do_draw(self, data):
         data.can_reproduce_example_from_repr = False
-        seed = data.draw(integers())
+        seed = data.draw(integers(0, 2 ** 32 - 1))
         state = random.getstate()
         random.seed(seed)
         cleanup(lambda: random.setstate(state))
+        if numpy is not None:  # pragma: no cover
+            npstate = numpy.random.get_state()
+            numpy.random.seed(seed)
+            cleanup(lambda: numpy.random.set_state(npstate))
         return RandomSeeder(seed)
 
 
@@ -1144,6 +1148,7 @@ def random_module():
     `:func:`~hypothesis.strategies.randoms`, this strategy calls
     :func:`python:random.seed` with an arbitrary integer and passes you
     an opaque object whose repr displays the seed value for debugging.
+    If ``numpy.random`` is available, that state is also managed.
 
     Examples from these strategy shrink to seeds closer to zero.
     """
