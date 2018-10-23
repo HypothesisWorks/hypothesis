@@ -31,7 +31,7 @@ RSpec.describe Hypothesis::MultipleExceptionError do
       begin
         raise m
       rescue Exception => e
-        exceptions.append(e)
+        exceptions.push(e)
       end
     end
 

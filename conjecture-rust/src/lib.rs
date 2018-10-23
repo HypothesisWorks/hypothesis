@@ -1,5 +1,6 @@
 extern crate core;
 extern crate crypto_hash;
+extern crate byteorder;
 extern crate rand;
 
 #[cfg(test)]

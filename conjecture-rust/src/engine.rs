@@ -2,12 +2,14 @@
 // the API that can be used to get test data from it.
 
 use rand::{ChaChaRng, Rng, SeedableRng};
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
 use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
 use std::mem;
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::thread;
+use std::io;
 
 use data::{DataSource, DataStream, Status, TestResult};
 use database::BoxedDatabase;
@@ -28,6 +30,8 @@ enum LoopCommand {
 
 #[derive(Debug)]
 struct MainGenerationLoop {
+    name: String,
+    database: BoxedDatabase,
     receiver: Receiver<TestResult>,
     sender: SyncSender<LoopCommand>,
     max_examples: u64,
@@ -61,11 +65,25 @@ impl MainGenerationLoop {
         }
     }
 
-    fn loop_body(&mut self) -> StepResult {
-        self.generate_examples()?;
+    fn run_previous_examples(&mut self) -> Result<(), LoopExitReason>{
+        for v in self.database.fetch(&self.name) {
+            self.execute(DataSource::from_vec(bytes_to_u64s(&v)))?;
+        }
+        Ok(())
+    }
 
-        // At the start of this loop we can only have example in
+    fn loop_body(&mut self) -> StepResult {
+        self.run_previous_examples()?;
+
+        if self.interesting_examples == 0 {
+            self.generate_examples()?;
+        }
+
+        // At the start of this loop we usually only have one example in
         // self.minimized_examples, but as we shrink we may find other ones.
+        // Additionally, we may have multiple different failing examples from
+        // a previous run.
+        //
         // The reason why we loop is twofold:
         // a) This allows us to include newly discovered examples. Labels that
         //    are not found in self.minimized_examples at the beginning of the
@@ -125,10 +143,15 @@ impl MainGenerationLoop {
             Status::Interesting(n) => {
                 self.best_example = Some(result.clone());
                 let mut changed = false;
-                self.minimized_examples.entry(n).or_insert_with(|| {result.clone()}); 
-                self.minimized_examples.entry(n).and_modify(|e| {
+                let mut minimized_examples = &mut self.minimized_examples;
+                let mut database = &mut self.database;
+                let name = &self.name;
+
+                minimized_examples.entry(n).or_insert_with(|| {result.clone()}); 
+                minimized_examples.entry(n).and_modify(|e| {
                   if result < *e {
                     changed = true;
+                    database.delete(name, &u64s_to_bytes(&(*e.record)));
                     *e = result.clone()
                   }; 
                 });
@@ -136,6 +159,7 @@ impl MainGenerationLoop {
                   self.fully_minimized.remove(&n);
                 }
                 self.interesting_examples += 1;
+                database.save(&self.name, &u64s_to_bytes(result.record.as_slice()));
             }
         }
 
@@ -509,8 +533,6 @@ pub struct Engine {
     // this is set to Some(Finished(_)) it stays that way,
     // otherwise it is cleared on access.
     loop_response: Option<LoopCommand>,
-    name: String,
-    database: BoxedDatabase,
 
     state: EngineState,
 
@@ -526,12 +548,31 @@ impl Clone for Engine {
     }
 }
 
+fn bytes_to_u64s(bytes: &[u8]) -> Vec<u64>{
+    let mut reader = io::Cursor::new(bytes);
+    let mut result = Vec::new();
+    while let Ok(n) = reader.read_u64::<BigEndian>() {
+        result.push(n);
+    }
+    result
+}
+
+fn u64s_to_bytes(ints: &[u64]) -> Vec<u8>{
+    let mut result = Vec::new();
+    for n in ints {
+        result.write_u64::<BigEndian>(*n).unwrap();
+    }
+    result
+}
+
 impl Engine {
     pub fn new(name: String, max_examples: u64, seed: &[u32], db: BoxedDatabase) -> Engine {
         let (send_local, recv_remote) = sync_channel(1);
         let (send_remote, recv_local) = sync_channel(1);
 
         let main_loop = MainGenerationLoop {
+            database: db,
+            name: name,
             max_examples: max_examples,
             random: ChaChaRng::from_seed(seed),
             sender: send_remote,
@@ -552,8 +593,6 @@ impl Engine {
             .unwrap();
 
         Engine {
-            name: name,
-            database: db,
             loop_response: None,
             sender: send_local,
             receiver: recv_local,

@@ -170,14 +170,15 @@ module Hypothesis
   #
   # @param max_valid_test_cases [Integer] The maximum number of valid test
   #   cases to run without finding a failing test case before stopping.
-  def hypothesis(max_valid_test_cases: 200, &block)
+  def hypothesis(max_valid_test_cases: 200, database: nil, &block)
     unless World.current_engine.nil?
       raise UsageError, 'Cannot nest hypothesis calls'
     end
     begin
       World.current_engine = Engine.new(
-        self.hypothesis_stable_identifier,
-        max_examples: max_valid_test_cases
+        hypothesis_stable_identifier,
+        max_examples: max_valid_test_cases,
+        database: database
       )
       World.current_engine.run(&block)
     ensure

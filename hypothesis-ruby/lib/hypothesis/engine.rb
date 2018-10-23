@@ -7,6 +7,8 @@ require_relative '../hypothesis-ruby/native'
 require 'rspec/expectations'
 
 module Hypothesis
+  DEFAULT_DATABASE_PATH = File.join(Dir.pwd, '.hypothesis', 'examples')
+
   class Engine
     include RSpec::Matchers
 
@@ -16,17 +18,11 @@ module Hypothesis
     def initialize(name, options)
       seed = Random.rand(2**64 - 1)
 
-      begin
-        database = options.fetch(:database)
-      rescue KeyError
-        database = File.join(
-          Dir.pwd, '.hypothesis', 'examples'
-        )
-      end
+      database = options.fetch(:database, nil)
 
-      if database == false
-        database = nil
-      end
+      database = DEFAULT_DATABASE_PATH if database.nil?
+
+      database = nil if database == false
 
       @core_engine = HypothesisCoreEngine.new(
         name, database, seed, options.fetch(:max_examples)

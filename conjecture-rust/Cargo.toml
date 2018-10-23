@@ -15,6 +15,7 @@ license = "MPL-2.0"
 
 rand = '0.3'
 crypto-hash = '0.3.1'
+byteorder = '1.2'
 
 [dev-dependencies]
 tempdir = "0.3"

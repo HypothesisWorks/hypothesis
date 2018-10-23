@@ -8,7 +8,7 @@ use std::fmt::Debug;
 pub type Key = str;
 
 
-pub trait Database: Debug {
+pub trait Database: Debug + Send {
     fn save(&mut self, key: &Key, value: &[u8]) -> ();
     fn delete(&mut self, key: &Key, value: &[u8]) -> ();
     fn fetch(&mut self, key: &Key) -> Vec<Vec<u8>>;
