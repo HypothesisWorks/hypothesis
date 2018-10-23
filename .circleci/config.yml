@@ -9,12 +9,12 @@ jobs:
       - run: brew install readline xz ncurses
       - restore_cache:
          keys:
-           - v3-runtimes-
+           - v4-runtimes-
       - run: ./build.sh install-core
       - run: ./build.sh check-py27
       - run: ./build.sh check-py36
       - save_cache:
-          key: v3-runtimes-{{ epoch }}
+          key: v4-runtimes-{{ epoch }}
           paths:
             - ~/.cache/hypothesis-build-runtimes
             - ~/.cache/pip
