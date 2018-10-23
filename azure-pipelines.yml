@@ -1,0 +1,11 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+pool:
+  vmImage: 'Ubuntu 16.04'
+
+steps:
+- script: echo Replace this with a real pipeline
+  displayName: 'Starter pipeline'
