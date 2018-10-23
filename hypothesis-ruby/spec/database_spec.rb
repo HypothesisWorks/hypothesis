@@ -45,4 +45,23 @@ RSpec.describe 'database usage' do
       end
     end.to raise_exception(RSpec::Expectations::ExpectationNotMetError)
   end
+
+  it 'cleans out passing examples' do
+    expect do
+      hypothesis do
+        n = any integer
+        expect(n).to be < 10
+      end
+    end.to raise_exception(RSpec::Expectations::ExpectationNotMetError)
+
+    saved = Dir.glob("#{Hypothesis::DEFAULT_DATABASE_PATH}/*/*")
+    expect(saved.length).to be == 1
+
+    hypothesis do
+      any integer
+    end
+
+    saved = Dir.glob("#{Hypothesis::DEFAULT_DATABASE_PATH}/*/*")
+    expect(saved.length).to be == 0
+  end
 end

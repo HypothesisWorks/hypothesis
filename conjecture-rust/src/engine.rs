@@ -67,7 +67,18 @@ impl MainGenerationLoop {
 
     fn run_previous_examples(&mut self) -> Result<(), LoopExitReason>{
         for v in self.database.fetch(&self.name) {
-            self.execute(DataSource::from_vec(bytes_to_u64s(&v)))?;
+            let result = self.execute(DataSource::from_vec(bytes_to_u64s(&v)))?;
+            let should_delete = match &result.status {
+                Status::Interesting(_) => 
+                    u64s_to_bytes(&result.record) != v
+                ,
+                _ => true
+            };
+            if should_delete {
+                println!("Deleting!");
+                self.database.delete(&self.name, v.as_slice());
+            }
+
         }
         Ok(())
     }

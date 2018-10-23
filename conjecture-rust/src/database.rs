@@ -141,4 +141,13 @@ mod tests {
         assert!(results.len() == 1);
         assert!(results[0].as_slice() == b"bar");
     }
+
+    #[test]
+    fn can_delete_key() {
+        let mut db = TestDatabase::new();
+        db.save("foo", b"bar");
+        db.delete("foo", b"bar");
+        let results = db.fetch("foo");
+        assert!(results.len() == 0);
+    }
 }
