@@ -24,6 +24,7 @@ this module can be modified.
 from __future__ import division, print_function, absolute_import
 
 import os
+import inspect
 import warnings
 import threading
 import contextlib
@@ -223,6 +224,24 @@ class settings(
                 'settings objects can be called as a decorator with @given, '
                 'but test=%r' % (test,)
             )
+        if inspect.isclass(test):
+            from hypothesis.stateful import GenericStateMachine
+            if issubclass(test, GenericStateMachine):
+                attr_name = '_hypothesis_internal_settings_applied'
+                if getattr(test, attr_name, False):
+                    raise InvalidArgument(
+                        'Applying the @settings decorator twice would '
+                        'overwrite the first version; merge their arguments '
+                        'instead.'
+                    )
+                setattr(test, attr_name, True)
+                test.TestCase.settings = self
+                return test
+            else:
+                raise InvalidArgument(
+                    '@settings(...) can only be used as a decorator on '
+                    'functions, or on subclasses of GenericStateMachine.'
+                )
         if hasattr(test, '_hypothesis_internal_settings_applied'):
             note_deprecation(
                 '%s has already been decorated with a settings object, which '
@@ -615,7 +634,7 @@ class HealthCheck(Enum):
     def all(cls):
         # type: () -> List[HealthCheck]
         bad = (HealthCheck.exception_in_generation, HealthCheck.random_module)
-        return [h for h in list(cls) if h not in bad]
+        return [h for h in list(cls) if h not in bad]  # type: ignore
 
     exception_in_generation = 0
     """Deprecated and no longer does anything. It used to convert errors in

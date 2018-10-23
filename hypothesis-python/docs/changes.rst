@@ -21,6 +21,159 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.79.3:
+
+-------------------
+3.79.3 - 2018-10-23
+-------------------
+
+Traceback elision is now disabled on Python 2, to avoid an import-time
+:class:`python:SyntaxError` under Python < 2.7.9 (Python: :bpo:`21591`,
+:ref:`Hypothesis 3.79.2 <v3.79.2>`: :issue:`1648`).
+
+We encourage all users to `upgrade to Python 3 before the end of 2019
+<https://pythonclock.org/>`_.
+
+.. _v3.79.2:
+
+-------------------
+3.79.2 - 2018-10-23
+-------------------
+
+This patch shortens tracebacks from Hypothesis, so you can see exactly
+happened in your code without having to skip over irrelevant details
+about our internals (:issue:`848`).
+
+In the example test (see :pull:`1582`), this reduces tracebacks from
+nine frames to just three - and for a test with multiple errors, from
+seven frames per error to just one!
+
+If you *do* want to see the internal details, you can disable frame
+elision by setting :obj:`~hypothesis.settings.verbosity` to ``debug``.
+
+.. _v3.79.1:
+
+-------------------
+3.79.1 - 2018-10-22
+-------------------
+
+The abstract number classes :class:`~python:numbers.Number`,
+:class:`~python:numbers.Complex`, :class:`~python:numbers.Real`,
+:class:`~python:numbers.Rational`, and :class:`~python:numbers.Integral`
+are now supported by the :func:`~hypothesis.strategies.from_type`
+strategy.  Previously, you would have to use
+:func:`~hypothesis.strategies.register_type_strategy` before they
+could be resolved (:issue:`1636`)
+
+.. _v3.79.0:
+
+-------------------
+3.79.0 - 2018-10-18
+-------------------
+
+This release adds a CLI flag for verbosity ``--hypothesis-verbosity`` to
+the Hypothesis pytest plugin, applied after loading the profile specified by
+``--hypothesis-profile``. Valid options are the names of verbosity settings,
+quiet, normal, verbose or debug.
+
+Thanks to Bex Dunn for writing this patch at the PyCon Australia
+sprints!
+
+The pytest header now correctly reports the current profile if
+``--hypothesis-profile`` has been used.
+
+Thanks to Mathieu Paturel for the contribution at the Canberra Python
+Hacktoberfest.
+
+.. _v3.78.0:
+
+-------------------
+3.78.0 - 2018-10-16
+-------------------
+
+This release has deprecated the generation of integers, floats and fractions
+when the conversion of the upper and/ or lower bound is not 100% exact, e.g.
+when an integer gets passed a bound that is not a whole number. (:issue:`1625`)
+
+Thanks to Felix Grünewald for this patch during Hacktoberfest 2018.
+
+.. _v3.77.0:
+
+-------------------
+3.77.0 - 2018-10-16
+-------------------
+
+This minor release adds functionality to :obj:`~hypothesis.settings` allowing
+it to be used as a decorator on :obj:`~hypothesis.stateful.RuleBasedStateMachine`
+and :obj:`~hypothesis.stateful.GenericStateMachine`.
+
+Thanks to Tyler Nickerson for this feature in #hacktoberfest!
+
+.. _v3.76.1:
+
+-------------------
+3.76.1 - 2018-10-16
+-------------------
+
+This patch fixes some warnings added by recent releases of
+:pypi:`pydocstyle` and :pypi:`mypy`.
+
+.. _v3.76.0:
+
+-------------------
+3.76.0 - 2018-10-11
+-------------------
+
+This release deprecates using floats for ``min_size`` and ``max_size``.
+
+The type hint for ``average_size`` arguments has been changed from
+``Optional[int]`` to None, because non-None values are always ignored and
+deprecated.
+
+.. _v3.75.4:
+
+-------------------
+3.75.4 - 2018-10-10
+-------------------
+
+This patch adds more internal comments to the core engine's sequence-length
+shrinker. There should be no user-visible change.
+
+.. _v3.75.3:
+
+-------------------
+3.75.3 - 2018-10-09
+-------------------
+
+This patch adds additional comments to some of the core engine's internal
+data structures. There is no user-visible change.
+
+.. _v3.75.2:
+
+-------------------
+3.75.2 - 2018-10-09
+-------------------
+
+This patch avoids caching a trivial case, fixing :issue:`493`.
+
+.. _v3.75.1:
+
+-------------------
+3.75.1 - 2018-10-09
+-------------------
+
+This patch fixes a broken link in a docstring.
+Thanks to Benjamin Lee for this contribution!
+
+.. _v3.75.0:
+
+-------------------
+3.75.0 - 2018-10-08
+-------------------
+
+This release deprecates  the use of ``min_size=None``, setting the default
+``min_size`` to 0 (:issue: `1618`).
+
 .. _v3.74.3:
 
 -------------------

@@ -100,7 +100,7 @@ First we need to define a strategy for Node:
   NodeStrategy = s.builds(
     Node,
     s.integers(),
-    s.lists(s.booleans(), average_size=5, max_size=10))
+    s.lists(s.booleans(), max_size=10))
 
 We want to generate *short* lists of values so that there's a decent chance of
 one being a prefix of the other (this is also why the choice of bool as the

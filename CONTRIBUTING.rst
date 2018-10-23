@@ -188,6 +188,8 @@ their individual contributions.
 * `Alex Stapleton <https://www.github.com/public>`_
 * `Alex Willmer <https://github.com/moreati>`_ (alex@moreati.org.uk)
 * `Ben Peterson <https://github.com/killthrush>`_ (killthrush@hotmail.com)
+* `Benjamin Lee <https://github.com/Benjamin-Lee>`_ (benjamindlee@me.com)
+* `Bex Dunn <https://github.com/BexDunn>`_ (bex.dunn@gmail.com)
 * `Bill Tucker <https://github.com/imbilltucker>`_ (imbilltucker@gmail.com)
 * `Buck Evan, copyright Google LLC <https://github.com/bukzor>`_
 * `Cameron McGill <https://www.github.com/Cameron-JM>`_
@@ -204,6 +206,7 @@ their individual contributions.
 * `Derek Gustafson <https://www.github.com/degustaf>`_
 * `Dion Misic <https://www.github.com/kingdion>`_ (dion.misic@gmail.com)
 * `Emmanuel Leblond <https://www.github.com/touilleMan>`_
+* `Felix Grünewald <https://www.github.com/fgruen>`_
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
 * `Gary Donovan <https://www.github.com/garyd203>`_
@@ -222,11 +225,13 @@ their individual contributions.
 * `kbara <https://www.github.com/kbara>`_
 * `Kyle Reeve <https://www.github.com/kreeve>`_ (krzw92@gmail.com)
 * `Lee Begg <https://www.github.com/llnz2>`_
+* `Lisa Goeller <https://www.github.com/lgoeller>`_
 * `Louis Taylor <https://github.com/kragniz>`_
 * `Luke Barone-Adesi <https://github.com/baluke>`_
 * `marekventur <https://www.github.com/marekventur>`_
 * `Marius Gedminas <https://www.github.com/mgedmin>`_ (marius@gedmin.as)
 * `Markus Unterwaditzer <http://github.com/untitaker/>`_ (markus@unterwaditzer.net)
+* `Mathieu Paturel <http://github.com/math2001>`_ (mathieu.paturel@gmail.com)
 * `Matt Bachmann <https://www.github.com/bachmann1234>`_ (bachmann.matt@gmail.com)
 * `Max Nordlund <https://www.github.com/maxnordlund>`_ (max.nordlund@gmail.com)
 * `Maxim Kulkin <https://www.github.com/maximkulkin>`_ (maxim.kulkin@gmail.com)
@@ -245,6 +250,7 @@ their individual contributions.
 * `Tessa Bradbury <https://www.github.com/tessereth>`_
 * `Tim Martin <https://www.github.com/timmartin>`_ (tim@asymptotic.co.uk)
 * `Tom McDermott <https://www.github.com/sponster-au>`_ (sponster@gmail.com)
+* `Tyler Nickerson <https://www.github.com/nmbrgts>`_
 * `Vidya Rani <https://www.github.com/vidyarani-dg>`_ (vidyarani.d.g@gmail.com)
 * `Will Hall <https://www.github.com/wrhall>`_ (wrsh07@gmail.com)
 * `Will Thompson <https://www.github.com/wjt>`_ (will@willthompson.co.uk)

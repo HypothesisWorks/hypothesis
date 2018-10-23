@@ -19,10 +19,12 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
+import traceback
+from inspect import getframeinfo
 
 import hypothesis
 from hypothesis.errors import StopTest, DeadlineExceeded, \
-    HypothesisException, UnsatisfiedAssumption
+    MultipleFailures, HypothesisException, UnsatisfiedAssumption
 from hypothesis.internal.compat import text_type, binary_type, \
     encoded_filepath
 
@@ -72,9 +74,30 @@ def escalate_hypothesis_internal_error():
     error_type, e, tb = sys.exc_info()
     if getattr(e, 'hypothesis_internal_always_escalate', False):
         raise
-    import traceback
     filepath = traceback.extract_tb(tb)[-1][0]
     if is_hypothesis_file(filepath) and not isinstance(
         e, (HypothesisException,) + HYPOTHESIS_CONTROL_EXCEPTIONS,
     ):
         raise
+
+
+def get_trimmed_traceback():
+    """Return the current traceback, minus any frames added by Hypothesis."""
+    error_type, _, tb = sys.exc_info()
+    if all([
+        # If verbosity is debug, leave the full traceback as-is
+        hypothesis.settings.default.verbosity < hypothesis.Verbosity.debug,
+        # If it's raised from inside Hypothesis and *not* MultipleFailures,
+        # it's probably an internal bug - so don't destroy the evidence!
+        (isinstance(error_type, MultipleFailures) or not
+         is_hypothesis_file(traceback.extract_tb(tb)[-1][0]))
+    ]):
+        while tb is not None and (
+            # If the frame is from one of our files, it's ours.
+            is_hypothesis_file(getframeinfo(tb.tb_frame)[0]) or
+            # But our `@proxies` decorator overrides the source location,
+            # so we check for an attribute it injects into the frame too.
+            tb.tb_frame.f_globals.get('__hypothesistracebackhide__') is True
+        ):
+            tb = tb.tb_next
+    return tb

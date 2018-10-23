@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import core, settings
+from hypothesis import Verbosity, core, settings
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
 from hypothesis.statistics import collector
@@ -27,6 +27,7 @@ from hypothesis.internal.compat import OrderedDict, text_type
 from hypothesis.internal.detection import is_hypothesis_test
 
 LOAD_PROFILE_OPTION = '--hypothesis-profile'
+VERBOSITY_OPTION = '--hypothesis-verbosity'
 PRINT_STATISTICS_OPTION = '--hypothesis-show-statistics'
 SEED_OPTION = '--hypothesis-seed'
 
@@ -53,6 +54,12 @@ def pytest_addoption(parser):
         help='Load in a registered hypothesis.settings profile'
     )
     group.addoption(
+        VERBOSITY_OPTION,
+        action='store',
+        choices=[opt.name for opt in Verbosity],
+        help='Override profile with verbosity setting specified'
+    )
+    group.addoption(
         PRINT_STATISTICS_OPTION,
         action='store_true',
         help='Configure when statistics are printed',
@@ -68,7 +75,7 @@ def pytest_addoption(parser):
 def pytest_report_header(config):
     profile = config.getoption(LOAD_PROFILE_OPTION)
     if not profile:
-        profile = 'default'
+        profile = settings._current_profile
     settings_str = settings.get_profile(profile).show_changed()
     if settings_str != '':
         settings_str = ' -> %s' % (settings_str)
@@ -80,6 +87,16 @@ def pytest_configure(config):
     profile = config.getoption(LOAD_PROFILE_OPTION)
     if profile:
         settings.load_profile(profile)
+    verbosity_name = config.getoption(VERBOSITY_OPTION)
+    if verbosity_name:
+        verbosity_value = Verbosity[verbosity_name]
+        profile_name = '%s-with-%s-verbosity' % (
+            settings._current_profile, verbosity_name
+        )
+        # register_profile creates a new profile, exactly like the current one,
+        # with the extra values given (in this case 'verbosity')
+        settings.register_profile(profile_name, verbosity=verbosity_value)
+        settings.load_profile(profile_name)
     seed = config.getoption(SEED_OPTION)
     if seed is not None:
         try:

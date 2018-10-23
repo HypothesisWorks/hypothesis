@@ -22,7 +22,6 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import ast
-import sys
 import zlib
 import base64
 import random as rnd_module
@@ -49,12 +48,12 @@ from hypothesis._settings import local_settings, note_deprecation
 from hypothesis.executors import new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
-from hypothesis.internal.compat import ceil, hbytes, qualname, \
+from hypothesis.internal.compat import PY2, ceil, hbytes, qualname, \
     binary_type, str_to_bytes, benchmark_time, get_type_hints, \
     getfullargspec, int_from_bytes, bad_django_TestCase
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.utils.conventions import infer, not_set
-from hypothesis.internal.escalation import \
+from hypothesis.internal.escalation import get_trimmed_traceback, \
     escalate_hypothesis_internal_error
 from hypothesis.internal.reflection import is_mock, proxies, nicerepr, \
     arg_string, impersonate, function_digest, fully_qualified_name, \
@@ -65,6 +64,7 @@ from hypothesis.internal.conjecture.data import StopTest, ConjectureData
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.internal.conjecture.engine import ExitReason, \
     ConjectureRunner, sort_key
+from hypothesis.searchstrategy.collections import TupleStrategy
 
 if False:
     from typing import (  # noqa
@@ -341,12 +341,15 @@ def process_arguments_to_given(
 
     arguments = tuple(arguments)
 
-    search_strategy = st.tuples(
+    # We use TupleStrategy over tuples() here to avoid polluting
+    # st.STRATEGY_CACHE with references (see #493), and because this is
+    # trivial anyway if the fixed_dictionaries strategy is cacheable.
+    search_strategy = TupleStrategy((
         st.just(arguments),
         st.fixed_dictionaries(generator_kwargs).map(
             lambda args: dict(args, **kwargs)
         )
-    )
+    ))
 
     if selfy is not None:
         search_strategy = WithRunner(search_strategy, selfy)
@@ -557,7 +560,6 @@ class StateForActualGivenExecution(object):
                     'Tests run under @given should return None, but '
                     '%s returned %r instead.'
                 ) % (self.test.__name__, result), HealthCheck.return_value)
-            return False
         except UnsatisfiedAssumption:
             data.mark_invalid()
         except (
@@ -567,16 +569,17 @@ class StateForActualGivenExecution(object):
             raise
         except Exception as e:
             escalate_hypothesis_internal_error()
-            data.__expected_traceback = traceback.format_exc()
+            tb = get_trimmed_traceback()
+            data.__expected_traceback = ''.join(
+                traceback.format_exception(type(e), e, tb)
+            )
             data.__expected_exception = e
             verbose_report(data.__expected_traceback)
-
-            error_class, _, tb = sys.exc_info()
 
             origin = traceback.extract_tb(tb)[-1]
             filename = origin[0]
             lineno = origin[1]
-            data.mark_interesting((error_class, filename, lineno))
+            data.mark_interesting((type(e), filename, lineno))
 
     def run(self):
         # Tell pytest to omit the body of this function from tracebacks
@@ -668,10 +671,11 @@ class StateForActualGivenExecution(object):
                     'Unreliable assumption: An example which satisfied '
                     'assumptions on the first run now fails it.'
                 )
-            except BaseException:
+            except BaseException as e:
                 if len(self.falsifying_examples) <= 1:
                     raise
-                report(traceback.format_exc())
+                tb = get_trimmed_traceback()
+                report(''.join(traceback.format_exception(type(e), e, tb)))
             finally:  # pragma: no cover
                 # This section is in fact entirely covered by the tests in
                 # test_reproduce_failure, but it seems to trigger a lovely set
@@ -918,11 +922,11 @@ def given(
                         setattr(runner, 'subTest', subTest)
                 else:
                     state.run()
-            except BaseException:
+            except BaseException as e:
                 generated_seed = \
                     wrapped_test._hypothesis_internal_use_generated_seed
-                if generated_seed is not None and not state.failed_normally:
-                    with local_settings(settings):
+                with local_settings(settings):
+                    if not (state.failed_normally or generated_seed is None):
                         if running_under_pytest:
                             report(
                                 'You can add @seed(%(seed)d) to this test or '
@@ -933,7 +937,27 @@ def given(
                             report(
                                 'You can add @seed(%d) to this test to '
                                 'reproduce this failure.' % (generated_seed,))
-                raise
+                    # The dance here is to avoid showing users long tracebacks
+                    # full of Hypothesis internals they don't care about.
+                    # We have to do this inline, to avoid adding another
+                    # internal stack frame just when we've removed the rest.
+                    if PY2:
+                        # Python 2 doesn't have Exception.with_traceback(...);
+                        # instead it has a three-argument form of the `raise`
+                        # statement.  Unfortunately this is a SyntaxError on
+                        # Python 3, and before Python 2.7.9 it was *also* a
+                        # SyntaxError to use it in a nested function so we
+                        # can't `exec` or `eval` our way out (BPO-21591).
+                        # So unless we break some versions of Python 2, none
+                        # of them get traceback elision.
+                        raise
+                    # On Python 3, we swap out the real traceback for our
+                    # trimmed version.  Using a variable ensures that the line
+                    # which will actually appear in trackbacks is as clear as
+                    # possible - "raise the_error_hypothesis_found".
+                    the_error_hypothesis_found = \
+                        e.with_traceback(get_trimmed_traceback())
+                    raise the_error_hypothesis_found
 
         for attrib in dir(test):
             if not (attrib.startswith('_') or hasattr(wrapped_test, attrib)):

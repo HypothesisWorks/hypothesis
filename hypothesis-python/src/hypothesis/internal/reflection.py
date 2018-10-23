@@ -544,6 +544,7 @@ def impersonate(target):
         f.__name__ = target.__name__
         f.__module__ = target.__module__
         f.__doc__ = target.__doc__
+        f.__globals__['__hypothesistracebackhide__'] = True
         return f
     return accept
 

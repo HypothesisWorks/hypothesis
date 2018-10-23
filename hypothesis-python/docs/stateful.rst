@@ -44,7 +44,7 @@ Rule based state machines are the ones you're most likely to want to use.
 They're significantly more user friendly and should be good enough for most
 things you'd want to do.
 
-The two main ingredients of a rule based state machine are rules and bundles.
+.. autoclass:: hypothesis.stateful.RuleBasedStateMachine
 
 A rule is very similar to a normal ``@given`` based test in that it takes
 values drawn from strategies and passes them to a user defined test function.
@@ -164,7 +164,7 @@ fewer examples with larger programs you could change the settings to:
 
 .. code:: python
 
-  DatabaseComparison.settings = settings(max_examples=50, stateful_step_count=100)
+  DatabaseComparison.TestCase.settings = settings(max_examples=50, stateful_step_count=100)
 
 Which doubles the number of steps each program runs and halves the number of
 test cases that will be run.

@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import io
 import uuid
 import decimal
+import numbers
 import datetime
 import fractions
 import functools
@@ -150,6 +151,11 @@ _global_type_lookup = {
     type(NotImplemented): st.just(NotImplemented),
     bytearray: st.binary().map(bytearray),
     memoryview: st.binary().map(memoryview),
+    numbers.Real: st.floats(),
+    numbers.Rational: st.fractions(),
+    numbers.Number: st.complex_numbers(),
+    numbers.Integral: st.integers(),
+    numbers.Complex: st.complex_numbers(),
     # Pull requests with more types welcome!
 }
 
@@ -187,8 +193,8 @@ else:
         typing.Reversible: st.lists(st.integers()),
         typing.SupportsAbs: st.complex_numbers(),
         typing.SupportsComplex: st.complex_numbers(),
-        typing.SupportsFloat: st.complex_numbers(),
-        typing.SupportsInt: st.complex_numbers(),
+        typing.SupportsFloat: st.floats(),
+        typing.SupportsInt: st.floats(),
     })
 
     try:

@@ -54,7 +54,7 @@ def builds_ignoring_invalid(target, *args, **kwargs):
 
 
 size_strategies = dict(
-    min_size=st.integers(min_value=0, max_value=100) | st.none(),
+    min_size=st.integers(min_value=0, max_value=100),
     max_size=st.integers(min_value=0, max_value=100) | st.none(),
 )
 
