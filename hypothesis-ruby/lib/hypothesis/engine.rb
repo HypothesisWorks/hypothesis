@@ -13,10 +13,10 @@ module Hypothesis
     attr_reader :current_source
     attr_accessor :is_find
 
-    def initialize(options)
+    def initialize(name, options)
       seed = Random.rand(2**64 - 1)
       @core_engine = HypothesisCoreEngine.new(
-        seed, options.fetch(:max_examples)
+        name, seed, options.fetch(:max_examples)
       )
 
       @exceptions_to_tags = Hash.new { |h, k| h[k] = h.size }

@@ -176,6 +176,7 @@ module Hypothesis
     end
     begin
       World.current_engine = Engine.new(
+        self.hypothesis_stable_identifier,
         max_examples: max_valid_test_cases
       )
       World.current_engine.run(&block)

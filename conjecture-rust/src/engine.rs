@@ -508,6 +508,7 @@ pub struct Engine {
     // this is set to Some(Finished(_)) it stays that way,
     // otherwise it is cleared on access.
     loop_response: Option<LoopCommand>,
+    name: String,
 
     state: EngineState,
 
@@ -524,7 +525,7 @@ impl Clone for Engine {
 }
 
 impl Engine {
-    pub fn new(max_examples: u64, seed: &[u32]) -> Engine {
+    pub fn new(name: String, max_examples: u64, seed: &[u32]) -> Engine {
         let (send_local, recv_remote) = sync_channel(1);
         let (send_remote, recv_local) = sync_channel(1);
 
@@ -549,6 +550,7 @@ impl Engine {
             .unwrap();
 
         Engine {
+            name: name,
             loop_response: None,
             sender: send_local,
             receiver: recv_local,
@@ -690,7 +692,7 @@ mod tests {
   fn run_to_results<F>(mut f: F) -> Vec<TestResult>
     where F: FnMut(&mut DataSource) -> Result<Status, FailedDraw> {
     let seed: [u32; 2] = [0, 0];
-    let mut engine = Engine::new(1000, &seed);
+    let mut engine = Engine::new("run_to_results".to_string(), 1000, &seed);
     while let Some(mut source) = engine.next_source() {
       if let Ok(status) = f(&mut source) {
         engine.mark_finished(source, status);

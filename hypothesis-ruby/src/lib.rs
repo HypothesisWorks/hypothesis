@@ -49,11 +49,11 @@ ruby! {
       interesting_examples: Vec<TestResult>,
     }
 
-    def initialize(helix, seed: u64, max_examples: u64){
+    def initialize(helix, name: String, seed: u64, max_examples: u64){
       let xs: [u32; 2] = [seed as u32, (seed >> 32) as u32];
       HypothesisCoreEngine{
         helix,
-        engine: Engine::new(max_examples, &xs),
+        engine: Engine::new(name, max_examples, &xs),
         pending: None,
         interesting_examples: Vec::new(),
       }
