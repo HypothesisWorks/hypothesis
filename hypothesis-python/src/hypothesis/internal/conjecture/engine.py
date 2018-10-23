@@ -166,7 +166,7 @@ class ConjectureRunner(object):
         except StopTest as e:
             if e.testcounter != data.testcounter:
                 self.save_buffer(data.buffer)
-                raise e
+                raise
         except BaseException:
             self.save_buffer(data.buffer)
             raise
