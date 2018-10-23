@@ -32,6 +32,7 @@ from functools import reduce
 
 import attr
 
+from hypothesis.types import RandomWithSeed
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.control import note, assume, reject, cleanup, \
     current_build_context
@@ -54,7 +55,7 @@ from hypothesis.internal.validation import check_type, try_convert, \
     check_valid_integer, check_valid_interval, check_valid_magnitude
 from hypothesis.searchstrategy.lazy import LazyStrategy
 from hypothesis.searchstrategy.misc import BoolStrategy, JustStrategy, \
-    RandomStrategy, SampledFromStrategy
+    SampledFromStrategy
 from hypothesis.searchstrategy.shared import SharedStrategy
 from hypothesis.searchstrategy.numbers import FloatStrategy, \
     BoundedIntStrategy, IntegersFromStrategy, WideRangeIntStrategy, \
@@ -87,7 +88,6 @@ except ImportError:
 
 if False:
     from types import ModuleType  # noqa
-    from random import Random  # noqa
     from typing import Any, Dict, Union, Sequence, Callable, Pattern  # noqa
     from typing import TypeVar, Tuple, List, Set, FrozenSet, overload  # noqa
     from typing import Type, Text, AnyStr, Optional  # noqa
@@ -1104,13 +1104,13 @@ def binary(
 @cacheable
 @defines_strategy
 def randoms():
-    # type: () -> SearchStrategy[Random]
+    # type: () -> SearchStrategy[random.Random]
     """Generates instances of Random (actually a Hypothesis specific
     RandomWithSeed class which displays what it was initially seeded with)
 
     Examples from this strategy shrink to seeds closer to zero.
     """
-    return RandomStrategy(integers())
+    return integers().map(RandomWithSeed)
 
 
 class RandomSeeder(object):
