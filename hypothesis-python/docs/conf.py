@@ -107,6 +107,7 @@ extlinks = {
     'issue': (_repo + 'issues/%s', 'issue #'),
     'pull': (_repo + 'pull/%s', 'pull request #'),
     'pypi': ('https://pypi.org/project/%s', ''),
+    'bpo': ('https://bugs.python.org/issue%s', 'bpo-'),
 }
 
 # -- Options for HTML output ----------------------------------------------
