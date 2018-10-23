@@ -944,11 +944,13 @@ def given(
                     if PY2:
                         # Python 2 doesn't have Exception.with_traceback(...);
                         # instead it has a three-argument form of the `raise`
-                        # statement.  Which is a SyntaxError on Python 3.
-                        exec(
-                            'raise type(e), e, get_trimmed_traceback()',
-                            globals(), locals()
-                        )
+                        # statement.  Unfortunately this is a SyntaxError on
+                        # Python 3, and before Python 2.7.9 it was *also* a
+                        # SyntaxError to use it in a nested function so we
+                        # can't `exec` or `eval` our way out (BPO-21591).
+                        # So unless we break some versions of Python 2, none
+                        # of them get traceback elision.
+                        raise
                     # On Python 3, we swap out the real traceback for our
                     # trimmed version.  Using a variable ensures that the line
                     # which will actually appear in trackbacks is as clear as

@@ -17,14 +17,11 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
-import traceback
-
 import pytest
 
 import hypothesis.strategies as st
 import hypothesis.internal.escalation as esc
-from hypothesis import Verbosity, given, settings
+from hypothesis import given
 
 
 def test_does_not_escalate_errors_in_non_hypothesis_file():
@@ -69,22 +66,3 @@ def test_immediately_escalates_errors_in_generation():
         test()
 
     assert count == [1]
-
-
-@pytest.mark.parametrize('verbosity', [Verbosity.normal, Verbosity.debug])
-def test_tracebacks_omit_hypothesis_internals(verbosity):
-    @settings(verbosity=verbosity)
-    @given(st.none())
-    def simplest_failure(x):
-        assert x
-
-    try:
-        simplest_failure()
-    except AssertionError:
-        tb = traceback.extract_tb(sys.exc_info()[2])
-        # Unless in debug mode, Hypothesis adds 1 frame - the least possible!
-        # (4 frames: this one, simplest_failure, internal frame, assert False)
-        if verbosity < Verbosity.debug:
-            assert len(tb) == 4
-        else:
-            assert len(tb) >= 5
