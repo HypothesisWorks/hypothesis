@@ -290,7 +290,7 @@ def one_of(*args):
     strategies.
 
     This may be called with one iterable argument instead of multiple
-    strategy arguments. In which case ``one_of(x)`` and ``one_of(*x)`` are
+    strategy arguments, in which case ``one_of(x)`` and ``one_of(*x)`` are
     equivalent.
 
     Examples from this strategy will generally shrink to ones that come from
@@ -380,7 +380,7 @@ def integers(min_value=None, max_value=None):
 @defines_strategy
 def booleans():
     # type: () -> SearchStrategy[bool]
-    """Returns a strategy which generates instances of bool.
+    """Returns a strategy which generates instances of :class:`python:bool`.
 
     Examples from this strategy will shrink towards False (i.e.
     shrinking will try to replace True with False where possible).
@@ -415,7 +415,7 @@ def floats(
     Passing ``width=32`` will still use the builtin 64-bit ``float`` class,
     but always for values which can be exactly represented as a 32-bit float.
     Half-precision floats (``width=16``) are only supported on Python 3.6, or
-    if Numpy is installed.
+    if :pypi:`Numpy` is installed.
 
     Examples from this strategy have a complicated and hard to explain
     shrinking behaviour, but it tries to improve "human readability". Finite
@@ -1105,8 +1105,8 @@ def binary(
 @defines_strategy
 def randoms():
     # type: () -> SearchStrategy[random.Random]
-    """Generates instances of Random (actually a Hypothesis specific
-    RandomWithSeed class which displays what it was initially seeded with)
+    """Generates instances of ``random.Random``, tweaked to show the seed value
+    in the repr for reproducibility.
 
     Examples from this strategy shrink to seeds closer to zero.
     """
@@ -1135,15 +1135,15 @@ class RandomModule(SearchStrategy):
 @cacheable
 @defines_strategy
 def random_module():
-    """If your code depends on the global random module then you need to use
-    this.
+    """The Hypothesis engine handles PRNG state for the stdlib and Numpy random
+    modules internally, always seeding them to zero and restoring the previous
+    state after the test.
 
-    It will explicitly seed the random module at the start of your test
-    so that tests are reproducible. The value it passes you is an opaque
-    object whose only useful feature is that its repr displays the
-    random seed. It is not itself a random number generator. If you want
-    a random number generator you should use the randoms() strategy
-    which will give you one.
+    If having a fixed seed would unacceptably weaken your tests, and you
+    cannot use a ``random.Random`` instance provided by
+    `:func:`~hypothesis.strategies.randoms`, this strategy calls
+    :func:`python:random.seed` with an arbitrary integer and passes you
+    an opaque object whose repr displays the seed value for debugging.
 
     Examples from these strategy shrink to seeds closer to zero.
     """
