@@ -16,6 +16,7 @@ use conjecture::data::{DataSource, Status, TestResult};
 use conjecture::distributions::Repeat;
 use conjecture::distributions;
 use conjecture::engine::Engine;
+use conjecture::database::{BoxedDatabase, NoDatabase, DirectoryDatabase};
 
 ruby! {
   class HypothesisCoreDataSource {
@@ -49,11 +50,16 @@ ruby! {
       interesting_examples: Vec<TestResult>,
     }
 
-    def initialize(helix, seed: u64, max_examples: u64){
+    def initialize(helix, name: String, database_path: Option<String>, seed: u64, max_examples: u64){
       let xs: [u32; 2] = [seed as u32, (seed >> 32) as u32];
+      let db: BoxedDatabase = match database_path {
+        None => Box::new(NoDatabase),
+        Some(path) => Box::new(DirectoryDatabase::new(path)),
+      };
+
       HypothesisCoreEngine{
         helix,
-        engine: Engine::new(max_examples, &xs),
+        engine: Engine::new(name, max_examples, &xs, db),
         pending: None,
         interesting_examples: Vec::new(),
       }

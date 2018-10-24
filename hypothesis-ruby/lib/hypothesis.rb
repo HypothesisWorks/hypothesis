@@ -140,11 +140,20 @@ module Hypothesis
   #
   # A call to hypothesis does the following:
   #
-  # 1. It tries to *generate* a failing test case.
-  # 2. If it succeeded then it will *shrink* that failing test case.
-  # 3. Finally, it will *display* the shrunk failing test case by
+  # 1. It first tries to *reuse* failing test cases for previous runs.
+  # 2. If there were no previous failing test cases then it tries to
+  #    *generate* new failing test cases.
+  # 3. If either of the first two phases found failing test cases then
+  #    it will *shrink* those failing test cases.
+  # 4. Finally, it will *display* the shrunk failing test case by
   #    the error from its failing assertion, modified to show the
   #    givens of the test case.
+  #
+  # Reuse uses an internal representation of the test case, so examples
+  # from previous runs will obey all of the usual invariants of generation.
+  # However, this means that if you change your test then reuse may not
+  # work. Test cases that have become invalid or passing will be cleaned
+  # up automatically.
   #
   # Generation consists of randomly trying test cases until one of
   # three things has happened:
@@ -170,13 +179,20 @@ module Hypothesis
   #
   # @param max_valid_test_cases [Integer] The maximum number of valid test
   #   cases to run without finding a failing test case before stopping.
-  def hypothesis(max_valid_test_cases: 200, &block)
+  #
+  # @param database [String, nil, false] A path to a directory where Hypothesis
+  #   should store previously failing test cases. If it is nil, Hypothesis
+  #   will use a default of .hypothesis/examples in the current directory.
+  #   May also be set to false to disable the database functionality.
+  def hypothesis(max_valid_test_cases: 200, database: nil, &block)
     unless World.current_engine.nil?
       raise UsageError, 'Cannot nest hypothesis calls'
     end
     begin
       World.current_engine = Engine.new(
-        max_examples: max_valid_test_cases
+        hypothesis_stable_identifier,
+        max_examples: max_valid_test_cases,
+        database: database
       )
       World.current_engine.run(&block)
     ensure

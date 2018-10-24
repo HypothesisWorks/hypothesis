@@ -63,7 +63,7 @@ module Hypothesis
       end
       begin
         Hypothesis::World.current_engine = Hypothesis::Engine.new(
-          max_examples: options.fetch(:max_examples, 1000)
+          'find', max_examples: options.fetch(:max_examples, 1000)
         )
         Hypothesis::World.current_engine.is_find = true
         Hypothesis::World.current_engine.run(&block)
@@ -111,4 +111,8 @@ RSpec.configure do |config|
 
   config.include(Hypothesis)
   config.include(Hypothesis::Possibilities)
+
+  config.before(:each) do
+    FileUtils.rm_rf Hypothesis::DEFAULT_DATABASE_PATH
+  end
 end
