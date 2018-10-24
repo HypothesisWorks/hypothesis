@@ -291,10 +291,10 @@ A useful trick that some of the shrink passes use is to try a thing and if it
 doesn't work take a look at what the test function did to guess *why* it didn't
 work and try to repair that.
 
-Two example such passes are ``zero_draws`` and the various passes that try to
+Two example such passes are ``zero_examples`` and the various passes that try to
 minimize individual blocks lexicographically.
 
-What happens in ``zero_draws`` is that we try replacing the region corresponding
+What happens in ``zero_examples`` is that we try replacing the region corresponding
 to a draw with all zero bytes. If that doesn't work, we check if that was because
 of changing the size of the example (e.g. doing that with a list will make the
 list much shorter) and messing up the byte stream after that point. If this

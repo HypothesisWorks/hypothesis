@@ -254,4 +254,5 @@ their individual contributions.
 * `Vidya Rani <https://www.github.com/vidyarani-dg>`_ (vidyarani.d.g@gmail.com)
 * `Will Hall <https://www.github.com/wrhall>`_ (wrsh07@gmail.com)
 * `Will Thompson <https://www.github.com/wjt>`_ (will@willthompson.co.uk)
+* `Wilfred Hughes <https://www.github.com/wilfred>`_
 * `Zac Hatfield-Dodds <https://www.github.com/Zac-HD>`_ (zac.hatfield.dodds@gmail.com)
