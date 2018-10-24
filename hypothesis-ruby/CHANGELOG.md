@@ -1,3 +1,9 @@
+# Hypothesis for Ruby 0.2.0 (2018-10-24)
+
+This release adds an example database to Hypothesis for Ruby. This means that when a test fails,
+it will automatically reuse the previously shown example when you rerun it, without having to
+manually pass a seed.
+
 # Hypothesis for Ruby 0.1.2 (2018-09-24)
 
 This release makes the code useable via a direct require.
