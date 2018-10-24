@@ -1,3 +1,8 @@
+# Conjecture for Rust 0.4.0 (2018-10-24)
+
+This release extends Conjecture for Rust with support for saving examples it discovers on disk in an example database,
+in line with Hypothesis for Python's existing functionality for this.
+
 # Conjecture for Rust 0.3.0 (2018-07-16)
 
 This release adds support for annotating interesting examples
