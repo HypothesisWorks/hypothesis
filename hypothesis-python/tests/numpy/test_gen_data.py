@@ -316,14 +316,29 @@ def test_overflowing_integers_are_deprecated(fill, data):
 
 
 @pytest.mark.parametrize('fill', [False, True])
+@pytest.mark.parametrize('dtype,strat', [
+    ('float16', st.floats(min_value=65520, allow_infinity=False)),
+    ('complex64', st.complex_numbers(10**300, allow_infinity=False)),
+    ('U1', st.text(min_size=2, max_size=2)),
+    ('S1', st.binary(min_size=2, max_size=2)),
+])
 @checks_deprecated_behaviour
-@given(st.data())
-def test_overflowing_floats_are_deprecated(fill, data):
-    kw = dict(elements=st.floats(min_value=65520, allow_infinity=False))
+@given(data=st.data())
+def test_unrepresentable_elements_are_deprecated(fill, dtype, strat, data):
     if fill:
-        kw = dict(elements=st.nothing(), fill=kw['elements'])
-    arr = data.draw(nps.arrays(dtype='float16', shape=(1,), **kw))
-    assert np.isinf(arr[0])
+        kw = dict(elements=st.nothing(), fill=strat)
+    else:
+        kw = dict(elements=strat)
+    arr = data.draw(nps.arrays(dtype=dtype, shape=(1,), **kw))
+    try:
+        # This is a float or complex number, and has overflowed to infinity,
+        # triggering our deprecation for overflow.
+        assert np.isinf(arr[0])
+    except TypeError:
+        # We tried to call isinf on a string.  The string was generated at
+        # length two, then truncated by the dtype of size 1 - deprecation
+        # again.  If the first character was \0 it is now the empty string.
+        assert len(arr[0]) <= 1
 
 
 @given(nps.arrays(dtype='float16', shape=(1,)))
