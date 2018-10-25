@@ -159,3 +159,17 @@ class EmptyEnum(enum.Enum):
 
 def test_error_if_enum_is_empty():
     assert st.from_type(EmptyEnum).is_empty
+
+
+class BrokenClass(object):
+    __init__ = 'Hello!'
+
+
+def test_uninspectable_builds():
+    with pytest.raises(InvalidArgument):
+        st.builds(BrokenClass).example()
+
+
+def test_uninspectable_from_type():
+    with pytest.raises(InvalidArgument):
+        st.from_type(BrokenClass).example()
