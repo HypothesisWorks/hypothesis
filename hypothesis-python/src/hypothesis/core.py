@@ -567,7 +567,7 @@ class StateForActualGivenExecution(object):
             StopTest,
         ) + EXCEPTIONS_TO_RERAISE:
             raise
-        except Exception as e:
+        except EXCEPTIONS_TO_FAIL as e:
             escalate_hypothesis_internal_error()
             tb = get_trimmed_traceback()
             data.__expected_traceback = ''.join(
