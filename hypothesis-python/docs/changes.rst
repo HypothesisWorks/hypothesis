@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.79.4:
+
+-------------------
+3.79.4 - 2018-10-25
+-------------------
+
+Tests using :func:`@given <hypothesis.given>` now shrink errors raised from
+:pypi:`pytest` helper functions, instead of reporting the first example found.
+
+This was previously fixed in :ref:`version 3.56.0 <v3.56.0>`, but only for
+stateful testing.
+
 .. _v3.79.3:
 
 -------------------
