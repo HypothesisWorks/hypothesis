@@ -91,6 +91,13 @@ class ParentUnknownType(object):
     pass
 
 
+def test_can_resolve_trivial_types():
+    # Under Python 2, this inherits a special wrapper_descriptor slots
+    # thing from object.__init__, which chokes inspect.getargspec.
+    # from_type should and does work anyway; see issues #1655 and #1656.
+    st.from_type(ParentUnknownType).example()
+
+
 class UnknownType(ParentUnknownType):
     def __init__(self, arg):
         pass
@@ -166,10 +173,10 @@ class BrokenClass(object):
 
 
 def test_uninspectable_builds():
-    with pytest.raises(InvalidArgument):
+    with pytest.raises(TypeError, match='object is not callable'):
         st.builds(BrokenClass).example()
 
 
 def test_uninspectable_from_type():
-    with pytest.raises(InvalidArgument):
+    with pytest.raises(TypeError, match='object is not callable'):
         st.from_type(BrokenClass).example()

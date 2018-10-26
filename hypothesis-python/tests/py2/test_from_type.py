@@ -29,3 +29,11 @@ def test_from_int_is_int(x):
 @given(st.from_type(long))
 def test_from_long_is_long(x):
     assert isinstance(x, long)
+
+
+class OldStyleInitlessClass:
+    pass
+
+
+def test_builds_old_style_initless_class():
+    st.builds(OldStyleInitlessClass).example()
