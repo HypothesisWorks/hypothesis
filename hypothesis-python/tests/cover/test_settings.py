@@ -459,3 +459,13 @@ def test_settings_decorator_applied_to_non_state_machine_class_raises_error():
         @settings()
         class NonStateMachine:
             pass
+
+
+def test_assigning_to_settings_attribute_on_state_machine_raises_error():
+    with pytest.raises(AttributeError):
+        class StateMachine(RuleBasedStateMachine):
+            pass
+        StateMachine.settings = settings()
+
+    state_machine_instance = StateMachine()
+    state_machine_instance.settings = 'any value'
