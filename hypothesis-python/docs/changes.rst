@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.81.0:
+
+-------------------
+3.81.0 - 2018-10-27
+-------------------
+
+:class:`~hypothesis.stateful.GenericStateMachine` and
+:class:`~hypothesis.stateful.RuleBasedStateMachine` now raise an explicit error
+when instances of :obj:`~hypothesis.settings` are assigned to the classes'
+settings attribute, which is a no-op (:issue:`1643`). Instead assign to
+``SomeStateMachine.TestCase.settings``, or use ``@settings(...)`` as a class
+decorator to handle this automatically.
+
 .. _v3.80.0:
 
 -------------------
