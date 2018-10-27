@@ -146,8 +146,8 @@ class GenericStateMachineMeta(type):
 
 
 class GenericStateMachine(
-        GenericStateMachineMeta('GenericStateMachine',
-                                (object,), {})  # type: ignore
+        GenericStateMachineMeta('GenericStateMachine', # type: ignore
+                                (object,), {})
 ):
     """A GenericStateMachine is the basic entry point into Hypothesis's
     approach to stateful testing.
