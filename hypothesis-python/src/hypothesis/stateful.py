@@ -130,8 +130,17 @@ class GenericStateMachineMeta(type):
         if name == 'settings':
             raise AttributeError(
                 ('Cannot assign to the property {0}.settings - '
-                 'settings can be applied to this stateful test by assigning '
-                 'to {0}.TestCase.settings').format(self.__name__)
+                 'settings can be applied to {0} by either '
+                 'assigning to the settings attribute of {0}.TestCase:\n'
+                 '\n'
+                 '    {0}.TestCase.settings = settings(...) \n'
+                 '\n'
+                 'Or applying the settings object as a decorator to {0}\'s '
+                 'declaration:\n'
+                 '\n'
+                 '    @settings(...)\n'
+                 '    class {0}(...):\n'
+                 '        ...').format(self.__name__)
             )
         return type.__setattr__(self, name, value)
 
