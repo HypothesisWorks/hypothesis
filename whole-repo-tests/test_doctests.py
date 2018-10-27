@@ -28,6 +28,7 @@ def test_doctests():
     env['PYTHONPATH'] = 'src'
 
     pip_tool(
-        'sphinx-build', '-W', '-b', 'doctest', '-d', 'docs/_build/doctrees',
+        'sphinx-build', '-n', '-W', '--keep-going', '-T',
+        '-b', 'doctest', '-d', 'docs/_build/doctrees',
         'docs', 'docs/_build/html', env=env, cwd=BASE_DIR,
     )
