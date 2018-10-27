@@ -347,3 +347,13 @@ def test_lists_forced_near_top(n):
         lists(integers(), min_size=n, max_size=n + 2),
         lambda t: len(t) == n + 2
     ) == [0] * (n + 2)
+
+
+@pytest.mark.parametrize('m, n', [
+    (m, n) for n in range(2, 10)
+    for m in range(n)
+])
+def test_shrink_for_inclusion(m, n):
+    assert minimal(
+        lists(sampled_from(range(n)), unique=True), lambda ls: m in ls
+    ) == [m]

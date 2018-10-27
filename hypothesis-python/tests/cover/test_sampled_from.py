@@ -20,9 +20,10 @@ from __future__ import division, print_function, absolute_import
 import enum
 import collections
 
-from hypothesis import given
-from tests.common.utils import checks_deprecated_behaviour
-from hypothesis.strategies import sampled_from
+from hypothesis import HealthCheck, given, settings
+from hypothesis.errors import Unsatisfiable
+from tests.common.utils import fails_with, checks_deprecated_behaviour
+from hypothesis.strategies import sets, sampled_from
 
 an_enum = enum.Enum('A', 'a b c')
 
@@ -45,3 +46,25 @@ def test_can_sample_ordereddict_without_warning():
 @given(sampled_from(an_enum))
 def test_can_sample_enums(member):
     assert isinstance(member, an_enum)
+
+
+@given(sets(sampled_from(list(range(100))), min_size=100))
+def test_entire_large_set_with_sampled_from(x):
+    assert x == set(range(100))
+
+
+@given(sets(sampled_from([1, 2]), min_size=2))
+def test_fast_path_can_bail_without_filter_too_much(x):
+    assert x == {1, 2}
+
+
+@given(sets(sampled_from([1, 1, 2]), min_size=2, max_size=3))
+def test_fast_path_lowers_max_size(x):
+    assert x == {1, 2}
+
+
+@fails_with(Unsatisfiable)
+@settings(suppress_health_check=HealthCheck.all())
+@given(sets(sampled_from([1, 2]), min_size=3))
+def test_impossible_fast_path_fails(x):
+    assert False

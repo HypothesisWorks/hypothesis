@@ -20,9 +20,13 @@ from __future__ import division, print_function, absolute_import
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import OrderedDict
-from hypothesis.internal.conjecture.utils import combine_labels
+from hypothesis.searchstrategy.misc import SampledFromStrategy
+from hypothesis.internal.conjecture.utils import integer_range, \
+    combine_labels, calc_label_from_name
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
+
+UNIQUE_ELEM_LABEL = calc_label_from_name('a unique index')
 
 
 class TupleStrategy(SearchStrategy):
@@ -122,6 +126,19 @@ class ListStrategy(SearchStrategy):
 class UniqueListStrategy(ListStrategy):
 
     def __init__(self, elements, min_size, max_size, key):
+        self.values = None
+        if isinstance(elements, SampledFromStrategy):
+            self.values = []
+            seen = set()
+            for x in elements.elements:
+                if key(x) not in seen:
+                    self.values.append(x)
+                    seen.add(key(x))
+            if len(self.values) < (min_size or 0):
+                # If no draw is possible, use the normal logic.
+                self.values = None
+            elif max_size is not None:
+                max_size = min(max_size, len(self.values))
         super(UniqueListStrategy, self).__init__(elements, min_size, max_size)
         self.key = key
 
@@ -137,6 +154,25 @@ class UniqueListStrategy(ListStrategy):
         )
         seen = set()
         result = []
+
+        if self.values is not None:
+            # With a known and perhaps small set of elements, we have two
+            # tricks to reduce the rate of early exits from rejection
+            # sampling.  (1) pre-filter down to unique elements in __init__.
+            # (2) nested retries, marking the discards for the shrinker.
+            while elements.more():
+                for _ in range(8):
+                    data.start_example(UNIQUE_ELEM_LABEL)
+                    idx = integer_range(data, 0, len(self.values) - 1)
+                    data.stop_example(discard=idx in seen)
+                    if idx not in seen:
+                        seen.add(idx)
+                        result.append(self.values[idx])
+                        break
+                else:
+                    elements.reject()
+            assert self.max_size >= len(result) >= self.min_size
+            return result
 
         while elements.more():
             value = data.draw(self.element_strategy)
