@@ -33,7 +33,8 @@ from tests.common.utils import validate_deprecation, \
     checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
-from hypothesis.stateful import RuleBasedStateMachine, rule
+from hypothesis.stateful import GenericStateMachine, \
+    RuleBasedStateMachine, rule
 from hypothesis._settings import Verbosity, PrintSettings, settings, \
     default_variable, note_deprecation
 from hypothesis.utils.conventions import not_set
@@ -463,7 +464,7 @@ def test_settings_decorator_applied_to_non_state_machine_class_raises_error():
 
 def test_assigning_to_settings_attribute_on_state_machine_raises_error():
     with pytest.raises(AttributeError):
-        class StateMachine(RuleBasedStateMachine):
+        class StateMachine(GenericStateMachine):
             pass
         StateMachine.settings = settings()
 
