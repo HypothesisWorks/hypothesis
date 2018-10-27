@@ -127,27 +127,18 @@ class GenericStateMachineMeta(type):
         super(GenericStateMachineMeta, self).__init__(*args, **kwargs)
 
     def __setattr__(self, name, value):
-        if name == 'settings':
+        if name == 'settings' and isinstance(value, Settings):
             raise AttributeError(
-                ('Cannot assign to the property {0}.settings - '
-                 'settings can be applied to {0} by either '
-                 'assigning to the settings attribute of {0}.TestCase:\n'
-                 '\n'
-                 '    {0}.TestCase.settings = settings(...) \n'
-                 '\n'
-                 'Or applying the settings object as a decorator to {0}\'s '
-                 'declaration:\n'
-                 '\n'
-                 '    @settings(...)\n'
-                 '    class {0}(...):\n'
-                 '        ...').format(self.__name__)
+                ('Assigning {cls}.settings = {value} does nothing. Assign '
+                 'to {cls}.TestCase.settings, or use @{value} as a decorator '
+                 'on the {cls} class.').format(cls=self.__name__, value=value)
             )
         return type.__setattr__(self, name, value)
 
 
 class GenericStateMachine(
-        GenericStateMachineMeta('GenericStateMachine', # type: ignore
-                                (object,), {})
+    GenericStateMachineMeta('GenericStateMachine',  # type: ignore
+                            (object,), {})
 ):
     """A GenericStateMachine is the basic entry point into Hypothesis's
     approach to stateful testing.
