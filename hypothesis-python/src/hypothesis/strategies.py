@@ -1198,7 +1198,7 @@ def builds(
         # Avoid an implementation nightmare juggling tuples and worse things
         raise InvalidArgument('infer was passed as a positional argument to '
                               'builds(), but is only allowed as a keyword arg')
-    required = required_args(target, args, kwargs)
+    required = required_args(target, args, kwargs) or set()
     to_infer = set(k for k, v in kwargs.items() if v is infer)
     if required or to_infer:
         if isclass(target) and attr.has(target):
@@ -1339,8 +1339,7 @@ def from_type(thing):
         return sampled_from(thing)
     # If we know that builds(thing) will fail, give a better error message
     required = required_args(thing)
-    if not any([
-        not required,
+    if required and not any([
         required.issubset(get_type_hints(thing.__init__)),
         attr.has(thing),
         # NamedTuples are weird enough that we need a specific check for them.
