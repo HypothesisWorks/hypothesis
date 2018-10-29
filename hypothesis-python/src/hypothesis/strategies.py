@@ -924,8 +924,11 @@ def characters(
             blacklist_categories is None,
             )):
         raise InvalidArgument(
-            'Passing only whitelist_characters=%r would have no effect. '
-            'Perhaps you want sampled_from() ?' % (whitelist_characters,))
+            'Nothing is excluded by other arguments, so passing only '
+            'whitelist_characters=%(chars)r would have no effect.  Also pass '
+            'whitelist_categories=(), or use sampled_from(%(chars)r) instead.'
+            % dict(chars=whitelist_characters)
+        )
     blacklist_characters = blacklist_characters or ''
     whitelist_characters = whitelist_characters or ''
     overlap = set(blacklist_characters).intersection(whitelist_characters)
@@ -963,7 +966,9 @@ def characters(
 @cacheable
 @defines_strategy_with_reusable_values
 def text(
-    alphabet=None,  # type: Union[Sequence[Text], SearchStrategy[Text]]
+    alphabet=characters(
+        blacklist_categories=('Cs',)
+    ),  # type: Union[Sequence[Text], SearchStrategy[Text]]
     min_size=0,   # type: int
     average_size=None,   # type: None
     max_size=None  # type: int
@@ -971,30 +976,30 @@ def text(
     # type: (...) -> SearchStrategy[Text]
     """Generates values of a unicode text type (unicode on python 2, str on
     python 3) with values drawn from alphabet, which should be an iterable of
-    length one strings or a strategy generating such. If it is None it will
-    default to generating the full unicode range (excluding surrogate
-    characters). If it is an empty collection this will only generate empty
-    strings.
+    length one strings or a strategy generating such strings.
+
+    The default alphabet strategy can generate the full unicode range but
+    excludes surrogate characters because they are invalid in the UTF-8
+    encoding.  You can use :func:`~hypothesis.strategies.characters` without
+    arguments to find surrogate-related bugs such as :bpo:`34454`.
 
     min_size and max_size have the usual interpretations.
+    Note that Python measures string length by counting codepoints: U+00C5
+    ``Å`` is a single character, while U+0041 U+030A ``Å`` is two - the ``A``,
+    and a combining ring above.
 
     The average_size argument is deprecated.  Internal upgrades since
     Hypothesis 1.x mean we no longer needed this hint to generate useful data.
 
     Examples from this strategy shrink towards shorter strings, and with the
     characters in the text shrinking as per the alphabet strategy.
+    This strategy does not :func:`~python:unicodedata.normalize` examples,
+    so generated strings may be in any or none of the 'normal forms'.
     """
     check_valid_sizes(min_size, average_size, max_size)
     if alphabet is None:
+        note_deprecation('alphabet=None is deprecated; just omit the argument')
         char_strategy = characters(blacklist_categories=('Cs',))
-    elif not alphabet:
-        if (min_size or 0) > 0:
-            raise InvalidArgument(
-                'Invalid min_size %r > 0 for empty alphabet' % (
-                    min_size,
-                )
-            )
-        return just(u'')
     elif isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:
@@ -1023,6 +1028,8 @@ def text(
                 'will be an error in future:  %r' % (not_one_char,)
             )
         char_strategy = sampled_from(alphabet)
+    if (max_size == 0 or char_strategy.is_empty) and not min_size:
+        return just(u'')
     return StringStrategy(lists(
         char_strategy, min_size=min_size, max_size=max_size
     ))

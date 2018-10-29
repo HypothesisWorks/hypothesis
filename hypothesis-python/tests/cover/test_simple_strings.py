@@ -139,5 +139,10 @@ def test_alphabet_breaking_size_limit():
 
 
 @checks_deprecated_behaviour
+def test_explicit_alphabet_None_is_deprecated():
+    text(alphabet=None).example()
+
+
+@checks_deprecated_behaviour
 def test_alphabet_non_string():
     text([1, 2, 3]).example()

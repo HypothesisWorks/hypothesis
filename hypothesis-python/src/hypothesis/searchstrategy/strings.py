@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
-from hypothesis.internal.compat import hunichr, text_type, binary_type
+from hypothesis.internal.compat import hunichr, binary_type
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
@@ -28,9 +28,6 @@ from hypothesis.searchstrategy.strategies import SearchStrategy, \
 
 class OneCharStringStrategy(SearchStrategy):
     """A strategy which generates single character strings of text type."""
-
-    specifier = text_type
-    zero_point = ord('0')
 
     def __init__(self,
                  whitelist_categories=None,
@@ -64,10 +61,6 @@ class OneCharStringStrategy(SearchStrategy):
                     '%s=%r' % arg for arg in arguments if arg[1] is not None)
             )
         self.intervals = IntervalSet(intervals)
-        if whitelist_characters:
-            self.whitelist_characters = set(whitelist_characters)
-        else:
-            self.whitelist_characters = set()
         self.zero_point = self.intervals.index_above(ord('0'))
 
     def do_draw(self, data):
