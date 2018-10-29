@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.82.1:
+
+-------------------
+3.82.1 - 2018-10-29
+-------------------
+
+This patch fixes :func:`~hypothesis.strategies.from_type` on Python 2
+for classes where ``cls.__init__ is object.__init__``.
+Thanks to ccxcz for reporting :issue:`1656`.
+
 .. _v3.82.0:
 
 -------------------
