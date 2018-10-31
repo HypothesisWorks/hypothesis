@@ -100,6 +100,8 @@ setuptools.setup(
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
+        'Framework :: Hypothesis',
+        'Framework :: Pytest',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
         'Operating System :: Unix',
@@ -115,7 +117,6 @@ setuptools.setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
         'Topic :: Software Development :: Testing',
-        'Framework :: Pytest',
     ],
     entry_points={
         'pytest11': ['hypothesispytest = hypothesis.extra.pytestplugin'],
