@@ -196,6 +196,8 @@ def base_defines_strategy(force_reusable):
                 result.force_has_reusable_values = True
                 assert result.has_reusable_values
             return result
+
+        accept.is_hypothesis_strategy_function = True
         return accept
     return decorator
 
