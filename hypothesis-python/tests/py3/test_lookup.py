@@ -249,7 +249,7 @@ def test_typevar_type_is_consistent(data, var, expected):
     assert isinstance(v1, expected)
 
 
-def annotated_func(a: int, b: int=2, *, c: int, d: int=4):
+def annotated_func(a: int, b: int = 2, *, c: int, d: int = 4):
     return a + b + c + d
 
 
