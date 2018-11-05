@@ -20,7 +20,7 @@ click==7.0                # via pip-tools, pyupio, safety
 cmarkgfm==0.4.2           # via readme-renderer
 coverage==4.5.1
 decorator==4.3.0          # via ipython, traitlets
-deprecated==1.2.3         # via pygithub
+deprecated==1.2.4         # via pygithub
 django==2.1.2
 docformatter==1.0         # via pyformat
 docutils==0.14            # via readme-renderer, restructuredtext-lint, sphinx
