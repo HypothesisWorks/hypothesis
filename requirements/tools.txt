@@ -57,7 +57,7 @@ pickleshare==0.7.5        # via ipython
 pip-tools==3.1.0
 pkginfo==1.4.2            # via twine
 pluggy==0.8.0             # via pytest, tox
-prompt-toolkit==2.0.6     # via ipython
+prompt-toolkit==2.0.7     # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.7.0                 # via pytest, tox
 pycodestyle==2.3.1        # via autopep8, flake8
