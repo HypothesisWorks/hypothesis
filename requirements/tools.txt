@@ -97,7 +97,7 @@ typed-ast==1.1.0          # via mypy
 unify==0.4                # via pyformat
 untokenize==0.1.1         # via docformatter, unify
 urllib3==1.24.1             # via requests
-virtualenv==16.0.0        # via tox
+virtualenv==16.1.0        # via tox
 wcwidth==0.1.7            # via prompt-toolkit
 webencodings==0.5.1       # via bleach
 wrapt==1.10.11            # via deprecated
