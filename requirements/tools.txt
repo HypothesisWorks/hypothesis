@@ -8,7 +8,7 @@ alabaster==0.7.12         # via sphinx
 atomicwrites==1.2.1       # via pytest
 attrs==18.2.0
 autoflake==1.2            # via pyformat
-autopep8==1.4             # via pyformat
+autopep8==1.4.2             # via pyformat
 babel==2.6.0              # via sphinx
 backcall==0.1.0           # via ipython
 bandit==1.5.1
