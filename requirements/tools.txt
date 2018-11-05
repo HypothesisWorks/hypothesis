@@ -90,7 +90,7 @@ sphinxcontrib-websupport==1.1.0  # via sphinx
 stevedore==1.30.0         # via bandit
 toml==0.10.0
 tox==3.5.3
-tqdm==4.27.0              # via pyupio, twine
+tqdm==4.28.1              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.12.1
 typed-ast==1.1.0          # via mypy
