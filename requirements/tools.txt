@@ -69,7 +69,7 @@ pygithub==1.43.2          # via pyupio
 pygments==2.2.0           # via ipython, readme-renderer, sphinx
 pyjwt==1.6.4              # via pygithub
 pyparsing==2.2.2          # via packaging
-pytest==3.8.2
+pytest==3.10.0
 python-dateutil==2.7.5
 python-gitlab==1.6.0      # via pyupio
 pytz==2018.7              # via babel, django
