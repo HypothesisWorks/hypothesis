@@ -81,6 +81,7 @@ if PY3:
     hrange = range
     ARG_NAME_ATTRIBUTE = 'arg'
     integer_types = (int,)
+    _long_integer_type = int
     hunichr = chr
 
     def unicode_safe_repr(x):
@@ -228,6 +229,7 @@ else:
 
     ARG_NAME_ATTRIBUTE = 'id'
     integer_types = (int, long)
+    _long_integer_type = long
     hunichr = unichr
 
     def escape_unicode_characters(s):
@@ -516,22 +518,24 @@ else:
     FileExistsError = None
 
 
-if PY2:
-    # Under Python 2, math.floor and math.ceil return floats, which cannot
-    # represent large integers - eg `float(2**53) == float(2**53 + 1)`.
-    # We therefore implement them entirely in (long) integer operations.
-    def floor(x):
-        if int(x) != x and x < 0:
-            return int(x) - 1
-        return int(x)
+# Under Python 2, math.floor and math.ceil return floats, which cannot
+# represent large integers - eg `float(2**53) == float(2**53 + 1)`.
+# We therefore implement them entirely in (long) integer operations.
+# We use the same trick on Python 3, because Numpy values and other
+# custom __floor__ or __ceil__ methods may convert via floats.
+# See issue #1667, Numpy issue 9068.
+def floor(x):
+    y = _long_integer_type(x)
+    if y != x and x < 0:
+        return y - 1
+    return y
 
-    def ceil(x):
-        if int(x) != x and x > 0:
-            return int(x) + 1
-        return int(x)
-else:
-    floor = math.floor
-    ceil = math.ceil
+
+def ceil(x):
+    y = _long_integer_type(x)
+    if y != x and x > 0:
+        return y + 1
+    return y
 
 
 try:

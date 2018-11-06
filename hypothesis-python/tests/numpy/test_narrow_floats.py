@@ -20,7 +20,8 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 from hypothesis import given
-from hypothesis.strategies import floats
+from hypothesis.strategies import data, floats, integers
+from hypothesis.extra.numpy import from_dtype, integer_dtypes
 
 
 @given(floats(width=32))
@@ -39,3 +40,11 @@ def test_float16_exactly_representable(x):
         assert np.isnan(clipped)
     else:
         assert x == float(clipped)
+
+
+@given(data=data(), dtype=integer_dtypes())
+def test_floor_ceil_lossless(data, dtype):
+    # Regression test for issue #1667; ceil converting numpy integers
+    # to float and back to int with loss of exact value.
+    x = data.draw(from_dtype(dtype))
+    assert data.draw(integers(x, x)) == x
