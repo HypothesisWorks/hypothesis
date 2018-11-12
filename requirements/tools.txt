@@ -26,7 +26,7 @@ docformatter==1.0         # via pyformat
 docutils==0.14            # via readme-renderer, restructuredtext-lint, sphinx
 dparse==0.4.1             # via pyupio, safety
 dpcontracts==0.6.0
-filelock==3.0.9           # via tox
+filelock==3.0.10           # via tox
 flake8-alfred==1.1.1
 flake8-docstrings==1.3.0
 flake8-polyfill==1.0.2    # via flake8-docstrings
