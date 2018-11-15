@@ -1699,7 +1699,7 @@ def datetimes(
     # that took aware bounds, but the API and validation is much harder.
     # If you want to generate datetimes between two particular momements in
     # time I suggest (a) just filtering out-of-bounds values; (b) if bounds
-    # are very close, draw a value and subtract it's UTC offset, handling
+    # are very close, draw a value and subtract its UTC offset, handling
     # overflows and nonexistent times; or (c) do something customised to
     # handle datetimes in e.g. a four-microsecond span which is not
     # representable in UTC.  Handling (d), all of the above, leads to a much
