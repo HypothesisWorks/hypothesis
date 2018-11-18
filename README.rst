@@ -2,6 +2,9 @@
 Hypothesis
 ==========
 
+.. image:: https://travis-ci.org/HypothesisWorks/hypothesis.svg?branch=master
+    :target: https://travis-ci.org/HypothesisWorks/hypothesis
+
 Hypothesis is family of testing libraries which let you write tests parametrized
 by a source of examples. A Hypothesis implementation then generates simple and
 comprehensible examples that make your tests fail.
