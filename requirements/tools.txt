@@ -87,7 +87,7 @@ snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.2
 sphinx==1.8.2
 sphinxcontrib-websupport==1.1.0  # via sphinx
-stevedore==1.29.0         # via bandit
+stevedore==1.30.0         # via bandit
 toml==0.10.0
 tox==3.5.2
 tqdm==4.27.0              # via pyupio, twine
