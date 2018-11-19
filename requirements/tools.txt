@@ -18,7 +18,7 @@ cffi==1.11.5              # via cmarkgfm
 chardet==3.0.4            # via requests
 click==7.0                # via pip-tools, pyupio, safety
 cmarkgfm==0.4.2           # via readme-renderer
-coverage==4.5.1
+coverage==4.5.2
 decorator==4.3.0          # via ipython, traitlets
 deprecated==1.2.3         # via pygithub
 django==2.1.2
