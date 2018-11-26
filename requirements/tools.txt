@@ -75,7 +75,7 @@ python-gitlab==1.6.0      # via pyupio
 pytz==2018.7              # via babel, django
 pyupio==1.0.2
 pyyaml==3.13              # via bandit, dparse, pyupio
-readme-renderer==22.0     # via twine
+readme-renderer==24.0     # via twine
 requests-toolbelt==0.8.0  # via twine
 requests==2.19.1
 restructuredtext-lint==1.1.3
