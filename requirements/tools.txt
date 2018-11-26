@@ -68,7 +68,7 @@ pyformat==0.7
 pygithub==1.43.3          # via pyupio
 pygments==2.3.0           # via ipython, readme-renderer, sphinx
 pyjwt==1.6.4              # via pygithub
-pyparsing==2.2.2          # via packaging
+pyparsing==2.3.0          # via packaging
 pytest==4.0.1
 python-dateutil==2.7.5
 python-gitlab==1.6.0      # via pyupio
