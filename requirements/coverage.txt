@@ -4,9 +4,9 @@
 #
 #    pip-compile --output-file requirements/coverage.txt requirements/coverage.in
 #
-coverage==4.5.1
-numpy==1.15.2
+coverage==4.5.2
+numpy==1.15.4
 pandas==0.23.4
-python-dateutil==2.7.3    # via pandas
-pytz==2018.5
+python-dateutil==2.7.5    # via pandas
+pytz==2018.7
 six==1.11.0               # via python-dateutil
