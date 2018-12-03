@@ -13,7 +13,7 @@ babel==2.6.0              # via sphinx
 backcall==0.1.0           # via ipython
 bandit==1.5.1
 bleach==3.0.2             # via readme-renderer
-certifi==2018.10.15       # via requests
+certifi==2018.11.29       # via requests
 cffi==1.11.5              # via cmarkgfm
 chardet==3.0.4            # via requests
 click==7.0                # via pip-tools, pyupio, safety
