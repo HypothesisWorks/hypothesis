@@ -63,7 +63,7 @@ py==1.7.0                 # via pytest, tox
 pycodestyle==2.4.0        # via autopep8, flake8
 pycparser==2.19           # via cffi
 pydocstyle==3.0.0         # via flake8-docstrings
-pyflakes==1.6.0           # via autoflake, flake8
+pyflakes==2.0.0           # via autoflake, flake8
 pyformat==0.7
 pygithub==1.43.2          # via pyupio
 pygments==2.2.0           # via ipython, readme-renderer, sphinx
