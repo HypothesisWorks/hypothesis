@@ -38,7 +38,7 @@ gitpython==2.1.11         # via bandit
 idna==2.7                 # via requests
 imagesize==1.1.0          # via sphinx
 ipython-genutils==0.2.0   # via traitlets
-ipython==7.0.1
+ipython==7.2.0
 isort==4.3.4
 jedi==0.13.1              # via ipython
 jinja2==2.10              # via pyupio, sphinx
