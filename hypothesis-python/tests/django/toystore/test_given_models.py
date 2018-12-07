@@ -151,7 +151,7 @@ class TestGetsBasicModels(TestCase):
         )
         try:
             ConjectureData.for_buffer(buf).draw(strategy)
-        except HypothesisException as e:
+        except HypothesisException:
             reject()
         # Draw again with the same buffer. This will cause a duplicate
         # primary key.
