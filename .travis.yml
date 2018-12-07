@@ -16,8 +16,6 @@ cache:
     directories:
         - $HOME/.cargo
         - $HOME/.rustup
-        - $HOME/.runtimes
-        - $HOME/.venv
         - $HOME/.gem
         - $HOME/.cache/pip
         - $HOME/wheelhouse
