@@ -58,6 +58,7 @@ extras = {
     'dateutil': ['python-dateutil>=1.4'],
     'fakefactory': ['Faker>=0.7'],
     'numpy': ['numpy>=1.9.0'],
+    'pandas': ['pandas>=0.19'],
     'pytest': ['pytest>=3.0'],
     'dpcontracts': ['dpcontracts>=0.4'],
     # We only support Django versions with upstream support - see
