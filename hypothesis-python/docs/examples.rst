@@ -248,15 +248,10 @@ population prefer A to B, B to C and C to A.
 
 Wouldn't it be neat if we could use Hypothesis to provide an example of this?
 
-Well as you can probably guess from the presence of this section, we can! This
-is slightly surprising because it's not really obvious how we would generate an
-election given the types that Hypothesis knows about.
-
-The trick here turns out to be twofold:
-
-1. We can generate a type that is *much larger* than an election, extract an election out of that, and rely on minimization to throw away all the extraneous detail.
-2. We can use assume and rely on Hypothesis's adaptive exploration to focus on the examples that turn out to generate interesting elections
-
+Well as you can probably guess from the presence of this section, we can!
+The main trick is to decide how we want to represent the result of an
+election - for this example, we'll use a list of "votes", where each
+vote is a list of candidates in the voters preferred order.
 Without further ado, here is the code:
 
 .. code:: python
@@ -265,11 +260,12 @@ Without further ado, here is the code:
     from hypothesis.strategies import lists, permutations
     from collections import Counter
 
-
+    # We need at least three candidates and at least three voters to have a
+    # paradox; anything less can only lead to victories or at worst ties.
     @given(lists(permutations(['A', 'B', 'C']), min_size=3))
     def test_elections_are_transitive(election):
-        all_candidates = set(election[0])
-        
+        all_candidates = {"A", "B", "C"}
+
         # First calculate the pairwise counts of how many prefer each candidate
         # to the other
         counts = Counter()
