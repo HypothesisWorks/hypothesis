@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.82.2:
+
+-------------------
+3.82.2 - 2018-12-08
+-------------------
+
+The :ref:`Hypothesis for Pandas extension <hypothesis-pandas>` is now
+listed in ``setup.py``, so you can ``pip install hypothesis[pandas]``.
+Thanks to jmshi for this contribution.
+
 .. _v3.82.1:
 
 -------------------
