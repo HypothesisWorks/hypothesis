@@ -34,9 +34,8 @@ functional modifications):
               prev = character
           else:
               count += 1
-      else:
-          entry = (character, count)
-          lst.append(entry)
+      entry = (character, count)
+      lst.append(entry)
       return lst
 
 
@@ -144,9 +143,8 @@ each time. Say we missed a line in our ``encode`` method:
             prev = character
         else:
             count += 1
-    else:
-        entry = (character, count)
-        lst.append(entry)
+    entry = (character, count)
+    lst.append(entry)
     return lst
 
 Hypothesis quickly informs us of the following example:

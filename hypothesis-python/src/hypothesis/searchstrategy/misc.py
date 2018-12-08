@@ -18,9 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.internal.conjecture.utils as d
-from hypothesis.types import RandomWithSeed
-from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    MappedSearchStrategy
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 class BoolStrategy(SearchStrategy):
@@ -63,17 +61,6 @@ class JustStrategy(SearchStrategy):
 
     def do_draw(self, data):
         return self.value
-
-
-class RandomStrategy(MappedSearchStrategy):
-    """A strategy which produces Random objects.
-
-    The conditional distribution is simply a RandomWithSeed seeded with
-    a 128 bits of data chosen uniformly at random.
-    """
-
-    def pack(self, i):
-        return RandomWithSeed(i)
 
 
 class SampledFromStrategy(SearchStrategy):
