@@ -335,15 +335,15 @@ def integers(min_value=None, max_value=None):
 
     if min_value != min_int_value:
         note_deprecation(
-            'min_value=%r cannot be exactly represented as an integer, which '
-            'will be an error in a future version.'
-            % (min_value)
+            'min_value=%r of type %r cannot be exactly represented as an '
+            'integer, which will be an error in a future version.  '
+            'Use %r instead.' % (min_value, type(min_value), min_int_value)
         )
     if max_value != max_int_value:
         note_deprecation(
-            'max_value=%r cannot be exactly represented as an integer, which '
-            'will be an error in a future version.'
-            % (max_value)
+            'max_value=%r of type %r cannot be exactly represented as an '
+            'integer, which will be an error in a future version.  '
+            'Use %r instead.' % (max_value, type(max_value), max_int_value)
         )
 
     if min_int_value is not None and max_int_value is not None and \
