@@ -251,3 +251,15 @@ def test_no_single_floats_in_range():
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             st.floats(low, high, width=32).validate()
+
+
+# If the floats() strategy adds random floats to a value as large as 10^304
+# without handling overflow, we are very likely to generate infinity.
+@given(st.floats(min_value=1e304, allow_infinity=False))
+def test_finite_min_bound_does_not_overflow(x):
+    assert not math.isinf(x)
+
+
+@given(st.floats(max_value=-1e304, allow_infinity=False))
+def test_finite_max_bound_does_not_overflow(x):
+    assert not math.isinf(x)

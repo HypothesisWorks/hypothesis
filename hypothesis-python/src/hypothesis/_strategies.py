@@ -573,6 +573,8 @@ def floats(
             result = floats(allow_infinity=allow_infinity, allow_nan=False).map(
                 lambda x: min_value + abs(x)  # type: ignore
             )
+            if not allow_infinity:
+                result = result.filter(lambda x: not math.isinf(x))
         if min_value == 0 and not is_negative(min_value):
             result = result.filter(lambda x: math.copysign(1.0, x) == 1)
     else:
@@ -585,6 +587,8 @@ def floats(
             result = floats(allow_infinity=allow_infinity, allow_nan=False).map(
                 lambda x: max_value - abs(x)  # type: ignore
             )
+            if not allow_infinity:
+                result = result.filter(lambda x: not math.isinf(x))
         if max_value == 0 and is_negative(max_value):
             result = result.filter(is_negative)
 
