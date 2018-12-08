@@ -21,6 +21,20 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.82.4:
+
+-------------------
+3.82.4 - 2018-12-08
+-------------------
+
+Hypothesis now seeds and resets the global state of
+:class:`np.random <numpy:numpy.random.RandomState>` for each
+test case, to ensure that tests are reproducible.
+
+This matches and complements the existing handling of the
+:mod:`python:random` module - Numpy simply maintains an
+independent PRNG for performance reasons.
+
 .. _v3.82.3:
 
 -------------------
