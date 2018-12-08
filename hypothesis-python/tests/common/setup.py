@@ -40,6 +40,16 @@ def run():
     filterwarnings('ignore', message='numpy.dtype size changed')
     filterwarnings('ignore', message='numpy.ufunc size changed')
 
+    # See https://github.com/HypothesisWorks/hypothesis/issues/1674
+    filterwarnings(
+        'ignore',
+        message=(
+            'The virtualenv distutils package at .+ appears to be in the '
+            'same location as the system distutils?'
+        ),
+        category=UserWarning
+    )
+
     # Imported by Pandas in version 1.9, but fixed in later versions.
     filterwarnings(
         'ignore',
