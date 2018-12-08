@@ -544,14 +544,18 @@ def floats(
         # But if max_value < 0 and abs(x) < abs(max_value), we need to use an
         # offset from the closest allowed integer, to preserve the shrinking
         # pattern of minimising the denominator of any fractional part.
-        return floor(max_value) - abs(x)
+        value = floor(max_value) - abs(x)
+        assume(allow_infinity or not math.isinf(value))
+        return value
 
     def reflect_about_min(x):
         if x >= min_value:
             return x
         if -x >= min_value:
             return -x
-        return ceil(min_value) + abs(x)
+        value = ceil(min_value) + abs(x)
+        assume(allow_infinity or not math.isinf(value))
+        return value
 
     if min_value is None and max_value is None:
         result = FloatStrategy(
