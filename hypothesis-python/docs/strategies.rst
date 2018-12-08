@@ -4,8 +4,9 @@ Projects extending Hypothesis
 
 Hypothesis has been eagerly used and extended by the open source community.
 This page lists extensions and applications; you can find more or newer
-packages by `searching PyPI <https://pypi.org/search/?q=hypothesis>`_ or
-`libraries.io <https://libraries.io/search?languages=Python&q=hypothesis>`_.
+packages by searching PyPI `by keyword <https://pypi.org/search/?q=hypothesis>`_
+or `filter by classifier <https://pypi.org/search/?c=Framework+%3A%3A+Hypothesis>`_,
+or search `libraries.io <https://libraries.io/search?languages=Python&q=hypothesis>`_.
 
 If there's something missing which you think should be here, let us know!
 
@@ -77,7 +78,8 @@ happy to review and help with external packages as well as pull requests!
 
 If you're thinking about writing an extension, please name it
 ``hypothesis-{something}`` - a standard prefix makes the community more
-visible and searching for extensions easier.
+visible and searching for extensions easier.  And make sure you use the
+``Framework :: Hypothesis`` trove classifier!
 
 On the other hand, being inside gets you access to some deeper implementation
 features (if you need them) and better long-term guarantees about maintenance.
