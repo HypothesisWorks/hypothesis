@@ -21,6 +21,20 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.82.3:
+
+-------------------
+3.82.3 - 2018-12-08
+-------------------
+
+This is a no-op release to add the new ``Framework :: Hypothesis``
+`trove classifier <https://pypi.org/classifiers/>`_ to
+:pypi:`hypothesis` on PyPI.
+
+You can `use it as a filter <https://pypi.org/search/?c=Framework+%3A%3A+Hypothesis>`_
+to find Hypothesis-related packages such as extensions as they add the tag
+over the coming weeks, or simply visit :doc:`our curated list <strategies>`.
+
 .. _v3.82.2:
 
 -------------------
