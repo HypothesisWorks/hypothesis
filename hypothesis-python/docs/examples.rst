@@ -248,67 +248,23 @@ population prefer A to B, B to C and C to A.
 
 Wouldn't it be neat if we could use Hypothesis to provide an example of this?
 
-Well as you can probably guess from the presence of this section, we can! This
-is slightly surprising because it's not really obvious how we would generate an
-election given the types that Hypothesis knows about.
-
-The trick here turns out to be twofold:
-
-1. We can generate a type that is *much larger* than an election, extract an election out of that, and rely on minimization to throw away all the extraneous detail.
-2. We can use assume and rely on Hypothesis's adaptive exploration to focus on the examples that turn out to generate interesting elections
-
+Well as you can probably guess from the presence of this section, we can!
+The main trick is to decide how we want to represent the result of an
+election - for this example, we'll use a list of "votes", where each
+vote is a list of candidates in the voters preferred order.
 Without further ado, here is the code:
 
 .. code:: python
 
     from hypothesis import given, assume
-    from hypothesis.strategies import integers, lists
+    from hypothesis.strategies import lists, permutations
     from collections import Counter
 
-
-    def candidates(votes):
-        return {candidate for vote in votes for candidate in vote}
-
-
-    def build_election(votes):
-        """
-        Given a list of lists we extract an election out of this. We do this
-        in two phases:
-
-        1. First of all we work out the full set of candidates present in all
-           votes and throw away any votes that do not have that whole set.
-        2. We then take each vote and make it unique, keeping only the first
-           instance of any candidate.
-
-        This gives us a list of total orderings of some set. It will usually
-        be a lot smaller than the starting list, but that's OK.
-        """
-        all_candidates = candidates(votes)
-        votes = list(filter(lambda v: set(v) == all_candidates, votes))
-        if not votes:
-            return []
-        rebuilt_votes = []
-        for vote in votes:
-            rv = []
-            for v in vote:
-                if v not in rv:
-                    rv.append(v)
-            assert len(rv) == len(all_candidates)
-            rebuilt_votes.append(rv)
-        return rebuilt_votes
-
-
-    @given(lists(lists(integers(min_value=1, max_value=5))))
+    # We need at least three candidates and at least three voters to have a
+    # paradox; anything less can only lead to victories or at worst ties.
+    @given(lists(permutations(['A', 'B', 'C']), min_size=3))
     def test_elections_are_transitive(election):
-        election = build_election(election)
-        # Small elections are unlikely to be interesting
-        assume(len(election) >= 3)
-        all_candidates = candidates(election)
-        # Elections with fewer than three candidates certainly can't exhibit
-        # intransitivity
-        assume(len(all_candidates) >= 3)
-
-        # Now we check if the election is transitive
+        all_candidates = {"A", "B", "C"}
 
         # First calculate the pairwise counts of how many prefer each candidate
         # to the other
@@ -321,7 +277,6 @@ Without further ado, here is the code:
         # Now look at which pairs of candidates one has a majority over the
         # other and store that.
         graph = {}
-        all_candidates = candidates(election)
         for i in all_candidates:
             for j in all_candidates:
                 if counts[(i, j)] > counts[(j, i)]:
@@ -338,12 +293,11 @@ vary) is:
 
 .. code:: python
 
-    [[3, 1, 4], [4, 3, 1], [1, 4, 3]]
+    [['A', 'B', 'C'], ['B', 'C', 'A'], ['C', 'A', 'B']]
 
-Which does indeed do the job: The majority (votes 0 and 1) prefer 3 to 1, the
-majority (votes 0 and 2) prefer 1 to 4 and the majority (votes 1 and 2) prefer
-4 to 3. This is in fact basically the canonical example of the voting paradox,
-modulo variations on the names of candidates.
+Which does indeed do the job: The majority (votes 0 and 1) prefer B to C, the
+majority (votes 0 and 2) prefer A to B and the majority (votes 1 and 2) prefer
+C to A. This is in fact basically the canonical example of the voting paradox.
 
 -------------------
 Fuzzing an HTTP API

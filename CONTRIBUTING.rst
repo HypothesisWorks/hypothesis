@@ -213,6 +213,7 @@ their individual contributions.
 * `Graham Williamson <https://github.com/00willo>`_
 * `Grant David Bachman <https://github.com/grantbachman>`_ (grantbachman@gmail.com)
 * `Gregory Petrosyan <https://github.com/flyingmutant>`_
+* `Grigorios Giannakopoulos <https://github.com/grigoriosgiann>`_
 * `Jack Massey <https://github.com/massey101>`_
 * `Jakub Nabaglo <https://github.com/nbgl>`_ (j@nab.gl)
 * `Jeremy Thurgood <https://github.com/jerith>`_
