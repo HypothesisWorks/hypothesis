@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.82.5:
+
+-------------------
+3.82.5 - 2018-12-08
+-------------------
+
+This patch fixes :issue:`1667`, where passing bounds of Numpy
+dtype ``int64`` to :func:`~hypothesis.strategies.integers` could
+cause errors on Python 3 due to internal rounding.
+
 .. _v3.82.4:
 
 -------------------
