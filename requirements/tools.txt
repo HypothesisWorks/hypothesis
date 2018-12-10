@@ -63,7 +63,7 @@ pyflakes==2.0.0           # via autoflake, flake8
 pyformat==0.7
 pygithub==1.43.3          # via pyupio
 pygments==2.3.0           # via ipython, readme-renderer, sphinx
-pyjwt==1.7.0              # via pygithub
+pyjwt==1.7.1              # via pygithub
 pyparsing==2.3.0          # via packaging
 pytest==4.0.1
 python-dateutil==2.7.5
