@@ -146,7 +146,10 @@ _global_type_lookup = {
     frozenset: st.builds(frozenset),
     dict: st.builds(dict),
     # Built-in types
-    type: st.sampled_from([type(None), bool, int, float, str, list, tuple, set, dict, complex, ]),
+    type: st.sampled_from([
+        type(None), bool, int, float, str, bytes, list, tuple, set, dict,
+        complex,
+    ]),
     type(Ellipsis): st.just(Ellipsis),
     type(NotImplemented): st.just(NotImplemented),
     bytearray: st.binary().map(bytearray),
