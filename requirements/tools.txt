@@ -73,7 +73,7 @@ pyupio==1.0.2
 pyyaml==3.13              # via bandit, dparse, pyupio
 readme-renderer==24.0     # via twine
 requests-toolbelt==0.8.0  # via twine
-requests==2.20.1
+requests==2.21.0
 restructuredtext-lint==1.2.1
 safety==1.8.4             # via pyupio
 six==1.12.0               # via bandit, bleach, dparse, mock, more-itertools, packaging, pip-tools, prompt-toolkit, pydocstyle, pytest, python-dateutil, python-gitlab, pyupio, readme-renderer, sphinx, stevedore, tox, traitlets
