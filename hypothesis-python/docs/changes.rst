@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.82.6:
+
+-------------------
+3.82.6 - 2018-12-11
+-------------------
+
+Hypothesis can now :ref:`show statistics <statistics>` when running
+under :pypi:`pytest-xdist`.  Previously, statistics were only reported
+when all tests were run in a single process (:issue:`700`).
+
 .. _v3.82.5:
 
 -------------------
