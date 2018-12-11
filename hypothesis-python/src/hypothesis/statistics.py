@@ -103,6 +103,25 @@ class Statistics(object):
             self.draw_time_percentage = '~ %d%%' % (
                 round(draw_time_percentage),)
 
+    def get_description(self):
+        """Return a list of lines describing the statistics, to be printed."""
+        if not self.has_runs:
+            return ['  - Test was never run']
+        lines = [
+            '  - %d passing examples, %d failing examples, %d invalid examples'
+            % (self.passing_examples, self.failing_examples,
+               self.invalid_examples),
+            '  - Typical runtimes: %s' % (self.runtimes,),
+            '  - Fraction of time spent in data generation: %s' % (
+                self.draw_time_percentage,
+            ),
+            '  - Stopped because %s' % (self.exit_reason,)
+        ]
+        if self.events:
+            lines.append('  - Events:')
+            lines += ['    * %s' % (event,) for event in self.events]
+        return lines
+
 
 def note_engine_for_statistics(engine):
     callback = collector.value

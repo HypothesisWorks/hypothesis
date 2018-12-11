@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from distutils.version import LooseVersion
+
 import pytest
 
 from hypothesis import Verbosity, core, settings
@@ -120,7 +122,9 @@ def pytest_runtest_call(item):
         store = StoringReporter(item.config)
 
         def note_statistics(stats):
-            gathered_statistics[item.nodeid] = stats
+            lines = [item.nodeid + ':', ''] + stats.get_description() + ['']
+            gathered_statistics[item.nodeid] = lines
+            item.hypothesis_statistics = lines
 
         with collector.with_value(note_statistics):
             with with_reporter(store):
@@ -137,42 +141,42 @@ def pytest_runtest_makereport(item, call):
             'Hypothesis',
             '\n'.join(item.hypothesis_report_information)
         ))
+    if hasattr(item, 'hypothesis_statistics') and report.when == 'teardown':
+        # Running on pytest < 3.5 where user_properties doesn't exist, fall
+        # back on the global gathered_statistics (which breaks under xdist)
+        if hasattr(report, 'user_properties'):  # pragma: no branch
+            val = ('hypothesis-stats', item.hypothesis_statistics)
+            # Workaround for https://github.com/pytest-dev/pytest/issues/4034
+            if isinstance(report.user_properties, tuple):
+                report.user_properties += (val,)
+            else:
+                report.user_properties.append(val)
 
 
 def pytest_terminal_summary(terminalreporter):
     if not terminalreporter.config.getoption(PRINT_STATISTICS_OPTION):
         return
     terminalreporter.section('Hypothesis Statistics')
-    for name, statistics in gathered_statistics.items():
-        terminalreporter.write_line(name + ':')
-        terminalreporter.write_line('')
 
-        if not statistics.has_runs:
-            terminalreporter.write_line('  - Test was never run')
-            continue
+    if LooseVersion(pytest.__version__) < '3.5':  # pragma: no cover
+        if not gathered_statistics:
+            terminalreporter.write_line(
+                'Reporting Hypothesis statistics with pytest-xdist enabled '
+                'requires pytest >= 3.5'
+            )
+        for lines in gathered_statistics.values():
+            for li in lines:
+                terminalreporter.write_line(li)
+        return
 
-        terminalreporter.write_line((
-            '  - %d passing examples, %d failing examples,'
-            ' %d invalid examples') % (
-            statistics.passing_examples, statistics.failing_examples,
-            statistics.invalid_examples,
-        ))
-        terminalreporter.write_line(
-            '  - Typical runtimes: %s' % (statistics.runtimes,)
-        )
-        terminalreporter.write_line(
-            '  - Fraction of time spent in data generation: %s' % (
-                statistics.draw_time_percentage,))
-        terminalreporter.write_line(
-            '  - Stopped because %s' % (statistics.exit_reason,)
-        )
-        if statistics.events:
-            terminalreporter.write_line('  - Events:')
-            for event in statistics.events:
-                terminalreporter.write_line(
-                    '    * %s' % (event,)
-                )
-        terminalreporter.write_line('')
+    # terminalreporter.stats is a dict, where the empty string appears to
+    # always be the key for a list of _pytest.reports.TestReport objects
+    # (where we stored the statistics data in pytest_runtest_makereport above)
+    for test_report in terminalreporter.stats.get('', []):
+        for name, lines in test_report.user_properties:
+            if name == 'hypothesis-stats' and test_report.when == 'teardown':
+                for li in lines:
+                    terminalreporter.write_line(li)
 
 
 def pytest_collection_modifyitems(items):

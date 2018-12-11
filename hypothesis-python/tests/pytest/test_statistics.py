@@ -17,6 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
+from distutils.version import LooseVersion
+
+import pytest
+
 from hypothesis.extra.pytestplugin import PRINT_STATISTICS_OPTION
 
 pytest_plugins = 'pytester'
@@ -65,6 +69,19 @@ def test_prints_statistics_given_option(testdir):
     assert 'timeout=0.2' in out
     assert 'max_examples=100' in out
     assert '< 10% of examples satisfied assumptions' in out
+
+
+@pytest.mark.skipif(LooseVersion(pytest.__version__) < '3.5', reason='too old')
+def test_prints_statistics_given_option_under_xdist(testdir):
+    script = testdir.makepyfile(TESTSUITE)
+    result = testdir.runpytest(script, PRINT_STATISTICS_OPTION, '-n', '2')
+    out = '\n'.join(result.stdout.lines)
+    assert 'Hypothesis Statistics' in out
+    assert 'timeout=0.2' in out
+    assert 'max_examples=100' in out
+    assert '< 10% of examples satisfied assumptions' in out
+    # Check that xdist doesn't have us report the same thing twice
+    assert out.count('Stopped because settings.timeout=0.2') == 1
 
 
 UNITTEST_TESTSUITE = """
