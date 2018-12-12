@@ -145,11 +145,6 @@ _global_type_lookup = {
     set: st.builds(set),
     frozenset: st.builds(frozenset),
     dict: st.builds(dict),
-    # Built-in types
-    type: st.sampled_from([
-        type(None), bool, int, float, str, bytes, list, tuple, set, dict,
-        complex,
-    ]),
     type(Ellipsis): st.just(Ellipsis),
     type(NotImplemented): st.just(NotImplemented),
     bytearray: st.binary().map(bytearray),
@@ -161,6 +156,11 @@ _global_type_lookup = {
     numbers.Complex: st.complex_numbers(),
     # Pull requests with more types welcome!
 }
+
+# Built-in types
+_global_type_lookup[type] = st.sampled_from([
+    sorted(_global_type_lookup, key=str)
+])
 
 if PY2:
     _global_type_lookup.update({
