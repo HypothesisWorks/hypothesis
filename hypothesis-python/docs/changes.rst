@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.83.0:
+
+-------------------
+3.83.0 - 2018-12-12
+-------------------
+
+Our pytest plugin now warns you when strategy functions have been collected
+as tests, which may happen when e.g. using the
+:func:`@composite <hypothesis.strategies.composite>` decorator when you
+should be using ``@given(st.data())`` for inline draws.
+Such functions *always* pass when treated as tests, because the lazy creation
+of strategies mean that the function body is never actually executed!
+
 .. _v3.82.6:
 
 -------------------
