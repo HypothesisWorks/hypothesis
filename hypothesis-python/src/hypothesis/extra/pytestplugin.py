@@ -22,6 +22,7 @@ from distutils.version import LooseVersion
 import pytest
 
 from hypothesis import Verbosity, core, settings
+from hypothesis._settings import note_deprecation
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
 from hypothesis.statistics import collector
@@ -183,8 +184,19 @@ def pytest_collection_modifyitems(items):
     for item in items:
         if not isinstance(item, pytest.Function):
             continue
-        if getattr(item.function, 'is_hypothesis_test', False):
+        if is_hypothesis_test(item.obj):
             item.add_marker('hypothesis')
+        if getattr(item.obj, 'is_hypothesis_strategy_function', False):
+            def note_strategy_is_not_test(*args, **kwargs):
+                note_deprecation(
+                    '%s is a function that returns a Hypothesis strategy, '
+                    'but pytest has collected it as a test function.  This '
+                    'is useless as the function body will never be executed.'
+                    'To define a test function, use @given instead of '
+                    '@composite.' % (item.nodeid,)
+                )
+
+            item.obj = note_strategy_is_not_test
 
 
 def load():

@@ -152,3 +152,20 @@ def test_healthcheck_traceback_is_hidden(testdir):
     def_line = get_line_num(def_token, result)
     timeout_line = get_line_num(timeout_token, result)
     assert timeout_line - def_line == 6
+
+
+COMPOSITE_IS_NOT_A_TEST = """
+from hypothesis.strategies import composite
+@composite
+def test_data_factory(draw):
+    assert False, 'Unreachable due to lazy construction'
+"""
+
+
+@pytest.mark.skipif(pytest.__version__[:3] == '3.0', reason='very very old')
+def test_deprecation_of_strategies_as_tests(testdir):
+    script = testdir.makepyfile(COMPOSITE_IS_NOT_A_TEST)
+    testdir.runpytest(script, '-Werror').assert_outcomes(failed=1)
+    result = testdir.runpytest(script)
+    result.assert_outcomes(passed=1)
+    result.stdout.fnmatch_lines(['*HypothesisDeprecationWarning*'])
