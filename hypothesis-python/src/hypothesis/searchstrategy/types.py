@@ -164,9 +164,9 @@ if PY2:
         long: st.integers().map(long)  # noqa
     })
 
-_global_type_lookup[type] = st.sampled_from(list(
-    set([type(None)] + sorted(_global_type_lookup, key=str))
-))
+_global_type_lookup[type] = st.sampled_from(
+    [type(None)] + sorted(_global_type_lookup, key=str)
+)
 
 try:
     from hypothesis.extra.pytz import timezones
