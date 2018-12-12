@@ -188,7 +188,6 @@ def format():
         return
 
     for f in files_to_format:
-        print(f)
         lines = []
         with open(f, encoding='utf-8') as o:
             shebang = None
@@ -215,13 +214,9 @@ def format():
                 o.write('\n\n')
                 o.write(source)
             o.write('\n')
-    pip_tool(
-        'isort', '-p', 'hypothesis', '-ls', '-m', '2', '-w', '75', '-a',
-        'from __future__ import absolute_import, print_function, division',
-        *files_to_format,
-    )
+    pip_tool("isort", *files_to_format)
 
-    pip_tool('pyformat', '-i', *files_to_format)
+    pip_tool("black", tools.ROOT)
 
 
 VALID_STARTS = (

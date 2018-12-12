@@ -5,22 +5,21 @@
 #    pip-compile --output-file requirements/tools.txt requirements/tools.in
 #
 alabaster==0.7.12         # via sphinx
+appdirs==1.4.3            # via black
 atomicwrites==1.2.1       # via pytest
 attrs==18.2.0
-autoflake==1.2            # via pyformat
-autopep8==1.4.3           # via pyformat
 babel==2.6.0              # via sphinx
 backcall==0.1.0           # via ipython
 bandit==1.5.1
+black==18.9b0
 bleach==3.0.2             # via readme-renderer
 certifi==2018.11.29       # via requests
 chardet==3.0.4            # via requests
-click==7.0                # via pip-tools, pyupio, safety
+click==7.0                # via black, pip-tools, pyupio, safety
 coverage==4.5.2
 decorator==4.3.0          # via ipython, traitlets
 deprecated==1.2.4         # via pygithub
 django==2.1.4
-docformatter==1.0         # via pyformat
 docutils==0.14            # via readme-renderer, restructuredtext-lint, sphinx
 dparse==0.4.1             # via pyupio, safety
 dpcontracts==0.6.0
@@ -57,10 +56,9 @@ pluggy==0.8.0             # via pytest, tox
 prompt-toolkit==2.0.7     # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.7.0                 # via pytest, tox
-pycodestyle==2.4.0        # via autopep8, flake8
+pycodestyle==2.4.0        # via flake8
 pydocstyle==3.0.0         # via flake8-docstrings
-pyflakes==2.0.0           # via autoflake, flake8
-pyformat==0.7
+pyflakes==2.0.0           # via flake8
 pygithub==1.43.3          # via pyupio
 pygments==2.3.0           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
@@ -89,8 +87,6 @@ tqdm==4.28.1              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.12.1
 typed-ast==1.1.0          # via mypy
-unify==0.4                # via pyformat
-untokenize==0.1.1         # via docformatter, unify
 urllib3==1.24.1           # via requests
 virtualenv==16.1.0        # via tox
 wcwidth==0.1.7            # via prompt-toolkit

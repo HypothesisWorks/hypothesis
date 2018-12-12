@@ -24,6 +24,8 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import integers
 from hypothesis.internal.reflection import get_pretty_function_description
 
+# fmt: off
+
 
 def test_destructuring_lambdas():
     assert get_pretty_function_description(lambda (x, y): 1) == \
