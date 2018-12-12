@@ -145,6 +145,7 @@ _global_type_lookup = {
     set: st.builds(set),
     frozenset: st.builds(frozenset),
     dict: st.builds(dict),
+    # Built-in types
     type(Ellipsis): st.just(Ellipsis),
     type(NotImplemented): st.just(NotImplemented),
     bytearray: st.binary().map(bytearray),
@@ -157,16 +158,15 @@ _global_type_lookup = {
     # Pull requests with more types welcome!
 }
 
-# Built-in types
-_global_type_lookup[type] = st.sampled_from([
-    sorted(_global_type_lookup, key=str)
-])
-
 if PY2:
     _global_type_lookup.update({
         int: st.integers().filter(lambda x: isinstance(x, int)),
         long: st.integers().map(long)  # noqa
     })
+
+_global_type_lookup[type] = st.sampled_from(list(
+    set([type(None)] + sorted(_global_type_lookup, key=str))
+))
 
 try:
     from hypothesis.extra.pytz import timezones
