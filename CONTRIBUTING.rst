@@ -205,6 +205,7 @@ their individual contributions.
 * `David Chudzicki <https://github.com/dchudz>`_ (dchudz@gmail.com)
 * `Derek Gustafson <https://www.github.com/degustaf>`_
 * `Dion Misic <https://www.github.com/kingdion>`_ (dion.misic@gmail.com)
+* `Eduardo Enriquez <https://www.github.com/eduzen>`_ (eduardo.a.enriquez@gmail.com)
 * `Emmanuel Leblond <https://www.github.com/touilleMan>`_
 * `Felix Grünewald <https://www.github.com/fgruen>`_
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_

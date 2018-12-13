@@ -146,7 +146,6 @@ _global_type_lookup = {
     frozenset: st.builds(frozenset),
     dict: st.builds(dict),
     # Built-in types
-    type: st.sampled_from([type(None), bool, int, str, list, set, dict]),
     type(Ellipsis): st.just(Ellipsis),
     type(NotImplemented): st.just(NotImplemented),
     bytearray: st.binary().map(bytearray),
@@ -164,6 +163,10 @@ if PY2:
         int: st.integers().filter(lambda x: isinstance(x, int)),
         long: st.integers().map(long)  # noqa
     })
+
+_global_type_lookup[type] = st.sampled_from(
+    [type(None)] + sorted(_global_type_lookup, key=str)
+)
 
 try:
     from hypothesis.extra.pytz import timezones
