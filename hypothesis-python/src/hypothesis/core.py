@@ -700,8 +700,7 @@ class StateForActualGivenExecution(object):
                         )
                     ):
                         report((
-                            '\n'
-                            'You can reproduce this example by temporarily '
+                            '\nYou can reproduce this example by temporarily '
                             'adding @reproduce_failure(%r, %r) as a decorator '
                             'on your test case') % (
                                 __version__, failure_blob,))

@@ -94,9 +94,3 @@ standard_types = [
         max_leaves=10,
     )
 ]
-
-
-if pytest is not None:
-    def parametrize(args, values):
-        return pytest.mark.parametrize(
-            args, values, ids=list(map(repr, values)))

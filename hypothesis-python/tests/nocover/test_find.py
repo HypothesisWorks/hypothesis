@@ -70,6 +70,8 @@ def test_condition_is_name():
 
 
 def test_find_dictionary():
-    assert len(minimal(
+    smallest = minimal(
         dictionaries(keys=integers(), values=integers()),
-        lambda xs: any(kv[0] > kv[1] for kv in xs.items()))) == 1
+        lambda xs: any(kv[0] > kv[1] for kv in xs.items()),
+    )
+    assert len(smallest) == 1

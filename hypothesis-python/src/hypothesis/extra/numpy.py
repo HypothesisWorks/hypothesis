@@ -121,12 +121,16 @@ class ArrayStrategy(SearchStrategy):
     def __init__(self, element_strategy, shape, dtype, fill, unique):
         self.shape = tuple(shape)
         self.fill = fill
-        check_argument(shape,
-                       u'Array shape must have at least one dimension, '
-                       u'provided shape was {}', shape)
-        check_argument(all(isinstance(s, int) for s in shape),
-                       u'Array shape must be integer in each dimension, '
-                       u'provided shape was {}', shape)
+        check_argument(
+            shape,
+            'Array shape must have at least one dimension, provided shape was {}', 
+            shape,
+        )
+        check_argument(
+            all(isinstance(s, int) for s in shape),
+            'Array shape must be integer in each dimension, provided shape was {}', 
+            shape,
+        )
         self.array_size = int(np.prod(shape))
         self.dtype = dtype
         self.element_strategy = element_strategy

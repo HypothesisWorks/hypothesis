@@ -26,7 +26,6 @@ import pytest
 from flaky import flaky
 
 from hypothesis import assume, settings
-from tests.common import parametrize
 from tests.common.debug import minimal
 from hypothesis.strategies import just, none, sets, text, lists, builds, \
     tuples, booleans, integers, fractions, frozensets, dictionaries, \
@@ -145,7 +144,7 @@ def test_flatmap_rectangles():
 
 
 @flaky(min_passes=5, max_runs=5)
-@parametrize(u'dict_class', [dict, OrderedDict])
+@pytest.mark.parametrize('dict_class', [dict, OrderedDict])
 def test_dictionary(dict_class):
     assert minimal(dictionaries(
         keys=integers(), values=text(),

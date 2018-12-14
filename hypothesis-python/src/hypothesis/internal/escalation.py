@@ -84,20 +84,19 @@ def escalate_hypothesis_internal_error():
 def get_trimmed_traceback():
     """Return the current traceback, minus any frames added by Hypothesis."""
     error_type, _, tb = sys.exc_info()
-    if all([
-        # If verbosity is debug, leave the full traceback as-is
-        hypothesis.settings.default.verbosity < hypothesis.Verbosity.debug,
-        # If it's raised from inside Hypothesis and *not* MultipleFailures,
-        # it's probably an internal bug - so don't destroy the evidence!
-        (isinstance(error_type, MultipleFailures) or not
-         is_hypothesis_file(traceback.extract_tb(tb)[-1][0]))
-    ]):
-        while tb is not None and (
-            # If the frame is from one of our files, it's ours.
-            is_hypothesis_file(getframeinfo(tb.tb_frame)[0]) or
-            # But our `@proxies` decorator overrides the source location,
-            # so we check for an attribute it injects into the frame too.
-            tb.tb_frame.f_globals.get('__hypothesistracebackhide__') is True
-        ):
-            tb = tb.tb_next
+    # Avoid trimming the traceback if we're in verbose mode, or the error
+    # was raised inside Hypothesis (and is not a MultipleFailures)
+    if hypothesis.settings.default.verbosity >= hypothesis.Verbosity.debug or (
+        is_hypothesis_file(traceback.extract_tb(tb)[-1][0])
+        and not isinstance(error_type, MultipleFailures)
+    ):
+        return tb
+    while tb is not None and (
+        # If the frame is from one of our files, it's been added by Hypothesis.
+        is_hypothesis_file(getframeinfo(tb.tb_frame)[0])
+        # But our `@proxies` decorator overrides the source location,
+        # so we check for an attribute it injects into the frame too.
+        or tb.tb_frame.f_globals.get("__hypothesistracebackhide__") is True
+    ):
+        tb = tb.tb_next
     return tb

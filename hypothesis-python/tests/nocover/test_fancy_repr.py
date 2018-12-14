@@ -32,6 +32,11 @@ def foo(*args, **kwargs):
     pass
 
 
+# fmt: off
+# The linebreaks here can force our lambda repr code into specific paths,
+# so we tell Black to leave them as-is.
+
+
 def test_builds_repr():
     assert repr(st.builds(foo, st.just(1), x=st.just(10))) == \
         u'builds(foo, just(1), x=just(10))'

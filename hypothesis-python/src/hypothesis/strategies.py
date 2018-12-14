@@ -792,9 +792,9 @@ def iterables(elements=None, min_size=0, average_size=None, max_size=None,
 
 @defines_strategy
 def fixed_dictionaries(
-    mapping  # type: Dict[T, SearchStrategy[Ex]]
+    mapping
 ):
-    # type: (...) -> SearchStrategy[Dict[T, Ex]]
+    # type: (Dict[T, SearchStrategy[Ex]]) -> SearchStrategy[Dict[T, Ex]]
     """Generates a dictionary of the same type as mapping with a fixed set of
     keys mapping to strategies. mapping must be a dict subclass.
 
@@ -919,12 +919,13 @@ def characters(
     check_valid_size(max_codepoint, 'max_codepoint')
     check_valid_interval(min_codepoint, max_codepoint,
                          'min_codepoint', 'max_codepoint')
-    if all((whitelist_characters is not None,
-            min_codepoint is None,
-            max_codepoint is None,
-            whitelist_categories is None,
-            blacklist_categories is None,
-            )):
+    if (
+        min_codepoint is None
+        and max_codepoint is None
+        and whitelist_categories is None
+        and blacklist_categories is None
+        and whitelist_characters is not None
+    ):
         raise InvalidArgument(
             'Nothing is excluded by other arguments, so passing only '
             'whitelist_characters=%(chars)r would have no effect.  Also pass '
@@ -1281,10 +1282,12 @@ def from_type(thing):
             # At runtime, `typing.NewType` returns an identity function rather
             # than an actual type, but we can check that for a possible match
             # and then read the magic attribute to unwrap it.
-            if all([
-                hasattr(thing, '__supertype__'), hasattr(typing, 'NewType'),
-                isfunction(thing), getattr(thing, '__module__', 0) == 'typing'
-            ]):
+            if (
+                hasattr(thing, '__supertype__')
+                and hasattr(typing, 'NewType')
+                and isfunction(thing)
+                and getattr(thing, '__module__', 0) == 'typing'
+            ):
                 return from_type(thing.__supertype__)
             # Under Python 3.6, Unions are not instances of `type` - but we
             # still want to resolve them!

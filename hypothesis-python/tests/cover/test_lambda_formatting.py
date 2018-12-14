@@ -29,13 +29,15 @@ def test_bracket_whitespace_is_striped():
 def test_can_have_unicode_in_lambda_sources():
     t = lambda x: 'é' not in x
     assert get_pretty_function_description(t) == (
-        "lambda x: 'é' not in x"
+        'lambda x: "é" not in x'
     )
 
 
+# fmt: off
 ordered_pair = (
     lambda right: [].map(
         lambda length: ()))
+# fmt: on
 
 
 def test_can_get_descriptions_of_nested_lambdas_with_different_names():
@@ -44,11 +46,13 @@ def test_can_get_descriptions_of_nested_lambdas_with_different_names():
 
 
 def test_does_not_error_on_unparsable_source():
+    # fmt: off
     t = [
         lambda x: \
         # This will break ast.parse, but the brackets are needed for the real
         # parser to accept this lambda
         x][0]
+    # fmt: on
     assert get_pretty_function_description(t) == 'lambda x: <unknown>'
 
 
@@ -69,9 +73,11 @@ def test_does_not_error_on_dynamically_defined_functions():
 
 
 def test_collapses_whitespace_nicely():
+    # fmt: off
     t = (
         lambda x,       y:           1
     )
+    # fmt: on
     assert get_pretty_function_description(t) == 'lambda x, y: 1'
 
 
@@ -88,7 +94,7 @@ def test_strips_comments_from_the_end():
 
 def test_does_not_strip_hashes_within_a_string():
     t = lambda x: '#'
-    assert get_pretty_function_description(t) == "lambda x: '#'"
+    assert get_pretty_function_description(t) == 'lambda x: "#"'
 
 
 def test_can_distinguish_between_two_lambdas_with_different_args():
@@ -104,16 +110,20 @@ def test_does_not_error_if_it_cannot_distinguish_between_two_lambdas():
 
 
 def test_lambda_source_break_after_def_with_brackets():
+    # fmt: off
     f = (lambda n:
          'aaa')
+    # fmt: on
 
     source = get_pretty_function_description(f)
     assert source == "lambda n: 'aaa'"
 
 
 def test_lambda_source_break_after_def_with_line_continuation():
+    # fmt: off
     f = lambda n:\
         'aaa'
+    # fmt: on
 
     source = get_pretty_function_description(f)
     assert source == "lambda n: 'aaa'"

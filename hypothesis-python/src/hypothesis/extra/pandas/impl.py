@@ -626,12 +626,10 @@ def data_frames(
                                     as_list[i] = fills[i]
                         for k in row:
                             if k not in column_names:
-                                raise InvalidArgument((
-                                    'Row %r contains column %r not in '
-                                    'columns %r)' % (
-                                        row, k, [
-                                            c.name for c in rewritten_columns
-                                        ])))
+                                raise InvalidArgument(
+                                    "Row %r contains column %r not in columns %r)"
+                                    % (row, k, [c.name for c in rewritten_columns])
+                                )
                         row = as_list
                     if any_unique:
                         has_duplicate = False

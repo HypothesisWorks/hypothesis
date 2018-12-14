@@ -32,6 +32,7 @@ from __future__ import division, print_function, absolute_import
 import datetime as dt
 
 import pytz
+from pytz.tzfile import StaticTzInfo
 
 import hypothesis.strategies as st
 
@@ -54,9 +55,8 @@ def timezones():
     # absolute offset the simpler they are.  Of course, UTC is even simpler!
     static = [pytz.UTC]  # type: list
     static += sorted(
-        (t for t in all_timezones
-         if isinstance(t, pytz.tzfile.StaticTzInfo)),  # type: ignore
-        key=lambda tz: abs(tz.utcoffset(dt.datetime(2000, 1, 1)))
+        (t for t in all_timezones if isinstance(t, StaticTzInfo)),
+        key=lambda tz: abs(tz.utcoffset(dt.datetime(2000, 1, 1))),
     )
     # Timezones which have changed UTC offset; best ordered by name.
     dynamic = [tz for tz in all_timezones if tz not in static]
