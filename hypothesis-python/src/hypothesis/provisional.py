@@ -28,7 +28,7 @@ from __future__ import absolute_import, division, print_function
 
 import string
 
-import hypothesis.strategies as st
+import hypothesis._strategies as st
 
 
 @st.defines_strategy_with_reusable_values

@@ -23,6 +23,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given, infer
+from hypothesis._strategies import _strategies
 from hypothesis.errors import (
     HypothesisDeprecationWarning,
     InvalidArgument,
@@ -46,7 +47,7 @@ blacklist = [
 types_with_core_strat = set(integer_types)
 for thing in (
     getattr(st, name)
-    for name in sorted(st._strategies)
+    for name in sorted(_strategies)
     if name in dir(st) and name not in blacklist
 ):
     for n in range(3):

@@ -152,51 +152,6 @@ else:
         return f
 
 
-__all__ = [
-    "nothing",
-    "just",
-    "one_of",
-    "none",
-    "choices",
-    "streaming",
-    "booleans",
-    "integers",
-    "floats",
-    "complex_numbers",
-    "fractions",
-    "decimals",
-    "characters",
-    "text",
-    "from_regex",
-    "binary",
-    "uuids",
-    "tuples",
-    "lists",
-    "sets",
-    "frozensets",
-    "iterables",
-    "dictionaries",
-    "fixed_dictionaries",
-    "sampled_from",
-    "permutations",
-    "datetimes",
-    "dates",
-    "times",
-    "timedeltas",
-    "builds",
-    "randoms",
-    "random_module",
-    "recursive",
-    "composite",
-    "shared",
-    "runner",
-    "data",
-    "deferred",
-    "from_type",
-    "register_type_strategy",
-    "emails",
-]
-
 _strategies = set()
 
 
@@ -2364,6 +2319,3 @@ def emails():
     return builds(u"{}@{}".format, local_part, domains()).filter(
         lambda addr: len(addr) <= 255
     )
-
-
-assert _strategies.issubset(set(__all__)), _strategies - set(__all__)

@@ -24,9 +24,9 @@ import attr
 import numpy as np
 import pandas
 
+import hypothesis._strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis.internal.conjecture.utils as cu
-import hypothesis.strategies as st
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange
@@ -37,7 +37,6 @@ from hypothesis.internal.validation import (
     check_valid_size,
     try_convert,
 )
-from hypothesis.strategies import check_strategy
 
 try:
     from pandas.api.types import is_categorical_dtype
@@ -76,7 +75,7 @@ def elements_and_dtype(elements, dtype, source=None):
         prefix = "%s." % (source,)
 
     if elements is not None:
-        check_strategy(elements, "%selements" % (prefix,))
+        st.check_strategy(elements, "%selements" % (prefix,))
     else:
         with check("dtype is not None"):
             if dtype is None:
@@ -265,7 +264,7 @@ def series(
     if index is None:
         index = range_indexes()
     else:
-        check_strategy(index)
+        st.check_strategy(index)
 
     elements, dtype = elements_and_dtype(elements, dtype)
     index_strategy = index
@@ -474,7 +473,7 @@ def data_frames(
     if index is None:
         index = range_indexes()
     else:
-        check_strategy(index)
+        st.check_strategy(index)
 
     index_strategy = index
 
