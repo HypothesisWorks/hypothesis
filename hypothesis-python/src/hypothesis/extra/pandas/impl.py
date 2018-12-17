@@ -15,33 +15,39 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from copy import copy
 from collections import Iterable, OrderedDict
+from copy import copy
 
 import attr
 import numpy as np
-
 import pandas
-import hypothesis.strategies as st
+
 import hypothesis.extra.numpy as npst
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis.errors import InvalidArgument
+import hypothesis.strategies as st
 from hypothesis.control import reject
-from hypothesis.strategies import check_strategy
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.coverage import check, check_function
-from hypothesis.internal.validation import check_type, try_convert, \
-    check_valid_size, check_valid_interval
+from hypothesis.internal.validation import (
+    check_type,
+    check_valid_interval,
+    check_valid_size,
+    try_convert,
+)
+from hypothesis.strategies import check_strategy
 
 try:
     from pandas.api.types import is_categorical_dtype
 except ImportError:  # pragma: no cover
+
     def is_categorical_dtype(dt):
         if isinstance(dt, np.dtype):
             return False
-        return dt == 'category'
+        return dt == "category"
+
 
 if False:
     from typing import Any, Union, Sequence, Set  # noqa
@@ -51,7 +57,7 @@ if False:
 def dtype_for_elements_strategy(s):
     return st.shared(
         s.map(lambda x: pandas.Series([x]).dtype),
-        key=('hypothesis.extra.pandas.dtype_for_elements_strategy', s),
+        key=("hypothesis.extra.pandas.dtype_for_elements_strategy", s),
     )
 
 
@@ -65,47 +71,49 @@ def infer_dtype_if_necessary(dtype, values, elements, draw):
 def elements_and_dtype(elements, dtype, source=None):
 
     if source is None:
-        prefix = ''
+        prefix = ""
     else:
-        prefix = '%s.' % (source,)
+        prefix = "%s." % (source,)
 
     if elements is not None:
-        check_strategy(elements, '%selements' % (prefix,))
+        check_strategy(elements, "%selements" % (prefix,))
     else:
-        with check('dtype is not None'):
+        with check("dtype is not None"):
             if dtype is None:
-                raise InvalidArgument((
-                    'At least one of %(prefix)selements or %(prefix)sdtype '
-                    'must be provided.') % {'prefix': prefix})
+                raise InvalidArgument(
+                    (
+                        "At least one of %(prefix)selements or %(prefix)sdtype "
+                        "must be provided."
+                    )
+                    % {"prefix": prefix}
+                )
 
-    with check('is_categorical_dtype'):
+    with check("is_categorical_dtype"):
         if is_categorical_dtype(dtype):
             raise InvalidArgument(
-                '%sdtype is categorical, which is currently unsupported' % (
-                    prefix,
-                ))
+                "%sdtype is categorical, which is currently unsupported" % (prefix,)
+            )
 
-    dtype = try_convert(np.dtype, dtype, 'dtype')
+    dtype = try_convert(np.dtype, dtype, "dtype")
 
     if elements is None:
         elements = npst.from_dtype(dtype)
     elif dtype is not None:
+
         def convert_element(value):
-            name = 'draw(%selements)' % (prefix,)
+            name = "draw(%selements)" % (prefix,)
             try:
                 return np.array([value], dtype=dtype)[0]
             except TypeError:
                 raise InvalidArgument(
-                    'Cannot convert %s=%r of type %s to dtype %s' % (
-                        name, value, type(value).__name__, dtype.str
-                    )
+                    "Cannot convert %s=%r of type %s to dtype %s"
+                    % (name, value, type(value).__name__, dtype.str)
                 )
             except ValueError:
                 raise InvalidArgument(
-                    'Cannot convert %s=%r to type %s' % (
-                        name, value, dtype.str,
-                    )
+                    "Cannot convert %s=%r to type %s" % (name, value, dtype.str)
                 )
+
         elements = elements.map(convert_element)
     assert elements is not None
 
@@ -126,8 +134,10 @@ class ValueIndexStrategy(st.SearchStrategy):
         seen = set()
 
         iterator = cu.many(
-            data, min_size=self.min_size, max_size=self.max_size,
-            average_size=(self.min_size + self.max_size) / 2
+            data,
+            min_size=self.min_size,
+            max_size=self.max_size,
+            average_size=(self.min_size + self.max_size) / 2,
         )
 
         while iterator.more():
@@ -141,8 +151,7 @@ class ValueIndexStrategy(st.SearchStrategy):
             result.append(elt)
 
         dtype = infer_dtype_if_necessary(
-            dtype=self.dtype, values=result, elements=self.elements,
-            draw=data.draw
+            dtype=self.dtype, values=result, elements=self.elements, draw=data.draw
         )
         return pandas.Index(result, dtype=dtype, tupleize_cols=False)
 
@@ -163,11 +172,11 @@ def range_indexes(min_size=0, max_size=None):
     * max_size is the largest number of elements the index can have. If None
       it will default to some suitable value based on min_size.
     """
-    check_valid_size(min_size, 'min_size')
-    check_valid_size(max_size, 'max_size')
+    check_valid_size(min_size, "min_size")
+    check_valid_size(max_size, "max_size")
     if max_size is None:
         max_size = min([min_size + DEFAULT_MAX_SIZE, 2 ** 63 - 1])
-    check_valid_interval(min_size, max_size, 'min_size', 'max_size')
+    check_valid_interval(min_size, max_size, "min_size", "max_size")
     return st.integers(min_size, max_size).map(pandas.RangeIndex)
 
 
@@ -199,17 +208,16 @@ def indexes(
     * unique specifies whether all of the elements in the resulting index
       should be distinct.
     """
-    check_valid_size(min_size, 'min_size')
-    check_valid_size(max_size, 'max_size')
-    check_valid_interval(min_size, max_size, 'min_size', 'max_size')
-    check_type(bool, unique, 'unique')
+    check_valid_size(min_size, "min_size")
+    check_valid_size(max_size, "max_size")
+    check_valid_interval(min_size, max_size, "min_size", "max_size")
+    check_type(bool, unique, "unique")
 
     elements, dtype = elements_and_dtype(elements, dtype)
 
     if max_size is None:
         max_size = min_size + DEFAULT_MAX_SIZE
-    return ValueIndexStrategy(
-        elements, dtype, min_size, max_size, unique)
+    return ValueIndexStrategy(elements, dtype, min_size, max_size, unique)
 
 
 @st.defines_strategy
@@ -268,24 +276,37 @@ def series(
 
         if len(index) > 0:
             if dtype is not None:
-                result_data = draw(npst.arrays(
-                    dtype=dtype, elements=elements, shape=len(index),
-                    fill=fill, unique=unique,
-                ))
+                result_data = draw(
+                    npst.arrays(
+                        dtype=dtype,
+                        elements=elements,
+                        shape=len(index),
+                        fill=fill,
+                        unique=unique,
+                    )
+                )
             else:
-                result_data = list(draw(npst.arrays(
-                    dtype=object, elements=elements, shape=len(index),
-                    fill=fill, unique=unique,
-                )))
+                result_data = list(
+                    draw(
+                        npst.arrays(
+                            dtype=object,
+                            elements=elements,
+                            shape=len(index),
+                            fill=fill,
+                            unique=unique,
+                        )
+                    )
+                )
 
-            return pandas.Series(
-                result_data, index=index, dtype=dtype
-            )
+            return pandas.Series(result_data, index=index, dtype=dtype)
         else:
             return pandas.Series(
-                (), index=index,
-                dtype=dtype if dtype is not None else draw(
-                    dtype_for_elements_strategy(elements)))
+                (),
+                index=index,
+                dtype=dtype
+                if dtype is not None
+                else draw(dtype_for_elements_strategy(elements)),
+            )
 
     return result()
 
@@ -336,9 +357,8 @@ def columns(
     else:
         names = list(names_or_number)
     return [
-        column(
-            name=n, dtype=dtype, elements=elements, fill=fill, unique=unique
-        ) for n in names
+        column(name=n, dtype=dtype, elements=elements, fill=fill, unique=unique)
+        for n in names
     ]
 
 
@@ -460,10 +480,9 @@ def data_frames(
 
     if columns is None:
         if rows is None:
-            raise InvalidArgument(
-                'At least one of rows and columns must be provided'
-            )
+            raise InvalidArgument("At least one of rows and columns must be provided")
         else:
+
             @st.composite
             def rows_only(draw):
                 index = draw(index_strategy)
@@ -471,34 +490,32 @@ def data_frames(
                 @check_function
                 def row():
                     result = draw(rows)
-                    check_type(Iterable, result, 'draw(row)')
+                    check_type(Iterable, result, "draw(row)")
                     return result
 
                 if len(index) > 0:
-                    return pandas.DataFrame(
-                        [row() for _ in index],
-                        index=index
-                    )
+                    return pandas.DataFrame([row() for _ in index], index=index)
                 else:
                     # If we haven't drawn any rows we need to draw one row and
                     # then discard it so that we get a consistent shape for the
                     # DataFrame.
                     base = pandas.DataFrame([row()])
                     return base.drop(0)
+
             return rows_only()
 
     assert columns is not None
-    cols = try_convert(tuple, columns, 'columns')  # type: Sequence[column]
+    cols = try_convert(tuple, columns, "columns")  # type: Sequence[column]
 
     rewritten_columns = []
     column_names = set()  # type: Set[str]
 
     for i, c in enumerate(cols):
-        check_type(column, c, 'columns[%d]' % (i,))
+        check_type(column, c, "columns[%d]" % (i,))
 
         c = copy(c)
         if c.name is None:
-            label = 'columns[%d]' % (i,)
+            label = "columns[%d]" % (i,)
             c.name = i
         else:
             label = c.name
@@ -506,34 +523,32 @@ def data_frames(
                 hash(c.name)
             except TypeError:
                 raise InvalidArgument(
-                    'Column names must be hashable, but columns[%d].name was '
-                    '%r of type %s, which cannot be hashed.' % (
-                        i, c.name, type(c.name).__name__,))
+                    "Column names must be hashable, but columns[%d].name was "
+                    "%r of type %s, which cannot be hashed."
+                    % (i, c.name, type(c.name).__name__)
+                )
 
         if c.name in column_names:
-            raise InvalidArgument(
-                'duplicate definition of column name %r' % (c.name,))
+            raise InvalidArgument("duplicate definition of column name %r" % (c.name,))
 
         column_names.add(c.name)
 
-        c.elements, c.dtype = elements_and_dtype(
-            c.elements, c.dtype, label
-        )
+        c.elements, c.dtype = elements_and_dtype(c.elements, c.dtype, label)
 
         if c.dtype is None and rows is not None:
             raise InvalidArgument(
-                'Must specify a dtype for all columns when combining rows with'
-                ' columns.'
+                "Must specify a dtype for all columns when combining rows with"
+                " columns."
             )
 
         c.fill = npst.fill_for(
-            fill=c.fill, elements=c.elements, unique=c.unique,
-            name=label
+            fill=c.fill, elements=c.elements, unique=c.unique, name=label
         )
 
         rewritten_columns.append(c)
 
     if rows is None:
+
         @st.composite
         def just_draw_columns(draw):
             index = draw(index_strategy)
@@ -554,17 +569,14 @@ def data_frames(
             # row wise, so that the values of each row are next to each other.
             # This makes life easier for the shrinker when deleting blocks of
             # data.
-            columns_without_fill = [
-                c for c in rewritten_columns if c.fill.is_empty]
+            columns_without_fill = [c for c in rewritten_columns if c.fill.is_empty]
 
             if columns_without_fill:
                 for c in columns_without_fill:
                     data[c.name] = pandas.Series(
-                        np.zeros(shape=len(index), dtype=c.dtype),
-                        index=index,
+                        np.zeros(shape=len(index), dtype=c.dtype), index=index
                     )
-                seen = {
-                    c.name: set() for c in columns_without_fill if c.unique}
+                seen = {c.name: set() for c in columns_without_fill if c.unique}
 
                 for i in hrange(len(index)):
                     for c in columns_without_fill:
@@ -582,30 +594,44 @@ def data_frames(
 
             for c in rewritten_columns:
                 if not c.fill.is_empty:
-                    data[c.name] = draw(series(
-                        index=local_index_strategy, dtype=c.dtype,
-                        elements=c.elements, fill=c.fill, unique=c.unique))
+                    data[c.name] = draw(
+                        series(
+                            index=local_index_strategy,
+                            dtype=c.dtype,
+                            elements=c.elements,
+                            fill=c.fill,
+                            unique=c.unique,
+                        )
+                    )
 
             return pandas.DataFrame(data, index=index)
+
         return just_draw_columns()
     else:
+
         @st.composite
         def assign_rows(draw):
             index = draw(index_strategy)
 
-            result = pandas.DataFrame(OrderedDict(
-                (c.name, pandas.Series(
-                    np.zeros(dtype=c.dtype, shape=len(index)), dtype=c.dtype))
-                for c in rewritten_columns
-            ), index=index)
+            result = pandas.DataFrame(
+                OrderedDict(
+                    (
+                        c.name,
+                        pandas.Series(
+                            np.zeros(dtype=c.dtype, shape=len(index)), dtype=c.dtype
+                        ),
+                    )
+                    for c in rewritten_columns
+                ),
+                index=index,
+            )
 
             fills = {}
 
             any_unique = any(c.unique for c in rewritten_columns)
 
             if any_unique:
-                all_seen = [
-                    set() if c.unique else None for c in rewritten_columns]
+                all_seen = [set() if c.unique else None for c in rewritten_columns]
                 while all_seen[-1] is None:
                     all_seen.pop()
 
@@ -626,12 +652,10 @@ def data_frames(
                                     as_list[i] = fills[i]
                         for k in row:
                             if k not in column_names:
-                                raise InvalidArgument((
-                                    'Row %r contains column %r not in '
-                                    'columns %r)' % (
-                                        row, k, [
-                                            c.name for c in rewritten_columns
-                                        ])))
+                                raise InvalidArgument(
+                                    "Row %r contains column %r not in columns %r)"
+                                    % (row, k, [c.name for c in rewritten_columns])
+                                )
                         row = as_list
                     if any_unique:
                         has_duplicate = False
@@ -644,14 +668,16 @@ def data_frames(
                             seen.add(value)
                         if has_duplicate:
                             continue
-                    row = list(try_convert(tuple, row, 'draw(rows)'))
+                    row = list(try_convert(tuple, row, "draw(rows)"))
 
                     if len(row) > len(rewritten_columns):
-                        raise InvalidArgument((
-                            'Row %r contains too many entries. Has %d but '
-                            'expected at most %d') % (
-                                original_row, len(row), len(rewritten_columns)
-                        ))
+                        raise InvalidArgument(
+                            (
+                                "Row %r contains too many entries. Has %d but "
+                                "expected at most %d"
+                            )
+                            % (original_row, len(row), len(rewritten_columns))
+                        )
                     while len(row) < len(rewritten_columns):
                         row.append(draw(rewritten_columns[len(row)].fill))
                     result.iloc[row_index] = row
@@ -659,4 +685,5 @@ def data_frames(
                 else:
                     reject()
             return result
+
         return assign_rows()

@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import hypothesis.internal.conjecture.utils as d
 from hypothesis.searchstrategy.strategies import SearchStrategy
@@ -26,7 +26,7 @@ class BoolStrategy(SearchStrategy):
     distribution."""
 
     def __repr__(self):
-        return u'BoolStrategy()'
+        return u"BoolStrategy()"
 
     def calc_has_reusable_values(self, recur):
         return True
@@ -51,7 +51,7 @@ class JustStrategy(SearchStrategy):
         self.value = value
 
     def __repr__(self):
-        return 'just(%r)' % (self.value,)
+        return "just(%r)" % (self.value,)
 
     def calc_has_reusable_values(self, recur):
         return True
@@ -74,7 +74,7 @@ class SampledFromStrategy(SearchStrategy):
 
     def __init__(self, elements):
         SearchStrategy.__init__(self)
-        self.elements = d.check_sample(elements, 'sampled_from')
+        self.elements = d.check_sample(elements, "sampled_from")
         assert self.elements
 
     def calc_has_reusable_values(self, recur):

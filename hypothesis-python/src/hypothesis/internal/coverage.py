@@ -15,11 +15,11 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
+import json
 import os
 import sys
-import json
 from contextlib import contextmanager
 
 from hypothesis.internal.reflection import proxies
@@ -50,17 +50,17 @@ def pretty_file_name(f):
         pass
 
     parts = f.split(os.path.sep)
-    parts = parts[parts.index('hypothesis'):]
+    parts = parts[parts.index("hypothesis") :]
     result = os.path.sep.join(parts)
     pretty_file_name_cache[f] = result
     return result
 
 
-IN_COVERAGE_TESTS = os.getenv('HYPOTHESIS_INTERNAL_COVERAGE') == 'true'
+IN_COVERAGE_TESTS = os.getenv("HYPOTHESIS_INTERNAL_COVERAGE") == "true"
 
 
 if IN_COVERAGE_TESTS:
-    with open('branch-check', 'w'):
+    with open("branch-check", "w"):
         pass
     written = set()  # type: Set[Tuple[str, bool]]
 
@@ -69,8 +69,8 @@ if IN_COVERAGE_TESTS:
         if key in written:
             return
         written.add(key)
-        with open('branch-check', 'a') as log:
-            log.write(json.dumps({'name': name, 'value': value}) + '\n')
+        with open("branch-check", "a") as log:
+            log.write(json.dumps({"name": name, "value": value}) + "\n")
 
     description_stack = []
 
@@ -80,14 +80,14 @@ if IN_COVERAGE_TESTS:
         # function, one for our actual caller, so we want to go two extra
         # stack frames up.
         caller = sys._getframe(depth + 2)
-        local_description = '%s at %s:%d' % (
+        local_description = "%s at %s:%d" % (
             name,
             pretty_file_name(caller.f_code.co_filename),
             caller.f_lineno,
         )
         try:
             description_stack.append(local_description)
-            description = ' in '.join(reversed(description_stack)) + ' passed'
+            description = " in ".join(reversed(description_stack)) + " passed"
             yield
             record_branch(description, True)
         except BaseException:
@@ -107,8 +107,12 @@ if IN_COVERAGE_TESTS:
             # depth of 2 because of the proxy function calling us.
             with check_block(f.__name__, 2):
                 return f(*args, **kwargs)
+
         return accept
+
+
 else:
+
     def check_function(f):
         return f
 

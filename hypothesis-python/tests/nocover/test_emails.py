@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from hypothesis import given
 from hypothesis.strategies import emails
@@ -23,7 +23,7 @@ from hypothesis.strategies import emails
 
 @given(emails())
 def test_is_valid_email(address):
-    local, at_, domain = address.rpartition('@')
-    assert at_ == '@'
+    local, at_, domain = address.rpartition("@")
+    assert at_ == "@"
     assert local
     assert domain

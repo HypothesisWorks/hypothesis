@@ -15,14 +15,13 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis.internal.compat import PY2, WINDOWS, hunichr, \
-    escape_unicode_characters
+from hypothesis.internal.compat import PY2, WINDOWS, escape_unicode_characters, hunichr
 
-pytest_plugins = str('pytester')
+pytest_plugins = str("pytester")
 
 TESTSUITE = """
 from hypothesis import given, settings, Verbosity
@@ -36,16 +35,13 @@ def test_should_be_verbose(x):
 """
 
 
-@pytest.mark.parametrize('capture,expected', [
-    ('no', True),
-    ('fd', False),
-])
+@pytest.mark.parametrize("capture,expected", [("no", True), ("fd", False)])
 def test_output_without_capture(testdir, capture, expected):
     script = testdir.makepyfile(TESTSUITE)
-    result = testdir.runpytest(script, '--verbose', '--capture', capture)
-    out = '\n'.join(result.stdout.lines)
-    assert 'test_should_be_verbose' in out
-    assert ('Trying example' in out) == expected
+    result = testdir.runpytest(script, "--verbose", "--capture", capture)
+    out = "\n".join(result.stdout.lines)
+    assert "test_should_be_verbose" in out
+    assert ("Trying example" in out) == expected
     assert result.ret == 0
 
 
@@ -68,21 +64,19 @@ def test_emits_unicode():
 
 @pytest.mark.xfail(
     WINDOWS,
-    reason=(
-        "Encoding issues in running the subprocess, possibly pytest's fault"))
-@pytest.mark.skipif(
-    PY2, reason="Output streams don't have encodings in python 2")
+    reason=("Encoding issues in running the subprocess, possibly pytest's fault"),
+)
+@pytest.mark.skipif(PY2, reason="Output streams don't have encodings in python 2")
 def test_output_emitting_unicode(testdir, monkeypatch):
-    monkeypatch.setenv('LC_ALL', 'C')
-    monkeypatch.setenv('LANG', 'C')
+    monkeypatch.setenv("LC_ALL", "C")
+    monkeypatch.setenv("LANG", "C")
     script = testdir.makepyfile(UNICODE_EMITTING)
-    result = getattr(
-        testdir, 'runpytest_subprocess', testdir.runpytest)(
-        script, '--verbose', '--capture=no')
-    out = '\n'.join(result.stdout.lines)
-    assert 'test_emits_unicode' in out
-    assert hunichr(1001) in out or \
-        escape_unicode_characters(hunichr(1001)) in out
+    result = getattr(testdir, "runpytest_subprocess", testdir.runpytest)(
+        script, "--verbose", "--capture=no"
+    )
+    out = "\n".join(result.stdout.lines)
+    assert "test_emits_unicode" in out
+    assert hunichr(1001) in out or escape_unicode_characters(hunichr(1001)) in out
     assert result.ret == 0
 
 
@@ -116,18 +110,21 @@ def get_line_num(token, result, skip_n=0):
                 return i
             else:
                 skipped += 1
-    assert False, 'Token %r not found (skipped %r of planned %r skips)' % (
-        token, skipped, skip_n)
+    assert False, "Token %r not found (skipped %r of planned %r skips)" % (
+        token,
+        skipped,
+        skip_n,
+    )
 
 
 def test_timeout_traceback_is_hidden(testdir):
     script = testdir.makepyfile(TRACEBACKHIDE_TIMEOUT)
-    result = testdir.runpytest(script, '--verbose')
+    result = testdir.runpytest(script, "--verbose")
     # `def inner` shows up in the output twice: once when pytest shows us the
     # source code of the failing test, and once in the traceback.
     # It's the 2nd that should be next to the "Timeout: ..." message.
-    def_line = get_line_num('def inner', result, skip_n=1)
-    timeout_line = get_line_num('Timeout: Ran out of time', result)
+    def_line = get_line_num("def inner", result, skip_n=1)
+    timeout_line = get_line_num("Timeout: Ran out of time", result)
     # If __tracebackhide__ works, then the Timeout error message will be
     # next to the test name.  If it doesn't work, then the message will be
     # many lines apart with source code dump between them.
@@ -146,9 +143,9 @@ def test_healthcheck_traceback_is_hidden(x):
 
 def test_healthcheck_traceback_is_hidden(testdir):
     script = testdir.makepyfile(TRACEBACKHIDE_HEALTHCHECK)
-    result = testdir.runpytest(script, '--verbose')
-    def_token = '__ test_healthcheck_traceback_is_hidden __'
-    timeout_token = ': FailedHealthCheck'
+    result = testdir.runpytest(script, "--verbose")
+    def_token = "__ test_healthcheck_traceback_is_hidden __"
+    timeout_token = ": FailedHealthCheck"
     def_line = get_line_num(def_token, result)
     timeout_line = get_line_num(timeout_token, result)
     assert timeout_line - def_line == 6
@@ -162,10 +159,10 @@ def test_data_factory(draw):
 """
 
 
-@pytest.mark.skipif(pytest.__version__[:3] == '3.0', reason='very very old')
+@pytest.mark.skipif(pytest.__version__[:3] == "3.0", reason="very very old")
 def test_deprecation_of_strategies_as_tests(testdir):
     script = testdir.makepyfile(COMPOSITE_IS_NOT_A_TEST)
-    testdir.runpytest(script, '-Werror').assert_outcomes(failed=1)
+    testdir.runpytest(script, "-Werror").assert_outcomes(failed=1)
     result = testdir.runpytest(script)
     result.assert_outcomes(passed=1)
-    result.stdout.fnmatch_lines(['*HypothesisDeprecationWarning*'])
+    result.stdout.fnmatch_lines(["*HypothesisDeprecationWarning*"])

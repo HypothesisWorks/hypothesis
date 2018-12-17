@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import re
 
@@ -38,9 +38,9 @@ def test_reports_passes():
 
     value = out.getvalue()
 
-    assert 'adaptive_example_deletion' in value
-    assert 'calls' in value
-    assert 'shrinks' in value
+    assert "adaptive_example_deletion" in value
+    assert "calls" in value
+    assert "shrinks" in value
 
     shrinks_info = re.compile(r"call(s?) of which ([0-9]+) shrank")
 

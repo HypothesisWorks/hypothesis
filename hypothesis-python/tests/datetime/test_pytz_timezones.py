@@ -15,18 +15,18 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import datetime as dt
 
-import pytz
 import pytest
+import pytz
 
-from hypothesis import given, assume
+from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
-from tests.common.debug import minimal
 from hypothesis.extra.pytz import timezones
-from hypothesis.strategies import times, datetimes, sampled_from
+from hypothesis.strategies import datetimes, sampled_from, times
+from tests.common.debug import minimal
 
 
 def test_utc_is_minimal():
@@ -34,13 +34,13 @@ def test_utc_is_minimal():
 
 
 def test_can_generate_non_naive_time():
-    assert minimal(times(timezones=timezones()),
-                   lambda d: d.tzinfo).tzinfo == pytz.UTC
+    assert minimal(times(timezones=timezones()), lambda d: d.tzinfo).tzinfo == pytz.UTC
 
 
 def test_can_generate_non_naive_datetime():
-    assert minimal(datetimes(timezones=timezones()),
-                   lambda d: d.tzinfo).tzinfo == pytz.UTC
+    assert (
+        minimal(datetimes(timezones=timezones()), lambda d: d.tzinfo).tzinfo == pytz.UTC
+    )
 
 
 @given(datetimes(timezones=timezones()))
@@ -48,8 +48,7 @@ def test_timezone_aware_datetimes_are_timezone_aware(dt):
     assert dt.tzinfo is not None
 
 
-@given(sampled_from(['min_value', 'max_value']),
-       datetimes(timezones=timezones()))
+@given(sampled_from(["min_value", "max_value"]), datetimes(timezones=timezones()))
 def test_datetime_bounds_must_be_naive(name, val):
     with pytest.raises(InvalidArgument):
         datetimes(**{name: val}).validate()
@@ -57,16 +56,22 @@ def test_datetime_bounds_must_be_naive(name, val):
 
 def test_underflow_in_simplify():
     # we shouldn't trigger a pytz bug when we're simplifying
-    minimal(datetimes(max_value=dt.datetime.min + dt.timedelta(days=3),
-                      timezones=timezones()),
-            lambda x: x.tzinfo != pytz.UTC)
+    minimal(
+        datetimes(
+            max_value=dt.datetime.min + dt.timedelta(days=3), timezones=timezones()
+        ),
+        lambda x: x.tzinfo != pytz.UTC,
+    )
 
 
 def test_overflow_in_simplify():
     # we shouldn't trigger a pytz bug when we're simplifying
-    minimal(datetimes(min_value=dt.datetime.max - dt.timedelta(days=3),
-                      timezones=timezones()),
-            lambda x: x.tzinfo != pytz.UTC)
+    minimal(
+        datetimes(
+            min_value=dt.datetime.max - dt.timedelta(days=3), timezones=timezones()
+        ),
+        lambda x: x.tzinfo != pytz.UTC,
+    )
 
 
 def test_timezones_arg_to_datetimes_must_be_search_strategy():
@@ -84,11 +89,11 @@ def test_timezone_aware_times_are_timezone_aware(dt):
 
 def test_can_generate_non_utc():
     times(timezones=timezones()).filter(
-        lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC'
+        lambda d: assume(d.tzinfo) and d.tzinfo.zone != u"UTC"
     ).validate()
 
 
-@given(sampled_from(['min_value', 'max_value']), times(timezones=timezones()))
+@given(sampled_from(["min_value", "max_value"]), times(timezones=timezones()))
 def test_time_bounds_must_be_naive(name, val):
     with pytest.raises(InvalidArgument):
         times(**{name: val}).validate()

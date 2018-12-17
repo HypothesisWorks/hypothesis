@@ -15,21 +15,27 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis import Verbosity, given, settings, reporting
+from hypothesis import Verbosity, given, reporting, settings
+from hypothesis.control import (
+    BuildContext,
+    _current_build_context,
+    cleanup,
+    current_build_context,
+    event,
+    note,
+)
 from hypothesis.errors import CleanupFailed, InvalidArgument
-from hypothesis.control import BuildContext, note, event, cleanup, \
-    current_build_context, _current_build_context
-from tests.common.utils import capture_out
-from hypothesis.strategies import integers
 from hypothesis.internal.conjecture.data import ConjectureData as TD
+from hypothesis.strategies import integers
+from tests.common.utils import capture_out
 
 
 def bc():
-    return BuildContext(TD.for_buffer(b''))
+    return BuildContext(TD.for_buffer(b""))
 
 
 def test_cannot_cleanup_with_no_context():
@@ -40,7 +46,7 @@ def test_cannot_cleanup_with_no_context():
 
 def test_cannot_event_with_no_context():
     with pytest.raises(InvalidArgument):
-        event('hi')
+        event("hi")
     assert _current_build_context.value is None
 
 
@@ -76,12 +82,14 @@ def test_suppresses_exceptions_in_teardown():
     with capture_out() as o:
         with pytest.raises(AssertionError):
             with bc():
+
                 def foo():
                     raise ValueError()
+
                 cleanup(foo)
                 assert False
 
-    assert u'ValueError' in o.getvalue()
+    assert u"ValueError" in o.getvalue()
     assert _current_build_context.value is None
 
 
@@ -89,33 +97,38 @@ def test_runs_multiple_cleanup_with_teardown():
     with capture_out() as o:
         with pytest.raises(AssertionError):
             with bc():
+
                 def foo():
                     raise ValueError()
+
                 cleanup(foo)
 
                 def bar():
                     raise TypeError()
+
                 cleanup(foo)
                 cleanup(bar)
                 assert False
 
-    assert u'ValueError' in o.getvalue()
-    assert u'TypeError' in o.getvalue()
+    assert u"ValueError" in o.getvalue()
+    assert u"TypeError" in o.getvalue()
     assert _current_build_context.value is None
 
 
 def test_raises_error_if_cleanup_fails_but_block_does_not():
     with pytest.raises(CleanupFailed):
         with bc():
+
             def foo():
                 raise ValueError()
+
             cleanup(foo)
     assert _current_build_context.value is None
 
 
 def test_raises_if_note_out_of_context():
     with pytest.raises(InvalidArgument):
-        note('Hi')
+        note("Hi")
 
 
 def test_raises_if_current_build_context_out_of_context():
@@ -135,7 +148,7 @@ def test_prints_all_notes_in_verbose_mode():
     @settings(verbosity=Verbosity.debug, database=None)
     @given(integers(1, 10))
     def test(x):
-        msg = 'x -> %d' % (x,)
+        msg = "x -> %d" % (x,)
         note(msg)
         messages.add(msg)
         assert x < 5

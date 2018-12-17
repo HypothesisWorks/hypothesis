@@ -15,18 +15,26 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from random import Random
 
 import hypothesis.strategies as st
-from hypothesis import Phase, Verbosity, HealthCheck, given, assume, \
-    reject, example, settings, unlimited
+from hypothesis import (
+    HealthCheck,
+    Phase,
+    Verbosity,
+    assume,
+    example,
+    given,
+    reject,
+    settings,
+    unlimited,
+)
 from hypothesis.internal.compat import hbytes
-from hypothesis.searchstrategy.numbers import WideRangeIntStrategy
-from hypothesis.internal.conjecture.data import Status, StopTest, \
-    ConjectureData
+from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis.searchstrategy.numbers import WideRangeIntStrategy
 
 
 @st.composite
@@ -45,12 +53,15 @@ def problems(draw):
             pass
 
 
-@example((2, b'\x00\x00\n\x01'))
-@example((1, b'\x00\x00\x06\x01'))
-@example(problem=(32768, b'\x03\x01\x00\x00\x00\x00\x00\x01\x00\x02\x01'))
+@example((2, b"\x00\x00\n\x01"))
+@example((1, b"\x00\x00\x06\x01"))
+@example(problem=(32768, b"\x03\x01\x00\x00\x00\x00\x00\x01\x00\x02\x01"))
 @settings(
-    suppress_health_check=HealthCheck.all(), timeout=unlimited, deadline=None,
-    max_examples=10, verbosity=Verbosity.normal
+    suppress_health_check=HealthCheck.all(),
+    timeout=unlimited,
+    deadline=None,
+    max_examples=10,
+    verbosity=Verbosity.normal,
 )
 @given(problems())
 def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
@@ -72,10 +83,18 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
         if data.draw_bits(8) == stop and k >= n:
             data.mark_interesting()
 
-    runner = ConjectureRunner(f, random=Random(0), settings=settings(
-        suppress_health_check=HealthCheck.all(), timeout=unlimited,
-        phases=(Phase.shrink,), database=None, verbosity=Verbosity.debug
-    ), database_key=None)
+    runner = ConjectureRunner(
+        f,
+        random=Random(0),
+        settings=settings(
+            suppress_health_check=HealthCheck.all(),
+            timeout=unlimited,
+            phases=(Phase.shrink,),
+            database=None,
+            verbosity=Verbosity.debug,
+        ),
+        database_key=None,
+    )
 
     runner.test_function(ConjectureData.for_buffer(blob))
 
@@ -86,7 +105,7 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
     shrinker = runner.new_shrinker(v, lambda x: x.status == Status.INTERESTING)
 
     shrinker.clear_passes()
-    shrinker.add_new_pass('minimize_individual_blocks')
+    shrinker.add_new_pass("minimize_individual_blocks")
 
     shrinker.shrink()
 
@@ -105,7 +124,8 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
     #   that.
     bits_needed = 1 + n.bit_length()
     actual_bits_needed = min(
-        [s for s in WideRangeIntStrategy.sizes if s >= bits_needed])
+        [s for s in WideRangeIntStrategy.sizes if s >= bits_needed]
+    )
     bytes_needed = actual_bits_needed // 8
     # 3 extra bytes: two for the sampler, one for the capping value.
     assert len(v.buffer) == 3 + bytes_needed

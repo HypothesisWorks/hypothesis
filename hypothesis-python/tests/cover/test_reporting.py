@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 import sys
@@ -23,11 +23,11 @@ import sys
 import pytest
 
 from hypothesis import given, reporting
-from tests.common.utils import capture_out
 from hypothesis._settings import Verbosity, settings
-from hypothesis.reporting import report, debug_report, verbose_report
-from hypothesis.strategies import integers
 from hypothesis.internal.compat import PY2
+from hypothesis.reporting import debug_report, report, verbose_report
+from hypothesis.strategies import integers
+from tests.common.utils import capture_out
 
 
 def test_can_suppress_output():
@@ -39,14 +39,14 @@ def test_can_suppress_output():
         with reporting.with_reporter(reporting.silent):
             with pytest.raises(AssertionError):
                 test_int()
-    assert u'Falsifying example' not in o.getvalue()
+    assert u"Falsifying example" not in o.getvalue()
 
 
 def test_can_print_bytes():
     with capture_out() as o:
         with reporting.with_reporter(reporting.default):
-            report(b'hi')
-    assert o.getvalue() == u'hi\n'
+            report(b"hi")
+    assert o.getvalue() == u"hi\n"
 
 
 def test_prints_output_by_default():
@@ -58,48 +58,48 @@ def test_prints_output_by_default():
         with reporting.with_reporter(reporting.default):
             with pytest.raises(AssertionError):
                 test_int()
-    assert u'Falsifying example' in o.getvalue()
+    assert u"Falsifying example" in o.getvalue()
 
 
 def test_does_not_print_debug_in_verbose():
     @given(integers())
     @settings(verbosity=Verbosity.verbose)
     def f(x):
-        debug_report('Hi')
+        debug_report("Hi")
 
     with capture_out() as o:
         f()
-    assert u'Hi' not in o.getvalue()
+    assert u"Hi" not in o.getvalue()
 
 
 def test_does_print_debug_in_debug():
     @given(integers())
     @settings(verbosity=Verbosity.debug)
     def f(x):
-        debug_report('Hi')
+        debug_report("Hi")
 
     with capture_out() as o:
         f()
-    assert u'Hi' in o.getvalue()
+    assert u"Hi" in o.getvalue()
 
 
 def test_does_print_verbose_in_debug():
     @given(integers())
     @settings(verbosity=Verbosity.debug)
     def f(x):
-        verbose_report('Hi')
+        verbose_report("Hi")
 
     with capture_out() as o:
         f()
-    assert u'Hi' in o.getvalue()
+    assert u"Hi" in o.getvalue()
 
 
-@pytest.mark.skipif(
-    PY2, reason="Output streams don't have encodings in python 2")
+@pytest.mark.skipif(PY2, reason="Output streams don't have encodings in python 2")
 def test_can_report_when_system_locale_is_ascii(monkeypatch):
     import io
+
     read, write = os.pipe()
-    with io.open(read, 'r', encoding='ascii') as read:
-        with io.open(write, 'w', encoding='ascii') as write:
-            monkeypatch.setattr(sys, 'stdout', write)
+    with io.open(read, "r", encoding="ascii") as read:
+        with io.open(write, "w", encoding="ascii") as write:
+            monkeypatch.setattr(sys, "stdout", write)
             reporting.default(u"☃")

@@ -15,10 +15,9 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 
 
 def test_max_examples_are_respected():
@@ -28,5 +27,6 @@ def test_max_examples_are_respected():
     @settings(max_examples=100)
     def test(rnd, i):
         counter[0] += 1
+
     test()
     assert counter == [100]

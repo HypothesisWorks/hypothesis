@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from hypothesis.internal.floats import count_between_floats
 

@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import time
 
@@ -23,26 +23,28 @@ import pytest
 
 import hypothesis.core as core
 import hypothesis.strategies as st
-from hypothesis import Verbosity, given, assume, settings
-from hypothesis.errors import FailedHealthCheck
-from tests.common.utils import all_values, capture_out
+from hypothesis import Verbosity, assume, given, settings
 from hypothesis.database import InMemoryExampleDatabase
+from hypothesis.errors import FailedHealthCheck
 from hypothesis.internal.compat import hrange
+from tests.common.utils import all_values, capture_out
 
 
-@pytest.mark.parametrize('in_pytest', [False, True])
-@pytest.mark.parametrize('fail_healthcheck', [False, True])
-@pytest.mark.parametrize('verbosity', [Verbosity.normal, Verbosity.quiet])
+@pytest.mark.parametrize("in_pytest", [False, True])
+@pytest.mark.parametrize("fail_healthcheck", [False, True])
+@pytest.mark.parametrize("verbosity", [Verbosity.normal, Verbosity.quiet])
 def test_prints_seed_only_on_healthcheck(
     monkeypatch, in_pytest, fail_healthcheck, verbosity
 ):
-    monkeypatch.setattr(core, 'running_under_pytest', in_pytest)
+    monkeypatch.setattr(core, "running_under_pytest", in_pytest)
 
     strategy = st.integers()
     if fail_healthcheck:
+
         def slow_map(i):
             time.sleep(10)
             return i
+
         strategy = strategy.map(slow_map)
         expected_exc = FailedHealthCheck
     else:
@@ -62,17 +64,16 @@ def test_prints_seed_only_on_healthcheck(
     seed = test._hypothesis_internal_use_generated_seed
     assert seed is not None
     if fail_healthcheck and verbosity != Verbosity.quiet:
-        assert '@seed(%d)' % (seed,) in output
-        contains_pytest_instruction = (
-            '--hypothesis-seed=%d' % (seed,)) in output
+        assert "@seed(%d)" % (seed,) in output
+        contains_pytest_instruction = ("--hypothesis-seed=%d" % (seed,)) in output
         assert contains_pytest_instruction == in_pytest
     else:
-        assert '@seed' not in output
-        assert '--hypothesis-seed=%d' % (seed,) not in output
+        assert "@seed" not in output
+        assert "--hypothesis-seed=%d" % (seed,) not in output
 
 
 def test_uses_global_force(monkeypatch):
-    monkeypatch.setattr(core, 'global_force_seed', 42)
+    monkeypatch.setattr(core, "global_force_seed", 42)
 
     @given(st.integers())
     def test(i):
@@ -87,7 +88,7 @@ def test_uses_global_force(monkeypatch):
         output.append(o.getvalue())
 
     assert output[0] == output[1]
-    assert '@seed' not in output[0]
+    assert "@seed" not in output[0]
 
 
 def test_does_print_on_reuse_from_database():
@@ -105,7 +106,7 @@ def test_does_print_on_reuse_from_database():
         with pytest.raises(FailedHealthCheck):
             test()
 
-    assert '@seed' in o.getvalue()
+    assert "@seed" in o.getvalue()
 
     passes_healthcheck = True
 
@@ -114,7 +115,7 @@ def test_does_print_on_reuse_from_database():
             test()
 
     assert all_values(database)
-    assert '@seed' not in o.getvalue()
+    assert "@seed" not in o.getvalue()
 
     passes_healthcheck = False
 
@@ -122,4 +123,4 @@ def test_does_print_on_reuse_from_database():
         with pytest.raises(FailedHealthCheck):
             test()
 
-    assert '@seed' in o.getvalue()
+    assert "@seed" in o.getvalue()

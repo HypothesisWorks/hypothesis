@@ -18,10 +18,10 @@
 """This module provides the core primitives of Hypothesis, such as given."""
 
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import sys
 import subprocess
+import sys
 
 import hypothesis.core as core
 
@@ -37,6 +37,6 @@ assert not core.running_under_pytest
 
 
 def test_is_not_running_under_pytest(tmpdir):
-    pyfile = tmpdir.join('test.py')
+    pyfile = tmpdir.join("test.py")
     pyfile.write(FILE_TO_RUN)
     subprocess.check_call([sys.executable, str(pyfile)])

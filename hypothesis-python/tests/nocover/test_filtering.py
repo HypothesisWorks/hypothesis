@@ -15,18 +15,18 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
 from hypothesis import given
-from hypothesis.strategies import lists, integers
+from hypothesis.strategies import integers, lists
 
 
-@pytest.mark.parametrize((u'specifier', u'condition'), [
-    (integers(), lambda x: x > 1),
-    (lists(integers()), bool),
-])
+@pytest.mark.parametrize(
+    (u"specifier", u"condition"),
+    [(integers(), lambda x: x > 1), (lists(integers()), bool)],
+)
 def test_filter_correctly(specifier, condition):
     @given(specifier.filter(condition))
     def test_is_filtered(x):

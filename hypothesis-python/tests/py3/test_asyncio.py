@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import asyncio
 import unittest
@@ -24,7 +24,7 @@ from unittest import TestCase
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, assume
+from hypothesis import assume, given
 from hypothesis.internal.compat import PYPY
 
 
@@ -50,14 +50,14 @@ class TestAsyncio(TestCase):
                     yield from x
             except BaseException as e:
                 error = e
+
         coro = asyncio.coroutine(g)
-        future = asyncio.wait_for(coro(),
-                                  timeout=self.timeout)
+        future = asyncio.wait_for(coro(), timeout=self.timeout)
         self.loop.run_until_complete(future)
         if error is not None:
             raise error
 
-    @pytest.mark.skipif(PYPY, reason='Error in asyncio.new_event_loop()')
+    @pytest.mark.skipif(PYPY, reason="Error in asyncio.new_event_loop()")
     @given(st.text())
     @asyncio.coroutine
     def test_foo(self, x):
@@ -66,5 +66,5 @@ class TestAsyncio(TestCase):
         assert x
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

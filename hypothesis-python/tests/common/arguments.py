@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
@@ -30,14 +30,13 @@ def e(a, *args, **kwargs):
 def e_to_str(elt):
     f, args, kwargs = elt
     bits = list(map(repr, args))
-    bits.extend(sorted('%s=%r' % (k, v) for k, v in kwargs.items()))
-    return '%s(%s)' % (f.__name__, ', '.join(bits))
+    bits.extend(sorted("%s=%r" % (k, v) for k, v in kwargs.items()))
+    return "%s(%s)" % (f.__name__, ", ".join(bits))
 
 
 def argument_validation_test(bad_args):
     @pytest.mark.parametrize(
-        ('function', 'args', 'kwargs'), bad_args,
-        ids=list(map(e_to_str, bad_args))
+        ("function", "args", "kwargs"), bad_args, ids=list(map(e_to_str, bad_args))
     )
     def test_raise_invalid_argument(function, args, kwargs):
         @given(function(*args, **kwargs))

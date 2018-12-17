@@ -15,42 +15,51 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
+import itertools
 import re
 import time
-import itertools
-from random import Random
-from random import seed as seed_random
+from random import Random, seed as seed_random
 
 import attr
 import pytest
 
 import hypothesis.internal.conjecture.engine as engine_module
-from hypothesis import Phase, Verbosity, HealthCheck, settings, unlimited
-from hypothesis.errors import FailedHealthCheck
-from tests.common.utils import no_shrink, checks_deprecated_behaviour
+from hypothesis import HealthCheck, Phase, Verbosity, settings, unlimited
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
-from tests.common.strategies import SLOW, HardToShrink
+from hypothesis.errors import FailedHealthCheck
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
+from hypothesis.internal.conjecture.data import MAX_DEPTH, ConjectureData, Status
+from hypothesis.internal.conjecture.engine import (
+    ConjectureRunner,
+    ExitReason,
+    PassClassification,
+    RunIsComplete,
+    Shrinker,
+    TargetSelector,
+    block_program,
+    sort_key,
+)
+from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
-from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
-    ConjectureData
-from hypothesis.internal.conjecture.utils import Sampler, \
-    calc_label_from_name
-from hypothesis.internal.conjecture.engine import Shrinker, ExitReason, \
-    RunIsComplete, TargetSelector, ConjectureRunner, PassClassification, \
-    sort_key, block_program
+from tests.common.strategies import SLOW, HardToShrink
+from tests.common.utils import checks_deprecated_behaviour, no_shrink
 
-SOME_LABEL = calc_label_from_name('some label')
+SOME_LABEL = calc_label_from_name("some label")
 
 
 def run_to_buffer(f):
     with deterministic_PRNG():
-        runner = ConjectureRunner(f, settings=settings(
-            max_examples=5000, buffer_size=1024,
-            database=None, suppress_health_check=HealthCheck.all(),
-        ))
+        runner = ConjectureRunner(
+            f,
+            settings=settings(
+                max_examples=5000,
+                buffer_size=1024,
+                database=None,
+                suppress_health_check=HealthCheck.all(),
+            ),
+        )
         runner.run()
         assert runner.interesting_examples
         last_data, = runner.interesting_examples.values()
@@ -62,6 +71,7 @@ def test_can_index_results():
     def f(data):
         data.draw_bytes(5)
         data.mark_interesting()
+
     assert f.index(0) == 0
     assert f.count(0) == 5
 
@@ -72,6 +82,7 @@ def test_non_cloneable_intervals():
         data.draw_bytes(10)
         data.draw_bytes(9)
         data.mark_interesting()
+
     assert x == hbytes(19)
 
 
@@ -84,6 +95,7 @@ def test_duplicate_buffers():
         s = data.draw_bytes(10)
         if s == t:
             data.mark_interesting()
+
     assert x == hbytes([0] * 9 + [1]) * 2
 
 
@@ -94,6 +106,7 @@ def test_deletable_draws():
             x = data.draw_bytes(2)
             if x[0] == 255:
                 data.mark_interesting()
+
     assert x == hbytes([255, 0])
 
 
@@ -102,16 +115,16 @@ def zero_dist(random, n):
 
 
 def test_can_load_data_from_a_corpus():
-    key = b'hi there'
+    key = b"hi there"
     db = ExampleDatabase()
-    value = b'=\xc3\xe4l\x81\xe1\xc2H\xc9\xfb\x1a\xb6bM\xa8\x7f'
+    value = b"=\xc3\xe4l\x81\xe1\xc2H\xc9\xfb\x1a\xb6bM\xa8\x7f"
     db.save(key, value)
 
     def f(data):
         if data.draw_bytes(len(value)) == value:
             data.mark_interesting()
-    runner = ConjectureRunner(
-        f, settings=settings(database=db), database_key=key)
+
+    runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
     runner.run()
     last_data, = runner.interesting_examples.values()
     assert last_data.buffer == value
@@ -124,28 +137,35 @@ def slow_shrinker():
     def accept(data):
         if data.draw(strat):
             data.mark_interesting()
+
     return accept
 
 
-@pytest.mark.parametrize('n', [1, 5])
+@pytest.mark.parametrize("n", [1, 5])
 def test_terminates_shrinks(n, monkeypatch):
     from hypothesis.internal.conjecture import engine
+
     db = InMemoryExampleDatabase()
 
     def generate_new_examples(self):
         def draw_bytes(data, n):
             return hbytes([255] * n)
 
-        self.test_function(ConjectureData(
-            draw_bytes=draw_bytes, max_length=self.settings.buffer_size))
+        self.test_function(
+            ConjectureData(draw_bytes=draw_bytes, max_length=self.settings.buffer_size)
+        )
 
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples', generate_new_examples)
-    monkeypatch.setattr(engine, 'MAX_SHRINKS', n)
+        ConjectureRunner, "generate_new_examples", generate_new_examples
+    )
+    monkeypatch.setattr(engine, "MAX_SHRINKS", n)
 
-    runner = ConjectureRunner(slow_shrinker(), settings=settings(
-        max_examples=5000, database=db, timeout=unlimited,
-    ), random=Random(0), database_key=b'key')
+    runner = ConjectureRunner(
+        slow_shrinker(),
+        settings=settings(max_examples=5000, database=db, timeout=unlimited),
+        random=Random(0),
+        database_key=b"key",
+    )
     runner.run()
     last_data, = runner.interesting_examples.values()
     assert last_data.status == Status.INTERESTING
@@ -164,6 +184,7 @@ def test_detects_flakiness():
         if not failed_once[0]:
             failed_once[0] = True
             data.mark_interesting()
+
     runner = ConjectureRunner(tf)
     runner.run()
     assert count == [2]
@@ -186,6 +207,7 @@ def test_variadic_draw():
     def b(data):
         if any(all(d) for d in draw_list(data)):
             data.mark_interesting()
+
     ls = draw_list(ConjectureData.for_buffer(b))
     assert len(ls) == 1
     assert len(ls[0]) == 1
@@ -194,10 +216,11 @@ def test_variadic_draw():
 def test_draw_to_overrun():
     @run_to_buffer
     def x(data):
-        d = (data.draw_bytes(1)[0] - 8) & 0xff
+        d = (data.draw_bytes(1)[0] - 8) & 0xFF
         data.draw_bytes(128 * d)
         if d >= 2:
             data.mark_interesting()
+
     assert x == hbytes([10]) + hbytes(128 * 2)
 
 
@@ -206,17 +229,18 @@ def test_can_navigate_to_a_valid_example():
         i = int_from_bytes(data.draw_bytes(2))
         data.draw_bytes(i)
         data.mark_interesting()
-    runner = ConjectureRunner(f, settings=settings(
-        max_examples=5000, buffer_size=2, database=None,
-    ))
+
+    runner = ConjectureRunner(
+        f, settings=settings(max_examples=5000, buffer_size=2, database=None)
+    )
     runner.run()
     assert runner.interesting_examples
 
 
 def test_stops_after_max_examples_when_reading():
-    key = b'key'
+    key = b"key"
 
-    db = ExampleDatabase(':memory:')
+    db = ExampleDatabase(":memory:")
     for i in range(10):
         db.save(key, hbytes([i]))
 
@@ -225,10 +249,9 @@ def test_stops_after_max_examples_when_reading():
     def f(data):
         seen.append(data.draw_bytes(1))
 
-    runner = ConjectureRunner(f, settings=settings(
-        max_examples=1,
-        database=db,
-    ), database_key=key)
+    runner = ConjectureRunner(
+        f, settings=settings(max_examples=1, database=db), database_key=key
+    )
     runner.run()
     assert len(seen) == 1
 
@@ -239,10 +262,7 @@ def test_stops_after_max_examples_when_generating():
     def f(data):
         seen.append(data.draw_bytes(1))
 
-    runner = ConjectureRunner(f, settings=settings(
-        max_examples=1,
-        database=None,
-    ))
+    runner = ConjectureRunner(f, settings=settings(max_examples=1, database=None))
     runner.run()
     assert len(seen) == 1
 
@@ -257,12 +277,14 @@ def test_interleaving_engines():
         def g(d2):
             d2.draw_bytes(1)
             data.mark_interesting()
+
         runner = ConjectureRunner(g, random=rnd)
         children.append(runner)
         runner.run()
         if runner.interesting_examples:
             data.mark_interesting()
-    assert x == b'\0'
+
+    assert x == b"\0"
     for c in children:
         assert not c.interesting_examples
 
@@ -275,8 +297,7 @@ def test_run_with_timeout_while_shrinking():
         if any(x):
             data.mark_interesting()
 
-    runner = ConjectureRunner(
-        f, settings=settings(database=None, timeout=0.2))
+    runner = ConjectureRunner(f, settings=settings(database=None, timeout=0.2))
     start = time.time()
     runner.run()
     assert time.time() <= start + 1
@@ -288,8 +309,7 @@ def test_run_with_timeout_while_boring():
     def f(data):
         time.sleep(0.1)
 
-    runner = ConjectureRunner(
-        f, settings=settings(database=None, timeout=0.2))
+    runner = ConjectureRunner(f, settings=settings(database=None, timeout=0.2))
     start = time.time()
     runner.run()
     assert time.time() <= start + 1
@@ -304,8 +324,7 @@ def test_max_shrinks_can_disable_shrinking():
         seen.add(hbytes(data.draw_bytes(32)))
         data.mark_interesting()
 
-    runner = ConjectureRunner(
-        f, settings=settings(database=None, max_shrinks=0,))
+    runner = ConjectureRunner(f, settings=settings(database=None, max_shrinks=0))
     runner.run()
     assert len(seen) == 1
 
@@ -317,9 +336,9 @@ def test_phases_can_disable_shrinking():
         seen.add(hbytes(data.draw_bytes(32)))
         data.mark_interesting()
 
-    runner = ConjectureRunner(f, settings=settings(
-        database=None, phases=(Phase.reuse, Phase.generate),
-    ))
+    runner = ConjectureRunner(
+        f, settings=settings(database=None, phases=(Phase.reuse, Phase.generate))
+    )
     runner.run()
     assert len(seen) == 1
 
@@ -344,7 +363,8 @@ def test_no_read_no_shrink():
     def x(data):
         count[0] += 1
         data.mark_interesting()
-    assert x == b''
+
+    assert x == b""
     assert count == [1]
 
 
@@ -376,9 +396,12 @@ def test_fully_exhaust_base(monkeypatch):
         assert key not in seen
         seen.add(key)
 
-    runner = ConjectureRunner(f, settings=settings(
-        max_examples=10000, phases=no_shrink, buffer_size=1024, database=None,
-    ))
+    runner = ConjectureRunner(
+        f,
+        settings=settings(
+            max_examples=10000, phases=no_shrink, buffer_size=1024, database=None
+        ),
+    )
 
     for c in hrange(4):
         runner.cached_test_function([0, c])
@@ -395,7 +418,8 @@ def test_saves_on_interrupt():
     db = InMemoryExampleDatabase()
 
     runner = ConjectureRunner(
-        interrupts, settings=settings(database=db), database_key=b'key')
+        interrupts, settings=settings(database=db), database_key=b"key"
+    )
 
     with pytest.raises(KeyboardInterrupt):
         runner.run()
@@ -403,7 +427,7 @@ def test_saves_on_interrupt():
 
 
 def test_returns_written():
-    value = hbytes(b'\0\1\2\3')
+    value = hbytes(b"\0\1\2\3")
 
     @run_to_buffer
     def written(data):
@@ -415,15 +439,22 @@ def test_returns_written():
 
 def fails_health_check(label, **kwargs):
     def accept(f):
-        runner = ConjectureRunner(f, settings=settings(
-            max_examples=100, phases=no_shrink, buffer_size=1024,
-            database=None, **kwargs
-        ))
+        runner = ConjectureRunner(
+            f,
+            settings=settings(
+                max_examples=100,
+                phases=no_shrink,
+                buffer_size=1024,
+                database=None,
+                **kwargs
+            ),
+        )
 
         with pytest.raises(FailedHealthCheck) as e:
             runner.run()
         assert e.value.health_check == label
         assert not runner.interesting_examples
+
     return accept
 
 
@@ -460,7 +491,7 @@ def test_fails_healthcheck_for_hung_test():
         time.sleep(3600)
 
 
-@pytest.mark.parametrize('n_large', [1, 5, 8, 15])
+@pytest.mark.parametrize("n_large", [1, 5, 8, 15])
 def test_can_shrink_variable_draws(n_large):
     target = 128 * n_large
 
@@ -470,11 +501,12 @@ def test_can_shrink_variable_draws(n_large):
         b = [data.draw_bits(8) for _ in hrange(n)]
         if sum(b) >= target:
             data.mark_interesting()
+
     assert x.count(0) == 0
     assert sum(x[1:]) == target
 
 
-@pytest.mark.parametrize('n', [1, 5, 8, 15])
+@pytest.mark.parametrize("n", [1, 5, 8, 15])
 def test_can_shrink_variable_draws_with_just_deletion(n, monkeypatch):
     @shrinking_from([n] + [0] * (n - 1) + [1])
     def shrinker(data):
@@ -493,25 +525,24 @@ def test_can_shrink_variable_draws_with_just_deletion(n, monkeypatch):
 
 def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
     monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.example_deletion_with_block_lowering
+        Shrinker, "shrink", Shrinker.example_deletion_with_block_lowering
     )
     # Would normally be added by minimize_individual_blocks, but we skip
     # that phase in this test.
-    monkeypatch.setattr(
-        Shrinker, 'is_shrinking_block', lambda self, i: i == 0
-    )
+    monkeypatch.setattr(Shrinker, "is_shrinking_block", lambda self, i: i == 0)
 
     def gen(self):
         data = ConjectureData.for_buffer(hbytes(10))
         self.test_function(data)
 
-    monkeypatch.setattr(ConjectureRunner, 'generate_new_examples', gen)
+    monkeypatch.setattr(ConjectureRunner, "generate_new_examples", gen)
 
     @run_to_buffer
     def x(data):
         for _ in hrange(10):
             data.draw_bytes(1)
         data.mark_interesting()
+
     assert x == hbytes(10)
 
 
@@ -526,10 +557,10 @@ def test_run_nothing():
 
 class Foo(object):
     def __repr__(self):
-        return 'stuff'
+        return "stuff"
 
 
-@pytest.mark.parametrize('event', ['hi', Foo()])
+@pytest.mark.parametrize("event", ["hi", Foo()])
 def test_note_events(event):
     def f(data):
         data.note_event(event)
@@ -551,18 +582,23 @@ def test_debug_data(capsys):
             data.stop_example()
         data.mark_interesting()
 
-    runner = ConjectureRunner(f, settings=settings(
-        max_examples=5000, buffer_size=1024,
-        database=None, suppress_health_check=HealthCheck.all(),
-        verbosity=Verbosity.debug
-    ))
+    runner = ConjectureRunner(
+        f,
+        settings=settings(
+            max_examples=5000,
+            buffer_size=1024,
+            database=None,
+            suppress_health_check=HealthCheck.all(),
+            verbosity=Verbosity.debug,
+        ),
+    )
     runner.test_function(ConjectureData.for_buffer(buf))
     runner.run()
 
     out, _ = capsys.readouterr()
-    assert re.match(u'\\d+ bytes \\[.*\\] -> ', out)
-    assert 'INTERESTING' in out
-    assert '[]' not in out
+    assert re.match(u"\\d+ bytes \\[.*\\] -> ", out)
+    assert "INTERESTING" in out
+    assert "[]" not in out
 
 
 def test_zeroes_bytes_above_bound():
@@ -575,13 +611,13 @@ def test_zeroes_bytes_above_bound():
 
 
 def test_can_write_bytes_towards_the_end():
-    buf = b'\1\2\3'
+    buf = b"\1\2\3"
 
     def f(data):
         if data.draw_bits(1):
             data.draw_bytes(5)
             data.write(hbytes(buf))
-            assert hbytes(data.buffer[-len(buf):]) == buf
+            assert hbytes(data.buffer[-len(buf) :]) == buf
 
     ConjectureRunner(f, settings=settings(buffer_size=10)).run()
 
@@ -597,9 +633,11 @@ def test_can_increase_number_of_bytes_drawn_in_tail():
         assert not any(b)
 
     runner = ConjectureRunner(
-        f, settings=settings(
-            max_examples=100,
-            buffer_size=11, suppress_health_check=HealthCheck.all()))
+        f,
+        settings=settings(
+            max_examples=100, buffer_size=11, suppress_health_check=HealthCheck.all()
+        ),
+    )
 
     runner.run()
 
@@ -613,25 +651,24 @@ def test_uniqueness_is_preserved_when_writing_at_beginning():
         assert n not in seen
         seen.add(n)
 
-    runner = ConjectureRunner(
-        f, settings=settings(max_examples=50))
+    runner = ConjectureRunner(f, settings=settings(max_examples=50))
     runner.run()
     assert runner.valid_examples == len(seen)
 
 
-@pytest.mark.parametrize('skip_target', [False, True])
-@pytest.mark.parametrize('initial_attempt', [127, 128])
+@pytest.mark.parametrize("skip_target", [False, True])
+@pytest.mark.parametrize("initial_attempt", [127, 128])
 def test_clears_out_its_database_on_shrinking(
     initial_attempt, skip_target, monkeypatch
 ):
     def generate_new_examples(self):
-        self.test_function(
-            ConjectureData.for_buffer(hbytes([initial_attempt])))
+        self.test_function(ConjectureData.for_buffer(hbytes([initial_attempt])))
 
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples', generate_new_examples)
+        ConjectureRunner, "generate_new_examples", generate_new_examples
+    )
 
-    key = b'key'
+    key = b"key"
     db = InMemoryExampleDatabase()
 
     def f(data):
@@ -639,7 +676,9 @@ def test_clears_out_its_database_on_shrinking(
             data.mark_interesting()
 
     runner = ConjectureRunner(
-        f, settings=settings(database=db, max_examples=256), database_key=key,
+        f,
+        settings=settings(database=db, max_examples=256),
+        database_key=key,
         random=Random(0),
     )
 
@@ -655,14 +694,12 @@ def test_clears_out_its_database_on_shrinking(
 
 def test_can_delete_intervals(monkeypatch):
     def generate_new_examples(self):
-        self.test_function(
-            ConjectureData.for_buffer(hbytes([255] * 10 + [1, 3])))
+        self.test_function(ConjectureData.for_buffer(hbytes([255] * 10 + [1, 3])))
 
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples', generate_new_examples)
-    monkeypatch.setattr(
-        Shrinker, 'shrink', fixate(Shrinker.adaptive_example_deletion)
+        ConjectureRunner, "generate_new_examples", generate_new_examples
     )
+    monkeypatch.setattr(Shrinker, "shrink", fixate(Shrinker.adaptive_example_deletion))
 
     def f(data):
         while True:
@@ -675,6 +712,7 @@ def test_can_delete_intervals(monkeypatch):
                 data.mark_invalid()
         if data.draw_bits(8) == 3:
             data.mark_interesting()
+
     runner = ConjectureRunner(f, settings=settings(database=None))
     runner.run()
     x, = runner.interesting_examples.values()
@@ -685,6 +723,7 @@ def test_detects_too_small_block_starts():
     def f(data):
         data.draw_bytes(8)
         data.mark_interesting()
+
     runner = ConjectureRunner(f, settings=settings(database=None))
     r = ConjectureData.for_buffer(hbytes(8))
     runner.test_function(r)
@@ -697,24 +736,27 @@ def test_shrinks_both_interesting_examples(monkeypatch):
         self.test_function(ConjectureData.for_buffer(hbytes([1])))
 
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples', generate_new_examples)
+        ConjectureRunner, "generate_new_examples", generate_new_examples
+    )
 
     def f(data):
         n = data.draw_bits(8)
         data.mark_interesting(n & 1)
-    runner = ConjectureRunner(f, database_key=b'key')
+
+    runner = ConjectureRunner(f, database_key=b"key")
     runner.run()
     assert runner.interesting_examples[0].buffer == hbytes([0])
     assert runner.interesting_examples[1].buffer == hbytes([1])
 
 
 def test_duplicate_blocks_that_go_away(monkeypatch):
+    monkeypatch.setattr(Shrinker, "shrink", Shrinker.minimize_duplicated_blocks)
     monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.minimize_duplicated_blocks)
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
+        ConjectureRunner,
+        "generate_new_examples",
         lambda runner: runner.test_function(
-            ConjectureData.for_buffer(hbytes([1, 1, 1, 2] * 2 + [5] * 2)))
+            ConjectureData.for_buffer(hbytes([1, 1, 1, 2] * 2 + [5] * 2))
+        ),
     )
 
     @run_to_buffer
@@ -726,6 +768,7 @@ def test_duplicate_blocks_that_go_away(monkeypatch):
         b = [data.draw_bytes(1) for _ in hrange(x & 255)]
         if len(set(b)) <= 1:
             data.mark_interesting()
+
     assert x == hbytes([0] * 8)
 
 
@@ -741,19 +784,21 @@ def test_accidental_duplication(monkeypatch):
         b = [data.draw_bytes(1) for _ in hrange(x)]
         if len(set(b)) == 1:
             data.mark_interesting()
+
     shrinker.clear_passes()
-    shrinker.add_new_pass('minimize_duplicated_blocks')
+    shrinker.add_new_pass("minimize_duplicated_blocks")
     shrinker.shrink()
     assert list(shrinker.buffer) == [5] * 7
 
 
 def test_discarding(monkeypatch):
+    monkeypatch.setattr(Shrinker, "shrink", Shrinker.remove_discarded)
     monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.remove_discarded)
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
+        ConjectureRunner,
+        "generate_new_examples",
         lambda runner: runner.test_function(
-            ConjectureData.for_buffer(hbytes([0, 1] * 10)))
+            ConjectureData.for_buffer(hbytes([0, 1] * 10))
+        ),
     )
 
     @run_to_buffer
@@ -766,6 +811,7 @@ def test_discarding(monkeypatch):
                 count += 1
             data.stop_example(discard=not b)
         data.mark_interesting()
+
     assert x == hbytes(hbytes([1]) * 10)
 
 
@@ -775,6 +821,7 @@ def fixate(f):
         while self.shrink_target is not prev:
             prev = self.shrink_target
             f(self)
+
     return accept
 
 
@@ -788,7 +835,8 @@ def test_can_remove_discarded_data():
             if b == 11:
                 break
         data.mark_interesting()
-    shrinker.run_shrink_pass('remove_discarded')
+
+    shrinker.run_shrink_pass("remove_discarded")
     assert list(shrinker.buffer) == [11]
 
 
@@ -801,13 +849,15 @@ def test_discarding_iterates_to_fixed_point():
         while data.draw_bits(1):
             pass
         data.mark_interesting()
-    shrinker.run_shrink_pass('remove_discarded')
+
+    shrinker.run_shrink_pass("remove_discarded")
     assert list(shrinker.buffer) == [1, 0]
 
 
 def shrink_pass(name):
     def run(self):
         self.run_shrink_pass(name)
+
     return run
 
 
@@ -818,13 +868,14 @@ def test_discarding_can_fail(monkeypatch):
         data.draw_bits(1)
         data.stop_example(discard=True)
         data.mark_interesting()
+
     shrinker.remove_discarded()
     assert shrinker.shrink_target.has_discards
 
 
-@pytest.mark.parametrize('bits', [3, 9])
-@pytest.mark.parametrize('prefix', [b'', b'\0'])
-@pytest.mark.parametrize('seed', [0])
+@pytest.mark.parametrize("bits", [3, 9])
+@pytest.mark.parametrize("prefix", [b"", b"\0"])
+@pytest.mark.parametrize("seed", [0])
 def test_exhaustive_enumeration(prefix, bits, seed):
     seen = set()
 
@@ -841,17 +892,15 @@ def test_exhaustive_enumeration(prefix, bits, seed):
     seen_prefixes = set()
 
     runner = ConjectureRunner(
-        f, settings=settings(database=None, max_examples=size),
-        random=Random(seed),
+        f, settings=settings(database=None, max_examples=size), random=Random(seed)
     )
     with pytest.raises(RunIsComplete):
-        runner.cached_test_function(b'')
+        runner.cached_test_function(b"")
         for _ in hrange(size):
             p = runner.generate_novel_prefix()
             assert p not in seen_prefixes
             seen_prefixes.add(p)
-            data = ConjectureData.for_buffer(
-                hbytes(p + hbytes(2 + len(prefix))))
+            data = ConjectureData.for_buffer(hbytes(p + hbytes(2 + len(prefix))))
             runner.test_function(data)
             assert data.status == Status.VALID
             node = 0
@@ -874,16 +923,16 @@ def test_depth_bounds_in_generation():
     def f(data):
         tails(data, 0)
 
-    runner = ConjectureRunner(
-        f, settings=settings(database=None, max_examples=20))
+    runner = ConjectureRunner(f, settings=settings(database=None, max_examples=20))
     runner.run()
     assert 0 < depth[0] <= MAX_DEPTH
 
 
 def test_shrinking_from_mostly_zero(monkeypatch):
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda self: self.cached_test_function(hbytes(5) + hbytes([2]))
+        ConjectureRunner,
+        "generate_new_examples",
+        lambda self: self.cached_test_function(hbytes(5) + hbytes([2])),
     )
 
     @run_to_buffer
@@ -896,12 +945,14 @@ def test_shrinking_from_mostly_zero(monkeypatch):
 
 
 def test_handles_nesting_of_discard_correctly(monkeypatch):
+    monkeypatch.setattr(Shrinker, "shrink", Shrinker.remove_discarded)
     monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.remove_discarded)
-    monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
+        ConjectureRunner,
+        "generate_new_examples",
         lambda runner: runner.test_function(
-            ConjectureData.for_buffer(hbytes([0, 0, 1, 1]))))
+            ConjectureData.for_buffer(hbytes([0, 0, 1, 1]))
+        ),
+    )
 
     @run_to_buffer
     def x(data):
@@ -929,24 +980,21 @@ def test_can_zero_subintervals(monkeypatch):
             if data.draw_bits(8) != 1:
                 return
         data.mark_interesting()
-    shrinker.run_shrink_pass('zero_examples')
+
+    shrinker.run_shrink_pass("zero_examples")
     assert list(shrinker.buffer) == [0, 1] * 10
 
 
 def test_can_pass_to_an_indirect_descendant(monkeypatch):
-    initial = hbytes([
-        1, 10,
-        0, 0,
-        1, 0,
-        0, 10,
-        0, 0,
-    ])
+    initial = hbytes([1, 10, 0, 0, 1, 0, 0, 10, 0, 0])
 
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.cached_test_function(initial))
+        ConjectureRunner,
+        "generate_new_examples",
+        lambda runner: runner.cached_test_function(initial),
+    )
 
-    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.pass_to_descendant)
+    monkeypatch.setattr(Shrinker, "shrink", Shrinker.pass_to_descendant)
 
     def tree(data):
         data.start_example(1)
@@ -967,16 +1015,13 @@ def test_can_pass_to_an_indirect_descendant(monkeypatch):
 
 
 def test_shrinking_block_pairs(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', lambda self: (
-            self.shrink_offset_pairs()
-        )
-    )
+    monkeypatch.setattr(Shrinker, "shrink", lambda self: (self.shrink_offset_pairs()))
 
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer([12, 10])))
+        ConjectureRunner,
+        "generate_new_examples",
+        lambda runner: runner.test_function(ConjectureData.for_buffer([12, 10])),
+    )
 
     @run_to_buffer
     def x(data):
@@ -984,6 +1029,7 @@ def test_shrinking_block_pairs(monkeypatch):
         n = data.draw_bits(8)
         if m == n + 2:
             data.mark_interesting()
+
     assert x == hbytes([2, 0])
 
 
@@ -997,11 +1043,12 @@ def shrink(buffer, *passes):
             for p in passes:
                 shrinker.run_shrink_pass(p)
         return list(shrinker.buffer)
+
     return accept
 
 
 def test_non_minimal_pair_shrink(monkeypatch):
-    @shrink([12, 10], 'shrink_offset_pairs')
+    @shrink([12, 10], "shrink_offset_pairs")
     def x(data):
         m = data.draw_bits(8)
         if m < 5:
@@ -1016,7 +1063,7 @@ def test_non_minimal_pair_shrink(monkeypatch):
 
 
 def test_buffer_changes_during_pair_shrink(monkeypatch):
-    @shrink([12, 10], 'shrink_offset_pairs')
+    @shrink([12, 10], "shrink_offset_pairs")
     def x(data):
         m = data.draw_bits(8)
         if m < 5:
@@ -1027,20 +1074,18 @@ def test_buffer_changes_during_pair_shrink(monkeypatch):
         n = data.draw_bits(8)
         if m == n + 2:
             data.mark_interesting()
+
     assert x == [5, 1]
 
 
 def test_buffer_changes_during_pair_shrink_stays_interesting(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', lambda self: (
-            self.shrink_offset_pairs()
-        )
-    )
+    monkeypatch.setattr(Shrinker, "shrink", lambda self: (self.shrink_offset_pairs()))
 
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer([12, 10])))
+        ConjectureRunner,
+        "generate_new_examples",
+        lambda runner: runner.test_function(ConjectureData.for_buffer([12, 10])),
+    )
 
     @run_to_buffer
     def x(data):
@@ -1049,24 +1094,28 @@ def test_buffer_changes_during_pair_shrink_stays_interesting(monkeypatch):
             data.draw_bits(8)
         if m >= 9:
             data.mark_interesting()
+
     assert len(x) == 1
 
 
 def test_shrinking_blocks_from_common_offset(monkeypatch):
     monkeypatch.setattr(
-        Shrinker, 'shrink', lambda self: (
+        Shrinker,
+        "shrink",
+        lambda self: (
             # Run minimize_individual_blocks twice so we have both blocks show
             # as changed regardless of which order this happens in.
             self.minimize_individual_blocks(),
             self.minimize_individual_blocks(),
             self.lower_common_block_offset(),
-        )
+        ),
     )
 
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer([11, 10])))
+        ConjectureRunner,
+        "generate_new_examples",
+        lambda runner: runner.test_function(ConjectureData.for_buffer([11, 10])),
+    )
 
     @run_to_buffer
     def x(data):
@@ -1074,15 +1123,14 @@ def test_shrinking_blocks_from_common_offset(monkeypatch):
         n = data.draw_bits(8)
         if abs(m - n) <= 1 and max(m, n) > 0:
             data.mark_interesting()
+
     assert sorted(x) == [0, 1]
 
 
 def test_handle_empty_draws(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.adaptive_example_deletion)
+    monkeypatch.setattr(Shrinker, "shrink", Shrinker.adaptive_example_deletion)
 
-    lambda runner: runner.test_function(ConjectureData.for_buffer(
-        [1, 1, 0]))
+    lambda runner: runner.test_function(ConjectureData.for_buffer([1, 1, 0]))
 
     @run_to_buffer
     def x(data):
@@ -1095,32 +1143,39 @@ def test_handle_empty_draws(monkeypatch):
             if not n:
                 break
         data.mark_interesting()
+
     assert x == hbytes([0])
 
 
 def test_large_initial_write():
-    big = hbytes(b'\xff') * 512
+    big = hbytes(b"\xff") * 512
 
     def f(data):
         data.write(big)
         data.draw_bits(63)
 
     with deterministic_PRNG():
-        runner = ConjectureRunner(f, settings=settings(
-            max_examples=5000, buffer_size=1024,
-            database=None, suppress_health_check=HealthCheck.all(),
-        ))
+        runner = ConjectureRunner(
+            f,
+            settings=settings(
+                max_examples=5000,
+                buffer_size=1024,
+                database=None,
+                suppress_health_check=HealthCheck.all(),
+            ),
+        )
         runner.run()
 
     assert runner.exit_reason == ExitReason.finished
 
 
-@pytest.mark.parametrize('lo', [0, 1, 50])
+@pytest.mark.parametrize("lo", [0, 1, 50])
 def test_can_shrink_additively(monkeypatch, lo):
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda self: self.test_function(
-            ConjectureData.for_buffer(hbytes([100, 100]))))
+        ConjectureRunner,
+        "generate_new_examples",
+        lambda self: self.test_function(ConjectureData.for_buffer(hbytes([100, 100]))),
+    )
 
     @run_to_buffer
     def x(data):
@@ -1134,14 +1189,13 @@ def test_can_shrink_additively(monkeypatch, lo):
 
 def test_can_shrink_additively_losing_size(monkeypatch):
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda self: self.test_function(
-            ConjectureData.for_buffer(hbytes([100, 100]))))
+        ConjectureRunner,
+        "generate_new_examples",
+        lambda self: self.test_function(ConjectureData.for_buffer(hbytes([100, 100]))),
+    )
 
     monkeypatch.setattr(
-        Shrinker, 'shrink', lambda self: (
-            self.minimize_block_pairs_retaining_sum(),
-        )
+        Shrinker, "shrink", lambda self: (self.minimize_block_pairs_retaining_sum(),)
     )
 
     @run_to_buffer
@@ -1154,18 +1208,20 @@ def test_can_shrink_additively_losing_size(monkeypatch):
                 n = data.draw_bits(8)
                 if m + n == 200:
                     data.mark_interesting()
+
     assert len(x) == 1
 
 
 def test_can_reorder_examples(monkeypatch):
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
+        ConjectureRunner,
+        "generate_new_examples",
         lambda runner: runner.test_function(
-            ConjectureData.for_buffer([1, 0, 1, 1, 0, 1, 0, 0, 0])))
-
-    monkeypatch.setattr(
-        Shrinker, 'shrink', Shrinker.reorder_examples,
+            ConjectureData.for_buffer([1, 0, 1, 1, 0, 1, 0, 0, 0])
+        ),
     )
+
+    monkeypatch.setattr(Shrinker, "shrink", Shrinker.reorder_examples)
 
     @run_to_buffer
     def x(data):
@@ -1183,13 +1239,13 @@ def test_can_reorder_examples(monkeypatch):
 
 def test_permits_but_ignores_raising_order(monkeypatch):
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer([1])))
+        ConjectureRunner,
+        "generate_new_examples",
+        lambda runner: runner.test_function(ConjectureData.for_buffer([1])),
+    )
 
     monkeypatch.setattr(
-        Shrinker, 'shrink',
-        lambda self: self.incorporate_new_buffer(hbytes([2]))
+        Shrinker, "shrink", lambda self: self.incorporate_new_buffer(hbytes([2]))
     )
 
     @run_to_buffer
@@ -1201,9 +1257,7 @@ def test_permits_but_ignores_raising_order(monkeypatch):
 
 
 def test_block_deletion_can_delete_short_ranges(monkeypatch):
-    @shrinking_from([
-        v for i in range(5) for _ in range(i + 1) for v in [0, i]]
-    )
+    @shrinking_from([v for i in range(5) for _ in range(i + 1) for v in [0, i]])
     def shrinker(data):
         while True:
             n = data.draw_bits(16)
@@ -1212,22 +1266,23 @@ def test_block_deletion_can_delete_short_ranges(monkeypatch):
                     data.mark_invalid()
             if n == 4:
                 data.mark_interesting()
+
     for i in range(1, 5):
-        block_program('X' * i)(shrinker)
+        block_program("X" * i)(shrinker)
     assert list(shrinker.shrink_target.buffer) == [0, 4] * 5
 
 
 def test_try_shrinking_blocks_ignores_overrun_blocks(monkeypatch):
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer([3, 3, 0, 1])))
+        ConjectureRunner,
+        "generate_new_examples",
+        lambda runner: runner.test_function(ConjectureData.for_buffer([3, 3, 0, 1])),
+    )
 
     monkeypatch.setattr(
-        Shrinker, 'shrink',
-        lambda self: self.try_shrinking_blocks(
-            (0, 1, 5), hbytes([2])
-        ),
+        Shrinker,
+        "shrink",
+        lambda self: self.try_shrinking_blocks((0, 1, 5), hbytes([2])),
     )
 
     @run_to_buffer
@@ -1246,28 +1301,32 @@ def test_try_shrinking_blocks_ignores_overrun_blocks(monkeypatch):
 def shrinking_from(start):
     def accept(f):
         with deterministic_PRNG():
-            runner = ConjectureRunner(f, settings=settings(
-                max_examples=5000, buffer_size=1024,
-                database=None, suppress_health_check=HealthCheck.all(),
-            ))
+            runner = ConjectureRunner(
+                f,
+                settings=settings(
+                    max_examples=5000,
+                    buffer_size=1024,
+                    database=None,
+                    suppress_health_check=HealthCheck.all(),
+                ),
+            )
             runner.test_function(ConjectureData.for_buffer(start))
             assert runner.interesting_examples
             last_data, = runner.interesting_examples.values()
             return runner.new_shrinker(
                 last_data, lambda d: d.status == Status.INTERESTING
             )
+
     return accept
 
 
 def test_dependent_block_pairs_is_up_to_shrinking_integers():
     # Unit test extracted from a failure in tests/nocover/test_integers.py
-    distribution = Sampler([
-        4.0, 8.0, 1.0, 1.0, 0.5
-    ])
+    distribution = Sampler([4.0, 8.0, 1.0, 1.0, 0.5])
 
     sizes = [8, 16, 32, 64, 128]
 
-    @shrinking_from(b'\x03\x01\x00\x00\x00\x00\x00\x01\x00\x02\x01')
+    @shrinking_from(b"\x03\x01\x00\x00\x00\x00\x00\x01\x00\x02\x01")
     def shrinker(data):
         size = sizes[distribution.sample(data)]
         result = data.draw_bits(size)
@@ -1279,9 +1338,7 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
             data.mark_interesting()
 
     shrinker.minimize_individual_blocks()
-    assert list(shrinker.shrink_target.buffer) == [
-        1, 1, 0, 1, 0, 0, 1
-    ]
+    assert list(shrinker.shrink_target.buffer) == [1, 1, 0, 1, 0, 0, 1]
 
 
 def test_finding_a_minimal_balanced_binary_tree():
@@ -1291,7 +1348,7 @@ def test_finding_a_minimal_balanced_binary_tree():
 
     def tree(data):
         # Returns height of a binary tree and whether it is height balanced.
-        data.start_example('tree')
+        data.start_example("tree")
         n = data.draw_bits(1)
         if n == 0:
             result = (1, True)
@@ -1299,7 +1356,7 @@ def test_finding_a_minimal_balanced_binary_tree():
             h1, b1 = tree(data)
             h2, b2 = tree(data)
             result = (1 + max(h1, h2), b1 and b2 and abs(h1 - h2) <= 1)
-        data.stop_example('tree')
+        data.stop_example("tree")
         return result
 
     # Starting from an unbalanced tree of depth six
@@ -1312,13 +1369,11 @@ def test_finding_a_minimal_balanced_binary_tree():
     shrinker.adaptive_example_deletion()
     shrinker.reorder_examples()
 
-    assert list(shrinker.shrink_target.buffer) == [
-        1, 0, 1, 0, 1, 0, 0
-    ]
+    assert list(shrinker.shrink_target.buffer) == [1, 0, 1, 0, 1, 0, 0]
 
 
 def test_database_clears_secondary_key():
-    key = b'key'
+    key = b"key"
     database = InMemoryExampleDatabase()
 
     def f(data):
@@ -1327,10 +1382,16 @@ def test_database_clears_secondary_key():
         else:
             data.mark_invalid()
 
-    runner = ConjectureRunner(f, settings=settings(
-        max_examples=1, buffer_size=1024,
-        database=database, suppress_health_check=HealthCheck.all(),
-    ), database_key=key)
+    runner = ConjectureRunner(
+        f,
+        settings=settings(
+            max_examples=1,
+            buffer_size=1024,
+            database=database,
+            suppress_health_check=HealthCheck.all(),
+        ),
+        database_key=key,
+    )
 
     for i in range(10):
         database.save(runner.secondary_key, hbytes([i]))
@@ -1348,7 +1409,7 @@ def test_database_clears_secondary_key():
 
 
 def test_database_uses_values_from_secondary_key():
-    key = b'key'
+    key = b"key"
     database = InMemoryExampleDatabase()
 
     def f(data):
@@ -1357,10 +1418,16 @@ def test_database_uses_values_from_secondary_key():
         else:
             data.mark_invalid()
 
-    runner = ConjectureRunner(f, settings=settings(
-        max_examples=1, buffer_size=1024,
-        database=database, suppress_health_check=HealthCheck.all(),
-    ), database_key=key)
+    runner = ConjectureRunner(
+        f,
+        settings=settings(
+            max_examples=1,
+            buffer_size=1024,
+            database=database,
+            suppress_health_check=HealthCheck.all(),
+        ),
+        database_key=key,
+    )
 
     for i in range(10):
         database.save(runner.secondary_key, hbytes([i]))
@@ -1374,9 +1441,9 @@ def test_database_uses_values_from_secondary_key():
     runner.clear_secondary_key()
 
     assert len(set(database.fetch(key))) == 1
-    assert set(
-        map(int_from_bytes, database.fetch(runner.secondary_key))
-    ) == set(range(6, 11))
+    assert set(map(int_from_bytes, database.fetch(runner.secondary_key))) == set(
+        range(6, 11)
+    )
 
     v, = runner.interesting_examples.values()
 
@@ -1384,15 +1451,19 @@ def test_database_uses_values_from_secondary_key():
 
 
 def test_exit_because_max_iterations():
-
     def f(data):
         data.draw_bits(64)
         data.mark_invalid()
 
-    runner = ConjectureRunner(f, settings=settings(
-        max_examples=1, buffer_size=1024,
-        database=None, suppress_health_check=HealthCheck.all(),
-    ))
+    runner = ConjectureRunner(
+        f,
+        settings=settings(
+            max_examples=1,
+            buffer_size=1024,
+            database=None,
+            suppress_health_check=HealthCheck.all(),
+        ),
+    )
 
     runner.run()
 
@@ -1421,6 +1492,7 @@ def test_dependent_block_pairs_can_lower_to_zero():
 
         if n == 1:
             data.mark_interesting()
+
     shrinker.minimize_individual_blocks()
     assert list(shrinker.shrink_target.buffer) == [0, 1]
 
@@ -1433,6 +1505,7 @@ def test_handle_size_too_large_during_dependent_lowering():
             data.mark_interesting()
         else:
             data.draw_bits(8)
+
     shrinker.minimize_individual_blocks()
 
 
@@ -1444,7 +1517,8 @@ def test_zero_examples_will_zero_blocks():
         m = data.draw_bits(1)
         if n == m == 1:
             data.mark_interesting()
-    shrinker.run_shrink_pass('zero_examples')
+
+    shrinker.run_shrink_pass("zero_examples")
     assert list(shrinker.shrink_target.buffer) == [1, 0, 1]
 
 
@@ -1458,9 +1532,11 @@ def test_non_trivial_examples():
         data.draw_bits(1)
         data.mark_interesting()
 
-    assert {
-        (ex.start, ex.end) for ex in shrinker.each_non_trivial_example()
-    } == {(0, 3), (0, 1), (2, 3)}
+    assert {(ex.start, ex.end) for ex in shrinker.each_non_trivial_example()} == {
+        (0, 3),
+        (0, 1),
+        (2, 3),
+    }
 
 
 def test_become_trivial_during_shrinking():
@@ -1500,9 +1576,7 @@ def test_each_non_trivial_example_includes_each_non_trivial_example():
         data.draw_bits(1)
         data.mark_interesting()
 
-    endpoints = {
-        (ex.start, ex.end) for ex in shrinker.each_non_trivial_example()
-    }
+    endpoints = {(ex.start, ex.end) for ex in shrinker.each_non_trivial_example()}
 
     assert endpoints == {(0, 3), (0, 1), (2, 3)}
 
@@ -1552,6 +1626,7 @@ def test_lower_common_block_offset_does_nothing_when_changed_blocks_are_zero():
         data.draw_bits(1)
         data.draw_bits(1)
         data.mark_interesting()
+
     shrinker.mark_changed(1)
     shrinker.mark_changed(3)
     shrinker.lower_common_block_offset()
@@ -1566,6 +1641,7 @@ def test_lower_common_block_offset_ignores_zeros():
         data.draw_bits(8)
         if n > 0:
             data.mark_interesting()
+
     for i in range(3):
         shrinker.mark_changed(i)
     shrinker.lower_common_block_offset()
@@ -1583,6 +1659,7 @@ def test_pandas_hack():
         data.draw_bits(8)
         if data.draw_bits(8) == 7:
             data.mark_interesting()
+
     shrinker.run_shrink_pass("block_program('-XX')")
     assert list(shrinker.shrink_target.buffer) == [1, 7]
 
@@ -1592,9 +1669,7 @@ def test_passes_can_come_back_to_life():
     buf1 = hbytes([0, 1, 3, 4, 5, 6])
     buf2 = hbytes([0, 1, 3, 4, 4, 6])
 
-    good = {
-        initial, buf1, buf2
-    }
+    good = {initial, buf1, buf2}
 
     @shrinking_from(initial)
     def shrinker(data):
@@ -1603,8 +1678,8 @@ def test_passes_can_come_back_to_life():
             data.mark_interesting()
 
     shrinker.clear_passes()
-    shrinker.add_new_pass(block_program('--'))
-    shrinker.add_new_pass(block_program('-'))
+    shrinker.add_new_pass(block_program("--"))
+    shrinker.add_new_pass(block_program("-"))
 
     shrinker.single_greedy_shrink_iteration()
     assert shrinker.shrink_target.buffer == buf1
@@ -1643,8 +1718,8 @@ def test_will_enable_previously_bad_passes_when_failing_to_shrink():
     # but the second pass starts out as disabled (and anyway won't work until
     # the first has hit fixity).
     shrinker.clear_passes()
-    shrinker.add_new_pass(block_program('-'))
-    shrinker.add_new_pass(block_program('X'))
+    shrinker.add_new_pass(block_program("-"))
+    shrinker.add_new_pass(block_program("X"))
 
     shrinker.shrink()
 
@@ -1679,7 +1754,7 @@ def test_shrink_pass_may_go_from_solid_to_dubious():
             data.draw_bits(8)
         data.mark_interesting()
 
-    sp = shrinker.shrink_pass('adaptive_example_deletion')
+    sp = shrinker.shrink_pass("adaptive_example_deletion")
     assert sp.classification == PassClassification.CANDIDATE
     shrinker.run_shrink_pass(sp)
     assert sp.classification == PassClassification.HOPEFUL
@@ -1688,7 +1763,6 @@ def test_shrink_pass_may_go_from_solid_to_dubious():
 
 
 def test_runs_adaptive_delete_on_first_pass_if_discarding_does_not_work():
-
     @shrinking_from([0, 1])
     def shrinker(data):
         while not data.draw_bits(1):
@@ -1700,13 +1774,14 @@ def test_runs_adaptive_delete_on_first_pass_if_discarding_does_not_work():
 
 
 def test_alphabet_minimization():
-    @shrink(list(hrange(11)), 'alphabet_minimize')
+    @shrink(list(hrange(11)), "alphabet_minimize")
     def x(data):
         n = 0
         for _ in hrange(10):
             n += (-1) ** (data.draw_bits(8) & 1)
         if n == 0 and data.draw_bits(8) == 10:
             data.mark_interesting()
+
     assert x == [0, 1] * 5 + [10]
 
 
@@ -1726,10 +1801,11 @@ def test_keeps_using_solid_passes_while_they_shrink_size():
             data.draw_bits(8)
             if hbytes(data.buffer) in good:
                 data.mark_interesting()
+
     shrinker.clear_passes()
 
-    d1 = shrinker.add_new_pass(block_program('X'))
-    d2 = shrinker.add_new_pass(block_program('-'))
+    d1 = shrinker.add_new_pass(block_program("X"))
+    d2 = shrinker.add_new_pass(block_program("-"))
 
     for _ in range(3):
         shrinker.single_greedy_shrink_iteration()
@@ -1738,15 +1814,15 @@ def test_keeps_using_solid_passes_while_they_shrink_size():
 
 
 def test_will_reset_the_tree_as_it_goes(monkeypatch):
-    monkeypatch.setattr(engine_module, 'CACHE_RESET_FREQUENCY', 3)
+    monkeypatch.setattr(engine_module, "CACHE_RESET_FREQUENCY", 3)
 
     def f(data):
         data.draw_bits(8)
 
     with deterministic_PRNG():
-        runner = ConjectureRunner(f, settings=settings(
-            database=None, suppress_health_check=HealthCheck.all(),
-        ))
+        runner = ConjectureRunner(
+            f, settings=settings(database=None, suppress_health_check=HealthCheck.all())
+        )
 
         def step(n):
             runner.test_function(ConjectureData.for_buffer([n]))
@@ -1759,16 +1835,16 @@ def test_will_reset_the_tree_as_it_goes(monkeypatch):
 
 
 def test_will_not_reset_the_tree_after_interesting_example(monkeypatch):
-    monkeypatch.setattr(engine_module, 'CACHE_RESET_FREQUENCY', 3)
+    monkeypatch.setattr(engine_module, "CACHE_RESET_FREQUENCY", 3)
 
     def f(data):
         if data.draw_bits(8) == 7:
             data.mark_interesting()
 
     with deterministic_PRNG():
-        runner = ConjectureRunner(f, settings=settings(
-            database=None, suppress_health_check=HealthCheck.all(),
-        ))
+        runner = ConjectureRunner(
+            f, settings=settings(database=None, suppress_health_check=HealthCheck.all())
+        )
 
         def step(n):
             runner.test_function(ConjectureData.for_buffer([n]))

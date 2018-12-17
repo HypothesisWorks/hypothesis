@@ -15,10 +15,9 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from hypothesis.internal.conjecture.shrinking.common import Shrinker, \
-    find_integer
+from hypothesis.internal.conjecture.shrinking.common import Shrinker, find_integer
 
 
 """
@@ -78,9 +77,8 @@ class Length(Shrinker):
             # region, from right to left. Always retain the skipped elements
             # at the end. (See diagram below.)
             find_integer(
-                lambda k: k <= candidates and self.consider(
-                    start[:candidates - k] + start[candidates:]
-                )
+                lambda k: k <= candidates
+                and self.consider(start[: candidates - k] + start[candidates:])
             )
 
             # If we stopped because of an element we couldn't delete, enlarge

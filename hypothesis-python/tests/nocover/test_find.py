@@ -15,18 +15,16 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import math
 
 import pytest
 
-from hypothesis import find
-from hypothesis import settings as Settings
+from hypothesis import find, settings as Settings
 from hypothesis.errors import NoSuchExample
+from hypothesis.strategies import booleans, dictionaries, floats, integers, lists
 from tests.common.debug import minimal
-from hypothesis.strategies import lists, floats, booleans, integers, \
-    dictionaries
 
 
 def test_can_find_an_int():
@@ -55,21 +53,23 @@ def test_condition_is_name():
     settings = Settings(max_examples=20)
     with pytest.raises(NoSuchExample) as e:
         find(booleans(), lambda x: False, settings=settings)
-    assert 'lambda x:' in e.value.args[0]
+    assert "lambda x:" in e.value.args[0]
 
     with pytest.raises(NoSuchExample) as e:
-        find(integers(), lambda x: '☃' in str(x), settings=settings)
-    assert 'lambda x:' in e.value.args[0]
+        find(integers(), lambda x: "☃" in str(x), settings=settings)
+    assert "lambda x:" in e.value.args[0]
 
     def bad(x):
         return False
 
     with pytest.raises(NoSuchExample) as e:
         find(integers(), bad, settings=settings)
-    assert 'bad' in e.value.args[0]
+    assert "bad" in e.value.args[0]
 
 
 def test_find_dictionary():
-    assert len(minimal(
+    smallest = minimal(
         dictionaries(keys=integers(), values=integers()),
-        lambda xs: any(kv[0] > kv[1] for kv in xs.items()))) == 1
+        lambda xs: any(kv[0] > kv[1] for kv in xs.items()),
+    )
+    assert len(smallest) == 1

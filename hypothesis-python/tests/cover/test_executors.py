@@ -15,21 +15,20 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import inspect
 from unittest import TestCase
 
 import pytest
 
-from hypothesis import given, example
+from hypothesis import example, given
 from hypothesis.executors import ConjectureRunner
 from hypothesis.strategies import booleans, integers
 
 
 def test_must_use_result_of_test():
     class DoubleRun(object):
-
         def execute_example(self, function):
             x = function()
             if inspect.isfunction(x):
@@ -39,6 +38,7 @@ def test_must_use_result_of_test():
         def boom(self, b):
             def f():
                 raise ValueError()
+
             return f
 
     with pytest.raises(ValueError):
@@ -46,7 +46,6 @@ def test_must_use_result_of_test():
 
 
 class TestTryReallyHard(TestCase):
-
     @given(integers())
     def test_something(self, i):
         pass
@@ -57,7 +56,6 @@ class TestTryReallyHard(TestCase):
 
 
 class Valueless(object):
-
     def execute_example(self, f):
         try:
             return f()
@@ -92,7 +90,6 @@ def test_no_boom_on_example():
 
 
 class TestNormal(ConjectureRunner, TestCase):
-
     @given(booleans())
     def test_stuff(self, b):
         pass

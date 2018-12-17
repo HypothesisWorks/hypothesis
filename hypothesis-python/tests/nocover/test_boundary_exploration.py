@@ -15,22 +15,18 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import Verbosity, HealthCheck, find, given, reject, \
-    settings, unlimited
+from hypothesis import HealthCheck, Verbosity, find, given, reject, settings, unlimited
 from hypothesis.errors import NoSuchExample
 from tests.common.utils import no_shrink
 
 
-@pytest.mark.parametrize('strat', [st.text(min_size=5)])
-@settings(
-    phases=no_shrink, deadline=None,
-    suppress_health_check=HealthCheck.all()
-)
+@pytest.mark.parametrize("strat", [st.text(min_size=5)])
+@settings(phases=no_shrink, deadline=None, suppress_health_check=HealthCheck.all())
 @given(st.data())
 def test_explore_arbitrary_function(strat, data):
     cache = {}
@@ -43,11 +39,14 @@ def test_explore_arbitrary_function(strat, data):
 
     try:
         find(
-            strat, predicate,
+            strat,
+            predicate,
             settings=settings(
-                max_examples=10, database=None, timeout=unlimited,
+                max_examples=10,
+                database=None,
+                timeout=unlimited,
                 verbosity=Verbosity.quiet,
-            )
+            ),
         )
     except NoSuchExample:
         reject()

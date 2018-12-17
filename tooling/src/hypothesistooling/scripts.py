@@ -15,13 +15,13 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 import re
-import sys
 import shlex
 import subprocess
+import sys
 
 from hypothesistooling import ROOT
 
@@ -37,7 +37,7 @@ def print_command(command, args):
                 ranges[-1][-1] += 1
     for i, j in ranges:
         if j > i:
-            args[i] = '...'
+            args[i] = "..."
             for k in range(i + 1, j + 1):
                 args[k] = None
     args = [v for v in args if v is not None]
@@ -46,13 +46,11 @@ def print_command(command, args):
 
 def run_script(script, *args, **kwargs):
     print_command(script, args)
-    return subprocess.check_call(
-        [os.path.join(SCRIPTS, script), *args], **kwargs
-    )
+    return subprocess.check_call([os.path.join(SCRIPTS, script), *args], **kwargs)
 
 
-SCRIPTS = os.path.join(ROOT, 'tooling', 'scripts')
-COMMON = os.path.join(SCRIPTS, 'common.sh')
+SCRIPTS = os.path.join(ROOT, "tooling", "scripts")
+COMMON = os.path.join(SCRIPTS, "common.sh")
 
 
 def __calc_script_variables():

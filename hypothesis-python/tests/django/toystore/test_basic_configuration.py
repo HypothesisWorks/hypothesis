@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from unittest import TestCase as VanillaTestCase
 
@@ -25,24 +25,23 @@ from django.test import TestCase as DjangoTestCase
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import integers
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from hypothesis.internal.compat import PYPY
+from hypothesis.strategies import integers
 from tests.django.toystore.models import Company
 
 
 class SomeStuff(object):
-
     @settings(suppress_health_check=[HealthCheck.too_slow])
     @given(integers())
     def test_is_blank_slate(self, unused):
-        Company.objects.create(name=u'MickeyCo')
+        Company.objects.create(name=u"MickeyCo")
 
     def test_normal_test_1(self):
-        Company.objects.create(name=u'MickeyCo')
+        Company.objects.create(name=u"MickeyCo")
 
     def test_normal_test_2(self):
-        Company.objects.create(name=u'MickeyCo')
+        Company.objects.create(name=u"MickeyCo")
 
 
 class TestConstraintsWithTransactions(SomeStuff, TestCase):
@@ -58,23 +57,21 @@ if not PYPY:
 
 
 class TestWorkflow(VanillaTestCase):
-
     def test_does_not_break_later_tests(self):
         def break_the_db(i):
-            Company.objects.create(name=u'MickeyCo')
-            Company.objects.create(name=u'MickeyCo')
+            Company.objects.create(name=u"MickeyCo")
+            Company.objects.create(name=u"MickeyCo")
 
         class LocalTest(TestCase):
-
             @given(integers().map(break_the_db))
             @settings(suppress_health_check=HealthCheck.all())
             def test_does_not_break_other_things(self, unused):
                 pass
 
             def test_normal_test_1(self):
-                Company.objects.create(name=u'MickeyCo')
+                Company.objects.create(name=u"MickeyCo")
 
-        t = LocalTest(u'test_normal_test_1')
+        t = LocalTest(u"test_normal_test_1")
         try:
             t.test_does_not_break_other_things()
         except IntegrityError:
@@ -82,12 +79,10 @@ class TestWorkflow(VanillaTestCase):
         t.test_normal_test_1()
 
     def test_given_needs_hypothesis_test_case(self):
-
         class LocalTest(DjangoTestCase):
-
             @given(integers())
             def tst(self, i):
-                assert False, 'InvalidArgument should be raised in @given'
+                assert False, "InvalidArgument should be raised in @given"
 
         with pytest.raises(InvalidArgument):
-            LocalTest('tst').tst()
+            LocalTest("tst").tst()

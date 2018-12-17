@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from functools import reduce
 from itertools import chain
@@ -24,9 +24,9 @@ import attr
 
 import hypothesis.strategies as st
 from hypothesis.errors import ResolutionFailed
-from hypothesis.internal.compat import string_types, get_type_hints
-from hypothesis.utils.conventions import infer
+from hypothesis.internal.compat import get_type_hints, string_types
 from hypothesis.searchstrategy.types import type_sorting_key
+from hypothesis.utils.conventions import infer
 
 
 def from_attrs(target, args, kwargs, to_infer):
@@ -50,7 +50,7 @@ def from_attrs_attribute(attrib, target):
     # we use it as the minimal example.
     default = st.nothing()
     if isinstance(attrib.default, attr.Factory):
-        if not getattr(attrib.default, 'takes_self', False):  # new in 17.1
+        if not getattr(attrib.default, "takes_self", False):  # new in 17.1
             default = st.builds(attrib.default.factory)
     elif attrib.default is not attr.NOTHING:
         default = st.just(attrib.default)
@@ -93,8 +93,9 @@ def from_attrs_attribute(attrib, target):
     # when we try to get a value but have lost track of where this was created.
     if strat.is_empty:
         raise ResolutionFailed(
-            'Cannot infer a strategy from the default, validator, type, or '
-            'converter for attribute=%r of class=%r' % (attrib, target))
+            "Cannot infer a strategy from the default, validator, type, or "
+            "converter for attribute=%r of class=%r" % (attrib, target)
+        )
     return strat
 
 
@@ -113,26 +114,29 @@ def types_to_strategy(attrib, types):
         type_tuples = [k if isinstance(k, tuple) else (k,) for k in types]
         # Flatten the list, filter types that would fail validation, and
         # sort so that ordering is stable between runs and shrinks well.
-        allowed = [t for t in set(sum(type_tuples, ()))
-                   if all(issubclass(t, tup) for tup in type_tuples)]
+        allowed = [
+            t
+            for t in set(sum(type_tuples, ()))
+            if all(issubclass(t, tup) for tup in type_tuples)
+        ]
         allowed.sort(key=type_sorting_key)
         return st.one_of([st.from_type(t) for t in allowed])
 
     # Otherwise, try the `type` attribute as a fallback, and finally try
     # the type hints on a converter (desperate!) before giving up.
-    if isinstance(getattr(attrib, 'type', None), type):
+    if isinstance(getattr(attrib, "type", None), type):
         # The convoluted test is because variable annotations may be stored
         # in string form; attrs doesn't evaluate them and we don't handle them.
         # See PEP 526, PEP 563, and Hypothesis issue #1004 for details.
         return st.from_type(attrib.type)
 
-    converter = getattr(attrib, 'converter', None)
+    converter = getattr(attrib, "converter", None)
     if isinstance(converter, type):
         return st.from_type(converter)
     elif callable(converter):
         hints = get_type_hints(converter)
-        if 'return' in hints:
-            return st.from_type(hints['return'])
+        if "return" in hints:
+            return st.from_type(hints["return"])
 
     return st.nothing()
 
@@ -156,4 +160,4 @@ def all_substrings(s):
     yield s[:0]
     for n, _ in enumerate(s):
         for i in range(len(s) - n):
-            yield s[i:i + n + 1]
+            yield s[i : i + n + 1]

@@ -17,7 +17,7 @@
 
 """Checks that @given, @mock.patch, and pytest fixtures work as expected."""
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import math
 from unittest import mock
@@ -29,13 +29,13 @@ from hypothesis import given
 
 
 @given(thing=st.text())
-@mock.patch('math.atan')
+@mock.patch("math.atan")
 def test_can_mock_inside_given_without_fixture(atan, thing):
     assert isinstance(atan, mock.MagicMock)
     assert isinstance(math.atan, mock.MagicMock)
 
 
-@mock.patch('math.atan')
+@mock.patch("math.atan")
 @given(thing=st.text())
 def test_can_mock_outside_given_with_fixture(atan, capsys, thing):
     assert isinstance(atan, mock.MagicMock)
@@ -47,7 +47,7 @@ def test_can_mock_outside_given_with_fixture(atan, capsys, thing):
 def test_can_mock_within_test_with_fixture(capsys, thing):
     assert isinstance(capsys, CaptureFixture)
     assert not isinstance(math.atan, mock.MagicMock)
-    with mock.patch('math.atan') as atan:
+    with mock.patch("math.atan") as atan:
         assert isinstance(atan, mock.MagicMock)
         assert isinstance(math.atan, mock.MagicMock)
     assert not isinstance(math.atan, mock.MagicMock)

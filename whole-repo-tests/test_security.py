@@ -15,13 +15,12 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from hypothesistooling.scripts import pip_tool
 from hypothesistooling.projects.hypothesispython import PYTHON_SRC
+from hypothesistooling.scripts import pip_tool
 
 
 def test_bandit_passes_on_hypothesis():
     # pypi.org/project/bandit has the table of error codes, or `bandit --help`
-    pip_tool('bandit', '--skip', 'B101,B102,B110,B303,B311',
-             '--recursive', PYTHON_SRC)
+    pip_tool("bandit", "--skip", "B101,B102,B110,B303,B311", "--recursive", PYTHON_SRC)

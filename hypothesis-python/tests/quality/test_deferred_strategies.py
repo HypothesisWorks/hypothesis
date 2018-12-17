@@ -15,23 +15,20 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from hypothesis import strategies as st
 from tests.common.debug import minimal
 
 
 def test_large_branching_tree():
-    tree = st.deferred(
-        lambda: st.integers() | st.tuples(tree, tree, tree, tree, tree))
+    tree = st.deferred(lambda: st.integers() | st.tuples(tree, tree, tree, tree, tree))
     assert minimal(tree) == 0
     assert minimal(tree, lambda x: isinstance(x, tuple)) == (0,) * 5
 
 
 def test_non_trivial_json():
-    json = st.deferred(
-        lambda: st.none() | st.floats() | st.text() | lists | objects
-    )
+    json = st.deferred(lambda: st.none() | st.floats() | st.text() | lists | objects)
 
     lists = st.lists(json)
     objects = st.dictionaries(st.text(), json)
@@ -41,10 +38,9 @@ def test_non_trivial_json():
     small_list = minimal(json, lambda x: isinstance(x, list) and x)
     assert small_list == [None]
 
-    x = minimal(
-        json, lambda x: isinstance(x, dict) and isinstance(x.get(''), list))
+    x = minimal(json, lambda x: isinstance(x, dict) and isinstance(x.get(""), list))
 
-    assert x == {'': []}
+    assert x == {"": []}
 
 
 def test_self_recursive_lists():

@@ -24,12 +24,12 @@ https://docs.djangoproject.com/en/1.7/howto/deployment/wsgi/
 """
 
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault(u'DJANGO_SETTINGS_MODULE', u'toys.settings')
+os.environ.setdefault(u"DJANGO_SETTINGS_MODULE", u"toys.settings")
 
 application = get_wsgi_application()

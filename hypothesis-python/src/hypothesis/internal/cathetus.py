@@ -15,10 +15,10 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
+from math import fabs, isinf, isnan, sqrt
 from sys import float_info
-from math import fabs, sqrt, isinf, isnan
 
 
 def cathetus(h, a):
@@ -39,21 +39,21 @@ def cathetus(h, a):
     Based on the C99 implementation https://github.com/jjgreen/cathetus
     """
     if isnan(h):
-        return float(u'nan')
+        return float(u"nan")
 
     if isinf(h):
         if isinf(a):
-            return float(u'nan')
+            return float(u"nan")
         else:
             # Deliberately includes the case when isnan(a), because the
             # C99 standard mandates that hypot(inf, nan) == inf
-            return float(u'inf')
+            return float(u"inf")
 
     h = fabs(h)
     a = fabs(a)
 
     if h < a:
-        return float(u'nan')
+        return float(u"nan")
 
     if h > sqrt(float_info.max):
         if h > float_info.max / 2:

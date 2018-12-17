@@ -24,7 +24,7 @@ Internet strategies should conform to https://tools.ietf.org/html/rfc3696 or
 the authoritative definitions it links to.  If not, report the bug!
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import string
 
@@ -34,14 +34,14 @@ import hypothesis.strategies as st
 @st.defines_strategy_with_reusable_values
 def domains():
     """A strategy for :rfc:`1035` fully qualified domain names."""
-    atoms = st.text(string.ascii_letters + '0123456789-',
-                    min_size=1, max_size=63
-                    ).filter(lambda s: '-' not in s[0] + s[-1])
+    atoms = st.text(
+        string.ascii_letters + "0123456789-", min_size=1, max_size=63
+    ).filter(lambda s: "-" not in s[0] + s[-1])
     return st.builds(
-        lambda x, y: '.'.join(x + [y]),
+        lambda x, y: ".".join(x + [y]),
         st.lists(atoms, min_size=1),
         # TODO: be more devious about top-level domains
-        st.sampled_from(['com', 'net', 'org', 'biz', 'info'])
+        st.sampled_from(["com", "net", "org", "biz", "info"]),
     ).filter(lambda url: len(url) <= 255)
 
 
@@ -52,7 +52,7 @@ def ip4_addr_strings():
     This consists of four strings representing integers [0..255],
     without zero-padding, joined by dots.
     """
-    return st.builds('{}.{}.{}.{}'.format, *(4 * [st.integers(0, 255)]))
+    return st.builds("{}.{}.{}.{}".format, *(4 * [st.integers(0, 255)]))
 
 
 @st.defines_strategy_with_reusable_values
@@ -62,5 +62,5 @@ def ip6_addr_strings():
     This consists of sixteen quads of hex digits (0000 .. FFFF), joined
     by colons.  Values do not currently have zero-segments collapsed.
     """
-    part = st.integers(0, 2**16 - 1).map(u'{:04x}'.format)
-    return st.tuples(*[part] * 8).map(lambda a: u':'.join(a).upper())
+    part = st.integers(0, 2 ** 16 - 1).map(u"{:04x}".format)
+    return st.tuples(*[part] * 8).map(lambda a: u":".join(a).upper())

@@ -15,19 +15,18 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis import seed, given, settings
-from hypothesis import strategies as st
-from tests.common.utils import validate_deprecation
+from hypothesis import given, seed, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
+from tests.common.utils import validate_deprecation
 
 
-@pytest.mark.parametrize('dec', [
-    settings(database=InMemoryExampleDatabase(), derandomize=True), seed(1)
-])
+@pytest.mark.parametrize(
+    "dec", [settings(database=InMemoryExampleDatabase(), derandomize=True), seed(1)]
+)
 def test_deprecated_determinism_with_database(dec):
     @dec
     @given(st.booleans())

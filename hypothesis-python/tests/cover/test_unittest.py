@@ -15,18 +15,17 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import io
 import unittest
 
 import pytest
 
-from hypothesis import given
-from hypothesis import strategies as st
+from hypothesis import given, strategies as st
 from hypothesis.errors import FailedHealthCheck, HypothesisWarning
-from tests.common.utils import fails_with
 from hypothesis.internal.compat import PY2
+from tests.common.utils import fails_with
 
 
 class Thing_with_a_subThing(unittest.TestCase):
@@ -42,14 +41,13 @@ class Thing_with_a_subThing(unittest.TestCase):
 
 def test_subTest():
     suite = unittest.TestSuite()
-    suite.addTest(Thing_with_a_subThing('thing'))
+    suite.addTest(Thing_with_a_subThing("thing"))
     stream = io.BytesIO() if PY2 else io.StringIO()
     out = unittest.TextTestRunner(stream=stream).run(suite)
     assert len(out.failures) <= out.testsRun, out
 
 
 class test_given_on_setUp_fails_health_check(unittest.TestCase):
-
     @fails_with(FailedHealthCheck)
     @given(st.integers())
     def setUp(self, i):

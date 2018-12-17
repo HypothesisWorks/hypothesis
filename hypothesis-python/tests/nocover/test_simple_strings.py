@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import unicodedata
 
@@ -26,4 +26,4 @@ from hypothesis.strategies import text
 @given(text(min_size=1, max_size=1))
 @settings(max_examples=2000)
 def test_does_not_generate_surrogates(t):
-    assert unicodedata.category(t) != u'Cs'
+    assert unicodedata.category(t) != u"Cs"

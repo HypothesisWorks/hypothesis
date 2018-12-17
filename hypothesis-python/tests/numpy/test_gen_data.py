@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import sys
 
@@ -23,23 +23,41 @@ import numpy as np
 import pytest
 from flaky import flaky
 
-import hypothesis.strategies as st
 import hypothesis.extra.numpy as nps
-from hypothesis import given, assume, settings
+import hypothesis.strategies as st
+from hypothesis import assume, given, settings
 from hypothesis.errors import InvalidArgument
-from tests.common.debug import minimal, find_any
-from tests.common.utils import checks_deprecated_behaviour
+from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import text_type, binary_type
+from tests.common.debug import find_any, minimal
+from tests.common.utils import checks_deprecated_behaviour
 
-STANDARD_TYPES = list(map(np.dtype, [
-    u'int8', u'int16', u'int32', u'int64',
-    u'uint8', u'uint16', u'uint32', u'uint64',
-    u'float', u'float16', u'float32', u'float64',
-    u'complex64', u'complex128',
-    u'datetime64', u'timedelta64',
-    bool, text_type, binary_type
-]))
+STANDARD_TYPES = list(
+    map(
+        np.dtype,
+        [
+            u"int8",
+            u"int16",
+            u"int32",
+            u"int64",
+            u"uint8",
+            u"uint16",
+            u"uint32",
+            u"uint64",
+            u"float",
+            u"float16",
+            u"float32",
+            u"float64",
+            u"complex64",
+            u"complex128",
+            u"datetime64",
+            u"timedelta64",
+            bool,
+            text_type,
+            binary_type,
+        ],
+    )
+)
 
 
 @given(nps.nested_dtypes())
@@ -47,12 +65,13 @@ def test_strategies_for_standard_dtypes_have_reusable_values(dtype):
     assert nps.from_dtype(dtype).has_reusable_values
 
 
-@pytest.mark.parametrize(u't', STANDARD_TYPES)
+@pytest.mark.parametrize(u"t", STANDARD_TYPES)
 def test_produces_instances(t):
     @given(nps.from_dtype(t))
     def test_is_t(x):
         assert isinstance(x, t.type)
         assert x.dtype.kind == t.kind
+
     test_is_t()
 
 
@@ -66,7 +85,7 @@ def test_can_handle_zero_dimensions(x):
     assert x.shape == (1, 0, 1)
 
 
-@given(nps.arrays(u'uint32', (5, 5)))
+@given(nps.arrays(u"uint32", (5, 5)))
 def test_generates_unsigned_ints(x):
     assert (x >= 0).all()
 
@@ -82,8 +101,9 @@ def test_generates_and_minimizes():
 
 def test_can_minimize_large_arrays():
     x = minimal(
-        nps.arrays(u'uint32', 100), lambda x: np.any(x) and not np.all(x),
-        timeout_after=60
+        nps.arrays(u"uint32", 100),
+        lambda x: np.any(x) and not np.all(x),
+        timeout_after=60,
     )
     assert np.logical_or(x == 0, x == 1).all()
     assert np.count_nonzero(x) in (1, len(x) - 1)
@@ -111,7 +131,8 @@ def test_can_create_arrays_of_composite_types():
 def test_can_create_arrays_of_tuples():
     arr = minimal(
         nps.arrays(object, 10, st.tuples(st.integers(), st.integers())),
-        lambda x: all(t0 != t1 for t0, t1 in x))
+        lambda x: all(t0 != t1 for t0, t1 in x),
+    )
     assert all(a in ((1, 0), (0, 1)) for a in arr)
 
 
@@ -120,9 +141,7 @@ def test_does_not_flatten_arrays_of_tuples(arr):
     assert isinstance(arr[0][0], tuple)
 
 
-@given(
-    nps.arrays(object, (2, 2), st.lists(st.integers(), min_size=1, max_size=1))
-)
+@given(nps.arrays(object, (2, 2), st.lists(st.integers(), min_size=1, max_size=1)))
 def test_does_not_flatten_arrays_of_lists(arr):
     assert isinstance(arr[0][0], list)
 
@@ -136,8 +155,11 @@ def test_can_generate_array_shapes(shape):
 @settings(deadline=None)
 @given(st.integers(1, 10), st.integers(0, 9), st.integers(1), st.integers(0))
 def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
-    smallest = minimal(nps.array_shapes(min_dims, min_dims + dim_range,
-                                        min_side, min_side + side_range))
+    smallest = minimal(
+        nps.array_shapes(
+            min_dims, min_dims + dim_range, min_side, min_side + side_range
+        )
+    )
     assert len(smallest) == min_dims and all(k == min_side for k in smallest)
 
 
@@ -151,8 +173,7 @@ def test_can_generate_compound_dtypes(dtype):
     assert isinstance(dtype, np.dtype)
 
 
-@given(nps.nested_dtypes(max_itemsize=settings.default.buffer_size // 10),
-       st.data())
+@given(nps.nested_dtypes(max_itemsize=settings.default.buffer_size // 10), st.data())
 def test_infer_strategy_from_dtype(dtype, data):
     # Given a dtype
     assert isinstance(dtype, np.dtype)
@@ -169,18 +190,21 @@ def test_np_dtype_is_idempotent(dtype):
 
 
 def test_minimise_scalar_dtypes():
-    assert minimal(nps.scalar_dtypes()) == np.dtype(u'bool')
+    assert minimal(nps.scalar_dtypes()) == np.dtype(u"bool")
 
 
 def test_minimise_nested_types():
-    assert minimal(nps.nested_dtypes()) == np.dtype(u'bool')
+    assert minimal(nps.nested_dtypes()) == np.dtype(u"bool")
 
 
 def test_minimise_array_strategy():
-    smallest = minimal(nps.arrays(
-        nps.nested_dtypes(max_itemsize=settings.default.buffer_size // 3**3),
-        nps.array_shapes(max_dims=3, max_side=3)))
-    assert smallest.dtype == np.dtype(u'bool') and not smallest.any()
+    smallest = minimal(
+        nps.arrays(
+            nps.nested_dtypes(max_itemsize=settings.default.buffer_size // 3 ** 3),
+            nps.array_shapes(max_dims=3, max_side=3),
+        )
+    )
+    assert smallest.dtype == np.dtype(u"bool") and not smallest.any()
 
 
 @given(nps.array_dtypes(allow_subarrays=False))
@@ -189,12 +213,12 @@ def test_can_turn_off_subarrays(dt):
         assert field.shape == ()
 
 
-@pytest.mark.parametrize('byteorder', ['<', '>'])
+@pytest.mark.parametrize("byteorder", ["<", ">"])
 @given(data=st.data())
 def test_can_restrict_endianness(data, byteorder):
     dtype = data.draw(nps.integer_dtypes(byteorder, sizes=(16, 32, 64)))
-    if byteorder == ('<' if sys.byteorder == 'little' else '>'):
-        assert dtype.byteorder == '='
+    if byteorder == ("<" if sys.byteorder == "little" else ">"):
+        assert dtype.byteorder == "="
     else:
         assert dtype.byteorder == byteorder
 
@@ -225,7 +249,7 @@ def test_byte_string_dtypes_generate_unicode_strings(data):
     assert isinstance(result, binary_type)
 
 
-@given(nps.arrays(dtype='int8', shape=st.integers(0, 20), unique=True))
+@given(nps.arrays(dtype="int8", shape=st.integers(0, 20), unique=True))
 def test_array_values_are_unique(arr):
     assert len(set(arr)) == len(arr)
 
@@ -233,16 +257,26 @@ def test_array_values_are_unique(arr):
 def test_may_fill_with_nan_when_unique_is_set():
     find_any(
         nps.arrays(
-            dtype=float, elements=st.floats(allow_nan=False), shape=10,
-            unique=True, fill=st.just(float('nan'))),
-        lambda x: np.isnan(x).any()
+            dtype=float,
+            elements=st.floats(allow_nan=False),
+            shape=10,
+            unique=True,
+            fill=st.just(float("nan")),
+        ),
+        lambda x: np.isnan(x).any(),
     )
 
 
 def test_is_still_unique_with_nan_fill():
-    @given(nps.arrays(
-           dtype=float, elements=st.floats(allow_nan=False), shape=10,
-           unique=True, fill=st.just(float('nan'))))
+    @given(
+        nps.arrays(
+            dtype=float,
+            elements=st.floats(allow_nan=False),
+            shape=10,
+            unique=True,
+            fill=st.just(float("nan")),
+        )
+    )
     def test(xs):
         assert len(set(xs)) == len(xs)
 
@@ -250,9 +284,15 @@ def test_is_still_unique_with_nan_fill():
 
 
 def test_may_not_fill_with_non_nan_when_unique_is_set():
-    @given(nps.arrays(
-        dtype=float, elements=st.floats(allow_nan=False), shape=10,
-        unique=True, fill=st.just(0.0)))
+    @given(
+        nps.arrays(
+            dtype=float,
+            elements=st.floats(allow_nan=False),
+            shape=10,
+            unique=True,
+            fill=st.just(0.0),
+        )
+    )
     def test(arr):
         pass
 
@@ -261,9 +301,7 @@ def test_may_not_fill_with_non_nan_when_unique_is_set():
 
 
 def test_may_not_fill_with_non_nan_when_unique_is_set_and_type_is_not_number():
-    @given(nps.arrays(
-        dtype='U', shape=10,
-        unique=True, fill=st.just(u'')))
+    @given(nps.arrays(dtype="U", shape=10, unique=True, fill=st.just(u"")))
     def test(arr):
         pass
 
@@ -271,12 +309,14 @@ def test_may_not_fill_with_non_nan_when_unique_is_set_and_type_is_not_number():
         test()
 
 
-@given(st.data(),
-       st.builds('{}[{}]'.format,
-                 st.sampled_from(('datetime64', 'timedelta64')),
-                 st.sampled_from(nps.TIME_RESOLUTIONS)
-                 ).map(np.dtype)
-       )
+@given(
+    st.data(),
+    st.builds(
+        "{}[{}]".format,
+        st.sampled_from(("datetime64", "timedelta64")),
+        st.sampled_from(nps.TIME_RESOLUTIONS),
+    ).map(np.dtype),
+)
 def test_inferring_from_time_dtypes_gives_same_dtype(data, dtype):
     ex = data.draw(nps.from_dtype(dtype))
     assert dtype == ex.dtype
@@ -304,24 +344,27 @@ def test_all_inferred_scalar_strategies_roundtrip(data, dtype):
     assert arr[0] == ex
 
 
-@pytest.mark.parametrize('fill', [False, True])
+@pytest.mark.parametrize("fill", [False, True])
 @checks_deprecated_behaviour
 @given(st.data())
 def test_overflowing_integers_are_deprecated(fill, data):
     kw = dict(elements=st.just(300))
     if fill:
-        kw = dict(elements=st.nothing(), fill=kw['elements'])
-    arr = data.draw(nps.arrays(dtype='int8', shape=(1,), **kw))
+        kw = dict(elements=st.nothing(), fill=kw["elements"])
+    arr = data.draw(nps.arrays(dtype="int8", shape=(1,), **kw))
     assert arr[0] == (300 % 256)
 
 
-@pytest.mark.parametrize('fill', [False, True])
-@pytest.mark.parametrize('dtype,strat', [
-    ('float16', st.floats(min_value=65520, allow_infinity=False)),
-    ('complex64', st.complex_numbers(10**300, allow_infinity=False)),
-    ('U1', st.text(min_size=2, max_size=2)),
-    ('S1', st.binary(min_size=2, max_size=2)),
-])
+@pytest.mark.parametrize("fill", [False, True])
+@pytest.mark.parametrize(
+    "dtype,strat",
+    [
+        ("float16", st.floats(min_value=65520, allow_infinity=False)),
+        ("complex64", st.complex_numbers(10 ** 300, allow_infinity=False)),
+        ("U1", st.text(min_size=2, max_size=2)),
+        ("S1", st.binary(min_size=2, max_size=2)),
+    ],
+)
 @checks_deprecated_behaviour
 @given(data=st.data())
 def test_unrepresentable_elements_are_deprecated(fill, dtype, strat, data):
@@ -341,14 +384,19 @@ def test_unrepresentable_elements_are_deprecated(fill, dtype, strat, data):
         assert len(arr[0]) <= 1
 
 
-@given(nps.arrays(dtype='float16', shape=(1,)))
+@given(nps.arrays(dtype="float16", shape=(1,)))
 def test_inferred_floats_do_not_overflow(arr):
     pass
 
 
-@given(nps.arrays(
-    dtype='float16', shape=10, unique=True,
-    elements=st.integers(1, 9), fill=st.just(np.nan)
-))
+@given(
+    nps.arrays(
+        dtype="float16",
+        shape=10,
+        unique=True,
+        elements=st.integers(1, 9),
+        fill=st.just(np.nan),
+    )
+)
 def test_unique_array_with_fill_can_use_all_elements(arr):
     assume(len(set(arr)) == arr.size)

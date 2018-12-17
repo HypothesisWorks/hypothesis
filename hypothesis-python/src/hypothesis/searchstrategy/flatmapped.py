@@ -15,17 +15,14 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 class FlatMapStrategy(SearchStrategy):
-
-    def __init__(
-        self, strategy, expand
-    ):
+    def __init__(self, strategy, expand):
         super(FlatMapStrategy, self).__init__()
         self.flatmapped_strategy = strategy
         self.expand = expand
@@ -34,10 +31,11 @@ class FlatMapStrategy(SearchStrategy):
         return recur(self.flatmapped_strategy)
 
     def __repr__(self):
-        if not hasattr(self, u'_cached_repr'):
-            self._cached_repr = u'%r.flatmap(%s)' % (
-                self.flatmapped_strategy, get_pretty_function_description(
-                    self.expand))
+        if not hasattr(self, u"_cached_repr"):
+            self._cached_repr = u"%r.flatmap(%s)" % (
+                self.flatmapped_strategy,
+                get_pretty_function_description(self.expand),
+            )
         return self._cached_repr
 
     def do_draw(self, data):

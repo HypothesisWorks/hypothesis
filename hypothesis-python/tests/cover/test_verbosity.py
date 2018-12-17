@@ -15,19 +15,18 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
-import sys
 import subprocess
+import sys
 from contextlib import contextmanager
 
 from hypothesis import find, given
-from tests.common.utils import fails, capture_out
 from hypothesis._settings import Verbosity, settings
-from hypothesis.reporting import default as default_reporter
-from hypothesis.reporting import with_reporter
-from hypothesis.strategies import lists, booleans, integers
+from hypothesis.reporting import default as default_reporter, with_reporter
+from hypothesis.strategies import booleans, integers, lists
+from tests.common.utils import capture_out, fails
 
 
 @contextmanager
@@ -39,16 +38,19 @@ def capture_verbosity():
 
 def test_prints_intermediate_in_success():
     with capture_verbosity() as o:
+
         @settings(verbosity=Verbosity.verbose)
         @given(booleans())
         def test_works(x):
             pass
+
         test_works()
-    assert 'Trying example' in o.getvalue()
+    assert "Trying example" in o.getvalue()
 
 
 def test_does_not_log_in_quiet_mode():
     with capture_verbosity() as o:
+
         @fails
         @settings(verbosity=Verbosity.quiet)
         @given(integers())
@@ -61,23 +63,26 @@ def test_does_not_log_in_quiet_mode():
 
 def test_includes_progress_in_verbose_mode():
     with capture_verbosity() as o:
+
         def foo():
             find(
                 lists(integers()),
                 lambda x: sum(x) >= 100,
-                settings=settings(verbosity=Verbosity.verbose, database=None))
+                settings=settings(verbosity=Verbosity.verbose, database=None),
+            )
 
         foo()
 
     out = o.getvalue()
     assert out
-    assert u'Shrunk example' in out
-    assert u'Found satisfying example' in out
+    assert u"Shrunk example" in out
+    assert u"Found satisfying example" in out
 
 
 def test_prints_initial_attempts_on_find():
 
     with capture_verbosity() as o:
+
         def foo():
             seen = []
 
@@ -86,17 +91,17 @@ def test_prints_initial_attempts_on_find():
                     seen.append(x)
                     return False
                 return x not in seen
-            find(
-                integers(), not_first,
-                settings=settings(verbosity=Verbosity.verbose))
+
+            find(integers(), not_first, settings=settings(verbosity=Verbosity.verbose))
 
         foo()
 
-    assert u'Tried non-satisfying example' in o.getvalue()
+    assert u"Tried non-satisfying example" in o.getvalue()
 
 
 def test_includes_intermediate_results_in_verbose_mode():
     with capture_verbosity() as o:
+
         @fails
         @settings(verbosity=Verbosity.verbose, database=None)
         @given(lists(integers(), min_size=1))
@@ -105,8 +110,8 @@ def test_includes_intermediate_results_in_verbose_mode():
 
         test_foo()
     lines = o.getvalue().splitlines()
-    assert len([l for l in lines if u'example' in l]) > 2
-    assert [l for l in lines if u'AssertionError' in l]
+    assert len([l for l in lines if u"example" in l]) > 2
+    assert [l for l in lines if u"AssertionError" in l]
 
 
 PRINT_VERBOSITY = """
@@ -123,13 +128,13 @@ if __name__ == '__main__':
 
 
 def test_picks_up_verbosity_from_environment(tmpdir):
-    script = tmpdir.join('printdebug.py')
+    script = tmpdir.join("printdebug.py")
     script.write(PRINT_VERBOSITY)
     environ = dict(os.environ)
 
-    environ['HYPOTHESIS_VERBOSITY_LEVEL'] = 'debug'
-    output = subprocess.check_output([
-        sys.executable, str(script)
-    ], env=environ).decode('ascii')
+    environ["HYPOTHESIS_VERBOSITY_LEVEL"] = "debug"
+    output = subprocess.check_output([sys.executable, str(script)], env=environ).decode(
+        "ascii"
+    )
 
-    assert 'VERBOSITY=debug' in output
+    assert "VERBOSITY=debug" in output

@@ -15,17 +15,16 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from random import Random
 
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import Verbosity, HealthCheck, given, assume, example, \
-    settings
-from tests.common.debug import minimal
+from hypothesis import HealthCheck, Verbosity, assume, example, given, settings
 from hypothesis.internal.compat import ceil
+from tests.common.debug import minimal
 
 
 def test_shrinks_to_simple_floats():
@@ -33,7 +32,7 @@ def test_shrinks_to_simple_floats():
     assert minimal(st.floats(), lambda x: x > 0) == 1.0
 
 
-@pytest.mark.parametrize('n', [1, 2, 3, 8, 10])
+@pytest.mark.parametrize("n", [1, 2, 3, 8, 10])
 def test_can_shrink_in_variable_sized_context(n):
     x = minimal(st.lists(st.floats(), min_size=n), any)
     assert len(x) == n
@@ -41,13 +40,15 @@ def test_can_shrink_in_variable_sized_context(n):
     assert 1 in x
 
 
-@example(1.7976931348623157e+308)
+@example(1.7976931348623157e308)
 @example(1.5)
 @given(st.floats(min_value=0, allow_infinity=False, allow_nan=False))
 @settings(deadline=None, suppress_health_check=HealthCheck.all())
 def test_shrinks_downwards_to_integers(f):
     g = minimal(
-        st.floats(), lambda x: x >= f, random=Random(0),
+        st.floats(),
+        lambda x: x >= f,
+        random=Random(0),
         settings=settings(verbosity=Verbosity.quiet),
     )
     assert g == ceil(f)
@@ -55,8 +56,7 @@ def test_shrinks_downwards_to_integers(f):
 
 @example(1)
 @given(st.integers(1, 2 ** 16 - 1))
-@settings(deadline=None,
-          suppress_health_check=HealthCheck.all(), max_examples=10)
+@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=10)
 def test_shrinks_downwards_to_integers_when_fractional(b):
     g = minimal(
         st.floats(),

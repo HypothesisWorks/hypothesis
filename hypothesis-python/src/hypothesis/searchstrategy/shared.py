@@ -15,15 +15,14 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from hypothesis.searchstrategy import SearchStrategy
 
-SHARED_STRATEGY_ATTRIBUTE = '_hypothesis_shared_strategies'
+SHARED_STRATEGY_ATTRIBUTE = "_hypothesis_shared_strategies"
 
 
 class SharedStrategy(SearchStrategy):
-
     def __init__(self, base, key=None):
         self.key = key
         self.base = base
@@ -34,9 +33,9 @@ class SharedStrategy(SearchStrategy):
 
     def __repr__(self):
         if self.key is not None:
-            return 'shared(%r, key=%r)' % (self.base, self.key)
+            return "shared(%r, key=%r)" % (self.base, self.key)
         else:
-            return 'shared(%r)' % (self.base,)
+            return "shared(%r)" % (self.base,)
 
     def do_draw(self, data):
         if not hasattr(data, SHARED_STRATEGY_ATTRIBUTE):

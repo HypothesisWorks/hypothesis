@@ -15,25 +15,27 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 import shutil
 import tempfile
 
 import hypothesis.strategies as st
-from tests.common.utils import validate_deprecation
-from hypothesis.database import SQLiteExampleDatabase, \
-    InMemoryExampleDatabase, DirectoryBasedExampleDatabase
+from hypothesis.database import (
+    DirectoryBasedExampleDatabase,
+    InMemoryExampleDatabase,
+    SQLiteExampleDatabase,
+)
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
+from tests.common.utils import validate_deprecation
 
 
 class DatabaseComparison(RuleBasedStateMachine):
-
     def __init__(self):
         super(DatabaseComparison, self).__init__()
         self.tempd = tempfile.mkdtemp()
-        exampledir = os.path.join(self.tempd, 'examples')
+        exampledir = os.path.join(self.tempd, "examples")
 
         self.dbs = [
             DirectoryBasedExampleDatabase(exampledir),
@@ -42,10 +44,10 @@ class DatabaseComparison(RuleBasedStateMachine):
         ]
 
         with validate_deprecation():
-            self.dbs.append(SQLiteExampleDatabase(':memory:'))
+            self.dbs.append(SQLiteExampleDatabase(":memory:"))
 
-    keys = Bundle('keys')
-    values = Bundle('values')
+    keys = Bundle("keys")
+    values = Bundle("values")
 
     @rule(target=keys, k=st.binary())
     def k(self, k):

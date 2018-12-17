@@ -15,20 +15,20 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from datetime import MINYEAR
 
-import pytz
 import pytest
+import pytz
 from flaky import flaky
 
-from hypothesis import given, assume, settings, unlimited
+from hypothesis import assume, given, settings, unlimited
 from hypothesis.errors import InvalidArgument
-from tests.common.debug import minimal, find_any
-from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.extra.datetime import datetimes
 from hypothesis.internal.compat import hrange
+from tests.common.debug import find_any, minimal
+from tests.common.utils import checks_deprecated_behaviour
 
 
 @checks_deprecated_behaviour
@@ -49,9 +49,7 @@ def test_can_find_each_month():
 
 @checks_deprecated_behaviour
 def test_can_find_midnight():
-    datetimes().filter(
-        lambda x: x.hour == x.minute == x.second == 0
-    ).example()
+    datetimes().filter(lambda x: x.hour == x.minute == x.second == 0).example()
 
 
 @checks_deprecated_behaviour
@@ -85,15 +83,12 @@ def test_can_generate_naive_datetime():
 
 @checks_deprecated_behaviour
 def test_can_generate_non_naive_datetime():
-    assert minimal(
-        datetimes(allow_naive=True), lambda d: d.tzinfo).tzinfo == pytz.UTC
+    assert minimal(datetimes(allow_naive=True), lambda d: d.tzinfo).tzinfo == pytz.UTC
 
 
 @checks_deprecated_behaviour
 def test_can_generate_non_utc():
-    datetimes().filter(
-        lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC'
-    ).example()
+    datetimes().filter(lambda d: assume(d.tzinfo) and d.tzinfo.zone != u"UTC").example()
 
 
 @checks_deprecated_behaviour
@@ -149,8 +144,7 @@ def test_bordering_on_a_leap_year():
     x = minimal(
         datetimes(min_year=2002, max_year=2005),
         lambda x: x.month == 2 and x.day == 29,
-        settings=settings(
-            database=None, max_examples=10 ** 7, timeout=unlimited)
+        settings=settings(database=None, max_examples=10 ** 7, timeout=unlimited),
     )
     assert x.year == 2004
 
@@ -159,7 +153,4 @@ def test_bordering_on_a_leap_year():
 def test_overflow_in_simplify():
     """This is a test that we don't trigger a pytz bug when we're simplifying
     around MINYEAR where valid dates can produce an overflow error."""
-    minimal(
-        datetimes(max_year=MINYEAR),
-        lambda x: x.tzinfo != pytz.UTC
-    )
+    minimal(datetimes(max_year=MINYEAR), lambda x: x.tzinfo != pytz.UTC)

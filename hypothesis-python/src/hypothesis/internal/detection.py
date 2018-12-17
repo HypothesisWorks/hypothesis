@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from types import MethodType
 
@@ -23,4 +23,4 @@ from types import MethodType
 def is_hypothesis_test(test):
     if isinstance(test, MethodType):
         return is_hypothesis_test(test.__func__)
-    return getattr(test, 'is_hypothesis_test', False)
+    return getattr(test, "is_hypothesis_test", False)

@@ -15,17 +15,17 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import warnings
 
-from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis._settings import note_deprecation
-from hypothesis.strategies import integers, composite
+from hypothesis.errors import HypothesisDeprecationWarning
+from hypothesis.strategies import composite, integers
 
 
 def test_note_deprecation_blames_right_code_issue_652():
-    msg = 'this is an arbitrary deprecation warning message'
+    msg = "this is an arbitrary deprecation warning message"
 
     @composite
     def deprecated_strategy(draw):
@@ -33,7 +33,7 @@ def test_note_deprecation_blames_right_code_issue_652():
         note_deprecation(msg)
 
     with warnings.catch_warnings(record=True) as log:
-        warnings.simplefilter('always')
+        warnings.simplefilter("always")
         deprecated_strategy().example()
 
     assert len(log) == 1

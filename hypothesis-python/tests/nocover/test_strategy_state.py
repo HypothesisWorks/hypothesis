@@ -15,19 +15,34 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import math
 import hashlib
+import math
 from random import Random
 
 from hypothesis import Verbosity, assume, settings, unlimited
 from hypothesis.database import ExampleDatabase
-from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
-from hypothesis.strategies import data, just, none, text, lists, binary, \
-    floats, tuples, booleans, decimals, integers, fractions, \
-    float_to_int, int_to_float, sampled_from, complex_numbers
 from hypothesis.internal.compat import PYPY
+from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
+from hypothesis.strategies import (
+    binary,
+    booleans,
+    complex_numbers,
+    data,
+    decimals,
+    float_to_int,
+    floats,
+    fractions,
+    int_to_float,
+    integers,
+    just,
+    lists,
+    none,
+    sampled_from,
+    text,
+    tuples,
+)
 
 AVERAGE_LIST_LENGTH = 2
 
@@ -36,8 +51,7 @@ def clamp(lower, value, upper):
     """Given a value and optional lower/upper bounds, 'clamp' the value so that
     it satisfies lower <= value <= upper."""
     if (lower is not None) and (upper is not None) and (lower > upper):
-        raise ValueError('Cannot clamp with lower > upper: %r > %r' %
-                         (lower, upper))
+        raise ValueError("Cannot clamp with lower > upper: %r > %r" % (lower, upper))
     if lower is not None:
         value = max(lower, value)
     if upper is not None:
@@ -46,16 +60,15 @@ def clamp(lower, value, upper):
 
 
 class HypothesisSpec(RuleBasedStateMachine):
-
     def __init__(self):
         super(HypothesisSpec, self).__init__()
         self.database = None
 
-    strategies = Bundle(u'strategy')
-    strategy_tuples = Bundle(u'tuples')
-    objects = Bundle(u'objects')
-    basic_data = Bundle(u'basic')
-    varied_floats = Bundle(u'varied_floats')
+    strategies = Bundle(u"strategy")
+    strategy_tuples = Bundle(u"tuples")
+    objects = Bundle(u"objects")
+    basic_data = Bundle(u"basic")
+    varied_floats = Bundle(u"varied_floats")
 
     def teardown(self):
         self.clear_database()
@@ -71,11 +84,23 @@ class HypothesisSpec(RuleBasedStateMachine):
         self.teardown()
         self.database = ExampleDatabase()
 
-    @rule(target=strategies, spec=sampled_from((
-        integers(), booleans(), floats(), complex_numbers(),
-        fractions(), decimals(), text(), binary(), none(),
-        tuples(),
-    )))
+    @rule(
+        target=strategies,
+        spec=sampled_from(
+            (
+                integers(),
+                booleans(),
+                floats(),
+                complex_numbers(),
+                fractions(),
+                decimals(),
+                text(),
+                binary(),
+                none(),
+                tuples(),
+            )
+        ),
+    )
     def strategy(self, spec):
         return spec
 
@@ -87,16 +112,15 @@ class HypothesisSpec(RuleBasedStateMachine):
     def strategy_for_tupes(self, spec):
         return tuples(*spec)
 
-    @rule(
-        target=strategies,
-        source=strategies,
-        level=integers(1, 10),
-        mixer=text())
+    @rule(target=strategies, source=strategies, level=integers(1, 10), mixer=text())
     def filtered_strategy(s, source, level, mixer):
         def is_good(x):
-            return bool(Random(
-                hashlib.md5((mixer + repr(x)).encode(u'utf-8')).digest()
-            ).randint(0, level))
+            return bool(
+                Random(
+                    hashlib.md5((mixer + repr(x)).encode(u"utf-8")).digest()
+                ).randint(0, level)
+            )
+
         return source.filter(is_good)
 
     @rule(target=strategies, elements=strategies)
@@ -111,20 +135,11 @@ class HypothesisSpec(RuleBasedStateMachine):
     def float(self, source):
         return source
 
-    @rule(
-        target=varied_floats,
-        source=varied_floats, offset=integers(-100, 100))
+    @rule(target=varied_floats, source=varied_floats, offset=integers(-100, 100))
     def adjust_float(self, source, offset):
-        return int_to_float(clamp(
-            0,
-            float_to_int(source) + offset,
-            2 ** 64 - 1
-        ))
+        return int_to_float(clamp(0, float_to_int(source) + offset, 2 ** 64 - 1))
 
-    @rule(
-        target=strategies,
-        left=varied_floats, right=varied_floats
-    )
+    @rule(target=strategies, left=varied_floats, right=varied_floats)
     def float_range(self, left, right):
         for f in (math.isnan, math.isinf):
             for x in (left, right):
@@ -135,20 +150,23 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(
         target=strategies,
-        source=strategies, result1=strategies, result2=strategies,
-        mixer=text(), p=floats(0, 1))
+        source=strategies,
+        result1=strategies,
+        result2=strategies,
+        mixer=text(),
+        p=floats(0, 1),
+    )
     def flatmapped_strategy(self, source, result1, result2, mixer, p):
         assume(result1 is not result2)
 
         def do_map(value):
             rep = repr(value)
-            random = Random(
-                hashlib.md5((mixer + rep).encode(u'utf-8')).digest()
-            )
+            random = Random(hashlib.md5((mixer + rep).encode(u"utf-8")).digest())
             if random.random() <= p:
                 return result1
             else:
                 return result2
+
         return source.flatmap(do_map)
 
     @rule(target=strategies, value=objects)
@@ -174,10 +192,10 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(strat=strategies)
     def repr_is_good(self, strat):
-        assert u' at 0x' not in repr(strat)
+        assert u" at 0x" not in repr(strat)
 
 
-MAIN = __name__ == u'__main__'
+MAIN = __name__ == u"__main__"
 
 TestHypothesis = HypothesisSpec.TestCase
 

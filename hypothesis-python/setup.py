@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 import sys
@@ -28,17 +28,17 @@ def local_file(name):
     return os.path.relpath(os.path.join(os.path.dirname(__file__), name))
 
 
-SOURCE = local_file('src')
-README = local_file('README.rst')
+SOURCE = local_file("src")
+README = local_file("README.rst")
 
-setuptools_version = tuple(map(int, setuptools.__version__.split('.')[:2]))
+setuptools_version = tuple(map(int, setuptools.__version__.split(".")[:2]))
 
 if setuptools_version < (36, 2):
     # Warning only - very bad if uploading bdist but fine if installing sdist.
     warnings.warn(
-        'This version of setuptools is too old to correctly store '
-        'conditional dependencies in binary wheels.  For more info, see:  '
-        'https://hynek.me/articles/conditional-python-dependencies/'
+        "This version of setuptools is too old to correctly store "
+        "conditional dependencies in binary wheels.  For more info, see:  "
+        "https://hynek.me/articles/conditional-python-dependencies/"
     )
 
 
@@ -46,82 +46,79 @@ if setuptools_version < (36, 2):
 # follows.
 __version__ = None
 
-with open(local_file('src/hypothesis/version.py')) as o:
+with open(local_file("src/hypothesis/version.py")) as o:
     exec(o.read())
 
 assert __version__ is not None
 
 
 extras = {
-    'datetime': ['pytz>=2014.1'],
-    'pytz': ['pytz>=2014.1'],
-    'dateutil': ['python-dateutil>=1.4'],
-    'fakefactory': ['Faker>=0.7'],
-    'numpy': ['numpy>=1.9.0'],
-    'pandas': ['pandas>=0.19'],
-    'pytest': ['pytest>=3.0'],
-    'dpcontracts': ['dpcontracts>=0.4'],
+    "datetime": ["pytz>=2014.1"],
+    "pytz": ["pytz>=2014.1"],
+    "dateutil": ["python-dateutil>=1.4"],
+    "fakefactory": ["Faker>=0.7"],
+    "numpy": ["numpy>=1.9.0"],
+    "pandas": ["pandas>=0.19"],
+    "pytest": ["pytest>=3.0"],
+    "dpcontracts": ["dpcontracts>=0.4"],
     # We only support Django versions with upstream support - see
     # https://www.djangoproject.com/download/#supported-versions
-    'django': ['pytz', 'django>=1.11'],
+    "django": ["pytz", "django>=1.11"],
 }
 
-extras['faker'] = extras['fakefactory']
-extras['all'] = sorted(sum(extras.values(), []))
+extras["faker"] = extras["fakefactory"]
+extras["all"] = sorted(sum(extras.values(), []))
 
 
-install_requires = ['attrs>=16.0.0']
+install_requires = ["attrs>=16.0.0"]
 # Using an environment marker on enum34 makes the dependency condition
 # independent of the build environemnt, which is important for wheels.
 # https://www.python.org/dev/peps/pep-0345/#environment-markers
 if sys.version_info[0] < 3 and setuptools_version < (8, 0):
     # Except really old systems, where we give up and install unconditionally
-    install_requires.append('enum34')
+    install_requires.append("enum34")
 else:
     install_requires.append('enum34; python_version=="2.7"')
 
 
 setuptools.setup(
-    name='hypothesis',
+    name="hypothesis",
     version=__version__,
-    author='David R. MacIver',
-    author_email='david@drmaciver.com',
+    author="David R. MacIver",
+    author_email="david@drmaciver.com",
     packages=setuptools.find_packages(SOURCE),
-    package_dir={'': SOURCE},
-    package_data={'hypothesis': ['py.typed']},
+    package_dir={"": SOURCE},
+    package_data={"hypothesis": ["py.typed"]},
     url=(
-        'https://github.com/HypothesisWorks/hypothesis/'
-        'tree/master/hypothesis-python'
+        "https://github.com/HypothesisWorks/hypothesis/" "tree/master/hypothesis-python"
     ),
-    license='MPL v2',
-    description='A library for property based testing',
+    license="MPL v2",
+    description="A library for property based testing",
     zip_safe=False,
     extras_require=extras,
     install_requires=install_requires,
-    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Framework :: Hypothesis',
-        'Framework :: Pytest',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
-        'Operating System :: Unix',
-        'Operating System :: POSIX',
-        'Operating System :: Microsoft :: Windows',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: Implementation :: CPython',
-        'Programming Language :: Python :: Implementation :: PyPy',
-        'Topic :: Software Development :: Testing',
+        "Development Status :: 5 - Production/Stable",
+        "Framework :: Hypothesis",
+        "Framework :: Pytest",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+        "Operating System :: Unix",
+        "Operating System :: POSIX",
+        "Operating System :: Microsoft :: Windows",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
+        "Topic :: Software Development :: Testing",
     ],
-    entry_points={
-        'pytest11': ['hypothesispytest = hypothesis.extra.pytestplugin'],
-    },
+    entry_points={"pytest11": ["hypothesispytest = hypothesis.extra.pytestplugin"]},
     long_description=open(README).read(),
-    keywords='python testing fuzzing property-based-testing',
+    keywords="python testing fuzzing property-based-testing",
 )

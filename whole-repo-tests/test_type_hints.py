@@ -15,25 +15,27 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 import subprocess
 
 import pytest
 
-from hypothesistooling.scripts import pip_tool, tool_path
 from hypothesistooling.projects.hypothesispython import PYTHON_SRC
+from hypothesistooling.scripts import pip_tool, tool_path
 
 
 def test_mypy_passes_on_hypothesis():
-    pip_tool('mypy', PYTHON_SRC)
+    pip_tool("mypy", PYTHON_SRC)
 
 
 def get_mypy_analysed_type(fname, val):
     out = subprocess.Popen(
-        [tool_path('mypy'), fname],
-        stdout=subprocess.PIPE, encoding='utf-8', universal_newlines=True,
+        [tool_path("mypy"), fname],
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+        universal_newlines=True,
         # We set the MYPYPATH explicitly, because PEP561 discovery wasn't
         # working in CI as of mypy==0.600 - hopefully a temporary workaround.
         env=dict(os.environ, MYPYPATH=PYTHON_SRC),
@@ -42,33 +44,35 @@ def get_mypy_analysed_type(fname, val):
     # See https://mypy.readthedocs.io/en/latest/common_issues.html#reveal-type
     # The shell output for `reveal_type([1, 2, 3])` looks like a literal:
     # file.py:2: error: Revealed type is 'builtins.list[builtins.int*]'
-    typ = out.split('error: Revealed type is ')[1].strip().strip("'")
-    qualname = 'hypothesis.searchstrategy.strategies.SearchStrategy'
+    typ = out.split("error: Revealed type is ")[1].strip().strip("'")
+    qualname = "hypothesis.searchstrategy.strategies.SearchStrategy"
     assert typ.startswith(qualname)
-    return typ[len(qualname) + 1:-1].replace('builtins.', '').replace('*', '')
+    return typ[len(qualname) + 1 : -1].replace("builtins.", "").replace("*", "")
 
 
-@pytest.mark.parametrize('val,expect', [
-    ('integers()', 'int'),
-    ('text()', 'str'),
-    ('integers().map(str)', 'str'),
-    ('booleans().filter(bool)', 'bool'),
-    ('lists(none())', 'list[None]'),
-    ('dictionaries(integers(), datetimes())', 'dict[int, datetime.datetime]'),
-    # Ex`-1 stands for recursion in the whole type, i.e. Ex`0 == Union[...]
-    ('recursive(integers(), lists)', 'Union[list[Ex`-1], int]'),
-    # See https://github.com/python/mypy/issues/5269 - fix the hints on
-    # `one_of` and document the minimum Mypy version when the issue is fixed.
-    ('one_of(integers(), text())', 'Any'),
-])
+@pytest.mark.parametrize(
+    "val,expect",
+    [
+        ("integers()", "int"),
+        ("text()", "str"),
+        ("integers().map(str)", "str"),
+        ("booleans().filter(bool)", "bool"),
+        ("lists(none())", "list[None]"),
+        ("dictionaries(integers(), datetimes())", "dict[int, datetime.datetime]"),
+        # Ex`-1 stands for recursion in the whole type, i.e. Ex`0 == Union[...]
+        ("recursive(integers(), lists)", "Union[list[Ex`-1], int]"),
+        # See https://github.com/python/mypy/issues/5269 - fix the hints on
+        # `one_of` and document the minimum Mypy version when the issue is fixed.
+        ("one_of(integers(), text())", "Any"),
+    ],
+)
 def test_revealed_types(tmpdir, val, expect):
     """Check that Mypy picks up the expected `X` in SearchStrategy[`X`]."""
-    f = tmpdir.join(expect + '.py')
+    f = tmpdir.join(expect + ".py")
     f.write(
-        'from hypothesis.strategies import *\n'
-        's = {}\n'
-        'reveal_type(s)\n'
-        .format(val)
+        "from hypothesis.strategies import *\n"
+        "s = {}\n"
+        "reveal_type(s)\n".format(val)
     )
     got = get_mypy_analysed_type(str(f.realpath()), val)
     assert got == expect

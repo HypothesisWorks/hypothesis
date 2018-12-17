@@ -15,11 +15,9 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from hypothesis import find, given, assume, reject
-from hypothesis import settings as Settings
-from hypothesis import unlimited
+from hypothesis import assume, find, given, reject, settings as Settings, unlimited
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from tests.common.utils import no_shrink
 
@@ -30,17 +28,13 @@ class Timeout(BaseException):
     pass
 
 
-def minimal(
-        definition, condition=None,
-        settings=None, timeout_after=10, random=None
-):
-    settings = Settings(
-        settings, max_examples=50000, database=None, timeout=unlimited,
-    )
+def minimal(definition, condition=None, settings=None, timeout_after=10, random=None):
+    settings = Settings(settings, max_examples=50000, database=None, timeout=unlimited)
 
     runtime = []
 
     if condition is None:
+
         def condition(x):
             return True
 
@@ -55,46 +49,36 @@ def minimal(
             runtime.append(0.0)
         return result
 
-    return find(
-        definition,
-        wrapped_condition,
-        settings=settings,
-        random=random,
-    )
+    return find(definition, wrapped_condition, settings=settings, random=random)
 
 
-def find_any(
-        definition, condition=None,
-        settings=None, random=None
-):
+def find_any(definition, condition=None, settings=None, random=None):
     settings = Settings(
-        settings,
-        max_examples=10000, phases=no_shrink, database=None, timeout=unlimited
+        settings, max_examples=10000, phases=no_shrink, database=None, timeout=unlimited
     )
 
     if condition is None:
+
         def condition(x):
             return True
 
-    return find(
-        definition,
-        condition,
-        settings=settings,
-        random=random,
-    )
+    return find(definition, condition, settings=settings, random=random)
 
 
 def assert_no_examples(strategy, condition=None):
     if condition is None:
+
         def predicate(x):
             reject()
+
     else:
+
         def predicate(x):
             assume(condition(x))
 
     try:
         result = find(strategy, predicate, settings=Settings(phases=no_shrink))
-        assert False, 'Expected no results but found %r' % (result,)
+        assert False, "Expected no results but found %r" % (result,)
     except (Unsatisfiable, NoSuchExample):
         pass
 
@@ -105,9 +89,12 @@ def assert_all_examples(strategy, predicate):
     :param strategy: Hypothesis strategy to check
     :param predicate: (callable) Predicate that takes example and returns bool
     """
+
     @given(strategy)
     def assert_examples(s):
-        assert predicate(s), \
-            'Found %r using strategy %s which does not match' % (s, strategy)
+        assert predicate(s), "Found %r using strategy %s which does not match" % (
+            s,
+            strategy,
+        )
 
     assert_examples()

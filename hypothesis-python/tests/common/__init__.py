@@ -24,29 +24,48 @@ except ImportError:
     pytest = None
 
 from tests.common.debug import TIME_INCREMENT
-from hypothesis.strategies import integers, floats, just, one_of, \
-    sampled_from, lists, booleans, dictionaries, tuples, \
-    frozensets, complex_numbers, sets, text, binary, decimals, fractions, \
-    none, randoms, builds, fixed_dictionaries, recursive
+from hypothesis.strategies import (
+    integers,
+    floats,
+    just,
+    one_of,
+    sampled_from,
+    lists,
+    booleans,
+    dictionaries,
+    tuples,
+    frozensets,
+    complex_numbers,
+    sets,
+    text,
+    binary,
+    decimals,
+    fractions,
+    none,
+    randoms,
+    builds,
+    fixed_dictionaries,
+    recursive,
+)
 
 
-__all__ = ['standard_types', 'OrderedPair', 'TIME_INCREMENT']
+__all__ = ["standard_types", "OrderedPair", "TIME_INCREMENT"]
 
-OrderedPair = namedtuple('OrderedPair', ('left', 'right'))
+OrderedPair = namedtuple("OrderedPair", ("left", "right"))
 
 
 ordered_pair = integers().flatmap(
     lambda right: integers(min_value=0).map(
-        lambda length: OrderedPair(right - length, right)))
+        lambda length: OrderedPair(right - length, right)
+    )
+)
 
 
 def constant_list(strat):
-    return strat.flatmap(
-        lambda v: lists(just(v)),
-    )
+    return strat.flatmap(lambda v: lists(just(v)))
 
 
-ABC = namedtuple('ABC', ('a', 'b', 'c'))
+ABC = namedtuple("ABC", ("a", "b", "c"))
 
 
 def abc(x, y, z):
@@ -54,27 +73,34 @@ def abc(x, y, z):
 
 
 standard_types = [
-    lists(none(), max_size=0), tuples(),
-    sets(none(), max_size=0), frozensets(none(), max_size=0),
+    lists(none(), max_size=0),
+    tuples(),
+    sets(none(), max_size=0),
+    frozensets(none(), max_size=0),
     fixed_dictionaries({}),
     abc(booleans(), booleans(), booleans()),
     abc(booleans(), booleans(), integers()),
-    fixed_dictionaries({'a': integers(), 'b': booleans()}),
+    fixed_dictionaries({"a": integers(), "b": booleans()}),
     dictionaries(booleans(), integers()),
     dictionaries(text(), booleans()),
     one_of(integers(), tuples(booleans())),
     sampled_from(range(10)),
-    one_of(just('a'), just('b'), just('c')),
-    sampled_from(('a', 'b', 'c')),
+    one_of(just("a"), just("b"), just("c")),
+    sampled_from(("a", "b", "c")),
     integers(),
     integers(min_value=3),
     integers(min_value=(-2 ** 32), max_value=(2 ** 64)),
-    floats(), floats(min_value=-2.0, max_value=3.0),
-    floats(), floats(min_value=-2.0),
-    floats(), floats(max_value=-0.0),
-    floats(), floats(min_value=0.0),
+    floats(),
+    floats(min_value=-2.0, max_value=3.0),
+    floats(),
+    floats(min_value=-2.0),
+    floats(),
+    floats(max_value=-0.0),
+    floats(),
+    floats(min_value=0.0),
     floats(min_value=3.14, max_value=3.14),
-    text(), binary(),
+    text(),
+    binary(),
     booleans(),
     tuples(booleans(), booleans()),
     frozensets(integers()),
@@ -84,19 +110,12 @@ standard_types = [
     decimals(),
     lists(lists(booleans())),
     lists(floats(0.0, 0.0)),
-    ordered_pair, constant_list(integers()),
+    ordered_pair,
+    constant_list(integers()),
     integers().filter(lambda x: abs(x) > 100),
     floats(min_value=-sys.float_info.max, max_value=sys.float_info.max),
-    none(), randoms(),
+    none(),
+    randoms(),
     booleans().flatmap(lambda x: booleans() if x else complex_numbers()),
-    recursive(
-        base=booleans(), extend=lambda x: lists(x, max_size=3),
-        max_leaves=10,
-    )
+    recursive(base=booleans(), extend=lambda x: lists(x, max_size=3), max_leaves=10),
 ]
-
-
-if pytest is not None:
-    def parametrize(args, values):
-        return pytest.mark.parametrize(
-            args, values, ids=list(map(repr, values)))

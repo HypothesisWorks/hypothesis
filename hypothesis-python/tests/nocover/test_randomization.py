@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import random
 
@@ -41,10 +41,12 @@ def test_nesting_with_control_passes_health_check():
     def test_blah(x, rnd):
         @given(st.integers())
         @settings(
-            max_examples=100, phases=no_shrink, database=None,
-            verbosity=Verbosity.quiet)
+            max_examples=100, phases=no_shrink, database=None, verbosity=Verbosity.quiet
+        )
         def test_nest(y):
             assert y < x
+
         with raises(AssertionError):
             test_nest()
+
     test_blah()

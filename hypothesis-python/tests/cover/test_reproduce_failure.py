@@ -15,34 +15,41 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
+import base64
 import re
 import zlib
-import base64
 
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import Verbosity, PrintSettings, given, reject, example, \
-    settings, __version__, reproduce_failure
+from hypothesis import (
+    PrintSettings,
+    Verbosity,
+    __version__,
+    example,
+    given,
+    reject,
+    reproduce_failure,
+    settings,
+)
 from hypothesis.core import decode_failure, encode_failure
-from hypothesis.errors import DidNotReproduce, InvalidArgument, \
-    UnsatisfiedAssumption
-from tests.common.utils import no_shrink, capture_out
+from hypothesis.errors import DidNotReproduce, InvalidArgument, UnsatisfiedAssumption
 from hypothesis.internal.compat import hbytes
+from tests.common.utils import capture_out, no_shrink
 
 
 @example(hbytes(20))  # shorter compressed
-@example(hbytes(3))   # shorter uncompressed
+@example(hbytes(3))  # shorter uncompressed
 @given(st.binary() | st.binary(min_size=100))
 def test_encoding_loop(b):
     assert decode_failure(encode_failure(b)) == b
 
 
-@example(base64.b64encode(b'\2\3\4'))
-@example(b'\t')
-@example(base64.b64encode(b'\1\0'))  # zlib error
+@example(base64.b64encode(b"\2\3\4"))
+@example(b"\t")
+@example(base64.b64encode(b"\1\0"))  # zlib error
 @given(st.binary())
 def test_decoding_may_fail(t):
     try:
@@ -53,11 +60,11 @@ def test_decoding_may_fail(t):
     except InvalidArgument:
         pass
     except Exception as e:
-        assert False, 'decoding failed with %r, not InvalidArgument' % (e,)
+        assert False, "decoding failed with %r, not InvalidArgument" % (e,)
 
 
 def test_reproduces_the_failure():
-    b = b'hello world'
+    b = b"hello world"
     n = len(b)
 
     @reproduce_failure(__version__, encode_failure(b))
@@ -70,7 +77,7 @@ def test_reproduces_the_failure():
 
 
 def test_errors_if_provided_example_does_not_reproduce_failure():
-    b = b'hello world'
+    b = b"hello world"
     n = len(b)
 
     @reproduce_failure(__version__, encode_failure(b))
@@ -83,7 +90,7 @@ def test_errors_if_provided_example_does_not_reproduce_failure():
 
 
 def test_errors_with_did_not_reproduce_if_the_shape_changes():
-    b = b'hello world'
+    b = b"hello world"
     n = len(b)
 
     @reproduce_failure(__version__, encode_failure(b))
@@ -96,7 +103,7 @@ def test_errors_with_did_not_reproduce_if_the_shape_changes():
 
 
 def test_errors_with_did_not_reproduce_if_rejected():
-    b = b'hello world'
+    b = b"hello world"
     n = len(b)
 
     @reproduce_failure(__version__, encode_failure(b))
@@ -121,9 +128,9 @@ def test_prints_reproduction_if_requested():
     with capture_out() as o:
         with pytest.raises(AssertionError):
             test()
-    assert '@reproduce_failure' in o.getvalue()
+    assert "@reproduce_failure" in o.getvalue()
 
-    exp = re.compile(r'reproduce_failure\(([^)]+)\)', re.MULTILINE)
+    exp = re.compile(r"reproduce_failure\(([^)]+)\)", re.MULTILINE)
     extract = exp.search(o.getvalue())
     reproduction = eval(extract.group(0))
     test = reproduction(test)
@@ -140,7 +147,7 @@ def test_does_not_print_reproduction_for_simple_examples_by_default():
     with capture_out() as o:
         with pytest.raises(AssertionError):
             test()
-    assert '@reproduce_failure' not in o.getvalue()
+    assert "@reproduce_failure" not in o.getvalue()
 
 
 def test_does_print_reproduction_for_simple_data_examples_by_default():
@@ -152,7 +159,7 @@ def test_does_print_reproduction_for_simple_data_examples_by_default():
     with capture_out() as o:
         with pytest.raises(AssertionError):
             test()
-    assert '@reproduce_failure' in o.getvalue()
+    assert "@reproduce_failure" in o.getvalue()
 
 
 def test_does_not_print_reproduction_for_large_data_examples_by_default():
@@ -166,12 +173,12 @@ def test_does_not_print_reproduction_for_large_data_examples_by_default():
     with capture_out() as o:
         with pytest.raises(ValueError):
             test()
-    assert '@reproduce_failure' not in o.getvalue()
+    assert "@reproduce_failure" not in o.getvalue()
 
 
 class Foo(object):
     def __repr__(self):
-        return 'not a valid python expression'
+        return "not a valid python expression"
 
 
 def test_does_print_reproduction_given_an_invalid_repr():
@@ -183,7 +190,7 @@ def test_does_print_reproduction_given_an_invalid_repr():
         with pytest.raises(ValueError):
             test()
 
-    assert '@reproduce_failure' in o.getvalue()
+    assert "@reproduce_failure" in o.getvalue()
 
 
 def test_does_not_print_reproduction_if_told_not_to():
@@ -196,14 +203,14 @@ def test_does_not_print_reproduction_if_told_not_to():
         with pytest.raises(ValueError):
             test()
 
-    assert '@reproduce_failure' not in o.getvalue()
+    assert "@reproduce_failure" not in o.getvalue()
 
 
 def test_raises_invalid_if_wrong_version():
-    b = b'hello world'
+    b = b"hello world"
     n = len(b)
 
-    @reproduce_failure('1.0.0', encode_failure(b))
+    @reproduce_failure("1.0.0", encode_failure(b))
     @given(st.binary(min_size=n, max_size=n))
     def test(x):
         pass
@@ -222,4 +229,4 @@ def test_does_not_print_reproduction_if_verbosity_set_to_quiet():
         with pytest.raises(AssertionError):
             test_always_fails()
 
-    assert '@reproduce_failure' not in out.getvalue()
+    assert "@reproduce_failure" not in out.getvalue()

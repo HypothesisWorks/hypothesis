@@ -15,19 +15,19 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from random import Random
 
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, note, given, assume, example, settings
+from hypothesis import HealthCheck, assume, example, given, note, settings
 from hypothesis.internal.cache import GenericCache, LRUReusedCache
 
 
 class LRUCache(GenericCache):
-    __slots__ = ('__tick',)
+    __slots__ = ("__tick",)
 
     def __init__(self, max_size):
         super(LRUCache, self).__init__(max_size)
@@ -57,8 +57,10 @@ def write_pattern(draw, min_size=0):
     keys = draw(st.lists(st.integers(0, 1000), unique=True, min_size=1))
     values = draw(st.lists(st.integers(), unique=True, min_size=1))
     return draw(
-        st.lists(st.tuples(st.sampled_from(keys), st.sampled_from(values)),
-                 min_size=min_size))
+        st.lists(
+            st.tuples(st.sampled_from(keys), st.sampled_from(values)), min_size=min_size
+        )
+    )
 
 
 class ValueScored(GenericCache):
@@ -79,9 +81,7 @@ class RandomCache(GenericCache):
 
 
 @pytest.mark.parametrize(
-    'implementation', [
-        LRUCache, LFUCache, LRUReusedCache, ValueScored, RandomCache
-    ]
+    "implementation", [LRUCache, LFUCache, LRUReusedCache, ValueScored, RandomCache]
 )
 @example(writes=[(0, 0), (3, 0), (1, 0), (2, 0), (2, 0), (1, 0)], size=4)
 @example(writes=[(0, 0)], size=1)
@@ -122,8 +122,7 @@ def test_always_evicts_the_lowest_scoring_value(writes, data):
     evicted = set()
 
     def new_score(key):
-        scores[key] = data.draw(
-            st.integers(0, 1000), label='scores[%r]' % (key,))
+        scores[key] = data.draw(st.integers(0, 1000), label="scores[%r]" % (key,))
         return scores[key]
 
     last_entry = [None]
@@ -140,14 +139,11 @@ def test_always_evicts_the_lowest_scoring_value(writes, data):
             return new_score(key)
 
         def on_evict(self, key, value, score):
-            note('Evicted %r' % (key,))
+            note("Evicted %r" % (key,))
             assert score == scores[key]
             del scores[key]
             if len(scores) > 1:
-                assert score <= min(
-                    v for k, v in scores.items()
-                    if k != last_entry[0]
-                )
+                assert score <= min(v for k, v in scores.items() if k != last_entry[0])
             evicted.add(key)
 
     target = Cache(max_size=size)

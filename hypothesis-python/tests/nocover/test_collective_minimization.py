@@ -15,20 +15,19 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 from flaky import flaky
 
 from hypothesis import settings
-from tests.common import standard_types
 from hypothesis.errors import NoSuchExample
-from tests.common.debug import minimal
 from hypothesis.strategies import lists
+from tests.common import standard_types
+from tests.common.debug import minimal
 
 
-@pytest.mark.parametrize(
-    u'spec', standard_types, ids=list(map(repr, standard_types)))
+@pytest.mark.parametrize(u"spec", standard_types, ids=list(map(repr, standard_types)))
 @flaky(min_passes=1, max_runs=2)
 def test_can_collectively_minimize(spec):
     """This should generally exercise strategies' strictly_simpler heuristic by
@@ -48,7 +47,8 @@ def test_can_collectively_minimize(spec):
         xs = minimal(
             lists(spec, min_size=n, max_size=n),
             distinct_reprs,
-            settings=settings(max_examples=2000))
+            settings=settings(max_examples=2000),
+        )
         assert len(xs) == n
         assert 2 <= len(set((map(repr, xs)))) <= 3
     except NoSuchExample:

@@ -15,21 +15,20 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
+import binascii
 import os
 import re
-import binascii
-import warnings
 import threading
-from hashlib import sha1
+import warnings
 from contextlib import contextmanager
+from hashlib import sha1
 
-from hypothesis.errors import HypothesisWarning
 from hypothesis._settings import note_deprecation
 from hypothesis.configuration import storage_directory
-from hypothesis.internal.compat import FileNotFoundError, hbytes, \
-    b64decode, b64encode
+from hypothesis.errors import HypothesisWarning
+from hypothesis.internal.compat import FileNotFoundError, b64decode, b64encode, hbytes
 from hypothesis.utils.conventions import not_set
 
 sqlite3 = None
@@ -38,31 +37,33 @@ SQLITE_PATH = re.compile(r"\.\(db|sqlite|sqlite3\)$")
 
 def _db_for_path(path=None):
     if path is not_set:
-        path = os.getenv('HYPOTHESIS_DATABASE_FILE')
+        path = os.getenv("HYPOTHESIS_DATABASE_FILE")
         if path is not None:  # pragma: no cover
             # Note: we should retain an explicit deprecation warning for a
             # further period after this is removed, to ease debugging for
             # anyone migrating to a new version.
             note_deprecation(
-                'The $HYPOTHESIS_DATABASE_FILE environment variable is '
-                'deprecated, and will be ignored by a future version of '
-                'Hypothesis.  Configure your database location via a '
-                'settings profile instead.'
+                "The $HYPOTHESIS_DATABASE_FILE environment variable is "
+                "deprecated, and will be ignored by a future version of "
+                "Hypothesis.  Configure your database location via a "
+                "settings profile instead."
             )
             return _db_for_path(path)
         # Note: storage_directory attempts to create the dir in question, so
         # if os.access fails there *must* be a fatal permissions issue.
-        path = storage_directory('examples')
+        path = storage_directory("examples")
         if os.access(path, os.R_OK | os.W_OK | os.X_OK):
             return _db_for_path(path)
         else:  # pragma: no cover
-            warnings.warn(HypothesisWarning(
-                'The database setting is not configured, and the default '
-                'location is unusable - falling back to an in-memory '
-                'database for this session.  path=%r' % (path,)
-            ))
+            warnings.warn(
+                HypothesisWarning(
+                    "The database setting is not configured, and the default "
+                    "location is unusable - falling back to an in-memory "
+                    "database for this session.  path=%r" % (path,)
+                )
+            )
             return InMemoryExampleDatabase()
-    if path in (None, ':memory:'):
+    if path in (None, ":memory:"):
         return InMemoryExampleDatabase()
     path = str(path)
     if os.path.isdir(path):
@@ -76,16 +77,13 @@ def _db_for_path(path=None):
 
 
 class EDMeta(type):
-
     def __call__(self, *args, **kwargs):
         if self is ExampleDatabase:
             return _db_for_path(*args, **kwargs)
         return super(EDMeta, self).__call__(*args, **kwargs)
 
 
-class ExampleDatabase(
-    EDMeta('ExampleDatabase', (object,), {})  # type: ignore
-):
+class ExampleDatabase(EDMeta("ExampleDatabase", (object,), {})):  # type: ignore
     """Interface class for storage systems.
 
     A key -> multiple distinct values mapping.
@@ -99,14 +97,14 @@ class ExampleDatabase(
         If this value is already present for this key, silently do
         nothing
         """
-        raise NotImplementedError('%s.save' % (type(self).__name__))
+        raise NotImplementedError("%s.save" % (type(self).__name__))
 
     def delete(self, key, value):
         """Remove this value from this key.
 
         If this value is not present, silently do nothing.
         """
-        raise NotImplementedError('%s.delete' % (type(self).__name__))
+        raise NotImplementedError("%s.delete" % (type(self).__name__))
 
     def move(self, src, dest, value):
         """Move value from key src to key dest. Equivalent to delete(src,
@@ -124,20 +122,19 @@ class ExampleDatabase(
 
     def fetch(self, key):
         """Return all values matching this key."""
-        raise NotImplementedError('%s.fetch' % (type(self).__name__))
+        raise NotImplementedError("%s.fetch" % (type(self).__name__))
 
     def close(self):
         """Clear up any resources associated with this database."""
-        raise NotImplementedError('%s.close' % (type(self).__name__))
+        raise NotImplementedError("%s.close" % (type(self).__name__))
 
 
 class InMemoryExampleDatabase(ExampleDatabase):
-
     def __init__(self):
         self.data = {}
 
     def __repr__(self):
-        return 'InMemoryExampleDatabase(%r)' % (self.data,)
+        return "InMemoryExampleDatabase(%r)" % (self.data,)
 
     def fetch(self, key):
         for v in self.data.get(key, ()):
@@ -154,42 +151,41 @@ class InMemoryExampleDatabase(ExampleDatabase):
 
 
 class SQLiteExampleDatabase(ExampleDatabase):
-
-    def __init__(self, path=u':memory:'):
+    def __init__(self, path=u":memory:"):
         self.path = path
         self.db_created = False
         self.current_connection = threading.local()
         global sqlite3
         import sqlite3
 
-        if path == u':memory:':
+        if path == u":memory:":
             note_deprecation(
-                'The SQLite database backend has been deprecated. '
+                "The SQLite database backend has been deprecated. "
                 'Use InMemoryExampleDatabase or set database_file=":memory:" '
-                'instead.'
+                "instead."
             )
         else:
             note_deprecation(
-                'The SQLite database backend has been deprecated. '
-                'Set database_file to some path name not ending in .db, '
-                '.sqlite or .sqlite3 to get the new directory based database '
-                'backend instead.'
+                "The SQLite database backend has been deprecated. "
+                "Set database_file to some path name not ending in .db, "
+                ".sqlite or .sqlite3 to get the new directory based database "
+                "backend instead."
             )
 
     def connection(self):
-        if not hasattr(self.current_connection, 'connection'):
+        if not hasattr(self.current_connection, "connection"):
             self.current_connection.connection = sqlite3.connect(self.path)
         return self.current_connection.connection
 
     def close(self):
-        if hasattr(self.current_connection, 'connection'):
+        if hasattr(self.current_connection, "connection"):
             try:
                 self.connection().close()
             finally:
                 del self.current_connection.connection
 
     def __repr__(self):
-        return u'%s(%s)' % (self.__class__.__name__, self.path)
+        return u"%s(%s)" % (self.__class__.__name__, self.path)
 
     @contextmanager
     def cursor(self):
@@ -210,28 +206,37 @@ class SQLiteExampleDatabase(ExampleDatabase):
         self.create_db_if_needed()
         with self.cursor() as cursor:
             try:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     insert into hypothesis_data_mapping(key, value)
                     values(?, ?)
-                """, (b64encode(key), b64encode(value)))
+                """,
+                    (b64encode(key), b64encode(value)),
+                )
             except sqlite3.IntegrityError:
                 pass
 
     def delete(self, key, value):
         self.create_db_if_needed()
         with self.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 delete from hypothesis_data_mapping
                 where key = ? and value = ?
-            """, (b64encode(key), b64encode(value)))
+            """,
+                (b64encode(key), b64encode(value)),
+            )
 
     def fetch(self, key):
         self.create_db_if_needed()
         with self.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 select value from hypothesis_data_mapping
                 where key = ?
-            """, (b64encode(key),))
+            """,
+                (b64encode(key),),
+            )
             for (value,) in cursor:
                 try:
                     yield b64decode(value)
@@ -242,13 +247,15 @@ class SQLiteExampleDatabase(ExampleDatabase):
         if self.db_created:
             return
         with self.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 create table if not exists hypothesis_data_mapping(
                     key text,
                     value text,
                     unique(key, value)
                 )
-            """)
+            """
+            )
         self.db_created = True
 
 
@@ -265,13 +272,12 @@ def _hash(key):
 
 
 class DirectoryBasedExampleDatabase(ExampleDatabase):
-
     def __init__(self, path):
         self.path = path
         self.keypaths = {}
 
     def __repr__(self):
-        return 'DirectoryBasedExampleDatabase(%r)' % (self.path,)
+        return "DirectoryBasedExampleDatabase(%r)" % (self.path,)
 
     def close(self):
         pass
@@ -287,16 +293,13 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         return directory
 
     def _value_path(self, key, value):
-        return os.path.join(
-            self._key_path(key),
-            sha1(value).hexdigest()[:16]
-        )
+        return os.path.join(self._key_path(key), sha1(value).hexdigest()[:16])
 
     def fetch(self, key):
         kp = self._key_path(key)
         for path in os.listdir(kp):
             try:
-                with open(os.path.join(kp, path), 'rb') as i:
+                with open(os.path.join(kp, path), "rb") as i:
                     yield hbytes(i.read())
             except FileNotFoundError:
                 pass
@@ -307,9 +310,9 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             suffix = binascii.hexlify(os.urandom(16))
             if not isinstance(suffix, str):  # pragma: no branch
                 # On Python 3, binascii.hexlify returns bytes
-                suffix = suffix.decode('ascii')
-            tmpname = path + '.' + suffix
-            with open(tmpname, 'wb') as o:
+                suffix = suffix.decode("ascii")
+            tmpname = path + "." + suffix
+            with open(tmpname, "wb") as o:
                 o.write(value)
             try:
                 os.rename(tmpname, path)
@@ -322,8 +325,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             self.save(src, value)
             return
         try:
-            os.rename(
-                self._value_path(src, value), self._value_path(dest, value))
+            os.rename(self._value_path(src, value), self._value_path(dest, value))
         except OSError:
             self.delete(src, value)
             self.save(dest, value)

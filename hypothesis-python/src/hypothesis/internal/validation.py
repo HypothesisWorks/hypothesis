@@ -15,11 +15,11 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import math
 import decimal
-from numbers import Real, Rational
+import math
+from numbers import Rational, Real
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import integer_types
@@ -27,17 +27,18 @@ from hypothesis.internal.coverage import check_function
 
 
 @check_function
-def check_type(typ, arg, name=''):
+def check_type(typ, arg, name=""):
     if name:
-        name += '='
+        name += "="
     if not isinstance(arg, typ):
         if isinstance(typ, type):
             typ_string = typ.__name__
         else:
-            typ_string = 'one of %s' % (
-                ', '.join(t.__name__ for t in typ))
-        raise InvalidArgument('Expected %s but got %s%r (type=%s)'
-                              % (typ_string, name, arg, type(arg).__name__))
+            typ_string = "one of %s" % (", ".join(t.__name__ for t in typ))
+        raise InvalidArgument(
+            "Expected %s but got %s%r (type=%s)"
+            % (typ_string, name, arg, type(arg).__name__)
+        )
 
 
 @check_function
@@ -60,9 +61,9 @@ def check_valid_bound(value, name):
     if value is None or isinstance(value, integer_types + (Rational,)):
         return
     if not isinstance(value, (Real, decimal.Decimal)):
-        raise InvalidArgument('%s=%r must be a real number.' % (name, value))
+        raise InvalidArgument("%s=%r must be a real number." % (name, value))
     if math.isnan(value):
-        raise InvalidArgument(u'Invalid end point %s=%r' % (name, value))
+        raise InvalidArgument(u"Invalid end point %s=%r" % (name, value))
 
 
 @check_function
@@ -74,7 +75,7 @@ def check_valid_magnitude(value, name):
     """
     check_valid_bound(value, name)
     if value is not None and value < 0:
-        raise InvalidArgument('%s=%r must not be negative.' % (name, value))
+        raise InvalidArgument("%s=%r must not be negative." % (name, value))
 
 
 @check_function
@@ -87,15 +88,12 @@ def try_convert(typ, value, name):
         return typ(value)
     except TypeError:
         raise InvalidArgument(
-            'Cannot convert %s=%r of type %s to type %s' % (
-                name, value, type(value).__name__, typ.__name__
-            )
+            "Cannot convert %s=%r of type %s to type %s"
+            % (name, value, type(value).__name__, typ.__name__)
         )
     except (OverflowError, ValueError, ArithmeticError):
         raise InvalidArgument(
-            'Cannot convert %s=%r to type %s' % (
-                name, value, typ.__name__
-            )
+            "Cannot convert %s=%r to type %s" % (name, value, typ.__name__)
         )
 
 
@@ -107,24 +105,24 @@ def check_valid_size(value, name):
     Otherwise raises InvalidArgument.
     """
     if value is None:
-        if name == 'min_size':
+        if name == "min_size":
             from hypothesis._settings import note_deprecation
-            note_deprecation(
-                'min_size=None is deprecated; use min_size=0 instead.'
-            )
+
+            note_deprecation("min_size=None is deprecated; use min_size=0 instead.")
         return
     if isinstance(value, float):
         if math.isnan(value):
-            raise InvalidArgument(u'Invalid size %s=%r' % (name, value))
+            raise InvalidArgument(u"Invalid size %s=%r" % (name, value))
         from hypothesis._settings import note_deprecation
+
         note_deprecation(
-            'Float size are deprecated: '
-            '%s should be an integer, got %r' % (name, value)
+            "Float size are deprecated: "
+            "%s should be an integer, got %r" % (name, value)
         )
     else:
         check_type(integer_types, value)
     if value < 0:
-        raise InvalidArgument(u'Invalid size %s=%r < 0' % (name, value))
+        raise InvalidArgument(u"Invalid size %s=%r < 0" % (name, value))
 
 
 @check_function
@@ -138,21 +136,22 @@ def check_valid_interval(lower_bound, upper_bound, lower_name, upper_name):
         return
     if upper_bound < lower_bound:
         raise InvalidArgument(
-            'Cannot have %s=%r < %s=%r' % (
-                upper_name, upper_bound, lower_name, lower_bound
-            ))
+            "Cannot have %s=%r < %s=%r"
+            % (upper_name, upper_bound, lower_name, lower_bound)
+        )
 
 
 @check_function
 def check_valid_sizes(min_size, average_size, max_size):
     if average_size is not None:
         from hypothesis._settings import note_deprecation
+
         note_deprecation(
-            'You should remove the average_size argument, because it is '
-            'deprecated and no longer has any effect.  Please open an issue '
-            'if the default distribution of examples does not work for you.'
+            "You should remove the average_size argument, because it is "
+            "deprecated and no longer has any effect.  Please open an issue "
+            "if the default distribution of examples does not work for you."
         )
 
-    check_valid_size(min_size, 'min_size')
-    check_valid_size(max_size, 'max_size')
-    check_valid_interval(min_size, max_size, 'min_size', 'max_size')
+    check_valid_size(min_size, "min_size")
+    check_valid_size(max_size, "max_size")
+    check_valid_interval(min_size, max_size, "min_size", "max_size")

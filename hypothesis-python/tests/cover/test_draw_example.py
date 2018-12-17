@@ -15,21 +15,19 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from tests.common import standard_types
 from hypothesis.strategies import lists
+from tests.common import standard_types
 
 
-@pytest.mark.parametrize(
-    u'spec', standard_types, ids=list(map(repr, standard_types)))
+@pytest.mark.parametrize(u"spec", standard_types, ids=list(map(repr, standard_types)))
 def test_single_example(spec):
     spec.example()
 
 
-@pytest.mark.parametrize(
-    u'spec', standard_types, ids=list(map(repr, standard_types)))
+@pytest.mark.parametrize(u"spec", standard_types, ids=list(map(repr, standard_types)))
 def test_list_example(spec):
     lists(spec).example()

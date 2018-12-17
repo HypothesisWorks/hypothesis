@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import sys
 
@@ -26,8 +26,11 @@ import hypothesis.strategies as st
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import getfullargspec
-from hypothesis.internal.reflection import define_function_signature, \
-    convert_positional_arguments, get_pretty_function_description
+from hypothesis.internal.reflection import (
+    convert_positional_arguments,
+    define_function_signature,
+    get_pretty_function_description,
+)
 
 
 @given(st.integers())
@@ -43,16 +46,12 @@ def has_annotation(a: int, *b, c=2) -> None:
     pass
 
 
-@pytest.mark.parametrize('f', [
-    has_annotation,
-    lambda *, a: a,
-    lambda *, a=1: a,
-])
+@pytest.mark.parametrize("f", [has_annotation, lambda *, a: a, lambda *, a=1: a])
 def test_copying_preserves_argspec(f):
     af = getfullargspec(f)
-    t = define_function_signature('foo', 'docstring', af)(universal_acceptor)
+    t = define_function_signature("foo", "docstring", af)(universal_acceptor)
     at = getfullargspec(t)
-    assert af.args == at.args[:len(af.args)]
+    assert af.args == at.args[: len(af.args)]
     assert af.varargs == at.varargs
     assert af.varkw == at.varkw
     assert len(af.defaults or ()) == len(at.defaults or ())
@@ -61,16 +60,15 @@ def test_copying_preserves_argspec(f):
     assert af.annotations == at.annotations
 
 
-@pytest.mark.parametrize('lam,source', [
-    ((lambda *z, a: a),
-     'lambda *z, a: a'),
-    ((lambda *z, a=1: a),
-     'lambda *z, a=1: a'),
-    ((lambda *, a: a),
-     'lambda *, a: a'),
-    ((lambda *, a=1: a),
-     'lambda *, a=1: a'),
-])
+@pytest.mark.parametrize(
+    "lam,source",
+    [
+        ((lambda *z, a: a), "lambda *z, a: a"),
+        ((lambda *z, a=1: a), "lambda *z, a=1: a"),
+        ((lambda *, a: a), "lambda *, a: a"),
+        ((lambda *, a=1: a), "lambda *, a=1: a"),
+    ],
+)
 def test_py3only_lambda_formatting(lam, source):
     # Testing kwonly lambdas, with and without varargs and default values
     assert get_pretty_function_description(lam) == source
@@ -78,6 +76,7 @@ def test_py3only_lambda_formatting(lam, source):
 
 def test_given_notices_missing_kwonly_args():
     with pytest.raises(InvalidArgument):
+
         @given(a=st.none())
         def reqs_kwonly(*, a, b):
             pass
@@ -113,16 +112,15 @@ def first_annot(draw: None):
 
 def test_composite_edits_annotations():
     spec_comp = getfullargspec(st.composite(pointless_composite))
-    assert spec_comp.annotations['return'] == int
-    assert 'nothing' in spec_comp.annotations
-    assert 'draw' not in spec_comp.annotations
+    assert spec_comp.annotations["return"] == int
+    assert "nothing" in spec_comp.annotations
+    assert "draw" not in spec_comp.annotations
 
 
-@pytest.mark.parametrize('nargs', [1, 2, 3])
+@pytest.mark.parametrize("nargs", [1, 2, 3])
 def test_given_edits_annotations(nargs):
-    spec_given = getfullargspec(
-        given(*(nargs * [st.none()]))(pointless_composite))
-    assert spec_given.annotations.pop('return') is None
+    spec_given = getfullargspec(given(*(nargs * [st.none()]))(pointless_composite))
+    assert spec_given.annotations.pop("return") is None
     assert len(spec_given.annotations) == 3 - nargs
 
 
@@ -135,15 +133,19 @@ class Inferrables(object):
     annot_converter = attr.ib(converter=a_converter)
 
 
-@pytest.mark.skipif(sys.version_info[:2] <= (3, 5),
-                    reason="Too-old typing module can't get return value hint")
+@pytest.mark.skipif(
+    sys.version_info[:2] <= (3, 5),
+    reason="Too-old typing module can't get return value hint",
+)
 @given(st.builds(Inferrables))
 def test_attrs_inference_builds(c):
     pass
 
 
-@pytest.mark.skipif(sys.version_info[:2] <= (3, 5),
-                    reason="Too-old typing module can't get return value hint")
+@pytest.mark.skipif(
+    sys.version_info[:2] <= (3, 5),
+    reason="Too-old typing module can't get return value hint",
+)
 @given(st.from_type(Inferrables))
 def test_attrs_inference_from_type(c):
     pass

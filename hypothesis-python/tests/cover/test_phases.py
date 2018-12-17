@@ -15,14 +15,14 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import Phase, given, example, settings
-from hypothesis.errors import InvalidArgument
+from hypothesis import Phase, example, given, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
+from hypothesis.errors import InvalidArgument
 
 
 @example(11)
@@ -84,10 +84,10 @@ def test_will_save_when_reuse_not_in_phases():
     with pytest.raises(ValueError):
         test_usage()
 
-    saved, = [v for k, v in database.data.items() if b'coverage' not in k]
+    saved, = [v for k, v in database.data.items() if b"coverage" not in k]
     assert len(saved) == 1
 
 
 def test_rejects_non_phases():
     with pytest.raises(InvalidArgument):
-        settings(phases=['cabbage'])
+        settings(phases=["cabbage"])

@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from random import Random
 
@@ -23,12 +23,15 @@ import pytest
 
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis import HealthCheck, settings, unlimited
-from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hbytes, hrange
-from hypothesis.internal.conjecture.engine import ConjectureData, \
-    ConjectureRunner, uniform
+from hypothesis.internal.conjecture.engine import (
+    ConjectureData,
+    ConjectureRunner,
+    uniform,
+)
+from hypothesis.searchstrategy import SearchStrategy
 
-POISON = 'POISON'
+POISON = "POISON"
 
 MAX_INT = 2 ** 32 - 1
 
@@ -63,13 +66,16 @@ LOTS = 10 ** 6
 
 
 TEST_SETTINGS = settings(
-    database=None, suppress_health_check=HealthCheck.all(), max_examples=LOTS,
-    deadline=None, timeout=unlimited
+    database=None,
+    suppress_health_check=HealthCheck.all(),
+    max_examples=LOTS,
+    deadline=None,
+    timeout=unlimited,
 )
 
 
-@pytest.mark.parametrize('size', [2, 5, 10])
-@pytest.mark.parametrize('seed', [0, 15993493061449915028])
+@pytest.mark.parametrize("size", [2, 5, 10])
+@pytest.mark.parametrize("seed", [0, 15993493061449915028])
 def test_can_reduce_poison_from_any_subtree(size, seed):
     """This test validates that we can minimize to any leaf node of a binary
     tree, regardless of where in the tree the leaf is."""
@@ -89,14 +95,14 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
         if len(v) >= size:
             data.mark_interesting()
 
-    runner = ConjectureRunner(
-        test_function, random=random, settings=TEST_SETTINGS
-    )
+    runner = ConjectureRunner(test_function, random=random, settings=TEST_SETTINGS)
 
     while not runner.interesting_examples:
-        runner.test_function(ConjectureData(
-            draw_bytes=lambda data, n: uniform(random, n),
-            max_length=LOTS))
+        runner.test_function(
+            ConjectureData(
+                draw_bytes=lambda data, n: uniform(random, n), max_length=LOTS
+            )
+        )
 
     runner.shrink_interesting_examples()
 
@@ -116,8 +122,7 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
         marker = hbytes([1, 2, 3, 4])
 
         poisoned_data = ConjectureData.for_buffer(
-            data.buffer[:u] + hbytes([255]) * 4 + data.buffer[u + 4:] +
-            marker
+            data.buffer[:u] + hbytes([255]) * 4 + data.buffer[u + 4 :] + marker
         )
 
         def test_function(data):
@@ -125,8 +130,8 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
             m = data.draw_bytes(len(marker))
             if POISON in v and m == marker:
                 data.mark_interesting()
-        runner = ConjectureRunner(
-            test_function, random=random, settings=TEST_SETTINGS)
+
+        runner = ConjectureRunner(test_function, random=random, settings=TEST_SETTINGS)
 
         runner.test_function(poisoned_data)
         assert runner.interesting_examples
@@ -134,5 +139,4 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
 
         shrunk, = runner.interesting_examples.values()
 
-        assert ConjectureData.for_buffer(
-            shrunk.buffer).draw(strat) == (POISON,)
+        assert ConjectureData.for_buffer(shrunk.buffer).draw(strat) == (POISON,)

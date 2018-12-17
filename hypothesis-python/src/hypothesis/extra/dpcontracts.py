@@ -27,7 +27,7 @@ because `combining contracts and property-based testing works really well
 It requires ``dpcontracts >= 0.4``.
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from dpcontracts import PreconditionError
 
@@ -47,9 +47,9 @@ def fulfill(contract_func):
     This can be used as ``builds(fulfill(func), ...)`` or in the body of the
     test e.g. ``assert fulfill(func)(*args)``.
     """
-    if not hasattr(contract_func, '__contract_wrapped_func__'):
+    if not hasattr(contract_func, "__contract_wrapped_func__"):
         raise InvalidArgument(
-            'There are no dpcontracts preconditions associated with %s'
+            "There are no dpcontracts preconditions associated with %s"
             % (contract_func.__name__,)
         )
 
@@ -59,4 +59,5 @@ def fulfill(contract_func):
             return contract_func(*args, **kwargs)
         except PreconditionError:
             reject()
+
     return inner

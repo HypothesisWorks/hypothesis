@@ -15,12 +15,12 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from tests.common.debug import minimal, find_any
-from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.extra.datetime import dates
 from hypothesis.internal.compat import hrange
+from tests.common.debug import find_any, minimal
+from tests.common.utils import checks_deprecated_behaviour
 
 
 @checks_deprecated_behaviour

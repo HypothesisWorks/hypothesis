@@ -15,13 +15,13 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from fractions import Fraction
 
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.internal.compat import int_to_bytes
-from hypothesis.internal.conjecture.data import StopTest, ConjectureData
+from hypothesis.internal.conjecture.data import ConjectureData, StopTest
 
 
 def test_gives_the_correct_probabilities():

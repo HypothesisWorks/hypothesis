@@ -15,22 +15,20 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import sys
 import json
+import sys
 from collections import defaultdict
 
-if __name__ == '__main__':
-    with open('branch-check') as i:
-        data = [
-            json.loads(l) for l in i
-        ]
+if __name__ == "__main__":
+    with open("branch-check") as i:
+        data = [json.loads(l) for l in i]
 
     checks = defaultdict(set)
 
     for d in data:
-        checks[d['name']].add(d['value'])
+        checks[d["name"]].add(d["value"])
 
     always_true = []
     always_false = []
@@ -47,18 +45,18 @@ if __name__ == '__main__':
     failure = always_true or always_false
 
     if failure:
-        print('Some branches were not properly covered.')
+        print("Some branches were not properly covered.")
         print()
 
     if always_true:
-        print('The following were always True:')
+        print("The following were always True:")
         print()
         for c in always_true:
-            print('  * %s' % (c,))
+            print("  * %s" % (c,))
     if always_false:
-        print('The following were always False:')
+        print("The following were always False:")
         print()
         for c in always_false:
-            print('  * %s' % (c,))
+            print("  * %s" % (c,))
     if failure:
         sys.exit(1)

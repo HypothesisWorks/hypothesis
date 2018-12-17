@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from collections import Counter
 
@@ -33,7 +33,7 @@ class Blocks(SearchStrategy):
         return data.draw_bytes(self.n)
 
 
-@pytest.mark.parametrize('n', range(1, 5))
+@pytest.mark.parametrize("n", range(1, 5))
 def test_does_not_duplicate_blocks(n):
     counts = Counter()
 
@@ -41,11 +41,12 @@ def test_does_not_duplicate_blocks(n):
     @settings(database=None)
     def test(b):
         counts[b] += 1
+
     test()
     assert set(counts.values()) == {1}
 
 
-@pytest.mark.parametrize('n', range(1, 5))
+@pytest.mark.parametrize("n", range(1, 5))
 def test_mostly_does_not_duplicate_blocks_even_when_failing(n):
     counts = Counter()
 
@@ -55,6 +56,7 @@ def test_mostly_does_not_duplicate_blocks_even_when_failing(n):
         counts[b] += 1
         if len(counts) > 3:
             raise ValueError()
+
     try:
         test()
     except ValueError:

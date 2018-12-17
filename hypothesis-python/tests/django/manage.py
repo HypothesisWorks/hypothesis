@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 import sys
@@ -23,18 +23,17 @@ import sys
 from hypothesis import HealthCheck, settings, unlimited
 from tests.common.setup import run
 
-if __name__ == u'__main__':
+if __name__ == u"__main__":
     run()
 
-    settings.register_profile('default', settings(
-        timeout=unlimited,
-        suppress_health_check=[HealthCheck.too_slow],
-    ))
+    settings.register_profile(
+        "default",
+        settings(timeout=unlimited, suppress_health_check=[HealthCheck.too_slow]),
+    )
 
-    settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'default'))
+    settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))
 
-    os.environ.setdefault(
-        u'DJANGO_SETTINGS_MODULE', u'tests.django.toys.settings')
+    os.environ.setdefault(u"DJANGO_SETTINGS_MODULE", u"tests.django.toys.settings")
 
     from django.core.management import execute_from_command_line
 

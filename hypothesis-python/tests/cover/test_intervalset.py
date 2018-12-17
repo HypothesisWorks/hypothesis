@@ -15,12 +15,12 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, assume, example
+from hypothesis import assume, example, given
 from hypothesis.internal.charmap import _subtract_intervals
 from hypothesis.internal.intervalsets import IntervalSet
 
@@ -40,8 +40,7 @@ def build_intervals(ls):
 
 
 IntervalLists = st.builds(
-    build_intervals,
-    st.lists(st.tuples(st.integers(0, 200), st.integers(0, 20)))
+    build_intervals, st.lists(st.tuples(st.integers(0, 200), st.integers(0, 20)))
 )
 
 Intervals = st.builds(IntervalSet, IntervalLists)

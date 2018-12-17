@@ -15,10 +15,10 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import hypothesis.strategies as st
-from hypothesis import Verbosity, HealthCheck, given, assume, settings
+from hypothesis import HealthCheck, Verbosity, assume, given, settings
 
 
 @settings(max_examples=1, database=None)
@@ -28,7 +28,8 @@ def test_single_example(n):
 
 
 @settings(
-    max_examples=1, database=None,
+    max_examples=1,
+    database=None,
     suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow],
     verbosity=Verbosity.debug,
 )

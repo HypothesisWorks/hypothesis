@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import random
 
@@ -30,11 +30,13 @@ def test_can_seed_random():
     with capture_out() as out:
         with reporting.with_reporter(reporting.default):
             with pytest.raises(AssertionError):
+
                 @given(st.random_module())
                 def test(r):
                     assert False
+
                 test()
-    assert 'random.seed(0)' in out.getvalue()
+    assert "random.seed(0)" in out.getvalue()
 
 
 @given(st.random_module(), st.random_module())

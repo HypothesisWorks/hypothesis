@@ -15,16 +15,14 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis import Verbosity, HealthCheck, given, assume, reject, \
-    example, settings
+from hypothesis import HealthCheck, Verbosity, assume, example, given, reject, settings
 from hypothesis.errors import Flaky, Unsatisfiable, UnsatisfiedAssumption
+from hypothesis.strategies import booleans, composite, integers, lists, random_module
 from tests.common.utils import no_shrink
-from hypothesis.strategies import lists, booleans, integers, composite, \
-    random_module
 
 
 class Nope(Exception):
@@ -65,6 +63,7 @@ def test_does_not_attempt_to_shrink_flaky_errors():
     def test(x):
         values.append(x)
         assert len(values) != 1
+
     with pytest.raises(Flaky):
         test()
     assert len(set(values)) == 1
@@ -82,14 +81,12 @@ def single_bool_lists(draw):
     return result
 
 
-@example([True, False, False, False], [3], None,)
-@example([False, True, False, False], [3], None,)
-@example([False, False, True, False], [3], None,)
-@example([False, False, False, True], [3], None,)
+@example([True, False, False, False], [3], None)
+@example([False, True, False, False], [3], None)
+@example([False, False, True, False], [3], None)
+@example([False, False, False, True], [3], None)
 @settings(max_examples=0)
-@given(
-    lists(booleans()) | single_bool_lists(),
-    lists(integers(1, 3)), random_module())
+@given(lists(booleans()) | single_bool_lists(), lists(integers(1, 3)), random_module())
 def test_failure_sequence_inducing(building, testing, rnd):
     buildit = iter(building)
     testit = iter(testing)
@@ -103,8 +100,10 @@ def test_failure_sequence_inducing(building, testing, rnd):
 
     @given(integers().map(build))
     @settings(
-        verbosity=Verbosity.quiet, database=None,
-        suppress_health_check=HealthCheck.all(), phases=no_shrink
+        verbosity=Verbosity.quiet,
+        database=None,
+        suppress_health_check=HealthCheck.all(),
+        phases=no_shrink,
     )
     def test(x):
         try:

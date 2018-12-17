@@ -15,13 +15,13 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from random import Random
 from itertools import chain
+from random import Random
 
 import hypothesis.strategies as st
-from hypothesis import given, example
+from hypothesis import example, given
 from hypothesis.internal.conjecture.shrinking import Length
 
 sizes = st.integers(0, 100)
@@ -32,8 +32,7 @@ sizes = st.integers(0, 100)
 def test_shrinks_down_to_size(m, n):
     m, n = sorted((m, n))
     assert Length.shrink(
-        [0] * n + [1], lambda ls: len(ls) >= m + 1 and ls[-1] == 1,
-        random=Random(0)
+        [0] * n + [1], lambda ls: len(ls) >= m + 1 and ls[-1] == 1, random=Random(0)
     ) == (0,) * m + (1,)
 
 

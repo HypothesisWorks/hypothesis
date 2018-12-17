@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import random as globalrandom
 from random import Random
@@ -31,25 +31,25 @@ from hypothesis.searchstrategy.strategies import SearchStrategy
 
 def fake_factory(source, locale=None, locales=None, providers=()):
     note_deprecation(
-        'hypothesis.extra.fakefactory has been deprecated, because it does '
-        'not support example discovery or shrinking.  Consider using a lower-'
-        'level strategy (such as st.text()) instead.'
+        "hypothesis.extra.fakefactory has been deprecated, because it does "
+        "not support example discovery or shrinking.  Consider using a lower-"
+        "level strategy (such as st.text()) instead."
     )
     check_valid_identifier(source)
-    if source[0] == u'_':
-        raise ValueError(u'Bad source name %s' % (source,))
+    if source[0] == u"_":
+        raise ValueError(u"Bad source name %s" % (source,))
 
     if locale is not None and locales is not None:
-        raise ValueError(u'Cannot specify both single and multiple locales')
+        raise ValueError(u"Cannot specify both single and multiple locales")
     if locale:
         locales = (locale,)
     elif locales:
         locales = tuple(locales)
     else:
         locales = None
-    for l in (locales or ()):
+    for l in locales or ():
         if l not in AVAILABLE_LOCALES:
-            raise ValueError(u'Unsupported locale %r' % (l,))
+            raise ValueError(u"Unsupported locale %r" % (l,))
 
     def supports_source(locale):
         test_faker = faker.Faker(locale)
@@ -60,18 +60,15 @@ def fake_factory(source, locale=None, locales=None, providers=()):
     if locales is None:
         locales = list(filter(supports_source, AVAILABLE_LOCALES))
         if not locales:
-            raise ValueError(u'No such source %r' % (source,))
+            raise ValueError(u"No such source %r" % (source,))
     else:
         for l in locales:
             if not supports_source(locale):
-                raise ValueError(u'Unsupported source %s for locale %s' % (
-                    source, l
-                ))
+                raise ValueError(u"Unsupported source %s for locale %s" % (source, l))
     return FakeFactoryStrategy(source, providers, locales)
 
 
 class FakeFactoryStrategy(SearchStrategy):
-
     def __init__(self, source, providers, locales):
         self.source = source
         self.providers = tuple(providers)

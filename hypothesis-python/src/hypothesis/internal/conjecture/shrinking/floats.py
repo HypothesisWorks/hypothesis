@@ -15,10 +15,10 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import sys
 import math
+import sys
 
 from hypothesis.internal.conjecture.floats import float_to_lex
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
@@ -28,9 +28,8 @@ MAX_PRECISE_INTEGER = 2 ** 53
 
 
 class Float(Shrinker):
-
     def setup(self):
-        self.NAN = float('nan')
+        self.NAN = float("nan")
         self.debugging_enabled = True
 
     def make_immutable(self, f):
@@ -51,7 +50,7 @@ class Float(Shrinker):
         return lex1 < lex2
 
     def short_circuit(self):
-        for g in [sys.float_info.max, float('inf'), float('nan'), ]:
+        for g in [sys.float_info.max, float("inf"), float("nan")]:
             self.consider(g)
 
         # If we're stuck at a nasty float don't try to shrink it further. These
@@ -79,10 +78,8 @@ class Float(Shrinker):
             self.consider(g)
 
         if self.consider(int(self.current)):
-            self.debug('Just an integer now')
-            self.delegate(
-                Integer, convert_to=int, convert_from=float
-            )
+            self.debug("Just an integer now")
+            self.delegate(Integer, convert_to=int, convert_from=float)
             return
 
         m, n = self.current.as_integer_ratio()
@@ -91,7 +88,4 @@ class Float(Shrinker):
         # Now try to minimize the top part of the fraction as an integer. This
         # basically splits the float as k + x with 0 <= x < 1 and minimizes
         # k as an integer, but without the precision issues that would have.
-        self.call_shrinker(
-            Integer,
-            i, lambda k: self.consider((i * n + r) / n),
-        )
+        self.call_shrinker(Integer, i, lambda k: self.consider((i * n + r) / n))

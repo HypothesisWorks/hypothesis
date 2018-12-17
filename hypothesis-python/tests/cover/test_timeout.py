@@ -15,21 +15,26 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import time
 
 import pytest
 
 from hypothesis import find, given, reject, settings
-from hypothesis.errors import Timeout, NoSuchExample
-from tests.common.utils import fails, fails_with, validate_deprecation, \
-    checks_deprecated_behaviour
+from hypothesis.errors import NoSuchExample, Timeout
 from hypothesis.strategies import integers
+from tests.common.utils import (
+    checks_deprecated_behaviour,
+    fails,
+    fails_with,
+    validate_deprecation,
+)
 
 
 def test_hitting_timeout_is_deprecated():
     with validate_deprecation():
+
         @settings(timeout=0.1)
         @given(integers())
         def test_slow_test_times_out(x):
@@ -41,6 +46,7 @@ def test_hitting_timeout_is_deprecated():
 
 def test_slow_unsatisfiable_test():
     with validate_deprecation():
+
         @settings(timeout=0.1)
         @given(integers())
         def test_slow_test_times_out(x):

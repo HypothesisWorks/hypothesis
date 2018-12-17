@@ -15,9 +15,9 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-pytest_plugins = str('pytester')
+pytest_plugins = str("pytester")
 
 
 TESTSUITE = """
@@ -36,9 +36,9 @@ def test_hi(xs):
 
 def test_runs_reporting_hook(testdir):
     script = testdir.makepyfile(TESTSUITE)
-    result = testdir.runpytest(script, '--verbose')
-    out = '\n'.join(result.stdout.lines)
-    assert 'test_this_one_is_ok' in out
-    assert 'Captured stdout call' not in out
-    assert 'Falsifying example' in out
+    result = testdir.runpytest(script, "--verbose")
+    out = "\n".join(result.stdout.lines)
+    assert "test_this_one_is_ok" in out
+    assert "Captured stdout call" not in out
+    assert "Falsifying example" in out
     assert result.ret != 0

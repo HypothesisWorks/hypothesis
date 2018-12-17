@@ -15,14 +15,13 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from functools import wraps
 
 import pytest
 
-from hypothesis import given
-from hypothesis import strategies as st
+from hypothesis import given, strategies as st
 
 
 def always_passes(*args, **kwargs):
@@ -36,7 +35,7 @@ def always_passes(*args, **kwargs):
 
 @given(st.integers())
 def test_can_replace_inner_test(x):
-    assert False, 'This should be replaced'
+    assert False, "This should be replaced"
 
 
 test_can_replace_inner_test.hypothesis.inner_test = always_passes
@@ -44,25 +43,27 @@ test_can_replace_inner_test.hypothesis.inner_test = always_passes
 
 def decorator(func):
     """An example of a common decorator pattern."""
+
     @wraps(func)
     def inner(*args, **kwargs):
         return func(*args, **kwargs)
+
     return inner
 
 
 @decorator
 @given(st.integers())
 def test_can_replace_when_decorated(x):
-    assert False, 'This should be replaced'
+    assert False, "This should be replaced"
 
 
 test_can_replace_when_decorated.hypothesis.inner_test = always_passes
 
 
-@pytest.mark.parametrize('x', [1, 2])
+@pytest.mark.parametrize("x", [1, 2])
 @given(y=st.integers())
 def test_can_replace_when_parametrized(x, y):
-    assert False, 'This should be replaced'
+    assert False, "This should be replaced"
 
 
 test_can_replace_when_parametrized.hypothesis.inner_test = always_passes

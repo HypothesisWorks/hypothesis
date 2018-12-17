@@ -15,15 +15,14 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis import given
-from hypothesis import strategies as st
+from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
-from tests.common.debug import minimal, assert_no_examples
 from hypothesis.internal.compat import hrange
+from tests.common.debug import assert_no_examples, minimal
 
 
 def test_binary_tree():
@@ -35,12 +34,11 @@ def test_binary_tree():
 
 def test_mutual_recursion():
     t = st.deferred(lambda: a | b)
-    a = st.deferred(lambda: st.none() | st.tuples(st.just('a'), b))
-    b = st.deferred(lambda: st.none() | st.tuples(st.just('b'), a))
+    a = st.deferred(lambda: st.none() | st.tuples(st.just("a"), b))
+    b = st.deferred(lambda: st.none() | st.tuples(st.just("b"), a))
 
-    for c in ('a', 'b'):
-        assert minimal(
-            t, lambda x: x is not None and x[0] == c) == (c, None)
+    for c in ("a", "b"):
+        assert minimal(t, lambda x: x is not None and x[0] == c) == (c, None)
 
 
 def test_errors_on_non_function_define():
@@ -102,15 +100,16 @@ def test_mutually_recursive_tuples_draw_nothing():
 
 
 def test_literals_strategy_is_valid():
-    literals = st.deferred(lambda: st.one_of(
-        st.booleans(),
-        st.tuples(literals, literals),
-        literals.map(lambda x: [x]),
-    ))
+    literals = st.deferred(
+        lambda: st.one_of(
+            st.booleans(), st.tuples(literals, literals), literals.map(lambda x: [x])
+        )
+    )
 
     @given(literals)
     def test(e):
         pass
+
     test()
 
     assert not literals.has_reusable_values
@@ -134,8 +133,7 @@ def test_very_deep_deferral():
         if i == 0:
             return st.deferred(lambda: st.one_of(strategies + [st.none()]))
         else:
-            return st.deferred(
-                lambda: st.tuples(strategies[(i + 1) % len(strategies)]))
+            return st.deferred(lambda: st.tuples(strategies[(i + 1) % len(strategies)]))
 
     strategies = list(map(strat, hrange(100)))
 
@@ -150,6 +148,5 @@ def test_recursion_in_middle():
     # argument. Then when we do the more refined test we've discovered that x
     # is non-empty, so we need to check the non-emptiness of the last component
     # to determine the non-emptiness of the tuples.
-    x = st.deferred(
-        lambda: st.tuples(st.none(), x, st.integers().map(abs)) | st.none())
+    x = st.deferred(lambda: st.tuples(st.none(), x, st.integers().map(abs)) | st.none())
     assert not x.is_empty

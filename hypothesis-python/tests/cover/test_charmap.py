@@ -15,16 +15,16 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 import sys
 import tempfile
 import unicodedata
 
-import hypothesis.strategies as st
 import hypothesis.internal.charmap as cm
-from hypothesis import given, assume
+import hypothesis.strategies as st
+from hypothesis import assume, given
 from hypothesis.internal.compat import hunichr
 
 
@@ -32,7 +32,7 @@ def test_charmap_contains_all_unicode():
     n = 0
     for vs in cm.charmap().values():
         for u, v in vs:
-            n += (v - u + 1)
+            n += v - u + 1
     assert n == sys.maxunicode + 1
 
 
@@ -41,8 +41,7 @@ def test_charmap_has_right_categories():
         for u, v in intervals:
             for i in range(u, v + 1):
                 real = unicodedata.category(hunichr(i))
-                assert real == cat, \
-                    '%d is %s but reported in %s' % (i, real, cat)
+                assert real == cat, "%d is %s but reported in %s" % (i, real, cat)
 
 
 def assert_valid_range_list(ls):
@@ -71,7 +70,8 @@ def test_query_matches_categories(exclude, include):
 @given(
     st.sets(st.sampled_from(cm.categories())),
     st.sets(st.sampled_from(cm.categories())) | st.none(),
-    st.integers(0, sys.maxunicode), st.integers(0, sys.maxunicode),
+    st.integers(0, sys.maxunicode),
+    st.integers(0, sys.maxunicode),
 )
 def test_query_matches_categories_codepoints(exclude, include, m1, m2):
     m1, m2 = sorted((m1, m2))
@@ -139,7 +139,7 @@ def test_successive_union():
 def test_can_handle_race_between_exist_and_create(monkeypatch):
     x = cm.charmap()
     cm._charmap = None
-    monkeypatch.setattr(os.path, 'exists', lambda p: False)
+    monkeypatch.setattr(os.path, "exists", lambda p: False)
     y = cm.charmap()
     assert x is not y
     assert x == y
@@ -150,8 +150,8 @@ def test_exception_in_write_does_not_lead_to_broken_charmap(monkeypatch):
         raise ValueError()
 
     cm._charmap = None
-    monkeypatch.setattr(os.path, 'exists', lambda p: False)
-    monkeypatch.setattr(os, 'rename', broken)
+    monkeypatch.setattr(os.path, "exists", lambda p: False)
+    monkeypatch.setattr(os, "rename", broken)
 
     cm.charmap()
     cm.charmap()
@@ -161,7 +161,7 @@ def test_regenerate_broken_charmap_file():
     cm.charmap()
     file_loc = cm.charmap_file()
 
-    with open(file_loc, 'wb'):
+    with open(file_loc, "wb"):
         pass
 
     cm._charmap = None
@@ -169,14 +169,14 @@ def test_regenerate_broken_charmap_file():
 
 
 def test_exclude_characters_are_included_in_key():
-    assert cm.query() != cm.query(exclude_characters='0')
+    assert cm.query() != cm.query(exclude_characters="0")
 
 
 def test_error_writing_charmap_file_is_suppressed(monkeypatch):
     def broken_mkstemp(dir):
         raise RuntimeError()
 
-    monkeypatch.setattr(tempfile, 'mkstemp', broken_mkstemp)
+    monkeypatch.setattr(tempfile, "mkstemp", broken_mkstemp)
 
     try:
         # Cache the charmap to avoid a performance hit the next time

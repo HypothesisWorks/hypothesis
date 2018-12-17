@@ -15,41 +15,40 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import math
 
 import numpy as np
 
-import hypothesis.strategies as st
 import hypothesis.internal.conjecture.utils as cu
+import hypothesis.strategies as st
 from hypothesis import Verbosity
-from hypothesis.errors import InvalidArgument
 from hypothesis._settings import note_deprecation
-from hypothesis.reporting import current_verbosity
-from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type
+from hypothesis.reporting import current_verbosity
+from hypothesis.searchstrategy import SearchStrategy
 
 if False:
     from typing import Any, Union, Sequence, Tuple  # noqa
     from hypothesis.searchstrategy.strategies import T  # noqa
 
-TIME_RESOLUTIONS = tuple('Y  M  D  h  m  s  ms  us  ns  ps  fs  as'.split())
+TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
 
 
 @st.defines_strategy_with_reusable_values
 def from_dtype(dtype):
     # type: (np.dtype) -> st.SearchStrategy[Any]
     """Creates a strategy which can generate any value of the given dtype."""
-    check_type(np.dtype, dtype, 'dtype')
+    check_type(np.dtype, dtype, "dtype")
     # Compound datatypes, eg 'f4,f4,f4'
     if dtype.names is not None:
         # mapping np.void.type over a strategy is nonsense, so return now.
-        return st.tuples(
-            *[from_dtype(dtype.fields[name][0]) for name in dtype.names])
+        return st.tuples(*[from_dtype(dtype.fields[name][0]) for name in dtype.names])
 
     # Subarray datatypes, eg '(2, 3)i4'
     if dtype.subdtype is not None:
@@ -57,44 +56,45 @@ def from_dtype(dtype):
         return arrays(subtype, shape)
 
     # Scalar datatypes
-    if dtype.kind == u'b':
+    if dtype.kind == u"b":
         result = st.booleans()  # type: SearchStrategy[Any]
-    elif dtype.kind == u'f':
+    elif dtype.kind == u"f":
         if dtype.itemsize == 2:
             result = st.floats(width=16)
         elif dtype.itemsize == 4:
             result = st.floats(width=32)
         else:
             result = st.floats()
-    elif dtype.kind == u'c':
+    elif dtype.kind == u"c":
         if dtype.itemsize == 8:
             float32 = st.floats(width=32)
             result = st.builds(complex, float32, float32)
         else:
             result = st.complex_numbers()
-    elif dtype.kind in (u'S', u'a'):
+    elif dtype.kind in (u"S", u"a"):
         # Numpy strings are null-terminated; only allow round-trippable values.
         # `itemsize == 0` means 'fixed length determined at array creation'
-        result = st.binary(max_size=dtype.itemsize or None
-                           ).filter(lambda b: b[-1:] != b'\0')
-    elif dtype.kind == u'u':
-        result = st.integers(min_value=0,
-                             max_value=2 ** (8 * dtype.itemsize) - 1)
-    elif dtype.kind == u'i':
+        result = st.binary(max_size=dtype.itemsize or None).filter(
+            lambda b: b[-1:] != b"\0"
+        )
+    elif dtype.kind == u"u":
+        result = st.integers(min_value=0, max_value=2 ** (8 * dtype.itemsize) - 1)
+    elif dtype.kind == u"i":
         overflow = 2 ** (8 * dtype.itemsize - 1)
         result = st.integers(min_value=-overflow, max_value=overflow - 1)
-    elif dtype.kind == u'U':
+    elif dtype.kind == u"U":
         # Encoded in UTF-32 (four bytes/codepoint) and null-terminated
-        result = st.text(max_size=(dtype.itemsize or 0) // 4 or None
-                         ).filter(lambda b: b[-1:] != u'\0')
-    elif dtype.kind in (u'm', u'M'):
-        if '[' in dtype.str:
-            res = st.just(dtype.str.split('[')[-1][:-1])
+        result = st.text(max_size=(dtype.itemsize or 0) // 4 or None).filter(
+            lambda b: b[-1:] != u"\0"
+        )
+    elif dtype.kind in (u"m", u"M"):
+        if "[" in dtype.str:
+            res = st.just(dtype.str.split("[")[-1][:-1])
         else:
             res = st.sampled_from(TIME_RESOLUTIONS)
-        result = st.builds(dtype.type, st.integers(-2**63, 2**63 - 1), res)
+        result = st.builds(dtype.type, st.integers(-2 ** 63, 2 ** 63 - 1), res)
     else:
-        raise InvalidArgument(u'No strategy inference for {}'.format(dtype))
+        raise InvalidArgument(u"No strategy inference for {}".format(dtype))
     return result.map(dtype.type)
 
 
@@ -107,26 +107,35 @@ def check_argument(condition, fail_message, *f_args, **f_kwargs):
 @check_function
 def order_check(name, floor, small, large):
     check_argument(
-        floor <= small, u'min_{name} must be at least {} but was {}',
-        floor, small, name=name
+        floor <= small,
+        u"min_{name} must be at least {} but was {}",
+        floor,
+        small,
+        name=name,
     )
     check_argument(
-        small <= large, u'min_{name}={} is larger than max_{name}={}',
-        small, large, name=name
+        small <= large,
+        u"min_{name}={} is larger than max_{name}={}",
+        small,
+        large,
+        name=name,
     )
 
 
 class ArrayStrategy(SearchStrategy):
-
     def __init__(self, element_strategy, shape, dtype, fill, unique):
         self.shape = tuple(shape)
         self.fill = fill
-        check_argument(shape,
-                       u'Array shape must have at least one dimension, '
-                       u'provided shape was {}', shape)
-        check_argument(all(isinstance(s, int) for s in shape),
-                       u'Array shape must be integer in each dimension, '
-                       u'provided shape was {}', shape)
+        check_argument(
+            shape,
+            "Array shape must have at least one dimension, provided shape was {}",
+            shape,
+        )
+        check_argument(
+            all(isinstance(s, int) for s in shape),
+            "Array shape must be integer in each dimension, provided shape was {}",
+            shape,
+        )
         self.array_size = int(np.prod(shape))
         self.dtype = dtype
         self.element_strategy = element_strategy
@@ -134,28 +143,26 @@ class ArrayStrategy(SearchStrategy):
 
         # Used by self.insert_element to check that the value can be stored
         # in the array without e.g. overflowing.  See issues #1385 and #1591.
-        if dtype.kind in (u'i', u'u'):
-            self.check_cast = lambda x: np.can_cast(x, self.dtype, 'safe')
-        elif dtype.kind == u'f' and dtype.itemsize == 2:
-            max_f2 = (2. - 2 ** -10) * 2 ** 15
-            self.check_cast = lambda x: \
-                (not np.isfinite(x)) or (-max_f2 <= x <= max_f2)
-        elif dtype.kind == u'f' and dtype.itemsize == 4:
-            max_f4 = (2. - 2 ** -23) * 2 ** 127
-            self.check_cast = lambda x: \
-                (not np.isfinite(x)) or (-max_f4 <= x <= max_f4)
-        elif dtype.kind == u'c' and dtype.itemsize == 8:
-            max_f4 = (2. - 2 ** -23) * 2 ** 127
+        if dtype.kind in (u"i", u"u"):
+            self.check_cast = lambda x: np.can_cast(x, self.dtype, "safe")
+        elif dtype.kind == u"f" and dtype.itemsize == 2:
+            max_f2 = (2.0 - 2 ** -10) * 2 ** 15
+            self.check_cast = lambda x: (not np.isfinite(x)) or (-max_f2 <= x <= max_f2)
+        elif dtype.kind == u"f" and dtype.itemsize == 4:
+            max_f4 = (2.0 - 2 ** -23) * 2 ** 127
+            self.check_cast = lambda x: (not np.isfinite(x)) or (-max_f4 <= x <= max_f4)
+        elif dtype.kind == u"c" and dtype.itemsize == 8:
+            max_f4 = (2.0 - 2 ** -23) * 2 ** 127
             self.check_cast = lambda x: (not np.isfinite(x)) or (
                 -max_f4 <= x.real <= max_f4 and -max_f4 <= x.imag <= max_f4
             )
-        elif dtype.kind == u'U':
+        elif dtype.kind == u"U":
             length = dtype.itemsize // 4
-            self.check_cast = \
-                lambda x: len(x) <= length and u'\0' not in x[length:]
-        elif dtype.kind in (u'S', u'a'):
-            self.check_cast = lambda x: len(x) <= dtype.itemsize and \
-                b'\0' not in x[dtype.itemsize:]
+            self.check_cast = lambda x: len(x) <= length and u"\0" not in x[length:]
+        elif dtype.kind in (u"S", u"a"):
+            self.check_cast = (
+                lambda x: len(x) <= dtype.itemsize and b"\0" not in x[dtype.itemsize :]
+            )
         else:
             self.check_cast = lambda x: True
 
@@ -165,10 +172,10 @@ class ArrayStrategy(SearchStrategy):
         result[idx] = val
         if self._report_overflow and not self.check_cast(val):
             note_deprecation(
-                'Generated array element %r from %r cannot be represented as '
-                'dtype %r - instead it becomes %r .  Consider using a more '
-                'precise strategy, as this will be an error in a future '
-                'version.' % (val, strategy, self.dtype, result[idx])
+                "Generated array element %r from %r cannot be represented as "
+                "dtype %r - instead it becomes %r .  Consider using a more "
+                "precise strategy, as this will be an error in a future "
+                "version." % (val, strategy, self.dtype, result[idx])
             )
             # Because the message includes the value of the generated element,
             # it would be easy to spam users with thousands of warnings.
@@ -197,8 +204,9 @@ class ArrayStrategy(SearchStrategy):
                 seen = set()
                 elements = cu.many(
                     data,
-                    min_size=self.array_size, max_size=self.array_size,
-                    average_size=self.array_size
+                    min_size=self.array_size,
+                    max_size=self.array_size,
+                    average_size=self.array_size,
                 )
                 i = 0
                 while elements.more():
@@ -225,7 +233,8 @@ class ArrayStrategy(SearchStrategy):
 
             elements = cu.many(
                 data,
-                min_size=0, max_size=self.array_size,
+                min_size=0,
+                max_size=self.array_size,
                 # sqrt isn't chosen for any particularly principled reason. It
                 # just grows reasonably quickly but sublinearly, and for small
                 # arrays it represents a decent fraction of the array size.
@@ -271,8 +280,9 @@ class ArrayStrategy(SearchStrategy):
 
                     if not is_nan:
                         raise InvalidArgument(
-                            'Cannot fill unique array with non-NaN '
-                            'value %r' % (fill_value,))
+                            "Cannot fill unique array with non-NaN "
+                            "value %r" % (fill_value,)
+                        )
 
                 np.putmask(result, needs_fill, one_element)
 
@@ -280,14 +290,14 @@ class ArrayStrategy(SearchStrategy):
 
 
 @check_function
-def fill_for(elements, unique, fill, name=''):
+def fill_for(elements, unique, fill, name=""):
     if fill is None:
         if unique or not elements.has_reusable_values:
             fill = st.nothing()
         else:
             fill = elements
     else:
-        st.check_strategy(fill, '%s.fill' % (name,) if name else 'fill')
+        st.check_strategy(fill, "%s.fill" % (name,) if name else "fill")
     return fill
 
 
@@ -382,11 +392,9 @@ def arrays(
         shape = (shape,)
     shape = tuple(shape)
     if not shape:
-        if dtype.kind != u'O':
+        if dtype.kind != u"O":
             return draw(elements)
-    fill = fill_for(
-        elements=elements, unique=unique, fill=fill
-    )
+    fill = fill_for(elements=elements, unique=unique, fill=fill)
     return draw(ArrayStrategy(elements, shape, dtype, fill, unique))
 
 
@@ -394,20 +402,26 @@ def arrays(
 def array_shapes(min_dims=1, max_dims=3, min_side=1, max_side=10):
     # type: (int, int, int, int) -> st.SearchStrategy[Tuple[int, ...]]
     """Return a strategy for array shapes (tuples of int >= 1)."""
-    order_check('dims', 1, min_dims, max_dims)
-    order_check('side', 1, min_side, max_side)
-    return st.lists(st.integers(min_side, max_side),
-                    min_size=min_dims, max_size=max_dims).map(tuple)
+    order_check("dims", 1, min_dims, max_dims)
+    order_check("side", 1, min_side, max_side)
+    return st.lists(
+        st.integers(min_side, max_side), min_size=min_dims, max_size=max_dims
+    ).map(tuple)
 
 
 @st.defines_strategy
 def scalar_dtypes():
     # type: () -> st.SearchStrategy[np.dtype]
     """Return a strategy that can return any non-flexible scalar dtype."""
-    return st.one_of(boolean_dtypes(),
-                     integer_dtypes(), unsigned_integer_dtypes(),
-                     floating_dtypes(), complex_number_dtypes(),
-                     datetime64_dtypes(), timedelta64_dtypes())
+    return st.one_of(
+        boolean_dtypes(),
+        integer_dtypes(),
+        unsigned_integer_dtypes(),
+        floating_dtypes(),
+        complex_number_dtypes(),
+        datetime64_dtypes(),
+        timedelta64_dtypes(),
+    )
 
 
 def defines_dtype_strategy(strat):
@@ -416,40 +430,47 @@ def defines_dtype_strategy(strat):
     @proxies(strat)
     def inner(*args, **kwargs):
         return strat(*args, **kwargs).map(np.dtype)
+
     return inner
 
 
 @defines_dtype_strategy
 def boolean_dtypes():
     # type: () -> st.SearchStrategy[np.dtype]
-    return st.just('?')
+    return st.just("?")
 
 
 def dtype_factory(kind, sizes, valid_sizes, endianness):
     # Utility function, shared logic for most integer and string types
-    valid_endian = ('?', '<', '=', '>')
-    check_argument(endianness in valid_endian,
-                   u'Unknown endianness: was {}, must be in {}',
-                   endianness, valid_endian)
+    valid_endian = ("?", "<", "=", ">")
+    check_argument(
+        endianness in valid_endian,
+        u"Unknown endianness: was {}, must be in {}",
+        endianness,
+        valid_endian,
+    )
     if valid_sizes is not None:
         if isinstance(sizes, int):
             sizes = (sizes,)
-        check_argument(sizes, 'Dtype must have at least one possible size.')
-        check_argument(all(s in valid_sizes for s in sizes),
-                       u'Invalid sizes: was {} must be an item or sequence '
-                       u'in {}', sizes, valid_sizes)
+        check_argument(sizes, "Dtype must have at least one possible size.")
+        check_argument(
+            all(s in valid_sizes for s in sizes),
+            u"Invalid sizes: was {} must be an item or sequence " u"in {}",
+            sizes,
+            valid_sizes,
+        )
         if all(isinstance(s, int) for s in sizes):
             sizes = sorted(set(s // 8 for s in sizes))
     strat = st.sampled_from(sizes)
-    if '{}' not in kind:
-        kind += '{}'
-    if endianness == '?':
-        return strat.map(('<' + kind).format) | strat.map(('>' + kind).format)
+    if "{}" not in kind:
+        kind += "{}"
+    if endianness == "?":
+        return strat.map(("<" + kind).format) | strat.map((">" + kind).format)
     return strat.map((endianness + kind).format)
 
 
 @defines_dtype_strategy
-def unsigned_integer_dtypes(endianness='?', sizes=(8, 16, 32, 64)):
+def unsigned_integer_dtypes(endianness="?", sizes=(8, 16, 32, 64)):
     # type: (str, Sequence[int]) -> st.SearchStrategy[np.dtype]
     """Return a strategy for unsigned integer dtypes.
 
@@ -460,22 +481,22 @@ def unsigned_integer_dtypes(endianness='?', sizes=(8, 16, 32, 64)):
     sizes must be a collection of integer sizes in bits.  The default
     (8, 16, 32, 64) covers the full range of sizes.
     """
-    return dtype_factory('u', sizes, (8, 16, 32, 64), endianness)
+    return dtype_factory("u", sizes, (8, 16, 32, 64), endianness)
 
 
 @defines_dtype_strategy
-def integer_dtypes(endianness='?', sizes=(8, 16, 32, 64)):
+def integer_dtypes(endianness="?", sizes=(8, 16, 32, 64)):
     # type: (str, Sequence[int]) -> st.SearchStrategy[np.dtype]
     """Return a strategy for signed integer dtypes.
 
     endianness and sizes are treated as for
     :func:`unsigned_integer_dtypes`.
     """
-    return dtype_factory('i', sizes, (8, 16, 32, 64), endianness)
+    return dtype_factory("i", sizes, (8, 16, 32, 64), endianness)
 
 
 @defines_dtype_strategy
-def floating_dtypes(endianness='?', sizes=(16, 32, 64)):
+def floating_dtypes(endianness="?", sizes=(16, 32, 64)):
     # type: (str, Sequence[int]) -> st.SearchStrategy[np.dtype]
     """Return a strategy for floating-point dtypes.
 
@@ -486,11 +507,11 @@ def floating_dtypes(endianness='?', sizes=(16, 32, 64)):
     platforms and therefore disabled by default.  To generate these dtypes,
     include these values in the sizes argument.
     """
-    return dtype_factory('f', sizes, (16, 32, 64, 96, 128), endianness)
+    return dtype_factory("f", sizes, (16, 32, 64, 96, 128), endianness)
 
 
 @defines_dtype_strategy
-def complex_number_dtypes(endianness='?', sizes=(64, 128)):
+def complex_number_dtypes(endianness="?", sizes=(64, 128)):
     # type: (str, Sequence[int]) -> st.SearchStrategy[np.dtype]
     """Return a strategy for complex-number dtypes.
 
@@ -498,63 +519,77 @@ def complex_number_dtypes(endianness='?', sizes=(64, 128)):
     of two floats.  Complex halfs (a 16-bit real part) are not supported
     by numpy and will not be generated by this strategy.
     """
-    return dtype_factory('c', sizes, (64, 128, 192, 256), endianness)
+    return dtype_factory("c", sizes, (64, 128, 192, 256), endianness)
 
 
 @check_function
 def validate_time_slice(max_period, min_period):
-    check_argument(max_period in TIME_RESOLUTIONS,
-                   u'max_period {} must be a valid resolution in {}',
-                   max_period, TIME_RESOLUTIONS)
-    check_argument(min_period in TIME_RESOLUTIONS,
-                   u'min_period {} must be a valid resolution in {}',
-                   min_period, TIME_RESOLUTIONS)
+    check_argument(
+        max_period in TIME_RESOLUTIONS,
+        u"max_period {} must be a valid resolution in {}",
+        max_period,
+        TIME_RESOLUTIONS,
+    )
+    check_argument(
+        min_period in TIME_RESOLUTIONS,
+        u"min_period {} must be a valid resolution in {}",
+        min_period,
+        TIME_RESOLUTIONS,
+    )
     start = TIME_RESOLUTIONS.index(max_period)
     end = TIME_RESOLUTIONS.index(min_period) + 1
-    check_argument(start < end,
-                   u'max_period {} must be earlier in sequence {} than '
-                   u'min_period {}', max_period, TIME_RESOLUTIONS, min_period)
+    check_argument(
+        start < end,
+        u"max_period {} must be earlier in sequence {} than " u"min_period {}",
+        max_period,
+        TIME_RESOLUTIONS,
+        min_period,
+    )
     return TIME_RESOLUTIONS[start:end]
 
 
 @defines_dtype_strategy
-def datetime64_dtypes(max_period='Y', min_period='ns', endianness='?'):
+def datetime64_dtypes(max_period="Y", min_period="ns", endianness="?"):
     # type: (str, str, str) -> st.SearchStrategy[np.dtype]
     """Return a strategy for datetime64 dtypes, with various precisions from
     year to attosecond."""
-    return dtype_factory('datetime64[{}]',
-                         validate_time_slice(max_period, min_period),
-                         TIME_RESOLUTIONS, endianness)
+    return dtype_factory(
+        "datetime64[{}]",
+        validate_time_slice(max_period, min_period),
+        TIME_RESOLUTIONS,
+        endianness,
+    )
 
 
 @defines_dtype_strategy
-def timedelta64_dtypes(max_period='Y', min_period='ns', endianness='?'):
+def timedelta64_dtypes(max_period="Y", min_period="ns", endianness="?"):
     # type: (str, str, str) -> st.SearchStrategy[np.dtype]
     """Return a strategy for timedelta64 dtypes, with various precisions from
     year to attosecond."""
-    return dtype_factory('timedelta64[{}]',
-                         validate_time_slice(max_period, min_period),
-                         TIME_RESOLUTIONS, endianness)
+    return dtype_factory(
+        "timedelta64[{}]",
+        validate_time_slice(max_period, min_period),
+        TIME_RESOLUTIONS,
+        endianness,
+    )
 
 
 @defines_dtype_strategy
-def byte_string_dtypes(endianness='?', min_len=0, max_len=16):
+def byte_string_dtypes(endianness="?", min_len=0, max_len=16):
     # type: (str, int, int) -> st.SearchStrategy[np.dtype]
     """Return a strategy for generating bytestring dtypes, of various lengths
     and byteorder."""
-    order_check('len', 0, min_len, max_len)
-    return dtype_factory('S', list(range(min_len, max_len + 1)),
-                         None, endianness)
+    order_check("len", 0, min_len, max_len)
+    return dtype_factory("S", list(range(min_len, max_len + 1)), None, endianness)
 
 
 @defines_dtype_strategy
-def unicode_string_dtypes(endianness='?', min_len=0, max_len=16):
+def unicode_string_dtypes(endianness="?", min_len=0, max_len=16):
     # type: (str, int, int) -> st.SearchStrategy[np.dtype]
     """Return a strategy for generating unicode string dtypes, of various
     lengths and byteorder."""
-    order_check('len', 0, min_len, max_len)
-    return dtype_factory('U', list(range(min_len, max_len + 1)),
-                         None, endianness)
+    order_check("len", 0, min_len, max_len)
+    return dtype_factory("U", list(range(min_len, max_len + 1)), None, endianness)
 
 
 @defines_dtype_strategy
@@ -567,16 +602,21 @@ def array_dtypes(
     # type: (...) -> st.SearchStrategy[np.dtype]
     """Return a strategy for generating array (compound) dtypes, with members
     drawn from the given subtype strategy."""
-    order_check('size', 0, min_size, max_size)
+    order_check("size", 0, min_size, max_size)
     native_strings = st.text()  # type: SearchStrategy[Any]
     if text_type is not str:  # pragma: no cover
         native_strings = st.binary()
     elements = st.tuples(native_strings, subtype_strategy)
     if allow_subarrays:
-        elements |= st.tuples(native_strings, subtype_strategy,
-                              array_shapes(max_dims=2, max_side=2))
-    return st.lists(elements=elements, min_size=min_size, max_size=max_size,
-                    unique_by=lambda d: d[0])
+        elements |= st.tuples(
+            native_strings, subtype_strategy, array_shapes(max_dims=2, max_side=2)
+        )
+    return st.lists(
+        elements=elements,
+        min_size=min_size,
+        max_size=max_size,
+        unique_by=lambda d: d[0],
+    )
 
 
 @st.defines_strategy
@@ -594,7 +634,6 @@ def nested_dtypes(
     array dtype may be nested to any depth, subject to the max_leaves
     argument.
     """
-    return st.recursive(subtype_strategy,
-                        lambda x: array_dtypes(x, allow_subarrays=True),
-                        max_leaves).filter(
-        lambda d: max_itemsize is None or d.itemsize <= max_itemsize)
+    return st.recursive(
+        subtype_strategy, lambda x: array_dtypes(x, allow_subarrays=True), max_leaves
+    ).filter(lambda d: max_itemsize is None or d.itemsize <= max_itemsize)

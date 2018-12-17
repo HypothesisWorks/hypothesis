@@ -15,18 +15,17 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import toml
 
-from hypothesistooling.projects.hypothesisruby import CARGO_FILE, \
-    GEMFILE_LOCK_FILE
+from hypothesistooling.projects.hypothesisruby import CARGO_FILE, GEMFILE_LOCK_FILE
 
 
 def test_helix_version_sync():
     cargo = toml.load(CARGO_FILE)
-    helix_version = cargo['dependencies']['helix']
+    helix_version = cargo["dependencies"]["helix"]
     gem_lock = open(GEMFILE_LOCK_FILE).read()
-    assert 'helix_runtime (%s)' % (helix_version,) in gem_lock, \
-        'helix version must be the same in %s and %s' % \
-        (CARGO_FILE, GEMFILE_LOCK_FILE)
+    assert (
+        "helix_runtime (%s)" % (helix_version,) in gem_lock
+    ), "helix version must be the same in %s and %s" % (CARGO_FILE, GEMFILE_LOCK_FILE)

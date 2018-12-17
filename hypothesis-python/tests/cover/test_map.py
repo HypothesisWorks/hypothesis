@@ -15,10 +15,9 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from hypothesis import given, assume
-from hypothesis import strategies as st
+from hypothesis import assume, given, strategies as st
 from tests.common.debug import assert_no_examples
 
 

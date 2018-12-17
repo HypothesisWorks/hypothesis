@@ -21,42 +21,41 @@ Either an explicit settings object can be used or the default object on
 this module can be modified.
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import os
-import inspect
-import warnings
-import threading
 import contextlib
+import inspect
+import os
+import threading
+import warnings
 from enum import Enum, IntEnum, unique
 
 import attr
 
-from hypothesis.errors import InvalidState, InvalidArgument, \
-    HypothesisDeprecationWarning
+from hypothesis.errors import (
+    HypothesisDeprecationWarning,
+    InvalidArgument,
+    InvalidState,
+)
 from hypothesis.internal.compat import text_type
-from hypothesis.utils.conventions import UniqueIdentifier, not_set
-from hypothesis.internal.reflection import proxies, \
-    get_pretty_function_description
+from hypothesis.internal.reflection import get_pretty_function_description, proxies
 from hypothesis.internal.validation import try_convert
+from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 if False:
     from typing import Any, Dict, List  # noqa
 
-__all__ = [
-    'settings',
-]
+__all__ = ["settings"]
 
 
-unlimited = UniqueIdentifier('unlimited')
+unlimited = UniqueIdentifier("unlimited")
 
 
 all_settings = {}  # type: Dict[str, Setting]
 
 
 class settingsProperty(object):
-
     def __init__(self, name, show_default):
         self.name = name
         self.show_default = show_default
@@ -70,8 +69,9 @@ class settingsProperty(object):
                 # This is a gross hack, but it preserves the old behaviour that
                 # you can change the storage directory and it will be reflected
                 # in the default database.
-                if self.name == 'database' and result is not_set:
+                if self.name == "database" and result is not_set:
                     from hypothesis.database import ExampleDatabase
+
                     result = ExampleDatabase(not_set)
                 return result
             except KeyError:
@@ -81,23 +81,30 @@ class settingsProperty(object):
         obj.__dict__[self.name] = value
 
     def __delete__(self, obj):
-        raise AttributeError('Cannot delete attribute %s' % (self.name,))
+        raise AttributeError("Cannot delete attribute %s" % (self.name,))
 
     @property
     def __doc__(self):
         description = all_settings[self.name].description
         deprecation_message = all_settings[self.name].deprecation_message
-        default = repr(getattr(settings.default, self.name)) if \
-            self.show_default else '(dynamically calculated)'
-        return '\n\n'.join([description, 'default value: %s' % (default,),
-                            (deprecation_message or '').strip()]).strip()
+        default = (
+            repr(getattr(settings.default, self.name))
+            if self.show_default
+            else "(dynamically calculated)"
+        )
+        return "\n\n".join(
+            [
+                description,
+                "default value: %s" % (default,),
+                (deprecation_message or "").strip(),
+            ]
+        ).strip()
 
 
 default_variable = DynamicVariable(None)
 
 
 class settingsMeta(type):
-
     def __init__(self, *args, **kwargs):
         super(settingsMeta, self).__init__(*args, **kwargs)
 
@@ -106,7 +113,7 @@ class settingsMeta(type):
         v = default_variable.value
         if v is not None:
             return v
-        if hasattr(settings, '_current_profile'):
+        if hasattr(settings, "_current_profile"):
             settings.load_profile(settings._current_profile)
             assert default_variable.value is not None
         return default_variable.value
@@ -115,24 +122,22 @@ class settingsMeta(type):
         default_variable.value = value
 
     def __setattr__(self, name, value):
-        if name == 'default':
+        if name == "default":
             raise AttributeError(
-                'Cannot assign to the property settings.default - '
-                'consider using settings.load_profile instead.'
+                "Cannot assign to the property settings.default - "
+                "consider using settings.load_profile instead."
             )
-        elif not (isinstance(value, settingsProperty) or name.startswith('_')):
+        elif not (isinstance(value, settingsProperty) or name.startswith("_")):
             raise AttributeError(
-                'Cannot assign hypothesis.settings.%s=%r - the settings '
-                'class is immutable.  You can change the global default '
-                'settings with settings.load_profile, or use @settings(...) '
-                'to decorate your test instead.' % (name, value)
+                "Cannot assign hypothesis.settings.%s=%r - the settings "
+                "class is immutable.  You can change the global default "
+                "settings with settings.load_profile, or use @settings(...) "
+                "to decorate your test instead." % (name, value)
             )
         return type.__setattr__(self, name, value)
 
 
-class settings(
-    settingsMeta('settings', (object,), {})  # type: ignore
-):
+class settings(settingsMeta("settings", (object,), {})):  # type: ignore
     """A settings object controls a variety of parameters that are used in
     falsification. These may control both the falsification strategy and the
     details of the data that is generated.
@@ -141,9 +146,7 @@ class settings(
     changes made there will be picked up in newly created settings.
     """
 
-    _WHITELISTED_REAL_PROPERTIES = [
-        '_construction_complete', 'storage'
-    ]
+    _WHITELISTED_REAL_PROPERTIES = ["_construction_complete", "storage"]
     __definitions_are_locked = False
     _profiles = {}  # type: dict
 
@@ -151,25 +154,25 @@ class settings(
         if name in all_settings:
             return all_settings[name].default
         else:
-            raise AttributeError('settings has no attribute %s' % (name,))
+            raise AttributeError("settings has no attribute %s" % (name,))
 
     def __init__(self, parent=None, **kwargs):
         # type: (settings, **Any) -> None
         if (
-            kwargs.get('database', not_set) is not_set and
-            kwargs.get('database_file', not_set) is not not_set
+            kwargs.get("database", not_set) is not_set
+            and kwargs.get("database_file", not_set) is not not_set
         ):
-            if kwargs['database_file'] is None:
-                kwargs['database'] = None
+            if kwargs["database_file"] is None:
+                kwargs["database"] = None
             else:
                 from hypothesis.database import ExampleDatabase
-                kwargs['database'] = ExampleDatabase(kwargs['database_file'])
-        if not kwargs.get('perform_health_check', True):
-            kwargs['suppress_health_check'] = HealthCheck.all()
-        if kwargs.get('max_shrinks') == 0:
-            kwargs['phases'] = tuple(
-                p for p in _validate_phases(kwargs.get('phases'))
-                if p != Phase.shrink
+
+                kwargs["database"] = ExampleDatabase(kwargs["database_file"])
+        if not kwargs.get("perform_health_check", True):
+            kwargs["suppress_health_check"] = HealthCheck.all()
+        if kwargs.get("max_shrinks") == 0:
+            kwargs["phases"] = tuple(
+                p for p in _validate_phases(kwargs.get("phases")) if p != Phase.shrink
             )
         self._construction_complete = False
         deprecations = []
@@ -183,12 +186,12 @@ class settings(
                         if setting.deprecation_message is not None:
                             deprecations.append(setting)
                     if setting.validator:
-                        kwargs[setting.name] = setting.validator(
-                            kwargs[setting.name])
+                        kwargs[setting.name] = setting.validator(kwargs[setting.name])
         for name, value in kwargs.items():
             if name not in all_settings:
                 raise InvalidArgument(
-                    'Invalid argument: %r is not a valid setting' % (name,))
+                    "Invalid argument: %r is not a valid setting" % (name,)
+                )
             setattr(self, name, value)
         self.storage = threading.local()
         self._construction_complete = True
@@ -221,35 +224,37 @@ class settings(
         """
         if not callable(test):
             raise InvalidArgument(
-                'settings objects can be called as a decorator with @given, '
-                'but test=%r' % (test,)
+                "settings objects can be called as a decorator with @given, "
+                "but test=%r" % (test,)
             )
         if inspect.isclass(test):
             from hypothesis.stateful import GenericStateMachine
+
             if issubclass(test, GenericStateMachine):
-                attr_name = '_hypothesis_internal_settings_applied'
+                attr_name = "_hypothesis_internal_settings_applied"
                 if getattr(test, attr_name, False):
                     raise InvalidArgument(
-                        'Applying the @settings decorator twice would '
-                        'overwrite the first version; merge their arguments '
-                        'instead.'
+                        "Applying the @settings decorator twice would "
+                        "overwrite the first version; merge their arguments "
+                        "instead."
                     )
                 setattr(test, attr_name, True)
                 test.TestCase.settings = self
                 return test
             else:
                 raise InvalidArgument(
-                    '@settings(...) can only be used as a decorator on '
-                    'functions, or on subclasses of GenericStateMachine.'
+                    "@settings(...) can only be used as a decorator on "
+                    "functions, or on subclasses of GenericStateMachine."
                 )
-        if hasattr(test, '_hypothesis_internal_settings_applied'):
+        if hasattr(test, "_hypothesis_internal_settings_applied"):
             note_deprecation(
-                '%s has already been decorated with a settings object, which '
-                'will be overridden.  This will be an error in a future '
-                'version of Hypothesis.\n    Previous:  %r\n    This:  %r' % (
+                "%s has already been decorated with a settings object, which "
+                "will be overridden.  This will be an error in a future "
+                "version of Hypothesis.\n    Previous:  %r\n    This:  %r"
+                % (
                     get_pretty_function_description(test),
                     test._hypothesis_internal_use_settings,
-                    self
+                    self,
                 )
             )
 
@@ -261,8 +266,8 @@ class settings(
         @proxies(test)
         def new_test(*args, **kwargs):
             note_deprecation(
-                'Using `@settings` without `@given` does not make sense and '
-                'will be an error in a future version of Hypothesis.'
+                "Using `@settings` without `@given` does not make sense and "
+                "will be an error in a future version of Hypothesis."
             )
             test(*args, **kwargs)
 
@@ -272,7 +277,7 @@ class settings(
 
         # This means @given has been applied, so we don't need to worry about
         # warning for @settings alone.
-        has_given_applied = getattr(test, 'is_hypothesis_test', False)
+        has_given_applied = getattr(test, "is_hypothesis_test", False)
         test_to_use = test if has_given_applied else new_test
         test_to_use._hypothesis_internal_use_settings = self
         # Can't use _hypothesis_internal_use_settings as an indicator that
@@ -282,9 +287,16 @@ class settings(
 
     @classmethod
     def _define_setting(
-        cls, name, description, default, options=None,
-        validator=None, show_default=True, future_default=not_set,
-        deprecation_message=None, hide_repr=not_set,
+        cls,
+        name,
+        description,
+        default,
+        options=None,
+        validator=None,
+        show_default=True,
+        future_default=not_set,
+        deprecation_message=None,
+        hide_repr=not_set,
     ):
         """Add a new setting.
 
@@ -297,7 +309,7 @@ class settings(
         """
         if settings.__definitions_are_locked:
             raise InvalidState(
-                'settings have been locked and may no longer be defined.'
+                "settings have been locked and may no longer be defined."
             )
         if options is not None:
             options = tuple(options)
@@ -310,8 +322,14 @@ class settings(
             hide_repr = bool(deprecation_message)
 
         all_settings[name] = Setting(
-            name, description.strip(), default, options, validator,
-            future_default, deprecation_message, hide_repr,
+            name,
+            description.strip(),
+            default,
+            options,
+            validator,
+            future_default,
+            deprecation_message,
+            hide_repr,
         )
         setattr(settings, name, settingsProperty(name, show_default))
 
@@ -325,23 +343,19 @@ class settings(
         elif name in all_settings:
             if self._construction_complete:
                 raise AttributeError(
-                    'settings objects are immutable and may not be assigned to'
-                    ' after construction.'
+                    "settings objects are immutable and may not be assigned to"
+                    " after construction."
                 )
             else:
                 setting = all_settings[name]
-                if (
-                    setting.options is not None and
-                    value not in setting.options
-                ):
+                if setting.options is not None and value not in setting.options:
                     raise InvalidArgument(
-                        'Invalid %s, %r. Valid options: %r' % (
-                            name, value, setting.options
-                        )
+                        "Invalid %s, %r. Valid options: %r"
+                        % (name, value, setting.options)
                     )
                 return object.__setattr__(self, name, value)
         else:
-            raise AttributeError('No such setting %s' % (name,))
+            raise AttributeError("No such setting %s" % (name,))
 
     def __repr__(self):
         bits = []
@@ -350,21 +364,21 @@ class settings(
             # The only settings that are not shown are those that are
             # deprecated and left at their default values.
             if value != setting.default or not setting.hide_repr:
-                bits.append('%s=%r' % (name, value))
-        return 'settings(%s)' % ', '.join(sorted(bits))
+                bits.append("%s=%r" % (name, value))
+        return "settings(%s)" % ", ".join(sorted(bits))
 
     def show_changed(self):
         bits = []
         for name, setting in all_settings.items():
             value = getattr(self, name)
             if value != setting.default:
-                bits.append('%s=%r' % (name, value))
-        return ', '.join(sorted(bits, key=len))
+                bits.append("%s=%r" % (name, value))
+        return ", ".join(sorted(bits, key=len))
 
     def __enter__(self):
         note_deprecation(
-            'Settings should be determined only by global state or with the '
-            '@settings decorator.'
+            "Settings should be determined only by global state or with the "
+            "@settings decorator."
         )
         default_context_manager = default_variable.with_value(self)
         self.defaults_stack().append(default_context_manager)
@@ -391,16 +405,17 @@ class settings(
         parent (or settings.default, if parent is None).
         """
         if not isinstance(name, (str, text_type)):
-            note_deprecation('name=%r must be a string' % (name,))
-        if 'settings' in kwargs:
+            note_deprecation("name=%r must be a string" % (name,))
+        if "settings" in kwargs:
             if parent is None:
-                parent = kwargs.pop('settings')
-                note_deprecation('The `settings` argument is deprecated - '
-                                 'use `parent` instead.')
+                parent = kwargs.pop("settings")
+                note_deprecation(
+                    "The `settings` argument is deprecated - " "use `parent` instead."
+                )
             else:
                 raise InvalidArgument(
-                    'The `settings` argument is deprecated, and has been '
-                    'replaced by the `parent` argument.  Use `parent` only.'
+                    "The `settings` argument is deprecated, and has been "
+                    "replaced by the `parent` argument.  Use `parent` only."
                 )
         settings._profiles[name] = settings(parent=parent, **kwargs)
 
@@ -409,11 +424,11 @@ class settings(
         # type: (str) -> settings
         """Return the profile with the given name."""
         if not isinstance(name, (str, text_type)):
-            note_deprecation('name=%r must be a string' % (name,))
+            note_deprecation("name=%r must be a string" % (name,))
         try:
             return settings._profiles[name]
         except KeyError:
-            raise InvalidArgument('Profile %r is not registered' % (name,))
+            raise InvalidArgument("Profile %r is not registered" % (name,))
 
     @staticmethod
     def load_profile(name):
@@ -425,7 +440,7 @@ class settings(
         defined default for that setting.
         """
         if not isinstance(name, (str, text_type)):
-            note_deprecation('name=%r must be a string' % (name,))
+            note_deprecation("name=%r must be a string" % (name,))
         settings._current_profile = name
         settings._assign_default_internal(settings.get_profile(name))
 
@@ -450,7 +465,7 @@ class Setting(object):
 
 
 settings._define_setting(
-    'min_satisfying_examples',
+    "min_satisfying_examples",
     default=not_set,
     description="""
 This doesn't actually do anything, but remains for compatibility reasons.
@@ -459,20 +474,20 @@ This doesn't actually do anything, but remains for compatibility reasons.
 The min_satisfying_examples setting has been deprecated and disabled, due to
 overlap with the filter_too_much healthcheck and poor interaction with the
 max_examples setting.
-"""
+""",
 )
 
 settings._define_setting(
-    'max_examples',
+    "max_examples",
     default=100,
     description="""
 Once this many satisfying examples have been considered without finding any
 counter-example, falsification will terminate.
-"""
+""",
 )
 
 settings._define_setting(
-    'max_iterations',
+    "max_iterations",
     default=not_set,
     description="""
 This doesn't actually do anything, but remains for compatibility reasons.
@@ -480,22 +495,22 @@ This doesn't actually do anything, but remains for compatibility reasons.
     deprecation_message="""
 The max_iterations setting has been disabled, as internal heuristics are more
 useful for this purpose than a user setting.  It no longer has any effect.
-"""
+""",
 )
 
 settings._define_setting(
-    'buffer_size',
+    "buffer_size",
     default=8 * 1024,
     description="""
 The size of the underlying data used to generate examples. If you need to
 generate really large examples you may want to increase this, but it will make
 your tests slower.
-"""
+""",
 )
 
 
 settings._define_setting(
-    'max_shrinks',
+    "max_shrinks",
     default=not_set,
     description="""
 Passing ``max_shrinks=0`` disables the shrinking phase (see the ``phases``
@@ -504,7 +519,7 @@ setting), but any other value has no effect and uses a general heuristic.
     deprecation_message="""
 The max_shrinks setting has been disabled, as internal heuristics are more
 useful for this purpose than a user setting.
-"""
+""",
 )
 
 
@@ -516,7 +531,7 @@ def _validate_timeout(n):
 
 
 settings._define_setting(
-    'timeout',
+    "timeout",
     default=60,
     description="""
 Once this many seconds have passed, falsify will terminate even
@@ -533,11 +548,11 @@ instead (which will remain valid for a further deprecation period after this
 setting has gone away).
 """,
     future_default=unlimited,
-    validator=_validate_timeout
+    validator=_validate_timeout,
 )
 
 settings._define_setting(
-    'derandomize',
+    "derandomize",
     default=False,
     description="""
 If this is True then hypothesis will run in deterministic mode
@@ -547,12 +562,12 @@ multiple runs. This has the advantage that it will eliminate any
 randomness from your tests, which may be preferable for some situations.
 It does have the disadvantage of making your tests less likely to
 find novel breakages.
-"""
+""",
 )
 
 settings._define_setting(
-    'strict',
-    default=os.getenv('HYPOTHESIS_STRICT_MODE') == 'true',
+    "strict",
+    default=os.getenv("HYPOTHESIS_STRICT_MODE") == "true",
     description="""
 Strict mode has been deprecated in favor of Python's standard warnings
 controls.  Ironically, enabling it is therefore an error - it only exists so
@@ -569,20 +584,21 @@ warnings.simplefilter('error', HypothesisDeprecationWarning).
 
 def _validate_database(db, _from_db_file=False):
     from hypothesis.database import ExampleDatabase
+
     if db is None or isinstance(db, ExampleDatabase):
         return db
     if _from_db_file or db is not_set:
         return ExampleDatabase(db)
     raise InvalidArgument(
-        'Arguments to the database setting must be None or an instance of '
-        'ExampleDatabase.  Try passing database=ExampleDatabase(%r), or '
-        'construct and use one of the specific subclasses in '
-        'hypothesis.database' % (db,)
+        "Arguments to the database setting must be None or an instance of "
+        "ExampleDatabase.  Try passing database=ExampleDatabase(%r), or "
+        "construct and use one of the specific subclasses in "
+        "hypothesis.database" % (db,)
     )
 
 
 settings._define_setting(
-    'database',
+    "database",
     default=not_set,
     show_default=False,
     description="""
@@ -595,7 +611,7 @@ database, or any path for a directory-based example database.
 )
 
 settings._define_setting(
-    'database_file',
+    "database_file",
     default=not_set,
     show_default=False,
     description="""
@@ -628,7 +644,7 @@ class HealthCheck(Enum):
     """
 
     def __repr__(self):
-        return '%s.%s' % (self.__class__.__name__, self.name)
+        return "%s.%s" % (self.__class__.__name__, self.name)
 
     @classmethod
     def all(cls):
@@ -689,31 +705,33 @@ class Verbosity(IntEnum):
     @staticmethod
     def _get_default():
         # type: () -> Verbosity
-        var = os.getenv('HYPOTHESIS_VERBOSITY_LEVEL')
+        var = os.getenv("HYPOTHESIS_VERBOSITY_LEVEL")
         if var is not None:  # pragma: no cover
             try:
                 result = Verbosity[var]
             except KeyError:
-                raise InvalidArgument('No such verbosity level %r' % (var,))
+                raise InvalidArgument("No such verbosity level %r" % (var,))
 
-            warnings.warn(HypothesisDeprecationWarning(
-                'The HYPOTHESIS_VERBOSITY_LEVEL environment variable is '
-                'deprecated, and will be ignored by a future version of '
-                'Hypothesis.  Configure your verbosity level via a '
-                'settings profile instead.'
-            ))
+            warnings.warn(
+                HypothesisDeprecationWarning(
+                    "The HYPOTHESIS_VERBOSITY_LEVEL environment variable is "
+                    "deprecated, and will be ignored by a future version of "
+                    "Hypothesis.  Configure your verbosity level via a "
+                    "settings profile instead."
+                )
+            )
             return result
         return Verbosity.normal
 
     def __repr__(self):
-        return 'Verbosity.%s' % (self.name,)
+        return "Verbosity.%s" % (self.name,)
 
 
 settings._define_setting(
-    'verbosity',
+    "verbosity",
     options=tuple(Verbosity),
     default=Verbosity._get_default(),
-    description='Control the verbosity level of Hypothesis messages',
+    description="Control the verbosity level of Hypothesis messages",
 )
 
 
@@ -723,30 +741,30 @@ def _validate_phases(phases):
     phases = tuple(phases)
     for a in phases:
         if not isinstance(a, Phase):
-            raise InvalidArgument('%r is not a valid phase' % (a,))
+            raise InvalidArgument("%r is not a valid phase" % (a,))
     return phases
 
 
 settings._define_setting(
-    'phases',
+    "phases",
     default=tuple(Phase),
     description=(
-        'Control which phases should be run. ' +
-        'See :ref:`the full documentation for more details <phases>`'
+        "Control which phases should be run. "
+        + "See :ref:`the full documentation for more details <phases>`"
     ),
     validator=_validate_phases,
 )
 
 settings._define_setting(
-    name='stateful_step_count',
+    name="stateful_step_count",
     default=50,
     description="""
 Number of steps to run a stateful program for before giving up on it breaking.
-"""
+""",
 )
 
 settings._define_setting(
-    'perform_health_check',
+    "perform_health_check",
     default=not_set,
     description=u"""
 If set to True, Hypothesis will run a preliminary health check before
@@ -760,35 +778,39 @@ effect of `suppress_health_check=HealthCheck.all()`.  Use that instead!
 
 
 def validate_health_check_suppressions(suppressions):
-    suppressions = try_convert(list, suppressions, 'suppress_health_check')
+    suppressions = try_convert(list, suppressions, "suppress_health_check")
     for s in suppressions:
         if not isinstance(s, HealthCheck):
-            note_deprecation((
-                'Non-HealthCheck value %r of type %s in suppress_health_check '
-                'will be ignored, and will become an error in a future '
-                'version of Hypothesis') % (
-                s, type(s).__name__,
-            ))
-        elif s in (
-            HealthCheck.exception_in_generation, HealthCheck.random_module
-        ):
-            note_deprecation((
-                '%s is now ignored and suppressing it is a no-op. This will '
-                'become an error in a future version of Hypothesis. Simply '
-                'remove it from your list of suppressions to get the same '
-                'effect.') % (s,))
+            note_deprecation(
+                (
+                    "Non-HealthCheck value %r of type %s in suppress_health_check "
+                    "will be ignored, and will become an error in a future "
+                    "version of Hypothesis"
+                )
+                % (s, type(s).__name__)
+            )
+        elif s in (HealthCheck.exception_in_generation, HealthCheck.random_module):
+            note_deprecation(
+                (
+                    "%s is now ignored and suppressing it is a no-op. This will "
+                    "become an error in a future version of Hypothesis. Simply "
+                    "remove it from your list of suppressions to get the same "
+                    "effect."
+                )
+                % (s,)
+            )
     return suppressions
 
 
 settings._define_setting(
-    'suppress_health_check',
+    "suppress_health_check",
     default=(),
     description="""A list of health checks to disable.""",
-    validator=validate_health_check_suppressions
+    validator=validate_health_check_suppressions,
 )
 
 settings._define_setting(
-    'deadline',
+    "deadline",
     default=not_set,
     description=u"""
 If set, a time in milliseconds (which may be a float to express
@@ -803,11 +825,11 @@ Set this to None to disable this behaviour entirely.
 In future this will default to 200. For now, a
 HypothesisDeprecationWarning will be emitted if you exceed that default
 deadline and have not explicitly set a deadline yourself.
-"""
+""",
 )
 
 settings._define_setting(
-    'use_coverage',
+    "use_coverage",
     default=not_set,
     deprecation_message="""
 use_coverage no longer does anything and can be removed from your settings.
@@ -815,7 +837,7 @@ use_coverage no longer does anything and can be removed from your settings.
     description="""
 A flag to enable a feature that no longer exists. This setting is present
 only for backwards compatibility purposes.
-"""
+""",
 )
 
 
@@ -841,7 +863,7 @@ class PrintSettings(Enum):
     """Always print a blob on failure."""
 
     def __repr__(self):
-        return 'PrintSettings.%s' % (self.name,)
+        return "PrintSettings.%s" % (self.name,)
 
 
 def _validate_print_blob(value):
@@ -852,10 +874,9 @@ def _validate_print_blob(value):
             replacement = PrintSettings.NEVER
 
         note_deprecation(
-            'Setting print_blob=%r is deprecated and will become an error '
-            'in a future version of Hypothesis. Use print_blob=%r instead.' % (
-                value, replacement,
-            )
+            "Setting print_blob=%r is deprecated and will become an error "
+            "in a future version of Hypothesis. Use print_blob=%r instead."
+            % (value, replacement)
         )
         return replacement
 
@@ -865,7 +886,7 @@ def _validate_print_blob(value):
 
 
 settings._define_setting(
-    'print_blob',
+    "print_blob",
     default=PrintSettings.INFER,
     description="""
 Determines whether to print blobs after tests that can be used to reproduce
@@ -892,6 +913,6 @@ def note_deprecation(message, s=None):
         warnings.warn(warning, stacklevel=2)
 
 
-settings.register_profile('default', settings())
-settings.load_profile('default')
+settings.register_profile("default", settings())
+settings.load_profile("default")
 assert settings.default is not None

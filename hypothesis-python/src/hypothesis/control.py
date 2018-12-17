@@ -15,13 +15,12 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import traceback
 
 from hypothesis import Verbosity, settings
-from hypothesis.errors import CleanupFailed, InvalidArgument, \
-    UnsatisfiedAssumption
+from hypothesis.errors import CleanupFailed, InvalidArgument, UnsatisfiedAssumption
 from hypothesis.reporting import report
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
@@ -52,13 +51,11 @@ _current_build_context = DynamicVariable(None)
 def current_build_context():
     context = _current_build_context.value
     if context is None:
-        raise InvalidArgument(
-            u'No build context registered')
+        raise InvalidArgument(u"No build context registered")
     return context
 
 
 class BuildContext(object):
-
     def __init__(self, data, is_final=False, close_on_capture=True):
         self.data = data
         self.tasks = []
@@ -102,8 +99,7 @@ def cleanup(teardown):
     """
     context = _current_build_context.value
     if context is None:
-        raise InvalidArgument(
-            u'Cannot register cleanup outside of build context')
+        raise InvalidArgument(u"Cannot register cleanup outside of build context")
     context.tasks.append(teardown)
 
 
@@ -112,8 +108,7 @@ def note(value):
     """Report this value in the final execution."""
     context = _current_build_context.value
     if context is None:
-        raise InvalidArgument(
-            'Cannot make notes outside of a test')
+        raise InvalidArgument("Cannot make notes outside of a test")
     context.notes.append(value)
     if context.is_final or settings.default.verbosity >= Verbosity.verbose:
         report(value)
@@ -129,8 +124,7 @@ def event(value):
     """
     context = _current_build_context.value
     if context is None:
-        raise InvalidArgument(
-            'Cannot make record events outside of a test')
+        raise InvalidArgument("Cannot make record events outside of a test")
 
     if context.data is not None:
         context.data.note_event(value)

@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import re
 
@@ -23,7 +23,7 @@ import pytest
 
 from hypothesis.internal.compat import hrange
 
-pytest_plugins = str('pytester')
+pytest_plugins = str("pytester")
 
 
 TEST_SUITE = """
@@ -48,27 +48,22 @@ def test_fails_once(some_int):
 CONTAINS_SEED_INSTRUCTION = re.compile(r"--hypothesis-seed=\d+", re.MULTILINE)
 
 
-@pytest.mark.parametrize('seed', [0, 42, 'foo'])
+@pytest.mark.parametrize("seed", [0, 42, "foo"])
 def test_runs_repeatably_when_seed_is_set(seed, testdir):
     script = testdir.makepyfile(TEST_SUITE)
 
     results = [
         testdir.runpytest(
-            script, '--verbose', '--strict', '--hypothesis-seed', str(seed)
+            script, "--verbose", "--strict", "--hypothesis-seed", str(seed)
         )
         for _ in hrange(2)
     ]
 
     for r in results:
         for l in r.stdout.lines:
-            assert '--hypothesis-seed' not in l
+            assert "--hypothesis-seed" not in l
 
-    failure_lines = [
-        l
-        for r in results
-        for l in r.stdout.lines
-        if 'some_int=' in l
-    ]
+    failure_lines = [l for r in results for l in r.stdout.lines if "some_int=" in l]
 
     assert len(failure_lines) == 2
     assert failure_lines[0] == failure_lines[1]
@@ -100,25 +95,25 @@ def test_failure(i):
 
 def test_repeats_healthcheck_when_following_seed_instruction(testdir, tmpdir):
     health_check_test = HEALTH_CHECK_FAILURE.replace(
-        '<file>', repr(str(tmpdir.join('seen'))))
+        "<file>", repr(str(tmpdir.join("seen")))
+    )
 
     script = testdir.makepyfile(health_check_test)
 
-    initial = testdir.runpytest(script, '--verbose', '--strict',)
+    initial = testdir.runpytest(script, "--verbose", "--strict")
 
-    match = CONTAINS_SEED_INSTRUCTION.search('\n'.join(initial.stdout.lines))
-    initial_output = '\n'.join(initial.stdout.lines)
+    match = CONTAINS_SEED_INSTRUCTION.search("\n".join(initial.stdout.lines))
+    initial_output = "\n".join(initial.stdout.lines)
 
     match = CONTAINS_SEED_INSTRUCTION.search(initial_output)
     assert match is not None
 
-    rerun = testdir.runpytest(script, '--verbose', '--strict', match.group(0))
-    rerun_output = '\n'.join(rerun.stdout.lines)
+    rerun = testdir.runpytest(script, "--verbose", "--strict", match.group(0))
+    rerun_output = "\n".join(rerun.stdout.lines)
 
-    assert 'FailedHealthCheck' in rerun_output
-    assert '--hypothesis-seed' not in rerun_output
+    assert "FailedHealthCheck" in rerun_output
+    assert "--hypothesis-seed" not in rerun_output
 
-    rerun2 = testdir.runpytest(
-        script, '--verbose', '--strict', '--hypothesis-seed=10')
-    rerun2_output = '\n'.join(rerun2.stdout.lines)
-    assert 'FailedHealthCheck' not in rerun2_output
+    rerun2 = testdir.runpytest(script, "--verbose", "--strict", "--hypothesis-seed=10")
+    rerun2_output = "\n".join(rerun2.stdout.lines)
+    assert "FailedHealthCheck" not in rerun2_output

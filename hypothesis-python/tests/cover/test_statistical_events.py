@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import re
 import time
@@ -23,12 +23,18 @@ import traceback
 
 import pytest
 
-from hypothesis import HealthCheck, event, given, assume, example, settings
-from hypothesis import strategies as st
-from hypothesis.statistics import Statistics, collector
+from hypothesis import (
+    HealthCheck,
+    assume,
+    event,
+    example,
+    given,
+    settings,
+    strategies as st,
+)
 from hypothesis.internal.conjecture.data import Status
-from hypothesis.internal.conjecture.engine import ExitReason, \
-    ConjectureRunner
+from hypothesis.internal.conjecture.engine import ConjectureRunner, ExitReason
+from hypothesis.statistics import Statistics, collector
 
 
 def call_for_statistics(test_function):
@@ -53,17 +59,17 @@ def test_notes_hard_to_satisfy():
         assume(i == 0)
 
     stats = call_for_statistics(test)
-    assert 'satisfied assumptions' in stats.exit_reason
+    assert "satisfied assumptions" in stats.exit_reason
 
 
 def test_can_callback_with_a_string():
     @given(st.integers())
     def test(i):
-        event('hi')
+        event("hi")
 
     stats = call_for_statistics(test)
 
-    assert any('hi' in s for s in stats.events)
+    assert any("hi" in s for s in stats.events)
 
 
 counter = 0
@@ -71,7 +77,6 @@ seen = []
 
 
 class Foo(object):
-
     def __eq__(self, other):
         return True
 
@@ -85,7 +90,7 @@ class Foo(object):
         seen.append(self)
         global counter
         counter += 1
-        return 'COUNTER %d' % (counter,)
+        return "COUNTER %d" % (counter,)
 
 
 def test_formats_are_evaluated_only_once():
@@ -98,19 +103,19 @@ def test_formats_are_evaluated_only_once():
 
     stats = call_for_statistics(test)
 
-    assert any('COUNTER 1' in s for s in stats.events)
-    assert not any('COUNTER 2' in s for s in stats.events)
+    assert any("COUNTER 1" in s for s in stats.events)
+    assert not any("COUNTER 2" in s for s in stats.events)
 
 
 def test_does_not_report_on_examples():
-    @example('hi')
+    @example("hi")
     @given(st.integers())
     def test(i):
         if isinstance(i, str):
-            event('boo')
+            event("boo")
 
     stats = call_for_statistics(test)
-    assert not any('boo' in e for e in stats.events)
+    assert not any("boo" in e for e in stats.events)
 
 
 def test_exact_timing():
@@ -120,7 +125,7 @@ def test_exact_timing():
         time.sleep(0.5)
 
     stats = call_for_statistics(test)
-    assert re.match(r'~ 5\d\dms', stats.runtimes)
+    assert re.match(r"~ 5\d\dms", stats.runtimes)
 
 
 def test_apparently_instantaneous_tests():
@@ -131,7 +136,7 @@ def test_apparently_instantaneous_tests():
         pass
 
     stats = call_for_statistics(test)
-    assert stats.runtimes == '< 1ms'
+    assert stats.runtimes == "< 1ms"
 
 
 def test_flaky_exit():
@@ -142,15 +147,15 @@ def test_flaky_exit():
         if i > 1001:
             if first[0]:
                 first[0] = False
-                print('Hi')
+                print("Hi")
                 assert False
 
     stats = call_for_statistics(test)
-    assert stats.exit_reason == 'test was flaky'
+    assert stats.exit_reason == "test was flaky"
 
 
-@pytest.mark.parametrize('draw_delay', [False, True])
-@pytest.mark.parametrize('test_delay', [False, True])
+@pytest.mark.parametrize("draw_delay", [False, True])
+@pytest.mark.parametrize("test_delay", [False, True])
 def test_draw_time_percentage(draw_delay, test_delay):
     time.freeze()
 
@@ -166,11 +171,11 @@ def test_draw_time_percentage(draw_delay, test_delay):
 
     stats = call_for_statistics(test)
     if not draw_delay:
-        assert stats.draw_time_percentage == '~ 0%'
+        assert stats.draw_time_percentage == "~ 0%"
     elif test_delay:
-        assert stats.draw_time_percentage == '~ 50%'
+        assert stats.draw_time_percentage == "~ 50%"
     else:
-        assert stats.draw_time_percentage == '~ 100%'
+        assert stats.draw_time_percentage == "~ 100%"
 
 
 def test_has_lambdas_in_output():
@@ -179,28 +184,25 @@ def test_has_lambdas_in_output():
         pass
 
     stats = call_for_statistics(test)
-    assert any(
-        'lambda x: x % 2 == 0' in e for e in stats.events
-    )
+    assert any("lambda x: x % 2 == 0" in e for e in stats.events)
 
 
 def test_stops_after_x_shrinks(monkeypatch):
     # the max_shrinks argument is deprecated, but we still stop after some
     # number - which we can reduce to zero to check that this works.
     from hypothesis.internal.conjecture import engine
-    monkeypatch.setattr(engine, 'MAX_SHRINKS', 0)
+
+    monkeypatch.setattr(engine, "MAX_SHRINKS", 0)
 
     @given(st.integers())
     def test(n):
         assert n < 100
 
     stats = call_for_statistics(test)
-    assert 'shrunk example' in stats.exit_reason
+    assert "shrunk example" in stats.exit_reason
 
 
-@pytest.mark.parametrize('drawtime,runtime', [
-    (1, 0), (-1, 0), (0, -1), (-1, -1),
-])
+@pytest.mark.parametrize("drawtime,runtime", [(1, 0), (-1, 0), (0, -1), (-1, -1)])
 def test_weird_drawtime_issues(drawtime, runtime):
     # Regression test for #1346, where we don't have the expected relationship
     # 0<=drawtime<= runtime due to changing clocks or floating-point issues.
@@ -212,4 +214,4 @@ def test_weird_drawtime_issues(drawtime, runtime):
     engine.all_runtimes.extend([0, runtime])
 
     stats = Statistics(engine)
-    assert stats.draw_time_percentage == 'NaN'
+    assert stats.draw_time_percentage == "NaN"

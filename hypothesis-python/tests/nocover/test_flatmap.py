@@ -15,22 +15,28 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis import given, assume, settings
-from tests.common.debug import minimal
+from hypothesis import assume, given, settings
 from hypothesis.database import ExampleDatabase
-from hypothesis.strategies import just, text, lists, builds, floats, \
-    tuples, booleans, integers
 from hypothesis.internal.compat import Counter
+from hypothesis.strategies import (
+    booleans,
+    builds,
+    floats,
+    integers,
+    just,
+    lists,
+    text,
+    tuples,
+)
+from tests.common.debug import minimal
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
 
-OrderedPairs = integers(1, 200).flatmap(
-    lambda e: tuples(integers(0, e - 1), just(e))
-)
+OrderedPairs = integers(1, 200).flatmap(lambda e: tuples(integers(0, e - 1), just(e)))
 
 
 @settings(max_examples=100)
@@ -47,9 +53,7 @@ def test_in_order(x):
 
 
 def test_flatmap_retrieve_from_db():
-    constant_float_lists = floats(0, 1).flatmap(
-        lambda x: lists(just(x))
-    )
+    constant_float_lists = floats(0, 1).flatmap(lambda x: lists(just(x)))
 
     track = []
 
@@ -87,9 +91,7 @@ def test_flatmap_has_original_strategy_repr():
 
 
 def test_mixed_list_flatmap():
-    s = lists(
-        booleans().flatmap(lambda b: booleans() if b else text())
-    )
+    s = lists(booleans().flatmap(lambda b: booleans() if b else text()))
 
     def criterion(ls):
         c = Counter(type(l) for l in ls)
@@ -97,24 +99,24 @@ def test_mixed_list_flatmap():
 
     result = minimal(s, criterion)
     assert len(result) == 6
-    assert set(result) == set([False, u''])
+    assert set(result) == set([False, u""])
 
 
-@pytest.mark.parametrize('n', range(1, 10))
+@pytest.mark.parametrize("n", range(1, 10))
 def test_can_shrink_through_a_binding(n):
     bool_lists = integers(0, 100).flatmap(
-        lambda k: lists(booleans(), min_size=k, max_size=k))
+        lambda k: lists(booleans(), min_size=k, max_size=k)
+    )
 
-    assert minimal(
-        bool_lists, lambda x: len(list(filter(bool, x))) >= n
-    ) == [True] * n
+    assert minimal(bool_lists, lambda x: len(list(filter(bool, x))) >= n) == [True] * n
 
 
-@pytest.mark.parametrize('n', range(1, 10))
+@pytest.mark.parametrize("n", range(1, 10))
 def test_can_delete_in_middle_of_a_binding(n):
     bool_lists = integers(1, 100).flatmap(
-        lambda k: lists(booleans(), min_size=k, max_size=k))
+        lambda k: lists(booleans(), min_size=k, max_size=k)
+    )
 
-    assert minimal(
-        bool_lists, lambda x: x[0] and x[-1] and x.count(False) >= n
-    ) == [True] + [False] * n + [True]
+    assert minimal(bool_lists, lambda x: x[0] and x[-1] and x.count(False) >= n) == [
+        True
+    ] + [False] * n + [True]

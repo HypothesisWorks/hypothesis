@@ -15,15 +15,14 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from contextlib import contextmanager
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.searchstrategy.strategies import OneOfStrategy, \
-    SearchStrategy
+from hypothesis.searchstrategy.strategies import OneOfStrategy, SearchStrategy
 
 
 class LimitReached(BaseException):
@@ -31,7 +30,6 @@ class LimitReached(BaseException):
 
 
 class LimitedStrategy(SearchStrategy):
-
     def __init__(self, strategy):
         super(LimitedStrategy, self).__init__()
         self.base_strategy = strategy
@@ -60,7 +58,6 @@ class LimitedStrategy(SearchStrategy):
 
 
 class RecursiveStrategy(SearchStrategy):
-
     def __init__(self, base, extend, max_leaves):
         self.max_leaves = max_leaves
         self.base = base
@@ -69,29 +66,29 @@ class RecursiveStrategy(SearchStrategy):
 
         strategies = [self.limited_base, self.extend(self.limited_base)]
         while 2 ** len(strategies) <= max_leaves:
-            strategies.append(
-                extend(OneOfStrategy(tuple(strategies), bias=0.8)))
+            strategies.append(extend(OneOfStrategy(tuple(strategies), bias=0.8)))
         self.strategy = OneOfStrategy(strategies)
 
     def __repr__(self):
-        if not hasattr(self, '_cached_repr'):
-            self._cached_repr = 'recursive(%r, %s, max_leaves=%d)' % (
-                self.base, get_pretty_function_description(self.extend),
-                self.max_leaves
+        if not hasattr(self, "_cached_repr"):
+            self._cached_repr = "recursive(%r, %s, max_leaves=%d)" % (
+                self.base,
+                get_pretty_function_description(self.extend),
+                self.max_leaves,
             )
         return self._cached_repr
 
     def do_validate(self):
         if not isinstance(self.base, SearchStrategy):
             raise InvalidArgument(
-                'Expected base to be SearchStrategy but got %r' % (self.base,)
+                "Expected base to be SearchStrategy but got %r" % (self.base,)
             )
         extended = self.extend(self.limited_base)
         if not isinstance(extended, SearchStrategy):
             raise InvalidArgument(
-                'Expected extend(%r) to be a SearchStrategy but got %r' % (
-                    self.limited_base, extended
-                ))
+                "Expected extend(%r) to be a SearchStrategy but got %r"
+                % (self.limited_base, extended)
+            )
         self.limited_base.validate()
         self.extend(self.limited_base).validate()
 
@@ -103,7 +100,10 @@ class RecursiveStrategy(SearchStrategy):
                     return data.draw(self.strategy)
             except LimitReached:
                 if count == 0:
-                    data.note_event(lazyformat(
-                        'Draw for %r exceeded max_leaves '
-                        'and had to be retried', self,))
+                    data.note_event(
+                        lazyformat(
+                            "Draw for %r exceeded max_leaves " "and had to be retried",
+                            self,
+                        )
+                    )
                 count += 1

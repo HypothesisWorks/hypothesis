@@ -15,17 +15,17 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from random import Random
 from decimal import Decimal
+from random import Random
 
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import find, given, example, settings
-from hypothesis.errors import NoExamples
+from hypothesis import example, find, given, settings
 from hypothesis.control import _current_build_context
+from hypothesis.errors import NoExamples
 from tests.common.utils import checks_deprecated_behaviour
 
 
@@ -33,8 +33,9 @@ from tests.common.utils import checks_deprecated_behaviour
 @given(st.integers())
 def test_deterministic_examples_are_deterministic(seed):
     with _current_build_context.with_value(None):
-        assert st.lists(st.integers()).example(Random(seed)) == \
-            st.lists(st.integers()).example(Random(seed))
+        assert st.lists(st.integers()).example(Random(seed)) == st.lists(
+            st.integers()
+        ).example(Random(seed))
 
 
 def test_example_of_none_is_none():
@@ -42,16 +43,12 @@ def test_example_of_none_is_none():
 
 
 def test_exception_in_compare_can_still_have_example():
-    st.one_of(
-        st.none().map(lambda n: Decimal('snan')),
-        st.just(Decimal(0))).example()
+    st.one_of(st.none().map(lambda n: Decimal("snan")), st.just(Decimal(0))).example()
 
 
 def test_does_not_always_give_the_same_example():
     s = st.integers()
-    assert len(set(
-        s.example() for _ in range(100)
-    )) >= 10
+    assert len(set(s.example() for _ in range(100))) >= 10
 
 
 def test_raises_on_no_examples():

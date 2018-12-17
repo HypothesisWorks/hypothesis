@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from itertools import islice
 
@@ -23,9 +23,9 @@ import pytest
 
 from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
-from tests.common.utils import checks_deprecated_behaviour
-from hypothesis.strategies import text, lists, booleans, streaming
 from hypothesis.searchstrategy.streams import Stream
+from hypothesis.strategies import booleans, lists, streaming, text
+from tests.common.utils import checks_deprecated_behaviour
 
 
 @given(lists(booleans()))
@@ -55,8 +55,9 @@ def test_can_stream_infinite():
 def test_fetched_repr_is_in_stream_repr():
     @given(streaming(text()))
     def test(s):
-        assert repr(s) == u'Stream(...)'
+        assert repr(s) == u"Stream(...)"
         assert repr(next(iter(s))) in repr(s)
+
     test()
 
 
@@ -81,7 +82,7 @@ def test_thunking_map_evaluates_source():
 
 def test_wrong_index_raises_type_error():
     with pytest.raises(InvalidArgument):
-        Stream([])[u'kittens']
+        Stream([])[u"kittens"]
 
 
 def test_can_index_into_unindexed():

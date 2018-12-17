@@ -17,10 +17,10 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import sys
 import hashlib
+import sys
 
-if __name__ == '__main__':
-    print(hashlib.sha1(sys.stdin.read().encode('utf-8')).hexdigest()[:10])
+if __name__ == "__main__":
+    print(hashlib.sha1(sys.stdin.read().encode("utf-8")).hexdigest()[:10])

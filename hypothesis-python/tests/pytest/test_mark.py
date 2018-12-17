@@ -15,9 +15,9 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-pytest_plugins = str('pytester')
+pytest_plugins = str("pytester")
 
 
 TESTSUITE = """
@@ -35,10 +35,9 @@ def test_bar():
 
 def test_can_select_mark(testdir):
     script = testdir.makepyfile(TESTSUITE)
-    result = testdir.runpytest(script, '--verbose', '--strict', '-m',
-                               'hypothesis')
-    out = '\n'.join(result.stdout.lines)
-    assert '1 passed, 1 deselected' in out
+    result = testdir.runpytest(script, "--verbose", "--strict", "-m", "hypothesis")
+    out = "\n".join(result.stdout.lines)
+    assert "1 passed, 1 deselected" in out
 
 
 UNITTEST_TESTSUITE = """
@@ -58,7 +57,6 @@ class TestStuff(TestCase):
 
 def test_can_select_mark_on_unittest(testdir):
     script = testdir.makepyfile(UNITTEST_TESTSUITE)
-    result = testdir.runpytest(script, '--verbose', '--strict', '-m',
-                               'hypothesis')
-    out = '\n'.join(result.stdout.lines)
-    assert '1 passed, 1 deselected' in out
+    result = testdir.runpytest(script, "--verbose", "--strict", "-m", "hypothesis")
+    out = "\n".join(result.stdout.lines)
+    assert "1 passed, 1 deselected" in out

@@ -15,10 +15,10 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from random import Random
 from collections import Counter
+from random import Random
 
 from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.shrinking import Lexical
@@ -26,33 +26,32 @@ from hypothesis.internal.conjecture.shrinking import Lexical
 
 def test_shrink_to_zero():
     assert Lexical.shrink(
-        hbytes([255] * 8), lambda x: True, random=Random(0)) == hbytes(8)
+        hbytes([255] * 8), lambda x: True, random=Random(0)
+    ) == hbytes(8)
 
 
 def test_shrink_to_smallest():
     assert Lexical.shrink(
-        hbytes([255] * 8), lambda x: sum(x) > 10, random=Random(0),
+        hbytes([255] * 8), lambda x: sum(x) > 10, random=Random(0)
     ) == hbytes([0] * 7 + [11])
 
 
 def test_float_hack_fails():
     assert Lexical.shrink(
-        hbytes([255] * 8), lambda x: x[0] >> 7, random=Random(0),
+        hbytes([255] * 8), lambda x: x[0] >> 7, random=Random(0)
     ) == hbytes([128] + [0] * 7)
 
 
 def test_can_sort_bytes_by_reordering():
     start = hbytes([5, 4, 3, 2, 1, 0])
-    finish = Lexical.shrink(
-        start, lambda x: set(x) == set(start), random=Random(0))
+    finish = Lexical.shrink(start, lambda x: set(x) == set(start), random=Random(0))
     assert finish == hbytes([0, 1, 2, 3, 4, 5])
 
 
 def test_can_sort_bytes_by_reordering_partially():
     start = hbytes([5, 4, 3, 2, 1, 0])
     finish = Lexical.shrink(
-        start, lambda x: set(x) == set(start) and x[0] > x[-1],
-        random=Random(0),
+        start, lambda x: set(x) == set(start) and x[0] > x[-1], random=Random(0)
     )
     assert finish == hbytes([1, 2, 3, 4, 5, 0])
 
@@ -60,8 +59,10 @@ def test_can_sort_bytes_by_reordering_partially():
 def test_can_sort_bytes_by_reordering_partially2():
     start = hbytes([5, 4, 3, 2, 1, 0])
     finish = Lexical.shrink(
-        start, lambda x: Counter(x) == Counter(start) and x[0] > x[2],
-        random=Random(0), full=True,
+        start,
+        lambda x: Counter(x) == Counter(start) and x[0] > x[2],
+        random=Random(0),
+        full=True,
     )
     assert finish <= hbytes([1, 2, 0, 3, 4, 5])
 
@@ -69,7 +70,6 @@ def test_can_sort_bytes_by_reordering_partially2():
 def test_can_sort_bytes_by_reordering_partially_not_cross_stationary_element():
     start = hbytes([5, 3, 0, 2, 1, 4])
     finish = Lexical.shrink(
-        start, lambda x: set(x) == set(start) and x[3] == 2,
-        random=Random(0),
+        start, lambda x: set(x) == set(start) and x[3] == 2, random=Random(0)
     )
     assert finish <= hbytes([0, 3, 5, 2, 1, 4])

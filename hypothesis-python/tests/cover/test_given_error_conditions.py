@@ -15,14 +15,14 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis import given, infer, assume, reject
-from hypothesis.errors import Unsatisfiable, InvalidArgument
-from tests.common.utils import fails_with, validate_deprecation
+from hypothesis import assume, given, infer, reject
+from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.strategies import booleans, integers
+from tests.common.utils import fails_with, validate_deprecation
 
 
 def test_raises_unsatisfiable_if_all_false_in_finite_set():
@@ -46,6 +46,7 @@ def test_error_if_has_no_hints():
     @given(a=infer)
     def inner(a):
         pass
+
     with pytest.raises(InvalidArgument):
         inner()
 
@@ -54,6 +55,7 @@ def test_error_if_infer_is_posarg():
     @given(infer)
     def inner(ex):
         pass
+
     with pytest.raises(InvalidArgument):
         inner()
 
@@ -63,6 +65,7 @@ def test_given_twice_deprecated():
     @given(integers())
     def inner(a, b):
         pass
+
     with validate_deprecation():
         inner()
 
@@ -70,7 +73,6 @@ def test_given_twice_deprecated():
 @fails_with(InvalidArgument)
 def test_given_is_not_a_class_decorator():
     @given(integers())
-    class test_given_is_not_a_class_decorator():
-
+    class test_given_is_not_a_class_decorator:
         def __init__(self, i):
             pass

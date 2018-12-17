@@ -15,47 +15,57 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict
 
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
-    UnsatisfiedAssumption
-from hypothesis.control import assume, _current_build_context
 from hypothesis._settings import Phase, note_deprecation
-from hypothesis.internal.compat import hrange, bit_length
+from hypothesis.control import _current_build_context, assume
+from hypothesis.errors import (
+    NoExamples,
+    NoSuchExample,
+    Unsatisfiable,
+    UnsatisfiedAssumption,
+)
+from hypothesis.internal.compat import bit_length, hrange
+from hypothesis.internal.conjecture.utils import (
+    LABEL_MASK,
+    calc_label_from_cls,
+    calc_label_from_name,
+    combine_labels,
+)
 from hypothesis.internal.coverage import check_function
-from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type
-from hypothesis.internal.conjecture.utils import LABEL_MASK, \
-    combine_labels, calc_label_from_cls, calc_label_from_name
+from hypothesis.utils.conventions import UniqueIdentifier
 
 try:
     from random import Random  # noqa
     from typing import List, Callable, TypeVar, Generic, Optional  # noqa
-    Ex = TypeVar('Ex', covariant=True)
-    T = TypeVar('T')
+
+    Ex = TypeVar("Ex", covariant=True)
+    T = TypeVar("T")
 
     from hypothesis.internal.conjecture.data import ConjectureData  # noqa
 
 except ImportError:  # pragma: no cover
-    Ex = 'key'  # type: ignore
+    Ex = "key"  # type: ignore
     Generic = {Ex: object}  # type: ignore
 
-calculating = UniqueIdentifier('calculating')
+calculating = UniqueIdentifier("calculating")
 
 MAPPED_SEARCH_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
-    'another attempted draw in MappedSearchStrategy')
+    "another attempted draw in MappedSearchStrategy"
+)
 
 
 def one_of_strategies(xs):
     """Helper function for unioning multiple strategies."""
     xs = tuple(xs)
     if not xs:
-        raise ValueError('Cannot join an empty list of strategies')
+        raise ValueError("Cannot join an empty list of strategies")
     return OneOfStrategy(xs)
 
 
@@ -99,9 +109,9 @@ class SearchStrategy(Generic[Ex]):
         and performance of parsing with derivatives." ACM SIGPLAN Notices 51.6
         (2016): 224-236.
         """
-        cache_key = 'cached_' + name
-        calculation = 'calc_' + name
-        force_key = 'force_' + name
+        cache_key = "cached_" + name
+        calculation = "calc_" + name
+        force_key = "force_" + name
 
         def forced_value(target):
             try:
@@ -172,6 +182,7 @@ class SearchStrategy(Generic[Ex]):
                         needs_update.add(other)
                         mapping[other] = default
                         return default
+
                 return recur_inner
 
             count = 0
@@ -217,14 +228,14 @@ class SearchStrategy(Generic[Ex]):
     # The fact that this returns False does not guarantee that a valid value
     # can be drawn - this is not intended to be perfect, and is primarily
     # intended to be an optimisation for some cases.
-    is_empty = recursive_property('is_empty', True)
+    is_empty = recursive_property("is_empty", True)
 
     # Returns True if values from this strategy can safely be reused without
     # this causing unexpected behaviour.
-    has_reusable_values = recursive_property('has_reusable_values', True)
+    has_reusable_values = recursive_property("has_reusable_values", True)
 
     # Whether this strategy is suitable for holding onto in a cache.
-    is_cacheable = recursive_property('is_cacheable', True)
+    is_cacheable = recursive_property("is_cacheable", True)
 
     def calc_is_cacheable(self, recur):
         return True
@@ -256,28 +267,28 @@ class SearchStrategy(Generic[Ex]):
         if context is not None:
             if context.data is not None and context.data.depth > 0:
                 note_deprecation(
-                    'Using example() inside a strategy definition is a bad '
-                    'idea. It will become an error in a future version of '
+                    "Using example() inside a strategy definition is a bad "
+                    "idea. It will become an error in a future version of "
                     "Hypothesis, but it's unlikely that it's doing what you "
-                    'intend even now. Instead consider using '
-                    'hypothesis.strategies.builds() or '
-                    '@hypothesis.strategies.composite to define your strategy.'
-                    ' See '
-                    'https://hypothesis.readthedocs.io/en/latest/data.html'
-                    '#hypothesis.strategies.builds or '
-                    'https://hypothesis.readthedocs.io/en/latest/data.html'
-                    '#composite-strategies for more details.'
+                    "intend even now. Instead consider using "
+                    "hypothesis.strategies.builds() or "
+                    "@hypothesis.strategies.composite to define your strategy."
+                    " See "
+                    "https://hypothesis.readthedocs.io/en/latest/data.html"
+                    "#hypothesis.strategies.builds or "
+                    "https://hypothesis.readthedocs.io/en/latest/data.html"
+                    "#composite-strategies for more details."
                 )
             else:
                 note_deprecation(
-                    'Using example() inside a test function is a bad '
-                    'idea. It will become an error in a future version of '
+                    "Using example() inside a test function is a bad "
+                    "idea. It will become an error in a future version of "
                     "Hypothesis, but it's unlikely that it's doing what you "
-                    'intend even now. Instead consider using '
-                    'hypothesis.strategies.data() to draw '
-                    'more examples during testing. See '
-                    'https://hypothesis.readthedocs.io/en/latest/data.html'
-                    '#drawing-interactively-in-tests for more details.'
+                    "intend even now. Instead consider using "
+                    "hypothesis.strategies.data() to draw "
+                    "more examples during testing. See "
+                    "https://hypothesis.readthedocs.io/en/latest/data.html"
+                    "#drawing-interactively-in-tests for more details."
                 )
 
         from hypothesis import find, settings, Verbosity
@@ -293,6 +304,7 @@ class SearchStrategy(Generic[Ex]):
             else:
                 first.append(x)
                 return False
+
         try:
             return find(
                 self,
@@ -302,16 +314,14 @@ class SearchStrategy(Generic[Ex]):
                     database=None,
                     verbosity=Verbosity.quiet,
                     phases=tuple(set(Phase) - {Phase.shrink}),
-                )
+                ),
             )
         except (NoSuchExample, Unsatisfiable):
             # This can happen when a strategy has only one example. e.g.
             # st.just(x). In that case we wanted the first example after all.
             if first:
                 return first[0]
-            raise NoExamples(
-                u'Could not find any valid examples in 100 tries'
-            )
+            raise NoExamples(u"Could not find any valid examples in 100 tries")
 
     def map(self, pack):
         # type: (Callable[[Ex], T]) -> SearchStrategy[T]
@@ -320,9 +330,7 @@ class SearchStrategy(Generic[Ex]):
 
         This method is part of the public API.
         """
-        return MappedSearchStrategy(
-            pack=pack, strategy=self
-        )
+        return MappedSearchStrategy(pack=pack, strategy=self)
 
     def flatmap(self, expand):
         # type: (Callable[[Ex], SearchStrategy[T]]) -> SearchStrategy[T]
@@ -333,9 +341,8 @@ class SearchStrategy(Generic[Ex]):
         This method is part of the public API.
         """
         from hypothesis.searchstrategy.flatmapped import FlatMapStrategy
-        return FlatMapStrategy(
-            expand=expand, strategy=self
-        )
+
+        return FlatMapStrategy(expand=expand, strategy=self)
 
     def filter(self, condition):
         # type: (Callable[[Ex], bool]) -> SearchStrategy[Ex]
@@ -346,10 +353,7 @@ class SearchStrategy(Generic[Ex]):
 
         This method is part of the public API.
         """
-        return FilteredStrategy(
-            condition=condition,
-            strategy=self,
-        )
+        return FilteredStrategy(condition=condition, strategy=self)
 
     @property
     def branches(self):
@@ -363,7 +367,7 @@ class SearchStrategy(Generic[Ex]):
         This method is part of the public API.
         """
         if not isinstance(other, SearchStrategy):
-            raise ValueError('Cannot | a SearchStrategy with %r' % (other,))
+            raise ValueError("Cannot | a SearchStrategy with %r" % (other,))
         return one_of_strategies((self, other))
 
     def validate(self):
@@ -413,7 +417,7 @@ class SearchStrategy(Generic[Ex]):
 
     def do_draw(self, data):
         # type: (ConjectureData) -> Ex
-        raise NotImplementedError('%s.do_draw' % (type(self).__name__,))
+        raise NotImplementedError("%s.do_draw" % (type(self).__name__,))
 
     def __init__(self):
         pass
@@ -442,9 +446,9 @@ class OneOfStrategy(SearchStrategy):
         if self.__sampler is None:
             assert self.bias is not None
             assert 0 < self.bias < 1
-            self.__sampler = cu.Sampler([
-                self.bias ** i for i in range(len(self.element_strategies))
-            ])
+            self.__sampler = cu.Sampler(
+                [self.bias ** i for i in range(len(self.element_strategies))]
+            )
         return self.__sampler
 
     def calc_is_empty(self, recur):
@@ -463,8 +467,7 @@ class OneOfStrategy(SearchStrategy):
             for arg in self.original_strategies:
                 check_strategy(arg)
                 if not arg.is_empty:
-                    strategies.extend(
-                        [s for s in arg.branches if not s.is_empty])
+                    strategies.extend([s for s in arg.branches if not s.is_empty])
             pruned = []
             seen = set()
             for s in strategies:
@@ -478,7 +481,8 @@ class OneOfStrategy(SearchStrategy):
             shift = bit_length(len(pruned))
             for i, p in enumerate(pruned):
                 branch_labels.append(
-                    (((self.label ^ p.label) << shift) + i) & LABEL_MASK)
+                    (((self.label ^ p.label) << shift) + i) & LABEL_MASK
+                )
             self.__element_strategies = pruned
             self.__branch_labels = tuple(branch_labels)
         return self.__element_strategies
@@ -490,9 +494,9 @@ class OneOfStrategy(SearchStrategy):
         return self.__branch_labels
 
     def calc_label(self):
-        return combine_labels(self.class_label, *[
-            p.label for p in self.original_strategies
-        ])
+        return combine_labels(
+            self.class_label, *[p.label for p in self.original_strategies]
+        )
 
     def do_draw(self, data):
         # type: (ConjectureData) -> Ex
@@ -507,11 +511,10 @@ class OneOfStrategy(SearchStrategy):
             i = self.sampler.sample(data)
             assert 0 <= i < n
 
-        return data.draw(
-            self.element_strategies[i], label=self.branch_labels[i])
+        return data.draw(self.element_strategies[i], label=self.branch_labels[i])
 
     def __repr__(self):
-        return 'one_of(%s)' % ', '.join(map(repr, self.original_strategies))
+        return "one_of(%s)" % ", ".join(map(repr, self.original_strategies))
 
     def do_validate(self):
         for e in self.element_strategies:
@@ -549,10 +552,10 @@ class MappedSearchStrategy(SearchStrategy):
         return recur(self.mapped_strategy)
 
     def __repr__(self):
-        if not hasattr(self, '_cached_repr'):
-            self._cached_repr = '%r.map(%s)' % (
-                self.mapped_strategy, get_pretty_function_description(
-                    self.pack)
+        if not hasattr(self, "_cached_repr"):
+            self._cached_repr = "%r.map(%s)" % (
+                self.mapped_strategy,
+                get_pretty_function_description(self.pack),
             )
         return self._cached_repr
 
@@ -562,8 +565,7 @@ class MappedSearchStrategy(SearchStrategy):
     def pack(self, x):  # type: ignore
         """Take a value produced by the underlying mapped_strategy and turn it
         into a value suitable for outputting from this strategy."""
-        raise NotImplementedError(
-            '%s.pack()' % (self.__class__.__name__))
+        raise NotImplementedError("%s.pack()" % (self.__class__.__name__))
 
     def do_draw(self, data):
         # type: (ConjectureData) -> Ex
@@ -590,7 +592,6 @@ class MappedSearchStrategy(SearchStrategy):
 
 
 class FilteredStrategy(SearchStrategy):
-
     def __init__(self, strategy, condition):
         super(FilteredStrategy, self).__init__()
         self.condition = condition
@@ -603,10 +604,10 @@ class FilteredStrategy(SearchStrategy):
         return recur(self.filtered_strategy)
 
     def __repr__(self):
-        if not hasattr(self, '_cached_repr'):
-            self._cached_repr = '%r.filter(%s)' % (
-                self.filtered_strategy, get_pretty_function_description(
-                    self.condition)
+        if not hasattr(self, "_cached_repr"):
+            self._cached_repr = "%r.filter(%s)" % (
+                self.filtered_strategy,
+                get_pretty_function_description(self.condition),
             )
         return self._cached_repr
 
@@ -622,17 +623,16 @@ class FilteredStrategy(SearchStrategy):
                 return value
             else:
                 if i == 0:
-                    data.note_event(lazyformat(
-                        'Retried draw from %r to satisfy filter', self,))
+                    data.note_event(
+                        lazyformat("Retried draw from %r to satisfy filter", self)
+                    )
                 # This is to guard against the case where we consume no data.
                 # As long as we consume data, we'll eventually pass or raise.
                 # But if we don't this could be an infinite loop.
                 assume(data.index > start_index)
-        data.note_event('Aborted test because unable to satisfy %r' % (
-            self,
-        ))
+        data.note_event("Aborted test because unable to satisfy %r" % (self,))
         data.mark_invalid()
-        raise AssertionError('Unreachable, for Mypy')  # pragma: no cover
+        raise AssertionError("Unreachable, for Mypy")  # pragma: no cover
 
     @property
     def branches(self):
@@ -644,5 +644,5 @@ class FilteredStrategy(SearchStrategy):
 
 
 @check_function
-def check_strategy(arg, name=''):
+def check_strategy(arg, name=""):
     check_type(SearchStrategy, arg, name)

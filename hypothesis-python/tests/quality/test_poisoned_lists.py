@@ -15,21 +15,24 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from random import Random
 
 import pytest
 
-import hypothesis.strategies as st
 import hypothesis.internal.conjecture.utils as cu
+import hypothesis.strategies as st
 from hypothesis import settings, unlimited
-from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import ceil, hrange
-from hypothesis.internal.conjecture.engine import ConjectureData, \
-    ConjectureRunner, uniform
+from hypothesis.internal.conjecture.engine import (
+    ConjectureData,
+    ConjectureRunner,
+    uniform,
+)
+from hypothesis.searchstrategy import SearchStrategy
 
-POISON = 'POISON'
+POISON = "POISON"
 
 
 class Poisoned(SearchStrategy):
@@ -52,10 +55,7 @@ class LinearLists(SearchStrategy):
         self.__elements = elements
 
     def do_draw(self, data):
-        return [
-            data.draw(self.__elements)
-            for _ in hrange(data.draw(self.__length))
-        ]
+        return [data.draw(self.__elements) for _ in hrange(data.draw(self.__length))]
 
 
 class Matrices(SearchStrategy):
@@ -68,9 +68,7 @@ class Matrices(SearchStrategy):
         n = data.draw(self.__length)
         m = data.draw(self.__length)
 
-        return [
-            data.draw(self.__elements) for _ in hrange(n * m)
-        ]
+        return [data.draw(self.__elements) for _ in hrange(n * m)]
 
 
 class TrialRunner(ConjectureRunner):
@@ -79,27 +77,25 @@ class TrialRunner(ConjectureRunner):
             return uniform(self.random, n)
 
         while not self.interesting_examples:
-            self.test_function(ConjectureData(
-                draw_bytes=draw_bytes, max_length=self.settings.buffer_size))
+            self.test_function(
+                ConjectureData(
+                    draw_bytes=draw_bytes, max_length=self.settings.buffer_size
+                )
+            )
 
 
 LOTS = 10 ** 6
 
-TRIAL_SETTINGS = settings(
-    max_examples=LOTS, timeout=unlimited, database=None
+TRIAL_SETTINGS = settings(max_examples=LOTS, timeout=unlimited, database=None)
+
+
+@pytest.mark.parametrize(
+    "seed", [2282791295271755424, 1284235381287210546, 14202812238092722246, 26097]
 )
-
-
-@pytest.mark.parametrize('seed', [
-    2282791295271755424, 1284235381287210546, 14202812238092722246,
-    26097,
-])
-@pytest.mark.parametrize('size', [5, 10, 20])
-@pytest.mark.parametrize('p', [0.01, 0.1])
-@pytest.mark.parametrize('strategy_class', [LinearLists, Matrices])
-def test_minimal_poisoned_containers(
-    seed, size, p, strategy_class, monkeypatch
-):
+@pytest.mark.parametrize("size", [5, 10, 20])
+@pytest.mark.parametrize("p", [0.01, 0.1])
+@pytest.mark.parametrize("strategy_class", [LinearLists, Matrices])
+def test_minimal_poisoned_containers(seed, size, p, strategy_class, monkeypatch):
     elements = Poisoned(p)
     strategy = strategy_class(elements, size)
 
@@ -109,8 +105,7 @@ def test_minimal_poisoned_containers(
         if POISON in v:
             data.mark_interesting()
 
-    runner = TrialRunner(
-        test_function, random=Random(seed), settings=TRIAL_SETTINGS)
+    runner = TrialRunner(test_function, random=Random(seed), settings=TRIAL_SETTINGS)
     runner.run()
     v, = runner.interesting_examples.values()
     result = ConjectureData.for_buffer(v.buffer).draw(strategy)

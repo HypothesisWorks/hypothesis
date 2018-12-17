@@ -15,17 +15,14 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import subprocess
 
 import hypothesistooling as tools
 import hypothesistooling.installers as install
 
-SCRIPTS = [
-    f for f in tools.all_files()
-    if f.endswith('.sh')
-]
+SCRIPTS = [f for f in tools.all_files() if f.endswith(".sh")]
 
 
 def test_all_shell_scripts_are_valid():

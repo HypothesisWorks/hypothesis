@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import sys
 from random import Random
@@ -23,13 +23,11 @@ from random import Random
 import pytest
 
 import hypothesis.internal.conjecture.floats as flt
-from hypothesis import given, assume, example
-from hypothesis import strategies as st
-from hypothesis.internal.compat import ceil, floor, hbytes, int_to_bytes, \
-    int_from_bytes
-from hypothesis.internal.floats import float_to_int
+from hypothesis import assume, example, given, strategies as st
+from hypothesis.internal.compat import ceil, floor, hbytes, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.shrinking import Lexical
+from hypothesis.internal.floats import float_to_int
 
 EXPONENTS = list(range(0, flt.MAX_EXPONENT + 1))
 assert len(EXPONENTS) == 2 ** 11
@@ -110,9 +108,7 @@ def test_floats_round_trip(f):
 
 
 @example(1, 0.5)
-@given(
-    st.integers(1, 2 ** 53), st.floats(0, 1).filter(lambda x: x not in (0, 1))
-)
+@given(st.integers(1, 2 ** 53), st.floats(0, 1).filter(lambda x: x not in (0, 1)))
 def test_floats_order_worse_than_their_integral_part(n, g):
     f = n + g
     assume(int(f) != f)
@@ -126,9 +122,9 @@ def test_floats_order_worse_than_their_integral_part(n, g):
     assert flt.float_to_lex(float(g)) < i
 
 
-integral_floats = st.floats(
-    allow_infinity=False, allow_nan=False, min_value=0.0
-).map(lambda x: abs(float(int(x))))
+integral_floats = st.floats(allow_infinity=False, allow_nan=False, min_value=0.0).map(
+    lambda x: abs(float(int(x)))
+)
 
 
 @given(integral_floats, integral_floats)
@@ -168,33 +164,31 @@ def minimal_from(start, condition):
         return flt.lex_to_float(int_from_bytes(b))
 
     shrunk = Lexical.shrink(
-        buf, lambda b: condition(parse_buf(b)),
-        full=True, random=Random(0)
+        buf, lambda b: condition(parse_buf(b)), full=True, random=Random(0)
     )
     return parse_buf(shrunk)
 
 
-INTERESTING_FLOATS = [
-    0.0, 1.0, 2.0, sys.float_info.max, float('inf'), float('nan')
-]
+INTERESTING_FLOATS = [0.0, 1.0, 2.0, sys.float_info.max, float("inf"), float("nan")]
 
 
-@pytest.mark.parametrize(('start', 'end'), [
-    (a, b)
-    for a in INTERESTING_FLOATS
-    for b in INTERESTING_FLOATS
-    if flt.float_to_lex(a) > flt.float_to_lex(b)
-])
+@pytest.mark.parametrize(
+    ("start", "end"),
+    [
+        (a, b)
+        for a in INTERESTING_FLOATS
+        for b in INTERESTING_FLOATS
+        if flt.float_to_lex(a) > flt.float_to_lex(b)
+    ],
+)
 def test_can_shrink_downwards(start, end):
     assert minimal_from(start, lambda x: not (x < end)) == end
 
 
 @pytest.mark.parametrize(
-    'f', [1, 2, 4, 8, 10, 16, 32, 64, 100, 128, 256, 500, 512, 1000, 1024]
+    "f", [1, 2, 4, 8, 10, 16, 32, 64, 100, 128, 256, 500, 512, 1000, 1024]
 )
-@pytest.mark.parametrize(
-    'mul', [1.1, 1.5, 9.99, 10]
-)
+@pytest.mark.parametrize("mul", [1.1, 1.5, 9.99, 10])
 def test_shrinks_downwards_to_integers(f, mul):
     g = minimal_from(f * mul, lambda x: x >= f)
     assert g == f
@@ -223,7 +217,7 @@ def test_does_not_shrink_across_one():
     assert minimal_from(1.1, lambda x: x == 1.1 or 0 < x < 1) == 1.1
 
 
-@pytest.mark.parametrize('f', [2.0, 10000000.0])
+@pytest.mark.parametrize("f", [2.0, 10000000.0])
 def test_converts_floats_to_integer_form(f):
     assert flt.is_simple(f)
 
@@ -233,7 +227,6 @@ def test_converts_floats_to_integer_form(f):
         return flt.lex_to_float(int_from_bytes(b))
 
     shrunk = Lexical.shrink(
-        buf, lambda b: parse_buf(b) == f,
-        full=True, random=Random(0)
+        buf, lambda b: parse_buf(b) == f, full=True, random=Random(0)
     )
     assert shrunk < buf

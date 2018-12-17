@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 
@@ -41,20 +41,18 @@ def test_defaults_to_the_default():
 
 
 def test_can_set_homedir_and_it_will_exist(tmpdir):
-    fs.set_hypothesis_home_dir(str(tmpdir.mkdir(u'kittens')))
+    fs.set_hypothesis_home_dir(str(tmpdir.mkdir(u"kittens")))
     d = fs.hypothesis_home_dir()
-    assert u'kittens' in d
+    assert u"kittens" in d
     assert os.path.exists(d)
 
 
 def test_will_pick_up_location_from_env(monkeypatch, tmpdir):
     tmpdir = str(tmpdir)
-    monkeypatch.setattr(os, 'environ', {
-        'HYPOTHESIS_STORAGE_DIRECTORY': tmpdir
-    })
+    monkeypatch.setattr(os, "environ", {"HYPOTHESIS_STORAGE_DIRECTORY": tmpdir})
     assert fs.hypothesis_home_dir() == tmpdir
 
 
 def test_storage_directories_are_created_automatically(tmpdir):
     fs.set_hypothesis_home_dir(str(tmpdir))
-    assert os.path.exists(fs.storage_directory(u'badgers'))
+    assert os.path.exists(fs.storage_directory(u"badgers"))

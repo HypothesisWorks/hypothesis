@@ -23,102 +23,112 @@ import subprocess
 
 
 def current_branch():
-    return subprocess.check_output([
-        'git', 'rev-parse', '--abbrev-ref', 'HEAD'
-    ]).decode('ascii').strip()
+    return (
+        subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+        .decode("ascii")
+        .strip()
+    )
 
 
 def tags():
-    result = [t.decode('ascii') for t in subprocess.check_output([
-        'git', 'tag'
-    ]).split(b'\n')]
+    result = [
+        t.decode("ascii") for t in subprocess.check_output(["git", "tag"]).split(b"\n")
+    ]
     assert len(set(result)) == len(result)
     return set(result)
 
 
-ROOT = subprocess.check_output([
-    'git', '-C', os.path.dirname(__file__), 'rev-parse', '--show-toplevel',
-]).decode('ascii').strip()
+ROOT = (
+    subprocess.check_output(
+        ["git", "-C", os.path.dirname(__file__), "rev-parse", "--show-toplevel"]
+    )
+    .decode("ascii")
+    .strip()
+)
 
 
-REPO_TESTS = os.path.join(ROOT, 'whole-repo-tests')
+REPO_TESTS = os.path.join(ROOT, "whole-repo-tests")
 
-PYUP_FILE = os.path.join(ROOT, '.pyup.yml')
+PYUP_FILE = os.path.join(ROOT, ".pyup.yml")
 
 
 def hash_for_name(name):
-    return subprocess.check_output([
-        'git', 'rev-parse', name
-    ]).decode('ascii').strip()
+    return subprocess.check_output(["git", "rev-parse", name]).decode("ascii").strip()
 
 
 def is_ancestor(a, b):
-    check = subprocess.call([
-        'git', 'merge-base', '--is-ancestor', a, b
-    ])
+    check = subprocess.call(["git", "merge-base", "--is-ancestor", a, b])
     assert 0 <= check <= 1
     return check == 0
 
 
 def merge_base(a, b):
-    return subprocess.check_output([
-        'git', 'merge-base', a, b,
-    ]).strip()
+    return subprocess.check_output(["git", "merge-base", a, b]).strip()
 
 
 def point_of_divergence():
-    return merge_base('HEAD', 'origin/master')
+    return merge_base("HEAD", "origin/master")
 
 
 def has_changes(files):
-    return subprocess.call([
-        'git', 'diff', '--no-patch', '--exit-code', point_of_divergence(),
-        'HEAD', '--', *files,
-    ]) != 0
+    return (
+        subprocess.call(
+            [
+                "git",
+                "diff",
+                "--no-patch",
+                "--exit-code",
+                point_of_divergence(),
+                "HEAD",
+                "--",
+                *files,
+            ]
+        )
+        != 0
+    )
 
 
 def has_uncommitted_changes(filename):
-    return subprocess.call([
-        'git', 'diff', '--exit-code', filename
-    ]) != 0
+    return subprocess.call(["git", "diff", "--exit-code", filename]) != 0
 
 
 def git(*args):
-    subprocess.check_call(('git',) + args)
+    subprocess.check_call(("git",) + args)
 
 
 def configure_git():
-    git('config', 'user.name', 'Travis CI on behalf of David R. MacIver')
-    git('config', 'user.email', 'david@drmaciver.com')
-    git('config', 'core.sshCommand', 'ssh -i deploy_key')
-    git(
-        'remote', 'add', 'ssh-origin',
-        'git@github.com:HypothesisWorks/hypothesis.git'
-    )
+    git("config", "user.name", "Travis CI on behalf of David R. MacIver")
+    git("config", "user.email", "david@drmaciver.com")
+    git("config", "core.sshCommand", "ssh -i deploy_key")
+    git("remote", "add", "ssh-origin", "git@github.com:HypothesisWorks/hypothesis.git")
 
 
 def create_tag(tagname):
     assert tagname not in tags()
-    git('tag', tagname)
+    git("tag", tagname)
 
 
 def push_tag(tagname):
     assert_can_release()
-    subprocess.check_call([
-        'ssh-agent', 'sh', '-c',
-        'ssh-add %s && ' % (shlex.quote(DEPLOY_KEY),) +
-        'git push ssh-origin HEAD:master &&' +
-        'git push ssh-origin %s' % (shlex.quote(tagname),)
-    ])
+    subprocess.check_call(
+        [
+            "ssh-agent",
+            "sh",
+            "-c",
+            "ssh-add %s && " % (shlex.quote(DEPLOY_KEY),)
+            + "git push ssh-origin HEAD:master &&"
+            + "git push ssh-origin %s" % (shlex.quote(tagname),),
+        ]
+    )
 
 
 def assert_can_release():
-    assert not IS_PULL_REQUEST, 'Cannot release from pull requests'
-    assert has_travis_secrets(), 'Cannot release without travis secure vars'
+    assert not IS_PULL_REQUEST, "Cannot release from pull requests"
+    assert has_travis_secrets(), "Cannot release without travis secure vars"
 
 
 def has_travis_secrets():
-    return os.environ.get('TRAVIS_SECURE_ENV_VARS', None) == 'true'
+    return os.environ.get("TRAVIS_SECURE_ENV_VARS", None) == "true"
 
 
 def build_jobs():
@@ -131,20 +141,20 @@ def build_jobs():
     """
     import requests
 
-    build_id = os.environ['TRAVIS_BUILD_ID']
+    build_id = os.environ["TRAVIS_BUILD_ID"]
 
-    url = 'https://api.travis-ci.org/builds/%s' % (build_id,)
-    data = requests.get(url, headers={
-        'Accept': 'application/vnd.travis-ci.2+json'
-    }).json()
+    url = "https://api.travis-ci.org/builds/%s" % (build_id,)
+    data = requests.get(
+        url, headers={"Accept": "application/vnd.travis-ci.2+json"}
+    ).json()
 
-    matrix = data['jobs']
+    matrix = data["jobs"]
 
     jobs = {}
 
     for m in matrix:
-        name = m['config']['env'].replace('TASK=', '')
-        status = m['state']
+        name = m["config"]["env"].replace("TASK=", "")
+        status = m["state"]
         jobs.setdefault(status, []).append(name)
     return jobs
 
@@ -152,12 +162,18 @@ def build_jobs():
 def modified_files():
     files = set()
     for command in [
-        ['git', 'diff', '--name-only', '--diff-filter=d',
-            point_of_divergence(), 'HEAD'],
-        ['git', 'diff', '--name-only']
+        [
+            "git",
+            "diff",
+            "--name-only",
+            "--diff-filter=d",
+            point_of_divergence(),
+            "HEAD",
+        ],
+        ["git", "diff", "--name-only"],
     ]:
-        diff_output = subprocess.check_output(command).decode('ascii')
-        for l in diff_output.split('\n'):
+        diff_output = subprocess.check_output(command).decode("ascii")
+        for l in diff_output.split("\n"):
             filepath = l.strip()
             if filepath:
                 assert os.path.exists(filepath), filepath
@@ -167,8 +183,10 @@ def modified_files():
 
 def all_files():
     return [
-        f for f in subprocess.check_output(
-            ['git', 'ls-files']).decode('ascii').splitlines()
+        f
+        for f in subprocess.check_output(["git", "ls-files"])
+        .decode("ascii")
+        .splitlines()
         if os.path.exists(f)
     ]
 
@@ -177,8 +195,8 @@ def changed_files_from_master():
     """Returns a list of files which have changed between a branch and
     master."""
     files = set()
-    command = ['git', 'diff', '--name-only', 'HEAD', 'master']
-    diff_output = subprocess.check_output(command).decode('ascii')
+    command = ["git", "diff", "--name-only", "HEAD", "master"]
+    diff_output = subprocess.check_output(command).decode("ascii")
     for line in diff_output.splitlines():
         filepath = line.strip()
         if filepath:
@@ -186,51 +204,52 @@ def changed_files_from_master():
     return files
 
 
-SECRETS_BASE = os.path.join(ROOT, 'secrets')
-SECRETS_TAR = SECRETS_BASE + '.tar'
-ENCRYPTED_SECRETS = SECRETS_TAR + '.enc'
+SECRETS_BASE = os.path.join(ROOT, "secrets")
+SECRETS_TAR = SECRETS_BASE + ".tar"
+ENCRYPTED_SECRETS = SECRETS_TAR + ".enc"
 
-SECRETS = os.path.join(ROOT, 'secrets')
+SECRETS = os.path.join(ROOT, "secrets")
 
-DEPLOY_KEY = os.path.join(SECRETS, 'deploy_key')
-PYPIRC = os.path.join(SECRETS, '.pypirc')
+DEPLOY_KEY = os.path.join(SECRETS, "deploy_key")
+PYPIRC = os.path.join(SECRETS, ".pypirc")
 
-RUBYGEMS_API_KEY = os.path.join(SECRETS, 'api_key.yaml')
-CARGO_API_KEY = os.path.join(SECRETS, 'cargo-credentials')
+RUBYGEMS_API_KEY = os.path.join(SECRETS, "api_key.yaml")
+CARGO_API_KEY = os.path.join(SECRETS, "cargo-credentials")
 
 
-SECRET_FILES = [
-    DEPLOY_KEY, PYPIRC, RUBYGEMS_API_KEY, CARGO_API_KEY
-]
+SECRET_FILES = [DEPLOY_KEY, PYPIRC, RUBYGEMS_API_KEY, CARGO_API_KEY]
 
 
 def decrypt_secrets():
-    subprocess.check_call([
-        'openssl', 'aes-256-cbc',
-        '-K', os.environ['encrypted_b8618e5d043b_key'],
-        '-iv', os.environ['encrypted_b8618e5d043b_iv'],
-        '-in', ENCRYPTED_SECRETS,
-        '-out', SECRETS_TAR,
-        '-d'
-    ])
+    subprocess.check_call(
+        [
+            "openssl",
+            "aes-256-cbc",
+            "-K",
+            os.environ["encrypted_b8618e5d043b_key"],
+            "-iv",
+            os.environ["encrypted_b8618e5d043b_iv"],
+            "-in",
+            ENCRYPTED_SECRETS,
+            "-out",
+            SECRETS_TAR,
+            "-d",
+        ]
+    )
 
-    subprocess.check_call(['tar', '-xvf', SECRETS_TAR], cwd=ROOT)
+    subprocess.check_call(["tar", "-xvf", SECRETS_TAR], cwd=ROOT)
 
-    missing_files = [
-        os.path.basename(f) for f in SECRET_FILES if not os.path.exists(f)
-    ]
+    missing_files = [os.path.basename(f) for f in SECRET_FILES if not os.path.exists(f)]
 
     assert not missing_files, missing_files
-    os.chmod(DEPLOY_KEY, int('0600', 8))
+    os.chmod(DEPLOY_KEY, int("0600", 8))
 
 
-IS_TRAVIS_PULL_REQUEST = (
-    os.environ.get('TRAVIS_EVENT_TYPE') == 'pull_request'
-)
+IS_TRAVIS_PULL_REQUEST = os.environ.get("TRAVIS_EVENT_TYPE") == "pull_request"
 
 IS_CIRCLE_PULL_REQUEST = (
-    os.environ.get('CIRCLE_BRANCH') == 'master' and
-    os.environ.get('CI_PULL_REQUESTS', '') != ''
+    os.environ.get("CIRCLE_BRANCH") == "master"
+    and os.environ.get("CI_PULL_REQUESTS", "") != ""
 )
 
 
@@ -241,4 +260,5 @@ def all_projects():
     import hypothesistooling.projects.conjecturerust as cr
     import hypothesistooling.projects.hypothesispython as hp
     import hypothesistooling.projects.hypothesisruby as hr
+
     return [cr, hp, hr]

@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 from tempfile import mkdtemp
@@ -29,35 +29,33 @@ from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 
 def run():
-    filterwarnings('error')
-    filterwarnings('ignore', category=ImportWarning)
-    filterwarnings('ignore', category=FutureWarning, module='pandas._version')
+    filterwarnings("error")
+    filterwarnings("ignore", category=ImportWarning)
+    filterwarnings("ignore", category=FutureWarning, module="pandas._version")
 
     # Fixed in recent versions but allowed by pytest=3.0.0; see #1630
-    filterwarnings('ignore', category=DeprecationWarning, module='pluggy')
+    filterwarnings("ignore", category=DeprecationWarning, module="pluggy")
 
     # See https://github.com/numpy/numpy/pull/432
-    filterwarnings('ignore', message='numpy.dtype size changed')
-    filterwarnings('ignore', message='numpy.ufunc size changed')
+    filterwarnings("ignore", message="numpy.dtype size changed")
+    filterwarnings("ignore", message="numpy.ufunc size changed")
 
     # See https://github.com/HypothesisWorks/hypothesis/issues/1674
     filterwarnings(
-        'ignore',
+        "ignore",
         message=(
-            'The virtualenv distutils package at .+ appears to be in the '
-            'same location as the system distutils?'
+            "The virtualenv distutils package at .+ appears to be in the "
+            "same location as the system distutils?"
         ),
-        category=UserWarning
+        category=UserWarning,
     )
 
     # Imported by Pandas in version 1.9, but fixed in later versions.
     filterwarnings(
-        'ignore',
-        message='Importing from numpy.testing.decorators is deprecated'
+        "ignore", message="Importing from numpy.testing.decorators is deprecated"
     )
     filterwarnings(
-        'ignore',
-        message='Importing from numpy.testing.nosetester is deprecated'
+        "ignore", message="Importing from numpy.testing.nosetester is deprecated"
     )
 
     new_home = mkdtemp()
@@ -78,20 +76,20 @@ def run():
         # Check if it has a dynamically defined default and if so skip
         # comparison.
         if getattr(settings, s.name).show_default:
-            assert v == s.default, '%r == x.%s != s.%s == %r' % (
-                v, s.name, s.name, s.default,
+            assert v == s.default, "%r == x.%s != s.%s == %r" % (
+                v,
+                s.name,
+                s.name,
+                s.default,
             )
 
-    settings.register_profile('default', settings(
-        max_examples=10 if IN_COVERAGE_TESTS else not_set,
-        timeout=unlimited,
-    ))
-
     settings.register_profile(
-        'speedy', settings(
-            max_examples=5,
-        ))
+        "default",
+        settings(max_examples=10 if IN_COVERAGE_TESTS else not_set, timeout=unlimited),
+    )
 
-    settings.register_profile('debug', settings(verbosity=Verbosity.debug))
+    settings.register_profile("speedy", settings(max_examples=5))
 
-    settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'default'))
+    settings.register_profile("debug", settings(verbosity=Verbosity.debug))
+
+    settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))

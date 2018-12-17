@@ -15,25 +15,19 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import hypothesis.strategies as st
 from hypothesis import given, settings, unlimited
-from tests.common.utils import raises, capture_out, \
-    checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import hrange
+from tests.common.utils import capture_out, checks_deprecated_behaviour, raises
 
 
 @checks_deprecated_behaviour
 def test_stability():
-    @given(
-        st.lists(st.integers(0, 1000), unique=True, min_size=5),
-        st.choices(),
-    )
-    @settings(
-        database=ExampleDatabase(), max_shrinks=10**6, timeout=unlimited,
-    )
+    @given(st.lists(st.integers(0, 1000), unique=True, min_size=5), st.choices())
+    @settings(database=ExampleDatabase(), max_shrinks=10 ** 6, timeout=unlimited)
     def test_choose_and_then_fail(ls, choice):
         for _ in hrange(100):
             choice(ls)
@@ -52,4 +46,4 @@ def test_stability():
             test_choose_and_then_fail()
     out2 = o.getvalue()
     assert out1 == out2
-    assert 'Choice #100:' in out1
+    assert "Choice #100:" in out1

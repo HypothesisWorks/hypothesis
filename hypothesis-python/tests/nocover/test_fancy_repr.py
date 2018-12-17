@@ -15,21 +15,26 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import hypothesis.strategies as st
 
 
 def test_floats_is_floats():
-    assert repr(st.floats()) == u'floats()'
+    assert repr(st.floats()) == u"floats()"
 
 
 def test_includes_non_default_values():
-    assert repr(st.floats(max_value=1.0)) == u'floats(max_value=1.0)'
+    assert repr(st.floats(max_value=1.0)) == u"floats(max_value=1.0)"
 
 
 def foo(*args, **kwargs):
     pass
+
+
+# fmt: off
+# The linebreaks here can force our lambda repr code into specific paths,
+# so we tell Black to leave them as-is.
 
 
 def test_builds_repr():

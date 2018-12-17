@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
@@ -24,8 +24,8 @@ from hypothesis import given
 
 
 def test_includes_non_default_args_in_repr():
-    assert repr(st.integers()) == 'integers()'
-    assert repr(st.integers(min_value=1)) == 'integers(min_value=1)'
+    assert repr(st.integers()) == "integers()"
+    assert repr(st.integers(min_value=1)) == "integers(min_value=1)"
 
 
 def hi(there, stuff):
@@ -33,28 +33,32 @@ def hi(there, stuff):
 
 
 def test_supports_positional_and_keyword_args_in_builds():
-    assert repr(st.builds(hi, st.integers(), there=st.booleans())) == \
-        'builds(hi, integers(), there=booleans())'
+    assert (
+        repr(st.builds(hi, st.integers(), there=st.booleans()))
+        == "builds(hi, integers(), there=booleans())"
+    )
 
 
 def test_preserves_sequence_type_of_argument():
-    assert repr(st.sampled_from([0])) == 'sampled_from([0])'
+    assert repr(st.sampled_from([0])) == "sampled_from([0])"
 
 
 class IHaveABadRepr(object):
-
     def __repr__(self):
-        raise ValueError('Oh no!')
+        raise ValueError("Oh no!")
 
 
 def test_errors_are_deferred_until_repr_is_calculated():
-    s = st.builds(
-        lambda x, y: 1,
-        st.just(IHaveABadRepr()),
-        y=st.one_of(
-            st.sampled_from((IHaveABadRepr(),)), st.just(IHaveABadRepr()))
-    ).map(lambda t: t).filter(lambda t: True).flatmap(
-        lambda t: st.just(IHaveABadRepr()))
+    s = (
+        st.builds(
+            lambda x, y: 1,
+            st.just(IHaveABadRepr()),
+            y=st.one_of(st.sampled_from((IHaveABadRepr(),)), st.just(IHaveABadRepr())),
+        )
+        .map(lambda t: t)
+        .filter(lambda t: True)
+        .flatmap(lambda t: st.just(IHaveABadRepr()))
+    )
 
     with pytest.raises(ValueError):
         repr(s)
@@ -63,4 +67,4 @@ def test_errors_are_deferred_until_repr_is_calculated():
 @given(st.iterables(st.integers()))
 def test_iterables_repr_is_useful(it):
     # fairly hard-coded but useful; also ensures _values are inexhaustible
-    assert repr(it) == 'iter({!r})'.format(it._values)
+    assert repr(it) == "iter({!r})".format(it._values)

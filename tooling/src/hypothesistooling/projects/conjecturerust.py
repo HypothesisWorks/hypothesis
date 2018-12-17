@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 import subprocess
@@ -23,23 +23,22 @@ import subprocess
 import hypothesistooling as tools
 import hypothesistooling.installers as install
 import hypothesistooling.releasemanagement as rm
-from hypothesistooling.junkdrawer import in_dir, unquote_string, \
-    unlink_if_present
+from hypothesistooling.junkdrawer import in_dir, unlink_if_present, unquote_string
 
-PACKAGE_NAME = 'conjecture-rust'
+PACKAGE_NAME = "conjecture-rust"
 
 CONJECTURE_RUST = os.path.join(tools.ROOT, PACKAGE_NAME)
 
 BASE_DIR = CONJECTURE_RUST
 
-TAG_PREFIX = PACKAGE_NAME + '-'
+TAG_PREFIX = PACKAGE_NAME + "-"
 
-RELEASE_FILE = os.path.join(BASE_DIR, 'RELEASE.md')
-CHANGELOG_FILE = os.path.join(BASE_DIR, 'CHANGELOG.md')
+RELEASE_FILE = os.path.join(BASE_DIR, "RELEASE.md")
+CHANGELOG_FILE = os.path.join(BASE_DIR, "CHANGELOG.md")
 
-CARGO_FILE = os.path.join(BASE_DIR, 'Cargo.toml')
+CARGO_FILE = os.path.join(BASE_DIR, "Cargo.toml")
 
-SRC = os.path.join(BASE_DIR, 'lib')
+SRC = os.path.join(BASE_DIR, "lib")
 
 
 def has_release():
@@ -55,11 +54,11 @@ def update_changelog_and_version():
 
     version, version_info = rm.bump_version_info(version_info, release_type)
 
-    rm.replace_assignment(CARGO_FILE, 'version', repr(version))
+    rm.replace_assignment(CARGO_FILE, "version", repr(version))
 
     rm.update_markdown_changelog(
         CHANGELOG_FILE,
-        name='Conjecture for Rust',
+        name="Conjecture for Rust",
         version=version,
         entry=release_contents,
     )
@@ -69,7 +68,7 @@ def update_changelog_and_version():
 def cargo(*args):
     install.ensure_rustup()
     with in_dir(BASE_DIR):
-        subprocess.check_call(('cargo',) + args)
+        subprocess.check_call(("cargo",) + args)
 
 
 IN_TEST = False
@@ -78,9 +77,9 @@ IN_TEST = False
 def build_distribution():
     """Build the crate."""
     if IN_TEST:
-        cargo('package', '--allow-dirty')
+        cargo("package", "--allow-dirty")
     else:
-        cargo('package')
+        cargo("package")
 
 
 def tag_name():
@@ -95,10 +94,10 @@ def has_source_changes():
 
 def current_version():
     """Returns the current version as specified by the Cargo.toml."""
-    return unquote_string(rm.extract_assignment(CARGO_FILE, 'version'))
+    return unquote_string(rm.extract_assignment(CARGO_FILE, "version"))
 
 
-CARGO_CREDENTIALS = os.path.expanduser('~/.cargo/credentials')
+CARGO_CREDENTIALS = os.path.expanduser("~/.cargo/credentials")
 
 
 def upload_distribution():
@@ -114,6 +113,6 @@ def upload_distribution():
     os.symlink(tools.CARGO_API_KEY, CARGO_CREDENTIALS)
 
     # Give the key the right permissions.
-    os.chmod(CARGO_CREDENTIALS, int('0600', 8))
+    os.chmod(CARGO_CREDENTIALS, int("0600", 8))
 
-    cargo('publish')
+    cargo("publish")

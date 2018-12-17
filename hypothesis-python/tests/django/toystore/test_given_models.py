@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import datetime as dt
 from uuid import UUID
@@ -23,25 +23,39 @@ from uuid import UUID
 from django.conf import settings as django_settings
 from django.contrib.auth.models import User
 
-from hypothesis import HealthCheck, given, assume, settings
-from hypothesis.errors import InvalidArgument, HypothesisException
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.control import reject
-from hypothesis.strategies import just, lists, binary
+from hypothesis.errors import HypothesisException, InvalidArgument
 from hypothesis.extra.django import TestCase, TransactionTestCase
+from hypothesis.extra.django.models import (
+    add_default_field_mapping,
+    default_value,
+    models,
+)
 from hypothesis.internal.compat import text_type
-from tests.django.toystore.models import Store, Company, Customer, \
-    SelfLoop, Customish, ManyTimes, OddFields, ManyNumerics, \
-    CustomishField, CouldBeCharming, CompanyExtension, CustomishDefault, \
-    RestrictedFields, MandatoryComputed
-from hypothesis.extra.django.models import models, default_value, \
-    add_default_field_mapping
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.strategies import binary, just, lists
+from tests.django.toystore.models import (
+    Company,
+    CompanyExtension,
+    CouldBeCharming,
+    Customer,
+    Customish,
+    CustomishDefault,
+    CustomishField,
+    MandatoryComputed,
+    ManyNumerics,
+    ManyTimes,
+    OddFields,
+    RestrictedFields,
+    SelfLoop,
+    Store,
+)
 
-add_default_field_mapping(CustomishField, just(u'a'))
+add_default_field_mapping(CustomishField, just(u"a"))
 
 
 class TestGetsBasicModels(TestCase):
-
     @given(models(Company))
     def test_is_company(self, company):
         self.assertIsInstance(company, Company)
@@ -91,7 +105,7 @@ class TestGetsBasicModels(TestCase):
 
     @given(models(Customish))
     def test_custom_field(self, x):
-        assert x.customish == u'a'
+        assert x.customish == u"a"
 
     def test_mandatory_fields_are_mandatory(self):
         self.assertRaises(InvalidArgument, models, Store)
@@ -105,26 +119,26 @@ class TestGetsBasicModels(TestCase):
 
     @given(models(MandatoryComputed, company=default_value))
     def test_mandatory_computed_field_default(self, x):
-        assert x.company.name == x.name + u'_company'
+        assert x.company.name == x.name + u"_company"
 
     @given(models(CustomishDefault))
     def test_customish_default_generated(self, x):
-        assert x.customish == u'a'
+        assert x.customish == u"a"
 
     @given(models(CustomishDefault, customish=default_value))
     def test_customish_default_not_generated(self, x):
-        assert x.customish == u'b'
+        assert x.customish == u"b"
 
     @given(models(OddFields))
     def test_odd_fields(self, x):
         assert isinstance(x.uuid, UUID)
         assert isinstance(x.slug, text_type)
-        assert u' ' not in x.slug
+        assert u" " not in x.slug
         assert isinstance(x.ipv4, str)
-        assert len(x.ipv4.split('.')) == 4
-        assert all(int(i) in range(256) for i in x.ipv4.split('.'))
+        assert len(x.ipv4.split(".")) == 4
+        assert all(int(i) in range(256) for i in x.ipv4.split("."))
         assert isinstance(x.ipv6, text_type)
-        assert set(x.ipv6).issubset(set(u'0123456789abcdefABCDEF:.'))
+        assert set(x.ipv6).issubset(set(u"0123456789abcdefABCDEF:."))
 
     @given(models(ManyTimes))
     def test_time_fields(self, x):
@@ -135,19 +149,14 @@ class TestGetsBasicModels(TestCase):
     @given(models(Company))
     def test_no_null_in_charfield(self, x):
         # regression test for #1045.  Company just has a convenient CharField.
-        assert u'\x00' not in x.name
+        assert u"\x00" not in x.name
 
     @given(binary(min_size=10))
     def test_foreign_key_primary(self, buf):
         # Regression test for #1307
-        company_strategy = models(
-            Company,
-            name=just('test')
-        )
+        company_strategy = models(Company, name=just("test"))
         strategy = models(
-            CompanyExtension,
-            company=company_strategy,
-            self_modifying=just(2)
+            CompanyExtension, company=company_strategy, self_modifying=just(2)
         )
         try:
             ConjectureData.for_buffer(buf).draw(strategy)
@@ -160,31 +169,29 @@ class TestGetsBasicModels(TestCase):
 
 
 class TestsNeedingRollback(TransactionTestCase):
-
     def test_can_get_examples(self):
         for _ in range(200):
             models(Company).example()
 
 
 class TestRestrictedFields(TestCase):
-
     @given(models(RestrictedFields))
     def test_constructs_valid_instance(self, instance):
         self.assertTrue(isinstance(instance, RestrictedFields))
         instance.full_clean()
         self.assertLessEqual(len(instance.text_field_4), 4)
         self.assertLessEqual(len(instance.char_field_4), 4)
-        self.assertIn(instance.choice_field_text, ('foo', 'bar'))
+        self.assertIn(instance.choice_field_text, ("foo", "bar"))
         self.assertIn(instance.choice_field_int, (1, 2))
         self.assertIn(instance.null_choice_field_int, (1, 2, None))
-        self.assertEqual(instance.choice_field_grouped,
-                         instance.choice_field_grouped.lower())
+        self.assertEqual(
+            instance.choice_field_grouped, instance.choice_field_grouped.lower()
+        )
         self.assertEqual(instance.even_number_field % 2, 0)
         self.assertTrue(instance.non_blank_text_field)
 
 
 class TestValidatorInference(TestCase):
-
     @given(models(User))
     def test_user_issue_1112_regression(self, user):
         assert user.username

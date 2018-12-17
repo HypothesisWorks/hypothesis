@@ -15,11 +15,11 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from hypothesis import given
-from tests.common.utils import fails
 from hypothesis.strategies import integers
+from tests.common.utils import fails
 
 
 @given(integers())

@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
 
@@ -61,7 +61,8 @@ class Ordering(Shrinker):
             original = self.current
 
             insertion_points = [
-                j for j in range(i)
+                j
+                for j in range(i)
                 if self.key(self.current[j]) > self.key(self.current[i])
             ]
 

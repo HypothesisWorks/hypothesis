@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 # Notes: we use instances of these objects as singletons which serve as
 # identifiers in various patches of code.  The more specific types
@@ -25,7 +25,6 @@ from __future__ import division, print_function, absolute_import
 
 
 class UniqueIdentifier(object):
-
     def __init__(self, identifier):
         self.identifier = identifier
 
@@ -41,5 +40,5 @@ class InferType(UniqueIdentifier):
     pass
 
 
-infer = InferType(u'infer')
-not_set = UniqueIdentifier(u'not_set')
+infer = InferType(u"infer")
+not_set = UniqueIdentifier(u"not_set")
