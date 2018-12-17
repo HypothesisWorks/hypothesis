@@ -414,13 +414,15 @@ def integers(min_value=None, max_value=None):
         note_deprecation(
             "min_value=%r of type %r cannot be exactly represented as an "
             "integer, which will be an error in a future version.  "
-            "Use %r instead." % (min_value, type(min_value), min_int_value)
+            "Use %r instead." % (min_value, type(min_value), min_int_value),
+            since="2018-10-10",
         )
     if max_value != max_int_value:
         note_deprecation(
             "max_value=%r of type %r cannot be exactly represented as an "
             "integer, which will be an error in a future version.  "
-            "Use %r instead." % (max_value, type(max_value), max_int_value)
+            "Use %r instead." % (max_value, type(max_value), max_int_value),
+            since="2018-10-10",
         )
 
     if (
@@ -1788,7 +1790,9 @@ def permutations(values):
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(min_datetime="min_value", max_datetime="max_value")
+@renamed_arguments(
+    since="2017-08-22", min_datetime="min_value", max_datetime="max_value"
+)
 def datetimes(
     min_value=dt.datetime.min,  # type: dt.datetime
     max_value=dt.datetime.max,  # type: dt.datetime
@@ -1854,7 +1858,7 @@ def datetimes(
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(min_date="min_value", max_date="max_value")
+@renamed_arguments(since="2017-08-22", min_date="min_value", max_date="max_value")
 def dates(min_value=dt.date.min, max_value=dt.date.max, min_date=None, max_date=None):
     # type: (dt.date, dt.date, dt.date, dt.date) -> SearchStrategy[dt.date]
     """A strategy for dates between ``min_value`` and ``max_value``.
@@ -1870,7 +1874,7 @@ def dates(min_value=dt.date.min, max_value=dt.date.max, min_date=None, max_date=
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(min_time="min_value", max_time="max_value")
+@renamed_arguments(since="2017-08-22", min_time="min_value", max_time="max_value")
 def times(
     min_value=dt.time.min,  # type: dt.time
     max_value=dt.time.max,  # type: dt.time
@@ -1902,7 +1906,7 @@ def times(
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(min_delta="min_value", max_delta="max_value")
+@renamed_arguments(since="2017-08-22", min_delta="min_value", max_delta="max_value")
 def timedeltas(
     min_value=dt.timedelta.min,  # type: dt.timedelta
     max_value=dt.timedelta.max,  # type: dt.timedelta

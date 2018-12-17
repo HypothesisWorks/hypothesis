@@ -20,10 +20,10 @@ from __future__ import absolute_import, division, print_function
 import inspect
 
 from hypothesis.internal.renaming import renamed_arguments
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import checks_deprecated_behaviour, today
 
 
-@renamed_arguments(old_arg="new_arg")
+@renamed_arguments(since=today(), old_arg="new_arg")
 def f(new_arg=None, old_arg=None):
     return new_arg
 
@@ -41,7 +41,7 @@ def test_using_old_args():
     assert f.__doc__ is None
 
 
-@renamed_arguments(old_arg="new_arg")
+@renamed_arguments(since=today(), old_arg="new_arg")
 def g(new_arg=None, old_arg=None):
     """Hi.
 

@@ -27,8 +27,8 @@ if False:
     from hypothesis.searchstrategy.strategies import T  # noqa
 
 
-def renamed_arguments(**rename_mapping):
-    # type: (**str) -> Callable[[T], T]
+def renamed_arguments(since, **rename_mapping):
+    # type: (str, **str) -> Callable[[T], T]
     """Helper function for deprecating arguments that have been renamed to a
     new form.
 
@@ -51,7 +51,8 @@ def renamed_arguments(**rename_mapping):
                             "name will go away in a future version of "
                             "Hypothesis."
                         )
-                        % (k, t)
+                        % (k, t),
+                        since=since,
                     )
                     kwargs[t] = kwargs.pop(k)
             return f(**kwargs)
