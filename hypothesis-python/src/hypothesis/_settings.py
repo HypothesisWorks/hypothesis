@@ -37,7 +37,7 @@ from hypothesis.errors import (
     InvalidArgument,
     InvalidState,
 )
-from hypothesis.internal.compat import text_type
+from hypothesis.internal.compat import string_types
 from hypothesis.internal.reflection import get_pretty_function_description, proxies
 from hypothesis.internal.validation import try_convert
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
@@ -420,7 +420,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         keyword arguments for each setting that will be set differently to
         parent (or settings.default, if parent is None).
         """
-        if not isinstance(name, (str, text_type)):
+        if not isinstance(name, string_types):
             note_deprecation("name=%r must be a string" % (name,), since="2018-02-27")
         if "settings" in kwargs:
             if parent is None:
@@ -440,7 +440,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
     def get_profile(name):
         # type: (str) -> settings
         """Return the profile with the given name."""
-        if not isinstance(name, (str, text_type)):
+        if not isinstance(name, string_types):
             note_deprecation("name=%r must be a string" % (name,), since="2016-01-08")
         try:
             return settings._profiles[name]
@@ -456,7 +456,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         Any setting not defined in the profile will be the library
         defined default for that setting.
         """
-        if not isinstance(name, (str, text_type)):
+        if not isinstance(name, string_types):
             note_deprecation("name=%r must be a string" % (name,), since="2016-01-08")
         settings._current_profile = name
         settings._assign_default_internal(settings.get_profile(name))
