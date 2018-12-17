@@ -537,13 +537,15 @@ def floats(
         note_deprecation(
             "min_value=%r cannot be exactly represented as a float of width "
             "%d, which will be an error in a future version. Use min_value=%r "
-            "instead." % (min_value, width, min_arg)
+            "instead." % (min_value, width, min_arg),
+            since="2018-10-10",
         )
     if max_value != max_arg:
         note_deprecation(
             "max_value=%r cannot be exactly represented as a float of width "
             "%d, which will be an error in a future version. Use max_value=%r "
-            "instead" % (max_value, width, max_arg)
+            "instead" % (max_value, width, max_arg),
+            since="2018-10-10",
         )
 
     check_valid_interval(min_value, max_value, "min_value", "max_value")
@@ -737,7 +739,8 @@ def lists(
         note_deprecation(
             "Passing a strategy for `elements` of the list will be required "
             "in a future version of Hypothesis.  To create lists that are "
-            "always empty, use `builds(list)` or `lists(nothing())`."
+            "always empty, use `builds(list)` or `lists(nothing())`.",
+            since="2018-03-10",
         )
         if min_size or average_size or max_size:
             # Checked internally for lists with an elements strategy, but
@@ -793,7 +796,8 @@ def sets(
         note_deprecation(
             "Passing a strategy for `elements` of the set will be required "
             "in a future version of Hypothesis.  To create sets that are "
-            "always empty, use `builds(set)` or `sets(nothing())`."
+            "always empty, use `builds(set)` or `sets(nothing())`.",
+            since="2018-03-10",
         )
     return lists(
         elements=elements,
@@ -820,7 +824,8 @@ def frozensets(
             "Passing a strategy for `elements` of the frozenset will be "
             "required in a future version of Hypothesis.  To create "
             "frozensets that are always empty, use `builds(frozenset)` "
-            "or `frozensets(nothing())`."
+            "or `frozensets(nothing())`.",
+            since="2018-03-10",
         )
     return lists(
         elements=elements,
@@ -867,7 +872,8 @@ def iterables(
         note_deprecation(
             "Passing a strategy for `elements` of the iterable will be "
             "required in a future version of Hypothesis.  To create "
-            "iterables that are always empty, use `iterables(nothing())`."
+            "iterables that are always empty, use `iterables(nothing())`.",
+            since="2018-03-10",
         )
 
     return lists(
@@ -950,7 +956,8 @@ def streaming(elements):
     """
     note_deprecation(
         "streaming() has been deprecated. Use the data() strategy instead and "
-        "replace stream iteration with data.draw() calls."
+        "replace stream iteration with data.draw() calls.",
+        since="2017-07-02",
     )
 
     check_strategy(elements)
@@ -1098,7 +1105,9 @@ def text(
     """
     check_valid_sizes(min_size, average_size, max_size)
     if alphabet is None:
-        note_deprecation("alphabet=None is deprecated; just omit the argument")
+        note_deprecation(
+            "alphabet=None is deprecated; just omit the argument", since="2018-10-05"
+        )
         char_strategy = characters(blacklist_categories=("Cs",))
     elif isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
@@ -1107,14 +1116,16 @@ def text(
             note_deprecation(
                 "alphabet must be an ordered sequence, or tests may be "
                 "flaky and shrinking weaker, but a %r is not a type of "
-                "sequence.  This will be an error in future." % (type(alphabet),)
+                "sequence.  This will be an error in future." % (type(alphabet),),
+                since="2018-06-18",
             )
         alphabet = list(alphabet)
         non_string = [c for c in alphabet if not isinstance(c, string_types)]
         if non_string:
             note_deprecation(
                 "The following elements in alphabet are not unicode "
-                "strings, which will be an error in future:  %r" % (non_string,)
+                "strings, which will be an error in future:  %r" % (non_string,),
+                since="2018-06-18",
             )
             alphabet = [str(c) for c in alphabet]
         not_one_char = [
@@ -1124,7 +1135,8 @@ def text(
             note_deprecation(
                 "The following elements in alphabet are not of length "
                 "one, which leads to violation of size constraints and "
-                "will be an error in future:  %r" % (not_one_char,)
+                "will be an error in future:  %r" % (not_one_char,),
+                since="2018-06-18",
             )
         char_strategy = sampled_from(alphabet)
     if (max_size == 0 or char_strategy.is_empty) and not min_size:
@@ -1287,7 +1299,8 @@ def builds(
         args = ()
         note_deprecation(
             "Specifying the target as a keyword argument to builds() is "
-            "deprecated. Provide it as the first positional argument instead."
+            "deprecated. Provide it as the first positional argument instead.",
+            since="2018-02-12",
         )
         target = kwargs.pop("target")
     else:
@@ -1536,7 +1549,8 @@ def fractions(
                 note_deprecation(
                     "The min_value=%r has a denominator greater than the "
                     "max_denominator=%r, which will be an error in a future "
-                    "version." % (min_value, max_denominator)
+                    "version." % (min_value, max_denominator),
+                    since="2018-10-12",
                 )
             _, min_value = fraction_bounds(min_value)
         if max_value is not None:
@@ -1544,7 +1558,8 @@ def fractions(
                 note_deprecation(
                     "The max_value=%r has a denominator greater than the "
                     "max_denominator=%r, which will be an error in a future "
-                    "version." % (max_value, max_denominator)
+                    "version." % (max_value, max_denominator),
+                    since="2018-10-12",
                 )
             max_value, _ = fraction_bounds(max_value)
 
@@ -2115,7 +2130,8 @@ def choices():
 
     note_deprecation(
         "choices() has been deprecated. Use the data() strategy instead and "
-        "replace its usage with data.draw(sampled_from(elements))) calls."
+        "replace its usage with data.draw(sampled_from(elements))) calls.",
+        since="2017-07-02",
     )
 
     return shared(ChoiceStrategy(), key="hypothesis.strategies.chooser.choice_function")

@@ -92,7 +92,8 @@ class ListStrategy(SearchStrategy):
             note_deprecation(
                 "Cannot create a collection of max_size=%r, because no "
                 "elements can be drawn from the element strategy %r"
-                % (self.max_size, self.element_strategy)
+                % (self.max_size, self.element_strategy),
+                since="2018-03-11",
             )
 
     def calc_is_empty(self, recur):

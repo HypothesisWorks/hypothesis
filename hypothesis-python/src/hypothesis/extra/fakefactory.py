@@ -33,7 +33,8 @@ def fake_factory(source, locale=None, locales=None, providers=()):
     note_deprecation(
         "hypothesis.extra.fakefactory has been deprecated, because it does "
         "not support example discovery or shrinking.  Consider using a lower-"
-        "level strategy (such as st.text()) instead."
+        "level strategy (such as st.text()) instead.",
+        since="2017-12-02",
     )
     check_valid_identifier(source)
     if source[0] == u"_":

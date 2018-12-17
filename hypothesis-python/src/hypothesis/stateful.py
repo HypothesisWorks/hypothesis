@@ -310,7 +310,8 @@ def _convert_targets(targets, target):
                 "Passing both targets=%r and target=%r is redundant, and "
                 "will become an error in a future version of Hypothesis.  "
                 "Pass targets=%r instead."
-                % (targets, target, tuple(targets) + (target,))
+                % (targets, target, tuple(targets) + (target,)),
+                since="2018-08-18",
             )
         targets = tuple(targets) + (target,)
 
@@ -319,7 +320,8 @@ def _convert_targets(targets, target):
         if isinstance(t, string_types):
             note_deprecation(
                 "Got %r as a target, but passing the name of a Bundle is "
-                "deprecated - please pass the Bundle directly." % (t,)
+                "deprecated - please pass the Bundle directly." % (t,),
+                since="2018-08-18",
             )
         elif not isinstance(t, Bundle):
             msg = (

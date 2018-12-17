@@ -530,7 +530,8 @@ class StateForActualGivenExecution(object):
                                 "slower than this into an error, or you can set "
                                 "it to None to disable this check entirely."
                             )
-                            % (self.test.__name__, runtime, ceil(runtime / 100) * 100)
+                            % (self.test.__name__, runtime, ceil(runtime / 100) * 100),
+                            since="2017-11-20",
                         )
                 else:
                     current_deadline = self.settings.deadline
@@ -665,7 +666,8 @@ class StateForActualGivenExecution(object):
                         "To get the future behaviour, update your settings to "
                         "include database=None."
                     )
-                    % (self.test.__name__,)
+                    % (self.test.__name__,),
+                    since="2018-09-01",
                 )
             if self.__had_seed:
                 note_deprecation(
@@ -675,7 +677,8 @@ class StateForActualGivenExecution(object):
                         "from the database. To get the future behaviour, update "
                         "your settings for this test to include database=None."
                     )
-                    % (self.test.__name__,)
+                    % (self.test.__name__,),
+                    since="2018-09-01",
                 )
 
         timed_out = runner.exit_reason == ExitReason.timeout
@@ -893,7 +896,8 @@ def given(
                         "@given(booleans()) @given(integers()), you could write "
                         "@given(booleans(), integers())"
                     )
-                    % (test.__name__,)
+                    % (test.__name__,),
+                    since="2018-09-01",
                 )
 
             settings = wrapped_test._hypothesis_internal_use_settings

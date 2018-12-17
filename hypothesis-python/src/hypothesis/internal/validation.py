@@ -108,7 +108,10 @@ def check_valid_size(value, name):
         if name == "min_size":
             from hypothesis._settings import note_deprecation
 
-            note_deprecation("min_size=None is deprecated; use min_size=0 instead.")
+            note_deprecation(
+                "min_size=None is deprecated; use min_size=0 instead.",
+                since="2018-10-06",
+            )
         return
     if isinstance(value, float):
         if math.isnan(value):
@@ -117,7 +120,8 @@ def check_valid_size(value, name):
 
         note_deprecation(
             "Float size are deprecated: "
-            "%s should be an integer, got %r" % (name, value)
+            "%s should be an integer, got %r" % (name, value),
+            since="2018-10-11",
         )
     else:
         check_type(integer_types, value)
@@ -149,7 +153,8 @@ def check_valid_sizes(min_size, average_size, max_size):
         note_deprecation(
             "You should remove the average_size argument, because it is "
             "deprecated and no longer has any effect.  Please open an issue "
-            "if the default distribution of examples does not work for you."
+            "if the default distribution of examples does not work for you.",
+            since="2018-03-10",
         )
 
     check_valid_size(min_size, "min_size")

@@ -46,7 +46,8 @@ def _db_for_path(path=None):
                 "The $HYPOTHESIS_DATABASE_FILE environment variable is "
                 "deprecated, and will be ignored by a future version of "
                 "Hypothesis.  Configure your database location via a "
-                "settings profile instead."
+                "settings profile instead.",
+                since="2018-04-01",
             )
             return _db_for_path(path)
         # Note: storage_directory attempts to create the dir in question, so
@@ -162,14 +163,16 @@ class SQLiteExampleDatabase(ExampleDatabase):
             note_deprecation(
                 "The SQLite database backend has been deprecated. "
                 'Use InMemoryExampleDatabase or set database_file=":memory:" '
-                "instead."
+                "instead.",
+                since="2017-09-12",
             )
         else:
             note_deprecation(
                 "The SQLite database backend has been deprecated. "
                 "Set database_file to some path name not ending in .db, "
                 ".sqlite or .sqlite3 to get the new directory based database "
-                "backend instead."
+                "backend instead.",
+                since="2017-09-12",
             )
 
     def connection(self):

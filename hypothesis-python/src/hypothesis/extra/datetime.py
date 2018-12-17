@@ -81,7 +81,8 @@ def datetimes(allow_naive=None, timezones=None, min_year=None, max_year=None):
     """
     note_deprecation(
         "Use hypothesis.strategies.datetimes, which supports "
-        "full-precision bounds and has a simpler API."
+        "full-precision bounds and has a simpler API.",
+        since="2017-04-29",
     )
     min_dt = convert_year_bound(min_year, dt.datetime.min)
     max_dt = convert_year_bound(max_year, dt.datetime.max)
@@ -100,7 +101,8 @@ def dates(min_year=None, max_year=None):
     """
     note_deprecation(
         "Use hypothesis.strategies.dates, which supports bounds "
-        "given as date objects for single-day resolution."
+        "given as date objects for single-day resolution.",
+        since="2017-04-29",
     )
     return st.dates(
         convert_year_bound(min_year, dt.date.min),
@@ -120,6 +122,7 @@ def times(allow_naive=None, timezones=None):
     """
     note_deprecation(
         "Use hypothesis.strategies.times, which supports "
-        "min_time and max_time arguments."
+        "min_time and max_time arguments.",
+        since="2017-04-29",
     )
     return st.times(timezones=tz_args_strat(allow_naive, timezones, "times"))
