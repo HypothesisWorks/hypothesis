@@ -25,6 +25,7 @@ import ast
 import hashlib
 import inspect
 import re
+import tokenize
 import types
 import uuid
 from functools import wraps
@@ -347,7 +348,25 @@ def extract_lambda_source(f):
         return if_confused
     lambda_ast = aligned_lambdas[0]
     assert lambda_ast.lineno == 1
-    source = source[lambda_ast.col_offset :].strip()
+
+    # If the source code contains Unicode characters, the bytes of the original
+    # file don't line up with the string indexes, and `col_offset` doesn't match
+    # the string we're using.  We need to convert the source code into bytes
+    # before slicing.
+    #
+    # Under the hood, the inspect module is using `tokenize.detect_encoding` to
+    # detect the encoding of the original source file.  We'll use the same
+    # approach to get the source code as bytes.
+    #
+    # See https://github.com/HypothesisWorks/hypothesis/issues/1700 for an
+    # example of what happens if you don't correct for this.
+    #
+    encoding, _ = tokenize.detect_encoding(
+        open(inspect.getsourcefile(f), "rb").readline
+    )
+    source_bytes = source.encode(encoding)
+    source_bytes = source_bytes[lambda_ast.col_offset :].strip()
+    source = source_bytes.decode(encoding)
 
     source = source[source.index("lambda") :]
     for i in hrange(len(source), len("lambda"), -1):  # pragma: no branch
