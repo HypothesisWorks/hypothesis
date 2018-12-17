@@ -804,7 +804,8 @@ def validate_health_check_suppressions(suppressions):
                     "will be ignored, and will become an error in a future "
                     "version of Hypothesis"
                 )
-                % (s, type(s).__name__)
+                % (s, type(s).__name__),
+                since="2017-11-11",
             )
         elif s in (HealthCheck.exception_in_generation, HealthCheck.random_module):
             note_deprecation(
@@ -814,7 +815,8 @@ def validate_health_check_suppressions(suppressions):
                     "remove it from your list of suppressions to get the same "
                     "effect."
                 )
-                % (s,)
+                % (s,),
+                since="2017-11-11",
             )
     return suppressions
 
