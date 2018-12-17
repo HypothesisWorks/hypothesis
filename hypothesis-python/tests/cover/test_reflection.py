@@ -24,6 +24,7 @@ from functools import partial
 import pytest
 from mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
+from hypothesis import given, strategies as st
 from hypothesis.internal.compat import PY3, FullArgSpec, getfullargspec
 from hypothesis.internal.reflection import (
     arg_string,
@@ -666,3 +667,13 @@ class Target(object):
 def test_required_args(target, args, kwargs, expected):
     # Mostly checking that `self` (and only self) is correctly excluded
     assert required_args(target, args, kwargs) == expected
+
+
+def test_regression_issue_1700():
+    π = 3.1415
+
+    @given(st.floats(min_value=-π, max_value=π).filter(lambda x: abs(x) > 1e-5))
+    def test_nonzero(x):
+        assert x != 0
+
+    test_nonzero()
