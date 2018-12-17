@@ -197,7 +197,11 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         self._construction_complete = True
 
         for d in deprecations:
-            note_deprecation(d.deprecation_message, self)
+            note_deprecation(
+                d.deprecation_message,
+                since=d.deprecated_since,
+                verbosity=self.verbosity,
+            )
 
     def defaults_stack(self):
         try:
