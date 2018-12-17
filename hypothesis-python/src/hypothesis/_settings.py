@@ -259,7 +259,8 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
                     get_pretty_function_description(test),
                     test._hypothesis_internal_use_settings,
                     self,
-                )
+                ),
+                since="2018-03-23",
             )
 
         test._hypothesis_internal_use_settings = self
@@ -271,7 +272,8 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         def new_test(*args, **kwargs):
             note_deprecation(
                 "Using `@settings` without `@given` does not make sense and "
-                "will be an error in a future version of Hypothesis."
+                "will be an error in a future version of Hypothesis.",
+                since="2018-03-12",
             )
             test(*args, **kwargs)
 
@@ -391,7 +393,8 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
     def __enter__(self):
         note_deprecation(
             "Settings should be determined only by global state or with the "
-            "@settings decorator."
+            "@settings decorator.",
+            since="2018-06-22",
         )
         default_context_manager = default_variable.with_value(self)
         self.defaults_stack().append(default_context_manager)
@@ -418,12 +421,13 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         parent (or settings.default, if parent is None).
         """
         if not isinstance(name, (str, text_type)):
-            note_deprecation("name=%r must be a string" % (name,))
+            note_deprecation("name=%r must be a string" % (name,), since="2018-02-27")
         if "settings" in kwargs:
             if parent is None:
                 parent = kwargs.pop("settings")
                 note_deprecation(
-                    "The `settings` argument is deprecated - " "use `parent` instead."
+                    "The `settings` argument is deprecated - " "use `parent` instead.",
+                    since="2018-02-27",
                 )
             else:
                 raise InvalidArgument(
@@ -437,7 +441,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         # type: (str) -> settings
         """Return the profile with the given name."""
         if not isinstance(name, (str, text_type)):
-            note_deprecation("name=%r must be a string" % (name,))
+            note_deprecation("name=%r must be a string" % (name,), since="2016-01-08")
         try:
             return settings._profiles[name]
         except KeyError:
@@ -453,7 +457,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         defined default for that setting.
         """
         if not isinstance(name, (str, text_type)):
-            note_deprecation("name=%r must be a string" % (name,))
+            note_deprecation("name=%r must be a string" % (name,), since="2016-01-08")
         settings._current_profile = name
         settings._assign_default_internal(settings.get_profile(name))
 
@@ -897,11 +901,11 @@ def _validate_print_blob(value):
         else:
             replacement = PrintSettings.NEVER
 
-        # TODO: Pass through `since` here
         note_deprecation(
             "Setting print_blob=%r is deprecated and will become an error "
             "in a future version of Hypothesis. Use print_blob=%r instead."
-            % (value, replacement)
+            % (value, replacement),
+            since="2018-09-30",
         )
         return replacement
 
