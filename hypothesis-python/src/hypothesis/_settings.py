@@ -902,12 +902,11 @@ more details of this behaviour.
 settings.lock_further_definitions()
 
 
-def note_deprecation(message, s=None):
-    # type: (str, settings) -> None
-    if s is None:
-        s = settings.default
-    assert s is not None
-    verbosity = s.verbosity
+def note_deprecation(message, since, verbosity=None):
+    # type: (str, str, Verbosity) -> None
+    if verbosity is None:
+        verbosity = settings.default.verbosity
+    assert verbosity is not None
     warning = HypothesisDeprecationWarning(message)
     if verbosity > Verbosity.quiet:
         warnings.warn(warning, stacklevel=2)
