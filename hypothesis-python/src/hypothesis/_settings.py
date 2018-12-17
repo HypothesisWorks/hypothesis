@@ -296,6 +296,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         show_default=True,
         future_default=not_set,
         deprecation_message=None,
+        deprecated_since=None,
         hide_repr=not_set,
     ):
         """Add a new setting.
@@ -321,15 +322,23 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         if hide_repr is not_set:
             hide_repr = bool(deprecation_message)
 
+        if deprecation_message is not None and deprecated_since is None:
+            note_deprecation(
+                "Settings with a deprecation message should always include "
+                "a `deprecated_since` date.",
+                since="2018-12-17",
+            )
+
         all_settings[name] = Setting(
-            name,
-            description.strip(),
-            default,
-            options,
-            validator,
-            future_default,
-            deprecation_message,
-            hide_repr,
+            name=name,
+            description=description.strip(),
+            default=default,
+            options=options,
+            validator=validator,
+            future_default=future_default,
+            deprecation_message=deprecation_message,
+            deprecated_since=deprecated_since,
+            hide_repr=hide_repr,
         )
         setattr(settings, name, settingsProperty(name, show_default))
 
@@ -461,6 +470,7 @@ class Setting(object):
     validator = attr.ib()
     future_default = attr.ib()
     deprecation_message = attr.ib()
+    deprecated_since = attr.ib()
     hide_repr = attr.ib()
 
 
@@ -475,6 +485,7 @@ The min_satisfying_examples setting has been deprecated and disabled, due to
 overlap with the filter_too_much healthcheck and poor interaction with the
 max_examples setting.
 """,
+    deprecated_since="2018-04-08",
 )
 
 settings._define_setting(
@@ -496,6 +507,7 @@ This doesn't actually do anything, but remains for compatibility reasons.
 The max_iterations setting has been disabled, as internal heuristics are more
 useful for this purpose than a user setting.  It no longer has any effect.
 """,
+    deprecated_since="2018-04-06",
 )
 
 settings._define_setting(
@@ -520,6 +532,7 @@ setting), but any other value has no effect and uses a general heuristic.
 The max_shrinks setting has been disabled, as internal heuristics are more
 useful for this purpose than a user setting.
 """,
+    deprecated_since="2018-04-14",
 )
 
 
@@ -547,6 +560,7 @@ Hypothesis. To get the future behaviour set ``timeout=hypothesis.unlimited``
 instead (which will remain valid for a further deprecation period after this
 setting has gone away).
 """,
+    deprecated_since="2017-11-02",
     future_default=unlimited,
     validator=_validate_timeout,
 )
@@ -578,6 +592,7 @@ Strict mode is deprecated and will go away in a future version of Hypothesis.
 To get the same behaviour, use
 warnings.simplefilter('error', HypothesisDeprecationWarning).
 """,
+    deprecated_since="2017-07-16",
     future_default=False,
 )
 
@@ -625,6 +640,7 @@ setting, and will be removed in a future version.  It only exists at
 all for complicated historical reasons and you should just use
 `database` instead.
 """,
+    deprecated_since="2018-04-01",
 )
 
 
@@ -774,6 +790,7 @@ attempting to actually execute your test.
 This setting is deprecated, as `perform_health_check=False` duplicates the
 effect of `suppress_health_check=HealthCheck.all()`.  Use that instead!
 """,
+    deprecated_since="2018-04-05",
 )
 
 
@@ -834,6 +851,7 @@ settings._define_setting(
     deprecation_message="""
 use_coverage no longer does anything and can be removed from your settings.
 """,
+    deprecated_since="2017-09-14",
     description="""
 A flag to enable a feature that no longer exists. This setting is present
 only for backwards compatibility purposes.
@@ -873,6 +891,7 @@ def _validate_print_blob(value):
         else:
             replacement = PrintSettings.NEVER
 
+        # TODO: Pass through `since` here
         note_deprecation(
             "Setting print_blob=%r is deprecated and will become an error "
             "in a future version of Hypothesis. Use print_blob=%r instead."
