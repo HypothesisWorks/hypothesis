@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 
 def default_executor(function):  # pragma: nocover
@@ -33,6 +33,7 @@ def setup_teardown_executor(setup, teardown):
             return function()
         finally:
             teardown(token)
+
     return execute
 
 
@@ -42,13 +43,10 @@ def executor(runner):
     except AttributeError:
         pass
 
-    if (
-        hasattr(runner, 'setup_example') or
-        hasattr(runner, 'teardown_example')
-    ):
+    if hasattr(runner, "setup_example") or hasattr(runner, "teardown_example"):
         return setup_teardown_executor(
-            getattr(runner, 'setup_example', None),
-            getattr(runner, 'teardown_example', None),
+            getattr(runner, "setup_example", None),
+            getattr(runner, "teardown_example", None),
         )
 
     return default_executor
@@ -59,7 +57,6 @@ def default_new_style_executor(data, function):
 
 
 class ConjectureRunner(object):
-
     def hypothesis_execute_example_with_data(self, data, function):
         return function(data)
 
@@ -74,6 +71,4 @@ def new_style_executor(runner):
     if old_school is default_executor:
         return default_new_style_executor
     else:
-        return lambda data, function: old_school(
-            lambda: function(data)
-        )
+        return lambda data, function: old_school(lambda: function(data))

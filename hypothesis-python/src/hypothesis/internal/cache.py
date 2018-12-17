@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import attr
 
@@ -49,7 +49,7 @@ class GenericCache(object):
     on_access and on_evict to implement a specific scoring strategy.
     """
 
-    __slots__ = ('keys_to_indices', 'data', 'max_size')
+    __slots__ = ("keys_to_indices", "data", "max_size")
 
     def __init__(self, max_size):
         self.max_size = max_size
@@ -108,8 +108,7 @@ class GenericCache(object):
         self.keys_to_indices.clear()
 
     def __repr__(self):
-        return '{%s}' % (', '.join(
-            '%r: %r' % (e.key, e.value) for e in self.data),)
+        return "{%s}" % (", ".join("%r: %r" % (e.key, e.value) for e in self.data),)
 
     def new_entry(self, key, value):
         """Called when a key is written that does not currently appear in the
@@ -164,10 +163,7 @@ class GenericCache(object):
             else:
                 break
         while True:
-            children = [
-                j for j in (2 * i + 1, 2 * i + 2)
-                if j < len(self.data)
-            ]
+            children = [j for j in (2 * i + 1, 2 * i + 2) if j < len(self.data)]
             if len(children) == 2:
                 children.sort(key=lambda j: self.data[j].score)
             for j in children:
@@ -202,9 +198,9 @@ class LRUReusedCache(GenericCache):
     entries in preference for the new ones.
     """
 
-    __slots__ = ('__tick',)
+    __slots__ = ("__tick",)
 
-    def __init__(self, max_size, ):
+    def __init__(self, max_size):
         super(LRUReusedCache, self).__init__(max_size)
         self.__tick = 0
 

@@ -15,15 +15,15 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given, settings
+from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import Flaky, MultipleFailures
 from tests.common.utils import capture_out, non_covering_examples
-from hypothesis.database import InMemoryExampleDatabase
 
 
 def test_raises_multiple_failures_with_varying_type():
@@ -43,8 +43,8 @@ def test_raises_multiple_failures_with_varying_type():
         with pytest.raises(MultipleFailures):
             test()
 
-    assert 'TypeError' in o.getvalue()
-    assert 'ValueError' in o.getvalue()
+    assert "TypeError" in o.getvalue()
+    assert "ValueError" in o.getvalue()
 
 
 def test_raises_multiple_failures_when_position_varies():
@@ -57,15 +57,15 @@ def test_raises_multiple_failures_when_position_varies():
         if target[0] is None:
             target[0] = i
         if target[0] == i:
-            raise ValueError('loc 1')
+            raise ValueError("loc 1")
         else:
-            raise ValueError('loc 2')
+            raise ValueError("loc 2")
 
     with capture_out() as o:
         with pytest.raises(MultipleFailures):
             test()
-    assert 'loc 1' in o.getvalue()
-    assert 'loc 2' in o.getvalue()
+    assert "loc 1" in o.getvalue()
+    assert "loc 2" in o.getvalue()
 
 
 def test_replays_both_failing_values():
@@ -88,7 +88,7 @@ def test_replays_both_failing_values():
         test()
 
 
-@pytest.mark.parametrize('fix', [TypeError, ValueError])
+@pytest.mark.parametrize("fix", [TypeError, ValueError])
 def test_replays_slipped_examples_once_initial_bug_is_fixed(fix):
     target = []
     bug_fixed = False
@@ -184,8 +184,8 @@ def test_shrinks_both_failures():
         with pytest.raises(MultipleFailures):
             test()
 
-    assert 'test(i=10000)' in o.getvalue()
-    assert 'test(i=%d)' % (second_target[0],) in o.getvalue()
+    assert "test(i=10000)" in o.getvalue()
+    assert "test(i=%d)" % (second_target[0],) in o.getvalue()
 
 
 def test_handles_flaky_tests_where_only_one_is_flaky():

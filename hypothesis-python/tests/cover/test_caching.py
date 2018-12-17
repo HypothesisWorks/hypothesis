@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
@@ -29,8 +29,7 @@ def test_no_args():
 
 def test_tuple_lengths():
     assert st.tuples(st.integers()) is st.tuples(st.integers())
-    assert st.tuples(st.integers()) is not st.tuples(
-        st.integers(), st.integers())
+    assert st.tuples(st.integers()) is not st.tuples(st.integers(), st.integers())
 
 
 def test_values():
@@ -38,16 +37,16 @@ def test_values():
 
 
 def test_alphabet_key():
-    assert st.text(alphabet='abcs') is st.text(alphabet='abcs')
+    assert st.text(alphabet="abcs") is st.text(alphabet="abcs")
 
 
 def test_does_not_error_on_unhashable_posarg():
-    st.text(['a', 'b', 'c'])
+    st.text(["a", "b", "c"])
 
 
 def test_does_not_error_on_unhashable_kwarg():
     with pytest.raises(InvalidArgument):
-        st.builds(lambda alphabet: 1, alphabet=['a', 'b', 'c']).validate()
+        st.builds(lambda alphabet: 1, alphabet=["a", "b", "c"]).validate()
 
 
 def test_caches_floats_sensitively():

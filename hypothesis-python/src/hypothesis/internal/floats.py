@@ -15,12 +15,16 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import math
 
-from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT, quiet_raise, \
-    struct_pack, struct_unpack
+from hypothesis.internal.compat import (
+    CAN_PACK_HALF_FLOAT,
+    quiet_raise,
+    struct_pack,
+    struct_unpack,
+)
 
 try:
     import numpy
@@ -31,9 +35,9 @@ except ImportError:
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
 STRUCT_FORMATS = {
-    16: (b'!H', b'!e'),  # Note: 'e' is new in Python 3.6, so we have helpers
-    32: (b'!I', b'!f'),
-    64: (b'!Q', b'!d'),
+    16: (b"!H", b"!e"),  # Note: 'e' is new in Python 3.6, so we have helpers
+    32: (b"!I", b"!f"),
+    64: (b"!Q", b"!d"),
 }
 
 
@@ -41,19 +45,22 @@ STRUCT_FORMATS = {
 # 3.5 and earlier, and the elegant one for new versions.  We use the new
 # one if Numpy is unavailable too, because it's slightly faster in all cases.
 if numpy and not CAN_PACK_HALF_FLOAT:  # pragma: no cover
+
     def reinterpret_bits(x, from_, to):
-        if from_ == b'!e':
-            arr = numpy.array([x], dtype='>f2')
+        if from_ == b"!e":
+            arr = numpy.array([x], dtype=">f2")
             if numpy.isfinite(x) and not numpy.isfinite(arr[0]):
-                quiet_raise(OverflowError('%r too large for float16' % (x,)))
+                quiet_raise(OverflowError("%r too large for float16" % (x,)))
             buf = arr.tobytes()
         else:
             buf = struct_pack(from_, x)
-        if to == b'!e':
-            return float(numpy.frombuffer(buf, dtype='>f2')[0])
+        if to == b"!e":
+            return float(numpy.frombuffer(buf, dtype=">f2")[0])
         return struct_unpack(to, buf)[0]
 
+
 else:
+
     def reinterpret_bits(x, from_, to):
         return struct_unpack(to, struct_pack(from_, x))[0]
 
@@ -63,18 +70,16 @@ def float_of(x, width):
     if width == 64:
         return float(x)
     elif width == 32:
-        return reinterpret_bits(float(x), b'!f', b'!f')
+        return reinterpret_bits(float(x), b"!f", b"!f")
     else:
-        return reinterpret_bits(float(x), b'!e', b'!e')
+        return reinterpret_bits(float(x), b"!e", b"!e")
 
 
 def sign(x):
     try:
         return math.copysign(1.0, x)
     except TypeError:
-        raise TypeError('Expected float but got %r of type %s' % (
-            x, type(x).__name__
-        ))
+        raise TypeError("Expected float but got %r of type %s" % (x, type(x).__name__))
 
 
 def is_negative(x):
@@ -87,8 +92,9 @@ def count_between_floats(x, y, width=64):
         if is_negative(y):
             return float_to_int(x, width) - float_to_int(y, width) + 1
         else:
-            return count_between_floats(x, -0.0, width) + \
-                count_between_floats(0.0, y, width)
+            return count_between_floats(x, -0.0, width) + count_between_floats(
+                0.0, y, width
+            )
     else:
         assert not is_negative(y)
         return float_to_int(y, width) - float_to_int(x, width) + 1

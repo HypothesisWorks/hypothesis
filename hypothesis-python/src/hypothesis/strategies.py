@@ -15,68 +15,117 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import sys
+import datetime as dt
 import enum
 import math
+import operator
 import random
 import string
-import datetime as dt
-import operator
-from uuid import UUID
+import sys
 from decimal import Context, Decimal, localcontext
-from inspect import isclass, isfunction
 from fractions import Fraction
 from functools import reduce
+from inspect import isclass, isfunction
+from uuid import UUID
 
 import attr
 
-from hypothesis.types import RandomWithSeed
-from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.control import note, assume, reject, cleanup, \
-    current_build_context
 from hypothesis._settings import note_deprecation
+from hypothesis.control import assume, cleanup, current_build_context, note, reject
+from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.searchstrategy import SearchStrategy, check_strategy
-from hypothesis.internal.compat import abc, gcd, ceil, floor, hrange, \
-    string_types, get_type_hints, getfullargspec, typing_root_type, \
-    implements_iterator
-from hypothesis.internal.floats import next_up, float_of, next_down, \
-    is_negative, float_to_int, int_to_float, count_between_floats
-from hypothesis.internal.charmap import as_general_categories
 from hypothesis.internal.cathetus import cathetus
+from hypothesis.internal.charmap import as_general_categories
+from hypothesis.internal.compat import (
+    abc,
+    ceil,
+    floor,
+    gcd,
+    get_type_hints,
+    getfullargspec,
+    hrange,
+    implements_iterator,
+    string_types,
+    typing_root_type,
+)
+from hypothesis.internal.conjecture.utils import (
+    calc_label_from_cls,
+    check_sample,
+    choice,
+    integer_range,
+)
+from hypothesis.internal.floats import (
+    count_between_floats,
+    float_of,
+    float_to_int,
+    int_to_float,
+    is_negative,
+    next_down,
+    next_up,
+)
+from hypothesis.internal.reflection import (
+    define_function_signature,
+    is_typed_named_tuple,
+    proxies,
+    required_args,
+)
 from hypothesis.internal.renaming import renamed_arguments
-from hypothesis.utils.conventions import infer, not_set
-from hypothesis.internal.reflection import proxies, required_args, \
-    is_typed_named_tuple, define_function_signature
-from hypothesis.internal.validation import check_type, try_convert, \
-    check_valid_size, check_valid_bound, check_valid_sizes, \
-    check_valid_integer, check_valid_interval, check_valid_magnitude
-from hypothesis.searchstrategy.lazy import LazyStrategy
-from hypothesis.searchstrategy.misc import BoolStrategy, JustStrategy, \
-    SampledFromStrategy
-from hypothesis.searchstrategy.shared import SharedStrategy
-from hypothesis.searchstrategy.numbers import FloatStrategy, \
-    BoundedIntStrategy, IntegersFromStrategy, WideRangeIntStrategy, \
-    FixedBoundedFloatStrategy
-from hypothesis.searchstrategy.streams import StreamStrategy
-from hypothesis.searchstrategy.strings import FixedSizeBytes, \
-    StringStrategy, BinaryStringStrategy, OneCharStringStrategy
-from hypothesis.searchstrategy.datetime import DateStrategy, \
-    DatetimeStrategy, TimedeltaStrategy
+from hypothesis.internal.validation import (
+    check_type,
+    check_valid_bound,
+    check_valid_integer,
+    check_valid_interval,
+    check_valid_magnitude,
+    check_valid_size,
+    check_valid_sizes,
+    try_convert,
+)
+from hypothesis.searchstrategy import SearchStrategy, check_strategy
+from hypothesis.searchstrategy.collections import (
+    FixedKeysDictStrategy,
+    ListStrategy,
+    TupleStrategy,
+    UniqueListStrategy,
+)
+from hypothesis.searchstrategy.datetime import (
+    DateStrategy,
+    DatetimeStrategy,
+    TimedeltaStrategy,
+)
 from hypothesis.searchstrategy.deferred import DeferredStrategy
+from hypothesis.searchstrategy.lazy import LazyStrategy
+from hypothesis.searchstrategy.misc import (
+    BoolStrategy,
+    JustStrategy,
+    SampledFromStrategy,
+)
+from hypothesis.searchstrategy.numbers import (
+    BoundedIntStrategy,
+    FixedBoundedFloatStrategy,
+    FloatStrategy,
+    IntegersFromStrategy,
+    WideRangeIntStrategy,
+)
 from hypothesis.searchstrategy.recursive import RecursiveStrategy
-from hypothesis.internal.conjecture.utils import choice, check_sample, \
-    integer_range, calc_label_from_cls
+from hypothesis.searchstrategy.shared import SharedStrategy
 from hypothesis.searchstrategy.strategies import OneOfStrategy
-from hypothesis.searchstrategy.collections import ListStrategy, \
-    TupleStrategy, UniqueListStrategy, FixedKeysDictStrategy
+from hypothesis.searchstrategy.streams import StreamStrategy
+from hypothesis.searchstrategy.strings import (
+    BinaryStringStrategy,
+    FixedSizeBytes,
+    OneCharStringStrategy,
+    StringStrategy,
+)
+from hypothesis.types import RandomWithSeed
+from hypothesis.utils.conventions import infer, not_set
 
-typing = None   # type: Union[None, ModuleType]
+typing = None  # type: Union[None, ModuleType]
 
 try:
     import typing as typing_module
+
     typing = typing_module
 except ImportError:
     pass
@@ -94,45 +143,70 @@ if False:
 
     from hypothesis.utils.conventions import InferType  # noqa
     from hypothesis.searchstrategy.strategies import T, Ex  # noqa
-    K, V = TypeVar['K'], TypeVar['V']
+
+    K, V = TypeVar["K"], TypeVar["V"]
     # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
     Real = Union[int, float, Fraction, Decimal]
 else:
+
     def overload(f):
         return f
 
+
 __all__ = [
-    'nothing',
-    'just', 'one_of',
-    'none',
-    'choices', 'streaming',
-    'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
-    'decimals',
-    'characters', 'text', 'from_regex', 'binary', 'uuids',
-    'tuples', 'lists', 'sets', 'frozensets', 'iterables',
-    'dictionaries', 'fixed_dictionaries',
-    'sampled_from', 'permutations',
-    'datetimes', 'dates', 'times', 'timedeltas',
-    'builds',
-    'randoms', 'random_module',
-    'recursive', 'composite',
-    'shared', 'runner', 'data',
-    'deferred',
-    'from_type', 'register_type_strategy', 'emails',
+    "nothing",
+    "just",
+    "one_of",
+    "none",
+    "choices",
+    "streaming",
+    "booleans",
+    "integers",
+    "floats",
+    "complex_numbers",
+    "fractions",
+    "decimals",
+    "characters",
+    "text",
+    "from_regex",
+    "binary",
+    "uuids",
+    "tuples",
+    "lists",
+    "sets",
+    "frozensets",
+    "iterables",
+    "dictionaries",
+    "fixed_dictionaries",
+    "sampled_from",
+    "permutations",
+    "datetimes",
+    "dates",
+    "times",
+    "timedeltas",
+    "builds",
+    "randoms",
+    "random_module",
+    "recursive",
+    "composite",
+    "shared",
+    "runner",
+    "data",
+    "deferred",
+    "from_type",
+    "register_type_strategy",
+    "emails",
 ]
 
 _strategies = set()
 
 
 class FloatKey(object):
-
     def __init__(self, f):
         self.value = float_to_int(f)
 
     def __eq__(self, other):
-        return isinstance(other, FloatKey) and (
-            other.value == self.value
-        )
+        return isinstance(other, FloatKey) and (other.value == self.value)
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -160,9 +234,7 @@ def cacheable(fn):
                 kwargs_cache_key.add((k, convert_value(v)))
         except TypeError:
             return fn(*args, **kwargs)
-        cache_key = (
-            fn,
-            tuple(map(convert_value, args)), frozenset(kwargs_cache_key))
+        cache_key = (fn, tuple(map(convert_value, args)), frozenset(kwargs_cache_key))
         try:
             return STRATEGY_CACHE[cache_key]
         except TypeError:
@@ -172,6 +244,7 @@ def cacheable(fn):
             if not isinstance(result, SearchStrategy) or result.is_cacheable:
                 STRATEGY_CACHE[cache_key] = result
             return result
+
     cached_strategy.__clear_cache = STRATEGY_CACHE.clear
     return cached_strategy
 
@@ -184,6 +257,7 @@ def base_defines_strategy(force_reusable):
     reusable, i.e. immutable and safe to cache, across multiple test
     invocations.
     """
+
     def decorator(strategy_definition):
         """A decorator that registers the function as a strategy and makes it
         lazily evaluated."""
@@ -199,6 +273,7 @@ def base_defines_strategy(force_reusable):
 
         accept.is_hypothesis_strategy_function = True
         return accept
+
     return decorator
 
 
@@ -219,7 +294,7 @@ class Nothing(SearchStrategy):
         return True
 
     def __repr__(self):
-        return 'nothing()'
+        return "nothing()"
 
     def map(self, f):
         return self
@@ -328,36 +403,39 @@ def integers(min_value=None, max_value=None):
     will also shrink towards positive (i.e. -n may be replaced by +n).
     """
 
-    check_valid_bound(min_value, 'min_value')
-    check_valid_bound(max_value, 'max_value')
-    check_valid_interval(min_value, max_value, 'min_value', 'max_value')
+    check_valid_bound(min_value, "min_value")
+    check_valid_bound(max_value, "max_value")
+    check_valid_interval(min_value, max_value, "min_value", "max_value")
 
     min_int_value = None if min_value is None else ceil(min_value)
     max_int_value = None if max_value is None else floor(max_value)
 
     if min_value != min_int_value:
         note_deprecation(
-            'min_value=%r of type %r cannot be exactly represented as an '
-            'integer, which will be an error in a future version.  '
-            'Use %r instead.' % (min_value, type(min_value), min_int_value)
+            "min_value=%r of type %r cannot be exactly represented as an "
+            "integer, which will be an error in a future version.  "
+            "Use %r instead." % (min_value, type(min_value), min_int_value)
         )
     if max_value != max_int_value:
         note_deprecation(
-            'max_value=%r of type %r cannot be exactly represented as an '
-            'integer, which will be an error in a future version.  '
-            'Use %r instead.' % (max_value, type(max_value), max_int_value)
+            "max_value=%r of type %r cannot be exactly represented as an "
+            "integer, which will be an error in a future version.  "
+            "Use %r instead." % (max_value, type(max_value), max_int_value)
         )
 
-    if min_int_value is not None and max_int_value is not None and \
-            min_int_value > max_int_value:
-        raise InvalidArgument('No integers between min_value=%r and '
-                              'max_value=%r' % (min_value, max_value))
+    if (
+        min_int_value is not None
+        and max_int_value is not None
+        and min_int_value > max_int_value
+    ):
+        raise InvalidArgument(
+            "No integers between min_value=%r and "
+            "max_value=%r" % (min_value, max_value)
+        )
 
     if min_int_value is None:
         if max_int_value is None:
-            return (
-                WideRangeIntStrategy()
-            )
+            return WideRangeIntStrategy()
         else:
             return IntegersFromStrategy(0).map(lambda x: max_int_value - x)
     else:
@@ -370,12 +448,13 @@ def integers(min_value=None, max_value=None):
             elif min_int_value >= 0:
                 return BoundedIntStrategy(min_int_value, max_int_value)
             elif max_int_value <= 0:
-                return BoundedIntStrategy(
-                    -max_int_value, -min_int_value
-                ).map(lambda t: -t)
+                return BoundedIntStrategy(-max_int_value, -min_int_value).map(
+                    lambda t: -t
+                )
             else:
-                return integers(min_value=0, max_value=max_int_value) | \
-                    integers(min_value=min_int_value, max_value=0)
+                return integers(min_value=0, max_value=max_int_value) | integers(
+                    min_value=min_int_value, max_value=0
+                )
 
 
 @cacheable
@@ -430,22 +509,21 @@ def floats(
     elif allow_nan:
         if min_value is not None or max_value is not None:
             raise InvalidArgument(
-                'Cannot have allow_nan=%r, with min_value or max_value' % (
-                    allow_nan
-                ))
+                "Cannot have allow_nan=%r, with min_value or max_value" % (allow_nan)
+            )
 
     if width not in (16, 32, 64):
         raise InvalidArgument(
-            'Got width=%r, but the only valid values are the integers 16, '
-            '32, and 64.' % (width,)
+            "Got width=%r, but the only valid values are the integers 16, "
+            "32, and 64." % (width,)
         )
     if width == 16 and sys.version_info[:2] < (3, 6) and numpy is None:
         raise InvalidArgument(  # pragma: no cover
-            'width=16 requires either Numpy, or Python >= 3.6'
+            "width=16 requires either Numpy, or Python >= 3.6"
         )
 
-    check_valid_bound(min_value, 'min_value')
-    check_valid_bound(max_value, 'max_value')
+    check_valid_bound(min_value, "min_value")
+    check_valid_bound(max_value, "max_value")
 
     min_arg, max_arg = min_value, max_value
     if min_value is not None:
@@ -457,23 +535,21 @@ def floats(
 
     if min_value != min_arg:
         note_deprecation(
-            'min_value=%r cannot be exactly represented as a float of width '
-            '%d, which will be an error in a future version. Use min_value=%r '
-            'instead.'
-            % (min_value, width, min_arg)
+            "min_value=%r cannot be exactly represented as a float of width "
+            "%d, which will be an error in a future version. Use min_value=%r "
+            "instead." % (min_value, width, min_arg)
         )
     if max_value != max_arg:
         note_deprecation(
-            'max_value=%r cannot be exactly represented as a float of width '
-            '%d, which will be an error in a future version. Use max_value=%r '
-            'instead'
-            % (max_value, width, max_arg)
+            "max_value=%r cannot be exactly represented as a float of width "
+            "%d, which will be an error in a future version. Use max_value=%r "
+            "instead" % (max_value, width, max_arg)
         )
 
-    check_valid_interval(min_value, max_value, 'min_value', 'max_value')
-    if min_value == float(u'-inf'):
+    check_valid_interval(min_value, max_value, "min_value", "max_value")
+    if min_value == float(u"-inf"):
         min_value = None
-    if max_value == float(u'inf'):
+    if max_value == float(u"inf"):
         max_value = None
 
     if min_value is not None and min_arg is not None and min_value < min_arg:
@@ -482,25 +558,24 @@ def floats(
     if max_value is not None and max_arg is not None and max_value > max_arg:
         max_value = next_down(max_value, width)
         assert max_value < max_arg  # type: ignore
-    if min_value is not None and max_value is not None and \
-            min_value > max_value:
+    if min_value is not None and max_value is not None and min_value > max_value:
         raise InvalidArgument(
-            'There are no %s-bit floating-point values between min_value=%r '
-            'and max_value=%r' % (width, min_arg, max_arg))
+            "There are no %s-bit floating-point values between min_value=%r "
+            "and max_value=%r" % (width, min_arg, max_arg)
+        )
 
     if allow_infinity is None:
         allow_infinity = bool(min_value is None or max_value is None)
     elif allow_infinity:
         if min_value is not None and max_value is not None:
             raise InvalidArgument(
-                'Cannot have allow_infinity=%r, with both min_value and '
-                'max_value' % (
-                    allow_infinity
-                ))
+                "Cannot have allow_infinity=%r, with both min_value and "
+                "max_value" % (allow_infinity)
+            )
 
     if min_value is None and max_value is None:
         result = FloatStrategy(
-            allow_infinity=allow_infinity, allow_nan=allow_nan,
+            allow_infinity=allow_infinity, allow_nan=allow_nan
         )  # type: SearchStrategy[float]
     elif min_value is not None and max_value is not None:
         if min_value == max_value:
@@ -508,11 +583,13 @@ def floats(
             result = just(min_value)
         elif is_negative(min_value):
             if is_negative(max_value):
-                result = floats(min_value=-max_value, max_value=-min_value)\
-                    .map(operator.neg)
+                result = floats(min_value=-max_value, max_value=-min_value).map(
+                    operator.neg
+                )
             else:
                 result = floats(min_value=0.0, max_value=max_value) | floats(
-                    min_value=0.0, max_value=-min_value).map(operator.neg)
+                    min_value=0.0, max_value=-min_value
+                ).map(operator.neg)
         elif count_between_floats(min_value, max_value) > 1000:
             result = FixedBoundedFloatStrategy(
                 lower_bound=min_value, upper_bound=max_value
@@ -527,41 +604,38 @@ def floats(
     elif min_value is not None:
         assert isinstance(min_value, float)
         if min_value < 0:
-            result = floats(
-                min_value=0.0, allow_infinity=allow_infinity
-            ) | floats(min_value=min_value, max_value=-0.0)
+            result = floats(min_value=0.0, allow_infinity=allow_infinity) | floats(
+                min_value=min_value, max_value=-0.0
+            )
         else:
-            result = (
-                floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                    lambda x: assume(not math.isnan(x)) and
-                    min_value + abs(x)  # type: ignore
-                )
+            result = floats(allow_infinity=allow_infinity, allow_nan=False).map(
+                lambda x: assume(not math.isnan(x))
+                and min_value + abs(x)  # type: ignore
             )
         if min_value == 0 and not is_negative(min_value):
             result = result.filter(lambda x: math.copysign(1.0, x) == 1)
     else:
         assert isinstance(max_value, float)
         if max_value > 0:
-            result = floats(
-                min_value=0.0,
-                max_value=max_value,
-            ) | floats(max_value=-0.0, allow_infinity=allow_infinity)
+            result = floats(min_value=0.0, max_value=max_value) | floats(
+                max_value=-0.0, allow_infinity=allow_infinity
+            )
         else:
-            result = (
-                floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                    lambda x: assume(not math.isnan(x)) and
-                    max_value - abs(x)  # type: ignore
-                )
+            result = floats(allow_infinity=allow_infinity, allow_nan=False).map(
+                lambda x: assume(not math.isnan(x))
+                and max_value - abs(x)  # type: ignore
             )
         if max_value == 0 and is_negative(max_value):
             result = result.filter(is_negative)
 
     if width < 64:
+
         def downcast(x):
             try:
                 return float_of(x, width)
             except OverflowError:
                 reject()
+
         return result.map(downcast)
     return result
 
@@ -613,17 +687,17 @@ def sampled_from(elements):
     1 values with 10, and sampled_from((1, 10)) will shrink by trying to
     replace 10 values with 1.
     """
-    values = check_sample(elements, 'sampled_from')
+    values = check_sample(elements, "sampled_from")
     if not values:
         return nothing()
     if len(values) == 1:
         return just(values[0])
-    if hasattr(enum, 'Flag') and isclass(elements) and \
-            issubclass(elements, enum.Flag):
+    if hasattr(enum, "Flag") and isclass(elements) and issubclass(elements, enum.Flag):
         # Combinations of enum.Flag members are also members.  We generate
         # these dynamically, because static allocation takes O(2^n) memory.
         return sets(sampled_from(values), min_size=1).map(
-            lambda s: reduce(operator.or_, s))
+            lambda s: reduce(operator.or_, s)
+        )
     return SampledFromStrategy(values)
 
 
@@ -661,38 +735,38 @@ def lists(
     check_valid_sizes(min_size, average_size, max_size)
     if elements is None:
         note_deprecation(
-            'Passing a strategy for `elements` of the list will be required '
-            'in a future version of Hypothesis.  To create lists that are '
-            'always empty, use `builds(list)` or `lists(nothing())`.'
+            "Passing a strategy for `elements` of the list will be required "
+            "in a future version of Hypothesis.  To create lists that are "
+            "always empty, use `builds(list)` or `lists(nothing())`."
         )
         if min_size or average_size or max_size:
             # Checked internally for lists with an elements strategy, but
             # we're about to skip that and return builds(list) instead...
             raise InvalidArgument(
-                'Cannot create a non-empty collection (min_size=%r, '
-                'average_size=%r, max_size=%r) without elements.'
+                "Cannot create a non-empty collection (min_size=%r, "
+                "average_size=%r, max_size=%r) without elements."
                 % (min_size, average_size, max_size)
             )
         return builds(list)
     if max_size == 0:
         return builds(list)
-    check_strategy(elements, 'elements')
+    check_strategy(elements, "elements")
     if unique:
         if unique_by is not None:
-            raise InvalidArgument((
-                'cannot specify both unique and unique_by (you probably only '
-                'want to set unique_by)'
-            ))
+            raise InvalidArgument(
+                (
+                    "cannot specify both unique and unique_by (you probably only "
+                    "want to set unique_by)"
+                )
+            )
         else:
+
             def unique_by(x):
                 return x
 
     if unique_by is not None:
         return UniqueListStrategy(
-            elements=elements,
-            max_size=max_size,
-            min_size=min_size,
-            key=unique_by
+            elements=elements, max_size=max_size, min_size=min_size, key=unique_by
         )
     return ListStrategy(elements, min_size=min_size, max_size=max_size)
 
@@ -701,7 +775,7 @@ def lists(
 @defines_strategy
 def sets(
     elements=None,  # type: SearchStrategy[Ex]
-    min_size=0,   # type: int
+    min_size=0,  # type: int
     average_size=None,  # type: None
     max_size=None,  # type: int
 ):
@@ -717,13 +791,16 @@ def sets(
     """
     if elements is None:
         note_deprecation(
-            'Passing a strategy for `elements` of the set will be required '
-            'in a future version of Hypothesis.  To create sets that are '
-            'always empty, use `builds(set)` or `sets(nothing())`.'
+            "Passing a strategy for `elements` of the set will be required "
+            "in a future version of Hypothesis.  To create sets that are "
+            "always empty, use `builds(set)` or `sets(nothing())`."
         )
     return lists(
-        elements=elements, min_size=min_size, average_size=average_size,
-        max_size=max_size, unique=True
+        elements=elements,
+        min_size=min_size,
+        average_size=average_size,
+        max_size=max_size,
+        unique=True,
     ).map(set)
 
 
@@ -731,7 +808,7 @@ def sets(
 @defines_strategy
 def frozensets(
     elements=None,  # type: SearchStrategy[Ex]
-    min_size=0,   # type: int
+    min_size=0,  # type: int
     average_size=None,  # type: None
     max_size=None,  # type: int
 ):
@@ -740,14 +817,17 @@ def frozensets(
     frozensets."""
     if elements is None:
         note_deprecation(
-            'Passing a strategy for `elements` of the frozenset will be '
-            'required in a future version of Hypothesis.  To create '
-            'frozensets that are always empty, use `builds(frozenset)` '
-            'or `frozensets(nothing())`.'
+            "Passing a strategy for `elements` of the frozenset will be "
+            "required in a future version of Hypothesis.  To create "
+            "frozensets that are always empty, use `builds(frozenset)` "
+            "or `frozensets(nothing())`."
         )
     return lists(
-        elements=elements, min_size=min_size, average_size=average_size,
-        max_size=max_size, unique=True
+        elements=elements,
+        min_size=min_size,
+        average_size=average_size,
+        max_size=max_size,
+        unique=True,
     ).map(frozenset)
 
 
@@ -764,12 +844,18 @@ class PrettyIter(object):
         return next(self._iter)
 
     def __repr__(self):
-        return 'iter({!r})'.format(self._values)
+        return "iter({!r})".format(self._values)
 
 
 @defines_strategy
-def iterables(elements=None, min_size=0, average_size=None, max_size=None,
-              unique_by=None, unique=False):
+def iterables(
+    elements=None,
+    min_size=0,
+    average_size=None,
+    max_size=None,
+    unique_by=None,
+    unique=False,
+):
     """This has the same behaviour as lists, but returns iterables instead.
 
     Some iterables cannot be indexed (e.g. sets) and some do not have a
@@ -779,21 +865,23 @@ def iterables(elements=None, min_size=0, average_size=None, max_size=None,
     """
     if elements is None:
         note_deprecation(
-            'Passing a strategy for `elements` of the iterable will be '
-            'required in a future version of Hypothesis.  To create '
-            'iterables that are always empty, use `iterables(nothing())`.'
+            "Passing a strategy for `elements` of the iterable will be "
+            "required in a future version of Hypothesis.  To create "
+            "iterables that are always empty, use `iterables(nothing())`."
         )
 
     return lists(
-        elements=elements, min_size=min_size, average_size=average_size,
-        max_size=max_size, unique_by=unique_by, unique=unique
+        elements=elements,
+        min_size=min_size,
+        average_size=average_size,
+        max_size=max_size,
+        unique_by=unique_by,
+        unique=unique,
     ).map(PrettyIter)
 
 
 @defines_strategy
-def fixed_dictionaries(
-    mapping
-):
+def fixed_dictionaries(mapping):
     # type: (Dict[T, SearchStrategy[Ex]]) -> SearchStrategy[Dict[T, Ex]]
     """Generates a dictionary of the same type as mapping with a fixed set of
     keys mapping to strategies. mapping must be a dict subclass.
@@ -806,7 +894,7 @@ def fixed_dictionaries(
     Examples from this strategy shrink by shrinking each individual value in
     the generated dictionary.
     """
-    check_type(dict, mapping, 'mapping')
+    check_type(dict, mapping, "mapping")
     for v in mapping.values():
         check_strategy(v)
     return FixedKeysDictStrategy(mapping)
@@ -841,8 +929,9 @@ def dictionaries(
 
     return lists(
         tuples(keys, values),
-        min_size=min_size, max_size=max_size,
-        unique_by=lambda x: x[0]
+        min_size=min_size,
+        max_size=max_size,
+        unique_by=lambda x: x[0],
     ).map(dict_class)
 
 
@@ -860,8 +949,8 @@ def streaming(elements):
         Use :func:`data() <hypothesis.strategies.data>` instead.
     """
     note_deprecation(
-        'streaming() has been deprecated. Use the data() strategy instead and '
-        'replace stream iteration with data.draw() calls.'
+        "streaming() has been deprecated. Use the data() strategy instead and "
+        "replace stream iteration with data.draw() calls."
     )
 
     check_strategy(elements)
@@ -915,10 +1004,9 @@ def characters(
     Examples from this strategy shrink towards the codepoint for ``'0'``,
     or the first allowable codepoint after it if ``'0'`` is excluded.
     """
-    check_valid_size(min_codepoint, 'min_codepoint')
-    check_valid_size(max_codepoint, 'max_codepoint')
-    check_valid_interval(min_codepoint, max_codepoint,
-                         'min_codepoint', 'max_codepoint')
+    check_valid_size(min_codepoint, "min_codepoint")
+    check_valid_size(max_codepoint, "max_codepoint")
+    check_valid_interval(min_codepoint, max_codepoint, "min_codepoint", "max_codepoint")
     if (
         min_codepoint is None
         and max_codepoint is None
@@ -927,54 +1015,63 @@ def characters(
         and whitelist_characters is not None
     ):
         raise InvalidArgument(
-            'Nothing is excluded by other arguments, so passing only '
-            'whitelist_characters=%(chars)r would have no effect.  Also pass '
-            'whitelist_categories=(), or use sampled_from(%(chars)r) instead.'
+            "Nothing is excluded by other arguments, so passing only "
+            "whitelist_characters=%(chars)r would have no effect.  Also pass "
+            "whitelist_categories=(), or use sampled_from(%(chars)r) instead."
             % dict(chars=whitelist_characters)
         )
-    blacklist_characters = blacklist_characters or ''
-    whitelist_characters = whitelist_characters or ''
+    blacklist_characters = blacklist_characters or ""
+    whitelist_characters = whitelist_characters or ""
     overlap = set(blacklist_characters).intersection(whitelist_characters)
     if overlap:
         raise InvalidArgument(
-            'Characters %r are present in both whitelist_characters=%r, and '
-            'blacklist_characters=%r' % (
-                sorted(overlap), whitelist_characters, blacklist_characters))
+            "Characters %r are present in both whitelist_characters=%r, and "
+            "blacklist_characters=%r"
+            % (sorted(overlap), whitelist_characters, blacklist_characters)
+        )
     blacklist_categories = as_general_categories(
-        blacklist_categories, 'blacklist_categories')
-    if whitelist_categories is not None and not whitelist_categories and \
-            not whitelist_characters:
+        blacklist_categories, "blacklist_categories"
+    )
+    if (
+        whitelist_categories is not None
+        and not whitelist_categories
+        and not whitelist_characters
+    ):
         raise InvalidArgument(
-            'When whitelist_categories is an empty collection and there are '
-            'no characters specified in whitelist_characters, nothing can '
-            'be generated by the characters() strategy.')
+            "When whitelist_categories is an empty collection and there are "
+            "no characters specified in whitelist_characters, nothing can "
+            "be generated by the characters() strategy."
+        )
     whitelist_categories = as_general_categories(
-        whitelist_categories, 'whitelist_categories')
-    both_cats = set(
-        blacklist_categories or ()).intersection(whitelist_categories or ())
+        whitelist_categories, "whitelist_categories"
+    )
+    both_cats = set(blacklist_categories or ()).intersection(whitelist_categories or ())
     if both_cats:
         raise InvalidArgument(
-            'Categories %r are present in both whitelist_categories=%r, and '
-            'blacklist_categories=%r' % (
-                sorted(both_cats), whitelist_categories, blacklist_categories))
+            "Categories %r are present in both whitelist_categories=%r, and "
+            "blacklist_categories=%r"
+            % (sorted(both_cats), whitelist_categories, blacklist_categories)
+        )
 
-    return OneCharStringStrategy(whitelist_categories=whitelist_categories,
-                                 blacklist_categories=blacklist_categories,
-                                 blacklist_characters=blacklist_characters,
-                                 min_codepoint=min_codepoint,
-                                 max_codepoint=max_codepoint,
-                                 whitelist_characters=whitelist_characters)
+    return OneCharStringStrategy(
+        whitelist_categories=whitelist_categories,
+        blacklist_categories=blacklist_categories,
+        blacklist_characters=blacklist_characters,
+        min_codepoint=min_codepoint,
+        max_codepoint=max_codepoint,
+        whitelist_characters=whitelist_characters,
+    )
 
 
 @cacheable
 @defines_strategy_with_reusable_values
 def text(
     alphabet=characters(
-        blacklist_categories=('Cs',)
+        blacklist_categories=("Cs",)
     ),  # type: Union[Sequence[Text], SearchStrategy[Text]]
-    min_size=0,   # type: int
-    average_size=None,   # type: None
-    max_size=None  # type: int
+    min_size=0,  # type: int
+    average_size=None,  # type: None
+    max_size=None,  # type: int
 ):
     # type: (...) -> SearchStrategy[Text]
     """Generates values of a unicode text type (unicode on python 2, str on
@@ -1001,41 +1098,38 @@ def text(
     """
     check_valid_sizes(min_size, average_size, max_size)
     if alphabet is None:
-        note_deprecation('alphabet=None is deprecated; just omit the argument')
-        char_strategy = characters(blacklist_categories=('Cs',))
+        note_deprecation("alphabet=None is deprecated; just omit the argument")
+        char_strategy = characters(blacklist_categories=("Cs",))
     elif isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:
         if not isinstance(alphabet, abc.Sequence):
             note_deprecation(
-                'alphabet must be an ordered sequence, or tests may be '
-                'flaky and shrinking weaker, but a %r is not a type of '
-                'sequence.  This will be an error in future.'
-                % (type(alphabet),)
+                "alphabet must be an ordered sequence, or tests may be "
+                "flaky and shrinking weaker, but a %r is not a type of "
+                "sequence.  This will be an error in future." % (type(alphabet),)
             )
         alphabet = list(alphabet)
         non_string = [c for c in alphabet if not isinstance(c, string_types)]
         if non_string:
             note_deprecation(
-                'The following elements in alphabet are not unicode '
-                'strings, which will be an error in future:  %r'
-                % (non_string,)
+                "The following elements in alphabet are not unicode "
+                "strings, which will be an error in future:  %r" % (non_string,)
             )
             alphabet = [str(c) for c in alphabet]
-        not_one_char = [c for c in alphabet
-                        if isinstance(c, string_types) and len(c) != 1]
+        not_one_char = [
+            c for c in alphabet if isinstance(c, string_types) and len(c) != 1
+        ]
         if not_one_char:
             note_deprecation(
-                'The following elements in alphabet are not of length '
-                'one, which leads to violation of size constraints and '
-                'will be an error in future:  %r' % (not_one_char,)
+                "The following elements in alphabet are not of length "
+                "one, which leads to violation of size constraints and "
+                "will be an error in future:  %r" % (not_one_char,)
             )
         char_strategy = sampled_from(alphabet)
     if (max_size == 0 or char_strategy.is_empty) and not min_size:
-        return just(u'')
-    return StringStrategy(lists(
-        char_strategy, min_size=min_size, max_size=max_size
-    ))
+        return just(u"")
+    return StringStrategy(lists(char_strategy, min_size=min_size, max_size=max_size))
 
 
 @cacheable
@@ -1069,18 +1163,17 @@ def from_regex(regex, fullmatch=False):
     Examples from this strategy shrink towards shorter strings and lower
     character values, with exact behaviour that may depend on the pattern.
     """
-    check_type(bool, fullmatch, 'fullmatch')
+    check_type(bool, fullmatch, "fullmatch")
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.searchstrategy.regex import regex_strategy
+
     return regex_strategy(regex, fullmatch)
 
 
 @cacheable
 @defines_strategy_with_reusable_values
-def binary(
-    min_size=0, average_size=None, max_size=None
-):
+def binary(min_size=0, average_size=None, max_size=None):
     # type: (int, int, int) -> SearchStrategy[bytes]
     """Generates the appropriate binary type (str in python 2, bytes in python
     3).
@@ -1098,8 +1191,7 @@ def binary(
         return FixedSizeBytes(min_size)
     return BinaryStringStrategy(
         lists(
-            integers(min_value=0, max_value=255),
-            min_size=min_size, max_size=max_size
+            integers(min_value=0, max_value=255), min_size=min_size, max_size=max_size
         )
     )
 
@@ -1117,12 +1209,11 @@ def randoms():
 
 
 class RandomSeeder(object):
-
     def __init__(self, seed):
         self.seed = seed
 
     def __repr__(self):
-        return 'random.seed(%r)' % (self.seed,)
+        return "random.seed(%r)" % (self.seed,)
 
 
 class RandomModule(SearchStrategy):
@@ -1155,7 +1246,7 @@ def random_module():
 
     Examples from these strategy shrink to seeds closer to zero.
     """
-    return shared(RandomModule(), 'hypothesis.strategies.random_module()')
+    return shared(RandomModule(), "hypothesis.strategies.random_module()")
 
 
 @cacheable
@@ -1189,29 +1280,35 @@ def builds(
         target, args = callable_and_args[0], callable_and_args[1:]
         if not callable(target):
             raise InvalidArgument(
-                'The first positional argument to builds() must be a callable '
-                'target to construct.')
-    elif 'target' in kwargs and callable(kwargs['target']):
+                "The first positional argument to builds() must be a callable "
+                "target to construct."
+            )
+    elif "target" in kwargs and callable(kwargs["target"]):
         args = ()
         note_deprecation(
-            'Specifying the target as a keyword argument to builds() is '
-            'deprecated. Provide it as the first positional argument instead.')
-        target = kwargs.pop('target')
+            "Specifying the target as a keyword argument to builds() is "
+            "deprecated. Provide it as the first positional argument instead."
+        )
+        target = kwargs.pop("target")
     else:
         raise InvalidArgument(
-            'builds() must be passed a callable as the first positional '
-            'argument, but no positional arguments were given.')
+            "builds() must be passed a callable as the first positional "
+            "argument, but no positional arguments were given."
+        )
 
     if infer in args:
         # Avoid an implementation nightmare juggling tuples and worse things
-        raise InvalidArgument('infer was passed as a positional argument to '
-                              'builds(), but is only allowed as a keyword arg')
+        raise InvalidArgument(
+            "infer was passed as a positional argument to "
+            "builds(), but is only allowed as a keyword arg"
+        )
     required = required_args(target, args, kwargs) or set()
     to_infer = set(k for k, v in kwargs.items() if v is infer)
     if required or to_infer:
         if isclass(target) and attr.has(target):
             # Use our custom introspection for attrs classes
             from hypothesis.searchstrategy.attrs import from_attrs
+
             return from_attrs(target, args, kwargs, required | to_infer)
         # Otherwise, try using type hints
         if isclass(target):
@@ -1224,8 +1321,9 @@ def builds(
             hints = get_type_hints(target)
         if to_infer - set(hints):
             raise InvalidArgument(
-                'passed infer for %s, but there is no type annotation'
-                % (', '.join(sorted(to_infer - set(hints)))))
+                "passed infer for %s, but there is no type annotation"
+                % (", ".join(sorted(to_infer - set(hints))))
+            )
         for kw in set(hints) & (required | to_infer):
             kwargs[kw] = from_type(hints[kw])
     # Mypy doesn't realise that `infer` is gone from kwargs now
@@ -1238,9 +1336,11 @@ def builds(
 def _defer_from_type(func):
     # type: (T) -> T
     """Decorator to make from_type lazy to support recursive definitions."""
+
     @proxies(func)
     def inner(*args, **kwargs):
         return deferred(lambda: func(*args, **kwargs))
+
     return inner
 
 
@@ -1283,27 +1383,28 @@ def from_type(thing):
             # than an actual type, but we can check that for a possible match
             # and then read the magic attribute to unwrap it.
             if (
-                hasattr(thing, '__supertype__')
-                and hasattr(typing, 'NewType')
+                hasattr(thing, "__supertype__")
+                and hasattr(typing, "NewType")
                 and isfunction(thing)
-                and getattr(thing, '__module__', 0) == 'typing'
+                and getattr(thing, "__module__", 0) == "typing"
             ):
                 return from_type(thing.__supertype__)
             # Under Python 3.6, Unions are not instances of `type` - but we
             # still want to resolve them!
-            if getattr(thing, '__origin__', None) is typing.Union:
+            if getattr(thing, "__origin__", None) is typing.Union:
                 args = sorted(thing.__args__, key=types.type_sorting_key)
                 return one_of([from_type(t) for t in args])
         # We can't resolve forward references, and under Python 3.5 (only)
         # a forward reference is an instance of type.  Hence, explicit check:
-        elif hasattr(typing, '_ForwardRef') and \
-                type(thing) == typing._ForwardRef:  # pragma: no cover
+        elif (
+            hasattr(typing, "_ForwardRef") and type(thing) == typing._ForwardRef
+        ):  # pragma: no cover
             raise ResolutionFailed(
-                'thing=%s cannot be resolved.  Upgrading to python>=3.6 may '
-                'fix this problem via improvements to the typing module.'
-                % (thing,))
+                "thing=%s cannot be resolved.  Upgrading to python>=3.6 may "
+                "fix this problem via improvements to the typing module." % (thing,)
+            )
     if not types.is_a_type(thing):
-        raise InvalidArgument('thing=%s must be a type' % (thing,))
+        raise InvalidArgument("thing=%s must be a type" % (thing,))
     # Now that we know `thing` is a type, the first step is to check for an
     # explicitly registered strategy.  This is the best (and hopefully most
     # common) way to resolve a type to a strategy.  Note that the value in the
@@ -1314,8 +1415,7 @@ def from_type(thing):
         if not isinstance(strategy, SearchStrategy):
             strategy = strategy(thing)  # type: ignore
         if strategy.is_empty:  # type: ignore
-            raise ResolutionFailed(
-                'Error: %r resolved to an empty strategy' % (thing,))
+            raise ResolutionFailed("Error: %r resolved to an empty strategy" % (thing,))
         return strategy  # type: ignore
     # If there's no explicitly registered strategy, maybe a subtype of thing
     # is registered - if so, we can resolve it to the subclass strategy.
@@ -1332,15 +1432,16 @@ def from_type(thing):
     strategies = [
         v if isinstance(v, SearchStrategy) else v(thing)  # type: ignore
         for k, v in types._global_type_lookup.items()
-        if isinstance(k, type) and issubclass(k, thing) and sum(
-            types.try_issubclass(k, typ) for typ in types._global_type_lookup
-        ) == 1
+        if isinstance(k, type)
+        and issubclass(k, thing)
+        and sum(types.try_issubclass(k, typ) for typ in types._global_type_lookup) == 1
     ]
-    empty = ', '.join(repr(s) for s in strategies if s.is_empty)
+    empty = ", ".join(repr(s) for s in strategies if s.is_empty)
     if empty:
         raise ResolutionFailed(
-            'Could not resolve %s to a strategy; consider using '
-            'register_type_strategy' % empty)
+            "Could not resolve %s to a strategy; consider using "
+            "register_type_strategy" % empty
+        )
     elif strategies:
         return one_of(strategies)
     # If we don't have a strategy registered for this type or any subtype, we
@@ -1349,14 +1450,18 @@ def from_type(thing):
         return sampled_from(thing)
     # If we know that builds(thing) will fail, give a better error message
     required = required_args(thing)
-    if required and not any([
-        required.issubset(get_type_hints(thing.__init__)),
-        attr.has(thing),
-        # NamedTuples are weird enough that we need a specific check for them.
-        is_typed_named_tuple(thing),
-    ]):
-        raise ResolutionFailed('Could not resolve %r to a strategy; consider '
-                               'using register_type_strategy' % (thing,))
+    if required and not any(
+        [
+            required.issubset(get_type_hints(thing.__init__)),
+            attr.has(thing),
+            # NamedTuples are weird enough that we need a specific check for them.
+            is_typed_named_tuple(thing),
+        ]
+    ):
+        raise ResolutionFailed(
+            "Could not resolve %r to a strategy; consider "
+            "using register_type_strategy" % (thing,)
+        )
     # Finally, try to build an instance by calling the type object
     return builds(thing)
 
@@ -1383,20 +1488,23 @@ def fractions(
     Examples from this strategy shrink towards smaller denominators, then
     closer to zero.
     """
-    min_value = try_convert(Fraction, min_value, 'min_value')
-    max_value = try_convert(Fraction, max_value, 'max_value')
+    min_value = try_convert(Fraction, min_value, "min_value")
+    max_value = try_convert(Fraction, max_value, "max_value")
 
-    if (min_value is not None and not isinstance(min_value, Fraction) or
-            max_value is not None and not isinstance(max_value, Fraction)):
-        assert False, 'Unreachable for Mypy'  # pragma: no cover
+    if (
+        min_value is not None
+        and not isinstance(min_value, Fraction)
+        or max_value is not None
+        and not isinstance(max_value, Fraction)
+    ):
+        assert False, "Unreachable for Mypy"  # pragma: no cover
 
-    check_valid_interval(min_value, max_value, 'min_value', 'max_value')
+    check_valid_interval(min_value, max_value, "min_value", "max_value")
     check_valid_integer(max_denominator)
 
     if max_denominator is not None:
         if max_denominator < 1:
-            raise InvalidArgument(
-                'max_denominator=%r must be >= 1' % max_denominator)
+            raise InvalidArgument("max_denominator=%r must be >= 1" % max_denominator)
 
         def fraction_bounds(value):
             # type: (Fraction) -> Tuple[Fraction, Fraction]
@@ -1426,27 +1534,25 @@ def fractions(
         if min_value is not None:
             if min_value.denominator > max_denominator:
                 note_deprecation(
-                    'The min_value=%r has a denominator greater than the '
-                    'max_denominator=%r, which will be an error in a future '
-                    'version.'
-                    % (min_value, max_denominator)
+                    "The min_value=%r has a denominator greater than the "
+                    "max_denominator=%r, which will be an error in a future "
+                    "version." % (min_value, max_denominator)
                 )
             _, min_value = fraction_bounds(min_value)
         if max_value is not None:
             if max_value.denominator > max_denominator:
                 note_deprecation(
-                    'The max_value=%r has a denominator greater than the '
-                    'max_denominator=%r, which will be an error in a future '
-                    'version.'
-                    % (max_value, max_denominator)
+                    "The max_value=%r has a denominator greater than the "
+                    "max_denominator=%r, which will be an error in a future "
+                    "version." % (max_value, max_denominator)
                 )
             max_value, _ = fraction_bounds(max_value)
 
-        if min_value is not None and max_value is not None and \
-                min_value > max_value:
+        if min_value is not None and max_value is not None and min_value > max_value:
             raise InvalidArgument(
-                'There are no fractions with a denominator <= %r between '
-                'min_value=%r and max_value=%r' % bounds)
+                "There are no fractions with a denominator <= %r between "
+                "min_value=%r and max_value=%r" % bounds
+            )
 
     if min_value is not None and min_value == max_value:
         return just(min_value)
@@ -1476,16 +1582,17 @@ def fractions(
             denom *= scale // div
 
         return builds(
-            Fraction,
-            integers(min_value=min_num, max_value=max_num),
-            just(denom)
+            Fraction, integers(min_value=min_num, max_value=max_num), just(denom)
         )
 
     if max_denominator is None:
         return integers(min_value=1).flatmap(dm_func)
 
-    return integers(1, max_denominator).flatmap(dm_func).map(
-        lambda f: f.limit_denominator(max_denominator))
+    return (
+        integers(1, max_denominator)
+        .flatmap(dm_func)
+        .map(lambda f: f.limit_denominator(max_denominator))
+    )
 
 
 def _as_finite_decimal(
@@ -1495,7 +1602,7 @@ def _as_finite_decimal(
 ):
     # type: (...) -> Optional[Decimal]
     """Convert decimal bounds to decimals, carefully."""
-    assert name in ('min_value', 'max_value')
+    assert name in ("min_value", "max_value")
     if value is None:
         return None
     if not isinstance(value, Decimal):
@@ -1504,13 +1611,14 @@ def _as_finite_decimal(
     assert isinstance(value, Decimal)
     if value.is_finite():
         return value
-    if value.is_infinite() and (value < 0 if 'min' in name else value > 0):
+    if value.is_infinite() and (value < 0 if "min" in name else value > 0):
         if allow_infinity or allow_infinity is None:
             return None
-        raise InvalidArgument('allow_infinity=%r, but %s=%r'
-                              % (allow_infinity, name, value))
+        raise InvalidArgument(
+            "allow_infinity=%r, but %s=%r" % (allow_infinity, name, value)
+        )
     # This could be infinity, quiet NaN, or signalling NaN
-    raise InvalidArgument(u'Invalid %s=%r' % (name, value))
+    raise InvalidArgument(u"Invalid %s=%r" % (name, value))
 
 
 @cacheable
@@ -1546,12 +1654,12 @@ def decimals(
     # Convert min_value and max_value to Decimal values, and validate args
     check_valid_integer(places)
     if places is not None and places < 0:
-        raise InvalidArgument('places=%r may not be negative' % places)
-    min_value = _as_finite_decimal(min_value, 'min_value', allow_infinity)
-    max_value = _as_finite_decimal(max_value, 'max_value', allow_infinity)
-    check_valid_interval(min_value, max_value, 'min_value', 'max_value')
+        raise InvalidArgument("places=%r may not be negative" % places)
+    min_value = _as_finite_decimal(min_value, "min_value", allow_infinity)
+    max_value = _as_finite_decimal(max_value, "max_value", allow_infinity)
+    check_valid_interval(min_value, max_value, "min_value", "max_value")
     if allow_infinity and (None not in (min_value, max_value)):
-        raise InvalidArgument('Cannot allow infinity between finite bounds')
+        raise InvalidArgument("Cannot allow infinity between finite bounds")
     # Set up a strategy for finite decimals.  Note that both floating and
     # fixed-point decimals require careful handling to remain isolated from
     # any external precision context - in short, we always work out the
@@ -1575,26 +1683,30 @@ def decimals(
             max_num = floor(ctx(max_value).divide(max_value, factor))
         if min_num is not None and max_num is not None and min_num > max_num:
             raise InvalidArgument(
-                'There are no decimals with %d places between min_value=%r '
-                'and max_value=%r ' % (places, min_value, max_value))
+                "There are no decimals with %d places between min_value=%r "
+                "and max_value=%r " % (places, min_value, max_value)
+            )
         strat = integers(min_num, max_num).map(int_to_decimal)
     else:
         # Otherwise, they're like fractions featuring a power of ten
         def fraction_to_decimal(val):
-            precision = ceil(math.log10(abs(val.numerator) or 1) +
-                             math.log10(val.denominator)) + 1
+            precision = (
+                ceil(math.log10(abs(val.numerator) or 1) + math.log10(val.denominator))
+                + 1
+            )
             return Context(prec=precision or 1).divide(
-                Decimal(val.numerator), val.denominator)
+                Decimal(val.numerator), val.denominator
+            )
 
         strat = fractions(min_value, max_value).map(fraction_to_decimal)
     # Compose with sampled_from for infinities and NaNs as appropriate
     special = []  # type: List[Decimal]
     if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
-        special.extend(map(Decimal, ('NaN', '-NaN', 'sNaN', '-sNaN')))
+        special.extend(map(Decimal, ("NaN", "-NaN", "sNaN", "-sNaN")))
     if allow_infinity or (allow_infinity is max_value is None):
-        special.append(Decimal('Infinity'))
+        special.append(Decimal("Infinity"))
     if allow_infinity or (allow_infinity is min_value is None):
-        special.append(Decimal('-Infinity'))
+        special.append(Decimal("-Infinity"))
     return strat | sampled_from(special)
 
 
@@ -1653,7 +1765,7 @@ def permutations(values):
     Examples from this strategy shrink by trying to become closer to the
     original order of values.
     """
-    values = check_sample(values, 'permutations')
+    values = check_sample(values, "permutations")
     if not values:
         return builds(list)
 
@@ -1661,10 +1773,7 @@ def permutations(values):
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(
-    min_datetime='min_value',
-    max_datetime='max_value',
-)
+@renamed_arguments(min_datetime="min_value", max_datetime="max_value")
 def datetimes(
     min_value=dt.datetime.min,  # type: dt.datetime
     max_value=dt.datetime.max,  # type: dt.datetime
@@ -1714,50 +1823,39 @@ def datetimes(
     # handle datetimes in e.g. a four-microsecond span which is not
     # representable in UTC.  Handling (d), all of the above, leads to a much
     # more complex API for all users and a useful feature for very few.
-    check_type(dt.datetime, min_value, 'min_value')
-    check_type(dt.datetime, max_value, 'max_value')
+    check_type(dt.datetime, min_value, "min_value")
+    check_type(dt.datetime, max_value, "max_value")
     if min_value.tzinfo is not None:
-        raise InvalidArgument('min_value=%r must not have tzinfo'
-                              % (min_value,))
+        raise InvalidArgument("min_value=%r must not have tzinfo" % (min_value,))
     if max_value.tzinfo is not None:
-        raise InvalidArgument('max_value=%r must not have tzinfo'
-                              % (max_value,))
-    check_valid_interval(min_value, max_value,
-                         'min_value', 'max_value')
+        raise InvalidArgument("max_value=%r must not have tzinfo" % (max_value,))
+    check_valid_interval(min_value, max_value, "min_value", "max_value")
     if not isinstance(timezones, SearchStrategy):
         raise InvalidArgument(
-            'timezones=%r must be a SearchStrategy that can provide tzinfo '
-            'for datetimes (either None or dt.tzinfo objects)' % (timezones,))
+            "timezones=%r must be a SearchStrategy that can provide tzinfo "
+            "for datetimes (either None or dt.tzinfo objects)" % (timezones,)
+        )
     return DatetimeStrategy(min_value, max_value, timezones)
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(
-    min_date='min_value',
-    max_date='max_value',
-)
-def dates(
-    min_value=dt.date.min, max_value=dt.date.max,
-    min_date=None, max_date=None,
-):
+@renamed_arguments(min_date="min_value", max_date="max_value")
+def dates(min_value=dt.date.min, max_value=dt.date.max, min_date=None, max_date=None):
     # type: (dt.date, dt.date, dt.date, dt.date) -> SearchStrategy[dt.date]
     """A strategy for dates between ``min_value`` and ``max_value``.
 
     Examples from this strategy shrink towards January 1st 2000.
     """
-    check_type(dt.date, min_value, 'min_value')
-    check_type(dt.date, max_value, 'max_value')
-    check_valid_interval(min_value, max_value, 'min_value', 'max_value')
+    check_type(dt.date, min_value, "min_value")
+    check_type(dt.date, max_value, "max_value")
+    check_valid_interval(min_value, max_value, "min_value", "max_value")
     if min_value == max_value:
         return just(min_value)
     return DateStrategy(min_value, max_value)
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(
-    min_time='min_value',
-    max_time='max_value',
-)
+@renamed_arguments(min_time="min_value", max_time="max_value")
 def times(
     min_value=dt.time.min,  # type: dt.time
     max_value=dt.time.max,  # type: dt.time
@@ -1773,24 +1871,23 @@ def times(
     Examples from this strategy shrink towards midnight, with the timezone
     component shrinking as for the strategy that provided it.
     """
-    check_type(dt.time, min_value, 'min_value')
-    check_type(dt.time, max_value, 'max_value')
+    check_type(dt.time, min_value, "min_value")
+    check_type(dt.time, max_value, "max_value")
     if min_value.tzinfo is not None:
-        raise InvalidArgument('min_value=%r must not have tzinfo' % min_value)
+        raise InvalidArgument("min_value=%r must not have tzinfo" % min_value)
     if max_value.tzinfo is not None:
-        raise InvalidArgument('max_value=%r must not have tzinfo' % max_value)
-    check_valid_interval(min_value, max_value, 'min_value', 'max_value')
+        raise InvalidArgument("max_value=%r must not have tzinfo" % max_value)
+    check_valid_interval(min_value, max_value, "min_value", "max_value")
     day = dt.date(2000, 1, 1)
-    return datetimes(min_value=dt.datetime.combine(day, min_value),
-                     max_value=dt.datetime.combine(day, max_value),
-                     timezones=timezones).map(lambda t: t.timetz())
+    return datetimes(
+        min_value=dt.datetime.combine(day, min_value),
+        max_value=dt.datetime.combine(day, max_value),
+        timezones=timezones,
+    ).map(lambda t: t.timetz())
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(
-    min_delta='min_value',
-    max_delta='max_value',
-)
+@renamed_arguments(min_delta="min_value", max_delta="max_value")
 def timedeltas(
     min_value=dt.timedelta.min,  # type: dt.timedelta
     max_value=dt.timedelta.max,  # type: dt.timedelta
@@ -1802,9 +1899,9 @@ def timedeltas(
 
     Examples from this strategy shrink towards zero.
     """
-    check_type(dt.timedelta, min_value, 'min_value')
-    check_type(dt.timedelta, max_value, 'max_value')
-    check_valid_interval(min_value, max_value, 'min_value', 'max_value')
+    check_type(dt.timedelta, min_value, "min_value")
+    check_type(dt.timedelta, max_value, "max_value")
+    check_valid_interval(min_value, max_value, "min_value", "max_value")
     if min_value == max_value:
         return just(min_value)
     return TimedeltaStrategy(min_value=min_value, max_value=max_value)
@@ -1839,20 +1936,19 @@ def composite(f):
     """
     argspec = getfullargspec(f)
 
-    if (
-        argspec.defaults is not None and
-        len(argspec.defaults) == len(argspec.args)
-    ):
-        raise InvalidArgument(
-            'A default value for initial argument will never be used')
+    if argspec.defaults is not None and len(argspec.defaults) == len(argspec.args):
+        raise InvalidArgument("A default value for initial argument will never be used")
     if len(argspec.args) == 0 and not argspec.varargs:
         raise InvalidArgument(
-            'Functions wrapped with composite must take at least one '
-            'positional argument.'
+            "Functions wrapped with composite must take at least one "
+            "positional argument."
         )
 
-    annots = {k: v for k, v in argspec.annotations.items()
-              if k in (argspec.args + argspec.kwonlyargs + ['return'])}
+    annots = {
+        k: v
+        for k, v in argspec.annotations.items()
+        if k in (argspec.args + argspec.kwonlyargs + ["return"])
+    }
     new_argspec = argspec._replace(args=argspec.args[1:], annotations=annots)
 
     label = calc_label_from_cls(f)
@@ -1861,14 +1957,16 @@ def composite(f):
     @define_function_signature(f.__name__, f.__doc__, new_argspec)
     def accept(*args, **kwargs):
         return CompositeStrategy(f, label, args, kwargs)
+
     accept.__module__ = f.__module__
     return accept
 
 
 @defines_strategy_with_reusable_values
 @cacheable
-def complex_numbers(min_magnitude=0, max_magnitude=None,
-                    allow_infinity=None, allow_nan=None):
+def complex_numbers(
+    min_magnitude=0, max_magnitude=None, allow_infinity=None, allow_nan=None
+):
     # type: (Optional[Real], Real, bool, bool) -> SearchStrategy[complex]
     """Returns a strategy that generates complex numbers.
 
@@ -1893,11 +1991,10 @@ def complex_numbers(min_magnitude=0, max_magnitude=None,
     :func:`builds(complex, ...) <hypothesis.strategies.builds>` or
     :func:`@composite <hypothesis.strategies.composite>` respectively.
     """
-    check_valid_magnitude(min_magnitude, 'min_magnitude')
-    check_valid_magnitude(max_magnitude, 'max_magnitude')
-    check_valid_interval(min_magnitude, max_magnitude,
-                         'min_magnitude', 'max_magnitude')
-    if max_magnitude == float('inf'):
+    check_valid_magnitude(min_magnitude, "min_magnitude")
+    check_valid_magnitude(max_magnitude, "max_magnitude")
+    check_valid_interval(min_magnitude, max_magnitude, "min_magnitude", "max_magnitude")
+    if max_magnitude == float("inf"):
         max_magnitude = None
     if min_magnitude == 0:
         min_magnitude = None
@@ -1906,15 +2003,15 @@ def complex_numbers(min_magnitude=0, max_magnitude=None,
         allow_infinity = bool(max_magnitude is None)
     elif allow_infinity and max_magnitude is not None:
         raise InvalidArgument(
-            'Cannot have allow_infinity=%r with max_magnitude=%r' %
-            (allow_infinity, max_magnitude)
+            "Cannot have allow_infinity=%r with max_magnitude=%r"
+            % (allow_infinity, max_magnitude)
         )
     if allow_nan is None:
         allow_nan = bool(min_magnitude is None and max_magnitude is None)
     elif allow_nan and not (min_magnitude is None and max_magnitude is None):
         raise InvalidArgument(
-            'Cannot have allow_nan=%r, min_magnitude=%r max_magnitude=%r' %
-            (allow_nan, min_magnitude, max_magnitude)
+            "Cannot have allow_nan=%r, min_magnitude=%r max_magnitude=%r"
+            % (allow_nan, min_magnitude, max_magnitude)
         )
     allow_kw = dict(allow_nan=allow_nan, allow_infinity=allow_infinity)
 
@@ -1930,7 +2027,7 @@ def complex_numbers(min_magnitude=0, max_magnitude=None,
         # this and the max_magnitude
         if max_magnitude is None:
             zi = draw(floats(**allow_kw))
-            rmax = float('inf')
+            rmax = float("inf")
         else:
             zi = draw(floats(-max_magnitude, max_magnitude, **allow_kw))
             rmax = cathetus(max_magnitude, zi)
@@ -1942,8 +2039,11 @@ def complex_numbers(min_magnitude=0, max_magnitude=None,
         # Order of conditions carefully tuned so that for a given pair of
         # magnitude arguments, we always either draw or do not draw the bool
         # (crucial for good shrinking behaviour) but only invert when needed.
-        if min_magnitude is not None and draw(booleans()) and \
-                math.fabs(zi) <= min_magnitude:
+        if (
+            min_magnitude is not None
+            and draw(booleans())
+            and math.fabs(zi) <= min_magnitude
+        ):
             zr = -zr
         return complex(zr, zi)
 
@@ -1979,15 +2079,15 @@ class Chooser(object):
 
     def __call__(self, values):
         if not values:
-            raise IndexError('Cannot choose from empty sequence')
-        result = choice(self.data, check_sample(values, 'choices'))
+            raise IndexError("Cannot choose from empty sequence")
+        result = choice(self.data, check_sample(values, "choices"))
         with self.build_context.local():
             self.choice_count += 1
-            note('Choice #%d: %r' % (self.choice_count, result))
+            note("Choice #%d: %r" % (self.choice_count, result))
         return result
 
     def __repr__(self):
-        return 'choice'
+        return "choice"
 
 
 class ChoiceStrategy(SearchStrategy):
@@ -2014,14 +2114,11 @@ def choices():
     """
 
     note_deprecation(
-        'choices() has been deprecated. Use the data() strategy instead and '
-        'replace its usage with data.draw(sampled_from(elements))) calls.'
+        "choices() has been deprecated. Use the data() strategy instead and "
+        "replace its usage with data.draw(sampled_from(elements))) calls."
     )
 
-    return shared(
-        ChoiceStrategy(),
-        key='hypothesis.strategies.chooser.choice_function'
-    )
+    return shared(ChoiceStrategy(), key="hypothesis.strategies.chooser.choice_function")
 
 
 @cacheable
@@ -2040,11 +2137,14 @@ def uuids(version=None):
     Examples from this strategy don't have any meaningful shrink order.
     """
     if version not in (None, 1, 2, 3, 4, 5):
-        raise InvalidArgument((
-            'version=%r, but version must be in (None, 1, 2, 3, 4, 5) '
-            'to pass to the uuid.UUID constructor.') % (version, )
+        raise InvalidArgument(
+            (
+                "version=%r, but version must be in (None, 1, 2, 3, 4, 5) "
+                "to pass to the uuid.UUID constructor."
+            )
+            % (version,)
         )
-    return shared(randoms(), key='hypothesis.strategies.uuids.generator').map(
+    return shared(randoms(), key="hypothesis.strategies.uuids.generator").map(
         lambda r: UUID(version=version, int=r.getrandbits(128))
     )
 
@@ -2054,12 +2154,12 @@ class RunnerStrategy(SearchStrategy):
         self.default = default
 
     def do_draw(self, data):
-        runner = getattr(data, 'hypothesis_runner', not_set)
+        runner = getattr(data, "hypothesis_runner", not_set)
         if runner is not_set:
             if self.default is not_set:
                 raise InvalidArgument(
-                    'Cannot use runner() strategy with no '
-                    'associated runner or explicit default.'
+                    "Cannot use runner() strategy with no "
+                    "associated runner or explicit default."
                 )
             else:
                 return self.default
@@ -2082,21 +2182,20 @@ def runner(default=not_set):
 
 
 class DataObject(object):
-
     def __init__(self, data):
         self.count = 0
         self.data = data
 
     def __repr__(self):
-        return 'data(...)'
+        return "data(...)"
 
     def draw(self, strategy, label=None):
         result = self.data.draw(strategy)
         self.count += 1
         if label is not None:
-            note('Draw %d (%s): %r' % (self.count, label, result))
+            note("Draw %d (%s): %r" % (self.count, label, result))
         else:
-            note('Draw %d: %r' % (self.count, result))
+            note("Draw %d: %r" % (self.count, result))
         return result
 
 
@@ -2106,30 +2205,33 @@ class DataStrategy(SearchStrategy):
     def do_draw(self, data):
         data.can_reproduce_example_from_repr = False
 
-        if not hasattr(data, 'hypothesis_shared_data_strategy'):
+        if not hasattr(data, "hypothesis_shared_data_strategy"):
             data.hypothesis_shared_data_strategy = DataObject(data)
         return data.hypothesis_shared_data_strategy
 
     def __repr__(self):
-        return 'data()'
+        return "data()"
 
     def map(self, f):
-        self.__not_a_first_class_strategy('map')
+        self.__not_a_first_class_strategy("map")
 
     def filter(self, f):
-        self.__not_a_first_class_strategy('filter')
+        self.__not_a_first_class_strategy("filter")
 
     def flatmap(self, f):
-        self.__not_a_first_class_strategy('flatmap')
+        self.__not_a_first_class_strategy("flatmap")
 
     def example(self):
-        self.__not_a_first_class_strategy('example')
+        self.__not_a_first_class_strategy("example")
 
     def __not_a_first_class_strategy(self, name):
-        raise InvalidArgument((
-            'Cannot call %s on a DataStrategy. You should probably be '
-            "using @composite for whatever it is you're trying to do."
-        ) % (name,))
+        raise InvalidArgument(
+            (
+                "Cannot call %s on a DataStrategy. You should probably be "
+                "using @composite for whatever it is you're trying to do."
+            )
+            % (name,)
+        )
 
 
 @cacheable
@@ -2173,14 +2275,16 @@ def register_type_strategy(
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.searchstrategy import types
+
     if not types.is_a_type(custom_type):
-        raise InvalidArgument('custom_type=%r must be a type')
+        raise InvalidArgument("custom_type=%r must be a type")
     elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
         raise InvalidArgument(
-            'strategy=%r must be a SearchStrategy, or a function that takes '
-            'a generic type and returns a specific SearchStrategy')
+            "strategy=%r must be a SearchStrategy, or a function that takes "
+            "a generic type and returns a specific SearchStrategy"
+        )
     elif isinstance(strategy, SearchStrategy) and strategy.is_empty:
-        raise InvalidArgument('strategy=%r must not be empty')
+        raise InvalidArgument("strategy=%r must not be empty")
     types._global_type_lookup[custom_type] = strategy
     from_type.__clear_cache()  # type: ignore
 
@@ -2230,11 +2334,13 @@ def emails():
     mishandling of email addresses is a common source of bugs.
     """
     from hypothesis.provisional import domains
+
     local_chars = string.ascii_letters + string.digits + "!#$%&'*+-/=^_`{|}~"
     local_part = text(local_chars, min_size=1, max_size=64)
     # TODO: include dot-atoms, quoted strings, escaped chars, etc in local part
-    return builds(u'{}@{}'.format, local_part, domains()).filter(
-        lambda addr: len(addr) <= 255)
+    return builds(u"{}@{}".format, local_part, domains()).filter(
+        lambda addr: len(addr) <= 255
+    )
 
 
 assert _strategies.issubset(set(__all__)), _strategies - set(__all__)

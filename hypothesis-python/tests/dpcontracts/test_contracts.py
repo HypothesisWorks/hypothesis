@@ -15,22 +15,22 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 from dpcontracts import require
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import builds, integers
 from hypothesis.extra.dpcontracts import fulfill
+from hypothesis.strategies import builds, integers
 
 
 def identity(x):
     return x
 
 
-@require('division is undefined for zero', lambda args: args.n != 0)
+@require("division is undefined for zero", lambda args: args.n != 0)
 def invert(n):
     return 1 / n
 
@@ -45,7 +45,7 @@ def test_contract_filter_inline(n):
     assert -1 <= fulfill(invert)(n) <= 1
 
 
-@pytest.mark.parametrize('f', [int, identity, lambda x: None])
+@pytest.mark.parametrize("f", [int, identity, lambda x: None])
 def test_no_vacuous_fulfill(f):
     with pytest.raises(InvalidArgument):
         fulfill(f)

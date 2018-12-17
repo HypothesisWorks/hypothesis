@@ -15,24 +15,24 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import functools
 from collections import namedtuple
 
 import pytest
 
-from hypothesis.types import RandomWithSeed
-from tests.common.debug import assert_no_examples
-from hypothesis.strategies import just, tuples, randoms, booleans, integers
 from hypothesis.internal.compat import text_type
 from hypothesis.searchstrategy.strategies import one_of_strategies
+from hypothesis.strategies import booleans, integers, just, randoms, tuples
+from hypothesis.types import RandomWithSeed
+from tests.common.debug import assert_no_examples
 
 
 def test_or_errors_when_given_non_strategy():
     bools = tuples(booleans())
     with pytest.raises(ValueError):
-        bools | u'foo'
+        bools | u"foo"
 
 
 def test_joining_zero_strategies_fails():
@@ -40,7 +40,7 @@ def test_joining_zero_strategies_fails():
         one_of_strategies(())
 
 
-SomeNamedTuple = namedtuple(u'SomeNamedTuple', (u'a', u'b'))
+SomeNamedTuple = namedtuple(u"SomeNamedTuple", (u"a", u"b"))
 
 
 def last(xs):
@@ -63,18 +63,15 @@ def test_random_only_produces_special_random():
 
 def test_just_strategy_uses_repr():
     class WeirdRepr(object):
-
         def __repr__(self):
-            return u'ABCDEFG'
+            return u"ABCDEFG"
 
-    assert repr(
-        just(WeirdRepr())
-    ) == u'just(%r)' % (WeirdRepr(),)
+    assert repr(just(WeirdRepr())) == u"just(%r)" % (WeirdRepr(),)
 
 
 def test_can_map():
-    s = integers().map(pack=lambda t: u'foo')
-    assert s.example() == u'foo'
+    s = integers().map(pack=lambda t: u"foo")
+    assert s.example() == u"foo"
 
 
 def test_example_raises_unsatisfiable_when_too_filtered():
@@ -84,6 +81,7 @@ def test_example_raises_unsatisfiable_when_too_filtered():
 def nameless_const(x):
     def f(u, v):
         return u
+
     return functools.partial(f, x)
 
 

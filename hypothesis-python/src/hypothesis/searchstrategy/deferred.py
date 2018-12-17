@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import inspect
 
@@ -38,20 +38,24 @@ class DeferredStrategy(SearchStrategy):
     def wrapped_strategy(self):
         if self.__wrapped_strategy is None:
             if not inspect.isfunction(self.__definition):
-                raise InvalidArgument((
-                    'Excepted a definition to be a function but got %r of type'
-                    ' %s instead.') % (
-                        self.__definition, type(self.__definition).__name__))
+                raise InvalidArgument(
+                    (
+                        "Excepted a definition to be a function but got %r of type"
+                        " %s instead."
+                    )
+                    % (self.__definition, type(self.__definition).__name__)
+                )
             result = self.__definition()
             if result is self:
-                raise InvalidArgument(
-                    'Cannot define a deferred strategy to be itself')
+                raise InvalidArgument("Cannot define a deferred strategy to be itself")
             if not isinstance(result, SearchStrategy):
-                raise InvalidArgument((
-                    'Expected definition to return a SearchStrategy but '
-                    'returned %r of type %s') % (
-                        result, type(result).__name__
-                ))
+                raise InvalidArgument(
+                    (
+                        "Expected definition to return a SearchStrategy but "
+                        "returned %r of type %s"
+                    )
+                    % (result, type(result).__name__)
+                )
             self.__wrapped_strategy = result
             del self.__definition
         return self.__wrapped_strategy
@@ -86,16 +90,14 @@ class DeferredStrategy(SearchStrategy):
     def __repr__(self):
         if self.__wrapped_strategy is not None:
             if self.__in_repr:
-                return '(deferred@%r)' % (id(self),)
+                return "(deferred@%r)" % (id(self),)
             try:
                 self.__in_repr = True
                 return repr(self.__wrapped_strategy)
             finally:
                 self.__in_repr = False
         else:
-            return 'deferred(%s)' % (
-                get_pretty_function_description(self.__definition)
-            )
+            return "deferred(%s)" % (get_pretty_function_description(self.__definition))
 
     def do_draw(self, data):
         return data.draw(self.wrapped_strategy)

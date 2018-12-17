@@ -15,10 +15,10 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import hypothesis.strategies as st
-from tests.common.arguments import e, argument_validation_test
+from tests.common.arguments import argument_validation_test, e
 
 BAD_ARGS = []
 
@@ -36,16 +36,14 @@ for ex in [
     e(st.frozensets, st.integers()),
     e(st.dictionaries, st.integers(), st.integers()),
     e(st.text),
-    e(st.binary)
+    e(st.binary),
 ]:
     adjust(ex, min_size=-1)
     adjust(ex, max_size=-1)
-    adjust(ex, min_size='no')
-    adjust(ex, max_size='no')
+    adjust(ex, min_size="no")
+    adjust(ex, max_size="no")
 
 
-BAD_ARGS.extend([
-    e(st.lists, st.nothing(), unique=True, min_size=1),
-])
+BAD_ARGS.extend([e(st.lists, st.nothing(), unique=True, min_size=1)])
 
 test_raise_invalid_argument = argument_validation_test(BAD_ARGS)

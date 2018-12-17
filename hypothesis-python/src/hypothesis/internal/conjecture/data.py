@@ -15,20 +15,27 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from enum import IntEnum
 
 import attr
 
-from hypothesis.errors import Frozen, StopTest, InvalidArgument
-from hypothesis.internal.compat import hbytes, hrange, text_type, \
-    bit_length, benchmark_time, int_from_bytes, unicode_safe_repr
-from hypothesis.internal.escalation import mark_for_escalation
+from hypothesis.errors import Frozen, InvalidArgument, StopTest
+from hypothesis.internal.compat import (
+    benchmark_time,
+    bit_length,
+    hbytes,
+    hrange,
+    int_from_bytes,
+    text_type,
+    unicode_safe_repr,
+)
 from hypothesis.internal.conjecture.utils import calc_label_from_name
+from hypothesis.internal.escalation import mark_for_escalation
 
-TOP_LABEL = calc_label_from_name('top')
-DRAW_BYTES_LABEL = calc_label_from_name('draw_bytes() in ConjectureData')
+TOP_LABEL = calc_label_from_name("top")
+DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
 
 
 class Status(IntEnum):
@@ -38,7 +45,7 @@ class Status(IntEnum):
     INTERESTING = 3
 
     def __repr__(self):
-        return 'Status.%s' % (self.name,)
+        return "Status.%s" % (self.name,)
 
 
 @attr.s(slots=True)
@@ -138,14 +145,12 @@ MAX_DEPTH = 100
 
 
 class ConjectureData(object):
-
     @classmethod
     def for_buffer(self, buffer):
         buffer = hbytes(buffer)
         return ConjectureData(
             max_length=len(buffer),
-            draw_bytes=lambda data, n:
-            hbytes(buffer[data.index:data.index + n])
+            draw_bytes=lambda data, n: hbytes(buffer[data.index : data.index + n]),
         )
 
     def __init__(self, max_length, draw_bytes):
@@ -156,7 +161,7 @@ class ConjectureData(object):
         self.block_starts = {}
         self.blocks = []
         self.buffer = bytearray()
-        self.output = u''
+        self.output = u""
         self.status = Status.VALID
         self.frozen = False
         global global_test_counter
@@ -179,9 +184,7 @@ class ConjectureData(object):
 
     def __assert_not_frozen(self, name):
         if self.frozen:
-            raise Frozen(
-                'Cannot call %s on frozen ConjectureData' % (
-                    name,))
+            raise Frozen("Cannot call %s on frozen ConjectureData" % (name,))
 
     @property
     def depth(self):
@@ -197,17 +200,20 @@ class ConjectureData(object):
         return [block.bounds for block in self.blocks]
 
     def note(self, value):
-        self.__assert_not_frozen('note')
+        self.__assert_not_frozen("note")
         if not isinstance(value, text_type):
             value = unicode_safe_repr(value)
         self.output += value
 
     def draw(self, strategy, label=None):
         if self.is_find and not strategy.supports_find:
-            raise InvalidArgument((
-                'Cannot use strategy %r within a call to find (presumably '
-                'because it would be invalid after the call had ended).'
-            ) % (strategy,))
+            raise InvalidArgument(
+                (
+                    "Cannot use strategy %r within a call to find (presumably "
+                    "because it would be invalid after the call had ended)."
+                )
+                % (strategy,)
+            )
 
         if strategy.is_empty:
             self.mark_invalid()
@@ -240,14 +246,11 @@ class ConjectureData(object):
             self.stop_example()
 
     def start_example(self, label):
-        self.__assert_not_frozen('start_example')
+        self.__assert_not_frozen("start_example")
 
         i = len(self.examples)
         new_depth = self.depth + 1
-        ex = Example(
-            index=i,
-            depth=new_depth, label=label, start=self.index,
-        )
+        ex = Example(index=i, depth=new_depth, label=label, start=self.index)
         self.examples.append(ex)
         if self.example_stack:
             p = self.example_stack[-1]
@@ -312,7 +315,7 @@ class ConjectureData(object):
         del self._draw_bytes
 
     def draw_bits(self, n):
-        self.__assert_not_frozen('draw_bits')
+        self.__assert_not_frozen("draw_bits")
         if n == 0:
             result = 0
         elif n % 8 == 0:
@@ -333,7 +336,7 @@ class ConjectureData(object):
         return result
 
     def write(self, string):
-        self.__assert_not_frozen('write')
+        self.__assert_not_frozen("write")
         self.__check_capacity(len(string))
         assert isinstance(string, hbytes)
         original = self.index
@@ -371,9 +374,9 @@ class ConjectureData(object):
         self.stop_example()
 
     def draw_bytes(self, n):
-        self.__assert_not_frozen('draw_bytes')
+        self.__assert_not_frozen("draw_bytes")
         if n == 0:
-            return hbytes(b'')
+            return hbytes(b"")
         self.__check_capacity(n)
         result = self._draw_bytes(self, n)
         assert len(result) == n
@@ -381,14 +384,14 @@ class ConjectureData(object):
         return hbytes(result)
 
     def mark_interesting(self, interesting_origin=None):
-        self.__assert_not_frozen('mark_interesting')
+        self.__assert_not_frozen("mark_interesting")
         self.interesting_origin = interesting_origin
         self.status = Status.INTERESTING
         self.freeze()
         raise StopTest(self.testcounter)
 
     def mark_invalid(self):
-        self.__assert_not_frozen('mark_invalid')
+        self.__assert_not_frozen("mark_invalid")
         self.status = Status.INVALID
         self.freeze()
         raise StopTest(self.testcounter)

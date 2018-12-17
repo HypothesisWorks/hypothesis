@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
@@ -32,10 +32,10 @@ def test_numpy_prng_is_seeded():
         val = np.random.bytes(10)
         if not first:
             first.append(val)
-        assert val == first[0], 'Numpy random module should be reproducible'
+        assert val == first[0], "Numpy random module should be reproducible"
 
     inner()
 
     np.testing.assert_array_equal(
-        np.random.get_state()[1], prng_state[1], 'State was not restored.'
+        np.random.get_state()[1], prng_state[1], "State was not restored."
     )

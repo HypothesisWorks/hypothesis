@@ -15,14 +15,13 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis import find, given, reporting
-from hypothesis import strategies as st
+from hypothesis import find, given, reporting, strategies as st
 from hypothesis.errors import InvalidArgument
-from tests.common.utils import raises, capture_out
+from tests.common.utils import capture_out, raises
 
 
 @given(st.integers(), st.data())
@@ -45,16 +44,15 @@ def test_prints_on_failure():
             with reporting.with_reporter(reporting.default):
                 test()
     result = out.getvalue()
-    assert 'Draw 1: [0, 0]' in result
-    assert 'Draw 2: 0' in result
+    assert "Draw 1: [0, 0]" in result
+    assert "Draw 2: 0" in result
 
 
 def test_prints_labels_if_given_on_failure():
     @given(st.data())
     def test(data):
-        x = data.draw(st.lists(st.integers(0, 10), min_size=2),
-                      label='Some numbers')
-        y = data.draw(st.sampled_from(x), label='A number')
+        x = data.draw(st.lists(st.integers(0, 10), min_size=2), label="Some numbers")
+        y = data.draw(st.sampled_from(x), label="A number")
         assert y in x
         x.remove(y)
         assert y not in x
@@ -64,8 +62,8 @@ def test_prints_labels_if_given_on_failure():
             with reporting.with_reporter(reporting.default):
                 test()
     result = out.getvalue()
-    assert 'Draw 1 (Some numbers): [0, 0]' in result
-    assert 'Draw 2 (A number): 0' in result
+    assert "Draw 1 (Some numbers): [0, 0]" in result
+    assert "Draw 2 (A number): 0" in result
 
 
 def test_given_twice_is_same():
@@ -80,8 +78,8 @@ def test_given_twice_is_same():
             with reporting.with_reporter(reporting.default):
                 test()
     result = out.getvalue()
-    assert 'Draw 1: 0' in result
-    assert 'Draw 2: 0' in result
+    assert "Draw 1: 0" in result
+    assert "Draw 2: 0" in result
 
 
 def test_errors_when_used_in_find():
@@ -89,9 +87,7 @@ def test_errors_when_used_in_find():
         find(st.data(), lambda x: x.draw(st.booleans()))
 
 
-@pytest.mark.parametrize('f', [
-    'filter', 'map', 'flatmap',
-])
+@pytest.mark.parametrize("f", ["filter", "map", "flatmap"])
 def test_errors_when_normal_strategy_functions_are_used(f):
     with raises(InvalidArgument):
         getattr(st.data(), f)(lambda x: 1)
@@ -103,4 +99,4 @@ def test_errors_when_asked_for_example():
 
 
 def test_nice_repr():
-    assert repr(st.data()) == 'data()'
+    assert repr(st.data()) == "data()"

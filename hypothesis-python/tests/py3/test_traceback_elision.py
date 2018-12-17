@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import traceback
 
@@ -25,7 +25,7 @@ import hypothesis.strategies as st
 from hypothesis import Verbosity, given, settings
 
 
-@pytest.mark.parametrize('verbosity', [Verbosity.normal, Verbosity.debug])
+@pytest.mark.parametrize("verbosity", [Verbosity.normal, Verbosity.debug])
 def test_tracebacks_omit_hypothesis_internals(verbosity):
     @settings(verbosity=verbosity)
     @given(st.none())

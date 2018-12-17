@@ -15,25 +15,25 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import re
 import string
-from decimal import Decimal
 from datetime import timedelta
+from decimal import Decimal
 
 import django.db.models as dm
-from django.db import IntegrityError
 from django.conf import settings as django_settings
 from django.core import validators
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 
 import hypothesis.strategies as st
 from hypothesis import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
-from hypothesis.strategies import emails
 from hypothesis.provisional import ip4_addr_strings, ip6_addr_strings
+from hypothesis.strategies import emails
 from hypothesis.utils.conventions import DefaultValueType
 
 if False:
@@ -43,7 +43,7 @@ if False:
 
 def get_tz_strat():
     # type: () -> st.SearchStrategy[Optional[tzinfo]]
-    if getattr(django_settings, 'USE_TZ', False):
+    if getattr(django_settings, "USE_TZ", False):
         return timezones()
     return st.none()
 
@@ -60,8 +60,7 @@ def field_mappings():
         __default_field_mappings = {
             dm.SmallIntegerField: st.integers(-32768, 32767),
             dm.IntegerField: st.integers(-2147483648, 2147483647),
-            dm.BigIntegerField:
-                st.integers(-9223372036854775808, 9223372036854775807),
+            dm.BigIntegerField: st.integers(-9223372036854775808, 9223372036854775807),
             dm.PositiveIntegerField: st.integers(0, 2147483647),
             dm.PositiveSmallIntegerField: st.integers(0, 32767),
             dm.BinaryField: st.binary(),
@@ -78,13 +77,15 @@ def field_mappings():
 
         # SQLite does not support timezone-aware times, or timedeltas that
         # don't fit in six bytes of microseconds, so we override those
-        db = getattr(django_settings, 'DATABASES', {}).get('default', {})
-        if db.get('ENGINE', '').endswith('.sqlite3'):  # pragma: no branch
+        db = getattr(django_settings, "DATABASES", {}).get("default", {})
+        if db.get("ENGINE", "").endswith(".sqlite3"):  # pragma: no branch
             sqlite_delta = timedelta(microseconds=2 ** 47 - 1)
-            __default_field_mappings.update({
-                dm.TimeField: st.times(),
-                dm.DurationField: st.timedeltas(-sqlite_delta, sqlite_delta),
-            })
+            __default_field_mappings.update(
+                {
+                    dm.TimeField: st.times(),
+                    dm.DurationField: st.timedeltas(-sqlite_delta, sqlite_delta),
+                }
+            )
 
     return __default_field_mappings
 
@@ -94,13 +95,14 @@ def add_default_field_mapping(field_type, strategy):
     field_mappings()[field_type] = strategy
 
 
-default_value = DefaultValueType(u'default_value')
+default_value = DefaultValueType(u"default_value")
 
 
 def validator_to_filter(f):
     # type: (Type[dm.Field]) -> Callable[[Any], bool]
     """Converts the field run_validators method to something suitable for use
     in filter."""
+
     def validate(value):
         try:
             f.run_validators(value)
@@ -121,20 +123,26 @@ def _get_strategy_for_field(f):
             else:
                 choices.append(value)
         if isinstance(f, (dm.CharField, dm.TextField)) and f.blank:
-            choices.insert(0, u'')
+            choices.insert(0, u"")
         strategy = st.sampled_from(choices)
     elif type(f) == dm.SlugField:
-        strategy = st.text(alphabet=string.ascii_letters + string.digits,
-                           min_size=(0 if f.blank else 1),
-                           max_size=f.max_length)
+        strategy = st.text(
+            alphabet=string.ascii_letters + string.digits,
+            min_size=(0 if f.blank else 1),
+            max_size=f.max_length,
+        )
     elif type(f) == dm.GenericIPAddressField:
-        lookup = {'both': ip4_addr_strings() | ip6_addr_strings(),
-                  'ipv4': ip4_addr_strings(), 'ipv6': ip6_addr_strings()}
+        lookup = {
+            "both": ip4_addr_strings() | ip6_addr_strings(),
+            "ipv4": ip4_addr_strings(),
+            "ipv6": ip6_addr_strings(),
+        }
         strategy = lookup[f.protocol.lower()]
     elif type(f) in (dm.TextField, dm.CharField):
         strategy = st.text(
-            alphabet=st.characters(blacklist_characters=u'\x00',
-                                   blacklist_categories=('Cs',)),
+            alphabet=st.characters(
+                blacklist_characters=u"\x00", blacklist_categories=("Cs",)
+            ),
             min_size=(0 if f.blank else 1),
             max_size=f.max_length,
         )
@@ -143,12 +151,15 @@ def _get_strategy_for_field(f):
         # concept, but we intend to leverage the idea much more heavily soon.
         # See https://github.com/HypothesisWorks/hypothesis-python/issues/1116
         re_validators = [
-            v for v in f.validators
+            v
+            for v in f.validators
             if isinstance(v, validators.RegexValidator) and not v.inverse_match
         ]
         if re_validators:
-            regexes = [re.compile(v.regex, v.flags) if isinstance(v.regex, str)
-                       else v.regex for v in re_validators]
+            regexes = [
+                re.compile(v.regex, v.flags) if isinstance(v.regex, str) else v.regex
+                for v in re_validators
+            ]
             # This strategy generates according to one of the regexes, and
             # filters using the others.  It can therefore learn to generate
             # from the most restrictive and filter with permissive patterns.
@@ -158,8 +169,9 @@ def _get_strategy_for_field(f):
             strategy = st.one_of(*[st.from_regex(r) for r in regexes])
     elif type(f) == dm.DecimalField:
         bound = Decimal(10 ** f.max_digits - 1) / (10 ** f.decimal_places)
-        strategy = st.decimals(min_value=-bound, max_value=bound,
-                               places=f.decimal_places)
+        strategy = st.decimals(
+            min_value=-bound, max_value=bound, places=f.decimal_places
+        )
     else:
         strategy = field_mappings().get(type(f), st.nothing())
     if f.validators:
@@ -211,8 +223,9 @@ def models(
                 missed.append(f.name)
     if missed:
         raise InvalidArgument(
-            u'Missing arguments for mandatory field%s %s for model %s'
-            % (u's' if missed else u'', u', '.join(missed), model.__name__))
+            u"Missing arguments for mandatory field%s %s for model %s"
+            % (u"s" if missed else u"", u", ".join(missed), model.__name__)
+        )
 
     for field in result:
         if model._meta.get_field(field).primary_key:
@@ -220,10 +233,8 @@ def models(
             # want to find any existing row with this primary key and
             # overwrite its contents.
             kwargs = {field: result.pop(field)}
-            kwargs['defaults'] = st.fixed_dictionaries(result)
-            return _models_impl(
-                st.builds(model.objects.update_or_create, **kwargs)
-            )
+            kwargs["defaults"] = st.fixed_dictionaries(result)
+            return _models_impl(st.builds(model.objects.update_or_create, **kwargs))
 
     # The primary key is not generated as part of the strategy, so we
     # just match against any row that has the same value for all

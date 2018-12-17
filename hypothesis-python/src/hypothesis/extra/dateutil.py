@@ -27,7 +27,7 @@ You can use this strategy to make
 :py:func:`hypothesis.strategies.times` produce timezone-aware values.
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import datetime as dt
 
@@ -35,7 +35,7 @@ from dateutil import tz, zoneinfo  # type: ignore
 
 import hypothesis.strategies as st
 
-__all__ = ['timezones']
+__all__ = ["timezones"]
 
 
 @st.cacheable
@@ -58,6 +58,6 @@ def timezones():
     all_timezones = [tz.UTC]  # type: ignore
     all_timezones += sorted(
         [tz.gettz(t) for t in tz_names],
-        key=lambda zone: abs(zone.utcoffset(reference_date))
+        key=lambda zone: abs(zone.utcoffset(reference_date)),
     )
     return st.sampled_from(all_timezones)

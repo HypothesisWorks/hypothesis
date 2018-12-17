@@ -15,11 +15,11 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import inspect
-from random import Random
 from itertools import islice
+from random import Random
 
 from hypothesis.errors import InvalidArgument
 
@@ -45,7 +45,7 @@ class RandomWithSeed(Random):
         return self.__copy__()
 
     def __repr__(self):
-        return u'RandomWithSeed(%s)' % (self.seed,)
+        return u"RandomWithSeed(%s)" % (self.seed,)
 
 
 class Stream(object):
@@ -83,14 +83,12 @@ class Stream(object):
 
     def __getitem__(self, key):
         if isinstance(key, slice):
-            return Stream(islice(
-                iter(self),
-                key.start, key.stop, key.step
-            ))
+            return Stream(islice(iter(self), key.start, key.stop, key.step))
 
         if not isinstance(key, int):
-            raise InvalidArgument(u'Cannot index stream with %s' % (
-                type(key).__name__,))
+            raise InvalidArgument(
+                u"Cannot index stream with %s" % (type(key).__name__,)
+            )
         self._thunk_to(key + 1)
         return self.fetched[key]
 
@@ -101,9 +99,8 @@ class Stream(object):
                 next(it)
         except StopIteration:
             raise IndexError(
-                u'Index %d out of bounds for finite stream of length %d' % (
-                    i, len(self.fetched)
-                )
+                u"Index %d out of bounds for finite stream of length %d"
+                % (i, len(self.fetched))
             )
 
     def _thunked(self):
@@ -111,11 +108,9 @@ class Stream(object):
 
     def __repr__(self):
         if not self.fetched:
-            return u'Stream(...)'
+            return u"Stream(...)"
 
-        return u'Stream(%s, ...)' % (
-            u', '.join(map(repr, self.fetched))
-        )
+        return u"Stream(%s, ...)" % (u", ".join(map(repr, self.fetched)))
 
     def __deepcopy__(self, table):
         return self

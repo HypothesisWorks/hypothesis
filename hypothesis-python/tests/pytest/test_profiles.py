@@ -15,12 +15,12 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from hypothesis.version import __version__
 from hypothesis.extra.pytestplugin import LOAD_PROFILE_OPTION
+from hypothesis.version import __version__
 
-pytest_plugins = str('pytester')
+pytest_plugins = str("pytester")
 
 CONFTEST = """
 from hypothesis._settings import settings
@@ -40,8 +40,8 @@ def test_this_one_is_ok():
 def test_runs_reporting_hook(testdir):
     script = testdir.makepyfile(TESTSUITE)
     testdir.makeconftest(CONFTEST)
-    result = testdir.runpytest(script, LOAD_PROFILE_OPTION, 'test')
-    out = '\n'.join(result.stdout.lines)
-    assert '1 passed' in out
-    assert 'max_examples=1' in out
+    result = testdir.runpytest(script, LOAD_PROFILE_OPTION, "test")
+    out = "\n".join(result.stdout.lines)
+    assert "1 passed" in out
+    assert "max_examples=1" in out
     assert __version__ in out

@@ -15,11 +15,11 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 
-__hypothesis_home_directory_default = os.path.join(os.getcwd(), '.hypothesis')
+__hypothesis_home_directory_default = os.path.join(os.getcwd(), ".hypothesis")
 
 __hypothesis_home_directory = None
 
@@ -39,8 +39,7 @@ def mkdir_p(path):
 def hypothesis_home_dir():
     global __hypothesis_home_directory
     if not __hypothesis_home_directory:
-        __hypothesis_home_directory = os.getenv(
-            'HYPOTHESIS_STORAGE_DIRECTORY')
+        __hypothesis_home_directory = os.getenv("HYPOTHESIS_STORAGE_DIRECTORY")
     if not __hypothesis_home_directory:
         __hypothesis_home_directory = __hypothesis_home_directory_default
         mkdir_p(__hypothesis_home_directory)
@@ -54,4 +53,4 @@ def storage_directory(*names):
 
 
 def tmpdir():
-    return storage_directory('tmp')
+    return storage_directory("tmp")

@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import gc
 import weakref
@@ -26,21 +26,27 @@ import hypothesis.strategies as st
 from hypothesis import given, settings
 
 
-@pytest.mark.parametrize('s', [
-    st.floats(),
-    st.tuples(st.integers()),
-    st.tuples(),
-    st.one_of(st.integers(), st.text()),
-])
+@pytest.mark.parametrize(
+    "s",
+    [
+        st.floats(),
+        st.tuples(st.integers()),
+        st.tuples(),
+        st.one_of(st.integers(), st.text()),
+    ],
+)
 def test_is_cacheable(s):
     assert s.is_cacheable
 
 
-@pytest.mark.parametrize('s', [
-    st.just([]),
-    st.tuples(st.integers(), st.just([])),
-    st.one_of(st.integers(), st.text(), st.just([])),
-])
+@pytest.mark.parametrize(
+    "s",
+    [
+        st.just([]),
+        st.tuples(st.integers(), st.just([])),
+        st.one_of(st.integers(), st.text(), st.just([])),
+    ],
+)
 def test_is_not_cacheable(s):
     assert not s.is_cacheable
 
@@ -59,7 +65,6 @@ def test_local_types_are_garbage_collected_issue_493():
     store = [None]
 
     def run_locally():
-
         class Test(object):
             @settings(database=None)
             @given(st.integers())

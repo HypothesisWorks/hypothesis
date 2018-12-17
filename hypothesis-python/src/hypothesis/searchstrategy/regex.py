@@ -15,19 +15,18 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import re
-import sys
 import operator
-import sre_parse
+import re
 import sre_constants as sre
+import sre_parse
+import sys
 
 import hypothesis.strategies as st
 from hypothesis import reject
-from hypothesis.internal.compat import PY3, hrange, hunichr, text_type, \
-    int_to_byte
-from hypothesis.internal.charmap import categories, as_general_categories
+from hypothesis.internal.charmap import as_general_categories, categories
+from hypothesis.internal.compat import PY3, hrange, hunichr, int_to_byte, text_type
 
 HAS_SUBPATTERN_FLAGS = sys.version_info[:2] >= (3, 6)
 
@@ -35,18 +34,18 @@ HAS_SUBPATTERN_FLAGS = sys.version_info[:2] >= (3, 6)
 UNICODE_CATEGORIES = set(categories())
 
 
-SPACE_CHARS = set(u' \t\n\r\f\v')
-UNICODE_SPACE_CHARS = SPACE_CHARS | set(u'\x1c\x1d\x1e\x1f\x85')
-UNICODE_DIGIT_CATEGORIES = set(['Nd'])
-UNICODE_SPACE_CATEGORIES = set(as_general_categories('Z'))
-UNICODE_LETTER_CATEGORIES = set(as_general_categories('L'))
-UNICODE_WORD_CATEGORIES = set(as_general_categories(['L', 'N']))
+SPACE_CHARS = set(u" \t\n\r\f\v")
+UNICODE_SPACE_CHARS = SPACE_CHARS | set(u"\x1c\x1d\x1e\x1f\x85")
+UNICODE_DIGIT_CATEGORIES = set(["Nd"])
+UNICODE_SPACE_CATEGORIES = set(as_general_categories("Z"))
+UNICODE_LETTER_CATEGORIES = set(as_general_categories("L"))
+UNICODE_WORD_CATEGORIES = set(as_general_categories(["L", "N"]))
 
 # This is verbose, but correct on all versions of Python
 BYTES_ALL = set(int_to_byte(i) for i in range(256))
-BYTES_DIGIT = set(b for b in BYTES_ALL if re.match(b'\\d', b))
-BYTES_SPACE = set(b for b in BYTES_ALL if re.match(b'\\s', b))
-BYTES_WORD = set(b for b in BYTES_ALL if re.match(b'\\w', b))
+BYTES_DIGIT = set(b for b in BYTES_ALL if re.match(b"\\d", b))
+BYTES_SPACE = set(b for b in BYTES_ALL if re.match(b"\\s", b))
+BYTES_WORD = set(b for b in BYTES_ALL if re.match(b"\\w", b))
 BYTES_LOOKUP = {
     sre.CATEGORY_DIGIT: BYTES_DIGIT,
     sre.CATEGORY_SPACE: BYTES_SPACE,
@@ -60,12 +59,10 @@ BYTES_LOOKUP = {
 # They are matched by the \W, meaning 'not word', but unicodedata.category(c)
 # returns one of the word categories above.  There's special handling below.
 HAS_WEIRD_WORD_CHARS = sys.version_info[:2] < (3, 4)
-UNICODE_WEIRD_NONWORD_CHARS = set(u'\U00012432\U00012433\U00012456\U00012457')
+UNICODE_WEIRD_NONWORD_CHARS = set(u"\U00012432\U00012433\U00012456\U00012457")
 
 
-GROUP_CACHE_STRATEGY = st.shared(
-    st.builds(dict), key='hypothesis.regex.group_cache'
-)
+GROUP_CACHE_STRATEGY = st.shared(st.builds(dict), key="hypothesis.regex.group_cache")
 
 
 @st.composite
@@ -103,7 +100,7 @@ def clear_cache_after_draw(draw, base_strategy):
 
 
 class Context(object):
-    __slots__ = ['flags']
+    __slots__ = ["flags"]
 
     def __init__(self, groups=None, flags=0):
         self.flags = flags
@@ -125,8 +122,7 @@ class CharactersBuilder(object):
         self._blacklist_chars = set()
         self._negate = negate
         self._ignorecase = flags & re.IGNORECASE
-        self._unicode = not bool(flags & re.ASCII) \
-            if PY3 else bool(flags & re.UNICODE)
+        self._unicode = not bool(flags & re.ASCII) if PY3 else bool(flags & re.UNICODE)
         self.code_to_char = hunichr
 
     @property
@@ -136,7 +132,7 @@ class CharactersBuilder(object):
         if self._negate:
             black_chars = self._blacklist_chars - self._whitelist_chars
             return st.characters(
-                blacklist_categories=self._categories | {'Cc', 'Cs'},
+                blacklist_categories=self._categories | {"Cc", "Cs"},
                 blacklist_characters=self._whitelist_chars,
                 whitelist_characters=black_chars,
                 max_codepoint=max_codepoint,
@@ -157,40 +153,40 @@ class CharactersBuilder(object):
             self._categories |= UNICODE_CATEGORIES - UNICODE_DIGIT_CATEGORIES
         elif category == sre.CATEGORY_SPACE:
             self._categories |= UNICODE_SPACE_CATEGORIES
-            self._whitelist_chars |= UNICODE_SPACE_CHARS \
-                if self._unicode else SPACE_CHARS
+            self._whitelist_chars |= (
+                UNICODE_SPACE_CHARS if self._unicode else SPACE_CHARS
+            )
         elif category == sre.CATEGORY_NOT_SPACE:
             self._categories |= UNICODE_CATEGORIES - UNICODE_SPACE_CATEGORIES
-            self._blacklist_chars |= UNICODE_SPACE_CHARS \
-                if self._unicode else SPACE_CHARS
+            self._blacklist_chars |= (
+                UNICODE_SPACE_CHARS if self._unicode else SPACE_CHARS
+            )
         elif category == sre.CATEGORY_WORD:
             self._categories |= UNICODE_WORD_CATEGORIES
-            self._whitelist_chars.add(u'_')
+            self._whitelist_chars.add(u"_")
             if HAS_WEIRD_WORD_CHARS and self._unicode:  # pragma: no cover
                 # This code is workaround of weird behavior in
                 # specific Python versions and run only on those versions
                 self._blacklist_chars |= UNICODE_WEIRD_NONWORD_CHARS
         elif category == sre.CATEGORY_NOT_WORD:
             self._categories |= UNICODE_CATEGORIES - UNICODE_WORD_CATEGORIES
-            self._blacklist_chars.add(u'_')
+            self._blacklist_chars.add(u"_")
             if HAS_WEIRD_WORD_CHARS and self._unicode:  # pragma: no cover
                 # This code is workaround of weird behavior in
                 # specific Python versions and run only on those versions
                 self._whitelist_chars |= UNICODE_WEIRD_NONWORD_CHARS
         else:  # pragma: no cover
-            raise AssertionError('Unknown character category: %s' % category)
+            raise AssertionError("Unknown character category: %s" % category)
 
     def add_char(self, char):
         """Add given char to the whitelist."""
         c = self.code_to_char(char)
         self._whitelist_chars.add(c)
-        if self._ignorecase and \
-                re.match(c, c.swapcase(), re.IGNORECASE) is not None:
+        if self._ignorecase and re.match(c, c.swapcase(), re.IGNORECASE) is not None:
             self._whitelist_chars.add(c.swapcase())
 
 
 class BytesBuilder(CharactersBuilder):
-
     def __init__(self, negate=False, flags=0):
         self._whitelist_chars = set()
         self._blacklist_chars = set()
@@ -228,15 +224,15 @@ def maybe_pad(draw, regex, strategy, left_pad_strategy, right_pad_strategy):
 def base_regex_strategy(regex, parsed=None):
     if parsed is None:
         parsed = sre_parse.parse(regex.pattern, flags=regex.flags)
-    return clear_cache_after_draw(_strategy(
-        parsed,
-        Context(flags=regex.flags),
-        isinstance(regex.pattern, text_type)
-    ))
+    return clear_cache_after_draw(
+        _strategy(
+            parsed, Context(flags=regex.flags), isinstance(regex.pattern, text_type)
+        )
+    )
 
 
 def regex_strategy(regex, fullmatch):
-    if not hasattr(regex, 'pattern'):
+    if not hasattr(regex, "pattern"):
         regex = re.compile(regex)
 
     is_unicode = isinstance(regex.pattern, text_type)
@@ -251,12 +247,12 @@ def regex_strategy(regex, fullmatch):
 
     if is_unicode:
         base_padding_strategy = st.text()
-        empty = st.just(u'')
-        newline = st.just(u'\n')
+        empty = st.just(u"")
+        newline = st.just(u"\n")
     else:
         base_padding_strategy = st.binary()
-        empty = st.just(b'')
-        newline = st.just(b'\n')
+        empty = st.just(b"")
+        newline = st.just(b"\n")
 
     right_pad = base_padding_strategy
     left_pad = base_padding_strategy
@@ -269,8 +265,7 @@ def regex_strategy(regex, fullmatch):
         elif parsed[-1][1] == sre.AT_END:
             if regex.flags & re.MULTILINE:
                 right_pad = st.one_of(
-                    empty,
-                    st.builds(operator.add, newline, right_pad)
+                    empty, st.builds(operator.add, newline, right_pad)
                 )
             else:
                 right_pad = st.one_of(empty, newline)
@@ -281,10 +276,7 @@ def regex_strategy(regex, fullmatch):
             left_pad = empty
         elif parsed[0][1] == sre.AT_BEGINNING:
             if regex.flags & re.MULTILINE:
-                left_pad = st.one_of(
-                    empty,
-                    st.builds(operator.add, left_pad, newline),
-                )
+                left_pad = st.one_of(empty, st.builds(operator.add, left_pad, newline))
             else:
                 left_pad = empty
 
@@ -320,14 +312,15 @@ def _strategy(codes, context, is_unicode):
     2. Active regex flags (e.g. IGNORECASE, DOTALL, UNICODE, they affect
        behavior of various inner strategies)
     """
+
     def recurse(codes):
         return _strategy(codes, context, is_unicode)
 
     if is_unicode:
-        empty = u''
+        empty = u""
         to_char = hunichr
     else:
-        empty = b''
+        empty = b""
         to_char = int_to_byte
         binary_char = st.binary(min_size=1, max_size=1)
 
@@ -337,8 +330,7 @@ def _strategy(codes, context, is_unicode):
 
         i = 0
         while i < len(codes):
-            if codes[i][0] == sre.LITERAL and \
-                    not context.flags & re.IGNORECASE:
+            if codes[i][0] == sre.LITERAL and not context.flags & re.IGNORECASE:
                 # Merge subsequent "literals" into one `just()` strategy
                 # that generates corresponding text if no IGNORECASE
                 j = i + 1
@@ -346,10 +338,13 @@ def _strategy(codes, context, is_unicode):
                     j += 1
 
                 if i + 1 < j:
-                    strategies.append(st.just(
-                        empty.join([to_char(charcode)
-                                    for (_, charcode) in codes[i:j]])
-                    ))
+                    strategies.append(
+                        st.just(
+                            empty.join(
+                                [to_char(charcode) for (_, charcode) in codes[i:j]]
+                            )
+                        )
+                    )
 
                     i = j
                     continue
@@ -371,8 +366,10 @@ def _strategy(codes, context, is_unicode):
         if code == sre.LITERAL:
             # Regex 'a' (single char)
             c = to_char(value)
-            if context.flags & re.IGNORECASE and \
-                    re.match(c, c.swapcase(), re.IGNORECASE) is not None:
+            if (
+                context.flags & re.IGNORECASE
+                and re.match(c, c.swapcase(), re.IGNORECASE) is not None
+            ):
                 # We do the explicit check for swapped-case matching because
                 # eg 'ß'.upper() == 'SS' and ignorecase doesn't match it.
                 return st.sampled_from([c, c.swapcase()])
@@ -382,8 +379,10 @@ def _strategy(codes, context, is_unicode):
             # Regex '[^a]' (negation of a single char)
             c = to_char(value)
             blacklist = set(c)
-            if context.flags & re.IGNORECASE and \
-                    re.match(c, c.swapcase(), re.IGNORECASE) is not None:
+            if (
+                context.flags & re.IGNORECASE
+                and re.match(c, c.swapcase(), re.IGNORECASE) is not None
+            ):
                 blacklist |= set(c.swapcase())
             if is_unicode:
                 return st.characters(blacklist_characters=blacklist)
@@ -417,8 +416,7 @@ def _strategy(codes, context, is_unicode):
                 else:  # pragma: no cover
                     # Currently there are no known code points other than
                     # handled here. This code is just future proofing
-                    raise AssertionError('Unknown charset code: %s'
-                                         % charset_code)
+                    raise AssertionError("Unknown charset code: %s" % charset_code)
             return builder.strategy
 
         elif code == sre.ANY:
@@ -426,11 +424,11 @@ def _strategy(codes, context, is_unicode):
             if is_unicode:
                 if context.flags & re.DOTALL:
                     return st.characters()
-                return st.characters(blacklist_characters=u'\n')
+                return st.characters(blacklist_characters=u"\n")
             else:
                 if context.flags & re.DOTALL:
                     return binary_char
-                return binary_char.filter(lambda c: c != b'\n')
+                return binary_char.filter(lambda c: c != b"\n")
 
         elif code == sre.AT:
             # Regexes like '^...', '...$', '\bfoo', '\Bfoo'
@@ -478,9 +476,9 @@ def _strategy(codes, context, is_unicode):
                 at_most = None
             if at_least == 0 and at_most == 1:
                 return st.just(empty) | recurse(subregex)
-            return st.lists(recurse(subregex),
-                            min_size=at_least,
-                            max_size=at_most).map(empty.join)
+            return st.lists(recurse(subregex), min_size=at_least, max_size=at_most).map(
+                empty.join
+            )
 
         elif code == sre.GROUPREF_EXISTS:
             # Regex '(?(id/name)yes-pattern|no-pattern)'
@@ -494,4 +492,4 @@ def _strategy(codes, context, is_unicode):
         else:  # pragma: no cover
             # Currently there are no known code points other than handled here.
             # This code is just future proofing
-            raise AssertionError('Unknown code point: %s' % repr(code))
+            raise AssertionError("Unknown code point: %s" % repr(code))

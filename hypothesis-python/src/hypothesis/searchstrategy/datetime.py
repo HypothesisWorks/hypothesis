@@ -15,25 +15,24 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import datetime as dt
 
 from hypothesis.internal.conjecture import utils
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
-__all__ = ['DateStrategy', 'DatetimeStrategy', 'TimedeltaStrategy']
+__all__ = ["DateStrategy", "DatetimeStrategy", "TimedeltaStrategy"]
 
 
 def is_pytz_timezone(tz):
     if not isinstance(tz, dt.tzinfo):
         return False
     module = type(tz).__module__
-    return module == 'pytz' or module.startswith('pytz.')
+    return module == "pytz" or module.startswith("pytz.")
 
 
 class DatetimeStrategy(SearchStrategy):
-
     def __init__(self, min_value, max_value, timezones_strat):
         assert isinstance(min_value, dt.datetime)
         assert isinstance(max_value, dt.datetime)
@@ -48,11 +47,10 @@ class DatetimeStrategy(SearchStrategy):
     def _attempt_one_draw(self, data):
         result = dict()
         cap_low, cap_high = True, True
-        for name in ('year', 'month', 'day',
-                     'hour', 'minute', 'second', 'microsecond'):
+        for name in ("year", "month", "day", "hour", "minute", "second", "microsecond"):
             low = getattr(self.min_dt if cap_low else dt.datetime.min, name)
             high = getattr(self.max_dt if cap_high else dt.datetime.max, name)
-            if name == 'year':
+            if name == "year":
                 val = utils.centered_integer_range(data, low, high, 2000)
             else:
                 val = utils.integer_range(data, low, high)
@@ -74,14 +72,14 @@ class DatetimeStrategy(SearchStrategy):
             result = self._attempt_one_draw(data)
             if result is not None:
                 return result
-        data.note_event('3 attempts to create a datetime between %r and %r '
-                        'with timezone from %r failed.' %
-                        (self.min_dt, self.max_dt, self.tz_strat))
+        data.note_event(
+            "3 attempts to create a datetime between %r and %r "
+            "with timezone from %r failed." % (self.min_dt, self.max_dt, self.tz_strat)
+        )
         data.mark_invalid()
 
 
 class DateStrategy(SearchStrategy):
-
     def __init__(self, min_value, max_value):
         assert isinstance(min_value, dt.date)
         assert isinstance(max_value, dt.date)
@@ -91,12 +89,14 @@ class DateStrategy(SearchStrategy):
         self.center = (dt.date(2000, 1, 1) - min_value).days
 
     def do_draw(self, data):
-        return self.min_value + dt.timedelta(days=utils.centered_integer_range(
-            data, 0, self.days_apart, center=self.center))
+        return self.min_value + dt.timedelta(
+            days=utils.centered_integer_range(
+                data, 0, self.days_apart, center=self.center
+            )
+        )
 
 
 class TimedeltaStrategy(SearchStrategy):
-
     def __init__(self, min_value, max_value):
         assert isinstance(min_value, dt.timedelta)
         assert isinstance(max_value, dt.timedelta)
@@ -108,11 +108,9 @@ class TimedeltaStrategy(SearchStrategy):
         result = dict()
         low_bound = True
         high_bound = True
-        for name in ('days', 'seconds', 'microseconds'):
-            low = getattr(
-                self.min_value if low_bound else dt.timedelta.min, name)
-            high = getattr(
-                self.max_value if high_bound else dt.timedelta.max, name)
+        for name in ("days", "seconds", "microseconds"):
+            low = getattr(self.min_value if low_bound else dt.timedelta.min, name)
+            high = getattr(self.max_value if high_bound else dt.timedelta.max, name)
             val = utils.centered_integer_range(data, low, high, 0)
             result[name] = val
             low_bound = low_bound and val == low

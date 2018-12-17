@@ -15,14 +15,13 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import string
 
-from hypothesis import given
-from hypothesis import strategies as st
+from hypothesis import given, strategies as st
 
-IDENTIFIER_CHARS = string.ascii_letters + string.digits + '_'
+IDENTIFIER_CHARS = string.ascii_letters + string.digits + "_"
 
 
 @given(st.characters(blacklist_characters=IDENTIFIER_CHARS))
@@ -32,8 +31,7 @@ def test_large_blacklist(c):
 
 @given(st.data())
 def test_arbitrary_blacklist(data):
-    blacklist = data.draw(
-        st.text(st.characters(max_codepoint=1000), min_size=1))
+    blacklist = data.draw(st.text(st.characters(max_codepoint=1000), min_size=1))
     ords = list(map(ord, blacklist))
     c = data.draw(
         st.characters(

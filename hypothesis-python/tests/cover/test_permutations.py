@@ -15,26 +15,24 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from hypothesis import given
+from hypothesis.strategies import data, integers, permutations, sets
 from tests.common.debug import minimal
 from tests.common.utils import checks_deprecated_behaviour
-from hypothesis.strategies import data, sets, integers, permutations
 
 
 def test_can_find_non_trivial_permutation():
-    x = minimal(
-        permutations(list(range(5))), lambda x: x[0] != 0
-    )
+    x = minimal(permutations(list(range(5))), lambda x: x[0] != 0)
 
     assert x == [1, 0, 2, 3, 4]
 
 
-@given(permutations(list(u'abcd')))
+@given(permutations(list(u"abcd")))
 def test_permutation_values_are_permutations(perm):
     assert len(perm) == 4
-    assert set(perm) == set(u'abcd')
+    assert set(perm) == set(u"abcd")
 
 
 @given(permutations([]))

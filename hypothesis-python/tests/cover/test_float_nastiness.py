@@ -15,10 +15,10 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import sys
 import math
+import sys
 import warnings
 from decimal import Decimal
 
@@ -26,13 +26,12 @@ import pytest
 from flaky import flaky
 
 import hypothesis.strategies as st
-from hypothesis import given, assume, settings
+from hypothesis import assume, given, settings
 from hypothesis.errors import InvalidArgument
-from tests.common.debug import minimal, find_any
+from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT, WINDOWS
+from hypothesis.internal.floats import float_to_int, int_to_float, next_down, next_up
+from tests.common.debug import find_any, minimal
 from tests.common.utils import checks_deprecated_behaviour
-from hypothesis.internal.compat import WINDOWS, CAN_PACK_HALF_FLOAT
-from hypothesis.internal.floats import next_up, next_down, float_to_int, \
-    int_to_float
 
 try:
     import numpy
@@ -40,37 +39,34 @@ except ImportError:
     numpy = None
 
 
-@pytest.mark.parametrize(('lower', 'upper'), [
-    # Exact values don't matter, but they're large enough so that x + y = inf.
-    (9.9792015476736e+291, 1.7976931348623157e+308),
-    (-sys.float_info.max, sys.float_info.max)
-])
+@pytest.mark.parametrize(
+    ("lower", "upper"),
+    [
+        # Exact values don't matter, but they're large enough so that x + y = inf.
+        (9.9792015476736e291, 1.7976931348623157e308),
+        (-sys.float_info.max, sys.float_info.max),
+    ],
+)
 def test_floats_are_in_range(lower, upper):
     @given(st.floats(lower, upper))
     def test_is_in_range(t):
         assert lower <= t <= upper
+
     test_is_in_range()
 
 
-@pytest.mark.parametrize('sign', [-1, 1])
+@pytest.mark.parametrize("sign", [-1, 1])
 def test_can_generate_both_zeros(sign):
-    assert minimal(
-        st.floats(),
-        lambda x: math.copysign(1, x) == sign,
-    ) == sign * 0.0
+    assert minimal(st.floats(), lambda x: math.copysign(1, x) == sign) == sign * 0.0
 
 
-@pytest.mark.parametrize((u'l', u'r'), [
-    (-1.0, 1.0),
-    (-0.0, 1.0),
-    (-1.0, 0.0),
-    (-sys.float_info.min, sys.float_info.min),
-])
-@pytest.mark.parametrize('sign', [-1, 1])
+@pytest.mark.parametrize(
+    (u"l", u"r"),
+    [(-1.0, 1.0), (-0.0, 1.0), (-1.0, 0.0), (-sys.float_info.min, sys.float_info.min)],
+)
+@pytest.mark.parametrize("sign", [-1, 1])
 def test_can_generate_both_zeros_when_in_interval(l, r, sign):
-    assert minimal(
-        st.floats(l, r),
-        lambda x: math.copysign(1, x) == sign) == sign * 0.0
+    assert minimal(st.floats(l, r), lambda x: math.copysign(1, x) == sign) == sign * 0.0
 
 
 @given(st.floats(0.0, 1.0))
@@ -83,11 +79,9 @@ def test_does_not_generate_positive_if_right_boundary_is_negative(x):
     assert math.copysign(1, x) == -1
 
 
-@pytest.mark.parametrize((u'l', u'r'), [
-    (0.0, 1.0),
-    (-1.0, 0.0),
-    (-sys.float_info.min, sys.float_info.min),
-])
+@pytest.mark.parametrize(
+    (u"l", u"r"), [(0.0, 1.0), (-1.0, 0.0), (-sys.float_info.min, sys.float_info.min)]
+)
 @flaky(max_runs=4, min_passes=1)
 def test_can_generate_interval_endpoints(l, r):
     interval = st.floats(l, r)
@@ -108,8 +102,8 @@ def test_half_bounded_generates_zero():
 
 @pytest.mark.xfail(
     WINDOWS,
-    reason=(
-        'Seems to be triggering a floating point bug on 2.7 + windows + x64'))
+    reason=("Seems to be triggering a floating point bug on 2.7 + windows + x64"),
+)
 @given(st.floats(max_value=-0.0))
 def test_half_bounded_respects_sign_of_upper_bound(x):
     assert math.copysign(1, x) == -1
@@ -159,6 +153,7 @@ def test_very_narrow_interval():
     @given(st.floats(lower_bound, upper_bound))
     def test(f):
         assert lower_bound <= f <= upper_bound
+
     test()
 
 
@@ -197,7 +192,7 @@ def test_floats_in_tiny_interval_within_bounds(data, center):
 def test_float_free_interval_is_invalid():
     lo = (2 ** 54) + 1
     hi = lo + 2
-    assert float(lo) < lo < hi < float(hi), 'There are no floats in [lo .. hi]'
+    assert float(lo) < lo < hi < float(hi), "There are no floats in [lo .. hi]"
     with pytest.raises(InvalidArgument):
         st.floats(lo, hi).example()
 
@@ -207,24 +202,27 @@ def test_float32_can_exclude_infinity(x):
     assert not math.isinf(x)
 
 
-@pytest.mark.skipif(not (numpy or CAN_PACK_HALF_FLOAT), reason='dependency')
+@pytest.mark.skipif(not (numpy or CAN_PACK_HALF_FLOAT), reason="dependency")
 @given(st.floats(width=32, allow_infinity=False))
 def test_float16_can_exclude_infinity(x):
     assert not math.isinf(x)
 
 
-@pytest.mark.parametrize('kwargs', [
-    dict(min_value=10 ** 5, width=16),
-    dict(max_value=10 ** 5, width=16),
-    dict(min_value=10 ** 40, width=32),
-    dict(max_value=10 ** 40, width=32),
-    dict(min_value=10 ** 400, width=64),
-    dict(max_value=10 ** 400, width=64),
-    dict(min_value=10 ** 400),
-    dict(max_value=10 ** 400),
-])
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        dict(min_value=10 ** 5, width=16),
+        dict(max_value=10 ** 5, width=16),
+        dict(min_value=10 ** 40, width=32),
+        dict(max_value=10 ** 40, width=32),
+        dict(min_value=10 ** 400, width=64),
+        dict(max_value=10 ** 400, width=64),
+        dict(min_value=10 ** 400),
+        dict(max_value=10 ** 400),
+    ],
+)
 def test_out_of_range(kwargs):
-    if kwargs.get('width') == 16 and not (CAN_PACK_HALF_FLOAT or numpy):
+    if kwargs.get("width") == 16 and not (CAN_PACK_HALF_FLOAT or numpy):
         pytest.skip()
     with pytest.raises(OverflowError):
         st.floats(**kwargs).validate()
@@ -244,12 +242,12 @@ def test_disallowed_width():
 
 
 def test_no_single_floats_in_range():
-    low = 2. ** 25 + 1
+    low = 2.0 ** 25 + 1
     high = low + 2
     st.floats(low, high).validate()  # Note: OK for 64bit floats
     with pytest.raises(InvalidArgument):
         """Unrepresentable bounds are deprecated; but we're not testing that
         here."""
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
+            warnings.simplefilter("ignore")
             st.floats(low, high, width=32).validate()

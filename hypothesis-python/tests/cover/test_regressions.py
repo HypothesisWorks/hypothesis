@@ -15,14 +15,13 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import random
 
 import pytest
 
-from hypothesis import Verbosity, seed, given, assume, settings
-from hypothesis import strategies as st
+from hypothesis import Verbosity, assume, given, seed, settings, strategies as st
 
 
 def strat():
@@ -53,7 +52,7 @@ def test_can_find_non_zero():
     @settings(verbosity=Verbosity.quiet)
     @given(strat())
     def test(v):
-        assert '0' in v['one']['val']['two']['some_text']
+        assert "0" in v["one"]["val"]["two"]["some_text"]
 
     with pytest.raises(AssertionError):
         test()
@@ -69,7 +68,7 @@ def test_mock_injection():
     """
     from mock import Mock
 
-    class Bar():
+    class Bar:
         pass
 
     @given(inp=st.integers())
@@ -84,21 +83,19 @@ def test_mock_injection():
 def test_regression_issue_1230():
     strategy = st.builds(
         lambda x, y: dict((list(x.items()) + list(y.items()))),
-        st.fixed_dictionaries({'0': st.text()}),
+        st.fixed_dictionaries({"0": st.text()}),
         st.builds(
             lambda dictionary, keys: {key: dictionary[key] for key in keys},
-            st.fixed_dictionaries({
-                '1': st.lists(elements=st.sampled_from(['a']))
-            }),
-            st.sets(elements=st.sampled_from(['1']))
-        )
+            st.fixed_dictionaries({"1": st.lists(elements=st.sampled_from(["a"]))}),
+            st.sets(elements=st.sampled_from(["1"])),
+        ),
     )
 
     @seed(81581571036124932593143257836081491416)
     @settings(database=None)
     @given(strategy)
     def test_false_is_false(params):
-        assume(params.get('0') not in ('', '\x00'))
+        assume(params.get("0") not in ("", "\x00"))
         raise ValueError()
 
     with pytest.raises(ValueError):

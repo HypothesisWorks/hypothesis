@@ -20,10 +20,10 @@
 See https://twitter.com/betsythemuffin/status/1003313844108824584
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import os
 import ast
+import os
 from contextlib import contextmanager
 
 
@@ -43,6 +43,7 @@ def once(fn):
             return
         fn()
         accept.has_been_called = True
+
     accept.has_been_called = False
     accept.__name__ = fn.__name__
     return accept

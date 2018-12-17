@@ -15,13 +15,13 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from array import array
 
 from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
-from hypothesis.internal.floats import float_to_int, int_to_float
 from hypothesis.internal.conjecture.utils import calc_label_from_name
+from hypothesis.internal.floats import float_to_int, int_to_float
 
 """
 This module implements support for arbitrary floating point numbers in
@@ -84,19 +84,19 @@ off the higher powers of 2 in the fraction first.
 """
 
 
-MAX_EXPONENT = 0x7ff
+MAX_EXPONENT = 0x7FF
 
 SPECIAL_EXPONENTS = (0, MAX_EXPONENT)
 
 BIAS = 1023
-MAX_POSITIVE_EXPONENT = (MAX_EXPONENT - 1 - BIAS)
+MAX_POSITIVE_EXPONENT = MAX_EXPONENT - 1 - BIAS
 
-DRAW_FLOAT_LABEL = calc_label_from_name('drawing a float')
+DRAW_FLOAT_LABEL = calc_label_from_name("drawing a float")
 
 
 def exponent_key(e):
     if e == MAX_EXPONENT:
-        return float('inf')
+        return float("inf")
     unbiased = e - BIAS
     if unbiased < 0:
         return 10000 - unbiased
@@ -104,8 +104,8 @@ def exponent_key(e):
         return unbiased
 
 
-ENCODING_TABLE = array('H', sorted(hrange(MAX_EXPONENT + 1), key=exponent_key))
-DECODING_TABLE = array('H', [0]) * len(ENCODING_TABLE)
+ENCODING_TABLE = array("H", sorted(hrange(MAX_EXPONENT + 1), key=exponent_key))
+DECODING_TABLE = array("H", [0]) * len(ENCODING_TABLE)
 
 for i, b in enumerate(ENCODING_TABLE):
     DECODING_TABLE[b] = i
@@ -131,7 +131,7 @@ def reverse_byte(b):
     result = 0
     for _ in range(8):
         result <<= 1
-        result |= (b & 1)
+        result |= b & 1
         b >>= 1
     return result
 
@@ -156,24 +156,24 @@ def reverse64(v):
     """
     assert v.bit_length() <= 64
     return (
-        (REVERSE_BITS_TABLE[(v >> 0) & 0xff] << 56) |
-        (REVERSE_BITS_TABLE[(v >> 8) & 0xff] << 48) |
-        (REVERSE_BITS_TABLE[(v >> 16) & 0xff] << 40) |
-        (REVERSE_BITS_TABLE[(v >> 24) & 0xff] << 32) |
-        (REVERSE_BITS_TABLE[(v >> 32) & 0xff] << 24) |
-        (REVERSE_BITS_TABLE[(v >> 40) & 0xff] << 16) |
-        (REVERSE_BITS_TABLE[(v >> 48) & 0xff] << 8) |
-        (REVERSE_BITS_TABLE[(v >> 56) & 0xff] << 0)
+        (REVERSE_BITS_TABLE[(v >> 0) & 0xFF] << 56)
+        | (REVERSE_BITS_TABLE[(v >> 8) & 0xFF] << 48)
+        | (REVERSE_BITS_TABLE[(v >> 16) & 0xFF] << 40)
+        | (REVERSE_BITS_TABLE[(v >> 24) & 0xFF] << 32)
+        | (REVERSE_BITS_TABLE[(v >> 32) & 0xFF] << 24)
+        | (REVERSE_BITS_TABLE[(v >> 40) & 0xFF] << 16)
+        | (REVERSE_BITS_TABLE[(v >> 48) & 0xFF] << 8)
+        | (REVERSE_BITS_TABLE[(v >> 56) & 0xFF] << 0)
     )
 
 
-MANTISSA_MASK = ((1 << 52) - 1)
+MANTISSA_MASK = (1 << 52) - 1
 
 
 def reverse_bits(x, n):
     assert x.bit_length() <= n <= 64
     x = reverse64(x)
-    x >>= (64 - n)
+    x >>= 64 - n
     return x
 
 
@@ -181,7 +181,7 @@ def update_mantissa(unbiased_exponent, mantissa):
     if unbiased_exponent <= 0:
         mantissa = reverse_bits(mantissa, 52)
     elif unbiased_exponent <= 51:
-        n_fractional_bits = (52 - unbiased_exponent)
+        n_fractional_bits = 52 - unbiased_exponent
         fractional_part = mantissa & ((1 << n_fractional_bits) - 1)
         mantissa ^= fractional_part
         mantissa |= reverse_bits(fractional_part, n_fractional_bits)
@@ -214,7 +214,7 @@ def float_to_lex(f):
 
 def base_float_to_lex(f):
     i = float_to_int(f)
-    i &= ((1 << 63) - 1)
+    i &= (1 << 63) - 1
     exponent = i >> 52
     mantissa = i & MANTISSA_MASK
     mantissa = update_mantissa(exponent - BIAS, mantissa)

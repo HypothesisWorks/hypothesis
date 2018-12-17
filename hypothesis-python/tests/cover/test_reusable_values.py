@@ -15,19 +15,27 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, reject, example
+from hypothesis import example, given, reject
 from hypothesis.errors import InvalidArgument
 
 base_reusable_strategies = (
-    st.text(), st.binary(), st.dates(),
-    st.times(), st.timedeltas(), st.booleans(), st.complex_numbers(),
-    st.floats(), st.floats(-1.0, 1.0),
-    st.integers(), st.integers(1, 10), st.integers(1),
+    st.text(),
+    st.binary(),
+    st.dates(),
+    st.times(),
+    st.timedeltas(),
+    st.booleans(),
+    st.complex_numbers(),
+    st.floats(),
+    st.floats(-1.0, 1.0),
+    st.integers(),
+    st.integers(1, 10),
+    st.integers(1),
 )
 
 
@@ -35,16 +43,15 @@ base_reusable_strategies = (
 def reusable():
     return st.one_of(
         st.sampled_from(base_reusable_strategies),
-
         st.builds(
-            st.floats, min_value=st.none() | st.floats(),
-            max_value=st.none() | st.floats(), allow_infinity=st.booleans(),
-            allow_nan=st.booleans()
+            st.floats,
+            min_value=st.none() | st.floats(),
+            max_value=st.none() | st.floats(),
+            allow_infinity=st.booleans(),
+            allow_nan=st.booleans(),
         ),
-
         st.builds(st.just, st.builds(list)),
         st.builds(st.sampled_from, st.lists(st.builds(list))),
-
         st.lists(reusable).map(st.one_of),
         st.lists(reusable).map(lambda ls: st.tuples(*ls)),
     )
@@ -81,10 +88,14 @@ def test_composing_breaks_reusability():
     assert not s.flatmap(lambda x: st.just(x)).has_reusable_values
 
 
-@pytest.mark.parametrize('strat', [
-    st.lists(st.booleans()), st.sets(st.booleans()),
-    st.dictionaries(st.booleans(), st.booleans()),
-])
+@pytest.mark.parametrize(
+    "strat",
+    [
+        st.lists(st.booleans()),
+        st.sets(st.booleans()),
+        st.dictionaries(st.booleans(), st.booleans()),
+    ],
+)
 def test_mutable_collections_do_not_have_reusable_values(strat):
     assert not strat.has_reusable_values
 

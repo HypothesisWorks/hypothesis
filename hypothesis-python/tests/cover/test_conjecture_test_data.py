@@ -15,16 +15,14 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis import given
-from hypothesis import strategies as st
+from hypothesis import given, strategies as st
 from hypothesis.errors import Frozen
 from hypothesis.internal.compat import hbytes
-from hypothesis.internal.conjecture.data import Status, StopTest, \
-    ConjectureData
+from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
@@ -35,7 +33,7 @@ def test_buffer_draws_as_self(buf):
 
 
 def test_cannot_draw_after_freeze():
-    x = ConjectureData.for_buffer(b'hi')
+    x = ConjectureData.for_buffer(b"hi")
     x.draw_bytes(1)
     x.freeze()
     with pytest.raises(Frozen):
@@ -43,7 +41,7 @@ def test_cannot_draw_after_freeze():
 
 
 def test_can_double_freeze():
-    x = ConjectureData.for_buffer(b'hi')
+    x = ConjectureData.for_buffer(b"hi")
     x.freeze()
     assert x.frozen
     x.freeze()
@@ -51,9 +49,9 @@ def test_can_double_freeze():
 
 
 def test_can_draw_zero_bytes():
-    x = ConjectureData.for_buffer(b'')
+    x = ConjectureData.for_buffer(b"")
     for _ in range(10):
-        assert x.draw_bytes(0) == b''
+        assert x.draw_bytes(0) == b""
 
 
 def test_draw_past_end_sets_overflow():
@@ -66,9 +64,9 @@ def test_draw_past_end_sets_overflow():
 
 
 def test_notes_repr():
-    x = ConjectureData.for_buffer(b'')
-    x.note(b'hi')
-    assert repr(b'hi') in x.output
+    x = ConjectureData.for_buffer(b"")
+    x.note(b"hi")
+    assert repr(b"hi") in x.output
 
 
 def test_can_mark_interesting():
@@ -93,14 +91,13 @@ def test_can_mark_invalid():
 
 
 class BoomStrategy(SearchStrategy):
-
     def do_draw(self, data):
         data.draw_bytes(1)
         raise ValueError()
 
 
 def test_closes_interval_on_error_in_strategy():
-    x = ConjectureData.for_buffer(b'hi')
+    x = ConjectureData.for_buffer(b"hi")
     with pytest.raises(ValueError):
         x.draw(BoomStrategy())
     x.freeze()
@@ -108,13 +105,12 @@ def test_closes_interval_on_error_in_strategy():
 
 
 class BigStrategy(SearchStrategy):
-
     def do_draw(self, data):
         data.draw_bytes(10 ** 6)
 
 
 def test_does_not_double_freeze_in_interval_close():
-    x = ConjectureData.for_buffer(b'hi')
+    x = ConjectureData.for_buffer(b"hi")
     with pytest.raises(StopTest):
         x.draw(BigStrategy())
     assert x.frozen
@@ -122,7 +118,7 @@ def test_does_not_double_freeze_in_interval_close():
 
 
 def test_empty_discards_do_not_count():
-    x = ConjectureData.for_buffer(b'')
+    x = ConjectureData.for_buffer(b"")
     x.start_example(label=1)
     x.stop_example(discard=True)
     x.freeze()
@@ -154,7 +150,7 @@ def test_example_depth_marking():
 
     # These draw sizes are chosen so that each example has a unique length.
     d.draw_bytes(2)
-    d.start_example('inner')
+    d.start_example("inner")
     d.draw_bytes(3)
     d.draw_bytes(6)
     d.stop_example()
@@ -162,6 +158,4 @@ def test_example_depth_marking():
     d.freeze()
 
     depths = set((ex.length, ex.depth) for ex in d.examples)
-    assert depths == set([
-        (2, 1), (3, 2), (6, 2), (9, 1), (12, 1), (23, 0)
-    ])
+    assert depths == set([(2, 1), (3, 2), (6, 2), (9, 1), (12, 1), (23, 0)])

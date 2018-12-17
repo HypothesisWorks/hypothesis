@@ -15,35 +15,33 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
+import pandas
 import pytest
 
-import pandas
-import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
-from hypothesis import HealthCheck, given, assume, reject, settings
+import hypothesis.strategies as st
+from hypothesis import HealthCheck, assume, given, reject, settings
 from hypothesis.errors import NoExamples
 from tests.pandas.helpers import supported_by_pandas
 
 
 @given(pdst.indexes(dtype=int, max_size=0))
 def test_gets_right_dtype_for_empty_indices(ix):
-    assert ix.dtype == np.dtype('int64')
+    assert ix.dtype == np.dtype("int64")
 
 
-@given(pdst.indexes(elements=st.integers(0, 2**63 - 1), max_size=0))
+@given(pdst.indexes(elements=st.integers(0, 2 ** 63 - 1), max_size=0))
 def test_gets_right_dtype_for_empty_indices_with_elements(ix):
-    assert ix.dtype == np.dtype('int64')
+    assert ix.dtype == np.dtype("int64")
 
 
 def test_does_not_generate_impossible_conditions():
     with pytest.raises(NoExamples):
-        pdst.indexes(
-            min_size=3, max_size=3, dtype=bool
-        ).example()
+        pdst.indexes(min_size=3, max_size=3, dtype=bool).example()
 
 
 @given(pdst.indexes(dtype=bool, unique=True))
@@ -71,24 +69,22 @@ def test_basic_range_indexes(ix):
 @settings(suppress_health_check=[HealthCheck.too_slow])
 @given(st.data())
 def test_generate_arbitrary_indices(data):
-    min_size = data.draw(st.integers(0, 10), 'min_size')
-    max_size = data.draw(
-        st.none() | st.integers(min_size, min_size + 10), 'max_size')
-    unique = data.draw(st.booleans(), 'unique')
-    dtype = data.draw(npst.scalar_dtypes(), 'dtype')
+    min_size = data.draw(st.integers(0, 10), "min_size")
+    max_size = data.draw(st.none() | st.integers(min_size, min_size + 10), "max_size")
+    unique = data.draw(st.booleans(), "unique")
+    dtype = data.draw(npst.scalar_dtypes(), "dtype")
     assume(supported_by_pandas(dtype))
 
     # Pandas bug: https://github.com/pandas-dev/pandas/pull/14916 until 0.20;
     # then int64 indexes are inferred from uint64 values.
-    assume(dtype.kind != 'u')
+    assume(dtype.kind != "u")
 
-    pass_elements = data.draw(st.booleans(), 'pass_elements')
+    pass_elements = data.draw(st.booleans(), "pass_elements")
 
     converted_dtype = pandas.Index([], dtype=dtype).dtype
 
     try:
-        inferred_dtype = pandas.Index(
-            [data.draw(npst.from_dtype(dtype))]).dtype
+        inferred_dtype = pandas.Index([data.draw(npst.from_dtype(dtype))]).dtype
 
         if pass_elements:
             elements = npst.from_dtype(dtype)
@@ -96,19 +92,24 @@ def test_generate_arbitrary_indices(data):
         else:
             elements = None
 
-        index = data.draw(pdst.indexes(
-            elements=elements, dtype=dtype, min_size=min_size,
-            max_size=max_size, unique=unique,
-        ))
+        index = data.draw(
+            pdst.indexes(
+                elements=elements,
+                dtype=dtype,
+                min_size=min_size,
+                max_size=max_size,
+                unique=unique,
+            )
+        )
 
     except Exception as e:
-        if type(e).__name__ == 'OutOfBoundsDatetime':
+        if type(e).__name__ == "OutOfBoundsDatetime":
             # See https://github.com/HypothesisWorks/hypothesis-python/pull/826
             reject()
         else:
             raise
     if dtype is None:
-        if pandas.__version__ >= '0.19':
+        if pandas.__version__ >= "0.19":
             assert index.dtype == inferred_dtype
     else:
         assert index.dtype == converted_dtype

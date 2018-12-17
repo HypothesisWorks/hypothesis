@@ -15,12 +15,12 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import hypothesis.strategies as st
 from hypothesis import given, settings
-from hypothesis.errors import InvalidArgument
 from hypothesis.control import reject
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import OrderedDict
 
 
@@ -36,9 +36,7 @@ def baz(x):
     pass
 
 
-fns = [
-    foo, bar, baz
-]
+fns = [foo, bar, baz]
 
 
 def builds_ignoring_invalid(target, *args, **kwargs):
@@ -49,8 +47,8 @@ def builds_ignoring_invalid(target, *args, **kwargs):
             return result
         except InvalidArgument:
             reject()
-    return st.tuples(
-        st.tuples(*args), st.fixed_dictionaries(kwargs)).map(splat)
+
+    return st.tuples(st.tuples(*args), st.fixed_dictionaries(kwargs)).map(splat)
 
 
 size_strategies = dict(
@@ -64,10 +62,17 @@ values = st.integers() | st.text()
 
 Strategies = st.recursive(
     st.one_of(
-        st.sampled_from([
-            st.none(), st.booleans(), st.randoms(), st.complex_numbers(),
-            st.randoms(), st.fractions(), st.decimals(),
-        ]),
+        st.sampled_from(
+            [
+                st.none(),
+                st.booleans(),
+                st.randoms(),
+                st.complex_numbers(),
+                st.randoms(),
+                st.fractions(),
+                st.decimals(),
+            ]
+        ),
         st.builds(st.just, values),
         st.builds(st.sampled_from, st.lists(values, min_size=1)),
         builds_ignoring_invalid(st.floats, st.floats(), st.floats()),
@@ -75,32 +80,28 @@ Strategies = st.recursive(
     lambda x: st.one_of(
         builds_ignoring_invalid(st.lists, x, **size_strategies),
         builds_ignoring_invalid(st.sets, x, **size_strategies),
+        builds_ignoring_invalid(lambda v: st.tuples(*v), st.lists(x)),
+        builds_ignoring_invalid(lambda v: st.one_of(*v), st.lists(x, min_size=1)),
         builds_ignoring_invalid(
-            lambda v: st.tuples(*v), st.lists(x)),
-        builds_ignoring_invalid(
-            lambda v: st.one_of(*v),
-            st.lists(x, min_size=1)),
-        builds_ignoring_invalid(
-            st.dictionaries, x, x,
+            st.dictionaries,
+            x,
+            x,
             dict_class=st.sampled_from([dict, OrderedDict]),
             **size_strategies
         ),
         st.builds(lambda s, f: s.map(f), x, st.sampled_from(fns)),
-    )
+    ),
 )
 
 
-strategy_globals = dict(
-    (k, getattr(st, k))
-    for k in dir(st)
-)
+strategy_globals = dict((k, getattr(st, k)) for k in dir(st))
 
-strategy_globals['OrderedDict'] = OrderedDict
-strategy_globals['inf'] = float('inf')
-strategy_globals['nan'] = float('nan')
-strategy_globals['foo'] = foo
-strategy_globals['bar'] = bar
-strategy_globals['baz'] = baz
+strategy_globals["OrderedDict"] = OrderedDict
+strategy_globals["inf"] = float("inf")
+strategy_globals["nan"] = float("nan")
+strategy_globals["foo"] = foo
+strategy_globals["bar"] = bar
+strategy_globals["baz"] = baz
 
 
 @given(Strategies)

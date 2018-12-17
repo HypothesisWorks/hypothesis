@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 
 """This module implements various useful common functions for shrinking tasks.
@@ -66,8 +66,14 @@ class Shrinker(object):
     and simpler."""
 
     def __init__(
-        self, initial, predicate, random=None, full=False, debug=False,
-        name=None, **kwargs
+        self,
+        initial,
+        predicate,
+        random=None,
+        full=False,
+        debug=False,
+        name=None,
+        **kwargs
     ):
         self.setup(**kwargs)
         self.current = self.make_immutable(initial)
@@ -86,10 +92,11 @@ class Shrinker(object):
         return len(self.__seen)
 
     def __repr__(self):
-        return '%s(%sinitial=%r, current=%r)' % (
+        return "%s(%sinitial=%r, current=%r)" % (
             type(self).__name__,
-            '' if self.name is None else '%r, ' % (self.name,),
-            self.initial, self.current
+            "" if self.name is None else "%r, " % (self.name,),
+            self.initial,
+            self.current,
         )
 
     def setup(self, **kwargs):
@@ -104,7 +111,8 @@ class Shrinker(object):
         """Delegates shrinking to another shrinker class, by converting the
         current value to and from it with provided functions."""
         self.call_shrinker(
-            other_class, convert_to(self.current),
+            other_class,
+            convert_to(self.current),
             lambda v: self.consider(convert_from(v)),
             **kwargs
         )
@@ -116,14 +124,11 @@ class Shrinker(object):
         Note we explicitly do not pass through full.
         """
 
-        return other_class.shrink(
-            initial, predicate,
-            random=self.random, **kwargs
-        )
+        return other_class.shrink(initial, predicate, random=self.random, **kwargs)
 
     def debug(self, *args):
         if self.debugging_enabled:
-            print('DEBUG', self, *args)
+            print("DEBUG", self, *args)
 
     @classmethod
     def shrink(cls, initial, predicate, **kwargs):
@@ -151,7 +156,7 @@ class Shrinker(object):
                 self.run_step()
         else:
             self.run_step()
-        self.debug('COMPLETE')
+        self.debug("COMPLETE")
 
     def incorporate(self, value):
         """Try using ``value`` as a possible candidate improvement.
@@ -162,15 +167,15 @@ class Shrinker(object):
         self.check_invariants(value)
         if not self.left_is_better(value, self.current):
             if value != self.current and (value == value):
-                self.debug('Rejected %r as worse than self.current=%r' % (
-                    value, self.current
-                ))
+                self.debug(
+                    "Rejected %r as worse than self.current=%r" % (value, self.current)
+                )
             return False
         if value in self.__seen:
             return False
         self.__seen.add(value)
         if self.__predicate(value):
-            self.debug('shrinking to %r' % (value,))
+            self.debug("shrinking to %r" % (value,))
             self.changes += 1
             self.current = value
             return True

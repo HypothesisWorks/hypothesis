@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
@@ -32,13 +32,14 @@ def test_respects_leaf_limit(xs):
             return sum(map(flatten, x), [])
         else:
             return [x]
+
     assert len(flatten(xs)) <= 10
 
 
 def test_can_find_nested():
     x = minimal(
         st.recursive(st.booleans(), lambda x: st.tuples(x, x)),
-        lambda x: isinstance(x, tuple) and isinstance(x[0], tuple)
+        lambda x: isinstance(x, tuple) and isinstance(x[0], tuple),
     )
 
     assert x == ((False, False), False)

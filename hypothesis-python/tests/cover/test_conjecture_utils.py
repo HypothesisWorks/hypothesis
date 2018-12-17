@@ -15,24 +15,24 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from fractions import Fraction
 from collections import Counter
+from fractions import Fraction
 
-import hypothesis.strategies as st
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis import HealthCheck, given, assume, example, settings
+import hypothesis.strategies as st
+from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis.internal.compat import hbytes, hrange
-from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 
 def test_does_draw_data_for_empty_range():
-    data = ConjectureData.for_buffer(b'\1')
+    data = ConjectureData.for_buffer(b"\1")
     assert cu.integer_range(data, 1, 1) == 1
     data.freeze()
-    assert data.buffer == hbytes(b'\0')
+    assert data.buffer == hbytes(b"\0")
 
 
 def test_uniform_float_shrinks_to_zero():
@@ -48,21 +48,19 @@ def test_uniform_float_can_draw_1():
 
 
 def test_geometric_can_handle_bad_first_draw():
-    assert cu.geometric(ConjectureData.for_buffer(hbytes(
-        [255] * 7 + [0] * 7)), 0.5) == 0
+    assert (
+        cu.geometric(ConjectureData.for_buffer(hbytes([255] * 7 + [0] * 7)), 0.5) == 0
+    )
 
 
 def test_coin_biased_towards_truth():
     p = 1 - 1.0 / 500
 
     for i in range(255):
-        assert cu.biased_coin(
-            ConjectureData.for_buffer([i]), p
-        )
+        assert cu.biased_coin(ConjectureData.for_buffer([i]), p)
 
     second_order = [
-        cu.biased_coin(ConjectureData.for_buffer([255, i]), p)
-        for i in range(255)
+        cu.biased_coin(ConjectureData.for_buffer([255, i]), p) for i in range(255)
     ]
 
     assert False in second_order
@@ -73,13 +71,10 @@ def test_coin_biased_towards_falsehood():
     p = 1.0 / 500
 
     for i in range(255):
-        assert not cu.biased_coin(
-            ConjectureData.for_buffer([i]), p
-        )
+        assert not cu.biased_coin(ConjectureData.for_buffer([i]), p)
 
     second_order = [
-        cu.biased_coin(ConjectureData.for_buffer([255, i]), p)
-        for i in range(255)
+        cu.biased_coin(ConjectureData.for_buffer([255, i]), p) for i in range(255)
     ]
 
     assert False in second_order
@@ -151,7 +146,8 @@ def weights(draw):
 @example([Fraction(1, 1), Fraction(3, 5), Fraction(1, 1)])
 @example([Fraction(2, 257), Fraction(2, 5), Fraction(1, 11)])
 @settings(
-    deadline=None, suppress_health_check=HealthCheck.all(),
+    deadline=None,
+    suppress_health_check=HealthCheck.all(),
     max_examples=0 if IN_COVERAGE_TESTS else settings.default.max_examples,
 )
 @given(st.lists(weights(), min_size=1))

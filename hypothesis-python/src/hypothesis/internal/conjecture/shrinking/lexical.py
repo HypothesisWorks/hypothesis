@@ -15,11 +15,10 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from hypothesis.internal.compat import hbytes, int_to_bytes, int_from_bytes
-from hypothesis.internal.conjecture.floats import is_simple, \
-    float_to_lex, lex_to_float
+from hypothesis.internal.compat import hbytes, int_from_bytes, int_to_bytes
+from hypothesis.internal.conjecture.floats import float_to_lex, is_simple, lex_to_float
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
 from hypothesis.internal.conjecture.shrinking.floats import Float
 from hypothesis.internal.conjecture.shrinking.integer import Integer
@@ -103,14 +102,12 @@ class Lexical(Shrinker):
         Integer.shrink(
             self.current_int,
             lambda c: c == self.current_int or self.incorporate_int(c),
-            random=self.random, full=full,
+            random=self.random,
+            full=full,
         )
 
     def partial_sort(self):
-        Ordering.shrink(
-            self.current, self.consider,
-            random=self.random,
-        )
+        Ordering.shrink(self.current, self.consider, random=self.random)
 
     def short_circuit(self):
         """This is just an assemblage of other shrinkers, so we rely on their

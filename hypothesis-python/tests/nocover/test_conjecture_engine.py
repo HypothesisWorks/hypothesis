@@ -15,22 +15,19 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from random import Random
 
 import pytest
 
-from hypothesis import HealthCheck, given, settings
-from hypothesis import strategies as st
-from tests.common.utils import no_shrink, non_covering_examples
+from hypothesis import HealthCheck, given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
-from tests.cover.test_conjecture_engine import shrink, run_to_buffer, \
-    shrinking_from
-from hypothesis.internal.conjecture.data import Status, ConjectureData
-from hypothesis.internal.conjecture.engine import RunIsComplete, \
-    ConjectureRunner
+from hypothesis.internal.conjecture.data import ConjectureData, Status
+from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
+from tests.common.utils import no_shrink, non_covering_examples
+from tests.cover.test_conjecture_engine import run_to_buffer, shrink, shrinking_from
 
 
 def test_lot_of_dead_nodes():
@@ -40,20 +37,22 @@ def test_lot_of_dead_nodes():
             if data.draw_bytes(1)[0] != i:
                 data.mark_invalid()
         data.mark_interesting()
+
     assert x == hbytes([0, 1, 2, 3])
 
 
 def test_saves_data_while_shrinking(monkeypatch):
-    key = b'hi there'
+    key = b"hi there"
     n = 5
     db = InMemoryExampleDatabase()
     assert list(db.fetch(key)) == []
     seen = set()
 
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer([255] * 10)))
+        ConjectureRunner,
+        "generate_new_examples",
+        lambda runner: runner.test_function(ConjectureData.for_buffer([255] * 10)),
+    )
 
     def f(data):
         x = data.draw_bytes(10)
@@ -61,8 +60,8 @@ def test_saves_data_while_shrinking(monkeypatch):
             seen.add(hbytes(x))
         if hbytes(x) in seen:
             data.mark_interesting()
-    runner = ConjectureRunner(
-        f, settings=settings(database=db), database_key=key)
+
+    runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
     runner.run()
     assert runner.interesting_examples
     assert len(seen) == n
@@ -73,8 +72,7 @@ def test_saves_data_while_shrinking(monkeypatch):
 
 @given(st.randoms(), st.random_module())
 @settings(
-    phases=no_shrink, deadline=None,
-    suppress_health_check=[HealthCheck.hung_test]
+    phases=no_shrink, deadline=None, suppress_health_check=[HealthCheck.hung_test]
 )
 def test_maliciously_bad_generator(rnd, seed):
     @run_to_buffer
@@ -91,11 +89,12 @@ def test_can_discard(monkeypatch):
     n = 8
 
     monkeypatch.setattr(
-        ConjectureRunner, 'generate_new_examples',
+        ConjectureRunner,
+        "generate_new_examples",
         lambda runner: runner.test_function(
-            ConjectureData.for_buffer([
-                v for i in range(n) for v in [i, i]
-            ])))
+            ConjectureData.for_buffer([v for i in range(n) for v in [i, i]])
+        ),
+    )
 
     @run_to_buffer
     def x(data):
@@ -103,6 +102,7 @@ def test_can_discard(monkeypatch):
         while len(seen) < n:
             seen.add(hbytes(data.draw_bytes(1)))
         data.mark_interesting()
+
     assert len(x) == n
 
 
@@ -118,11 +118,12 @@ def test_exhaustive_enumeration_of_partial_buffer():
     seen_prefixes = set()
 
     runner = ConjectureRunner(
-        f, settings=settings(database=None, max_examples=256, buffer_size=2),
+        f,
+        settings=settings(database=None, max_examples=256, buffer_size=2),
         random=Random(0),
     )
     with pytest.raises(RunIsComplete):
-        runner.cached_test_function(b'')
+        runner.cached_test_function(b"")
         for _ in hrange(256):
             p = runner.generate_novel_prefix()
             assert p not in seen_prefixes
@@ -144,11 +145,12 @@ def test_regression_1():
     # problem.
     @run_to_buffer
     def x(data):
-        data.write(hbytes(b'\x01\x02'))
-        data.write(hbytes(b'\x01\x00'))
+        data.write(hbytes(b"\x01\x02"))
+        data.write(hbytes(b"\x01\x00"))
         v = data.draw_bits(41)
         if v >= 512 or v == 254:
             data.mark_interesting()
+
     assert list(x)[:-2] == [1, 2, 1, 0, 0, 0, 0, 0]
 
     assert int_from_bytes(x[-2:]) in (254, 512)
@@ -161,7 +163,7 @@ def test_shrink_offset_pairs_handles_block_structure_change():
     shrinker.
     """
 
-    @shrink([235, 0, 0, 255], 'shrink_offset_pairs')
+    @shrink([235, 0, 0, 255], "shrink_offset_pairs")
     def f(data):
         x = data.draw_bytes(1)[0]
 
@@ -186,7 +188,8 @@ def test_shrink_offset_pairs_handles_block_structure_change():
 def test_retaining_sum_considers_zero_destination_blocks():
     """Explicitly test that this shrink pass will try to move data into blocks
     that are currently all-zero."""
-    @shrink([100, 0, 0], 'minimize_block_pairs_retaining_sum')
+
+    @shrink([100, 0, 0], "minimize_block_pairs_retaining_sum")
     def f(data):
         x = data.draw_bytes(1)[0]
         data.draw_bytes(1)
@@ -247,17 +250,11 @@ def test_each_pair_of_blocks():
         data.mark_interesting()
 
     bounds = [
-        (a.bounds, b.bounds) for a, b in shrinker.each_pair_of_blocks(
-            lambda block: True,
-            lambda block: True,
-        )
+        (a.bounds, b.bounds)
+        for a, b in shrinker.each_pair_of_blocks(lambda block: True, lambda block: True)
     ]
 
-    assert bounds == [
-        ((0, 1), (1, 2)),
-        ((0, 1), (2, 3)),
-        ((1, 2), (2, 3)),
-    ]
+    assert bounds == [((0, 1), (1, 2)), ((0, 1), (2, 3)), ((1, 2), (2, 3))]
 
 
 def test_each_pair_of_blocks_with_filters():
@@ -270,17 +267,13 @@ def test_each_pair_of_blocks_with_filters():
         data.mark_interesting()
 
     blocks = [
-        (a.index, b.index) for a, b in shrinker.each_pair_of_blocks(
-            lambda block: block.index != 1,
-            lambda block: block.index != 3,
+        (a.index, b.index)
+        for a, b in shrinker.each_pair_of_blocks(
+            lambda block: block.index != 1, lambda block: block.index != 3
         )
     ]
 
-    assert blocks == [
-        (0, 1), (0, 2), (0, 4),
-        (2, 4),
-        (3, 4),
-    ]
+    assert blocks == [(0, 1), (0, 2), (0, 4), (2, 4), (3, 4)]
 
 
 def test_each_pair_of_blocks_handles_change():
@@ -294,16 +287,19 @@ def test_each_pair_of_blocks_handles_change():
         data.mark_interesting()
 
     blocks = []
-    for a, b in shrinker.each_pair_of_blocks(
-        lambda block: True,
-        lambda block: True,
-    ):
+    for a, b in shrinker.each_pair_of_blocks(lambda block: True, lambda block: True):
         if a.index == 0 and b.index == 6:
             shrinker.incorporate_new_buffer(hbytes([3] + [0] * 10))
         blocks.append((a.index, b.index))
 
     assert blocks == [
-        (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6),
-        (1, 2), (1, 3),
+        (0, 1),
+        (0, 2),
+        (0, 3),
+        (0, 4),
+        (0, 5),
+        (0, 6),
+        (1, 2),
+        (1, 3),
         (2, 3),
     ]

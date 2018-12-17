@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import time
 
@@ -24,11 +24,11 @@ from pytest import raises
 
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, given, settings
-from hypothesis.errors import InvalidArgument, FailedHealthCheck
 from hypothesis.control import assume
-from tests.common.utils import no_shrink, checks_deprecated_behaviour
+from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.searchstrategy.strategies import SearchStrategy
+from tests.common.utils import checks_deprecated_behaviour, no_shrink
 
 
 def test_slow_generation_fails_a_health_check():
@@ -78,8 +78,7 @@ def test_suppressing_filtering_health_check():
 
     forbidden = set()
 
-    @settings(suppress_health_check=[
-        HealthCheck.filter_too_much, HealthCheck.too_slow])
+    @settings(suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
     @given(st.integers().filter(unhealthy_filter))
     def test2(x):
         raise ValueError()
@@ -96,15 +95,14 @@ def test_filtering_everything_fails_a_health_check():
 
     with raises(FailedHealthCheck) as e:
         test()
-    assert 'filter' in e.value.args[0]
+    assert "filter" in e.value.args[0]
 
 
 class fails_regularly(SearchStrategy):
-
     def do_draw(self, data):
         b = int_from_bytes(data.draw_bytes(2))
         assume(b == 3)
-        print('ohai')
+        print("ohai")
 
 
 def test_filtering_most_things_fails_a_health_check():
@@ -115,7 +113,7 @@ def test_filtering_most_things_fails_a_health_check():
 
     with raises(FailedHealthCheck) as e:
         test()
-    assert 'filter' in e.value.args[0]
+    assert "filter" in e.value.args[0]
 
 
 def test_large_data_will_fail_a_health_check():
@@ -126,7 +124,7 @@ def test_large_data_will_fail_a_health_check():
 
     with raises(FailedHealthCheck) as e:
         test()
-    assert 'allowable size' in e.value.args[0]
+    assert "allowable size" in e.value.args[0]
 
 
 def test_returning_non_none_is_forbidden():
@@ -143,17 +141,17 @@ def test_a_very_slow_test_will_fail_a_health_check():
     @settings(deadline=None)
     def a(x):
         time.sleep(1000)
+
     with raises(FailedHealthCheck):
         a()
 
 
 def test_the_slow_test_health_check_can_be_disabled():
     @given(st.integers())
-    @settings(suppress_health_check=[
-        HealthCheck.hung_test,
-    ], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.hung_test], deadline=None)
     def a(x):
         time.sleep(1000)
+
     a()
 
 
@@ -162,6 +160,7 @@ def test_the_slow_test_health_only_runs_if_health_checks_are_on():
     @settings(suppress_health_check=HealthCheck.all(), deadline=None)
     def a(x):
         time.sleep(1000)
+
     a()
 
 
@@ -197,7 +196,8 @@ def test_example_that_shrinks_to_overrun_fails_health_check():
 
 
 @pytest.mark.parametrize(
-    'check', [HealthCheck.random_module, HealthCheck.exception_in_generation])
+    "check", [HealthCheck.random_module, HealthCheck.exception_in_generation]
+)
 @checks_deprecated_behaviour
 def test_noop_health_checks(check):
     settings(suppress_health_check=[check])

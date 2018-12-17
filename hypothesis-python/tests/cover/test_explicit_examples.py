@@ -15,21 +15,20 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from unittest import TestCase
 
 import pytest
 
-from hypothesis import Verbosity, note, given, example, settings, reporting
+from hypothesis import Verbosity, example, given, note, reporting, settings
 from hypothesis.errors import InvalidArgument
-from tests.common.utils import capture_out
-from hypothesis.strategies import text, integers
 from hypothesis.internal.compat import integer_types, print_unicode
+from hypothesis.strategies import integers, text
+from tests.common.utils import capture_out
 
 
 class TestInstanceMethods(TestCase):
-
     @given(integers())
     @example(1)
     def test_hi_1(self, x):
@@ -48,13 +47,12 @@ class TestInstanceMethods(TestCase):
 
 def test_kwarg_example_on_testcase():
     class Stuff(TestCase):
-
         @given(integers())
         @example(x=1)
         def test_hi(self, x):
             assert isinstance(x, integer_types)
 
-    Stuff(u'test_hi').test_hi()
+    Stuff(u"test_hi").test_hi()
 
 
 def test_errors_when_run_with_not_enough_args():
@@ -103,7 +101,7 @@ def test_can_use_examples_before_given():
 
 def test_can_use_examples_around_given():
     long_str = u"This is a very long string that you've no chance of hitting"
-    short_str = u'Still no chance'
+    short_str = u"Still no chance"
 
     seen = []
 
@@ -117,7 +115,7 @@ def test_can_use_examples_around_given():
     assert set(seen[:2]) == set((long_str, short_str))
 
 
-@pytest.mark.parametrize((u'x', u'y'), [(1, False), (2, True)])
+@pytest.mark.parametrize((u"x", u"y"), [(1, False), (2, True)])
 @example(z=10)
 @given(z=integers())
 def test_is_a_thing(x, y, z):
@@ -145,7 +143,7 @@ def test_does_not_print_on_explicit_examples_if_no_failure():
             with capture_out() as out:
                 test_positive()
     out = out.getvalue()
-    assert u'Falsifying example: test_positive(1)' not in out
+    assert u"Falsifying example: test_positive(1)" not in out
 
 
 def test_prints_output_for_explicit_examples():
@@ -159,12 +157,12 @@ def test_prints_output_for_explicit_examples():
             with capture_out() as out:
                 test_positive()
     out = out.getvalue()
-    assert u'Falsifying example: test_positive(x=-1)' in out
+    assert u"Falsifying example: test_positive(x=-1)" in out
 
 
 def test_prints_verbose_output_for_explicit_examples():
     @settings(verbosity=Verbosity.verbose)
-    @example('NOT AN INTEGER')
+    @example("NOT AN INTEGER")
     @given(integers())
     def test_always_passes(x):
         pass
@@ -188,7 +186,7 @@ def test_captures_original_repr_of_example():
             with capture_out() as out:
                 test_mutation()
     out = out.getvalue()
-    assert u'Falsifying example: test_mutation(x=[])' in out
+    assert u"Falsifying example: test_mutation(x=[])" in out
 
 
 def test_examples_are_tried_in_order():
@@ -199,6 +197,7 @@ def test_examples_are_tried_in_order():
     @example(x=3)
     def test(x):
         print_unicode(u"x -> %d" % (x,))
+
     with capture_out() as out:
         with reporting.with_reporter(reporting.default):
             test()
@@ -211,7 +210,7 @@ def test_prints_note_in_failing_example():
     @example(x=43)
     @given(integers())
     def test(x):
-        note('x -> %d' % (x,))
+        note("x -> %d" % (x,))
         assert x == 42
 
     with capture_out() as out:
@@ -220,8 +219,8 @@ def test_prints_note_in_failing_example():
                 test()
     v = out.getvalue()
     print_unicode(v)
-    assert 'x -> 43' in v
-    assert 'x -> 42' not in v
+    assert "x -> 43" in v
+    assert "x -> 42" not in v
 
 
 def test_must_agree_with_number_of_arguments():

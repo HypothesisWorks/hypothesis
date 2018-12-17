@@ -15,23 +15,23 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import enum
 import collections
+import enum
 
 from hypothesis import given
-from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import sampled_from
+from tests.common.utils import checks_deprecated_behaviour
 
-an_enum = enum.Enum('A', 'a b c')
+an_enum = enum.Enum("A", "a b c")
 
-an_ordereddict = collections.OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+an_ordereddict = collections.OrderedDict([("a", 1), ("b", 2), ("c", 3)])
 
 
 @checks_deprecated_behaviour
 def test_can_sample_sets_while_deprecated():
-    assert sampled_from(set('abc')).example() in 'abc'
+    assert sampled_from(set("abc")).example() in "abc"
 
 
 def test_can_sample_sequence_without_warning():

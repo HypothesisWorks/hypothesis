@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 
@@ -25,8 +25,8 @@ import hypothesistooling as tools
 
 
 @pytest.mark.skipif(
-    os.environ.get('TRAVIS_SECURE_ENV_VARS', None) != 'true',
-    reason='Not running in an environment with travis secure vars'
+    os.environ.get("TRAVIS_SECURE_ENV_VARS", None) != "true",
+    reason="Not running in an environment with travis secure vars",
 )
 def test_can_descrypt_secrets():
     tools.decrypt_secrets()

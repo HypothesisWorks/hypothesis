@@ -15,15 +15,15 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import math
 
-import hypothesis.internal.conjecture.utils as d
 import hypothesis.internal.conjecture.floats as flt
+import hypothesis.internal.conjecture.utils as d
 from hypothesis.control import assume
-from hypothesis.internal.floats import sign
 from hypothesis.internal.conjecture.utils import calc_label_from_name
+from hypothesis.internal.floats import sign
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
@@ -36,30 +36,26 @@ class IntStrategy(SearchStrategy):
 
 
 class IntegersFromStrategy(SearchStrategy):
-
     def __init__(self, lower_bound, average_size=100000.0):
         super(IntegersFromStrategy, self).__init__()
         self.lower_bound = lower_bound
         self.average_size = average_size
 
     def __repr__(self):
-        return 'IntegersFromStrategy(%d)' % (self.lower_bound,)
+        return "IntegersFromStrategy(%d)" % (self.lower_bound,)
 
     def do_draw(self, data):
-        return int(
-            self.lower_bound + d.geometric(data, 1.0 / self.average_size))
+        return int(self.lower_bound + d.geometric(data, 1.0 / self.average_size))
 
 
 class WideRangeIntStrategy(IntStrategy):
 
-    distribution = d.Sampler([
-        4.0, 8.0, 1.0, 1.0, 0.5
-    ])
+    distribution = d.Sampler([4.0, 8.0, 1.0, 1.0, 0.5])
 
     sizes = [8, 16, 32, 64, 128]
 
     def __repr__(self):
-        return 'WideRangeIntStrategy()'
+        return "WideRangeIntStrategy()"
 
     def do_draw(self, data):
         size = self.sizes[self.distribution.sample(data)]
@@ -81,24 +77,41 @@ class BoundedIntStrategy(SearchStrategy):
         self.end = end
 
     def __repr__(self):
-        return 'BoundedIntStrategy(%d, %d)' % (self.start, self.end)
+        return "BoundedIntStrategy(%d, %d)" % (self.start, self.end)
 
     def do_draw(self, data):
         return d.integer_range(data, self.start, self.end)
 
 
-NASTY_FLOATS = sorted([
-    0.0, 0.5, 1.1, 1.5, 1.9, 1.0 / 3, 10e6, 10e-6, 1.175494351e-38,
-    2.2250738585072014e-308,
-    1.7976931348623157e+308, 3.402823466e+38, 9007199254740992, 1 - 10e-6,
-    2 + 10e-6, 1.192092896e-07, 2.2204460492503131e-016,
-
-] + [float('inf'), float('nan')] * 5, key=flt.float_to_lex)
+NASTY_FLOATS = sorted(
+    [
+        0.0,
+        0.5,
+        1.1,
+        1.5,
+        1.9,
+        1.0 / 3,
+        10e6,
+        10e-6,
+        1.175494351e-38,
+        2.2250738585072014e-308,
+        1.7976931348623157e308,
+        3.402823466e38,
+        9007199254740992,
+        1 - 10e-6,
+        2 + 10e-6,
+        1.192092896e-07,
+        2.2204460492503131e-016,
+    ]
+    + [float("inf"), float("nan")] * 5,
+    key=flt.float_to_lex,
+)
 NASTY_FLOATS = list(map(float, NASTY_FLOATS))
 NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
 
 FLOAT_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
-    'getting another float in FloatStrategy')
+    "getting another float in FloatStrategy"
+)
 
 
 class FloatStrategy(SearchStrategy):
@@ -112,13 +125,11 @@ class FloatStrategy(SearchStrategy):
         self.allow_nan = allow_nan
 
         self.nasty_floats = [f for f in NASTY_FLOATS if self.permitted(f)]
-        weights = [
-            0.2 * len(self.nasty_floats)
-        ] + [0.8] * len(self.nasty_floats)
+        weights = [0.2 * len(self.nasty_floats)] + [0.8] * len(self.nasty_floats)
         self.sampler = d.Sampler(weights)
 
     def __repr__(self):
-        return '%s()' % (self.__class__.__name__,)
+        return "%s()" % (self.__class__.__name__,)
 
     def permitted(self, f):
         assert isinstance(f, float)
@@ -161,21 +172,20 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         lb = float_order_key(self.lower_bound)
         ub = float_order_key(self.upper_bound)
 
-        self.critical = [
-            z for z in (-0.0, 0.0)
-            if lb <= float_order_key(z) <= ub
-        ]
+        self.critical = [z for z in (-0.0, 0.0) if lb <= float_order_key(z) <= ub]
         self.critical.append(self.lower_bound)
         self.critical.append(self.upper_bound)
 
     def __repr__(self):
-        return 'FixedBoundedFloatStrategy(%s, %s)' % (
-            self.lower_bound, self.upper_bound,
+        return "FixedBoundedFloatStrategy(%s, %s)" % (
+            self.lower_bound,
+            self.upper_bound,
         )
 
     def do_draw(self, data):
         f = self.lower_bound + (
-            self.upper_bound - self.lower_bound) * d.fractional_float(data)
+            self.upper_bound - self.lower_bound
+        ) * d.fractional_float(data)
         assume(self.lower_bound <= f <= self.upper_bound)
         assume(sign(self.lower_bound) <= sign(f) <= sign(self.upper_bound))
         # Special handling for bounds of -0.0

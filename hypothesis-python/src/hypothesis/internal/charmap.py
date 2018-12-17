@@ -15,29 +15,29 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import os
-import sys
 import gzip
 import json
+import os
+import sys
 import tempfile
 import unicodedata
 
 from hypothesis._settings import note_deprecation
-from hypothesis.configuration import tmpdir, storage_directory
+from hypothesis.configuration import storage_directory, tmpdir
 from hypothesis.internal.compat import hunichr
 
 if False:
     from typing import Dict, Tuple
+
     intervals = Tuple[Tuple[int, int], ...]
     cache_type = Dict[Tuple[Tuple[str, ...], int, int, intervals], intervals]
 
 
 def charmap_file():
     return os.path.join(
-        storage_directory('unicodedata', unicodedata.unidata_version),
-        'charmap.json.gz'
+        storage_directory("unicodedata", unicodedata.unidata_version), "charmap.json.gz"
     )
 
 
@@ -58,7 +58,7 @@ def charmap():
     if _charmap is None:
         f = charmap_file()
         try:
-            with gzip.GzipFile(f, 'rb') as i:
+            with gzip.GzipFile(f, "rb") as i:
                 tmp_charmap = dict(json.loads(i))
 
         except Exception:
@@ -76,7 +76,7 @@ def charmap():
                 fd, tmpfile = tempfile.mkstemp(dir=tmpdir())
                 os.close(fd)
                 # Explicitly set the mtime to get reproducible output
-                with gzip.GzipFile(tmpfile, 'wb', mtime=1) as o:
+                with gzip.GzipFile(tmpfile, "wb", mtime=1) as o:
                     result = json.dumps(sorted(tmp_charmap.items()))
                     o.write(result.encode())
 
@@ -85,8 +85,9 @@ def charmap():
                 pass
 
         # convert between lists and tuples
-        _charmap = {k: tuple(tuple(pair) for pair in pairs)
-                    for k, pairs in tmp_charmap.items()}
+        _charmap = {
+            k: tuple(tuple(pair) for pair in pairs) for k, pairs in tmp_charmap.items()
+        }
         # each value is a tuple of 2-tuples (that is, tuples of length 2)
         # and that both elements of that tuple are integers.
         for vs in _charmap.values():
@@ -111,17 +112,15 @@ def categories():
     global _categories
     if _categories is None:
         cm = charmap()
-        _categories = sorted(
-            cm.keys(), key=lambda c: len(cm[c])
-        )
-        _categories.remove('Cc')  # Other, Control
-        _categories.remove('Cs')  # Other, Surrogate
-        _categories.append('Cc')
-        _categories.append('Cs')
+        _categories = sorted(cm.keys(), key=lambda c: len(cm[c]))
+        _categories.remove("Cc")  # Other, Control
+        _categories.remove("Cs")  # Other, Surrogate
+        _categories.append("Cc")
+        _categories.append("Cs")
     return tuple(_categories)
 
 
-def as_general_categories(cats, name='cats'):
+def as_general_categories(cats, name="cats"):
     """Return a tuple of Unicode categories in a normalised order.
 
     This function expands one-letter designations of a major class to include
@@ -138,7 +137,7 @@ def as_general_categories(cats, name='cats'):
     """
     if cats is None:
         return None
-    major_classes = ('L', 'M', 'N', 'P', 'S', 'Z', 'C')
+    major_classes = ("L", "M", "N", "P", "S", "Z", "C")
     cs = categories()
     out = set(cats)
     for c in cats:
@@ -147,8 +146,9 @@ def as_general_categories(cats, name='cats'):
             out.update(x for x in cs if x.startswith(c))
         elif c not in cs:
             note_deprecation(
-                'In %s=%r, %r is not a valid Unicode category.  This will '
-                'be an error in a future version.' % (name, cats, c))
+                "In %s=%r, %r is not a valid Unicode category.  This will "
+                "be an error in a future version." % (name, cats, c)
+            )
     return tuple(c for c in cs if c in out)
 
 
@@ -272,9 +272,7 @@ def _intervals(s):
     return _union_intervals(intervals, intervals)
 
 
-category_index_cache = {
-    (): (),
-}
+category_index_cache = {(): ()}
 
 
 def _category_key(exclude, include):
@@ -317,9 +315,7 @@ def _query_for_key(key):
     if set(key) == set(categories()):
         result = ((0, sys.maxunicode),)
     else:
-        result = _union_intervals(
-            _query_for_key(key[:-1]), charmap()[key[-1]]
-        )
+        result = _union_intervals(_query_for_key(key[:-1]), charmap()[key[-1]])
     category_index_cache[key] = result
     return result
 
@@ -328,11 +324,12 @@ limited_category_index_cache = {}  # type: cache_type
 
 
 def query(
-    exclude_categories=(), include_categories=None,
+    exclude_categories=(),
+    include_categories=None,
     min_codepoint=None,
     max_codepoint=None,
-    include_characters='',
-    exclude_characters='',
+    include_characters="",
+    exclude_characters="",
 ):
     """Return a tuple of intervals covering the codepoints for all characters
     that meet the critera (min_codepoint <= codepoint(c) <= max_codepoint and
@@ -354,11 +351,14 @@ def query(
     if max_codepoint is None:
         max_codepoint = sys.maxunicode
     catkey = _category_key(exclude_categories, include_categories)
-    character_intervals = _intervals(include_characters or '')
-    exclude_intervals = _intervals(exclude_characters or '')
+    character_intervals = _intervals(include_characters or "")
+    exclude_intervals = _intervals(exclude_characters or "")
     qkey = (
-        catkey, min_codepoint, max_codepoint,
-        character_intervals, exclude_intervals
+        catkey,
+        min_codepoint,
+        max_codepoint,
+        character_intervals,
+        exclude_intervals,
     )
     try:
         return limited_category_index_cache[qkey]
@@ -368,9 +368,7 @@ def query(
     result = []
     for u, v in base:
         if v >= min_codepoint and u <= max_codepoint:
-            result.append((
-                max(u, min_codepoint), min(v, max_codepoint)
-            ))
+            result.append((max(u, min_codepoint), min(v, max_codepoint)))
     result = tuple(result)
     result = _union_intervals(result, character_intervals)
     result = _subtract_intervals(result, exclude_intervals)

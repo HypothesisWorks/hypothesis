@@ -15,36 +15,39 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import io
-import sys
-import enum
-import string
 import collections
+import enum
+import io
+import string
+import sys
 
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, given, infer, assume, settings
-from hypothesis.errors import NoExamples, InvalidArgument, ResolutionFailed
-from tests.common.debug import minimal
-from hypothesis.strategies import from_type
+from hypothesis import HealthCheck, assume, given, infer, settings
+from hypothesis.errors import InvalidArgument, NoExamples, ResolutionFailed
+from hypothesis.internal.compat import (
+    ForwardRef,
+    get_type_hints,
+    integer_types,
+    typing_root_type,
+)
 from hypothesis.searchstrategy import types
-from hypothesis.internal.compat import ForwardRef, integer_types, \
-    get_type_hints, typing_root_type
+from hypothesis.strategies import from_type
+from tests.common.debug import minimal
 
-typing = pytest.importorskip('typing')
+typing = pytest.importorskip("typing")
 sentinel = object()
-generics = sorted((t for t in types._global_type_lookup
-                   if isinstance(t, typing_root_type)), key=str)
+generics = sorted(
+    (t for t in types._global_type_lookup if isinstance(t, typing_root_type)), key=str
+)
 
 
-@pytest.mark.parametrize('typ', generics)
+@pytest.mark.parametrize("typ", generics)
 def test_resolve_typing_module(typ):
-    @settings(suppress_health_check=[
-        HealthCheck.too_slow, HealthCheck.filter_too_much
-    ])
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much])
     @given(from_type(typ))
     def inner(ex):
         if typ in (typing.BinaryIO, typing.TextIO):
@@ -67,16 +70,16 @@ def test_resolve_typing_module(typ):
     inner()
 
 
-@pytest.mark.parametrize('typ', [typing.Any, typing.Union])
+@pytest.mark.parametrize("typ", [typing.Any, typing.Union])
 def test_does_not_resolve_special_cases(typ):
     with pytest.raises(InvalidArgument):
         from_type(typ).example()
 
 
-@pytest.mark.parametrize('typ,instance_of', [
-    (typing.Union[int, str], (int, str)),
-    (typing.Optional[int], (int, type(None))),
-])
+@pytest.mark.parametrize(
+    "typ,instance_of",
+    [(typing.Union[int, str], (int, str)), (typing.Optional[int], (int, type(None)))],
+)
 def test_specialised_scalar_types(typ, instance_of):
     @given(from_type(typ))
     def inner(ex):
@@ -85,12 +88,12 @@ def test_specialised_scalar_types(typ, instance_of):
     inner()
 
 
-@pytest.mark.skipif(not hasattr(typing, 'Type'), reason='requires this attr')
+@pytest.mark.skipif(not hasattr(typing, "Type"), reason="requires this attr")
 def test_typing_Type_int():
     assert from_type(typing.Type[int]).example() is int
 
 
-@pytest.mark.skipif(not hasattr(typing, 'Type'), reason='requires this attr')
+@pytest.mark.skipif(not hasattr(typing, "Type"), reason="requires this attr")
 def test_typing_Type_Union():
     @given(from_type(typing.Type[typing.Union[str, list]]))
     def inner(ex):
@@ -99,22 +102,25 @@ def test_typing_Type_Union():
     inner()
 
 
-@pytest.mark.parametrize('typ,coll_type,instance_of', [
-    (typing.Set[int], set, int),
-    (typing.FrozenSet[int], frozenset, int),
-    (typing.Dict[int, int], dict, int),
-    (typing.KeysView[int], type({}.keys()), int),
-    (typing.ValuesView[int], type({}.values()), int),
-    (typing.List[int], list, int),
-    (typing.Tuple[int], tuple, int),
-    (typing.Tuple[int, ...], tuple, int),
-    (typing.Iterator[int], typing.Iterator, int),
-    (typing.Sequence[int], typing.Sequence, int),
-    (typing.Iterable[int], typing.Iterable, int),
-    (typing.Mapping[int, None], typing.Mapping, int),
-    (typing.Container[int], typing.Container, int),
-    (typing.NamedTuple('A_NamedTuple', (('elem', int),)), tuple, int),
-])
+@pytest.mark.parametrize(
+    "typ,coll_type,instance_of",
+    [
+        (typing.Set[int], set, int),
+        (typing.FrozenSet[int], frozenset, int),
+        (typing.Dict[int, int], dict, int),
+        (typing.KeysView[int], type({}.keys()), int),
+        (typing.ValuesView[int], type({}.values()), int),
+        (typing.List[int], list, int),
+        (typing.Tuple[int], tuple, int),
+        (typing.Tuple[int, ...], tuple, int),
+        (typing.Iterator[int], typing.Iterator, int),
+        (typing.Sequence[int], typing.Sequence, int),
+        (typing.Iterable[int], typing.Iterable, int),
+        (typing.Mapping[int, None], typing.Mapping, int),
+        (typing.Container[int], typing.Container, int),
+        (typing.NamedTuple("A_NamedTuple", (("elem", int),)), tuple, int),
+    ],
+)
 def test_specialised_collection_types(typ, coll_type, instance_of):
     @given(from_type(typ))
     def inner(ex):
@@ -127,11 +133,11 @@ def test_specialised_collection_types(typ, coll_type, instance_of):
         inner()
     except (ResolutionFailed, AssertionError):
         if sys.version_info[:2] < (3, 6):
-            pytest.skip('Hard-to-reproduce bug (early version of typing?)')
+            pytest.skip("Hard-to-reproduce bug (early version of typing?)")
         raise
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 6), reason='new addition')
+@pytest.mark.skipif(sys.version_info[:2] < (3, 6), reason="new addition")
 def test_36_specialised_collection_types():
     @given(from_type(typing.DefaultDict[int, int]))
     def inner(ex):
@@ -144,7 +150,7 @@ def test_36_specialised_collection_types():
     inner()
 
 
-@pytest.mark.skipif(sys.version_info[:3] <= (3, 5, 1), reason='broken')
+@pytest.mark.skipif(sys.version_info[:3] <= (3, 5, 1), reason="broken")
 def test_ItemsView():
     @given(from_type(typing.ItemsView[int, int]))
     def inner(ex):
@@ -162,7 +168,7 @@ def test_Optional_minimises_to_None():
     assert minimal(from_type(typing.Optional[int]), lambda ex: True) is None
 
 
-@pytest.mark.parametrize('n', range(10))
+@pytest.mark.parametrize("n", range(10))
 def test_variable_length_tuples(n):
     type_ = typing.Tuple[int, ...]
     try:
@@ -173,7 +179,7 @@ def test_variable_length_tuples(n):
         raise
 
 
-@pytest.mark.skipif(sys.version_info[:3] <= (3, 5, 1), reason='broken')
+@pytest.mark.skipif(sys.version_info[:3] <= (3, 5, 1), reason="broken")
 def test_lookup_overrides_defaults():
     sentinel = object()
     try:
@@ -201,8 +207,7 @@ def test_register_generic_typing_strats():
         # We register sets for the abstract sequence type, which masks subtypes
         # from supertype resolution but not direct resolution
         st.register_type_strategy(
-            typing.Sequence,
-            types._global_type_lookup[typing.Set]
+            typing.Sequence, types._global_type_lookup[typing.Set]
         )
 
         @given(from_type(typing.Sequence[int]))
@@ -225,20 +230,33 @@ def test_register_generic_typing_strats():
         st.from_type.__clear_cache()
 
 
-@pytest.mark.parametrize('typ', [
-    typing.Sequence, typing.Container, typing.Mapping, typing.Reversible,
-    typing.SupportsBytes, typing.SupportsAbs, typing.SupportsComplex,
-    typing.SupportsFloat, typing.SupportsInt, typing.SupportsRound,
-])
+@pytest.mark.parametrize(
+    "typ",
+    [
+        typing.Sequence,
+        typing.Container,
+        typing.Mapping,
+        typing.Reversible,
+        typing.SupportsBytes,
+        typing.SupportsAbs,
+        typing.SupportsComplex,
+        typing.SupportsFloat,
+        typing.SupportsInt,
+        typing.SupportsRound,
+    ],
+)
 def test_resolves_weird_types(typ):
     from_type(typ).example()
 
 
-@pytest.mark.parametrize('var,expected', [
-    (typing.TypeVar('V'), object),
-    (typing.TypeVar('V', bound=int), int),
-    (typing.TypeVar('V', int, str), (int, str)),
-])
+@pytest.mark.parametrize(
+    "var,expected",
+    [
+        (typing.TypeVar("V"), object),
+        (typing.TypeVar("V", bound=int), int),
+        (typing.TypeVar("V", int, str), (int, str)),
+    ],
+)
 @given(data=st.data())
 def test_typevar_type_is_consistent(data, var, expected):
     strat = st.from_type(var)
@@ -258,11 +276,14 @@ def test_issue_946_regression():
     st.builds(annotated_func, st.integers()).example()
 
 
-@pytest.mark.parametrize('thing', [
-    annotated_func,  # Works via typing.get_type_hints
-    typing.NamedTuple('N', [('a', int)]),  # Falls back to inspection
-    int,  # Fails; returns empty dict
-])
+@pytest.mark.parametrize(
+    "thing",
+    [
+        annotated_func,  # Works via typing.get_type_hints
+        typing.NamedTuple("N", [("a", int)]),  # Falls back to inspection
+        int,  # Fails; returns empty dict
+    ],
+)
 def test_can_get_type_hints(thing):
     assert isinstance(get_type_hints(thing), dict)
 
@@ -271,8 +292,7 @@ def test_force_builds_to_infer_strategies_for_default_args():
     # By default, leaves args with defaults and minimises to 2+4=6
     assert minimal(st.builds(annotated_func), lambda ex: True) == 6
     # Inferring integers() for args makes it minimise to zero
-    assert minimal(st.builds(annotated_func, b=infer, d=infer),
-                   lambda ex: True) == 0
+    assert minimal(st.builds(annotated_func, b=infer, d=infer), lambda ex: True) == 0
 
 
 def non_annotated_func(a, b=2, *, c, d=4):
@@ -326,21 +346,22 @@ def test_error_if_has_unresolvable_hints():
     @given(a=infer)
     def inner(a: UnknownType):
         pass
+
     with pytest.raises(InvalidArgument):
         inner()
 
 
-@pytest.mark.skipif(not hasattr(typing, 'NewType'), reason='test for NewType')
+@pytest.mark.skipif(not hasattr(typing, "NewType"), reason="test for NewType")
 def test_resolves_NewType():
-    typ = typing.NewType('T', int)
-    nested = typing.NewType('NestedT', typ)
-    uni = typing.NewType('UnionT', typing.Optional[int])
+    typ = typing.NewType("T", int)
+    nested = typing.NewType("NestedT", typ)
+    uni = typing.NewType("UnionT", typing.Optional[int])
     assert isinstance(from_type(typ).example(), integer_types)
     assert isinstance(from_type(nested).example(), integer_types)
     assert isinstance(from_type(uni).example(), integer_types + (type(None),))
 
 
-E = enum.Enum('E', 'a b c')
+E = enum.Enum("E", "a b c")
 
 
 @given(from_type(E))
@@ -348,12 +369,12 @@ def test_resolves_enum(ex):
     assert isinstance(ex, E)
 
 
-@pytest.mark.skipif(not hasattr(enum, 'Flag'), reason='test for Flag')
-@pytest.mark.parametrize('resolver', [from_type, st.sampled_from])
+@pytest.mark.skipif(not hasattr(enum, "Flag"), reason="test for Flag")
+@pytest.mark.parametrize("resolver", [from_type, st.sampled_from])
 def test_resolves_flag_enum(resolver):
     # Storing all combinations takes O(2^n) memory.  Using an enum of 52
     # members in this test ensures that we won't try!
-    F = enum.Flag('F', ' '.join(string.ascii_letters))
+    F = enum.Flag("F", " ".join(string.ascii_letters))
     # Filter to check that we can generate compound members of enum.Flags
 
     @given(resolver(F).filter(lambda ex: ex not in tuple(F)))
@@ -364,7 +385,6 @@ def test_resolves_flag_enum(resolver):
 
 
 class AnnotatedTarget(object):
-
     def __init__(self, a: int, b: int):
         pass
 
@@ -372,24 +392,26 @@ class AnnotatedTarget(object):
         pass
 
 
-@pytest.mark.parametrize('target', [
-    AnnotatedTarget, AnnotatedTarget(1, 2).method
-])
-@pytest.mark.parametrize('args,kwargs', [
-    ((), {}),
-    ((1,), {}),
-    ((1, 2), {}),
-    ((), dict(a=1)),
-    ((), dict(b=2)),
-    ((), dict(a=1, b=2)),
-])
+@pytest.mark.parametrize("target", [AnnotatedTarget, AnnotatedTarget(1, 2).method])
+@pytest.mark.parametrize(
+    "args,kwargs",
+    [
+        ((), {}),
+        ((1,), {}),
+        ((1, 2), {}),
+        ((), dict(a=1)),
+        ((), dict(b=2)),
+        ((), dict(a=1, b=2)),
+    ],
+)
 def test_required_args(target, args, kwargs):
     # Mostly checking that `self` (and only self) is correctly excluded
-    st.builds(target, *map(st.just, args),
-              **{k: st.just(v) for k, v in kwargs.items()}).example()
+    st.builds(
+        target, *map(st.just, args), **{k: st.just(v) for k, v in kwargs.items()}
+    ).example()
 
 
-AnnotatedNamedTuple = typing.NamedTuple('AnnotatedNamedTuple', [('a', str)])
+AnnotatedNamedTuple = typing.NamedTuple("AnnotatedNamedTuple", [("a", str)])
 
 
 @given(st.builds(AnnotatedNamedTuple))
@@ -407,27 +429,25 @@ def test_override_args_for_namedtuple(thing):
     assert thing.a is None
 
 
-@pytest.mark.parametrize('thing', [
-    typing.Optional, typing.List, getattr(typing, 'Type', typing.Set)
-])  # check Type if it's available, otherwise Set is redundant but harmless
+@pytest.mark.parametrize(
+    "thing", [typing.Optional, typing.List, getattr(typing, "Type", typing.Set)]
+)  # check Type if it's available, otherwise Set is redundant but harmless
 def test_cannot_resolve_bare_forward_reference(thing):
     with pytest.raises(InvalidArgument):
-        t = thing['int']
-        if type(getattr(t, '__args__', [None])[0]) != ForwardRef:
+        t = thing["int"]
+        if type(getattr(t, "__args__", [None])[0]) != ForwardRef:
             assert sys.version_info[:2] == (3, 5)
-            pytest.xfail('python 3.5 typing module is really weird')
+            pytest.xfail("python 3.5 typing module is really weird")
         st.from_type(t).example()
 
 
 class Tree:
-    def __init__(self,
-                 left: typing.Optional['Tree'],
-                 right: typing.Optional['Tree']):
+    def __init__(self, left: typing.Optional["Tree"], right: typing.Optional["Tree"]):
         self.left = left
         self.right = right
 
     def __repr__(self):
-        return 'Tree({}, {})'.format(self.left, self.right)
+        return "Tree({}, {})".format(self.left, self.right)
 
 
 def test_resolving_recursive_type():
@@ -435,12 +455,12 @@ def test_resolving_recursive_type():
         assert isinstance(st.builds(Tree).example(), Tree)
     except ResolutionFailed:
         assert sys.version_info[:2] == (3, 5)
-        pytest.xfail('python 3.5 typing module may not resolve annotations')
+        pytest.xfail("python 3.5 typing module may not resolve annotations")
     except TypeError:
         # TypeError raised if typing.get_type_hints(Tree.__init__) fails; see
         # https://github.com/HypothesisWorks/hypothesis-python/issues/1074
         assert sys.version_info[:2] == (3, 5)
-        pytest.skip('Could not find type hints to resolve')
+        pytest.skip("Could not find type hints to resolve")
 
 
 @given(from_type(typing.Tuple[()]))

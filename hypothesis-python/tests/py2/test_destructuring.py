@@ -15,14 +15,14 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import integers
 from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.strategies import integers
 
 # fmt: off
 

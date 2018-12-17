@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
@@ -33,6 +33,7 @@ def test_exhaustion():
             s = choice(ls)
             assert s in ls
             ls.remove(s)
+
     test()
 
 
@@ -41,6 +42,7 @@ def test_choice_is_shared():
     @given(st.choices(), st.choices())
     def test(choice1, choice2):
         assert choice1 is choice2
+
     test()
 
 

@@ -15,13 +15,13 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import time
 
 import pytest
-from flaky import flaky
 from _pytest.outcomes import Failed, Skipped
+from flaky import flaky
 
 import hypothesis.strategies as s
 from hypothesis import find, given, reject, settings
@@ -39,9 +39,7 @@ def test_stops_after_max_examples_if_satisfying():
     max_examples = 100
 
     with pytest.raises(NoSuchExample):
-        find(
-            s.integers(0, 10000),
-            track, settings=settings(max_examples=max_examples))
+        find(s.integers(0, 10000), track, settings=settings(max_examples=max_examples))
 
     assert len(tracker) == max_examples
 
@@ -56,9 +54,7 @@ def test_stops_after_ten_times_max_examples_if_not_satisfying():
     max_examples = 100
 
     with pytest.raises(Unsatisfiable):
-        find(
-            s.integers(0, 10000),
-            track, settings=settings(max_examples=max_examples))
+        find(s.integers(0, 10000), track, settings=settings(max_examples=max_examples))
 
     assert count[0] == 10 * max_examples
 
@@ -69,10 +65,12 @@ def test_can_time_out_in_simplify():
     def slow_always_true(x):
         time.sleep(0.1)
         return True
+
     start = time.time()
     find(
-        s.lists(s.booleans()), slow_always_true,
-        settings=settings(timeout=0.1, database=None)
+        s.lists(s.booleans()),
+        slow_always_true,
+        settings=settings(timeout=0.1, database=None),
     )
     finish = time.time()
     run_time = finish - start
@@ -99,7 +97,7 @@ def test_given_shrinks_pytest_helper_errors():
     def inner(x):
         final_value[0] = x
         if x > 100:
-            pytest.fail('x=%r is too big!' % x)
+            pytest.fail("x=%r is too big!" % x)
 
     with pytest.raises(Failed):
         inner()
@@ -113,7 +111,7 @@ def test_pytest_skip_skips_shrinking():
     def inner(x):
         values.append(x)
         if x > 100:
-            pytest.skip('x=%r is too big!' % x)
+            pytest.skip("x=%r is too big!" % x)
 
     with pytest.raises(Skipped):
         inner()

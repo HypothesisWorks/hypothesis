@@ -15,33 +15,33 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import inspect
 
-from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.internal.renaming import renamed_arguments
+from tests.common.utils import checks_deprecated_behaviour
 
 
-@renamed_arguments(old_arg='new_arg')
+@renamed_arguments(old_arg="new_arg")
 def f(new_arg=None, old_arg=None):
     return new_arg
 
 
 def test_using_new_args():
-    new_arg = 'A number of numbats at night'
+    new_arg = "A number of numbats at night"
     assert f(new_arg=new_arg) == new_arg
     assert f.__doc__ is None
 
 
 @checks_deprecated_behaviour
 def test_using_old_args():
-    old_arg = 'An order of otters on the Ouse'
+    old_arg = "An order of otters on the Ouse"
     assert f(old_arg=old_arg) == old_arg
     assert f.__doc__ is None
 
 
-@renamed_arguments(old_arg='new_arg')
+@renamed_arguments(old_arg="new_arg")
 def g(new_arg=None, old_arg=None):
     """Hi.
 
@@ -51,4 +51,4 @@ def g(new_arg=None, old_arg=None):
 
 def test_docstring():
     """Make sure the docstring's indentation didn't get messed up."""
-    assert inspect.cleandoc(g.__doc__).startswith('Hi.\n\nBye')
+    assert inspect.cleandoc(g.__doc__).startswith("Hi.\n\nBye")

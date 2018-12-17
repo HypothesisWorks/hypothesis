@@ -15,13 +15,13 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import numpy
 import pytest
 
-import hypothesis.strategies as st
 import hypothesis.extra.numpy as nps
+import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument
 
 
@@ -30,7 +30,8 @@ def e(a, **kwargs):
 
 
 @pytest.mark.parametrize(
-    ('function', 'kwargs'), [
+    ("function", "kwargs"),
+    [
         e(nps.array_dtypes, min_size=2, max_size=1),
         e(nps.array_dtypes, min_size=-1),
         e(nps.array_shapes, min_side=2, max_side=1),
@@ -45,20 +46,20 @@ def e(a, **kwargs):
         e(nps.byte_string_dtypes, min_len=2, max_len=1),
         e(nps.datetime64_dtypes, max_period=11),
         e(nps.datetime64_dtypes, min_period=11),
-        e(nps.datetime64_dtypes, min_period='Y', max_period='M'),
+        e(nps.datetime64_dtypes, min_period="Y", max_period="M"),
         e(nps.timedelta64_dtypes, max_period=11),
         e(nps.timedelta64_dtypes, min_period=11),
-        e(nps.timedelta64_dtypes, min_period='Y', max_period='M'),
+        e(nps.timedelta64_dtypes, min_period="Y", max_period="M"),
         e(nps.unicode_string_dtypes, min_len=-1),
         e(nps.unicode_string_dtypes, min_len=2, max_len=1),
         e(nps.unsigned_integer_dtypes, endianness=3),
         e(nps.unsigned_integer_dtypes, sizes=()),
         e(nps.unsigned_integer_dtypes, sizes=(3,)),
-        e(nps.from_dtype, dtype='float64'),
+        e(nps.from_dtype, dtype="float64"),
         e(nps.from_dtype, dtype=float),
         e(nps.from_dtype, dtype=numpy.int8),
         e(nps.from_dtype, dtype=1),
-    ]
+    ],
 )
 def test_raise_invalid_argument(function, kwargs):
     with pytest.raises(InvalidArgument):

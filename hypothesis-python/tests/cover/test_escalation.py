@@ -15,12 +15,12 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
-import hypothesis.strategies as st
 import hypothesis.internal.escalation as esc
+import hypothesis.strategies as st
 from hypothesis import given
 
 
@@ -32,7 +32,7 @@ def test_does_not_escalate_errors_in_non_hypothesis_file():
 
 
 def test_does_escalate_errors_in_hypothesis_file(monkeypatch):
-    monkeypatch.setattr(esc, 'is_hypothesis_file', lambda x: True)
+    monkeypatch.setattr(esc, "is_hypothesis_file", lambda x: True)
 
     with pytest.raises(AssertionError):
         try:
@@ -42,8 +42,8 @@ def test_does_escalate_errors_in_hypothesis_file(monkeypatch):
 
 
 def test_does_not_escalate_errors_in_hypothesis_file_if_disabled(monkeypatch):
-    monkeypatch.setattr(esc, 'is_hypothesis_file', lambda x: True)
-    monkeypatch.setattr(esc, 'PREVENT_ESCALATION', True)
+    monkeypatch.setattr(esc, "is_hypothesis_file", lambda x: True)
+    monkeypatch.setattr(esc, "PREVENT_ESCALATION", True)
 
     try:
         assert False

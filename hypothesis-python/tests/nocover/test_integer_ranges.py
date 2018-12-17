@@ -15,34 +15,26 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from tests.common.debug import minimal
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.searchstrategy.strategies import SearchStrategy
+from tests.common.debug import minimal
 
 
 class interval(SearchStrategy):
-
     def __init__(self, lower, upper, center=None):
         self.lower = lower
         self.upper = upper
         self.center = center
 
     def do_draw(self, data):
-        return integer_range(
-            data, self.lower, self.upper, center=self.center,
-        )
+        return integer_range(data, self.lower, self.upper, center=self.center)
 
 
-@pytest.mark.parametrize('inter', [
-    (0, 5, 10),
-    (-10, 10, 10),
-    (0, 1, 1),
-    (1, 1, 2),
-])
+@pytest.mark.parametrize("inter", [(0, 5, 10), (-10, 10, 10), (0, 1, 1), (1, 1, 2)])
 def test_intervals_shrink_to_center(inter):
     lower, center, upper = inter
     s = interval(lower, upper, center)

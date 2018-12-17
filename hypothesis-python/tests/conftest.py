@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import gc
 import sys
@@ -30,17 +30,15 @@ run()
 
 
 def pytest_configure(config):
-    config.addinivalue_line(
-        'markers',
-        'slow: pandas expects this marker to exist.')
+    config.addinivalue_line("markers", "slow: pandas expects this marker to exist.")
 
 
-@pytest.fixture(scope=u'function', autouse=True)
+@pytest.fixture(scope=u"function", autouse=True)
 def gc_before_each_test():
     gc.collect()
 
 
-@pytest.fixture(scope=u'function', autouse=True)
+@pytest.fixture(scope=u"function", autouse=True)
 def consistently_increment_time(monkeypatch):
     """Rather than rely on real system time we monkey patch time.time so that
     it passes at a consistent rate between calls.
@@ -67,10 +65,10 @@ def consistently_increment_time(monkeypatch):
     def freeze():
         frozen[0] = True
 
-    monkeypatch.setattr(time_module, 'time', time)
+    monkeypatch.setattr(time_module, "time", time)
     try:
-        monkeypatch.setattr(time_module, 'monotonic', time)
+        monkeypatch.setattr(time_module, "monotonic", time)
     except AttributeError:
         assert sys.version_info[0] == 2
-    monkeypatch.setattr(time_module, 'sleep', sleep)
-    monkeypatch.setattr(time_module, 'freeze', freeze, raising=False)
+    monkeypatch.setattr(time_module, "sleep", sleep)
+    monkeypatch.setattr(time_module, "freeze", freeze, raising=False)

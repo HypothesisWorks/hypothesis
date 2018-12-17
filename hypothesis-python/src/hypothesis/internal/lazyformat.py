@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 
 class lazyformat(object):
@@ -30,9 +30,9 @@ class lazyformat(object):
 
     def __eq__(self, other):
         return (
-            isinstance(other, lazyformat) and
-            self.__format_string == other.__format_string and
-            self.__args == other.__args
+            isinstance(other, lazyformat)
+            and self.__format_string == other.__format_string
+            and self.__args == other.__args
         )
 
     def __ne__(self, other):

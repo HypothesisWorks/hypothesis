@@ -26,7 +26,7 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 
@@ -37,7 +37,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = u'o0zlv@74u4e3s+o0^h$+tlalh&$r(7hbx01g4^h5-3gizj%hub'
+SECRET_KEY = u"o0zlv@74u4e3s+o0^h$+tlalh&$r(7hbx01g4^h5-3gizj%hub"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -50,55 +50,55 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = (
-    u'django.contrib.admin',
-    u'django.contrib.auth',
-    u'django.contrib.contenttypes',
-    u'django.contrib.sessions',
-    u'django.contrib.messages',
-    u'django.contrib.staticfiles',
-    u'tests.django.toystore',
+    u"django.contrib.admin",
+    u"django.contrib.auth",
+    u"django.contrib.contenttypes",
+    u"django.contrib.sessions",
+    u"django.contrib.messages",
+    u"django.contrib.staticfiles",
+    u"tests.django.toystore",
 )
 
 MIDDLEWARE_CLASSES = (
-    u'django.contrib.sessions.middleware.SessionMiddleware',
-    u'django.middleware.common.CommonMiddleware',
-    u'django.middleware.csrf.CsrfViewMiddleware',
-    u'django.contrib.auth.middleware.AuthenticationMiddleware',
-    u'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-    u'django.contrib.messages.middleware.MessageMiddleware',
-    u'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    u"django.contrib.sessions.middleware.SessionMiddleware",
+    u"django.middleware.common.CommonMiddleware",
+    u"django.middleware.csrf.CsrfViewMiddleware",
+    u"django.contrib.auth.middleware.AuthenticationMiddleware",
+    u"django.contrib.auth.middleware.SessionAuthenticationMiddleware",
+    u"django.contrib.messages.middleware.MessageMiddleware",
+    u"django.middleware.clickjacking.XFrameOptionsMiddleware",
 )
 
-ROOT_URLCONF = u'tests.django.toys.urls'
+ROOT_URLCONF = u"tests.django.toys.urls"
 
-WSGI_APPLICATION = u'tests.django.toys.wsgi.application'
+WSGI_APPLICATION = u"tests.django.toys.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
 
 DATABASES = {
-    u'default': {
-        u'ENGINE': u'django.db.backends.sqlite3',
-        u'NAME': os.path.join(BASE_DIR, u'db.sqlite3'),
+    u"default": {
+        u"ENGINE": u"django.db.backends.sqlite3",
+        u"NAME": os.path.join(BASE_DIR, u"db.sqlite3"),
     }
 }
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
 
-LANGUAGE_CODE = u'en-us'
+LANGUAGE_CODE = u"en-us"
 
-TIME_ZONE = u'UTC'
+TIME_ZONE = u"UTC"
 
 USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = os.environ.get('HYPOTHESIS_DJANGO_USETZ', 'TRUE') == 'TRUE'
+USE_TZ = os.environ.get("HYPOTHESIS_DJANGO_USETZ", "TRUE") == "TRUE"
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
-STATIC_URL = u'/static/'
+STATIC_URL = u"/static/"

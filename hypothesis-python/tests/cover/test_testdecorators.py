@@ -15,19 +15,30 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import functools
 import threading
 from collections import namedtuple
 
 import hypothesis.reporting as reporting
-from hypothesis import Verbosity, HealthCheck, note, given, assume, \
-    settings
-from tests.common.utils import fails, raises, no_shrink, fails_with, \
-    capture_out
-from hypothesis.strategies import data, just, sets, text, lists, binary, \
-    builds, floats, one_of, booleans, integers, frozensets, sampled_from
+from hypothesis import HealthCheck, Verbosity, assume, given, note, settings
+from hypothesis.strategies import (
+    binary,
+    booleans,
+    builds,
+    data,
+    floats,
+    frozensets,
+    integers,
+    just,
+    lists,
+    one_of,
+    sampled_from,
+    sets,
+    text,
+)
+from tests.common.utils import capture_out, fails, fails_with, no_shrink, raises
 
 
 @given(integers(), integers())
@@ -54,7 +65,7 @@ def test_int_addition_is_associative(x, y, z):
 
 @fails
 @given(floats(), floats(), floats())
-@settings(max_examples=2000,)
+@settings(max_examples=2000)
 def test_float_addition_is_associative(x, y, z):
     assert x + (y + z) == (x + y) + z
 
@@ -69,12 +80,12 @@ def test_still_minimizes_on_non_assertion_failures():
     @given(integers())
     def is_not_too_large(x):
         if x >= 10:
-            raise ValueError('No, %s is just too large. Sorry' % x)
+            raise ValueError("No, %s is just too large. Sorry" % x)
 
     with raises(ValueError) as exinfo:
         is_not_too_large()
 
-    assert ' 10 ' in exinfo.value.args[0]
+    assert " 10 " in exinfo.value.args[0]
 
 
 @given(integers())
@@ -84,7 +95,6 @@ def test_integer_division_shrinks_positive_integers(n):
 
 
 class TestCases(object):
-
     @given(integers())
     def test_abs_non_negative(self, x):
         assert abs(x) >= 0
@@ -97,12 +107,12 @@ class TestCases(object):
 
     @given(x=integers())
     def test_abs_non_negative_varargs_kwargs(self, *args, **kw):
-        assert abs(kw['x']) >= 0
+        assert abs(kw["x"]) >= 0
         assert isinstance(self, TestCases)
 
     @given(x=integers())
     def test_abs_non_negative_varargs_kwargs_only(*args, **kw):
-        assert abs(kw['x']) >= 0
+        assert abs(kw["x"]) >= 0
         assert isinstance(args[0], TestCases)
 
     @fails
@@ -164,6 +174,7 @@ def test_does_not_catch_interrupt_during_falsify():
         if not calls[0]:
             calls[0] = 1
             raise KeyboardInterrupt()
+
     with raises(KeyboardInterrupt):
         flaky_base_exception()
 
@@ -215,15 +226,14 @@ def test_prints_on_failure_by_default():
     def test_ints_are_sorted(balthazar, evans):
         assume(evans >= 0)
         assert balthazar <= evans
+
     with raises(AssertionError):
         with capture_out() as out:
             with reporting.with_reporter(reporting.default):
                 test_ints_are_sorted()
     out = out.getvalue()
-    lines = [l.strip() for l in out.split('\n')]
-    assert (
-        'Falsifying example: test_ints_are_sorted(balthazar=1, evans=0)'
-        in lines)
+    lines = [l.strip() for l in out.split("\n")]
+    assert "Falsifying example: test_ints_are_sorted(balthazar=1, evans=0)" in lines
 
 
 def test_does_not_print_on_success():
@@ -235,7 +245,7 @@ def test_does_not_print_on_success():
     with capture_out() as out:
         test_is_an_int()
     out = out.getvalue()
-    lines = [l.strip() for l in out.split(u'\n')]
+    lines = [l.strip() for l in out.split(u"\n")]
     assert all(not l for l in lines), lines
 
 
@@ -261,27 +271,28 @@ def test_breaks_bounds():
     @given(x=integers())
     def test_is_bounded(t, x):
         assert x < t
+
     for t in [1, 10, 100, 1000]:
         test_is_bounded(t)
 
 
 @given(x=booleans())
 def test_can_test_kwargs_only_methods(**kwargs):
-    assert isinstance(kwargs['x'], bool)
+    assert isinstance(kwargs["x"], bool)
 
 
 @fails_with(UnicodeEncodeError)
 @given(text())
 @settings(max_examples=100)
 def test_is_ascii(x):
-    x.encode('ascii')
+    x.encode("ascii")
 
 
 @fails
 @given(text())
 def test_is_not_ascii(x):
     try:
-        x.encode('ascii')
+        x.encode("ascii")
         assert False
     except UnicodeEncodeError:
         pass
@@ -299,7 +310,7 @@ def test_has_ascii(x):
     if not x:
         return
     ascii_characters = (
-        u'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ \t\n'
+        u"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ \t\n"
     )
     assert any(c in ascii_characters for c in x)
 
@@ -327,6 +338,7 @@ def test_can_run_without_database():
     @settings(database=None)
     def test_blah(x):
         assert False
+
     with raises(AssertionError):
         test_blah()
 
@@ -342,16 +354,16 @@ def test_can_run_with_database_in_thread():
         try:
             test_blah()
         except ValueError:
-            results.append('success')
+            results.append("success")
 
     # Run once in the main thread and once in another thread. Execution is
     # strictly serial, so no need for locking.
     run_test()
-    assert results == ['success']
+    assert results == ["success"]
     thread = threading.Thread(target=run_test)
     thread.start()
     thread.join()
-    assert results == ['success', 'success']
+    assert results == ["success", "success"]
 
 
 @given(integers())
@@ -361,7 +373,7 @@ def test_can_call_an_argument_f(f):
     pass
 
 
-Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
+Litter = namedtuple("Litter", ("kitten1", "kitten2"))
 
 
 @given(builds(Litter, integers(), integers()))
@@ -376,19 +388,19 @@ def test_fails_in_reify(x):
     pass
 
 
-@given(text(u'a'))
+@given(text(u"a"))
 def test_a_text(x):
-    assert set(x).issubset(set(u'a'))
+    assert set(x).issubset(set(u"a"))
 
 
-@given(text(u''))
+@given(text(u""))
 def test_empty_text(x):
     assert not x
 
 
-@given(text(u'abcdefg'))
+@given(text(u"abcdefg"))
 def test_mixed_text(x):
-    assert set(x).issubset(set(u'abcdefg'))
+    assert set(x).issubset(set(u"abcdefg"))
 
 
 def test_when_set_to_no_simplifies_runs_failing_example_twice():
@@ -398,7 +410,7 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
     @settings(phases=no_shrink, max_examples=100, verbosity=Verbosity.normal)
     def foo(x):
         if x > 11:
-            note('Lo')
+            note("Lo")
             failing[0] += 1
             assert False
 
@@ -406,8 +418,8 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
         with capture_out() as out:
             foo()
     assert failing == [2]
-    assert 'Falsifying example' in out.getvalue()
-    assert 'Lo' in out.getvalue()
+    assert "Falsifying example" in out.getvalue()
+    assert "Lo" in out.getvalue()
 
 
 @given(integers().filter(lambda x: x % 4 == 0))
@@ -418,6 +430,7 @@ def test_filtered_values_satisfy_condition(i):
 def nameless_const(x):
     def f(u, v):
         return u
+
     return functools.partial(f, x)
 
 
@@ -426,8 +439,7 @@ def test_can_map_nameless(x):
     assert x == 2
 
 
-@given(
-    integers(0, 10).flatmap(nameless_const(just(3))))
+@given(integers(0, 10).flatmap(nameless_const(just(3))))
 def test_can_flatmap_nameless(x):
     assert x == 3
 
@@ -435,6 +447,7 @@ def test_can_flatmap_nameless(x):
 def test_can_be_used_with_none_module():
     def test_is_cool(i):
         pass
+
     test_is_cool.__module__ = None
     test_is_cool = given(integers())(test_is_cool)
     test_is_cool()
@@ -444,7 +457,8 @@ def test_does_not_print_notes_if_all_succeed():
     @given(integers())
     @settings(verbosity=Verbosity.normal)
     def test(i):
-        note('Hi there')
+        note("Hi there")
+
     with capture_out() as out:
         with reporting.with_reporter(reporting.default):
             test()
@@ -455,15 +469,16 @@ def test_prints_notes_once_on_failure():
     @given(lists(integers()))
     @settings(database=None, verbosity=Verbosity.normal)
     def test(xs):
-        note('Hi there')
+        note("Hi there")
         if sum(xs) <= 100:
             raise ValueError()
+
     with capture_out() as out:
         with reporting.with_reporter(reporting.default):
             with raises(ValueError):
                 test()
     lines = out.getvalue().strip().splitlines()
-    assert lines.count('Hi there') == 1
+    assert lines.count("Hi there") == 1
 
 
 @given(lists(integers(), max_size=0))

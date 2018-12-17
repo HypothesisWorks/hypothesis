@@ -15,10 +15,10 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from hypothesis.types import Stream
 from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.types import Stream
 
 
 class StreamStrategy(SearchStrategy):
@@ -30,7 +30,7 @@ class StreamStrategy(SearchStrategy):
         self.source_strategy = source_strategy
 
     def __repr__(self):
-        return u'StreamStrategy(%r)' % (self.source_strategy,)
+        return u"StreamStrategy(%r)" % (self.source_strategy,)
 
     def do_draw(self, data):
         data.can_reproduce_example_from_repr = False
@@ -38,4 +38,5 @@ class StreamStrategy(SearchStrategy):
         def gen():
             while True:
                 yield data.draw(self.source_strategy)
+
         return Stream(gen())

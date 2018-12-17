@@ -15,14 +15,13 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from unittest import TestCase
 
 import pytest
 
-from hypothesis import find, given
-from hypothesis import strategies as st
+from hypothesis import find, given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.stateful import GenericStateMachine
 
@@ -31,6 +30,7 @@ def test_cannot_use_without_a_runner():
     @given(st.runner())
     def f(x):
         pass
+
     with pytest.raises(InvalidArgument):
         f()
 
@@ -51,7 +51,6 @@ def test_is_default_without_self(runner):
 
 
 class TestStuff(TestCase):
-
     @given(st.runner())
     def test_runner_is_self(self, runner):
         assert runner is self
@@ -62,7 +61,6 @@ class TestStuff(TestCase):
 
 
 class RunnerStateMachine(GenericStateMachine):
-
     def steps(self):
         return st.runner()
 

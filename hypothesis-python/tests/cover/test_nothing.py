@@ -15,21 +15,20 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis import given
-from hypothesis import strategies as st
+from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
-from tests.common.debug import minimal, assert_no_examples
+from tests.common.debug import assert_no_examples, minimal
 
 
 def test_resampling():
     x = minimal(
-        st.lists(st.integers()).flatmap(
-            lambda x: st.lists(st.sampled_from(x))),
-        lambda x: len(x) >= 10 and len(set(x)) == 1)
+        st.lists(st.integers()).flatmap(lambda x: st.lists(st.sampled_from(x))),
+        lambda x: len(x) >= 10 and len(set(x)) == 1,
+    )
     assert x == [0] * 10
 
 
@@ -49,7 +48,7 @@ def test_validates_min_size():
 
 
 def test_function_composition():
-    assert st.nothing().map(lambda x: 'hi').is_empty
+    assert st.nothing().map(lambda x: "hi").is_empty
     assert st.nothing().filter(lambda x: True).is_empty
     assert st.nothing().flatmap(lambda x: st.integers()).is_empty
 
@@ -59,17 +58,21 @@ def test_tuples_detect_empty_elements():
 
 
 def test_fixed_dictionaries_detect_empty_values():
-    assert st.fixed_dictionaries({'a': st.nothing()}).is_empty
+    assert st.fixed_dictionaries({"a": st.nothing()}).is_empty
 
 
 def test_no_examples():
     assert_no_examples(st.nothing())
 
 
-@pytest.mark.parametrize('s', [
-    st.nothing(), st.nothing().map(lambda x: x),
-    st.nothing().filter(lambda x: True),
-    st.nothing().flatmap(lambda x: st.integers())
-])
+@pytest.mark.parametrize(
+    "s",
+    [
+        st.nothing(),
+        st.nothing().map(lambda x: x),
+        st.nothing().filter(lambda x: True),
+        st.nothing().flatmap(lambda x: st.integers()),
+    ],
+)
 def test_empty(s):
     assert s.is_empty

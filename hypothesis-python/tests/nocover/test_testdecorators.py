@@ -15,17 +15,16 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from hypothesis import HealthCheck, given, reject, settings
 from hypothesis.errors import Unsatisfiable
-from tests.common.utils import raises
 from hypothesis.strategies import integers
+from tests.common.utils import raises
 
 
 def test_contains_the_test_function_name_in_the_exception_string():
-    look_for_one = settings(
-        max_examples=1, suppress_health_check=HealthCheck.all())
+    look_for_one = settings(max_examples=1, suppress_health_check=HealthCheck.all())
 
     @given(integers())
     @look_for_one
@@ -37,7 +36,6 @@ def test_contains_the_test_function_name_in_the_exception_string():
     assert this_has_a_totally_unique_name.__name__ in e.value.args[0]
 
     class Foo(object):
-
         @given(integers())
         @look_for_one
         def this_has_a_unique_name_and_lives_on_a_class(self, x):
@@ -45,6 +43,4 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     with raises(Unsatisfiable) as e:
         Foo().this_has_a_unique_name_and_lives_on_a_class()
-    assert (
-        Foo.this_has_a_unique_name_and_lives_on_a_class.__name__
-    ) in e.value.args[0]
+    assert (Foo.this_has_a_unique_name_and_lives_on_a_class.__name__) in e.value.args[0]

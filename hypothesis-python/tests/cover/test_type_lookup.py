@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import enum
 
@@ -23,19 +23,32 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given, infer
-from hypothesis.errors import InvalidArgument, ResolutionFailed, \
-    HypothesisDeprecationWarning
-from hypothesis.searchstrategy import types
+from hypothesis.errors import (
+    HypothesisDeprecationWarning,
+    InvalidArgument,
+    ResolutionFailed,
+)
 from hypothesis.internal.compat import PY2, integer_types
+from hypothesis.searchstrategy import types
 
 # Build a set of all types output by core strategies
 blacklist = [
-    'builds', 'iterables', 'permutations', 'random_module', 'randoms',
-    'runner', 'sampled_from', 'streaming', 'choices',
+    "builds",
+    "iterables",
+    "permutations",
+    "random_module",
+    "randoms",
+    "runner",
+    "sampled_from",
+    "streaming",
+    "choices",
 ]
 types_with_core_strat = set(integer_types)
-for thing in (getattr(st, name) for name in sorted(st._strategies)
-              if name in dir(st) and name not in blacklist):
+for thing in (
+    getattr(st, name)
+    for name in sorted(st._strategies)
+    if name in dir(st) and name not in blacklist
+):
     for n in range(3):
         try:
             ex = thing(*([st.nothing()] * n)).example()
@@ -45,7 +58,7 @@ for thing in (getattr(st, name) for name in sorted(st._strategies)
             continue
 
 
-@pytest.mark.parametrize('typ', sorted(types_with_core_strat, key=str))
+@pytest.mark.parametrize("typ", sorted(types_with_core_strat, key=str))
 def test_resolve_core_strategies(typ):
     @given(st.from_type(typ))
     def inner(ex):
@@ -64,8 +77,8 @@ def test_lookup_knows_about_all_core_strategies():
 
 def test_lookup_keys_are_types():
     with pytest.raises(InvalidArgument):
-        st.register_type_strategy('int', st.integers())
-    assert 'int' not in types._global_type_lookup
+        st.register_type_strategy("int", st.integers())
+    assert "int" not in types._global_type_lookup
 
 
 def test_lookup_values_are_strategies():
@@ -74,7 +87,7 @@ def test_lookup_values_are_strategies():
     assert 42 not in types._global_type_lookup.values()
 
 
-@pytest.mark.parametrize('typ', sorted(types_with_core_strat, key=str))
+@pytest.mark.parametrize("typ", sorted(types_with_core_strat, key=str))
 def test_lookup_overrides_defaults(typ):
     sentinel = object()
     try:
@@ -147,7 +160,7 @@ def test_cannot_register_empty():
 
 def test_pulic_interface_works():
     st.from_type(int).example()
-    fails = st.from_type('not a type or annotated function')
+    fails = st.from_type("not a type or annotated function")
     with pytest.raises(InvalidArgument):
         fails.example()
 
@@ -156,7 +169,8 @@ def test_given_can_infer_on_py2():
     # Editing annotations before decorating is hilariously awkward, but works!
     def inner(a):
         pass
-    inner.__annotations__ = {'a': int}
+
+    inner.__annotations__ = {"a": int}
     given(a=infer)(inner)()
 
 
@@ -169,14 +183,14 @@ def test_error_if_enum_is_empty():
 
 
 class BrokenClass(object):
-    __init__ = 'Hello!'
+    __init__ = "Hello!"
 
 
 def test_uninspectable_builds():
-    with pytest.raises(TypeError, match='object is not callable'):
+    with pytest.raises(TypeError, match="object is not callable"):
         st.builds(BrokenClass).example()
 
 
 def test_uninspectable_from_type():
-    with pytest.raises(TypeError, match='object is not callable'):
+    with pytest.raises(TypeError, match="object is not callable"):
         st.from_type(BrokenClass).example()

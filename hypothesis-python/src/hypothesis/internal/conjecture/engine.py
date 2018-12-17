@@ -15,27 +15,37 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import heapq
 from enum import Enum
+from functools import total_ordering
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
-from functools import total_ordering
 
 import attr
 
-from hypothesis import Phase, Verbosity, HealthCheck
-from hypothesis import settings as Settings
+from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings, note_deprecation
-from hypothesis.reporting import debug_report
-from hypothesis.internal.compat import Counter, ceil, hbytes, hrange, \
-    int_to_bytes, benchmark_time, int_from_bytes, to_bytes_sequence
+from hypothesis.internal.compat import (
+    Counter,
+    benchmark_time,
+    ceil,
+    hbytes,
+    hrange,
+    int_from_bytes,
+    int_to_bytes,
+    to_bytes_sequence,
+)
+from hypothesis.internal.conjecture.data import (
+    MAX_DEPTH,
+    ConjectureData,
+    Status,
+    StopTest,
+)
+from hypothesis.internal.conjecture.shrinking import Integer, Length, Lexical, Ordering
 from hypothesis.internal.healthcheck import fail_health_check
-from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
-    StopTest, ConjectureData
-from hypothesis.internal.conjecture.shrinking import Length, Integer, \
-    Lexical, Ordering
+from hypothesis.reporting import debug_report
 
 # Tell pytest to omit the body of this module from tracebacks
 # http://doc.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
@@ -71,11 +81,7 @@ class RunIsComplete(Exception):
 
 
 class ConjectureRunner(object):
-
-    def __init__(
-        self, test_function, settings=None, random=None,
-        database_key=None,
-    ):
+    def __init__(self, test_function, settings=None, random=None, database_key=None):
         self._test_function = test_function
         self.settings = settings or Settings()
         self.shrinks = 0
@@ -153,11 +159,15 @@ class ConjectureRunner(object):
 
     def test_function(self, data):
         if benchmark_time() - self.start_time >= HUNG_TEST_TIME_LIMIT:
-            fail_health_check(self.settings, (
-                'Your test has been running for at least five minutes. This '
-                'is probably not what you intended, so by default Hypothesis '
-                'turns it into an error.'
-            ), HealthCheck.hung_test)
+            fail_health_check(
+                self.settings,
+                (
+                    "Your test has been running for at least five minutes. This "
+                    "is probably not what you intended, so by default Hypothesis "
+                    "turns it into an error."
+                ),
+                HealthCheck.hung_test,
+            )
 
         self.call_count += 1
         try:
@@ -217,8 +227,8 @@ class ConjectureRunner(object):
         # very small. Nevertheless we want CACHE_RESET_FREQUENCY to be quite
         # high to avoid this case coming up in practice.
         if (
-            self.call_count % CACHE_RESET_FREQUENCY == 0 and
-            not self.interesting_examples
+            self.call_count % CACHE_RESET_FREQUENCY == 0
+            and not self.interesting_examples
         ):
             self.reset_tree_to_empty()
 
@@ -269,7 +279,7 @@ class ConjectureRunner(object):
 
         # Forcibly mark all nodes beyond the zero-bound point as dead,
         # because we don't intend to try any other values there.
-        self.dead.update(indices[self.cap:])
+        self.dead.update(indices[self.cap :])
 
         # Now store this result in the tree (if appropriate), and check if
         # any nodes need to be marked as dead.
@@ -285,14 +295,11 @@ class ConjectureRunner(object):
             # as dead. We check them in reverse order, because as soon as we
             # find a live node, all nodes before it must still be live too.
             for j in reversed(indices):
-                mask = self.masks.get(j, 0xff)
+                mask = self.masks.get(j, 0xFF)
                 assert _is_simple_mask(mask)
                 max_size = mask + 1
 
-                if (
-                    len(self.tree[j]) < max_size and
-                    j not in self.forced
-                ):
+                if len(self.tree[j]) < max_size and j not in self.forced:
                     # There are still byte values to explore at this node,
                     # so it isn't dead yet.
                     break
@@ -328,21 +335,23 @@ class ConjectureRunner(object):
             if self.shrinks >= MAX_SHRINKS:
                 self.exit_with(ExitReason.max_shrinks)
         if (
-            self.settings.timeout > 0 and
-            benchmark_time() >= self.start_time + self.settings.timeout
+            self.settings.timeout > 0
+            and benchmark_time() >= self.start_time + self.settings.timeout
         ):
-            note_deprecation((
-                'Your tests are hitting the settings timeout (%.2fs). '
-                'This functionality will go away in a future release '
-                'and you should not rely on it. Instead, try setting '
-                'max_examples to be some value lower than %d (the number '
-                'of examples your test successfully ran here). Or, if you '
-                'would prefer your tests to run to completion, regardless '
-                'of how long they take, you can set the timeout value to '
-                'hypothesis.unlimited.'
-            ) % (
-                self.settings.timeout, self.valid_examples),
-                self.settings)
+            note_deprecation(
+                (
+                    "Your tests are hitting the settings timeout (%.2fs). "
+                    "This functionality will go away in a future release "
+                    "and you should not rely on it. Instead, try setting "
+                    "max_examples to be some value lower than %d (the number "
+                    "of examples your test successfully ran here). Or, if you "
+                    "would prefer your tests to run to completion, regardless "
+                    "of how long they take, you can set the timeout value to "
+                    "hypothesis.unlimited."
+                )
+                % (self.settings.timeout, self.valid_examples),
+                self.settings,
+            )
             self.exit_with(ExitReason.timeout)
 
         if not self.interesting_examples:
@@ -352,7 +361,7 @@ class ConjectureRunner(object):
                 self.settings.max_examples * 10,
                 # We have a high-ish default max iterations, so that tests
                 # don't become flaky when max_examples is too low.
-                1000
+                1000,
             ):
                 self.exit_with(ExitReason.max_iterations)
 
@@ -378,7 +387,7 @@ class ConjectureRunner(object):
             # Figure out the range of byte values we should be trying.
             # Normally this will be 0-255, unless the current position has a
             # mask.
-            mask = self.masks.get(node, 0xff)
+            mask = self.masks.get(node, 0xFF)
             assert _is_simple_mask(mask)
             upper_bound = mask + 1
 
@@ -404,7 +413,8 @@ class ConjectureRunner(object):
                     # already been fully explored. Let's pick a new value, and
                     # this time choose a value that's definitely still alive.
                     choices = [
-                        b for b in hrange(upper_bound)
+                        b
+                        for b in hrange(upper_bound)
                         if self.tree[node].get(b) not in self.dead
                     ]
                     assert choices
@@ -459,39 +469,55 @@ class ConjectureRunner(object):
             return
 
         if state.overrun_examples == max_overrun_draws:
-            fail_health_check(self.settings, (
-                'Examples routinely exceeded the max allowable size. '
-                '(%d examples overran while generating %d valid ones)'
-                '. Generating examples this large will usually lead to'
-                ' bad results. You could try setting max_size parameters '
-                'on your collections and turning '
-                'max_leaves down on recursive() calls.') % (
-                state.overrun_examples, state.valid_examples
-            ), HealthCheck.data_too_large)
+            fail_health_check(
+                self.settings,
+                (
+                    "Examples routinely exceeded the max allowable size. "
+                    "(%d examples overran while generating %d valid ones)"
+                    ". Generating examples this large will usually lead to"
+                    " bad results. You could try setting max_size parameters "
+                    "on your collections and turning "
+                    "max_leaves down on recursive() calls."
+                )
+                % (state.overrun_examples, state.valid_examples),
+                HealthCheck.data_too_large,
+            )
         if state.invalid_examples == max_invalid_draws:
-            fail_health_check(self.settings, (
-                'It looks like your strategy is filtering out a lot '
-                'of data. Health check found %d filtered examples but '
-                'only %d good ones. This will make your tests much '
-                'slower, and also will probably distort the data '
-                'generation quite a lot. You should adapt your '
-                'strategy to filter less. This can also be caused by '
-                'a low max_leaves parameter in recursive() calls') % (
-                state.invalid_examples, state.valid_examples
-            ), HealthCheck.filter_too_much)
+            fail_health_check(
+                self.settings,
+                (
+                    "It looks like your strategy is filtering out a lot "
+                    "of data. Health check found %d filtered examples but "
+                    "only %d good ones. This will make your tests much "
+                    "slower, and also will probably distort the data "
+                    "generation quite a lot. You should adapt your "
+                    "strategy to filter less. This can also be caused by "
+                    "a low max_leaves parameter in recursive() calls"
+                )
+                % (state.invalid_examples, state.valid_examples),
+                HealthCheck.filter_too_much,
+            )
 
         draw_time = sum(state.draw_times)
 
         if draw_time > 1.0:
-            fail_health_check(self.settings, (
-                'Data generation is extremely slow: Only produced '
-                '%d valid examples in %.2f seconds (%d invalid ones '
-                'and %d exceeded maximum size). Try decreasing '
-                "size of the data you're generating (with e.g."
-                'max_size or max_leaves parameters).'
-            ) % (
-                state.valid_examples, draw_time, state.invalid_examples,
-                state.overrun_examples), HealthCheck.too_slow,)
+            fail_health_check(
+                self.settings,
+                (
+                    "Data generation is extremely slow: Only produced "
+                    "%d valid examples in %.2f seconds (%d invalid ones "
+                    "and %d exceeded maximum size). Try decreasing "
+                    "size of the data you're generating (with e.g."
+                    "max_size or max_leaves parameters)."
+                )
+                % (
+                    state.valid_examples,
+                    draw_time,
+                    state.invalid_examples,
+                    state.overrun_examples,
+                ),
+                HealthCheck.too_slow,
+            )
 
     def save_buffer(self, buffer):
         if self.settings.database is not None:
@@ -501,20 +527,16 @@ class ConjectureRunner(object):
             self.settings.database.save(key, hbytes(buffer))
 
     def downgrade_buffer(self, buffer):
-        if (
-            self.settings.database is not None and
-            self.database_key is not None
-        ):
-            self.settings.database.move(
-                self.database_key, self.secondary_key, buffer)
+        if self.settings.database is not None and self.database_key is not None:
+            self.settings.database.move(self.database_key, self.secondary_key, buffer)
 
     @property
     def secondary_key(self):
-        return b'.'.join((self.database_key, b'secondary'))
+        return b".".join((self.database_key, b"secondary"))
 
     @property
     def covering_key(self):
-        return b'.'.join((self.database_key, b'coverage'))
+        return b".".join((self.database_key, b"coverage"))
 
     def note_details(self, data):
         runtime = max(data.finish_time - data.start_time, 0.0)
@@ -542,9 +564,7 @@ class ConjectureRunner(object):
             if ex.length == 0:
                 return
             if len(ex.children) == 0:
-                stack[-1].append(int_from_bytes(
-                    data.buffer[ex.start:ex.end]
-                ))
+                stack[-1].append(int_from_bytes(data.buffer[ex.start : ex.end]))
             else:
                 node = []
                 stack.append(node)
@@ -556,17 +576,18 @@ class ConjectureRunner(object):
                     stack[-1].extend(node)
                 else:
                     stack[-1].append(node)
+
         go(data.examples[0])
         assert len(stack) == 1
 
         status = repr(data.status)
 
         if data.status == Status.INTERESTING:
-            status = '%s (%r)' % (status, data.interesting_origin,)
+            status = "%s (%r)" % (status, data.interesting_origin)
 
-        self.debug('%d bytes %r -> %s, %s' % (
-            data.index, stack[0], status, data.output,
-        ))
+        self.debug(
+            "%d bytes %r -> %s, %s" % (data.index, stack[0], status, data.output)
+        )
 
     def run(self):
         with local_settings(self.settings):
@@ -577,8 +598,9 @@ class ConjectureRunner(object):
             for v in self.interesting_examples.values():
                 self.debug_data(v)
             self.debug(
-                u'Run complete after %d examples (%d valid) and %d shrinks'
-                % (self.call_count, self.valid_examples, self.shrinks))
+                u"Run complete after %d examples (%d valid) and %d shrinks"
+                % (self.call_count, self.valid_examples, self.shrinks)
+            )
 
     def _new_mutator(self):
         target_data = [None]
@@ -587,17 +609,17 @@ class ConjectureRunner(object):
             return uniform(self.random, n)
 
         def draw_existing(data, n):
-            return target_data[0].buffer[data.index:data.index + n]
+            return target_data[0].buffer[data.index : data.index + n]
 
         def draw_smaller(data, n):
-            existing = target_data[0].buffer[data.index:data.index + n]
+            existing = target_data[0].buffer[data.index : data.index + n]
             r = uniform(self.random, n)
             if r <= existing:
                 return r
             return _draw_predecessor(self.random, existing)
 
         def draw_larger(data, n):
-            existing = target_data[0].buffer[data.index:data.index + n]
+            existing = target_data[0].buffer[data.index : data.index + n]
             r = uniform(self.random, n)
             if r >= existing:
                 return r
@@ -607,22 +629,21 @@ class ConjectureRunner(object):
             choices = data.block_starts.get(n, [])
             if choices:
                 i = self.random.choice(choices)
-                return hbytes(data.buffer[i:i + n])
+                return hbytes(data.buffer[i : i + n])
             else:
                 result = uniform(self.random, n)
                 assert isinstance(result, hbytes)
                 return result
 
         def flip_bit(data, n):
-            buf = bytearray(
-                target_data[0].buffer[data.index:data.index + n])
+            buf = bytearray(target_data[0].buffer[data.index : data.index + n])
             i = self.random.randint(0, n - 1)
             k = self.random.randint(0, 7)
-            buf[i] ^= (1 << k)
+            buf[i] ^= 1 << k
             return hbytes(buf)
 
         def draw_zero(data, n):
-            return hbytes(b'\0' * n)
+            return hbytes(b"\0" * n)
 
         def draw_max(data, n):
             return hbytes([255]) * n
@@ -633,23 +654,28 @@ class ConjectureRunner(object):
         def redraw_last(data, n):
             u = target_data[0].blocks[-1].start
             if data.index + n <= u:
-                return target_data[0].buffer[data.index:data.index + n]
+                return target_data[0].buffer[data.index : data.index + n]
             else:
                 return uniform(self.random, n)
 
         options = [
             draw_new,
-            redraw_last, redraw_last,
-            reuse_existing, reuse_existing,
-            draw_existing, draw_smaller, draw_larger,
+            redraw_last,
+            redraw_last,
+            reuse_existing,
+            reuse_existing,
+            draw_existing,
+            draw_smaller,
+            draw_larger,
             flip_bit,
-            draw_zero, draw_max, draw_zero, draw_max,
+            draw_zero,
+            draw_max,
+            draw_zero,
+            draw_max,
             draw_constant,
         ]
 
-        bits = [
-            self.random.choice(options) for _ in hrange(3)
-        ]
+        bits = [self.random.choice(options) for _ in hrange(3)]
 
         prefix = [None]
 
@@ -665,8 +691,8 @@ class ConjectureRunner(object):
                 result = self.random.choice(bits)(data, n)
             p = prefix[0]
             if data.index < len(p):
-                start = p[data.index:data.index + n]
-                result = start + result[len(start):]
+                start = p[data.index : data.index + n]
+                result = start + result[len(start) :]
             return self.__zero_bound(data, result)
 
         return mutate_from
@@ -684,15 +710,13 @@ class ConjectureRunner(object):
         """
         initial = len(result)
         if data.depth * 2 >= MAX_DEPTH or data.index >= self.cap:
-            data.forced_indices.update(
-                hrange(data.index, data.index + initial))
+            data.forced_indices.update(hrange(data.index, data.index + initial))
             data.hit_zero_bound = True
             result = hbytes(initial)
         elif data.index + initial >= self.cap:
             data.hit_zero_bound = True
             n = self.cap - data.index
-            data.forced_indices.update(
-                hrange(self.cap, data.index + initial))
+            data.forced_indices.update(hrange(self.cap, data.index + initial))
             result = result[:n] + hbytes(initial - n)
         assert len(result) == initial
         return result
@@ -704,10 +728,7 @@ class ConjectureRunner(object):
         return self.settings.database
 
     def has_existing_examples(self):
-        return (
-            self.database is not None and
-            Phase.reuse in self.settings.phases
-        )
+        return self.database is not None and Phase.reuse in self.settings.phases
 
     def reuse_existing_examples(self):
         """If appropriate (we have a database and have been told to use it),
@@ -721,7 +742,7 @@ class ConjectureRunner(object):
         examples that are no longer interesting are cleared out.
         """
         if self.has_existing_examples():
-            self.debug('Reusing examples from database')
+            self.debug("Reusing examples from database")
             # We have to do some careful juggling here. We have two database
             # corpora: The primary and secondary. The primary corpus is a
             # small set of minimized examples each of which has at one point
@@ -735,16 +756,13 @@ class ConjectureRunner(object):
             # sample the secondary corpus to a more manageable size.
 
             corpus = sorted(
-                self.settings.database.fetch(self.database_key),
-                key=sort_key
+                self.settings.database.fetch(self.database_key), key=sort_key
             )
             desired_size = max(2, ceil(0.1 * self.settings.max_examples))
 
             for extra_key in [self.secondary_key, self.covering_key]:
                 if len(corpus) < desired_size:
-                    extra_corpus = list(
-                        self.settings.database.fetch(extra_key),
-                    )
+                    extra_corpus = list(self.settings.database.fetch(extra_key))
 
                     shortfall = desired_size - len(corpus)
 
@@ -763,10 +781,8 @@ class ConjectureRunner(object):
                     self.test_function(last_data)
                 finally:
                     if last_data.status != Status.INTERESTING:
-                        self.settings.database.delete(
-                            self.database_key, existing)
-                        self.settings.database.delete(
-                            self.secondary_key, existing)
+                        self.settings.database.delete(self.database_key, existing)
+                        self.settings.database.delete(self.secondary_key, existing)
 
     def exit_with(self, reason):
         self.exit_reason = reason
@@ -776,25 +792,24 @@ class ConjectureRunner(object):
         if Phase.generate not in self.settings.phases:
             return
 
-        zero_data = self.cached_test_function(
-            hbytes(self.settings.buffer_size))
+        zero_data = self.cached_test_function(hbytes(self.settings.buffer_size))
         if zero_data.status == Status.OVERRUN or (
-            zero_data.status == Status.VALID and
-            len(zero_data.buffer) * 2 > self.settings.buffer_size
+            zero_data.status == Status.VALID
+            and len(zero_data.buffer) * 2 > self.settings.buffer_size
         ):
             fail_health_check(
                 self.settings,
-                'The smallest natural example for your test is extremely '
-                'large. This makes it difficult for Hypothesis to generate '
-                'good examples, especially when trying to reduce failing ones '
-                'at the end. Consider reducing the size of your data if it is '
-                'of a fixed size. You could also fix this by improving how '
-                'your data shrinks (see https://hypothesis.readthedocs.io/en/'
-                'latest/data.html#shrinking for details), or by introducing '
-                'default values inside your strategy. e.g. could you replace '
-                'some arguments with their defaults by using '
-                'one_of(none(), some_complex_strategy)?',
-                HealthCheck.large_base_example
+                "The smallest natural example for your test is extremely "
+                "large. This makes it difficult for Hypothesis to generate "
+                "good examples, especially when trying to reduce failing ones "
+                "at the end. Consider reducing the size of your data if it is "
+                "of a fixed size. You could also fix this by improving how "
+                "your data shrinks (see https://hypothesis.readthedocs.io/en/"
+                "latest/data.html#shrinking for details), or by introducing "
+                "default values inside your strategy. e.g. could you replace "
+                "some arguments with their defaults by using "
+                "one_of(none(), some_complex_strategy)?",
+                HealthCheck.large_base_example,
             )
 
         # If the language starts with writes of length >= cap then there is
@@ -818,7 +833,7 @@ class ConjectureRunner(object):
 
             def draw_bytes(data, n):
                 if data.index < len(prefix):
-                    result = prefix[data.index:data.index + n]
+                    result = prefix[data.index : data.index + n]
                     if len(result) < n:
                         result += uniform(self.random, n - len(result))
                 else:
@@ -828,8 +843,7 @@ class ConjectureRunner(object):
             targets_found = len(self.covering_examples)
 
             last_data = ConjectureData(
-                max_length=self.settings.buffer_size,
-                draw_bytes=draw_bytes
+                max_length=self.settings.buffer_size, draw_bytes=draw_bytes
             )
             self.test_function(last_data)
             last_data.freeze()
@@ -869,14 +883,13 @@ class ConjectureRunner(object):
                 buffer = hbytes(buffer)
 
                 def draw_bytes(data, n):
-                    result = buffer[data.index:data.index + n]
+                    result = buffer[data.index : data.index + n]
                     if len(result) < n:
                         result += hbytes(n - len(result))
                     return self.__rewrite(data, result)
 
                 data = ConjectureData(
-                    draw_bytes=draw_bytes,
-                    max_length=self.settings.buffer_size,
+                    draw_bytes=draw_bytes, max_length=self.settings.buffer_size
                 )
                 self.test_function(data)
                 data.freeze()
@@ -885,26 +898,22 @@ class ConjectureRunner(object):
                 mutations += 1
                 targets_found = len(self.covering_examples)
                 data = ConjectureData(
-                    draw_bytes=mutator(origin),
-                    max_length=self.settings.buffer_size
+                    draw_bytes=mutator(origin), max_length=self.settings.buffer_size
                 )
                 self.test_function(data)
                 data.freeze()
                 if (
-                    data.status > origin.status or
-                    len(self.covering_examples) > targets_found
+                    data.status > origin.status
+                    or len(self.covering_examples) > targets_found
                 ):
                     mutations = 0
-                elif (
-                    data.status < origin.status or
-                    mutations >= 10
-                ):
+                elif data.status < origin.status or mutations >= 10:
                     # Cap the variations of a single example and move on to
                     # an entirely fresh start.  Ten is an entirely arbitrary
                     # constant, but it's been working well for years.
                     mutations = 0
                     mutator = self._new_mutator()
-            if getattr(data, 'hit_zero_bound', False):
+            if getattr(data, "hit_zero_bound", False):
                 zero_bound_queue.append(data)
             mutations += 1
 
@@ -924,15 +933,11 @@ class ConjectureRunner(object):
         We may find one or more examples with a new interesting_origin
         during the shrink process. If so we shrink these too.
         """
-        if (
-            Phase.shrink not in self.settings.phases or
-            not self.interesting_examples
-        ):
+        if Phase.shrink not in self.settings.phases or not self.interesting_examples:
             return
 
         for prev_data in sorted(
-            self.interesting_examples.values(),
-            key=lambda d: sort_key(d.buffer)
+            self.interesting_examples.values(), key=lambda d: sort_key(d.buffer)
         ):
             assert prev_data.status == Status.INTERESTING
             data = ConjectureData.for_buffer(prev_data.buffer)
@@ -943,12 +948,15 @@ class ConjectureRunner(object):
         self.clear_secondary_key()
 
         while len(self.shrunk_examples) < len(self.interesting_examples):
-            target, example = min([
-                (k, v) for k, v in self.interesting_examples.items()
-                if k not in self.shrunk_examples],
+            target, example = min(
+                [
+                    (k, v)
+                    for k, v in self.interesting_examples.items()
+                    if k not in self.shrunk_examples
+                ],
                 key=lambda kv: (sort_key(kv[1].buffer), sort_key(repr(kv[0]))),
             )
-            self.debug('Shrinking %r' % (target,))
+            self.debug("Shrinking %r" % (target,))
 
             def predicate(d):
                 if d.status < Status.INTERESTING:
@@ -969,13 +977,10 @@ class ConjectureRunner(object):
             # It's not worth trying the primary corpus because we already
             # tried all of those in the initial phase.
             corpus = sorted(
-                self.settings.database.fetch(self.secondary_key),
-                key=sort_key
+                self.settings.database.fetch(self.secondary_key), key=sort_key
             )
             for c in corpus:
-                primary = {
-                    v.buffer for v in self.interesting_examples.values()
-                }
+                primary = {v.buffer for v in self.interesting_examples.values()}
 
                 cap = max(map(sort_key, primary))
 
@@ -1256,21 +1261,22 @@ def block_program(description):
             for k, d in reversed(list(enumerate(description))):
                 j = i + k
                 u, v = self.blocks[j].bounds
-                if d == '-':
+                if d == "-":
                     value = int_from_bytes(attempt[u:v])
                     if value == 0:
                         failed = True
                         break
                     else:
                         attempt[u:v] = int_to_bytes(value - 1, v - u)
-                elif d == 'X':
+                elif d == "X":
                     del attempt[u:v]
                 else:  # pragma: no cover
-                    assert False, 'Unrecognised command %r' % (d,)
+                    assert False, "Unrecognised command %r" % (d,)
             if failed or not self.incorporate_new_buffer(attempt):
                 i += 1
+
     run.command = description
-    run.__name__ = 'block_program(%r)' % (description,)
+    run.__name__ = "block_program(%r)" % (description,)
     return run
 
 
@@ -1315,12 +1321,7 @@ class ShrinkPass(object):
 
     def key(self):
         # Smaller is better.
-        return (
-            self.runs,
-            self.failures,
-            self.calls,
-            self.index
-        )
+        return (self.runs, self.failures, self.calls, self.index)
 
 
 class Shrinker(object):
@@ -1339,20 +1340,20 @@ class Shrinker(object):
     """
 
     DEFAULT_PASSES = [
-        'pass_to_descendant',
-        'zero_examples',
-        'adaptive_example_deletion',
-        'reorder_examples',
-        'minimize_duplicated_blocks',
-        'minimize_individual_blocks',
+        "pass_to_descendant",
+        "zero_examples",
+        "adaptive_example_deletion",
+        "reorder_examples",
+        "minimize_duplicated_blocks",
+        "minimize_individual_blocks",
     ]
 
     EMERGENCY_PASSES = [
-        block_program('-XX'),
-        block_program('XX'),
-        'example_deletion_with_block_lowering',
-        'shrink_offset_pairs',
-        'minimize_block_pairs_retaining_sum',
+        block_program("-XX"),
+        block_program("XX"),
+        "example_deletion_with_block_lowering",
+        "shrink_offset_pairs",
+        "minimize_block_pairs_retaining_sum",
     ]
 
     def __init__(self, engine, initial, predicate):
@@ -1398,8 +1399,7 @@ class Shrinker(object):
             self.add_new_pass(p, classification=PassClassification.AVOID)
 
         self.add_new_pass(
-            'lower_common_block_offset',
-            classification=PassClassification.SPECIAL
+            "lower_common_block_offset", classification=PassClassification.SPECIAL
         )
 
     def clear_passes(self):
@@ -1422,10 +1422,9 @@ class Shrinker(object):
         if isinstance(run, str):
             run = getattr(Shrinker, run)
         p = ShrinkPass(
-            pass_function=run, index=len(self.passes),
-            classification=classification,
+            pass_function=run, index=len(self.passes), classification=classification
         )
-        if hasattr(run, 'command'):
+        if hasattr(run, "command"):
             self.known_programs.add(run.command)
         self.passes.append(p)
         self.passes_awaiting_requeue.append(p)
@@ -1460,10 +1459,7 @@ class Shrinker(object):
         """Run passes with this classification until there are no more or one
         of them succeeds in shrinking the target."""
         initial = self.shrink_target
-        while (
-            self.has_queued_passes(classification) and
-            self.shrink_target is initial
-        ):
+        while self.has_queued_passes(classification) and self.shrink_target is initial:
             self.pop_queued_pass(classification)
         return self.shrink_target is not initial
 
@@ -1484,11 +1480,10 @@ class Shrinker(object):
 
     def consider_new_buffer(self, buffer):
         buffer = hbytes(buffer)
-        return buffer.startswith(self.buffer) or \
-            self.incorporate_new_buffer(buffer)
+        return buffer.startswith(self.buffer) or self.incorporate_new_buffer(buffer)
 
     def incorporate_new_buffer(self, buffer):
-        buffer = hbytes(buffer[:self.shrink_target.index])
+        buffer = hbytes(buffer[: self.shrink_target.index])
         try:
             existing = self.__test_function_cache[buffer]
         except KeyError:
@@ -1519,9 +1514,8 @@ class Shrinker(object):
 
     def incorporate_test_data(self, data):
         self.__test_function_cache[data.buffer] = data
-        if (
-            self.__predicate(data) and
-            sort_key(data.buffer) < sort_key(self.shrink_target.buffer)
+        if self.__predicate(data) and sort_key(data.buffer) < sort_key(
+            self.shrink_target.buffer
         ):
             self.update_shrink_target(data)
             self.__shrinking_block_cache = {}
@@ -1557,7 +1551,7 @@ class Shrinker(object):
         if isinstance(sp, str):
             sp = self.shrink_pass(sp)
 
-        self.debug('Shrink Pass %s' % (sp.name,))
+        self.debug("Shrink Pass %s" % (sp.name,))
 
         initial_shrinks = self.shrinks
         initial_calls = self.calls
@@ -1573,7 +1567,7 @@ class Shrinker(object):
             sp.shrinks += shrinks
             sp.deletions += deletions
             sp.runs += 1
-            self.debug('Shrink Pass %s completed.' % (sp.name,))
+            self.debug("Shrink Pass %s completed." % (sp.name,))
 
         # Complex state machine alert! A pass run can either succeed (we made
         # at least one shrink) or fail (we didn't). This changes the pass's
@@ -1612,9 +1606,10 @@ class Shrinker(object):
                 else:
                     sp.classification = PassClassification.HOPEFUL
             if previous != sp.classification:
-                self.debug('Reclassified %s from %s to %s' % (
-                    sp.name, previous.name, sp.classification.name
-                ))
+                self.debug(
+                    "Reclassified %s from %s to %s"
+                    % (sp.name, previous.name, sp.classification.name)
+                )
 
     def shrink(self):
         """Run the full set of shrinks and update shrink_target.
@@ -1630,9 +1625,8 @@ class Shrinker(object):
         # about the structure of the data (principally that we're never
         # operating on a block of all zero bytes so can use non-zeroness as a
         # signpost of complexity).
-        if (
-            not any(self.shrink_target.buffer) or
-            self.incorporate_new_buffer(hbytes(len(self.shrink_target.buffer)))
+        if not any(self.shrink_target.buffer) or self.incorporate_new_buffer(
+            hbytes(len(self.shrink_target.buffer))
         ):
             return
 
@@ -1640,56 +1634,64 @@ class Shrinker(object):
             self.greedy_shrink()
         finally:
             if self.__engine.report_debug_info:
+
                 def s(n):
-                    return 's' if n != 1 else ''
+                    return "s" if n != 1 else ""
 
-                total_deleted = self.initial_size - len(
-                    self.shrink_target.buffer)
+                total_deleted = self.initial_size - len(self.shrink_target.buffer)
 
-                self.debug('---------------------')
-                self.debug('Shrink pass profiling')
-                self.debug('---------------------')
-                self.debug('')
+                self.debug("---------------------")
+                self.debug("Shrink pass profiling")
+                self.debug("---------------------")
+                self.debug("")
                 calls = self.__engine.call_count - self.initial_calls
-                self.debug((
-                    'Shrinking made a total of %d call%s '
-                    'of which %d shrank. This deleted %d byte%s out of %d.'
-                ) % (
-                    calls, s(calls),
-                    self.shrinks,
-                    total_deleted, s(total_deleted),
-                    self.initial_size,
-                ))
+                self.debug(
+                    (
+                        "Shrinking made a total of %d call%s "
+                        "of which %d shrank. This deleted %d byte%s out of %d."
+                    )
+                    % (
+                        calls,
+                        s(calls),
+                        self.shrinks,
+                        total_deleted,
+                        s(total_deleted),
+                        self.initial_size,
+                    )
+                )
                 for useful in [True, False]:
-                    self.debug('')
+                    self.debug("")
                     if useful:
-                        self.debug('Useful passes:')
+                        self.debug("Useful passes:")
                     else:
-                        self.debug('Useless passes:')
-                    self.debug('')
+                        self.debug("Useless passes:")
+                    self.debug("")
                     for p in sorted(
                         self.passes,
-                        key=lambda t: (
-                            -t.calls, -t.runs,
-                            t.deletions, t.shrinks,
-                        ),
+                        key=lambda t: (-t.calls, -t.runs, t.deletions, t.shrinks),
                     ):
                         if p.calls == 0:
                             continue
                         if (p.shrinks != 0) != useful:
                             continue
 
-                        self.debug((
-                            '  * %s ran %d time%s, making %d call%s of which '
-                            '%d shrank, deleting %d byte%s.'
-                        ) % (
-                            p.name,
-                            p.runs, s(p.runs),
-                            p.calls, s(p.calls),
-                            p.shrinks,
-                            p.deletions, s(p.deletions),
-                        ))
-                self.debug('')
+                        self.debug(
+                            (
+                                "  * %s ran %d time%s, making %d call%s of which "
+                                "%d shrank, deleting %d byte%s."
+                            )
+                            % (
+                                p.name,
+                                p.runs,
+                                s(p.runs),
+                                p.calls,
+                                s(p.calls),
+                                p.shrinks,
+                                p.deletions,
+                                s(p.deletions),
+                            )
+                        )
+                self.debug("")
 
     def greedy_shrink(self):
         """Run a full set of greedy shrinks (that is, ones that will only ever
@@ -1698,9 +1700,9 @@ class Shrinker(object):
         This method iterates to a fixed point and so is idempontent - calling
         it twice will have exactly the same effect as calling it once.
         """
-        self.run_shrink_pass('alphabet_minimize')
+        self.run_shrink_pass("alphabet_minimize")
         while self.single_greedy_shrink_iteration():
-            self.run_shrink_pass('lower_common_block_offset')
+            self.run_shrink_pass("lower_common_block_offset")
 
     def single_greedy_shrink_iteration(self):
         """Performs a single run through each greedy shrink pass, but does not
@@ -1717,7 +1719,7 @@ class Shrinker(object):
 
         self.requeue_passes()
 
-        self.run_shrink_pass('remove_discarded')
+        self.run_shrink_pass("remove_discarded")
 
         # First run the entire set of solid passes (ones that have previously
         # made changes). It's important that we run all of them, not just one,
@@ -1754,7 +1756,7 @@ class Shrinker(object):
             # bring in the desperation passes. These are either passes that
             # started as CANDIDATE but we have never seen work, or ones that
             # are so expensive that they begin life as AVOID.
-            PassClassification.AVOID
+            PassClassification.AVOID,
         ]:
             if self.run_queued_until_change(classification):
                 return True
@@ -1817,15 +1819,21 @@ class Shrinker(object):
         """
         for ex in self.each_non_trivial_example():
             st = self.shrink_target
-            descendants = sorted(set(
-                st.buffer[d.start:d.end] for d in self.shrink_target.examples
-                if d.start >= ex.start and d.end <= ex.end and
-                d.length < ex.length and d.label == ex.label
-            ), key=sort_key)
+            descendants = sorted(
+                set(
+                    st.buffer[d.start : d.end]
+                    for d in self.shrink_target.examples
+                    if d.start >= ex.start
+                    and d.end <= ex.end
+                    and d.length < ex.length
+                    and d.label == ex.label
+                ),
+                key=sort_key,
+            )
 
             for d in descendants:
                 if self.incorporate_new_buffer(
-                    self.buffer[:ex.start] + d + self.buffer[ex.end:]
+                    self.buffer[: ex.start] + d + self.buffer[ex.end :]
                 ):
                     break
 
@@ -1845,8 +1853,7 @@ class Shrinker(object):
             pass
         t = self.shrink_target
         return self.__shrinking_block_cache.setdefault(
-            i,
-            t.buffer[:t.blocks[i].start] in self.__shrinking_prefixes
+            i, t.buffer[: t.blocks[i].start] in self.__shrinking_prefixes
         )
 
     def is_payload_block(self, i):
@@ -1859,10 +1866,7 @@ class Shrinker(object):
         payload blocks, we expect the shape of the language to not change
         under us (but must still guard against it doing so).
         """
-        return not (
-            self.is_shrinking_block(i) or
-            self.shrink_target.blocks[i].forced
-        )
+        return not (self.is_shrinking_block(i) or self.shrink_target.blocks[i].forced)
 
     def lower_common_block_offset(self):
         """Sometimes we find ourselves in a situation where changes to one part
@@ -1905,7 +1909,8 @@ class Shrinker(object):
         blocked = [current.buffer[u:v] for u, v in current.all_block_bounds()]
 
         changed = [
-            i for i in sorted(self.__changed_blocks)
+            i
+            for i in sorted(self.__changed_blocks)
             if not self.shrink_target.blocks[i].trivial
         ]
 
@@ -1957,8 +1962,9 @@ class Shrinker(object):
             n = len(self.blocks)
             # Number of blocks may have changed, need to validate
             valid_pair = [
-                p for p in pair if p < n and int_from_block(p) > 0 and
-                self.is_payload_block(p)
+                p
+                for p in pair
+                if p < n and int_from_block(p) > 0 and self.is_payload_block(p)
             ]
 
             if len(valid_pair) < 2:
@@ -1966,11 +1972,12 @@ class Shrinker(object):
 
             m = min([int_from_block(p) for p in valid_pair])
 
-            new_blocks = [self.shrink_target.buffer[u:v]
-                          for u, v in self.shrink_target.all_block_bounds()]
+            new_blocks = [
+                self.shrink_target.buffer[u:v]
+                for u, v in self.shrink_target.all_block_bounds()
+            ]
             for i in valid_pair:
-                new_blocks[i] = int_to_bytes(
-                    int_from_block(i) + o - m, block_len(i))
+                new_blocks[i] = int_to_bytes(int_from_block(i) + o - m, block_len(i))
             buffer = hbytes().join(new_blocks)
             return self.incorporate_new_buffer(buffer)
 
@@ -1978,8 +1985,7 @@ class Shrinker(object):
             return not block.all_zero and self.is_payload_block(block.index)
 
         for block_i, block_j in self.each_pair_of_blocks(
-            is_non_zero_payload,
-            is_non_zero_payload,
+            is_non_zero_payload, is_non_zero_payload
         ):
             i = block_i.index
             j = block_j.index
@@ -1989,8 +1995,7 @@ class Shrinker(object):
 
             offset = min(value_i, value_j)
             Integer.shrink(
-                offset, lambda o: reoffset_pair((i, j), o),
-                random=self.random,
+                offset, lambda o: reoffset_pair((i, j), o), random=self.random
             )
 
     def mark_shrinking(self, blocks):
@@ -2001,7 +2006,7 @@ class Shrinker(object):
             if self.__shrinking_block_cache.get(i) is True:
                 continue
             self.__shrinking_block_cache[i] = True
-            prefix = t.buffer[:t.blocks[i].start]
+            prefix = t.buffer[: t.blocks[i].start]
             self.__shrinking_prefixes.add(prefix)
 
     def clear_change_tracking(self):
@@ -2018,19 +2023,14 @@ class Shrinker(object):
             assert sort_key(new) < sort_key(current)
             self.shrinks += 1
             if (
-                len(new_target.blocks) != len(self.shrink_target.blocks) or
-                new_target.all_block_bounds() !=
-                    self.shrink_target.all_block_bounds()
+                len(new_target.blocks) != len(self.shrink_target.blocks)
+                or new_target.all_block_bounds()
+                != self.shrink_target.all_block_bounds()
             ):
                 self.clear_change_tracking()
             else:
-                for i, (u, v) in enumerate(
-                    self.shrink_target.all_block_bounds()
-                ):
-                    if (
-                        i not in self.__changed_blocks and
-                        current[u:v] != new[u:v]
-                    ):
+                for i, (u, v) in enumerate(self.shrink_target.all_block_bounds()):
+                    if i not in self.__changed_blocks and current[u:v] != new[u:v]:
                         self.mark_changed(i)
         else:
             self.__changed_blocks = set()
@@ -2060,7 +2060,7 @@ class Shrinker(object):
                 break
             u, v = self.blocks[block].bounds
             n = min(v - u, len(b))
-            initial_attempt[v - n:v] = b[-n:]
+            initial_attempt[v - n : v] = b[-n:]
 
         start = self.shrink_target.blocks[blocks[0]].start
         end = self.shrink_target.blocks[blocks[-1]].end
@@ -2123,13 +2123,9 @@ class Shrinker(object):
 
             replacement = initial_data.examples[ex.index]
 
-            in_original = [
-                c for c in ex.children if c.start >= end
-            ]
+            in_original = [c for c in ex.children if c.start >= end]
 
-            in_replaced = [
-                c for c in replacement.children if c.start >= end
-            ]
+            in_replaced = [c for c in replacement.children if c.start >= end]
 
             if len(in_replaced) >= len(in_original) or not in_replaced:
                 continue
@@ -2140,13 +2136,11 @@ class Shrinker(object):
             # means that some of its children towards the right must be
             # important, so we try to arrange it so that it retains its
             # rightmost children instead of its leftmost.
-            regions_to_delete.add((
-                in_original[0].start, in_original[-len(in_replaced)].start
-            ))
+            regions_to_delete.add(
+                (in_original[0].start, in_original[-len(in_replaced)].start)
+            )
 
-        for u, v in sorted(
-            regions_to_delete, key=lambda x: x[1] - x[0], reverse=True
-        ):
+        for u, v in sorted(regions_to_delete, key=lambda x: x[1] - x[0], reverse=True):
             try_with_deleted = bytearray(initial_attempt)
             del try_with_deleted[u:v]
             if self.incorporate_new_buffer(try_with_deleted):
@@ -2170,9 +2164,7 @@ class Shrinker(object):
             discarded = []
 
             for ex in self.shrink_target.examples:
-                if ex.discarded and (
-                    not discarded or ex.start >= discarded[-1][-1]
-                ):
+                if ex.discarded and (not discarded or ex.start >= discarded[-1][-1]):
                     discarded.append((ex.start, ex.end))
 
             assert discarded
@@ -2223,18 +2215,18 @@ class Shrinker(object):
         """Runs a sequence shrinker on the children of each example."""
         for ex in self.each_non_trivial_example():
             st = self.shrink_target
-            pieces = [
-                st.buffer[c.start:c.end]
-                for c in ex.children
-            ]
+            pieces = [st.buffer[c.start : c.end] for c in ex.children]
             if not pieces:
-                pieces = [st.buffer[ex.start:ex.end]]
-            prefix = st.buffer[:ex.start]
-            suffix = st.buffer[ex.end:]
+                pieces = [st.buffer[ex.start : ex.end]]
+            prefix = st.buffer[: ex.start]
+            suffix = st.buffer[ex.end :]
             shrinker.shrink(
-                pieces, lambda ls: self.incorporate_new_buffer(
-                    prefix + hbytes().join(ls) + suffix,
-                ), random=self.random, **kwargs
+                pieces,
+                lambda ls: self.incorporate_new_buffer(
+                    prefix + hbytes().join(ls) + suffix
+                ),
+                random=self.random,
+                **kwargs
             )
 
     def adaptive_example_deletion(self):
@@ -2276,9 +2268,9 @@ class Shrinker(object):
             used = in_replacement.length
 
             if (
-                not self.__predicate(attempt) and
-                in_replacement.end < len(attempt.buffer) and
-                used < ex.length
+                not self.__predicate(attempt)
+                and in_replacement.end < len(attempt.buffer)
+                and used < ex.length
             ):
                 self.incorporate_new_buffer(
                     self.buffer[:u] + hbytes(used) + self.buffer[v:]
@@ -2304,6 +2296,7 @@ class Shrinker(object):
         of the blocks doesn't matter very much because it allows us to replace
         more values at once.
         """
+
         def canon(b):
             i = 0
             while i < len(b) and b[i] == 0:
@@ -2311,8 +2304,7 @@ class Shrinker(object):
             return b[i:]
 
         counts = Counter(
-            canon(self.shrink_target.buffer[u:v])
-            for u, v in self.all_block_bounds()
+            canon(self.shrink_target.buffer[u:v]) for u, v in self.all_block_bounds()
         )
         counts.pop(hbytes(), None)
         blocks = [buffer for buffer, count in counts.items() if count > 1]
@@ -2321,7 +2313,8 @@ class Shrinker(object):
         blocks.sort(key=lambda b: counts[b] * len(b), reverse=True)
         for block in blocks:
             targets = [
-                i for i, (u, v) in enumerate(self.all_block_bounds())
+                i
+                for i, (u, v) in enumerate(self.all_block_bounds())
                 if canon(self.shrink_target.buffer[u:v]) == block
             ]
             # This can happen if some blocks have been lost in the previous
@@ -2332,7 +2325,8 @@ class Shrinker(object):
             Lexical.shrink(
                 block,
                 lambda b: self.try_shrinking_blocks(targets, b),
-                random=self.random, full=False
+                random=self.random,
+                full=False,
             )
 
     def minimize_individual_blocks(self):
@@ -2352,7 +2346,8 @@ class Shrinker(object):
             Lexical.shrink(
                 self.shrink_target.buffer[u:v],
                 lambda b: self.try_shrinking_blocks((i,), b),
-                random=self.random, full=False,
+                random=self.random,
+                full=False,
             )
             i -= 1
 
@@ -2390,7 +2385,7 @@ class Shrinker(object):
 
                 buf = bytearray(self.shrink_target.buffer)
                 buf[u:v] = int_to_bytes(n - 1, v - u)
-                del buf[ex.start:ex.end]
+                del buf[ex.start : ex.end]
                 if not self.incorporate_new_buffer(buf):
                     j += 1
 
@@ -2415,10 +2410,7 @@ class Shrinker(object):
         triggering overflow behaviour.
         """
         for block_i, block_j in self.each_pair_of_blocks(
-            lambda block: (
-                self.is_payload_block(block.index) and
-                not block.all_zero
-            ),
+            lambda block: (self.is_payload_block(block.index) and not block.all_zero),
             lambda block: self.is_payload_block(block.index),
         ):
             if block_i.length != block_j.length:
@@ -2451,10 +2443,7 @@ class Shrinker(object):
                 n = int_from_bytes(self.shrink_target.buffer[r:s])
 
                 tot = m + n
-                Integer.shrink(
-                    m, lambda x: trial(x, tot - x),
-                    random=self.random
-                )
+                Integer.shrink(m, lambda x: trial(x, tot - x), random=self.random)
 
     def reorder_examples(self):
         """This pass allows us to reorder the children of each example.
@@ -2495,13 +2484,9 @@ class Shrinker(object):
 
             def clear_to(reduced):
                 reduced = set(reduced)
-                attempt = hbytes([
-                    b if b <= c or b in reduced else c
-                    for b in self.buffer
-                ])
+                attempt = hbytes(
+                    [b if b <= c or b in reduced else c for b in self.buffer]
+                )
                 return self.consider_new_buffer(attempt)
 
-            Length.shrink(
-                sorted(alphabet), clear_to,
-                random=self.random,
-            )
+            Length.shrink(sorted(alphabet), clear_to, random=self.random)

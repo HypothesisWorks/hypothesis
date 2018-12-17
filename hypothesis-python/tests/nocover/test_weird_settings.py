@@ -15,10 +15,9 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 from tests.common.utils import checks_deprecated_behaviour
 
 
@@ -28,4 +27,5 @@ def test_setting_database_to_none_disables_the_database():
     @settings(database_file=None)
     def test(b):
         pass
+
     test()

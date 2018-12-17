@@ -19,29 +19,37 @@
 to really unreasonable lengths to produce pretty output."""
 
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import re
 import ast
-import uuid
-import types
 import hashlib
 import inspect
-from types import ModuleType
+import re
+import types
+import uuid
 from functools import wraps
+from types import ModuleType
 
 from hypothesis.configuration import storage_directory
+from hypothesis.internal.compat import (
+    ARG_NAME_ATTRIBUTE,
+    getfullargspec,
+    hrange,
+    isidentifier,
+    qualname,
+    str_to_bytes,
+    to_str,
+    to_unicode,
+    update_code_location,
+)
 from hypothesis.vendor.pretty import pretty
-from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, \
-    to_str, qualname, to_unicode, isidentifier, str_to_bytes, \
-    getfullargspec, update_code_location
 
 
 def fully_qualified_name(f):
     """Returns a unique identifier for f pointing to the module it was defined
     on, and an containing functions."""
     if f.__module__ is not None:
-        return f.__module__ + '.' + qualname(f)
+        return f.__module__ + "." + qualname(f)
     else:
         return qualname(f)
 
@@ -69,7 +77,7 @@ def function_digest(function):
     """
     hasher = hashlib.md5()
     try:
-        hasher.update(to_unicode(inspect.getsource(function)).encode('utf-8'))
+        hasher.update(to_unicode(inspect.getsource(function)).encode("utf-8"))
     # Different errors on different versions of python. What fun.
     except (OSError, IOError, TypeError):
         pass
@@ -78,7 +86,7 @@ def function_digest(function):
     except AttributeError:
         pass
     try:
-        hasher.update(function.__module__.__name__.encode('utf-8'))
+        hasher.update(function.__module__.__name__.encode("utf-8"))
     except AttributeError:
         pass
     try:
@@ -96,8 +104,11 @@ def is_typed_named_tuple(cls):
     and means we just have to hope that nobody defines a different tuple
     subclass with similar attributes.
     """
-    return issubclass(cls, tuple) and hasattr(cls, '_fields') and \
-        hasattr(cls, '_field_types')
+    return (
+        issubclass(cls, tuple)
+        and hasattr(cls, "_fields")
+        and hasattr(cls, "_field_types")
+    )
 
 
 def required_args(target, args=(), kwargs=()):
@@ -111,13 +122,12 @@ def required_args(target, args=(), kwargs=()):
     """
     # We start with a workaround for NamedTuples, which don't have nice inits
     if inspect.isclass(target) and is_typed_named_tuple(target):
-        provided = set(kwargs) | set(target._fields[:len(args)])
+        provided = set(kwargs) | set(target._fields[: len(args)])
         return set(target._fields) - provided
     # Then we try to do the right thing with getfullargspec
     try:
         spec = getfullargspec(
-            getattr(target, '__init__', target)
-            if inspect.isclass(target) else target
+            getattr(target, "__init__", target) if inspect.isclass(target) else target
         )
     except TypeError:  # pragma: no cover
         return None
@@ -127,9 +137,12 @@ def required_args(target, args=(), kwargs=()):
     # Start with the args that were not supplied and all kwonly arguments,
     # then remove all positional arguments with default values, and finally
     # remove kwonly defaults and any supplied keyword arguments
-    return set(spec.args[skip_self + len(args):] + spec.kwonlyargs) \
-        - set(spec.args[len(spec.args) - len(spec.defaults or ()):]) \
-        - set(spec.kwonlydefaults or ()) - set(kwargs)
+    return (
+        set(spec.args[skip_self + len(args) :] + spec.kwonlyargs)
+        - set(spec.args[len(spec.args) - len(spec.defaults or ()) :])
+        - set(spec.kwonlydefaults or ())
+        - set(kwargs)
+    )
 
 
 def convert_keyword_arguments(function, args, kwargs):
@@ -146,8 +159,7 @@ def convert_keyword_arguments(function, args, kwargs):
 
     if argspec.defaults:
         for name, value in zip(
-                argspec.args[-len(argspec.defaults):],
-                argspec.defaults
+            argspec.args[-len(argspec.defaults) :], argspec.defaults
         ):
             defaults[name] = value
 
@@ -163,20 +175,20 @@ def convert_keyword_arguments(function, args, kwargs):
             elif arg_name in defaults:
                 new_args.append(defaults[arg_name])
             else:
-                raise TypeError('No value provided for argument %r' % (
-                    arg_name
-                ))
+                raise TypeError("No value provided for argument %r" % (arg_name))
 
     if kwargs and not argspec.varkw:
         if len(kwargs) > 1:
-            raise TypeError('%s() got unexpected keyword arguments %s' % (
-                function.__name__, ', '.join(map(repr, kwargs))
-            ))
+            raise TypeError(
+                "%s() got unexpected keyword arguments %s"
+                % (function.__name__, ", ".join(map(repr, kwargs)))
+            )
         else:
             bad_kwarg = next(iter(kwargs))
-            raise TypeError('%s() got an unexpected keyword argument %r' % (
-                function.__name__, bad_kwarg
-            ))
+            raise TypeError(
+                "%s() got an unexpected keyword argument %r"
+                % (function.__name__, bad_kwarg)
+            )
     return tuple(new_args), kwargs
 
 
@@ -193,47 +205,40 @@ def convert_positional_arguments(function, args, kwargs):
         for k in new_kwargs.keys():
             if k not in argspec.args and k not in argspec.kwonlyargs:
                 raise TypeError(
-                    '%s() got an unexpected keyword argument %r' % (
-                        function.__name__, k
-                    ))
+                    "%s() got an unexpected keyword argument %r"
+                    % (function.__name__, k)
+                )
     if len(args) < len(argspec.args):
-        for i in hrange(
-            len(args), len(argspec.args) - len(argspec.defaults or ())
-        ):
+        for i in hrange(len(args), len(argspec.args) - len(argspec.defaults or ())):
             if argspec.args[i] not in kwargs:
-                raise TypeError('No value provided for argument %s' % (
-                    argspec.args[i],
-                ))
+                raise TypeError(
+                    "No value provided for argument %s" % (argspec.args[i],)
+                )
     for kw in argspec.kwonlyargs:
         if kw not in new_kwargs:
-            raise TypeError('No value provided for argument %s' % kw)
+            raise TypeError("No value provided for argument %s" % kw)
 
     if len(args) > len(argspec.args) and not argspec.varargs:
         raise TypeError(
-            '%s() takes at most %d positional arguments (%d given)' % (
-                function.__name__, len(argspec.args), len(args)
-            )
+            "%s() takes at most %d positional arguments (%d given)"
+            % (function.__name__, len(argspec.args), len(args))
         )
 
     for arg, name in zip(args, argspec.args):
         if name in new_kwargs:
             raise TypeError(
-                '%s() got multiple values for keyword argument %r' % (
-                    function.__name__, name
-                ))
+                "%s() got multiple values for keyword argument %r"
+                % (function.__name__, name)
+            )
         else:
             new_kwargs[name] = arg
-    return (
-        tuple(args[len(argspec.args):]),
-        new_kwargs,
-    )
+    return (tuple(args[len(argspec.args) :]), new_kwargs)
 
 
 def extract_all_lambdas(tree):
     lambdas = []
 
     class Visitor(ast.NodeVisitor):
-
         def visit_Lambda(self, node):
             lambdas.append(node)
 
@@ -268,23 +273,23 @@ def extract_lambda_source(f):
     bad_lambda = False
     for a in argspec.args:
         if isinstance(a, (tuple, list)):  # pragma: no cover
-            arg_strings.append('(%s)' % (', '.join(a),))
+            arg_strings.append("(%s)" % (", ".join(a),))
             bad_lambda = True
         else:
             assert isinstance(a, str)
             arg_strings.append(a)
     if argspec.varargs:
-        arg_strings.append('*' + argspec.varargs)
+        arg_strings.append("*" + argspec.varargs)
     elif argspec.kwonlyargs:
-        arg_strings.append('*')
-    for a in (argspec.kwonlyargs or []):
+        arg_strings.append("*")
+    for a in argspec.kwonlyargs or []:
         default = (argspec.kwonlydefaults or {}).get(a)
         if default:
-            arg_strings.append('{}={}'.format(a, default))
+            arg_strings.append("{}={}".format(a, default))
         else:
             arg_strings.append(a)
 
-    if_confused = 'lambda %s: <unknown>' % (', '.join(arg_strings),)
+    if_confused = "lambda %s: <unknown>" % (", ".join(arg_strings),)
     if bad_lambda:  # pragma: no cover
         return if_confused
     try:
@@ -292,19 +297,19 @@ def extract_lambda_source(f):
     except IOError:
         return if_confused
 
-    source = LINE_CONTINUATION.sub(' ', source)
-    source = WHITESPACE.sub(' ', source)
+    source = LINE_CONTINUATION.sub(" ", source)
+    source = WHITESPACE.sub(" ", source)
     source = source.strip()
-    assert 'lambda' in source
+    assert "lambda" in source
 
     tree = None
 
     try:
         tree = ast.parse(source)
     except SyntaxError:
-        for i in hrange(len(source) - 1, len('lambda'), -1):
+        for i in hrange(len(source) - 1, len("lambda"), -1):
             prefix = source[:i]
-            if 'lambda' not in prefix:
+            if "lambda" not in prefix:
                 break
             try:
                 tree = ast.parse(prefix)
@@ -313,7 +318,7 @@ def extract_lambda_source(f):
             except SyntaxError:
                 continue
     if tree is None:
-        if source.startswith('@'):
+        if source.startswith("@"):
             # This will always eventually find a valid expression because
             # the decorator must be a valid Python function call, so will
             # eventually be syntactically valid and break out of the loop. Thus
@@ -321,7 +326,7 @@ def extract_lambda_source(f):
             # appropriate.
             for i in hrange(len(source) + 1):  # pragma: no branch
                 p = source[1:i]
-                if 'lambda' in p:
+                if "lambda" in p:
                     try:
                         tree = ast.parse(p)
                         source = p
@@ -333,18 +338,15 @@ def extract_lambda_source(f):
         return if_confused
 
     all_lambdas = extract_all_lambdas(tree)
-    aligned_lambdas = [
-        l for l in all_lambdas
-        if args_for_lambda_ast(l) == argspec.args
-    ]
+    aligned_lambdas = [l for l in all_lambdas if args_for_lambda_ast(l) == argspec.args]
     if len(aligned_lambdas) != 1:
         return if_confused
     lambda_ast = aligned_lambdas[0]
     assert lambda_ast.lineno == 1
-    source = source[lambda_ast.col_offset:].strip()
+    source = source[lambda_ast.col_offset :].strip()
 
-    source = source[source.index('lambda'):]
-    for i in hrange(len(source), len('lambda'), -1):  # pragma: no branch
+    source = source[source.index("lambda") :]
+    for i in hrange(len(source), len("lambda"), -1):  # pragma: no branch
         try:
             parsed = ast.parse(source[:i])
             assert len(parsed.body) == 1
@@ -354,28 +356,28 @@ def extract_lambda_source(f):
                 break
         except SyntaxError:
             pass
-    lines = source.split('\n')
-    lines = [PROBABLY_A_COMMENT.sub('', l) for l in lines]
-    source = '\n'.join(lines)
+    lines = source.split("\n")
+    lines = [PROBABLY_A_COMMENT.sub("", l) for l in lines]
+    source = "\n".join(lines)
 
-    source = WHITESPACE.sub(' ', source)
-    source = SPACE_FOLLOWS_OPEN_BRACKET.sub('(', source)
-    source = SPACE_PRECEDES_CLOSE_BRACKET.sub(')', source)
+    source = WHITESPACE.sub(" ", source)
+    source = SPACE_FOLLOWS_OPEN_BRACKET.sub("(", source)
+    source = SPACE_PRECEDES_CLOSE_BRACKET.sub(")", source)
     source = source.strip()
     return source
 
 
 def get_pretty_function_description(f):
-    if not hasattr(f, '__name__'):
+    if not hasattr(f, "__name__"):
         return repr(f)
     name = f.__name__
-    if name == '<lambda>':
+    if name == "<lambda>":
         result = extract_lambda_source(f)
         return result
     elif isinstance(f, types.MethodType):
         self = f.__self__
         if not (self is None or inspect.isclass(self)):
-            return '%r.%s' % (self, name)
+            return "%r.%s" % (self, name)
     return name
 
 
@@ -398,28 +400,27 @@ def arg_string(f, args, kwargs, reorder=True):
 
     for a in argspec.args:
         if a in kwargs:
-            bits.append('%s=%s' % (a, nicerepr(kwargs.pop(a))))
+            bits.append("%s=%s" % (a, nicerepr(kwargs.pop(a))))
     if kwargs:
         for a in sorted(kwargs):
-            bits.append('%s=%s' % (a, nicerepr(kwargs[a])))
+            bits.append("%s=%s" % (a, nicerepr(kwargs[a])))
 
-    return ', '.join([nicerepr(x) for x in args] + bits)
+    return ", ".join([nicerepr(x) for x in args] + bits)
 
 
 def unbind_method(f):
     """Take something that might be a method or a function and return the
     underlying function."""
-    return getattr(f, 'im_func', getattr(f, '__func__', f))
+    return getattr(f, "im_func", getattr(f, "__func__", f))
 
 
 def check_valid_identifier(identifier):
     if not isidentifier(identifier):
-        raise ValueError('%r is not a valid python identifier' %
-                         (identifier,))
+        raise ValueError("%r is not a valid python identifier" % (identifier,))
 
 
 def eval_directory():
-    return storage_directory('eval_source')
+    return storage_directory("eval_source")
 
 
 eval_cache = {}  # type: dict
@@ -431,23 +432,27 @@ def source_exec_as_module(source):
     except KeyError:
         pass
 
-    result = ModuleType('hypothesis_temporary_module_%s' % (
-        hashlib.sha1(str_to_bytes(source)).hexdigest(),
-    ))
+    result = ModuleType(
+        "hypothesis_temporary_module_%s"
+        % (hashlib.sha1(str_to_bytes(source)).hexdigest(),)
+    )
     assert isinstance(source, str)
     exec(source, result.__dict__)
     eval_cache[source] = result
     return result
 
 
-COPY_ARGSPEC_SCRIPT = """
+COPY_ARGSPEC_SCRIPT = (
+    """
 from hypothesis.utils.conventions import not_set
 
 def accept(%(funcname)s):
     def %(name)s(%(argspec)s):
         return %(funcname)s(%(invocation)s)
     return %(name)s
-""".strip() + '\n'
+""".strip()
+    + "\n"
+)
 
 
 def define_function_signature(name, docstring, argspec):
@@ -466,7 +471,7 @@ def define_function_signature(name, docstring, argspec):
         for a in argspec.args[:-n_defaults]:
             parts.append(a)
         for a in argspec.args[-n_defaults:]:
-            parts.append('%s=not_set' % (a,))
+            parts.append("%s=not_set" % (a,))
     else:
         parts = list(argspec.args)
     used_names = list(argspec.args) + list(argspec.kwonlyargs)
@@ -486,26 +491,26 @@ def define_function_signature(name, docstring, argspec):
                 invocation_parts.append(a)
         if argspec.varargs:
             used_names.append(argspec.varargs)
-            parts.append('*' + argspec.varargs)
-            invocation_parts.append('*' + argspec.varargs)
+            parts.append("*" + argspec.varargs)
+            invocation_parts.append("*" + argspec.varargs)
         elif argspec.kwonlyargs:
-            parts.append('*')
+            parts.append("*")
         for k in must_pass_as_kwargs:
-            invocation_parts.append('%(k)s=%(k)s' % {'k': k})
+            invocation_parts.append("%(k)s=%(k)s" % {"k": k})
 
         for k in argspec.kwonlyargs:
-            invocation_parts.append('%(k)s=%(k)s' % {'k': k})
+            invocation_parts.append("%(k)s=%(k)s" % {"k": k})
             if k in (argspec.kwonlydefaults or []):
-                parts.append('%(k)s=not_set' % {'k': k})
+                parts.append("%(k)s=not_set" % {"k": k})
             else:
                 parts.append(k)
         if argspec.varkw:
             used_names.append(argspec.varkw)
-            parts.append('**' + argspec.varkw)
-            invocation_parts.append('**' + argspec.varkw)
+            parts.append("**" + argspec.varkw)
+            invocation_parts.append("**" + argspec.varkw)
 
-        candidate_names = ['f'] + [
-            'f_%d' % (i,) for i in hrange(1, len(used_names) + 2)
+        candidate_names = ["f"] + [
+            "f_%d" % (i,) for i in hrange(1, len(used_names) + 2)
         ]
 
         for funcname in candidate_names:  # pragma: no branch
@@ -513,12 +518,14 @@ def define_function_signature(name, docstring, argspec):
                 break
 
         base_accept = source_exec_as_module(
-            COPY_ARGSPEC_SCRIPT % {
-                'name': name,
-                'funcname': funcname,
-                'argspec': ', '.join(parts),
-                'invocation': ', '.join(invocation_parts)
-            }).accept
+            COPY_ARGSPEC_SCRIPT
+            % {
+                "name": name,
+                "funcname": funcname,
+                "argspec": ", ".join(parts),
+                "invocation": ", ".join(invocation_parts),
+            }
+        ).accept
 
         result = base_accept(f)
         result.__doc__ = docstring
@@ -528,6 +535,7 @@ def define_function_signature(name, docstring, argspec):
         if argspec.annotations:
             result.__annotations__ = argspec.annotations
         return result
+
     return accept
 
 
@@ -538,21 +546,28 @@ def impersonate(target):
     Note that this updates the function in place, it doesn't return a
     new one.
     """
+
     def accept(f):
         f.__code__ = update_code_location(
-            f.__code__,
-            target.__code__.co_filename, target.__code__.co_firstlineno
+            f.__code__, target.__code__.co_filename, target.__code__.co_firstlineno
         )
         f.__name__ = target.__name__
         f.__module__ = target.__module__
         f.__doc__ = target.__doc__
-        f.__globals__['__hypothesistracebackhide__'] = True
+        f.__globals__["__hypothesistracebackhide__"] = True
         return f
+
     return accept
 
 
 def proxies(target):
     def accept(proxy):
-        return impersonate(target)(wraps(target)(define_function_signature(
-            target.__name__, target.__doc__, getfullargspec(target))(proxy)))
+        return impersonate(target)(
+            wraps(target)(
+                define_function_signature(
+                    target.__name__, target.__doc__, getfullargspec(target)
+                )(proxy)
+            )
+        )
+
     return accept

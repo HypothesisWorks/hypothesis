@@ -15,31 +15,26 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import sys
 import math
+import sys
 from random import Random
 
 import pytest
 
 from hypothesis.internal.compat import ceil
-from hypothesis.internal.conjecture.shrinking import Length, Integer, \
-    Lexical, Ordering
+from hypothesis.internal.conjecture.shrinking import Integer, Length, Lexical, Ordering
 
 
 def measure_baseline(cls, value, **kwargs):
-    shrinker = cls(
-        value, lambda x: x == value, random=Random(0), **kwargs
-    )
+    shrinker = cls(value, lambda x: x == value, random=Random(0), **kwargs)
     shrinker.run()
     return shrinker.calls
 
 
-@pytest.mark.parametrize('cls', [Lexical, Length, Ordering])
-@pytest.mark.parametrize('example', [
-    [255] * 8,
-])
+@pytest.mark.parametrize("cls", [Lexical, Length, Ordering])
+@pytest.mark.parametrize("example", [[255] * 8])
 def test_meets_budgetary_requirements(cls, example):
     # Somewhat arbitrary but not unreasonable budget.
     n = len(example)

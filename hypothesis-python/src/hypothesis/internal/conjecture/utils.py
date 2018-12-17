@@ -15,18 +15,26 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import enum
-import math
-import heapq
 import hashlib
-from fractions import Fraction
+import heapq
+import math
 from collections import OrderedDict
+from fractions import Fraction
 
 from hypothesis._settings import note_deprecation
-from hypothesis.internal.compat import abc, floor, hbytes, hrange, \
-    qualname, bit_length, str_to_bytes, int_from_bytes
+from hypothesis.internal.compat import (
+    abc,
+    bit_length,
+    floor,
+    hbytes,
+    hrange,
+    int_from_bytes,
+    qualname,
+    str_to_bytes,
+)
 from hypothesis.internal.floats import int_to_float
 
 LABEL_MASK = 2 ** 64 - 1
@@ -49,12 +57,11 @@ def combine_labels(*labels):
     return label
 
 
-INTEGER_RANGE_DRAW_LABEL = calc_label_from_name(
-    'another draw in integer_range()')
-GEOMETRIC_LABEL = calc_label_from_name('geometric()')
-BIASED_COIN_LABEL = calc_label_from_name('biased_coin()')
-SAMPLE_IN_SAMPLER_LABLE = calc_label_from_name('a sample() in Sampler')
-ONE_FROM_MANY_LABEL = calc_label_from_name('one more from many()')
+INTEGER_RANGE_DRAW_LABEL = calc_label_from_name("another draw in integer_range()")
+GEOMETRIC_LABEL = calc_label_from_name("geometric()")
+BIASED_COIN_LABEL = calc_label_from_name("biased_coin()")
+SAMPLE_IN_SAMPLER_LABLE = calc_label_from_name("a sample() in Sampler")
+ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
 
 
 def integer_range(data, lower, upper, center=None):
@@ -103,9 +110,7 @@ def integer_range(data, lower, upper, center=None):
 
 
 def centered_integer_range(data, lower, upper, center):
-    return integer_range(
-        data, lower, upper, center=center
-    )
+    return integer_range(data, lower, upper, center=center)
 
 
 try:
@@ -117,27 +122,31 @@ except ImportError:  # pragma: no cover
 def check_sample(values, strategy_name):
     if isinstance(values, ndarray):
         if values.ndim != 1:
-            note_deprecation((
-                'Only one-dimensional arrays are supported for sampling, '
-                'and the given value has {ndim} dimensions (shape '
-                '{shape}).  This array would give samples of array slices '
-                'instead of elements!  Use np.ravel(values) to convert '
-                'to a one-dimensional array, or tuple(values) if you '
-                'want to sample slices.  Sampling a multi-dimensional '
-                'array will be an error in a future version of Hypothesis.'
-            ).format(ndim=values.ndim, shape=values.shape))
+            note_deprecation(
+                (
+                    "Only one-dimensional arrays are supported for sampling, "
+                    "and the given value has {ndim} dimensions (shape "
+                    "{shape}).  This array would give samples of array slices "
+                    "instead of elements!  Use np.ravel(values) to convert "
+                    "to a one-dimensional array, or tuple(values) if you "
+                    "want to sample slices.  Sampling a multi-dimensional "
+                    "array will be an error in a future version of Hypothesis."
+                ).format(ndim=values.ndim, shape=values.shape)
+            )
     elif not isinstance(values, (OrderedDict, abc.Sequence, enum.EnumMeta)):
         note_deprecation(
-            'Cannot sample from {values}, not an ordered collection. '
-            'Hypothesis goes to some length to ensure that the {strategy} '
-            'strategy has stable results between runs. To replay a saved '
-            'example, the sampled values must have the same iteration order '
-            'on every run - ruling out sets, dicts, etc due to hash '
-            'randomisation. Most cases can simply use `sorted(values)`, but '
-            'mixed types or special values such as math.nan require careful '
-            'handling - and note that when simplifying an example, '
-            'Hypothesis treats earlier values as simpler.'.format(
-                values=repr(values), strategy=strategy_name))
+            "Cannot sample from {values}, not an ordered collection. "
+            "Hypothesis goes to some length to ensure that the {strategy} "
+            "strategy has stable results between runs. To replay a saved "
+            "example, the sampled values must have the same iteration order "
+            "on every run - ruling out sets, dicts, etc due to hash "
+            "randomisation. Most cases can simply use `sorted(values)`, but "
+            "mixed types or special values such as math.nan require careful "
+            "handling - and note that when simplifying an example, "
+            "Hypothesis treats earlier values as simpler.".format(
+                values=repr(values), strategy=strategy_name
+            )
+        )
     return tuple(values)
 
 
@@ -157,9 +166,7 @@ FULL_FLOAT = int_to_float(FLOAT_PREFIX | ((2 << 53) - 1)) - 1
 
 
 def fractional_float(data):
-    return (
-        int_to_float(FLOAT_PREFIX | getrandbits(data, 52)) - 1
-    ) / FULL_FLOAT
+    return (int_to_float(FLOAT_PREFIX | getrandbits(data, 52)) - 1) / FULL_FLOAT
 
 
 def geometric(data, p):
@@ -321,7 +328,8 @@ class Sampler(object):
             self.table[lo][1] = hi
             self.table[lo][2] = one - scaled_probabilities[lo]
             scaled_probabilities[hi] = (
-                scaled_probabilities[hi] + scaled_probabilities[lo]) - one
+                scaled_probabilities[hi] + scaled_probabilities[lo]
+            ) - one
 
             if scaled_probabilities[hi] < 1:
                 heapq.heappush(small, hi)

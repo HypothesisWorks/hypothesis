@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
@@ -26,7 +26,6 @@ from hypothesis.internal.reflection import arg_string
 
 
 class BadRepr(object):
-
     def __init__(self, value):
         self.value = value
 
@@ -34,34 +33,58 @@ class BadRepr(object):
         return self.value
 
 
-Frosty = BadRepr('☃')
+Frosty = BadRepr("☃")
 
 
 def test_just_frosty():
-    assert repr(st.just(Frosty)) == 'just(☃)'
+    assert repr(st.just(Frosty)) == "just(☃)"
 
 
 def test_sampling_snowmen():
-    assert repr(st.sampled_from((
-        Frosty, 'hi'))) == 'sampled_from((☃, %s))' % (repr('hi'),)
+    assert repr(st.sampled_from((Frosty, "hi"))) == "sampled_from((☃, %s))" % (
+        repr("hi"),
+    )
 
 
 def varargs(*args, **kwargs):
     pass
 
 
-@pytest.mark.skipif(PY3, reason='Unicode repr is kosher on python 3')
+@pytest.mark.skipif(PY3, reason="Unicode repr is kosher on python 3")
 def test_arg_strings_are_bad_repr_safe():
-    assert arg_string(varargs, (Frosty,), {}) == '☃'
+    assert arg_string(varargs, (Frosty,), {}) == "☃"
 
 
-@pytest.mark.skipif(PY3, reason='Unicode repr is kosher on python 3')
+@pytest.mark.skipif(PY3, reason="Unicode repr is kosher on python 3")
 def test_arg_string_kwargs_are_bad_repr_safe():
-    assert arg_string(varargs, (), {'x': Frosty}) == 'x=☃'
+    assert arg_string(varargs, (), {"x": Frosty}) == "x=☃"
 
 
-@given(st.sampled_from([
-    '✐', '✑', '✒', '✓', '✔', '✕', '✖', '✗', '✘',
-    '✙', '✚', '✛', '✜', '✝', '✞', '✟', '✠', '✡', '✢', '✣']))
+@given(
+    st.sampled_from(
+        [
+            "✐",
+            "✑",
+            "✒",
+            "✓",
+            "✔",
+            "✕",
+            "✖",
+            "✗",
+            "✘",
+            "✙",
+            "✚",
+            "✛",
+            "✜",
+            "✝",
+            "✞",
+            "✟",
+            "✠",
+            "✡",
+            "✢",
+            "✣",
+        ]
+    )
+)
 def test_sampled_from_bad_repr(c):
     pass

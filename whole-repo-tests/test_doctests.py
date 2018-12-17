@@ -15,20 +15,30 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 
-from hypothesistooling.scripts import pip_tool
 from hypothesistooling.projects.hypothesispython import BASE_DIR
+from hypothesistooling.scripts import pip_tool
 
 
 def test_doctests():
     env = dict(os.environ)
-    env['PYTHONPATH'] = 'src'
+    env["PYTHONPATH"] = "src"
 
     pip_tool(
-        'sphinx-build', '-n', '-W', '--keep-going', '-T',
-        '-b', 'doctest', '-d', 'docs/_build/doctrees',
-        'docs', 'docs/_build/html', env=env, cwd=BASE_DIR,
+        "sphinx-build",
+        "-n",
+        "-W",
+        "--keep-going",
+        "-T",
+        "-b",
+        "doctest",
+        "-d",
+        "docs/_build/doctrees",
+        "docs",
+        "docs/_build/html",
+        env=env,
+        cwd=BASE_DIR,
     )

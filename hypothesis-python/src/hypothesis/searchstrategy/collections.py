@@ -15,14 +15,13 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import OrderedDict
 from hypothesis.internal.conjecture.utils import combine_labels
-from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    MappedSearchStrategy
+from hypothesis.searchstrategy.strategies import MappedSearchStrategy, SearchStrategy
 
 
 class TupleStrategy(SearchStrategy):
@@ -39,14 +38,15 @@ class TupleStrategy(SearchStrategy):
 
     def calc_label(self):
         return combine_labels(
-            self.class_label, *[s.label for s in self.element_strategies])
+            self.class_label, *[s.label for s in self.element_strategies]
+        )
 
     def __repr__(self):
         if len(self.element_strategies) == 1:
-            tuple_string = '%s,' % (repr(self.element_strategies[0]),)
+            tuple_string = "%s," % (repr(self.element_strategies[0]),)
         else:
-            tuple_string = ', '.join(map(repr, self.element_strategies))
-        return 'TupleStrategy((%s))' % (tuple_string,)
+            tuple_string = ", ".join(map(repr, self.element_strategies))
+        return "TupleStrategy((%s))" % (tuple_string,)
 
     def calc_has_reusable_values(self, recur):
         return all(recur(e) for e in self.element_strategies)
@@ -62,10 +62,10 @@ class ListStrategy(SearchStrategy):
     """A strategy for lists which takes a strategy for its elements and the
     allowed lengths, and generates lists with the correct size and contents."""
 
-    def __init__(self, elements, min_size=0, max_size=float('inf')):
+    def __init__(self, elements, min_size=0, max_size=float("inf")):
         SearchStrategy.__init__(self)
         self.min_size = min_size or 0
-        self.max_size = max_size if max_size is not None else float('inf')
+        self.max_size = max_size if max_size is not None else float("inf")
         assert 0 <= self.min_size <= self.max_size
         self.average_size = min(
             max(self.min_size * 2, self.min_size + 5),
@@ -79,15 +79,19 @@ class ListStrategy(SearchStrategy):
     def do_validate(self):
         self.element_strategy.validate()
         if self.is_empty:
-            raise InvalidArgument((
-                'Cannot create non-empty lists with elements drawn from '
-                'strategy %r because it has no values.') % (
-                self.element_strategy,))
-        if self.element_strategy.is_empty and 0 < self.max_size < float('inf'):
+            raise InvalidArgument(
+                (
+                    "Cannot create non-empty lists with elements drawn from "
+                    "strategy %r because it has no values."
+                )
+                % (self.element_strategy,)
+            )
+        if self.element_strategy.is_empty and 0 < self.max_size < float("inf"):
             from hypothesis._settings import note_deprecation
+
             note_deprecation(
-                'Cannot create a collection of max_size=%r, because no '
-                'elements can be drawn from the element strategy %r'
+                "Cannot create a collection of max_size=%r, because no "
+                "elements can be drawn from the element strategy %r"
                 % (self.max_size, self.element_strategy)
             )
 
@@ -104,8 +108,9 @@ class ListStrategy(SearchStrategy):
 
         elements = cu.many(
             data,
-            min_size=self.min_size, max_size=self.max_size,
-            average_size=self.average_size
+            min_size=self.min_size,
+            max_size=self.max_size,
+            average_size=self.average_size,
         )
         result = []
         while elements.more():
@@ -113,14 +118,15 @@ class ListStrategy(SearchStrategy):
         return result
 
     def __repr__(self):
-        return '%s(%r, min_size=%r, max_size=%r)' % (
-            self.__class__.__name__, self.element_strategy, self.min_size,
-            self.max_size
+        return "%s(%r, min_size=%r, max_size=%r)" % (
+            self.__class__.__name__,
+            self.element_strategy,
+            self.min_size,
+            self.max_size,
         )
 
 
 class UniqueListStrategy(ListStrategy):
-
     def __init__(self, elements, min_size, max_size, key):
         super(UniqueListStrategy, self).__init__(elements, min_size, max_size)
         self.key = key
@@ -132,8 +138,9 @@ class UniqueListStrategy(ListStrategy):
 
         elements = cu.many(
             data,
-            min_size=self.min_size, max_size=self.max_size,
-            average_size=self.average_size
+            min_size=self.min_size,
+            max_size=self.max_size,
+            average_size=self.average_size,
         )
         seen = set()
         result = []
@@ -165,25 +172,18 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
             self.keys = tuple(strategy_dict.keys())
         else:
             try:
-                self.keys = tuple(sorted(
-                    strategy_dict.keys(),
-                ))
+                self.keys = tuple(sorted(strategy_dict.keys()))
             except TypeError:
-                self.keys = tuple(sorted(
-                    strategy_dict.keys(), key=repr,
-                ))
+                self.keys = tuple(sorted(strategy_dict.keys(), key=repr))
         super(FixedKeysDictStrategy, self).__init__(
-            strategy=TupleStrategy(
-                (strategy_dict[k] for k in self.keys)
-            )
+            strategy=TupleStrategy((strategy_dict[k] for k in self.keys))
         )
 
     def calc_is_empty(self, recur):
         return recur(self.mapped_strategy)
 
     def __repr__(self):
-        return 'FixedKeysDictStrategy(%r, %r)' % (
-            self.keys, self.mapped_strategy)
+        return "FixedKeysDictStrategy(%r, %r)" % (self.keys, self.mapped_strategy)
 
     def pack(self, value):
         return self.dict_type(zip(self.keys, value))

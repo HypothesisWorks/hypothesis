@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 import sys
@@ -23,10 +23,14 @@ import traceback
 from inspect import getframeinfo
 
 import hypothesis
-from hypothesis.errors import StopTest, DeadlineExceeded, \
-    MultipleFailures, HypothesisException, UnsatisfiedAssumption
-from hypothesis.internal.compat import text_type, binary_type, \
-    encoded_filepath
+from hypothesis.errors import (
+    DeadlineExceeded,
+    HypothesisException,
+    MultipleFailures,
+    StopTest,
+    UnsatisfiedAssumption,
+)
+from hypothesis.internal.compat import binary_type, encoded_filepath, text_type
 
 if False:
     from typing import Dict  # noqa
@@ -47,20 +51,19 @@ def belongs_to(package):
         cache[ftype][filepath] = result
         cache[type(new_filepath)][new_filepath] = result
         return result
-    accept.__name__ = 'is_%s_file' % (package.__name__,)
+
+    accept.__name__ = "is_%s_file" % (package.__name__,)
     return accept
 
 
-PREVENT_ESCALATION = os.getenv('HYPOTHESIS_DO_NOT_ESCALATE') == 'true'
+PREVENT_ESCALATION = os.getenv("HYPOTHESIS_DO_NOT_ESCALATE") == "true"
 
 FILE_CACHE = {}  # type: Dict[bytes, bool]
 
 
 is_hypothesis_file = belongs_to(hypothesis)
 
-HYPOTHESIS_CONTROL_EXCEPTIONS = (
-    DeadlineExceeded, StopTest, UnsatisfiedAssumption
-)
+HYPOTHESIS_CONTROL_EXCEPTIONS = (DeadlineExceeded, StopTest, UnsatisfiedAssumption)
 
 
 def mark_for_escalation(e):
@@ -72,11 +75,11 @@ def escalate_hypothesis_internal_error():
     if PREVENT_ESCALATION:
         return
     error_type, e, tb = sys.exc_info()
-    if getattr(e, 'hypothesis_internal_always_escalate', False):
+    if getattr(e, "hypothesis_internal_always_escalate", False):
         raise
     filepath = traceback.extract_tb(tb)[-1][0]
     if is_hypothesis_file(filepath) and not isinstance(
-        e, (HypothesisException,) + HYPOTHESIS_CONTROL_EXCEPTIONS,
+        e, (HypothesisException,) + HYPOTHESIS_CONTROL_EXCEPTIONS
     ):
         raise
 

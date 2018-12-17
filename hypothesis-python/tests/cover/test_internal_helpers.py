@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
@@ -23,7 +23,7 @@ from hypothesis.internal.floats import sign
 
 
 def test_sign_gives_good_type_error():
-    x = 'foo'
+    x = "foo"
     with pytest.raises(TypeError) as e:
         sign(x)
     assert repr(x) in e.value.args[0]

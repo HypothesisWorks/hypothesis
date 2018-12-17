@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 
@@ -24,6 +24,6 @@ from hypothesis.strategies import booleans
 
 
 @given(booleans())
-@pytest.mark.parametrize('hi', (1, 2, 3))
+@pytest.mark.parametrize("hi", (1, 2, 3))
 def test_parametrize_after_given(hi, i):
     pass

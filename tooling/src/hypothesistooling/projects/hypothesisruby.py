@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 import subprocess
@@ -23,27 +23,27 @@ from glob import glob
 
 import hypothesistooling as tools
 import hypothesistooling.installers as install
-import hypothesistooling.releasemanagement as rm
 import hypothesistooling.projects.conjecturerust as cr
-from hypothesistooling.junkdrawer import once, in_dir, unlink_if_present
+import hypothesistooling.releasemanagement as rm
+from hypothesistooling.junkdrawer import in_dir, once, unlink_if_present
 
-PACKAGE_NAME = 'hypothesis-ruby'
+PACKAGE_NAME = "hypothesis-ruby"
 
 HYPOTHESIS_RUBY = os.path.join(tools.ROOT, PACKAGE_NAME)
 
 BASE_DIR = HYPOTHESIS_RUBY
 
-TAG_PREFIX = PACKAGE_NAME + '-'
+TAG_PREFIX = PACKAGE_NAME + "-"
 
-RELEASE_FILE = os.path.join(BASE_DIR, 'RELEASE.md')
-CHANGELOG_FILE = os.path.join(BASE_DIR, 'CHANGELOG.md')
-GEMSPEC_FILE = os.path.join(BASE_DIR, 'hypothesis-specs.gemspec')
-CARGO_FILE = os.path.join(BASE_DIR, 'Cargo.toml')
-GEMFILE_LOCK_FILE = os.path.join(BASE_DIR, 'Gemfile.lock')
+RELEASE_FILE = os.path.join(BASE_DIR, "RELEASE.md")
+CHANGELOG_FILE = os.path.join(BASE_DIR, "CHANGELOG.md")
+GEMSPEC_FILE = os.path.join(BASE_DIR, "hypothesis-specs.gemspec")
+CARGO_FILE = os.path.join(BASE_DIR, "Cargo.toml")
+GEMFILE_LOCK_FILE = os.path.join(BASE_DIR, "Gemfile.lock")
 CONJECTURE_CARGO_FILE = cr.CARGO_FILE
 
-RUST_SRC = os.path.join(BASE_DIR, 'src')
-RUBY_SRC = os.path.join(BASE_DIR, 'lib')
+RUST_SRC = os.path.join(BASE_DIR, "src")
+RUBY_SRC = os.path.join(BASE_DIR, "lib")
 
 
 def has_release():
@@ -63,14 +63,12 @@ def update_changelog_and_version():
 
     version, version_info = rm.bump_version_info(version_info, release_type)
 
-    rm.replace_assignment(GEMSPEC_FILE, 's.version', repr(version))
-    rm.replace_assignment(
-        GEMSPEC_FILE, 's.date', repr(rm.release_date_string())
-    )
+    rm.replace_assignment(GEMSPEC_FILE, "s.version", repr(version))
+    rm.replace_assignment(GEMSPEC_FILE, "s.date", repr(rm.release_date_string()))
 
     rm.update_markdown_changelog(
         CHANGELOG_FILE,
-        name='Hypothesis for Ruby',
+        name="Hypothesis for Ruby",
         version=version,
         entry=release_contents,
     )
@@ -81,19 +79,16 @@ LOCAL_PATH_DEPENDENCY = "{ path = '../conjecture-rust' }"
 
 
 def update_conjecture_dependency(dependency):
-    rm.replace_assignment(
-        CARGO_FILE, 'conjecture',
-        dependency
-    )
+    rm.replace_assignment(CARGO_FILE, "conjecture", dependency)
 
 
 def build_distribution():
     """Build the rubygem."""
-    current_dependency = rm.extract_assignment(CARGO_FILE, 'conjecture')
+    current_dependency = rm.extract_assignment(CARGO_FILE, "conjecture")
 
     assert current_dependency == LOCAL_PATH_DEPENDENCY, (
-        'Cargo file in a bad state. Expected conjecture dependency to be %s '
-        'but it was instead %s'
+        "Cargo file in a bad state. Expected conjecture dependency to be %s "
+        "but it was instead %s"
     ) % (LOCAL_PATH_DEPENDENCY, current_dependency)
 
     conjecture_version = cr.current_version()
@@ -101,7 +96,7 @@ def build_distribution():
     # Update to use latest version of conjecture-rust.
     try:
         update_conjecture_dependency(repr(conjecture_version))
-        rake_task('gem')
+        rake_task("gem")
     finally:
         update_conjecture_dependency(LOCAL_PATH_DEPENDENCY)
 
@@ -119,10 +114,13 @@ def has_source_changes():
 def current_version():
     """Returns the current version as specified by the gemspec."""
     ensure_bundler()
-    return subprocess.check_output([
-        install.BUNDLER_EXECUTABLE, 'exec', 'ruby', '-e',
-        RUBY_TO_PRINT_VERSION
-    ]).decode('ascii').strip()
+    return (
+        subprocess.check_output(
+            [install.BUNDLER_EXECUTABLE, "exec", "ruby", "-e", RUBY_TO_PRINT_VERSION]
+        )
+        .decode("ascii")
+        .strip()
+    )
 
 
 def bundle(*args):
@@ -132,30 +130,32 @@ def bundle(*args):
 
 def bundle_command(*args):
     with in_dir(BASE_DIR):
-        subprocess.check_call([
-            install.BUNDLER_EXECUTABLE, *args
-        ])
+        subprocess.check_call([install.BUNDLER_EXECUTABLE, *args])
 
 
 def rake_task(*args):
-    bundle('exec', 'rake', *args)
+    bundle("exec", "rake", *args)
 
 
 @once
 def ensure_bundler():
     install.ensure_rustup()
     install.ensure_ruby()
-    bundle_command('install')
+    bundle_command("install")
 
 
 RUBY_TO_PRINT_VERSION = """
 require 'rubygems'
 spec = Gem::Specification::load(%r)
 puts spec.version
-""".strip().replace('\n', '; ') % (GEMSPEC_FILE,)
+""".strip().replace(
+    "\n", "; "
+) % (
+    GEMSPEC_FILE,
+)
 
 
-RUBYGEMS_CREDENTIALS = os.path.expanduser('~/.gem/credentials')
+RUBYGEMS_CREDENTIALS = os.path.expanduser("~/.gem/credentials")
 
 
 def upload_distribution():
@@ -171,8 +171,8 @@ def upload_distribution():
     os.symlink(tools.RUBYGEMS_API_KEY, RUBYGEMS_CREDENTIALS)
 
     # Give the key the right permissions.
-    os.chmod(RUBYGEMS_CREDENTIALS, int('0600', 8))
+    os.chmod(RUBYGEMS_CREDENTIALS, int("0600", 8))
 
-    subprocess.check_call([
-        install.GEM_EXECUTABLE, 'push', *glob('hypothesis-specs-*.gem')
-    ])
+    subprocess.check_call(
+        [install.GEM_EXECUTABLE, "push", *glob("hypothesis-specs-*.gem")]
+    )

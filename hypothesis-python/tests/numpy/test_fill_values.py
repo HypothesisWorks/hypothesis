@@ -15,12 +15,12 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import hypothesis.strategies as st
 from hypothesis import given
-from tests.common.debug import minimal, find_any
 from hypothesis.extra.numpy import arrays
+from tests.common.debug import find_any, minimal
 
 
 @given(arrays(object, 100, st.builds(list)))
@@ -30,21 +30,21 @@ def test_generated_lists_are_distinct(ls):
 
 @st.composite
 def distinct_integers(draw):
-    used = draw(st.shared(st.builds(set), key='distinct_integers.used'))
+    used = draw(st.shared(st.builds(set), key="distinct_integers.used"))
     i = draw(st.integers(0, 2 ** 64 - 1).filter(lambda x: x not in used))
     used.add(i)
     return i
 
 
-@given(arrays('uint64', 10, distinct_integers()))
+@given(arrays("uint64", 10, distinct_integers()))
 def test_does_not_reuse_distinct_integers(arr):
     assert len(set(arr)) == len(arr)
 
 
 def test_may_reuse_distinct_integers_if_asked():
     find_any(
-        arrays('uint64', 10, distinct_integers(), fill=distinct_integers()),
-        lambda x: len(set(x)) < len(x)
+        arrays("uint64", 10, distinct_integers(), fill=distinct_integers()),
+        lambda x: len(set(x)) < len(x),
     )
 
 
@@ -53,9 +53,13 @@ def test_minimizes_to_fill():
     assert (result == 3.0).all()
 
 
-@given(arrays(
-    dtype=float,
-    elements=st.floats().filter(bool), shape=(3, 3, 3,), fill=st.just(1.0))
+@given(
+    arrays(
+        dtype=float,
+        elements=st.floats().filter(bool),
+        shape=(3, 3, 3),
+        fill=st.just(1.0),
+    )
 )
 def test_fills_everything(x):
     assert x.all()

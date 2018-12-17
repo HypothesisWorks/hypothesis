@@ -15,21 +15,22 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
+import inspect
 import os
 import sys
-import inspect
 import warnings
 from tempfile import mkdtemp
 
 import unicodenazi
-from hypothesis import settings, unlimited
-from hypothesis.errors import HypothesisDeprecationWarning
-from hypothesis.configuration import set_hypothesis_home_dir
 
-warnings.filterwarnings('error', category=UnicodeWarning)
-warnings.filterwarnings('error', category=HypothesisDeprecationWarning)
+from hypothesis import settings, unlimited
+from hypothesis.configuration import set_hypothesis_home_dir
+from hypothesis.errors import HypothesisDeprecationWarning
+
+warnings.filterwarnings("error", category=UnicodeWarning)
+warnings.filterwarnings("error", category=HypothesisDeprecationWarning)
 unicodenazi.enable()
 
 
@@ -37,27 +38,23 @@ set_hypothesis_home_dir(mkdtemp())
 
 assert isinstance(settings, type)
 
-settings.register_profile(
-    'default', settings(timeout=unlimited)
-)
-settings.load_profile('default')
+settings.register_profile("default", settings(timeout=unlimited))
+settings.load_profile("default")
 
 
-TESTS = [
-    'test_testdecorators',
-]
+TESTS = ["test_testdecorators"]
 
-sys.path.append(os.path.join('tests', 'cover'))
+sys.path.append(os.path.join("tests", "cover"))
 
 
 def main():
     for t in TESTS:
         module = __import__(t)
         for k, v in sorted(module.__dict__.items(), key=lambda x: x[0]):
-            if k.startswith('test_') and inspect.isfunction(v):
+            if k.startswith("test_") and inspect.isfunction(v):
                 print(k)
                 v()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

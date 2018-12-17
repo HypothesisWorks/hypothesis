@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from pytest import raises
 
@@ -30,11 +30,13 @@ def test_nesting_1():
     def test_blah(x):
         @given(st.integers())
         @settings(
-            max_examples=100, phases=no_shrink, database=None,
-            verbosity=Verbosity.quiet)
+            max_examples=100, phases=no_shrink, database=None, verbosity=Verbosity.quiet
+        )
         def test_nest(y):
             if y >= x:
                 raise ValueError()
+
         with raises(ValueError):
             test_nest()
+
     test_blah()

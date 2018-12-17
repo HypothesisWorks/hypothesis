@@ -19,18 +19,17 @@
 numbers."""
 
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import sys
 import math
+import sys
 
-from hypothesis import HealthCheck, given, assume, settings
+from hypothesis import HealthCheck, assume, given, settings
+from hypothesis.strategies import data, floats, lists
 from tests.common.utils import fails
-from hypothesis.strategies import data, lists, floats
 
 TRY_HARDER = settings(
-    max_examples=1000,
-    suppress_health_check=[HealthCheck.filter_too_much]
+    max_examples=1000, suppress_health_check=[HealthCheck.filter_too_much]
 )
 
 

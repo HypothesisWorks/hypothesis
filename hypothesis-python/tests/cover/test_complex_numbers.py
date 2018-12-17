@@ -15,15 +15,15 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-import sys
 import math
+import sys
 
 import hypothesis.strategies as st
-from hypothesis import given, assume, reject
-from tests.common.debug import minimal
+from hypothesis import assume, given, reject
 from hypothesis.strategies import complex_numbers
+from tests.common.debug import minimal
 
 
 def test_minimal():
@@ -39,31 +39,19 @@ def test_minimal_nonzero_imaginary():
 
 
 def test_minimal_quadrant1():
-    assert minimal(
-        complex_numbers(),
-        lambda x: x.imag > 0 and x.real > 0
-    ) == 1 + 1j
+    assert minimal(complex_numbers(), lambda x: x.imag > 0 and x.real > 0) == 1 + 1j
 
 
 def test_minimal_quadrant2():
-    assert minimal(
-        complex_numbers(),
-        lambda x: x.imag > 0 and x.real < 0
-    ) == -1 + 1j
+    assert minimal(complex_numbers(), lambda x: x.imag > 0 and x.real < 0) == -1 + 1j
 
 
 def test_minimal_quadrant3():
-    assert minimal(
-        complex_numbers(),
-        lambda x: x.imag < 0 and x.real < 0
-    ) == -1 - 1j
+    assert minimal(complex_numbers(), lambda x: x.imag < 0 and x.real < 0) == -1 - 1j
 
 
 def test_minimal_quadrant4():
-    assert minimal(
-        complex_numbers(),
-        lambda x: x.imag < 0 and x.real > 0
-    ) == 1 - 1j
+    assert minimal(complex_numbers(), lambda x: x.imag < 0 and x.real > 0) == 1 - 1j
 
 
 @given(st.data(), st.integers(-5, 5).map(lambda x: 10 ** x))
@@ -81,37 +69,27 @@ def test_max_magnitude_zero(val):
 def test_min_magnitude_respected(data, mag):
     c = data.draw(complex_numbers(min_magnitude=mag))
     assert (
-        abs(c.real) >= mag or
-        abs(c.imag) >= mag or
-        abs(c) >= mag * (1 - sys.float_info.epsilon)
+        abs(c.real) >= mag
+        or abs(c.imag) >= mag
+        or abs(c) >= mag * (1 - sys.float_info.epsilon)
     )
 
 
 def test_minimal_min_magnitude_zero():
-    assert minimal(
-        complex_numbers(min_magnitude=0),
-        lambda x: True
-    ) == 0
+    assert minimal(complex_numbers(min_magnitude=0), lambda x: True) == 0
 
 
 def test_minimal_min_magnitude_none():
-    assert minimal(
-        complex_numbers(min_magnitude=None),
-        lambda x: True
-    ) == 0
+    assert minimal(complex_numbers(min_magnitude=None), lambda x: True) == 0
 
 
 def test_minimal_min_magnitude_positive():
-    assert minimal(
-        complex_numbers(min_magnitude=0.5),
-        lambda x: True
-    ) in (0.5, 1)
+    assert minimal(complex_numbers(min_magnitude=0.5), lambda x: True) in (0.5, 1)
 
 
 def test_minimal_minmax_magnitude():
     assert minimal(
-        complex_numbers(min_magnitude=0.5, max_magnitude=1.5),
-        lambda x: True
+        complex_numbers(min_magnitude=0.5, max_magnitude=1.5), lambda x: True
     ) in (0.5, 1)
 
 
@@ -119,7 +97,7 @@ def test_minimal_minmax_magnitude():
 def test_minmax_magnitude_equal(data, mag):
     val = data.draw(st.complex_numbers(min_magnitude=mag, max_magnitude=mag))
     try:
-        assume(abs(val) < float('inf'))
+        assume(abs(val) < float("inf"))
         assert math.isclose(abs(val), mag)
     except OverflowError:
         reject()

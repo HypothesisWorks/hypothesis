@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 
@@ -26,17 +26,17 @@ import hypothesistooling.__main__ as main
 import hypothesistooling.releasemanagement as rm
 
 
-@pytest.mark.parametrize('project', [
-    p for p in tools.all_projects() if p.has_release()
-])
+@pytest.mark.parametrize(
+    "project", [p for p in tools.all_projects() if p.has_release()]
+)
 def test_release_file_exists_and_is_valid(project, monkeypatch):
     assert not tools.has_uncommitted_changes(project.BASE_DIR)
 
-    monkeypatch.setattr(tools, 'create_tag', lambda *args, **kwargs: None)
-    monkeypatch.setattr(tools, 'push_tag', lambda name: None)
-    monkeypatch.setattr(rm, 'commit_pending_release', lambda p: None)
-    monkeypatch.setattr(project, 'upload_distribution', lambda: None)
-    monkeypatch.setattr(project, 'IN_TEST', True, raising=False)
+    monkeypatch.setattr(tools, "create_tag", lambda *args, **kwargs: None)
+    monkeypatch.setattr(tools, "push_tag", lambda name: None)
+    monkeypatch.setattr(rm, "commit_pending_release", lambda p: None)
+    monkeypatch.setattr(project, "upload_distribution", lambda: None)
+    monkeypatch.setattr(project, "IN_TEST", True, raising=False)
 
     try:
         main.do_release(project)
@@ -47,5 +47,5 @@ def test_release_file_exists_and_is_valid(project, monkeypatch):
         assert rm.release_date_string() in changelog
 
     finally:
-        tools.git('checkout', project.BASE_DIR)
+        tools.git("checkout", project.BASE_DIR)
         os.chdir(tools.ROOT)

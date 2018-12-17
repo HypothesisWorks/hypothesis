@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import unittest
 
@@ -23,17 +23,17 @@ import pytest
 
 from hypothesis import given
 from hypothesis.core import EXCEPTIONS_TO_RERAISE
-from tests.common.utils import capture_out
 from hypothesis.strategies import integers
+from tests.common.utils import capture_out
 
 
-@pytest.mark.parametrize('skip_exception', EXCEPTIONS_TO_RERAISE)
+@pytest.mark.parametrize("skip_exception", EXCEPTIONS_TO_RERAISE)
 def test_no_falsifying_example_if_unittest_skip(skip_exception):
     """If a ``SkipTest`` exception is raised during a test, Hypothesis should
     not continue running the test and shrink process, nor should it print
     anything about falsifying examples."""
-    class DemoTest(unittest.TestCase):
 
+    class DemoTest(unittest.TestCase):
         @given(xs=integers())
         def test_to_be_skipped(self, xs):
             if xs == 0:
@@ -45,4 +45,4 @@ def test_no_falsifying_example_if_unittest_skip(skip_exception):
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(DemoTest)
         unittest.TextTestRunner().run(suite)
 
-    assert 'Falsifying example' not in o.getvalue()
+    assert "Falsifying example" not in o.getvalue()

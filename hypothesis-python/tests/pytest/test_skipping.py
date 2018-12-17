@@ -15,9 +15,9 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
-pytest_plugins = str('pytester')
+pytest_plugins = str("pytester")
 
 
 PYTEST_TESTSUITE = """
@@ -39,7 +39,6 @@ def test_no_falsifying_example_if_pytest_skip(testdir):
     continue running the test and shrink process, nor should it print anything
     about falsifying examples."""
     script = testdir.makepyfile(PYTEST_TESTSUITE)
-    result = testdir.runpytest(script, '--verbose', '--strict', '-m',
-                               'hypothesis')
-    out = '\n'.join(result.stdout.lines)
-    assert 'Falsifying example' not in out
+    result = testdir.runpytest(script, "--verbose", "--strict", "-m", "hypothesis")
+    out = "\n".join(result.stdout.lines)
+    assert "Falsifying example" not in out

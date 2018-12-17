@@ -15,127 +15,128 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from random import Random
 
 import pytest
 
 from hypothesis import given
+from hypothesis.strategies import binary, characters, text, tuples
 from tests.common.debug import minimal
 from tests.common.utils import checks_deprecated_behaviour
-from hypothesis.strategies import text, binary, tuples, characters
 
 
 def test_can_minimize_up_to_zero():
-    s = minimal(text(), lambda x: any(lambda t: t <= u'0' for t in x))
-    assert s == u'0'
+    s = minimal(text(), lambda x: any(lambda t: t <= u"0" for t in x))
+    assert s == u"0"
 
 
 def test_minimizes_towards_ascii_zero():
-    s = minimal(text(), lambda x: any(t < u'0' for t in x))
-    assert s == chr(ord(u'0') - 1)
+    s = minimal(text(), lambda x: any(t < u"0" for t in x))
+    assert s == chr(ord(u"0") - 1)
 
 
 def test_can_handle_large_codepoints():
-    s = minimal(text(), lambda x: x >= u'☃')
-    assert s == u'☃'
+    s = minimal(text(), lambda x: x >= u"☃")
+    assert s == u"☃"
 
 
 def test_can_find_mixed_ascii_and_non_ascii_strings():
     s = minimal(
-        text(), lambda x: (
-            any(t >= u'☃' for t in x) and
-            any(ord(t) <= 127 for t in x)))
+        text(), lambda x: (any(t >= u"☃" for t in x) and any(ord(t) <= 127 for t in x))
+    )
     assert len(s) == 2
-    assert sorted(s) == [u'0', u'☃']
+    assert sorted(s) == [u"0", u"☃"]
 
 
 def test_will_find_ascii_examples_given_the_chance():
     s = minimal(
-        tuples(text(max_size=1), text(max_size=1)),
-        lambda x: x[0] and (x[0] < x[1]))
+        tuples(text(max_size=1), text(max_size=1)), lambda x: x[0] and (x[0] < x[1])
+    )
     assert ord(s[1]) == ord(s[0]) + 1
-    assert u'0' in s
+    assert u"0" in s
 
 
 def test_finds_single_element_strings():
-    assert minimal(text(), bool, random=Random(4)) == u'0'
+    assert minimal(text(), bool, random=Random(4)) == u"0"
 
 
 def test_binary_respects_changes_in_size():
     @given(binary())
     def test_foo(x):
         assert len(x) <= 5
+
     with pytest.raises(AssertionError):
         test_foo()
 
     @given(binary(max_size=5))
     def test_foo(x):
         assert len(x) <= 5
+
     test_foo()
 
 
 def test_does_not_simplify_into_surrogates():
-    f = minimal(text(), lambda x: x >= u'\udfff')
-    assert f == u'\ue000'
+    f = minimal(text(), lambda x: x >= u"\udfff")
+    assert f == u"\ue000"
 
     size = 5
 
-    f = minimal(
-        text(min_size=size), lambda x: sum(t >= u'\udfff' for t in x) >= size)
-    assert f == u'\ue000' * size
+    f = minimal(text(min_size=size), lambda x: sum(t >= u"\udfff" for t in x) >= size)
+    assert f == u"\ue000" * size
 
 
-@given(text(alphabet=[u'a', u'b']))
+@given(text(alphabet=[u"a", u"b"]))
 def test_respects_alphabet_if_list(xs):
-    assert set(xs).issubset(set(u'ab'))
+    assert set(xs).issubset(set(u"ab"))
 
 
-@given(text(alphabet=u'cdef'))
+@given(text(alphabet=u"cdef"))
 def test_respects_alphabet_if_string(xs):
-    assert set(xs).issubset(set(u'cdef'))
+    assert set(xs).issubset(set(u"cdef"))
 
 
 @given(text())
 def test_can_encode_as_utf8(s):
-    s.encode('utf-8')
+    s.encode("utf-8")
 
 
-@given(text(characters(blacklist_characters=u'\n')))
+@given(text(characters(blacklist_characters=u"\n")))
 def test_can_blacklist_newlines(s):
-    assert u'\n' not in s
+    assert u"\n" not in s
 
 
-@given(text(characters(blacklist_categories=('Cc', 'Cs'))))
+@given(text(characters(blacklist_categories=("Cc", "Cs"))))
 def test_can_exclude_newlines_by_category(s):
-    assert u'\n' not in s
+    assert u"\n" not in s
 
 
 @given(text(characters(max_codepoint=127)))
 def test_can_restrict_to_ascii_only(s):
-    s.encode('ascii')
+    s.encode("ascii")
 
 
 def test_fixed_size_bytes_just_draw_bytes():
     from hypothesis.internal.conjecture.data import ConjectureData
-    x = ConjectureData.for_buffer(b'foo')
-    assert x.draw(binary(min_size=3, max_size=3)) == b'foo'
+
+    x = ConjectureData.for_buffer(b"foo")
+    assert x.draw(binary(min_size=3, max_size=3)) == b"foo"
 
 
-@given(text(max_size=10**6))
+@given(text(max_size=10 ** 6))
 def test_can_set_max_size_large(s):
     pass
 
 
 @checks_deprecated_behaviour
 def test_alphabet_is_not_a_sequence():
-    text(alphabet=set('abc')).example()
+    text(alphabet=set("abc")).example()
 
 
 @checks_deprecated_behaviour
 def test_alphabet_breaking_size_limit():
-    text(['a', 'c', 'ed', 'b', 'abc']).example()
+    text(["a", "c", "ed", "b", "abc"]).example()
 
 
 @checks_deprecated_behaviour

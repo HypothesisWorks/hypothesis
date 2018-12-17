@@ -15,19 +15,19 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytest
 from mock import Mock, create_autospec
 
-from hypothesis import given, example
-from tests.common.utils import fails
+from hypothesis import example, given
 from hypothesis.strategies import integers
+from tests.common.utils import fails
 
 
 @pytest.fixture
 def infinity():
-    return float('inf')
+    return float("inf")
 
 
 @pytest.fixture
@@ -37,12 +37,13 @@ def mock_fixture():
 
 @pytest.fixture
 def spec_fixture():
-    class Foo():
+    class Foo:
         def __init__(self):
             pass
 
         def bar(self):
-            return 'baz'
+            return "baz"
+
     return create_autospec(Foo)
 
 
@@ -77,5 +78,5 @@ def test_can_inject_mock_via_fixture(mock_fixture, xs):
 
 @given(integers())
 def test_can_inject_autospecced_mock_via_fixture(spec_fixture, xs):
-    spec_fixture.bar.return_value = float('inf')
+    spec_fixture.bar.return_value = float("inf")
     assert xs <= spec_fixture.bar()

@@ -15,10 +15,10 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from hypothesis.utils.conventions import UniqueIdentifier
 
 
 def test_unique_identifier_repr():
-    assert repr(UniqueIdentifier(u'hello_world')) == u'hello_world'
+    assert repr(UniqueIdentifier(u"hello_world")) == u"hello_world"

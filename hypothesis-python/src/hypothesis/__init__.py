@@ -23,32 +23,30 @@ failing examples it finds.
 """
 
 
-from hypothesis._settings import settings, Verbosity, Phase, HealthCheck, \
-    unlimited
+from hypothesis._settings import settings, Verbosity, Phase, HealthCheck, unlimited
 from hypothesis.version import __version_info__, __version__
 from hypothesis.control import assume, note, reject, event
-from hypothesis.core import given, find, example, seed, reproduce_failure, \
-    PrintSettings
+from hypothesis.core import given, find, example, seed, reproduce_failure, PrintSettings
 from hypothesis.utils.conventions import infer
 
 
 __all__ = [
-    'settings',
-    'Verbosity',
-    'HealthCheck',
-    'Phase',
-    'PrintSettings',
-    'assume',
-    'reject',
-    'seed',
-    'given',
-    'unlimited',
-    'reproduce_failure',
-    'find',
-    'example',
-    'note',
-    'event',
-    'infer',
-    '__version__',
-    '__version_info__',
+    "settings",
+    "Verbosity",
+    "HealthCheck",
+    "Phase",
+    "PrintSettings",
+    "assume",
+    "reject",
+    "seed",
+    "given",
+    "unlimited",
+    "reproduce_failure",
+    "find",
+    "example",
+    "note",
+    "event",
+    "infer",
+    "__version__",
+    "__version_info__",
 ]

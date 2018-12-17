@@ -15,15 +15,15 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
-
 import pandas
-import hypothesis.strategies as st
+
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
-from hypothesis import given, assume
+import hypothesis.strategies as st
+from hypothesis import assume, given
 from tests.common.debug import find_any
 from tests.pandas.helpers import supported_by_pandas
 
@@ -36,18 +36,16 @@ def test_can_create_a_series_of_any_dtype(data):
     assert series.dtype == pandas.Series([], dtype=dtype).dtype
 
 
-@given(pdst.series(
-    dtype=float, index=pdst.range_indexes(min_size=2, max_size=5)))
+@given(pdst.series(dtype=float, index=pdst.range_indexes(min_size=2, max_size=5)))
 def test_series_respects_size_bounds(s):
     assert 2 <= len(s) <= 5
 
 
 def test_can_fill_series():
     nan_backed = pdst.series(
-        elements=st.floats(allow_nan=False), fill=st.just(float('nan')))
-    find_any(
-        nan_backed, lambda x: np.isnan(x).any()
+        elements=st.floats(allow_nan=False), fill=st.just(float("nan"))
     )
+    find_any(nan_backed, lambda x: np.isnan(x).any())
 
 
 @given(pdst.series(dtype=int))
@@ -57,7 +55,7 @@ def test_can_generate_integral_series(s):
 
 @given(pdst.series(elements=st.integers(0, 10)))
 def test_will_use_dtype_of_elements(s):
-    assert s.dtype == np.dtype('int64')
+    assert s.dtype == np.dtype("int64")
 
 
 @given(pdst.series(elements=st.floats(allow_nan=False)))
@@ -65,6 +63,6 @@ def test_will_use_a_provided_elements_strategy(s):
     assert not np.isnan(s).any()
 
 
-@given(pdst.series(dtype='int8', unique=True))
+@given(pdst.series(dtype="int8", unique=True))
 def test_unique_series_are_unique(s):
     assert len(s) == len(set(s))

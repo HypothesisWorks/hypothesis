@@ -15,17 +15,25 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import random
 
 import attr
 import pytest
 
-import hypothesis.strategies as st
 import hypothesis.internal.escalation as esc
-from hypothesis import Phase, Verbosity, HealthCheck, note, given, \
-    assume, settings, unlimited
+import hypothesis.strategies as st
+from hypothesis import (
+    HealthCheck,
+    Phase,
+    Verbosity,
+    assume,
+    given,
+    note,
+    settings,
+    unlimited,
+)
 from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -63,18 +71,14 @@ nodes = st.deferred(lambda: terminals | writes | branches)
 # Does not include Status.OVERFLOW by design: That happens because of the size
 # of the string, not the input language.
 terminals = st.one_of(
-    st.just(Terminal(Status.VALID)), st.just(Terminal(Status.INVALID)),
-    st.builds(
-        Terminal, status=st.just(Status.INTERESTING),
-        payload=st.integers(0, 10)
-    )
+    st.just(Terminal(Status.VALID)),
+    st.just(Terminal(Status.INVALID)),
+    st.builds(Terminal, status=st.just(Status.INTERESTING), payload=st.integers(0, 10)),
 )
 
 branches = st.builds(Branch, bits=st.integers(1, 64))
 
-writes = st.builds(
-    Write, value=st.binary(min_size=1), child=nodes
-)
+writes = st.builds(Write, value=st.binary(min_size=1), child=nodes)
 
 
 def run_language_test_for(root, data, seed):
@@ -101,11 +105,18 @@ def run_language_test_for(root, data, seed):
         elif node.status == Status.INVALID:
             local_data.mark_invalid()
 
-    runner = ConjectureRunner(test, settings=settings(
-        max_examples=1, max_shrinks=100, buffer_size=512,
-        database=None, suppress_health_check=HealthCheck.all(),
-        verbosity=Verbosity.quiet, phases=list(Phase),
-    ))
+    runner = ConjectureRunner(
+        test,
+        settings=settings(
+            max_examples=1,
+            max_shrinks=100,
+            buffer_size=512,
+            database=None,
+            suppress_health_check=HealthCheck.all(),
+            verbosity=Verbosity.quiet,
+            phases=list(Phase),
+        ),
+    )
     try:
         runner.run()
     finally:
@@ -115,8 +126,10 @@ def run_language_test_for(root, data, seed):
 
 
 @settings(
-    max_examples=100, suppress_health_check=HealthCheck.all(),
-    deadline=None, timeout=unlimited,
+    max_examples=100,
+    suppress_health_check=HealthCheck.all(),
+    deadline=None,
+    timeout=unlimited,
     phases=set(Phase) - {Phase.shrink},
 )
 @given(st.data())
@@ -126,10 +139,7 @@ def test_explore_an_arbitrary_language(data):
     run_language_test_for(root, data, seed)
 
 
-@pytest.mark.parametrize(
-    'seed, language', [
-    ]
-)
+@pytest.mark.parametrize("seed, language", [])
 def test_run_specific_example(seed, language):
     """This test recreates individual languages generated with the main test.
 

@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import time
 import warnings
@@ -24,8 +24,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, given, settings, unlimited
-from hypothesis.errors import Flaky, DeadlineExceeded, \
-    HypothesisDeprecationWarning
+from hypothesis.errors import DeadlineExceeded, Flaky, HypothesisDeprecationWarning
 from tests.common.utils import capture_out, checks_deprecated_behaviour
 
 
@@ -43,12 +42,13 @@ def test_only_warns_once():
     @given(st.integers())
     def slow(i):
         time.sleep(1)
+
     try:
-        warnings.simplefilter('always', HypothesisDeprecationWarning)
+        warnings.simplefilter("always", HypothesisDeprecationWarning)
         with warnings.catch_warnings(record=True) as w:
             slow()
     finally:
-        warnings.simplefilter('error', HypothesisDeprecationWarning)
+        warnings.simplefilter("error", HypothesisDeprecationWarning)
     assert len(w) == 1
 
 
@@ -73,6 +73,7 @@ def test_raises_flaky_if_a_test_becomes_fast_on_rerun():
         if once[0]:
             once[0] = False
             time.sleep(1)
+
     with pytest.raises(Flaky):
         test_flaky_slow()
 
@@ -87,16 +88,16 @@ def test_deadlines_participate_in_shrinking():
     with capture_out() as o:
         with pytest.raises(DeadlineExceeded):
             slow_if_large()
-    assert 'slow_if_large(i=10000)' in o.getvalue()
+    assert "slow_if_large(i=10000)" in o.getvalue()
 
 
 def test_keeps_you_well_above_the_deadline():
     seen = set()
     failed_once = [False]
 
-    @settings(deadline=100, timeout=unlimited, suppress_health_check=[
-        HealthCheck.hung_test
-    ])
+    @settings(
+        deadline=100, timeout=unlimited, suppress_health_check=[HealthCheck.hung_test]
+    )
     @given(st.integers(0, 2000))
     def slow(i):
         # Make sure our initial failure isn't something that immediately goes
@@ -131,15 +132,13 @@ def test_gives_a_deadline_specific_flaky_error_message():
     with capture_out() as o:
         with pytest.raises(Flaky):
             slow_once()
-    assert 'Unreliable test timing' in o.getvalue()
-    assert 'took 2' in o.getvalue()
+    assert "Unreliable test timing" in o.getvalue()
+    assert "took 2" in o.getvalue()
 
 
-@pytest.mark.parametrize('slow_strategy', [False, True])
-@pytest.mark.parametrize('slow_test', [False, True])
-def test_should_only_fail_a_deadline_if_the_test_is_slow(
-    slow_strategy, slow_test
-):
+@pytest.mark.parametrize("slow_strategy", [False, True])
+@pytest.mark.parametrize("slow_test", [False, True])
+def test_should_only_fail_a_deadline_if_the_test_is_slow(slow_strategy, slow_test):
     s = st.integers()
     if slow_strategy:
         s = s.map(lambda x: time.sleep(0.08))

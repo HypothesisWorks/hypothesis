@@ -15,11 +15,10 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from hypothesis.internal.compat import hrange
-from hypothesis.internal.conjecture.shrinking.common import Shrinker, \
-    find_integer
+from hypothesis.internal.conjecture.shrinking.common import Shrinker, find_integer
 
 
 """
@@ -42,7 +41,7 @@ class Integer(Shrinker):
         if self.size > 8:
             # see if we can squeeze the integer into a single byte.
             self.consider(self.current >> (self.size - 8))
-            self.consider(self.current & 0xff)
+            self.consider(self.current & 0xFF)
         return self.current == 2
 
     def check_invariants(self, value):
@@ -58,9 +57,7 @@ class Integer(Shrinker):
 
     def shift_right(self):
         base = self.current
-        find_integer(lambda k: k <= self.size and self.consider(
-            base >> k
-        ))
+        find_integer(lambda k: k <= self.size and self.consider(base >> k))
 
     def mask_high_bits(self):
         base = self.current
@@ -84,4 +81,5 @@ class Integer(Shrinker):
         def shrunk(n):
             attempt = base - n * k
             return attempt >= 0 and self.consider(attempt)
+
         return shrunk > 0

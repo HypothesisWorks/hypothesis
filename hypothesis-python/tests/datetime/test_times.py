@@ -15,14 +15,14 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import pytz
 
-from hypothesis import given, assume
-from tests.common.debug import minimal, find_any
-from tests.common.utils import checks_deprecated_behaviour
+from hypothesis import assume, given
 from hypothesis.extra.datetime import times
+from tests.common.debug import find_any, minimal
+from tests.common.utils import checks_deprecated_behaviour
 
 
 @checks_deprecated_behaviour
@@ -61,15 +61,12 @@ def test_can_generate_naive_time():
 
 @checks_deprecated_behaviour
 def test_can_generate_non_naive_time():
-    assert minimal(
-        times(allow_naive=True), lambda d: d.tzinfo).tzinfo == pytz.UTC
+    assert minimal(times(allow_naive=True), lambda d: d.tzinfo).tzinfo == pytz.UTC
 
 
 @checks_deprecated_behaviour
 def test_can_generate_non_utc():
-    times().filter(
-        lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC'
-    ).example()
+    times().filter(lambda d: assume(d.tzinfo) and d.tzinfo.zone != u"UTC").example()
 
 
 @checks_deprecated_behaviour

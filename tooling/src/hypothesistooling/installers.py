@@ -22,7 +22,7 @@ this work on Windows as well by using Anaconda (as our build already
 does).
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import os
 import subprocess
@@ -31,11 +31,11 @@ import hypothesistooling.scripts as scripts
 from hypothesistooling import git
 from hypothesistooling.junkdrawer import once
 
-HOME = os.environ['HOME']
+HOME = os.environ["HOME"]
 
 
 def __python_executable(version):
-    return os.path.join(scripts.SNAKEPIT, version, 'bin', 'python')
+    return os.path.join(scripts.SNAKEPIT, version, "bin", "python")
 
 
 def python_executable(version):
@@ -49,32 +49,33 @@ PYTHONS = set()
 def ensure_python(version):
     if version in PYTHONS:
         return
-    scripts.run_script('ensure-python.sh', version)
+    scripts.run_script("ensure-python.sh", version)
     target = __python_executable(version)
     assert os.path.exists(target), target
     PYTHONS.add(version)
 
 
-STACK = os.path.join(HOME, '.local', 'bin', 'stack')
-GHC = os.path.join(HOME, '.local', 'bin', 'ghc')
-SHELLCHECK = os.path.join(HOME, '.local', 'bin', 'shellcheck')
+STACK = os.path.join(HOME, ".local", "bin", "stack")
+GHC = os.path.join(HOME, ".local", "bin", "ghc")
+SHELLCHECK = os.path.join(HOME, ".local", "bin", "shellcheck")
 
 
 def ensure_stack():
     if os.path.exists(STACK):
         return
-    subprocess.check_call('mkdir -p ~/.local/bin', shell=True)
+    subprocess.check_call("mkdir -p ~/.local/bin", shell=True)
     subprocess.check_call(
-        'curl -L https://www.stackage.org/stack/linux-x86_64 '
-        '| tar xz --wildcards --strip-components=1 -C $HOME'
-        "/.local/bin '*/stack'", shell=True
+        "curl -L https://www.stackage.org/stack/linux-x86_64 "
+        "| tar xz --wildcards --strip-components=1 -C $HOME"
+        "/.local/bin '*/stack'",
+        shell=True,
     )
 
 
 @once
 def update_stack():
     ensure_stack()
-    subprocess.check_call([STACK, 'update'])
+    subprocess.check_call([STACK, "update"])
 
 
 @once
@@ -82,7 +83,7 @@ def ensure_ghc():
     if os.path.exists(GHC):
         return
     update_stack()
-    subprocess.check_call([STACK, 'setup'])
+    subprocess.check_call([STACK, "setup"])
 
 
 @once
@@ -91,44 +92,41 @@ def ensure_shellcheck():
         return
     update_stack()
     ensure_ghc()
-    subprocess.check_call([STACK, 'install', 'ShellCheck'])
+    subprocess.check_call([STACK, "install", "ShellCheck"])
 
 
 @once
 def ensure_rustup():
-    scripts.run_script('ensure-rustup.sh')
+    scripts.run_script("ensure-rustup.sh")
 
 
-RUBY_BUILD = os.path.join(scripts.RBENV_ROOT, 'plugins', 'ruby-build')
+RUBY_BUILD = os.path.join(scripts.RBENV_ROOT, "plugins", "ruby-build")
 
-RUBY_BIN_DIR = os.path.join(scripts.INSTALLED_RUBY_DIR, 'bin')
+RUBY_BIN_DIR = os.path.join(scripts.INSTALLED_RUBY_DIR, "bin")
 
-BUNDLER_EXECUTABLE = os.path.join(RUBY_BIN_DIR, 'bundle')
-GEM_EXECUTABLE = os.path.join(RUBY_BIN_DIR, 'gem')
+BUNDLER_EXECUTABLE = os.path.join(RUBY_BIN_DIR, "bundle")
+GEM_EXECUTABLE = os.path.join(RUBY_BIN_DIR, "gem")
 
-RBENV_COMMAND = os.path.join(scripts.RBENV_ROOT, 'bin', 'rbenv')
+RBENV_COMMAND = os.path.join(scripts.RBENV_ROOT, "bin", "rbenv")
 
 
 @once
 def ensure_ruby():
     if not os.path.exists(scripts.RBENV_ROOT):
-        git('clone', 'https://github.com/rbenv/rbenv.git', scripts.RBENV_ROOT)
+        git("clone", "https://github.com/rbenv/rbenv.git", scripts.RBENV_ROOT)
 
     if not os.path.exists(RUBY_BUILD):
-        git('clone', 'https://github.com/rbenv/ruby-build.git', RUBY_BUILD)
+        git("clone", "https://github.com/rbenv/ruby-build.git", RUBY_BUILD)
 
     if not os.path.exists(
-        os.path.join(scripts.RBENV_ROOT, 'versions', scripts.RBENV_VERSION)
+        os.path.join(scripts.RBENV_ROOT, "versions", scripts.RBENV_VERSION)
     ):
-        subprocess.check_call(
-            [RBENV_COMMAND, 'install', scripts.RBENV_VERSION])
+        subprocess.check_call([RBENV_COMMAND, "install", scripts.RBENV_VERSION])
 
     if not (
-        os.path.exists(BUNDLER_EXECUTABLE) and
-        subprocess.call([BUNDLER_EXECUTABLE, 'version']) == 0
+        os.path.exists(BUNDLER_EXECUTABLE)
+        and subprocess.call([BUNDLER_EXECUTABLE, "version"]) == 0
     ):
-        subprocess.check_call(
-            [GEM_EXECUTABLE, 'install', 'bundler']
-        )
+        subprocess.check_call([GEM_EXECUTABLE, "install", "bundler"])
 
     assert os.path.exists(BUNDLER_EXECUTABLE)

@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from inspect import cleandoc
 
@@ -45,10 +45,14 @@ def renamed_arguments(**rename_mapping):
             for k, v in list(kwargs.items()):
                 if k in rename_mapping and v is not None:
                     t = rename_mapping[k]
-                    note_deprecation((
-                        'The argument %s has been renamed to %s. The old '
-                        'name will go away in a future version of '
-                        'Hypothesis.') % (k, t))
+                    note_deprecation(
+                        (
+                            "The argument %s has been renamed to %s. The old "
+                            "name will go away in a future version of "
+                            "Hypothesis."
+                        )
+                        % (k, t)
+                    )
                     kwargs[t] = kwargs.pop(k)
             return f(**kwargs)
 
@@ -65,19 +69,18 @@ def renamed_arguments(**rename_mapping):
             # different indentation level and so prevents the later clean step
             # from working properly. So we clean here first.
             with_name_check.__doc__ = cleandoc(with_name_check.__doc__)
-            with_name_check.__doc__ += '\n'.join((
-                '', '',
-                'The following arguments have been renamed:',
-                '',
-            ) + tuple(
-                '  * %s has been renamed to %s' % s
-                for s in rename_mapping.items()
-            ) + (
-                '',
-                'Use of the old names has been deprecated and will be removed',
-                'in a future version of Hypothesis.'
-            )
+            with_name_check.__doc__ += "\n".join(
+                ("", "", "The following arguments have been renamed:", "")
+                + tuple(
+                    "  * %s has been renamed to %s" % s for s in rename_mapping.items()
+                )
+                + (
+                    "",
+                    "Use of the old names has been deprecated and will be removed",
+                    "in a future version of Hypothesis.",
+                )
             )
 
         return with_name_check
+
     return accept

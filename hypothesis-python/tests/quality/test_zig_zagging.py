@@ -15,14 +15,22 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import random
 from math import log
 
 import hypothesis.strategies as st
-from hypothesis import Phase, Verbosity, HealthCheck, given, assume, \
-    example, settings, unlimited
+from hypothesis import (
+    HealthCheck,
+    Phase,
+    Verbosity,
+    assume,
+    example,
+    given,
+    settings,
+    unlimited,
+)
 from hypothesis.internal.compat import ceil, hbytes, int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -40,26 +48,26 @@ def problem(draw):
 
 base_settings = settings(
     database=None,
-    deadline=None, suppress_health_check=HealthCheck.all(), max_examples=10,
-    verbosity=Verbosity.normal, timeout=unlimited,
-    phases=(
-        Phase.explicit,
-        Phase.generate
-    )
+    deadline=None,
+    suppress_health_check=HealthCheck.all(),
+    max_examples=10,
+    verbosity=Verbosity.normal,
+    timeout=unlimited,
+    phases=(Phase.explicit, Phase.generate),
 )
 
 
-@example((b'\x10\x00\x00\x00\x00\x00', b'', 2861143707951135))
-@example((b'\x05Cn', b'%\x1b\xa0\xfa', 12394667))
-@example((b'\x179 f', b'\xf5|', 24300326997))
-@example((b'\x05*\xf5\xe5\nh', b'', 1076887621690235))
-@example((b'=', b'', 2508))
-@example((b'\x01\x00', b'', 20048))
-@example((b'\x01', b'', 0))
-@example((b'\x02', b'', 258))
-@example((b'\x08', b'', 1792))
-@example((b'\x0c', b'', 0))
-@example((b'\x01', b'', 1))
+@example((b"\x10\x00\x00\x00\x00\x00", b"", 2861143707951135))
+@example((b"\x05Cn", b"%\x1b\xa0\xfa", 12394667))
+@example((b"\x179 f", b"\xf5|", 24300326997))
+@example((b"\x05*\xf5\xe5\nh", b"", 1076887621690235))
+@example((b"=", b"", 2508))
+@example((b"\x01\x00", b"", 20048))
+@example((b"\x01", b"", 0))
+@example((b"\x02", b"", 258))
+@example((b"\x08", b"", 1792))
+@example((b"\x0c", b"", 0))
+@example((b"\x01", b"", 1))
 @settings(
     base_settings,
     verbosity=Verbosity.normal,
@@ -93,14 +101,14 @@ def test_avoids_zig_zag_trap(p):
             data.mark_interesting()
 
     runner = ConjectureRunner(
-        test_function, database_key=None, settings=settings(
-            base_settings,
-            phases=(Phase.generate, Phase.shrink)
-        )
+        test_function,
+        database_key=None,
+        settings=settings(base_settings, phases=(Phase.generate, Phase.shrink)),
     )
 
-    runner.test_function(ConjectureData.for_buffer(
-        b + hbytes([0]) + b + hbytes([1]) + marker))
+    runner.test_function(
+        ConjectureData.for_buffer(b + hbytes([0]) + b + hbytes([1]) + marker)
+    )
 
     assert runner.interesting_examples
 

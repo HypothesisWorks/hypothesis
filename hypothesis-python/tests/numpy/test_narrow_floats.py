@@ -15,18 +15,18 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
 from hypothesis import given
-from hypothesis.strategies import data, floats, integers
 from hypothesis.extra.numpy import from_dtype, integer_dtypes
+from hypothesis.strategies import data, floats, integers
 
 
 @given(floats(width=32))
 def test_float32_exactly_representable(x):
-    clipped = np.dtype('float32').type(x)
+    clipped = np.dtype("float32").type(x)
     if np.isnan(x):
         assert np.isnan(clipped)
     else:
@@ -35,7 +35,7 @@ def test_float32_exactly_representable(x):
 
 @given(floats(width=16))
 def test_float16_exactly_representable(x):
-    clipped = np.dtype('float16').type(x)
+    clipped = np.dtype("float16").type(x)
     if np.isnan(x):
         assert np.isnan(clipped)
     else:

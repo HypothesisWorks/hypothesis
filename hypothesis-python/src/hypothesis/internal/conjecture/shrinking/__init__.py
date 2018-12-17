@@ -21,6 +21,4 @@ from hypothesis.internal.conjecture.shrinking.lexical import Lexical
 from hypothesis.internal.conjecture.shrinking.ordering import Ordering
 
 
-__all__ = [
-    'Lexical', 'Length', 'Integer', 'Ordering'
-]
+__all__ = ["Lexical", "Length", "Integer", "Ordering"]

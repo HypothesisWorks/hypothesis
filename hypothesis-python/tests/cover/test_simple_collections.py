@@ -15,50 +15,55 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from random import Random
 
 import pytest
 
 from hypothesis import given, settings
-from tests.common.debug import minimal, find_any
-from hypothesis.strategies import none, sets, text, lists, tuples, \
-    booleans, integers, frozensets, dictionaries, fixed_dictionaries
 from hypothesis.internal.compat import OrderedDict
+from hypothesis.strategies import (
+    booleans,
+    dictionaries,
+    fixed_dictionaries,
+    frozensets,
+    integers,
+    lists,
+    none,
+    sets,
+    text,
+    tuples,
+)
+from tests.common.debug import find_any, minimal
 
 
-@pytest.mark.parametrize((u'col', u'strat'), [
-    ((), tuples()),
-    ([], lists(none(), max_size=0)),
-    (set(), sets(none(), max_size=0)),
-    (frozenset(), frozensets(none(), max_size=0)),
-    ({}, fixed_dictionaries({})),
-])
+@pytest.mark.parametrize(
+    (u"col", u"strat"),
+    [
+        ((), tuples()),
+        ([], lists(none(), max_size=0)),
+        (set(), sets(none(), max_size=0)),
+        (frozenset(), frozensets(none(), max_size=0)),
+        ({}, fixed_dictionaries({})),
+    ],
+)
 def test_find_empty_collection_gives_empty(col, strat):
     assert minimal(strat, lambda x: True) == col
 
 
-@pytest.mark.parametrize((u'coltype', u'strat'), [
-    (list, lists),
-    (set, sets),
-    (frozenset, frozensets),
-])
+@pytest.mark.parametrize(
+    (u"coltype", u"strat"), [(list, lists), (set, sets), (frozenset, frozensets)]
+)
 def test_find_non_empty_collection_gives_single_zero(coltype, strat):
-    assert minimal(
-        strat(integers()), bool
-    ) == coltype((0,))
+    assert minimal(strat(integers()), bool) == coltype((0,))
 
 
-@pytest.mark.parametrize((u'coltype', u'strat'), [
-    (list, lists),
-    (set, sets),
-    (frozenset, frozensets),
-])
+@pytest.mark.parametrize(
+    (u"coltype", u"strat"), [(list, lists), (set, sets), (frozenset, frozensets)]
+)
 def test_minimizes_to_empty(coltype, strat):
-    assert minimal(
-        strat(integers()), lambda x: True
-    ) == coltype()
+    assert minimal(strat(integers()), lambda x: True) == coltype()
 
 
 def test_minimizes_list_of_lists():
@@ -77,21 +82,18 @@ def test_ordered_dictionaries_preserve_keys():
     r = Random()
     keys = list(range(100))
     r.shuffle(keys)
-    x = fixed_dictionaries(
-        OrderedDict([(k, booleans()) for k in keys])).example()
+    x = fixed_dictionaries(OrderedDict([(k, booleans()) for k in keys])).example()
     assert list(x.keys()) == keys
 
 
-@pytest.mark.parametrize(u'n', range(10))
+@pytest.mark.parametrize(u"n", range(10))
 def test_lists_of_fixed_length(n):
-    assert minimal(
-        lists(integers(), min_size=n, max_size=n), lambda x: True) == [0] * n
+    assert minimal(lists(integers(), min_size=n, max_size=n), lambda x: True) == [0] * n
 
 
-@pytest.mark.parametrize(u'n', range(10))
+@pytest.mark.parametrize(u"n", range(10))
 def test_sets_of_fixed_length(n):
-    x = minimal(
-        sets(integers(), min_size=n, max_size=n), lambda x: True)
+    x = minimal(sets(integers(), min_size=n, max_size=n), lambda x: True)
     assert len(x) == n
 
     if not n:
@@ -100,11 +102,13 @@ def test_sets_of_fixed_length(n):
         assert x == set(range(min(x), min(x) + n))
 
 
-@pytest.mark.parametrize(u'n', range(10))
+@pytest.mark.parametrize(u"n", range(10))
 def test_dictionaries_of_fixed_length(n):
-    x = set(minimal(
-        dictionaries(integers(), booleans(), min_size=n, max_size=n),
-        lambda x: True).keys())
+    x = set(
+        minimal(
+            dictionaries(integers(), booleans(), min_size=n, max_size=n), lambda x: True
+        ).keys()
+    )
 
     if not n:
         assert x == set()
@@ -112,11 +116,9 @@ def test_dictionaries_of_fixed_length(n):
         assert x == set(range(min(x), min(x) + n))
 
 
-@pytest.mark.parametrize(u'n', range(10))
+@pytest.mark.parametrize(u"n", range(10))
 def test_lists_of_lower_bounded_length(n):
-    x = minimal(
-        lists(integers(), min_size=n), lambda x: sum(x) >= 2 * n
-    )
+    x = minimal(lists(integers(), min_size=n), lambda x: sum(x) >= 2 * n)
     assert n <= len(x) <= 2 * n
     assert all(t >= 0 for t in x)
     assert len(x) == n or all(t > 0 for t in x)
@@ -135,10 +137,7 @@ def test_can_find_unique_lists_of_non_set_order():
     # a consistent value. This could be 0, or it could be the PYTHONHASHSEED
     # value listed in a failure log from CI.
 
-    ls = minimal(
-        lists(text(), unique=True),
-        lambda x: list(set(reversed(x))) != x
-    )
+    ls = minimal(lists(text(), unique=True), lambda x: list(set(reversed(x))) != x)
     assert len(set(ls)) == len(ls)
     assert len(ls) == 2
 
@@ -161,6 +160,5 @@ def test_small_sized_sets(x):
 
 def test_minimize_dicts_with_incompatible_keys():
     assert minimal(
-        fixed_dictionaries({1: booleans(), u'hi': lists(booleans())}),
-        lambda x: True
-    ) == {1: False, u'hi': []}
+        fixed_dictionaries({1: booleans(), u"hi": lists(booleans())}), lambda x: True
+    ) == {1: False, u"hi": []}

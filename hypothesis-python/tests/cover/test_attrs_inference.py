@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import attr
 import pytest
@@ -30,34 +30,35 @@ class Inferrables(object):
     type_ = attr.ib(type=int)
     type_converter = attr.ib(converter=bool)
     validator_type = attr.ib(validator=attr.validators.instance_of(str))
-    validator_type_tuple = attr.ib(
-        validator=attr.validators.instance_of((str, int))
+    validator_type_tuple = attr.ib(validator=attr.validators.instance_of((str, int)))
+    validator_type_multiple = attr.ib(
+        validator=[
+            attr.validators.instance_of(str),
+            attr.validators.instance_of((str, int, bool)),
+        ]
     )
-    validator_type_multiple = attr.ib(validator=[
-        attr.validators.instance_of(str),
-        attr.validators.instance_of((str, int, bool)),
-    ])
-    validator_type_has_overlap = attr.ib(validator=[
-        attr.validators.instance_of(str),
-        attr.validators.instance_of((str, list)),
-        attr.validators.instance_of(object),
-    ])
+    validator_type_has_overlap = attr.ib(
+        validator=[
+            attr.validators.instance_of(str),
+            attr.validators.instance_of((str, list)),
+            attr.validators.instance_of(object),
+        ]
+    )
     validator_optional = attr.ib(
         validator=attr.validators.optional(lambda inst, atrib, val: float(val))
     )
     validator_in = attr.ib(validator=attr.validators.in_([1, 2, 3]))
-    validator_in_multiple = attr.ib(validator=[
-        attr.validators.in_(list(range(100))),
-        attr.validators.in_([1, -1]),
-    ])
-    validator_in_multiple_strings = attr.ib(validator=[
-        attr.validators.in_('abcd'),
-        attr.validators.in_(['ab', 'cd']),
-    ])
+    validator_in_multiple = attr.ib(
+        validator=[attr.validators.in_(list(range(100))), attr.validators.in_([1, -1])]
+    )
+    validator_in_multiple_strings = attr.ib(
+        validator=[attr.validators.in_("abcd"), attr.validators.in_(["ab", "cd"])]
+    )
     has_default = attr.ib(default=0)
     has_default_factory = attr.ib(default=attr.Factory(list))
     has_default_factory_takes_self = attr.ib(  # uninferrable but has default
-        default=attr.Factory(lambda _: list(), takes_self=True))
+        default=attr.Factory(lambda _: list(), takes_self=True)
+    )
 
 
 @attr.s
@@ -80,7 +81,7 @@ def test_attrs_inference_from_type(c):
     pass
 
 
-@pytest.mark.parametrize('c', [Required, UnhelpfulConverter])
+@pytest.mark.parametrize("c", [Required, UnhelpfulConverter])
 def test_cannot_infer(c):
     with pytest.raises(ResolutionFailed):
         st.builds(c).example()

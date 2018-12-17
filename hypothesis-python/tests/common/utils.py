@@ -15,18 +15,18 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
+import contextlib
 import sys
 import traceback
-import contextlib
 from io import BytesIO, StringIO
 
-from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis._settings import Phase
-from hypothesis.reporting import default, with_reporter
+from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.internal.compat import PY2
 from hypothesis.internal.reflection import proxies
+from hypothesis.reporting import default, with_reporter
 
 no_shrink = tuple(set(Phase) - {Phase.shrink})
 
@@ -65,7 +65,9 @@ def fails_with(e):
         def inverted_test(*arguments, **kwargs):
             with raises(e):
                 f(*arguments, **kwargs)
+
         return inverted_test
+
     return accepts
 
 
@@ -81,25 +83,26 @@ def validate_deprecation():
     import warnings
 
     try:
-        warnings.simplefilter('always', HypothesisDeprecationWarning)
+        warnings.simplefilter("always", HypothesisDeprecationWarning)
         with warnings.catch_warnings(record=True) as w:
             yield
     finally:
-        warnings.simplefilter('error', HypothesisDeprecationWarning)
-        if not any(
-            e.category == HypothesisDeprecationWarning for e in w
-        ):
+        warnings.simplefilter("error", HypothesisDeprecationWarning)
+        if not any(e.category == HypothesisDeprecationWarning for e in w):
             raise NotDeprecated(
-                'Expected to get a deprecation warning but got %r' % (
-                    [e.category for e in w],))
+                "Expected to get a deprecation warning but got %r"
+                % ([e.category for e in w],)
+            )
 
 
 def checks_deprecated_behaviour(func):
     """A decorator for testing deprecated behaviour."""
+
     @proxies(func)
     def _inner(*args, **kwargs):
         with validate_deprecation():
             return func(*args, **kwargs)
+
     return _inner
 
 
@@ -109,8 +112,5 @@ def all_values(db):
 
 def non_covering_examples(database):
     return {
-        v
-        for k, vs in database.data.items()
-        if not k.endswith(b'.coverage')
-        for v in vs
+        v for k, vs in database.data.items() if not k.endswith(b".coverage") for v in vs
     }

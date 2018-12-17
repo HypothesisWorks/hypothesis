@@ -15,14 +15,14 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import hypothesis.strategies as st
-from hypothesis import core, find, given, assume, settings
-from hypothesis.errors import NoSuchExample, Unsatisfiable
-from tests.common.utils import all_values, non_covering_examples
+from hypothesis import assume, core, find, given, settings
 from hypothesis.database import InMemoryExampleDatabase
+from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.compat import hbytes
+from tests.common.utils import all_values, non_covering_examples
 
 
 def has_a_non_zero_byte(x):
@@ -30,17 +30,19 @@ def has_a_non_zero_byte(x):
 
 
 def test_saves_incremental_steps_in_database():
-    key = b'a database key'
+    key = b"a database key"
     database = InMemoryExampleDatabase()
     find(
-        st.binary(min_size=10), lambda x: has_a_non_zero_byte(x),
-        settings=settings(database=database), database_key=key
+        st.binary(min_size=10),
+        lambda x: has_a_non_zero_byte(x),
+        settings=settings(database=database),
+        database_key=key,
     )
     assert len(all_values(database)) > 1
 
 
 def test_clears_out_database_as_things_get_boring():
-    key = b'a database key'
+    key = b"a database key"
     database = InMemoryExampleDatabase()
     do_we_care = True
 
@@ -50,10 +52,11 @@ def test_clears_out_database_as_things_get_boring():
                 st.binary(min_size=50),
                 lambda x: do_we_care and has_a_non_zero_byte(x),
                 settings=settings(database=database, max_examples=10),
-                database_key=key
+                database_key=key,
             )
         except NoSuchExample:
             pass
+
     stuff()
     assert len(non_covering_examples(database)) > 1
     do_we_care = False
@@ -71,7 +74,7 @@ def test_clears_out_database_as_things_get_boring():
 
 
 def test_trashes_invalid_examples():
-    key = b'a database key'
+    key = b"a database key"
     database = InMemoryExampleDatabase()
     finicky = False
 
@@ -81,10 +84,11 @@ def test_trashes_invalid_examples():
                 st.binary(min_size=100),
                 lambda x: assume(not finicky) and has_a_non_zero_byte(x),
                 settings=settings(database=database),
-                database_key=key
+                database_key=key,
             )
         except Unsatisfiable:
             pass
+
     stuff()
     original = len(all_values(database))
     assert original > 1
@@ -94,7 +98,7 @@ def test_trashes_invalid_examples():
 
 
 def test_respects_max_examples_in_database_usage():
-    key = b'a database key'
+    key = b"a database key"
     database = InMemoryExampleDatabase()
     do_we_care = True
     counter = [0]
@@ -106,12 +110,14 @@ def test_respects_max_examples_in_database_usage():
     def stuff():
         try:
             find(
-                st.binary(min_size=100), check,
+                st.binary(min_size=100),
+                check,
                 settings=settings(database=database, max_examples=10),
-                database_key=key
+                database_key=key,
             )
         except NoSuchExample:
             pass
+
     stuff()
     assert len(all_values(database)) > 10
     do_we_care = False
@@ -121,7 +127,7 @@ def test_respects_max_examples_in_database_usage():
 
 
 def test_does_not_use_database_when_seed_is_forced(monkeypatch):
-    monkeypatch.setattr(core, 'global_force_seed', 42)
+    monkeypatch.setattr(core, "global_force_seed", 42)
     database = InMemoryExampleDatabase()
     database.fetch = None
 
