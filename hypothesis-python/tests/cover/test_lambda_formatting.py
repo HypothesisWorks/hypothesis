@@ -185,10 +185,10 @@ def test_can_handle_nested_lambda_in_decorator_argument():
     )
 
 
-π = lambda x: x == 3.1415
+is_approx_π = lambda x: x == 3.1415
 
 
-@arg_decorator(π)
+@arg_decorator(is_approx_π)
 def decorator_with_unicode_wrapper():
     pass
 
