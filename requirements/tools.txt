@@ -36,7 +36,7 @@ imagesize==1.1.0          # via sphinx
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.2.0
 isort==4.3.4
-jedi==0.13.1              # via ipython
+jedi==0.13.2              # via ipython
 jinja2==2.10              # via pyupio, sphinx
 markupsafe==1.1.0         # via jinja2
 mccabe==0.6.1             # via flake8
@@ -60,10 +60,10 @@ pycodestyle==2.4.0        # via flake8
 pydocstyle==3.0.0         # via flake8-docstrings
 pyflakes==2.0.0           # via flake8
 pygithub==1.43.3          # via pyupio
-pygments==2.3.0           # via ipython, readme-renderer, sphinx
+pygments==2.3.1           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pyparsing==2.3.0          # via packaging
-pytest==4.0.1
+pytest==4.0.2
 python-dateutil==2.7.5
 python-gitlab==1.7.0      # via pyupio
 pytz==2018.7              # via babel, django
@@ -82,7 +82,7 @@ sphinx==1.8.2
 sphinxcontrib-websupport==1.1.0  # via sphinx
 stevedore==1.30.0         # via bandit
 toml==0.10.0
-tox==3.5.3
+tox==3.6.0
 tqdm==4.28.1              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.12.1
