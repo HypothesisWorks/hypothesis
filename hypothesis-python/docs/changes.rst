@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.83.2:
+
+-------------------
+3.83.2 - 2018-12-17
+-------------------
+
+Hypothesis has adopted :pypi:`Black` as our code formatter (:issue:`1686`).
+There are no functional changes to the source, but it's prettier!
+
 .. _v3.83.1:
 
 -------------------
