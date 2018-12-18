@@ -667,7 +667,7 @@ class StateForActualGivenExecution(object):
                         "include database=None."
                     )
                     % (self.test.__name__,),
-                    since="2018-09-01",
+                    since="2017-11-29",
                 )
             if self.__had_seed:
                 note_deprecation(
@@ -678,7 +678,7 @@ class StateForActualGivenExecution(object):
                         "your settings for this test to include database=None."
                     )
                     % (self.test.__name__,),
-                    since="2018-09-01",
+                    since="2017-11-29",
                 )
 
         timed_out = runner.exit_reason == ExitReason.timeout
