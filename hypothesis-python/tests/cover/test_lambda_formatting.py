@@ -183,18 +183,3 @@ def test_can_handle_nested_lambda_in_decorator_argument():
     assert (
         get_pretty_function_description(decorator_with_wrapper[0]) == "lambda x: x + 1"
     )
-
-
-is_approx_π = lambda x: x == 3.1415
-
-
-@arg_decorator(is_approx_π)
-def decorator_with_unicode_wrapper():
-    pass
-
-
-def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():
-    f = decorator_with_unicode_wrapper[0]
-    assert (
-        get_pretty_function_description(f) == "lambda x: x == 3.1415"
-    )

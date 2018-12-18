@@ -17,7 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis.internal.reflection import proxies
+from hypothesis.internal.reflection import get_pretty_function_description, proxies
 
 
 def test_can_copy_argspec_of_unicode_args():
@@ -40,3 +40,10 @@ def test_can_copy_argspec_of_unicode_name():
         return 2
 
     assert bar() == 2
+
+
+is_approx_π = lambda x: x == 3.1415  # noqa: E731
+
+
+def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():
+    assert get_pretty_function_description(is_approx_π) == "lambda x: x == 3.1415"
