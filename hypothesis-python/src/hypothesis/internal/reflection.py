@@ -361,12 +361,21 @@ def extract_lambda_source(f):
     # See https://github.com/HypothesisWorks/hypothesis/issues/1700 for an
     # example of what happens if you don't correct for this.
     #
-    encoding, _ = tokenize.detect_encoding(
-        open(inspect.getsourcefile(f), "rb").readline
-    )
-    source_bytes = source.encode(encoding)
-    source_bytes = source_bytes[lambda_ast.col_offset :].strip()
-    source = source_bytes.decode(encoding)
+    # Note: if the code doesn't come from a file (but, for example, a doctest),
+    # `getsourcefile` will return `None` and the `open()` call will fail with
+    # an OSError.  Or if `f` is a built-in function, in which case we get a
+    # TypeError.  In both cases, fall back to splitting the Unicode string.
+    # It's not perfect, but it's the best we can do.
+    #
+    try:
+        encoding, _ = tokenize.detect_encoding(
+            open(inspect.getsourcefile(f), "rb").readline
+        )
+        source_bytes = source.encode(encoding)
+        source_bytes = source_bytes[lambda_ast.col_offset :].strip()
+        source = source_bytes.decode(encoding)
+    except (TypeError, OSError):
+        source = source[lambda_ast.col_offset :].strip()
 
     source = source[source.index("lambda") :]
     for i in hrange(len(source), len("lambda"), -1):  # pragma: no branch
