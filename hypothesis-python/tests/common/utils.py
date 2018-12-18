@@ -18,7 +18,6 @@
 from __future__ import absolute_import, division, print_function
 
 import contextlib
-import datetime
 import sys
 import traceback
 from io import BytesIO, StringIO
@@ -115,7 +114,3 @@ def non_covering_examples(database):
     return {
         v for k, vs in database.data.items() if not k.endswith(b".coverage") for v in vs
     }
-
-
-def today():
-    return datetime.datetime.now().strftime("%Y-%m-%d")
