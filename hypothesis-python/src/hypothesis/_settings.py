@@ -328,13 +328,6 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         if hide_repr is not_set:
             hide_repr = bool(deprecation_message)
 
-        if deprecation_message is not None and deprecated_since is None:
-            note_deprecation(
-                "Settings with a deprecation message should always include "
-                "a `deprecated_since` date.",
-                since="2018-12-17",
-            )
-
         all_settings[name] = Setting(
             name=name,
             description=description.strip(),
