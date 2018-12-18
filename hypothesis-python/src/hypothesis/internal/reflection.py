@@ -93,6 +93,10 @@ def function_digest(function):
         hasher.update(str_to_bytes(repr(getfullargspec(function))))
     except TypeError:
         pass
+    try:
+        hasher.update(function._hypothesis_internal_add_digest)
+    except AttributeError:
+        pass
     return hasher.digest()
 
 

@@ -71,7 +71,6 @@ from hypothesis.internal.compat import (
     hbytes,
     int_from_bytes,
     qualname,
-    str_to_bytes,
 )
 from hypothesis.internal.conjecture.data import ConjectureData, StopTest
 from hypothesis.internal.conjecture.engine import ConjectureRunner, ExitReason, sort_key
@@ -85,7 +84,6 @@ from hypothesis.internal.reflection import (
     arg_string,
     convert_positional_arguments,
     define_function_signature,
-    fully_qualified_name,
     function_digest,
     get_pretty_function_description,
     impersonate,
@@ -639,7 +637,7 @@ class StateForActualGivenExecution(object):
         # Tell pytest to omit the body of this function from tracebacks
         __tracebackhide__ = True
         if global_force_seed is None:
-            database_key = str_to_bytes(fully_qualified_name(self.test))
+            database_key = function_digest(self.test)
         else:
             database_key = None
         self.start_time = benchmark_time()
