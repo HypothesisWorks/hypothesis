@@ -147,7 +147,8 @@ def as_general_categories(cats, name="cats"):
         elif c not in cs:
             note_deprecation(
                 "In %s=%r, %r is not a valid Unicode category.  This will "
-                "be an error in a future version." % (name, cats, c)
+                "be an error in a future version." % (name, cats, c),
+                since="2018-02-21",
             )
     return tuple(c for c in cs if c in out)
 

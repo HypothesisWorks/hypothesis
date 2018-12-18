@@ -277,7 +277,8 @@ class SearchStrategy(Generic[Ex]):
                     "https://hypothesis.readthedocs.io/en/latest/data.html"
                     "#hypothesis.strategies.builds or "
                     "https://hypothesis.readthedocs.io/en/latest/data.html"
-                    "#composite-strategies for more details."
+                    "#composite-strategies for more details.",
+                    since="2017-09-04",
                 )
             else:
                 note_deprecation(
@@ -288,7 +289,8 @@ class SearchStrategy(Generic[Ex]):
                     "hypothesis.strategies.data() to draw "
                     "more examples during testing. See "
                     "https://hypothesis.readthedocs.io/en/latest/data.html"
-                    "#drawing-interactively-in-tests for more details."
+                    "#drawing-interactively-in-tests for more details.",
+                    since="2017-09-04",
                 )
 
         from hypothesis import find, settings, Verbosity

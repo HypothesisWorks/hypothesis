@@ -30,7 +30,7 @@ def test_note_deprecation_blames_right_code_issue_652():
     @composite
     def deprecated_strategy(draw):
         draw(integers())
-        note_deprecation(msg)
+        note_deprecation(msg, since="RELEASEDAY")
 
     with warnings.catch_warnings(record=True) as log:
         warnings.simplefilter("always")

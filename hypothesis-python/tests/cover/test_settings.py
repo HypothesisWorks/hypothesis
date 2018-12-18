@@ -293,7 +293,7 @@ def test_cannot_assign_default():
 
 def test_does_not_warn_if_quiet():
     with pytest.warns(None) as rec:
-        note_deprecation("This is bad", settings(verbosity=Verbosity.quiet))
+        note_deprecation("This is bad", since="RELEASEDAY", verbosity=Verbosity.quiet)
     assert len(rec) == 0
 
 

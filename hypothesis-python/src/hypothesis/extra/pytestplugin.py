@@ -188,7 +188,8 @@ def pytest_collection_modifyitems(items):
                     "but pytest has collected it as a test function.  This "
                     "is useless as the function body will never be executed."
                     "To define a test function, use @given instead of "
-                    "@composite." % (item.nodeid,)
+                    "@composite." % (item.nodeid,),
+                    since="2018-11-02",
                 )
 
             item.obj = note_strategy_is_not_test

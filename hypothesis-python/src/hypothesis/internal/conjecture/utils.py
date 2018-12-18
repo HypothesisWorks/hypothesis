@@ -131,7 +131,8 @@ def check_sample(values, strategy_name):
                     "to a one-dimensional array, or tuple(values) if you "
                     "want to sample slices.  Sampling a multi-dimensional "
                     "array will be an error in a future version of Hypothesis."
-                ).format(ndim=values.ndim, shape=values.shape)
+                ).format(ndim=values.ndim, shape=values.shape),
+                since="2018-05-09",
             )
     elif not isinstance(values, (OrderedDict, abc.Sequence, enum.EnumMeta)):
         note_deprecation(
@@ -145,7 +146,8 @@ def check_sample(values, strategy_name):
             "handling - and note that when simplifying an example, "
             "Hypothesis treats earlier values as simpler.".format(
                 values=repr(values), strategy=strategy_name
-            )
+            ),
+            since="2017-04-12",
         )
     return tuple(values)
 

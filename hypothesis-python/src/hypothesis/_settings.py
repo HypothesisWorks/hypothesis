@@ -37,7 +37,7 @@ from hypothesis.errors import (
     InvalidArgument,
     InvalidState,
 )
-from hypothesis.internal.compat import text_type
+from hypothesis.internal.compat import string_types
 from hypothesis.internal.reflection import get_pretty_function_description, proxies
 from hypothesis.internal.validation import try_convert
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
@@ -197,7 +197,11 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         self._construction_complete = True
 
         for d in deprecations:
-            note_deprecation(d.deprecation_message, self)
+            note_deprecation(
+                d.deprecation_message,
+                since=d.deprecated_since,
+                verbosity=self.verbosity,
+            )
 
     def defaults_stack(self):
         try:
@@ -255,7 +259,8 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
                     get_pretty_function_description(test),
                     test._hypothesis_internal_use_settings,
                     self,
-                )
+                ),
+                since="2018-03-23",
             )
 
         test._hypothesis_internal_use_settings = self
@@ -267,7 +272,8 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         def new_test(*args, **kwargs):
             note_deprecation(
                 "Using `@settings` without `@given` does not make sense and "
-                "will be an error in a future version of Hypothesis."
+                "will be an error in a future version of Hypothesis.",
+                since="2018-03-12",
             )
             test(*args, **kwargs)
 
@@ -296,6 +302,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         show_default=True,
         future_default=not_set,
         deprecation_message=None,
+        deprecated_since=None,
         hide_repr=not_set,
     ):
         """Add a new setting.
@@ -322,14 +329,15 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
             hide_repr = bool(deprecation_message)
 
         all_settings[name] = Setting(
-            name,
-            description.strip(),
-            default,
-            options,
-            validator,
-            future_default,
-            deprecation_message,
-            hide_repr,
+            name=name,
+            description=description.strip(),
+            default=default,
+            options=options,
+            validator=validator,
+            future_default=future_default,
+            deprecation_message=deprecation_message,
+            deprecated_since=deprecated_since,
+            hide_repr=hide_repr,
         )
         setattr(settings, name, settingsProperty(name, show_default))
 
@@ -378,7 +386,8 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
     def __enter__(self):
         note_deprecation(
             "Settings should be determined only by global state or with the "
-            "@settings decorator."
+            "@settings decorator.",
+            since="2018-06-22",
         )
         default_context_manager = default_variable.with_value(self)
         self.defaults_stack().append(default_context_manager)
@@ -404,13 +413,14 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         keyword arguments for each setting that will be set differently to
         parent (or settings.default, if parent is None).
         """
-        if not isinstance(name, (str, text_type)):
-            note_deprecation("name=%r must be a string" % (name,))
+        if not isinstance(name, string_types):
+            note_deprecation("name=%r must be a string" % (name,), since="2018-02-27")
         if "settings" in kwargs:
             if parent is None:
                 parent = kwargs.pop("settings")
                 note_deprecation(
-                    "The `settings` argument is deprecated - " "use `parent` instead."
+                    "The `settings` argument is deprecated - " "use `parent` instead.",
+                    since="2018-02-27",
                 )
             else:
                 raise InvalidArgument(
@@ -423,8 +433,8 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
     def get_profile(name):
         # type: (str) -> settings
         """Return the profile with the given name."""
-        if not isinstance(name, (str, text_type)):
-            note_deprecation("name=%r must be a string" % (name,))
+        if not isinstance(name, string_types):
+            note_deprecation("name=%r must be a string" % (name,), since="2016-01-08")
         try:
             return settings._profiles[name]
         except KeyError:
@@ -439,8 +449,8 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         Any setting not defined in the profile will be the library
         defined default for that setting.
         """
-        if not isinstance(name, (str, text_type)):
-            note_deprecation("name=%r must be a string" % (name,))
+        if not isinstance(name, string_types):
+            note_deprecation("name=%r must be a string" % (name,), since="2016-01-08")
         settings._current_profile = name
         settings._assign_default_internal(settings.get_profile(name))
 
@@ -461,6 +471,7 @@ class Setting(object):
     validator = attr.ib()
     future_default = attr.ib()
     deprecation_message = attr.ib()
+    deprecated_since = attr.ib()
     hide_repr = attr.ib()
 
 
@@ -475,6 +486,7 @@ The min_satisfying_examples setting has been deprecated and disabled, due to
 overlap with the filter_too_much healthcheck and poor interaction with the
 max_examples setting.
 """,
+    deprecated_since="2018-04-08",
 )
 
 settings._define_setting(
@@ -496,6 +508,7 @@ This doesn't actually do anything, but remains for compatibility reasons.
 The max_iterations setting has been disabled, as internal heuristics are more
 useful for this purpose than a user setting.  It no longer has any effect.
 """,
+    deprecated_since="2018-04-06",
 )
 
 settings._define_setting(
@@ -520,6 +533,7 @@ setting), but any other value has no effect and uses a general heuristic.
 The max_shrinks setting has been disabled, as internal heuristics are more
 useful for this purpose than a user setting.
 """,
+    deprecated_since="2018-04-14",
 )
 
 
@@ -547,6 +561,7 @@ Hypothesis. To get the future behaviour set ``timeout=hypothesis.unlimited``
 instead (which will remain valid for a further deprecation period after this
 setting has gone away).
 """,
+    deprecated_since="2017-11-02",
     future_default=unlimited,
     validator=_validate_timeout,
 )
@@ -578,6 +593,7 @@ Strict mode is deprecated and will go away in a future version of Hypothesis.
 To get the same behaviour, use
 warnings.simplefilter('error', HypothesisDeprecationWarning).
 """,
+    deprecated_since="2017-07-16",
     future_default=False,
 )
 
@@ -625,6 +641,7 @@ setting, and will be removed in a future version.  It only exists at
 all for complicated historical reasons and you should just use
 `database` instead.
 """,
+    deprecated_since="2018-04-01",
 )
 
 
@@ -774,6 +791,7 @@ attempting to actually execute your test.
 This setting is deprecated, as `perform_health_check=False` duplicates the
 effect of `suppress_health_check=HealthCheck.all()`.  Use that instead!
 """,
+    deprecated_since="2018-04-05",
 )
 
 
@@ -787,7 +805,8 @@ def validate_health_check_suppressions(suppressions):
                     "will be ignored, and will become an error in a future "
                     "version of Hypothesis"
                 )
-                % (s, type(s).__name__)
+                % (s, type(s).__name__),
+                since="2017-11-11",
             )
         elif s in (HealthCheck.exception_in_generation, HealthCheck.random_module):
             note_deprecation(
@@ -797,7 +816,8 @@ def validate_health_check_suppressions(suppressions):
                     "remove it from your list of suppressions to get the same "
                     "effect."
                 )
-                % (s,)
+                % (s,),
+                since="2017-11-11",
             )
     return suppressions
 
@@ -834,6 +854,7 @@ settings._define_setting(
     deprecation_message="""
 use_coverage no longer does anything and can be removed from your settings.
 """,
+    deprecated_since="2017-09-14",
     description="""
 A flag to enable a feature that no longer exists. This setting is present
 only for backwards compatibility purposes.
@@ -876,7 +897,8 @@ def _validate_print_blob(value):
         note_deprecation(
             "Setting print_blob=%r is deprecated and will become an error "
             "in a future version of Hypothesis. Use print_blob=%r instead."
-            % (value, replacement)
+            % (value, replacement),
+            since="2018-09-30",
         )
         return replacement
 
@@ -902,12 +924,11 @@ more details of this behaviour.
 settings.lock_further_definitions()
 
 
-def note_deprecation(message, s=None):
-    # type: (str, settings) -> None
-    if s is None:
-        s = settings.default
-    assert s is not None
-    verbosity = s.verbosity
+def note_deprecation(message, since, verbosity=None):
+    # type: (str, str, Verbosity) -> None
+    if verbosity is None:
+        verbosity = settings.default.verbosity
+    assert verbosity is not None
     warning = HypothesisDeprecationWarning(message)
     if verbosity > Verbosity.quiet:
         warnings.warn(warning, stacklevel=2)

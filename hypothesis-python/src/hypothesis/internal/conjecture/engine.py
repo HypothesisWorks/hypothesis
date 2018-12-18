@@ -350,7 +350,8 @@ class ConjectureRunner(object):
                     "hypothesis.unlimited."
                 )
                 % (self.settings.timeout, self.valid_examples),
-                self.settings,
+                since="2018-07-29",
+                verbosity=self.settings.verbosity,
             )
             self.exit_with(ExitReason.timeout)
 
