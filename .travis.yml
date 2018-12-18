@@ -59,7 +59,8 @@ jobs:
       env: TASK=check-unicode
     - env: TASK=check-py27-typing
     - env: TASK=check-nose
-    - env: TASK=check-pytest30
+    # https://github.com/HypothesisWorks/hypothesis/issues/1702
+    # - env: TASK=check-pytest30
     - env: TASK=check-faker070
     - env: TASK=check-faker-latest
     - env: TASK=check-django21
