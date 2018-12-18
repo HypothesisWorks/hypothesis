@@ -367,6 +367,12 @@ def extract_lambda_source(f):
     # TypeError.  In both cases, fall back to splitting the Unicode string.
     # It's not perfect, but it's the best we can do.
     #
+    # Note 2: You can only detect the encoding with `tokenize.detect_encoding`
+    # in Python 3.2 or later.  But that's okay, because the only version that
+    # affects for us is Python 2.7, and 2.7 doesn't support non-ASCII identifiers:
+    # https://www.python.org/dev/peps/pep-3131/. In this case we'll get an
+    # AttributeError.
+    #
     try:
         encoding, _ = tokenize.detect_encoding(
             open(inspect.getsourcefile(f), "rb").readline
@@ -374,7 +380,7 @@ def extract_lambda_source(f):
         source_bytes = source.encode(encoding)
         source_bytes = source_bytes[lambda_ast.col_offset :].strip()
         source = source_bytes.decode(encoding)
-    except (TypeError, OSError):
+    except (AttributeError, OSError, TypeError):
         source = source[lambda_ast.col_offset :].strip()
 
     source = source[source.index("lambda") :]
