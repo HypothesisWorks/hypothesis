@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.84.2:
+
+-------------------
+3.84.2 - 2018-12-19
+-------------------
+
+This patch fixes the internals for :func:`~hypothesis.strategies.integers`
+with one bound.  Values from this strategy now always shrink towards zero
+instead of towards the bound, and should shrink much more efficiently too.
+On Python 2, providing a bound incorrectly excluded ``long`` integers,
+which can now be generated.
+
 .. _v3.84.1:
 
 -------------------
