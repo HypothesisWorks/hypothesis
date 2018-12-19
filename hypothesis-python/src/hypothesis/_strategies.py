@@ -497,14 +497,14 @@ def floats(
         note_deprecation(
             "min_value=%r cannot be exactly represented as a float of width "
             "%d, which will be an error in a future version. Use min_value=%r "
-            "instead." % (min_value, width, min_arg),
+            "instead." % (min_arg, width, min_value),
             since="2018-10-10",
         )
     if max_value != max_arg:
         note_deprecation(
             "max_value=%r cannot be exactly represented as a float of width "
             "%d, which will be an error in a future version. Use max_value=%r "
-            "instead" % (max_value, width, max_arg),
+            "instead" % (max_arg, width, max_value),
             since="2018-10-10",
         )
 
