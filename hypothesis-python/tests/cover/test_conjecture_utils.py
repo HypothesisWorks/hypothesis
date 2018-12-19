@@ -47,12 +47,6 @@ def test_uniform_float_can_draw_1():
     assert len(d.buffer) == 7
 
 
-def test_geometric_can_handle_bad_first_draw():
-    assert (
-        cu.geometric(ConjectureData.for_buffer(hbytes([255] * 7 + [0] * 7)), 0.5) == 0
-    )
-
-
 def test_coin_biased_towards_truth():
     p = 1 - 1.0 / 500
 

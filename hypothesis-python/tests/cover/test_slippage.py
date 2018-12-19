@@ -164,7 +164,7 @@ def test_shrinks_both_failures():
     second_target = [None]
 
     @settings(database=None)
-    @given(st.integers(min_value=0))
+    @given(st.integers(min_value=0).map(int))
     def test(i):
         if i >= 10000:
             first_has_failed[0] = True
