@@ -222,6 +222,7 @@ their individual contributions.
 * `JP Viljoen <https://github.com/froztbyte>`_ (froztbyte@froztbyte.net)
 * `Joey Tuong <https://github.com/tetrapus>`_
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (jonty@jonty.co.uk)
+* `Joshua Boone <https://www.github.com/patchedwork>`_ (joshuaboone4190@gmail.com)
 * `jmhsi <https://www.github.com/jmhsi>`_
 * `jwg4 <https://www.github.com/jwg4>`_
 * `Karthikeyan Singaravelan <https://www.github.com/tirkarthi>`_ (tir.karthi@gmail.com)
