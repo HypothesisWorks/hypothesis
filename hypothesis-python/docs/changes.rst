@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.84.3:
+
+-------------------
+3.84.3 - 2018-12-20
+-------------------
+
+This patch updates the Hypothesis pytest plugin to avoid a recently
+deprecated hook interface.  There is no user-visible change.
+
 .. _v3.84.2:
 
 -------------------
