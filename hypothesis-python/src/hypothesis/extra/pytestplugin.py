@@ -110,7 +110,7 @@ def pytest_configure(config):
 gathered_statistics = OrderedDict()  # type: dict
 
 
-@pytest.mark.hookwrapper
+@pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_call(item):
     if not (hasattr(item, "obj") and is_hypothesis_test(item.obj)):
         yield
@@ -129,7 +129,7 @@ def pytest_runtest_call(item):
             item.hypothesis_report_information = list(store.results)
 
 
-@pytest.mark.hookwrapper
+@pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     report = (yield).get_result()
     if hasattr(item, "hypothesis_report_information"):
