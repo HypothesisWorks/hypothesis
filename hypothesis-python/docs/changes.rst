@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.84.5:
+
+-------------------
+3.84.5 - 2018-12-21
+-------------------
+
+This patch refactors the ``hypothesis.strategies`` module, so that private
+names should no longer appear in tab-completion lists.  We previously relied
+on ``__all__`` for this, but not all editors respect it.
+
 .. _v3.84.4:
 
 -------------------
