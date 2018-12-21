@@ -41,7 +41,6 @@ blacklist = [
     "randoms",
     "runner",
     "sampled_from",
-    "streaming",
 ]
 types_with_core_strat = set(integer_types)
 for thing in (

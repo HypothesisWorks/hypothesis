@@ -109,7 +109,6 @@ from hypothesis.searchstrategy.numbers import (
 from hypothesis.searchstrategy.recursive import RecursiveStrategy
 from hypothesis.searchstrategy.shared import SharedStrategy
 from hypothesis.searchstrategy.strategies import OneOfStrategy
-from hypothesis.searchstrategy.streams import StreamStrategy
 from hypothesis.searchstrategy.strings import (
     BinaryStringStrategy,
     FixedSizeBytes,
@@ -904,29 +903,6 @@ def dictionaries(
         max_size=max_size,
         unique_by=lambda x: x[0],
     ).map(dict_class)
-
-
-@defines_strategy
-def streaming(elements):
-    """Generates an infinite stream of values where each value is drawn from
-    elements.
-
-    The result is iterable (the iterator will never terminate) and
-    indexable.
-
-    Examples from this strategy shrink by trying to shrink each value drawn.
-
-    .. deprecated:: 3.15.0
-        Use :func:`data() <hypothesis.strategies.data>` instead.
-    """
-    note_deprecation(
-        "streaming() has been deprecated. Use the data() strategy instead and "
-        "replace stream iteration with data.draw() calls.",
-        since="2017-07-02",
-    )
-
-    check_strategy(elements)
-    return StreamStrategy(elements)
 
 
 @cacheable
