@@ -24,6 +24,7 @@ this module can be modified.
 from __future__ import absolute_import, division, print_function
 
 import contextlib
+import datetime
 import inspect
 import os
 import threading
@@ -929,6 +930,9 @@ def note_deprecation(message, since, verbosity=None):
     if verbosity is None:
         verbosity = settings.default.verbosity
     assert verbosity is not None
+    if since != "RELEASEDAY":
+        date = datetime.datetime.strptime(since, "%Y-%m-%d").date()
+        assert datetime.date(2016, 1, 1) <= date
     warning = HypothesisDeprecationWarning(message)
     if verbosity > Verbosity.quiet:
         warnings.warn(warning, stacklevel=2)

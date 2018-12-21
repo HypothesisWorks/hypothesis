@@ -121,6 +121,18 @@ def update_changelog_and_version():
     with open(CHANGELOG_FILE, "w") as o:
         o.write("\n".join(new_changelog_parts))
 
+    # Replace the `since="RELEASEDAY"` argument to `note_deprecation`
+    # with today's date, to record it for future reference.
+    before = 'since="RELEASEDAY"'
+    after = before.replace("RELEASEDAY", rm.release_date_string())
+    for root, _, files in os.walk(PYTHON_SRC):
+        for fname in (os.path.join(root, f) for f in files if f.endswith(".py")):
+            with open(fname) as f:
+                contents = f.read()
+            if before in contents:
+                with open(fname, "w") as f:
+                    f.write(contents.replace(before, after))
+
 
 CHANGELOG_FILE = os.path.join(HYPOTHESIS_PYTHON, "docs", "changes.rst")
 DIST = os.path.join(HYPOTHESIS_PYTHON, "dist")
