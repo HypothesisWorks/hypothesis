@@ -24,6 +24,7 @@ from random import Random
 from hypothesis import Verbosity, assume, settings, unlimited
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import PYPY
+from hypothesis.internal.floats import float_to_int, int_to_float
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.strategies import (
     binary,
@@ -31,10 +32,8 @@ from hypothesis.strategies import (
     complex_numbers,
     data,
     decimals,
-    float_to_int,
     floats,
     fractions,
-    int_to_float,
     integers,
     just,
     lists,

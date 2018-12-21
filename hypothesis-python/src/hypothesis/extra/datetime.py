@@ -32,7 +32,7 @@ import datetime as dt
 
 import pytz
 
-import hypothesis.strategies as st
+import hypothesis._strategies as st
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones as timezones_strategy

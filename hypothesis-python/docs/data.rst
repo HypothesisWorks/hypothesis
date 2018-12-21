@@ -18,6 +18,7 @@ module. The salient functions from it are as follows:
 
 .. automodule:: hypothesis.strategies
   :members:
+  :exclude-members: SearchStrategy
 
 .. _shrinking:
 

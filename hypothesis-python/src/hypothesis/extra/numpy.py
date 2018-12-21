@@ -21,8 +21,8 @@ import math
 
 import numpy as np
 
+import hypothesis._strategies as st
 import hypothesis.internal.conjecture.utils as cu
-import hypothesis.strategies as st
 from hypothesis import Verbosity
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
