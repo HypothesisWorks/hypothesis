@@ -105,13 +105,16 @@ def fn_ktest(*fnkwargs):
     (ds.fractions, {"max_denominator": 0}),
     (ds.fractions, {"max_denominator": 1.5}),
     (ds.fractions, {"min_value": complex(1, 2)}),
-    (ds.lists, {"min_size": 10, "max_size": 9}),
-    (ds.lists, {"min_size": -10, "max_size": -9}),
-    (ds.lists, {"max_size": -9}),
-    (ds.lists, {"min_size": -10}),
-    (ds.lists, {"min_size": float("nan")}),
+    (ds.lists, {"elements": ds.integers(), "min_size": 10, "max_size": 9}),
+    (ds.lists, {"elements": ds.integers(), "min_size": -10, "max_size": -9}),
+    (ds.lists, {"elements": ds.integers(), "max_size": -9}),
+    (ds.lists, {"elements": ds.integers(), "min_size": -10}),
+    (ds.lists, {"elements": ds.integers(), "min_size": float("nan")}),
+    (ds.lists, {"elements": ds.nothing(), "max_size": 1}),
     (ds.lists, {"elements": "hi"}),
     (ds.text, {"min_size": 10, "max_size": 9}),
+    (ds.text, {"alphabet": [1]}),
+    (ds.text, {"alphabet": ["abc"]}),
     (ds.binary, {"min_size": 10, "max_size": 9}),
     (ds.floats, {"min_value": float("nan")}),
     (ds.floats, {"min_value": "0"}),
@@ -269,6 +272,11 @@ def test_builds_raises_if_non_callable_as_first_arg(non_callable):
         ds.builds(non_callable, target=lambda x: x).example()
 
 
+def test_text_raises_error_on_non_sequence_alphabet():
+    with pytest.raises(InvalidArgument):
+        ds.text(set("abc")).validate()
+
+
 def test_tuples_raise_error_on_bad_kwargs():
     with pytest.raises(TypeError):
         ds.tuples(stuff="things")
@@ -383,27 +391,6 @@ def test_iterables_are_exhaustible(it):
 
 def test_minimal_iterable():
     assert list(minimal(ds.iterables(ds.integers()), lambda x: True)) == []
-
-
-@checks_deprecated_behaviour
-def test_iterables_without_elements_is_deprecated():
-    assert list(ds.iterables().example()) == []
-
-
-@checks_deprecated_behaviour
-def test_lists_with_max_size_no_elements_is_deprecated_and_error():
-    with pytest.raises(InvalidArgument):
-        ds.lists(max_size=1).example()
-
-
-@checks_deprecated_behaviour
-def test_empty_elements_with_max_size_is_deprecated():
-    ds.lists(ds.nothing(), max_size=1).example()
-
-
-@checks_deprecated_behaviour
-def test_average_size_is_deprecated():
-    ds.lists(ds.integers(), average_size=1).example()
 
 
 @checks_deprecated_behaviour
