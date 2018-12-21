@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.84.4:
+
+-------------------
+3.84.4 - 2018-12-21
+-------------------
+
+This is a follow-up patch to ensure that the deprecation date is automatically
+recorded for any new deprecations.  There is no user-visible effect.
+
 .. _v3.84.3:
 
 -------------------
