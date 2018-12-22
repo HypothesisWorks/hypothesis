@@ -39,6 +39,7 @@ from hypothesis.stateful import (
     Bundle,
     GenericStateMachine,
     RuleBasedStateMachine,
+    consumes,
     initialize,
     invariant,
     precondition,
@@ -350,6 +351,42 @@ class FlakyRatchettingMachine(GenericStateMachine):
 
     def execute_step(self, step):
         assert False
+
+
+class MachineWithConsumingRule(RuleBasedStateMachine):
+    b1 = Bundle("b1")
+    b2 = Bundle("b2")
+
+    def __init__(self):
+        self.created_counter = 0
+        self.consumed_counter = 0
+        super(MachineWithConsumingRule, self).__init__()
+
+    @invariant()
+    def bundle_length(self):
+        assert len(self.bundle("b1")) == self.created_counter - self.consumed_counter
+
+    @rule(target=b1)
+    def populate_b1(self):
+        self.created_counter += 1
+        return self.created_counter
+
+    @rule(target=b2, consumed=consumes(b1))
+    def depopulate_b1(self, consumed):
+        self.consumed_counter += 1
+        return consumed
+
+    @rule(value1=b1, value2=b2)
+    def check(self, value1, value2):
+        assert value1 != value2
+
+
+TestMachineWithConsumingRule = MachineWithConsumingRule.TestCase
+
+
+def test_consumes_typecheck():
+    with pytest.raises(TypeError):
+        consumes(integers())
 
 
 def test_ratchetting_raises_flaky():

@@ -267,6 +267,9 @@ class Rule(object):
             if isinstance(v, Bundle):
                 bundles.append(v)
                 arguments[k] = BundleReferenceStrategy(v.name)
+            elif isinstance(v, Consumer):
+                bundles.append(v.bundle)
+                arguments[k] = BundleReferenceStrategy(v.bundle.name)
             else:
                 arguments[k] = v
         self.bundles = tuple(bundles)
@@ -300,6 +303,21 @@ class Bundle(SearchStrategy):
         machine = data.draw(self_strategy)
         reference = data.draw(self.__reference_strategy)
         return machine.names_to_values[reference.name]
+
+
+@attr.s()
+class Consumer(object):
+    bundle = attr.ib()
+
+
+def consumes(bundle):
+    """When introducing a rule in a RuleBasedStateMachine, this function can
+    be used to mark bundles from which a value should be consumed, rather than
+    just drawn and possibly reused.
+    """
+    if not isinstance(bundle, Bundle):
+        raise TypeError("Argument to be consumed must be a bundle.")
+    return Consumer(bundle)
 
 
 def _convert_targets(targets, target):
