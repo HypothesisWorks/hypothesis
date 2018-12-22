@@ -312,8 +312,8 @@ class Consumer(object):
 
 def consumes(bundle):
     """When introducing a rule in a RuleBasedStateMachine, this function can
-    be used to mark bundles from which a value should be consumed, rather than
-    just drawn and possibly reused.
+    be used to mark bundles from which each value used in a step with the
+    given rule should be removed.
     """
     if not isinstance(bundle, Bundle):
         raise TypeError("Argument to be consumed must be a bundle.")
@@ -379,9 +379,13 @@ def rule(targets=(), target=None, **kwargs):
     each case.
 
     kwargs then define the arguments that will be passed to the function
-    invocation. If their value is a Bundle then values that have previously
-    been produced for that bundle will be provided, if they are anything else
-    it will be turned into a strategy and values from that will be provided.
+    invocation. If their value is a Bundle, or if it is ``consumes(b)``
+    where ``b`` is a Bundle, then values that have previously been produced
+    for that bundle will be provided. If ``consumes`` is used, the value
+    will also be removed from the bundle.
+
+    Any other kwargs will be turned into a strategy and values from that
+    will be provided.
     """
     converted_targets = _convert_targets(targets, target)
 
