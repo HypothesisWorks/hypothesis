@@ -786,6 +786,9 @@ class RuleBasedStateMachine(GenericStateMachine):
         for k, v in list(data.items()):
             if isinstance(v, VarReference):
                 data[k] = self.names_to_values[v.name]
+                rule_argument = rule.arguments[k]
+                if isinstance(rule_argument, Consumer):
+                    self.bundle(rule_argument.bundle.name).remove(v)
         result = rule.function(self, **data)
         if rule.targets:
             name = self.new_name()
