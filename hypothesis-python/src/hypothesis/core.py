@@ -858,18 +858,16 @@ def given(
             test = wrapped_test.hypothesis.inner_test
 
             if getattr(test, "is_hypothesis_test", False):
-                note_deprecation(
+                raise InvalidArgument(
                     (
-                        "You have applied @given to test: %s more than once. In "
-                        "future this will be an error. Applying @given twice "
-                        "wraps the test twice, which can be extremely slow. A "
+                        "You have applied @given to the test %s more than once, which "
+                        "wraps the test several times and is extremely slow. A "
                         "similar effect can be gained by combining the arguments "
                         "of the two calls to given. For example, instead of "
                         "@given(booleans()) @given(integers()), you could write "
                         "@given(booleans(), integers())"
                     )
-                    % (test.__name__,),
-                    since="2018-09-01",
+                    % (test.__name__,)
                 )
 
             settings = wrapped_test._hypothesis_internal_use_settings

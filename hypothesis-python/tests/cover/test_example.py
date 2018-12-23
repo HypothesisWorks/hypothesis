@@ -25,8 +25,8 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import example, find, given, settings
 from hypothesis.control import _current_build_context
-from hypothesis.errors import NoExamples
-from tests.common.utils import checks_deprecated_behaviour
+from hypothesis.errors import HypothesisException, NoExamples
+from tests.common.utils import fails_with
 
 
 @settings(deadline=None)
@@ -56,18 +56,18 @@ def test_raises_on_no_examples():
         st.nothing().example()
 
 
-@checks_deprecated_behaviour
+@fails_with(HypothesisException)
 @example(False)
 @given(st.booleans())
 def test_example_inside_given(b):
     st.integers().example()
 
 
-@checks_deprecated_behaviour
+@fails_with(HypothesisException)
 def test_example_inside_find():
     find(st.integers(0, 100), lambda x: st.integers().example())
 
 
-@checks_deprecated_behaviour
+@fails_with(HypothesisException)
 def test_example_inside_strategy():
     st.booleans().map(lambda x: st.integers().example()).example()

@@ -22,7 +22,7 @@ import pytest
 from hypothesis import assume, given, infer, reject, settings
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.strategies import booleans, integers
-from tests.common.utils import fails_with, validate_deprecation
+from tests.common.utils import fails_with
 
 
 def test_raises_unsatisfiable_if_all_false_in_finite_set():
@@ -60,14 +60,14 @@ def test_error_if_infer_is_posarg():
         inner()
 
 
-def test_given_twice_deprecated():
+def test_given_twice_is_an_error():
     @settings(deadline=None)
     @given(booleans())
     @given(integers())
     def inner(a, b):
         pass
 
-    with validate_deprecation():
+    with pytest.raises(InvalidArgument):
         inner()
 
 
