@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis import assume, given, infer, reject
+from hypothesis import assume, given, infer, reject, settings
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.strategies import booleans, integers
 from tests.common.utils import fails_with, validate_deprecation
@@ -61,6 +61,7 @@ def test_error_if_infer_is_posarg():
 
 
 def test_given_twice_deprecated():
+    @settings(deadline=None)
     @given(booleans())
     @given(integers())
     def inner(a, b):

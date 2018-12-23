@@ -64,7 +64,6 @@ from hypothesis.internal.compat import (
     bad_django_TestCase,
     benchmark_time,
     binary_type,
-    ceil,
     get_type_hints,
     getfullargspec,
     hbytes,
@@ -94,7 +93,7 @@ from hypothesis.reporting import current_verbosity, report, verbose_report
 from hypothesis.searchstrategy.collections import TupleStrategy
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.statistics import note_engine_for_statistics
-from hypothesis.utils.conventions import infer, not_set
+from hypothesis.utils.conventions import infer
 from hypothesis.version import __version__
 
 if False:
@@ -517,27 +516,11 @@ class StateForActualGivenExecution(object):
                 internal_draw_time = sum(data.draw_times[initial_draws:])
                 runtime = (finish - start - internal_draw_time) * 1000
                 self.__test_runtime = runtime
-                if self.settings.deadline is not_set:
-                    if not self.__warned_deadline and runtime >= 200:
-                        self.__warned_deadline = True
-                        note_deprecation(
-                            (
-                                "Test: %s took %.2fms to run. In future the "
-                                "default deadline setting will be 200ms, which "
-                                "will make this an error. You can set deadline to "
-                                "an explicit value of e.g. %d to turn tests "
-                                "slower than this into an error, or you can set "
-                                "it to None to disable this check entirely."
-                            )
-                            % (self.test.__name__, runtime, ceil(runtime / 100) * 100),
-                            since="2017-11-20",
-                        )
-                else:
-                    current_deadline = self.settings.deadline
-                    if not is_final:
-                        current_deadline *= 1.25
-                    if runtime >= current_deadline:
-                        raise DeadlineExceeded(runtime, self.settings.deadline)
+                current_deadline = self.settings.deadline
+                if not is_final:
+                    current_deadline *= 1.25
+                if runtime >= current_deadline:
+                    raise DeadlineExceeded(runtime, self.settings.deadline)
                 return result
 
         def run(data):

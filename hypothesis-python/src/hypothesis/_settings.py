@@ -810,9 +810,20 @@ settings._define_setting(
     validator=validate_health_check_suppressions,
 )
 
+
+def _validate_deadline(x):
+    if x is None or isinstance(x, (int, float)):
+        return x
+    raise InvalidArgument(
+        "deadline=%r (type %s) must be an integer or float number of milliseconds, "
+        "or None to disable the per-test-case deadline." % (x, type(x).__name__)
+    )
+
+
 settings._define_setting(
     "deadline",
-    default=not_set,
+    default=200,
+    validator=_validate_deadline,
     description=u"""
 If set, a time in milliseconds (which may be a float to express
 smaller units of time) that each individual example (i.e. each time your test
@@ -822,10 +833,6 @@ errors (but will not necessarily be if close to the deadline, to allow some
 variability in test run time).
 
 Set this to None to disable this behaviour entirely.
-
-In future this will default to 200. For now, a
-HypothesisDeprecationWarning will be emitted if you exceed that default
-deadline and have not explicitly set a deadline yourself.
 """,
 )
 
