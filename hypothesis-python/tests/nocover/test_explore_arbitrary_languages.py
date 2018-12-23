@@ -24,16 +24,7 @@ import pytest
 
 import hypothesis.internal.escalation as esc
 import hypothesis.strategies as st
-from hypothesis import (
-    HealthCheck,
-    Phase,
-    Verbosity,
-    assume,
-    given,
-    note,
-    settings,
-    unlimited,
-)
+from hypothesis import HealthCheck, Phase, Verbosity, assume, given, note, settings
 from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -129,7 +120,6 @@ def run_language_test_for(root, data, seed):
     max_examples=100,
     suppress_health_check=HealthCheck.all(),
     deadline=None,
-    timeout=unlimited,
     phases=set(Phase) - {Phase.shrink},
 )
 @given(st.data())

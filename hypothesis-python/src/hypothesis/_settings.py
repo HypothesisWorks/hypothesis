@@ -304,7 +304,6 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         future_default=not_set,
         deprecation_message=None,
         deprecated_since=None,
-        hide_repr=not_set,
     ):
         """Add a new setting.
 
@@ -326,9 +325,6 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         if future_default is not_set:
             future_default = default
 
-        if hide_repr is not_set:
-            hide_repr = bool(deprecation_message)
-
         all_settings[name] = Setting(
             name=name,
             description=description.strip(),
@@ -338,7 +334,6 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
             future_default=future_default,
             deprecation_message=deprecation_message,
             deprecated_since=deprecated_since,
-            hide_repr=hide_repr,
         )
         setattr(settings, name, settingsProperty(name, show_default))
 
@@ -372,7 +367,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
             value = getattr(self, name)
             # The only settings that are not shown are those that are
             # deprecated and left at their default values.
-            if value != setting.default or not setting.hide_repr:
+            if value != setting.default or not setting.deprecation_message:
                 bits.append("%s=%r" % (name, value))
         return "settings(%s)" % ", ".join(sorted(bits))
 
@@ -473,7 +468,6 @@ class Setting(object):
     future_default = attr.ib()
     deprecation_message = attr.ib()
     deprecated_since = attr.ib()
-    hide_repr = attr.ib()
 
 
 settings._define_setting(
@@ -539,31 +533,17 @@ useful for this purpose than a user setting.
 
 
 def _validate_timeout(n):
-    if n is unlimited:
-        return -1
-    else:
+    if n in (not_set, unlimited):
         return n
+    raise InvalidArgument("The timeout setting has been removed.")
 
 
 settings._define_setting(
     "timeout",
-    default=60,
-    description="""
-Once this many seconds have passed, falsify will terminate even
-if it has not found many examples. This is a soft rather than a hard
-limit - Hypothesis won't e.g. interrupt execution of the called
-function to stop it. If this value is <= 0 then no timeout will be
-applied.
-""",
-    hide_repr=False,  # Still affects behaviour at runtime
-    deprecation_message="""
-The timeout setting is deprecated and will be removed in a future version of
-Hypothesis. To get the future behaviour set ``timeout=hypothesis.unlimited``
-instead (which will remain valid for a further deprecation period after this
-setting has gone away).
-""",
+    default=not_set,
+    description="The timeout setting has been deprecated and no longer does anything.",
+    deprecation_message="The timeout setting can safely be removed with no effect.",
     deprecated_since="2017-11-02",
-    future_default=unlimited,
     validator=_validate_timeout,
 )
 

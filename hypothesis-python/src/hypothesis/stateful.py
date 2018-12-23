@@ -39,7 +39,6 @@ from hypothesis._settings import (
     Verbosity,
     note_deprecation,
     settings as Settings,
-    unlimited,
 )
 from hypothesis.control import current_build_context
 from hypothesis.core import given
@@ -83,11 +82,7 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
             settings = state_machine_factory.TestCase.settings
             check_type(Settings, settings, "state_machine_factory.TestCase.settings")
         except AttributeError:
-            settings = Settings(
-                timeout=unlimited,
-                deadline=None,
-                suppress_health_check=HealthCheck.all(),
-            )
+            settings = Settings(deadline=None, suppress_health_check=HealthCheck.all())
     check_type(Settings, settings, "settings")
 
     @settings
@@ -229,11 +224,7 @@ class GenericStateMachine(
             pass
 
         class StateMachineTestCase(TestCase):
-            settings = Settings(
-                timeout=unlimited,
-                deadline=None,
-                suppress_health_check=HealthCheck.all(),
-            )
+            settings = Settings(deadline=None, suppress_health_check=HealthCheck.all())
 
         # We define this outside of the class and assign it because you can't
         # assign attributes to instance method values in Python 2

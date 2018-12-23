@@ -55,7 +55,6 @@ from hypothesis.errors import (
     InvalidArgument,
     MultipleFailures,
     NoSuchExample,
-    Timeout,
     Unsatisfiable,
     UnsatisfiedAssumption,
 )
@@ -647,7 +646,6 @@ class StateForActualGivenExecution(object):
             database_key = function_digest(self.test)
         else:
             database_key = None
-        self.start_time = benchmark_time()
         runner = ConjectureRunner(
             self.evaluate_test_data,
             settings=self.settings,
@@ -659,7 +657,6 @@ class StateForActualGivenExecution(object):
         finally:
             self.used_examples_from_database = runner.used_examples_from_database
         note_engine_for_statistics(runner)
-        run_time = benchmark_time() - self.start_time
 
         self.used_examples_from_database = runner.used_examples_from_database
 
@@ -687,7 +684,6 @@ class StateForActualGivenExecution(object):
                     since="2017-11-29",
                 )
 
-        timed_out = runner.exit_reason == ExitReason.timeout
         if runner.call_count == 0:
             return
         if runner.interesting_examples:
@@ -698,23 +694,10 @@ class StateForActualGivenExecution(object):
             )
         else:
             if runner.valid_examples == 0:
-                if timed_out:
-                    raise Timeout(
-                        (
-                            "Ran out of time before finding a satisfying "
-                            "example for %s. Only found %d examples in %.2fs."
-                        )
-                        % (
-                            get_pretty_function_description(self.test),
-                            runner.valid_examples,
-                            run_time,
-                        )
-                    )
-                else:
-                    raise Unsatisfiable(
-                        "Unable to satisfy assumptions of hypothesis %s."
-                        % (get_pretty_function_description(self.test),)
-                    )
+                raise Unsatisfiable(
+                    "Unable to satisfy assumptions of hypothesis %s."
+                    % (get_pretty_function_description(self.test),)
+                )
 
         if not self.falsifying_examples:
             return
@@ -1142,13 +1125,11 @@ def find(
         if success and not data.frozen:
             data.mark_interesting()
 
-    start = benchmark_time()
     runner = ConjectureRunner(
         template_condition, settings=settings, random=random, database_key=database_key
     )
     runner.run()
     note_engine_for_statistics(runner)
-    run_time = benchmark_time() - start
     if runner.interesting_examples:
         data = ConjectureData.for_buffer(
             list(runner.interesting_examples.values())[0].buffer
@@ -1157,23 +1138,9 @@ def find(
             with deterministic_PRNG():
                 return data.draw(search)
     if runner.valid_examples == 0 and (runner.exit_reason != ExitReason.finished):
-        if settings.timeout > 0 and run_time > settings.timeout:
-            raise Timeout(
-                (  # pragma: no cover
-                    "Ran out of time before finding enough valid examples for "
-                    "%s. Only %d valid examples found in %.2f seconds."
-                )
-                % (
-                    get_pretty_function_description(condition),
-                    runner.valid_examples,
-                    run_time,
-                )
-            )
-
-        else:
-            raise Unsatisfiable(
-                "Unable to satisfy assumptions of %s."
-                % (get_pretty_function_description(condition),)
-            )
+        raise Unsatisfiable(
+            "Unable to satisfy assumptions of %s."
+            % (get_pretty_function_description(condition),)
+        )
 
     raise NoSuchExample(get_pretty_function_description(condition))

@@ -29,7 +29,6 @@ from hypothesis import (
     given,
     reject,
     settings,
-    unlimited,
 )
 from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
@@ -58,7 +57,6 @@ def problems(draw):
 @example(problem=(32768, b"\x03\x01\x00\x00\x00\x00\x00\x01\x00\x02\x01"))
 @settings(
     suppress_health_check=HealthCheck.all(),
-    timeout=unlimited,
     deadline=None,
     max_examples=10,
     verbosity=Verbosity.normal,
@@ -88,7 +86,6 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
         random=Random(0),
         settings=settings(
             suppress_health_check=HealthCheck.all(),
-            timeout=unlimited,
             phases=(Phase.shrink,),
             database=None,
             verbosity=Verbosity.debug,

@@ -17,7 +17,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-import os
 import re
 import subprocess
 import sys
@@ -210,14 +209,6 @@ def test_load_non_existent_profile():
         settings.get_profile("nonsense")
 
 
-@pytest.mark.skipif(
-    os.getenv("HYPOTHESIS_PROFILE") not in (None, "default"),
-    reason="Defaults have been overridden",
-)
-def test_runs_tests_with_defaults_from_conftest():
-    assert settings.default.timeout == -1
-
-
 def test_cannot_delete_a_setting():
     x = settings()
     with pytest.raises(AttributeError):
@@ -235,12 +226,8 @@ def test_cannot_set_strict():
 
 
 @checks_deprecated_behaviour
-def test_set_deprecated_settings():
-    assert settings(timeout=3).timeout == 3
-
-
-def test_setting_to_future_value_gives_future_value_and_no_error():
-    assert settings(timeout=unlimited).timeout == -1
+def test_setting_to_unlimited_is_not_error_yet():
+    settings(timeout=unlimited)
 
 
 def test_cannot_set_settings():
@@ -480,3 +467,8 @@ def test_assigning_to_settings_attribute_on_state_machine_raises_error():
 
     state_machine_instance = StateMachine()
     state_machine_instance.settings = "any value"
+
+
+def test_can_not_set_timeout_to_time():
+    with pytest.raises(InvalidArgument):
+        settings(timeout=60)

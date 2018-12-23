@@ -17,15 +17,12 @@
 
 from __future__ import absolute_import, division, print_function
 
-import time
-
 import pytest
 from _pytest.outcomes import Failed, Skipped
 
 import hypothesis.strategies as s
 from hypothesis import find, given, reject, settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
-from tests.common.utils import checks_deprecated_behaviour, flaky
 
 
 def test_stops_after_max_examples_if_satisfying():
@@ -56,24 +53,6 @@ def test_stops_after_ten_times_max_examples_if_not_satisfying():
         find(s.integers(0, 10000), track, settings=settings(max_examples=max_examples))
 
     assert count[0] == 10 * max_examples
-
-
-@checks_deprecated_behaviour
-@flaky(min_passes=1, max_runs=2)
-def test_can_time_out_in_simplify():
-    def slow_always_true(x):
-        time.sleep(0.1)
-        return True
-
-    start = time.time()
-    find(
-        s.lists(s.booleans()),
-        slow_always_true,
-        settings=settings(timeout=0.1, database=None),
-    )
-    finish = time.time()
-    run_time = finish - start
-    assert run_time <= 0.4
 
 
 some_normal_settings = settings()

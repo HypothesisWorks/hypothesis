@@ -26,7 +26,7 @@ import attr
 import pytest
 
 import hypothesis.internal.conjecture.engine as engine_module
-from hypothesis import HealthCheck, Phase, Verbosity, settings, unlimited
+from hypothesis import HealthCheck, Phase, Verbosity, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
@@ -169,7 +169,7 @@ def test_terminates_shrinks(n, monkeypatch):
 
     runner = ConjectureRunner(
         slow_shrinker(),
-        settings=settings(max_examples=5000, database=db, timeout=unlimited),
+        settings=settings(max_examples=5000, database=db),
         random=Random(0),
         database_key=b"key",
     )
@@ -294,33 +294,6 @@ def test_interleaving_engines():
     assert x == b"\0"
     for c in children:
         assert not c.interesting_examples
-
-
-@checks_deprecated_behaviour
-def test_run_with_timeout_while_shrinking():
-    def f(data):
-        time.sleep(0.1)
-        x = data.draw_bytes(32)
-        if any(x):
-            data.mark_interesting()
-
-    runner = ConjectureRunner(f, settings=settings(database=None, timeout=0.2))
-    start = time.time()
-    runner.run()
-    assert time.time() <= start + 1
-    assert runner.interesting_examples
-
-
-@checks_deprecated_behaviour
-def test_run_with_timeout_while_boring():
-    def f(data):
-        time.sleep(0.1)
-
-    runner = ConjectureRunner(f, settings=settings(database=None, timeout=0.2))
-    start = time.time()
-    runner.run()
-    assert time.time() <= start + 1
-    assert runner.valid_examples > 0
 
 
 @checks_deprecated_behaviour
@@ -492,7 +465,7 @@ def test_fails_health_check_for_slow_draws():
 
 
 def test_fails_healthcheck_for_hung_test():
-    @fails_health_check(HealthCheck.hung_test, timeout=unlimited)
+    @fails_health_check(HealthCheck.hung_test)
     def _(data):
         data.draw_bytes(1)
         time.sleep(3600)

@@ -21,7 +21,7 @@ import hashlib
 import math
 from random import Random
 
-from hypothesis import Verbosity, assume, settings, unlimited
+from hypothesis import Verbosity, assume, settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import PYPY
 from hypothesis.internal.floats import float_to_int, int_to_float
@@ -201,7 +201,6 @@ TestHypothesis = HypothesisSpec.TestCase
 TestHypothesis.settings = settings(
     TestHypothesis.settings,
     stateful_step_count=10 if PYPY else 50,
-    timeout=unlimited,
     verbosity=max(TestHypothesis.settings.verbosity, Verbosity.verbose),
     max_examples=10000 if MAIN else 200,
 )

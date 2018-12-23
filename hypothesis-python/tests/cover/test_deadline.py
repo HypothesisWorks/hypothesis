@@ -23,7 +23,7 @@ import warnings
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, given, settings, unlimited
+from hypothesis import HealthCheck, given, settings
 from hypothesis.errors import DeadlineExceeded, Flaky, HypothesisDeprecationWarning
 from tests.common.utils import capture_out, checks_deprecated_behaviour
 
@@ -95,9 +95,7 @@ def test_keeps_you_well_above_the_deadline():
     seen = set()
     failed_once = [False]
 
-    @settings(
-        deadline=100, timeout=unlimited, suppress_health_check=[HealthCheck.hung_test]
-    )
+    @settings(deadline=100, suppress_health_check=[HealthCheck.hung_test])
     @given(st.integers(0, 2000))
     def slow(i):
         # Make sure our initial failure isn't something that immediately goes

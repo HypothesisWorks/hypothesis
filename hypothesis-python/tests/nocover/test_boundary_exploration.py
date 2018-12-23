@@ -20,7 +20,7 @@ from __future__ import absolute_import, division, print_function
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, Verbosity, find, given, reject, settings, unlimited
+from hypothesis import HealthCheck, Verbosity, find, given, reject, settings
 from hypothesis.errors import NoSuchExample
 from tests.common.utils import no_shrink
 
@@ -42,10 +42,7 @@ def test_explore_arbitrary_function(strat, data):
             strat,
             predicate,
             settings=settings(
-                max_examples=10,
-                database=None,
-                timeout=unlimited,
-                verbosity=Verbosity.quiet,
+                max_examples=10, database=None, verbosity=Verbosity.quiet
             ),
         )
     except NoSuchExample:
