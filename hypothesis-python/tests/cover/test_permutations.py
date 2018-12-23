@@ -18,9 +18,10 @@
 from __future__ import absolute_import, division, print_function
 
 from hypothesis import given
-from hypothesis.strategies import data, integers, permutations, sets
+from hypothesis.errors import InvalidArgument
+from hypothesis.strategies import permutations
 from tests.common.debug import minimal
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import fails_with
 
 
 def test_can_find_non_trivial_permutation():
@@ -40,8 +41,6 @@ def test_empty_permutations_are_empty(xs):
     assert xs == []
 
 
-@checks_deprecated_behaviour
-@given(data=data(), xs=sets(integers()))
-def test_non_sequence_types_are_deprecated(data, xs):
-    p = data.draw(permutations(xs))
-    assert xs == set(p)
+@fails_with(InvalidArgument)
+def test_cannot_permute_non_sequence_types():
+    permutations(set()).example()

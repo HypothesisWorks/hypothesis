@@ -248,11 +248,6 @@ def test_build_class_with_target_kwarg():
     ds.builds(NamedTupleWithTargetField, target=ds.integers()).example()
 
 
-@checks_deprecated_behaviour
-def test_builds_can_specify_target_with_target_kwarg():
-    ds.builds(x=ds.integers(), target=lambda x: x).example()
-
-
 def test_builds_raises_with_no_target():
     with pytest.raises(InvalidArgument):
         ds.builds().example()

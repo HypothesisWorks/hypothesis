@@ -87,13 +87,10 @@ class ListStrategy(SearchStrategy):
                 % (self.element_strategy,)
             )
         if self.element_strategy.is_empty and 0 < self.max_size < float("inf"):
-            from hypothesis._settings import note_deprecation
-
-            note_deprecation(
+            raise InvalidArgument(
                 "Cannot create a collection of max_size=%r, because no "
                 "elements can be drawn from the element strategy %r"
-                % (self.max_size, self.element_strategy),
-                since="2018-03-11",
+                % (self.max_size, self.element_strategy)
             )
 
     def calc_is_empty(self, recur):
