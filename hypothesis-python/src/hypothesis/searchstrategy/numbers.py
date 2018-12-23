@@ -108,7 +108,9 @@ class FloatStrategy(SearchStrategy):
         self.sampler = d.Sampler(weights)
 
     def __repr__(self):
-        return "%s()" % (self.__class__.__name__,)
+        return "FloatStrategy(allow_infinity={}, allow_nan={})".format(
+            self.allow_infinity, self.allow_nan
+        )
 
     def permitted(self, f):
         assert isinstance(f, float)
