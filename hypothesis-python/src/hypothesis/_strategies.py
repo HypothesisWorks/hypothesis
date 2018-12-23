@@ -534,6 +534,10 @@ def floats(
                 "Cannot have allow_infinity=%r, with both min_value and "
                 "max_value" % (allow_infinity)
             )
+    elif min_value == float("inf"):
+        raise InvalidArgument("allow_infinity=False excludes min_value=inf")
+    elif max_value == float("-inf"):
+        raise InvalidArgument("allow_infinity=False excludes max_value=-inf")
 
     if min_value is None and max_value is None:
         result = FloatStrategy(
