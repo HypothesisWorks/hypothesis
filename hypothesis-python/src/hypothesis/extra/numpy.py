@@ -176,7 +176,7 @@ class ArrayStrategy(SearchStrategy):
                 "dtype %r - instead it becomes %r .  Consider using a more "
                 "precise strategy, as this will be an error in a future "
                 "version." % (val, strategy, self.dtype, result[idx]),
-                since="2018-07-31",
+                since="2018-10-25",
             )
             # Because the message includes the value of the generated element,
             # it would be easy to spam users with thousands of warnings.
