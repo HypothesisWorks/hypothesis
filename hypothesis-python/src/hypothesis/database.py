@@ -22,28 +22,20 @@ import os
 import warnings
 from hashlib import sha1
 
-from hypothesis._settings import note_deprecation
 from hypothesis.configuration import storage_directory
-from hypothesis.errors import HypothesisWarning
+from hypothesis.errors import HypothesisException, HypothesisWarning
 from hypothesis.internal.compat import FileNotFoundError, hbytes
 from hypothesis.utils.conventions import not_set
 
 
 def _db_for_path(path=None):
     if path is not_set:
-        path = os.getenv("HYPOTHESIS_DATABASE_FILE")
-        if path is not None:  # pragma: no cover
-            # Note: we should retain an explicit deprecation warning for a
-            # further period after this is removed, to ease debugging for
-            # anyone migrating to a new version.
-            note_deprecation(
-                "The $HYPOTHESIS_DATABASE_FILE environment variable is "
-                "deprecated, and will be ignored by a future version of "
-                "Hypothesis.  Configure your database location via a "
-                "settings profile instead.",
-                since="2018-04-01",
+        if os.getenv("HYPOTHESIS_DATABASE_FILE") is not None:  # pragma: no cover
+            raise HypothesisException(
+                "The $HYPOTHESIS_DATABASE_FILE environment variable no longer has any "
+                "effect.  Configure your database location via a settings profile instead.\n"
+                "https://hypothesis.readthedocs.io/en/latest/settings.html#settings-profiles"
             )
-            return _db_for_path(path)
         # Note: storage_directory attempts to create the dir in question, so
         # if os.access fails there *must* be a fatal permissions issue.
         path = storage_directory("examples")
