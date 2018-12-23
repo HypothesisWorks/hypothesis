@@ -158,6 +158,13 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
 
     def __init__(self, parent=None, **kwargs):
         # type: (settings, **Any) -> None
+        if kwargs.get("derandomize"):
+            if kwargs.get("database") is not None:
+                raise InvalidArgument(
+                    "derandomize=True implies database=None, so passing "
+                    "database=%r too is invalid." % (kwargs["database"],)
+                )
+            kwargs["database"] = None
         self._construction_complete = False
         deprecations = []
         defaults = parent or settings.default

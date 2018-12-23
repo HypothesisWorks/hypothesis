@@ -41,7 +41,6 @@ from hypothesis._settings import (
     PrintSettings,
     Verbosity,
     local_settings,
-    note_deprecation,
     settings as Settings,
 )
 from hypothesis.control import BuildContext
@@ -152,6 +151,10 @@ def seed(seed):
 
     def accept(test):
         test._hypothesis_internal_use_seed = seed
+        current_settings = getattr(test, "_hypothesis_internal_use_settings", None)
+        test._hypothesis_internal_use_settings = Settings(
+            current_settings, database=None
+        )
         return test
 
     return accept
@@ -642,30 +645,6 @@ class StateForActualGivenExecution(object):
         note_engine_for_statistics(runner)
 
         self.used_examples_from_database = runner.used_examples_from_database
-
-        if runner.used_examples_from_database:
-            if self.settings.derandomize:
-                note_deprecation(
-                    (
-                        "In future derandomize will imply database=None, but your "
-                        "test: %s is currently using examples from the database. "
-                        "To get the future behaviour, update your settings to "
-                        "include database=None."
-                    )
-                    % (self.test.__name__,),
-                    since="2017-11-29",
-                )
-            if self.__had_seed:
-                note_deprecation(
-                    (
-                        "In future use of @seed will imply database=None in your "
-                        "settings, but your test: %s is currently using examples "
-                        "from the database. To get the future behaviour, update "
-                        "your settings for this test to include database=None."
-                    )
-                    % (self.test.__name__,),
-                    since="2017-11-29",
-                )
 
         if runner.call_count == 0:
             return

@@ -395,3 +395,8 @@ def test_assigning_to_settings_attribute_on_state_machine_raises_error():
 def test_can_not_set_timeout_to_time():
     with pytest.raises(InvalidArgument):
         settings(timeout=60)
+
+
+def test_derandomise_with_explicit_database_is_invalid():
+    with pytest.raises(InvalidArgument):
+        settings(derandomize=True, database=ExampleDatabase(":memory:"))
