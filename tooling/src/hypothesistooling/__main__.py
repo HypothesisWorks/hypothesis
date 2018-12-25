@@ -216,7 +216,7 @@ def format():
             o.write("\n")
     pip_tool("isort", *files_to_format)
 
-    pip_tool("black", tools.ROOT)
+    pip_tool("black", *files_to_format)
 
 
 VALID_STARTS = ("# coding=utf-8", "#!/usr/bin/env python")
