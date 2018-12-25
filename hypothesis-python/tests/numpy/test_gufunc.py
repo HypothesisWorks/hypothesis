@@ -1,0 +1,103 @@
+
+
+def test_shapes_tuple_of_arrays():
+    # test output shapes what requested
+    pass
+
+
+def test_elements_tuple_of_arrays():
+    # somehow test elements
+    pass
+
+
+def test_constraints_gufunc_shape():
+    # generate signatures
+    #    but also with already parsed
+    #    need to generate parsed and do inverse of sig
+    # infer shape of each var
+    #    make sure never assign dif value if already infered
+    #    or correct val if is const
+    #    make sure right len
+    # test sizes in [min, max] range
+    pass
+
+
+def test_constraints_gufunc():
+    # same as gufunc_shape but now need to use .shape to get shapes
+    #   => put most of test in subroutine, then test_ func is wrapper
+    pass
+
+
+def test_elements_gufunc():
+    # again prob just a wrapper
+    pass
+
+
+def test_bcast_gufunc_broadcast_shape():
+    # chop off extra dims then same as gufunc_shape
+    # make sure compatible with broadcast_arrays
+    # compute extra dims matrix: make sure 1 or same
+    #    make sure extra in [min, max] side and under max extra
+    #    also compute not always same??
+    #    keep drawing until diff??
+    # nothing extra if in excluded
+    pass
+
+
+def test_bcast_gufunc_broadcast():
+    # same as gufunc_broadcast_shape but now use .shape
+    pass
+
+
+def test_elements_gufunc_broadcast():
+    # again prob just a wrapper
+    pass
+
+
+def test_bcast_broadcasted():
+    # take args and test same as gufunc_broadcast
+    pass
+
+
+def test_elements_broadcasted():
+    # again prob just a wrapper
+    pass
+
+
+def test_first_arg_broadcasted():
+    # test id just pass thru on first arg
+    pass
+
+
+def test_np_passes_broadcasted():
+    # check function matches for built-in nps we know broadcast correct
+    #    do with real sig
+    #    then also do elementwise funcs and test arbitrary sigs??
+    #    also test otypes match
+    pass
+
+
+def test_constraints_axised():
+    # take args and test same as gufunc_broadcast
+    pass
+
+
+def test_elements_axised():
+    # again prob just a wrapper
+    pass
+
+
+def test_first_arg_axised():
+    # test id just pass thru on first arg
+    pass
+
+
+def test_np_passes_axised():
+    # check function matches for built-in nps we know broadcast correct
+    #    do with real sig
+    pass
+
+
+def test_none_arg_axised():
+    # check never None is allow_none is false
+    pass
