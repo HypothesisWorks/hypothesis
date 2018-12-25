@@ -1,17 +1,20 @@
+from __future__ import absolute_import
+
+import numpy as np
 from hypothesis import given
-from hypothesis.strategies import integers, lists
+from hypothesis.strategies import integers, lists, data
 import hypothesis.extra.gufunc as gu
 
 
 @given(lists(lists(integers(min_value=0, max_value=5),
-                   min_size=0, max_size=3), min_size=0, max_size=5))
-def test_shapes_tuple_of_arrays(shapes):
+                   min_size=0, max_size=3), min_size=0, max_size=5), data())
+def test_shapes_tuple_of_arrays(shapes, data):
     S = gu.tuple_of_arrays(shapes, integers, min_value=0, max_value=5)
-    L = S.example()
+    L = data.draw(S)  # TODO consider giving name
 
     assert len(shapes) == len(L)
     for spec, drawn in zip(shapes, L):
-        assert tuple(spec) == drawn.shape
+        assert tuple(spec) == np.shape(drawn)
     pass
 
 
