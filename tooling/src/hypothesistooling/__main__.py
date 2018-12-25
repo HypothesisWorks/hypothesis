@@ -163,7 +163,7 @@ HEADER = """
 @task()
 def format():
     def should_format_file(path):
-        if os.path.basename(path) in ("header.py", "test_lambda_formatting.py"):
+        if os.path.basename(path) in ("header.py",):
             return False
         if "vendor" in path.split(os.path.sep):
             return False
