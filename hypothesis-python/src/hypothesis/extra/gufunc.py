@@ -1,8 +1,10 @@
+from __future__ import absolute_import
+
+import numpy as np
+import numpy.lib.function_base as npfb
 from hypothesis.extra.numpy import arrays
 from hypothesis.strategies import composite, just, lists, tuples
 from hypothesis.strategies import booleans, integers, floats
-import numpy as np
-import numpy.lib.function_base as npfb
 
 
 @composite
@@ -48,7 +50,7 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
         and still find most corner cases in testing.
 
     Returns
-    ----------
+    -------
     shapes : list of tuples
         list of tuples where each tuple is the shape of an argument.
 
@@ -144,7 +146,7 @@ def gufunc_broadcast_shape(draw, signature,
         grows exponentially with extra dimensions.
 
     Returns
-    ----------
+    -------
     shapes : list of tuples
         list of tuples where each tuple is the shape of an argument. Extra
         dimensions for broadcasting will be present in the shapes.
