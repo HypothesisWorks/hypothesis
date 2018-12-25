@@ -29,7 +29,7 @@ def tuple_of_arrays(draw, shapes, filler, **kwargs):
 
 
 @composite
-def gufunc_shape(draw, signature, max_side=5):
+def gufunc_shape(draw, signature, min_side=0, max_side=5):
     '''Strategy to generate array shapes for arguments to a function consistent
     with its signature.
 
@@ -39,6 +39,10 @@ def gufunc_shape(draw, signature, max_side=5):
         Signature for shapes to be compatible with. Expects string in format
         of numpy generalized universal function signature, e.g.,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
+    min_side : int
+        Minimum size of any side of the arrays. It is good to test the corner
+        cases of 0 or 1 sized dimensions when applicable, but if not, it a min
+        size can be supplied here.
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing.
@@ -53,8 +57,6 @@ def gufunc_shape(draw, signature, max_side=5):
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     '''
-    min_side = 0  # This could be made argument as well if we like
-
     # Parse out the signature
     # Warning: this uses "private" function of numpy, but it does the job.
     # parses to [('n', 'm'), ('m', 'p')]
@@ -76,7 +78,7 @@ def gufunc_shape(draw, signature, max_side=5):
 
 
 @composite
-def gufunc(draw, signature, filler=floats, max_side=5, **kwargs):
+def gufunc(draw, signature, filler=floats, min_side=0, max_side=5, **kwargs):
     '''Strategy to generate a tuple of ndarrays for arguments to a function
     consistent with its signature.
 
@@ -89,6 +91,10 @@ def gufunc(draw, signature, filler=floats, max_side=5, **kwargs):
     filler : strategy
         Strategy to fill in array elements e.g. `hypothesis.strategies.floats`.
         The parameters for `filler` are specified by the `kwargs`.
+    min_side : int
+        Minimum size of any side of the arrays. It is good to test the corner
+        cases of 0 or 1 sized dimensions when applicable, but if not, it a min
+        size can be supplied here.
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing.
@@ -104,14 +110,15 @@ def gufunc(draw, signature, filler=floats, max_side=5, **kwargs):
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     '''
-    shapes = draw(gufunc_shape(signature, max_side=max_side))
+    shapes = draw(gufunc_shape(signature,
+                               min_side=min_side, max_side=max_side))
     res = draw(tuple_of_arrays(shapes, filler, **kwargs))
     return res
 
 
 @composite
 def gufunc_broadcast_shape(draw, signature,
-                           excluded=(), max_side=5, max_extra=2):
+                           excluded=(), min_side=0, max_side=5, max_extra=2):
     '''Strategy to generate the shape of ndarrays for arguments to a function
     consistent with its signature with extra dimensions to test broadcasting.
 
@@ -124,6 +131,10 @@ def gufunc_broadcast_shape(draw, signature,
     excluded : list-like of integers
         Set of integers representing the positional for which the function will
         not be vectorized. Uses same format as `numpy.vectorize`.
+    min_side : int
+        Minimum size of any side of the arrays. It is good to test the corner
+        cases of 0 or 1 sized dimensions when applicable, but if not, it a min
+        size can be supplied here.
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing.
@@ -143,11 +154,10 @@ def gufunc_broadcast_shape(draw, signature,
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     '''
-    min_side = 0  # This could be made argument as well if we like
-
     # Get core shapes before broadcasted dimensions
     # e.g., shapes = [(1, 3), (3, 1)]
-    shapes = draw(gufunc_shape(signature, max_side=max_side))
+    shapes = draw(gufunc_shape(signature,
+                               min_side=min_side, max_side=max_side))
 
     # Which extra dims will just be 1 to get broadcasted, specified by mask
     n_extra = draw(integers(min_value=0, max_value=max_extra))  # e.g., 2
@@ -179,7 +189,7 @@ def gufunc_broadcast_shape(draw, signature,
 
 @composite
 def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
-                     max_side=5, max_extra=2, **kwargs):
+                     min_side=0, max_side=5, max_extra=2, **kwargs):
     '''Strategy to generate a tuple of ndarrays for arguments to a function
     consistent with its signature with extra dimensions to test broadcasting.
 
@@ -195,6 +205,10 @@ def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
     excluded : list-like of integers
         Set of integers representing the positional for which the function will
         not be vectorized. Uses same format as `numpy.vectorize`.
+    min_side : int
+        Minimum size of any side of the arrays. It is good to test the corner
+        cases of 0 or 1 sized dimensions when applicable, but if not, it a min
+        size can be supplied here.
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing.
@@ -215,7 +229,7 @@ def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     '''
     shapes = draw(gufunc_broadcast_shape(signature, excluded=excluded,
-                                         max_side=max_side,
+                                         min_side=min_side, max_side=max_side,
                                          max_extra=max_extra))
     res = draw(tuple_of_arrays(shapes, filler, **kwargs))
     return res
@@ -269,7 +283,8 @@ def broadcasted(f, signature, otypes=None, excluded=(), **kwargs):
 
 @composite
 def axised(draw, f, signature,
-           filler=floats, max_side=5, max_extra=2, allow_none=True, **kwargs):
+           filler=floats, min_side=0, max_side=5, max_extra=2, allow_none=True,
+           **kwargs):
     '''Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
     `numpy.apply_along_axis`.
@@ -287,6 +302,10 @@ def axised(draw, f, signature,
     filler : strategy
         Strategy to fill in array elements e.g. `hypothesis.strategies.floats`.
         The parameters for `filler` are specified by the `kwargs`.
+    min_side : int
+        Minimum size of any side of the arrays. It is good to test the corner
+        cases of 0 or 1 sized dimensions when applicable, but if not, it a min
+        size can be supplied here.
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing.
@@ -332,11 +351,12 @@ def axised(draw, f, signature,
             Y = np.apply_along_axis(f, axis, X, *args)
         return Y
 
-    X_shape = draw(lists(integers(min_value=min_side, max_value=max_side),
-                         min_size=1, max_size=max_extra + 1))
+    side_base = integers(min_value=min_side, max_value=max_side)
+    X_shape = draw(lists(side_base, min_size=1, max_size=max_extra + 1))
     axis = draw(integers(min_value=0, max_value=len(X_shape) - 1))
 
-    shapes = draw(gufunc_shape(signature, max_side=max_side))
+    shapes = draw(gufunc_shape(signature,
+                               min_side=min_side, max_side=max_side))
     n, = shapes[0]  # must be singleton by spec
     X_shape[axis] = n
     shapes[0] = X_shape
