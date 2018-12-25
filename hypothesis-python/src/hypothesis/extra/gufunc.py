@@ -13,8 +13,8 @@ def tuple_of_arrays(draw, shapes, filler, **kwargs):
 
     Parameters
     ----------
-    shapes : iterable of tuples
-        Iterable of tuples where each tuple is the shape of an argument.
+    shapes : list-like of tuples
+        List of tuples where each tuple is the shape of an argument.
     filler : strategy
         Strategy to fill in array elements e.g. `hypothesis.strategies.floats`.
         The parameters for `filler` are specified by the `kwargs`.

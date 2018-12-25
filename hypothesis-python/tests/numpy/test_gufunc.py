@@ -1,7 +1,17 @@
+from hypothesis import given
+from hypothesis.strategies import integers, lists
+import hypothesis.extra.gufunc as gu
 
 
-def test_shapes_tuple_of_arrays():
-    # test output shapes what requested
+@given(lists(lists(integers(min_value=0, max_value=5),
+                   min_size=0, max_size=3), min_size=0, max_size=5))
+def test_shapes_tuple_of_arrays(shapes):
+    S = gu.tuple_of_arrays(shapes, integers, min_value=0, max_value=5)
+    L = S.example()
+
+    assert len(shapes) == len(L)
+    for spec, drawn in zip(shapes, L):
+        assert tuple(spec) == drawn.shape
     pass
 
 
