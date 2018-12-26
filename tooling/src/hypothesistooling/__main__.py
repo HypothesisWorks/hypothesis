@@ -163,7 +163,7 @@ HEADER = """
 @task()
 def format():
     def should_format_file(path):
-        if os.path.basename(path) in ("header.py", "test_lambda_formatting.py"):
+        if os.path.basename(path) in ("header.py",):
             return False
         if "vendor" in path.split(os.path.sep):
             return False
@@ -216,7 +216,7 @@ def format():
             o.write("\n")
     pip_tool("isort", *files_to_format)
 
-    pip_tool("black", tools.ROOT)
+    pip_tool("black", *files_to_format)
 
 
 VALID_STARTS = ("# coding=utf-8", "#!/usr/bin/env python")
