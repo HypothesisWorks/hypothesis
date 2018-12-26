@@ -1,12 +1,23 @@
 from __future__ import absolute_import
 
+import string
 import numpy as np
 from hypothesis import given
-from hypothesis.strategies import integers, lists, data
+from hypothesis.strategies import integers, lists, data, sampled_from
 import hypothesis.extra.gufunc as gu
 # from hypothesis.extra.numpy import scalar_dtypes, from_dtype
 
 # TODO consider if tuple_of_arrays should always return np.array
+# TODO note numpy>=1.12.0 for the sig parsing
+
+SHAPE_VARS = string.digits + string.ascii_lowercase
+
+
+def unparse(parsed_sig):
+    # TODO explain [] not valid here
+    sig = [','.join(vv) for vv in parsed_sig]
+    sig = '(' + '),('.join(sig) + ')'
+    return sig
 
 
 @given(lists(lists(integers(min_value=0, max_value=5),
@@ -24,16 +35,35 @@ def test_shapes_tuple_of_arrays(shapes, data):
         assert np.all(drawn <= 5)
 
 
-def test_constraints_gufunc_shape():
-    # generate signatures
-    #    but also with already parsed
-    #    need to generate parsed and do inverse of sig
-    # infer shape of each var
-    #    make sure never assign dif value if already infered
-    #    or correct val if is const
-    #    make sure right len
-    # test sizes in [min, max] range
-    pass
+@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
+             min_size=1, max_size=5), integers(0, 100), integers(0, 100),
+       data())
+def test_constraints_gufunc_shape(parsed_sig, min_side, max_side, data):
+    min_side, max_side = sorted([min_side, max_side])
+
+    # We don't care about the output for this function
+    signature = unparse(parsed_sig) + '->()'
+
+    S = gu.gufunc_shape(signature, min_side=min_side, max_side=max_side)
+
+    L = data.draw(S)
+
+    assert type(L) == list
+    assert len(parsed_sig) == len(L)
+    size_lookup = {}
+    for spec, drawn in zip(parsed_sig, L):
+        assert type(drawn) == tuple
+        assert len(spec) == len(drawn)
+        for ss, dd in zip(spec, drawn):
+            # TODO adapt this in Py3
+            assert type(dd) in (int, long)
+            if ss.isdigit():
+                assert int(ss) == dd
+            else:
+                assert min_side <= dd
+                assert dd <= max_side
+                var_size = size_lookup.setdefault(ss, dd)
+                assert var_size == dd
 
 
 def test_constraints_gufunc():
