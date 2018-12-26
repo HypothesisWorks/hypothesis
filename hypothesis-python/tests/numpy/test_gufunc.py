@@ -20,34 +20,7 @@ def unparse(parsed_sig):
     return sig
 
 
-@given(lists(lists(integers(min_value=0, max_value=5),
-                   min_size=0, max_size=3), min_size=0, max_size=5), data())
-def test_shapes_tuple_of_arrays(shapes, data):
-    S = gu.tuple_of_arrays(shapes, integers, min_value=0, max_value=5)
-    L = data.draw(S)
-
-    assert len(shapes) == len(L)
-    for spec, drawn in zip(shapes, L):
-        assert tuple(spec) == np.shape(drawn)
-        # TODO after API change, can make bigger test of elements elsewhere
-        assert np.asarray(drawn).dtype == int
-        assert np.all(0 <= drawn)
-        assert np.all(drawn <= 5)
-
-
-@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
-             min_size=1, max_size=5), integers(0, 100), integers(0, 100),
-       data())
-def test_constraints_gufunc_shape(parsed_sig, min_side, max_side, data):
-    min_side, max_side = sorted([min_side, max_side])
-
-    # We don't care about the output for this function
-    signature = unparse(parsed_sig) + '->()'
-
-    S = gu.gufunc_shape(signature, min_side=min_side, max_side=max_side)
-
-    L = data.draw(S)
-
+def validate_shapes(L, parsed_sig, min_side, max_side):
     assert type(L) == list
     assert len(parsed_sig) == len(L)
     size_lookup = {}
@@ -66,15 +39,60 @@ def test_constraints_gufunc_shape(parsed_sig, min_side, max_side, data):
                 assert var_size == dd
 
 
-def test_constraints_gufunc():
-    # same as gufunc_shape but now need to use .shape to get shapes
-    #   => put most of test in subroutine, then test_ func is wrapper
-    pass
+def validate_elements(L):
+    for drawn in L:
+        # TODO after API change, can make bigger test of elements elsewhere
+        assert np.asarray(drawn).dtype == int
+        assert np.all(0 <= drawn)
+        assert np.all(drawn <= 5)
 
 
-def test_elements_gufunc():
-    # again prob just a wrapper
-    pass
+@given(lists(lists(integers(min_value=0, max_value=5),
+                   min_size=0, max_size=3), min_size=0, max_size=5), data())
+def test_shapes_tuple_of_arrays(shapes, data):
+    S = gu.tuple_of_arrays(shapes, integers, min_value=0, max_value=5)
+    X = data.draw(S)
+
+    validate_elements(X)
+
+    assert len(shapes) == len(X)
+    for spec, drawn in zip(shapes, X):
+        assert tuple(spec) == np.shape(drawn)
+
+
+@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
+             min_size=1, max_size=5), integers(0, 100), integers(0, 100),
+       data())
+def test_constraints_gufunc_shape(parsed_sig, min_side, max_side, data):
+    min_side, max_side = sorted([min_side, max_side])
+
+    # We don't care about the output for this function
+    signature = unparse(parsed_sig) + '->()'
+
+    S = gu.gufunc_shape(signature, min_side=min_side, max_side=max_side)
+
+    shapes = data.draw(S)
+    validate_shapes(shapes, parsed_sig, min_side, max_side)
+
+
+@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
+             min_size=1, max_size=5), integers(0, 100), integers(0, 100),
+       data())
+def test_constraints_gufunc(parsed_sig, min_side, max_side, data):
+    min_side, max_side = sorted([min_side, max_side])
+
+    # We don't care about the output for this function
+    signature = unparse(parsed_sig) + '->()'
+
+    S = gu.gufunc(signature, filler=integers,
+                  min_side=min_side, max_side=max_side,
+                  min_value=0, max_value=5)
+
+    X = data.draw(S)
+    shapes = [np.shape(xx) for xx in X]
+
+    validate_shapes(shapes, parsed_sig, min_side, max_side)
+    validate_elements(X)
 
 
 def test_bcast_gufunc_broadcast_shape():

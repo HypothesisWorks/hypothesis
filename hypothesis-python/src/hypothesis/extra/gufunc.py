@@ -7,6 +7,12 @@ from hypothesis.strategies import composite, just, lists, tuples
 from hypothesis.strategies import booleans, integers, floats
 
 
+def validate(shapes):
+    # Make all int and rid of longs, but hopefully we can eliminate in Py3
+    shapes = [tuple(int(aa) for aa in tt) for tt in shapes]
+    return shapes
+
+
 @composite
 def tuple_of_arrays(draw, shapes, filler, **kwargs):
     '''Strategy to generate a tuple of ndarrays with specified shapes.
@@ -24,6 +30,8 @@ def tuple_of_arrays(draw, shapes, filler, **kwargs):
     res : tuple of ndarrays
         Resulting ndarrays with shape from `shapes` and elements from `filler`.
     '''
+    shapes = validate(shapes)
+
     dtype = np.dtype(type(draw(filler(**kwargs))))
     res = tuple(draw(arrays(dtype, ss, elements=filler(**kwargs)))
                 for ss in shapes)
@@ -70,12 +78,14 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     # Randomly sample dimensions for each variable, if literal number provided
     # just put the integer in, e.g., D['2'] = 2 if someone provided '(n,2)'.
     # e.g., D = {'p': 1, 'm': 3, 'n': 1}
+    # TODO consider forcing the draws to be ints for Py2
     D = {k: (int(k) if k.isdigit() else
              draw(integers(min_value=min_side, max_value=max_side)))
          for arg in inp for k in arg}
 
     # Build the shapes: e.g., shapes = [(1, 3), (3, 1)]
     shapes = [tuple(D[k] for k in arg) for arg in inp]
+
     return shapes
 
 
