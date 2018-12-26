@@ -146,7 +146,7 @@ def gufunc_broadcast_shape(draw, signature,
     min_side : int
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, it a min
-        size can be supplied here.
+        size can be supplied here. Not applied to broadcasted dims.
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing.
@@ -173,11 +173,14 @@ def gufunc_broadcast_shape(draw, signature,
 
     # Which extra dims will just be 1 to get broadcasted, specified by mask
     n_extra = draw(integers(min_value=0, max_value=max_extra))  # e.g., 2
+    n_extra = int(n_extra)  # cast to int only for Py2
     # e.g., mask = [[True False], [False False]]
     mask = draw(arrays(np.bool, (len(shapes), n_extra)))
 
+    # TODO note still can get 1 on bcast dims even if max_side=0
+
     # Build 2D array with extra dimensions
-    extra_dim_gen = integers(min_value=min_side, max_value=max_side)
+    extra_dim_gen = integers(min_value=0, max_value=max_side)
     # e.g., extra_dims = [2 5]
     extra_dims = draw(arrays(np.int, (n_extra,), elements=extra_dim_gen))
     # e.g., extra_dims = [[2 5], [2 5]]
@@ -220,7 +223,7 @@ def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
     min_side : int
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, it a min
-        size can be supplied here.
+        size can be supplied here. Not applied to broadcasted dims.
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing.
@@ -295,7 +298,7 @@ def broadcasted(f, signature, otypes=None, excluded=(), **kwargs):
 
 @composite
 def axised(draw, f, signature,
-           filler=floats, min_side=0, max_side=5, max_extra=2, allow_none=True,
+           filler=floats, min_side=1, max_side=5, max_extra=2, allow_none=True,
            **kwargs):
     '''Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
@@ -318,9 +321,10 @@ def axised(draw, f, signature,
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, it a min
         size can be supplied here.
-    max_side : int
-        Maximum size of any side of the arrays. This can usually be kept small
-        and still find most corner cases in testing.
+    min_side : int
+        Minimum size of any side of the arrays. It is good to test the corner
+        cases of 0 or 1 sized dimensions when applicable, but if not, it a min
+        size can be supplied here.
     max_extra : int
         Maximum number of extra dimensions that can be added to the first
         argument of `f`, which is the argument that `numpy.apply_along_axis`
@@ -352,7 +356,7 @@ def axised(draw, f, signature,
     '''
     # This could be made argument as well if we like, np.apply_along_axis
     # doesn't like when this is 0, but we could handle that case ourselves.
-    min_side = 1
+
 
     def f_axis(X, *args, **kwargs):
         axis = kwargs.get('axis', None)  # This trick is not needed in Python3
