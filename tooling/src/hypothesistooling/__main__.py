@@ -163,8 +163,6 @@ HEADER = """
 @task()
 def format():
     def should_format_file(path):
-        if os.path.basename(path) in ("header.py",):
-            return False
         if "vendor" in path.split(os.path.sep):
             return False
         return path.endswith(".py")
@@ -172,9 +170,6 @@ def format():
     changed = tools.modified_files()
 
     format_all = os.environ.get("FORMAT_ALL", "").lower() == "true"
-    if "scripts/header.py" in changed:
-        # We've changed the header, so everything needs its header updated.
-        format_all = True
     if "requirements/tools.txt" in changed:
         # We've changed the tools, which includes a lot of our formatting
         # logic, so we need to rerun formatters.
