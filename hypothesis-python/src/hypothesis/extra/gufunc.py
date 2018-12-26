@@ -146,7 +146,7 @@ def gufunc_broadcast_shape(draw, signature,
     min_side : int
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, it a min
-        size can be supplied here. Not applied to broadcasted dims.
+        size can be supplied here.
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing.
@@ -180,7 +180,7 @@ def gufunc_broadcast_shape(draw, signature,
     # TODO note still can get 1 on bcast dims even if max_side=0
 
     # Build 2D array with extra dimensions
-    extra_dim_gen = integers(min_value=0, max_value=max_side)
+    extra_dim_gen = integers(min_value=min_side, max_value=max_side)
     # e.g., extra_dims = [2 5]
     extra_dims = draw(arrays(np.int, (n_extra,), elements=extra_dim_gen))
     # e.g., extra_dims = [[2 5], [2 5]]

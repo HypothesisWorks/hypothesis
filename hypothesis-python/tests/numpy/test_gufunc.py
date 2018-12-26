@@ -68,14 +68,14 @@ def validate_bcast_shapes(shapes, parsed_sig, min_side, max_side, max_extra):
     b_dims2 = np.array([pad_left(list(bb), max_extra, 1) for bb in b_dims],
                        dtype=int)
     # TODO comment
-    assert np.all(b_dims2 <= max(1, max_side))
+    assert np.all((b_dims2 == 1) | (min_side <= b_dims2))
+    assert np.all((b_dims2 == 1) | (b_dims2 <= max_side))
     # make sure 1 or same
     for ii in range(max_extra):
         vals = set(b_dims2[:, ii])
         # Must all be 1 or a const size
         assert len(vals) <= 2
         assert len(vals) < 2 or (1 in vals)
-
 
 
 @given(lists(lists(integers(min_value=0, max_value=5),
@@ -174,11 +174,6 @@ def test_bcast_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
 
     validate_bcast_shapes(shapes, parsed_sig, min_side, max_side, max_extra)
     validate_elements(X)
-
-
-def test_elements_gufunc_broadcast():
-    # again prob just a wrapper
-    pass
 
 
 def test_bcast_broadcasted():
