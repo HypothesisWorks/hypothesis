@@ -53,6 +53,31 @@ def validate_elements(L):
         assert np.all(drawn <= 5)
 
 
+def validate_bcast_shapes(shapes, parsed_sig, min_side, max_side, max_extra):
+    # chop off extra dims then same as gufunc_shape
+    core_dims = [tt[len(tt) - len(pp):] for tt, pp in zip(shapes, parsed_sig)]
+    validate_shapes(core_dims, parsed_sig, min_side, max_side)
+
+    # check max_extra
+    b_dims = [tt[:len(tt) - len(pp)] for tt, pp in zip(shapes, parsed_sig)]
+    assert all(len(tt) <= max_extra for tt in b_dims)
+
+    # TODO use np built in bcast checkers
+
+    # Convert dims to matrix form
+    b_dims2 = np.array([pad_left(list(bb), max_extra, 1) for bb in b_dims],
+                       dtype=int)
+    # TODO comment
+    assert np.all(b_dims2 <= max(1, max_side))
+    # make sure 1 or same
+    for ii in range(max_extra):
+        vals = set(b_dims2[:, ii])
+        # Must all be 1 or a const size
+        assert len(vals) <= 2
+        assert len(vals) < 2 or (1 in vals)
+
+
+
 @given(lists(lists(integers(min_value=0, max_value=5),
                    min_size=0, max_size=3), min_size=0, max_size=5), data())
 def test_shapes_tuple_of_arrays(shapes, data):
@@ -122,30 +147,33 @@ def test_bcast_gufunc_broadcast_shape(parsed_sig, excluded, min_side, max_side,
 
     shapes = data.draw(S)
 
-    # chop off extra dims then same as gufunc_shape
-    core_dims = [tt[len(tt) - len(pp):] for tt, pp in zip(shapes, parsed_sig)]
-    validate_shapes(core_dims, parsed_sig, min_side, max_side)
-
-    # check max_extra
-    b_dims = [tt[:len(tt) - len(pp)] for tt, pp in zip(shapes, parsed_sig)]
-    assert all(len(tt) <= max_extra for tt in b_dims)
-
-    # Convert dims to matrix form
-    b_dims2 = np.array([pad_left(list(bb), max_extra, 1) for bb in b_dims],
-                       dtype=int)
-    # TODO comment
-    assert np.all(b_dims2 <= max(1, max_side))
-    # make sure 1 or same
-    for ii in range(max_extra):
-        vals = set(b_dims2[:, ii])
-        # Must all be 1 or a const size
-        assert len(vals) <= 2
-        assert len(vals) < 2 or (1 in vals)
+    validate_bcast_shapes(shapes, parsed_sig, min_side, max_side, max_extra)
 
 
-def test_bcast_gufunc_broadcast():
-    # same as gufunc_broadcast_shape but now use .shape
-    pass
+@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
+             min_size=1, max_size=5),
+       lists(booleans(), min_size=3, max_size=3),
+       integers(0, 5), integers(0, 5), integers(0, 3), data())
+def test_bcast_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
+                                max_extra, data):
+    excluded = excluded[:len(parsed_sig)]
+    excluded, = np.where(excluded)
+    excluded = tuple(excluded)
+
+    min_side, max_side = sorted([min_side, max_side])
+
+    # We don't care about the output for this function
+    signature = unparse(parsed_sig) + '->()'
+
+    S = gu.gufunc_broadcast(signature, filler=integers, excluded=excluded,
+                            min_side=min_side, max_side=max_side,
+                            max_extra=max_extra, min_value=0, max_value=5)
+
+    X = data.draw(S)
+    shapes = [np.shape(xx) for xx in X]
+
+    validate_bcast_shapes(shapes, parsed_sig, min_side, max_side, max_extra)
+    validate_elements(X)
 
 
 def test_elements_gufunc_broadcast():
