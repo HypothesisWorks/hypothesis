@@ -4,23 +4,24 @@ import numpy as np
 from hypothesis import given
 from hypothesis.strategies import integers, lists, data
 import hypothesis.extra.gufunc as gu
+# from hypothesis.extra.numpy import scalar_dtypes, from_dtype
+
+# TODO consider if tuple_of_arrays should always return np.array
 
 
 @given(lists(lists(integers(min_value=0, max_value=5),
                    min_size=0, max_size=3), min_size=0, max_size=5), data())
 def test_shapes_tuple_of_arrays(shapes, data):
     S = gu.tuple_of_arrays(shapes, integers, min_value=0, max_value=5)
-    L = data.draw(S)  # TODO consider giving name
+    L = data.draw(S)
 
     assert len(shapes) == len(L)
     for spec, drawn in zip(shapes, L):
         assert tuple(spec) == np.shape(drawn)
-    pass
-
-
-def test_elements_tuple_of_arrays():
-    # somehow test elements
-    pass
+        # TODO after API change, can make bigger test of elements elsewhere
+        assert np.asarray(drawn).dtype == int
+        assert np.all(0 <= drawn)
+        assert np.all(drawn <= 5)
 
 
 def test_constraints_gufunc_shape():
