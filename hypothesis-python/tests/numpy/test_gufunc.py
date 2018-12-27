@@ -11,7 +11,6 @@ from hypothesis.extra.numpy import scalar_dtypes
 # TODO consider if tuple_of_arrays should always return np.array
 # TODO eliminate need for padding using gufuncs and filler, might need next API
 
-# TODO max extra to max extra dims??
 # TODO order_check etc
 # Check going over full support of funcs
 
@@ -30,11 +29,11 @@ NP_AXIS = ((np.sum, '(n)->()', True),
 SHAPE_VARS = string.digits + string.ascii_lowercase
 
 
-def parsed_sigs(max_dims=3):
+def parsed_sigs(max_dims=3, max_args=5):
     '''Strategy to generate a parsed gufunc signature'''
     shapes = lists(sampled_from(SHAPE_VARS),
                    min_size=0, max_size=max_dims).map(tuple)
-    S = lists(shapes, min_size=1, max_size=5)
+    S = lists(shapes, min_size=1, max_size=max_args)
     return S
 
 
@@ -165,8 +164,10 @@ def test_constraints_gufunc(parsed_sig, min_side, max_side, data):
     validate_elements(X)
 
 
-@given(parsed_sigs(max_dims=3), lists(booleans(), min_size=3, max_size=3),
-       integers(0, 100), integers(0, 100), integers(0, 5), data())
+@given(parsed_sigs(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX),
+       lists(booleans(), min_size=10, max_size=10),
+       integers(0, 100), integers(0, 100), integers(0, gu.GLOBAL_DIMS_MAX),
+       data())
 def test_bcast_gufunc_broadcast_shape(parsed_sig, excluded, min_side, max_side,
                                       max_dims_extra, data):
     # We don't care about the output for this function
@@ -188,7 +189,7 @@ def test_bcast_gufunc_broadcast_shape(parsed_sig, excluded, min_side, max_side,
                           min_side, max_side, max_dims_extra)
 
 
-@given(parsed_sigs(max_dims=3), lists(booleans(), min_size=3, max_size=3),
+@given(parsed_sigs(max_args=3), lists(booleans(), min_size=3, max_size=3),
        integers(0, 5), integers(0, 5), integers(0, 3), data())
 def test_bcast_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
                                 max_dims_extra, data):
@@ -214,7 +215,7 @@ def test_bcast_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
     validate_elements(X)
 
 
-@given(parsed_sigs(max_dims=3), parsed_sigs(max_dims=3),
+@given(parsed_sigs(max_args=3), parsed_sigs(),
        lists(scalar_dtypes(), min_size=3, max_size=3),
        lists(booleans(), min_size=3, max_size=3),
        integers(0, 5), integers(0, 5), integers(0, 3), data())

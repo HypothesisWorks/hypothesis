@@ -8,9 +8,15 @@ from __future__ import absolute_import
 
 import numpy as np
 import numpy.lib.function_base as npfb
-from hypothesis.extra.numpy import arrays
+from hypothesis.extra.numpy import arrays, order_check, check_argument
 from hypothesis.strategies import composite, just, lists, tuples
 from hypothesis.strategies import booleans, integers, floats
+
+# TODO marke integers_ wrapper for Py2 that forces int type: .map(int)
+
+# Should not ever need to broadcast beyond this, but should be able to set it
+# as high as 32 before breaking assumptions in numpy.
+GLOBAL_DIMS_MAX = 12
 
 
 def validate(shapes):
@@ -73,7 +79,7 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     '''
-    assert min_side <= max_side, 'Must have min array side <= max array side'
+    order_check('side', 0, min_side, max_side)
 
     # Parse out the signature
     # Warning: this uses "private" function of numpy, but it does the job.
@@ -86,7 +92,6 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     # Randomly sample dimensions for each variable, if literal number provided
     # just put the integer in, e.g., D['2'] = 2 if someone provided '(n,2)'.
     # e.g., D = {'p': 1, 'm': 3, 'n': 1}
-    # TODO consider forcing the draws to be ints for Py2
     D = {k: (int(k) if k.isdigit() else
              draw(integers(min_value=min_side, max_value=max_side)))
          for arg in inp for k in arg}
@@ -175,8 +180,8 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     '''
-    assert min_side <= max_side, 'Must have min array side <= max array side'
-    assert max_dims_extra >= 0, 'max_dims_extra must be >= 0'
+    order_check('side', 0, min_side, max_side)
+    order_check('extra dims', 0, max_dims_extra, GLOBAL_DIMS_MAX)
 
     # Get core shapes before broadcasted dimensions
     # e.g., shapes = [(1, 3), (3, 1)]
@@ -185,8 +190,12 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     # Should not be possible if signature parser makes sense
     assert len(shapes) > 0
 
+    max_core_dims = max(len(ss) for ss in shapes)
+
     # Which extra dims will just be 1 to get broadcasted, specified by mask
     n_extra = draw(integers(min_value=0, max_value=max_dims_extra))  # e.g., 2
+    # Make sure always under global max dims
+    n_extra = min(n_extra, GLOBAL_DIMS_MAX - max_core_dims)
     n_extra = int(n_extra)  # cast to int only for Py2
     # e.g., mask = [[True False], [False False]]
     mask = draw(arrays(np.bool, (len(shapes), n_extra)))
@@ -366,8 +375,8 @@ def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     '''
-    assert min_side >= 1, 'np.apply_along_axis does not like sides of 0'
-    assert min_side <= max_side, 'Must have min array side <= max array side'
+    # np.apply_along_axis does not like sides of 0
+    order_check('side', 1, min_side, max_side)
 
     def f_axis(X, *args, **kwargs):
         axis = kwargs.get('axis', None)  # This trick is not needed in Python3
@@ -385,6 +394,10 @@ def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
     shapes = draw(gufunc_shape(signature,
                                min_side=min_side, max_side=max_side))
     # ok to assume [0] since should not be any way to generate len(shapes) = 0
+    check_argument(len(shapes[0]) == 1,
+                   'first argument of signature %s must be 1D, for %dD',
+                   signature, len(shapes[0]))
+
     assert len(shapes[0]) == 1, \
         'first argument of signature %s must be 1D' % signature
 
