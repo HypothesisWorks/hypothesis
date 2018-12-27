@@ -5,11 +5,14 @@ import numpy as np
 from hypothesis import given
 from hypothesis.strategies import integers, lists, data, sampled_from, booleans
 import hypothesis.extra.gufunc as gu
-# from hypothesis.extra.numpy import scalar_dtypes, from_dtype
+from hypothesis.extra.numpy import scalar_dtypes
 
 # TODO consider if tuple_of_arrays should always return np.array
 # TODO note numpy>=1.12.0 for the sig parsing
 # TODO check all comments and usages of min_side, max_side for bcast
+# TODO move order of sig preproc
+# TODO make function for repeated strats
+# TODO eliminate need for padding using gufuncs and filler, might need next API
 
 SHAPE_VARS = string.digits + string.ascii_lowercase
 
@@ -34,7 +37,7 @@ def validate_shapes(L, parsed_sig, min_side, max_side):
         assert type(drawn) == tuple
         assert len(spec) == len(drawn)
         for ss, dd in zip(spec, drawn):
-            # TODO adapt this in Py3
+            # TODO adapt this in Py3, pull to subroutine
             assert type(dd) in (int, long)
             if ss.isdigit():
                 assert int(ss) == dd
@@ -176,22 +179,49 @@ def test_bcast_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
     validate_elements(X)
 
 
-def test_bcast_broadcasted():
-    # take args and test same as gufunc_broadcast
-    pass
+@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
+             min_size=1, max_size=5),
+       lists(scalar_dtypes(), min_size=3, max_size=3),
+       lists(booleans(), min_size=3, max_size=3),
+       integers(0, 5), integers(0, 5), integers(0, 3), data())
+def test_bcast_broadcasted(parsed_sig, otypes, excluded, min_side, max_side,
+                           max_extra, data):
+    # TODO also put random output sig as well
+    signature = unparse(parsed_sig) + '->()'
 
+    # TODO also test taking None sometimes, or these are str or type
+    otypes = otypes[:len(parsed_sig)]
 
-def test_elements_broadcasted():
-    # again prob just a wrapper
-    pass
+    excluded = excluded[:len(parsed_sig)]
+    excluded, = np.where(excluded)
+    excluded = tuple(excluded)
 
+    min_side, max_side = sorted([min_side, max_side])
 
-def test_first_arg_broadcasted():
-    # test id just pass thru on first arg
-    pass
+    def dummy(*args):
+        assert False, 'this function shouldnt get called'
+
+    S = gu.broadcasted(dummy, signature, otypes=otypes, excluded=excluded,
+                       min_side=min_side, max_side=max_side,
+                       max_extra=max_extra,
+                       filler=integers, min_value=0, max_value=5)
+
+    f0, f_vec, X = data.draw(S)
+
+    # First argument is pass thru
+    assert f0 is dummy
+    assert id(f0) == id(dummy)
+
+    # Second is result of np.vectorize, which we test elsewhere
+
+    # Third same as gufunc_broadcast
+    shapes = [np.shape(xx) for xx in X]
+    validate_bcast_shapes(shapes, parsed_sig, min_side, max_side, max_extra)
+    validate_elements(X)
 
 
 def test_np_passes_broadcasted():
+    # TODO will need diff test for single and multi-broadcast cases
     # check function matches for built-in nps we know broadcast correct
     #    do with real sig
     #    then also do elementwise funcs and test arbitrary sigs??
@@ -201,16 +231,6 @@ def test_np_passes_broadcasted():
 
 def test_constraints_axised():
     # take args and test same as gufunc_broadcast
-    pass
-
-
-def test_elements_axised():
-    # again prob just a wrapper
-    pass
-
-
-def test_first_arg_axised():
-    # test id just pass thru on first arg
     pass
 
 
