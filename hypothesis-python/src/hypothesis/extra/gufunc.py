@@ -357,7 +357,6 @@ def axised(draw, f, signature,
     # This could be made argument as well if we like, np.apply_along_axis
     # doesn't like when this is 0, but we could handle that case ourselves.
 
-
     def f_axis(X, *args, **kwargs):
         axis = kwargs.get('axis', None)  # This trick is not needed in Python3
 

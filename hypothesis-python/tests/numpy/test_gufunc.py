@@ -14,8 +14,6 @@ from hypothesis.extra.numpy import scalar_dtypes
 # TODO make function for repeated strats
 # TODO eliminate need for padding using gufuncs and filler, might need next API
 
-#                    (np.percentile, '(n),()->()')
-
 NP_BROADCASTABLE = ((np.matmul, '(n,m),(m,p)->(n,p)'),
                     (np.add, '(),()->()'),
                     (np.multiply, '(),()->()'))
@@ -29,6 +27,7 @@ def pad_left(L, size, padding):
 
 
 def unparse(parsed_sig):
+    # TODO test parse unparse
     # TODO explain [] not valid here
     sig = [','.join(vv) for vv in parsed_sig]
     sig = '(' + '),('.join(sig) + ')'
@@ -251,13 +250,12 @@ def test_np_passes_broadcasted(func_choice, min_side, max_side, max_extra,
     assert np.all(R1 == R2)  # All int so no round off error
 
 
-@given(integers(1, 5), integers(1, 5), integers(0, 3), data())
+@given(integers(0, 5), integers(0, 5), integers(0, 3), data())
 def test_multi_broadcasted(min_side, max_side, max_extra, data):
     min_side, max_side = sorted([min_side, max_side])
 
     def multi_out_f(x, y, q):
         '''Function should already be fully broadcast compatible.'''
-        # TODO make 2nd more complex
         z = np.matmul(x, y)
         R = (z, z + 0.5 * q)
         return R
@@ -273,6 +271,7 @@ def test_multi_broadcasted(min_side, max_side, max_extra, data):
     f0, f_vec, args = data.draw(S)
 
     assert f0 is multi_out_f
+    assert np.shape(args[2]) == (), 'argument should be excluded from bcast'
 
     R1 = f0(*args)
     R2 = f_vec(*args)
