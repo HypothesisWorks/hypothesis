@@ -700,27 +700,6 @@ class Verbosity(IntEnum):
     verbose = 2
     debug = 3
 
-    @staticmethod
-    def _get_default():
-        # type: () -> Verbosity
-        var = os.getenv("HYPOTHESIS_VERBOSITY_LEVEL")
-        if var is not None:  # pragma: no cover
-            try:
-                result = Verbosity[var]
-            except KeyError:
-                raise InvalidArgument("No such verbosity level %r" % (var,))
-
-            warnings.warn(
-                HypothesisDeprecationWarning(
-                    "The HYPOTHESIS_VERBOSITY_LEVEL environment variable is "
-                    "deprecated, and will be ignored by a future version of "
-                    "Hypothesis.  Configure your verbosity level via a "
-                    "settings profile instead."
-                )
-            )
-            return result
-        return Verbosity.normal
-
     def __repr__(self):
         return "Verbosity.%s" % (self.name,)
 
@@ -728,7 +707,7 @@ class Verbosity(IntEnum):
 settings._define_setting(
     "verbosity",
     options=tuple(Verbosity),
-    default=Verbosity._get_default(),
+    default=Verbosity.normal,
     description="Control the verbosity level of Hypothesis messages",
 )
 
