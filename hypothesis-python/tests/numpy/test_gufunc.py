@@ -9,12 +9,12 @@ import hypothesis.extra.gufunc as gu
 from hypothesis.extra.numpy import scalar_dtypes
 
 # TODO consider if tuple_of_arrays should always return np.array
-# TODO note numpy>=1.12.0 for the sig parsing
-# TODO check all comments and usages of min_side, max_side for bcast
-# TODO make function for repeated strats
 # TODO eliminate need for padding using gufuncs and filler, might need next API
+
+# TODO check all comments and usages of min_side, max_side for bcast
 # TODO max extra to max extra dims??
 # TODO order_check etc
+# Check going over full support of funcs
 
 NP_BROADCASTABLE = ((np.matmul, '(n,m),(m,p)->(n,p)'),
                     (np.add, '(),()->()'),

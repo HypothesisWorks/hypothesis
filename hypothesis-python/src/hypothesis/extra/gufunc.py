@@ -1,3 +1,9 @@
+'''Extend hypothesis.extra.numpy for functions that follow the GU function API.
+
+This routine uses the numpy parser of the Generalized Universal Function API
+signatures `_parse_gufunc_signature`, which is only available in numpy>=1.12.0
+and therefore requires a bump in the requirements for hypothesis.
+'''
 from __future__ import absolute_import
 
 import numpy as np
