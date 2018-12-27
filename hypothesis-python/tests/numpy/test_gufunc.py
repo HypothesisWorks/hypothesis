@@ -31,9 +31,10 @@ NP_AXIS = ((np.sum, '(n)->()', True),
 SHAPE_VARS = string.digits + string.ascii_lowercase
 
 
-def parsed_sigs():
+def parsed_sigs(max_dims=3):
     '''Strategy to generate a parsed gufunc signature'''
-    shapes = lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3).map(tuple)
+    shapes = lists(sampled_from(SHAPE_VARS),
+                   min_size=0, max_size=max_dims).map(tuple)
     S = lists(shapes, min_size=1, max_size=5)
     return S
 
@@ -44,7 +45,8 @@ def pad_left(L, size, padding):
 
 
 def unparse(parsed_sig):
-    # TODO explain [] not valid here
+    assert len(parsed_sig) > 0, 'gufunc sig does not support no argument funcs'
+
     sig = [','.join(vv) for vv in parsed_sig]
     sig = '(' + '),('.join(sig) + ')'
     return sig
@@ -158,10 +160,7 @@ def test_constraints_gufunc(parsed_sig, min_side, max_side, data):
     validate_elements(X)
 
 
-# TODO pass max to parsed sigs
-
-
-@given(parsed_sigs(), lists(booleans(), min_size=3, max_size=3),
+@given(parsed_sigs(max_dims=3), lists(booleans(), min_size=3, max_size=3),
        integers(0, 100), integers(0, 100), integers(0, 5), data())
 def test_bcast_gufunc_broadcast_shape(parsed_sig, excluded, min_side, max_side,
                                       max_extra, data):
@@ -183,7 +182,7 @@ def test_bcast_gufunc_broadcast_shape(parsed_sig, excluded, min_side, max_side,
     validate_bcast_shapes(shapes, parsed_sig, min_side, max_side, max_extra)
 
 
-@given(parsed_sigs(), lists(booleans(), min_size=3, max_size=3),
+@given(parsed_sigs(max_dims=3), lists(booleans(), min_size=3, max_size=3),
        integers(0, 5), integers(0, 5), integers(0, 3), data())
 def test_bcast_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
                                 max_extra, data):
@@ -207,7 +206,7 @@ def test_bcast_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
     validate_elements(X)
 
 
-@given(parsed_sigs(), lists(scalar_dtypes(), min_size=3, max_size=3),
+@given(parsed_sigs(max_dims=3), lists(scalar_dtypes(), min_size=3, max_size=3),
        lists(booleans(), min_size=3, max_size=3),
        integers(0, 5), integers(0, 5), integers(0, 3), data())
 def test_bcast_broadcasted(parsed_sig, otypes, excluded, min_side, max_side,
