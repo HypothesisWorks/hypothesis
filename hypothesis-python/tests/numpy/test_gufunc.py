@@ -14,6 +14,12 @@ from hypothesis.extra.numpy import scalar_dtypes
 # TODO make function for repeated strats
 # TODO eliminate need for padding using gufuncs and filler, might need next API
 
+#                    (np.percentile, '(n),()->()')
+
+NP_BROADCASTABLE = ((np.matmul, '(n,m),(m,p)->(n,p)'),
+                    (np.add, '(),()->()'),
+                    (np.multiply, '(),()->()'))
+
 SHAPE_VARS = string.digits + string.ascii_lowercase
 
 
@@ -220,13 +226,28 @@ def test_bcast_broadcasted(parsed_sig, otypes, excluded, min_side, max_side,
     validate_elements(X)
 
 
-def test_np_passes_broadcasted():
-    # TODO will need diff test for single and multi-broadcast cases
-    # check function matches for built-in nps we know broadcast correct
-    #    do with real sig
-    #    then also do elementwise funcs and test arbitrary sigs??
-    #    also test otypes match
-    pass
+@given(integers(0, len(NP_BROADCASTABLE) - 1),
+       integers(0, 5), integers(0, 5), integers(0, 3), data())
+def test_np_passes_broadcasted(func_choice, min_side, max_side, max_extra,
+                               data):
+    otype = 'int64'
+
+    f, signature = NP_BROADCASTABLE[func_choice]
+
+    min_side, max_side = sorted([min_side, max_side])
+
+    S = gu.broadcasted(f, signature, otypes=[otype],
+                       min_side=min_side, max_side=max_side,
+                       max_extra=max_extra,
+                       filler=integers, min_value=0, max_value=100)
+
+    f0, f_vec, args = data.draw(S)
+
+    R1 = f0(*args)
+    R2 = f_vec(*args)
+    assert(R1.dtype == otype)
+    assert(R2.dtype == otype)
+    assert(np.all(R1 == R2))  # All int so no round off error
 
 
 def test_constraints_axised():
