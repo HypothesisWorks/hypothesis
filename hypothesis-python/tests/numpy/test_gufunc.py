@@ -11,10 +11,10 @@ from hypothesis.extra.numpy import scalar_dtypes
 # TODO consider if tuple_of_arrays should always return np.array
 # TODO note numpy>=1.12.0 for the sig parsing
 # TODO check all comments and usages of min_side, max_side for bcast
-# TODO move order of sig preproc
 # TODO make function for repeated strats
 # TODO eliminate need for padding using gufuncs and filler, might need next API
 # TODO max extra to max extra dims??
+# TODO order_check etc
 
 NP_BROADCASTABLE = ((np.matmul, '(n,m),(m,p)->(n,p)'),
                     (np.add, '(),()->()'),
@@ -31,8 +31,15 @@ NP_AXIS = ((np.sum, '(n)->()', True),
 SHAPE_VARS = string.digits + string.ascii_lowercase
 
 
+def parsed_sigs():
+    '''Strategy to generate a parsed gufunc signature'''
+    shapes = lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3).map(tuple)
+    S = lists(shapes, min_size=1, max_size=5)
+    return S
+
+
 def pad_left(L, size, padding):
-    L = [padding] * max(0, size - len(L)) + L
+    L = (padding,) * max(0, size - len(L)) + L
     return L
 
 
@@ -82,7 +89,7 @@ def validate_bcast_shapes(shapes, parsed_sig, min_side, max_side, max_extra):
     # TODO use np built in bcast checkers
 
     # Convert dims to matrix form
-    b_dims2 = np.array([pad_left(list(bb), max_extra, 1) for bb in b_dims],
+    b_dims2 = np.array([pad_left(bb, max_extra, 1) for bb in b_dims],
                        dtype=int)
     # TODO comment
     assert np.all((b_dims2 == 1) | (min_side <= b_dims2))
@@ -95,6 +102,7 @@ def validate_bcast_shapes(shapes, parsed_sig, min_side, max_side, max_extra):
         assert len(vals) < 2 or (1 in vals)
 
 
+# TODO built in array shapes
 @given(lists(lists(integers(min_value=0, max_value=5),
                    min_size=0, max_size=3), min_size=0, max_size=5), data())
 def test_shapes_tuple_of_arrays(shapes, data):
@@ -108,8 +116,7 @@ def test_shapes_tuple_of_arrays(shapes, data):
         assert tuple(spec) == np.shape(drawn)
 
 
-@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
-             min_size=1, max_size=5))
+@given(parsed_sigs())
 def test_unparse_parse(parsed_sig):
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + '->()'
@@ -117,13 +124,10 @@ def test_unparse_parse(parsed_sig):
     # think it does.
     inp, _ = npfb._parse_gufunc_signature(signature)
 
-    parsed_sig = [tuple(ss) for ss in parsed_sig]  # need list of tuple
     assert parsed_sig == inp
 
 
-@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
-             min_size=1, max_size=5), integers(0, 100), integers(0, 100),
-       data())
+@given(parsed_sigs(), integers(0, 100), integers(0, 100), data())
 def test_constraints_gufunc_shape(parsed_sig, min_side, max_side, data):
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + '->()'
@@ -136,9 +140,7 @@ def test_constraints_gufunc_shape(parsed_sig, min_side, max_side, data):
     validate_shapes(shapes, parsed_sig, min_side, max_side)
 
 
-@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
-             min_size=1, max_size=5), integers(0, 5), integers(0, 5),
-       data())
+@given(parsed_sigs(), integers(0, 5), integers(0, 5), data())
 def test_constraints_gufunc(parsed_sig, min_side, max_side, data):
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + '->()'
@@ -156,9 +158,10 @@ def test_constraints_gufunc(parsed_sig, min_side, max_side, data):
     validate_elements(X)
 
 
-@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
-             min_size=1, max_size=5),
-       lists(booleans(), min_size=3, max_size=3),
+# TODO pass max to parsed sigs
+
+
+@given(parsed_sigs(), lists(booleans(), min_size=3, max_size=3),
        integers(0, 100), integers(0, 100), integers(0, 5), data())
 def test_bcast_gufunc_broadcast_shape(parsed_sig, excluded, min_side, max_side,
                                       max_extra, data):
@@ -180,9 +183,7 @@ def test_bcast_gufunc_broadcast_shape(parsed_sig, excluded, min_side, max_side,
     validate_bcast_shapes(shapes, parsed_sig, min_side, max_side, max_extra)
 
 
-@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
-             min_size=1, max_size=5),
-       lists(booleans(), min_size=3, max_size=3),
+@given(parsed_sigs(), lists(booleans(), min_size=3, max_size=3),
        integers(0, 5), integers(0, 5), integers(0, 3), data())
 def test_bcast_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
                                 max_extra, data):
@@ -206,9 +207,7 @@ def test_bcast_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
     validate_elements(X)
 
 
-@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
-             min_size=1, max_size=5),
-       lists(scalar_dtypes(), min_size=3, max_size=3),
+@given(parsed_sigs(), lists(scalar_dtypes(), min_size=3, max_size=3),
        lists(booleans(), min_size=3, max_size=3),
        integers(0, 5), integers(0, 5), integers(0, 3), data())
 def test_bcast_broadcasted(parsed_sig, otypes, excluded, min_side, max_side,
@@ -311,8 +310,7 @@ def test_multi_broadcasted(min_side, max_side, max_extra, data):
         assert np.all(rr1 == rr2)
 
 
-@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
-             min_size=1, max_size=5),
+@given(parsed_sigs(),
        integers(1, 5), integers(1, 5), integers(0, 3), booleans(), data())
 def test_constraints_axised(parsed_sig, min_side, max_side, max_extra,
                             allow_none, data):
