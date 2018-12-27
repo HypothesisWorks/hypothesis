@@ -90,6 +90,7 @@ def validate_bcast_shapes(shapes, parsed_sig,
     # check max_dims_extra
     b_dims = [tt[:len(tt) - len(pp)] for tt, pp in zip(shapes, parsed_sig)]
     assert all(len(tt) <= max_dims_extra for tt in b_dims)
+    assert all(len(tt) <= gu.GLOBAL_DIMS_MAX for tt in b_dims)
 
     # TODO use np built in bcast checkers
 
@@ -307,10 +308,6 @@ def test_multi_broadcasted(min_side, max_side, max_dims_extra, data):
 
     R1 = f0(*args)
     R2 = f_vec(*args)
-
-    print 'args', args
-    print 'f0', R1
-    print 'fvec', R2
 
     for rr1, rr2, ot in zip(R1, R2, otypes):
         assert rr1.dtype == ot
