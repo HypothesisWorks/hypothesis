@@ -368,21 +368,23 @@ def axised(draw, f, signature,
 
     side_base = integers(min_value=min_side, max_value=max_side)
     X_shape = draw(lists(side_base, min_size=1, max_size=max_extra + 1))
-    axis = draw(integers(min_value=0, max_value=len(X_shape) - 1))
 
     shapes = draw(gufunc_shape(signature,
                                min_side=min_side, max_side=max_side))
     assert len(shapes[0]) == 1, \
         'first argument of signature %s must be 1D' % signature
 
-    n, = shapes[0]  # must be singleton by spec
-    X_shape[axis] = n
-    shapes[0] = X_shape
-
-    args = draw(tuple_of_arrays(shapes, filler, **kwargs))
-
     if allow_none and draw(booleans()):
-        axis = None  # Sometimes we want to check this too
+        # If function allows for axis=None, then must be able to handle
+        # arbitrary shapes of first arg X (with X.ndims >= 1).
+        axis = None
+    else:
+        axis = draw(integers(min_value=0, max_value=len(X_shape) - 1))
+        n, = shapes[0]
+        X_shape[axis] = n
+
+    shapes[0] = X_shape
+    args = draw(tuple_of_arrays(shapes, filler, **kwargs))
 
     funcs_and_args = (f, f_axis, args, axis)
     return funcs_and_args

@@ -289,8 +289,9 @@ def test_multi_broadcasted(min_side, max_side, max_extra, data):
 
 @given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
              min_size=1, max_size=5),
-       integers(0, 5), integers(0, 5), integers(0, 3), data())
-def test_constraints_axised(parsed_sig, min_side, max_side, max_extra, data):
+       integers(0, 5), integers(0, 5), integers(0, 3), booleans(), data())
+def test_constraints_axised(parsed_sig, min_side, max_side, max_extra,
+                            allow_none, data):
     # First argument must be 1D
     parsed_sig[0] = pad_left(parsed_sig[0], 1, 'n')[:1]
     signature = unparse(parsed_sig) + '->()'  # output dims ignored here
@@ -301,7 +302,7 @@ def test_constraints_axised(parsed_sig, min_side, max_side, max_extra, data):
         assert False, 'this function shouldnt get called'
 
     S = gu.axised(dummy, signature, min_side=min_side, max_side=max_side,
-                  max_extra=max_extra, allow_none=False,  # TODO allow
+                  max_extra=max_extra, allow_none=allow_none,
                   filler=integers, min_value=0, max_value=5)
 
     f0, f_ax, X, axis = data.draw(S)
@@ -314,18 +315,21 @@ def test_constraints_axised(parsed_sig, min_side, max_side, max_extra, data):
 
     # Third same as gufunc_broadcast
     shapes = [np.shape(xx) for xx in X]
-    shapes[0] = (X.size,) if axis is None else (X[0].shape[axis],)
-    validate_shapes(shapes, parsed_sig, min_side, max_side)
+    if axis is None:
+        # First arg shape can be arbitrary with axis=None
+        assert len(shapes[0]) >= 1
+        validate_shapes(shapes[1:], parsed_sig[1:], min_side, max_side)
+    else:
+        shapes[0] = (X[0].shape[axis],)
+        validate_shapes(shapes, parsed_sig, min_side, max_side)
 
     validate_elements(X)
+
+    # Test fourth
+    assert allow_none or (axis is not None)
 
 
 def test_np_passes_axised():
     # check function matches for built-in nps we know broadcast correct
     #    do with real sig
-    pass
-
-
-def test_none_arg_axised():
-    # check never None is allow_none is false
     pass
