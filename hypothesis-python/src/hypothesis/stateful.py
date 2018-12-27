@@ -266,10 +266,8 @@ class Rule(object):
             assert not isinstance(v, BundleReferenceStrategy)
             if isinstance(v, Bundle):
                 bundles.append(v)
-                arguments[k] = BundleReferenceStrategy(v.name)
-            elif isinstance(v, Consumer):
-                bundles.append(v.bundle)
-                arguments[k] = BundleReferenceStrategy(v.bundle.name)
+                consume = isinstance(v, BundleConsumer)
+                arguments[k] = BundleReferenceStrategy(v.name, consume)
             else:
                 arguments[k] = v
         self.bundles = tuple(bundles)
@@ -280,8 +278,9 @@ self_strategy = st.runner()
 
 
 class BundleReferenceStrategy(SearchStrategy):
-    def __init__(self, name):
+    def __init__(self, name, consume=False):
         self.name = name
+        self.consume = consume
 
     def do_draw(self, data):
         machine = data.draw(self_strategy)
@@ -291,13 +290,17 @@ class BundleReferenceStrategy(SearchStrategy):
         # Shrink towards the right rather than the left. This makes it easier
         # to delete data generated earlier, as when the error is towards the
         # end there can be a lot of hard to remove padding.
-        return bundle[cu.integer_range(data, 0, len(bundle) - 1, center=len(bundle))]
+        position = cu.integer_range(data, 0, len(bundle) - 1, center=len(bundle))
+        if self.consume:
+            return bundle.pop(position)
+        else:
+            return bundle[position]
 
 
 class Bundle(SearchStrategy):
-    def __init__(self, name):
+    def __init__(self, name, consume=False):
         self.name = name
-        self.__reference_strategy = BundleReferenceStrategy(name)
+        self.__reference_strategy = BundleReferenceStrategy(name, consume)
 
     def do_draw(self, data):
         machine = data.draw(self_strategy)
@@ -305,19 +308,27 @@ class Bundle(SearchStrategy):
         return machine.names_to_values[reference.name]
 
 
-@attr.s()
-class Consumer(object):
-    bundle = attr.ib()
+class BundleConsumer(Bundle):
+    def __init__(self, bundle):
+        super(BundleConsumer, self).__init__(bundle.name, consume=True)
 
 
 def consumes(bundle):
     """When introducing a rule in a RuleBasedStateMachine, this function can
     be used to mark bundles from which each value used in a step with the
-    given rule should be removed.
+    given rule should be removed. This function returns a strategy object
+    that can be manipulated and combined like any other.
+
+    For example, a rule declared with
+
+    ``@rule(value1=b1, value2=consumes(b2), value3=lists(consumes(b3)))``
+
+    will consume a value from Bundle ``b2`` and several values from Bundle
+    ``b3`` to populate ``value2`` and ``value3`` each time it is executed.
     """
     if not isinstance(bundle, Bundle):
         raise TypeError("Argument to be consumed must be a bundle.")
-    return Consumer(bundle)
+    return BundleConsumer(bundle)
 
 
 def _convert_targets(targets, target):
@@ -790,9 +801,6 @@ class RuleBasedStateMachine(GenericStateMachine):
         for k, v in list(data.items()):
             if isinstance(v, VarReference):
                 data[k] = self.names_to_values[v.name]
-                rule_argument = rule.arguments[k]
-                if isinstance(rule_argument, Consumer):
-                    self.bundle(rule_argument.bundle.name).remove(v)
         result = rule.function(self, **data)
         if rule.targets:
             name = self.new_name()

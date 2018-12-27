@@ -376,6 +376,10 @@ class MachineWithConsumingRule(RuleBasedStateMachine):
         self.consumed_counter += 1
         return consumed
 
+    @rule(consumed=lists(consumes(b1)))
+    def depopulate_b1_multiple(self, consumed):
+        self.consumed_counter += len(consumed)
+
     @rule(value1=b1, value2=b2)
     def check(self, value1, value2):
         assert value1 != value2
