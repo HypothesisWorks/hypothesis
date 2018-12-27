@@ -345,7 +345,7 @@ def test_np_passes_axised(func_choice, min_side, max_side, max_extra, data):
     min_side, max_side = sorted([min_side, max_side])
 
     S = gu.axised(f, signature, min_side=min_side, max_side=max_side,
-                  max_extra=max_extra, allow_none=False,  # TODO use true
+                  max_extra=max_extra, allow_none=True,
                   filler=integers, min_value=0, max_value=100)
 
     f0, f_ax, args, axis = data.draw(S)
@@ -354,4 +354,4 @@ def test_np_passes_axised(func_choice, min_side, max_side, max_extra, data):
     R2 = f_ax(*args, axis=axis)
     assert R1.dtype == R2.dtype
     assert np.shape(R1) == np.shape(R2)
-    assert np.all(R1 == R2)  # All int so no round off error
+    assert np.all(R1 == R2)
