@@ -245,9 +245,47 @@ def test_np_passes_broadcasted(func_choice, min_side, max_side, max_extra,
 
     R1 = f0(*args)
     R2 = f_vec(*args)
-    assert(R1.dtype == otype)
-    assert(R2.dtype == otype)
-    assert(np.all(R1 == R2))  # All int so no round off error
+    assert R1.dtype == otype
+    assert R2.dtype == otype
+    # TODO assert shape
+    assert np.all(R1 == R2)  # All int so no round off error
+
+
+@given(integers(1, 5), integers(1, 5), integers(0, 3), data())
+def test_multi_broadcasted(min_side, max_side, max_extra, data):
+    min_side, max_side = sorted([min_side, max_side])
+
+    def multi_out_f(x, y, q):
+        '''Function should already be fully broadcast compatible.'''
+        # TODO make 2nd more complex
+        z = np.matmul(x, y)
+        R = (z, z + 0.5 * q)
+        return R
+
+    signature = '(n,m),(m,p),()->(n,p),(n,p)'
+    otypes = ['int64', 'float64']
+
+    S = gu.broadcasted(multi_out_f, signature, otypes=otypes, excluded=(2,),
+                       min_side=min_side, max_side=max_side,
+                       max_extra=max_extra,
+                       filler=integers, min_value=0, max_value=100)
+
+    f0, f_vec, args = data.draw(S)
+
+    assert f0 is multi_out_f
+
+    R1 = f0(*args)
+    R2 = f_vec(*args)
+
+    print 'args', args
+    print 'f0', R1
+    print 'fvec', R2
+
+    for rr1, rr2, ot in zip(R1, R2, otypes):
+        assert rr1.dtype == ot
+        assert rr2.dtype == ot
+        assert np.shape(rr1) == np.shape(rr2)
+        assert np.all(rr1 == rr2)
 
 
 def test_constraints_axised():
