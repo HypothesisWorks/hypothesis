@@ -158,22 +158,6 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
 
     def __init__(self, parent=None, **kwargs):
         # type: (settings, **Any) -> None
-        if (
-            kwargs.get("database", not_set) is not_set
-            and kwargs.get("database_file", not_set) is not not_set
-        ):
-            if kwargs["database_file"] is None:
-                kwargs["database"] = None
-            else:
-                from hypothesis.database import ExampleDatabase
-
-                kwargs["database"] = ExampleDatabase(kwargs["database_file"])
-        if not kwargs.get("perform_health_check", True):
-            kwargs["suppress_health_check"] = HealthCheck.all()
-        if kwargs.get("max_shrinks") == 0:
-            kwargs["phases"] = tuple(
-                p for p in _validate_phases(kwargs.get("phases")) if p != Phase.shrink
-            )
         self._construction_complete = False
         deprecations = []
         defaults = parent or settings.default
@@ -182,11 +166,10 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
                 if kwargs.get(setting.name, not_set) is not_set:
                     kwargs[setting.name] = getattr(defaults, setting.name)
                 else:
-                    if kwargs[setting.name] != setting.future_default:
-                        if setting.deprecation_message is not None:
-                            deprecations.append(setting)
                     if setting.validator:
                         kwargs[setting.name] = setting.validator(kwargs[setting.name])
+                    if setting.deprecation_message is not None:
+                        deprecations.append(setting)
         for name, value in kwargs.items():
             if name not in all_settings:
                 raise InvalidArgument(
@@ -288,7 +271,6 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         options=None,
         validator=None,
         show_default=True,
-        future_default=not_set,
         deprecation_message=None,
         deprecated_since=None,
     ):
@@ -309,16 +291,12 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
             options = tuple(options)
             assert default in options
 
-        if future_default is not_set:
-            future_default = default
-
         all_settings[name] = Setting(
             name=name,
             description=description.strip(),
             default=default,
             options=options,
             validator=validator,
-            future_default=future_default,
             deprecation_message=deprecation_message,
             deprecated_since=deprecated_since,
         )
@@ -422,24 +400,9 @@ class Setting(object):
     default = attr.ib()
     options = attr.ib()
     validator = attr.ib()
-    future_default = attr.ib()
     deprecation_message = attr.ib()
     deprecated_since = attr.ib()
 
-
-settings._define_setting(
-    "min_satisfying_examples",
-    default=not_set,
-    description="""
-This doesn't actually do anything, but remains for compatibility reasons.
-""",
-    deprecation_message="""
-The min_satisfying_examples setting has been deprecated and disabled, due to
-overlap with the filter_too_much healthcheck and poor interaction with the
-max_examples setting.
-""",
-    deprecated_since="2018-04-08",
-)
 
 settings._define_setting(
     "max_examples",
@@ -451,19 +414,6 @@ counter-example, falsification will terminate.
 )
 
 settings._define_setting(
-    "max_iterations",
-    default=not_set,
-    description="""
-This doesn't actually do anything, but remains for compatibility reasons.
-""",
-    deprecation_message="""
-The max_iterations setting has been disabled, as internal heuristics are more
-useful for this purpose than a user setting.  It no longer has any effect.
-""",
-    deprecated_since="2018-04-06",
-)
-
-settings._define_setting(
     "buffer_size",
     default=8 * 1024,
     description="""
@@ -471,21 +421,6 @@ The size of the underlying data used to generate examples. If you need to
 generate really large examples you may want to increase this, but it will make
 your tests slower.
 """,
-)
-
-
-settings._define_setting(
-    "max_shrinks",
-    default=not_set,
-    description="""
-Passing ``max_shrinks=0`` disables the shrinking phase (see the ``phases``
-setting), but any other value has no effect and uses a general heuristic.
-""",
-    deprecation_message="""
-The max_shrinks setting has been disabled, as internal heuristics are more
-useful for this purpose than a user setting.
-""",
-    deprecated_since="2018-04-14",
 )
 
 
@@ -518,31 +453,12 @@ find novel breakages.
 """,
 )
 
-settings._define_setting(
-    "strict",
-    default=os.getenv("HYPOTHESIS_STRICT_MODE") == "true",
-    description="""
-Strict mode has been deprecated in favor of Python's standard warnings
-controls.  Ironically, enabling it is therefore an error - it only exists so
-that users get the right *type* of error!
-""",
-    deprecation_message="""
-Strict mode is deprecated and will go away in a future version of Hypothesis.
-To get the same behaviour, use
-warnings.simplefilter('error', HypothesisDeprecationWarning).
-""",
-    deprecated_since="2017-07-16",
-    future_default=False,
-)
 
-
-def _validate_database(db, _from_db_file=False):
+def _validate_database(db):
     from hypothesis.database import ExampleDatabase
 
     if db is None or isinstance(db, ExampleDatabase):
         return db
-    if _from_db_file or db is not_set:
-        return ExampleDatabase(db)
     raise InvalidArgument(
         "Arguments to the database setting must be None or an instance of "
         "ExampleDatabase.  Try passing database=ExampleDatabase(%r), or "
@@ -562,24 +478,6 @@ in which case no storage will be used, `:memory:` for an in-memory
 database, or any path for a directory-based example database.
 """,
     validator=_validate_database,
-)
-
-settings._define_setting(
-    "database_file",
-    default=not_set,
-    show_default=False,
-    description="""
-The file or directory location to save and load previously tried examples;
-`:memory:` for an in-memory cache or None to disable caching entirely.
-""",
-    validator=lambda f: _validate_database(f, _from_db_file=True),
-    deprecation_message="""
-The `database_file` setting is deprecated in favor of the `database`
-setting, and will be removed in a future version.  It only exists at
-all for complicated historical reasons and you should just use
-`database` instead.
-""",
-    deprecated_since="2018-04-01",
 )
 
 
@@ -687,20 +585,6 @@ Number of steps to run a stateful program for before giving up on it breaking.
 """,
 )
 
-settings._define_setting(
-    "perform_health_check",
-    default=not_set,
-    description=u"""
-If set to True, Hypothesis will run a preliminary health check before
-attempting to actually execute your test.
-""",
-    deprecation_message="""
-This setting is deprecated, as `perform_health_check=False` duplicates the
-effect of `suppress_health_check=HealthCheck.all()`.  Use that instead!
-""",
-    deprecated_since="2018-04-05",
-)
-
 
 def validate_health_check_suppressions(suppressions):
     suppressions = try_convert(list, suppressions, "suppress_health_check")
@@ -743,19 +627,6 @@ errors (but will not necessarily be if close to the deadline, to allow some
 variability in test run time).
 
 Set this to None to disable this behaviour entirely.
-""",
-)
-
-settings._define_setting(
-    "use_coverage",
-    default=not_set,
-    deprecation_message="""
-use_coverage no longer does anything and can be removed from your settings.
-""",
-    deprecated_since="2017-09-14",
-    description="""
-A flag to enable a feature that no longer exists. This setting is present
-only for backwards compatibility purposes.
 """,
 )
 

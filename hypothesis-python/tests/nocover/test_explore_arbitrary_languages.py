@@ -100,7 +100,6 @@ def run_language_test_for(root, data, seed):
         test,
         settings=settings(
             max_examples=1,
-            max_shrinks=100,
             buffer_size=512,
             database=None,
             suppress_health_check=HealthCheck.all(),
@@ -117,7 +116,6 @@ def run_language_test_for(root, data, seed):
 
 
 @settings(
-    max_examples=100,
     suppress_health_check=HealthCheck.all(),
     deadline=None,
     phases=set(Phase) - {Phase.shrink},

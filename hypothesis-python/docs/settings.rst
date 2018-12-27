@@ -138,13 +138,13 @@ copied from the parent settings:
 .. doctest::
 
     >>> parent = settings(max_examples=10)
-    >>> child = settings(parent, deadline=200)
+    >>> child = settings(parent, deadline=None)
     >>> parent.max_examples == child.max_examples == 10
     True
     >>> parent.deadline
-    not_set
-    >>> child.deadline
     200
+    >>> child.deadline is None
+    True
 
 ----------------
 Default settings

@@ -51,7 +51,7 @@ from hypothesis.internal.conjecture.shrinker import (
 from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
 from tests.common.strategies import SLOW, HardToShrink
-from tests.common.utils import checks_deprecated_behaviour, no_shrink
+from tests.common.utils import no_shrink
 
 SOME_LABEL = calc_label_from_name("some label")
 
@@ -294,19 +294,6 @@ def test_interleaving_engines():
     assert x == b"\0"
     for c in children:
         assert not c.interesting_examples
-
-
-@checks_deprecated_behaviour
-def test_max_shrinks_can_disable_shrinking():
-    seen = set()
-
-    def f(data):
-        seen.add(hbytes(data.draw_bytes(32)))
-        data.mark_interesting()
-
-    runner = ConjectureRunner(f, settings=settings(database=None, max_shrinks=0))
-    runner.run()
-    assert len(seen) == 1
 
 
 def test_phases_can_disable_shrinking():

@@ -20,7 +20,6 @@ from __future__ import absolute_import, division, print_function
 import re
 import subprocess
 import sys
-from tempfile import mkdtemp
 
 import pytest
 
@@ -30,10 +29,11 @@ from hypothesis._settings import (
     PrintSettings,
     Verbosity,
     default_variable,
+    local_settings,
     note_deprecation,
     settings,
 )
-from hypothesis.database import DirectoryBasedExampleDatabase, ExampleDatabase
+from hypothesis.database import ExampleDatabase
 from hypothesis.errors import (
     HypothesisDeprecationWarning,
     InvalidArgument,
@@ -41,7 +41,7 @@ from hypothesis.errors import (
 )
 from hypothesis.stateful import GenericStateMachine, RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
-from tests.common.utils import checks_deprecated_behaviour, validate_deprecation
+from tests.common.utils import checks_deprecated_behaviour, fails_with
 
 
 def test_has_docstrings():
@@ -106,19 +106,6 @@ def test_cannot_register_with_parent_and_settings_args():
             "conflicted", settings.default, settings=settings.default
         )
     assert "conflicted" not in settings._profiles
-
-
-@checks_deprecated_behaviour
-def test_perform_health_check_setting_is_deprecated():
-    s = settings(suppress_health_check=(), perform_health_check=False)
-    assert s.suppress_health_check
-
-
-@checks_deprecated_behaviour
-@given(st.integers(0, 10000))
-def test_max_shrinks_setting_is_deprecated(n):
-    s = settings(max_shrinks=n)
-    assert s.max_shrinks == n
 
 
 def test_can_set_verbosity():
@@ -205,11 +192,6 @@ def test_cannot_delete_a_setting():
         del x.foo
 
 
-def test_cannot_set_strict():
-    with pytest.raises(HypothesisDeprecationWarning):
-        settings(strict=True)
-
-
 @checks_deprecated_behaviour
 def test_setting_to_unlimited_is_not_error_yet():
     settings(timeout=unlimited)
@@ -236,19 +218,6 @@ def test_database_type_must_be_ExampleDatabase(db):
         with pytest.raises(InvalidArgument):
             settings(database=".hypothesis/examples")
         assert settings.database is settings_property_db
-
-
-@checks_deprecated_behaviour
-def test_can_have_none_database_file():
-    assert settings(database_file=None).database is None
-
-
-@checks_deprecated_behaviour
-def test_can_override_database_file():
-    f = mkdtemp()
-    x = settings(database_file=f)
-    assert isinstance(x.database, DirectoryBasedExampleDatabase)
-    assert x.database.path == f
 
 
 def test_cannot_define_settings_once_locked():
@@ -337,12 +306,6 @@ def test_database_is_reference_preserved():
     s = settings(database=not_set)
 
     assert s.database is s.database
-
-
-@pytest.mark.parametrize("value", [False, True])
-def test_setting_use_coverage_is_deprecated(value):
-    with validate_deprecation():
-        settings(use_coverage=value)
 
 
 @settings(verbosity=Verbosity.verbose)
