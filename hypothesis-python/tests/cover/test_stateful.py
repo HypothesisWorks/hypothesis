@@ -515,20 +515,6 @@ def test_new_rules_are_picked_up_before_and_after_rules_call():
     assert len(Foo.rules()) == 2
 
 
-@checks_deprecated_behaviour
-def test_settings_are_independent():
-    s = Settings()
-    orig = s.max_examples
-    with s:
-
-        class Foo(RuleBasedStateMachine):
-            pass
-
-        Foo.define_rule(targets=(), function=lambda self: 1, arguments={})
-        Foo.TestCase.settings = Settings(Foo.TestCase.settings, max_examples=1000000)
-    assert s.max_examples == orig
-
-
 def test_minimizes_errors_in_teardown():
     counter = [0]
 

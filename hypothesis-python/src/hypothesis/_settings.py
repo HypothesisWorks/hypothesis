@@ -26,7 +26,6 @@ from __future__ import absolute_import, division, print_function
 import contextlib
 import datetime
 import inspect
-import os
 import threading
 import warnings
 from enum import Enum, IntEnum, unique
@@ -40,7 +39,7 @@ from hypothesis.errors import (
 )
 from hypothesis.internal.compat import string_types
 from hypothesis.internal.reflection import get_pretty_function_description, proxies
-from hypothesis.internal.validation import try_convert
+from hypothesis.internal.validation import check_type, try_convert
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
@@ -204,13 +203,6 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
                 verbosity=self.verbosity,
             )
 
-    def defaults_stack(self):
-        try:
-            return self.storage.defaults_stack
-        except AttributeError:
-            self.storage.defaults_stack = []
-            return self.storage.defaults_stack
-
     def __call__(self, test):
         """Make the settings object (self) an attribute of the test.
 
@@ -252,16 +244,14 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
                     "functions, or on subclasses of GenericStateMachine."
                 )
         if hasattr(test, "_hypothesis_internal_settings_applied"):
-            note_deprecation(
-                "%s has already been decorated with a settings object, which "
-                "will be overridden.  This will be an error in a future "
-                "version of Hypothesis.\n    Previous:  %r\n    This:  %r"
+            raise InvalidArgument(
+                "%s has already been decorated with a settings object."
+                "\n    Previous:  %r\n    This:  %r"
                 % (
                     get_pretty_function_description(test),
                     test._hypothesis_internal_use_settings,
                     self,
-                ),
-                since="2018-03-23",
+                )
             )
 
         test._hypothesis_internal_use_settings = self
@@ -271,12 +261,9 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
 
         @proxies(test)
         def new_test(*args, **kwargs):
-            note_deprecation(
-                "Using `@settings` without `@given` does not make sense and "
-                "will be an error in a future version of Hypothesis.",
-                since="2018-03-12",
+            raise InvalidArgument(
+                "Using `@settings` on a test without `@given` is completely pointless."
             )
-            test(*args, **kwargs)
 
         # @given will get the test from this attribution (rather than use the
         # version with the deprecation warning)
@@ -379,21 +366,6 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
                 bits.append("%s=%r" % (name, value))
         return ", ".join(sorted(bits, key=len))
 
-    def __enter__(self):
-        note_deprecation(
-            "Settings should be determined only by global state or with the "
-            "@settings decorator.",
-            since="2018-06-22",
-        )
-        default_context_manager = default_variable.with_value(self)
-        self.defaults_stack().append(default_context_manager)
-        default_context_manager.__enter__()
-        return self
-
-    def __exit__(self, *args, **kwargs):
-        default_context_manager = self.defaults_stack().pop()
-        return default_context_manager.__exit__(*args, **kwargs)
-
     @staticmethod
     def register_profile(name, parent=None, **kwargs):
         # type: (str, settings, **Any) -> None
@@ -409,28 +381,14 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         keyword arguments for each setting that will be set differently to
         parent (or settings.default, if parent is None).
         """
-        if not isinstance(name, string_types):
-            note_deprecation("name=%r must be a string" % (name,), since="2018-02-27")
-        if "settings" in kwargs:
-            if parent is None:
-                parent = kwargs.pop("settings")
-                note_deprecation(
-                    "The `settings` argument is deprecated - " "use `parent` instead.",
-                    since="2018-02-27",
-                )
-            else:
-                raise InvalidArgument(
-                    "The `settings` argument is deprecated, and has been "
-                    "replaced by the `parent` argument.  Use `parent` only."
-                )
+        check_type(string_types, name, "name")
         settings._profiles[name] = settings(parent=parent, **kwargs)
 
     @staticmethod
     def get_profile(name):
         # type: (str) -> settings
         """Return the profile with the given name."""
-        if not isinstance(name, string_types):
-            note_deprecation("name=%r must be a string" % (name,), since="2016-01-08")
+        check_type(string_types, name, "name")
         try:
             return settings._profiles[name]
         except KeyError:
@@ -445,8 +403,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         Any setting not defined in the profile will be the library
         defined default for that setting.
         """
-        if not isinstance(name, string_types):
-            note_deprecation("name=%r must be a string" % (name,), since="2016-01-08")
+        check_type(string_types, name, "name")
         settings._current_profile = name
         settings._assign_default_internal(settings.get_profile(name))
 
@@ -647,12 +604,7 @@ class HealthCheck(Enum):
     @classmethod
     def all(cls):
         # type: () -> List[HealthCheck]
-        bad = (HealthCheck.exception_in_generation, HealthCheck.random_module)
-        return [h for h in list(cls) if h not in bad]  # type: ignore
-
-    exception_in_generation = 0
-    """Deprecated and no longer does anything. It used to convert errors in
-    data generation into FailedHealthCheck error."""
+        return list(HealthCheck)
 
     data_too_large = 1
     """Check for when the typical size of the examples you are generating
@@ -666,11 +618,6 @@ class HealthCheck(Enum):
     too_slow = 3
     """Check for when your data generation is extremely slow and likely to hurt
     testing."""
-
-    random_module = 4
-    """Deprecated and no longer does anything. It used to check for whether
-    your tests used the global random module. Now @given tests automatically
-    seed random so this is no longer an error."""
 
     return_value = 5
     """Checks if your tests return a non-None value (which will be ignored and
@@ -759,25 +706,9 @@ def validate_health_check_suppressions(suppressions):
     suppressions = try_convert(list, suppressions, "suppress_health_check")
     for s in suppressions:
         if not isinstance(s, HealthCheck):
-            note_deprecation(
-                (
-                    "Non-HealthCheck value %r of type %s in suppress_health_check "
-                    "will be ignored, and will become an error in a future "
-                    "version of Hypothesis"
-                )
-                % (s, type(s).__name__),
-                since="2017-11-11",
-            )
-        elif s in (HealthCheck.exception_in_generation, HealthCheck.random_module):
-            note_deprecation(
-                (
-                    "%s is now ignored and suppressing it is a no-op. This will "
-                    "become an error in a future version of Hypothesis. Simply "
-                    "remove it from your list of suppressions to get the same "
-                    "effect."
-                )
-                % (s,),
-                since="2017-11-11",
+            raise InvalidArgument(
+                "Non-HealthCheck value %r of type %s is invalid in suppress_health_check."
+                % (s, type(s).__name__)
             )
     return suppressions
 

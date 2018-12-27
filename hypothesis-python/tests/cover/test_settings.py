@@ -77,25 +77,17 @@ def test_respects_none_database():
     assert settings(database=None).database is None
 
 
-@checks_deprecated_behaviour
-def test_settings_can_be_used_as_context_manager_to_change_defaults():
-    with settings(max_examples=12):
-        assert settings.default.max_examples == 12
-    assert settings.default.max_examples == original_default
-
-
-@checks_deprecated_behaviour
 def test_can_repeatedly_push_the_same_thing():
     s = settings(max_examples=12)
     t = settings(max_examples=17)
     assert settings().max_examples == original_default
-    with s:
+    with local_settings(s):
         assert settings().max_examples == 12
-        with t:
+        with local_settings(t):
             assert settings().max_examples == 17
-            with s:
+            with local_settings(s):
                 assert settings().max_examples == 12
-                with t:
+                with local_settings(t):
                     assert settings().max_examples == 17
                 assert settings().max_examples == 12
             assert settings().max_examples == 17
@@ -114,13 +106,6 @@ def test_cannot_register_with_parent_and_settings_args():
             "conflicted", settings.default, settings=settings.default
         )
     assert "conflicted" not in settings._profiles
-
-
-@checks_deprecated_behaviour
-def test_register_profile_kwarg_settings_is_deprecated():
-    settings.register_profile("test", settings=settings(max_examples=10))
-    settings.load_profile("test")
-    assert settings.default.max_examples == 10
 
 
 @checks_deprecated_behaviour
@@ -147,13 +132,12 @@ def test_can_not_set_verbosity_to_non_verbosity():
         settings(verbosity="kittens")
 
 
-@checks_deprecated_behaviour
 @pytest.mark.parametrize("db", [None, ExampleDatabase()])
 def test_inherits_an_empty_database(db):
     assert settings.default.database is not None
     s = settings(database=db)
     assert s.database is db
-    with s:
+    with local_settings(s):
         t = settings()
     assert t.database is db
 
@@ -187,19 +171,20 @@ def test_load_profile():
     assert settings.default.stateful_step_count == 50
 
 
-@checks_deprecated_behaviour
-def test_nonstring_profile_names_deprecated():
-    settings.register_profile(5, stateful_step_count=5)
-    settings.load_profile(5)
-    assert settings.default.stateful_step_count == 5
+def test_profile_names_must_be_strings():
+    with pytest.raises(InvalidArgument):
+        settings.register_profile(5)
+    with pytest.raises(InvalidArgument):
+        settings.get_profile(5)
+    with pytest.raises(InvalidArgument):
+        settings.load_profile(5)
 
 
-@checks_deprecated_behaviour
 def test_loading_profile_keeps_expected_behaviour():
     settings.register_profile("ci", settings(max_examples=10000))
     settings.load_profile("ci")
     assert settings().max_examples == 10000
-    with settings(max_examples=5):
+    with local_settings(settings(max_examples=5)):
         assert settings().max_examples == 5
     assert settings().max_examples == 10000
 
@@ -244,10 +229,9 @@ def test_can_have_none_database():
     assert settings(database=None).database is None
 
 
-@checks_deprecated_behaviour
 @pytest.mark.parametrize("db", [None, ExampleDatabase(":memory:")])
 def test_database_type_must_be_ExampleDatabase(db):
-    with settings(database=db):
+    with local_settings(settings(database=db)):
         settings_property_db = settings.database
         with pytest.raises(InvalidArgument):
             settings(database=".hypothesis/examples")
@@ -290,46 +274,22 @@ def test_settings_in_strategies_are_from_test_scope(s):
     assert s.max_examples == 7
 
 
-@checks_deprecated_behaviour
 def test_settings_alone():
     @settings()
     def test_nothing():
         pass
 
-    test_nothing()
+    with pytest.raises(InvalidArgument):
+        test_nothing()
 
 
-@checks_deprecated_behaviour
-def test_settings_applied_twice_1():
+@fails_with(InvalidArgument)
+def test_settings_applied_twice_is_error():
     @given(st.integers())
     @settings()
     @settings()
     def test_nothing(x):
         pass
-
-    test_nothing()
-
-
-@checks_deprecated_behaviour
-def test_settings_applied_twice_2():
-    @settings()
-    @given(st.integers())
-    @settings()
-    def test_nothing(x):
-        pass
-
-    test_nothing()
-
-
-@checks_deprecated_behaviour
-def test_settings_applied_twice_3():
-    @settings()
-    @settings()
-    @given(st.integers())
-    def test_nothing(x):
-        pass
-
-    test_nothing()
 
 
 @settings()
