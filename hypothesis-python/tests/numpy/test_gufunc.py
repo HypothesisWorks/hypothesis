@@ -14,6 +14,7 @@ from hypothesis.extra.numpy import scalar_dtypes
 # TODO move order of sig preproc
 # TODO make function for repeated strats
 # TODO eliminate need for padding using gufuncs and filler, might need next API
+# TODO max extra to max extra dims??
 
 NP_BROADCASTABLE = ((np.matmul, '(n,m),(m,p)->(n,p)'),
                     (np.add, '(),()->()'),
@@ -36,7 +37,6 @@ def pad_left(L, size, padding):
 
 
 def unparse(parsed_sig):
-    # TODO test parse unparse
     # TODO explain [] not valid here
     sig = [','.join(vv) for vv in parsed_sig]
     sig = '(' + '),('.join(sig) + ')'
@@ -125,10 +125,10 @@ def test_unparse_parse(parsed_sig):
              min_size=1, max_size=5), integers(0, 100), integers(0, 100),
        data())
 def test_constraints_gufunc_shape(parsed_sig, min_side, max_side, data):
-    min_side, max_side = sorted([min_side, max_side])
-
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + '->()'
+
+    min_side, max_side = sorted([min_side, max_side])
 
     S = gu.gufunc_shape(signature, min_side=min_side, max_side=max_side)
 
@@ -140,10 +140,10 @@ def test_constraints_gufunc_shape(parsed_sig, min_side, max_side, data):
              min_size=1, max_size=5), integers(0, 5), integers(0, 5),
        data())
 def test_constraints_gufunc(parsed_sig, min_side, max_side, data):
-    min_side, max_side = sorted([min_side, max_side])
-
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + '->()'
+
+    min_side, max_side = sorted([min_side, max_side])
 
     S = gu.gufunc(signature, filler=integers,
                   min_side=min_side, max_side=max_side,
@@ -162,14 +162,14 @@ def test_constraints_gufunc(parsed_sig, min_side, max_side, data):
        integers(0, 100), integers(0, 100), integers(0, 5), data())
 def test_bcast_gufunc_broadcast_shape(parsed_sig, excluded, min_side, max_side,
                                       max_extra, data):
+    # We don't care about the output for this function
+    signature = unparse(parsed_sig) + '->()'
+
     excluded = excluded[:len(parsed_sig)]
     excluded, = np.where(excluded)
     excluded = tuple(excluded)
 
     min_side, max_side = sorted([min_side, max_side])
-
-    # We don't care about the output for this function
-    signature = unparse(parsed_sig) + '->()'
 
     S = gu.gufunc_broadcast_shape(signature, excluded=excluded,
                                   min_side=min_side, max_side=max_side,
@@ -186,14 +186,14 @@ def test_bcast_gufunc_broadcast_shape(parsed_sig, excluded, min_side, max_side,
        integers(0, 5), integers(0, 5), integers(0, 3), data())
 def test_bcast_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
                                 max_extra, data):
+    # We don't care about the output for this function
+    signature = unparse(parsed_sig) + '->()'
+
     excluded = excluded[:len(parsed_sig)]
     excluded, = np.where(excluded)
     excluded = tuple(excluded)
 
     min_side, max_side = sorted([min_side, max_side])
-
-    # We don't care about the output for this function
-    signature = unparse(parsed_sig) + '->()'
 
     S = gu.gufunc_broadcast(signature, filler=integers, excluded=excluded,
                             min_side=min_side, max_side=max_side,
