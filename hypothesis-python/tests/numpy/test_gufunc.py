@@ -247,7 +247,7 @@ def test_np_passes_broadcasted(func_choice, min_side, max_side, max_extra,
     R2 = f_vec(*args)
     assert R1.dtype == otype
     assert R2.dtype == otype
-    # TODO assert shape
+    assert np.shape(R1) == np.shape(R2)
     assert np.all(R1 == R2)  # All int so no round off error
 
 
