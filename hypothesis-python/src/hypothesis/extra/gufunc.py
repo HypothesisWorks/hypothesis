@@ -67,6 +67,8 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     '''
+    assert min_side <= max_side, 'Must have min array side <= max array side'
+
     # Parse out the signature
     # Warning: this uses "private" function of numpy, but it does the job.
     # parses to [('n', 'm'), ('m', 'p')]
@@ -166,10 +168,15 @@ def gufunc_broadcast_shape(draw, signature,
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     '''
+    assert min_side <= max_side, 'Must have min array side <= max array side'
+    assert max_extra >= 0, 'max_extra must be >= 0'
+
     # Get core shapes before broadcasted dimensions
     # e.g., shapes = [(1, 3), (3, 1)]
     shapes = draw(gufunc_shape(signature,
                                min_side=min_side, max_side=max_side))
+    # Should not be possible if signature parser makes sense
+    assert len(shapes) > 0
 
     # Which extra dims will just be 1 to get broadcasted, specified by mask
     n_extra = draw(integers(min_value=0, max_value=max_extra))  # e.g., 2
@@ -355,6 +362,7 @@ def axised(draw, f, signature,
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     '''
     assert min_side >= 1, 'np.apply_along_axis does not like sides of 0'
+    assert min_side <= max_side, 'Must have min array side <= max array side'
 
     def f_axis(X, *args, **kwargs):
         axis = kwargs.get('axis', None)  # This trick is not needed in Python3
@@ -370,6 +378,7 @@ def axised(draw, f, signature,
 
     shapes = draw(gufunc_shape(signature,
                                min_side=min_side, max_side=max_side))
+    # should not be any way to generate len(shapes) = 0
     assert len(shapes[0]) == 1, \
         'first argument of signature %s must be 1D' % signature
 
