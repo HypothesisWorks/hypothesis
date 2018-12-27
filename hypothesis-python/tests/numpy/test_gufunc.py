@@ -287,9 +287,37 @@ def test_multi_broadcasted(min_side, max_side, max_extra, data):
         assert np.all(rr1 == rr2)
 
 
-def test_constraints_axised():
-    # take args and test same as gufunc_broadcast
-    pass
+@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
+             min_size=1, max_size=5),
+       integers(0, 5), integers(0, 5), integers(0, 3), data())
+def test_constraints_axised(parsed_sig, min_side, max_side, max_extra, data):
+    # First argument must be 1D
+    parsed_sig[0] = pad_left(parsed_sig[0], 1, 'n')[:1]
+    signature = unparse(parsed_sig) + '->()'  # output dims ignored here
+
+    min_side, max_side = sorted([min_side, max_side])
+
+    def dummy(*args, **kwargs):
+        assert False, 'this function shouldnt get called'
+
+    S = gu.axised(dummy, signature, min_side=min_side, max_side=max_side,
+                  max_extra=max_extra, allow_none=False,  # TODO allow
+                  filler=integers, min_value=0, max_value=5)
+
+    f0, f_ax, X, axis = data.draw(S)
+
+    # First argument is pass thru
+    assert f0 is dummy
+    assert id(f0) == id(dummy)
+
+    # Second is result of np.vectorize, which we test elsewhere
+
+    # Third same as gufunc_broadcast
+    shapes = [np.shape(xx) for xx in X]
+    shapes[0] = (X.size,) if axis is None else (X[0].shape[axis],)
+    validate_shapes(shapes, parsed_sig, min_side, max_side)
+
+    validate_elements(X)
 
 
 def test_np_passes_axised():

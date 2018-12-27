@@ -372,6 +372,9 @@ def axised(draw, f, signature,
 
     shapes = draw(gufunc_shape(signature,
                                min_side=min_side, max_side=max_side))
+    assert len(shapes[0]) == 1, \
+        'first argument of signature %s must be 1D' % signature
+
     n, = shapes[0]  # must be singleton by spec
     X_shape[axis] = n
     shapes[0] = X_shape
