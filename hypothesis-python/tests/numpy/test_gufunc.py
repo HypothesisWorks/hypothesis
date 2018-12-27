@@ -18,6 +18,12 @@ NP_BROADCASTABLE = ((np.matmul, '(n,m),(m,p)->(n,p)'),
                     (np.add, '(),()->()'),
                     (np.multiply, '(),()->()'))
 
+
+# TODO add diff
+NP_AXIS = ((np.sum, '(n)->()'),
+           (np.cumsum, '(n)->(n)'),
+           (np.percentile, '(n),()->()'))
+
 SHAPE_VARS = string.digits + string.ascii_lowercase
 
 
@@ -242,6 +248,8 @@ def test_np_passes_broadcasted(func_choice, min_side, max_side, max_extra,
 
     f0, f_vec, args = data.draw(S)
 
+    assert f0 is f
+
     R1 = f0(*args)
     R2 = f_vec(*args)
     assert R1.dtype == otype
@@ -329,7 +337,21 @@ def test_constraints_axised(parsed_sig, min_side, max_side, max_extra,
     assert allow_none or (axis is not None)
 
 
-def test_np_passes_axised():
-    # check function matches for built-in nps we know broadcast correct
-    #    do with real sig
-    pass
+@given(integers(0, len(NP_AXIS) - 1),
+       integers(1, 5), integers(1, 5), integers(0, 3), data())
+def test_np_passes_axised(func_choice, min_side, max_side, max_extra, data):
+    f, signature = NP_AXIS[func_choice]
+
+    min_side, max_side = sorted([min_side, max_side])
+
+    S = gu.axised(f, signature, min_side=min_side, max_side=max_side,
+                  max_extra=max_extra, allow_none=False,  # TODO use true
+                  filler=integers, min_value=0, max_value=100)
+
+    f0, f_ax, args, axis = data.draw(S)
+
+    R1 = f0(*args, axis=axis)
+    R2 = f_ax(*args, axis=axis)
+    assert R1.dtype == R2.dtype
+    assert np.shape(R1) == np.shape(R2)
+    assert np.all(R1 == R2)  # All int so no round off error
