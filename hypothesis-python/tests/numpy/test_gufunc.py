@@ -23,7 +23,8 @@ NP_BROADCASTABLE = ((np.matmul, '(n,m),(m,p)->(n,p)'),
 NP_AXIS = ((np.sum, '(n)->()', True),
            (np.cumsum, '(n)->(n)', True),
            (np.percentile, '(n),()->()', True),
-           (np.diff, '(n)->(m)', False))
+           (np.diff, '(n)->(m)', False),
+           (np.diff, '(n),()->(m)', False))
 
 SHAPE_VARS = string.digits + string.ascii_lowercase
 
