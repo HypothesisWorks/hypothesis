@@ -24,7 +24,7 @@ from functools import partial
 import pytest
 from mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
-from hypothesis.internal.compat import PY3, FullArgSpec, getfullargspec
+from hypothesis.internal.compat import PY2, PY3, FullArgSpec, getfullargspec
 from hypothesis.internal.reflection import (
     arg_string,
     convert_keyword_arguments,
@@ -666,3 +666,23 @@ class Target(object):
 def test_required_args(target, args, kwargs, expected):
     # Mostly checking that `self` (and only self) is correctly excluded
     assert required_args(target, args, kwargs) == expected
+
+
+pi = "π"; is_str_pi = lambda x: x == pi  # noqa: E731
+
+
+if PY2:
+    def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():
+        assert get_pretty_function_description(is_str_pi) == "lambda x: x == pi"
+else:
+    def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():
+        # Monkey-patching out the `tokenize.detect_encoding` method here means
+        # that our reflection can't detect the encoding of the source file, and
+        # has to fall back to assuming it's ASCII.
+        import tokenize
+        old_detect_encoding = tokenize.detect_encoding
+        try:
+            del tokenize.detect_encoding
+            assert get_pretty_function_description(is_str_pi) == "lambda x: x == pi"
+        finally:
+            tokenize.detect_encoding = old_detect_encoding
