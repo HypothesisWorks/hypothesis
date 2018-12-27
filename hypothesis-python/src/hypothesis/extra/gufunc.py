@@ -354,8 +354,7 @@ def axised(draw, f, signature,
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     '''
-    # This could be made argument as well if we like, np.apply_along_axis
-    # doesn't like when this is 0, but we could handle that case ourselves.
+    assert min_side >= 1, 'np.apply_along_axis does not like sides of 0'
 
     def f_axis(X, *args, **kwargs):
         axis = kwargs.get('axis', None)  # This trick is not needed in Python3

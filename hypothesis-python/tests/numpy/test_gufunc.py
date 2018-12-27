@@ -299,7 +299,7 @@ def test_multi_broadcasted(min_side, max_side, max_extra, data):
 
 @given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
              min_size=1, max_size=5),
-       integers(0, 5), integers(0, 5), integers(0, 3), booleans(), data())
+       integers(1, 5), integers(1, 5), integers(0, 3), booleans(), data())
 def test_constraints_axised(parsed_sig, min_side, max_side, max_extra,
                             allow_none, data):
     # First argument must be 1D
