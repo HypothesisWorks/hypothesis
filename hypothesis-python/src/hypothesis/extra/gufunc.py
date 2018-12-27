@@ -276,7 +276,8 @@ def broadcasted(f, signature, otypes=None, excluded=(), **kwargs):
         The dtypes for the the outputs of `f`. It must be a list with one dtype
         for each output argument of `f`. It must be a singleton list if `f`
         only returns a single output. It can also be set to `None` to leave it
-        to be inferred, but this can create issues with empty arrays.
+        to be inferred, but this can create issues with empty arrays, so it is
+        not officially supported here.
     excluded : list-like of integers
         Set of integers representing the positional for which the function will
         not be vectorized. Uses same format as `numpy.vectorize`.

@@ -93,7 +93,7 @@ def validate_bcast_shapes(shapes, parsed_sig, min_side, max_side, max_extra):
     # Convert dims to matrix form
     b_dims2 = np.array([pad_left(bb, max_extra, 1) for bb in b_dims],
                        dtype=int)
-    # TODO comment
+    # The extra broadcast dims be set to one regardless of min, max sides
     assert np.all((b_dims2 == 1) | (min_side <= b_dims2))
     assert np.all((b_dims2 == 1) | (b_dims2 <= max_side))
     # make sure 1 or same
@@ -104,7 +104,8 @@ def validate_bcast_shapes(shapes, parsed_sig, min_side, max_side, max_extra):
         assert len(vals) < 2 or (1 in vals)
 
 
-# TODO built in array shapes
+# hypothesis.extra.numpy.array_shapes does not support 0 min_size so we roll
+# our own in this case.
 @given(lists(lists(integers(min_value=0, max_value=5),
                    min_size=0, max_size=3), min_size=0, max_size=5), data())
 def test_shapes_tuple_of_arrays(shapes, data):
@@ -206,15 +207,15 @@ def test_bcast_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
     validate_elements(X)
 
 
-@given(parsed_sigs(max_dims=3), lists(scalar_dtypes(), min_size=3, max_size=3),
+@given(parsed_sigs(max_dims=3), parsed_sigs(max_dims=3),
+       lists(scalar_dtypes(), min_size=3, max_size=3),
        lists(booleans(), min_size=3, max_size=3),
        integers(0, 5), integers(0, 5), integers(0, 3), data())
-def test_bcast_broadcasted(parsed_sig, otypes, excluded, min_side, max_side,
-                           max_extra, data):
-    # TODO also put random output sig as well
-    signature = unparse(parsed_sig) + '->()'
+def test_bcast_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
+                           min_side, max_side, max_extra, data):
+    signature = unparse(parsed_sig) + '->' + unparse(o_parsed_sig)
 
-    # TODO also test taking None sometimes, or these are str or type
+    # These are of type np.dtype, but we test use str elsewhere
     otypes = otypes[:len(parsed_sig)]
 
     excluded = excluded[:len(parsed_sig)]
