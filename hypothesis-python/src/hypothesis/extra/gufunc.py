@@ -137,8 +137,8 @@ def gufunc(draw, signature, filler=floats, min_side=0, max_side=5, **kwargs):
 
 
 @composite
-def gufunc_broadcast_shape(draw, signature,
-                           excluded=(), min_side=0, max_side=5, max_extra=2):
+def gufunc_broadcast_shape(draw, signature, excluded=(),
+                           min_side=0, max_side=5, max_dims_extra=2):
     '''Strategy to generate the shape of ndarrays for arguments to a function
     consistent with its signature with extra dimensions to test broadcasting.
 
@@ -159,7 +159,7 @@ def gufunc_broadcast_shape(draw, signature,
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing.
-    max_extra : int
+    max_dims_extra : int
         Maximum number of extra dimensions that can be appended on left of
         arrays for broadcasting. This should be kept small as the memory used
         grows exponentially with extra dimensions.
@@ -176,7 +176,7 @@ def gufunc_broadcast_shape(draw, signature,
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     '''
     assert min_side <= max_side, 'Must have min array side <= max array side'
-    assert max_extra >= 0, 'max_extra must be >= 0'
+    assert max_dims_extra >= 0, 'max_dims_extra must be >= 0'
 
     # Get core shapes before broadcasted dimensions
     # e.g., shapes = [(1, 3), (3, 1)]
@@ -186,7 +186,7 @@ def gufunc_broadcast_shape(draw, signature,
     assert len(shapes) > 0
 
     # Which extra dims will just be 1 to get broadcasted, specified by mask
-    n_extra = draw(integers(min_value=0, max_value=max_extra))  # e.g., 2
+    n_extra = draw(integers(min_value=0, max_value=max_dims_extra))  # e.g., 2
     n_extra = int(n_extra)  # cast to int only for Py2
     # e.g., mask = [[True False], [False False]]
     mask = draw(arrays(np.bool, (len(shapes), n_extra)))
@@ -216,7 +216,7 @@ def gufunc_broadcast_shape(draw, signature,
 
 @composite
 def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
-                     min_side=0, max_side=5, max_extra=2, **kwargs):
+                     min_side=0, max_side=5, max_dims_extra=2, **kwargs):
     '''Strategy to generate a tuple of ndarrays for arguments to a function
     consistent with its signature with extra dimensions to test broadcasting.
 
@@ -240,7 +240,7 @@ def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing.
-    max_extra : int
+    max_dims_extra : int
         Maximum number of extra dimensions that can be appended on left of
         arrays for broadcasting. This should be kept small as the memory used
         grows exponentially with extra dimensions.
@@ -258,7 +258,7 @@ def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
     '''
     shapes = draw(gufunc_broadcast_shape(signature, excluded=excluded,
                                          min_side=min_side, max_side=max_side,
-                                         max_extra=max_extra))
+                                         max_dims_extra=max_dims_extra))
     res = draw(tuple_of_arrays(shapes, filler, **kwargs))
     return res
 
@@ -311,9 +311,8 @@ def broadcasted(f, signature, otypes=None, excluded=(), **kwargs):
 
 
 @composite
-def axised(draw, f, signature,
-           filler=floats, min_side=1, max_side=5, max_extra=2, allow_none=True,
-           **kwargs):
+def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
+           max_dims_extra=2, allow_none=True, **kwargs):
     '''Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
     `numpy.apply_along_axis`.
@@ -338,7 +337,7 @@ def axised(draw, f, signature,
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, it a min
         size can be supplied here.
-    max_extra : int
+    max_dims_extra : int
         Maximum number of extra dimensions that can be added to the first
         argument of `f`, which is the argument that `numpy.apply_along_axis`
         operates on. This should be kept small as the memory used
@@ -380,8 +379,8 @@ def axised(draw, f, signature,
         return Y
 
     side_X = integers(min_value=min_side, max_value=max_side)
-    # X has core dims (n,) so the total dims must be in [1, max_extra + 1]
-    X_shape = draw(lists(side_X, min_size=1, max_size=max_extra + 1))
+    # X has core dims (n,) so the total dims must be in [1, max_dims_extra + 1]
+    X_shape = draw(lists(side_X, min_size=1, max_size=max_dims_extra + 1))
 
     shapes = draw(gufunc_shape(signature,
                                min_side=min_side, max_side=max_side))
