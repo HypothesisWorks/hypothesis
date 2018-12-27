@@ -57,7 +57,7 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
     min_side : int
         Minimum size of any side of the arrays. It is good to test the corner
-        cases of 0 or 1 sized dimensions when applicable, but if not, it a min
+        cases of 0 or 1 sized dimensions when applicable, but if not, a min
         size can be supplied here.
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
@@ -113,7 +113,7 @@ def gufunc(draw, signature, filler=floats, min_side=0, max_side=5, **kwargs):
         The parameters for `filler` are specified by the `kwargs`.
     min_side : int
         Minimum size of any side of the arrays. It is good to test the corner
-        cases of 0 or 1 sized dimensions when applicable, but if not, it a min
+        cases of 0 or 1 sized dimensions when applicable, but if not, a min
         size can be supplied here.
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
@@ -153,8 +153,9 @@ def gufunc_broadcast_shape(draw, signature,
         not be vectorized. Uses same format as `numpy.vectorize`.
     min_side : int
         Minimum size of any side of the arrays. It is good to test the corner
-        cases of 0 or 1 sized dimensions when applicable, but if not, it a min
-        size can be supplied here.
+        cases of 0 or 1 sized dimensions when applicable, but if not, a min
+        size can be supplied here. Note that the broadcasted dimensions may be
+        1 even regardless of `min_side` or `max_side`.
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing.
@@ -190,8 +191,6 @@ def gufunc_broadcast_shape(draw, signature,
     # e.g., mask = [[True False], [False False]]
     mask = draw(arrays(np.bool, (len(shapes), n_extra)))
 
-    # TODO note still can get 1 on bcast dims even if max_side=0
-
     # Build 2D array with extra dimensions
     extra_dim_gen = integers(min_value=min_side, max_value=max_side)
     # e.g., extra_dims = [2 5]
@@ -199,7 +198,7 @@ def gufunc_broadcast_shape(draw, signature,
     # e.g., extra_dims = [[2 5], [2 5]]
     extra_dims = np.tile(extra_dims, (len(shapes), 1))
     # e.g., extra_dims = [[1 5], [2 5]]
-    extra_dims[mask] = 1
+    extra_dims[mask] = 1  # This may be outside [min_side, max_side]
 
     # How many extra dims on left to include for each argument (implicitly) 1
     # for each chopped dim. Cannot include any extra for excluded arguments.
@@ -235,8 +234,9 @@ def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
         not be vectorized. Uses same format as `numpy.vectorize`.
     min_side : int
         Minimum size of any side of the arrays. It is good to test the corner
-        cases of 0 or 1 sized dimensions when applicable, but if not, it a min
-        size can be supplied here. Not applied to broadcasted dims.
+        cases of 0 or 1 sized dimensions when applicable, but if not, a min
+        size can be supplied here. Note that the broadcasted dimensions may be
+        1 even regardless of `min_side` or `max_side`.
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing.
@@ -332,9 +332,8 @@ def axised(draw, f, signature,
         Strategy to fill in array elements e.g. `hypothesis.strategies.floats`.
         The parameters for `filler` are specified by the `kwargs`.
     min_side : int
-        Minimum size of any side of the arrays. It is good to test the corner
-        cases of 0 or 1 sized dimensions when applicable, but if not, it a min
-        size can be supplied here.
+        Minimum size of any side of the arrays. This must be >= 1 since
+        `np.apply_along_axis` does not like sides of 0 for the first argument.
     min_side : int
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, it a min
@@ -380,12 +379,13 @@ def axised(draw, f, signature,
             Y = np.apply_along_axis(f, axis, X, *args)
         return Y
 
-    side_base = integers(min_value=min_side, max_value=max_side)
-    X_shape = draw(lists(side_base, min_size=1, max_size=max_extra + 1))
+    side_X = integers(min_value=min_side, max_value=max_side)
+    # X has core dims (n,) so the total dims must be in [1, max_extra + 1]
+    X_shape = draw(lists(side_X, min_size=1, max_size=max_extra + 1))
 
     shapes = draw(gufunc_shape(signature,
                                min_side=min_side, max_side=max_side))
-    # should not be any way to generate len(shapes) = 0
+    # ok to assume [0] since should not be any way to generate len(shapes) = 0
     assert len(shapes[0]) == 1, \
         'first argument of signature %s must be 1D' % signature
 
@@ -394,6 +394,7 @@ def axised(draw, f, signature,
         # arbitrary shapes of first arg X (with X.ndims >= 1).
         axis = None
     else:
+        # integers is inclusive => must use len(X_shape) - 1 when drawing axis
         axis = draw(integers(min_value=0, max_value=len(X_shape) - 1))
         n, = shapes[0]
         X_shape[axis] = n
