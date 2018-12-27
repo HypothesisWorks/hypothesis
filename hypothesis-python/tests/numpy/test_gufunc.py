@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import string
 import numpy as np
+import numpy.lib.function_base as npfb
 from hypothesis import given
 from hypothesis.strategies import integers, lists, data, sampled_from, booleans
 import hypothesis.extra.gufunc as gu
@@ -105,6 +106,19 @@ def test_shapes_tuple_of_arrays(shapes, data):
     assert len(shapes) == len(X)
     for spec, drawn in zip(shapes, X):
         assert tuple(spec) == np.shape(drawn)
+
+
+@given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
+             min_size=1, max_size=5))
+def test_unparse_parse(parsed_sig):
+    # We don't care about the output for this function
+    signature = unparse(parsed_sig) + '->()'
+    # This is a 'private' function of np, so need to test it still works as we
+    # think it does.
+    inp, _ = npfb._parse_gufunc_signature(signature)
+
+    parsed_sig = [tuple(ss) for ss in parsed_sig]  # need list of tuple
+    assert parsed_sig == inp
 
 
 @given(lists(lists(sampled_from(SHAPE_VARS), min_size=0, max_size=3),
