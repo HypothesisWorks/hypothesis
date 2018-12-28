@@ -1,15 +1,23 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
+
+import string
 # Note: this requires adding `future` to the test requirements!
 from builtins import int as py3int
 
-import string
 import numpy as np
 import numpy.lib.function_base as npfb
-from hypothesis import given
-from hypothesis.strategies import integers, lists, data, sampled_from, booleans
-from hypothesis.strategies import from_regex
+
 import hypothesis.extra.gufunc as gu
-from hypothesis.extra.numpy import scalar_dtypes, from_dtype
+from hypothesis import given
+from hypothesis.extra.numpy import from_dtype, scalar_dtypes
+from hypothesis.strategies import (
+    booleans,
+    data,
+    from_regex,
+    integers,
+    lists,
+    sampled_from,
+)
 
 NP_BROADCASTABLE = ((np.matmul, "(n,m),(m,p)->(n,p)"),
                     (np.add, "(),()->()"),

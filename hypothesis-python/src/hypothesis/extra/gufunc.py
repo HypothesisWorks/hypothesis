@@ -4,13 +4,21 @@ This routine uses the numpy parser of the Generalized Universal Function API
 signatures `_parse_gufunc_signature`, which is only available in numpy>=1.12.0
 and therefore requires a bump in the requirements for hypothesis.
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import numpy.lib.function_base as npfb
-from hypothesis.extra.numpy import arrays, order_check, check_argument
-from hypothesis.strategies import composite, just, lists, tuples
-from hypothesis.strategies import booleans, integers, floats
+
+from hypothesis.extra.numpy import arrays, check_argument, order_check
+from hypothesis.strategies import (
+    booleans,
+    composite,
+    floats,
+    integers,
+    just,
+    lists,
+    tuples,
+)
 
 # Should not ever need to broadcast beyond this, but should be able to set it
 # as high as 32 before breaking assumptions in numpy.
