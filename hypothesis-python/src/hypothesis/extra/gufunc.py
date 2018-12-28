@@ -12,17 +12,24 @@ from hypothesis.extra.numpy import arrays, order_check, check_argument
 from hypothesis.strategies import composite, just, lists, tuples
 from hypothesis.strategies import booleans, integers, floats
 
-# TODO marke integers_ wrapper for Py2 that forces int type: .map(int)
-
 # Should not ever need to broadcast beyond this, but should be able to set it
 # as high as 32 before breaking assumptions in numpy.
 GLOBAL_DIMS_MAX = 12
 
 
-def validate(shapes):
-    # Make all int and rid of longs, but hopefully we can eliminate in Py3
-    shapes = [tuple(int(aa) for aa in tt) for tt in shapes]
-    return shapes
+def arrays_(dtype, shape, elements, force_ndarray=False):
+    '''Wrapper to fix issues with `hypothesis.extra.numpy.arrays`.
+
+    `arrays` is strict on shape being `int` which this fixes. This is partially
+    not needed in Py3 since there is no `int` vs `long` issue. Also, `arrays`
+    does not return ndarray for 0-dim arrays.
+    '''
+    shape = tuple(int(aa) for aa in shape)
+    if force_ndarray:
+        S = arrays(dtype, shape, elements=elements).map(np.asarray)
+    else:
+        S = arrays(dtype, shape, elements=elements)
+    return S
 
 
 @composite
@@ -42,13 +49,9 @@ def tuple_of_arrays(draw, shapes, filler, **kwargs):
     res : tuple of ndarrays
         Resulting ndarrays with shape from `shapes` and elements from `filler`.
     '''
-    shapes = validate(shapes)
-
-    # TODO remove comment
-    #  dtype = np.dtype(type(draw(filler(**kwargs))))
     # Need to use asarray to correct get type on weird types like np datetimes
     dtype = np.asarray(draw(filler(**kwargs))).dtype
-    res = tuple(draw(arrays(dtype, ss, elements=filler(**kwargs)))
+    res = tuple(draw(arrays_(dtype, ss, elements=filler(**kwargs)))
                 for ss in shapes)
     return res
 

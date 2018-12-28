@@ -9,7 +9,6 @@ from hypothesis.strategies import from_regex
 import hypothesis.extra.gufunc as gu
 from hypothesis.extra.numpy import scalar_dtypes, from_dtype
 
-# TODO consider if tuple_of_arrays should always return np.array
 # TODO eliminate need for padding using gufuncs and filler, might need next API
 
 NP_BROADCASTABLE = ((np.matmul, '(n,m),(m,p)->(n,p)'),
@@ -81,7 +80,6 @@ def validate_shapes(L, parsed_sig, min_side, max_side):
 
 def validate_elements(L, elements=None):
     for drawn in L:
-        # TODO after API change, can make bigger test of elements elsewhere
         drawn = np.asarray(drawn)
         if elements is None:  # Test int filler
             assert drawn.dtype == int
@@ -118,6 +116,26 @@ def validate_bcast_shapes(shapes, parsed_sig,
         # Must all be 1 or a const size
         assert len(vals) <= 2
         assert len(vals) < 2 or (1 in vals)
+
+
+@given(scalar_dtypes(),
+       lists(integers(min_value=0, max_value=5),
+             min_size=0, max_size=3).map(tuple), booleans(), data())
+def test_arrays_(dtype, shape, force_ndarray, data):
+    elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
+    # testing elements equality tricky with nans
+    elements = np.nan_to_num(elements)
+    elements_st = sampled_from(elements)
+
+    S = gu.arrays_(elements.dtype, shape, elements_st,
+                   force_ndarray=force_ndarray)
+    X = data.draw(S)
+
+    assert np.shape(X) == shape
+    validate_elements([X], elements=elements)
+
+    if force_ndarray or np.size(X) != 1:
+        assert type(X) == np.ndarray
 
 
 # hypothesis.extra.numpy.array_shapes does not support 0 min_size so we roll
