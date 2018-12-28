@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.84.6:
+
+-------------------
+3.84.6 - 2018-12-28
+-------------------
+
+This patch makes a small internal change to fix an issue in Hypothesis's
+own coverage tests (:issue:`1718`:).
+
+There is no user-visible change.
+
 .. _v3.84.5:
 
 -------------------
