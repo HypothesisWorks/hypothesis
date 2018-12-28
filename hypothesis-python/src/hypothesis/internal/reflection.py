@@ -383,7 +383,19 @@ def extract_lambda_source(f):
     except (AttributeError, OSError, TypeError):
         source = source[lambda_ast.col_offset :].strip()
 
+    # Note: It is possible for this line to throw a ValueError in Python 3 if:
+    #
+    #  - There's a Unicode character in the line before the Lambda, and
+    #  - For some reason we can't detect the source encoding of the file
+    #
+    # because slicing on `lambda_ast.col_offset` will account for bytes, but
+    # the slice will be on Unicode characters.
+    #
+    # In practice this seems relatively rare, and I'm going to ignore this bug
+    # until I have a compelling reason to add even more complexity here.
+    #
     source = source[source.index("lambda") :]
+
     for i in hrange(len(source), len("lambda"), -1):  # pragma: no branch
         try:
             parsed = ast.parse(source[:i])
