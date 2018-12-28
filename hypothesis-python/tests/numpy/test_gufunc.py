@@ -11,7 +11,6 @@ from hypothesis.extra.numpy import scalar_dtypes
 # TODO consider if tuple_of_arrays should always return np.array
 # TODO eliminate need for padding using gufuncs and filler, might need next API
 
-# TODO order_check etc
 # Check going over full support of funcs
 
 NP_BROADCASTABLE = ((np.matmul, '(n,m),(m,p)->(n,p)'),
@@ -83,6 +82,8 @@ def validate_elements(L):
 
 def validate_bcast_shapes(shapes, parsed_sig,
                           min_side, max_side, max_dims_extra):
+    assert all(len(ss) <= gu.GLOBAL_DIMS_MAX for ss in shapes)
+
     # chop off extra dims then same as gufunc_shape
     core_dims = [tt[len(tt) - len(pp):] for tt, pp in zip(shapes, parsed_sig)]
     validate_shapes(core_dims, parsed_sig, min_side, max_side)
@@ -90,9 +91,6 @@ def validate_bcast_shapes(shapes, parsed_sig,
     # check max_dims_extra
     b_dims = [tt[:len(tt) - len(pp)] for tt, pp in zip(shapes, parsed_sig)]
     assert all(len(tt) <= max_dims_extra for tt in b_dims)
-    assert all(len(tt) <= gu.GLOBAL_DIMS_MAX for tt in b_dims)
-
-    # TODO use np built in bcast checkers
 
     # Convert dims to matrix form
     b_dims2 = np.array([pad_left(bb, max_dims_extra, 1) for bb in b_dims],
