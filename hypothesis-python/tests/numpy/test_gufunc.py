@@ -11,31 +11,31 @@ from hypothesis.strategies import from_regex
 import hypothesis.extra.gufunc as gu
 from hypothesis.extra.numpy import scalar_dtypes, from_dtype
 
-NP_BROADCASTABLE = ((np.matmul, '(n,m),(m,p)->(n,p)'),
-                    (np.add, '(),()->()'),
-                    (np.multiply, '(),()->()'))
+NP_BROADCASTABLE = ((np.matmul, "(n,m),(m,p)->(n,p)"),
+                    (np.add, "(),()->()"),
+                    (np.multiply, "(),()->()"))
 
 
 # Also include if function can handle axis=None
-NP_AXIS = ((np.sum, '(n)->()', True),
-           (np.cumsum, '(n)->(n)', True),
-           (np.percentile, '(n),()->()', True),
-           (np.diff, '(n)->(m)', False),
-           (np.diff, '(n),()->(m)', False))
+NP_AXIS = ((np.sum, "(n)->()", True),
+           (np.cumsum, "(n)->(n)", True),
+           (np.percentile, "(n),()->()", True),
+           (np.diff, "(n)->(m)", False),
+           (np.diff, "(n),()->(m)", False))
 
 # The spec for a dimension name in numpy.lib.function_base, if we are happy
 # testing single char var names we can switch this to '\A\w\Z' and save ~0.5s
 # when running the tests. Officially, we should use r'\A\w+\Z' but this creates
 # too many weird corner cases on Python3 unicode.
-VALID_DIM_NAMES = r'\A[a-zA-Z_][a-zA-Z0-9_]*\Z'
+VALID_DIM_NAMES = r"\A[a-zA-Z_][a-zA-Z0-9_]*\Z"
 
 
 def parsed_sigs(max_dims=3, max_args=5):
-    '''Strategy to generate a parsed gufunc signature.
+    """Strategy to generate a parsed gufunc signature.
 
     Note that in general functions can take no-args, but the function signature
     formalism is for >= 1 args. So, there is always at least 1 arg here.
-    '''
+    """
     # Use | to sample from digits since we would like pure numbers more often
     shapes = lists(from_regex(VALID_DIM_NAMES) | sampled_from(string.digits),
                    min_size=0, max_size=max_dims).map(tuple)
@@ -49,15 +49,15 @@ def pad_left(L, size, padding):
 
 
 def unparse(parsed_sig):
-    assert len(parsed_sig) > 0, 'gufunc sig does not support no argument funcs'
+    assert len(parsed_sig) > 0, "gufunc sig does not support no argument funcs"
 
-    sig = [','.join(vv) for vv in parsed_sig]
-    sig = '(' + '),('.join(sig) + ')'
+    sig = [",".join(vv) for vv in parsed_sig]
+    sig = "(" + "),(".join(sig) + ")"
     return sig
 
 
 def check_int(x):
-    '''Use subroutine for this so in Py3 we can remove the `long`.'''
+    """Use subroutine for this so in Py3 we can remove the `long`."""
     # Could also do ``type(x) in (int, long)``, but only on Py2.
     assert isinstance(x, py3int)
 
@@ -173,7 +173,7 @@ def test_elements_tuple_of_arrays(shapes, dtype, data):
 @given(parsed_sigs(), parsed_sigs())
 def test_unparse_parse(i_parsed_sig, o_parsed_sig):
     # We don't care about the output for this function
-    signature = unparse(i_parsed_sig) + '->' + unparse(o_parsed_sig)
+    signature = unparse(i_parsed_sig) + "->" + unparse(o_parsed_sig)
     # This is a 'private' function of np, so need to test it still works as we
     # think it does.
     inp, out = npfb._parse_gufunc_signature(signature)
@@ -185,7 +185,7 @@ def test_unparse_parse(i_parsed_sig, o_parsed_sig):
 @given(parsed_sigs(), integers(0, 100), integers(0, 100), data())
 def test_shapes_gufunc_shape(parsed_sig, min_side, max_side, data):
     # We don't care about the output for this function
-    signature = unparse(parsed_sig) + '->()'
+    signature = unparse(parsed_sig) + "->()"
 
     min_side, max_side = sorted([min_side, max_side])
 
@@ -198,7 +198,7 @@ def test_shapes_gufunc_shape(parsed_sig, min_side, max_side, data):
 @given(parsed_sigs(), integers(0, 5), integers(0, 5), data())
 def test_shapes_gufunc(parsed_sig, min_side, max_side, data):
     # We don't care about the output for this function
-    signature = unparse(parsed_sig) + '->()'
+    signature = unparse(parsed_sig) + "->()"
 
     min_side, max_side = sorted([min_side, max_side])
 
@@ -221,7 +221,7 @@ def test_elements_gufunc(parsed_sig, min_side, max_side, dtype, data):
     elements = np.nan_to_num(elements)
 
     # We don't care about the output for this function
-    signature = unparse(parsed_sig) + '->()'
+    signature = unparse(parsed_sig) + "->()"
 
     min_side, max_side = sorted([min_side, max_side])
 
@@ -241,7 +241,7 @@ def test_shapes_gufunc_broadcast_shape(parsed_sig, excluded,
                                        min_side, max_side, max_dims_extra,
                                        data):
     # We don't care about the output for this function
-    signature = unparse(parsed_sig) + '->()'
+    signature = unparse(parsed_sig) + "->()"
 
     excluded = excluded[:len(parsed_sig)]
     assert len(excluded) == len(parsed_sig)  # Make sure excluded long enough
@@ -265,7 +265,7 @@ def test_shapes_gufunc_broadcast_shape(parsed_sig, excluded,
 def test_shapes_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
                                  max_dims_extra, data):
     # We don't care about the output for this function
-    signature = unparse(parsed_sig) + '->()'
+    signature = unparse(parsed_sig) + "->()"
 
     excluded = excluded[:len(parsed_sig)]
     assert len(excluded) == len(parsed_sig)  # Make sure excluded long enough
@@ -292,7 +292,7 @@ def test_shapes_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
 def test_elements_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
                                    max_dims_extra, dtype, data):
     # We don't care about the output for this function
-    signature = unparse(parsed_sig) + '->()'
+    signature = unparse(parsed_sig) + "->()"
 
     excluded = excluded[:len(parsed_sig)]
     assert len(excluded) == len(parsed_sig)  # Make sure excluded long enough
@@ -320,7 +320,7 @@ def test_elements_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
        integers(0, 5), integers(0, 5), integers(0, 3), data())
 def test_shapes_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
                             min_side, max_side, max_dims_extra, data):
-    signature = unparse(parsed_sig) + '->' + unparse(o_parsed_sig)
+    signature = unparse(parsed_sig) + "->" + unparse(o_parsed_sig)
 
     # These are of type np.dtype, but we test use str elsewhere
     otypes = otypes[:len(parsed_sig)]
@@ -334,7 +334,7 @@ def test_shapes_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
     min_side, max_side = sorted([min_side, max_side])
 
     def dummy(*args):
-        assert False, 'this function shouldnt get called'
+        assert False, "this function shouldnt get called"
 
     S = gu.broadcasted(dummy, signature, otypes=otypes, excluded=excluded,
                        min_side=min_side, max_side=max_side,
@@ -362,7 +362,7 @@ def test_shapes_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
        integers(0, 5), integers(0, 5), integers(0, 3), scalar_dtypes(), data())
 def test_elements_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
                               min_side, max_side, max_dims_extra, dtype, data):
-    signature = unparse(parsed_sig) + '->' + unparse(o_parsed_sig)
+    signature = unparse(parsed_sig) + "->" + unparse(o_parsed_sig)
 
     # These are of type np.dtype, but we test use str elsewhere
     otypes = otypes[:len(parsed_sig)]
@@ -376,7 +376,7 @@ def test_elements_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
     min_side, max_side = sorted([min_side, max_side])
 
     def dummy(*args):
-        assert False, 'this function shouldnt get called'
+        assert False, "this function shouldnt get called"
 
     elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
     # testing elements equality tricky with nans
@@ -395,7 +395,7 @@ def test_elements_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
 @given(integers(0, len(NP_BROADCASTABLE) - 1),
        integers(0, 5), integers(0, 5), integers(0, 3), data())
 def test_np_broadcasted(func_choice, min_side, max_side, max_dims_extra, data):
-    otype = 'int64'
+    otype = "int64"
 
     f, signature = NP_BROADCASTABLE[func_choice]
 
@@ -423,13 +423,13 @@ def test_np_multi_broadcasted(min_side, max_side, max_dims_extra, data):
     min_side, max_side = sorted([min_side, max_side])
 
     def multi_out_f(x, y, q):
-        '''Function should already be fully broadcast compatible.'''
+        """Function should already be fully broadcast compatible."""
         z = np.matmul(x, y)
         R = (z, z + 0.5 * q)
         return R
 
-    signature = '(n,m),(m,p),()->(n,p),(n,p)'
-    otypes = ['int64', 'float64']
+    signature = "(n,m),(m,p),()->(n,p),(n,p)"
+    otypes = ["int64", "float64"]
 
     S = gu.broadcasted(multi_out_f, signature, otypes=otypes, excluded=(2,),
                        min_side=min_side, max_side=max_side,
@@ -439,7 +439,7 @@ def test_np_multi_broadcasted(min_side, max_side, max_dims_extra, data):
     f0, f_vec, args = data.draw(S)
 
     assert f0 is multi_out_f
-    assert np.shape(args[2]) == (), 'argument should be excluded from bcast'
+    assert np.shape(args[2]) == (), "argument should be excluded from bcast"
 
     R1 = f0(*args)
     R2 = f_vec(*args)
@@ -456,13 +456,13 @@ def test_np_multi_broadcasted(min_side, max_side, max_dims_extra, data):
 def test_shapes_axised(parsed_sig, min_side, max_side, max_dims_extra,
                        allow_none, data):
     # First argument must be 1D
-    parsed_sig[0] = pad_left(parsed_sig[0], 1, 'n')[:1]
-    signature = unparse(parsed_sig) + '->()'  # output dims ignored here
+    parsed_sig[0] = pad_left(parsed_sig[0], 1, "n")[:1]
+    signature = unparse(parsed_sig) + "->()"  # output dims ignored here
 
     min_side, max_side = sorted([min_side, max_side])
 
     def dummy(*args, **kwargs):
-        assert False, 'this function shouldnt get called'
+        assert False, "this function shouldnt get called"
 
     S = gu.axised(dummy, signature, min_side=min_side, max_side=max_side,
                   max_dims_extra=max_dims_extra, allow_none=allow_none,
@@ -497,13 +497,13 @@ def test_shapes_axised(parsed_sig, min_side, max_side, max_dims_extra,
 def test_elements_axised(parsed_sig, min_side, max_side, max_dims_extra,
                          allow_none, dtype, data):
     # First argument must be 1D
-    parsed_sig[0] = pad_left(parsed_sig[0], 1, 'n')[:1]
-    signature = unparse(parsed_sig) + '->()'  # output dims ignored here
+    parsed_sig[0] = pad_left(parsed_sig[0], 1, "n")[:1]
+    signature = unparse(parsed_sig) + "->()"  # output dims ignored here
 
     min_side, max_side = sorted([min_side, max_side])
 
     def dummy(*args, **kwargs):
-        assert False, 'this function shouldnt get called'
+        assert False, "this function shouldnt get called"
 
     elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
     # testing elements equality tricky with nans

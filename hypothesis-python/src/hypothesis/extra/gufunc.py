@@ -1,9 +1,9 @@
-'''Extend hypothesis.extra.numpy for functions that follow the GU function API.
+"""Extend hypothesis.extra.numpy for functions that follow the GU function API.
 
 This routine uses the numpy parser of the Generalized Universal Function API
 signatures `_parse_gufunc_signature`, which is only available in numpy>=1.12.0
 and therefore requires a bump in the requirements for hypothesis.
-'''
+"""
 from __future__ import absolute_import
 
 import numpy as np
@@ -18,12 +18,12 @@ GLOBAL_DIMS_MAX = 12
 
 
 def arrays_(dtype, shape, elements=None, force_ndarray=False):
-    '''Wrapper to fix issues with `hypothesis.extra.numpy.arrays`.
+    """Wrapper to fix issues with `hypothesis.extra.numpy.arrays`.
 
     `arrays` is strict on shape being `int` which this fixes. This is partially
     not needed in Py3 since there is no `int` vs `long` issue. Also, `arrays`
     does not return ndarray for 0-dim arrays.
-    '''
+    """
     shape = tuple(int(aa) for aa in shape)
     if force_ndarray:
         S = arrays(dtype, shape, elements=elements).map(np.asarray)
@@ -34,7 +34,7 @@ def arrays_(dtype, shape, elements=None, force_ndarray=False):
 
 @composite
 def tuple_of_arrays(draw, shapes, filler, **kwargs):
-    '''Strategy to generate a tuple of ndarrays with specified shapes.
+    """Strategy to generate a tuple of ndarrays with specified shapes.
 
     Parameters
     ----------
@@ -48,7 +48,7 @@ def tuple_of_arrays(draw, shapes, filler, **kwargs):
     -------
     res : tuple of ndarrays
         Resulting ndarrays with shape from `shapes` and elements from `filler`.
-    '''
+    """
     # Need to use asarray to correct get type on weird types like np datetimes
     dtype = np.asarray(draw(filler(**kwargs))).dtype
     res = tuple(draw(arrays_(dtype, ss, elements=filler(**kwargs)))
@@ -58,7 +58,7 @@ def tuple_of_arrays(draw, shapes, filler, **kwargs):
 
 @composite
 def gufunc_shape(draw, signature, min_side=0, max_side=5):
-    '''Strategy to generate array shapes for arguments to a function consistent
+    """Strategy to generate array shapes for arguments to a function consistent
     with its signature.
 
     Parameters
@@ -85,8 +85,8 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     --------
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
-    '''
-    order_check('side', 0, min_side, max_side)
+    """
+    order_check("side", 0, min_side, max_side)
 
     # We should check signature.isascii() since there are lot of weird corner
     # cases with unicode parsing, but isascii() restricts us to Py >=3.7.
@@ -114,7 +114,7 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
 
 @composite
 def gufunc(draw, signature, filler=floats, min_side=0, max_side=5, **kwargs):
-    '''Strategy to generate a tuple of ndarrays for arguments to a function
+    """Strategy to generate a tuple of ndarrays for arguments to a function
     consistent with its signature.
 
     Parameters
@@ -145,7 +145,7 @@ def gufunc(draw, signature, filler=floats, min_side=0, max_side=5, **kwargs):
     --------
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
-    '''
+    """
     shapes = draw(gufunc_shape(signature,
                                min_side=min_side, max_side=max_side))
     res = draw(tuple_of_arrays(shapes, filler, **kwargs))
@@ -155,7 +155,7 @@ def gufunc(draw, signature, filler=floats, min_side=0, max_side=5, **kwargs):
 @composite
 def gufunc_broadcast_shape(draw, signature, excluded=(),
                            min_side=0, max_side=5, max_dims_extra=2):
-    '''Strategy to generate the shape of ndarrays for arguments to a function
+    """Strategy to generate the shape of ndarrays for arguments to a function
     consistent with its signature with extra dimensions to test broadcasting.
 
     Parameters
@@ -191,9 +191,9 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     --------
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
-    '''
-    order_check('side', 0, min_side, max_side)
-    order_check('extra dims', 0, max_dims_extra, GLOBAL_DIMS_MAX)
+    """
+    order_check("side", 0, min_side, max_side)
+    order_check("extra dims", 0, max_dims_extra, GLOBAL_DIMS_MAX)
 
     # Get core shapes before broadcasted dimensions
     # e.g., shapes = [(1, 3), (3, 1)]
@@ -237,7 +237,7 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
 @composite
 def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
                      min_side=0, max_side=5, max_dims_extra=2, **kwargs):
-    '''Strategy to generate a tuple of ndarrays for arguments to a function
+    """Strategy to generate a tuple of ndarrays for arguments to a function
     consistent with its signature with extra dimensions to test broadcasting.
 
     Parameters
@@ -276,7 +276,7 @@ def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
     --------
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
-    '''
+    """
     shapes = draw(gufunc_broadcast_shape(signature, excluded=excluded,
                                          min_side=min_side, max_side=max_side,
                                          max_dims_extra=max_dims_extra))
@@ -285,7 +285,7 @@ def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
 
 
 def broadcasted(f, signature, otypes=None, excluded=(), **kwargs):
-    '''Strategy that makes it easy to test the broadcasting semantics of a
+    """Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
     `numpy.vectorize`.
 
@@ -340,7 +340,7 @@ def broadcasted(f, signature, otypes=None, excluded=(), **kwargs):
     --------
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
-    '''
+    """
     f_vec = np.vectorize(f, signature=signature, otypes=otypes)
     broadcasted_args = gufunc_broadcast(signature, excluded=excluded, **kwargs)
     funcs_and_args = tuples(just(f), just(f_vec), broadcasted_args)
@@ -350,7 +350,7 @@ def broadcasted(f, signature, otypes=None, excluded=(), **kwargs):
 @composite
 def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
            max_dims_extra=2, allow_none=True, **kwargs):
-    '''Strategy that makes it easy to test the broadcasting semantics of a
+    """Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
     `numpy.apply_along_axis`.
 
@@ -403,12 +403,12 @@ def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.apply_along_axis.html
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
-    '''
+    """
     # np.apply_along_axis does not like sides of 0
-    order_check('side', 1, min_side, max_side)
+    order_check("side", 1, min_side, max_side)
 
     def f_axis(X, *args, **kwargs):
-        axis = kwargs.get('axis', None)  # This trick is not needed in Python3
+        axis = kwargs.get("axis", None)  # This trick is not needed in Python3
 
         if axis is None:
             Y = f(np.ravel(X), *args)
@@ -424,11 +424,11 @@ def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
                                min_side=min_side, max_side=max_side))
     # ok to assume [0] since should not be any way to generate len(shapes) = 0
     check_argument(len(shapes[0]) == 1,
-                   'first argument of signature %s must be 1D, for %dD',
+                   "first argument of signature %s must be 1D, for %dD",
                    signature, len(shapes[0]))
 
     assert len(shapes[0]) == 1, \
-        'first argument of signature %s must be 1D' % signature
+        "first argument of signature %s must be 1D" % signature
 
     if allow_none and draw(booleans()):
         # If function allows for axis=None, then must be able to handle
