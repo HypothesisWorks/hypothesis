@@ -33,7 +33,7 @@ from uuid import UUID
 import attr
 
 from hypothesis._settings import note_deprecation
-from hypothesis.control import assume, cleanup, current_build_context, note, reject
+from hypothesis.control import cleanup, current_build_context, note, reject
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.cathetus import cathetus
@@ -571,8 +571,7 @@ def floats(
             )
         else:
             result = floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                lambda x: assume(not math.isnan(x))
-                and min_value + abs(x)  # type: ignore
+                lambda x: min_value + abs(x)  # type: ignore
             )
         if min_value == 0 and not is_negative(min_value):
             result = result.filter(lambda x: math.copysign(1.0, x) == 1)
@@ -584,8 +583,7 @@ def floats(
             )
         else:
             result = floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                lambda x: assume(not math.isnan(x))
-                and max_value - abs(x)  # type: ignore
+                lambda x: max_value - abs(x)  # type: ignore
             )
         if max_value == 0 and is_negative(max_value):
             result = result.filter(is_negative)
