@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from builtins import int
 
 import string
 import numpy as np
@@ -8,8 +9,6 @@ from hypothesis.strategies import integers, lists, data, sampled_from, booleans
 from hypothesis.strategies import from_regex
 import hypothesis.extra.gufunc as gu
 from hypothesis.extra.numpy import scalar_dtypes, from_dtype
-
-# TODO eliminate need for padding using gufuncs and filler, might need next API
 
 NP_BROADCASTABLE = ((np.matmul, '(n,m),(m,p)->(n,p)'),
                     (np.add, '(),()->()'),
@@ -25,8 +24,9 @@ NP_AXIS = ((np.sum, '(n)->()', True),
 
 # The spec for a dimension name in numpy.lib.function_base, if we are happy
 # testing single char var names we can switch this to '\A\w\Z' and save ~0.5s
-# when running the tests.
-VALID_DIM_NAMES = r'\A\w+\Z'
+# when running the tests. Officially, we should use r'\A\w+\Z' but this creates
+# too many weird corner cases on Python3 unicode.
+VALID_DIM_NAMES = r'\A[a-zA-Z0-9_]+\Z'
 
 
 def parsed_sigs(max_dims=3, max_args=5):
@@ -57,7 +57,8 @@ def unparse(parsed_sig):
 
 def check_int(x):
     '''Use subroutine for this so in Py3 we can remove the `long`.'''
-    assert type(x) in (int, long)
+    # Could also do ``type(x) in (int, long)``, but only on Py2.
+    assert isinstance(x, int)
 
 
 def validate_shapes(L, parsed_sig, min_side, max_side):

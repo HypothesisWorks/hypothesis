@@ -5,6 +5,7 @@ signatures `_parse_gufunc_signature`, which is only available in numpy>=1.12.0
 and therefore requires a bump in the requirements for hypothesis.
 '''
 from __future__ import absolute_import
+from builtins import range
 
 import numpy as np
 import numpy.lib.function_base as npfb
@@ -67,6 +68,7 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
         Signature for shapes to be compatible with. Expects string in format
         of numpy generalized universal function signature, e.g.,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
+        Officially, only supporting ascii characters on Py3.
     min_side : int
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
@@ -86,6 +88,9 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     '''
     order_check('side', 0, min_side, max_side)
+
+    # We should check signature.isascii() since there are lot of weird corner
+    # cases with unicode parsing, but isascii() restricts us to Py >=3.7.
 
     # Parse out the signature
     # Warning: this uses "private" function of numpy, but it does the job.
@@ -119,6 +124,7 @@ def gufunc(draw, signature, filler=floats, min_side=0, max_side=5, **kwargs):
         Signature for shapes to be compatible with. Expects string in format
         of numpy generalized universal function signature, e.g.,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
+        Officially, only supporting ascii characters on Py3.
     filler : strategy
         Strategy to fill in array elements e.g. `hypothesis.strategies.floats`.
         The parameters for `filler` are specified by the `kwargs`.
@@ -159,6 +165,7 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
         Signature for shapes to be compatible with. Expects string in format
         of numpy generalized universal function signature, e.g.,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
+        Officially, only supporting ascii characters on Py3.
     excluded : list-like of integers
         Set of integers representing the positional for which the function will
         not be vectorized. Uses same format as `numpy.vectorize`.
@@ -219,7 +226,7 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     # e.g., n_extra_per_arg = [1, 2]
     n_extra_per_arg = [0 if nn in excluded else
                        draw(integers(min_value=0, max_value=n_extra))
-                       for nn in xrange(len(shapes))]
+                       for nn in range(len(shapes))]
 
     # Get full dimensions (core+extra), will chop some on left randomly
     # e.g., shapes = [(5, 1, 3), (2, 5, 3, 1)]
@@ -240,6 +247,7 @@ def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
         Signature for shapes to be compatible with. Expects string in format
         of numpy generalized universal function signature, e.g.,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
+        Officially, only supporting ascii characters on Py3.
     filler : strategy
         Strategy to fill in array elements e.g. `hypothesis.strategies.floats`.
         The parameters for `filler` are specified by the `kwargs`.
@@ -292,6 +300,7 @@ def broadcasted(f, signature, otypes=None, excluded=(), **kwargs):
         Signature for shapes to be compatible with. Expects string in format
         of numpy generalized universal function signature, e.g.,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
+        Officially, only supporting ascii characters on Py3.
     otypes : list of dtypes
         The dtypes for the the outputs of `f`. It must be a list with one dtype
         for each output argument of `f`. It must be a singleton list if `f`
@@ -355,7 +364,8 @@ def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
         of numpy generalized universal function signature. This does not
         include the axis kwarg. For testing axis, the core dimension of the
         first argument must be 1D. For, `np.mean` we use the signature
-        `'(n)->()'` or for `'np.percentile'` we use `'(n),()->()'`.
+        `'(n)->()'` or for `'np.percentile'` we use `'(n),()->()'`. Officially,
+        only supporting ascii characters on Py3.
     filler : strategy
         Strategy to fill in array elements e.g. `hypothesis.strategies.floats`.
         The parameters for `filler` are specified by the `kwargs`.
