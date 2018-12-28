@@ -395,8 +395,8 @@ def rule(targets=(), target=None, **kwargs):
     for that bundle will be provided. If ``consumes`` is used, the value
     will also be removed from the bundle.
 
-    Any other kwargs will be turned into a strategy and values from that
-    will be provided.
+    Any other kwargs should be strategies and values from them will be
+    provided.
     """
     converted_targets = _convert_targets(targets, target)
 
