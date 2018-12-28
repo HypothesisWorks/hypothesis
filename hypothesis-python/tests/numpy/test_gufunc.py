@@ -336,6 +336,42 @@ def test_shapes_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
     validate_elements(X)
 
 
+@given(parsed_sigs(max_args=3), parsed_sigs(),
+       lists(scalar_dtypes(), min_size=3, max_size=3),
+       lists(booleans(), min_size=3, max_size=3),
+       integers(0, 5), integers(0, 5), integers(0, 3), scalar_dtypes(), data())
+def test_elements_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
+                              min_side, max_side, max_dims_extra, dtype, data):
+    signature = unparse(parsed_sig) + '->' + unparse(o_parsed_sig)
+
+    # These are of type np.dtype, but we test use str elsewhere
+    otypes = otypes[:len(parsed_sig)]
+    assert len(otypes) == len(parsed_sig)  # Make sure otypes long enough
+
+    excluded = excluded[:len(parsed_sig)]
+    assert len(excluded) == len(parsed_sig)  # Make sure excluded long enough
+    excluded, = np.where(excluded)
+    excluded = tuple(excluded)
+
+    min_side, max_side = sorted([min_side, max_side])
+
+    def dummy(*args):
+        assert False, 'this function shouldnt get called'
+
+    elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
+    # testing elements equality tricky with nans
+    elements = np.nan_to_num(elements)
+
+    S = gu.broadcasted(dummy, signature, otypes=otypes, excluded=excluded,
+                       min_side=min_side, max_side=max_side,
+                       max_dims_extra=max_dims_extra,
+                       filler=sampled_from, elements=elements)
+
+    f0, f_vec, X = data.draw(S)
+
+    validate_elements(X, elements=elements)
+
+
 @given(integers(0, len(NP_BROADCASTABLE) - 1),
        integers(0, 5), integers(0, 5), integers(0, 3), data())
 def test_np_broadcasted(func_choice, min_side, max_side, max_dims_extra, data):
@@ -434,6 +470,32 @@ def test_shapes_axised(parsed_sig, min_side, max_side, max_dims_extra,
 
     # Test fourth
     assert allow_none or (axis is not None)
+
+
+@given(parsed_sigs(), integers(1, 5), integers(1, 5), integers(0, 3),
+       booleans(), scalar_dtypes(), data())
+def test_elements_axised(parsed_sig, min_side, max_side, max_dims_extra,
+                         allow_none, dtype, data):
+    # First argument must be 1D
+    parsed_sig[0] = pad_left(parsed_sig[0], 1, 'n')[:1]
+    signature = unparse(parsed_sig) + '->()'  # output dims ignored here
+
+    min_side, max_side = sorted([min_side, max_side])
+
+    def dummy(*args, **kwargs):
+        assert False, 'this function shouldnt get called'
+
+    elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
+    # testing elements equality tricky with nans
+    elements = np.nan_to_num(elements)
+
+    S = gu.axised(dummy, signature, min_side=min_side, max_side=max_side,
+                  max_dims_extra=max_dims_extra, allow_none=allow_none,
+                  filler=sampled_from, elements=elements)
+
+    f0, f_ax, X, axis = data.draw(S)
+
+    validate_elements(X, elements=elements)
 
 
 @given(integers(0, len(NP_AXIS) - 1),
