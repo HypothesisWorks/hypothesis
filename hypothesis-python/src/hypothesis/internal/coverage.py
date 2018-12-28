@@ -60,8 +60,9 @@ IN_COVERAGE_TESTS = os.getenv("HYPOTHESIS_INTERNAL_COVERAGE") == "true"
 
 
 if IN_COVERAGE_TESTS:
-    with open("branch-check", "w"):
-        pass
+    # By this point, "branch-check" should have already been deleted by the
+    # tox config. We can't delete it here because of #1718.
+
     written = set()  # type: Set[Tuple[str, bool]]
 
     def record_branch(name, value):
