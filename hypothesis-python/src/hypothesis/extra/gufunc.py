@@ -17,7 +17,7 @@ from hypothesis.strategies import booleans, integers, floats
 GLOBAL_DIMS_MAX = 12
 
 
-def arrays_(dtype, shape, elements, force_ndarray=False):
+def arrays_(dtype, shape, elements=None, force_ndarray=False):
     '''Wrapper to fix issues with `hypothesis.extra.numpy.arrays`.
 
     `arrays` is strict on shape being `int` which this fixes. This is partially
@@ -202,14 +202,13 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     n_extra = draw(integers(min_value=0, max_value=max_dims_extra))  # e.g., 2
     # Make sure always under global max dims
     n_extra = min(n_extra, GLOBAL_DIMS_MAX - max_core_dims)
-    n_extra = int(n_extra)  # cast to int only for Py2
     # e.g., mask = [[True False], [False False]]
-    mask = draw(arrays(np.bool, (len(shapes), n_extra)))
+    mask = draw(arrays_(np.bool, (len(shapes), n_extra)))
 
     # Build 2D array with extra dimensions
     extra_dim_gen = integers(min_value=min_side, max_value=max_side)
     # e.g., extra_dims = [2 5]
-    extra_dims = draw(arrays(np.int, (n_extra,), elements=extra_dim_gen))
+    extra_dims = draw(arrays_(np.int, (n_extra,), elements=extra_dim_gen))
     # e.g., extra_dims = [[2 5], [2 5]]
     extra_dims = np.tile(extra_dims, (len(shapes), 1))
     # e.g., extra_dims = [[1 5], [2 5]]
