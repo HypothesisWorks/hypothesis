@@ -313,7 +313,9 @@ def broadcasted(f, signature, otypes=None, excluded=(), **kwargs):
     Parameters
     ----------
     f : callable
-        This is the original function handles broadcasting itself.
+        This is the original function handles broadcasting itself. It must
+        return an `ndarray` or multiple `ndarray` (which Python treats as a
+        `tuple`) if returning 2-or-more output arguments.
     signature : str
         Signature for shapes to be compatible with. Expects string in format
         of numpy generalized universal function signature, e.g.,
@@ -381,7 +383,8 @@ def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
     Parameters
     ----------
     f : callable
-        This is the original function with the form f(..., axis=None)
+        This is the original function with the form f(..., axis=None). It must
+        return a single `ndarray` as output.
     signature : str
         Signature for shapes to be compatible with. Expects string in format
         of numpy generalized universal function signature. This does not
