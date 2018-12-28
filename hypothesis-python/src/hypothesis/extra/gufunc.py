@@ -51,13 +51,18 @@ def tuple_of_arrays(draw, shapes, filler, **kwargs):
     filler : strategy
         Strategy to fill in array elements e.g. `hypothesis.strategies.floats`.
         The parameters for `filler` are specified by the `kwargs`.
+    kwargs : kwargs
+        Passed to filler strategy.
 
     Returns
     -------
     res : tuple of ndarrays
         Resulting ndarrays with shape from `shapes` and elements from `filler`.
     """
-    # Need to use asarray to correct get type on weird types like np datetimes
+    # Need to use asarray to correct get type on weird types like np datetimes.
+    # This method of infering dtype is problematic if the filler can output
+    # multiple dtypes. We will change to interface closer to arrays() in
+    # another iteration.
     dtype = np.asarray(draw(filler(**kwargs))).dtype
     res = tuple(draw(arrays_(dtype, ss, elements=filler(**kwargs)))
                 for ss in shapes)
@@ -142,6 +147,8 @@ def gufunc(draw, signature, filler=floats, min_side=0, max_side=5, **kwargs):
     max_side : int
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing.
+    kwargs : kwargs
+        Passed to filler strategy.
 
     Returns
     -------
@@ -237,6 +244,8 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
 
     # Get full dimensions (core+extra), will chop some on left randomly
     # e.g., shapes = [(5, 1, 3), (2, 5, 3, 1)]
+    # We use pp[len(pp) - nn:] instead of pp[-nn:] since that doesn't handle
+    # corner case with nn=0 correctly (seems like an oversight of py slicing).
     shapes = [tuple(pp[len(pp) - nn:]) + ss
               for ss, pp, nn in zip(shapes, extra_dims, n_extra_per_arg)]
     return shapes
@@ -273,6 +282,8 @@ def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
         Maximum number of extra dimensions that can be appended on left of
         arrays for broadcasting. This should be kept small as the memory used
         grows exponentially with extra dimensions.
+    kwargs : kwargs
+        Passed to filler strategy.
 
     Returns
     -------
@@ -332,6 +343,8 @@ def broadcasted(f, signature, otypes=None, excluded=(), **kwargs):
         Maximum number of extra dimensions that can be appended on left of
         arrays for broadcasting. This should be kept small as the memory used
         grows exponentially with extra dimensions.
+    kwargs : kwargs
+        Passed to filler strategy.
 
     Returns
     -------
@@ -349,7 +362,10 @@ def broadcasted(f, signature, otypes=None, excluded=(), **kwargs):
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     """
+    # cache and doc not needed for property testing, excluded not actually
+    # needed here because we don't generate extra dims for the excluded args.
     f_vec = np.vectorize(f, signature=signature, otypes=otypes)
+
     broadcasted_args = gufunc_broadcast(signature, excluded=excluded, **kwargs)
     funcs_and_args = tuples(just(f), just(f_vec), broadcasted_args)
     return funcs_and_args
@@ -391,6 +407,8 @@ def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
     allow_none : bool
         If True, sometimes creates test cases where the axis argument is None,
         which implies the first argument should be flattened before use.
+    kwargs : kwargs
+        Passed to filler strategy.
 
     Returns
     -------
@@ -416,7 +434,9 @@ def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
     order_check("side", 1, min_side, max_side)
 
     def f_axis(X, *args, **kwargs):
-        axis = kwargs.get("axis", None)  # This trick is not needed in Python3
+        # This trick is not needed in Python3, after dropping Py2 support we
+        # can change to ``f_axis(X, *args, axis=None)``.
+        axis = kwargs.get("axis", None)
 
         if axis is None:
             Y = f(np.ravel(X), *args)
