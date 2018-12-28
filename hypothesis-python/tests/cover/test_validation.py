@@ -17,18 +17,23 @@
 
 from __future__ import absolute_import, division, print_function
 
+import functools
+
 import pytest
 
 from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
+    binary,
     booleans,
+    dictionaries,
     floats,
     frozensets,
     integers,
     lists,
     recursive,
     sets,
+    text,
 )
 from tests.common.utils import checks_deprecated_behaviour, fails_with
 
@@ -222,3 +227,22 @@ def test_given_warns_when_mixing_positional_with_keyword():
 def test_cannot_find_non_strategies():
     with pytest.raises(InvalidArgument):
         find(bool, bool)
+
+
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        functools.partial(lists, elements=integers()),
+        functools.partial(dictionaries, keys=integers(), values=integers()),
+        text,
+        binary,
+    ],
+)
+@pytest.mark.parametrize("min_size,max_size", [(0, "10"), ("0", 10)])
+def test_valid_sizes(strategy, min_size, max_size):
+    @given(strategy(min_size=min_size, max_size=max_size))
+    def test(x):
+        pass
+
+    with pytest.raises(InvalidArgument):
+        test()
