@@ -44,7 +44,10 @@ def tuple_of_arrays(draw, shapes, filler, **kwargs):
     '''
     shapes = validate(shapes)
 
-    dtype = np.dtype(type(draw(filler(**kwargs))))
+    # TODO remove comment
+    #  dtype = np.dtype(type(draw(filler(**kwargs))))
+    # Need to use asarray to correct get type on weird types like np datetimes
+    dtype = np.asarray(draw(filler(**kwargs))).dtype
     res = tuple(draw(arrays(dtype, ss, elements=filler(**kwargs)))
                 for ss in shapes)
     return res

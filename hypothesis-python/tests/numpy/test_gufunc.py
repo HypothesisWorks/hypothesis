@@ -7,7 +7,7 @@ from hypothesis import given
 from hypothesis.strategies import integers, lists, data, sampled_from, booleans
 from hypothesis.strategies import from_regex
 import hypothesis.extra.gufunc as gu
-from hypothesis.extra.numpy import scalar_dtypes
+from hypothesis.extra.numpy import scalar_dtypes, from_dtype
 
 # TODO consider if tuple_of_arrays should always return np.array
 # TODO eliminate need for padding using gufuncs and filler, might need next API
@@ -24,7 +24,9 @@ NP_AXIS = ((np.sum, '(n)->()', True),
            (np.diff, '(n)->(m)', False),
            (np.diff, '(n),()->(m)', False))
 
-# The spec for a dimension name in numpy.lib.function_base
+# The spec for a dimension name in numpy.lib.function_base, if we are happy
+# testing single char var names we can switch this to '\A\w\Z' and save ~0.5s
+# when running the tests.
 VALID_DIM_NAMES = r'\A\w+\Z'
 
 
@@ -77,12 +79,19 @@ def validate_shapes(L, parsed_sig, min_side, max_side):
                 assert var_size == dd
 
 
-def validate_elements(L):
+def validate_elements(L, elements=None):
     for drawn in L:
         # TODO after API change, can make bigger test of elements elsewhere
-        assert np.asarray(drawn).dtype == int
-        assert np.all(0 <= drawn)
-        assert np.all(drawn <= 5)
+        drawn = np.asarray(drawn)
+        if elements is None:  # Test int filler
+            assert drawn.dtype == int
+            assert np.all(0 <= drawn)
+            assert np.all(drawn <= 5)
+        else:
+            elements = np.asarray(elements)
+            assert drawn.dtype == elements.dtype
+            vals = set(drawn.ravel())
+            assert vals.issubset(elements)
 
 
 def validate_bcast_shapes(shapes, parsed_sig,
@@ -127,6 +136,20 @@ def test_shapes_tuple_of_arrays(shapes, data):
         assert tuple(spec) == np.shape(drawn)
 
 
+@given(lists(lists(integers(min_value=0, max_value=5),
+                   min_size=0, max_size=3).map(tuple),
+             min_size=0, max_size=5), scalar_dtypes(), data())
+def test_elements_tuple_of_arrays(shapes, dtype, data):
+    elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
+    # testing elements equality tricky with nans
+    elements = np.nan_to_num(elements)
+
+    S = gu.tuple_of_arrays(shapes, sampled_from, elements=elements)
+    X = data.draw(S)
+
+    validate_elements(X, elements=elements)
+
+
 @given(parsed_sigs(), parsed_sigs())
 def test_unparse_parse(i_parsed_sig, o_parsed_sig):
     # We don't care about the output for this function
@@ -140,7 +163,7 @@ def test_unparse_parse(i_parsed_sig, o_parsed_sig):
 
 
 @given(parsed_sigs(), integers(0, 100), integers(0, 100), data())
-def test_constraints_gufunc_shape(parsed_sig, min_side, max_side, data):
+def test_shapes_gufunc_shape(parsed_sig, min_side, max_side, data):
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + '->()'
 
@@ -153,7 +176,7 @@ def test_constraints_gufunc_shape(parsed_sig, min_side, max_side, data):
 
 
 @given(parsed_sigs(), integers(0, 5), integers(0, 5), data())
-def test_constraints_gufunc(parsed_sig, min_side, max_side, data):
+def test_shapes_gufunc(parsed_sig, min_side, max_side, data):
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + '->()'
 
@@ -170,12 +193,33 @@ def test_constraints_gufunc(parsed_sig, min_side, max_side, data):
     validate_elements(X)
 
 
+@given(parsed_sigs(max_args=3), integers(0, 5), integers(0, 5),
+       scalar_dtypes(), data())
+def test_elements_gufunc(parsed_sig, min_side, max_side, dtype, data):
+    elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
+    # testing elements equality tricky with nans
+    elements = np.nan_to_num(elements)
+
+    # We don't care about the output for this function
+    signature = unparse(parsed_sig) + '->()'
+
+    min_side, max_side = sorted([min_side, max_side])
+
+    S = gu.gufunc(signature, filler=sampled_from,
+                  min_side=min_side, max_side=max_side, elements=elements)
+
+    X = data.draw(S)
+
+    validate_elements(X, elements=elements)
+
+
 @given(parsed_sigs(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX),
        lists(booleans(), min_size=10, max_size=10),
        integers(0, 100), integers(0, 100), integers(0, gu.GLOBAL_DIMS_MAX),
        data())
-def test_bcast_gufunc_broadcast_shape(parsed_sig, excluded, min_side, max_side,
-                                      max_dims_extra, data):
+def test_shapes_gufunc_broadcast_shape(parsed_sig, excluded,
+                                       min_side, max_side, max_dims_extra,
+                                       data):
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + '->()'
 
@@ -198,8 +242,8 @@ def test_bcast_gufunc_broadcast_shape(parsed_sig, excluded, min_side, max_side,
 
 @given(parsed_sigs(max_args=3), lists(booleans(), min_size=3, max_size=3),
        integers(0, 5), integers(0, 5), integers(0, 3), data())
-def test_bcast_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
-                                max_dims_extra, data):
+def test_shapes_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
+                                 max_dims_extra, data):
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + '->()'
 
@@ -223,12 +267,39 @@ def test_bcast_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
     validate_elements(X)
 
 
+@given(parsed_sigs(max_args=3), lists(booleans(), min_size=3, max_size=3),
+       integers(0, 5), integers(0, 5), integers(0, 3), scalar_dtypes(), data())
+def test_elements_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
+                                   max_dims_extra, dtype, data):
+    # We don't care about the output for this function
+    signature = unparse(parsed_sig) + '->()'
+
+    excluded = excluded[:len(parsed_sig)]
+    assert len(excluded) == len(parsed_sig)  # Make sure excluded long enough
+    excluded, = np.where(excluded)
+    excluded = tuple(excluded)
+
+    min_side, max_side = sorted([min_side, max_side])
+
+    elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
+    # testing elements equality tricky with nans
+    elements = np.nan_to_num(elements)
+
+    S = gu.gufunc_broadcast(signature, filler=sampled_from, excluded=excluded,
+                            min_side=min_side, max_side=max_side,
+                            max_dims_extra=max_dims_extra, elements=elements)
+
+    X = data.draw(S)
+
+    validate_elements(X, elements=elements)
+
+
 @given(parsed_sigs(max_args=3), parsed_sigs(),
        lists(scalar_dtypes(), min_size=3, max_size=3),
        lists(booleans(), min_size=3, max_size=3),
        integers(0, 5), integers(0, 5), integers(0, 3), data())
-def test_bcast_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
-                           min_side, max_side, max_dims_extra, data):
+def test_shapes_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
+                            min_side, max_side, max_dims_extra, data):
     signature = unparse(parsed_sig) + '->' + unparse(o_parsed_sig)
 
     # These are of type np.dtype, but we test use str elsewhere
@@ -267,8 +338,7 @@ def test_bcast_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
 
 @given(integers(0, len(NP_BROADCASTABLE) - 1),
        integers(0, 5), integers(0, 5), integers(0, 3), data())
-def test_np_passes_broadcasted(func_choice, min_side, max_side, max_dims_extra,
-                               data):
+def test_np_broadcasted(func_choice, min_side, max_side, max_dims_extra, data):
     otype = 'int64'
 
     f, signature = NP_BROADCASTABLE[func_choice]
@@ -293,7 +363,7 @@ def test_np_passes_broadcasted(func_choice, min_side, max_side, max_dims_extra,
 
 
 @given(integers(0, 5), integers(0, 5), integers(0, 3), data())
-def test_multi_broadcasted(min_side, max_side, max_dims_extra, data):
+def test_np_multi_broadcasted(min_side, max_side, max_dims_extra, data):
     min_side, max_side = sorted([min_side, max_side])
 
     def multi_out_f(x, y, q):
@@ -327,8 +397,8 @@ def test_multi_broadcasted(min_side, max_side, max_dims_extra, data):
 
 @given(parsed_sigs(),
        integers(1, 5), integers(1, 5), integers(0, 3), booleans(), data())
-def test_constraints_axised(parsed_sig, min_side, max_side, max_dims_extra,
-                            allow_none, data):
+def test_shapes_axised(parsed_sig, min_side, max_side, max_dims_extra,
+                       allow_none, data):
     # First argument must be 1D
     parsed_sig[0] = pad_left(parsed_sig[0], 1, 'n')[:1]
     signature = unparse(parsed_sig) + '->()'  # output dims ignored here
@@ -368,8 +438,7 @@ def test_constraints_axised(parsed_sig, min_side, max_side, max_dims_extra,
 
 @given(integers(0, len(NP_AXIS) - 1),
        integers(1, 5), integers(1, 5), integers(0, 3), data())
-def test_np_passes_axised(func_choice, min_side, max_side, max_dims_extra,
-                          data):
+def test_np_axised(func_choice, min_side, max_side, max_dims_extra, data):
     f, signature, allow_none = NP_AXIS[func_choice]
 
     min_side, max_side = sorted([min_side, max_side])
