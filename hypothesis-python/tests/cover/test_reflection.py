@@ -685,6 +685,7 @@ def test_can_render_lambda_with_no_encoding():
     # that our reflection can't detect the encoding of the source file, and
     # has to fall back to assuming it's ASCII.
     import tokenize
+
     old_detect_encoding = tokenize.detect_encoding
     try:
         del tokenize.detect_encoding
