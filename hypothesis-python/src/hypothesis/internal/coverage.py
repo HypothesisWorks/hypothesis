@@ -50,7 +50,7 @@ def pretty_file_name(f):
         pass
 
     parts = f.split(os.path.sep)
-    parts = parts[parts.index("hypothesis") :]
+    parts = parts[-parts[::-1].index("hypothesis") :]
     result = os.path.sep.join(parts)
     pretty_file_name_cache[f] = result
     return result
@@ -60,8 +60,9 @@ IN_COVERAGE_TESTS = os.getenv("HYPOTHESIS_INTERNAL_COVERAGE") == "true"
 
 
 if IN_COVERAGE_TESTS:
-    with open("branch-check", "w"):
-        pass
+    # By this point, "branch-check" should have already been deleted by the
+    # tox config. We can't delete it here because of #1718.
+
     written = set()  # type: Set[Tuple[str, bool]]
 
     def record_branch(name, value):
