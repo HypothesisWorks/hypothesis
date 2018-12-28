@@ -296,6 +296,21 @@ def broadcasted(f, signature, otypes=None, excluded=(), **kwargs):
     excluded : list-like of integers
         Set of integers representing the positional for which the function will
         not be vectorized. Uses same format as `numpy.vectorize`.
+    filler : strategy
+        Strategy to fill in array elements e.g. `hypothesis.strategies.floats`.
+        The parameters for `filler` are specified by the `kwargs`.
+    min_side : int
+        Minimum size of any side of the arrays. It is good to test the corner
+        cases of 0 or 1 sized dimensions when applicable, but if not, a min
+        size can be supplied here. Note that the broadcasted dimensions may be
+        1 even regardless of `min_side` or `max_side`.
+    max_side : int
+        Maximum size of any side of the arrays. This can usually be kept small
+        and still find most corner cases in testing.
+    max_dims_extra : int
+        Maximum number of extra dimensions that can be appended on left of
+        arrays for broadcasting. This should be kept small as the memory used
+        grows exponentially with extra dimensions.
 
     Returns
     -------

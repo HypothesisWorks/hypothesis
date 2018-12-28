@@ -11,8 +11,6 @@ from hypothesis.extra.numpy import scalar_dtypes
 # TODO consider if tuple_of_arrays should always return np.array
 # TODO eliminate need for padding using gufuncs and filler, might need next API
 
-# Check going over full support of funcs
-
 NP_BROADCASTABLE = ((np.matmul, '(n,m),(m,p)->(n,p)'),
                     (np.add, '(),()->()'),
                     (np.multiply, '(),()->()'))
@@ -29,7 +27,12 @@ SHAPE_VARS = string.digits + string.ascii_lowercase
 
 
 def parsed_sigs(max_dims=3, max_args=5):
-    '''Strategy to generate a parsed gufunc signature'''
+    '''Strategy to generate a parsed gufunc signature.
+
+    Note that in general functions can take no-args, but the function signature
+    formalism is for >= 1 args. So, there is always at least 1 arg here.
+    '''
+    # TODO try alll \w strings or digits, unicode and str??
     shapes = lists(sampled_from(SHAPE_VARS),
                    min_size=0, max_size=max_dims).map(tuple)
     S = lists(shapes, min_size=1, max_size=max_args)
@@ -109,7 +112,8 @@ def validate_bcast_shapes(shapes, parsed_sig,
 # hypothesis.extra.numpy.array_shapes does not support 0 min_size so we roll
 # our own in this case.
 @given(lists(lists(integers(min_value=0, max_value=5),
-                   min_size=0, max_size=3), min_size=0, max_size=5), data())
+                   min_size=0, max_size=3).map(tuple),
+             min_size=0, max_size=5), data())
 def test_shapes_tuple_of_arrays(shapes, data):
     S = gu.tuple_of_arrays(shapes, integers, min_value=0, max_value=5)
     X = data.draw(S)
@@ -121,15 +125,16 @@ def test_shapes_tuple_of_arrays(shapes, data):
         assert tuple(spec) == np.shape(drawn)
 
 
-@given(parsed_sigs())
-def test_unparse_parse(parsed_sig):
+@given(parsed_sigs(), parsed_sigs())
+def test_unparse_parse(i_parsed_sig, o_parsed_sig):
     # We don't care about the output for this function
-    signature = unparse(parsed_sig) + '->()'
+    signature = unparse(i_parsed_sig) + '->' + unparse(o_parsed_sig)
     # This is a 'private' function of np, so need to test it still works as we
     # think it does.
-    inp, _ = npfb._parse_gufunc_signature(signature)
+    inp, out = npfb._parse_gufunc_signature(signature)
 
-    assert parsed_sig == inp
+    assert i_parsed_sig == inp
+    assert o_parsed_sig == out
 
 
 @given(parsed_sigs(), integers(0, 100), integers(0, 100), data())
@@ -173,6 +178,7 @@ def test_bcast_gufunc_broadcast_shape(parsed_sig, excluded, min_side, max_side,
     signature = unparse(parsed_sig) + '->()'
 
     excluded = excluded[:len(parsed_sig)]
+    assert len(excluded) == len(parsed_sig)  # Make sure excluded long enough
     excluded, = np.where(excluded)
     excluded = tuple(excluded)
 
@@ -196,6 +202,7 @@ def test_bcast_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
     signature = unparse(parsed_sig) + '->()'
 
     excluded = excluded[:len(parsed_sig)]
+    assert len(excluded) == len(parsed_sig)  # Make sure excluded long enough
     excluded, = np.where(excluded)
     excluded = tuple(excluded)
 
@@ -224,8 +231,10 @@ def test_bcast_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
 
     # These are of type np.dtype, but we test use str elsewhere
     otypes = otypes[:len(parsed_sig)]
+    assert len(otypes) == len(parsed_sig)  # Make sure otypes long enough
 
     excluded = excluded[:len(parsed_sig)]
+    assert len(excluded) == len(parsed_sig)  # Make sure excluded long enough
     excluded, = np.where(excluded)
     excluded = tuple(excluded)
 
