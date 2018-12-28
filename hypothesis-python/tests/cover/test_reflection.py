@@ -673,18 +673,21 @@ pi = "π"; is_str_pi = lambda x: x == pi  # noqa: E731
 # fmt: on
 
 
-if PY2:
-    def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():
-        assert get_pretty_function_description(is_str_pi) == "lambda x: x == pi"
-else:
-    def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():
-        # Monkey-patching out the `tokenize.detect_encoding` method here means
-        # that our reflection can't detect the encoding of the source file, and
-        # has to fall back to assuming it's ASCII.
-        import tokenize
-        old_detect_encoding = tokenize.detect_encoding
-        try:
-            del tokenize.detect_encoding
-            assert get_pretty_function_description(is_str_pi) == "lambda x: x == pi"
-        finally:
-            tokenize.detect_encoding = old_detect_encoding
+def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():
+    assert get_pretty_function_description(is_str_pi) == "lambda x: x == pi"
+
+
+@pytest.mark.skipif(PY2, reason="detect_encoding does not exist in Python 2")
+def test_can_render_lambda_with_no_encoding():
+    is_positive = lambda x: x > 0
+
+    # Monkey-patching out the `tokenize.detect_encoding` method here means
+    # that our reflection can't detect the encoding of the source file, and
+    # has to fall back to assuming it's ASCII.
+    import tokenize
+    old_detect_encoding = tokenize.detect_encoding
+    try:
+        del tokenize.detect_encoding
+        assert get_pretty_function_description(is_positive) == "lambda x: x > 0"
+    finally:
+        tokenize.detect_encoding = old_detect_encoding
