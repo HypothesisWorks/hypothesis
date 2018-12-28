@@ -5,6 +5,7 @@ import numpy as np
 import numpy.lib.function_base as npfb
 from hypothesis import given
 from hypothesis.strategies import integers, lists, data, sampled_from, booleans
+from hypothesis.strategies import from_regex
 import hypothesis.extra.gufunc as gu
 from hypothesis.extra.numpy import scalar_dtypes
 
@@ -23,7 +24,8 @@ NP_AXIS = ((np.sum, '(n)->()', True),
            (np.diff, '(n)->(m)', False),
            (np.diff, '(n),()->(m)', False))
 
-SHAPE_VARS = string.digits + string.ascii_lowercase
+# The spec for a dimension name in numpy.lib.function_base
+VALID_DIM_NAMES = r'\A\w+\Z'
 
 
 def parsed_sigs(max_dims=3, max_args=5):
@@ -32,8 +34,8 @@ def parsed_sigs(max_dims=3, max_args=5):
     Note that in general functions can take no-args, but the function signature
     formalism is for >= 1 args. So, there is always at least 1 arg here.
     '''
-    # TODO try alll \w strings or digits, unicode and str??
-    shapes = lists(sampled_from(SHAPE_VARS),
+    # Use | to sample from digits since we would like pure numbers more often
+    shapes = lists(from_regex(VALID_DIM_NAMES) | sampled_from(string.digits),
                    min_size=0, max_size=max_dims).map(tuple)
     S = lists(shapes, min_size=1, max_size=max_args)
     return S
