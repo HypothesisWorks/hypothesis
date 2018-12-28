@@ -668,7 +668,9 @@ def test_required_args(target, args, kwargs, expected):
     assert required_args(target, args, kwargs) == expected
 
 
+# fmt: off
 pi = "π"; is_str_pi = lambda x: x == pi  # noqa: E731
+# fmt: on
 
 
 if PY2:
