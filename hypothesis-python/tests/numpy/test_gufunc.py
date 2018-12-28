@@ -1,5 +1,6 @@
 from __future__ import absolute_import
-from builtins import int
+# Note: this requires adding `future` to the test requirements!
+from builtins import int as py3int
 
 import string
 import numpy as np
@@ -26,7 +27,7 @@ NP_AXIS = ((np.sum, '(n)->()', True),
 # testing single char var names we can switch this to '\A\w\Z' and save ~0.5s
 # when running the tests. Officially, we should use r'\A\w+\Z' but this creates
 # too many weird corner cases on Python3 unicode.
-VALID_DIM_NAMES = r'\A[a-zA-Z0-9_]+\Z'
+VALID_DIM_NAMES = r'\A[a-zA-Z_][a-zA-Z0-9_]*\Z'
 
 
 def parsed_sigs(max_dims=3, max_args=5):
@@ -58,7 +59,7 @@ def unparse(parsed_sig):
 def check_int(x):
     '''Use subroutine for this so in Py3 we can remove the `long`.'''
     # Could also do ``type(x) in (int, long)``, but only on Py2.
-    assert isinstance(x, int)
+    assert isinstance(x, py3int)
 
 
 def validate_shapes(L, parsed_sig, min_side, max_side):
