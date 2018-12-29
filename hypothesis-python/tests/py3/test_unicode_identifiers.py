@@ -17,7 +17,8 @@
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis.internal.reflection import proxies
+from hypothesis import given, strategies as st
+from hypothesis.internal.reflection import get_pretty_function_description, proxies
 
 
 def test_can_copy_argspec_of_unicode_args():
@@ -40,3 +41,20 @@ def test_can_copy_argspec_of_unicode_name():
         return 2
 
     assert bar() == 2
+
+
+is_approx_π = lambda x: x == 3.1415  # noqa: E731
+
+
+def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():
+    assert get_pretty_function_description(is_approx_π) == "lambda x: x == 3.1415"
+
+
+def test_regression_issue_1700():
+    π = 3.1415
+
+    @given(st.floats(min_value=-π, max_value=π).filter(lambda x: abs(x) > 1e-5))
+    def test_nonzero(x):
+        assert x != 0
+
+    test_nonzero()
