@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.85.0:
+
+-------------------
+3.85.0 - 2018-12-29
+-------------------
+
+Introduces the :func:`hypothesis.stateful.consumes` function. When defining
+a rule in stateful testing, it can be used to mark bundles from which values
+should be consumed, i. e. removed after use in the rule. This has been
+proposed in :issue:`136`.
+
+Thanks to Jochen Müller for this long-awaited feature.
+
 .. _v3.84.6:
 
 -------------------
