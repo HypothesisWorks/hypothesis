@@ -331,6 +331,21 @@ def consumes(bundle):
     return BundleConsumer(bundle)
 
 
+@attr.s()
+class MultipleResults(object):
+    values = attr.ib()
+
+
+def multiple(*args):
+    """This function can be used to pass multiple results to the target(s) of
+    a rule. Just use ``return multiple(result1, result2, ...)`` in your rule.
+
+    It is also possible to use ``return multiple()`` with no arguments in
+    order to end a rule without passing any result.
+    """
+    return MultipleResults(args)
+
+
 def _convert_targets(targets, target):
     """Single validator and convertor for target arguments."""
     if target is not None:
@@ -795,6 +810,15 @@ class RuleBasedStateMachine(GenericStateMachine):
             )
         )
 
+    def _add_result_to_targets(self, targets, result):
+        name = self.new_name()
+        self.__printer.singleton_pprinters.setdefault(
+            id(result), lambda obj, p, cycle: p.text(name)
+        )
+        self.names_to_values[name] = result
+        for target in targets:
+            self.bundle(target).append(VarReference(name))
+
     def execute_step(self, step):
         rule, data = step
         data = dict(data)
@@ -803,13 +827,11 @@ class RuleBasedStateMachine(GenericStateMachine):
                 data[k] = self.names_to_values[v.name]
         result = rule.function(self, **data)
         if rule.targets:
-            name = self.new_name()
-            self.names_to_values[name] = result
-            self.__printer.singleton_pprinters.setdefault(
-                id(result), lambda obj, p, cycle: p.text(name)
-            )
-            for target in rule.targets:
-                self.bundle(target).append(VarReference(name))
+            if isinstance(result, MultipleResults):
+                for single_result in result.values:
+                    self._add_result_to_targets(rule.targets, single_result)
+            else:
+                self._add_result_to_targets(rule.targets, result)
         if self._initialize_rules_to_run:
             self._initialize_rules_to_run.remove(rule)
 

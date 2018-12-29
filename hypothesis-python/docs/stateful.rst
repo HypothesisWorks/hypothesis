@@ -188,6 +188,8 @@ instead.
 
 .. autofunction:: hypothesis.stateful.consumes
 
+.. autofunction:: hypothesis.stateful.multiple
+
 -----------
 Initializes
 -----------
