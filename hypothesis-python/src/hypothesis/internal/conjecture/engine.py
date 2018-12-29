@@ -2524,7 +2524,7 @@ class Shrinker(object):
 
             # Invariant: We cannot replace with lo, we can replace with hi.
             lo = 1
-            hi = c - 1
+            hi = c - 2
             while lo + 1 < hi:
                 mid = (lo + hi) // 2
                 if try_replace(mid):
