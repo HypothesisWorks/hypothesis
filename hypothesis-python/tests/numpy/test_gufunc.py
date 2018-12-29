@@ -31,24 +31,17 @@ NP_AXIS = ((np.sum, "(n)->()", True),
            (np.diff, "(n)->(m)", False),
            (np.diff, "(n),()->(m)", False))
 
-# The spec for a dimension name in numpy.lib.function_base, if we are happy
-# testing single char var names we can switch this to '\A\w\Z' and save ~0.5s
-# when running the tests. Officially, we should use r'\A\w+\Z' but this creates
-# too many weird corner cases on Python3 unicode.
+# The spec for a dimension name in numpy.lib.function_base is r'\A\w+\Z' but
+# this creates too many weird corner cases on Python3 unicode. Also make sure
+# doesn't start with digits because if it is parsed as number we could end up
+# with very large dimensions that blow out memory.
 VALID_DIM_NAMES = r"\A[a-zA-Z_][a-zA-Z0-9_]*\Z"
 
 
-def parsed_sigs(max_dims=3, max_args=5):
-    """Strategy to generate a parsed gufunc signature.
-
-    Note that in general functions can take no-args, but the function signature
-    formalism is for >= 1 args. So, there is always at least 1 arg here.
-    """
-    # Use | to sample from digits since we would like pure numbers more often
-    shapes = lists(from_regex(VALID_DIM_NAMES) | sampled_from(string.digits),
-                   min_size=0, max_size=max_dims).map(tuple)
-    S = lists(shapes, min_size=1, max_size=max_args)
-    return S
+def check_int(x):
+    """Use subroutine for this so in Py3 we can remove the `long`."""
+    # Could also do ``type(x) in (int, long)``, but only on Py2.
+    assert isinstance(x, py3int)
 
 
 def pad_left(L, size, padding):
@@ -56,18 +49,18 @@ def pad_left(L, size, padding):
     return L
 
 
-def unparse(parsed_sig):
-    assert len(parsed_sig) > 0, "gufunc sig does not support no argument funcs"
-
-    sig = [",".join(vv) for vv in parsed_sig]
-    sig = "(" + "),(".join(sig) + ")"
-    return sig
-
-
-def check_int(x):
-    """Use subroutine for this so in Py3 we can remove the `long`."""
-    # Could also do ``type(x) in (int, long)``, but only on Py2.
-    assert isinstance(x, py3int)
+def validate_elements(L, elements=None):
+    for drawn in L:
+        drawn = np.asarray(drawn)
+        if elements is None:  # Test int filler
+            assert drawn.dtype == int
+            assert np.all(0 <= drawn)
+            assert np.all(drawn <= 5)
+        else:
+            elements = np.asarray(elements)
+            assert drawn.dtype == elements.dtype
+            vals = set(drawn.ravel())
+            assert vals.issubset(elements)
 
 
 def validate_shapes(L, parsed_sig, min_side, max_side):
@@ -86,20 +79,6 @@ def validate_shapes(L, parsed_sig, min_side, max_side):
                 assert dd <= max_side
                 var_size = size_lookup.setdefault(ss, dd)
                 assert var_size == dd
-
-
-def validate_elements(L, elements=None):
-    for drawn in L:
-        drawn = np.asarray(drawn)
-        if elements is None:  # Test int filler
-            assert drawn.dtype == int
-            assert np.all(0 <= drawn)
-            assert np.all(drawn <= 5)
-        else:
-            elements = np.asarray(elements)
-            assert drawn.dtype == elements.dtype
-            vals = set(drawn.ravel())
-            assert vals.issubset(elements)
 
 
 def validate_bcast_shapes(shapes, parsed_sig,
@@ -126,6 +105,27 @@ def validate_bcast_shapes(shapes, parsed_sig,
         # Must all be 1 or a const size
         assert len(vals) <= 2
         assert len(vals) < 2 or (1 in vals)
+
+
+def unparse(parsed_sig):
+    assert len(parsed_sig) > 0, "gufunc sig does not support no argument funcs"
+
+    sig = [",".join(vv) for vv in parsed_sig]
+    sig = "(" + "),(".join(sig) + ")"
+    return sig
+
+
+def parsed_sigs(max_dims=3, max_args=5):
+    """Strategy to generate a parsed gufunc signature.
+
+    Note that in general functions can take no-args, but the function signature
+    formalism is for >= 1 args. So, there is always at least 1 arg here.
+    """
+    # Use | to sample from digits since we would like (small) pure numbers too
+    shapes = lists(from_regex(VALID_DIM_NAMES) | sampled_from(string.digits),
+                   min_size=0, max_size=max_dims).map(tuple)
+    S = lists(shapes, min_size=1, max_size=max_args)
+    return S
 
 
 @given(scalar_dtypes(),
@@ -342,7 +342,7 @@ def test_shapes_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
     min_side, max_side = sorted([min_side, max_side])
 
     def dummy(*args):
-        assert False, "this function shouldnt get called"
+        assert False, "this function shouldn't get called"
 
     S = gu.broadcasted(dummy, signature, otypes=otypes, excluded=excluded,
                        min_side=min_side, max_side=max_side,
@@ -384,7 +384,7 @@ def test_elements_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
     min_side, max_side = sorted([min_side, max_side])
 
     def dummy(*args):
-        assert False, "this function shouldnt get called"
+        assert False, "this function shouldn't get called"
 
     elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
     # testing elements equality tricky with nans
@@ -470,7 +470,7 @@ def test_shapes_axised(parsed_sig, min_side, max_side, max_dims_extra,
     min_side, max_side = sorted([min_side, max_side])
 
     def dummy(*args, **kwargs):
-        assert False, "this function shouldnt get called"
+        assert False, "this function shouldn't get called"
 
     S = gu.axised(dummy, signature, min_side=min_side, max_side=max_side,
                   max_dims_extra=max_dims_extra, allow_none=allow_none,
@@ -511,7 +511,7 @@ def test_elements_axised(parsed_sig, min_side, max_side, max_dims_extra,
     min_side, max_side = sorted([min_side, max_side])
 
     def dummy(*args, **kwargs):
-        assert False, "this function shouldnt get called"
+        assert False, "this function shouldn't get called"
 
     elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
     # testing elements equality tricky with nans

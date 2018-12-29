@@ -303,7 +303,7 @@ def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
     return res
 
 
-def broadcasted(f, signature, otypes=None, excluded=(), **kwargs):
+def broadcasted(f, signature, otypes, excluded=(), **kwargs):
     """Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
     `numpy.vectorize`.
