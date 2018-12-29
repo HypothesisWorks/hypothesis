@@ -2487,7 +2487,7 @@ class Shrinker(object):
                     return False
 
                 return self.consider_new_buffer(
-                    bytes([d if b == c else b for b in buf])
+                    hbytes([d if b == c else b for b in buf])
                 )
 
             # If we cannot replace the current byte with its predecessor,
@@ -2512,7 +2512,7 @@ class Shrinker(object):
                         if k > c:
                             return False
                         return self.consider_new_buffer(
-                            bytes([d if c - k <= b <= c and b > d else b for b in buf])
+                            hbytes([d if c - k <= b <= c and b > d else b for b in buf])
                         )
 
                     find_integer(replace_range)
