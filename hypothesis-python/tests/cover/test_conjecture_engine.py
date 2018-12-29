@@ -1774,15 +1774,15 @@ def test_runs_adaptive_delete_on_first_pass_if_discarding_does_not_work():
 
 
 def test_alphabet_minimization():
-    @shrink(list(hrange(11)), "alphabet_minimize")
+    @shrink(hbytes((10, 11)) * 5, "alphabet_minimize")
     def x(data):
-        n = 0
-        for _ in hrange(10):
-            n += (-1) ** (data.draw_bits(8) & 1)
-        if n == 0 and data.draw_bits(8) == 10:
+        buf = data.draw_bytes(10)
+        if len(set(buf)) > 2:
+            data.mark_invalid()
+        if buf[0] < buf[1] and buf[1] > 1:
             data.mark_interesting()
 
-    assert x == [0, 1] * 5 + [10]
+    assert x == [0, 2] * 5
 
 
 def test_keeps_using_solid_passes_while_they_shrink_size():
