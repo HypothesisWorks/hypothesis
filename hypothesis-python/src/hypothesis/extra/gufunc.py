@@ -366,6 +366,8 @@ def broadcasted(f, signature, otypes, excluded=(), **kwargs):
     """
     # cache and doc not needed for property testing, excluded not actually
     # needed here because we don't generate extra dims for the excluded args.
+    # Using the excluded argument in np.vectorize only seems to confuse it in
+    # corner cases.
     f_vec = np.vectorize(f, signature=signature, otypes=otypes)
 
     broadcasted_args = gufunc_broadcast(signature, excluded=excluded, **kwargs)
