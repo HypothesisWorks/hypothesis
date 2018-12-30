@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.85.1:
+
+-------------------
+3.85.1 - 2018-12-30
+-------------------
+
+This patch fixes :issue:`1700`, where a line that contained a Unicode character
+before a lambda definition would cause an internal exception.
+
 .. _v3.85.0:
 
 -------------------
