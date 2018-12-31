@@ -44,6 +44,7 @@ from hypothesis.internal.conjecture.data import (
     StopTest,
 )
 from hypothesis.internal.conjecture.shrinking import Integer, Length, Lexical, Ordering
+from hypothesis.internal.conjecture.shrinking.common import find_integer
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import debug_report
 
@@ -1341,6 +1342,7 @@ class Shrinker(object):
     """
 
     DEFAULT_PASSES = [
+        "alphabet_minimize",
         "pass_to_descendant",
         "zero_examples",
         "adaptive_example_deletion",
@@ -1701,7 +1703,6 @@ class Shrinker(object):
         This method iterates to a fixed point and so is idempontent - calling
         it twice will have exactly the same effect as calling it once.
         """
-        self.run_shrink_pass("alphabet_minimize")
         while self.single_greedy_shrink_iteration():
             self.run_shrink_pass("lower_common_block_offset")
 
@@ -2467,27 +2468,76 @@ class Shrinker(object):
         self.example_wise_shrink(Ordering, key=sort_key)
 
     def alphabet_minimize(self):
-        """Attempts to replace most bytes in the buffer with 0 or 1. The main
+        """Attempts to minimize the "alphabet" - the set of bytes that
+        are used in the representation of the current buffer. The main
         benefit of this is that it significantly increases our cache hit rate
         by making things that are equivalent more likely to have the same
-        representation.
-
-        We only run this once rather than as part of the main passes as
-        once it's done its magic it's unlikely to ever be useful again.
-        It's important that it runs first though, because it makes
-        everything that comes after it faster because of the cache hits.
+        representation, but it's also generally a rather effective "fuzzing"
+        step that gives us a lot of good opportunities to slip to a smaller
+        representation of the same bug.
         """
-        for c in (1, 0):
-            alphabet = set(self.buffer) - set(hrange(c + 1))
+        for c in range(255, 0, -1):
+            buf = self.buffer
 
-            if not alphabet:
+            if c not in buf:
                 continue
 
-            def clear_to(reduced):
-                reduced = set(reduced)
-                attempt = hbytes(
-                    [b if b <= c or b in reduced else c for b in self.buffer]
-                )
-                return self.consider_new_buffer(attempt)
+            def can_replace_with(d):
+                if d < 0:
+                    return False
 
-            Length.shrink(sorted(alphabet), clear_to, random=self.random)
+                if self.consider_new_buffer(hbytes([d if b == c else b for b in buf])):
+                    if d <= 1:
+                        # For small values of d if this succeeds we take this
+                        # as evidence that it is worth doing a a bulk replacement
+                        # where we replace all values which are close
+                        # to c but smaller with d as well. This helps us substantially
+                        # in cases where we have a lot of "dead" bytes that don't really do
+                        # much, as it allows us to replace many of them in one go rather
+                        # than one at a time. An example of where this matters is
+                        # test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe
+                        # in test_shrink_quality.py
+                        def replace_range(k):
+                            if k > c:
+                                return False
+
+                            def should_replace_byte(b):
+                                return c - k <= b <= c and d < b
+
+                            return self.consider_new_buffer(
+                                hbytes(
+                                    [d if should_replace_byte(b) else b for b in buf]
+                                )
+                            )
+
+                        find_integer(replace_range)
+                    return True
+
+            if (
+                # If we cannot replace the current byte with its predecessor,
+                # assume it is already minimal and continue on. This ensures
+                # we make no more than one call per distinct byte value in the
+                # event that no shrinks are possible here.
+                not can_replace_with(c - 1)
+                # We next try replacing with 0 or 1. If this works then
+                # there is nothing else to do here.
+                or can_replace_with(0)
+                or can_replace_with(1)
+                # Finally we try to replace with c - 2 before going on to the
+                # binary search so that in cases which were already nearly
+                # minimal we don't do log(n) extra work.
+                or not can_replace_with(c - 2)
+            ):
+                continue
+
+            # Now binary search to find a small replacement.
+
+            # Invariant: We cannot replace with lo, we can replace with hi.
+            lo = 1
+            hi = c - 2
+            while lo + 1 < hi:
+                mid = (lo + hi) // 2
+                if can_replace_with(mid):
+                    hi = mid
+                else:
+                    lo = mid
