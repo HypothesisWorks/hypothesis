@@ -1745,16 +1745,15 @@ def test_shrink_passes_behave_sensibly_with_standard_operators():
 
 def test_shrink_pass_may_go_from_solid_to_dubious():
 
-    initial = hbytes([0, 1, 0, 0, 2, 3])
+    initial = hbytes([10])
 
     @shrinking_from(initial)
     def shrinker(data):
-        n = len(initial) - 1 - data.draw_bits(1)
-        for _ in range(n):
-            data.draw_bits(8)
-        data.mark_interesting()
+        n = data.draw_bits(8)
+        if n >= 9:
+            data.mark_interesting()
 
-    sp = shrinker.shrink_pass("adaptive_example_deletion")
+    sp = shrinker.shrink_pass("minimize_individual_blocks")
     assert sp.classification == PassClassification.CANDIDATE
     shrinker.run_shrink_pass(sp)
     assert sp.classification == PassClassification.HOPEFUL
