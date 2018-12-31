@@ -41,7 +41,7 @@ jinja2==2.10              # via pyupio, sphinx
 markupsafe==1.1.0         # via jinja2
 mccabe==0.6.1             # via flake8
 mock==2.0.0
-more-itertools==4.3.0     # via pytest
+more-itertools==5.0.0     # via pytest
 mypy-extensions==0.4.1    # via mypy
 mypy==0.650
 numpy==1.15.4
