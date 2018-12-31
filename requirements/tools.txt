@@ -78,7 +78,7 @@ six==1.12.0               # via bandit, bleach, dparse, mock, more-itertools, pa
 smmap2==2.0.5             # via gitdb2
 snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.2
-sphinx==1.8.2
+sphinx==1.8.3
 sphinxcontrib-websupport==1.1.0  # via sphinx
 stevedore==1.30.0         # via bandit
 toml==0.10.0
