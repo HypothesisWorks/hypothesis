@@ -66,14 +66,7 @@ class Shrinker(object):
     and simpler."""
 
     def __init__(
-        self,
-        initial,
-        predicate,
-        random=None,
-        full=False,
-        debug=False,
-        name=None,
-        **kwargs
+        self, initial, predicate, random, full=False, debug=False, name=None, **kwargs
     ):
         self.setup(**kwargs)
         self.current = self.make_immutable(initial)
