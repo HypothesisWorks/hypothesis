@@ -26,7 +26,7 @@ import attr
 
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.data import Overrun, Status
-from hypothesis.internal.conjecture.shrinking import Integer, Length, Lexical, Ordering
+from hypothesis.internal.conjecture.shrinking import Integer, Length, Lexical
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
 
@@ -1245,8 +1245,102 @@ class Shrinker(object):
         Without the ability to reorder x and y this could fail either with
         ``x=""``, ``y="0"``, or the other way around. With reordering it will
         reliably fail with ``x=""``, ``y="0"``.
+
+        This pass ignores block examples. This is because there are a lot
+        of single block examples (many of which may not be well labelled),
+        and such reorderings are much less likely to work. We could add
+        an emergency shrink pass to patch up any possible block reorderings,
+        but so far there doesn't seem to be a compelling use case for doing
+        so.
         """
-        self.example_wise_shrink(Ordering, key=sort_key)
+
+        # Rather than index order we want to iterate over examples in order
+        # of increasing depth, with index order among the examples at a given
+        # depth. This retains the property that our iteration is stable in the
+        # sense that if we replace the current example, its replacement lives
+        # in the same index in the new list (which we have to recalculate).
+        # However, it ensures that we start by trying larger examples,
+        # prioritising big swaps. This prevents us getting bogged down too
+        # early and gives us more opportunities to luck into a successful
+        # reduction of the size of the test case.
+        def calc_examples():
+            return sorted(
+                self.shrink_target.examples, key=lambda ex: (ex.depth, ex.index)
+            )
+
+        examples = calc_examples()
+
+        # Note our iteration order is that we repeatedly try to make the
+        # example at index i smaller.
+        i = 0
+        while i < len(examples):
+            succeeded = False
+            ex1 = examples[i]
+            buf = self.buffer
+            b1 = buf[ex1.start : ex1.end]
+
+            if ex1.children:
+                candidates = [
+                    j
+                    for j in hrange(i + 1, len(examples))
+                    for exc in [examples[j]]
+                    # Skip examples which are blocks
+                    if exc.children
+                    # Skip examples which are descendants of the current one
+                    and exc.start >= ex1.end
+                    # Skip examples which have different labels and thus presumably
+                    # come from a different strategy
+                    and exc.label == ex1.label
+                    for bc in [buf[exc.start : exc.end]]
+                    # We only try sorting in examples which are smaller than the
+                    # current target in sort order. This can in principle cause
+                    # us to skip some viable candidates if the test case shrinks
+                    # oddly (e.g. if shrinking an example could cause us to draw
+                    # more data later) but it's OK to be slightly suboptimal in
+                    # that case.
+                    if sort_key(bc) < sort_key(b1)
+                ]
+
+                # We want to avoid going quadratic time here, so if the set of
+                # candidate replacements is large we sample it down to a smaller
+                # one. This allows this pass to remain efficient even when there
+                # are many examples of a given type. It can cause us to miss some
+                # possible swaps, but we'll get more opportunities to run this
+                # later and hopefully by the time the example is fully minimized
+                # we will be under the desired size anyway.
+
+                max_candidates = 3
+                if len(candidates) > max_candidates:
+                    candidates = self.random.sample(candidates, max_candidates)
+
+                def candidate_sort_key(j):
+                    """Sort key so that we try candidate replacements in order
+                    of simplest to most complicated."""
+                    ex = examples[j]
+                    return sort_key(buf[ex.start : ex.end])
+
+                for j in sorted(candidates, key=candidate_sort_key):
+                    ex2 = examples[j]
+                    b2 = buf[ex2.start : ex2.end]
+
+                    swapped = (
+                        buf[: ex1.start]
+                        + b2
+                        + buf[ex1.end : ex2.start]
+                        + b1
+                        + buf[ex2.end :]
+                    )
+                    assert len(swapped) == len(buf)
+                    if self.incorporate_new_buffer(swapped):
+                        succeeded = True
+                        break
+            # If we successfully made a shrink then the example at the current
+            # index has changed and we should try again (especially if we had
+            # sampled down). Otherwise, move on to the next example.
+            if succeeded:
+                examples = calc_examples()
+            else:
+                i += 1
 
     def alphabet_minimize(self):
         """Attempts to minimize the "alphabet" - the set of bytes that
