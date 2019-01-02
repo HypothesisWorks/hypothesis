@@ -43,14 +43,18 @@ def urls():
         return scheme + "://" + host + port + path
 
     schemes = st.sampled_from(["http", "https"])
-    ports = st.one_of(
-        st.just(""), st.integers(min_value=0, max_value=2 ** 16 - 1).map(lambda x: ":%d" % x)
-    )
+    ports = st.integers(min_value=0, max_value=2 ** 16 - 1)
     paths = st.lists(st.text(string.printable).map(url_encode)).map(
         lambda path: "/".join([""] + path)
     )
 
-    return st.builds(create_url, schemes, domains(), ports, paths)
+    return st.builds(
+        create_url,
+        schemes,
+        domains(),
+        st.one_of(st.just(""), ports.map(lambda x: ":%d" % x)),
+        paths,
+    )
 
 
 @st.defines_strategy_with_reusable_values
