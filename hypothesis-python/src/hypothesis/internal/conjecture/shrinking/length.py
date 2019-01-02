@@ -75,8 +75,6 @@ class Length(Shrinker):
             """Try replacing current_subset with current_subset & keep."""
 
             keep = keep & current_subset
-            if len(keep) == len(current_subset):
-                return True
             to_remove = current_subset - keep
 
             # Once we've tried and failed to delete an element we never
