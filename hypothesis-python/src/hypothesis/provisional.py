@@ -32,6 +32,28 @@ import hypothesis._strategies as st
 
 
 @st.defines_strategy_with_reusable_values
+def urls():
+    """"A strategy for :rfc:`3986`, generating http/https URLs."""
+
+    def url_encode(s):
+        safe_chars = set(string.ascii_letters + string.digits + "$-_.+!*'(),")
+        return "".join(c if c in safe_chars else "%%%02X" % ord(c) for c in s)
+
+    def create_url(scheme, host, port, path):
+        return scheme + "://" + host + port + path
+
+    schemes = st.sampled_from(["http", "https"])
+    ports = st.one_of(
+        st.just(""), st.integers(min_value=0, max_value=2 ** 16 - 1).map(lambda x: ":%d" % x)
+    )
+    paths = st.lists(st.text(string.printable).map(url_encode)).map(
+        lambda path: "/".join([""] + path)
+    )
+
+    return st.builds(create_url, schemes, domains(), ports, paths)
+
+
+@st.defines_strategy_with_reusable_values
 def domains():
     """A strategy for :rfc:`1035` fully qualified domain names."""
     atoms = st.text(
