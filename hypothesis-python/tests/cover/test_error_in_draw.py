@@ -28,7 +28,7 @@ def test_error_is_in_finally():
     @given(st.data())
     def test(d):
         try:
-            d.draw(st.lists(st.integers(min_value=0), min_size=3, unique=True))
+            d.draw(st.lists(st.integers(), min_size=3, unique=True))
         finally:
             raise ValueError()
 
@@ -36,4 +36,4 @@ def test_error_is_in_finally():
         with pytest.raises(ValueError):
             test()
 
-    assert "[0, 1, 2]" in o.getvalue()
+    assert "[0, 1, -1]" in o.getvalue()
