@@ -80,7 +80,6 @@ if PY3:
     hrange = range
     ARG_NAME_ATTRIBUTE = "arg"
     integer_types = (int,)
-    _long_integer_type = int
     hunichr = chr
 
     def unicode_safe_repr(x):
@@ -236,7 +235,6 @@ else:
 
     ARG_NAME_ATTRIBUTE = "id"
     integer_types = (int, long)
-    _long_integer_type = long
     hunichr = unichr
 
     def escape_unicode_characters(s):
@@ -551,14 +549,14 @@ else:
 # custom __floor__ or __ceil__ methods may convert via floats.
 # See issue #1667, Numpy issue 9068.
 def floor(x):
-    y = _long_integer_type(x)
+    y = int(x)
     if y != x and x < 0:
         return y - 1
     return y
 
 
 def ceil(x):
-    y = _long_integer_type(x)
+    y = int(x)
     if y != x and x > 0:
         return y + 1
     return y
