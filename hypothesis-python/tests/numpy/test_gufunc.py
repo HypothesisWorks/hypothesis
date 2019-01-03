@@ -276,11 +276,11 @@ def test_elements_gufunc(parsed_sig, min_side, max_side, dtype, data):
     min_side, max_side = sorted([min_side, max_side])
 
     S = gu.gufunc(signature, min_side=min_side, max_side=max_side,
-                  dtype=dtype, elements=elements)
+                  dtype=choices.dtype, elements=elements)
 
     X = data.draw(S)
 
-    validate_elements(X, choices=choices, dtype=dtype)
+    validate_elements(X, choices=choices, dtype=choices.dtype)
 
 
 @given(parsed_sigs_and_sizes(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX,
@@ -602,5 +602,5 @@ def test_np_axised(func_choice, min_side, max_side, max_dims_extra, data):
     assert np.shape(R1) == np.shape(R2)
     assert np.all(R1 == R2)
 
-test_shapes_gufunc()
+test_elements_gufunc()
 
