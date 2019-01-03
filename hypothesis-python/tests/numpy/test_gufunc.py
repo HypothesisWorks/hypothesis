@@ -243,7 +243,7 @@ def test_shapes_gufunc_shape(parsed_sig_and_size, data):
     validate_shapes(shapes, parsed_sig, min_side, max_side)
 
 
-@given(parsed_sigs_and_sizes(), data())
+@given(parsed_sigs_and_sizes(), scalar_dtypes(), booleans(), data())
 def test_shapes_gufunc(parsed_sig_and_size, dtype, unique, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
 
@@ -601,3 +601,6 @@ def test_np_axised(func_choice, min_side, max_side, max_dims_extra, data):
     assert R1.dtype == R2.dtype
     assert np.shape(R1) == np.shape(R2)
     assert np.all(R1 == R2)
+
+test_shapes_gufunc()
+

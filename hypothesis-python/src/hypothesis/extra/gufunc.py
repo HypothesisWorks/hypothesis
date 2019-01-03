@@ -161,7 +161,8 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
 
 
 @composite
-def gufunc(draw, signature, filler=floats, min_side=0, max_side=5, **kwargs):
+def gufunc(draw, signature, dtype, elements, unique=False,
+           min_side=0, max_side=5):
     """Strategy to generate a tuple of ndarrays for arguments to a function
     consistent with its signature.
 
@@ -198,7 +199,8 @@ def gufunc(draw, signature, filler=floats, min_side=0, max_side=5, **kwargs):
     """
     shapes = draw(gufunc_shape(signature,
                                min_side=min_side, max_side=max_side))
-    res = draw(_tuple_of_arrays(shapes, filler, **kwargs))
+    res = draw(_tuple_of_arrays(shapes, dtype=dtype,
+                                elements=elements, unique=unique))
     return res
 
 
