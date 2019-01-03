@@ -156,21 +156,20 @@ def parsed_sigs_and_sizes(draw, max_max_side=5, **kwargs):
 
 @given(scalar_dtypes(),
        lists(integers(min_value=0, max_value=5),
-             min_size=0, max_size=3).map(tuple), booleans(), data())
-def test_arrays_(dtype, shape, force_ndarray, data):
+             min_size=0, max_size=3).map(tuple), data())
+def test_arrays_(dtype, shape, data):
     choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
     # testing elements equality tricky with nans
     choices = np.nan_to_num(choices)
     elements = sampled_from(choices)
 
-    S = gu.arrays_(choices.dtype, shape, elements, force_ndarray=force_ndarray)
+    S = gu.arrays_(choices.dtype, shape, elements)
     X = data.draw(S)
 
     assert np.shape(X) == shape
     validate_elements([X], dtype=choices.dtype, choices=choices)
 
-    if force_ndarray or np.size(X) != 1:
-        assert type(X) == np.ndarray
+    assert type(X) == np.ndarray
 
 
 # hypothesis.extra.numpy.array_shapes does not support 0 min_size so we roll
