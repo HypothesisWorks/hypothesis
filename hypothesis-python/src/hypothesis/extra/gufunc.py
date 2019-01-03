@@ -6,6 +6,8 @@ and therefore requires a bump in the requirements for hypothesis.
 """
 from __future__ import absolute_import, division, print_function
 
+from collections import defaultdict
+
 import numpy as np
 import numpy.lib.function_base as npfb
 
@@ -23,6 +25,18 @@ from hypothesis.strategies import (
 # Should not ever need to broadcast beyond this, but should be able to set it
 # as high as 32 before breaking assumptions in numpy.
 GLOBAL_DIMS_MAX = 12
+
+
+def int_or_dict(x, default_val):
+    # TODO tests
+    try:
+        default_val = int(x)
+    except TypeError:  # x is dict
+        pass
+    else:  # x is int
+        x = {}
+    D = defaultdict(lambda: default_val, x)
+    return D
 
 
 @composite
@@ -118,7 +132,9 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     """
-    order_check("side", 0, min_side, max_side)
+    # TODO figure out how to order check this
+    min_side = int_or_dict(min_side, 0)
+    max_side = int_or_dict(max_side, 5)
 
     # We should check signature.isascii() since there are lot of weird corner
     # cases with unicode parsing, but isascii() restricts us to Py >=3.7.
@@ -135,7 +151,7 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     # just put the integer in, e.g., D['2'] = 2 if someone provided '(n,2)'.
     # e.g., D = {'p': 1, 'm': 3, 'n': 1}
     D = {k: (int(k) if k.isdigit() else
-             draw(integers(min_value=min_side, max_value=max_side)))
+             draw(integers(min_value=min_side[k], max_value=max_side[k])))
          for arg in inp for k in arg}
 
     # Build the shapes: e.g., shapes = [(1, 3), (3, 1)]

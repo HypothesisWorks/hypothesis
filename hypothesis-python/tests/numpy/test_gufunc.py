@@ -76,8 +76,12 @@ def validate_shapes(L, parsed_sig, min_side, max_side):
             if ss.isdigit():
                 assert int(ss) == dd
             else:
-                assert min_side <= dd
-                assert dd <= max_side
+                mm = min_side.get(ss, None) if isinstance(min_side, dict) \
+                    else min_side
+                assert mm is None or mm <= dd
+                mm = max_side.get(ss, None) if isinstance(max_side, dict) \
+                    else max_side
+                assert mm is None or dd <= mm
                 var_size = size_lookup.setdefault(ss, dd)
                 assert var_size == dd
 
@@ -157,6 +161,7 @@ def parsed_sigs_and_sizes(draw, max_max_side=5, **kwargs):
        lists(integers(min_value=0, max_value=5),
              min_size=0, max_size=3).map(tuple), data())
 def test_arrays_(dtype, shape, data):
+    # TODO generalize for new args
     choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
     # testing elements equality tricky with nans
     choices = np.nan_to_num(choices)
