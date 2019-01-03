@@ -186,6 +186,9 @@ def test_unparse_parse(i_parsed_sig, o_parsed_sig):
     # think it does.
     inp, out = npfb._parse_gufunc_signature(signature)
 
+    # TODO check all under 10 if isdigit
+    # TODO add max shape to validate shapes
+
     assert i_parsed_sig == inp
     assert o_parsed_sig == out
 

@@ -30,6 +30,7 @@ follow numpy's `Generalized Universal Function API <https://docs.scipy.org/doc/n
 
 .. automodule:: hypothesis.extra.gufunc
    :members:
+   :exclude-members: arrays_
 
 .. _hypothesis-pandas:
 

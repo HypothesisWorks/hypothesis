@@ -58,6 +58,20 @@ def tuple_of_arrays(draw, shapes, filler, **kwargs):
     -------
     res : tuple of ndarrays
         Resulting ndarrays with shape from `shapes` and elements from `filler`.
+
+    Examples
+    --------
+
+    .. code-block:: pycon
+
+      >>> S = tuple_of_arrays([(3, 4), (1, 4), ()], floats, min_value=0, max_value=1)
+      >>> S.example()
+      (array([[ 0.21359337,  0.21359337,  0.21359337,  0.21359337],
+              [ 0.21359337,  0.21359337,  0.21359337,  0.21359337],
+              [ 0.21359337,  0.21359337,  0.21359337,  0.21359337]]),
+       array([[ 0.7416438,  0.7416438,  0.7416438,  0.7416438]]),
+       0.8971914860930077)
+
     """
     # Need to use asarray to correct get type on weird types like np datetimes.
     # This method of infering dtype is problematic if the filler can output
