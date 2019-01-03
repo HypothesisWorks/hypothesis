@@ -141,15 +141,15 @@ def parsed_sigs_and_sizes(draw, max_max_side=5, **kwargs):
     split = draw(integers(0, max_max_side))
 
     if draw(booleans()):
-        max_side = draw(dictionaries(sampled_from(labels), integers(0, split)))
+        min_side = draw(dictionaries(sampled_from(labels), integers(0, split)))
     else:
-        max_side = draw(integers(0, split))
+        min_side = draw(integers(0, split))
 
     if draw(booleans()):
-        min_side = draw(dictionaries(sampled_from(labels),
+        max_side = draw(dictionaries(sampled_from(labels),
                                      integers(split, max_max_side)))
     else:
-        min_side = draw(integers(split, max_max_side))
+        max_side = draw(integers(split, max_max_side))
 
     return parsed_sig, min_side, max_side
 
@@ -209,6 +209,7 @@ def test_elements_tuple_of_arrays(shapes, dtype, data):
 
 
 # TODO implement testing of broadcasting in tuple of arrays
+# TODO also consider this for later functions too
 
 
 @given(parsed_sigs(), parsed_sigs())
