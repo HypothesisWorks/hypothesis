@@ -25,7 +25,8 @@ from hypothesis.strategies import (
 GLOBAL_DIMS_MAX = 12
 
 
-def arrays_(dtype, shape, elements=None, force_ndarray=False):
+@composite
+def arrays_(draw, dtype, shape, elements=None, unique=False):
     """Wrapper to fix issues with `hypothesis.extra.numpy.arrays`.
 
     `arrays` is strict on shape being `int` which this fixes. This is partially
@@ -33,15 +34,14 @@ def arrays_(dtype, shape, elements=None, force_ndarray=False):
     does not return ndarray for 0-dim arrays.
     """
     shape = tuple(int(aa) for aa in shape)
-    if force_ndarray:
-        S = arrays(dtype, shape, elements=elements).map(np.asarray)
-    else:
-        S = arrays(dtype, shape, elements=elements)
-    return S
+    S = arrays(dtype, shape, elements=elements, unique=unique).map(np.asarray)
+    X = draw(S)
+    X = X.astype(dtype)
+    return X
 
 
 @composite
-def tuple_of_arrays(draw, shapes, filler, **kwargs):
+def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     """Strategy to generate a tuple of ndarrays with specified shapes.
 
     Parameters
@@ -71,15 +71,20 @@ def tuple_of_arrays(draw, shapes, filler, **kwargs):
               [ 0.21359337,  0.21359337,  0.21359337,  0.21359337]]),
        array([[ 0.7416438,  0.7416438,  0.7416438,  0.7416438]]),
        0.8971914860930077)
-
     """
-    # Need to use asarray to correct get type on weird types like np datetimes.
-    # This method of infering dtype is problematic if the filler can output
-    # multiple dtypes. We will change to interface closer to arrays() in
-    # another iteration.
-    dtype = np.asarray(draw(filler(**kwargs))).dtype
-    res = tuple(draw(arrays_(dtype, ss, elements=filler(**kwargs)))
-                for ss in shapes)
+    n = len(shapes)
+
+    # TODO tests need to type raw type, dtype and str
+    # Need this since broadcast_to does not like vars of type type
+    if isinstance(dtype, type):
+        dtype = [dtype]
+    dtype = np.broadcast_to(dtype, (n,))
+
+    elements = np.broadcast_to(elements, (n,))
+    unique = np.broadcast_to(unique, (n,))
+
+    res = tuple(draw(arrays_(dd, ss, elements=ee, unique=uu))
+                for dd, ss, ee, uu in zip(dtype, shapes, elements, unique))
     return res
 
 
@@ -177,7 +182,7 @@ def gufunc(draw, signature, filler=floats, min_side=0, max_side=5, **kwargs):
     """
     shapes = draw(gufunc_shape(signature,
                                min_side=min_side, max_side=max_side))
-    res = draw(tuple_of_arrays(shapes, filler, **kwargs))
+    res = draw(_tuple_of_arrays(shapes, filler, **kwargs))
     return res
 
 
@@ -313,7 +318,7 @@ def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
     shapes = draw(gufunc_broadcast_shape(signature, excluded=excluded,
                                          min_side=min_side, max_side=max_side,
                                          max_dims_extra=max_dims_extra))
-    res = draw(tuple_of_arrays(shapes, filler, **kwargs))
+    res = draw(_tuple_of_arrays(shapes, filler, **kwargs))
     return res
 
 
@@ -488,7 +493,7 @@ def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
         X_shape[axis] = n
 
     shapes[0] = X_shape
-    args = draw(tuple_of_arrays(shapes, filler, **kwargs))
+    args = draw(_tuple_of_arrays(shapes, filler, **kwargs))
 
     funcs_and_args = (f, f_axis, args, axis)
     return funcs_and_args

@@ -51,18 +51,18 @@ def pad_left(L, size, padding):
     return L
 
 
-def validate_elements(L, elements=None):
+def validate_elements(L, dtype, unique=False, choices=None):
     for drawn in L:
-        drawn = np.asarray(drawn)
-        if elements is None:  # Test int filler
-            assert drawn.dtype == int
-            assert np.all(0 <= drawn)
-            assert np.all(drawn <= 5)
-        else:
-            elements = np.asarray(elements)
-            assert drawn.dtype == elements.dtype
+        assert drawn.dtype == np.dtype(dtype)
+
+        if unique:
+            assert len(set(drawn.ravel())) == drawn.size
+
+        if choices is not None:
+            choices = np.asarray(choices)
+            assert drawn.dtype == choices.dtype
             vals = set(drawn.ravel())
-            assert vals.issubset(elements)
+            assert vals.issubset(choices)
 
 
 def validate_shapes(L, parsed_sig, min_side, max_side):
@@ -158,17 +158,16 @@ def parsed_sigs_and_sizes(draw, max_max_side=5, **kwargs):
        lists(integers(min_value=0, max_value=5),
              min_size=0, max_size=3).map(tuple), booleans(), data())
 def test_arrays_(dtype, shape, force_ndarray, data):
-    elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
+    choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
     # testing elements equality tricky with nans
-    elements = np.nan_to_num(elements)
-    elements_st = sampled_from(elements)
+    choices = np.nan_to_num(choices)
+    elements = sampled_from(choices)
 
-    S = gu.arrays_(elements.dtype, shape, elements_st,
-                   force_ndarray=force_ndarray)
+    S = gu.arrays_(choices.dtype, shape, elements, force_ndarray=force_ndarray)
     X = data.draw(S)
 
     assert np.shape(X) == shape
-    validate_elements([X], elements=elements)
+    validate_elements([X], dtype=choices.dtype, choices=choices)
 
     if force_ndarray or np.size(X) != 1:
         assert type(X) == np.ndarray
@@ -598,3 +597,5 @@ def test_np_axised(func_choice, min_side, max_side, max_dims_extra, data):
     assert R1.dtype == R2.dtype
     assert np.shape(R1) == np.shape(R2)
     assert np.all(R1 == R2)
+
+test_shapes_tuple_of_arrays()
