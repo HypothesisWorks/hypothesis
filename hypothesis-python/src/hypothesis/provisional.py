@@ -64,3 +64,40 @@ def ip6_addr_strings():
     """
     part = st.integers(0, 2 ** 16 - 1).map(u"{:04x}".format)
     return st.tuples(*[part] * 8).map(lambda a: u":".join(a).upper())
+
+
+def distributed(strategies, weights):
+    from hypothesis.internal.conjecture.utils import Sampler
+    from hypothesis.strategies import SearchStrategy
+    from hypothesis.searchstrategy.strategies import check_strategy
+    from hypothesis.internal.validation import check_type, InvalidArgument
+
+    class DistributedStrategy(SearchStrategy):
+        def __init__(self, strategies, weights):
+            SearchStrategy.__init__(self)
+            self.sampler = Sampler(weights)
+            self.strategies = strategies
+
+        def calc_has_reusable_values(self, recur):
+            return True
+
+        def do_draw(self, data):
+            strategy = self.strategies[self.sampler.sample(data)]
+            return strategy.do_draw(data)
+
+    assert strategies
+
+    for strategy in strategies:
+        check_strategy(strategy)
+
+    for weight in weights:
+        check_type((int, float), weight)
+        if weight < 0:
+            raise InvalidArgument("weight must be a positive number")
+
+    if len(strategies) != len(weights):
+        raise InvalidArgument(
+            "The number of weights must match the number of strategies"
+        )
+
+    return DistributedStrategy(strategies, weights)

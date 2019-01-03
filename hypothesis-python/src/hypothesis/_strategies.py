@@ -2319,3 +2319,9 @@ def emails():
     return builds(u"{}@{}".format, local_part, domains()).filter(
         lambda addr: len(addr) <= 255
     )
+
+
+def distributed(strategies, weights):
+    # type: (List[SearchStrategy], List[Union[int, float]]) -> SearchStrategy[Any]
+    from hypothesis.provisional import distributed
+    return distributed(strategies, weights)
