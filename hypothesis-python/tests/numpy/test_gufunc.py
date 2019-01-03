@@ -12,7 +12,9 @@ from hypothesis import given
 from hypothesis.extra.numpy import from_dtype, scalar_dtypes
 from hypothesis.strategies import (
     booleans,
+    composite,
     data,
+    dictionaries,
     from_regex,
     integers,
     lists,
@@ -128,6 +130,30 @@ def parsed_sigs(max_dims=3, max_args=5):
     return S
 
 
+@composite
+def parsed_sigs_and_sizes(draw, max_max_side=5, **kwargs):
+    parsed_sig = draw(parsed_sigs(**kwargs))
+    # list of all labels used in sig, includes ints which is ok to include in
+    # dict as distractors.
+    labels = list(set([k for arg in parsed_sig for k in arg]))
+
+    # TODO comment
+    split = draw(integers(0, max_max_side))
+
+    if draw(booleans()):
+        max_side = draw(dictionaries(sampled_from(labels), integers(0, split)))
+    else:
+        max_side = draw(integers(0, split))
+
+    if draw(booleans()):
+        min_side = draw(dictionaries(sampled_from(labels),
+                                     integers(split, max_max_side)))
+    else:
+        min_side = draw(integers(split, max_max_side))
+
+    return parsed_sig, min_side, max_side
+
+
 @given(scalar_dtypes(),
        lists(integers(min_value=0, max_value=5),
              min_size=0, max_size=3).map(tuple), booleans(), data())
@@ -200,7 +226,7 @@ def test_unparse_parse(i_parsed_sig, o_parsed_sig):
     assert o_parsed_sig == out
 
 
-@given(parsed_sigs_and_sizes(), data())
+@given(parsed_sigs_and_sizes(), data())  # TODO allow big
 def test_shapes_gufunc_shape(parsed_sig_and_size, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
 
@@ -253,9 +279,10 @@ def test_elements_gufunc(parsed_sig, min_side, max_side, dtype, data):
     validate_elements(X, choices=choices, dtype=dtype)
 
 
-@given(parsed_sig_and_size(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX),
+@given(parsed_sigs_and_sizes(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX,
+                             max_max_side=100),
        lists(booleans(), min_size=10, max_size=10),
-       integers(0, 100), integers(0, 100), integers(0, gu.GLOBAL_DIMS_MAX),
+       integers(0, gu.GLOBAL_DIMS_MAX),
        data())
 def test_shapes_gufunc_broadcast_shape(parsed_sig_and_size, excluded,
                                        max_dims_extra, data):
@@ -279,8 +306,9 @@ def test_shapes_gufunc_broadcast_shape(parsed_sig_and_size, excluded,
                           min_side, max_side, max_dims_extra)
 
 
-@given(parsed_sig_and_size(max_args=3), lists(booleans(), min_size=3, max_size=3),
-       integers(0, 5), integers(0, 5), integers(0, 3), data())
+@given(parsed_sigs_and_sizes(max_args=3),
+       lists(booleans(), min_size=3, max_size=3), integers(0, 3),
+       scalar_dtypes(), booleans(), data())
 def test_shapes_gufunc_broadcast(parsed_sig_and_size, excluded,
                                  max_dims_extra, dtype, unique, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
@@ -337,13 +365,12 @@ def test_elements_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
     validate_elements(X, choices=choices, dtype=dtype)
 
 
-@given(parsed_sig_and_size(max_args=3), parsed_sigs(),
+@given(parsed_sigs_and_sizes(max_args=3), parsed_sigs(),
        lists(scalar_dtypes(), min_size=3, max_size=3),
        lists(booleans(), min_size=3, max_size=3),
-       integers(0, 5), integers(0, 5), integers(0, 3), data())
+       integers(0, 3), scalar_dtypes(), booleans(), data())
 def test_shapes_broadcasted(parsed_sig_and_size, o_parsed_sig, otypes,
-                            excluded, min_side, max_side, max_dims_extra,
-                            dtype, unique, data):
+                            excluded, max_dims_extra, dtype, unique, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
     signature = unparse(parsed_sig) + "->" + unparse(o_parsed_sig)
 
@@ -479,8 +506,8 @@ def test_np_multi_broadcasted(min_side, max_side, max_dims_extra, data):
         assert np.all(rr1 == rr2)
 
 
-@given(parsed_sig_and_size(),
-       integers(1, 5), integers(1, 5), integers(0, 3), booleans(), data())
+@given(parsed_sigs_and_sizes(),  # TODO will need to worry about min=1
+       integers(0, 3), booleans(), scalar_dtypes(), booleans(), data())
 def test_shapes_axised(parsed_sig_and_size, max_dims_extra,
                        allow_none, dtype, unique, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
