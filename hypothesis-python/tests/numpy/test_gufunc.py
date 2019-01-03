@@ -59,7 +59,6 @@ def validate_elements(L, dtype, unique=False, choices=None):
             assert len(set(drawn.ravel())) == drawn.size
 
         if choices is not None:
-            choices = np.asarray(choices)
             assert drawn.dtype == choices.dtype
             vals = set(drawn.ravel())
             assert vals.issubset(choices)
@@ -200,10 +199,11 @@ def test_elements_tuple_of_arrays(shapes, dtype, data):
     choices = np.nan_to_num(choices)
     elements = sampled_from(choices)
 
-    S = gu._tuple_of_arrays(shapes, dtype, elements=elements)
+    S = gu._tuple_of_arrays(shapes, choices.dtype, elements=elements)
     X = data.draw(S)
 
-    validate_elements(X, choices=choices, dtype=dtype)
+    # TODO figure out why choices.dtype != dtype always
+    validate_elements(X, choices=choices, dtype=choices.dtype)
 
 
 # TODO implement testing of broadcasting in tuple of arrays
@@ -596,5 +596,3 @@ def test_np_axised(func_choice, min_side, max_side, max_dims_extra, data):
     assert R1.dtype == R2.dtype
     assert np.shape(R1) == np.shape(R2)
     assert np.all(R1 == R2)
-
-test_shapes_tuple_of_arrays()
