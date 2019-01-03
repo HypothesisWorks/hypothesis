@@ -152,12 +152,15 @@ def test_arrays_(dtype, shape, force_ndarray, data):
 # our own in this case.
 @given(lists(lists(integers(min_value=0, max_value=5),
                    min_size=0, max_size=3).map(tuple),
-             min_size=0, max_size=5), data())
-def test_shapes_tuple_of_arrays(shapes, data):
-    S = gu.tuple_of_arrays(shapes, integers, min_value=0, max_value=5)
+             min_size=0, max_size=5),
+       scalar_dtypes(), booleans(), data())
+def test_shapes_tuple_of_arrays(shapes, dtype, unique, data):
+    elements = from_dtype(dtype)
+
+    S = gu._tuple_of_arrays(shapes, dtype, elements=elements, unique=unique)
     X = data.draw(S)
 
-    validate_elements(X)
+    validate_elements(X, dtype=dtype, unique=unique)
 
     assert len(shapes) == len(X)
     for spec, drawn in zip(shapes, X):
@@ -168,14 +171,18 @@ def test_shapes_tuple_of_arrays(shapes, data):
                    min_size=0, max_size=3).map(tuple),
              min_size=0, max_size=5), scalar_dtypes(), data())
 def test_elements_tuple_of_arrays(shapes, dtype, data):
-    elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
+    choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
     # testing elements equality tricky with nans
-    elements = np.nan_to_num(elements)
+    choices = np.nan_to_num(choices)
+    elements = sampled_from(choices)
 
-    S = gu.tuple_of_arrays(shapes, sampled_from, elements=elements)
+    S = gu._tuple_of_arrays(shapes, dtype, elements=elements)
     X = data.draw(S)
 
-    validate_elements(X, elements=elements)
+    validate_elements(X, choices=choices, dtype=dtype)
+
+
+# TODO implement testing of broadcasting in tuple of arrays
 
 
 @given(parsed_sigs(), parsed_sigs())
@@ -193,12 +200,12 @@ def test_unparse_parse(i_parsed_sig, o_parsed_sig):
     assert o_parsed_sig == out
 
 
-@given(parsed_sigs(), integers(0, 100), integers(0, 100), data())
-def test_shapes_gufunc_shape(parsed_sig, min_side, max_side, data):
+@given(parsed_sigs_and_sizes(), data())
+def test_shapes_gufunc_shape(parsed_sig_and_size, data):
+    parsed_sig, min_side, max_side = parsed_sig_and_size
+
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + "->()"
-
-    min_side, max_side = sorted([min_side, max_side])
 
     S = gu.gufunc_shape(signature, min_side=min_side, max_side=max_side)
 
@@ -206,51 +213,54 @@ def test_shapes_gufunc_shape(parsed_sig, min_side, max_side, data):
     validate_shapes(shapes, parsed_sig, min_side, max_side)
 
 
-@given(parsed_sigs(), integers(0, 5), integers(0, 5), data())
-def test_shapes_gufunc(parsed_sig, min_side, max_side, data):
+@given(parsed_sigs_and_sizes(), data())
+def test_shapes_gufunc(parsed_sig_and_size, dtype, unique, data):
+    parsed_sig, min_side, max_side = parsed_sig_and_size
+
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + "->()"
 
-    min_side, max_side = sorted([min_side, max_side])
+    elements = from_dtype(dtype)
 
-    S = gu.gufunc(signature, filler=integers,
-                  min_side=min_side, max_side=max_side,
-                  min_value=0, max_value=5)
+    S = gu.gufunc(signature, min_side=min_side, max_side=max_side,
+                  dtype=dtype, elements=elements, unique=unique)
 
     X = data.draw(S)
     shapes = [np.shape(xx) for xx in X]
 
     validate_shapes(shapes, parsed_sig, min_side, max_side)
-    validate_elements(X)
+    validate_elements(X, dtype=dtype, unique=unique)
 
 
 @given(parsed_sigs(max_args=3), integers(0, 5), integers(0, 5),
        scalar_dtypes(), data())
 def test_elements_gufunc(parsed_sig, min_side, max_side, dtype, data):
-    elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
+    choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
     # testing elements equality tricky with nans
-    elements = np.nan_to_num(elements)
+    choices = np.nan_to_num(choices)
+    elements = sampled_from(choices)
 
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + "->()"
 
     min_side, max_side = sorted([min_side, max_side])
 
-    S = gu.gufunc(signature, filler=sampled_from,
-                  min_side=min_side, max_side=max_side, elements=elements)
+    S = gu.gufunc(signature, min_side=min_side, max_side=max_side,
+                  dtype=dtype, elements=elements)
 
     X = data.draw(S)
 
-    validate_elements(X, elements=elements)
+    validate_elements(X, choices=choices, dtype=dtype)
 
 
-@given(parsed_sigs(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX),
+@given(parsed_sig_and_size(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX),
        lists(booleans(), min_size=10, max_size=10),
        integers(0, 100), integers(0, 100), integers(0, gu.GLOBAL_DIMS_MAX),
        data())
-def test_shapes_gufunc_broadcast_shape(parsed_sig, excluded,
-                                       min_side, max_side, max_dims_extra,
-                                       data):
+def test_shapes_gufunc_broadcast_shape(parsed_sig_and_size, excluded,
+                                       max_dims_extra, data):
+    parsed_sig, min_side, max_side = parsed_sig_and_size
+
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + "->()"
 
@@ -258,8 +268,6 @@ def test_shapes_gufunc_broadcast_shape(parsed_sig, excluded,
     assert len(excluded) == len(parsed_sig)  # Make sure excluded long enough
     excluded, = np.where(excluded)
     excluded = tuple(excluded)
-
-    min_side, max_side = sorted([min_side, max_side])
 
     S = gu.gufunc_broadcast_shape(signature, excluded=excluded,
                                   min_side=min_side, max_side=max_side,
@@ -271,10 +279,12 @@ def test_shapes_gufunc_broadcast_shape(parsed_sig, excluded,
                           min_side, max_side, max_dims_extra)
 
 
-@given(parsed_sigs(max_args=3), lists(booleans(), min_size=3, max_size=3),
+@given(parsed_sig_and_size(max_args=3), lists(booleans(), min_size=3, max_size=3),
        integers(0, 5), integers(0, 5), integers(0, 3), data())
-def test_shapes_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
-                                 max_dims_extra, data):
+def test_shapes_gufunc_broadcast(parsed_sig_and_size, excluded,
+                                 max_dims_extra, dtype, unique, data):
+    parsed_sig, min_side, max_side = parsed_sig_and_size
+
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + "->()"
 
@@ -283,19 +293,19 @@ def test_shapes_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
     excluded, = np.where(excluded)
     excluded = tuple(excluded)
 
-    min_side, max_side = sorted([min_side, max_side])
+    elements = from_dtype(dtype)
 
-    S = gu.gufunc_broadcast(signature, filler=integers, excluded=excluded,
+    S = gu.gufunc_broadcast(signature, excluded=excluded,
                             min_side=min_side, max_side=max_side,
                             max_dims_extra=max_dims_extra,
-                            min_value=0, max_value=5)
+                            dtype=dtype, elements=elements, unique=unique)
 
     X = data.draw(S)
     shapes = [np.shape(xx) for xx in X]
 
     validate_bcast_shapes(shapes, parsed_sig,
                           min_side, max_side, max_dims_extra)
-    validate_elements(X)
+    validate_elements(X, dtype=dtype, unique=unique)
 
 
 @given(parsed_sigs(max_args=3), lists(booleans(), min_size=3, max_size=3),
@@ -312,25 +322,29 @@ def test_elements_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
 
     min_side, max_side = sorted([min_side, max_side])
 
-    elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
+    choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
     # testing elements equality tricky with nans
-    elements = np.nan_to_num(elements)
+    choices = np.nan_to_num(choices)
+    elements = sampled_from(choices)
 
     S = gu.gufunc_broadcast(signature, filler=sampled_from, excluded=excluded,
                             min_side=min_side, max_side=max_side,
-                            max_dims_extra=max_dims_extra, elements=elements)
+                            max_dims_extra=max_dims_extra,
+                            dtype=dtype, elements=elements)
 
     X = data.draw(S)
 
-    validate_elements(X, elements=elements)
+    validate_elements(X, choices=choices, dtype=dtype)
 
 
-@given(parsed_sigs(max_args=3), parsed_sigs(),
+@given(parsed_sig_and_size(max_args=3), parsed_sigs(),
        lists(scalar_dtypes(), min_size=3, max_size=3),
        lists(booleans(), min_size=3, max_size=3),
        integers(0, 5), integers(0, 5), integers(0, 3), data())
-def test_shapes_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
-                            min_side, max_side, max_dims_extra, data):
+def test_shapes_broadcasted(parsed_sig_and_size, o_parsed_sig, otypes,
+                            excluded, min_side, max_side, max_dims_extra,
+                            dtype, unique, data):
+    parsed_sig, min_side, max_side = parsed_sig_and_size
     signature = unparse(parsed_sig) + "->" + unparse(o_parsed_sig)
 
     # These are of type np.dtype, but we test use str elsewhere
@@ -342,7 +356,7 @@ def test_shapes_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
     excluded, = np.where(excluded)
     excluded = tuple(excluded)
 
-    min_side, max_side = sorted([min_side, max_side])
+    elements = from_dtype(dtype)
 
     def dummy(*args):
         assert False, "this function shouldn't get called"
@@ -350,7 +364,7 @@ def test_shapes_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
     S = gu.broadcasted(dummy, signature, otypes=otypes, excluded=excluded,
                        min_side=min_side, max_side=max_side,
                        max_dims_extra=max_dims_extra,
-                       filler=integers, min_value=0, max_value=5)
+                       dtype=dtype, elements=elements, unique=unique)
 
     f0, f_vec, X = data.draw(S)
 
@@ -364,7 +378,7 @@ def test_shapes_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
     shapes = [np.shape(xx) for xx in X]
     validate_bcast_shapes(shapes, parsed_sig,
                           min_side, max_side, max_dims_extra)
-    validate_elements(X)
+    validate_elements(X, dtype=dtype, unique=unique)
 
 
 @given(parsed_sigs(max_args=3), parsed_sigs(),
@@ -389,18 +403,19 @@ def test_elements_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
     def dummy(*args):
         assert False, "this function shouldn't get called"
 
-    elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
+    choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
     # testing elements equality tricky with nans
-    elements = np.nan_to_num(elements)
+    choices = np.nan_to_num(choices)
+    elements = sampled_from(choices)
 
     S = gu.broadcasted(dummy, signature, otypes=otypes, excluded=excluded,
                        min_side=min_side, max_side=max_side,
                        max_dims_extra=max_dims_extra,
-                       filler=sampled_from, elements=elements)
+                       dtype=dtype, elements=elements)
 
     f0, f_vec, X = data.draw(S)
 
-    validate_elements(X, elements=elements)
+    validate_elements(X, choices=choices, dtype=dtype)
 
 
 @given(integers(0, len(NP_BROADCASTABLE) - 1),
@@ -415,7 +430,8 @@ def test_np_broadcasted(func_choice, min_side, max_side, max_dims_extra, data):
     S = gu.broadcasted(f, signature, otypes=[otype],
                        min_side=min_side, max_side=max_side,
                        max_dims_extra=max_dims_extra,
-                       filler=integers, min_value=0, max_value=100)
+                       dtype=np.int64,
+                       elements=integers(min_value=0, max_value=100))
 
     f0, f_vec, args = data.draw(S)
 
@@ -445,7 +461,8 @@ def test_np_multi_broadcasted(min_side, max_side, max_dims_extra, data):
     S = gu.broadcasted(multi_out_f, signature, otypes=otypes, excluded=(2,),
                        min_side=min_side, max_side=max_side,
                        max_dims_extra=max_dims_extra,
-                       filler=integers, min_value=0, max_value=100)
+                       dtype=np.int64,
+                       elements=integers(min_value=0, max_value=100))
 
     f0, f_vec, args = data.draw(S)
 
@@ -462,22 +479,24 @@ def test_np_multi_broadcasted(min_side, max_side, max_dims_extra, data):
         assert np.all(rr1 == rr2)
 
 
-@given(parsed_sigs(),
+@given(parsed_sig_and_size(),
        integers(1, 5), integers(1, 5), integers(0, 3), booleans(), data())
-def test_shapes_axised(parsed_sig, min_side, max_side, max_dims_extra,
-                       allow_none, data):
-    # First argument must be 1D
+def test_shapes_axised(parsed_sig_and_size, max_dims_extra,
+                       allow_none, dtype, unique, data):
+    parsed_sig, min_side, max_side = parsed_sig_and_size
+    # First argument must be 1D, this may give extra entries in shape dict,
+    # but that is ok since we test that case too then.
     parsed_sig[0] = pad_left(parsed_sig[0], 1, "n")[:1]
     signature = unparse(parsed_sig) + "->()"  # output dims ignored here
-
-    min_side, max_side = sorted([min_side, max_side])
 
     def dummy(*args, **kwargs):
         assert False, "this function shouldn't get called"
 
+    elements = from_dtype(dtype)
+
     S = gu.axised(dummy, signature, min_side=min_side, max_side=max_side,
                   max_dims_extra=max_dims_extra, allow_none=allow_none,
-                  filler=integers, min_value=0, max_value=5)
+                  dtype=dtype, elements=elements, unique=unique)
 
     f0, f_ax, X, axis = data.draw(S)
 
@@ -497,7 +516,7 @@ def test_shapes_axised(parsed_sig, min_side, max_side, max_dims_extra,
         shapes[0] = (X[0].shape[axis],)
         validate_shapes(shapes, parsed_sig, min_side, max_side)
 
-    validate_elements(X)
+    validate_elements(X, dtype=dtype, unique=unique)
 
     # Test fourth
     assert allow_none or (axis is not None)
@@ -516,17 +535,18 @@ def test_elements_axised(parsed_sig, min_side, max_side, max_dims_extra,
     def dummy(*args, **kwargs):
         assert False, "this function shouldn't get called"
 
-    elements = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
+    choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
     # testing elements equality tricky with nans
-    elements = np.nan_to_num(elements)
+    choices = np.nan_to_num(choices)
+    elements = sampled_from(choices)
 
     S = gu.axised(dummy, signature, min_side=min_side, max_side=max_side,
                   max_dims_extra=max_dims_extra, allow_none=allow_none,
-                  filler=sampled_from, elements=elements)
+                  dtype=dtype, elements=elements)
 
     f0, f_ax, X, axis = data.draw(S)
 
-    validate_elements(X, elements=elements)
+    validate_elements(X, choices=choices, dtype=dtype)
 
 
 @given(integers(0, len(NP_AXIS) - 1),
@@ -538,7 +558,8 @@ def test_np_axised(func_choice, min_side, max_side, max_dims_extra, data):
 
     S = gu.axised(f, signature, min_side=min_side, max_side=max_side,
                   max_dims_extra=max_dims_extra, allow_none=allow_none,
-                  filler=integers, min_value=0, max_value=100)
+                  dtype=np.int64,
+                  elements=integers(min_value=0, max_value=100))
 
     f0, f_ax, args, axis = data.draw(S)
 
