@@ -76,7 +76,7 @@ We translate the mantissa as follows:
     1. If the unbiased exponent is <= 0 we reverse it bitwise.
     2. If the unbiased exponent is >= 52 we leave it alone.
     3. If the unbiased exponent is in the range [1, 51] then we reverse the
-       low k bits, where k is 52 - unbiased exponen.
+       low k bits, where k is 52 - unbiased exponent.
 
 The low bits correspond to the fractional part of the floating point number.
 Reversing it bitwise means that we try to minimize the low bits, which kills

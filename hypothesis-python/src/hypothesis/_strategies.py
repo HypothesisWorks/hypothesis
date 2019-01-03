@@ -33,7 +33,7 @@ from uuid import UUID
 import attr
 
 from hypothesis._settings import note_deprecation
-from hypothesis.control import assume, cleanup, current_build_context, note, reject
+from hypothesis.control import cleanup, current_build_context, note, reject
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.cathetus import cathetus
@@ -497,14 +497,14 @@ def floats(
         note_deprecation(
             "min_value=%r cannot be exactly represented as a float of width "
             "%d, which will be an error in a future version. Use min_value=%r "
-            "instead." % (min_value, width, min_arg),
+            "instead." % (min_arg, width, min_value),
             since="2018-10-10",
         )
     if max_value != max_arg:
         note_deprecation(
             "max_value=%r cannot be exactly represented as a float of width "
             "%d, which will be an error in a future version. Use max_value=%r "
-            "instead" % (max_value, width, max_arg),
+            "instead" % (max_arg, width, max_value),
             since="2018-10-10",
         )
 
@@ -534,6 +534,10 @@ def floats(
                 "Cannot have allow_infinity=%r, with both min_value and "
                 "max_value" % (allow_infinity)
             )
+    elif min_value == float("inf"):
+        raise InvalidArgument("allow_infinity=False excludes min_value=inf")
+    elif max_value == float("-inf"):
+        raise InvalidArgument("allow_infinity=False excludes max_value=-inf")
 
     if min_value is None and max_value is None:
         result = FloatStrategy(
@@ -571,9 +575,10 @@ def floats(
             )
         else:
             result = floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                lambda x: assume(not math.isnan(x))
-                and min_value + abs(x)  # type: ignore
+                lambda x: min_value + abs(x)  # type: ignore
             )
+            if not allow_infinity:
+                result = result.filter(lambda x: not math.isinf(x))
         if min_value == 0 and not is_negative(min_value):
             result = result.filter(lambda x: math.copysign(1.0, x) == 1)
     else:
@@ -584,9 +589,10 @@ def floats(
             )
         else:
             result = floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                lambda x: assume(not math.isnan(x))
-                and max_value - abs(x)  # type: ignore
+                lambda x: max_value - abs(x)  # type: ignore
             )
+            if not allow_infinity:
+                result = result.filter(lambda x: not math.isinf(x))
         if max_value == 0 and is_negative(max_value):
             result = result.filter(is_negative)
 
