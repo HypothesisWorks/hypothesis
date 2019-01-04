@@ -15,7 +15,6 @@ from hypothesis.extra.numpy import arrays, check_argument, order_check
 from hypothesis.strategies import (
     booleans,
     composite,
-    floats,
     integers,
     just,
     lists,
@@ -78,19 +77,6 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     -------
     res : tuple of ndarrays
         Resulting ndarrays with shape from `shapes` and elements from `filler`.
-
-    Examples
-    --------
-
-    .. code-block:: pycon
-
-      >>> S = tuple_of_arrays([(3, 4), (1, 4), ()], floats, min_value=0, max_value=1)
-      >>> S.example()
-      (array([[ 0.21359337,  0.21359337,  0.21359337,  0.21359337],
-              [ 0.21359337,  0.21359337,  0.21359337,  0.21359337],
-              [ 0.21359337,  0.21359337,  0.21359337,  0.21359337]]),
-       array([[ 0.7416438,  0.7416438,  0.7416438,  0.7416438]]),
-       0.8971914860930077)
     """
     n = len(shapes)
 
