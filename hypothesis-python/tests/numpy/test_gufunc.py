@@ -363,14 +363,14 @@ def test_elements_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
     choices = np.nan_to_num(choices)
     elements = sampled_from(choices)
 
-    S = gu.gufunc_broadcast(signature, filler=sampled_from, excluded=excluded,
+    S = gu.gufunc_broadcast(signature, excluded=excluded,
                             min_side=min_side, max_side=max_side,
                             max_dims_extra=max_dims_extra,
-                            dtype=dtype, elements=elements)
+                            dtype=choices.dtype, elements=elements)
 
     X = data.draw(S)
 
-    validate_elements(X, choices=choices, dtype=dtype)
+    validate_elements(X, choices=choices, dtype=choices.dtype)
 
 
 @given(parsed_sigs_and_sizes(max_args=3), parsed_sigs(),
