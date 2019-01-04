@@ -168,7 +168,6 @@ def parsed_sigs_and_sizes(draw, min_min_side=0, max_max_side=5, **kwargs):
        lists(integers(min_value=0, max_value=5),
              min_size=0, max_size=3).map(tuple), data())
 def test_arrays_(dtype, shape, data):
-    # TODO generalize for new args
     choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
     # testing elements equality tricky with nans
     choices = np.nan_to_num(choices)
@@ -208,7 +207,8 @@ def test_shapes_tuple_of_arrays(shapes, dtype, unique, data):
 def test_elements_tuple_of_arrays(shapes, dtype, data):
     choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
     # testing elements equality tricky with nans
-    choices = np.nan_to_num(choices)
+    choices = np.nan_to_num(choices).astype(dtype)
+    assert choices.dtype == dtype
     elements = sampled_from(choices)
 
     S = gu._tuple_of_arrays(shapes, choices.dtype, elements=elements)
