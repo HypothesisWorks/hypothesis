@@ -131,7 +131,10 @@ def unparse(parsed_sig):
 
 def real_scalar_dtypes():
     def to_native(dtype):
-        return dtype.type
+        tt = dtype.type
+        # Only keep if invertible
+        tt = tt if np.dtype(tt) == dtype else dtype
+        return tt
 
     def cast_it(args):
         return args[0](args[1])
@@ -142,9 +145,12 @@ def real_scalar_dtypes():
 
 
 def real_from_dtype(dtype, N=10):
+    print(1, dtype)
     dtype = np.dtype(dtype)
+    print(2, dtype)
 
     def clean_up(x):
+        print(3, x)
         x = np.nan_to_num(x).astype(dtype)
         assert x.dtype == dtype  # hard to always get this it seems
         return x
@@ -192,7 +198,7 @@ def parsed_sigs_and_sizes(draw, min_min_side=0, max_max_side=5, **kwargs):
     return parsed_sig, min_side, max_side
 
 
-@given(scalar_dtypes(),
+@given(real_scalar_dtypes(),
        lists(integers(min_value=0, max_value=5),
              min_size=0, max_size=3).map(tuple), data())
 def test_arrays_(dtype, shape, data):
@@ -213,7 +219,7 @@ def test_arrays_(dtype, shape, data):
 @given(lists(lists(integers(min_value=0, max_value=5),
                    min_size=0, max_size=3).map(tuple),
              min_size=0, max_size=5),
-       scalar_dtypes(), booleans(), data())
+       real_scalar_dtypes(), booleans(), data())
 def test_shapes_tuple_of_arrays(shapes, dtype, unique, data):
     elements = from_dtype(dtype)
 
@@ -229,7 +235,7 @@ def test_shapes_tuple_of_arrays(shapes, dtype, unique, data):
 
 @given(lists(lists(integers(min_value=0, max_value=5),
                    min_size=0, max_size=3).map(tuple),
-             min_size=0, max_size=5), scalar_dtypes(), data())
+             min_size=0, max_size=5), real_scalar_dtypes(), data())
 def test_elements_tuple_of_arrays(shapes, dtype, data):
     choices = data.draw(real_from_dtype(dtype))
 
@@ -272,7 +278,7 @@ def test_shapes_gufunc_shape(parsed_sig_and_size, data):
     validate_shapes(shapes, parsed_sig, min_side, max_side)
 
 
-@given(parsed_sigs_and_sizes(), scalar_dtypes(), booleans(), data())
+@given(parsed_sigs_and_sizes(), real_scalar_dtypes(), booleans(), data())
 def test_shapes_gufunc(parsed_sig_and_size, dtype, unique, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
 
@@ -292,7 +298,7 @@ def test_shapes_gufunc(parsed_sig_and_size, dtype, unique, data):
 
 
 @given(parsed_sigs(max_args=3), integers(0, 5), integers(0, 5),
-       scalar_dtypes(), data())
+       real_scalar_dtypes(), data())
 def test_elements_gufunc(parsed_sig, min_side, max_side, dtype, data):
     choices = data.draw(real_from_dtype(dtype))
     elements = sampled_from(choices)
@@ -339,7 +345,7 @@ def test_shapes_gufunc_broadcast_shape(parsed_sig_and_size, excluded,
 
 @given(parsed_sigs_and_sizes(max_args=3),
        lists(booleans(), min_size=3, max_size=3), integers(0, 3),
-       scalar_dtypes(), booleans(), data())
+       real_scalar_dtypes(), booleans(), data())
 def test_shapes_gufunc_broadcast(parsed_sig_and_size, excluded,
                                  max_dims_extra, dtype, unique, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
@@ -368,7 +374,8 @@ def test_shapes_gufunc_broadcast(parsed_sig_and_size, excluded,
 
 
 @given(parsed_sigs(max_args=3), lists(booleans(), min_size=3, max_size=3),
-       integers(0, 5), integers(0, 5), integers(0, 3), scalar_dtypes(), data())
+       integers(0, 5), integers(0, 5), integers(0, 3), real_scalar_dtypes(),
+       data())
 def test_elements_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
                                    max_dims_extra, dtype, data):
     # We don't care about the output for this function
@@ -395,9 +402,9 @@ def test_elements_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
 
 
 @given(parsed_sigs_and_sizes(max_args=3), parsed_sigs(),
-       lists(scalar_dtypes(), min_size=3, max_size=3),
+       lists(real_scalar_dtypes(), min_size=3, max_size=3),
        lists(booleans(), min_size=3, max_size=3),
-       integers(0, 3), scalar_dtypes(), booleans(), data())
+       integers(0, 3), real_scalar_dtypes(), booleans(), data())
 def test_shapes_broadcasted(parsed_sig_and_size, o_parsed_sig, otypes,
                             excluded, max_dims_extra, dtype, unique, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
@@ -438,9 +445,10 @@ def test_shapes_broadcasted(parsed_sig_and_size, o_parsed_sig, otypes,
 
 
 @given(parsed_sigs(max_args=3), parsed_sigs(),
-       lists(scalar_dtypes(), min_size=3, max_size=3),
+       lists(real_scalar_dtypes(), min_size=3, max_size=3),
        lists(booleans(), min_size=3, max_size=3),
-       integers(0, 5), integers(0, 5), integers(0, 3), scalar_dtypes(), data())
+       integers(0, 5), integers(0, 5), integers(0, 3), real_scalar_dtypes(),
+       data())
 def test_elements_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
                               min_side, max_side, max_dims_extra, dtype, data):
     signature = unparse(parsed_sig) + "->" + unparse(o_parsed_sig)
@@ -534,7 +542,7 @@ def test_np_multi_broadcasted(min_side, max_side, max_dims_extra, data):
 
 
 @given(parsed_sigs_and_sizes(min_min_side=1),
-       integers(0, 3), booleans(), scalar_dtypes(), booleans(), data())
+       integers(0, 3), booleans(), real_scalar_dtypes(), booleans(), data())
 def test_shapes_axised(parsed_sig_and_size, max_dims_extra,
                        allow_none, dtype, unique, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
@@ -577,7 +585,7 @@ def test_shapes_axised(parsed_sig_and_size, max_dims_extra,
 
 
 @given(parsed_sigs(), integers(1, 5), integers(1, 5), integers(0, 3),
-       booleans(), scalar_dtypes(), data())
+       booleans(), real_scalar_dtypes(), data())
 def test_elements_axised(parsed_sig, min_side, max_side, max_dims_extra,
                          allow_none, dtype, data):
     # First argument must be 1D
@@ -622,3 +630,5 @@ def test_np_axised(func_choice, min_side, max_side, max_dims_extra, data):
     assert R1.dtype == R2.dtype
     assert np.shape(R1) == np.shape(R2)
     assert np.all(R1 == R2)
+
+test_arrays_()
