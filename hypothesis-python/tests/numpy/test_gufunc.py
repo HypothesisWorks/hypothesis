@@ -233,6 +233,7 @@ def test_int_int_or_dict(default_val, default_val2):
 
 @given(real_scalar_dtypes(), _st_shape, data())
 def test_arrays(dtype, shape, data):
+    # unique argument to arrays gets tested in the tuple of arrays tests
     choices = data.draw(real_from_dtype(dtype))
 
     elements = sampled_from(choices)
@@ -322,7 +323,7 @@ def test_unparse_parse(i_parsed_sig, o_parsed_sig):
     # Make sure all hard coded literals within specified size
     # This is actually testing parsed_sigs().
     labels = list(set([k for arg in i_parsed_sig for k in arg]))
-    assert all((not k.isdigit()) or (int(k) < 10)for k in labels)
+    assert all((not k.isdigit()) or (int(k) < 10) for k in labels)
 
     # We don't care about the output for this function
     signature = unparse(i_parsed_sig) + "->" + unparse(o_parsed_sig)
@@ -356,6 +357,8 @@ def test_shapes_gufunc(parsed_sig_and_size, dtype, unique, data):
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + "->()"
 
+    # We could also test using elements strategy that then requires casting,
+    # but that would be kind of complicated to come up with compatible combos
     elements = from_dtype(np.dtype(dtype))
 
     S = gu.gufunc(signature, min_side=min_side, max_side=max_side,

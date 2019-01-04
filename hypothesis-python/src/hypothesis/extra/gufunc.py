@@ -202,6 +202,9 @@ def gufunc(draw, signature, dtype, elements, unique=False,
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     """
+    # Leaving dtype and elements as required for now since that leaves us the
+    # flexibility to later make the default float and floats, or perhaps None
+    # for a random dtype + from_dtype() strategy.
     shapes = draw(gufunc_shape(signature,
                                min_side=min_side, max_side=max_side))
     res = draw(_tuple_of_arrays(shapes, dtype=dtype,
