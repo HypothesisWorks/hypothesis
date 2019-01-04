@@ -177,11 +177,9 @@ def parsed_sigs_and_sizes(draw, min_min_side=0, max_max_side=5, **kwargs):
        lists(integers(min_value=0, max_value=5),
              min_size=0, max_size=3).map(tuple), data())
 def test_arrays_(dtype, shape, data):
-    choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
-    # testing elements equality tricky with nans
-    choices = np.nan_to_num(choices)
-    elements = sampled_from(choices)
+    choices = data.draw(real_from_dtype(dtype))
 
+    elements = sampled_from(choices)
     S = gu.arrays_(choices.dtype, shape, elements)
     X = data.draw(S)
 
@@ -277,9 +275,7 @@ def test_shapes_gufunc(parsed_sig_and_size, dtype, unique, data):
 @given(parsed_sigs(max_args=3), integers(0, 5), integers(0, 5),
        scalar_dtypes(), data())
 def test_elements_gufunc(parsed_sig, min_side, max_side, dtype, data):
-    choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
-    # testing elements equality tricky with nans
-    choices = np.nan_to_num(choices)
+    choices = data.draw(real_from_dtype(dtype))
     elements = sampled_from(choices)
 
     # We don't care about the output for this function
@@ -366,9 +362,7 @@ def test_elements_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
 
     min_side, max_side = sorted([min_side, max_side])
 
-    choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
-    # testing elements equality tricky with nans
-    choices = np.nan_to_num(choices)
+    choices = data.draw(real_from_dtype(dtype))
     elements = sampled_from(choices)
 
     S = gu.gufunc_broadcast(signature, excluded=excluded,
@@ -446,11 +440,9 @@ def test_elements_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
     def dummy(*args):
         assert False, "this function shouldn't get called"
 
-    choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
-    # testing elements equality tricky with nans
-    choices = np.nan_to_num(choices)
-    elements = sampled_from(choices)
+    choices = data.draw(real_from_dtype(dtype))
 
+    elements = sampled_from(choices)
     S = gu.broadcasted(dummy, signature, otypes=otypes, excluded=excluded,
                        min_side=min_side, max_side=max_side,
                        max_dims_extra=max_dims_extra,
@@ -578,9 +570,7 @@ def test_elements_axised(parsed_sig, min_side, max_side, max_dims_extra,
     def dummy(*args, **kwargs):
         assert False, "this function shouldn't get called"
 
-    choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
-    # testing elements equality tricky with nans
-    choices = np.nan_to_num(choices)
+    choices = data.draw(real_from_dtype(dtype))
     elements = sampled_from(choices)
 
     S = gu.axised(dummy, signature, min_side=min_side, max_side=max_side,
