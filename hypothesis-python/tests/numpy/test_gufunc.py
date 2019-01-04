@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+from collections import defaultdict
 import string
 # Note: this requires adding `future` to the test requirements!
 from builtins import int as py3int
@@ -199,6 +200,35 @@ def parsed_sigs_and_sizes(draw, min_min_side=0, max_max_side=5, **kwargs):
         max_side = draw(integers(split, max_max_side))
 
     return parsed_sig, min_side, max_side
+
+
+@given(dictionaries(from_regex(VALID_DIM_NAMES), integers()),
+       integers(), integers())
+def test_ddict_int_or_dict(D, default_val, default_val2):
+    DD = defaultdict(lambda: default_val, D)
+
+    DD2 = gu._int_or_dict(DD, default_val2)
+
+    # just pass thru
+    assert DD is DD2
+    # default_val2 is ignored
+    assert DD2.default_factory() == default_val
+
+
+@given(dictionaries(from_regex(VALID_DIM_NAMES), integers()), integers())
+def test_dict_int_or_dict(D, default_val):
+    DD = gu._int_or_dict(D, default_val)
+
+    assert DD == D
+    assert DD['---'] == default_val
+
+
+@given(integers(), integers())
+def test_int_int_or_dict(default_val, default_val2):
+    DD = gu._int_or_dict(default_val, default_val2)
+
+    assert len(DD) == 0
+    assert DD['---'] == default_val
 
 
 @given(real_scalar_dtypes(), _st_shape, data())
