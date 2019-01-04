@@ -36,8 +36,7 @@ def order_check_min_max(min_dict, max_dict, floor=0):
     order_check("side default", floor,
                 min_dict.default_factory(), max_dict.default_factory())
 
-    # Could use set to avoid dupes, but prob not worth it
-    for kk in (min_dict.keys() + max_dict.keys()):
+    for kk in (set(min_dict.keys()) | set(max_dict.keys())):
         order_check("side %s" % kk, floor, min_dict[kk], max_dict[kk])
 
 
