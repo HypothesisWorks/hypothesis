@@ -21,6 +21,14 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.86.1:
+
+-------------------
+3.86.1 - 2019-01-04
+-------------------
+
+This patch fixes :issue:`1732`, where :func:`hypothesis.strategies.integers` would always return long values on Python 2.
+
 .. _v3.86.0:
 
 -------------------
