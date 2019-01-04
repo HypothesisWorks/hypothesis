@@ -1217,7 +1217,7 @@ def random_module():
 
     If having a fixed seed would unacceptably weaken your tests, and you
     cannot use a ``random.Random`` instance provided by
-    `:func:`~hypothesis.strategies.randoms`, this strategy calls
+    :func:`~hypothesis.strategies.randoms`, this strategy calls
     :func:`python:random.seed` with an arbitrary integer and passes you
     an opaque object whose repr displays the seed value for debugging.
     If ``numpy.random`` is available, that state is also managed.
