@@ -12,7 +12,14 @@ import numpy as np
 import numpy.lib.function_base as npfb
 
 from hypothesis.extra.numpy import arrays, check_argument, order_check
-from hypothesis.strategies import booleans, composite, integers, just, lists, tuples
+from hypothesis.strategies import (
+    booleans,
+    composite,
+    integers,
+    just,
+    lists,
+    tuples,
+)
 
 # Should not ever need to broadcast beyond this, but should be able to set it
 # as high as 32 before breaking assumptions in numpy.
