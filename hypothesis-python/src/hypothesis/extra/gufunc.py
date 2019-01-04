@@ -423,8 +423,8 @@ def broadcasted(f, signature, otypes, excluded=(), **kwargs):
 
 
 @composite
-def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
-           max_dims_extra=2, allow_none=True, **kwargs):
+def axised(draw, f, signature, dtype, elements, unique=False,
+           min_side=1, max_side=5, max_dims_extra=2, allow_none=True):
     """Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
     `numpy.apply_along_axis`.
@@ -482,8 +482,9 @@ def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     """
-    # np.apply_along_axis does not like sides of 0
-    order_check("side", 1, min_side, max_side)
+    # TODO still need order check, and check min 1
+    min_side = int_or_dict(min_side, 0)
+    max_side = int_or_dict(max_side, DEFAULT_MAX_SIDE)
 
     def f_axis(X, *args, **kwargs):
         # This trick is not needed in Python3, after dropping Py2 support we
@@ -496,7 +497,8 @@ def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
             Y = np.apply_along_axis(f, axis, X, *args)
         return Y
 
-    side_X = integers(min_value=min_side, max_value=max_side)
+    side_X = integers(min_value=min_side[BCAST_DIM],
+                      max_value=max_side[BCAST_DIM])
     # X has core dims (n,) so the total dims must be in [1, max_dims_extra + 1]
     X_shape = draw(lists(side_X, min_size=1, max_size=max_dims_extra + 1))
 
@@ -521,7 +523,8 @@ def axised(draw, f, signature, filler=floats, min_side=1, max_side=5,
         X_shape[axis] = n
 
     shapes[0] = X_shape
-    args = draw(_tuple_of_arrays(shapes, filler, **kwargs))
+    args = draw(_tuple_of_arrays(shapes, dtype=dtype,
+                                 elements=elements, unique=unique))
 
     funcs_and_args = (f, f_axis, args, axis)
     return funcs_and_args

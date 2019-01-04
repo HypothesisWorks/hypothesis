@@ -138,19 +138,20 @@ def parsed_sigs(max_dims=3, max_args=5):
 
 
 @composite
-def parsed_sigs_and_sizes(draw, max_max_side=5, **kwargs):
+def parsed_sigs_and_sizes(draw, min_min_side=0, max_max_side=5, **kwargs):
     parsed_sig = draw(parsed_sigs(**kwargs))
     # list of all labels used in sig, includes ints which is ok to include in
     # dict as distractors.
     labels = list(set([k for arg in parsed_sig for k in arg]))
 
     # TODO comment
-    split = draw(integers(0, gu.DEFAULT_MAX_SIDE))
+    split = draw(integers(min_min_side, gu.DEFAULT_MAX_SIDE))
 
     if draw(booleans()):
-        min_side = draw(dictionaries(sampled_from(labels), integers(0, split)))
+        min_side = draw(dictionaries(sampled_from(labels),
+                                     integers(min_min_side, split)))
     else:
-        min_side = draw(integers(0, split))
+        min_side = draw(integers(min_min_side, split))
 
     if draw(booleans()):
         max_side = draw(dictionaries(sampled_from(labels),
@@ -514,7 +515,7 @@ def test_np_multi_broadcasted(min_side, max_side, max_dims_extra, data):
         assert np.all(rr1 == rr2)
 
 
-@given(parsed_sigs_and_sizes(),  # TODO will need to worry about min=1
+@given(parsed_sigs_and_sizes(min_min_side=1),
        integers(0, 3), booleans(), scalar_dtypes(), booleans(), data())
 def test_shapes_axised(parsed_sig_and_size, max_dims_extra,
                        allow_none, dtype, unique, data):
