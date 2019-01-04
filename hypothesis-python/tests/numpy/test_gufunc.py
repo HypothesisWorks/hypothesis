@@ -202,11 +202,11 @@ def parsed_sigs_and_sizes(draw, min_min_side=0, max_max_side=5, **kwargs):
 
 
 @given(real_scalar_dtypes(), _st_shape, data())
-def test_arrays_(dtype, shape, data):
+def test_arrays(dtype, shape, data):
     choices = data.draw(real_from_dtype(dtype))
 
     elements = sampled_from(choices)
-    S = gu.arrays_(dtype, shape, elements)
+    S = gu._arrays(dtype, shape, elements)
     X = data.draw(S)
 
     assert np.shape(X) == shape

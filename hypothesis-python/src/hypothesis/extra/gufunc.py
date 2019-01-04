@@ -32,20 +32,6 @@ BCAST_DIM = None
 DEFAULT_MAX_SIDE = 5
 
 
-def int_or_dict(x, default_val):
-    if isinstance(x, defaultdict):
-        return x  # pass thru
-
-    default_val = int(default_val)  # Make sure simple int
-    # TODO tests
-    try:
-        D = defaultdict(lambda: default_val, x)
-    except TypeError:  # ==> x is int
-        default_val = int(x)  # Make sure simple int
-        D = defaultdict(lambda: default_val)
-    return D
-
-
 def order_check_min_max(min_dict, max_dict, floor=0):
     order_check("side default", floor,
                 min_dict.default_factory(), max_dict.default_factory())
@@ -55,8 +41,26 @@ def order_check_min_max(min_dict, max_dict, floor=0):
         order_check("side %s" % kk, floor, min_dict[kk], max_dict[kk])
 
 
+def int_or_dict(x, default_val):
+    # case 1: x already defaultdict, leave it be, pass thru
+    if isinstance(x, defaultdict):
+        return x
+
+    default_val = int(default_val)  # Make sure simple int
+    try:
+        # case 2: x is or can be converted to dict
+        D = defaultdict(lambda: default_val, x)
+    except TypeError:
+        # case 3: x is or can be converted to int => make a const dict
+        default_val = int(x)  # Make sure simple int
+        assert default_val == x, '%s not representable as int' % str(x)
+        D = defaultdict(lambda: default_val)
+    # case 4: if can't be converted to dict or int, then exception raised
+    return D
+
+
 @composite
-def arrays_(draw, dtype, shape, elements=None, unique=False):
+def _arrays(draw, dtype, shape, elements=None, unique=False):
     """Wrapper to fix issues with `hypothesis.extra.numpy.arrays`.
 
     `arrays` is strict on shape being `int` which this fixes. This is partially
@@ -99,7 +103,7 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     elements = np.broadcast_to(elements, (n,))
     unique = np.broadcast_to(unique, (n,))
 
-    res = tuple(draw(arrays_(dd, ss, elements=ee, unique=uu))
+    res = tuple(draw(_arrays(dd, ss, elements=ee, unique=uu))
                 for dd, ss, ee, uu in zip(dtype, shapes, elements, unique))
     return res
 
@@ -265,13 +269,13 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     # Make sure always under global max dims
     n_extra = min(n_extra, GLOBAL_DIMS_MAX - max_core_dims)
     # e.g., mask = [[True False], [False False]]
-    mask = draw(arrays_(np.bool, (len(shapes), n_extra)))
+    mask = draw(_arrays(np.bool, (len(shapes), n_extra)))
 
     # Build 2D array with extra dimensions
     extra_dim_gen = integers(min_value=min_side[BCAST_DIM],
                              max_value=max_side[BCAST_DIM])
     # e.g., extra_dims = [2 5]
-    extra_dims = draw(arrays_(np.int, (n_extra,), elements=extra_dim_gen))
+    extra_dims = draw(_arrays(np.int, (n_extra,), elements=extra_dim_gen))
     # e.g., extra_dims = [[2 5], [2 5]]
     extra_dims = np.tile(extra_dims, (len(shapes), 1))
     # e.g., extra_dims = [[1 5], [2 5]]
