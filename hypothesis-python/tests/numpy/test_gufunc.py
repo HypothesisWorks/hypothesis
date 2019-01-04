@@ -145,12 +145,9 @@ def real_scalar_dtypes():
 
 
 def real_from_dtype(dtype, N=10):
-    print(1, dtype)
     dtype = np.dtype(dtype)
-    print(2, dtype)
 
     def clean_up(x):
-        print(3, x)
         x = np.nan_to_num(x).astype(dtype)
         assert x.dtype == dtype  # hard to always get this it seems
         return x
@@ -221,7 +218,7 @@ def test_arrays_(dtype, shape, data):
              min_size=0, max_size=5),
        real_scalar_dtypes(), booleans(), data())
 def test_shapes_tuple_of_arrays(shapes, dtype, unique, data):
-    elements = from_dtype(dtype)
+    elements = from_dtype(np.dtype(dtype))
 
     S = gu._tuple_of_arrays(shapes, dtype, elements=elements, unique=unique)
     X = data.draw(S)
@@ -285,7 +282,7 @@ def test_shapes_gufunc(parsed_sig_and_size, dtype, unique, data):
     # We don't care about the output for this function
     signature = unparse(parsed_sig) + "->()"
 
-    elements = from_dtype(dtype)
+    elements = from_dtype(np.dtype(dtype))
 
     S = gu.gufunc(signature, min_side=min_side, max_side=max_side,
                   dtype=dtype, elements=elements, unique=unique)
@@ -358,7 +355,7 @@ def test_shapes_gufunc_broadcast(parsed_sig_and_size, excluded,
     excluded, = np.where(excluded)
     excluded = tuple(excluded)
 
-    elements = from_dtype(dtype)
+    elements = from_dtype(np.dtype(dtype))
 
     S = gu.gufunc_broadcast(signature, excluded=excluded,
                             min_side=min_side, max_side=max_side,
@@ -419,7 +416,7 @@ def test_shapes_broadcasted(parsed_sig_and_size, o_parsed_sig, otypes,
     excluded, = np.where(excluded)
     excluded = tuple(excluded)
 
-    elements = from_dtype(dtype)
+    elements = from_dtype(np.dtype(dtype))
 
     def dummy(*args):
         assert False, "this function shouldn't get called"
@@ -554,7 +551,7 @@ def test_shapes_axised(parsed_sig_and_size, max_dims_extra,
     def dummy(*args, **kwargs):
         assert False, "this function shouldn't get called"
 
-    elements = from_dtype(dtype)
+    elements = from_dtype(np.dtype(dtype))
 
     S = gu.axised(dummy, signature, min_side=min_side, max_side=max_side,
                   max_dims_extra=max_dims_extra, allow_none=allow_none,
@@ -630,5 +627,3 @@ def test_np_axised(func_choice, min_side, max_side, max_dims_extra, data):
     assert R1.dtype == R2.dtype
     assert np.shape(R1) == np.shape(R2)
     assert np.all(R1 == R2)
-
-test_arrays_()
