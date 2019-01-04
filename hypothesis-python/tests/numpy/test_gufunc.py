@@ -143,6 +143,8 @@ def parsed_sigs_and_sizes(draw, min_min_side=0, max_max_side=5, **kwargs):
     # list of all labels used in sig, includes ints which is ok to include in
     # dict as distractors.
     labels = list(set([k for arg in parsed_sig for k in arg]))
+    # Also sometimes put the broadcast flag in as label
+    labels.append(gu.BCAST_DIM)
 
     # TODO comment
     split = draw(integers(min_min_side, gu.DEFAULT_MAX_SIDE))

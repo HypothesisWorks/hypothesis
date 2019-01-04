@@ -25,8 +25,10 @@ from hypothesis.strategies import (
 # as high as 32 before breaking assumptions in numpy.
 GLOBAL_DIMS_MAX = 12
 
-# TODO comment and add to test cases
+# Key used in min_side and max_side to indicate min/max on broadcasted dims
+# TODO consider using a fancy enum or something
 BCAST_DIM = None
+# Value used in default dict for max side if variable not specified
 DEFAULT_MAX_SIDE = 5
 
 
