@@ -180,11 +180,11 @@ def test_arrays_(dtype, shape, data):
     choices = data.draw(real_from_dtype(dtype))
 
     elements = sampled_from(choices)
-    S = gu.arrays_(choices.dtype, shape, elements)
+    S = gu.arrays_(dtype, shape, elements)
     X = data.draw(S)
 
     assert np.shape(X) == shape
-    validate_elements([X], dtype=choices.dtype, choices=choices)
+    validate_elements([X], dtype=dtype, choices=choices)
 
     assert type(X) == np.ndarray
 
@@ -284,11 +284,11 @@ def test_elements_gufunc(parsed_sig, min_side, max_side, dtype, data):
     min_side, max_side = sorted([min_side, max_side])
 
     S = gu.gufunc(signature, min_side=min_side, max_side=max_side,
-                  dtype=choices.dtype, elements=elements)
+                  dtype=dtype, elements=elements)
 
     X = data.draw(S)
 
-    validate_elements(X, choices=choices, dtype=choices.dtype)
+    validate_elements(X, choices=choices, dtype=dtype)
 
 
 @given(parsed_sigs_and_sizes(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX,
@@ -368,11 +368,11 @@ def test_elements_gufunc_broadcast(parsed_sig, excluded, min_side, max_side,
     S = gu.gufunc_broadcast(signature, excluded=excluded,
                             min_side=min_side, max_side=max_side,
                             max_dims_extra=max_dims_extra,
-                            dtype=choices.dtype, elements=elements)
+                            dtype=dtype, elements=elements)
 
     X = data.draw(S)
 
-    validate_elements(X, choices=choices, dtype=choices.dtype)
+    validate_elements(X, choices=choices, dtype=dtype)
 
 
 @given(parsed_sigs_and_sizes(max_args=3), parsed_sigs(),
@@ -446,11 +446,11 @@ def test_elements_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
     S = gu.broadcasted(dummy, signature, otypes=otypes, excluded=excluded,
                        min_side=min_side, max_side=max_side,
                        max_dims_extra=max_dims_extra,
-                       dtype=choices.dtype, elements=elements)
+                       dtype=dtype, elements=elements)
 
     f0, f_vec, X = data.draw(S)
 
-    validate_elements(X, choices=choices, dtype=choices.dtype)
+    validate_elements(X, choices=choices, dtype=dtype)
 
 
 @given(integers(0, len(NP_BROADCASTABLE) - 1),
@@ -575,11 +575,11 @@ def test_elements_axised(parsed_sig, min_side, max_side, max_dims_extra,
 
     S = gu.axised(dummy, signature, min_side=min_side, max_side=max_side,
                   max_dims_extra=max_dims_extra, allow_none=allow_none,
-                  dtype=choices.dtype, elements=elements)
+                  dtype=dtype, elements=elements)
 
     f0, f_ax, X, axis = data.draw(S)
 
-    validate_elements(X, choices=choices, dtype=choices.dtype)
+    validate_elements(X, choices=choices, dtype=dtype)
 
 
 @given(integers(0, len(NP_AXIS) - 1),
