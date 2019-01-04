@@ -124,6 +124,15 @@ def unparse(parsed_sig):
     return sig
 
 
+def real_from_dtype(dtype, N=10):
+    def clean_up(x):
+        x = np.nan_to_num(x).astype(dtype)
+        assert x.dtype == dtype  # hard to always get this it seems
+        return x
+    S = lists(from_dtype(dtype), min_size=N, max_size=N).map(clean_up)
+    return S
+
+
 def parsed_sigs(max_dims=3, max_args=5):
     """Strategy to generate a parsed gufunc signature.
 
@@ -205,17 +214,13 @@ def test_shapes_tuple_of_arrays(shapes, dtype, unique, data):
                    min_size=0, max_size=3).map(tuple),
              min_size=0, max_size=5), scalar_dtypes(), data())
 def test_elements_tuple_of_arrays(shapes, dtype, data):
-    choices = data.draw(lists(from_dtype(dtype), min_size=1, max_size=10))
-    # testing elements equality tricky with nans
-    choices = np.nan_to_num(choices).astype(dtype)
-    assert choices.dtype == dtype
-    elements = sampled_from(choices)
+    choices = data.draw(real_from_dtype(dtype))
 
-    S = gu._tuple_of_arrays(shapes, choices.dtype, elements=elements)
+    elements = sampled_from(choices)
+    S = gu._tuple_of_arrays(shapes, dtype, elements=elements)
     X = data.draw(S)
 
-    # TODO figure out why choices.dtype != dtype always
-    validate_elements(X, choices=choices, dtype=choices.dtype)
+    validate_elements(X, choices=choices, dtype=dtype)
 
 
 # TODO implement testing of broadcasting in tuple of arrays
