@@ -1342,9 +1342,10 @@ class Shrinker(object):
     """
 
     DEFAULT_PASSES = [
+        "zero_examples",
+        "randomize_examples",
         "alphabet_minimize",
         "pass_to_descendant",
-        "zero_examples",
         "adaptive_example_deletion",
         "reorder_examples",
         "minimize_duplicated_blocks",
@@ -2250,33 +2251,79 @@ class Shrinker(object):
     def zero_examples(self):
         """Attempt to replace each example with a minimal version of itself."""
         for ex in self.each_non_trivial_example():
-            u = ex.start
-            v = ex.end
-            attempt = self.cached_test_function(
-                self.buffer[:u] + hbytes(v - u) + self.buffer[v:]
+            self.replace_example(ex, hbytes(ex.length))
+
+    def randomize_examples(self):
+        """Attempt to "fuzz downwards" by replacing examples with random shortlex
+        smaller values.
+
+        In principle this does not give us access to any shrinks that we can't
+        otherwise do - we might always get unlucky and fail to fuzz - but the
+        big advantage of it is that it often lets us escape situations where
+        the shrinker would get stuck in a local minimum. This is especially
+        useful when the bug is triggered for a wide range of possible values
+        but there are some gaps in the space. For example, it may be that we
+        end up with the string "00" and most single-character strings would
+        work in its place but the string "0" would not. By randomly generating
+        smaller strings we have the opportunity to shrink to a different single
+        element string.
+
+        tests/quality/test_bounded_exploration.py is an example of a set of tests
+        that pass only with this include.
+        """
+        for ex in self.each_non_trivial_example():
+            # A failure/reward loop: As long as this approach of fuzzing downwards
+            # seems to be working, keep doing it. Once it stops working, fail
+            # out fairly quickly.
+            failures = 0
+            while failures < 10:
+                if self.replace_example(
+                    ex, _draw_predecessor(self.random, self.buffer[ex.start : ex.end])
+                ):
+                    failures = 0
+                    ex = self.shrink_target.examples[ex.index]
+                else:
+                    failures += 1
+
+    def replace_example(self, ex, replacement):
+        """Attempt to replace the example ex with the byte string replacement.
+        If this ends up being a sloppy replacement and the string runs off
+        the end of the example, we try again with a prefix of it that gets
+        the size right."""
+
+        initial = self.shrink_target
+
+        u = ex.start
+        v = ex.end
+        attempt = self.cached_test_function(
+            self.buffer[:u] + replacement + self.buffer[v:]
+        )
+
+        if initial is not self.shrink_target:
+            return True
+
+        # FIXME: IOU one attempt to debug this - DRMacIver
+        # This is a mysterious problem that should be impossible to trigger
+        # but isn't. I don't know what's going on, and it defeated my
+        # my attempts to reproduce or debug it. I'd *guess* it's related to
+        # nondeterminism in the test function. That should be impossible in
+        # the cases where I'm seeing it, but I haven't been able to put
+        # together a reliable reproduction of it.
+        if ex.index >= len(attempt.examples):  # pragma: no cover
+            return False
+
+        in_replacement = attempt.examples[ex.index]
+        used = in_replacement.length
+
+        if (
+            not self.__predicate(attempt)
+            and in_replacement.end < len(attempt.buffer)
+            and used < ex.length
+        ):
+            return self.incorporate_new_buffer(
+                self.buffer[:u] + replacement[:used] + self.buffer[v:]
             )
-
-            # FIXME: IOU one attempt to debug this - DRMacIver
-            # This is a mysterious problem that should be impossible to trigger
-            # but isn't. I don't know what's going on, and it defeated my
-            # my attempts to reproduce or debug it. I'd *guess* it's related to
-            # nondeterminism in the test function. That should be impossible in
-            # the cases where I'm seeing it, but I haven't been able to put
-            # together a reliable reproduction of it.
-            if ex.index >= len(attempt.examples):  # pragma: no cover
-                continue
-
-            in_replacement = attempt.examples[ex.index]
-            used = in_replacement.length
-
-            if (
-                not self.__predicate(attempt)
-                and in_replacement.end < len(attempt.buffer)
-                and used < ex.length
-            ):
-                self.incorporate_new_buffer(
-                    self.buffer[:u] + hbytes(used) + self.buffer[v:]
-                )
+        return False
 
     def minimize_duplicated_blocks(self):
         """Find blocks that have been duplicated in multiple places and attempt

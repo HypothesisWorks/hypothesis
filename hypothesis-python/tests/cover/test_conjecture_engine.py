@@ -1813,6 +1813,16 @@ def test_keeps_using_solid_passes_while_they_shrink_size():
         assert d2.classification == PassClassification.CANDIDATE
 
 
+def test_can_fuzz_down_to_minimal():
+    @shrinking_from(hbytes([255] * 3))
+    def shrinker(data):
+        if data.draw_bits(8 * 3) > 0:
+            data.mark_interesting()
+
+    shrinker.randomize_examples()
+    assert list(shrinker.shrink_target.buffer) == [0, 0, 1]
+
+
 def test_will_reset_the_tree_as_it_goes(monkeypatch):
     monkeypatch.setattr(engine_module, "CACHE_RESET_FREQUENCY", 3)
 
