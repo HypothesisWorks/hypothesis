@@ -17,6 +17,7 @@ from hypothesis.strategies import (
     dictionaries,
     from_regex,
     integers,
+    just,
     lists,
     sampled_from,
     tuples
@@ -39,6 +40,9 @@ NP_AXIS = ((np.sum, "(n)->()", True),
 # doesn't start with digits because if it is parsed as number we could end up
 # with very large dimensions that blow out memory.
 VALID_DIM_NAMES = r"\A[a-zA-Z_][a-zA-Z0-9_]*\Z"
+
+_st_shape = lists(integers(min_value=0, max_value=5),
+                  min_size=0, max_size=3).map(tuple)
 
 
 def identity(x):
@@ -195,9 +199,7 @@ def parsed_sigs_and_sizes(draw, min_min_side=0, max_max_side=5, **kwargs):
     return parsed_sig, min_side, max_side
 
 
-@given(real_scalar_dtypes(),
-       lists(integers(min_value=0, max_value=5),
-             min_size=0, max_size=3).map(tuple), data())
+@given(real_scalar_dtypes(), _st_shape, data())
 def test_arrays_(dtype, shape, data):
     choices = data.draw(real_from_dtype(dtype))
 
@@ -213,9 +215,7 @@ def test_arrays_(dtype, shape, data):
 
 # hypothesis.extra.numpy.array_shapes does not support 0 min_size so we roll
 # our own in this case.
-@given(lists(lists(integers(min_value=0, max_value=5),
-                   min_size=0, max_size=3).map(tuple),
-             min_size=0, max_size=5),
+@given(lists(_st_shape, min_size=0, max_size=5),
        real_scalar_dtypes(), booleans(), data())
 def test_shapes_tuple_of_arrays(shapes, dtype, unique, data):
     elements = from_dtype(np.dtype(dtype))
@@ -230,9 +230,7 @@ def test_shapes_tuple_of_arrays(shapes, dtype, unique, data):
         assert tuple(spec) == np.shape(drawn)
 
 
-@given(lists(lists(integers(min_value=0, max_value=5),
-                   min_size=0, max_size=3).map(tuple),
-             min_size=0, max_size=5), real_scalar_dtypes(), data())
+@given(lists(_st_shape, min_size=0, max_size=5), real_scalar_dtypes(), data())
 def test_elements_tuple_of_arrays(shapes, dtype, data):
     choices = data.draw(real_from_dtype(dtype))
 
@@ -243,8 +241,40 @@ def test_elements_tuple_of_arrays(shapes, dtype, data):
     validate_elements(X, choices=choices, dtype=dtype)
 
 
-# TODO implement testing of broadcasting in tuple of arrays
-# TODO also consider this for later functions too
+@given(gu.gufunc_broadcast('(1),(1),(1),()->()',
+                           dtype=['object', 'object', 'object', 'bool'],
+                           elements=[_st_shape,
+                                     scalar_dtypes(), just(None), booleans()],
+                           min_side=1, max_dims_extra=1), data())
+def test_bcast_tuple_of_arrays(args, data):
+    shapes, dtype, elements, unique = args
+
+    shapes = shapes.ravel()
+    # Need to squeeze out due to weird behaviour of object
+    dtype = np.squeeze(dtype, -1)
+    elements = np.squeeze(elements, -1)
+
+    elements_shape = max(dtype.shape, elements.shape)
+    dtype_ = np.broadcast_to(dtype, elements_shape)
+    if elements_shape == ():
+        elements = from_dtype(dtype_.item())
+    else:
+        elements = [from_dtype(dd) for dd in dtype_]
+
+    shapes_shape = max(shapes.shape, dtype.shape, elements_shape, unique.shape)
+    shapes = np.broadcast_to(shapes, shapes_shape)
+
+    S = gu._tuple_of_arrays(shapes, dtype, elements=elements, unique=unique)
+    X = data.draw(S)
+
+    assert len(shapes) == len(X)
+    for spec, drawn in zip(shapes, X):
+        assert tuple(spec) == np.shape(drawn)
+
+    for ii, xx in enumerate(X):
+        dd = dtype[ii] if dtype.size > 1 else dtype.item()
+        uu = unique[ii] if unique.size > 1 else unique.item()
+        validate_elements([xx], dtype=dd, unique=uu)
 
 
 @given(parsed_sigs(), parsed_sigs())
