@@ -41,7 +41,7 @@ def order_check_min_max(min_dict, max_dict, floor=0):
         order_check("side %s" % kk, floor, min_dict[kk], max_dict[kk])
 
 
-def int_or_dict(x, default_val):
+def _int_or_dict(x, default_val):
     # case 1: x already defaultdict, leave it be, pass thru
     if isinstance(x, defaultdict):
         return x
@@ -138,8 +138,8 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     """
-    min_side = int_or_dict(min_side, 0)
-    max_side = int_or_dict(max_side, DEFAULT_MAX_SIDE)
+    min_side = _int_or_dict(min_side, 0)
+    max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
     order_check_min_max(min_side, max_side)
 
     # We should check signature.isascii() since there are lot of weird corner
@@ -250,8 +250,8 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     """
-    min_side = int_or_dict(min_side, 0)
-    max_side = int_or_dict(max_side, DEFAULT_MAX_SIDE)
+    min_side = _int_or_dict(min_side, 0)
+    max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
     order_check_min_max(min_side, max_side)
     order_check("extra dims", 0, max_dims_extra, GLOBAL_DIMS_MAX)
 
@@ -482,8 +482,8 @@ def axised(draw, f, signature, dtype, elements, unique=False,
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     """
-    min_side = int_or_dict(min_side, 1)
-    max_side = int_or_dict(max_side, DEFAULT_MAX_SIDE)
+    min_side = _int_or_dict(min_side, 1)
+    max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
     order_check_min_max(min_side, max_side, floor=1)
 
     def f_axis(X, *args, **kwargs):
