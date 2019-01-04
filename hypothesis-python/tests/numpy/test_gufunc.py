@@ -19,6 +19,7 @@ from hypothesis.strategies import (
     integers,
     lists,
     sampled_from,
+    tuples
 )
 
 NP_BROADCASTABLE = ((np.matmul, "(n,m),(m,p)->(n,p)"),
@@ -38,6 +39,10 @@ NP_AXIS = ((np.sum, "(n)->()", True),
 # doesn't start with digits because if it is parsed as number we could end up
 # with very large dimensions that blow out memory.
 VALID_DIM_NAMES = r"\A[a-zA-Z_][a-zA-Z0-9_]*\Z"
+
+
+def identity(x):
+    return x
 
 
 def check_int(x):
@@ -124,7 +129,21 @@ def unparse(parsed_sig):
     return sig
 
 
+def real_scalar_dtypes():
+    def to_native(dtype):
+        return dtype.type
+
+    def cast_it(args):
+        return args[0](args[1])
+
+    S = tuples(sampled_from((str, identity, to_native)), scalar_dtypes())
+    S = S.map(cast_it)
+    return S
+
+
 def real_from_dtype(dtype, N=10):
+    dtype = np.dtype(dtype)
+
     def clean_up(x):
         x = np.nan_to_num(x).astype(dtype)
         assert x.dtype == dtype  # hard to always get this it seems

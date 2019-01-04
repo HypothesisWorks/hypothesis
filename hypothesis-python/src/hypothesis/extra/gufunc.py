@@ -41,7 +41,7 @@ def int_or_dict(x, default_val):
     try:
         D = defaultdict(lambda: default_val, x)
     except TypeError:  # ==> x is int
-        default_val = int(x)
+        default_val = int(x)  # Make sure simple int
         D = defaultdict(lambda: default_val)
     return D
 
