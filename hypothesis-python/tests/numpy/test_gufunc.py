@@ -181,7 +181,9 @@ def parsed_sigs_and_sizes(draw, min_min_side=0, max_max_side=5, **kwargs):
     # Also sometimes put the broadcast flag in as label
     labels.append(gu.BCAST_DIM)
 
-    # TODO comment
+    # Using a split to decide which numbers we use for min sides and which
+    # numbers we use for max side, to avoid min > max. This strategy does not
+    # cover whole search space, but should should be good enough.
     split = draw(integers(min_min_side, gu.DEFAULT_MAX_SIDE))
 
     if draw(booleans()):
