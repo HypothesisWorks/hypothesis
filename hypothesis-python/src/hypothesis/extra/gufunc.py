@@ -298,8 +298,8 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
 
 
 @composite
-def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
-                     min_side=0, max_side=5, max_dims_extra=2, **kwargs):
+def gufunc_broadcast(draw, signature, dtype, elements, unique=False,
+                     excluded=(), min_side=0, max_side=5, max_dims_extra=2):
     """Strategy to generate a tuple of ndarrays for arguments to a function
     consistent with its signature with extra dimensions to test broadcasting.
 
@@ -345,7 +345,8 @@ def gufunc_broadcast(draw, signature, filler=floats, excluded=(),
     shapes = draw(gufunc_broadcast_shape(signature, excluded=excluded,
                                          min_side=min_side, max_side=max_side,
                                          max_dims_extra=max_dims_extra))
-    res = draw(_tuple_of_arrays(shapes, filler, **kwargs))
+    res = draw(_tuple_of_arrays(shapes, dtype=dtype,
+                                elements=elements, unique=unique))
     return res
 
 
