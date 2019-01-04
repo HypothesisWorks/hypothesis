@@ -28,9 +28,13 @@ GLOBAL_DIMS_MAX = 12
 
 # TODO comment and add to test cases
 BCAST_DIM = None
+DEFAULT_MAX_SIDE = 5
 
 
 def int_or_dict(x, default_val):
+    if isinstance(x, defaultdict):
+        return x  # pass thru
+
     default_val = int(default_val)  # Make sure simple int
     # TODO tests
     try:
@@ -136,7 +140,7 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     """
     # TODO figure out how to order check this
     min_side = int_or_dict(min_side, 0)
-    max_side = int_or_dict(max_side, 5)
+    max_side = int_or_dict(max_side, DEFAULT_MAX_SIDE)
 
     # We should check signature.isascii() since there are lot of weird corner
     # cases with unicode parsing, but isascii() restricts us to Py >=3.7.
@@ -246,12 +250,9 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     """
-    print(min_side)
-    print(max_side)
-
     # TODO still need order check
     min_side = int_or_dict(min_side, 0)
-    max_side = int_or_dict(max_side, 5)
+    max_side = int_or_dict(max_side, DEFAULT_MAX_SIDE)
     order_check("extra dims", 0, max_dims_extra, GLOBAL_DIMS_MAX)
 
     # Get core shapes before broadcasted dimensions

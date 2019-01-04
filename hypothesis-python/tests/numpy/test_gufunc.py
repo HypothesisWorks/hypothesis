@@ -76,12 +76,12 @@ def validate_shapes(L, parsed_sig, min_side, max_side):
             if ss.isdigit():
                 assert int(ss) == dd
             else:
-                mm = min_side.get(ss, None) if isinstance(min_side, dict) \
+                mm = min_side.get(ss, 0) if isinstance(min_side, dict) \
                     else min_side
-                assert mm is None or mm <= dd
-                mm = max_side.get(ss, None) if isinstance(max_side, dict) \
-                    else max_side
-                assert mm is None or dd <= mm
+                assert mm <= dd
+                mm = max_side.get(ss, gu.DEFAULT_MAX_SIDE) \
+                    if isinstance(max_side, dict) else max_side
+                assert dd <= mm
                 var_size = size_lookup.setdefault(ss, dd)
                 assert var_size == dd
 
@@ -102,8 +102,12 @@ def validate_bcast_shapes(shapes, parsed_sig,
     b_dims2 = np.array([pad_left(bb, max_dims_extra, 1) for bb in b_dims],
                        dtype=int)
     # The extra broadcast dims be set to one regardless of min, max sides
-    assert np.all((b_dims2 == 1) | (min_side <= b_dims2))
-    assert np.all((b_dims2 == 1) | (b_dims2 <= max_side))
+    mm = min_side.get(gu.BCAST_DIM, 0) \
+        if isinstance(min_side, dict) else min_side
+    assert np.all((b_dims2 == 1) | (mm <= b_dims2))
+    mm = max_side.get(gu.BCAST_DIM, gu.DEFAULT_MAX_SIDE) \
+        if isinstance(max_side, dict) else max_side
+    assert np.all((b_dims2 == 1) | (b_dims2 <= mm))
     # make sure 1 or same
     for ii in range(max_dims_extra):
         vals = set(b_dims2[:, ii])
@@ -141,7 +145,7 @@ def parsed_sigs_and_sizes(draw, max_max_side=5, **kwargs):
     labels = list(set([k for arg in parsed_sig for k in arg]))
 
     # TODO comment
-    split = draw(integers(0, max_max_side))
+    split = draw(integers(0, gu.DEFAULT_MAX_SIDE))
 
     if draw(booleans()):
         min_side = draw(dictionaries(sampled_from(labels), integers(0, split)))
@@ -601,5 +605,3 @@ def test_np_axised(func_choice, min_side, max_side, max_dims_extra, data):
     assert R1.dtype == R2.dtype
     assert np.shape(R1) == np.shape(R2)
     assert np.all(R1 == R2)
-
-test_shapes_gufunc_broadcast_shape()
