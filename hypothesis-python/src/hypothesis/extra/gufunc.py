@@ -46,6 +46,15 @@ def int_or_dict(x, default_val):
     return D
 
 
+def order_check_min_max(min_dict, max_dict, floor=0):
+    order_check("side default", floor,
+                min_dict.default_factory(), max_dict.default_factory())
+
+    # Could use set to avoid dupes, but prob not worth it
+    for kk in (min_dict.keys() + max_dict.keys()):
+        order_check("side %s" % kk, floor, min_dict[kk], max_dict[kk])
+
+
 @composite
 def arrays_(draw, dtype, shape, elements=None, unique=False):
     """Wrapper to fix issues with `hypothesis.extra.numpy.arrays`.
@@ -82,7 +91,6 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     """
     n = len(shapes)
 
-    # TODO tests need to type raw type, dtype and str
     # Need this since broadcast_to does not like vars of type type
     if isinstance(dtype, type):
         dtype = [dtype]
@@ -126,9 +134,9 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     """
-    # TODO figure out how to order check this
     min_side = int_or_dict(min_side, 0)
     max_side = int_or_dict(max_side, DEFAULT_MAX_SIDE)
+    order_check_min_max(min_side, max_side)
 
     # We should check signature.isascii() since there are lot of weird corner
     # cases with unicode parsing, but isascii() restricts us to Py >=3.7.
@@ -238,9 +246,9 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     """
-    # TODO still need order check
     min_side = int_or_dict(min_side, 0)
     max_side = int_or_dict(max_side, DEFAULT_MAX_SIDE)
+    order_check_min_max(min_side, max_side)
     order_check("extra dims", 0, max_dims_extra, GLOBAL_DIMS_MAX)
 
     # Get core shapes before broadcasted dimensions
@@ -470,9 +478,9 @@ def axised(draw, f, signature, dtype, elements, unique=False,
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     """
-    # TODO still need order check, and check min 1
-    min_side = int_or_dict(min_side, 0)
+    min_side = int_or_dict(min_side, 1)
     max_side = int_or_dict(max_side, DEFAULT_MAX_SIDE)
+    order_check_min_max(min_side, max_side, floor=1)
 
     def f_axis(X, *args, **kwargs):
         # This trick is not needed in Python3, after dropping Py2 support we
