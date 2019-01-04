@@ -247,6 +247,14 @@ def test_elements_tuple_of_arrays(shapes, dtype, data):
                                      scalar_dtypes(), just(None), booleans()],
                            min_side=1, max_dims_extra=1), data())
 def test_bcast_tuple_of_arrays(args, data):
+    '''Now testing broadcasting of tuple_of_arrays, kind of crazy since it uses
+    gufuncs to test itself. Some awkwardness here since there are a lot of
+    corner cases when dealing with object types in the numpy extension.
+
+    For completeness, should probably right a function like this for the other
+    functions, but there always just pass dtype, elements, unique to
+    `_tuple_of_arrays` anyway, so this should be pretty good.
+    '''
     shapes, dtype, elements, unique = args
 
     shapes = shapes.ravel()
@@ -292,7 +300,9 @@ def test_unparse_parse(i_parsed_sig, o_parsed_sig):
     assert o_parsed_sig == out
 
 
-@given(parsed_sigs_and_sizes(), data())  # TODO allow big
+# Allow bigger sizes since we only generate the shapes and never alloc arrays
+@given(parsed_sigs_and_sizes(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX,
+                             max_max_side=100), data())
 def test_shapes_gufunc_shape(parsed_sig_and_size, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
 
