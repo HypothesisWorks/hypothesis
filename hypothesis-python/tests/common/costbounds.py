@@ -17,29 +17,23 @@
 
 from __future__ import absolute_import, division, print_function
 
-from random import Random
+from hypothesis.internal.conjecture.shrinking.common import find_integer
 
-from hypothesis.internal.conjecture.shrinking import Integer
-from tests.common.utils import capture_out
-
-
-def test_debug_output():
-    with capture_out() as o:
-        Integer.shrink(10, lambda x: True, debug=True, random=Random(0))
-
-    assert "initial=10" in o.getvalue()
-    assert "shrinking to 0" in o.getvalue()
+FIND_INTEGER_COSTS = {}
 
 
-def test_includes_name_in_repr_if_set():
-    assert (
-        repr(Integer(10, lambda x: True, name="hi there", random=Random(0)))
-        == "Integer('hi there', initial=10, current=10)"
-    )
+def find_integer_cost(n):
+    try:
+        return FIND_INTEGER_COSTS[n]
+    except KeyError:
+        pass
 
+    cost = [0]
 
-def test_normally_contains_no_space_for_name():
-    assert (
-        repr(Integer(10, lambda x: True, random=Random(0)))
-        == "Integer(initial=10, current=10)"
-    )
+    def test(i):
+        cost[0] += 1
+        return i <= n
+
+    find_integer(test)
+
+    return FIND_INTEGER_COSTS.setdefault(n, cost[0])
