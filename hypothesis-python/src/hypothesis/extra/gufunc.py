@@ -26,16 +26,18 @@ from hypothesis.strategies import (
 # as high as 32 before breaking assumptions in numpy.
 GLOBAL_DIMS_MAX = 12
 
+# TODO comment and add to test cases
+BCAST_DIM = None
+
 
 def int_or_dict(x, default_val):
+    default_val = int(default_val)  # Make sure simple int
     # TODO tests
     try:
+        D = defaultdict(lambda: default_val, x)
+    except TypeError:  # ==> x is int
         default_val = int(x)
-    except TypeError:  # x is dict
-        pass
-    else:  # x is int
-        x = {}
-    D = defaultdict(lambda: default_val, x)
+        D = defaultdict(lambda: default_val)
     return D
 
 
@@ -244,7 +246,12 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     See `numpy.vectorize` at
     docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
     """
-    order_check("side", 0, min_side, max_side)
+    print(min_side)
+    print(max_side)
+
+    # TODO still need order check
+    min_side = int_or_dict(min_side, 0)
+    max_side = int_or_dict(max_side, 5)
     order_check("extra dims", 0, max_dims_extra, GLOBAL_DIMS_MAX)
 
     # Get core shapes before broadcasted dimensions
@@ -264,7 +271,8 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     mask = draw(arrays_(np.bool, (len(shapes), n_extra)))
 
     # Build 2D array with extra dimensions
-    extra_dim_gen = integers(min_value=min_side, max_value=max_side)
+    extra_dim_gen = integers(min_value=min_side[BCAST_DIM],
+                             max_value=max_side[BCAST_DIM])
     # e.g., extra_dims = [2 5]
     extra_dims = draw(arrays_(np.int, (n_extra,), elements=extra_dim_gen))
     # e.g., extra_dims = [[2 5], [2 5]]

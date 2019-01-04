@@ -602,5 +602,4 @@ def test_np_axised(func_choice, min_side, max_side, max_dims_extra, data):
     assert np.shape(R1) == np.shape(R2)
     assert np.all(R1 == R2)
 
-test_elements_gufunc()
-
+test_shapes_gufunc_broadcast_shape()
