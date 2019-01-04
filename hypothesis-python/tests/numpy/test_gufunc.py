@@ -446,11 +446,11 @@ def test_elements_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
     S = gu.broadcasted(dummy, signature, otypes=otypes, excluded=excluded,
                        min_side=min_side, max_side=max_side,
                        max_dims_extra=max_dims_extra,
-                       dtype=dtype, elements=elements)
+                       dtype=choices.dtype, elements=elements)
 
     f0, f_vec, X = data.draw(S)
 
-    validate_elements(X, choices=choices, dtype=dtype)
+    validate_elements(X, choices=choices, dtype=choices.dtype)
 
 
 @given(integers(0, len(NP_BROADCASTABLE) - 1),
