@@ -578,11 +578,11 @@ def test_elements_axised(parsed_sig, min_side, max_side, max_dims_extra,
 
     S = gu.axised(dummy, signature, min_side=min_side, max_side=max_side,
                   max_dims_extra=max_dims_extra, allow_none=allow_none,
-                  dtype=dtype, elements=elements)
+                  dtype=choices.dtype, elements=elements)
 
     f0, f_ax, X, axis = data.draw(S)
 
-    validate_elements(X, choices=choices, dtype=dtype)
+    validate_elements(X, choices=choices, dtype=choices.dtype)
 
 
 @given(integers(0, len(NP_AXIS) - 1),
