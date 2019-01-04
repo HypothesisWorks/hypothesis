@@ -287,14 +287,16 @@ def test_bcast_tuple_of_arrays(args, data):
 
 @given(parsed_sigs(), parsed_sigs())
 def test_unparse_parse(i_parsed_sig, o_parsed_sig):
+    # Make sure all hard coded literals within specified size
+    # This is actually testing parsed_sigs().
+    labels = list(set([k for arg in i_parsed_sig for k in arg]))
+    assert all((not k.isdigit()) or (int(k) < 10)for k in labels)
+
     # We don't care about the output for this function
     signature = unparse(i_parsed_sig) + "->" + unparse(o_parsed_sig)
     # This is a 'private' function of np, so need to test it still works as we
     # think it does.
     inp, out = npfb._parse_gufunc_signature(signature)
-
-    # TODO check all under 10 if isdigit
-    # TODO add max shape to validate shapes
 
     assert i_parsed_sig == inp
     assert o_parsed_sig == out
