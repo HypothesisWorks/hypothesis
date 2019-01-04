@@ -622,17 +622,23 @@ class StateForActualGivenExecution(object):
             raise
         except EXCEPTIONS_TO_FAIL as e:
             escalate_hypothesis_internal_error()
-            tb = get_trimmed_traceback()
-            data.__expected_traceback = "".join(
-                traceback.format_exception(type(e), e, tb)
-            )
-            data.__expected_exception = e
-            verbose_report(data.__expected_traceback)
+            if data.frozen:
+                # This can happen if an error occurred in a finally
+                # block somewhere, suppressing our original StopTest.
+                # We raise a new one here to resume normal operation.
+                raise StopTest(data.testcounter)
+            else:
+                tb = get_trimmed_traceback()
+                data.__expected_traceback = "".join(
+                    traceback.format_exception(type(e), e, tb)
+                )
+                data.__expected_exception = e
+                verbose_report(data.__expected_traceback)
 
-            origin = traceback.extract_tb(tb)[-1]
-            filename = origin[0]
-            lineno = origin[1]
-            data.mark_interesting((type(e), filename, lineno))
+                origin = traceback.extract_tb(tb)[-1]
+                filename = origin[0]
+                lineno = origin[1]
+                data.mark_interesting((type(e), filename, lineno))
 
     def run(self):
         # Tell pytest to omit the body of this function from tracebacks
