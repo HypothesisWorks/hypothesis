@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.86.4:
+
+-------------------
+3.86.4 - 2019-01-04
+-------------------
+
+This release changes the order that the shrinker tries to delete data in.
+For large and slow tests this may significantly improve the performance of shrinking.
+
 .. _v3.86.3:
 
 -------------------
