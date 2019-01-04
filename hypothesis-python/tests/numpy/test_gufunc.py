@@ -1,9 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import defaultdict
 import string
 # Note: this requires adding `future` to the test requirements!
 from builtins import int as py3int
+from collections import defaultdict
 
 import numpy as np
 import numpy.lib.function_base as npfb
@@ -21,7 +21,7 @@ from hypothesis.strategies import (
     just,
     lists,
     sampled_from,
-    tuples
+    tuples,
 )
 
 NP_BROADCASTABLE = ((np.matmul, "(n,m),(m,p)->(n,p)"),
