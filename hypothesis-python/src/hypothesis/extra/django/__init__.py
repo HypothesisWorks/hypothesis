@@ -15,29 +15,13 @@
 #
 # END HEADER
 
-import unittest
+from hypothesis.extra.django._fields import from_field, register_field_strategy
+from hypothesis.extra.django._impl import TestCase, TransactionTestCase, from_model
 
-import django.test as dt
-
-
-class HypothesisTestCase(object):
-    def setup_example(self):
-        self._pre_setup()
-
-    def teardown_example(self, example):
-        self._post_teardown()
-
-    def __call__(self, result=None):
-        testMethod = getattr(self, self._testMethodName)
-        if getattr(testMethod, u"is_hypothesis_test", False):
-            return unittest.TestCase.__call__(self, result)
-        else:
-            return dt.SimpleTestCase.__call__(self, result)
-
-
-class TestCase(HypothesisTestCase, dt.TestCase):
-    pass
-
-
-class TransactionTestCase(HypothesisTestCase, dt.TransactionTestCase):
-    pass
+__all__ = [
+    "TestCase",
+    "TransactionTestCase",
+    "from_field",
+    "from_model",
+    "register_field_strategy",
+]

@@ -582,14 +582,16 @@ else:
 
 try:
     from django.test import TransactionTestCase
-    from hypothesis.extra.django import HypothesisTestCase
 
     def bad_django_TestCase(runner):
         if runner is None:
             return False
-        return isinstance(runner, TransactionTestCase) and not isinstance(
-            runner, HypothesisTestCase
-        )
+        if not isinstance(runner, TransactionTestCase):
+            return False
+
+        from hypothesis.extra.django._impl import HypothesisTestCase
+
+        return not isinstance(runner, HypothesisTestCase)
 
 
 except Exception:

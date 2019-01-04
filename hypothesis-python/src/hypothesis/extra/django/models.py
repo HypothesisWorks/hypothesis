@@ -20,8 +20,9 @@ from __future__ import absolute_import, division, print_function
 import django.db.models as dm
 from django.db import IntegrityError
 
-import hypothesis.strategies as st
+import hypothesis._strategies as st
 from hypothesis import reject
+from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django import from_field, register_field_strategy
 from hypothesis.utils.conventions import DefaultValueType
@@ -32,12 +33,18 @@ if False:
 
 def add_default_field_mapping(field_type, strategy):
     # type: (Type[dm.Field], st.SearchStrategy[Any]) -> None
+    note_deprecation(
+        "This function is deprecated; use `hypothesis.extra.django."
+        "register_field_strategy` instead.",
+        since="RELEASEDAY",
+    )
     register_field_strategy(field_type, strategy)
 
 
 default_value = DefaultValueType(u"default_value")
 
 
+@st.defines_strategy
 def models(
     model,  # type: Type[dm.Model]
     **field_strategies  # type: Union[st.SearchStrategy[Any], DefaultValueType]
@@ -68,6 +75,11 @@ def models(
 
       shop_strategy = models(Shop, company=models(Company))
     """
+    note_deprecation(
+        "This function is deprecated; use `hypothesis.extra.django."
+        "from_model` instead.",
+        since="RELEASEDAY",
+    )
     result = {}
     for k, v in field_strategies.items():
         if not isinstance(v, DefaultValueType):
