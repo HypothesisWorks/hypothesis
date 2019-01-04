@@ -21,6 +21,14 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.86.2:
+
+-------------------
+3.86.2 - 2019-01-04
+-------------------
+
+Fix reference rendering to `hypothesis.strategies.randoms` in documentation.
+
 .. _v3.86.1:
 
 -------------------
