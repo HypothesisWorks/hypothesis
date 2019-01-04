@@ -53,40 +53,18 @@ class Ordering(Shrinker):
 
     def reinsert(self):
         for i in range(len(self.current)):
-            # This is essentially insertion sort, but unlike normal insertion
-            # sort because of our use of find_integer we only perform
-            # O(n(log(n))) calls. Because of the rotations we're still O(n^2)
-            # performance in terms of number of list operations, but we don't
-            # care about those so much.
-            original = self.current
-
             insertion_points = [
                 j
                 for j in range(i)
                 if self.key(self.current[j]) > self.key(self.current[i])
             ]
 
-            def push_back_to(t):
-                if t >= len(insertion_points):
-                    return True
-                j = insertion_points[t]
-                reinserted = list(original)
+            for j in insertion_points[:2]:
+                reinserted = list(self.current)
                 del reinserted[i]
-                reinserted.insert(j, original[i])
+                reinserted.insert(j, self.current[i])
                 if self.consider(reinserted):
-                    return
+                    continue
                 swapped = list(self.current)
                 swapped[i], swapped[j] = swapped[j], swapped[i]
-                return self.consider(swapped)
-
-            if push_back_to(0) or push_back_to(1):
-                continue
-
-            lo = 1
-            hi = len(insertion_points)
-            while lo + 1 < hi:
-                mid = (lo + hi) // 2
-                if push_back_to(mid):
-                    hi = mid
-                else:
-                    lo = mid
+                self.consider(swapped)
