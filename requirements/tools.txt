@@ -37,6 +37,7 @@ ipython==7.2.0
 isort==4.3.4
 jedi==0.13.2              # via ipython
 jinja2==2.10              # via pyupio, sphinx
+lark-parser==0.6.5
 markupsafe==1.1.0         # via jinja2
 mccabe==0.6.1             # via flake8
 mock==2.0.0
