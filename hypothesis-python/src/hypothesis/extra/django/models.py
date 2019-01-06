@@ -72,6 +72,7 @@ def field_mappings():
             dm.FloatField: st.floats(),
             dm.NullBooleanField: st.one_of(st.none(), st.booleans()),
             dm.TimeField: st.times(timezones=get_tz_strat()),
+            dm.URLField: urls(),
             dm.UUIDField: st.uuids(),
         }
 
