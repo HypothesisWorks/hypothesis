@@ -39,21 +39,14 @@ def urls():
         safe_chars = set(string.ascii_letters + string.digits + "$-_.+!*'(),")
         return "".join(c if c in safe_chars else "%%%02X" % ord(c) for c in s)
 
-    def create_url(scheme, host, port, path):
-        return scheme + "://" + host + port + path
-
     schemes = st.sampled_from(["http", "https"])
-    ports = st.integers(min_value=0, max_value=2 ** 16 - 1)
+    ports = st.integers(min_value=0, max_value=2 ** 16 - 1).map(":{}".format)
     paths = st.lists(st.text(string.printable).map(url_encode)).map(
         lambda path: "/".join([""] + path)
     )
 
     return st.builds(
-        create_url,
-        schemes,
-        domains(),
-        st.one_of(st.just(""), ports.map(lambda x: ":%d" % x)),
-        paths,
+        "{}://{}{}{}".format, schemes, domains(), st.one_of(st.just(""), ports), paths
     )
 
 
