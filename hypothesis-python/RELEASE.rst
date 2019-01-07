@@ -1,4 +1,4 @@
 RELEASE_TYPE: patch
 
-Add a provisional URL strategy.
-This patch is a step towards solving :issue:`1388`.
+Hypothesis can now automatically generate values for Django models with a
+`URLfield`, thanks to a new provisional strategy for URLs (:issue:`1388`).
