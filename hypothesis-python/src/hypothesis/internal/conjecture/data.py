@@ -138,6 +138,15 @@ class Block(object):
         return self.forced or self.all_zero
 
 
+class _Overrun(object):
+    status = Status.OVERRUN
+
+    def __repr__(self):
+        return "Overrun"
+
+
+Overrun = _Overrun()
+
 global_test_counter = 0
 
 

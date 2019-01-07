@@ -25,7 +25,7 @@ from functools import total_ordering
 import attr
 
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.data import ConjectureData, Status
+from hypothesis.internal.conjecture.data import Overrun, Status
 from hypothesis.internal.conjecture.shrinking import Integer, Length, Lexical, Ordering
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
@@ -297,16 +297,13 @@ class Shrinker(object):
         if self.shrink_target.buffer.startswith(buffer):
             return False
 
-        if not self.__engine.prescreen_buffer(buffer):
-            return False
-
-        assert sort_key(buffer) <= sort_key(self.shrink_target.buffer)
-        data = ConjectureData.for_buffer(buffer)
-        self.__engine.test_function(data)
-        self.__test_function_cache[buffer] = data
-        return self.incorporate_test_data(data)
+        previous = self.shrink_target
+        self.cached_test_function(buffer)
+        return previous is not self.shrink_target
 
     def incorporate_test_data(self, data):
+        if data is Overrun:
+            return
         self.__test_function_cache[data.buffer] = data
         if self.__predicate(data) and sort_key(data.buffer) < sort_key(
             self.shrink_target.buffer
@@ -1047,14 +1044,7 @@ class Shrinker(object):
                 self.buffer[:u] + hbytes(v - u) + self.buffer[v:]
             )
 
-            # FIXME: IOU one attempt to debug this - DRMacIver
-            # This is a mysterious problem that should be impossible to trigger
-            # but isn't. I don't know what's going on, and it defeated my
-            # my attempts to reproduce or debug it. I'd *guess* it's related to
-            # nondeterminism in the test function. That should be impossible in
-            # the cases where I'm seeing it, but I haven't been able to put
-            # together a reliable reproduction of it.
-            if ex.index >= len(attempt.examples):  # pragma: no cover
+            if attempt is Overrun:
                 continue
 
             in_replacement = attempt.examples[ex.index]
