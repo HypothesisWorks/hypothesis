@@ -17,10 +17,23 @@
 
 from __future__ import absolute_import, division, print_function
 
+import re
+import string
 from binascii import unhexlify
 
 from hypothesis import given
-from hypothesis.provisional import ip4_addr_strings, ip6_addr_strings
+from hypothesis.provisional import ip4_addr_strings, ip6_addr_strings, urls
+
+
+@given(urls())
+def test_is_URL(url):
+    allowed_chars = set(string.ascii_letters + string.digits + "$-_.+!*'(),%/")
+    url_schemeless = url.split("://", 1)[1]
+    path = url_schemeless.split("/", 1)[1] if "/" in url_schemeless else ""
+    assert all(c in allowed_chars for c in path)
+    assert all(
+        re.match("^[0-9A-Fa-f]{2}", after_perc) for after_perc in path.split("%")[1:]
+    )
 
 
 @given(ip4_addr_strings())

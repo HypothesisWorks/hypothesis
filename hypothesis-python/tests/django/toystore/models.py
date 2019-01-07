@@ -92,6 +92,7 @@ class ManyTimes(models.Model):
 class OddFields(models.Model):
     uuid = models.UUIDField()
     slug = models.SlugField()
+    url = models.URLField()
     ipv4 = models.GenericIPAddressField(protocol="IPv4")
     ipv6 = models.GenericIPAddressField(protocol="IPv6")
 
