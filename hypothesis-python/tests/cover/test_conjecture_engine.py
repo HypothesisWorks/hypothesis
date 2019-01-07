@@ -34,12 +34,14 @@ from hypothesis.internal.conjecture.data import MAX_DEPTH, ConjectureData, Statu
 from hypothesis.internal.conjecture.engine import (
     ConjectureRunner,
     ExitReason,
-    PassClassification,
     RunIsComplete,
-    Shrinker,
     TargetSelector,
-    block_program,
     sort_key,
+)
+from hypothesis.internal.conjecture.shrinker import (
+    PassClassification,
+    Shrinker,
+    block_program,
 )
 from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
