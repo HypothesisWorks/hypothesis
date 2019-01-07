@@ -33,7 +33,7 @@ import hypothesis._strategies as st
 
 @st.defines_strategy_with_reusable_values
 def urls():
-    """"A strategy for :rfc:`3986`, generating http/https URLs."""
+    """A strategy for :rfc:`3986`, generating http/https URLs."""
 
     def url_encode(s):
         safe_chars = set(string.ascii_letters + string.digits + "$-_.+!*'(),")
