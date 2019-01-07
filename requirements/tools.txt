@@ -19,7 +19,7 @@ click==7.0                # via black, pip-tools, pyupio, safety
 coverage==4.5.2
 decorator==4.3.0          # via ipython, traitlets
 deprecated==1.2.4         # via pygithub
-django==2.1.4
+django==2.1.5
 docutils==0.14            # via readme-renderer, restructuredtext-lint, sphinx
 dparse==0.4.1             # via pyupio, safety
 dpcontracts==0.6.0
@@ -51,7 +51,7 @@ pbr==5.1.1                # via mock, stevedore
 pexpect==4.6.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pip-tools==3.2.0
-pkginfo==1.4.2            # via twine
+pkginfo==1.5.0            # via twine
 pluggy==0.8.0             # via pytest, tox
 prompt-toolkit==2.0.7     # via ipython
 ptyprocess==0.6.0         # via pexpect
@@ -63,16 +63,16 @@ pygithub==1.43.4          # via pyupio
 pygments==2.3.1           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pyparsing==2.3.0          # via packaging
-pytest==4.0.2
+pytest==4.1.0
 python-dateutil==2.7.5
 python-gitlab==1.7.0      # via pyupio
-pytz==2018.7              # via babel, django
+pytz==2018.9              # via babel, django
 pyupio==1.0.2
 pyyaml==3.13              # via bandit, dparse, pyupio
 readme-renderer==24.0     # via twine
 requests-toolbelt==0.8.0  # via twine
 requests==2.21.0
-restructuredtext-lint==1.2.1
+restructuredtext-lint==1.2.2
 safety==1.8.4             # via pyupio
 six==1.12.0               # via bandit, bleach, dparse, mock, more-itertools, packaging, pip-tools, prompt-toolkit, pydocstyle, pytest, python-dateutil, python-gitlab, pyupio, readme-renderer, sphinx, stevedore, tox, traitlets
 smmap2==2.0.5             # via gitdb2
@@ -83,12 +83,12 @@ sphinxcontrib-websupport==1.1.0  # via sphinx
 stevedore==1.30.0         # via bandit
 toml==0.10.0
 tox==3.6.1
-tqdm==4.28.1              # via pyupio, twine
+tqdm==4.29.0              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.12.1
 typed-ast==1.1.1          # via mypy
 urllib3==1.24.1           # via requests
-virtualenv==16.1.0        # via tox
+virtualenv==16.2.0        # via tox
 wcwidth==0.1.7            # via prompt-toolkit
 webencodings==0.5.1       # via bleach
 wrapt==1.10.11            # via deprecated
