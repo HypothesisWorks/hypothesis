@@ -92,6 +92,15 @@ def has_uncommitted_changes(filename):
     return subprocess.call(["git", "diff", "--exit-code", filename]) != 0
 
 
+def last_committer():
+    out, _ = subprocess.Popen(
+        ["git", "log", "-1", "--pretty=format:%an"],
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
+    ).communicate()
+    return out
+
+
 def git(*args):
     subprocess.check_call(("git",) + args)
 
