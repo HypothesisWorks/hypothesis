@@ -21,12 +21,11 @@ import time
 
 import pytest
 from _pytest.outcomes import Failed, Skipped
-from flaky import flaky
 
 import hypothesis.strategies as s
 from hypothesis import find, given, reject, settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import checks_deprecated_behaviour, flaky
 
 
 def test_stops_after_max_examples_if_satisfying():

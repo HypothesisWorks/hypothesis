@@ -18,13 +18,13 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
-from flaky import flaky
 
 from hypothesis import settings
 from hypothesis.errors import NoSuchExample
 from hypothesis.strategies import lists
 from tests.common import standard_types
 from tests.common.debug import minimal
+from tests.common.utils import flaky
 
 
 @pytest.mark.parametrize(u"spec", standard_types, ids=list(map(repr, standard_types)))

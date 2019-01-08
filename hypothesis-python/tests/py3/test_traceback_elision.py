@@ -28,7 +28,7 @@ from hypothesis import Verbosity, given, settings
 @pytest.mark.parametrize("verbosity", [Verbosity.normal, Verbosity.debug])
 def test_tracebacks_omit_hypothesis_internals(verbosity):
     @settings(verbosity=verbosity)
-    @given(st.none())
+    @given(st.just(False))
     def simplest_failure(x):
         assert x
 

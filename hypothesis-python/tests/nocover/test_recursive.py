@@ -17,12 +17,10 @@
 
 from __future__ import absolute_import, division, print_function
 
-from flaky import flaky
-
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, given, settings
 from tests.common.debug import find_any, minimal
-from tests.common.utils import no_shrink
+from tests.common.utils import flaky, no_shrink
 
 
 def test_can_generate_with_large_branching():

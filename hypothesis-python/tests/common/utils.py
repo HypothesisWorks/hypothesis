@@ -31,6 +31,29 @@ from hypothesis.reporting import default, with_reporter
 no_shrink = tuple(set(Phase) - {Phase.shrink})
 
 
+def flaky(max_runs, min_passes):
+    assert isinstance(max_runs, int)
+    assert isinstance(min_passes, int)
+    assert 0 < min_passes <= max_runs <= 50  # arbitrary cap
+
+    def accept(func):
+        @proxies(func)
+        def inner(*args, **kwargs):
+            runs = passes = 0
+            while passes < min_passes:
+                runs += 1
+                try:
+                    func(*args, **kwargs)
+                    passes += 1
+                except BaseException:
+                    if runs >= max_runs:
+                        raise
+
+        return inner
+
+    return accept
+
+
 @contextlib.contextmanager
 def capture_out():
     old_out = sys.stdout

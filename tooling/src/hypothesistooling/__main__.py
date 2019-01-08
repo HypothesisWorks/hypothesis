@@ -306,7 +306,10 @@ def push_pyup_requirements_commit():
 @task()
 def check_requirements():
     if is_pyup_branch():
-        compile_requirements(upgrade=True)
+        # We recompile to fix broken formatting etc., but also want to support
+        # manual fixes to the bot's PRs and ensure there can't be a loop.
+        should_recompile = tools.last_committer() == "pyup-bot"
+        compile_requirements(upgrade=should_recompile)
     else:
         compile_requirements(upgrade=False)
 
