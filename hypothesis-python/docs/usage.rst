@@ -38,7 +38,7 @@ You can find hundreds more from `the Hypothesis page at libraries.io
 * `pretext <https://github.com/moreati/b-prefix-all-the-doctests>`_
 * `priority <https://github.com/python-hyper/priority>`_
 * `PyCEbox <https://github.com/AustinRochford/PyCEbox>`_
-* `PyPy <http://pypy.org>`_
+* `PyPy <https://pypy.org/>`_
 * `pyrsistent <https://github.com/tobgu/pyrsistent>`_
 * `python-humble-utils <https://github.com/webyneter/python-humble-utils>`_
 * `pyudev <https://github.com/pyudev/pyudev>`_

@@ -2,7 +2,7 @@ environment:
   global:
     # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
     # /E:ON and /V:ON options are not enabled in the batch script interpreter
-    # See: http://stackoverflow.com/a/13751649/163740
+    # See: https://stackoverflow.com/a/13751649/163740
     CMD_IN_ENV: "cmd /E:ON /V:ON /C ..\\scripts\\run_with_env.cmd"
 
     TWINE_USERNAME: DRMacIver
@@ -57,7 +57,7 @@ install:
   - ECHO "Installed SDKs:"
   - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""
 
-  # Install Python (from the official .msi of http://python.org) and pip when
+  # Install Python (from the official .msi of https://www.python.org/) and pip when
   # not already installed.
   - "powershell ./scripts/install.ps1"
 

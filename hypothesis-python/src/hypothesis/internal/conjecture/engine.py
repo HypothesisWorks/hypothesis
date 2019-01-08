@@ -11,7 +11,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
 
@@ -46,7 +46,7 @@ from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import debug_report
 
 # Tell pytest to omit the body of this module from tracebacks
-# http://doc.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
+# https://docs.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
 __tracebackhide__ = True
 
 

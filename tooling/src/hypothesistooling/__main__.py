@@ -11,7 +11,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
 
@@ -153,7 +153,7 @@ HEADER = """
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER""".strip() % {
     "year": CURRENT_YEAR
@@ -324,7 +324,7 @@ def documentation():
         if hp.has_release():
             hp.update_changelog_and_version()
         pip_tool(
-            # See http://www.sphinx-doc.org/en/stable/man/sphinx-build.html
+            # See https://www.sphinx-doc.org/en/stable/man/sphinx-build.html
             "sphinx-build",
             "-n",
             "-W",

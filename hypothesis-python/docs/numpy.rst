@@ -8,7 +8,7 @@ Hypothesis for the Scientific Stack
 numpy
 -----
 
-Hypothesis offers a number of strategies for `NumPy <http://www.numpy.org/>`_ testing,
+Hypothesis offers a number of strategies for `NumPy <https://www.numpy.org/>`_ testing,
 available in the ``hypothesis[numpy]`` :doc:`extra </extras>`.
 It lives in the ``hypothesis.extra.numpy`` package.
 

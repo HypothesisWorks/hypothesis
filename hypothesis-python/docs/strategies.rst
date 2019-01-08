@@ -25,7 +25,7 @@ Some packages provide strategies directly:
 * :pypi:`hs-dbus-signature` - strategy to generate arbitrary
   `D-Bus signatures <https://dbus.freedesktop.org>`_.
 * :pypi:`hypothesis_sqlalchemy` - strategies to generate :pypi:`SQLAlchemy` objects.
-* :pypi:`hypothesis-ros` - strategies to generate messages and parameters for the `Robot Operating System <http://www.ros.org/>`_.
+* :pypi:`hypothesis-ros` - strategies to generate messages and parameters for the `Robot Operating System <https://www.ros.org/>`_.
 * :pypi:`hypothesis-csv` - strategy to generate CSV files.
 
 Others provide a function to infer a strategy from some other schema:

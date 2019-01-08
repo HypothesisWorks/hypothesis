@@ -66,7 +66,7 @@ which is the only other such project at the moment).
 
 The first line of the file specifies the component
 of the version number that will be updated, according to our
-`semantic versioning <http://semver.org/>`_ policy.
+`semantic versioning <https://semver.org/>`_ policy.
 
 - ``RELEASE_TYPE: major`` is for breaking changes, and will only be used by the
   core team after extensive discussion.
