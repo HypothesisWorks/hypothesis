@@ -170,7 +170,7 @@ running it multiple times.
 Installing
 ----------
 
-Hypothesis is :pypi:`available on pypi as "hypothesis" <hypothesis>`. You can install it with:
+Hypothesis is :pypi:`available on PyPI as "hypothesis" <hypothesis>`. You can install it with:
 
 .. code:: bash
 
