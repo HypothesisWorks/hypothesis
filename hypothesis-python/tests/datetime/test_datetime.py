@@ -21,14 +21,13 @@ from datetime import MINYEAR
 
 import pytest
 import pytz
-from flaky import flaky
 
 from hypothesis import assume, given, settings, unlimited
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.datetime import datetimes
 from hypothesis.internal.compat import hrange
 from tests.common.debug import find_any, minimal
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import checks_deprecated_behaviour, flaky
 
 
 @checks_deprecated_behaviour

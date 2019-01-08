@@ -18,13 +18,13 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
-from flaky import flaky
 
 import hypothesis.strategies as st
 from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange
 from tests.common.debug import minimal
+from tests.common.utils import flaky
 
 
 @st.composite

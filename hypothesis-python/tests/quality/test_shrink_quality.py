@@ -23,7 +23,6 @@ from functools import reduce
 from random import Random
 
 import pytest
-from flaky import flaky
 
 from hypothesis import assume, settings
 from hypothesis.internal.compat import OrderedDict, hrange
@@ -44,6 +43,7 @@ from hypothesis.strategies import (
     tuples,
 )
 from tests.common.debug import minimal
+from tests.common.utils import flaky
 
 
 def test_integers_from_minimizes_leftwards():
