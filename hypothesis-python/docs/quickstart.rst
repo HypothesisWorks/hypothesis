@@ -14,7 +14,7 @@ Suppose we've written a `run length encoding
 it out.
 
 We have the following code which I took straight from the
-`Rosetta Code <http://rosettacode.org/wiki/Run-length_encoding>`_ wiki (OK, I
+`Rosetta Code <https://rosettacode.org/wiki/Run-length_encoding>`_ wiki (OK, I
 removed some commented out code and fixed the formatting, but there are no
 functional modifications):
 

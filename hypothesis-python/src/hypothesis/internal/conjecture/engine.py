@@ -46,7 +46,7 @@ from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import debug_report
 
 # Tell pytest to omit the body of this module from tracebacks
-# http://doc.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
+# https://docs.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
 __tracebackhide__ = True
 
 

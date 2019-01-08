@@ -22,7 +22,7 @@ from hypothesis.errors import FailedHealthCheck
 
 def fail_health_check(settings, message, label):
     # Tell pytest to omit the body of this function from tracebacks
-    # http://doc.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
+    # https://docs.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
     __tracebackhide__ = True
 
     if label in settings.suppress_health_check:

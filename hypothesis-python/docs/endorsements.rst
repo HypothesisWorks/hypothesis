@@ -48,7 +48,7 @@ support Unicode input, which I never would have had the stomach for without such
 thorough testing capabilities. Thanks!
 
 -------------------------------------------
-`Sixty North <http://sixty-north.com>`_
+`Sixty North <https://sixty-north.com/>`_
 -------------------------------------------
 
 At Sixty North we use Hypothesis for testing

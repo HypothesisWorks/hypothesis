@@ -3,7 +3,7 @@
 The current goals of the Hypothesis for Ruby project are:
 
 * To provide a useful but not wholly feature complete version of
-  [Hypothesis](http://hypothesis.works) for Ruby, that works with
+  [Hypothesis](https://hypothesis.works/) for Ruby, that works with
   RSpec (and ideally minitest, but if that at any point proves to
   be a lot of work this may be dropped. It's not an explicit
   requirement, but supporting it now makes it much easier to find
