@@ -70,21 +70,6 @@ def test_saves_data_while_shrinking(monkeypatch):
     assert in_db == seen
 
 
-@given(st.randoms(), st.random_module())
-@settings(
-    phases=no_shrink, deadline=None, suppress_health_check=[HealthCheck.hung_test]
-)
-def test_maliciously_bad_generator(rnd, seed):
-    @run_to_buffer
-    def x(data):
-        for _ in range(rnd.randint(1, 100)):
-            data.draw_bytes(rnd.randint(1, 10))
-        if rnd.randint(0, 1):
-            data.mark_invalid()
-        else:
-            data.mark_interesting()
-
-
 def test_can_discard(monkeypatch):
     n = 8
 
