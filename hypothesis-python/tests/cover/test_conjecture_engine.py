@@ -413,7 +413,7 @@ def test_fully_exhaust_base(monkeypatch):
     for c in hrange(4):
         runner.cached_test_function([0, c])
 
-    assert 1 in runner.dead
+    assert 1 in runner.tree.dead
 
     runner.run()
 
@@ -919,8 +919,8 @@ def test_exhaustive_enumeration(prefix, bits, seed):
             assert data.status == Status.VALID
             node = 0
             for b in data.buffer:
-                node = runner.tree[node][b]
-            assert node in runner.dead
+                node = runner.tree.nodes[node][b]
+            assert node in runner.tree.dead
     assert len(seen) == size
 
 
@@ -1842,9 +1842,9 @@ def test_will_reset_the_tree_as_it_goes(monkeypatch):
 
         step(0)
         step(1)
-        assert len(runner.tree[0]) > 1
+        assert len(runner.tree.nodes[0]) > 1
         step(2)
-        assert len(runner.tree[0]) == 1
+        assert len(runner.tree.nodes[0]) == 1
 
 
 def test_will_not_reset_the_tree_after_interesting_example(monkeypatch):
@@ -1864,12 +1864,12 @@ def test_will_not_reset_the_tree_after_interesting_example(monkeypatch):
 
         step(0)
         step(1)
-        assert len(runner.tree) > 1
+        assert len(runner.tree.nodes) > 1
         step(7)
-        assert len(runner.tree) > 1
-        t = len(runner.tree)
+        assert len(runner.tree.nodes) > 1
+        t = len(runner.tree.nodes)
         runner.shrink_interesting_examples()
-        assert len(runner.tree) > t
+        assert len(runner.tree.nodes) > t
 
 
 fake_data_counter = 0
