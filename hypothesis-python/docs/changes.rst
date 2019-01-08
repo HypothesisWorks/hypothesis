@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.86.7:
+
+-------------------
+3.86.7 - 2019-01-08
+-------------------
+
+Hypothesis can now automatically generate values for Django models with a
+`URLfield`, thanks to a new provisional strategy for URLs (:issue:`1388`).
+
 .. _v3.86.6:
 
 -------------------
