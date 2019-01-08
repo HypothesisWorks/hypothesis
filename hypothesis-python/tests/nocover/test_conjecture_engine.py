@@ -214,12 +214,12 @@ def test_each_pair_of_blocks():
         data.draw_bits(1)
         data.mark_interesting()
 
-    bounds = [
+    bounds = {
         (a.bounds, b.bounds)
         for a, b in shrinker.each_pair_of_blocks(lambda block: True, lambda block: True)
-    ]
+    }
 
-    assert bounds == [((0, 1), (1, 2)), ((0, 1), (2, 3)), ((1, 2), (2, 3))]
+    assert bounds == {((0, 1), (1, 2)), ((0, 1), (2, 3)), ((1, 2), (2, 3))}
 
 
 def test_each_pair_of_blocks_with_filters():
@@ -231,17 +231,18 @@ def test_each_pair_of_blocks_with_filters():
             data.draw_bits(1)
         data.mark_interesting()
 
-    blocks = [
+    blocks = {
         (a.index, b.index)
         for a, b in shrinker.each_pair_of_blocks(
             lambda block: block.index != 1, lambda block: block.index != 3
         )
-    ]
+    }
 
-    assert blocks == [(0, 1), (0, 2), (0, 4), (2, 4), (3, 4)]
+    assert blocks == {(0, 1), (0, 2), (0, 4), (2, 4), (3, 4)}
 
 
-def test_each_pair_of_blocks_handles_change():
+@pytest.mark.parametrize("intervene_at", [(0, 1), (0, 6), (1, 3)])
+def test_each_pair_of_blocks_handles_change(intervene_at):
     initial = hbytes([9] + [0] * 10)
 
     @shrinking_from(initial)
@@ -251,20 +252,28 @@ def test_each_pair_of_blocks_handles_change():
             data.draw_bits(1)
         data.mark_interesting()
 
-    blocks = []
-    for a, b in shrinker.each_pair_of_blocks(lambda block: True, lambda block: True):
-        if a.index == 0 and b.index == 6:
-            shrinker.incorporate_new_buffer(hbytes([3] + [0] * 10))
-        blocks.append((a.index, b.index))
+    def blocks(intervene=False):
+        blocks = []
+        for a, b in shrinker.each_pair_of_blocks(
+            lambda block: True, lambda block: True
+        ):
+            assert a.index < b.index < len(shrinker.shrink_target.blocks)
+            if intervene and (a.index, b.index) == intervene_at:
+                shrinker.incorporate_new_buffer(hbytes([3] + [0] * 10))
+            blocks.append((a.index, b.index))
+        return blocks
 
-    assert blocks == [
-        (0, 1),
-        (0, 2),
-        (0, 3),
-        (0, 4),
-        (0, 5),
-        (0, 6),
-        (1, 2),
-        (1, 3),
-        (2, 3),
-    ]
+    original_blocks = blocks()
+    blocks_with_intervention = blocks(intervene=True)
+    blocks_after_intervention = blocks()
+
+    # We should not abort when the change happens but should carry on to include
+    # every pair of indices that we would have if we'd iterated after the change.
+    assert set(blocks_after_intervention).issubset(blocks_with_intervention)
+
+    # Changing the iteration order shouldn't introduce new possible block pairs.
+    assert set(blocks_with_intervention).issubset(original_blocks)
+
+    # We should however not do that by repeating any pairs of block indexes -
+    # repetition should happen the next time the relevant passes are run.
+    assert len(set(blocks_with_intervention)) == len(blocks_with_intervention)
