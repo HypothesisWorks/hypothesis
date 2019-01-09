@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.86.9:
+
+-------------------
+3.86.9 - 2019-01-09
+-------------------
+
+This release improves some internal logic about when a test case in Hypothesis's internal representation could lead to a valid test case.
+In some circumstances this can lead to a significant speed up during shrinking.
+It may have some minor negative impact on the quality of the final result due to certain shrink passes now having access to less information about test cases in some circumstances, but this should rarely matter.
+
 .. _v3.86.8:
 
 -------------------
