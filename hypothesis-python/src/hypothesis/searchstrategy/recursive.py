@@ -102,7 +102,7 @@ class RecursiveStrategy(SearchStrategy):
                 if count == 0:
                     data.note_event(
                         lazyformat(
-                            "Draw for %r exceeded max_leaves " "and had to be retried",
+                            "Draw for %r exceeded max_leaves and had to be retried",
                             self,
                         )
                     )

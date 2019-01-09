@@ -19,11 +19,17 @@ from __future__ import absolute_import, division, print_function
 
 pytest_plugins = "pytester"
 
+func_with_doctest = """
+def hi():
+    '''
+    >>> i = 5
+    >>> i-1
+    4
+    '''
+"""
+
 
 def test_can_run_doctests(testdir):
-    script = testdir.makepyfile(
-        "def hi():\n" '    """\n' "    >>> i = 5\n" "    >>> i-1\n" '    4"""'
-    )
-
+    script = testdir.makepyfile(func_with_doctest)
     result = testdir.runpytest(script, "--doctest-modules")
     assert result.ret == 0
