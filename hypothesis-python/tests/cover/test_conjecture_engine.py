@@ -1939,5 +1939,5 @@ def test_cached_test_function_does_not_reinvoke_on_prefix():
         assert data.status == Status.VALID
         for n in [2, 1, 0]:
             prefix_data = runner.cached_test_function(hbytes(n))
-            prefix_data is Overrun
+            assert prefix_data is Overrun
         assert call_count[0] == 1
