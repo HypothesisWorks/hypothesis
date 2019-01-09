@@ -21,6 +21,14 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.86.8:
+
+-------------------
+3.86.8 - 2019-01-09
+-------------------
+
+This release has no user visible changes but updates our URLs to use HTTPS.
+
 .. _v3.86.7:
 
 -------------------
