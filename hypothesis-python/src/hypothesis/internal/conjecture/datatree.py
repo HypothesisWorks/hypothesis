@@ -221,11 +221,18 @@ class DataTree(object):
         assert node not in self.dead
         return hbytes(prefix)
 
-    def cached_test_function(self, buffer):
-        """If the known ConjectureData objects mean that we already know
-        what the result of running this buffer would be, return either an
-        OverrunPlaceholder or a previously run ConjectureData object as
-        appropriate."""
+    def lookup(self, buffer):
+        """Look up the result of running buffer for a test function that
+        produced the stored data objects. Returns either:
+
+        * a stored ConjectureData object of status >= INVALID which
+          could have resulted from running buffer.
+        * Overrun if running a test function which produced one of the
+          stored data objects must necessarily result in a status of
+          OVERRUN.
+        * None if we cannot infer what the result of running buffer would
+          be from the previously seen ConjectureData values.
+        """
         rewritten = bytearray()
         would_overrun = False
 
@@ -276,7 +283,8 @@ class DataTree(object):
 
         if would_overrun:
             return Overrun
-        raise KeyError()
+        else:
+            return None
 
 
 def _is_simple_mask(mask):

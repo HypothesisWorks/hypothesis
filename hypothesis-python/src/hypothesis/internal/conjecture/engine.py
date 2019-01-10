@@ -836,10 +836,9 @@ class ConjectureRunner(object):
         Otherwise we call through to ``test_function``, and return a
         fresh result.
         """
-        try:
-            return self.tree.cached_test_function(buffer)
-        except KeyError:
-            pass
+        result = self.tree.lookup(buffer)
+        if result is not None:
+            return result
 
         # We didn't find a match in the tree, so we need to run the test
         # function normally. Note that test_function will automatically
