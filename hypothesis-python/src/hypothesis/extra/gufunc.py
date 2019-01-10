@@ -370,7 +370,7 @@ def gufunc_broadcast(draw, signature, dtype, elements, unique=False,
 # TODO consider dtypes --> itypes
 
 
-def broadcasted(f, signature, otypes, dtype, elements, unique=False,
+def broadcasted(f, signature, otypes, itypes, elements, unique=False,
                 excluded=(), min_side=0, max_side=5, max_dims_extra=2):
     """Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
@@ -393,7 +393,7 @@ def broadcasted(f, signature, otypes, dtype, elements, unique=False,
         only returns a single output. It can also be set to `None` to leave it
         to be inferred, but this can create issues with empty arrays, so it is
         not officially supported here.
-    dtype : list-like of dtype
+    itypes : list-like of dtype
         List of numpy `dtype` for each argument. These can be either strings
         (``'int64'``), type (``np.int64``), or numpy `dtype`
         (``np.dtype('int64')``). A single `dtype` can be supplied for all
@@ -443,7 +443,7 @@ def broadcasted(f, signature, otypes, dtype, elements, unique=False,
     f_vec = np.vectorize(f, signature=signature, otypes=otypes)
 
     broadcasted_args = \
-        gufunc_broadcast(signature, dtype, elements, unique=unique,
+        gufunc_broadcast(signature, itypes, elements, unique=unique,
                          excluded=excluded, min_side=min_side,
                          max_side=max_side, max_dims_extra=max_dims_extra)
     funcs_and_args = tuples(just(f), just(f_vec), broadcasted_args)
@@ -451,7 +451,7 @@ def broadcasted(f, signature, otypes, dtype, elements, unique=False,
 
 
 @composite
-def axised(draw, f, signature, dtype, elements, unique=False,
+def axised(draw, f, signature, itypes, elements, unique=False,
            min_side=1, max_side=5, max_dims_extra=2, allow_none=True):
     """Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
@@ -469,7 +469,7 @@ def axised(draw, f, signature, dtype, elements, unique=False,
         first argument must be 1D. For, :func:`numpy.mean` we use the signature
         `'(n)->()'` or for :func:`numpy.percentile` we use `'(n),()->()'`.
         Officially, only supporting ascii characters on Py3.
-    dtype : list-like of dtype
+    itypes : list-like of dtype
         List of numpy `dtype` for each argument. These can be either strings
         (``'int64'``), type (``np.int64``), or numpy `dtype`
         (``np.dtype('int64')``). A single `dtype` can be supplied for all
@@ -556,7 +556,7 @@ def axised(draw, f, signature, dtype, elements, unique=False,
         X_shape[axis] = n
 
     shapes[0] = X_shape
-    args = draw(_tuple_of_arrays(shapes, dtype=dtype,
+    args = draw(_tuple_of_arrays(shapes, dtype=itypes,
                                  elements=elements, unique=unique))
 
     funcs_and_args = (f, f_axis, args, axis)

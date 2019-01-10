@@ -501,7 +501,7 @@ def test_shapes_broadcasted(parsed_sig_and_size, o_parsed_sig, otypes,
     S = gu.broadcasted(dummy, signature, otypes=otypes, excluded=excluded,
                        min_side=min_side, max_side=max_side,
                        max_dims_extra=max_dims_extra,
-                       dtype=dtype, elements=elements, unique=unique)
+                       itypes=dtype, elements=elements, unique=unique)
 
     f0, f_vec, X = data.draw(S)
 
@@ -547,7 +547,7 @@ def test_elements_broadcasted(parsed_sig, o_parsed_sig, otypes, excluded,
     S = gu.broadcasted(dummy, signature, otypes=otypes, excluded=excluded,
                        min_side=min_side, max_side=max_side,
                        max_dims_extra=max_dims_extra,
-                       dtype=dtype, elements=elements)
+                       itypes=dtype, elements=elements)
 
     f0, f_vec, X = data.draw(S)
 
@@ -566,7 +566,7 @@ def test_np_broadcasted(func_choice, min_side, max_side, max_dims_extra, data):
     S = gu.broadcasted(f, signature, otypes=[otype],
                        min_side=min_side, max_side=max_side,
                        max_dims_extra=max_dims_extra,
-                       dtype=np.int64,
+                       itypes=np.int64,
                        elements=integers(min_value=0, max_value=100))
 
     f0, f_vec, args = data.draw(S)
@@ -597,7 +597,7 @@ def test_np_multi_broadcasted(min_side, max_side, max_dims_extra, data):
     S = gu.broadcasted(multi_out_f, signature, otypes=otypes, excluded=(2,),
                        min_side=min_side, max_side=max_side,
                        max_dims_extra=max_dims_extra,
-                       dtype=np.int64,
+                       itypes=np.int64,
                        elements=integers(min_value=0, max_value=100))
 
     f0, f_vec, args = data.draw(S)
@@ -632,7 +632,7 @@ def test_shapes_axised(parsed_sig_and_size, max_dims_extra,
 
     S = gu.axised(dummy, signature, min_side=min_side, max_side=max_side,
                   max_dims_extra=max_dims_extra, allow_none=allow_none,
-                  dtype=dtype, elements=elements, unique=unique)
+                  itypes=dtype, elements=elements, unique=unique)
 
     f0, f_ax, X, axis = data.draw(S)
 
@@ -676,7 +676,7 @@ def test_elements_axised(parsed_sig, min_side, max_side, max_dims_extra,
 
     S = gu.axised(dummy, signature, min_side=min_side, max_side=max_side,
                   max_dims_extra=max_dims_extra, allow_none=allow_none,
-                  dtype=dtype, elements=elements)
+                  itypes=dtype, elements=elements)
 
     f0, f_ax, X, axis = data.draw(S)
 
@@ -692,7 +692,7 @@ def test_np_axised(func_choice, min_side, max_side, max_dims_extra, data):
 
     S = gu.axised(f, signature, min_side=min_side, max_side=max_side,
                   max_dims_extra=max_dims_extra, allow_none=allow_none,
-                  dtype=np.int64,
+                  itypes=np.int64,
                   elements=integers(min_value=0, max_value=100))
 
     f0, f_ax, args, axis = data.draw(S)
