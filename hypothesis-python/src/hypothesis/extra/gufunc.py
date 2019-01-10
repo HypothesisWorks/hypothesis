@@ -23,9 +23,9 @@ from hypothesis.strategies import (
 # as high as 32 before breaking assumptions in numpy.
 GLOBAL_DIMS_MAX = 12
 
-# Key used in min_side and max_side to indicate min/max on broadcasted dims
-# TODO consider using a fancy enum or something
-BCAST_DIM = None
+# Key used in min_side and max_side to indicate min/max on broadcasted dims,
+# using ``object()`` trick to create unique sentinel.
+BCAST_DIM = object()
 # Value used in default dict for max side if variable not specified
 DEFAULT_MAX_SIDE = 5
 
@@ -143,11 +143,6 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     -------
     shapes : list of tuples
         list of tuples where each tuple is the shape of an argument.
-
-    See Also
-    --------
-    See `numpy.vectorize` at
-    docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html
     """
     min_side = _int_or_dict(min_side, 0)
     max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
@@ -218,11 +213,6 @@ def gufunc(draw, signature, dtype, elements, unique=False,
     res : tuple of ndarrays
         Resulting ndarrays with shapes consistent with `signature` and elements
         from `elements`.
-
-    See Also
-    --------
-    See `numpy.vectorize` at
-    docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html
     """
     # Leaving dtype and elements as required for now since that leaves us the
     # flexibility to later make the default float and floats, or perhaps None
@@ -249,7 +239,7 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
         Officially, only supporting ascii characters on Py3.
     excluded : list-like of integers
         Set of integers representing the positional for which the function will
-        not be vectorized. Uses same format as :func:`numpy.vectorize`.
+        not be vectorized. Uses same format as :obj:`numpy.vectorize`.
     min_side : int or dict
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
@@ -271,11 +261,6 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     shapes : list of tuples
         list of tuples where each tuple is the shape of an argument. Extra
         dimensions for broadcasting will be present in the shapes.
-
-    See Also
-    --------
-    See `numpy.vectorize` at
-    docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html
     """
     min_side = _int_or_dict(min_side, 0)
     max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
@@ -352,7 +337,7 @@ def gufunc_broadcast(draw, signature, dtype, elements, unique=False,
         One can also specify a single boolean to apply it to all arguments.
     excluded : list-like of integers
         Set of integers representing the positional for which the function will
-        not be vectorized. Uses same format as :func:`numpy.vectorize`.
+        not be vectorized. Uses same format as :obj:`numpy.vectorize`.
     min_side : int or dict
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
@@ -374,11 +359,6 @@ def gufunc_broadcast(draw, signature, dtype, elements, unique=False,
     res : tuple of ndarrays
         Resulting ndarrays with shapes consistent with `signature` and elements
         from `elements`. Extra dimensions for broadcasting will be present.
-
-    See Also
-    --------
-    See `numpy.vectorize` at
-    docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html
     """
     shapes = draw(gufunc_broadcast_shape(signature, excluded=excluded,
                                          min_side=min_side, max_side=max_side,
@@ -394,7 +374,7 @@ def broadcasted(f, signature, otypes, dtype, elements, unique=False,
                 excluded=(), min_side=0, max_side=5, max_dims_extra=2):
     """Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
-    :func:`numpy.vectorize`.
+    :obj:`numpy.vectorize`.
 
     Parameters
     ----------
@@ -428,7 +408,7 @@ def broadcasted(f, signature, otypes, dtype, elements, unique=False,
         One can also specify a single boolean to apply it to all arguments.
     excluded : list-like of integers
         Set of integers representing the positional for which the function will
-        not be vectorized. Uses same format as :func:`numpy.vectorize`.
+        not be vectorized. Uses same format as :obj:`numpy.vectorize`.
     min_side : int or dict
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
@@ -451,15 +431,10 @@ def broadcasted(f, signature, otypes, dtype, elements, unique=False,
         This is the original function handles broadcasting itself.
     f_vec : callable
         Function that should be functionaly equivalent to `f` but broadcasting
-        is handled by :func:`numpy.vectorize`.
+        is handled by :obj:`numpy.vectorize`.
     res : tuple of ndarrays
         Resulting ndarrays with shapes consistent with `signature`. Extra
         dimensions for broadcasting will be present.
-
-    See Also
-    --------
-    See `numpy.vectorize` at
-    docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html
     """
     # cache and doc not needed for property testing, excluded not actually
     # needed here because we don't generate extra dims for the excluded args.
@@ -539,13 +514,6 @@ def axised(draw, f, signature, dtype, elements, unique=False,
         will be added to first argument (args[0]) to test axis slicing.
     axis : int
         Axis along which first argument of `f` is sliced.
-
-    See Also
-    --------
-    See `numpy.apply_along_axis` at
-    docs.scipy.org/doc/numpy/reference/generated/numpy.apply_along_axis.html
-    See `numpy.vectorize` at
-    docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html
     """
     min_side = _int_or_dict(min_side, 1)
     max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
