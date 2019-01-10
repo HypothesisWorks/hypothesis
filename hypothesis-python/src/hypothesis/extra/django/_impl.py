@@ -77,8 +77,9 @@ def from_model(
 
     Hypothesis can often infer a strategy based the field type and validators,
     and will attempt to do so for any required fields.  No strategy will be
-    inferred for ``AutoField``s, nullable fields, fields for which a keyword
-    argument is passed to ``from_model()``, or foreign keys.  For example,
+    inferred for an :class:`~django:django.db.models.AutoField`, nullable field,
+    foreign key, or field for which a keyword
+    argument is passed to ``from_model()``.  For example,
     a Shop type with a foreign key to Company could be generated with::
 
         shop_strategy = from_model(Shop, company=from_model(Company))
