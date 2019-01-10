@@ -42,6 +42,7 @@ from hypothesis.stateful import (
     consumes,
     initialize,
     invariant,
+    multiple,
     precondition,
     rule,
     run_state_machine_as_test,
@@ -386,6 +387,37 @@ class MachineWithConsumingRule(RuleBasedStateMachine):
 
 
 TestMachineWithConsumingRule = MachineWithConsumingRule.TestCase
+
+
+def test_multiple():
+    none = multiple()
+    some = multiple(1, 2.01, "3", b"4", 5)
+    assert len(none.values) == 0 and len(some.values) == 5
+    assert all(value in some.values for value in (1, 2.01, "3", b"4", 5))
+
+
+class MachineUsingMultiple(RuleBasedStateMachine):
+    b = Bundle("b")
+
+    def __init__(self):
+        self.expected_bundle_length = 0
+        super(MachineUsingMultiple, self).__init__()
+
+    @invariant()
+    def bundle_length(self):
+        assert len(self.bundle("b")) == self.expected_bundle_length
+
+    @rule(target=b, items=lists(elements=integers(), max_size=10))
+    def populate_bundle(self, items):
+        self.expected_bundle_length += len(items)
+        return multiple(*items)
+
+    @rule(target=b)
+    def do_not_populate(self):
+        return multiple()
+
+
+TestMachineUsingMultiple = MachineUsingMultiple.TestCase
 
 
 def test_consumes_typecheck():
