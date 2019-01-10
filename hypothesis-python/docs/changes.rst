@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.88.0:
+
+-------------------
+3.88.0 - 2019-01-10
+-------------------
+
+Introduces :func:`hypothesis.stateful.multiple`, which allows rules in rule
+based state machines to send multiple results at once to their target Bundle,
+or none at all.
+
 .. _v3.87.0:
 
 -------------------
