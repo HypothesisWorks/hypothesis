@@ -86,7 +86,7 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     shapes : list-like of tuples
         List of tuples where each tuple is the shape of an argument.
     dtype : list-like of dtype
-        List of numpy `dtype`s for each argument. These can be either strings
+        List of numpy `dtype` for each argument. These can be either strings
         (``'int64'``), type (``np.int64``), or numpy `dtype`
         (``np.dtype('int64')``). A single `dtype` can be supplied for all
         arguments.
@@ -192,7 +192,7 @@ def gufunc(draw, signature, dtype, elements, unique=False,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
         Officially, only supporting ascii characters on Py3.
     dtype : list-like of dtype
-        List of numpy `dtype`s for each argument. These can be either strings
+        List of numpy `dtype` for each argument. These can be either strings
         (``'int64'``), type (``np.int64``), or numpy `dtype`
         (``np.dtype('int64')``). A single `dtype` can be supplied for all
         arguments.
@@ -336,7 +336,7 @@ def gufunc_broadcast(draw, signature, dtype, elements, unique=False,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
         Officially, only supporting ascii characters on Py3.
     dtype : list-like of dtype
-        List of numpy `dtype`s for each argument. These can be either strings
+        List of numpy `dtype` for each argument. These can be either strings
         (``'int64'``), type (``np.int64``), or numpy `dtype`
         (``np.dtype('int64')``). A single `dtype` can be supplied for all
         arguments.
@@ -412,7 +412,7 @@ def broadcasted(f, signature, otypes, excluded=(), **kwargs):
         Set of integers representing the positional for which the function will
         not be vectorized. Uses same format as `numpy.vectorize`.
     dtype : list-like of dtype
-        List of numpy `dtype`s for each argument. These can be either strings
+        List of numpy `dtype` for each argument. These can be either strings
         (``'int64'``), type (``np.int64``), or numpy `dtype`
         (``np.dtype('int64')``). A single `dtype` can be supplied for all
         arguments.
@@ -484,7 +484,7 @@ def axised(draw, f, signature, dtype, elements, unique=False,
         `'(n)->()'` or for `'np.percentile'` we use `'(n),()->()'`. Officially,
         only supporting ascii characters on Py3.
     dtype : list-like of dtype
-        List of numpy `dtype`s for each argument. These can be either strings
+        List of numpy `dtype` for each argument. These can be either strings
         (``'int64'``), type (``np.int64``), or numpy `dtype`
         (``np.dtype('int64')``). A single `dtype` can be supplied for all
         arguments.
