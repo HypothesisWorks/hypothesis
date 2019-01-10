@@ -583,17 +583,17 @@ class Shrinker(object):
         # have more opportunities to make shrinks that speed up the tests or
         # that reduce the number of viable shrinks at the next gap size because
         # we've lowered some values.
-        gap = 1
-        while gap < len(self.blocks):
+        offset = 1
+        while offset < len(self.blocks):
             i = 0
-            while i + gap < len(self.blocks):
-                j = i + gap
+            while i + offset < len(self.blocks):
+                j = i + offset
                 block_i = self.blocks[i]
                 block_j = self.blocks[j]
                 if accept_first(block_i) and accept_second(block_j):
                     yield (block_i, block_j)
                 i += 1
-            gap += 1
+            offset += 1
 
     def pass_to_descendant(self):
         """Attempt to replace each example with a descendant example.
