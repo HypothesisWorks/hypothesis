@@ -35,16 +35,16 @@ to avoid :doc:`errors due to slow example generation </healthchecks>`.
 Having set up a test class, you can now pass :func:`@given <hypothesis.given>`
 a strategy for Django models:
 
-.. autofunction:: hypothesis.extra.django.models.models
+.. autofunction:: hypothesis.extra.django.from_model
 
 For example, using `the trivial django project we have for testing
 <https://github.com/HypothesisWorks/hypothesis/blob/master/hypothesis-python/tests/django/toystore/models.py>`_:
 
 .. code-block:: python
 
-    >>> from hypothesis.extra.django.models import models
+    >>> from hypothesis.extra.django import from_model
     >>> from toystore.models import Customer
-    >>> c = models(Customer).example()
+    >>> c = from_model(Customer).example()
     >>> c
     <Customer: Customer object>
     >>> c.email
@@ -75,7 +75,7 @@ pass a strategy to skip validation at the strategy level:
 .. code-block:: python
 
     >>> from hypothesis.strategies import integers
-    >>> c = models(Customer, age=integers(min_value=0, max_value=120)).example()
+    >>> c = from_model(Customer, age=integers(min_value=0, max_value=120)).example()
     >>> c
     <Customer: Customer object>
     >>> c.age
@@ -94,17 +94,19 @@ model deriving functionality by registering a default strategy for it:
 .. code-block:: python
 
     >>> from toystore.models import CustomishField, Customish
-    >>> models(Customish).example()
+    >>> from_model(Customish).example()
     hypothesis.errors.InvalidArgument: Missing arguments for mandatory field
         customish for model Customish
-    >>> from hypothesis.extra.django.models import add_default_field_mapping
+    >>> from hypothesis.extra.django import register_field_strategy
     >>> from hypothesis.strategies import just
-    >>> add_default_field_mapping(CustomishField, just("hi"))
-    >>> x = models(Customish).example()
+    >>> register_field_strategy(CustomishField, just("hi"))
+    >>> x = from_model(Customish).example()
     >>> x.customish
     'hi'
 
 Note that this mapping is on exact type. Subtypes will not inherit it.
+
+.. autofunction:: hypothesis.extra.django.register_field_strategy
 
 
 Generating child models
@@ -120,9 +122,9 @@ the *flatmap* function as follows:
   from hypothesis.strategies import lists, just
 
   def generate_with_shops(company):
-    return lists(models(Shop, company=just(company))).map(lambda _: company)
+    return lists(from_model(Shop, company=just(company))).map(lambda _: company)
 
-  company_with_shops_strategy = models(Company).flatmap(generate_with_shops)
+  company_with_shops_strategy = from_model(Company).flatmap(generate_with_shops)
 
 Lets unpack what this is doing:
 
@@ -131,7 +133,7 @@ apply a function to it which gives us a new strategy. We then draw a value from
 *that* strategy. So in this case we're first drawing a company, and then we're
 drawing a list of shops belonging to that company: The *just* strategy is a
 strategy such that drawing it always produces the individual value, so
-``models(Shop, company=just(company))`` is a strategy that generates a Shop belonging
+``from_model(Shop, company=just(company))`` is a strategy that generates a Shop belonging
 to the original company.
 
 So the following code would give us a list of shops all belonging to the same
@@ -139,7 +141,7 @@ company:
 
 .. code:: python
 
-  models(Company).flatmap(lambda c: lists(models(Shop, company=just(c))))
+  from_model(Company).flatmap(lambda c: lists(from_model(Shop, company=just(c))))
 
 The only difference from this and the above is that we want the company, not
 the shops. This is where the inner map comes in. We build the list of shops
@@ -148,25 +150,6 @@ works because the models that Hypothesis generates are saved in the database,
 so we're essentially running the inner strategy purely for the side effect of
 creating those children in the database.
 
-
-Using default field values
-==========================
-
-Hypothesis ignores field defaults and always tries to generate values, even if
-it doesn't know how to. You can tell it to use the default value for a field
-instead of generating one by passing ``fieldname=default_value`` to
-``models()``:
-
-.. code:: python
-
-    >>> from toystore.models import DefaultCustomish
-    >>> models(DefaultCustomish).example()
-    hypothesis.errors.InvalidArgument: Missing arguments for mandatory field
-        customish for model DefaultCustomish
-    >>> from hypothesis.extra.django.models import default_value
-    >>> x = models(DefaultCustomish, customish=default_value).example()
-    >>> x.customish
-    'b'
 
 .. _django-generating-primary-key:
 

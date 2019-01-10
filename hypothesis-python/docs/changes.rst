@@ -2930,8 +2930,7 @@ This is a bugfix release:
 3.33.0 - 2017-10-16
 -------------------
 
-This release supports strategy inference for more field types in Django
-:func:`~hypothesis.extra.django.models.models` - you can now omit an argument for
+This release supports strategy inference for more Django field types - you can now omit an argument for
 Date, Time, Duration, Slug, IP Address, and UUID fields.  (:issue:`642`)
 
 Strategy generation for fields with grouped choices now selects choices from
@@ -4275,7 +4274,7 @@ This is a bug fix release for a single bug:
 
 This release is entirely provided by `Lucas Wiman <https://github.com/lucaswiman>`_:
 
-Strategies constructed by :func:`~hypothesis.extra.django.models.models`
+Strategies constructed by the Django extra
 will now respect much more of Django's validations out of the box.
 Wherever possible, :meth:`~django:django.db.models.Model.full_clean` should
 succeed.
