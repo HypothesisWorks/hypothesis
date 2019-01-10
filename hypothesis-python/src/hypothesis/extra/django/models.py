@@ -36,7 +36,7 @@ def add_default_field_mapping(field_type, strategy):
     note_deprecation(
         "This function is deprecated; use `hypothesis.extra.django."
         "register_field_strategy` instead.",
-        since="RELEASEDAY",
+        since="2019-01-10",
     )
     register_field_strategy(field_type, strategy)
 
@@ -78,7 +78,7 @@ def models(
     note_deprecation(
         "This function is deprecated; use `hypothesis.extra.django."
         "from_model` instead.",
-        since="RELEASEDAY",
+        since="2019-01-10",
     )
     result = {}
     for k, v in field_strategies.items():
