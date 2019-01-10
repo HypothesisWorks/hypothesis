@@ -1,9 +1,7 @@
-"""Extend hypothesis.extra.numpy for functions that follow the GU function API.
-
-This routine uses the numpy parser of the Generalized Universal Function API
-signatures `_parse_gufunc_signature`, which is only available in numpy>=1.12.0
-and therefore requires a bump in the requirements for hypothesis.
-"""
+# This module uses the numpy parser of the Generalized Universal Function API
+# signatures `_parse_gufunc_signature`, which is only available in
+# numpy>=1.12.0 and therefore requires a bump in the requirements for
+# hypothesis.
 from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict
@@ -148,7 +146,7 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     See Also
     --------
     See `numpy.vectorize` at
-    docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
+    docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html
     """
     min_side = _int_or_dict(min_side, 0)
     max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
@@ -222,7 +220,7 @@ def gufunc(draw, signature, dtype, elements, unique=False,
     See Also
     --------
     See `numpy.vectorize` at
-    docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
+    docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html
     """
     # Leaving dtype and elements as required for now since that leaves us the
     # flexibility to later make the default float and floats, or perhaps None
@@ -254,7 +252,9 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
         size can be supplied here. Minimums can be provided on a per-dimension
-        basis using a dict, e.g. ``min_side={'n': 2}``.
+        basis using a dict, e.g. ``min_side={'n': 2}``. One can use, e.g.,
+        ``min_side={hypothesis.extra.gufunc.BCAST_DIM: 2}`` to limit the size
+        of the broadcasted dimensions.
     max_side : int or dict
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing. Dictionaries can be
@@ -273,7 +273,7 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     See Also
     --------
     See `numpy.vectorize` at
-    docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
+    docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html
     """
     min_side = _int_or_dict(min_side, 0)
     max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
@@ -354,7 +354,9 @@ def gufunc_broadcast(draw, signature, dtype, elements, unique=False,
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
         size can be supplied here. Minimums can be provided on a per-dimension
-        basis using a dict, e.g. ``min_side={'n': 2}``.
+        basis using a dict, e.g. ``min_side={'n': 2}``. One can use, e.g.,
+        ``min_side={hypothesis.extra.gufunc.BCAST_DIM: 2}`` to limit the size
+        of the broadcasted dimensions.
     max_side : int or dict
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing. Dictionaries can be
@@ -373,7 +375,7 @@ def gufunc_broadcast(draw, signature, dtype, elements, unique=False,
     See Also
     --------
     See `numpy.vectorize` at
-    docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
+    docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html
     """
     shapes = draw(gufunc_broadcast_shape(signature, excluded=excluded,
                                          min_side=min_side, max_side=max_side,
@@ -382,11 +384,11 @@ def gufunc_broadcast(draw, signature, dtype, elements, unique=False,
                                 elements=elements, unique=unique))
     return res
 
-# TODO consider replacing kwargs, search all
 # TODO consider dtypes --> itypes
 
 
-def broadcasted(f, signature, otypes, excluded=(), **kwargs):
+def broadcasted(f, signature, otypes, dtype, elements, unique=False,
+                excluded=(), min_side=0, max_side=5, max_dims_extra=2):
     """Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
     `numpy.vectorize`.
@@ -408,9 +410,6 @@ def broadcasted(f, signature, otypes, excluded=(), **kwargs):
         only returns a single output. It can also be set to `None` to leave it
         to be inferred, but this can create issues with empty arrays, so it is
         not officially supported here.
-    excluded : list-like of integers
-        Set of integers representing the positional for which the function will
-        not be vectorized. Uses same format as `numpy.vectorize`.
     dtype : list-like of dtype
         List of numpy `dtype` for each argument. These can be either strings
         (``'int64'``), type (``np.int64``), or numpy `dtype`
@@ -423,11 +422,16 @@ def broadcasted(f, signature, otypes, excluded=(), **kwargs):
     unique : list-like of bool
         Boolean flag to specify if all elements in an array must be unique.
         One can also specify a single boolean to apply it to all arguments.
+    excluded : list-like of integers
+        Set of integers representing the positional for which the function will
+        not be vectorized. Uses same format as `numpy.vectorize`.
     min_side : int or dict
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
         size can be supplied here. Minimums can be provided on a per-dimension
-        basis using a dict, e.g. ``min_side={'n': 2}``.
+        basis using a dict, e.g. ``min_side={'n': 2}``. One can use, e.g.,
+        ``min_side={hypothesis.extra.gufunc.BCAST_DIM: 2}`` to limit the size
+        of the broadcasted dimensions.
     max_side : int or dict
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing. Dictionaries can be
@@ -451,7 +455,7 @@ def broadcasted(f, signature, otypes, excluded=(), **kwargs):
     See Also
     --------
     See `numpy.vectorize` at
-    docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
+    docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html
     """
     # cache and doc not needed for property testing, excluded not actually
     # needed here because we don't generate extra dims for the excluded args.
@@ -459,7 +463,10 @@ def broadcasted(f, signature, otypes, excluded=(), **kwargs):
     # corner cases.
     f_vec = np.vectorize(f, signature=signature, otypes=otypes)
 
-    broadcasted_args = gufunc_broadcast(signature, excluded=excluded, **kwargs)
+    broadcasted_args = \
+        gufunc_broadcast(signature, dtype, elements, unique=unique,
+                         excluded=excluded, min_side=min_side,
+                         max_side=max_side, max_dims_extra=max_dims_extra)
     funcs_and_args = tuples(just(f), just(f_vec), broadcasted_args)
     return funcs_and_args
 
@@ -499,7 +506,9 @@ def axised(draw, f, signature, dtype, elements, unique=False,
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
         size can be supplied here. Minimums can be provided on a per-dimension
-        basis using a dict, e.g. ``min_side={'n': 2}``.
+        basis using a dict, e.g. ``min_side={'n': 2}``. One can use, e.g.,
+        ``min_side={hypothesis.extra.gufunc.BCAST_DIM: 2}`` to limit the size
+        of the extra dimensions of the first argument.
     max_side : int or dict
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing. Dictionaries can be
@@ -528,9 +537,9 @@ def axised(draw, f, signature, dtype, elements, unique=False,
     See Also
     --------
     See `numpy.apply_along_axis` at
-    docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.apply_along_axis.html
+    docs.scipy.org/doc/numpy/reference/generated/numpy.apply_along_axis.html
     See `numpy.vectorize` at
-    docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.vectorize.html
+    docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html
     """
     min_side = _int_or_dict(min_side, 1)
     max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)

@@ -26,7 +26,7 @@ Generalized Universal Function API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Hypothesis also offers strategies for creating arguments for functions that
-follow numpy's `Generalized Universal Function API <https://docs.scipy.org/doc/numpy-1.13.0/reference/c-api.generalized-ufuncs.html>`_.
+follow numpy's `Generalized Universal Function API <https://docs.scipy.org/doc/numpy/reference/c-api.generalized-ufuncs.html>`_.
 
 .. automodule:: hypothesis.extra.gufunc
    :members:
