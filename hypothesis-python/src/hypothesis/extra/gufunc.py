@@ -143,6 +143,15 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     -------
     shapes : list of tuples
         list of tuples where each tuple is the shape of an argument.
+
+    Examples
+    --------
+
+    .. code-block:: pycon
+
+      >>> gufunc_shape('(m,n),(n)->(m)',
+                       min_side={'m': 1, 'n': 2}, max_side=3).example()
+      [(3, 2), (2,)]
     """
     min_side = _int_or_dict(min_side, 0)
     max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
