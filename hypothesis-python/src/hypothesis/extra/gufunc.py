@@ -33,6 +33,7 @@ DEFAULT_MAX_SIDE = 5
 
 
 def order_check_min_max(min_dict, max_dict, floor=0):
+    '''Wrapper around argument checker in `hypothesis.extra.numpy`.'''
     order_check("side default", floor,
                 min_dict.default_factory(), max_dict.default_factory())
 
@@ -41,6 +42,9 @@ def order_check_min_max(min_dict, max_dict, floor=0):
 
 
 def _int_or_dict(x, default_val):
+    '''Pre-process cases where argument `x` can be `int` or `dict`. In all
+    cases, build a `defaultdict` and return it.
+    '''
     # case 1: x already defaultdict, leave it be, pass thru
     if isinstance(x, defaultdict):
         return x
@@ -81,16 +85,23 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     ----------
     shapes : list-like of tuples
         List of tuples where each tuple is the shape of an argument.
-    filler : strategy
-        Strategy to fill in array elements e.g. `hypothesis.strategies.floats`.
-        The parameters for `filler` are specified by the `kwargs`.
-    kwargs : kwargs
-        Passed to filler strategy.
+    dtype : list-like of dtype
+        List of numpy `dtype`s for each argument. These can be either strings
+        (``'int64'``), type (``np.int64``), or numpy `dtype`
+        (``np.dtype('int64')``). A single `dtype` can be supplied for all
+        arguments.
+    elements : list-like of strategy
+        Strategies to fill in array elements on a per argument basis. One can
+        also specify a single strategy (e.g., `hypothesis.strategies.floats`)
+        and have it applied to all arguments.
+    unique : list-like of bool
+        Boolean flag to specify if all elements in an array must be unique.
+        One can also specify a single boolean to apply it to all arguments.
 
     Returns
     -------
     res : tuple of ndarrays
-        Resulting ndarrays with shape from `shapes` and elements from `filler`.
+        Resulting ndarrays with shape of `shapes` and elements from `elements`.
     """
     n = len(shapes)
 
@@ -119,13 +130,15 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
         of numpy generalized universal function signature, e.g.,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
         Officially, only supporting ascii characters on Py3.
-    min_side : int
+    min_side : int or dict
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
-        size can be supplied here.
-    max_side : int
+        size can be supplied here. Minimums can be provided on a per-dimension
+        basis using a dict, e.g. ``min_side={'n': 2}``.
+    max_side : int or dict
         Maximum size of any side of the arrays. This can usually be kept small
-        and still find most corner cases in testing.
+        and still find most corner cases in testing. Dictionaries can also be
+        supplied as with `min_side`.
 
     Returns
     -------
@@ -178,24 +191,33 @@ def gufunc(draw, signature, dtype, elements, unique=False,
         of numpy generalized universal function signature, e.g.,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
         Officially, only supporting ascii characters on Py3.
-    filler : strategy
-        Strategy to fill in array elements e.g. `hypothesis.strategies.floats`.
-        The parameters for `filler` are specified by the `kwargs`.
-    min_side : int
+    dtype : list-like of dtype
+        List of numpy `dtype`s for each argument. These can be either strings
+        (``'int64'``), type (``np.int64``), or numpy `dtype`
+        (``np.dtype('int64')``). A single `dtype` can be supplied for all
+        arguments.
+    elements : list-like of strategy
+        Strategies to fill in array elements on a per argument basis. One can
+        also specify a single strategy (e.g., `hypothesis.strategies.floats`)
+        and have it applied to all arguments.
+    unique : list-like of bool
+        Boolean flag to specify if all elements in an array must be unique.
+        One can also specify a single boolean to apply it to all arguments.
+    min_side : int or dict
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
-        size can be supplied here.
-    max_side : int
+        size can be supplied here. Minimums can be provided on a per-dimension
+        basis using a dict, e.g. ``min_side={'n': 2}``.
+    max_side : int or dict
         Maximum size of any side of the arrays. This can usually be kept small
-        and still find most corner cases in testing.
-    kwargs : kwargs
-        Passed to filler strategy.
+        and still find most corner cases in testing. Dictionaries can be
+        supplied as with `min_side`.
 
     Returns
     -------
     res : tuple of ndarrays
         Resulting ndarrays with shapes consistent with `signature` and elements
-        from `filler`.
+        from `elements`.
 
     See Also
     --------
@@ -228,14 +250,15 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     excluded : list-like of integers
         Set of integers representing the positional for which the function will
         not be vectorized. Uses same format as `numpy.vectorize`.
-    min_side : int
+    min_side : int or dict
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
-        size can be supplied here. Note that the broadcasted dimensions may be
-        1 even regardless of `min_side` or `max_side`.
-    max_side : int
+        size can be supplied here. Minimums can be provided on a per-dimension
+        basis using a dict, e.g. ``min_side={'n': 2}``.
+    max_side : int or dict
         Maximum size of any side of the arrays. This can usually be kept small
-        and still find most corner cases in testing.
+        and still find most corner cases in testing. Dictionaries can be
+        supplied as with `min_side`.
     max_dims_extra : int
         Maximum number of extra dimensions that can be appended on left of
         arrays for broadcasting. This should be kept small as the memory used
@@ -312,32 +335,40 @@ def gufunc_broadcast(draw, signature, dtype, elements, unique=False,
         of numpy generalized universal function signature, e.g.,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
         Officially, only supporting ascii characters on Py3.
-    filler : strategy
-        Strategy to fill in array elements e.g. `hypothesis.strategies.floats`.
-        The parameters for `filler` are specified by the `kwargs`.
+    dtype : list-like of dtype
+        List of numpy `dtype`s for each argument. These can be either strings
+        (``'int64'``), type (``np.int64``), or numpy `dtype`
+        (``np.dtype('int64')``). A single `dtype` can be supplied for all
+        arguments.
+    elements : list-like of strategy
+        Strategies to fill in array elements on a per argument basis. One can
+        also specify a single strategy (e.g., `hypothesis.strategies.floats`)
+        and have it applied to all arguments.
+    unique : list-like of bool
+        Boolean flag to specify if all elements in an array must be unique.
+        One can also specify a single boolean to apply it to all arguments.
     excluded : list-like of integers
         Set of integers representing the positional for which the function will
         not be vectorized. Uses same format as `numpy.vectorize`.
-    min_side : int
+    min_side : int or dict
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
-        size can be supplied here. Note that the broadcasted dimensions may be
-        1 even regardless of `min_side` or `max_side`.
-    max_side : int
+        size can be supplied here. Minimums can be provided on a per-dimension
+        basis using a dict, e.g. ``min_side={'n': 2}``.
+    max_side : int or dict
         Maximum size of any side of the arrays. This can usually be kept small
-        and still find most corner cases in testing.
+        and still find most corner cases in testing. Dictionaries can be
+        supplied as with `min_side`.
     max_dims_extra : int
         Maximum number of extra dimensions that can be appended on left of
         arrays for broadcasting. This should be kept small as the memory used
         grows exponentially with extra dimensions.
-    kwargs : kwargs
-        Passed to filler strategy.
 
     Returns
     -------
     res : tuple of ndarrays
         Resulting ndarrays with shapes consistent with `signature` and elements
-        from `filler`. Extra dimensions for broadcasting will be present.
+        from `elements`. Extra dimensions for broadcasting will be present.
 
     See Also
     --------
@@ -351,13 +382,14 @@ def gufunc_broadcast(draw, signature, dtype, elements, unique=False,
                                 elements=elements, unique=unique))
     return res
 
+# TODO consider replacing kwargs, search all
+# TODO consider dtypes --> itypes
+
 
 def broadcasted(f, signature, otypes, excluded=(), **kwargs):
     """Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
     `numpy.vectorize`.
-
-    Extra parameters for `gufunc_broadcast` can be provided as `kwargs`.
 
     Parameters
     ----------
@@ -379,23 +411,31 @@ def broadcasted(f, signature, otypes, excluded=(), **kwargs):
     excluded : list-like of integers
         Set of integers representing the positional for which the function will
         not be vectorized. Uses same format as `numpy.vectorize`.
-    filler : strategy
-        Strategy to fill in array elements e.g. `hypothesis.strategies.floats`.
-        The parameters for `filler` are specified by the `kwargs`.
-    min_side : int
+    dtype : list-like of dtype
+        List of numpy `dtype`s for each argument. These can be either strings
+        (``'int64'``), type (``np.int64``), or numpy `dtype`
+        (``np.dtype('int64')``). A single `dtype` can be supplied for all
+        arguments.
+    elements : list-like of strategy
+        Strategies to fill in array elements on a per argument basis. One can
+        also specify a single strategy (e.g., `hypothesis.strategies.floats`)
+        and have it applied to all arguments.
+    unique : list-like of bool
+        Boolean flag to specify if all elements in an array must be unique.
+        One can also specify a single boolean to apply it to all arguments.
+    min_side : int or dict
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
-        size can be supplied here. Note that the broadcasted dimensions may be
-        1 even regardless of `min_side` or `max_side`.
-    max_side : int
+        size can be supplied here. Minimums can be provided on a per-dimension
+        basis using a dict, e.g. ``min_side={'n': 2}``.
+    max_side : int or dict
         Maximum size of any side of the arrays. This can usually be kept small
-        and still find most corner cases in testing.
+        and still find most corner cases in testing. Dictionaries can be
+        supplied as with `min_side`.
     max_dims_extra : int
         Maximum number of extra dimensions that can be appended on left of
         arrays for broadcasting. This should be kept small as the memory used
         grows exponentially with extra dimensions.
-    kwargs : kwargs
-        Passed to filler strategy.
 
     Returns
     -------
@@ -443,26 +483,34 @@ def axised(draw, f, signature, dtype, elements, unique=False,
         first argument must be 1D. For, `np.mean` we use the signature
         `'(n)->()'` or for `'np.percentile'` we use `'(n),()->()'`. Officially,
         only supporting ascii characters on Py3.
-    filler : strategy
-        Strategy to fill in array elements e.g. `hypothesis.strategies.floats`.
-        The parameters for `filler` are specified by the `kwargs`.
-    min_side : int
-        Minimum size of any side of the arrays. This must be >= 1 since
-        `np.apply_along_axis` does not like sides of 0 for the first argument.
-    min_side : int
+    dtype : list-like of dtype
+        List of numpy `dtype`s for each argument. These can be either strings
+        (``'int64'``), type (``np.int64``), or numpy `dtype`
+        (``np.dtype('int64')``). A single `dtype` can be supplied for all
+        arguments.
+    elements : list-like of strategy
+        Strategies to fill in array elements on a per argument basis. One can
+        also specify a single strategy (e.g., `hypothesis.strategies.floats`)
+        and have it applied to all arguments.
+    unique : list-like of bool
+        Boolean flag to specify if all elements in an array must be unique.
+        One can also specify a single boolean to apply it to all arguments.
+    min_side : int or dict
         Minimum size of any side of the arrays. It is good to test the corner
-        cases of 0 or 1 sized dimensions when applicable, but if not, it a min
-        size can be supplied here.
+        cases of 0 or 1 sized dimensions when applicable, but if not, a min
+        size can be supplied here. Minimums can be provided on a per-dimension
+        basis using a dict, e.g. ``min_side={'n': 2}``.
+    max_side : int or dict
+        Maximum size of any side of the arrays. This can usually be kept small
+        and still find most corner cases in testing. Dictionaries can be
+        supplied as with `min_side`.
     max_dims_extra : int
-        Maximum number of extra dimensions that can be added to the first
-        argument of `f`, which is the argument that `numpy.apply_along_axis`
-        operates on. This should be kept small as the memory used
+        Maximum number of extra dimensions that can be appended on left of
+        arrays for broadcasting. This should be kept small as the memory used
         grows exponentially with extra dimensions.
     allow_none : bool
         If True, sometimes creates test cases where the axis argument is None,
         which implies the first argument should be flattened before use.
-    kwargs : kwargs
-        Passed to filler strategy.
 
     Returns
     -------
