@@ -90,7 +90,8 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
         arguments.
     elements : list-like of strategy
         Strategies to fill in array elements on a per argument basis. One can
-        also specify a single strategy (e.g., `hypothesis.strategies.floats`)
+        also specify a single strategy
+        (e.g., :func:`hypothesis.strategies.floats`)
         and have it applied to all arguments.
     unique : list-like of bool
         Boolean flag to specify if all elements in an array must be unique.
@@ -196,7 +197,8 @@ def gufunc(draw, signature, dtype, elements, unique=False,
         arguments.
     elements : list-like of strategy
         Strategies to fill in array elements on a per argument basis. One can
-        also specify a single strategy (e.g., `hypothesis.strategies.floats`)
+        also specify a single strategy
+        (e.g., :func:`hypothesis.strategies.floats`)
         and have it applied to all arguments.
     unique : list-like of bool
         Boolean flag to specify if all elements in an array must be unique.
@@ -247,7 +249,7 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
         Officially, only supporting ascii characters on Py3.
     excluded : list-like of integers
         Set of integers representing the positional for which the function will
-        not be vectorized. Uses same format as `numpy.vectorize`.
+        not be vectorized. Uses same format as :func:`numpy.vectorize`.
     min_side : int or dict
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
@@ -342,14 +344,15 @@ def gufunc_broadcast(draw, signature, dtype, elements, unique=False,
         arguments.
     elements : list-like of strategy
         Strategies to fill in array elements on a per argument basis. One can
-        also specify a single strategy (e.g., `hypothesis.strategies.floats`)
+        also specify a single strategy
+        (e.g., :func:`hypothesis.strategies.floats`)
         and have it applied to all arguments.
     unique : list-like of bool
         Boolean flag to specify if all elements in an array must be unique.
         One can also specify a single boolean to apply it to all arguments.
     excluded : list-like of integers
         Set of integers representing the positional for which the function will
-        not be vectorized. Uses same format as `numpy.vectorize`.
+        not be vectorized. Uses same format as :func:`numpy.vectorize`.
     min_side : int or dict
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
@@ -391,7 +394,7 @@ def broadcasted(f, signature, otypes, dtype, elements, unique=False,
                 excluded=(), min_side=0, max_side=5, max_dims_extra=2):
     """Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
-    `numpy.vectorize`.
+    :func:`numpy.vectorize`.
 
     Parameters
     ----------
@@ -417,14 +420,15 @@ def broadcasted(f, signature, otypes, dtype, elements, unique=False,
         arguments.
     elements : list-like of strategy
         Strategies to fill in array elements on a per argument basis. One can
-        also specify a single strategy (e.g., `hypothesis.strategies.floats`)
+        also specify a single strategy
+        (e.g., :func:`hypothesis.strategies.floats`)
         and have it applied to all arguments.
     unique : list-like of bool
         Boolean flag to specify if all elements in an array must be unique.
         One can also specify a single boolean to apply it to all arguments.
     excluded : list-like of integers
         Set of integers representing the positional for which the function will
-        not be vectorized. Uses same format as `numpy.vectorize`.
+        not be vectorized. Uses same format as :func:`numpy.vectorize`.
     min_side : int or dict
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
@@ -447,7 +451,7 @@ def broadcasted(f, signature, otypes, dtype, elements, unique=False,
         This is the original function handles broadcasting itself.
     f_vec : callable
         Function that should be functionaly equivalent to `f` but broadcasting
-        is handled by `numpy.vectorize`.
+        is handled by :func:`numpy.vectorize`.
     res : tuple of ndarrays
         Resulting ndarrays with shapes consistent with `signature`. Extra
         dimensions for broadcasting will be present.
@@ -476,7 +480,7 @@ def axised(draw, f, signature, dtype, elements, unique=False,
            min_side=1, max_side=5, max_dims_extra=2, allow_none=True):
     """Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
-    `numpy.apply_along_axis`.
+    :func:`numpy.apply_along_axis`.
 
     Parameters
     ----------
@@ -487,9 +491,9 @@ def axised(draw, f, signature, dtype, elements, unique=False,
         Signature for shapes to be compatible with. Expects string in format
         of numpy generalized universal function signature. This does not
         include the axis kwarg. For testing axis, the core dimension of the
-        first argument must be 1D. For, `np.mean` we use the signature
-        `'(n)->()'` or for `'np.percentile'` we use `'(n),()->()'`. Officially,
-        only supporting ascii characters on Py3.
+        first argument must be 1D. For, :func:`numpy.mean` we use the signature
+        `'(n)->()'` or for :func:`numpy.percentile` we use `'(n),()->()'`.
+        Officially, only supporting ascii characters on Py3.
     dtype : list-like of dtype
         List of numpy `dtype` for each argument. These can be either strings
         (``'int64'``), type (``np.int64``), or numpy `dtype`
@@ -497,7 +501,8 @@ def axised(draw, f, signature, dtype, elements, unique=False,
         arguments.
     elements : list-like of strategy
         Strategies to fill in array elements on a per argument basis. One can
-        also specify a single strategy (e.g., `hypothesis.strategies.floats`)
+        also specify a single strategy
+        (e.g., :func:`hypothesis.strategies.floats`)
         and have it applied to all arguments.
     unique : list-like of bool
         Boolean flag to specify if all elements in an array must be unique.
@@ -518,8 +523,9 @@ def axised(draw, f, signature, dtype, elements, unique=False,
         arrays for broadcasting. This should be kept small as the memory used
         grows exponentially with extra dimensions.
     allow_none : bool
-        If True, sometimes creates test cases where the axis argument is None,
-        which implies the first argument should be flattened before use.
+        If True, sometimes creates test cases where the axis argument is
+        `None`, which implies the first argument should be flattened before
+        use.
 
     Returns
     -------
@@ -527,7 +533,7 @@ def axised(draw, f, signature, dtype, elements, unique=False,
         This is the original function handles axis itself.
     f_vec : callable
         Function that should be functionaly equivalent to `f` but axis is
-        handled by `numpy.apply_along_axis`.
+        handled by :func:`numpy.apply_along_axis`.
     args : tuple of ndarrays
         Arguments to pass to `f` not including the axis kwarg. Extra dimensions
         will be added to first argument (args[0]) to test axis slicing.
