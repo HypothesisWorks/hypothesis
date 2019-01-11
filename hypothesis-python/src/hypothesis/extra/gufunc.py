@@ -222,6 +222,24 @@ def gufunc(draw, signature, dtype, elements, unique=False,
     res : tuple of ndarrays
         Resulting ndarrays with shapes consistent with `signature` and elements
         from `elements`.
+
+    Examples
+    --------
+
+    .. code-block:: pycon
+
+      >>> from hypothesis.strategies import integers, booleans
+      >>> gufunc('(m,n),(n)->(m)', dtype=np.int_, elements=integers(0, 9),
+                 min_side={'m': 1, 'n': 2}, max_side=3).example()
+      (array([[2, 2, 7],
+              [4, 2, 2],
+              [2, 2, 2]]), array([2, 2, 2]))
+      >>> gufunc('(m,n),(n)->(m)', dtype=['bool', 'int32'],
+                 elements=[booleans(), integers(0, 100)],
+                 unique=[False, True]).example()
+      (array([[ True],
+              [False],
+              [ True]], dtype=bool), array([17], dtype=int32))
     """
     # Leaving dtype and elements as required for now since that leaves us the
     # flexibility to later make the default float and floats, or perhaps None
@@ -270,6 +288,20 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     shapes : list of tuples
         list of tuples where each tuple is the shape of an argument. Extra
         dimensions for broadcasting will be present in the shapes.
+
+    Examples
+    --------
+
+    .. code-block:: pycon
+
+      >>> from hypothesis.extra.gufunc import BCAST_DIM
+      >>> gufunc_broadcast_shape('(m,n),(n)->(m)', max_side=9,
+                                 min_side={'m': 1, 'n': 2, BCAST_DIM: 5},
+                                 max_dims_extra=3).example()
+      [(9, 4), (7, 1, 4)]
+      >>> gufunc_broadcast_shape('(m,n),(n)->(m)', excluded=(0,), max_side=9,
+                                 max_dims_extra=3).example()
+      [(3, 6), (2, 6)]
     """
     min_side = _int_or_dict(min_side, 0)
     max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
@@ -368,6 +400,27 @@ def gufunc_broadcast(draw, signature, dtype, elements, unique=False,
     res : tuple of ndarrays
         Resulting ndarrays with shapes consistent with `signature` and elements
         from `elements`. Extra dimensions for broadcasting will be present.
+
+
+    Examples
+    --------
+
+    .. code-block:: pycon
+
+      >>> from hypothesis.extra.gufunc import BCAST_DIM
+      >>> from hypothesis.strategies import integers, booleans
+      >>> gufunc_broadcast('(m,n),(n)->(m)', dtype=np.int_,
+                           elements=integers(0, 9), max_side=3,
+                           min_side={'m': 1, 'n': 2, BCAST_DIM: 3}).example()
+      (array([[[2, 2, 2],
+               [3, 2, 2],
+               [2, 0, 2]]]), array([[[4, 4, 4]]]))
+      >>> gufunc_broadcast('(m,n),(n)->(m)', dtype=['bool', 'int32'],
+                           elements=[booleans(), integers(0, 100)],
+                           unique=[False, True], max_dims_extra=3).example()
+      (array([[[ True,  True,  True],
+               [ True,  True,  True]]], dtype=bool), array([[[51, 75, 78],
+               [98, 99, 50]]], dtype=int32))
     """
     shapes = draw(gufunc_broadcast_shape(signature, excluded=excluded,
                                          min_side=min_side, max_side=max_side,
