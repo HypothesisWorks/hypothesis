@@ -89,9 +89,7 @@ setuptools.setup(
     packages=setuptools.find_packages(SOURCE),
     package_dir={"": SOURCE},
     package_data={"hypothesis": ["py.typed"]},
-    url=(
-        "https://github.com/HypothesisWorks/hypothesis/" "tree/master/hypothesis-python"
-    ),
+    url="https://github.com/HypothesisWorks/hypothesis/tree/master/hypothesis-python",
     license="MPL v2",
     description="A library for property based testing",
     zip_safe=False,

@@ -309,7 +309,7 @@ else:
 if PY2:
     FullArgSpec = namedtuple(
         "FullArgSpec",
-        "args, varargs, varkw, defaults, " "kwonlyargs, kwonlydefaults, annotations",
+        "args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations",
     )
 
     def getfullargspec(func):
