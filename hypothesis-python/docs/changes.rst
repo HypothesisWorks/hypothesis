@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.88.2:
+
+-------------------
+3.88.2 - 2019-01-11
+-------------------
+
+This is a pure refactoring release that extracts some logic from the core Hypothesis engine
+into its own class and file. It should have no user visible impact.
+
 .. _v3.88.1:
 
 -------------------
