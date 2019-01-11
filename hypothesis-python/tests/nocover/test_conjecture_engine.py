@@ -118,8 +118,8 @@ def test_exhaustive_enumeration_of_partial_buffer():
             assert data.status == Status.VALID
             node = 0
             for b in data.buffer:
-                node = runner.tree[node][b]
-            assert node in runner.dead
+                node = runner.tree.nodes[node][b]
+            assert node in runner.tree.dead
     assert len(seen) == 256
 
 
