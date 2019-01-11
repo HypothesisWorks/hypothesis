@@ -191,6 +191,13 @@ class ConjectureData(object):
         top = self.start_example(TOP_LABEL)
         assert top.depth == 0
 
+    def __repr__(self):
+        return "ConjectureData(%s, %d bytes%s)" % (
+            self.status.name,
+            len(self.buffer),
+            ", frozen" if self.frozen else "",
+        )
+
     def __assert_not_frozen(self, name):
         if self.frozen:
             raise Frozen("Cannot call %s on frozen ConjectureData" % (name,))
