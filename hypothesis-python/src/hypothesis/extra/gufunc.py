@@ -515,12 +515,17 @@ def broadcasted(f, signature, otypes, itypes, elements, unique=False,
       (<ufunc 'add'>,
        <numpy.lib.function_base.vectorize at 0x11a715b10>,
        (array([9]), array(True, dtype=bool)))
-      >>> broadcasted(np.add, '(),()->()', ['int64'], ['int64', 'bool'],
-                      elements=[integers(0,9), booleans()],
-                      min_side=1, max_side=3, max_dims_extra=1).example()
-      (<ufunc 'add'>,
-       <numpy.lib.function_base.vectorize at 0x11a7e85d0>,
-       (array([7]), array([ True], dtype=bool)))
+      >>> f, fv, args = broadcasted(np.add, '(),()->()', ['int64'],
+                                    ['int64', 'bool'],
+                                    elements=[integers(0,9), booleans()],
+                                    min_side=1, max_side=3,
+                                    max_dims_extra=1).example()
+      >>> f is np.add
+      True
+      >>> f(*args)
+      7
+      >>> fv(*args)
+      array(7)
     """
     # cache and doc not needed for property testing, excluded not actually
     # needed here because we don't generate extra dims for the excluded args.
@@ -615,14 +620,20 @@ def axised(draw, f, signature, itypes, elements, unique=False,
        <function __main__.f_axis>,
        (array([9, 0, 1, 2, 8]), array(0.6318185150011054)),
        None)
-      >>> axised(np.percentile, '(n),()->()', ['int64', np.float_],
-                 elements=[integers(0, 9), floats(0, 1)],
-                 allow_none=False).example()
-          (<function numpy.lib.function_base.percentile>,
-           <function __main__.f_axis>,
-           (array([[[2, 2],
-                    [2, 2]]]), array(0.34600973310654154)),
-           0)
+      >>> f, fa, args, axis = axised(np.percentile, '(n),()->()',
+                                     ['int64', np.float_],
+                                     elements=[integers(0, 9), floats(0, 1)],
+                                     allow_none=False).example()
+      >>> args
+      (array([0, 1, 9, 9]), array(0.9396067150190481))
+      >>> axis
+      0
+      >>> f is np.percentile
+      True
+      >>> f(*args, axis=axis)
+      0.028188201450571444
+      >>> fa(*args, axis=axis)
+      array(0.028188201450571444)
     """
     min_side = _int_or_dict(min_side, 1)
     max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
