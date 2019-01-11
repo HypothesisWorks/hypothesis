@@ -495,6 +495,32 @@ def broadcasted(f, signature, otypes, itypes, elements, unique=False,
     res : tuple of ndarrays
         Resulting ndarrays with shapes consistent with `signature`. Extra
         dimensions for broadcasting will be present.
+
+    Examples
+    --------
+
+    .. code-block:: pycon
+
+      >>> import numpy as np
+      >>> from hypothesis.strategies import integers, booleans
+      >>> broadcasted(np.add, '(),()->()', ['int64'], ['int64', 'bool'],
+                      elements=[integers(0,9), booleans()],
+                      unique=[True, False]).example()
+      (<ufunc 'add'>,
+       <numpy.lib.function_base.vectorize at 0x11a777690>,
+       (array([5, 6]), array([ True], dtype=bool)))
+      >>> broadcasted(np.add, '(),()->()', ['int64'], ['int64', 'bool'],
+                      elements=[integers(0,9), booleans()],
+                      excluded=(1,)).example()
+      (<ufunc 'add'>,
+       <numpy.lib.function_base.vectorize at 0x11a715b10>,
+       (array([9]), array(True, dtype=bool)))
+      >>> broadcasted(np.add, '(),()->()', ['int64'], ['int64', 'bool'],
+                      elements=[integers(0,9), booleans()],
+                      min_side=1, max_side=3, max_dims_extra=1).example()
+      (<ufunc 'add'>,
+       <numpy.lib.function_base.vectorize at 0x11a7e85d0>,
+       (array([7]), array([ True], dtype=bool)))
     """
     # cache and doc not needed for property testing, excluded not actually
     # needed here because we don't generate extra dims for the excluded args.
@@ -574,6 +600,29 @@ def axised(draw, f, signature, itypes, elements, unique=False,
         will be added to first argument (args[0]) to test axis slicing.
     axis : int
         Axis along which first argument of `f` is sliced.
+
+    Examples
+    --------
+
+    .. code-block:: pycon
+
+      >>> import numpy as np
+      >>> from hypothesis.strategies import integers, floats
+      >>> axised(np.percentile, '(n),()->()', ['int64', np.float_],
+                 elements=[integers(0, 9), floats(0, 1)],
+                 unique=True).example()
+      (<function numpy.lib.function_base.percentile>,
+       <function __main__.f_axis>,
+       (array([9, 0, 1, 2, 8]), array(0.6318185150011054)),
+       None)
+      >>> axised(np.percentile, '(n),()->()', ['int64', np.float_],
+                 elements=[integers(0, 9), floats(0, 1)],
+                 allow_none=False).example()
+          (<function numpy.lib.function_base.percentile>,
+           <function __main__.f_axis>,
+           (array([[[2, 2],
+                    [2, 2]]]), array(0.34600973310654154)),
+           0)
     """
     min_side = _int_or_dict(min_side, 1)
     max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
