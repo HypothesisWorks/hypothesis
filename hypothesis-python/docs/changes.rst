@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v3.88.3:
+
+-------------------
+3.88.3 - 2019-01-11
+-------------------
+
+This changes the order that the shrinker tries certain operations in its "emergency" phase which runs late in the process.
+The new order should be better at avoiding long stalls where the shrinker is failing to make progress,
+which may be helpful if you have difficult to shrink test cases.
+However this will not be noticeable in the vast majority of use cases.
+
 .. _v3.88.2:
 
 -------------------
