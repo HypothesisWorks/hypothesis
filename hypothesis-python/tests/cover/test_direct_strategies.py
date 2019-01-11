@@ -1,9 +1,9 @@
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
-# https://github.com/HypothesisWorks/hypothesis-python
+# https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# Most of this work is copyright (C) 2013-2019 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -11,7 +11,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
 
@@ -120,6 +120,8 @@ def fn_ktest(*fnkwargs):
     (ds.floats, {"min_value": 0.0, "allow_nan": True}),
     (ds.floats, {"max_value": 0.0, "allow_nan": True}),
     (ds.floats, {"min_value": 0.0, "max_value": 1.0, "allow_infinity": True}),
+    (ds.floats, {"min_value": float("inf"), "allow_infinity": False}),
+    (ds.floats, {"max_value": float("-inf"), "allow_infinity": False}),
     (ds.complex_numbers, {"min_magnitude": float("nan")}),
     (ds.complex_numbers, {"max_magnitude": float("nan")}),
     (ds.complex_numbers, {"max_magnitude": complex(1, 2)}),
@@ -190,6 +192,8 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.floats, {}),
     (ds.floats, {"min_value": 1.0}),
     (ds.floats, {"max_value": 1.0}),
+    (ds.floats, {"min_value": float("inf")}),
+    (ds.floats, {"max_value": float("-inf")}),
     (ds.floats, {"max_value": 1.0, "min_value": -1.0}),
     (ds.floats, {"max_value": 1.0, "min_value": -1.0, "allow_infinity": False}),
     (ds.floats, {"min_value": 1.0, "allow_nan": False}),

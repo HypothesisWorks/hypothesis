@@ -1,9 +1,9 @@
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
-# https://github.com/HypothesisWorks/hypothesis-python
+# https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# Most of this work is copyright (C) 2013-2019 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -11,7 +11,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
 
@@ -143,7 +143,7 @@ HEADER = """
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
-# https://github.com/HypothesisWorks/hypothesis-python
+# https://github.com/HypothesisWorks/hypothesis/
 #
 # Most of this work is copyright (C) 2013-%(year)s David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
@@ -153,7 +153,7 @@ HEADER = """
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER""".strip() % {
     "year": CURRENT_YEAR
@@ -163,8 +163,6 @@ HEADER = """
 @task()
 def format():
     def should_format_file(path):
-        if os.path.basename(path) in ("header.py", "test_lambda_formatting.py"):
-            return False
         if "vendor" in path.split(os.path.sep):
             return False
         return path.endswith(".py")
@@ -172,9 +170,6 @@ def format():
     changed = tools.modified_files()
 
     format_all = os.environ.get("FORMAT_ALL", "").lower() == "true"
-    if "scripts/header.py" in changed:
-        # We've changed the header, so everything needs its header updated.
-        format_all = True
     if "requirements/tools.txt" in changed:
         # We've changed the tools, which includes a lot of our formatting
         # logic, so we need to rerun formatters.
@@ -216,7 +211,7 @@ def format():
             o.write("\n")
     pip_tool("isort", *files_to_format)
 
-    pip_tool("black", tools.ROOT)
+    pip_tool("black", *files_to_format)
 
 
 VALID_STARTS = ("# coding=utf-8", "#!/usr/bin/env python")
@@ -311,7 +306,10 @@ def push_pyup_requirements_commit():
 @task()
 def check_requirements():
     if is_pyup_branch():
-        compile_requirements(upgrade=True)
+        # We recompile to fix broken formatting etc., but also want to support
+        # manual fixes to the bot's PRs and ensure there can't be a loop.
+        should_recompile = tools.last_committer() == "pyup-bot"
+        compile_requirements(upgrade=should_recompile)
     else:
         compile_requirements(upgrade=False)
 
@@ -326,7 +324,7 @@ def documentation():
         if hp.has_release():
             hp.update_changelog_and_version()
         pip_tool(
-            # See http://www.sphinx-doc.org/en/stable/man/sphinx-build.html
+            # See https://www.sphinx-doc.org/en/stable/man/sphinx-build.html
             "sphinx-build",
             "-n",
             "-W",

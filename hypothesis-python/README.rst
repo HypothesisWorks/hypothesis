@@ -40,7 +40,7 @@ If you just want to get started:
 Links of interest
 -----------------
 
-The main Hypothesis site is at `hypothesis.works <http://hypothesis.works>`_, and contains a lot
+The main Hypothesis site is at `hypothesis.works <https://hypothesis.works/>`_, and contains a lot
 of good introductory and explanatory material.
 
 Extensive documentation and examples of usage are `available at readthedocs <https://hypothesis.readthedocs.io/en/master/>`_.
@@ -49,7 +49,7 @@ If you want to talk to people about using Hypothesis, `we have both an IRC chann
 and a mailing list <https://hypothesis.readthedocs.io/en/latest/community.html>`_.
 
 If you want to receive occasional updates about Hypothesis, including useful tips and tricks, there's a
-`TinyLetter mailing list to sign up for them <http://tinyletter.com/DRMacIver/>`_.
+`TinyLetter mailing list to sign up for them <https://tinyletter.com/DRMacIver/>`_.
 
 If you want to contribute to Hypothesis, `instructions are here <https://github.com/HypothesisWorks/hypothesis-python/blob/master/CONTRIBUTING.rst>`_.
 

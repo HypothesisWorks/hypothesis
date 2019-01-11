@@ -1,9 +1,9 @@
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
-# https://github.com/HypothesisWorks/hypothesis-python
+# https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# Most of this work is copyright (C) 2013-2019 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -11,7 +11,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
 
@@ -176,7 +176,7 @@ class ArrayStrategy(SearchStrategy):
                 "dtype %r - instead it becomes %r .  Consider using a more "
                 "precise strategy, as this will be an error in a future "
                 "version." % (val, strategy, self.dtype, result[idx]),
-                since="2018-07-31",
+                since="2018-10-25",
             )
             # Because the message includes the value of the generated element,
             # it would be easy to spam users with thousands of warnings.

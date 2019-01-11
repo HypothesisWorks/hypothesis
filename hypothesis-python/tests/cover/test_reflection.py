@@ -1,9 +1,9 @@
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
-# https://github.com/HypothesisWorks/hypothesis-python
+# https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# Most of this work is copyright (C) 2013-2019 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -11,7 +11,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
 
@@ -24,7 +24,7 @@ from functools import partial
 import pytest
 from mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
-from hypothesis.internal.compat import PY3, FullArgSpec, getfullargspec
+from hypothesis.internal.compat import PY2, PY3, FullArgSpec, getfullargspec
 from hypothesis.internal.reflection import (
     arg_string,
     convert_keyword_arguments,
@@ -666,3 +666,44 @@ class Target(object):
 def test_required_args(target, args, kwargs, expected):
     # Mostly checking that `self` (and only self) is correctly excluded
     assert required_args(target, args, kwargs) == expected
+
+
+# fmt: off
+pi = "π"; is_str_pi = lambda x: x == pi  # noqa: E731
+# fmt: on
+
+
+def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():
+    assert get_pretty_function_description(is_str_pi) == "lambda x: x == pi"
+
+
+@pytest.mark.skipif(PY2, reason="detect_encoding does not exist in Python 2")
+def test_can_render_lambda_with_no_encoding():
+    is_positive = lambda x: x > 0
+
+    # Monkey-patching out the `tokenize.detect_encoding` method here means
+    # that our reflection can't detect the encoding of the source file, and
+    # has to fall back to assuming it's ASCII.
+    import tokenize
+
+    old_detect_encoding = tokenize.detect_encoding
+    try:
+        del tokenize.detect_encoding
+        assert get_pretty_function_description(is_positive) == "lambda x: x > 0"
+    finally:
+        tokenize.detect_encoding = old_detect_encoding
+
+
+@pytest.mark.skipif(PY2, reason="detect_encoding does not exist in Python 2")
+def test_does_not_crash_on_utf8_lambda_without_encoding():
+    # Monkey-patching out the `tokenize.detect_encoding` method here means
+    # that our reflection can't detect the encoding of the source file, and
+    # has to fall back to assuming it's ASCII.
+    import tokenize
+
+    old_detect_encoding = tokenize.detect_encoding
+    try:
+        del tokenize.detect_encoding
+        assert get_pretty_function_description(is_str_pi) == "lambda x: <unknown>"
+    finally:
+        tokenize.detect_encoding = old_detect_encoding

@@ -1,9 +1,9 @@
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
-# https://github.com/HypothesisWorks/hypothesis-python
+# https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# Most of this work is copyright (C) 2013-2019 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -11,7 +11,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
 
@@ -30,16 +30,23 @@ from hypothesis import HealthCheck, Phase, Verbosity, settings, unlimited
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
-from hypothesis.internal.conjecture.data import MAX_DEPTH, ConjectureData, Status
+from hypothesis.internal.conjecture.data import (
+    MAX_DEPTH,
+    ConjectureData,
+    Overrun,
+    Status,
+)
 from hypothesis.internal.conjecture.engine import (
     ConjectureRunner,
     ExitReason,
-    PassClassification,
     RunIsComplete,
-    Shrinker,
     TargetSelector,
-    block_program,
     sort_key,
+)
+from hypothesis.internal.conjecture.shrinker import (
+    PassClassification,
+    Shrinker,
+    block_program,
 )
 from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -49,17 +56,17 @@ from tests.common.utils import checks_deprecated_behaviour, no_shrink
 SOME_LABEL = calc_label_from_name("some label")
 
 
+TEST_SETTINGS = settings(
+    max_examples=5000,
+    buffer_size=1024,
+    database=None,
+    suppress_health_check=HealthCheck.all(),
+)
+
+
 def run_to_buffer(f):
     with deterministic_PRNG():
-        runner = ConjectureRunner(
-            f,
-            settings=settings(
-                max_examples=5000,
-                buffer_size=1024,
-                database=None,
-                suppress_health_check=HealthCheck.all(),
-            ),
-        )
+        runner = ConjectureRunner(f, settings=TEST_SETTINGS)
         runner.run()
         assert runner.interesting_examples
         last_data, = runner.interesting_examples.values()
@@ -406,7 +413,7 @@ def test_fully_exhaust_base(monkeypatch):
     for c in hrange(4):
         runner.cached_test_function([0, c])
 
-    assert 1 in runner.dead
+    assert 1 in runner.tree.dead
 
     runner.run()
 
@@ -720,7 +727,11 @@ def test_can_delete_intervals(monkeypatch):
 
 
 def test_detects_too_small_block_starts():
+    call_count = [0]
+
     def f(data):
+        assert call_count[0] == 0
+        call_count[0] += 1
         data.draw_bytes(8)
         data.mark_interesting()
 
@@ -728,7 +739,10 @@ def test_detects_too_small_block_starts():
     r = ConjectureData.for_buffer(hbytes(8))
     runner.test_function(r)
     assert r.status == Status.INTERESTING
-    assert not runner.prescreen_buffer(hbytes([255] * 7))
+    assert call_count[0] == 1
+    r2 = runner.cached_test_function(hbytes([255] * 7))
+    assert r2.status == Status.OVERRUN
+    assert call_count[0] == 1
 
 
 def test_shrinks_both_interesting_examples(monkeypatch):
@@ -905,8 +919,8 @@ def test_exhaustive_enumeration(prefix, bits, seed):
             assert data.status == Status.VALID
             node = 0
             for b in data.buffer:
-                node = runner.tree[node][b]
-            assert node in runner.dead
+                node = runner.tree.nodes[node][b]
+            assert node in runner.tree.dead
     assert len(seen) == size
 
 
@@ -1745,16 +1759,15 @@ def test_shrink_passes_behave_sensibly_with_standard_operators():
 
 def test_shrink_pass_may_go_from_solid_to_dubious():
 
-    initial = hbytes([0, 1, 0, 0, 2, 3])
+    initial = hbytes([10])
 
     @shrinking_from(initial)
     def shrinker(data):
-        n = len(initial) - 1 - data.draw_bits(1)
-        for _ in range(n):
-            data.draw_bits(8)
-        data.mark_interesting()
+        n = data.draw_bits(8)
+        if n >= 9:
+            data.mark_interesting()
 
-    sp = shrinker.shrink_pass("adaptive_example_deletion")
+    sp = shrinker.shrink_pass("minimize_individual_blocks")
     assert sp.classification == PassClassification.CANDIDATE
     shrinker.run_shrink_pass(sp)
     assert sp.classification == PassClassification.HOPEFUL
@@ -1774,15 +1787,15 @@ def test_runs_adaptive_delete_on_first_pass_if_discarding_does_not_work():
 
 
 def test_alphabet_minimization():
-    @shrink(list(hrange(11)), "alphabet_minimize")
+    @shrink(hbytes((10, 11)) * 5, "alphabet_minimize")
     def x(data):
-        n = 0
-        for _ in hrange(10):
-            n += (-1) ** (data.draw_bits(8) & 1)
-        if n == 0 and data.draw_bits(8) == 10:
+        buf = data.draw_bytes(10)
+        if len(set(buf)) > 2:
+            data.mark_invalid()
+        if buf[0] < buf[1] and buf[1] > 1:
             data.mark_interesting()
 
-    assert x == [0, 1] * 5 + [10]
+    assert x == [0, 2] * 5
 
 
 def test_keeps_using_solid_passes_while_they_shrink_size():
@@ -1829,9 +1842,9 @@ def test_will_reset_the_tree_as_it_goes(monkeypatch):
 
         step(0)
         step(1)
-        assert len(runner.tree[0]) > 1
+        assert len(runner.tree.nodes[0]) > 1
         step(2)
-        assert len(runner.tree[0]) == 1
+        assert len(runner.tree.nodes[0]) == 1
 
 
 def test_will_not_reset_the_tree_after_interesting_example(monkeypatch):
@@ -1851,12 +1864,12 @@ def test_will_not_reset_the_tree_after_interesting_example(monkeypatch):
 
         step(0)
         step(1)
-        assert len(runner.tree) > 1
+        assert len(runner.tree.nodes) > 1
         step(7)
-        assert len(runner.tree) > 1
-        t = len(runner.tree)
+        assert len(runner.tree.nodes) > 1
+        t = len(runner.tree.nodes)
         runner.shrink_interesting_examples()
-        assert len(runner.tree) > t
+        assert len(runner.tree.nodes) > t
 
 
 fake_data_counter = 0
@@ -1908,3 +1921,23 @@ def test_target_selector_will_eventually_reuse_examples():
     for _ in range(2):
         x = selector.select()
         assert x.global_identifier in seen
+
+
+def test_cached_test_function_does_not_reinvoke_on_prefix():
+    call_count = [0]
+
+    def test_function(data):
+        call_count[0] += 1
+        data.draw_bits(8)
+        data.write(hbytes([7]))
+        data.draw_bits(8)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(test_function, settings=TEST_SETTINGS)
+
+        data = runner.cached_test_function(hbytes(3))
+        assert data.status == Status.VALID
+        for n in [2, 1, 0]:
+            prefix_data = runner.cached_test_function(hbytes(n))
+            assert prefix_data is Overrun
+        assert call_count[0] == 1

@@ -1,9 +1,9 @@
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
-# https://github.com/HypothesisWorks/hypothesis-python
+# https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# Most of this work is copyright (C) 2013-2019 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -11,7 +11,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
 
@@ -50,7 +50,7 @@ def pretty_file_name(f):
         pass
 
     parts = f.split(os.path.sep)
-    parts = parts[parts.index("hypothesis") :]
+    parts = parts[-parts[::-1].index("hypothesis") :]
     result = os.path.sep.join(parts)
     pretty_file_name_cache[f] = result
     return result
@@ -60,8 +60,9 @@ IN_COVERAGE_TESTS = os.getenv("HYPOTHESIS_INTERNAL_COVERAGE") == "true"
 
 
 if IN_COVERAGE_TESTS:
-    with open("branch-check", "w"):
-        pass
+    # By this point, "branch-check" should have already been deleted by the
+    # tox config. We can't delete it here because of #1718.
+
     written = set()  # type: Set[Tuple[str, bool]]
 
     def record_branch(name, value):

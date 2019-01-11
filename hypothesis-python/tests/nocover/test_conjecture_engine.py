@@ -1,9 +1,9 @@
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
-# https://github.com/HypothesisWorks/hypothesis-python
+# https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# Most of this work is copyright (C) 2013-2019 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -11,7 +11,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
 
@@ -21,12 +21,12 @@ from random import Random
 
 import pytest
 
-from hypothesis import HealthCheck, given, settings, strategies as st
+from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
-from tests.common.utils import no_shrink, non_covering_examples
+from tests.common.utils import non_covering_examples
 from tests.cover.test_conjecture_engine import run_to_buffer, shrink, shrinking_from
 
 
@@ -68,21 +68,6 @@ def test_saves_data_while_shrinking(monkeypatch):
     in_db = non_covering_examples(db)
     assert in_db.issubset(seen)
     assert in_db == seen
-
-
-@given(st.randoms(), st.random_module())
-@settings(
-    phases=no_shrink, deadline=None, suppress_health_check=[HealthCheck.hung_test]
-)
-def test_maliciously_bad_generator(rnd, seed):
-    @run_to_buffer
-    def x(data):
-        for _ in range(rnd.randint(1, 100)):
-            data.draw_bytes(rnd.randint(1, 10))
-        if rnd.randint(0, 1):
-            data.mark_invalid()
-        else:
-            data.mark_interesting()
 
 
 def test_can_discard(monkeypatch):
@@ -133,8 +118,8 @@ def test_exhaustive_enumeration_of_partial_buffer():
             assert data.status == Status.VALID
             node = 0
             for b in data.buffer:
-                node = runner.tree[node][b]
-            assert node in runner.dead
+                node = runner.tree.nodes[node][b]
+            assert node in runner.tree.dead
     assert len(seen) == 256
 
 
@@ -202,26 +187,6 @@ def test_retaining_sum_considers_zero_destination_blocks():
 
 
 @given(st.integers(0, 255), st.integers(0, 255))
-def test_prescreen_with_masked_byte_agrees_with_results(byte_a, byte_b):
-    def f(data):
-        data.draw_bits(2)
-
-    runner = ConjectureRunner(f)
-
-    data_a = ConjectureData.for_buffer(hbytes([byte_a]))
-    data_b = ConjectureData.for_buffer(hbytes([byte_b]))
-
-    runner.test_function(data_a)
-    prescreen_b = runner.prescreen_buffer(hbytes([byte_b]))
-    # Always test buffer B, to check whether the prescreen was correct.
-    runner.test_function(data_b)
-
-    # If the prescreen passed, then the buffers should be different.
-    # If it failed, then the buffers should be the same.
-    assert prescreen_b == (data_a.buffer != data_b.buffer)
-
-
-@given(st.integers(0, 255), st.integers(0, 255))
 def test_cached_with_masked_byte_agrees_with_results(byte_a, byte_b):
     def f(data):
         data.draw_bits(2)
@@ -249,12 +214,12 @@ def test_each_pair_of_blocks():
         data.draw_bits(1)
         data.mark_interesting()
 
-    bounds = [
+    bounds = {
         (a.bounds, b.bounds)
         for a, b in shrinker.each_pair_of_blocks(lambda block: True, lambda block: True)
-    ]
+    }
 
-    assert bounds == [((0, 1), (1, 2)), ((0, 1), (2, 3)), ((1, 2), (2, 3))]
+    assert bounds == {((0, 1), (1, 2)), ((0, 1), (2, 3)), ((1, 2), (2, 3))}
 
 
 def test_each_pair_of_blocks_with_filters():
@@ -266,17 +231,18 @@ def test_each_pair_of_blocks_with_filters():
             data.draw_bits(1)
         data.mark_interesting()
 
-    blocks = [
+    blocks = {
         (a.index, b.index)
         for a, b in shrinker.each_pair_of_blocks(
             lambda block: block.index != 1, lambda block: block.index != 3
         )
-    ]
+    }
 
-    assert blocks == [(0, 1), (0, 2), (0, 4), (2, 4), (3, 4)]
+    assert blocks == {(0, 1), (0, 2), (0, 4), (2, 4), (3, 4)}
 
 
-def test_each_pair_of_blocks_handles_change():
+@pytest.mark.parametrize("intervene_at", [(0, 1), (0, 6), (1, 3)])
+def test_each_pair_of_blocks_handles_change(intervene_at):
     initial = hbytes([9] + [0] * 10)
 
     @shrinking_from(initial)
@@ -286,20 +252,28 @@ def test_each_pair_of_blocks_handles_change():
             data.draw_bits(1)
         data.mark_interesting()
 
-    blocks = []
-    for a, b in shrinker.each_pair_of_blocks(lambda block: True, lambda block: True):
-        if a.index == 0 and b.index == 6:
-            shrinker.incorporate_new_buffer(hbytes([3] + [0] * 10))
-        blocks.append((a.index, b.index))
+    def blocks(intervene=False):
+        blocks = []
+        for a, b in shrinker.each_pair_of_blocks(
+            lambda block: True, lambda block: True
+        ):
+            assert a.index < b.index < len(shrinker.shrink_target.blocks)
+            if intervene and (a.index, b.index) == intervene_at:
+                shrinker.incorporate_new_buffer(hbytes([3] + [0] * 10))
+            blocks.append((a.index, b.index))
+        return blocks
 
-    assert blocks == [
-        (0, 1),
-        (0, 2),
-        (0, 3),
-        (0, 4),
-        (0, 5),
-        (0, 6),
-        (1, 2),
-        (1, 3),
-        (2, 3),
-    ]
+    original_blocks = blocks()
+    blocks_with_intervention = blocks(intervene=True)
+    blocks_after_intervention = blocks()
+
+    # We should not abort when the change happens but should carry on to include
+    # every pair of indices that we would have if we'd iterated after the change.
+    assert set(blocks_after_intervention).issubset(blocks_with_intervention)
+
+    # Changing the iteration order shouldn't introduce new possible block pairs.
+    assert set(blocks_with_intervention).issubset(original_blocks)
+
+    # We should however not do that by repeating any pairs of block indexes -
+    # repetition should happen the next time the relevant passes are run.
+    assert len(set(blocks_with_intervention)) == len(blocks_with_intervention)

@@ -1,9 +1,9 @@
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
-# https://github.com/HypothesisWorks/hypothesis-python
+# https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# Most of this work is copyright (C) 2013-2019 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -11,7 +11,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
 
@@ -23,7 +23,6 @@ import warnings
 from decimal import Decimal
 
 import pytest
-from flaky import flaky
 
 import hypothesis.strategies as st
 from hypothesis import assume, given, settings
@@ -31,7 +30,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT, WINDOWS
 from hypothesis.internal.floats import float_to_int, int_to_float, next_down, next_up
 from tests.common.debug import find_any, minimal
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import checks_deprecated_behaviour, flaky
 
 try:
     import numpy
@@ -251,3 +250,15 @@ def test_no_single_floats_in_range():
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             st.floats(low, high, width=32).validate()
+
+
+# If the floats() strategy adds random floats to a value as large as 10^304
+# without handling overflow, we are very likely to generate infinity.
+@given(st.floats(min_value=1e304, allow_infinity=False))
+def test_finite_min_bound_does_not_overflow(x):
+    assert not math.isinf(x)
+
+
+@given(st.floats(max_value=-1e304, allow_infinity=False))
+def test_finite_max_bound_does_not_overflow(x):
+    assert not math.isinf(x)

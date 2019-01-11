@@ -186,6 +186,10 @@ instead.
 
 .. autofunction:: hypothesis.stateful.rule
 
+.. autofunction:: hypothesis.stateful.consumes
+
+.. autofunction:: hypothesis.stateful.multiple
+
 -----------
 Initializes
 -----------
@@ -352,7 +356,7 @@ use HTTP instead of HTTPS.
 
           for l in self.result.html.absolute_links:
               # All links should be HTTPS
-              assert "http://hypothesis.works" not in l
+              assert "https://hypothesis.works/" not in l
 
 
   TestLinks = LinkChecker.TestCase
@@ -362,10 +366,10 @@ output:
 
 ::
 
-  AssertionError: assert 'http://hypothesis.works' not in 'http://hypoth...test-fixtures/'
-  'http://hypothesis.works' is contained here:
-    http://hypothesis.works/articles/hypothesis-pytest-fixtures/
-  ? +++++++++++++++++++++++
+  AssertionError: assert 'https://hypothesis.works/' not in 'http://hypoth...test-fixtures/'
+  'https://hypothesis.works/' is contained here:
+    https://hypothesis.works/articles/hypothesis-pytest-fixtures/
+  ? +++++++++++++++++++++++++
 
     ------------ Hypothesis ------------
 

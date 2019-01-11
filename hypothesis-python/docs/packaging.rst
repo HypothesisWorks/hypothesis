@@ -17,7 +17,7 @@ Release tarballs
 ----------------
 
 These are available from :gh-link:`the GitHub releases page <releases>`. The
-tarballs on pypi are intended for installation from a Python tool such as pip and should not
+tarballs on PyPI are intended for installation from a Python tool such as pip and should not
 be considered complete releases. Requests to include additional files in them will not be granted. Their absence
 is not a bug.
 

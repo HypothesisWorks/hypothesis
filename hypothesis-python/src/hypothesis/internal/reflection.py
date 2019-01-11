@@ -1,9 +1,9 @@
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
-# https://github.com/HypothesisWorks/hypothesis-python
+# https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# Most of this work is copyright (C) 2013-2019 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -11,7 +11,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
 
@@ -25,6 +25,7 @@ import ast
 import hashlib
 import inspect
 import re
+import tokenize
 import types
 import uuid
 from functools import wraps
@@ -347,9 +348,56 @@ def extract_lambda_source(f):
         return if_confused
     lambda_ast = aligned_lambdas[0]
     assert lambda_ast.lineno == 1
-    source = source[lambda_ast.col_offset :].strip()
 
-    source = source[source.index("lambda") :]
+    # If the source code contains Unicode characters, the bytes of the original
+    # file don't line up with the string indexes, and `col_offset` doesn't match
+    # the string we're using.  We need to convert the source code into bytes
+    # before slicing.
+    #
+    # Under the hood, the inspect module is using `tokenize.detect_encoding` to
+    # detect the encoding of the original source file.  We'll use the same
+    # approach to get the source code as bytes.
+    #
+    # See https://github.com/HypothesisWorks/hypothesis/issues/1700 for an
+    # example of what happens if you don't correct for this.
+    #
+    # Note: if the code doesn't come from a file (but, for example, a doctest),
+    # `getsourcefile` will return `None` and the `open()` call will fail with
+    # an OSError.  Or if `f` is a built-in function, in which case we get a
+    # TypeError.  In both cases, fall back to splitting the Unicode string.
+    # It's not perfect, but it's the best we can do.
+    #
+    # Note 2: You can only detect the encoding with `tokenize.detect_encoding`
+    # in Python 3.2 or later.  But that's okay, because the only version that
+    # affects for us is Python 2.7, and 2.7 doesn't support non-ASCII identifiers:
+    # https://www.python.org/dev/peps/pep-3131/. In this case we'll get an
+    # AttributeError.
+    #
+    try:
+        encoding, _ = tokenize.detect_encoding(
+            open(inspect.getsourcefile(f), "rb").readline
+        )
+        source_bytes = source.encode(encoding)
+        source_bytes = source_bytes[lambda_ast.col_offset :].strip()
+        source = source_bytes.decode(encoding)
+    except (AttributeError, OSError, TypeError):
+        source = source[lambda_ast.col_offset :].strip()
+
+    # This ValueError can be thrown in Python 3 if:
+    #
+    #  - There's a Unicode character in the line before the Lambda, and
+    #  - For some reason we can't detect the source encoding of the file
+    #
+    # because slicing on `lambda_ast.col_offset` will account for bytes, but
+    # the slice will be on Unicode characters.
+    #
+    # In practice this seems relatively rare, so we just give up rather than
+    # trying to recover.
+    try:
+        source = source[source.index("lambda") :]
+    except ValueError:
+        return if_confused
+
     for i in hrange(len(source), len("lambda"), -1):  # pragma: no branch
         try:
             parsed = ast.parse(source[:i])

@@ -1,9 +1,9 @@
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
-# https://github.com/HypothesisWorks/hypothesis-python
+# https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# Most of this work is copyright (C) 2013-2019 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -11,7 +11,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
 
@@ -80,7 +80,6 @@ if PY3:
     hrange = range
     ARG_NAME_ATTRIBUTE = "arg"
     integer_types = (int,)
-    _long_integer_type = int
     hunichr = chr
 
     def unicode_safe_repr(x):
@@ -236,7 +235,6 @@ else:
 
     ARG_NAME_ATTRIBUTE = "id"
     integer_types = (int, long)
-    _long_integer_type = long
     hunichr = unichr
 
     def escape_unicode_characters(s):
@@ -311,7 +309,7 @@ else:
 if PY2:
     FullArgSpec = namedtuple(
         "FullArgSpec",
-        "args, varargs, varkw, defaults, " "kwonlyargs, kwonlydefaults, annotations",
+        "args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations",
     )
 
     def getfullargspec(func):
@@ -551,14 +549,14 @@ else:
 # custom __floor__ or __ceil__ methods may convert via floats.
 # See issue #1667, Numpy issue 9068.
 def floor(x):
-    y = _long_integer_type(x)
+    y = int(x)
     if y != x and x < 0:
         return y - 1
     return y
 
 
 def ceil(x):
-    y = _long_integer_type(x)
+    y = int(x)
     if y != x and x > 0:
         return y + 1
     return y
@@ -584,14 +582,16 @@ else:
 
 try:
     from django.test import TransactionTestCase
-    from hypothesis.extra.django import HypothesisTestCase
 
     def bad_django_TestCase(runner):
         if runner is None:
             return False
-        return isinstance(runner, TransactionTestCase) and not isinstance(
-            runner, HypothesisTestCase
-        )
+        if not isinstance(runner, TransactionTestCase):
+            return False
+
+        from hypothesis.extra.django._impl import HypothesisTestCase
+
+        return not isinstance(runner, HypothesisTestCase)
 
 
 except Exception:

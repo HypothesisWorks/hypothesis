@@ -1,9 +1,9 @@
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
-# https://github.com/HypothesisWorks/hypothesis-python
+# https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# Most of this work is copyright (C) 2013-2019 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -11,7 +11,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
 
@@ -39,8 +39,10 @@ from hypothesis.stateful import (
     Bundle,
     GenericStateMachine,
     RuleBasedStateMachine,
+    consumes,
     initialize,
     invariant,
+    multiple,
     precondition,
     rule,
     run_state_machine_as_test,
@@ -350,6 +352,77 @@ class FlakyRatchettingMachine(GenericStateMachine):
 
     def execute_step(self, step):
         assert False
+
+
+class MachineWithConsumingRule(RuleBasedStateMachine):
+    b1 = Bundle("b1")
+    b2 = Bundle("b2")
+
+    def __init__(self):
+        self.created_counter = 0
+        self.consumed_counter = 0
+        super(MachineWithConsumingRule, self).__init__()
+
+    @invariant()
+    def bundle_length(self):
+        assert len(self.bundle("b1")) == self.created_counter - self.consumed_counter
+
+    @rule(target=b1)
+    def populate_b1(self):
+        self.created_counter += 1
+        return self.created_counter
+
+    @rule(target=b2, consumed=consumes(b1))
+    def depopulate_b1(self, consumed):
+        self.consumed_counter += 1
+        return consumed
+
+    @rule(consumed=lists(consumes(b1)))
+    def depopulate_b1_multiple(self, consumed):
+        self.consumed_counter += len(consumed)
+
+    @rule(value1=b1, value2=b2)
+    def check(self, value1, value2):
+        assert value1 != value2
+
+
+TestMachineWithConsumingRule = MachineWithConsumingRule.TestCase
+
+
+def test_multiple():
+    none = multiple()
+    some = multiple(1, 2.01, "3", b"4", 5)
+    assert len(none.values) == 0 and len(some.values) == 5
+    assert all(value in some.values for value in (1, 2.01, "3", b"4", 5))
+
+
+class MachineUsingMultiple(RuleBasedStateMachine):
+    b = Bundle("b")
+
+    def __init__(self):
+        self.expected_bundle_length = 0
+        super(MachineUsingMultiple, self).__init__()
+
+    @invariant()
+    def bundle_length(self):
+        assert len(self.bundle("b")) == self.expected_bundle_length
+
+    @rule(target=b, items=lists(elements=integers(), max_size=10))
+    def populate_bundle(self, items):
+        self.expected_bundle_length += len(items)
+        return multiple(*items)
+
+    @rule(target=b)
+    def do_not_populate(self):
+        return multiple()
+
+
+TestMachineUsingMultiple = MachineUsingMultiple.TestCase
+
+
+def test_consumes_typecheck():
+    with pytest.raises(TypeError):
+        consumes(integers())
 
 
 def test_ratchetting_raises_flaky():

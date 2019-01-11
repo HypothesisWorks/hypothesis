@@ -70,7 +70,7 @@ If it is done on work time, or you have a particularly onerous contract, make su
 you've checked with your employer.
 
 All work in Hypothesis is licensed under the terms of the
-`Mozilla Public License, version 2.0 <http://mozilla.org/MPL/2.0/>`_. By
+`Mozilla Public License, version 2.0 <https://mozilla.org/MPL/2.0/>`_. By
 submitting a contribution you are agreeing to licence your work under those
 terms.
 
@@ -220,6 +220,7 @@ their individual contributions.
 * `Jeremy Thurgood <https://github.com/jerith>`_
 * `J.J. Green <http://soliton.vm.bytemark.co.uk/pub/jjg/>`_
 * `JP Viljoen <https://github.com/froztbyte>`_ (froztbyte@froztbyte.net)
+* `Jochen Müller <https://github.com/jomuel>`_
 * `Joey Tuong <https://github.com/tetrapus>`_
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (jonty@jonty.co.uk)
 * `Joshua Boone <https://www.github.com/patchedwork>`_ (joshuaboone4190@gmail.com)
@@ -234,15 +235,15 @@ their individual contributions.
 * `Luke Barone-Adesi <https://github.com/baluke>`_
 * `marekventur <https://www.github.com/marekventur>`_
 * `Marius Gedminas <https://www.github.com/mgedmin>`_ (marius@gedmin.as)
-* `Markus Unterwaditzer <http://github.com/untitaker/>`_ (markus@unterwaditzer.net)
-* `Mathieu Paturel <http://github.com/math2001>`_ (mathieu.paturel@gmail.com)
+* `Markus Unterwaditzer <https://github.com/untitaker>`_ (markus@unterwaditzer.net)
+* `Mathieu Paturel <https://github.com/math2001>`_ (mathieu.paturel@gmail.com)
 * `Matt Bachmann <https://www.github.com/bachmann1234>`_ (bachmann.matt@gmail.com)
 * `Max Nordlund <https://www.github.com/maxnordlund>`_ (max.nordlund@gmail.com)
 * `Maxim Kulkin <https://www.github.com/maximkulkin>`_ (maxim.kulkin@gmail.com)
 * `mulkieran <https://www.github.com/mulkieran>`_
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
 * `Paul Lorett Amazona <https://github.com/whatevergeek>`_
-* `Peadar Coyle <http://www.github.com/springcoil>`_ (peadarcoyle@gmail.com)
+* `Peadar Coyle <https://github.com/springcoil>`_ (peadarcoyle@gmail.com)
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
 * `Sam Hames <https://www.github.com/SamHames>`_
 * `Sanyam Khurana <https://github.com/CuriousLearner>`_

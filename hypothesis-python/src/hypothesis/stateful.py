@@ -1,9 +1,9 @@
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
-# https://github.com/HypothesisWorks/hypothesis-python
+# https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2018 David R. MacIver
+# Most of this work is copyright (C) 2013-2019 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -11,7 +11,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
+# obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
 
@@ -266,7 +266,8 @@ class Rule(object):
             assert not isinstance(v, BundleReferenceStrategy)
             if isinstance(v, Bundle):
                 bundles.append(v)
-                arguments[k] = BundleReferenceStrategy(v.name)
+                consume = isinstance(v, BundleConsumer)
+                arguments[k] = BundleReferenceStrategy(v.name, consume)
             else:
                 arguments[k] = v
         self.bundles = tuple(bundles)
@@ -277,8 +278,9 @@ self_strategy = st.runner()
 
 
 class BundleReferenceStrategy(SearchStrategy):
-    def __init__(self, name):
+    def __init__(self, name, consume=False):
         self.name = name
+        self.consume = consume
 
     def do_draw(self, data):
         machine = data.draw(self_strategy)
@@ -288,18 +290,60 @@ class BundleReferenceStrategy(SearchStrategy):
         # Shrink towards the right rather than the left. This makes it easier
         # to delete data generated earlier, as when the error is towards the
         # end there can be a lot of hard to remove padding.
-        return bundle[cu.integer_range(data, 0, len(bundle) - 1, center=len(bundle))]
+        position = cu.integer_range(data, 0, len(bundle) - 1, center=len(bundle))
+        if self.consume:
+            return bundle.pop(position)
+        else:
+            return bundle[position]
 
 
 class Bundle(SearchStrategy):
-    def __init__(self, name):
+    def __init__(self, name, consume=False):
         self.name = name
-        self.__reference_strategy = BundleReferenceStrategy(name)
+        self.__reference_strategy = BundleReferenceStrategy(name, consume)
 
     def do_draw(self, data):
         machine = data.draw(self_strategy)
         reference = data.draw(self.__reference_strategy)
         return machine.names_to_values[reference.name]
+
+
+class BundleConsumer(Bundle):
+    def __init__(self, bundle):
+        super(BundleConsumer, self).__init__(bundle.name, consume=True)
+
+
+def consumes(bundle):
+    """When introducing a rule in a RuleBasedStateMachine, this function can
+    be used to mark bundles from which each value used in a step with the
+    given rule should be removed. This function returns a strategy object
+    that can be manipulated and combined like any other.
+
+    For example, a rule declared with
+
+    ``@rule(value1=b1, value2=consumes(b2), value3=lists(consumes(b3)))``
+
+    will consume a value from Bundle ``b2`` and several values from Bundle
+    ``b3`` to populate ``value2`` and ``value3`` each time it is executed.
+    """
+    if not isinstance(bundle, Bundle):
+        raise TypeError("Argument to be consumed must be a bundle.")
+    return BundleConsumer(bundle)
+
+
+@attr.s()
+class MultipleResults(object):
+    values = attr.ib()
+
+
+def multiple(*args):
+    """This function can be used to pass multiple results to the target(s) of
+    a rule. Just use ``return multiple(result1, result2, ...)`` in your rule.
+
+    It is also possible to use ``return multiple()`` with no arguments in
+    order to end a rule without passing any result.
+    """
+    return MultipleResults(args)
 
 
 def _convert_targets(targets, target):
@@ -361,9 +405,13 @@ def rule(targets=(), target=None, **kwargs):
     each case.
 
     kwargs then define the arguments that will be passed to the function
-    invocation. If their value is a Bundle then values that have previously
-    been produced for that bundle will be provided, if they are anything else
-    it will be turned into a strategy and values from that will be provided.
+    invocation. If their value is a Bundle, or if it is ``consumes(b)``
+    where ``b`` is a Bundle, then values that have previously been produced
+    for that bundle will be provided. If ``consumes`` is used, the value
+    will also be removed from the bundle.
+
+    Any other kwargs should be strategies and values from them will be
+    provided.
     """
     converted_targets = _convert_targets(targets, target)
 
@@ -762,6 +810,15 @@ class RuleBasedStateMachine(GenericStateMachine):
             )
         )
 
+    def _add_result_to_targets(self, targets, result):
+        name = self.new_name()
+        self.__printer.singleton_pprinters.setdefault(
+            id(result), lambda obj, p, cycle: p.text(name)
+        )
+        self.names_to_values[name] = result
+        for target in targets:
+            self.bundle(target).append(VarReference(name))
+
     def execute_step(self, step):
         rule, data = step
         data = dict(data)
@@ -770,13 +827,11 @@ class RuleBasedStateMachine(GenericStateMachine):
                 data[k] = self.names_to_values[v.name]
         result = rule.function(self, **data)
         if rule.targets:
-            name = self.new_name()
-            self.names_to_values[name] = result
-            self.__printer.singleton_pprinters.setdefault(
-                id(result), lambda obj, p, cycle: p.text(name)
-            )
-            for target in rule.targets:
-                self.bundle(target).append(VarReference(name))
+            if isinstance(result, MultipleResults):
+                for single_result in result.values:
+                    self._add_result_to_targets(rule.targets, single_result)
+            else:
+                self._add_result_to_targets(rule.targets, result)
         if self._initialize_rules_to_run:
             self._initialize_rules_to_run.remove(rule)
 

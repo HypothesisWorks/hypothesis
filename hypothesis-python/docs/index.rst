@@ -49,7 +49,7 @@ the :doc:`Quick start guide <quickstart>`, which will give you a worked
 example of how to use Hypothesis and a detailed outline
 of the things you need to know to begin testing your code with it, or
 check out some of the
-`introductory articles <http://hypothesis.works/articles/intro/>`_.
+`introductory articles <https://hypothesis.works/articles/intro/>`_.
 
 
 .. toctree::
