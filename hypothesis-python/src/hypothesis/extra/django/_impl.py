@@ -20,8 +20,10 @@ from __future__ import absolute_import, division, print_function
 import unittest
 
 import django.db.models as dm
+import django.forms as df
 import django.test as dt
 from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 
 import hypothesis._strategies as st
 from hypothesis import reject
@@ -124,4 +126,109 @@ def _models_impl(draw, strat):
     try:
         return draw(strat)[0]
     except IntegrityError:
+        reject()
+
+
+class _FormWrap:
+    """Instantiating a form with data requires passing the form data
+    as a dictionary (not keyword arguments) e.g. ::
+
+        form = FormClass(data={'field1': 'value1', 'field2': 'value2'})
+
+    ``_FormWrap`` provides a wrapper to support
+    ``hypothesis.strategies.builds``.
+
+    To wrap your ``form`` use ::
+
+        _form = type(_, (_FormWrap,), {'wraps': form})
+    """
+    # TODO: is there an easier way of doing this?
+    wraps = df.Form
+    form_kwargs = {}
+
+    def __new__(self, **kwargs):
+        # print(kwargs)
+        # print(self.form_kwargs)
+        return self.wraps(data=kwargs, **self.form_kwargs)
+
+
+@st.defines_strategy
+def from_form(
+    form,  # type: Type[dm.Model]
+    **field_strategies_and_form_kwargs  # type: Union[st.SearchStrategy[Any], InferType]
+):
+    # type: (...) -> st.SearchStrategy[Any]
+    """Return a strategy for examples of ``form``.
+
+    ``form`` must be an subclass of :class:`~django:django.forms.Form`.
+    Strategies for fields may be passed as keyword arguments, for example
+    ``is_staff=st.just(False)``.
+
+    Hypothesis can often infer a strategy based the field type and validators,
+    and will attempt to do so for any required fields.  No strategy will be
+  >>  inferred for an :class:`~django:django.db.forms.AutoField`, nullable field,
+    foreign key, or field for which a keyword
+    argument is passed to ``from_form()``.  For example,
+    a Shop type with a foreign key to Company could be generated with::
+
+        shop_strategy = from_form(Shop, company=from_form(Company))
+
+    Like for :func:`~hypothesis.strategies.builds`, you can pass
+    :obj:`~hypothesis.infer` as a keyword argument to infer a strategy for
+    a field which has a default value instead of using the default.
+    """
+    if not issubclass(form, df.BaseForm):
+        print(form.__mro__)
+        raise InvalidArgument("form=%r must be a subtype of Form" % (form,))
+
+    # Forms are a little bit different from models. Model classes have
+    # all their fields defined, whereas forms may have different fields
+    # per-instance. So, we ought to instantiate the form and get the
+    # fields from the instance, thus we need to accept the kwargs for
+    # instantiation as well as the explicitly defined strategies
+
+    # split the form kwargs from the field strategies
+    field_strategies = {}
+    form_kwargs = {}
+    for k, v in field_strategies_and_form_kwargs.items():
+        if isinstance(v, st.SearchStrategy):
+            field_strategies[k] = v
+        else:
+            form_kwargs[k] = v
+
+    blank_form = form(**form_kwargs)
+    fields_by_name = blank_form.fields
+    for name, value in sorted(field_strategies.items()):
+        if value is infer:
+            field_strategies[name] = from_field(fields_by_name[name])
+    for name, field in sorted(fields_by_name.items()):
+        if (
+            name not in field_strategies
+            and not field.disabled
+        ):
+            field_strategies[name] = from_field(field)
+
+    # for field in field_strategies:
+    #     if form._meta.get_field(field).primary_key:
+    #         # The primary key is generated as part of the strategy. We
+    #         # want to find any existing row with this primary key and
+    #         # overwrite its contents.
+    #         kwargs = {field: field_strategies.pop(field)}
+    #         kwargs["defaults"] = st.fixed_dictionaries(field_strategies)  # type: ignore
+    #         return _forms_impl(st.builds(form.objects.update_or_create, **kwargs))
+
+    # The primary key is not generated as part of the strategy, so we
+    # just match against any row that has the same value for all
+    # fields.
+    _form = type(
+        'ignored', (_FormWrap, ), {'wraps': form, 'form_kwargs': form_kwargs})
+    return _forms_impl(st.builds(_form, **field_strategies))
+
+
+@st.composite
+def _forms_impl(draw, strat):
+    """Handle the nasty part of drawing a value for from_form()"""
+    try:
+        return draw(strat)
+    except ValidationError:
         reject()

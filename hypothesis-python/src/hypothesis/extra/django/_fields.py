@@ -24,6 +24,7 @@ from decimal import Decimal
 
 import django
 import django.db.models as dm
+import django.forms as df
 
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument
@@ -35,6 +36,14 @@ from hypothesis.strategies import emails
 if False:
     from datetime import tzinfo  # noqa
     from typing import Any, Type, Optional, List, Text, Callable, Union  # noqa
+
+
+def get_tz_strat():
+    # type: () -> st.SearchStrategy[Optional[tzinfo]]
+    if getattr(django.conf.settings, "USE_TZ", False):
+        return timezones()
+    return st.none()
+
 
 # Mapping of field types, to strategy objects or functions of (type) -> strategy
 _global_field_lookup = {
@@ -51,6 +60,19 @@ _global_field_lookup = {
     dm.NullBooleanField: st.one_of(st.none(), st.booleans()),
     dm.URLField: urls(),
     dm.UUIDField: st.uuids(),
+    df.BooleanField: st.booleans(),
+    df.DateField: st.dates(),
+    df.DateTimeField: st.datetimes(timezones=get_tz_strat()),
+    df.DurationField: st.timedeltas(),
+    df.EmailField: emails(),
+    df.FloatField: st.floats(),
+    df.IntegerField: st.integers(-2147483648, 2147483647),
+    df.NullBooleanField: st.one_of(st.none(), st.booleans()),
+    # probably...
+    df.SplitDateTimeField:
+        st.tuples(st.dates(), st.times(timezones=get_tz_strat())),
+    df.TimeField: st.times(timezones=get_tz_strat()),
+    df.UUIDField: st.uuids(),
 }
 
 
@@ -99,6 +121,7 @@ def _for_duration(field):
 
 
 @register_for(dm.SlugField)
+@register_for(df.SlugField)
 def _for_slug(field):
     return st.text(
         alphabet=string.ascii_letters + string.digits,
@@ -108,6 +131,7 @@ def _for_slug(field):
 
 
 @register_for(dm.GenericIPAddressField)
+@register_for(df.GenericIPAddressField)
 def _for_ip(field):
     return dict(
         ipv4=ip4_addr_strings(),
@@ -117,6 +141,7 @@ def _for_ip(field):
 
 
 @register_for(dm.DecimalField)
+@register_for(df.DecimalField)
 def _for_decimal(field):
     bound = Decimal(10 ** field.max_digits - 1) / (10 ** field.decimal_places)
     return st.decimals(min_value=-bound, max_value=bound, places=field.decimal_places)
@@ -124,6 +149,7 @@ def _for_decimal(field):
 
 @register_for(dm.CharField)
 @register_for(dm.TextField)
+@register_for(df.CharField)
 def _for_text(field):
     # We can infer a vastly more precise strategy by considering the
     # validators as well as the field type.  This is a minimal proof of
@@ -143,11 +169,14 @@ def _for_text(field):
         # compute intersections of the full Python regex language.
         return st.one_of(*[st.from_regex(r) for r in regexes])
     # If there are no (usable) regexes, we use a standard text strategy.
+    min_size = 1
+    if getattr(field, "blank", False) or getattr(field, "required", False):
+        min_size = 0
     return st.text(
         alphabet=st.characters(
             blacklist_characters=u"\x00", blacklist_categories=("Cs",)
         ),
-        min_size=(0 if field.blank else 1),
+        min_size=min_size,
         max_size=field.max_length,
     )
 
@@ -183,20 +212,40 @@ def from_field(field):
     than a Field *subtype*, so that it has access to instance attributes
     such as string length and validators.
     """
-    check_type(dm.Field, field, "field")
-    if field.choices:
+    check_type((dm.Field, df.Field), field, "field")
+    # not all form fields have ``choices``, so this will raise an exception
+    # if field.choices:
+    if getattr(field, "choices", False):
         choices = []  # type: list
         for value, name_or_optgroup in field.choices:
             if isinstance(name_or_optgroup, (list, tuple)):
                 choices.extend(key for key, _ in name_or_optgroup)
             else:
                 choices.append(value)
+        min_size = 1
         if isinstance(field, (dm.CharField, dm.TextField)) and field.blank:
             choices.insert(0, u"")
+        # form fields don't have ``blank``, but they do have required
+        elif isinstance(field, (df.Field)) and not field.required:
+            choices.insert(0, u"")
+            min_size = 0
         strategy = st.sampled_from(choices)
+        # TODO: test this
+        if isinstance(
+                field, (df.MultipleChoiceField, df.TypedMultipleChoiceField)):
+            # not quite sure how the field will recieve multiples
+            strategy = st.lists(st.sampled_from(choices), min_size=min_size)
+    elif isinstance(field, df.MultiValueField):
+        # introspect further
+        strats = []
+        for _field in field.fields:
+            strats.append(from_field(_field))
+        # if len(strats) > 1:
+        strategy = st.tuples(*strats)
     else:
         if type(field) not in _global_field_lookup:
-            if field.null:
+            # form fields don't have ``null``
+            if getattr(field, "null", False):
                 return st.none()
             raise InvalidArgument("Could not infer a strategy for %r", (field,))
         strategy = _global_field_lookup[type(field)]
@@ -213,6 +262,6 @@ def from_field(field):
                 return False
 
         strategy = strategy.filter(validate)
-    if field.null:
+    if getattr(field, "null", False):
         return st.none() | strategy
     return strategy
