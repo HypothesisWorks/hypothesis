@@ -75,8 +75,6 @@ def _arrays(draw, dtype, shape, elements=None, unique=False):
     X = X.astype(dtype)
     return X
 
-# TODO test by trying with just()
-
 
 @composite
 def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
