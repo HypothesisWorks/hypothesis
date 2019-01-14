@@ -17,9 +17,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-import os
-import subprocess
-import sys
 from contextlib import contextmanager
 
 from hypothesis import find, given
@@ -112,29 +109,3 @@ def test_includes_intermediate_results_in_verbose_mode():
     lines = o.getvalue().splitlines()
     assert len([l for l in lines if u"example" in l]) > 2
     assert [l for l in lines if u"AssertionError" in l]
-
-
-PRINT_VERBOSITY = """
-from __future__ import print_function
-
-import warnings
-warnings.resetwarnings()
-
-from hypothesis import settings
-
-if __name__ == '__main__':
-    print("VERBOSITY=%s" % (settings.default.verbosity.name,))
-"""
-
-
-def test_picks_up_verbosity_from_environment(tmpdir):
-    script = tmpdir.join("printdebug.py")
-    script.write(PRINT_VERBOSITY)
-    environ = dict(os.environ)
-
-    environ["HYPOTHESIS_VERBOSITY_LEVEL"] = "debug"
-    output = subprocess.check_output([sys.executable, str(script)], env=environ).decode(
-        "ascii"
-    )
-
-    assert "VERBOSITY=debug" in output

@@ -25,10 +25,10 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import text_type
 from hypothesis.strategies import characters
 from tests.common.debug import assert_no_examples, find_any, minimal
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import fails_with
 
 
-@checks_deprecated_behaviour
+@fails_with(InvalidArgument)
 def test_nonexistent_category_argument():
     characters(blacklist_categories=["foo"]).example()
 

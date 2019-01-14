@@ -31,6 +31,7 @@ from hypothesis.strategies import (
     integers,
     lists,
     none,
+    nothing,
     sets,
     text,
     tuples,
@@ -46,6 +47,8 @@ from tests.common.debug import find_any, minimal
         (set(), sets(none(), max_size=0)),
         (frozenset(), frozensets(none(), max_size=0)),
         ({}, fixed_dictionaries({})),
+        ([], lists(nothing())),
+        ([], lists(nothing(), unique=True)),
     ],
 )
 def test_find_empty_collection_gives_empty(col, strat):

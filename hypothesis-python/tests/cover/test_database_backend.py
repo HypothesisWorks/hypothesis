@@ -17,7 +17,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-import base64
 import os
 
 import pytest
@@ -27,10 +26,8 @@ from hypothesis.database import (
     DirectoryBasedExampleDatabase,
     ExampleDatabase,
     InMemoryExampleDatabase,
-    SQLiteExampleDatabase,
 )
 from hypothesis.strategies import binary, lists, tuples
-from tests.common.utils import checks_deprecated_behaviour, validate_deprecation
 
 small_settings = settings(max_examples=50)
 
@@ -50,54 +47,12 @@ def test_backend_returns_what_you_put_in(xs):
         assert distinct_backend_contents == set(values)
 
 
-@checks_deprecated_behaviour
-def test_does_not_commit_in_error_state():
-    backend = SQLiteExampleDatabase(":memory:")
-    backend.create_db_if_needed()
-    try:
-        with backend.cursor() as cursor:
-            cursor.execute(
-                """
-                insert into hypothesis_data_mapping(key, value)
-                values("a", "b")
-            """
-            )
-            raise ValueError()
-    except ValueError:
-        pass
-
-    assert list(backend.fetch(b"a")) == []
-
-
-@checks_deprecated_behaviour
-def test_can_double_close():
-    backend = SQLiteExampleDatabase(":memory:")
-    backend.create_db_if_needed()
-    backend.close()
-    backend.close()
-
-
 def test_can_delete_keys():
     backend = InMemoryExampleDatabase()
     backend.save(b"foo", b"bar")
     backend.save(b"foo", b"baz")
     backend.delete(b"foo", b"bar")
     assert list(backend.fetch(b"foo")) == [b"baz"]
-
-
-@checks_deprecated_behaviour
-def test_ignores_badly_stored_values():
-    backend = SQLiteExampleDatabase(":memory:")
-    backend.create_db_if_needed()
-    with backend.cursor() as cursor:
-        cursor.execute(
-            """
-            insert into hypothesis_data_mapping(key, value)
-            values(?, ?)
-        """,
-            (base64.b64encode(b"foo"), u"kittens"),
-        )
-    assert list(backend.fetch(b"foo")) == []
 
 
 def test_default_database_is_in_memory():
@@ -110,26 +65,10 @@ def test_default_on_disk_database_is_dir(tmpdir):
     )
 
 
-@checks_deprecated_behaviour
-def test_selects_sqlite_database_if_name_matches(tmpdir):
-    assert isinstance(ExampleDatabase(tmpdir.join("foo.db")), SQLiteExampleDatabase)
-    assert isinstance(ExampleDatabase(tmpdir.join("foo.sqlite")), SQLiteExampleDatabase)
-    assert isinstance(
-        ExampleDatabase(tmpdir.join("foo.sqlite3")), SQLiteExampleDatabase
-    )
-
-
 def test_selects_directory_based_if_already_directory(tmpdir):
     path = str(tmpdir.join("hi.sqlite3"))
     DirectoryBasedExampleDatabase(path).save(b"foo", b"bar")
     assert isinstance(ExampleDatabase(path), DirectoryBasedExampleDatabase)
-
-
-@checks_deprecated_behaviour
-def test_selects_sqlite_if_already_sqlite(tmpdir):
-    path = str(tmpdir.join("hi"))
-    SQLiteExampleDatabase(path).save(b"foo", b"bar")
-    assert isinstance(ExampleDatabase(path), SQLiteExampleDatabase)
 
 
 def test_does_not_error_when_fetching_when_not_exist(tmpdir):
@@ -137,13 +76,10 @@ def test_does_not_error_when_fetching_when_not_exist(tmpdir):
     db.fetch(b"foo")
 
 
-@pytest.fixture(scope="function", params=["memory", "sql", "directory"])
+@pytest.fixture(scope="function", params=["memory", "directory"])
 def exampledatabase(request, tmpdir):
     if request.param == "memory":
         return ExampleDatabase()
-    if request.param == "sql":
-        with validate_deprecation():
-            return SQLiteExampleDatabase(str(tmpdir.join("example.db")))
     if request.param == "directory":
         return DirectoryBasedExampleDatabase(str(tmpdir.join("examples")))
     assert False

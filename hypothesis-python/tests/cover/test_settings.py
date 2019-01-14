@@ -17,11 +17,9 @@
 
 from __future__ import absolute_import, division, print_function
 
-import os
 import re
 import subprocess
 import sys
-from tempfile import mkdtemp
 
 import pytest
 
@@ -31,10 +29,11 @@ from hypothesis._settings import (
     PrintSettings,
     Verbosity,
     default_variable,
+    local_settings,
     note_deprecation,
     settings,
 )
-from hypothesis.database import DirectoryBasedExampleDatabase, ExampleDatabase
+from hypothesis.database import ExampleDatabase
 from hypothesis.errors import (
     HypothesisDeprecationWarning,
     InvalidArgument,
@@ -42,7 +41,7 @@ from hypothesis.errors import (
 )
 from hypothesis.stateful import GenericStateMachine, RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
-from tests.common.utils import checks_deprecated_behaviour, validate_deprecation
+from tests.common.utils import checks_deprecated_behaviour, fails_with
 
 
 def test_has_docstrings():
@@ -78,25 +77,17 @@ def test_respects_none_database():
     assert settings(database=None).database is None
 
 
-@checks_deprecated_behaviour
-def test_settings_can_be_used_as_context_manager_to_change_defaults():
-    with settings(max_examples=12):
-        assert settings.default.max_examples == 12
-    assert settings.default.max_examples == original_default
-
-
-@checks_deprecated_behaviour
 def test_can_repeatedly_push_the_same_thing():
     s = settings(max_examples=12)
     t = settings(max_examples=17)
     assert settings().max_examples == original_default
-    with s:
+    with local_settings(s):
         assert settings().max_examples == 12
-        with t:
+        with local_settings(t):
             assert settings().max_examples == 17
-            with s:
+            with local_settings(s):
                 assert settings().max_examples == 12
-                with t:
+                with local_settings(t):
                     assert settings().max_examples == 17
                 assert settings().max_examples == 12
             assert settings().max_examples == 17
@@ -117,26 +108,6 @@ def test_cannot_register_with_parent_and_settings_args():
     assert "conflicted" not in settings._profiles
 
 
-@checks_deprecated_behaviour
-def test_register_profile_kwarg_settings_is_deprecated():
-    settings.register_profile("test", settings=settings(max_examples=10))
-    settings.load_profile("test")
-    assert settings.default.max_examples == 10
-
-
-@checks_deprecated_behaviour
-def test_perform_health_check_setting_is_deprecated():
-    s = settings(suppress_health_check=(), perform_health_check=False)
-    assert s.suppress_health_check
-
-
-@checks_deprecated_behaviour
-@given(st.integers(0, 10000))
-def test_max_shrinks_setting_is_deprecated(n):
-    s = settings(max_shrinks=n)
-    assert s.max_shrinks == n
-
-
 def test_can_set_verbosity():
     settings(verbosity=Verbosity.quiet)
     settings(verbosity=Verbosity.normal)
@@ -148,13 +119,12 @@ def test_can_not_set_verbosity_to_non_verbosity():
         settings(verbosity="kittens")
 
 
-@checks_deprecated_behaviour
 @pytest.mark.parametrize("db", [None, ExampleDatabase()])
 def test_inherits_an_empty_database(db):
     assert settings.default.database is not None
     s = settings(database=db)
     assert s.database is db
-    with s:
+    with local_settings(s):
         t = settings()
     assert t.database is db
 
@@ -188,19 +158,20 @@ def test_load_profile():
     assert settings.default.stateful_step_count == 50
 
 
-@checks_deprecated_behaviour
-def test_nonstring_profile_names_deprecated():
-    settings.register_profile(5, stateful_step_count=5)
-    settings.load_profile(5)
-    assert settings.default.stateful_step_count == 5
+def test_profile_names_must_be_strings():
+    with pytest.raises(InvalidArgument):
+        settings.register_profile(5)
+    with pytest.raises(InvalidArgument):
+        settings.get_profile(5)
+    with pytest.raises(InvalidArgument):
+        settings.load_profile(5)
 
 
-@checks_deprecated_behaviour
 def test_loading_profile_keeps_expected_behaviour():
     settings.register_profile("ci", settings(max_examples=10000))
     settings.load_profile("ci")
     assert settings().max_examples == 10000
-    with settings(max_examples=5):
+    with local_settings(settings(max_examples=5)):
         assert settings().max_examples == 5
     assert settings().max_examples == 10000
 
@@ -208,14 +179,6 @@ def test_loading_profile_keeps_expected_behaviour():
 def test_load_non_existent_profile():
     with pytest.raises(InvalidArgument):
         settings.get_profile("nonsense")
-
-
-@pytest.mark.skipif(
-    os.getenv("HYPOTHESIS_PROFILE") not in (None, "default"),
-    reason="Defaults have been overridden",
-)
-def test_runs_tests_with_defaults_from_conftest():
-    assert settings.default.timeout == -1
 
 
 def test_cannot_delete_a_setting():
@@ -229,18 +192,9 @@ def test_cannot_delete_a_setting():
         del x.foo
 
 
-def test_cannot_set_strict():
-    with pytest.raises(HypothesisDeprecationWarning):
-        settings(strict=True)
-
-
 @checks_deprecated_behaviour
-def test_set_deprecated_settings():
-    assert settings(timeout=3).timeout == 3
-
-
-def test_setting_to_future_value_gives_future_value_and_no_error():
-    assert settings(timeout=unlimited).timeout == -1
+def test_setting_to_unlimited_is_not_error_yet():
+    settings(timeout=unlimited)
 
 
 def test_cannot_set_settings():
@@ -257,27 +211,13 @@ def test_can_have_none_database():
     assert settings(database=None).database is None
 
 
-@checks_deprecated_behaviour
 @pytest.mark.parametrize("db", [None, ExampleDatabase(":memory:")])
 def test_database_type_must_be_ExampleDatabase(db):
-    with settings(database=db):
+    with local_settings(settings(database=db)):
         settings_property_db = settings.database
         with pytest.raises(InvalidArgument):
             settings(database=".hypothesis/examples")
         assert settings.database is settings_property_db
-
-
-@checks_deprecated_behaviour
-def test_can_have_none_database_file():
-    assert settings(database_file=None).database is None
-
-
-@checks_deprecated_behaviour
-def test_can_override_database_file():
-    f = mkdtemp()
-    x = settings(database_file=f)
-    assert isinstance(x.database, DirectoryBasedExampleDatabase)
-    assert x.database.path == f
 
 
 def test_cannot_define_settings_once_locked():
@@ -303,46 +243,22 @@ def test_settings_in_strategies_are_from_test_scope(s):
     assert s.max_examples == 7
 
 
-@checks_deprecated_behaviour
 def test_settings_alone():
     @settings()
     def test_nothing():
         pass
 
-    test_nothing()
+    with pytest.raises(InvalidArgument):
+        test_nothing()
 
 
-@checks_deprecated_behaviour
-def test_settings_applied_twice_1():
+@fails_with(InvalidArgument)
+def test_settings_applied_twice_is_error():
     @given(st.integers())
     @settings()
     @settings()
     def test_nothing(x):
         pass
-
-    test_nothing()
-
-
-@checks_deprecated_behaviour
-def test_settings_applied_twice_2():
-    @settings()
-    @given(st.integers())
-    @settings()
-    def test_nothing(x):
-        pass
-
-    test_nothing()
-
-
-@checks_deprecated_behaviour
-def test_settings_applied_twice_3():
-    @settings()
-    @settings()
-    @given(st.integers())
-    def test_nothing(x):
-        pass
-
-    test_nothing()
 
 
 @settings()
@@ -390,12 +306,6 @@ def test_database_is_reference_preserved():
     s = settings(database=not_set)
 
     assert s.database is s.database
-
-
-@pytest.mark.parametrize("value", [False, True])
-def test_setting_use_coverage_is_deprecated(value):
-    with validate_deprecation():
-        settings(use_coverage=value)
 
 
 @settings(verbosity=Verbosity.verbose)
@@ -480,3 +390,13 @@ def test_assigning_to_settings_attribute_on_state_machine_raises_error():
 
     state_machine_instance = StateMachine()
     state_machine_instance.settings = "any value"
+
+
+def test_can_not_set_timeout_to_time():
+    with pytest.raises(InvalidArgument):
+        settings(timeout=60)
+
+
+def test_derandomise_with_explicit_database_is_invalid():
+    with pytest.raises(InvalidArgument):
+        settings(derandomize=True, database=ExampleDatabase(":memory:"))

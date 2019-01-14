@@ -21,17 +21,18 @@ import collections
 import enum
 
 from hypothesis import given
+from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import sampled_from
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import fails_with
 
 an_enum = enum.Enum("A", "a b c")
 
 an_ordereddict = collections.OrderedDict([("a", 1), ("b", 2), ("c", 3)])
 
 
-@checks_deprecated_behaviour
-def test_can_sample_sets_while_deprecated():
-    assert sampled_from(set("abc")).example() in "abc"
+@fails_with(InvalidArgument)
+def test_cannot_sample_sets():
+    sampled_from(set("abc")).example()
 
 
 def test_can_sample_sequence_without_warning():

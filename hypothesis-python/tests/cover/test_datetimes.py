@@ -27,7 +27,6 @@ from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.searchstrategy.datetime import DatetimeStrategy
 from hypothesis.strategies import binary, dates, datetimes, none, timedeltas, times
 from tests.common.debug import find_any, minimal
-from tests.common.utils import checks_deprecated_behaviour
 
 
 def test_can_find_positive_delta():
@@ -158,8 +157,3 @@ def test_can_generate_naive_time():
 @given(times())
 def test_naive_times_are_naive(dt):
     assert dt.tzinfo is None
-
-
-@checks_deprecated_behaviour
-def test_deprecated_min_date_is_respected():
-    assert minimal(dates(min_date=dt.date.min.replace(2003))).year == 2003

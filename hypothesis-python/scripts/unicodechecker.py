@@ -25,7 +25,6 @@ from tempfile import mkdtemp
 
 import unicodenazi
 
-from hypothesis import settings, unlimited
 from hypothesis.configuration import set_hypothesis_home_dir
 from hypothesis.errors import HypothesisDeprecationWarning
 
@@ -35,12 +34,6 @@ unicodenazi.enable()
 
 
 set_hypothesis_home_dir(mkdtemp())
-
-assert isinstance(settings, type)
-
-settings.register_profile("default", settings(timeout=unlimited))
-settings.load_profile("default")
-
 
 TESTS = ["test_testdecorators"]
 

@@ -24,7 +24,7 @@ from weakref import WeakKeyDictionary
 import attr
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
-from hypothesis._settings import local_settings, note_deprecation
+from hypothesis._settings import local_settings
 from hypothesis.internal.compat import (
     Counter,
     benchmark_time,
@@ -70,7 +70,6 @@ class HealthCheckState(object):
 class ExitReason(Enum):
     max_examples = 0
     max_iterations = 1
-    timeout = 2
     max_shrinks = 3
     finished = 4
     flaky = 5
@@ -213,26 +212,6 @@ class ConjectureRunner(object):
 
             if self.shrinks >= MAX_SHRINKS:
                 self.exit_with(ExitReason.max_shrinks)
-        if (
-            self.settings.timeout > 0
-            and benchmark_time() >= self.start_time + self.settings.timeout
-        ):
-            note_deprecation(
-                (
-                    "Your tests are hitting the settings timeout (%.2fs). "
-                    "This functionality will go away in a future release "
-                    "and you should not rely on it. Instead, try setting "
-                    "max_examples to be some value lower than %d (the number "
-                    "of examples your test successfully ran here). Or, if you "
-                    "would prefer your tests to run to completion, regardless "
-                    "of how long they take, you can set the timeout value to "
-                    "hypothesis.unlimited."
-                )
-                % (self.settings.timeout, self.valid_examples),
-                since="2018-07-29",
-                verbosity=self.settings.verbosity,
-            )
-            self.exit_with(ExitReason.timeout)
 
         if not self.interesting_examples:
             if self.valid_examples >= self.settings.max_examples:

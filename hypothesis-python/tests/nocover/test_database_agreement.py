@@ -22,13 +22,8 @@ import shutil
 import tempfile
 
 import hypothesis.strategies as st
-from hypothesis.database import (
-    DirectoryBasedExampleDatabase,
-    InMemoryExampleDatabase,
-    SQLiteExampleDatabase,
-)
+from hypothesis.database import DirectoryBasedExampleDatabase, InMemoryExampleDatabase
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
-from tests.common.utils import validate_deprecation
 
 
 class DatabaseComparison(RuleBasedStateMachine):
@@ -42,9 +37,6 @@ class DatabaseComparison(RuleBasedStateMachine):
             InMemoryExampleDatabase(),
             DirectoryBasedExampleDatabase(exampledir),
         ]
-
-        with validate_deprecation():
-            self.dbs.append(SQLiteExampleDatabase(":memory:"))
 
     keys = Bundle("keys")
     values = Bundle("values")

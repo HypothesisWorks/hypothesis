@@ -20,9 +20,10 @@ from __future__ import absolute_import, division, print_function
 from collections import defaultdict
 
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis._settings import Phase, note_deprecation
+from hypothesis._settings import Phase
 from hypothesis.control import _current_build_context, assume
 from hypothesis.errors import (
+    HypothesisException,
     NoExamples,
     NoSuchExample,
     Unsatisfiable,
@@ -266,31 +267,22 @@ class SearchStrategy(Generic[Ex]):
         context = _current_build_context.value
         if context is not None:
             if context.data is not None and context.data.depth > 0:
-                note_deprecation(
+                raise HypothesisException(
                     "Using example() inside a strategy definition is a bad "
-                    "idea. It will become an error in a future version of "
-                    "Hypothesis, but it's unlikely that it's doing what you "
-                    "intend even now. Instead consider using "
-                    "hypothesis.strategies.builds() or "
-                    "@hypothesis.strategies.composite to define your strategy."
-                    " See "
-                    "https://hypothesis.readthedocs.io/en/latest/data.html"
+                    "idea. Instead consider using hypothesis.strategies.builds() "
+                    "or @hypothesis.strategies.composite to define your strategy."
+                    " See https://hypothesis.readthedocs.io/en/latest/data.html"
                     "#hypothesis.strategies.builds or "
                     "https://hypothesis.readthedocs.io/en/latest/data.html"
-                    "#composite-strategies for more details.",
-                    since="2017-09-04",
+                    "#composite-strategies for more details."
                 )
             else:
-                note_deprecation(
+                raise HypothesisException(
                     "Using example() inside a test function is a bad "
-                    "idea. It will become an error in a future version of "
-                    "Hypothesis, but it's unlikely that it's doing what you "
-                    "intend even now. Instead consider using "
-                    "hypothesis.strategies.data() to draw "
-                    "more examples during testing. See "
+                    "idea. Instead consider using hypothesis.strategies.data() "
+                    "to draw more examples during testing. See "
                     "https://hypothesis.readthedocs.io/en/latest/data.html"
-                    "#drawing-interactively-in-tests for more details.",
-                    since="2017-09-04",
+                    "#drawing-interactively-in-tests for more details."
                 )
 
         from hypothesis import find, settings, Verbosity

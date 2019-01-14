@@ -18,14 +18,13 @@
 from __future__ import absolute_import, division, print_function
 
 import time
-import warnings
 
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, given, settings, unlimited
-from hypothesis.errors import DeadlineExceeded, Flaky, HypothesisDeprecationWarning
-from tests.common.utils import capture_out, checks_deprecated_behaviour
+from hypothesis import HealthCheck, given, settings
+from hypothesis.errors import DeadlineExceeded, Flaky, InvalidArgument
+from tests.common.utils import capture_out, fails_with
 
 
 def test_raises_deadline_on_slow_test():
@@ -38,24 +37,15 @@ def test_raises_deadline_on_slow_test():
         slow()
 
 
-def test_only_warns_once():
-    @given(st.integers())
-    def slow(i):
-        time.sleep(1)
-
-    try:
-        warnings.simplefilter("always", HypothesisDeprecationWarning)
-        with warnings.catch_warnings(record=True) as w:
-            slow()
-    finally:
-        warnings.simplefilter("error", HypothesisDeprecationWarning)
-    assert len(w) == 1
-
-
-@checks_deprecated_behaviour
+@fails_with(DeadlineExceeded)
 @given(st.integers())
-def test_slow_tests_are_deprecated_by_default(i):
+def test_slow_tests_are_errors_by_default(i):
     time.sleep(1)
+
+
+def test_non_numeric_deadline_is_an_error():
+    with pytest.raises(InvalidArgument):
+        settings(deadline="3 seconds")
 
 
 @given(st.integers())
@@ -95,9 +85,7 @@ def test_keeps_you_well_above_the_deadline():
     seen = set()
     failed_once = [False]
 
-    @settings(
-        deadline=100, timeout=unlimited, suppress_health_check=[HealthCheck.hung_test]
-    )
+    @settings(deadline=100, suppress_health_check=[HealthCheck.hung_test])
     @given(st.integers(0, 2000))
     def slow(i):
         # Make sure our initial failure isn't something that immediately goes

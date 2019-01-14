@@ -50,7 +50,6 @@ from hypothesis.stateful import (
 from hypothesis.strategies import (
     binary,
     booleans,
-    choices,
     integers,
     just,
     lists,
@@ -472,18 +471,6 @@ IntAdder.define_rule(
 )
 
 
-@checks_deprecated_behaviour
-def test_can_choose_in_a_machine():
-    class ChoosingMachine(GenericStateMachine):
-        def steps(self):
-            return choices()
-
-        def execute_step(self, choices):
-            choices([1, 2, 3])
-
-    run_state_machine_as_test(ChoosingMachine)
-
-
 TestGoodSets = GoodSet.TestCase
 TestGivenLike = GivenLikeStateMachine.TestCase
 TestDynamicMachine = DynamicMachine.TestCase
@@ -513,20 +500,6 @@ def test_new_rules_are_picked_up_before_and_after_rules_call():
     assert len(Foo.rules()) == 1
     Foo.define_rule(targets=(), function=lambda self: 2, arguments={})
     assert len(Foo.rules()) == 2
-
-
-@checks_deprecated_behaviour
-def test_settings_are_independent():
-    s = Settings()
-    orig = s.max_examples
-    with s:
-
-        class Foo(RuleBasedStateMachine):
-            pass
-
-        Foo.define_rule(targets=(), function=lambda self: 1, arguments={})
-        Foo.TestCase.settings = Settings(Foo.TestCase.settings, max_examples=1000000)
-    assert s.max_examples == orig
 
 
 def test_minimizes_errors_in_teardown():

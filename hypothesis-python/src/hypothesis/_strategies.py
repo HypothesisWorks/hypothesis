@@ -33,7 +33,7 @@ from uuid import UUID
 import attr
 
 from hypothesis._settings import note_deprecation
-from hypothesis.control import cleanup, current_build_context, note, reject
+from hypothesis.control import cleanup, note, reject
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.cathetus import cathetus
@@ -53,7 +53,6 @@ from hypothesis.internal.compat import (
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
     check_sample,
-    choice,
     integer_range,
 )
 from hypothesis.internal.floats import (
@@ -71,7 +70,6 @@ from hypothesis.internal.reflection import (
     proxies,
     required_args,
 )
-from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.internal.validation import (
     check_type,
     check_valid_bound,
@@ -110,7 +108,6 @@ from hypothesis.searchstrategy.numbers import (
 from hypothesis.searchstrategy.recursive import RecursiveStrategy
 from hypothesis.searchstrategy.shared import SharedStrategy
 from hypothesis.searchstrategy.strategies import OneOfStrategy
-from hypothesis.searchstrategy.streams import StreamStrategy
 from hypothesis.searchstrategy.strings import (
     BinaryStringStrategy,
     FixedSizeBytes,
@@ -672,9 +669,8 @@ def sampled_from(elements):
 @cacheable
 @defines_strategy
 def lists(
-    elements=None,  # type: SearchStrategy[Ex]
+    elements,  # type: SearchStrategy[Ex]
     min_size=0,  # type: int
-    average_size=None,  # type: None
     max_size=None,  # type: int
     unique_by=None,  # type: Callable[..., Any]
     unique=False,  # type: bool
@@ -684,9 +680,6 @@ def lists(
     interval [min_size, max_size] (no bounds in that direction if these are
     None). If max_size is 0 then elements may be None and only the empty list
     will be drawn.
-
-    The average_size argument is deprecated.  Internal upgrades since
-    Hypothesis 1.x mean we no longer needed this hint to generate useful data.
 
     If unique is True (or something that evaluates to True), we compare direct
     object equality, as if unique_by was ``lambda x: x``. This comparison only
@@ -700,39 +693,21 @@ def lists(
     Examples from this strategy shrink by trying to remove elements from the
     list, and by shrinking each individual element of the list.
     """
-    check_valid_sizes(min_size, average_size, max_size)
-    if elements is None:
-        note_deprecation(
-            "Passing a strategy for `elements` of the list will be required "
-            "in a future version of Hypothesis.  To create lists that are "
-            "always empty, use `builds(list)` or `lists(nothing())`.",
-            since="2018-03-10",
-        )
-        if min_size or average_size or max_size:
-            # Checked internally for lists with an elements strategy, but
-            # we're about to skip that and return builds(list) instead...
-            raise InvalidArgument(
-                "Cannot create a non-empty collection (min_size=%r, "
-                "average_size=%r, max_size=%r) without elements."
-                % (min_size, average_size, max_size)
-            )
-        return builds(list)
-    if max_size == 0:
-        return builds(list)
+    check_valid_sizes(min_size, max_size)
     check_strategy(elements, "elements")
     if unique:
         if unique_by is not None:
             raise InvalidArgument(
-                (
-                    "cannot specify both unique and unique_by (you probably only "
-                    "want to set unique_by)"
-                )
+                "cannot specify both unique and unique_by "
+                "(you probably only want to set unique_by)"
             )
         else:
 
             def unique_by(x):
                 return x
 
+    if max_size == 0:
+        return builds(list)
     if unique_by is not None:
         return UniqueListStrategy(
             elements=elements, max_size=max_size, min_size=min_size, key=unique_by
@@ -743,9 +718,8 @@ def lists(
 @cacheable
 @defines_strategy
 def sets(
-    elements=None,  # type: SearchStrategy[Ex]
+    elements,  # type: SearchStrategy[Ex]
     min_size=0,  # type: int
-    average_size=None,  # type: None
     max_size=None,  # type: int
 ):
     # type: (...) -> SearchStrategy[Set[Ex]]
@@ -758,47 +732,23 @@ def sets(
     Examples from this strategy shrink by trying to remove elements from the
     set, and by shrinking each individual element of the set.
     """
-    if elements is None:
-        note_deprecation(
-            "Passing a strategy for `elements` of the set will be required "
-            "in a future version of Hypothesis.  To create sets that are "
-            "always empty, use `builds(set)` or `sets(nothing())`.",
-            since="2018-03-10",
-        )
     return lists(
-        elements=elements,
-        min_size=min_size,
-        average_size=average_size,
-        max_size=max_size,
-        unique=True,
+        elements=elements, min_size=min_size, max_size=max_size, unique=True
     ).map(set)
 
 
 @cacheable
 @defines_strategy
 def frozensets(
-    elements=None,  # type: SearchStrategy[Ex]
+    elements,  # type: SearchStrategy[Ex]
     min_size=0,  # type: int
-    average_size=None,  # type: None
     max_size=None,  # type: int
 ):
     # type: (...) -> SearchStrategy[FrozenSet[Ex]]
     """This is identical to the sets function but instead returns
     frozensets."""
-    if elements is None:
-        note_deprecation(
-            "Passing a strategy for `elements` of the frozenset will be "
-            "required in a future version of Hypothesis.  To create "
-            "frozensets that are always empty, use `builds(frozenset)` "
-            "or `frozensets(nothing())`.",
-            since="2018-03-10",
-        )
     return lists(
-        elements=elements,
-        min_size=min_size,
-        average_size=average_size,
-        max_size=max_size,
-        unique=True,
+        elements=elements, min_size=min_size, max_size=max_size, unique=True
     ).map(frozenset)
 
 
@@ -819,14 +769,7 @@ class PrettyIter(object):
 
 
 @defines_strategy
-def iterables(
-    elements=None,
-    min_size=0,
-    average_size=None,
-    max_size=None,
-    unique_by=None,
-    unique=False,
-):
+def iterables(elements, min_size=0, max_size=None, unique_by=None, unique=False):
     """This has the same behaviour as lists, but returns iterables instead.
 
     Some iterables cannot be indexed (e.g. sets) and some do not have a
@@ -834,18 +777,9 @@ def iterables(
     which cannot be indexed and do not have a fixed length. This ensures
     that you do not accidentally depend on sequence behaviour.
     """
-    if elements is None:
-        note_deprecation(
-            "Passing a strategy for `elements` of the iterable will be "
-            "required in a future version of Hypothesis.  To create "
-            "iterables that are always empty, use `iterables(nothing())`.",
-            since="2018-03-10",
-        )
-
     return lists(
         elements=elements,
         min_size=min_size,
-        average_size=average_size,
         max_size=max_size,
         unique_by=unique_by,
         unique=unique,
@@ -879,7 +813,6 @@ def dictionaries(
     values,  # type: SearchStrategy[T]
     dict_class=dict,  # type: type
     min_size=0,  # type: int
-    average_size=None,  # type: None
     max_size=None,  # type: int
 ):
     # type: (...) -> SearchStrategy[Dict[Ex, T]]
@@ -893,7 +826,7 @@ def dictionaries(
     Examples from this strategy shrink by trying to remove keys from the
     generated dictionary, and by shrinking each generated key and value.
     """
-    check_valid_sizes(min_size, average_size, max_size)
+    check_valid_sizes(min_size, max_size)
     if max_size == 0:
         return fixed_dictionaries(dict_class())
     check_strategy(keys)
@@ -905,29 +838,6 @@ def dictionaries(
         max_size=max_size,
         unique_by=lambda x: x[0],
     ).map(dict_class)
-
-
-@defines_strategy
-def streaming(elements):
-    """Generates an infinite stream of values where each value is drawn from
-    elements.
-
-    The result is iterable (the iterator will never terminate) and
-    indexable.
-
-    Examples from this strategy shrink by trying to shrink each value drawn.
-
-    .. deprecated:: 3.15.0
-        Use :func:`data() <hypothesis.strategies.data>` instead.
-    """
-    note_deprecation(
-        "streaming() has been deprecated. Use the data() strategy instead and "
-        "replace stream iteration with data.draw() calls.",
-        since="2017-07-02",
-    )
-
-    check_strategy(elements)
-    return StreamStrategy(elements)
 
 
 @cacheable
@@ -1043,7 +953,6 @@ def text(
         blacklist_categories=("Cs",)
     ),  # type: Union[Sequence[Text], SearchStrategy[Text]]
     min_size=0,  # type: int
-    average_size=None,  # type: None
     max_size=None,  # type: int
 ):
     # type: (...) -> SearchStrategy[Text]
@@ -1061,15 +970,12 @@ def text(
     ``Å`` is a single character, while U+0041 U+030A ``Å`` is two - the ``A``,
     and a combining ring above.
 
-    The average_size argument is deprecated.  Internal upgrades since
-    Hypothesis 1.x mean we no longer needed this hint to generate useful data.
-
     Examples from this strategy shrink towards shorter strings, and with the
     characters in the text shrinking as per the alphabet strategy.
     This strategy does not :func:`~python:unicodedata.normalize` examples,
     so generated strings may be in any or none of the 'normal forms'.
     """
-    check_valid_sizes(min_size, average_size, max_size)
+    check_valid_sizes(min_size, max_size)
     if alphabet is None:
         note_deprecation(
             "alphabet=None is deprecated; just omit the argument", since="2018-10-05"
@@ -1078,33 +984,28 @@ def text(
     elif isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:
+        char_strategy = sampled_from(list(alphabet))
         if not isinstance(alphabet, abc.Sequence):
-            note_deprecation(
+            raise InvalidArgument(
                 "alphabet must be an ordered sequence, or tests may be "
                 "flaky and shrinking weaker, but a %r is not a type of "
-                "sequence.  This will be an error in future." % (type(alphabet),),
-                since="2018-06-18",
+                "sequence." % (type(alphabet),)
             )
-        alphabet = list(alphabet)
         non_string = [c for c in alphabet if not isinstance(c, string_types)]
         if non_string:
-            note_deprecation(
+            raise InvalidArgument(
                 "The following elements in alphabet are not unicode "
-                "strings, which will be an error in future:  %r" % (non_string,),
-                since="2018-06-18",
+                "strings:  %r" % (non_string,)
             )
-            alphabet = [str(c) for c in alphabet]
         not_one_char = [
             c for c in alphabet if isinstance(c, string_types) and len(c) != 1
         ]
         if not_one_char:
-            note_deprecation(
+            raise InvalidArgument(
                 "The following elements in alphabet are not of length "
-                "one, which leads to violation of size constraints and "
-                "will be an error in future:  %r" % (not_one_char,),
-                since="2018-06-18",
+                "one, which leads to violation of size constraints:  %r"
+                % (not_one_char,)
             )
-        char_strategy = sampled_from(alphabet)
     if (max_size == 0 or char_strategy.is_empty) and not min_size:
         return just(u"")
     return StringStrategy(lists(char_strategy, min_size=min_size, max_size=max_size))
@@ -1151,20 +1052,17 @@ def from_regex(regex, fullmatch=False):
 
 @cacheable
 @defines_strategy_with_reusable_values
-def binary(min_size=0, average_size=None, max_size=None):
-    # type: (int, int, int) -> SearchStrategy[bytes]
+def binary(min_size=0, max_size=None):
+    # type: (int, int) -> SearchStrategy[bytes]
     """Generates the appropriate binary type (str in python 2, bytes in python
     3).
 
     min_size and max_size have the usual interpretations.
 
-    The average_size argument is deprecated.  Internal upgrades since
-    Hypothesis 1.x mean we no longer needed this hint to generate useful data.
-
     Examples from this strategy shrink towards smaller strings and lower byte
     values.
     """
-    check_valid_sizes(min_size, average_size, max_size)
+    check_valid_sizes(min_size, max_size)
     if min_size == max_size is not None:
         return FixedSizeBytes(min_size)
     return BinaryStringStrategy(
@@ -1254,25 +1152,16 @@ def builds(
     Examples from this strategy shrink by shrinking the argument values to
     the callable.
     """
-    if callable_and_args:
-        target, args = callable_and_args[0], callable_and_args[1:]
-        if not callable(target):
-            raise InvalidArgument(
-                "The first positional argument to builds() must be a callable "
-                "target to construct."
-            )
-    elif "target" in kwargs and callable(kwargs["target"]):
-        args = ()
-        note_deprecation(
-            "Specifying the target as a keyword argument to builds() is "
-            "deprecated. Provide it as the first positional argument instead.",
-            since="2018-02-12",
-        )
-        target = kwargs.pop("target")
-    else:
+    if not callable_and_args:
         raise InvalidArgument(
             "builds() must be passed a callable as the first positional "
             "argument, but no positional arguments were given."
+        )
+    target, args = callable_and_args[0], callable_and_args[1:]
+    if not callable(target):
+        raise InvalidArgument(
+            "The first positional argument to builds() must be a callable "
+            "target to construct."
         )
 
     if infer in args:
@@ -1754,15 +1643,10 @@ def permutations(values):
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(
-    since="2017-08-22", min_datetime="min_value", max_datetime="max_value"
-)
 def datetimes(
     min_value=dt.datetime.min,  # type: dt.datetime
     max_value=dt.datetime.max,  # type: dt.datetime
     timezones=none(),  # type: SearchStrategy[Optional[dt.tzinfo]]
-    min_datetime=None,  # type: dt.datetime
-    max_datetime=None,  # type: dt.datetime
 ):
     # type: (...) -> SearchStrategy[dt.datetime]
     """A strategy for generating datetimes, which may be timezone-aware.
@@ -1822,9 +1706,8 @@ def datetimes(
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(since="2017-08-22", min_date="min_value", max_date="max_value")
-def dates(min_value=dt.date.min, max_value=dt.date.max, min_date=None, max_date=None):
-    # type: (dt.date, dt.date, dt.date, dt.date) -> SearchStrategy[dt.date]
+def dates(min_value=dt.date.min, max_value=dt.date.max):
+    # type: (dt.date, dt.date) -> SearchStrategy[dt.date]
     """A strategy for dates between ``min_value`` and ``max_value``.
 
     Examples from this strategy shrink towards January 1st 2000.
@@ -1838,15 +1721,8 @@ def dates(min_value=dt.date.min, max_value=dt.date.max, min_date=None, max_date=
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(since="2017-08-22", min_time="min_value", max_time="max_value")
-def times(
-    min_value=dt.time.min,  # type: dt.time
-    max_value=dt.time.max,  # type: dt.time
-    timezones=none(),  # type: SearchStrategy
-    min_time=None,  # type: dt.time
-    max_time=None,  # type: dt.time
-):
-    # type: (...) -> SearchStrategy[dt.time]
+def times(min_value=dt.time.min, max_value=dt.time.max, timezones=none()):
+    # type: (dt.time, dt.time, SearchStrategy) -> SearchStrategy[dt.time]
     """A strategy for times between ``min_value`` and ``max_value``.
 
     The ``timezones`` argument is handled as for :py:func:`datetimes`.
@@ -1870,14 +1746,8 @@ def times(
 
 
 @defines_strategy_with_reusable_values
-@renamed_arguments(since="2017-08-22", min_delta="min_value", max_delta="max_value")
-def timedeltas(
-    min_value=dt.timedelta.min,  # type: dt.timedelta
-    max_value=dt.timedelta.max,  # type: dt.timedelta
-    min_delta=None,  # type: dt.timedelta
-    max_delta=None,  # type: dt.timedelta
-):
-    # type: (...) -> SearchStrategy[dt.timedelta]
+def timedeltas(min_value=dt.timedelta.min, max_value=dt.timedelta.max):
+    # type: (dt.timedelta, dt.timedelta) -> SearchStrategy[dt.timedelta]
     """A strategy for timedeltas between ``min_value`` and ``max_value``.
 
     Examples from this strategy shrink towards zero.
@@ -2052,57 +1922,6 @@ def shared(base, key=None):
     Examples from this strategy shrink as per their base strategy.
     """
     return SharedStrategy(base, key)
-
-
-class Chooser(object):
-    def __init__(self, build_context, data):
-        self.build_context = build_context
-        self.data = data
-        self.choice_count = 0
-
-    def __call__(self, values):
-        if not values:
-            raise IndexError("Cannot choose from empty sequence")
-        result = choice(self.data, check_sample(values, "choices"))
-        with self.build_context.local():
-            self.choice_count += 1
-            note("Choice #%d: %r" % (self.choice_count, result))
-        return result
-
-    def __repr__(self):
-        return "choice"
-
-
-class ChoiceStrategy(SearchStrategy):
-    supports_find = False
-
-    def do_draw(self, data):
-        data.can_reproduce_example_from_repr = False
-        return Chooser(current_build_context(), data)
-
-
-@defines_strategy
-def choices():
-    """Strategy that generates a function that behaves like random.choice.
-
-    Will note choices made for reproducibility.
-
-    .. deprecated:: 3.15.0
-
-        Use :func:`data() <hypothesis.strategies.data>` with
-        :func:`sampled_from() <hypothesis.strategies.sampled_from>` instead.
-
-    Examples from this strategy shrink by making each choice function return
-    an earlier value in the sequence passed to it.
-    """
-
-    note_deprecation(
-        "choices() has been deprecated. Use the data() strategy instead and "
-        "replace its usage with data.draw(sampled_from(elements))) calls.",
-        since="2017-07-02",
-    )
-
-    return shared(ChoiceStrategy(), key="hypothesis.strategies.chooser.choice_function")
 
 
 @cacheable

@@ -20,15 +20,14 @@ from __future__ import absolute_import, division, print_function
 import os
 import sys
 
-from hypothesis import HealthCheck, settings, unlimited
+from hypothesis import HealthCheck, settings
 from tests.common.setup import run
 
 if __name__ == u"__main__":
     run()
 
     settings.register_profile(
-        "default",
-        settings(timeout=unlimited, suppress_health_check=[HealthCheck.too_slow]),
+        "default", settings(suppress_health_check=[HealthCheck.too_slow])
     )
 
     settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))

@@ -29,6 +29,8 @@ Using a value of ``HealthCheck.all()`` will disable all health checks.
    :inherited-members:
 
 
+.. _deprecation-policy:
+
 ------------
 Deprecations
 ------------

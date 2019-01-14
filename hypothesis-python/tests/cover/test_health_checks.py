@@ -28,7 +28,7 @@ from hypothesis.control import assume
 from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.searchstrategy.strategies import SearchStrategy
-from tests.common.utils import checks_deprecated_behaviour, no_shrink
+from tests.common.utils import no_shrink
 
 
 def test_slow_generation_fails_a_health_check():
@@ -195,19 +195,11 @@ def test_example_that_shrinks_to_overrun_fails_health_check():
     assert exc.value.health_check == HealthCheck.large_base_example
 
 
-@pytest.mark.parametrize(
-    "check", [HealthCheck.random_module, HealthCheck.exception_in_generation]
-)
-@checks_deprecated_behaviour
-def test_noop_health_checks(check):
-    settings(suppress_health_check=[check])
-
-
 def test_it_is_an_error_to_suppress_non_iterables():
     with raises(InvalidArgument):
         settings(suppress_health_check=1)
 
 
-@checks_deprecated_behaviour
-def test_is_is_deprecated_to_suppress_non_healthchecks():
-    settings(suppress_health_check=[1])
+def test_it_is_an_error_to_suppress_non_healthchecks():
+    with raises(InvalidArgument):
+        settings(suppress_health_check=[1])

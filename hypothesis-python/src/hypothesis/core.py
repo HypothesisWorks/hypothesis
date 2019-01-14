@@ -41,7 +41,6 @@ from hypothesis._settings import (
     PrintSettings,
     Verbosity,
     local_settings,
-    note_deprecation,
     settings as Settings,
 )
 from hypothesis.control import BuildContext
@@ -55,7 +54,6 @@ from hypothesis.errors import (
     InvalidArgument,
     MultipleFailures,
     NoSuchExample,
-    Timeout,
     Unsatisfiable,
     UnsatisfiedAssumption,
 )
@@ -65,7 +63,6 @@ from hypothesis.internal.compat import (
     bad_django_TestCase,
     benchmark_time,
     binary_type,
-    ceil,
     get_type_hints,
     getfullargspec,
     hbytes,
@@ -95,7 +92,7 @@ from hypothesis.reporting import current_verbosity, report, verbose_report
 from hypothesis.searchstrategy.collections import TupleStrategy
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.statistics import note_engine_for_statistics
-from hypothesis.utils.conventions import infer, not_set
+from hypothesis.utils.conventions import infer
 from hypothesis.version import __version__
 
 if False:
@@ -154,6 +151,10 @@ def seed(seed):
 
     def accept(test):
         test._hypothesis_internal_use_seed = seed
+        current_settings = getattr(test, "_hypothesis_internal_use_settings", None)
+        test._hypothesis_internal_use_settings = Settings(
+            current_settings, database=None
+        )
         return test
 
     return accept
@@ -518,27 +519,11 @@ class StateForActualGivenExecution(object):
                 internal_draw_time = sum(data.draw_times[initial_draws:])
                 runtime = (finish - start - internal_draw_time) * 1000
                 self.__test_runtime = runtime
-                if self.settings.deadline is not_set:
-                    if not self.__warned_deadline and runtime >= 200:
-                        self.__warned_deadline = True
-                        note_deprecation(
-                            (
-                                "Test: %s took %.2fms to run. In future the "
-                                "default deadline setting will be 200ms, which "
-                                "will make this an error. You can set deadline to "
-                                "an explicit value of e.g. %d to turn tests "
-                                "slower than this into an error, or you can set "
-                                "it to None to disable this check entirely."
-                            )
-                            % (self.test.__name__, runtime, ceil(runtime / 100) * 100),
-                            since="2017-11-20",
-                        )
-                else:
-                    current_deadline = self.settings.deadline
-                    if not is_final:
-                        current_deadline *= 1.25
-                    if runtime >= current_deadline:
-                        raise DeadlineExceeded(runtime, self.settings.deadline)
+                current_deadline = self.settings.deadline
+                if not is_final:
+                    current_deadline *= 1.25
+                if runtime >= current_deadline:
+                    raise DeadlineExceeded(runtime, self.settings.deadline)
                 return result
 
         def run(data):
@@ -647,7 +632,6 @@ class StateForActualGivenExecution(object):
             database_key = function_digest(self.test)
         else:
             database_key = None
-        self.start_time = benchmark_time()
         runner = ConjectureRunner(
             self.evaluate_test_data,
             settings=self.settings,
@@ -659,35 +643,9 @@ class StateForActualGivenExecution(object):
         finally:
             self.used_examples_from_database = runner.used_examples_from_database
         note_engine_for_statistics(runner)
-        run_time = benchmark_time() - self.start_time
 
         self.used_examples_from_database = runner.used_examples_from_database
 
-        if runner.used_examples_from_database:
-            if self.settings.derandomize:
-                note_deprecation(
-                    (
-                        "In future derandomize will imply database=None, but your "
-                        "test: %s is currently using examples from the database. "
-                        "To get the future behaviour, update your settings to "
-                        "include database=None."
-                    )
-                    % (self.test.__name__,),
-                    since="2017-11-29",
-                )
-            if self.__had_seed:
-                note_deprecation(
-                    (
-                        "In future use of @seed will imply database=None in your "
-                        "settings, but your test: %s is currently using examples "
-                        "from the database. To get the future behaviour, update "
-                        "your settings for this test to include database=None."
-                    )
-                    % (self.test.__name__,),
-                    since="2017-11-29",
-                )
-
-        timed_out = runner.exit_reason == ExitReason.timeout
         if runner.call_count == 0:
             return
         if runner.interesting_examples:
@@ -698,23 +656,10 @@ class StateForActualGivenExecution(object):
             )
         else:
             if runner.valid_examples == 0:
-                if timed_out:
-                    raise Timeout(
-                        (
-                            "Ran out of time before finding a satisfying "
-                            "example for %s. Only found %d examples in %.2fs."
-                        )
-                        % (
-                            get_pretty_function_description(self.test),
-                            runner.valid_examples,
-                            run_time,
-                        )
-                    )
-                else:
-                    raise Unsatisfiable(
-                        "Unable to satisfy assumptions of hypothesis %s."
-                        % (get_pretty_function_description(self.test),)
-                    )
+                raise Unsatisfiable(
+                    "Unable to satisfy assumptions of hypothesis %s."
+                    % (get_pretty_function_description(self.test),)
+                )
 
         if not self.falsifying_examples:
             return
@@ -892,18 +837,16 @@ def given(
             test = wrapped_test.hypothesis.inner_test
 
             if getattr(test, "is_hypothesis_test", False):
-                note_deprecation(
+                raise InvalidArgument(
                     (
-                        "You have applied @given to test: %s more than once. In "
-                        "future this will be an error. Applying @given twice "
-                        "wraps the test twice, which can be extremely slow. A "
+                        "You have applied @given to the test %s more than once, which "
+                        "wraps the test several times and is extremely slow. A "
                         "similar effect can be gained by combining the arguments "
                         "of the two calls to given. For example, instead of "
                         "@given(booleans()) @given(integers()), you could write "
                         "@given(booleans(), integers())"
                     )
-                    % (test.__name__,),
-                    since="2018-09-01",
+                    % (test.__name__,)
                 )
 
             settings = wrapped_test._hypothesis_internal_use_settings
@@ -1142,13 +1085,11 @@ def find(
         if success and not data.frozen:
             data.mark_interesting()
 
-    start = benchmark_time()
     runner = ConjectureRunner(
         template_condition, settings=settings, random=random, database_key=database_key
     )
     runner.run()
     note_engine_for_statistics(runner)
-    run_time = benchmark_time() - start
     if runner.interesting_examples:
         data = ConjectureData.for_buffer(
             list(runner.interesting_examples.values())[0].buffer
@@ -1157,23 +1098,9 @@ def find(
             with deterministic_PRNG():
                 return data.draw(search)
     if runner.valid_examples == 0 and (runner.exit_reason != ExitReason.finished):
-        if settings.timeout > 0 and run_time > settings.timeout:
-            raise Timeout(
-                (  # pragma: no cover
-                    "Ran out of time before finding enough valid examples for "
-                    "%s. Only %d valid examples found in %.2f seconds."
-                )
-                % (
-                    get_pretty_function_description(condition),
-                    runner.valid_examples,
-                    run_time,
-                )
-            )
-
-        else:
-            raise Unsatisfiable(
-                "Unable to satisfy assumptions of %s."
-                % (get_pretty_function_description(condition),)
-            )
+        raise Unsatisfiable(
+            "Unable to satisfy assumptions of %s."
+            % (get_pretty_function_description(condition),)
+        )
 
     raise NoSuchExample(get_pretty_function_description(condition))

@@ -17,7 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis import assume, find, given, reject, settings as Settings, unlimited
+from hypothesis import assume, find, given, reject, settings as Settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from tests.common.utils import no_shrink
 
@@ -29,7 +29,7 @@ class Timeout(BaseException):
 
 
 def minimal(definition, condition=None, settings=None, timeout_after=10, random=None):
-    settings = Settings(settings, max_examples=50000, database=None, timeout=unlimited)
+    settings = Settings(settings, max_examples=50000, database=None)
 
     runtime = []
 
@@ -53,9 +53,7 @@ def minimal(definition, condition=None, settings=None, timeout_after=10, random=
 
 
 def find_any(definition, condition=None, settings=None, random=None):
-    settings = Settings(
-        settings, max_examples=10000, phases=no_shrink, database=None, timeout=unlimited
-    )
+    settings = Settings(settings, max_examples=10000, phases=no_shrink, database=None)
 
     if condition is None:
 
