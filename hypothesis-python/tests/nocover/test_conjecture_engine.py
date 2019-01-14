@@ -242,7 +242,13 @@ def test_each_pair_of_blocks_with_filters():
 
 
 @pytest.mark.parametrize("intervene_at", [(0, 1), (0, 6), (1, 3)])
-def test_each_pair_of_blocks_handles_change(intervene_at):
+@given(
+    exclude_first=st.frozensets(st.integers(0, 9)),
+    exclude_second=st.frozensets(st.integers(0, 9)),
+)
+def test_each_pair_of_blocks_handles_change(
+    intervene_at, exclude_first, exclude_second
+):
     initial = hbytes([9] + [0] * 10)
 
     @shrinking_from(initial)
@@ -255,7 +261,8 @@ def test_each_pair_of_blocks_handles_change(intervene_at):
     def blocks(intervene=False):
         blocks = []
         for a, b in shrinker.each_pair_of_blocks(
-            lambda block: True, lambda block: True
+            lambda block: block.index not in exclude_first,
+            lambda block: block.index not in exclude_second,
         ):
             assert a.index < b.index < len(shrinker.shrink_target.blocks)
             if intervene and (a.index, b.index) == intervene_at:

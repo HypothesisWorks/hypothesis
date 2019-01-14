@@ -566,34 +566,64 @@ class Shrinker(object):
     def all_block_bounds(self):
         return self.shrink_target.all_block_bounds()
 
+    def each_pair(self, base_collection, dependent_collection):
+        """Iterate over the (filtered) product of a pair of dynamically
+        changing collections.
+
+        Logically equivalent to:
+
+        .. code-block: python
+
+            outer = base_collection()
+            for a in outer:
+                for b in dependent_collection(a):
+                    yield (a, b)
+
+        except that:
+
+            * If the collection changes due to shrinking, the
+              iteration will be "fixed" to use the updated collection.
+              The result will be that every pair that occurs after a change
+              has happened will be one that could have arisen if the iteration
+              started with the current value.
+            * The iteration order is different, in a way that is designed
+              to reduce the likelihood of the shrinker "stalling", by ensuring
+              that both a and b change on each loop iteration.
+        """
+
+        def recalc():
+            base = base_collection()
+            return base, [None] * len(base)
+
+        outer, children = recalc()
+
+        j = 0
+        while True:
+            i = 0
+            any_j_in_bounds = False
+            while i < len(outer):
+                if children[i] is None:
+                    children[i] = dependent_collection(outer[i])
+                inner = children[i]
+                if j < len(inner):
+                    any_j_in_bounds = True
+                    prev = self.shrink_target
+                    yield (outer[i], inner[j])
+                    if prev is not self.shrink_target:
+                        outer, children = recalc()
+                i += 1
+            if not any_j_in_bounds:
+                break
+            j += 1
+
     def each_pair_of_blocks(self, accept_first, accept_second):
         """Yield each pair of blocks ``(a, b)``, such that ``a.index <
         b.index``, but only if ``accept_first(a)`` and ``accept_second(b)`` are
         both true."""
-
-        # Iteration order here is significant: Rather than fixing i and looping
-        # over each j, then doing the same, etc. we iterate over the gap between
-        # i and j and then over i. The reason for this is that it ensures that
-        # we try a different value for i and j on each iteration of the inner
-        # loop. This stops us from stalling if we happen to hit on a value of i
-        # where nothing useful can be done.
-        #
-        # In the event that nothing works, this doesn't help and we still make
-        # the same number of calls, but by ensuring that we make progress we
-        # have more opportunities to make shrinks that speed up the tests or
-        # that reduce the number of viable shrinks at the next gap size because
-        # we've lowered some values.
-        offset = 1
-        while offset < len(self.blocks):
-            i = 0
-            while i + offset < len(self.blocks):
-                j = i + offset
-                block_i = self.blocks[i]
-                block_j = self.blocks[j]
-                if accept_first(block_i) and accept_second(block_j):
-                    yield (block_i, block_j)
-                i += 1
-            offset += 1
+        return self.each_pair(
+            lambda: list(filter(accept_first, self.blocks)),
+            lambda b: list(filter(accept_second, self.blocks[b.index + 1 :])),
+        )
 
     def pass_to_descendant(self):
         """Attempt to replace each example with a descendant example.
@@ -1154,31 +1184,26 @@ class Shrinker(object):
         example and every block not inside that example it tries deleting the
         example and modifying the block's value by one in either direction.
         """
-        i = 0
-        while i < len(self.shrink_target.blocks):
-            if not self.is_shrinking_block(i):
-                i += 1
-                continue
 
-            u, v = self.blocks[i].bounds
-
-            j = 0
-            while j < len(self.shrink_target.examples):
-                n = int_from_bytes(self.shrink_target.buffer[u:v])
-                if n == 0:
-                    break
-                ex = self.shrink_target.examples[j]
-                if ex.start < v or ex.length == 0:
-                    j += 1
-                    continue
-
-                buf = bytearray(self.shrink_target.buffer)
-                buf[u:v] = int_to_bytes(n - 1, v - u)
-                del buf[ex.start : ex.end]
-                if not self.incorporate_new_buffer(buf):
-                    j += 1
-
-            i += 1
+        for ex, block in self.each_pair(
+            base_collection=lambda: sorted(
+                self.shrink_target.examples, key=lambda ex: ex.depth
+            ),
+            dependent_collection=lambda ex: [
+                b
+                for b in self.blocks
+                if self.is_shrinking_block(b.index)
+                and not b.all_zero
+                and b.end <= ex.start
+            ],
+        ):
+            buf = bytearray(self.shrink_target.buffer)
+            u, v = block.bounds
+            n = int_from_bytes(buf[u:v])
+            assert n > 0
+            buf[u:v] = int_to_bytes(n - 1, v - u)
+            del buf[ex.start : ex.end]
+            self.incorporate_new_buffer(buf)
 
     def minimize_block_pairs_retaining_sum(self):
         """This pass minimizes pairs of blocks subject to the constraint that
