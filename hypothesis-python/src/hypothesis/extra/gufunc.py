@@ -430,7 +430,7 @@ def gufunc_broadcast(draw, signature, dtype, elements, unique=False,
     return res
 
 
-def broadcasted(f, signature, otypes, itypes, elements, unique=False,
+def broadcasted(f, signature, itypes, otypes, elements, unique=False,
                 excluded=(), min_side=0, max_side=5, max_dims_extra=2):
     """Strategy that makes it easy to test the broadcasting semantics of a
     function against the 'ground-truth' broadcasting convention provided by
@@ -447,17 +447,17 @@ def broadcasted(f, signature, otypes, itypes, elements, unique=False,
         of numpy generalized universal function signature, e.g.,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
         Officially, only supporting ascii characters on Py3.
+    itypes : list-like of dtype
+        List of numpy `dtype` for each argument. These can be either strings
+        (``'int64'``), type (``np.int64``), or numpy `dtype`
+        (``np.dtype('int64')``). A single `dtype` can be supplied for all
+        arguments.
     otypes : list of dtype
         The dtype for the the outputs of `f`. It must be a list with one dtype
         for each output argument of `f`. It must be a singleton list if `f`
         only returns a single output. It can also be set to `None` to leave it
         to be inferred, but this can create issues with empty arrays, so it is
         not officially supported here.
-    itypes : list-like of dtype
-        List of numpy `dtype` for each argument. These can be either strings
-        (``'int64'``), type (``np.int64``), or numpy `dtype`
-        (``np.dtype('int64')``). A single `dtype` can be supplied for all
-        arguments.
     elements : list-like of strategy
         Strategies to fill in array elements on a per argument basis. One can
         also specify a single strategy
