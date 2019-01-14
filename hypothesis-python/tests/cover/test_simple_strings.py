@@ -130,20 +130,5 @@ def test_can_set_max_size_large(s):
 
 
 @checks_deprecated_behaviour
-def test_alphabet_is_not_a_sequence():
-    text(alphabet=set("abc")).example()
-
-
-@checks_deprecated_behaviour
-def test_alphabet_breaking_size_limit():
-    text(["a", "c", "ed", "b", "abc"]).example()
-
-
-@checks_deprecated_behaviour
 def test_explicit_alphabet_None_is_deprecated():
     text(alphabet=None).example()
-
-
-@checks_deprecated_behaviour
-def test_alphabet_non_string():
-    text([1, 2, 3]).example()

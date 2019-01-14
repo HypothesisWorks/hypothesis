@@ -22,7 +22,7 @@ from random import Random
 import pytest
 
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis import HealthCheck, settings, unlimited
+from hypothesis import HealthCheck, settings
 from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.conjecture.engine import (
     ConjectureData,
@@ -70,7 +70,6 @@ TEST_SETTINGS = settings(
     suppress_health_check=HealthCheck.all(),
     max_examples=LOTS,
     deadline=None,
-    timeout=unlimited,
 )
 
 

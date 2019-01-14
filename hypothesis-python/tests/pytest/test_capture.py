@@ -80,28 +80,6 @@ def test_output_emitting_unicode(testdir, monkeypatch):
     assert result.ret == 0
 
 
-TRACEBACKHIDE_TIMEOUT = """
-from hypothesis import given, settings, reject
-from hypothesis.strategies import integers
-from hypothesis.errors import HypothesisDeprecationWarning
-
-import time
-import warnings
-import pytest
-
-
-def test_timeout_traceback_is_hidden():
-    with warnings.catch_warnings(record=True):
-        warnings.simplefilter('ignore', HypothesisDeprecationWarning)
-        @given(integers())
-        @settings(timeout=1)
-        def inner(i):
-            time.sleep(1.1)
-            reject()
-        inner()
-"""
-
-
 def get_line_num(token, result, skip_n=0):
     skipped = 0
     for i, line in enumerate(result.stdout.lines):
@@ -115,20 +93,6 @@ def get_line_num(token, result, skip_n=0):
         skipped,
         skip_n,
     )
-
-
-def test_timeout_traceback_is_hidden(testdir):
-    script = testdir.makepyfile(TRACEBACKHIDE_TIMEOUT)
-    result = testdir.runpytest(script, "--verbose")
-    # `def inner` shows up in the output twice: once when pytest shows us the
-    # source code of the failing test, and once in the traceback.
-    # It's the 2nd that should be next to the "Timeout: ..." message.
-    def_line = get_line_num("def inner", result, skip_n=1)
-    timeout_line = get_line_num("Timeout: Ran out of time", result)
-    # If __tracebackhide__ works, then the Timeout error message will be
-    # next to the test name.  If it doesn't work, then the message will be
-    # many lines apart with source code dump between them.
-    assert timeout_line - def_line == 1
 
 
 TRACEBACKHIDE_HEALTHCHECK = """

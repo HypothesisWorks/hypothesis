@@ -146,17 +146,7 @@ def check_valid_interval(lower_bound, upper_bound, lower_name, upper_name):
 
 
 @check_function
-def check_valid_sizes(min_size, average_size, max_size):
-    if average_size is not None:
-        from hypothesis._settings import note_deprecation
-
-        note_deprecation(
-            "You should remove the average_size argument, because it is "
-            "deprecated and no longer has any effect.  Please open an issue "
-            "if the default distribution of examples does not work for you.",
-            since="2018-03-10",
-        )
-
+def check_valid_sizes(min_size, max_size):
     check_valid_size(min_size, "min_size")
     check_valid_size(max_size, "max_size")
     check_valid_interval(min_size, max_size, "min_size", "max_size")

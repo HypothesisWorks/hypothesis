@@ -41,12 +41,6 @@ def test_all_valid(x):
     pass
 
 
-@settings(timeout=0.2)
-@given(integers())
-def test_slow(x):
-    time.sleep(0.1)
-
-
 @settings(max_examples=100, suppress_health_check=HealthCheck.all())
 @given(integers())
 def test_iterations(x):
@@ -66,7 +60,6 @@ def test_prints_statistics_given_option(testdir):
     result = testdir.runpytest(script, PRINT_STATISTICS_OPTION)
     out = "\n".join(result.stdout.lines)
     assert "Hypothesis Statistics" in out
-    assert "timeout=0.2" in out
     assert "max_examples=100" in out
     assert "< 10% of examples satisfied assumptions" in out
 
@@ -77,11 +70,8 @@ def test_prints_statistics_given_option_under_xdist(testdir):
     result = testdir.runpytest(script, PRINT_STATISTICS_OPTION, "-n", "2")
     out = "\n".join(result.stdout.lines)
     assert "Hypothesis Statistics" in out
-    assert "timeout=0.2" in out
     assert "max_examples=100" in out
     assert "< 10% of examples satisfied assumptions" in out
-    # Check that xdist doesn't have us report the same thing twice
-    assert out.count("Stopped because settings.timeout=0.2") == 1
 
 
 UNITTEST_TESTSUITE = """

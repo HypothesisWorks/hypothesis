@@ -21,16 +21,7 @@ import random
 from math import log
 
 import hypothesis.strategies as st
-from hypothesis import (
-    HealthCheck,
-    Phase,
-    Verbosity,
-    assume,
-    example,
-    given,
-    settings,
-    unlimited,
-)
+from hypothesis import HealthCheck, Phase, Verbosity, assume, example, given, settings
 from hypothesis.internal.compat import ceil, hbytes, int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -52,7 +43,6 @@ base_settings = settings(
     suppress_health_check=HealthCheck.all(),
     max_examples=10,
     verbosity=Verbosity.normal,
-    timeout=unlimited,
     phases=(Phase.explicit, Phase.generate),
 )
 

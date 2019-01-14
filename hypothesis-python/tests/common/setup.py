@@ -21,7 +21,7 @@ import os
 from tempfile import mkdtemp
 from warnings import filterwarnings
 
-from hypothesis import Verbosity, settings, unlimited
+from hypothesis import Verbosity, settings
 from hypothesis._settings import not_set
 from hypothesis.configuration import set_hypothesis_home_dir
 from hypothesis.internal.charmap import charmap, charmap_file
@@ -84,8 +84,7 @@ def run():
             )
 
     settings.register_profile(
-        "default",
-        settings(max_examples=10 if IN_COVERAGE_TESTS else not_set, timeout=unlimited),
+        "default", settings(max_examples=10 if IN_COVERAGE_TESTS else not_set)
     )
 
     settings.register_profile("speedy", settings(max_examples=5))

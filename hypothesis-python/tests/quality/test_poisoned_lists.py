@@ -23,7 +23,7 @@ import pytest
 
 import hypothesis.internal.conjecture.utils as cu
 import hypothesis.strategies as st
-from hypothesis import settings, unlimited
+from hypothesis import settings
 from hypothesis.internal.compat import ceil, hrange
 from hypothesis.internal.conjecture.engine import (
     ConjectureData,
@@ -86,7 +86,7 @@ class TrialRunner(ConjectureRunner):
 
 LOTS = 10 ** 6
 
-TRIAL_SETTINGS = settings(max_examples=LOTS, timeout=unlimited, database=None)
+TRIAL_SETTINGS = settings(max_examples=LOTS, database=None)
 
 
 @pytest.mark.parametrize(

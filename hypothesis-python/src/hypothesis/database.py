@@ -19,37 +19,23 @@ from __future__ import absolute_import, division, print_function
 
 import binascii
 import os
-import re
-import threading
 import warnings
-from contextlib import contextmanager
 from hashlib import sha1
 
-from hypothesis._settings import note_deprecation
 from hypothesis.configuration import storage_directory
-from hypothesis.errors import HypothesisWarning
-from hypothesis.internal.compat import FileNotFoundError, b64decode, b64encode, hbytes
+from hypothesis.errors import HypothesisException, HypothesisWarning
+from hypothesis.internal.compat import FileNotFoundError, hbytes
 from hypothesis.utils.conventions import not_set
-
-sqlite3 = None
-SQLITE_PATH = re.compile(r"\.\(db|sqlite|sqlite3\)$")
 
 
 def _db_for_path(path=None):
     if path is not_set:
-        path = os.getenv("HYPOTHESIS_DATABASE_FILE")
-        if path is not None:  # pragma: no cover
-            # Note: we should retain an explicit deprecation warning for a
-            # further period after this is removed, to ease debugging for
-            # anyone migrating to a new version.
-            note_deprecation(
-                "The $HYPOTHESIS_DATABASE_FILE environment variable is "
-                "deprecated, and will be ignored by a future version of "
-                "Hypothesis.  Configure your database location via a "
-                "settings profile instead.",
-                since="2018-04-01",
+        if os.getenv("HYPOTHESIS_DATABASE_FILE") is not None:  # pragma: no cover
+            raise HypothesisException(
+                "The $HYPOTHESIS_DATABASE_FILE environment variable no longer has any "
+                "effect.  Configure your database location via a settings profile instead.\n"
+                "https://hypothesis.readthedocs.io/en/latest/settings.html#settings-profiles"
             )
-            return _db_for_path(path)
         # Note: storage_directory attempts to create the dir in question, so
         # if os.access fails there *must* be a fatal permissions issue.
         path = storage_directory("examples")
@@ -66,15 +52,7 @@ def _db_for_path(path=None):
             return InMemoryExampleDatabase()
     if path in (None, ":memory:"):
         return InMemoryExampleDatabase()
-    path = str(path)
-    if os.path.isdir(path):
-        return DirectoryBasedExampleDatabase(path)
-    if os.path.exists(path):
-        return SQLiteExampleDatabase(path)
-    if SQLITE_PATH.search(path):
-        return SQLiteExampleDatabase(path)
-    else:
-        return DirectoryBasedExampleDatabase(path)
+    return DirectoryBasedExampleDatabase(str(path))
 
 
 class EDMeta(type):
@@ -149,117 +127,6 @@ class InMemoryExampleDatabase(ExampleDatabase):
 
     def close(self):
         pass
-
-
-class SQLiteExampleDatabase(ExampleDatabase):
-    def __init__(self, path=u":memory:"):
-        self.path = path
-        self.db_created = False
-        self.current_connection = threading.local()
-        global sqlite3
-        import sqlite3
-
-        if path == u":memory:":
-            note_deprecation(
-                "The SQLite database backend has been deprecated. "
-                'Use InMemoryExampleDatabase or set database_file=":memory:" '
-                "instead.",
-                since="2017-09-12",
-            )
-        else:
-            note_deprecation(
-                "The SQLite database backend has been deprecated. "
-                "Set database_file to some path name not ending in .db, "
-                ".sqlite or .sqlite3 to get the new directory based database "
-                "backend instead.",
-                since="2017-09-12",
-            )
-
-    def connection(self):
-        if not hasattr(self.current_connection, "connection"):
-            self.current_connection.connection = sqlite3.connect(self.path)
-        return self.current_connection.connection
-
-    def close(self):
-        if hasattr(self.current_connection, "connection"):
-            try:
-                self.connection().close()
-            finally:
-                del self.current_connection.connection
-
-    def __repr__(self):
-        return u"%s(%s)" % (self.__class__.__name__, self.path)
-
-    @contextmanager
-    def cursor(self):
-        conn = self.connection()
-        cursor = conn.cursor()
-        try:
-            try:
-                yield cursor
-            finally:
-                cursor.close()
-        except BaseException:
-            conn.rollback()
-            raise
-        else:
-            conn.commit()
-
-    def save(self, key, value):
-        self.create_db_if_needed()
-        with self.cursor() as cursor:
-            try:
-                cursor.execute(
-                    """
-                    insert into hypothesis_data_mapping(key, value)
-                    values(?, ?)
-                """,
-                    (b64encode(key), b64encode(value)),
-                )
-            except sqlite3.IntegrityError:
-                pass
-
-    def delete(self, key, value):
-        self.create_db_if_needed()
-        with self.cursor() as cursor:
-            cursor.execute(
-                """
-                delete from hypothesis_data_mapping
-                where key = ? and value = ?
-            """,
-                (b64encode(key), b64encode(value)),
-            )
-
-    def fetch(self, key):
-        self.create_db_if_needed()
-        with self.cursor() as cursor:
-            cursor.execute(
-                """
-                select value from hypothesis_data_mapping
-                where key = ?
-            """,
-                (b64encode(key),),
-            )
-            for (value,) in cursor:
-                try:
-                    yield b64decode(value)
-                except (binascii.Error, TypeError):
-                    pass
-
-    def create_db_if_needed(self):
-        if self.db_created:
-            return
-        with self.cursor() as cursor:
-            cursor.execute(
-                """
-                create table if not exists hypothesis_data_mapping(
-                    key text,
-                    value text,
-                    unique(key, value)
-                )
-            """
-            )
-        self.db_created = True
 
 
 def mkdirp(path):

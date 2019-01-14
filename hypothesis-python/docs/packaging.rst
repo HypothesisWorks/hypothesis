@@ -55,7 +55,6 @@ Hypothesis has *mandatory* dependencies on the following libraries:
 Hypothesis has *optional* dependencies on the following libraries:
 
 * :pypi:`pytz` (almost any version should work)
-* :pypi:`Faker`, version 0.7 or later
 * `Django <https://www.djangoproject.com>`_, all supported versions
 * :pypi:`numpy`, 1.10 or later (earlier versions will probably work fine)
 * :pypi:`pandas`, 1.19 or later
@@ -83,7 +82,6 @@ Tests are organised into a number of top level subdirectories of the tests/ dire
 * py2: Tests that can only be run under Python 2
 * py3: Tests that can only be run under Python 3
 * datetime: This tests the subset of Hypothesis that depends on pytz
-* fakefactory: This tests the subset of Hypothesis that depends on fakefactory.
 * django: This tests the subset of Hypothesis that depends on django
 
 

@@ -138,13 +138,13 @@ copied from the parent settings:
 .. doctest::
 
     >>> parent = settings(max_examples=10)
-    >>> child = settings(parent, deadline=200)
+    >>> child = settings(parent, deadline=None)
     >>> parent.max_examples == child.max_examples == 10
     True
     >>> parent.deadline
-    not_set
-    >>> child.deadline
     200
+    >>> child.deadline is None
+    True
 
 ----------------
 Default settings
@@ -216,46 +216,3 @@ by your conftest you can load one with the command line option ``--hypothesis-pr
 .. code:: bash
 
     $ pytest tests --hypothesis-profile <profile-name>
-
-
-~~~~~~~~
-Timeouts
-~~~~~~~~
-
-The timeout functionality of Hypothesis is being deprecated, and will
-eventually be removed. For the moment, the timeout setting can still be set
-and the old default timeout of one minute remains.
-
-If you want to future proof your code you can get
-the future behaviour by setting it to the value ``hypothesis.unlimited``.
-
-.. code:: python
-
-    from hypothesis import given, settings, unlimited
-    from hypothesis import strategies as st
-
-    @settings(timeout=unlimited)
-    @given(st.integers())
-    def test_something_slow(i):
-        ...
-
-This will cause your code to run until it hits the normal Hypothesis example
-limits, regardless of how long it takes. ``timeout=unlimited`` will remain a
-valid setting after the timeout functionality has been deprecated (but will
-then have its own deprecation cycle).
-
-There is however now a timing related health check which is designed to catch
-tests that run for ages by accident. If you really want your test to run
-forever, the following code will enable that:
-
-.. code:: python
-
-    from hypothesis import given, settings, unlimited, HealthCheck
-    from hypothesis import strategies as st
-
-    @settings(timeout=unlimited, suppress_health_check=[
-        HealthCheck.hung_test
-    ])
-    @given(st.integers())
-    def test_something_slow(i):
-        ...

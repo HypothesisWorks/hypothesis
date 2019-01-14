@@ -33,16 +33,6 @@ class UnsatisfiedAssumption(HypothesisException):
     """
 
 
-class BadTemplateDraw(HypothesisException):
-    """An internal error raised when something unfortunate happened during
-    template generation and you should restart the draw, preferably with a new
-    parameter.
-
-    This is not an error condition internally, but if you ever see this
-    in your code it's probably a Hypothesis bug
-    """
-
-
 class NoSuchExample(HypothesisException):
     """The condition we have been asked to satisfy appears to be always false.
 
@@ -54,15 +44,6 @@ class NoSuchExample(HypothesisException):
         super(NoSuchExample, self).__init__(
             "No examples found of condition %s%s" % (condition_string, extra)
         )
-
-
-class DefinitelyNoSuchExample(NoSuchExample):  # pragma: no cover
-    """Hypothesis used to be able to detect exhaustive coverage of a search
-    space and no longer can.
-
-    This exception remains for compatibility reasons for now but can
-    never actually be thrown.
-    """
 
 
 class NoExamples(HypothesisException):
@@ -101,21 +82,6 @@ class Flaky(HypothesisException):
     """
 
 
-class Timeout(Unsatisfiable):
-    """We were unable to find enough examples that satisfied the preconditions
-    of this hypothesis in the amount of time allotted to us."""
-
-
-class WrongFormat(HypothesisException, ValueError):
-    """An exception indicating you have attempted to serialize a value that
-    does not match the type described by this format."""
-
-
-class BadData(HypothesisException, ValueError):
-    """The data that we got out of the database does not seem to match the data
-    we could have put into the database given this schema."""
-
-
 class InvalidArgument(HypothesisException, TypeError):
     """Used to indicate that the arguments to a Hypothesis function were in
     some manner incorrect."""
@@ -139,22 +105,17 @@ class InvalidDefinition(HypothesisException, TypeError):
     has something wrong with it."""
 
 
-class AbnormalExit(HypothesisException):
-    """Raised when a test running in a child process exits without returning or
-    raising an exception."""
+class HypothesisWarning(HypothesisException, Warning):
+    """A generic warning issued by Hypothesis."""
 
 
-class FailedHealthCheck(HypothesisException, Warning):
+class FailedHealthCheck(HypothesisWarning):
     """Raised when a test fails a preliminary healthcheck that occurs before
     execution."""
 
     def __init__(self, message, check):
         super(FailedHealthCheck, self).__init__(message)
         self.health_check = check
-
-
-class HypothesisWarning(HypothesisException, Warning):
-    """A generic warning issued by Hypothesis."""
 
 
 class HypothesisDeprecationWarning(HypothesisWarning, FutureWarning):
