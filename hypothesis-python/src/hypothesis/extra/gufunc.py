@@ -10,6 +10,7 @@ import numpy as np
 import numpy.lib.function_base as npfb
 
 from hypothesis.extra.numpy import arrays, check_argument, order_check
+from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.strategies import (
     booleans,
     composite,
@@ -74,6 +75,8 @@ def _arrays(draw, dtype, shape, elements=None, unique=False):
     X = X.astype(dtype)
     return X
 
+# TODO test by trying with just()
+
 
 @composite
 def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
@@ -82,7 +85,8 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     Parameters
     ----------
     shapes : list-like of tuples
-        List of tuples where each tuple is the shape of an argument.
+        List of tuples where each tuple is the shape of an argument. A
+        `SearchStrategy` for list of tuples is also supported.
     dtype : list-like of dtype
         List of numpy `dtype` for each argument. These can be either strings
         (``'int64'``), type (``np.int64``), or numpy `dtype`
@@ -102,6 +106,8 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     res : tuple of ndarrays
         Resulting ndarrays with shape of `shapes` and elements from `elements`.
     """
+    if isinstance(shapes, SearchStrategy):
+        shapes = draw(shapes)
     n = len(shapes)
 
     # Need this since broadcast_to does not like vars of type type
@@ -181,9 +187,7 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     return shapes
 
 
-@composite
-def gufunc(draw, signature, dtype, elements, unique=False,
-           min_side=0, max_side=5):
+def gufunc(signature, dtype, elements, unique=False, min_side=0, max_side=5):
     """Strategy to generate a tuple of ndarrays for arguments to a function
     consistent with its signature.
 
@@ -244,11 +248,10 @@ def gufunc(draw, signature, dtype, elements, unique=False,
     # Leaving dtype and elements as required for now since that leaves us the
     # flexibility to later make the default float and floats, or perhaps None
     # for a random dtype + from_dtype() strategy.
-    shapes = draw(gufunc_shape(signature,
-                               min_side=min_side, max_side=max_side))
-    res = draw(_tuple_of_arrays(shapes, dtype=dtype,
-                                elements=elements, unique=unique))
-    return res
+    shape_st = gufunc_shape(signature, min_side=min_side, max_side=max_side)
+    S = _tuple_of_arrays(shape_st,
+                         dtype=dtype, elements=elements, unique=unique)
+    return S
 
 
 @composite
