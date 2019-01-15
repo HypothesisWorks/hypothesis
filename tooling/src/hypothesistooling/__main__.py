@@ -34,7 +34,10 @@ from hypothesistooling import fix_doctests as fd
 from hypothesistooling.scripts import pip_tool
 
 TASKS = {}
-BUILD_FILES = tuple(os.path.join(tools.ROOT, f) for f in ["tooling", ".travis.yml"])
+BUILD_FILES = tuple(
+    os.path.join(tools.ROOT, f)
+    for f in ["tooling", "requirements", ".travis.yml", "hypothesis-python/tox.ini"]
+)
 
 
 def task(if_changed=()):
