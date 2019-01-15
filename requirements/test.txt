@@ -13,7 +13,7 @@ more-itertools==5.0.0     # via pytest
 pbr==5.1.1                # via mock
 pluggy==0.8.1             # via pytest
 py==1.7.0                 # via pytest
-pytest==4.0.2
 pytest-forked==1.0.1      # via pytest-xdist
 pytest-xdist==1.26.0
+pytest==4.0.2
 six==1.12.0               # via mock, more-itertools, pytest, pytest-xdist
