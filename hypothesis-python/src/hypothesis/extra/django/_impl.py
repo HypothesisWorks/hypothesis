@@ -155,7 +155,8 @@ class _FormWrap:
 @st.defines_strategy
 def from_form(
     form,  # type: Type[dm.Model]
-    **field_strategies_and_form_kwargs  # type: Union[st.SearchStrategy[Any], InferType]
+    form_kwargs=None,  # type: dict
+    **field_strategies  # type: Union[st.SearchStrategy[Any], InferType]
 ):
     # type: (...) -> st.SearchStrategy[Any]
     """Return a strategy for examples of ``form``.
@@ -177,6 +178,7 @@ def from_form(
     :obj:`~hypothesis.infer` as a keyword argument to infer a strategy for
     a field which has a default value instead of using the default.
     """
+    form_kwargs = form_kwargs or {}
     if not issubclass(form, df.BaseForm):
         print(form.__mro__)
         raise InvalidArgument("form=%r must be a subtype of Form" % (form,))
@@ -186,15 +188,6 @@ def from_form(
     # per-instance. So, we ought to instantiate the form and get the
     # fields from the instance, thus we need to accept the kwargs for
     # instantiation as well as the explicitly defined strategies
-
-    # split the form kwargs from the field strategies
-    field_strategies = {}
-    form_kwargs = {}
-    for k, v in field_strategies_and_form_kwargs.items():
-        if isinstance(v, st.SearchStrategy):
-            field_strategies[k] = v
-        else:
-            form_kwargs[k] = v
 
     blank_form = form(**form_kwargs)
     fields_by_name = blank_form.fields
@@ -207,15 +200,6 @@ def from_form(
             and not field.disabled
         ):
             field_strategies[name] = from_field(field)
-
-    # for field in field_strategies:
-    #     if form._meta.get_field(field).primary_key:
-    #         # The primary key is generated as part of the strategy. We
-    #         # want to find any existing row with this primary key and
-    #         # overwrite its contents.
-    #         kwargs = {field: field_strategies.pop(field)}
-    #         kwargs["defaults"] = st.fixed_dictionaries(field_strategies)  # type: ignore
-    #         return _forms_impl(st.builds(form.objects.update_or_create, **kwargs))
 
     # The primary key is not generated as part of the strategy, so we
     # just match against any row that has the same value for all

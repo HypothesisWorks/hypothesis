@@ -25,6 +25,7 @@ from decimal import Decimal
 import django
 import django.db.models as dm
 import django.forms as df
+from django.core.validators import validate_ipv4_address, validate_ipv6_address
 
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument
@@ -72,6 +73,7 @@ _global_field_lookup = {
     df.SplitDateTimeField:
         st.tuples(st.dates(), st.times(timezones=get_tz_strat())),
     df.TimeField: st.times(timezones=get_tz_strat()),
+    df.URLField: urls(),
     df.UUIDField: st.uuids(),
 }
 
@@ -123,21 +125,43 @@ def _for_duration(field):
 @register_for(dm.SlugField)
 @register_for(df.SlugField)
 def _for_slug(field):
+    min_size = 1
+    if getattr(field, "blank", False) or not getattr(field, "required", True):
+        min_size = 0
     return st.text(
         alphabet=string.ascii_letters + string.digits,
-        min_size=(0 if field.blank else 1),
+        min_size=min_size,
         max_size=field.max_length,
     )
 
 
-@register_for(dm.GenericIPAddressField)
-@register_for(df.GenericIPAddressField)
-def _for_ip(field):
+def _for_ip(protocol):
     return dict(
         ipv4=ip4_addr_strings(),
         ipv6=ip6_addr_strings(),
         both=ip4_addr_strings() | ip6_addr_strings(),
-    )[field.protocol.lower()]
+    )[protocol]
+
+
+@register_for(dm.GenericIPAddressField)
+def _for_model_ip(field):
+    return _for_ip(field.protocol.lower())
+
+
+@register_for(df.GenericIPAddressField)
+def _for_form_ip(field):
+    # the IP address form fields have no direct indication of which type
+    #  of address they want, so direct comparison with the validator
+    #  function has to be used instead. Sorry for the potato logic here
+    dv = field.default_validators
+    protocol = 'unkown'
+    if validate_ipv4_address in dv and validate_ipv6_address in dv:
+        protocol = 'both'
+    elif validate_ipv4_address in dv:
+        protocol = 'ipv4'
+    elif validate_ipv6_address in dv:
+        protocol = 'ipv6'
+    return _for_ip(protocol)
 
 
 @register_for(dm.DecimalField)
@@ -170,7 +194,7 @@ def _for_text(field):
         return st.one_of(*[st.from_regex(r) for r in regexes])
     # If there are no (usable) regexes, we use a standard text strategy.
     min_size = 1
-    if getattr(field, "blank", False) or getattr(field, "required", False):
+    if getattr(field, "blank", False) or not getattr(field, "required", True):
         min_size = 0
     return st.text(
         alphabet=st.characters(
@@ -222,9 +246,13 @@ def from_field(field):
                 choices.extend(key for key, _ in name_or_optgroup)
             else:
                 choices.append(value)
+        # form fields automatically include the blank option, strip it out
+        if "" in choices:
+            choices.remove("")
         min_size = 1
         if isinstance(field, (dm.CharField, dm.TextField)) and field.blank:
             choices.insert(0, u"")
+            pass
         # form fields don't have ``blank``, but they do have required
         elif isinstance(field, (df.Field)) and not field.required:
             choices.insert(0, u"")
@@ -262,6 +290,7 @@ def from_field(field):
                 return False
 
         strategy = strategy.filter(validate)
+
     if getattr(field, "null", False):
         return st.none() | strategy
     return strategy

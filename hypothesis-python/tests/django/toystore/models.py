@@ -47,7 +47,7 @@ class Customish(models.Model):
 class Customer(models.Model):
     name = models.CharField(max_length=100, unique=True)
     email = models.EmailField(max_length=100, unique=True)
-    gender = models.CharField(max_length=50, null=True)
+    gender = models.CharField(max_length=50, null=True, blank=True)
     age = models.IntegerField()
     birthday = models.DateTimeField()
 
