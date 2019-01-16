@@ -1263,7 +1263,15 @@ class Shrinker(object):
         step that gives us a lot of good opportunities to slip to a smaller
         representation of the same bug.
         """
-        for c in range(255, 0, -1):
+
+        # We perform our normalization in a random order. This helps give
+        # us a good mix of likely to succeed (e.g. rare bytes) vs likely
+        # to have a large impact (e.g. common bytes) without having to
+        # have any idea which bytes are which.
+        all_bytes = list(hrange(256))
+        self.random.shuffle(all_bytes)
+
+        for c in all_bytes:
             buf = self.buffer
 
             if c not in buf:
