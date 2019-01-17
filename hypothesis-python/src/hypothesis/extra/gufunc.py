@@ -2,6 +2,7 @@
 # signatures `_parse_gufunc_signature`, which is only available in
 # numpy>=1.12.0 and therefore requires a bump in the requirements for
 # hypothesis.
+# TODO rename this file private and then import to numpy
 from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict
@@ -9,16 +10,9 @@ from collections import defaultdict
 import numpy as np
 import numpy.lib.function_base as npfb
 
-from hypothesis.extra.numpy import arrays, check_argument, order_check
+from hypothesis.extra.numpy import arrays, order_check
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.strategies import (
-    booleans,
-    composite,
-    integers,
-    just,
-    lists,
-    tuples,
-)
+from hypothesis.strategies import composite, integers
 
 # Should not ever need to broadcast beyond this, but should be able to set it
 # as high as 32 before breaking assumptions in numpy.
@@ -32,7 +26,7 @@ DEFAULT_MAX_SIDE = 5
 
 
 def order_check_min_max(min_dict, max_dict, floor=0):
-    '''Wrapper around argument checker in `hypothesis.extra.numpy`.'''
+    """Wrapper around argument checker in `hypothesis.extra.numpy`."""
     order_check("side default", floor,
                 min_dict.default_factory(), max_dict.default_factory())
 
@@ -41,9 +35,9 @@ def order_check_min_max(min_dict, max_dict, floor=0):
 
 
 def _int_or_dict(x, default_val):
-    '''Pre-process cases where argument `x` can be `int` or `dict`. In all
+    """Pre-process cases where argument `x` can be `int` or `dict`. In all
     cases, build a `defaultdict` and return it.
-    '''
+    """
     # case 1: x already defaultdict, leave it be, pass thru
     if isinstance(x, defaultdict):
         return x
@@ -55,7 +49,7 @@ def _int_or_dict(x, default_val):
     except TypeError:
         # case 3: x is or can be converted to int => make a const dict
         default_val = int(x)  # Make sure simple int
-        assert default_val == x, '%s not representable as int' % str(x)
+        assert default_val == x, "%s not representable as int" % str(x)
         D = defaultdict(lambda: default_val)
     # case 4: if can't be converted to dict or int, then exception raised
     return D
@@ -69,6 +63,7 @@ def _arrays(draw, dtype, shape, elements=None, unique=False):
     not needed in Py3 since there is no `int` vs `long` issue. Also, `arrays`
     does not return ndarray for 0-dim arrays.
     """
+    # TODO do this without composite
     shape = tuple(int(aa) for aa in shape)
     S = arrays(dtype, shape, elements=elements, unique=unique).map(np.asarray)
     X = draw(S)
@@ -104,7 +99,9 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     res : tuple of ndarrays
         Resulting ndarrays with shape of `shapes` and elements from `elements`.
     """
+    # TODO consider noting multiple types possible for dtype in doc :
     if isinstance(shapes, SearchStrategy):
+        # TODO maybe make inner func composite only for this case
         shapes = draw(shapes)
     n = len(shapes)
 
@@ -116,13 +113,14 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     elements = np.broadcast_to(elements, (n,))
     unique = np.broadcast_to(unique, (n,))
 
+    # TODO see if there is way to broadcast strategies without composite
     res = tuple(draw(_arrays(dd, ss, elements=ee, unique=uu))
                 for dd, ss, ee, uu in zip(dtype, shapes, elements, unique))
     return res
 
 
 @composite
-def gufunc_shape(draw, signature, min_side=0, max_side=5):
+def _gufunc_arg_shapes(draw, signature, min_side=0, max_side=5):
     """Strategy to generate array shapes for arguments to a function consistent
     with its signature.
 
@@ -167,11 +165,11 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     # Parse out the signature
     # Warning: this uses "private" function of numpy, but it does the job.
     # parses to [('n', 'm'), ('m', 'p')]
-    # This parsing currently occurs every draw and build be pulled out to only
-    # occur once with some code reorganization. Some of the dictionary D could
-    # be done that way as well.
+    # TODO note memoize in regex
+    # TODO look into exception if this is invalid
     inp, out = npfb._parse_gufunc_signature(signature)
 
+    # TODO this might be possible without composite
     # Randomly sample dimensions for each variable, if literal number provided
     # just put the integer in, e.g., D['2'] = 2 if someone provided '(n,2)'.
     # e.g., D = {'p': 1, 'm': 3, 'n': 1}
@@ -185,76 +183,9 @@ def gufunc_shape(draw, signature, min_side=0, max_side=5):
     return shapes
 
 
-def gufunc(signature, dtype, elements, unique=False, min_side=0, max_side=5):
-    """Strategy to generate a tuple of ndarrays for arguments to a function
-    consistent with its signature.
-
-    Parameters
-    ----------
-    signature : str
-        Signature for shapes to be compatible with. Expects string in format
-        of numpy generalized universal function signature, e.g.,
-        `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
-        Officially, only supporting ascii characters on Py3.
-    dtype : list-like of dtype
-        List of numpy `dtype` for each argument. These can be either strings
-        (``'int64'``), type (``np.int64``), or numpy `dtype`
-        (``np.dtype('int64')``). A single `dtype` can be supplied for all
-        arguments.
-    elements : list-like of strategy
-        Strategies to fill in array elements on a per argument basis. One can
-        also specify a single strategy
-        (e.g., :func:`hypothesis.strategies.floats`)
-        and have it applied to all arguments.
-    unique : list-like of bool
-        Boolean flag to specify if all elements in an array must be unique.
-        One can also specify a single boolean to apply it to all arguments.
-    min_side : int or dict
-        Minimum size of any side of the arrays. It is good to test the corner
-        cases of 0 or 1 sized dimensions when applicable, but if not, a min
-        size can be supplied here. Minimums can be provided on a per-dimension
-        basis using a dict, e.g. ``min_side={'n': 2}``.
-    max_side : int or dict
-        Maximum size of any side of the arrays. This can usually be kept small
-        and still find most corner cases in testing. Dictionaries can be
-        supplied as with `min_side`.
-
-    Returns
-    -------
-    res : tuple of ndarrays
-        Resulting ndarrays with shapes consistent with `signature` and elements
-        from `elements`.
-
-    Examples
-    --------
-
-    .. code-block:: pycon
-
-      >>> from hypothesis.strategies import integers, booleans
-      >>> gufunc('(m,n),(n)->(m)', dtype=np.int_, elements=integers(0, 9),
-                 min_side={'m': 1, 'n': 2}, max_side=3).example()
-      (array([[2, 2, 7],
-              [4, 2, 2],
-              [2, 2, 2]]), array([2, 2, 2]))
-      >>> gufunc('(m,n),(n)->(m)', dtype=['bool', 'int32'],
-                 elements=[booleans(), integers(0, 100)],
-                 unique=[False, True]).example()
-      (array([[ True],
-              [False],
-              [ True]], dtype=bool), array([17], dtype=int32))
-    """
-    # Leaving dtype and elements as required for now since that leaves us the
-    # flexibility to later make the default float and floats, or perhaps None
-    # for a random dtype + from_dtype() strategy.
-    shape_st = gufunc_shape(signature, min_side=min_side, max_side=max_side)
-    S = _tuple_of_arrays(shape_st,
-                         dtype=dtype, elements=elements, unique=unique)
-    return S
-
-
 @composite
-def gufunc_broadcast_shape(draw, signature, excluded=(),
-                           min_side=0, max_side=5, max_dims_extra=2):
+def gufunc_arg_shapes(draw, signature, excluded=(),
+                      min_side=0, max_side=5, max_dims_extra=0):
     """Strategy to generate the shape of ndarrays for arguments to a function
     consistent with its signature with extra dimensions to test broadcasting.
 
@@ -282,7 +213,8 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     max_dims_extra : int
         Maximum number of extra dimensions that can be appended on left of
         arrays for broadcasting. This should be kept small as the memory used
-        grows exponentially with extra dimensions.
+        grows exponentially with extra dimensions. By default, no extra
+        dimensions are added.
 
     Returns
     -------
@@ -304,6 +236,8 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
                                  max_dims_extra=3).example()
       [(3, 6), (2, 6)]
     """
+    # TODO broadcasted needs to use diff default for extra dims, check uses in
+    # tests.
     min_side = _int_or_dict(min_side, 0)
     max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
     order_check_min_max(min_side, max_side)
@@ -311,10 +245,18 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
 
     # Get core shapes before broadcasted dimensions
     # e.g., shapes = [(1, 3), (3, 1)]
-    shapes = draw(gufunc_shape(signature,
-                               min_side=min_side, max_side=max_side))
+    shapes = draw(_gufunc_arg_shapes(signature,
+                                     min_side=min_side, max_side=max_side))
     # Should not be possible if signature parser makes sense
     assert len(shapes) > 0
+
+    # If we are not looking for this extra broadcasting dims craziness just
+    # return the current draw.
+    if max_dims_extra == 0:
+        return shapes
+
+    # TODO consider separate composite strat that does all this and then only
+    # apply that second then if max_extra > 0
 
     max_core_dims = max(len(ss) for ss in shapes)
 
@@ -351,8 +293,8 @@ def gufunc_broadcast_shape(draw, signature, excluded=(),
     return shapes
 
 
-def gufunc_broadcast(signature, dtype, elements, unique=False, excluded=(),
-                     min_side=0, max_side=5, max_dims_extra=2):
+def gufunc_args(signature, dtype, elements, unique=False, excluded=(),
+                min_side=0, max_side=5, max_dims_extra=0):
     """Strategy to generate a tuple of ndarrays for arguments to a function
     consistent with its signature with extra dimensions to test broadcasting.
 
@@ -393,14 +335,14 @@ def gufunc_broadcast(signature, dtype, elements, unique=False, excluded=(),
     max_dims_extra : int
         Maximum number of extra dimensions that can be appended on left of
         arrays for broadcasting. This should be kept small as the memory used
-        grows exponentially with extra dimensions.
+        grows exponentially with extra dimensions. By default, no extra
+        dimensions are added.
 
     Returns
     -------
     res : tuple of ndarrays
         Resulting ndarrays with shapes consistent with `signature` and elements
         from `elements`. Extra dimensions for broadcasting will be present.
-
 
     Examples
     --------
@@ -422,262 +364,9 @@ def gufunc_broadcast(signature, dtype, elements, unique=False, excluded=(),
                [ True,  True,  True]]], dtype=bool), array([[[51, 75, 78],
                [98, 99, 50]]], dtype=int32))
     """
-    shape_st = gufunc_broadcast_shape(signature, excluded=excluded,
-                                      min_side=min_side, max_side=max_side,
-                                      max_dims_extra=max_dims_extra)
+    shape_st = gufunc_arg_shapes(signature, excluded=excluded,
+                                 min_side=min_side, max_side=max_side,
+                                 max_dims_extra=max_dims_extra)
     S = _tuple_of_arrays(shape_st,
                          dtype=dtype, elements=elements, unique=unique)
     return S
-
-
-def broadcasted(f, signature, itypes, otypes, elements, unique=False,
-                excluded=(), min_side=0, max_side=5, max_dims_extra=2):
-    """Strategy that makes it easy to test the broadcasting semantics of a
-    function against the 'ground-truth' broadcasting convention provided by
-    :obj:`numpy.vectorize`.
-
-    Parameters
-    ----------
-    f : callable
-        This is the original function handles broadcasting itself. It must
-        return an `ndarray` or multiple `ndarray` (which Python treats as a
-        `tuple`) if returning 2-or-more output arguments.
-    signature : str
-        Signature for shapes to be compatible with. Expects string in format
-        of numpy generalized universal function signature, e.g.,
-        `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
-        Officially, only supporting ascii characters on Py3.
-    itypes : list-like of dtype
-        List of numpy `dtype` for each argument. These can be either strings
-        (``'int64'``), type (``np.int64``), or numpy `dtype`
-        (``np.dtype('int64')``). A single `dtype` can be supplied for all
-        arguments.
-    otypes : list of dtype
-        The dtype for the the outputs of `f`. It must be a list with one dtype
-        for each output argument of `f`. It must be a singleton list if `f`
-        only returns a single output. It can also be set to `None` to leave it
-        to be inferred, but this can create issues with empty arrays, so it is
-        not officially supported here.
-    elements : list-like of strategy
-        Strategies to fill in array elements on a per argument basis. One can
-        also specify a single strategy
-        (e.g., :func:`hypothesis.strategies.floats`)
-        and have it applied to all arguments.
-    unique : list-like of bool
-        Boolean flag to specify if all elements in an array must be unique.
-        One can also specify a single boolean to apply it to all arguments.
-    excluded : list-like of integers
-        Set of integers representing the positional for which the function will
-        not be vectorized. Uses same format as :obj:`numpy.vectorize`.
-    min_side : int or dict
-        Minimum size of any side of the arrays. It is good to test the corner
-        cases of 0 or 1 sized dimensions when applicable, but if not, a min
-        size can be supplied here. Minimums can be provided on a per-dimension
-        basis using a dict, e.g. ``min_side={'n': 2}``. One can use, e.g.,
-        ``min_side={hypothesis.extra.gufunc.BCAST_DIM: 2}`` to limit the size
-        of the broadcasted dimensions.
-    max_side : int or dict
-        Maximum size of any side of the arrays. This can usually be kept small
-        and still find most corner cases in testing. Dictionaries can be
-        supplied as with `min_side`.
-    max_dims_extra : int
-        Maximum number of extra dimensions that can be appended on left of
-        arrays for broadcasting. This should be kept small as the memory used
-        grows exponentially with extra dimensions.
-
-    Returns
-    -------
-    f : callable
-        This is the original function handles broadcasting itself.
-    f_vec : callable
-        Function that should be functionaly equivalent to `f` but broadcasting
-        is handled by :obj:`numpy.vectorize`.
-    res : tuple of ndarrays
-        Resulting ndarrays with shapes consistent with `signature`. Extra
-        dimensions for broadcasting will be present.
-
-    Examples
-    --------
-
-    .. code-block:: pycon
-
-      >>> import numpy as np
-      >>> from hypothesis.strategies import integers, booleans
-      >>> broadcasted(np.add, '(),()->()', ['int64'], ['int64', 'bool'],
-                      elements=[integers(0,9), booleans()],
-                      unique=[True, False]).example()
-      (<ufunc 'add'>,
-       <numpy.lib.function_base.vectorize at 0x11a777690>,
-       (array([5, 6]), array([ True], dtype=bool)))
-      >>> broadcasted(np.add, '(),()->()', ['int64'], ['int64', 'bool'],
-                      elements=[integers(0,9), booleans()],
-                      excluded=(1,)).example()
-      (<ufunc 'add'>,
-       <numpy.lib.function_base.vectorize at 0x11a715b10>,
-       (array([9]), array(True, dtype=bool)))
-      >>> f, fv, args = broadcasted(np.add, '(),()->()', ['int64'],
-                                    ['int64', 'bool'],
-                                    elements=[integers(0,9), booleans()],
-                                    min_side=1, max_side=3,
-                                    max_dims_extra=1).example()
-      >>> f is np.add
-      True
-      >>> f(*args)
-      7
-      >>> fv(*args)
-      array(7)
-    """
-    # cache and doc not needed for property testing, excluded not actually
-    # needed here because we don't generate extra dims for the excluded args.
-    # Using the excluded argument in np.vectorize only seems to confuse it in
-    # corner cases.
-    f_vec = np.vectorize(f, signature=signature, otypes=otypes)
-
-    broadcasted_args = \
-        gufunc_broadcast(signature, itypes, elements, unique=unique,
-                         excluded=excluded, min_side=min_side,
-                         max_side=max_side, max_dims_extra=max_dims_extra)
-    funcs_and_args = tuples(just(f), just(f_vec), broadcasted_args)
-    return funcs_and_args
-
-
-@composite
-def axised(draw, f, signature, itypes, elements, unique=False,
-           min_side=1, max_side=5, max_dims_extra=2, allow_none=True):
-    """Strategy that makes it easy to test the broadcasting semantics of a
-    function against the 'ground-truth' broadcasting convention provided by
-    :func:`numpy.apply_along_axis`.
-
-    Parameters
-    ----------
-    f : callable
-        This is the original function with the form f(..., axis=None). It must
-        return a single `ndarray` as output.
-    signature : str
-        Signature for shapes to be compatible with. Expects string in format
-        of numpy generalized universal function signature. This does not
-        include the axis kwarg. For testing axis, the core dimension of the
-        first argument must be 1D. For, :func:`numpy.mean` we use the signature
-        `'(n)->()'` or for :func:`numpy.percentile` we use `'(n),()->()'`.
-        Officially, only supporting ascii characters on Py3.
-    itypes : list-like of dtype
-        List of numpy `dtype` for each argument. These can be either strings
-        (``'int64'``), type (``np.int64``), or numpy `dtype`
-        (``np.dtype('int64')``). A single `dtype` can be supplied for all
-        arguments.
-    elements : list-like of strategy
-        Strategies to fill in array elements on a per argument basis. One can
-        also specify a single strategy
-        (e.g., :func:`hypothesis.strategies.floats`)
-        and have it applied to all arguments.
-    unique : list-like of bool
-        Boolean flag to specify if all elements in an array must be unique.
-        One can also specify a single boolean to apply it to all arguments.
-    min_side : int or dict
-        Minimum size of any side of the arrays. It is good to test the corner
-        cases of 0 or 1 sized dimensions when applicable, but if not, a min
-        size can be supplied here. Minimums can be provided on a per-dimension
-        basis using a dict, e.g. ``min_side={'n': 2}``. One can use, e.g.,
-        ``min_side={hypothesis.extra.gufunc.BCAST_DIM: 2}`` to limit the size
-        of the extra dimensions of the first argument.
-    max_side : int or dict
-        Maximum size of any side of the arrays. This can usually be kept small
-        and still find most corner cases in testing. Dictionaries can be
-        supplied as with `min_side`.
-    max_dims_extra : int
-        Maximum number of extra dimensions that can be appended on left of
-        arrays for broadcasting. This should be kept small as the memory used
-        grows exponentially with extra dimensions.
-    allow_none : bool
-        If True, sometimes creates test cases where the axis argument is
-        `None`, which implies the first argument should be flattened before
-        use.
-
-    Returns
-    -------
-    f : callable
-        This is the original function handles axis itself.
-    f_vec : callable
-        Function that should be functionaly equivalent to `f` but axis is
-        handled by :func:`numpy.apply_along_axis`.
-    args : tuple of ndarrays
-        Arguments to pass to `f` not including the axis kwarg. Extra dimensions
-        will be added to first argument (args[0]) to test axis slicing.
-    axis : int
-        Axis along which first argument of `f` is sliced.
-
-    Examples
-    --------
-
-    .. code-block:: pycon
-
-      >>> import numpy as np
-      >>> from hypothesis.strategies import integers, floats
-      >>> axised(np.percentile, '(n),()->()', ['int64', np.float_],
-                 elements=[integers(0, 9), floats(0, 1)],
-                 unique=True).example()
-      (<function numpy.lib.function_base.percentile>,
-       <function __main__.f_axis>,
-       (array([9, 0, 1, 2, 8]), array(0.6318185150011054)),
-       None)
-      >>> f, fa, args, axis = axised(np.percentile, '(n),()->()',
-                                     ['int64', np.float_],
-                                     elements=[integers(0, 9), floats(0, 1)],
-                                     allow_none=False).example()
-      >>> args
-      (array([0, 1, 9, 9]), array(0.9396067150190481))
-      >>> axis
-      0
-      >>> f is np.percentile
-      True
-      >>> f(*args, axis=axis)
-      0.028188201450571444
-      >>> fa(*args, axis=axis)
-      array(0.028188201450571444)
-    """
-    min_side = _int_or_dict(min_side, 1)
-    max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
-    order_check_min_max(min_side, max_side, floor=1)
-
-    def f_axis(X, *args, **kwargs):
-        # This trick is not needed in Python3, after dropping Py2 support we
-        # can change to ``f_axis(X, *args, axis=None)``.
-        axis = kwargs.get("axis", None)
-
-        if axis is None:
-            Y = f(np.ravel(X), *args)
-        else:
-            Y = np.apply_along_axis(f, axis, X, *args)
-        return Y
-
-    side_X = integers(min_value=min_side[BCAST_DIM],
-                      max_value=max_side[BCAST_DIM])
-    # X has core dims (n,) so the total dims must be in [1, max_dims_extra + 1]
-    X_shape = draw(lists(side_X, min_size=1, max_size=max_dims_extra + 1))
-
-    shapes = draw(gufunc_shape(signature,
-                               min_side=min_side, max_side=max_side))
-    # ok to assume [0] since should not be any way to generate len(shapes) = 0
-    check_argument(len(shapes[0]) == 1,
-                   "first argument of signature %s must be 1D, for %dD",
-                   signature, len(shapes[0]))
-
-    assert len(shapes[0]) == 1, \
-        "first argument of signature %s must be 1D" % signature
-
-    if allow_none and draw(booleans()):
-        # If function allows for axis=None, then must be able to handle
-        # arbitrary shapes of first arg X (with X.ndims >= 1).
-        axis = None
-    else:
-        # integers is inclusive => must use len(X_shape) - 1 when drawing axis
-        axis = draw(integers(min_value=0, max_value=len(X_shape) - 1))
-        n, = shapes[0]
-        X_shape[axis] = n
-
-    shapes[0] = X_shape
-    args = draw(_tuple_of_arrays(shapes, dtype=itypes,
-                                 elements=elements, unique=unique))
-
-    funcs_and_args = (f, f_axis, args, axis)
-    return funcs_and_args
