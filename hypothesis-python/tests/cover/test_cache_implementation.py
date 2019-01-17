@@ -189,3 +189,111 @@ def test_max_size_cache_ignores():
     x[0] = 1
     with pytest.raises(KeyError):
         x[0]
+
+
+def test_pinning_prevents_eviction():
+    cache = LRUReusedCache(max_size=10)
+    cache[20] = 1
+    cache.pin(20)
+    for i in range(20):
+        cache[i] = 0
+    assert cache[20] == 1
+
+
+def test_unpinning_allows_eviction():
+    cache = LRUReusedCache(max_size=10)
+    cache[20] = True
+    cache.pin(20)
+    for i in range(20):
+        cache[i] = False
+
+    assert 20 in cache
+
+    cache.unpin(20)
+    cache[21] = False
+
+    assert 20 not in cache
+
+
+def test_unpins_must_match_pins():
+    cache = LRUReusedCache(max_size=2)
+    cache[1] = 1
+    cache.pin(1)
+    assert cache.is_pinned(1)
+    cache.pin(1)
+    assert cache.is_pinned(1)
+    cache.unpin(1)
+    assert cache.is_pinned(1)
+    cache.unpin(1)
+    assert not cache.is_pinned(1)
+
+
+def test_will_error_instead_of_evicting_pin():
+    cache = LRUReusedCache(max_size=1)
+    cache[1] = 1
+    cache.pin(1)
+    with pytest.raises(ValueError):
+        cache[2] = 2
+
+
+def test_will_error_for_bad_unpin():
+    cache = LRUReusedCache(max_size=1)
+    cache[1] = 1
+    with pytest.raises(ValueError):
+        cache.unpin(1)
+
+
+def test_still_inserts_if_score_is_worse():
+    class TC(GenericCache):
+        def new_entry(self, key, value):
+            return key
+
+    cache = TC(1)
+
+    cache[0] = 1
+    cache[1] = 1
+
+    assert 0 not in cache
+    assert 1 in cache
+    assert len(cache) == 1
+
+
+def test_does_insert_if_score_is_better():
+    class TC(GenericCache):
+        def new_entry(self, key, value):
+            return value
+
+    cache = TC(1)
+
+    cache[0] = 1
+    cache[1] = 0
+
+    assert 0 not in cache
+    assert 1 in cache
+    assert len(cache) == 1
+
+
+def test_double_pinning_does_not_increase_pin_count():
+    cache = LRUReusedCache(2)
+    cache[0] = 0
+    cache.pin(0)
+    cache.pin(0)
+    cache[1] = 1
+    assert len(cache) == 2
+
+
+def test_can_add_new_keys_after_unpinning():
+    cache = LRUReusedCache(1)
+    cache[0] = 0
+    cache.pin(0)
+    cache.unpin(0)
+    cache[1] = 1
+    assert len(cache) == 1
+    assert 1 in cache
+
+
+def test_iterates_over_remaining_keys():
+    cache = LRUReusedCache(2)
+    for i in range(3):
+        cache[i] = "hi"
+    assert sorted(cache) == [1, 2]
