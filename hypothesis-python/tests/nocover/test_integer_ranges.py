@@ -19,8 +19,10 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
+from hypothesis import given
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.strategies import integers
 from tests.common.debug import minimal
 
 
@@ -43,3 +45,19 @@ def test_intervals_shrink_to_center(inter):
         assert minimal(s, lambda x: x < center) == center - 1
     if center < upper:
         assert minimal(s, lambda x: x > center) == center + 1
+
+
+def test_bounded_integers_distribution_of_bit_width_issue_1387_regression():
+    values = []
+
+    @given(integers(0, 1e100))
+    def test(x):
+        values.append(x)
+
+    test()
+
+    # We draw from a shaped distribution up to 128bit ~7/8 of the time, and
+    # uniformly the rest.  So we should get some very large but not too many.
+    huge = sum(x > 1e97 for x in values)
+    assert huge != 0
+    assert huge <= 0.3 * len(values)  # expected ~1/8

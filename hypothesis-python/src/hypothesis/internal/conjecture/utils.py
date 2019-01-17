@@ -93,6 +93,14 @@ def integer_range(data, lower, upper, center=None):
     bits = bit_length(gap)
     probe = gap + 1
 
+    if bits > 24 and data.draw_bits(3):
+        # For large ranges, we combine the uniform random distribution from draw_bits
+        # with the weighting scheme used by WideRangeIntStrategy with moderate chance.
+        # Cutoff at 2 ** 24 so unicode choice is uniform but 32bit distribution is not.
+        idx = Sampler([4.0, 8.0, 1.0, 1.0, 0.5]).sample(data)
+        sizes = [8, 16, 32, 64, 128]
+        bits = min(bits, sizes[idx])
+
     while probe > gap:
         data.start_example(INTEGER_RANGE_DRAW_LABEL)
         probe = data.draw_bits(bits)
