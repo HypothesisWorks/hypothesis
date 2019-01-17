@@ -281,11 +281,11 @@ def test_elements_tuple_of_arrays(shapes, dtype, data):
     validate_elements(X, choices=choices, dtype=dtype)
 
 
-@given(gu.gufunc_broadcast('(1),(1),(1),()->()',
-                           dtype=['object', 'object', 'object', 'bool'],
-                           elements=[_st_shape,
-                                     scalar_dtypes(), just(None), booleans()],
-                           min_side=1, max_dims_extra=1), data())
+@given(gu.gufunc_args('(1),(1),(1),()->()',
+                      dtype=['object', 'object', 'object', 'bool'],
+                      elements=[_st_shape,
+                                scalar_dtypes(), just(None), booleans()],
+                      min_side=1, max_dims_extra=1), data())
 def test_bcast_tuple_of_arrays(args, data):
     '''Now testing broadcasting of tuple_of_arrays, kind of crazy since it uses
     gufuncs to test itself. Some awkwardness here since there are a lot of
