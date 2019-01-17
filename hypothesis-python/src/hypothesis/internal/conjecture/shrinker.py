@@ -31,9 +31,8 @@ from hypothesis.internal.conjecture.shrinking.common import find_integer
 
 
 def sort_key(buffer):
-    """
-    Returns a key such that if sort_key(x) < sort_key(y) then x is
-    considered to be "simpler" than y.
+    """Returns a sort key such that "simpler" buffers are smaller than
+    "more complicated" ones.
 
     We define sort_key so that x is simpler than y if x is shorter than y or if
     they have the same length and x < y lexicographically. This is called the
