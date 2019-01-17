@@ -31,9 +31,9 @@ from hypothesis.internal.conjecture.shrinking.common import find_integer
 
 
 def sort_key(buffer):
-    """The standard sort key we use for choosing between buffers during
-    shrinking: If sort_key(x) < sort_key(y) then x is considered to be
-    "simpler" than y.
+    """
+    Returns a key such that if sort_key(x) < sort_key(y) then x is
+    considered to be "simpler" than y.
 
     We define sort_key so that x is simpler than y if x is shorter than y or if
     they have the same length and x < y lexicographically. This is called the
@@ -199,7 +199,10 @@ class Shrinker(object):
     """
 
     def default_passes(self):
-        """Shrink passes that are always safe to run. These mostly have time
+        """Returns the list of shrink passes that are always safe to run,
+        in a good order to run them in.
+
+        These mostly have time
         complexity that is at most O(n log(n)) in the size of the underlying
         buffer. pass_to_descendant is an exception in that it technically
         has worst case complexity O(n^2), but it is rare for it to hit
@@ -216,7 +219,10 @@ class Shrinker(object):
         ]
 
     def emergency_passes(self):
-        """Emergency passes are ones that we hope don't do anything
+        """Returns the list of emergency sshrink passes,
+        in a good order to run them in.
+
+        Emergency passes are ones that we hope don't do anything
         very useful. The ideal scenario is that we run all of our
         default passes to a fixed point, then we run all of the
         emergency passes and they do nothing and we're finished.
