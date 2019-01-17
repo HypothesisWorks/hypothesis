@@ -40,8 +40,8 @@ Upgrading Hypothesis and changing your tests
 
 The design of the Hypothesis database is such that you can put arbitrary data in the database
 and not get wrong behaviour. When you upgrade Hypothesis, old data *might* be invalidated, but
-this should happen transparently. It should never be the case that e.g. changing the strategy
-that generates an argument sometimes gives you data from the old strategy.
+this should happen transparently. It can never be the case that e.g. changing the strategy
+that generates an argument gives you data from the old strategy.
 
 -----------------------------
 Sharing your example database

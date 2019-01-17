@@ -329,11 +329,6 @@ The :pypi:`swagger-conformance` package provides an excellent example of this!
     import time
     import math
 
-    # These tests will be quite slow because we have to talk to an external
-    # service. Also we'll put in a sleep between calls so as to not hammer it.
-    # As a result we reduce the number of test cases and turn off the timeout.
-    settings.default.max_examples = 100
-    settings.default.timeout = -1
 
     Goal = namedtuple("Goal", ("slug",))
 

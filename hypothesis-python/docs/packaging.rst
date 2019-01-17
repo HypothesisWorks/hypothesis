@@ -30,14 +30,10 @@ Dependencies
 Python versions
 ~~~~~~~~~~~~~~~
 
-Hypothesis is designed to work with a range of Python versions. Currently supported are:
-
-* pypy-2.6.1 (earlier versions of pypy *may* work)
-* CPython 2.7.x
-* CPython 3.4.x
-* CPython 3.5.x
-* CPython 3.6.x
-* CPython 3.7.x
+Hypothesis is designed to work with a range of Python versions.  We always support
+`all versisions of CPython with upstream support <https://devguide.python.org/#status-of-python-branches>`_,
+and plan to drop Python 2 at EOL in 2020.  We also support the latest versions of PyPy
+for Python 3, and for Python 2 until the CPython 2 EOL.
 
 If you feel the need to have separate Python 3 and Python 2 packages you can, but Hypothesis works unmodified
 on either.
@@ -49,7 +45,6 @@ Other Python libraries
 Hypothesis has *mandatory* dependencies on the following libraries:
 
 * :pypi:`attrs`
-* :pypi:`coverage`
 * :pypi:`enum34` is required on Python 2.7
 
 Hypothesis has *optional* dependencies on the following libraries:
@@ -74,24 +69,7 @@ different versions of Python.
 The tests must be run with pytest >= 3.0; check the :gh-file:`requirements/`
 directory for details.
 
-Tests are organised into a number of top level subdirectories of the tests/ directory.
-
-* cover: This is a small, reasonably fast, collection of tests designed to give 100% coverage of all but a select
-  subset of the files when run under Python 3.
-* nocover: This is a much slower collection of tests that should not be run under coverage for performance reasons.
-* py2: Tests that can only be run under Python 2
-* py3: Tests that can only be run under Python 3
-* datetime: This tests the subset of Hypothesis that depends on pytz
-* django: This tests the subset of Hypothesis that depends on django
-
-
-An example invocation for running the coverage subset of these tests:
-
-.. code-block:: bash
-
-  pip install -e .
-  pip install pytest # you will probably want to use your own packaging here
-  python -m pytest tests/cover
+The organisation of the tests is described in the :gh-file:`hypothesis-python/tests/README.rst`.
 
 --------
 Examples
