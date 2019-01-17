@@ -89,18 +89,36 @@ class Shrinker(object):
     cached_test_function and/or incorporate_new_buffer a number of times,
     but there are a couple of useful things to bear in mind.
 
-    The main invariant that shrink passes should satisfy is that if
-    running a shrink pass failed to make progress, running it again
-    should still fail to make progress. This means that it is
-    fine to include non-determinism in the design of a shrink pass
-    (we do in several), but until the shrink pass has successfully
-    made progress that non-determinism should only affect the order
-    in which things are tried. e.g. it's fine to try each of N deletions
+    A shrink pass *makes progress* if running it changes self.shrink_target
+    (i.e. it tries a shortlex smaller ConjectureData object satisfying
+    the predicate). The desired end state of shrinking is to find a
+    value such that no shrink pass can make progress, i.e. that we
+    are at a local minimum for each shrink pass.
+
+    In aid of this goal, the main invariant that a shrink pass much
+    satisfy is that whether it makes progress must be deterministic.
+    It is fine (encouraged even) for the specific progress it makes
+    to be non-deterministic, but if you run a shrink pass, it makes
+    no progress, and then you immediately run it again, it should
+    never succeed on the second time. This allows us to stop as soon
+    as we have run each shrink pass and seen no progress on any of
+    them.
+
+    This means that e.g. it's fine to try each of N deletions
     or replacements in a random order, but it's not OK to try N random
     deletions (unless you have already shrunk at least once, though we
     don't currently take advantage of this loophole).
 
-    A less precise but still important requirement is that shrink
+    Shrink passes need to be written so as to be robust against
+    change in the underlying shrink target. It is generally safe
+    to assume that the shrink target does not change prior to the
+    point of first modification - e.g. if you change no bytes at
+    index ``i``, all examples whose start is ``<= i`` still exist,
+    as do all blocks, and the data object is still of length
+    ``>= i + 1``. This can only be violated by bad user code which
+    relies on an external source of non-determinism.
+
+    When the underlying shrink_target changes, shrink
     passes should not run substantially more test_function calls
     on success than they do on failure. Say, no more than a constant
     factor more. In particular shrink passes should not iterate to a
