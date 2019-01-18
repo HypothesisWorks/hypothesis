@@ -12,7 +12,7 @@ import numpy.lib.function_base as npfb
 
 from hypothesis.extra.numpy import arrays, order_check
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.strategies import composite, integers
+from hypothesis.strategies import builds, composite, integers, just
 
 # Should not ever need to broadcast beyond this, but should be able to set it
 # as high as 32 before breaking assumptions in numpy.
@@ -55,20 +55,18 @@ def _int_or_dict(x, default_val):
     return D
 
 
-@composite
-def _arrays(draw, dtype, shape, elements=None, unique=False):
+def _arrays(dtype, shape, elements=None, unique=False):
     """Wrapper to fix issues with `hypothesis.extra.numpy.arrays`.
 
     `arrays` is strict on shape being `int` which this fixes. This is partially
     not needed in Py3 since there is no `int` vs `long` issue. Also, `arrays`
     does not return ndarray for 0-dim arrays.
     """
-    # TODO do this without composite
     shape = tuple(int(aa) for aa in shape)
-    S = arrays(dtype, shape, elements=elements, unique=unique).map(np.asarray)
-    X = draw(S)
-    X = X.astype(dtype)
-    return X
+    S = builds(np.asarray,
+               arrays(dtype, shape, elements=elements, unique=unique),
+               dtype=just(dtype))
+    return S
 
 
 @composite
@@ -99,6 +97,7 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     res : tuple of ndarrays
         Resulting ndarrays with shape of `shapes` and elements from `elements`.
     """
+    # TODO consider allowing strategy for dtypes
     # TODO consider noting multiple types possible for dtype in doc :
     if isinstance(shapes, SearchStrategy):
         # TODO maybe make inner func composite only for this case
