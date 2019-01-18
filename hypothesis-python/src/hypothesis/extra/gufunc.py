@@ -12,7 +12,7 @@ import numpy.lib.function_base as npfb
 
 from hypothesis.extra.numpy import arrays, order_check
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.strategies import builds, composite, integers, just
+from hypothesis.strategies import builds, composite, integers, just, fixed_dictionaries
 
 # Should not ever need to broadcast beyond this, but should be able to set it
 # as high as 32 before breaking assumptions in numpy.
@@ -118,8 +118,12 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     return res
 
 
-@composite
-def _gufunc_arg_shapes(draw, signature, min_side=0, max_side=5):
+def _unfold(D, parsed_sig):
+    shapes = [tuple(D[k] for k in arg) for arg in parsed_sig]
+    return shapes
+
+
+def _gufunc_arg_shapes(signature, min_side=0, max_side=5):
     """Strategy to generate array shapes for arguments to a function consistent
     with its signature.
 
@@ -167,19 +171,14 @@ def _gufunc_arg_shapes(draw, signature, min_side=0, max_side=5):
     # TODO note memoize in regex
     # TODO look into exception if this is invalid
     inp, out = npfb._parse_gufunc_signature(signature)
+    all_vars = set([k for arg in inp for k in arg])
 
-    # TODO this might be possible without composite
-    # Randomly sample dimensions for each variable, if literal number provided
-    # just put the integer in, e.g., D['2'] = 2 if someone provided '(n,2)'.
-    # e.g., D = {'p': 1, 'm': 3, 'n': 1}
-    D = {k: (int(k) if k.isdigit() else
-             draw(integers(min_value=min_side[k], max_value=max_side[k])))
-         for arg in inp for k in arg}
+    var_dict = {k: (just(int(k)) if k.isdigit() else
+                    integers(min_value=min_side[k], max_value=max_side[k]))
+                for k in all_vars}
 
-    # Build the shapes: e.g., shapes = [(1, 3), (3, 1)]
-    shapes = [tuple(D[k] for k in arg) for arg in inp]
-
-    return shapes
+    S = builds(_unfold, fixed_dictionaries(var_dict), parsed_sig=just(inp))
+    return S
 
 
 @composite
