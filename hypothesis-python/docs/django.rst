@@ -81,6 +81,8 @@ pass a strategy to skip validation at the strategy level:
     >>> c.age
     5
 
+.. autofunction:: hypothesis.extra.django.from_form
+
 ---------------
 Tips and tricks
 ---------------
