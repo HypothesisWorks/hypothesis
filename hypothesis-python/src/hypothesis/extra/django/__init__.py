@@ -16,7 +16,12 @@
 # END HEADER
 
 from hypothesis.extra.django._fields import from_field, register_field_strategy
-from hypothesis.extra.django._impl import TestCase, TransactionTestCase, from_model, from_form
+from hypothesis.extra.django._impl import (
+    TestCase,
+    TransactionTestCase,
+    from_model,
+    from_form,
+)
 
 __all__ = [
     "TestCase",

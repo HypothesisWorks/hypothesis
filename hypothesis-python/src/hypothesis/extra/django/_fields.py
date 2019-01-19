@@ -25,7 +25,11 @@ from decimal import Decimal
 import django
 import django.db.models as dm
 import django.forms as df
-from django.core.validators import validate_ipv4_address, validate_ipv6_address
+from django.core.validators import (
+    validate_ipv4_address,
+    validate_ipv6_address,
+    validate_ipv46_address,
+)
 
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument
@@ -62,16 +66,14 @@ _global_field_lookup = {
     dm.URLField: urls(),
     dm.UUIDField: st.uuids(),
     df.BooleanField: st.booleans(),
+    df.BooleanField: st.sampled_from(["0", "1"]),
     df.DateField: st.dates(),
     df.DateTimeField: st.datetimes(timezones=get_tz_strat()),
     df.DurationField: st.timedeltas(),
     df.EmailField: emails(),
-    df.FloatField: st.floats(),
+    df.FloatField: st.floats(allow_nan=False, allow_infinity=False),
     df.IntegerField: st.integers(-2147483648, 2147483647),
     df.NullBooleanField: st.one_of(st.none(), st.booleans()),
-    # probably...
-    df.SplitDateTimeField:
-        st.tuples(st.dates(), st.times(timezones=get_tz_strat())),
     df.TimeField: st.times(timezones=get_tz_strat()),
     df.URLField: urls(),
     df.UUIDField: st.uuids(),
@@ -154,13 +156,13 @@ def _for_form_ip(field):
     #  of address they want, so direct comparison with the validator
     #  function has to be used instead. Sorry for the potato logic here
     dv = field.default_validators
-    protocol = 'unkown'
-    if validate_ipv4_address in dv and validate_ipv6_address in dv:
-        protocol = 'both'
+    protocol = "unkown"
+    if validate_ipv46_address in dv:
+        protocol = "both"
     elif validate_ipv4_address in dv:
-        protocol = 'ipv4'
+        protocol = "ipv4"
     elif validate_ipv6_address in dv:
-        protocol = 'ipv6'
+        protocol = "ipv6"
     return _for_ip(protocol)
 
 
@@ -174,6 +176,7 @@ def _for_decimal(field):
 @register_for(dm.CharField)
 @register_for(dm.TextField)
 @register_for(df.CharField)
+@register_for(df.RegexField)
 def _for_text(field):
     # We can infer a vastly more precise strategy by considering the
     # validators as well as the field type.  This is a minimal proof of
@@ -259,17 +262,18 @@ def from_field(field):
             min_size = 0
         strategy = st.sampled_from(choices)
         # TODO: test this
-        if isinstance(
-                field, (df.MultipleChoiceField, df.TypedMultipleChoiceField)):
+        if isinstance(field, (df.MultipleChoiceField, df.TypedMultipleChoiceField)):
             # not quite sure how the field will recieve multiples
             strategy = st.lists(st.sampled_from(choices), min_size=min_size)
-    elif isinstance(field, df.MultiValueField):
-        # introspect further
-        strats = []
-        for _field in field.fields:
-            strats.append(from_field(_field))
-        # if len(strats) > 1:
-        strategy = st.tuples(*strats)
+    # elif isinstance(field, df.ComboField):
+    #     # introspect further
+    #     strats = []
+    #     for _field in field.fields:
+    #         strats.append(from_field(_field))
+    # # This requires unioning together two or more strategies, which
+    # # I've seen done somewhere in the documentation, but I cannot find
+    # # it right now
+    #     strategy = Union(*strats)
     else:
         if type(field) not in _global_field_lookup:
             # form fields don't have ``null``

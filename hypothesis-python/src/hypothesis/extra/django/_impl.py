@@ -22,8 +22,8 @@ import unittest
 import django.db.models as dm
 import django.forms as df
 import django.test as dt
-from django.db import IntegrityError
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 
 import hypothesis._strategies as st
 from hypothesis import reject
@@ -142,9 +142,9 @@ class _FormWrap:
 
         _form = type(_, (_FormWrap,), {'wraps': form})
     """
-    # TODO: is there an easier way of doing this?
+
     wraps = df.Form
-    form_kwargs = {}
+    form_kwargs = {}  # type: dict
 
     def __new__(self, **kwargs):
         # print(kwargs)
@@ -167,17 +167,25 @@ def from_form(
 
     Hypothesis can often infer a strategy based the field type and validators,
     and will attempt to do so for any required fields.  No strategy will be
-  >>  inferred for an :class:`~django:django.db.forms.AutoField`, nullable field,
-    foreign key, or field for which a keyword
-    argument is passed to ``from_form()``.  For example,
-    a Shop type with a foreign key to Company could be generated with::
+    inferred for a disabled field or field for which a keyword argument
+    is passed to ``from_form()``.
 
-        shop_strategy = from_form(Shop, company=from_form(Company))
+    This function uses the fields of an unbound ``form`` instance to determine
+    field strategies, any keyword arguments needed to instantiate the unbound
+    ``form`` instance can be passed into ``from_form()`` as a dict with the
+    keyword ``form_kwargs``. E.g.
+
+        shop_strategy = from_form(Shop, form_kwargs={"company_id": 5})
 
     Like for :func:`~hypothesis.strategies.builds`, you can pass
     :obj:`~hypothesis.infer` as a keyword argument to infer a strategy for
     a field which has a default value instead of using the default.
     """
+    # currently unsupported:
+    # ComboField (this one is close to being supported)
+    # FilePathField
+    # FileField
+    # ImageField
     form_kwargs = form_kwargs or {}
     if not issubclass(form, df.BaseForm):
         print(form.__mro__)
@@ -189,23 +197,35 @@ def from_form(
     # fields from the instance, thus we need to accept the kwargs for
     # instantiation as well as the explicitly defined strategies
 
-    blank_form = form(**form_kwargs)
-    fields_by_name = blank_form.fields
+    unbound_form = form(**form_kwargs)
+    fields_by_name = {}
+    for name, field in unbound_form.fields.items():
+        if isinstance(field, df.MultiValueField):
+            # PS: So this is a little strange, but MultiValueFields must
+            # have their form data encoded in a particular way for the
+            # values to actually be picked up by the widget instances'
+            # ``value_from_datadict``.
+            # E.g. if a MultiValueField named 'mv_field' has 3
+            # sub-fields then the ``value_from_datadict`` will look for
+            # 'mv_field_0', 'mv_field_1', and 'mv_field_2'. Here I'm
+            # decomposing the individual sub-fields into the names that
+            # the form validation process expects
+            for i, _field in enumerate(field.fields):
+                fields_by_name["%s_%d" % (name, i)] = _field
+        else:
+            fields_by_name[name] = field
     for name, value in sorted(field_strategies.items()):
         if value is infer:
             field_strategies[name] = from_field(fields_by_name[name])
+
     for name, field in sorted(fields_by_name.items()):
-        if (
-            name not in field_strategies
-            and not field.disabled
-        ):
+        if name not in field_strategies and not field.disabled:
             field_strategies[name] = from_field(field)
 
     # The primary key is not generated as part of the strategy, so we
     # just match against any row that has the same value for all
     # fields.
-    _form = type(
-        'ignored', (_FormWrap, ), {'wraps': form, 'form_kwargs': form_kwargs})
+    _form = type("ignored", (_FormWrap,), {"wraps": form, "form_kwargs": form_kwargs})
     return _forms_impl(st.builds(_form, **field_strategies))
 
 
