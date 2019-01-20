@@ -24,6 +24,8 @@ from hypothesis.strategies import (
     tuples,
 )
 
+# TODO try cranking up maxes on all shape tests and see what happens
+
 # The spec for a dimension name in numpy.lib.function_base is r'\A\w+\Z' but
 # this creates too many weird corner cases on Python3 unicode. Also make sure
 # doesn't start with digits because if it is parsed as number we could end up
@@ -88,6 +90,8 @@ def validate_bcast_shapes(shapes, parsed_sig,
                           min_side, max_side, max_dims_extra):
     assert all(len(ss) <= gu.GLOBAL_DIMS_MAX for ss in shapes)
 
+    # TODO check all int in list of tuples
+
     # chop off extra dims then same as gufunc_shape
     core_dims = [tt[len(tt) - len(pp):] for tt, pp in zip(shapes, parsed_sig)]
     validate_shapes(core_dims, parsed_sig, min_side, max_side)
@@ -131,6 +135,8 @@ def real_scalar_dtypes():
 
     def cast_it(args):
         return args[0](args[1])
+
+    # TODO consider also string native dtypes
 
     S = tuples(sampled_from((str, identity, to_native)), scalar_dtypes())
     S = S.map(cast_it)

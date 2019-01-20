@@ -24,6 +24,17 @@ BCAST_DIM = object()
 # Value used in default dict for max side if variable not specified
 DEFAULT_MAX_SIDE = 5
 
+# TODO tester that transforms somes elements in list with just, or applies
+# just if not iterable
+
+# TODO check doc string examples with rand seed = 0
+
+# TODO consider in tests using from_regex(npfb._SIGNATURE)
+
+# TODO doc strings need to be redone with interface change
+
+# Maybe note dtype could be built in type
+
 
 def order_check_min_max(min_dict, max_dict, floor=0):
     """Wrapper around argument checker in `hypothesis.extra.numpy`."""
@@ -35,8 +46,8 @@ def order_check_min_max(min_dict, max_dict, floor=0):
 
 
 def _int_or_dict(x, default_val):
-    """Pre-process cases where argument `x` can be `int` or `dict`. In all
-    cases, build a `defaultdict` and return it.
+    """Pre-process cases where argument `x` can be `int`, `dict`, or
+    `defaultdict`. In all cases, build a `defaultdict` and return it.
     """
     # case 1: x already defaultdict, leave it be, pass thru
     if isinstance(x, defaultdict):
@@ -49,10 +60,27 @@ def _int_or_dict(x, default_val):
     except TypeError:
         # case 3: x is or can be converted to int => make a const dict
         default_val = int(x)  # Make sure simple int
+        # TODO use arg check
         assert default_val == x, "%s not representable as int" % str(x)
         D = defaultdict(lambda: default_val)
     # case 4: if can't be converted to dict or int, then exception raised
     return D
+
+
+@composite
+def _arrays0(draw, dtype, shape, elements=None, unique=False):
+    """Wrapper to fix issues with `hypothesis.extra.numpy.arrays`.
+
+    `arrays` is strict on shape being `int` which this fixes. This is partially
+    not needed in Py3 since there is no `int` vs `long` issue. Also, `arrays`
+    does not return ndarray for 0-dim arrays.
+    """
+    shape = tuple(int(aa) for aa in shape)
+    S = arrays(dtype, shape, elements=elements, unique=unique).map(np.asarray)
+    X = draw(S)
+    # TODO comment why copy False
+    X = X.astype(dtype, copy=False)
+    return X
 
 
 def _arrays(dtype, shape, elements=None, unique=False):
@@ -62,10 +90,24 @@ def _arrays(dtype, shape, elements=None, unique=False):
     not needed in Py3 since there is no `int` vs `long` issue. Also, `arrays`
     does not return ndarray for 0-dim arrays.
     """
+    # TODO put builds back into doc str, flip arg order, accept strat for dtype
     shape = tuple(int(aa) for aa in shape)
     S = builds(np.asarray,
                arrays(dtype, shape, elements=elements, unique=unique),
                dtype=just(dtype))
+    return S
+
+
+def _arrays1(dtype, shape, elements=None, unique=False):
+    """Wrapper to fix issues with `hypothesis.extra.numpy.arrays`.
+
+    `arrays` is strict on shape being `int` which this fixes. This is partially
+    not needed in Py3 since there is no `int` vs `long` issue. Also, `arrays`
+    does not return ndarray for 0-dim arrays.
+    """
+    shape = tuple(int(aa) for aa in shape)
+    fix = lambda x: np.asarray(x, dtype=dtype)
+    S = arrays(dtype, shape, elements=elements, unique=unique).map(fix)
     return S
 
 
@@ -97,6 +139,7 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     res : tuple of ndarrays
         Resulting ndarrays with shape of `shapes` and elements from `elements`.
     """
+    # TODO comment could use chaining but not worth effort
     # TODO consider allowing strategy for dtypes
     # TODO consider noting multiple types possible for dtype in doc :
     if isinstance(shapes, SearchStrategy):
@@ -105,6 +148,7 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     n = len(shapes)
 
     # Need this since broadcast_to does not like vars of type type
+    # TODO file np bug report on this
     if isinstance(dtype, type):
         dtype = [dtype]
     dtype = np.broadcast_to(dtype, (n,))
@@ -119,6 +163,7 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
 
 
 def _unfold(D, parsed_sig):
+    # TODO rename signature_map, swap arg order, tests (inverse + const)
     shapes = [tuple(D[k] for k in arg) for arg in parsed_sig]
     return shapes
 
@@ -158,6 +203,8 @@ def _gufunc_arg_shapes(signature, min_side=0, max_side=5):
                        min_side={'m': 1, 'n': 2}, max_side=3).example()
       [(3, 2), (2,)]
     """
+    # TODO can remove these if private, assume already default dict,
+    # can skip check
     min_side = _int_or_dict(min_side, 0)
     max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
     order_check_min_max(min_side, max_side)
@@ -170,15 +217,21 @@ def _gufunc_arg_shapes(signature, min_side=0, max_side=5):
     # parses to [('n', 'm'), ('m', 'p')]
     # TODO note memoize in regex
     # TODO look into exception if this is invalid
+    # TODO consider pulling out parsing to calling func
     inp, out = npfb._parse_gufunc_signature(signature)
+    # TODO rename all_dimensions
     all_vars = set([k for arg in inp for k in arg])
 
+    # TODO rename dim_sub_st or something, note isdigit weird with unicode
     var_dict = {k: (just(int(k)) if k.isdigit() else
                     integers(min_value=min_side[k], max_value=max_side[k]))
                 for k in all_vars}
 
     S = builds(_unfold, fixed_dictionaries(var_dict), parsed_sig=just(inp))
     return S
+
+# TODO validate:
+# excluded iterable (__contains__), sig
 
 
 @composite
@@ -241,6 +294,8 @@ def gufunc_arg_shapes(draw, signature, excluded=(),
     order_check_min_max(min_side, max_side)
     order_check("extra dims", 0, max_dims_extra, GLOBAL_DIMS_MAX)
 
+    # TODO parse sig here, then can get list with ndim for each arg
+
     # Get core shapes before broadcasted dimensions
     # e.g., shapes = [(1, 3), (3, 1)]
     shapes = draw(_gufunc_arg_shapes(signature,
@@ -250,18 +305,24 @@ def gufunc_arg_shapes(draw, signature, excluded=(),
 
     # If we are not looking for this extra broadcasting dims craziness just
     # return the current draw.
+    # TODO use > 0
     if max_dims_extra == 0:
         return shapes
 
     # TODO consider separate composite strat that does all this and then only
     # apply that second then if max_extra > 0
+    # use builds to func that takes:
+    # core_dims, extra_dims vec, mask mat, n_extra vec
 
     max_core_dims = max(len(ss) for ss in shapes)
 
     # Which extra dims will just be 1 to get broadcasted, specified by mask
     n_extra = draw(integers(min_value=0, max_value=max_dims_extra))  # e.g., 2
     # Make sure always under global max dims
+    # TODO max with zero, TODO set GLOBAL DIMS MAX low and run tests
+    # TODO make a list of max for each arg
     n_extra = min(n_extra, GLOBAL_DIMS_MAX - max_core_dims)
+    # TODO consider just setting n_extra to max_extra
     # e.g., mask = [[True False], [False False]]
     mask = draw(_arrays(np.bool, (len(shapes), n_extra)))
 
@@ -269,6 +330,8 @@ def gufunc_arg_shapes(draw, signature, excluded=(),
     extra_dim_gen = integers(min_value=min_side[BCAST_DIM],
                              max_value=max_side[BCAST_DIM])
     # e.g., extra_dims = [2 5]
+    # TODO consider using tuples if faster but assert dtype after tile since
+    # len always greater than 0
     extra_dims = draw(_arrays(np.int, (n_extra,), elements=extra_dim_gen))
     # e.g., extra_dims = [[2 5], [2 5]]
     extra_dims = np.tile(extra_dims, (len(shapes), 1))
@@ -278,9 +341,14 @@ def gufunc_arg_shapes(draw, signature, excluded=(),
     # How many extra dims on left to include for each argument (implicitly) 1
     # for each chopped dim. Cannot include any extra for excluded arguments.
     # e.g., n_extra_per_arg = [1, 2]
+    # TODO consider clipping with global max here instead
     n_extra_per_arg = [0 if nn in excluded else
                        draw(integers(min_value=0, max_value=n_extra))
                        for nn in range(len(shapes))]
+
+    # TODO note broadcasted dims of np type and not native, do we care??
+    # Can do tolist() first if we care, comment either way
+    # TODO write check in tests
 
     # Get full dimensions (core+extra), will chop some on left randomly
     # e.g., shapes = [(5, 1, 3), (2, 5, 3, 1)]
