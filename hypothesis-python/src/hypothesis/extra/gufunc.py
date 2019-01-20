@@ -24,6 +24,8 @@ BCAST_DIM = object()
 # Value used in default dict for max side if variable not specified
 DEFAULT_MAX_SIDE = 5
 
+# TODO isort
+
 # TODO tester that transforms somes elements in list with just, or applies
 # just if not iterable
 
@@ -68,47 +70,27 @@ def _int_or_dict(x, default_val):
 
 
 @composite
-def _arrays0(draw, dtype, shape, elements=None, unique=False):
+def _arrays(draw, dtype, shape, elements=None, unique=False):
     """Wrapper to fix issues with `hypothesis.extra.numpy.arrays`.
 
     `arrays` is strict on shape being `int` which this fixes. This is partially
     not needed in Py3 since there is no `int` vs `long` issue. Also, `arrays`
     does not return ndarray for 0-dim arrays.
-    """
-    shape = tuple(int(aa) for aa in shape)
-    S = arrays(dtype, shape, elements=elements, unique=unique).map(np.asarray)
-    X = draw(S)
-    # TODO comment why copy False
-    X = X.astype(dtype, copy=False)
-    return X
 
-
-def _arrays(dtype, shape, elements=None, unique=False):
-    """Wrapper to fix issues with `hypothesis.extra.numpy.arrays`.
-
-    `arrays` is strict on shape being `int` which this fixes. This is partially
-    not needed in Py3 since there is no `int` vs `long` issue. Also, `arrays`
-    does not return ndarray for 0-dim arrays.
-    """
-    # TODO put builds back into doc str, flip arg order, accept strat for dtype
-    shape = tuple(int(aa) for aa in shape)
+    This could possibly be done more compactly with:
+    ```
     S = builds(np.asarray,
                arrays(dtype, shape, elements=elements, unique=unique),
                dtype=just(dtype))
-    return S
-
-
-def _arrays1(dtype, shape, elements=None, unique=False):
-    """Wrapper to fix issues with `hypothesis.extra.numpy.arrays`.
-
-    `arrays` is strict on shape being `int` which this fixes. This is partially
-    not needed in Py3 since there is no `int` vs `long` issue. Also, `arrays`
-    does not return ndarray for 0-dim arrays.
+    ```
+    However, this appears to be slower.
     """
+    # TODO swap order draw dtype
     shape = tuple(int(aa) for aa in shape)
-    fix = lambda x: np.asarray(x, dtype=dtype)
-    S = arrays(dtype, shape, elements=elements, unique=unique).map(fix)
-    return S
+    S = arrays(dtype, shape, elements=elements, unique=unique).map(np.asarray)
+    X = draw(S)
+    X = X.astype(dtype, copy=False)  # Will never see original => copy=False
+    return X
 
 
 @composite
@@ -139,11 +121,7 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     res : tuple of ndarrays
         Resulting ndarrays with shape of `shapes` and elements from `elements`.
     """
-    # TODO comment could use chaining but not worth effort
-    # TODO consider allowing strategy for dtypes
-    # TODO consider noting multiple types possible for dtype in doc :
     if isinstance(shapes, SearchStrategy):
-        # TODO maybe make inner func composite only for this case
         shapes = draw(shapes)
     n = len(shapes)
 
@@ -156,15 +134,17 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     elements = np.broadcast_to(elements, (n,))
     unique = np.broadcast_to(unique, (n,))
 
-    # TODO see if there is way to broadcast strategies without composite
+    # This could somewhat easily be done using builds and avoid need for
+    # composite if shape is always given and not strategy. Otherwise, we need
+    # to chain strategies and probably not worth the effort.
     res = tuple(draw(_arrays(dd, ss, elements=ee, unique=uu))
                 for dd, ss, ee, uu in zip(dtype, shapes, elements, unique))
     return res
 
 
-def _unfold(D, parsed_sig):
-    # TODO rename signature_map, swap arg order, tests (inverse + const)
-    shapes = [tuple(D[k] for k in arg) for arg in parsed_sig]
+def _signature_map(map_dict, parsed_sig):
+    # TODO tests (inverse + const)
+    shapes = [tuple(map_dict[k] for k in arg) for arg in parsed_sig]
     return shapes
 
 
@@ -219,15 +199,16 @@ def _gufunc_arg_shapes(signature, min_side=0, max_side=5):
     # TODO look into exception if this is invalid
     # TODO consider pulling out parsing to calling func
     inp, out = npfb._parse_gufunc_signature(signature)
-    # TODO rename all_dimensions
-    all_vars = set([k for arg in inp for k in arg])
+    all_dimensions = set([k for arg in inp for k in arg])
 
-    # TODO rename dim_sub_st or something, note isdigit weird with unicode
-    var_dict = {k: (just(int(k)) if k.isdigit() else
-                    integers(min_value=min_side[k], max_value=max_side[k]))
-                for k in all_vars}
+    # Note that isdigit can be a bit odd with some unicode characters
+    # => officially only support ascii characters in signature.
+    dim_map_st = {k: (just(int(k)) if k.isdigit() else
+                      integers(min_value=min_side[k], max_value=max_side[k]))
+                  for k in all_dimensions}
 
-    S = builds(_unfold, fixed_dictionaries(var_dict), parsed_sig=just(inp))
+    S = builds(_signature_map,
+               map_dict=fixed_dictionaries(dim_map_st), parsed_sig=just(inp))
     return S
 
 # TODO validate:
