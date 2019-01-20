@@ -168,3 +168,39 @@ Hypothesis will create the model instance with
 :meth:`~django:django.db.models.query.QuerySet.update_or_create`,
 overwriting any existing instance in the database for this test case
 with the same primary key.
+
+
+On the subject of ``MultiValueField``
+=====================================
+
+Django forms feature the :class:`~django:django.forms.fields.MultiValueField`
+which allows for several fields to be combined under a single named field, the
+default example of this is the :class:`~django:django.forms.fields.SplitDateTimeField`.
+
+.. code:: python
+
+  class CustomerForm(forms.Form):
+    name = forms.CharField()
+    birth_date_time = forms.SplitDateTimeField()
+
+``from_form`` supports ``MultiValueField`` subclasses directly, however if you
+want to define your own strategy be forewarned that Django binds data for a
+``MultiValueField`` in a peculiar way. Specifically each sub-field is expected
+to have its own entry in ``data`` addressed by the field name
+(e.g. ``birth_date_time``) and the index of the sub-field within the
+``MultiValueField``, so form ``data`` for the example above might look
+like this:
+
+.. code:: python
+
+  {
+    'name': 'Samuel John',
+    'birth_date_time_0': '2018-05-19',  # the date, as the first sub-field
+    'birth_date_time_1': '15:18:00'     # the time, as the second sub-field
+  }
+
+Thus, if you want to define your own strategies for such a field you must
+address your sub-fields appropriately:
+
+.. code:: python
+  from_form(CustomerForm, birth_date_time_0=just('2018-05-19'))

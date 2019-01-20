@@ -66,15 +66,12 @@ _global_field_lookup = {
     dm.URLField: urls(),
     dm.UUIDField: st.uuids(),
     df.BooleanField: st.booleans(),
-    df.BooleanField: st.sampled_from(["0", "1"]),
     df.DateField: st.dates(),
-    df.DateTimeField: st.datetimes(timezones=get_tz_strat()),
     df.DurationField: st.timedeltas(),
     df.EmailField: emails(),
     df.FloatField: st.floats(allow_nan=False, allow_infinity=False),
     df.IntegerField: st.integers(-2147483648, 2147483647),
     df.NullBooleanField: st.one_of(st.none(), st.booleans()),
-    df.TimeField: st.times(timezones=get_tz_strat()),
     df.URLField: urls(),
     df.UUIDField: st.uuids(),
 }
@@ -89,6 +86,7 @@ def register_for(field_type):
 
 
 @register_for(dm.DateTimeField)
+@register_for(df.DateTimeField)
 def _for_datetime(field):
     if getattr(django.conf.settings, "USE_TZ", False):
         return st.datetimes(timezones=timezones())
@@ -108,9 +106,17 @@ def using_sqlite():
 
 
 @register_for(dm.TimeField)
-def _for_time(field):
+def _for_model_time(field):
     # SQLITE supports TZ-aware datetimes, but not TZ-aware times.
     if getattr(django.conf.settings, "USE_TZ", False) and not using_sqlite():
+        return st.times(timezones=timezones())
+    return st.times()
+
+
+@register_for(df.TimeField)
+def _for_form_time(field):
+    # SQLITE supports TZ-aware datetimes, but not TZ-aware times.
+    if getattr(django.conf.settings, "USE_TZ", False):
         return st.times(timezones=timezones())
     return st.times()
 
@@ -137,17 +143,13 @@ def _for_slug(field):
     )
 
 
-def _for_ip(protocol):
+@register_for(dm.GenericIPAddressField)
+def _for_model_ip(field):
     return dict(
         ipv4=ip4_addr_strings(),
         ipv6=ip6_addr_strings(),
         both=ip4_addr_strings() | ip6_addr_strings(),
-    )[protocol]
-
-
-@register_for(dm.GenericIPAddressField)
-def _for_model_ip(field):
-    return _for_ip(field.protocol.lower())
+    )[field.protocol.lower()]
 
 
 @register_for(df.GenericIPAddressField)
@@ -155,15 +157,13 @@ def _for_form_ip(field):
     # the IP address form fields have no direct indication of which type
     #  of address they want, so direct comparison with the validator
     #  function has to be used instead. Sorry for the potato logic here
-    dv = field.default_validators
-    protocol = "unkown"
-    if validate_ipv46_address in dv:
-        protocol = "both"
-    elif validate_ipv4_address in dv:
-        protocol = "ipv4"
-    elif validate_ipv6_address in dv:
-        protocol = "ipv6"
-    return _for_ip(protocol)
+    if validate_ipv46_address in field.default_validators:
+        return ip4_addr_strings() | ip6_addr_strings()
+    if validate_ipv4_address in field.default_validators:
+        return ip4_addr_strings()
+    if validate_ipv6_address in field.default_validators:
+        return ip6_addr_strings()
+    raise InvalidArgument("No IP version validator on field=%r" % field)
 
 
 @register_for(dm.DecimalField)
@@ -215,7 +215,7 @@ def register_field_strategy(field_type, strategy):
     ``field_type`` must be a subtype of django.db.models.Field, which must not
     already be registered.  ``strategy`` must be a SearchStrategy.
     """
-    if not issubclass(field_type, dm.Field):
+    if not issubclass(field_type, (dm.Field, df.Field)):
         raise InvalidArgument(
             "field_type=%r must be a subtype of Field" % (field_type,)
         )
@@ -249,31 +249,28 @@ def from_field(field):
                 choices.extend(key for key, _ in name_or_optgroup)
             else:
                 choices.append(value)
-        # form fields automatically include the blank option, strip it out
+        # form fields automatically include an empty choice, strip it out
         if "" in choices:
             choices.remove("")
         min_size = 1
         if isinstance(field, (dm.CharField, dm.TextField)) and field.blank:
             choices.insert(0, u"")
             pass
-        # form fields don't have ``blank``, but they do have required
+        # form fields don't have ``blank``, but they do have ``required``
         elif isinstance(field, (df.Field)) and not field.required:
             choices.insert(0, u"")
             min_size = 0
         strategy = st.sampled_from(choices)
-        # TODO: test this
         if isinstance(field, (df.MultipleChoiceField, df.TypedMultipleChoiceField)):
-            # not quite sure how the field will recieve multiples
             strategy = st.lists(st.sampled_from(choices), min_size=min_size)
-    # elif isinstance(field, df.ComboField):
-    #     # introspect further
-    #     strats = []
-    #     for _field in field.fields:
-    #         strats.append(from_field(_field))
-    # # This requires unioning together two or more strategies, which
-    # # I've seen done somewhere in the documentation, but I cannot find
-    # # it right now
-    #     strategy = Union(*strats)
+    elif isinstance(field, df.ComboField):
+        # introspect further
+        strategy = False
+        for _field in field.fields:
+            if not isinstance(strategy, set):
+                strategy = from_field(_field)
+            else:
+                strategy &= from_field(_field)
     else:
         if type(field) not in _global_field_lookup:
             # form fields don't have ``null``

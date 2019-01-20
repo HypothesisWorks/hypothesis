@@ -18,14 +18,23 @@
 from __future__ import absolute_import, division, print_function
 
 from hypothesis import assume, given
-from hypothesis.extra.django import TestCase, from_form
+from hypothesis.extra.django import TestCase, from_form, register_field_strategy
+from hypothesis.strategies import booleans, sampled_from
 from tests.django.toystore.forms import (  # RestrictedFieldsForm,
     AllFieldsForm,
+    BroadBooleanField,
+    ComboFieldForm,
     CustomerForm,
     DynamicForm,
+    ManyMultiValueForm,
     ManyNumericsForm,
     ManyTimesForm,
     OddFieldsForm,
+    ShortStringForm,
+)
+
+register_field_strategy(
+    BroadBooleanField, booleans() | sampled_from([u"1", u"0", u"True", u"False"])
 )
 
 
@@ -66,6 +75,22 @@ class TestGetsBasicForms(TestCase):
 
     @given(from_form(AllFieldsForm))
     def test_all_fields_form(self, all_fields_form):
-        assume(all_fields_form.data["_char"].strip())
-        print(all_fields_form.data["_regex"])
+        assume(all_fields_form.data["_char_required"].strip())
         self.assertTrue(all_fields_form.is_valid())
+
+    @given(from_form(ManyMultiValueForm, form_kwargs={"subfield_count": 2}))
+    def test_many_values_in_multi_value_field(self, many_multi_value_form):
+        self.assertTrue(many_multi_value_form.is_valid())
+
+    @given(from_form(ManyMultiValueForm, form_kwargs={"subfield_count": 105}))
+    def test_excessive_values_in_multi_value_field(self, excessive_form):
+        self.assertTrue(excessive_form.is_valid())
+
+    @given(from_form(ComboFieldForm))
+    def test_combo_field(self, combo_field_form):
+        self.assertTrue(len(combo_field_form.data["_combo"]) <= 20)
+        self.assertTrue(combo_field_form.is_valid())
+
+    @given(from_form(ShortStringForm))
+    def test_short_string_form(self, short_string_form):
+        self.assertTrue(short_string_form.is_valid())

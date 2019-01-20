@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import unittest
+from functools import partial
 
 import django.db.models as dm
 import django.forms as df
@@ -129,29 +130,6 @@ def _models_impl(draw, strat):
         reject()
 
 
-class _FormWrap:
-    """Instantiating a form with data requires passing the form data
-    as a dictionary (not keyword arguments) e.g. ::
-
-        form = FormClass(data={'field1': 'value1', 'field2': 'value2'})
-
-    ``_FormWrap`` provides a wrapper to support
-    ``hypothesis.strategies.builds``.
-
-    To wrap your ``form`` use ::
-
-        _form = type(_, (_FormWrap,), {'wraps': form})
-    """
-
-    wraps = df.Form
-    form_kwargs = {}  # type: dict
-
-    def __new__(self, **kwargs):
-        # print(kwargs)
-        # print(self.form_kwargs)
-        return self.wraps(data=kwargs, **self.form_kwargs)
-
-
 @st.defines_strategy
 def from_form(
     form,  # type: Type[dm.Model]
@@ -188,7 +166,6 @@ def from_form(
     # ImageField
     form_kwargs = form_kwargs or {}
     if not issubclass(form, df.BaseForm):
-        print(form.__mro__)
         raise InvalidArgument("form=%r must be a subtype of Form" % (form,))
 
     # Forms are a little bit different from models. Model classes have
@@ -222,11 +199,11 @@ def from_form(
         if name not in field_strategies and not field.disabled:
             field_strategies[name] = from_field(field)
 
-    # The primary key is not generated as part of the strategy, so we
-    # just match against any row that has the same value for all
-    # fields.
-    _form = type("ignored", (_FormWrap,), {"wraps": form, "form_kwargs": form_kwargs})
-    return _forms_impl(st.builds(_form, **field_strategies))
+    return _forms_impl(
+        st.builds(
+            partial(form, **form_kwargs), data=st.fixed_dictionaries(field_strategies)
+        )
+    )
 
 
 @st.composite

@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 from django import forms
+from django.forms import widgets
 
 from tests.django.toystore.models import (
     CouldBeCharming,
@@ -29,65 +30,54 @@ from tests.django.toystore.models import (
 )
 
 
-class CouldBeCharmingForm(forms.ModelForm):
+class ReprModelForm(forms.ModelForm):
     def __repr__(self):
-        return repr(self.data)
+        """I recommend putting this in your form to show the failed cases."""
+        return repr(self.data) + repr(self.errors)
 
+
+class ReprForm(forms.Form):
+    def __repr__(self):
+        return repr(self.data) + repr(self.errors)
+
+
+class CouldBeCharmingForm(ReprModelForm):
     class Meta:
         model = CouldBeCharming
         fields = "__all__"
 
 
-class CustomerForm(forms.ModelForm):
-    def __repr__(self):
-        return repr(self.data)
-
+class CustomerForm(ReprModelForm):
     class Meta:
         model = Customer
         fields = "__all__"
 
 
-class ManyNumericsForm(forms.ModelForm):
-    def __repr__(self):
-        return repr(self.data)
-
+class ManyNumericsForm(ReprModelForm):
     class Meta:
         model = ManyNumerics
         fields = "__all__"
 
 
-class ManyTimesForm(forms.ModelForm):
-    def __repr__(self):
-        return repr(self.data)
-
+class ManyTimesForm(ReprModelForm):
     class Meta:
         model = ManyTimes
         fields = "__all__"
 
 
-class OddFieldsForm(forms.ModelForm):
-    def __repr__(self):
-        return repr(self.data)
-
+class OddFieldsForm(ReprModelForm):
     class Meta:
         model = OddFields
         fields = "__all__"
 
 
-class RestrictedFieldsForm(forms.ModelForm):
-    def __repr__(self):
-        """I recommend putting this in your form to show the failed cases"""
-        return repr(self.data)
-
+class RestrictedFieldsForm(ReprModelForm):
     class Meta:
         model = RestrictedFields
         fields = "__all__"
 
 
-class DynamicForm(forms.Form):
-    def __repr__(self):
-        return repr(self.data)
-
+class DynamicForm(ReprForm):
     def __init__(self, *args, field_count=5, **kwargs):
         super(DynamicForm, self).__init__(*args, **kwargs)
         for i in range(field_count):
@@ -95,12 +85,21 @@ class DynamicForm(forms.Form):
             self.fields[field_name] = forms.CharField(required=False)
 
 
-class AllFieldsForm(forms.Form):
-    def __repr__(self):
-        return repr(self.data)
+class AllFieldsForm(ReprForm):
+    _boolean = forms.BooleanField(required=False)
+    # This took me too long to figure out... The BooleanField will actually
+    # raise a ValidationError when it recieves a value of False. Why they
+    # didn't call it a TrueOnlyField escapes me, but *if* you actually want
+    # to accept both True and False in your BooleanField, make sure you set
+    # `required=False`. This behavior has been hotly contested in the bug
+    # tracker (e.g. https://code.djangoproject.com/ticket/23547), but it
+    # seems that since the tests and documentation are already written
+    # this behavior is Truth.
+    # see the note in the documentation
+    # https://docs.djangoproject.com/en/dev/ref/forms/fields/#booleanfield
 
-    _boolean = forms.BooleanField()
-    _char = forms.CharField()
+    _char_required = forms.CharField(required=True)
+    _char = forms.CharField(required=False)
     _choice = forms.ChoiceField(
         choices=(("cola", "Cola"), ("tea", "Tea"), ("water", "Water"))
     )
@@ -132,3 +131,64 @@ class AllFieldsForm(forms.Form):
     _time = forms.TimeField()
     _url = forms.URLField()
     _uuid = forms.UUIDField()
+
+
+class BroadBooleanInput(widgets.CheckboxInput):
+    """Basically pulled directly from the Django CheckboxInput. I added
+    some stuff to ``values``
+    """
+
+    def value_from_datadict(self, data, files, name):
+        if name not in data:
+            return False
+        value = data.get(name)
+        # Translate true and false strings to boolean values.
+        values = {u"true": True, u"false": False, u"0": False, u"1": True}
+        if isinstance(value, str):
+            value = values.get(value.lower(), value)
+        return bool(value)
+
+
+class MultiCheckboxWidget(widgets.MultiWidget):
+    def __init__(self, *args, subfield_count=12, **kwargs):
+        _widgets = [BroadBooleanInput()] * subfield_count
+        super(MultiCheckboxWidget, self).__init__(_widgets, *args, **kwargs)
+
+    def decompress(self, value):
+        values = []
+        for _value in value.split(u"::"):
+            if _value in (u"0", "", u"False", 0, None, False):
+                values.append(False)
+            else:
+                values.append(True)
+        return values
+
+
+class BroadBooleanField(forms.BooleanField):
+    pass
+
+
+class MultiBooleanField(forms.MultiValueField):
+    def __init__(self, *args, subfield_count=12, **kwargs):
+        subfields = [BroadBooleanField()] * subfield_count
+        widget = MultiCheckboxWidget(subfield_count=subfield_count)
+        super(MultiBooleanField, self).__init__(fields=subfields, widget=widget)
+
+    def compress(self, values):
+        return u"::".join([str(x) for x in values])
+
+
+class ManyMultiValueForm(ReprForm):
+    def __init__(self, *args, subfield_count=12, **kwargs):
+        super(ManyMultiValueForm, self).__init__(*args, **kwargs)
+        self.fields["mv_field"] = MultiBooleanField(subfield_count=subfield_count)
+
+
+class ShortStringForm(ReprForm):
+    _not_too_long = forms.CharField(max_length=20, required=False)
+
+
+class ComboFieldForm(ReprForm):
+    _combo = forms.ComboField(
+        fields=[forms.CharField(max_length=19), forms.EmailField()]
+    )
