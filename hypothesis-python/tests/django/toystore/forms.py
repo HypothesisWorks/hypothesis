@@ -108,11 +108,23 @@ class TemporalFieldForm(ReprForm):
     _split_date_time = forms.SplitDateTimeField()
 
 
-class NotQuiteCharFieldForm(ReprForm):
+class EmailFieldForm(ReprForm):
     _email = forms.EmailField()
+
+
+class SlugFieldForm(ReprForm):
     _slug = forms.SlugField()
+
+
+class URLFieldForm(ReprForm):
     _url = forms.URLField()
+
+
+class RegexFieldForm(ReprForm):
     _regex = forms.RegexField(regex=r"[A-Z]{3}\.[a-z]{4}")
+
+
+class UUIDFieldForm(ReprForm):
     _uuid = forms.UUIDField()
 
 
@@ -165,7 +177,7 @@ class MultiCheckboxWidget(widgets.MultiWidget):
     def decompress(self, value):
         values = []
         for _value in value.split(u"::"):
-            if _value in (u"0", "", u"False", 0, None, False):
+            if _value in (u"0", u"", u"False", 0, None, False):
                 values.append(False)
             else:
                 values.append(True)

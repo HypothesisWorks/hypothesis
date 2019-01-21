@@ -26,14 +26,18 @@ from tests.django.toystore.forms import (
     ChoiceFieldForm,
     CustomerForm,
     DynamicForm,
+    EmailFieldForm,
     InternetProtocolForm,
     ManyMultiValueForm,
     ManyNumericsForm,
     ManyTimesForm,
-    NotQuiteCharFieldForm,
     OddFieldsForm,
+    RegexFieldForm,
     ShortStringForm,
+    SlugFieldForm,
     TemporalFieldForm,
+    URLFieldForm,
+    UUIDFieldForm,
 )
 
 register_field_strategy(
@@ -75,9 +79,25 @@ class TestGetsBasicForms(TestCase):
     def test_temporal_fields_form(self, time_field_form):
         self.assertTrue(time_field_form.is_valid())
 
-    @given(from_form(NotQuiteCharFieldForm))
-    def test_charlike_fields_form(self, charlike_field_form):
-        self.assertTrue(charlike_field_form.is_valid())
+    @given(from_form(EmailFieldForm))
+    def test_email_field_form(self, email_field_form):
+        self.assertTrue(email_field_form.is_valid())
+
+    @given(from_form(SlugFieldForm))
+    def test_slug_field_form(self, slug_field_form):
+        self.assertTrue(slug_field_form.is_valid())
+
+    @given(from_form(URLFieldForm))
+    def test_url_field_form(self, url_field_form):
+        self.assertTrue(url_field_form.is_valid())
+
+    @given(from_form(RegexFieldForm))
+    def test_regex_field_form(self, regex_field_form):
+        self.assertTrue(regex_field_form.is_valid())
+
+    @given(from_form(UUIDFieldForm))
+    def test_uuid_field_form(self, uuid_field_form):
+        self.assertTrue(uuid_field_form.is_valid())
 
     @given(from_form(ChoiceFieldForm))
     def test_choice_fields_form(self, choice_field_form):
