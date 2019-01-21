@@ -256,8 +256,8 @@ def from_field(field):
             else:
                 choices.append(value)
         # form fields automatically include an empty choice, strip it out
-        if "" in choices:
-            choices.remove("")
+        if u"" in choices:
+            choices.remove(u"")
         min_size = 1
         if isinstance(field, (dm.CharField, dm.TextField)) and field.blank:
             choices.insert(0, u"")
