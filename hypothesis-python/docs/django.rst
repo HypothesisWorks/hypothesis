@@ -173,9 +173,9 @@ with the same primary key.
 On the subject of ``MultiValueField``
 =====================================
 
-Django forms feature the :class:`~django:django.forms.fields.MultiValueField`
+Django forms feature the :class:`~django:django.forms.MultiValueField`
 which allows for several fields to be combined under a single named field, the
-default example of this is the :class:`~django:django.forms.fields.SplitDateTimeField`.
+default example of this is the :class:`~django:django.forms.SplitDateTimeField`.
 
 .. code:: python
 

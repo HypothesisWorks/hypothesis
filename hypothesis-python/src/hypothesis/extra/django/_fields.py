@@ -65,7 +65,6 @@ _global_field_lookup = {
     dm.NullBooleanField: st.one_of(st.none(), st.booleans()),
     dm.URLField: urls(),
     dm.UUIDField: st.uuids(),
-    df.BooleanField: st.booleans(),
     df.DateField: st.dates(),
     df.DurationField: st.timedeltas(),
     df.EmailField: emails(),
@@ -115,7 +114,6 @@ def _for_model_time(field):
 
 @register_for(df.TimeField)
 def _for_form_time(field):
-    # SQLITE supports TZ-aware datetimes, but not TZ-aware times.
     if getattr(django.conf.settings, "USE_TZ", False):
         return st.times(timezones=timezones())
     return st.times()
@@ -199,13 +197,23 @@ def _for_text(field):
     min_size = 1
     if getattr(field, "blank", False) or not getattr(field, "required", True):
         min_size = 0
-    return st.text(
+    strategy = st.text(
         alphabet=st.characters(
             blacklist_characters=u"\x00", blacklist_categories=("Cs",)
         ),
         min_size=min_size,
         max_size=field.max_length,
     )
+    if getattr(field, "required", True):
+        strategy = strategy.filter(str.strip)
+    return strategy
+
+
+@register_for(df.BooleanField)
+def _for_form_boolean(field):
+    if field.required:
+        return st.just(True)
+    return st.booleans()
 
 
 def register_field_strategy(field_type, strategy):
@@ -240,8 +248,6 @@ def from_field(field):
     such as string length and validators.
     """
     check_type((dm.Field, df.Field), field, "field")
-    # not all form fields have ``choices``, so this will raise an exception
-    # if field.choices:
     if getattr(field, "choices", False):
         choices = []  # type: list
         for value, name_or_optgroup in field.choices:
@@ -256,24 +262,22 @@ def from_field(field):
         if isinstance(field, (dm.CharField, dm.TextField)) and field.blank:
             choices.insert(0, u"")
             pass
-        # form fields don't have ``blank``, but they do have ``required``
         elif isinstance(field, (df.Field)) and not field.required:
             choices.insert(0, u"")
             min_size = 0
         strategy = st.sampled_from(choices)
         if isinstance(field, (df.MultipleChoiceField, df.TypedMultipleChoiceField)):
             strategy = st.lists(st.sampled_from(choices), min_size=min_size)
-    elif isinstance(field, df.ComboField):
-        # introspect further
-        strategy = False
-        for _field in field.fields:
-            if not isinstance(strategy, set):
-                strategy = from_field(_field)
-            else:
-                strategy &= from_field(_field)
+    # elif isinstance(field, df.ComboField):
+    #     # introspect further
+    #     strategy = False
+    #     for _field in field.fields:
+    #         if not isinstance(strategy, set):
+    #             strategy = from_field(_field)
+    #         else:
+    #             strategy &= from_field(_field)
     else:
         if type(field) not in _global_field_lookup:
-            # form fields don't have ``null``
             if getattr(field, "null", False):
                 return st.none()
             raise InvalidArgument("Could not infer a strategy for %r", (field,))

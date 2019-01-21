@@ -151,7 +151,7 @@ def from_form(
     This function uses the fields of an unbound ``form`` instance to determine
     field strategies, any keyword arguments needed to instantiate the unbound
     ``form`` instance can be passed into ``from_form()`` as a dict with the
-    keyword ``form_kwargs``. E.g.
+    keyword ``form_kwargs``. E.g.::
 
         shop_strategy = from_form(Shop, form_kwargs={"company_id": 5})
 
@@ -160,7 +160,7 @@ def from_form(
     a field which has a default value instead of using the default.
     """
     # currently unsupported:
-    # ComboField (this one is close to being supported)
+    # ComboField
     # FilePathField
     # FileField
     # ImageField
@@ -201,7 +201,8 @@ def from_form(
 
     return _forms_impl(
         st.builds(
-            partial(form, **form_kwargs), data=st.fixed_dictionaries(field_strategies)
+            partial(form, **form_kwargs),
+            data=st.fixed_dictionaries(field_strategies),  # type: ignore
         )
     )
 

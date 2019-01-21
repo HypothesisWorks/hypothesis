@@ -26,14 +26,13 @@ from tests.django.toystore.models import (
     ManyNumerics,
     ManyTimes,
     OddFields,
-    RestrictedFields,
 )
 
 
 class ReprModelForm(forms.ModelForm):
     def __repr__(self):
         """I recommend putting this in your form to show the failed cases."""
-        return repr(self.data) + repr(self.errors)
+        return "%r\n%r" % (self.data, self.errors)
 
 
 class ReprForm(forms.Form):
@@ -71,12 +70,6 @@ class OddFieldsForm(ReprModelForm):
         fields = "__all__"
 
 
-class RestrictedFieldsForm(ReprModelForm):
-    class Meta:
-        model = RestrictedFields
-        fields = "__all__"
-
-
 class DynamicForm(ReprForm):
     def __init__(self, *args, field_count=5, **kwargs):
         super(DynamicForm, self).__init__(*args, **kwargs)
@@ -86,6 +79,7 @@ class DynamicForm(ReprForm):
 
 
 class AllFieldsForm(ReprForm):
+    _boolean_required = forms.BooleanField()
     _boolean = forms.BooleanField(required=False)
     # This took me too long to figure out... The BooleanField will actually
     # raise a ValidationError when it recieves a value of False. Why they
@@ -186,9 +180,3 @@ class ManyMultiValueForm(ReprForm):
 
 class ShortStringForm(ReprForm):
     _not_too_long = forms.CharField(max_length=20, required=False)
-
-
-class ComboFieldForm(ReprForm):
-    _combo = forms.ComboField(
-        fields=[forms.CharField(max_length=19), forms.EmailField()]
-    )
