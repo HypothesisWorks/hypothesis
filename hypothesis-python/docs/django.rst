@@ -203,4 +203,5 @@ Thus, if you want to define your own strategies for such a field you must
 address your sub-fields appropriately:
 
 .. code:: python
+
   from_form(CustomerForm, birth_date_time_0=just('2018-05-19'))
