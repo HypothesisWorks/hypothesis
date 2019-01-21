@@ -22,18 +22,18 @@ from hypothesis.extra.django import TestCase, from_form, register_field_strategy
 from hypothesis.strategies import booleans, sampled_from
 from tests.django.toystore.forms import (
     BasicFieldForm,
-    TemporalFieldForm,
-    NotQuiteCharFieldForm,
-    ChoiceFieldForm,
-    InternetProtocolForm,
     BroadBooleanField,
+    ChoiceFieldForm,
     CustomerForm,
     DynamicForm,
+    InternetProtocolForm,
     ManyMultiValueForm,
     ManyNumericsForm,
     ManyTimesForm,
+    NotQuiteCharFieldForm,
     OddFieldsForm,
     ShortStringForm,
+    TemporalFieldForm,
 )
 
 register_field_strategy(
@@ -68,23 +68,23 @@ class TestGetsBasicForms(TestCase):
             _test()
 
     @given(from_form(BasicFieldForm))
-    def test_all_fields_form(self, basic_field_form):
+    def test_basic_fields_form(self, basic_field_form):
         self.assertTrue(basic_field_form.is_valid())
 
     @given(from_form(TemporalFieldForm))
-    def test_all_fields_form(self, time_field_form):
+    def test_temporal_fields_form(self, time_field_form):
         self.assertTrue(time_field_form.is_valid())
 
     @given(from_form(NotQuiteCharFieldForm))
-    def test_all_fields_form(self, charlike_field_form):
+    def test_charlike_fields_form(self, charlike_field_form):
         self.assertTrue(charlike_field_form.is_valid())
 
     @given(from_form(ChoiceFieldForm))
-    def test_all_fields_form(self, choice_field_form):
+    def test_choice_fields_form(self, choice_field_form):
         self.assertTrue(choice_field_form.is_valid())
 
     @given(from_form(InternetProtocolForm))
-    def test_all_fields_form(self, ip_field_form):
+    def test_ip_fields_form(self, ip_field_form):
         self.assertTrue(ip_field_form.is_valid())
 
     @given(from_form(ManyMultiValueForm, form_kwargs={"subfield_count": 2}))
