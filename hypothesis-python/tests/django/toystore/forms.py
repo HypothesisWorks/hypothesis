@@ -78,7 +78,7 @@ class DynamicForm(ReprForm):
             self.fields[field_name] = forms.CharField(required=False)
 
 
-class AllFieldsForm(ReprForm):
+class BasicFieldForm(ReprForm):
     _boolean_required = forms.BooleanField()
     _boolean = forms.BooleanField(required=False)
     # This took me too long to figure out... The BooleanField will actually
@@ -94,6 +94,29 @@ class AllFieldsForm(ReprForm):
 
     _char_required = forms.CharField(required=True)
     _char = forms.CharField(required=False)
+    _decimal = forms.DecimalField(max_digits=8, decimal_places=3)
+    _float = forms.FloatField()
+    _integer = forms.IntegerField()
+    _null_boolean = forms.NullBooleanField()
+
+
+class TemporalFieldForm(ReprForm):
+    _date = forms.DateField()
+    _date_time = forms.DateTimeField()
+    _duration = forms.DurationField()
+    _time = forms.TimeField()
+    _split_date_time = forms.SplitDateTimeField()
+
+
+class NotQuiteCharFieldForm(ReprForm):
+    _email = forms.EmailField()
+    _slug = forms.SlugField()
+    _url = forms.URLField()
+    _regex = forms.RegexField(regex=r"[A-Z]{3}\.[a-z]{4}")
+    _uuid = forms.UUIDField()
+
+
+class ChoiceFieldForm(ReprForm):
     _choice = forms.ChoiceField(
         choices=(("cola", "Cola"), ("tea", "Tea"), ("water", "Water"))
     )
@@ -110,21 +133,12 @@ class AllFieldsForm(ReprForm):
         coerce=int,
         empty_value=0,
     )
-    _date = forms.DateField()
-    _date_time = forms.DateTimeField()
-    _decimal = forms.DecimalField(max_digits=8, decimal_places=3)
-    _duration = forms.DurationField()
-    _email = forms.EmailField()
-    _float = forms.FloatField()
-    _generic = forms.GenericIPAddressField()
-    _integer = forms.IntegerField()
-    _null = forms.NullBooleanField()
-    _regex = forms.RegexField(regex=r"[A-Z]{3}\.[a-z]{4}")
-    _slug = forms.SlugField()
-    _split_date_time = forms.SplitDateTimeField()
-    _time = forms.TimeField()
-    _url = forms.URLField()
-    _uuid = forms.UUIDField()
+
+
+class InternetProtocolForm(ReprForm):
+    _ip_both = forms.GenericIPAddressField()
+    _ip_v4 = forms.GenericIPAddressField(protocol="IPv4")
+    _ip_v6 = forms.GenericIPAddressField(protocol="IPv6")
 
 
 class BroadBooleanInput(widgets.CheckboxInput):

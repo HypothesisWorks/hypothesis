@@ -21,7 +21,11 @@ from hypothesis import given
 from hypothesis.extra.django import TestCase, from_form, register_field_strategy
 from hypothesis.strategies import booleans, sampled_from
 from tests.django.toystore.forms import (
-    AllFieldsForm,
+    BasicFieldForm,
+    TemporalFieldForm,
+    NotQuiteCharFieldForm,
+    ChoiceFieldForm,
+    InternetProtocolForm,
     BroadBooleanField,
     CustomerForm,
     DynamicForm,
@@ -63,9 +67,25 @@ class TestGetsBasicForms(TestCase):
 
             _test()
 
-    @given(from_form(AllFieldsForm))
-    def test_all_fields_form(self, all_fields_form):
-        self.assertTrue(all_fields_form.is_valid())
+    @given(from_form(BasicFieldForm))
+    def test_all_fields_form(self, basic_field_form):
+        self.assertTrue(basic_field_form.is_valid())
+
+    @given(from_form(TemporalFieldForm))
+    def test_all_fields_form(self, time_field_form):
+        self.assertTrue(time_field_form.is_valid())
+
+    @given(from_form(NotQuiteCharFieldForm))
+    def test_all_fields_form(self, charlike_field_form):
+        self.assertTrue(charlike_field_form.is_valid())
+
+    @given(from_form(ChoiceFieldForm))
+    def test_all_fields_form(self, choice_field_form):
+        self.assertTrue(choice_field_form.is_valid())
+
+    @given(from_form(InternetProtocolForm))
+    def test_all_fields_form(self, ip_field_form):
+        self.assertTrue(ip_field_form.is_valid())
 
     @given(from_form(ManyMultiValueForm, form_kwargs={"subfield_count": 2}))
     def test_many_values_in_multi_value_field(self, many_multi_value_form):
