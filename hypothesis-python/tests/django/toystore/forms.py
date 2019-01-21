@@ -37,7 +37,7 @@ class ReprModelForm(forms.ModelForm):
 
 class ReprForm(forms.Form):
     def __repr__(self):
-        return repr(self.data) + repr(self.errors)
+        return "%r\n%r" % (self.data, self.errors)
 
 
 class CouldBeCharmingForm(ReprModelForm):
@@ -71,8 +71,8 @@ class OddFieldsForm(ReprModelForm):
 
 
 class DynamicForm(ReprForm):
-    def __init__(self, *args, field_count=5, **kwargs):
-        super(DynamicForm, self).__init__(*args, **kwargs)
+    def __init__(self, field_count=5, **kwargs):
+        super(DynamicForm, self).__init__(**kwargs)
         for i in range(field_count):
             field_name = "field-%d" % (i,)
             self.fields[field_name] = forms.CharField(required=False)
@@ -144,9 +144,9 @@ class BroadBooleanInput(widgets.CheckboxInput):
 
 
 class MultiCheckboxWidget(widgets.MultiWidget):
-    def __init__(self, *args, subfield_count=12, **kwargs):
+    def __init__(self, subfield_count=12, **kwargs):
         _widgets = [BroadBooleanInput()] * subfield_count
-        super(MultiCheckboxWidget, self).__init__(_widgets, *args, **kwargs)
+        super(MultiCheckboxWidget, self).__init__(_widgets, **kwargs)
 
     def decompress(self, value):
         values = []
@@ -163,7 +163,7 @@ class BroadBooleanField(forms.BooleanField):
 
 
 class MultiBooleanField(forms.MultiValueField):
-    def __init__(self, *args, subfield_count=12, **kwargs):
+    def __init__(self, subfield_count=12, **kwargs):
         subfields = [BroadBooleanField()] * subfield_count
         widget = MultiCheckboxWidget(subfield_count=subfield_count)
         super(MultiBooleanField, self).__init__(fields=subfields, widget=widget)
@@ -173,8 +173,8 @@ class MultiBooleanField(forms.MultiValueField):
 
 
 class ManyMultiValueForm(ReprForm):
-    def __init__(self, *args, subfield_count=12, **kwargs):
-        super(ManyMultiValueForm, self).__init__(*args, **kwargs)
+    def __init__(self, subfield_count=12, **kwargs):
+        super(ManyMultiValueForm, self).__init__(**kwargs)
         self.fields["mv_field"] = MultiBooleanField(subfield_count=subfield_count)
 
 

@@ -205,7 +205,7 @@ def _for_text(field):
         max_size=field.max_length,
     )
     if getattr(field, "required", True):
-        strategy = strategy.filter(str.strip)
+        strategy = strategy.filter(lambda s: s.strip())
     return strategy
 
 
