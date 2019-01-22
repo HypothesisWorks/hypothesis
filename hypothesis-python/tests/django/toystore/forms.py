@@ -121,7 +121,7 @@ class URLFieldForm(ReprForm):
 
 
 class RegexFieldForm(ReprForm):
-    _regex = forms.RegexField(regex=r"[A-Z]{3}\.[a-z]{4}")
+    _regex = forms.RegexField(regex=u"[A-Z]{3}\\.[a-z]{4}")
 
 
 class UUIDFieldForm(ReprForm):
