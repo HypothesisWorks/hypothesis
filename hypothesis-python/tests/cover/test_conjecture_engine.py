@@ -26,10 +26,11 @@ import attr
 import pytest
 
 import hypothesis.internal.conjecture.engine as engine_module
+import hypothesis.internal.conjecture.floats as flt
 from hypothesis import HealthCheck, Phase, Verbosity, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck
-from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
+from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
     ConjectureData,
@@ -48,6 +49,7 @@ from hypothesis.internal.conjecture.shrinker import (
     Shrinker,
     block_program,
 )
+from hypothesis.internal.conjecture.shrinking import Float
 from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
 from tests.common.strategies import SLOW, HardToShrink
@@ -1901,3 +1903,20 @@ def test_cached_test_function_does_not_reinvoke_on_prefix():
             prefix_data = runner.cached_test_function(hbytes(n))
             assert prefix_data is Overrun
         assert call_count[0] == 1
+
+
+def test_float_shrink_can_run_when_canonicalisation_does_not_work(monkeypatch):
+    # This should be an error when called
+    monkeypatch.setattr(Float, "shrink", None)
+
+    base_buf = int_to_bytes(flt.base_float_to_lex(1000.0), 8) + hbytes(1)
+
+    @shrinking_from(base_buf)
+    def shrinker(data):
+        flt.draw_float(data)
+        if hbytes(data.buffer) == base_buf:
+            data.mark_interesting()
+
+    shrinker.minimize_floats()
+
+    assert shrinker.shrink_target.buffer == base_buf
