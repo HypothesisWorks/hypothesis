@@ -218,7 +218,7 @@ class Shrinker(object):
         ]
 
     def emergency_passes(self):
-        """Returns the list of emergency sshrink passes,
+        """Returns the list of emergency shrink passes,
         in a good order to run them in.
 
         Emergency passes are ones that we hope don't do anything
