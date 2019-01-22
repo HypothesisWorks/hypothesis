@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.0.2:
+
+------------------
+4.0.2 - 2019-01-22
+------------------
+
+This patch fixes :issue:`1387`, where bounded :func:`~hypothesis.strategies.integers`
+with a very large range would almost always generate very large numbers.
+Now, we usually use the same tuned distribution as unbounded
+:func:`~hypothesis.strategies.integers`.
+
 .. _v4.0.1:
 
 ------------------
