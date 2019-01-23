@@ -24,22 +24,36 @@ BCAST_DIM = object()
 # Value used in default dict for max side if variable not specified
 DEFAULT_MAX_SIDE = 5
 
-# TODO isort
+# TODO validators:
+#  excluded, max_dims_extra int
+#  accept non-ints min-side and max-side??
+
+# TODO test sig map and bdim builder
+#   use from hypothesis.internal.compat import integer_types in test
 
 # TODO tester that transforms somes elements in list with just, or applies
 # just if not iterable
-
-# TODO check doc string examples with rand seed = 0
 
 # TODO consider in tests using from_regex(npfb._SIGNATURE)
 
 # TODO doc strings need to be redone with interface change
 
+# TODO check doc string examples with rand seed = 0
+
+# TODO isort
+
 # Maybe note dtype could be built in type
+
+# This uses "private" function of numpy, but it does the job. It throws a
+# pretty readable exception for invalid input, so we don't need to add anything
+# there. We should also check signature.isascii() since there are lot of weird
+# corner cases with unicode parsing, but isascii() restricts us to Py >=3.7.
+parse_gufunc_signature = npfb._parse_gufunc_signature
 
 
 def order_check_min_max(min_dict, max_dict, floor=0):
     """Wrapper around argument checker in `hypothesis.extra.numpy`."""
+    # TODO use same checks as integers strat
     order_check("side default", floor,
                 min_dict.default_factory(), max_dict.default_factory())
 
@@ -62,7 +76,7 @@ def _int_or_dict(x, default_val):
     except TypeError:
         # case 3: x is or can be converted to int => make a const dict
         default_val = int(x)  # Make sure simple int
-        # TODO use arg check
+        # TODO use arg check, ensure_int function
         assert default_val == x, "%s not representable as int" % str(x)
         D = defaultdict(lambda: default_val)
     # case 4: if can't be converted to dict or int, then exception raised
@@ -85,7 +99,7 @@ def _arrays(draw, dtype, shape, elements=None, unique=False):
     ```
     However, this appears to be slower.
     """
-    # TODO swap order draw dtype
+    # TODO swap order draw dtype, draw if strat
     shape = tuple(int(aa) for aa in shape)
     S = arrays(dtype, shape, elements=elements, unique=unique).map(np.asarray)
     X = draw(S)
@@ -144,12 +158,11 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
 
 def _signature_map(map_dict, parsed_sig):
     '''Map values found in parsed gufunc signature.'''
-    # TODO tests (inverse + const)
     shapes = [tuple(map_dict[k] for k in arg) for arg in parsed_sig]
     return shapes
 
 
-def _gufunc_arg_shapes(inp, min_side=0, max_side=5):
+def _gufunc_arg_shapes(parsed_sig, min_side, max_side):
     """Strategy to generate array shapes for arguments to a function consistent
     with its signature.
 
@@ -160,12 +173,12 @@ def _gufunc_arg_shapes(inp, min_side=0, max_side=5):
         of numpy generalized universal function signature, e.g.,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
         Officially, only supporting ascii characters on Py3.
-    min_side : int or dict
+    min_side : defaultdict
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
         size can be supplied here. Minimums can be provided on a per-dimension
         basis using a dict, e.g. ``min_side={'n': 2}``.
-    max_side : int or dict
+    max_side : defaultdict
         Maximum size of any side of the arrays. This can usually be kept small
         and still find most corner cases in testing. Dictionaries can also be
         supplied as with `min_side`.
@@ -185,10 +198,9 @@ def _gufunc_arg_shapes(inp, min_side=0, max_side=5):
       [(3, 2), (2,)]
     """
     # Skipping validation on min and max sides since this function is private.
-    # TODO put in doc string must be default dicts
 
     # Get all dimension names in signature, including numeric constants
-    all_dimensions = set([k for arg in inp for k in arg])
+    all_dimensions = set([k for arg in parsed_sig for k in arg])
 
     # Note that isdigit can be a bit odd with some unicode characters
     # => officially only support ascii characters in signature.
@@ -198,15 +210,13 @@ def _gufunc_arg_shapes(inp, min_side=0, max_side=5):
 
     # Could strategy that draws ints for dimensions and subs them in
     S = builds(_signature_map,
-               map_dict=fixed_dictionaries(dim_map_st), parsed_sig=just(inp))
+               map_dict=fixed_dictionaries(dim_map_st),
+               parsed_sig=just(parsed_sig))
     return S
-
-# TODO validate:
-# excluded iterable (__contains__), sig
 
 
 def _append_bcast_dims(core_dims, b_dims, mask, n_extra_per_arg):
-    # Could put in some assertions here
+    # TODO put in some assertions here
 
     # Build 2D array with extra dimensions
     # e.g., extra_dims = [[2 5], [2 5]]
@@ -276,43 +286,38 @@ def gufunc_arg_shapes(signature, excluded=(),
                                  max_dims_extra=3).example()
       [(3, 6), (2, 6)]
     """
-    # TODO broadcasted needs to use diff default for extra dims, check uses in
-    # tests.
     min_side = _int_or_dict(min_side, 0)
     max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
     order_check_min_max(min_side, max_side)
     order_check("extra dims", 0, max_dims_extra, GLOBAL_DIMS_MAX)
 
     # Parse out the signature: e.g., parses to [('n', 'm'), ('m', 'p')]
-    # Warning: this uses "private" function of numpy, but it does the job.
-    # Should also check signature.isascii() since there are lot of weird corner
-    # cases with unicode parsing, but isascii() restricts us to Py >=3.7.
-    inp, out = npfb._parse_gufunc_signature(signature)
+    parsed_sig, _ = parse_gufunc_signature(signature)
 
     # Get core shapes before broadcasted dimensions
-    shapes_st = _gufunc_arg_shapes(inp, min_side=min_side, max_side=max_side)
+    shapes_st = _gufunc_arg_shapes(parsed_sig,
+                                   min_side=min_side, max_side=max_side)
 
     # If we are not looking for this extra broadcasting dims craziness just
     # return the current draw.
-    # TODO use > 0
     if max_dims_extra == 0:
         return shapes_st
 
     # TODO max with zero, TODO set GLOBAL DIMS MAX low and run tests
     max_extra_per_arg = [min(max(0, GLOBAL_DIMS_MAX - len(ss)), max_dims_extra)
-                         for ss in inp]
+                         for ss in parsed_sig]
 
     # TODO consider using tuples if faster but assert dtype after tile since
     # len always greater than 0
     extra_dim_gen = integers(min_value=min_side[BCAST_DIM],
                              max_value=max_side[BCAST_DIM])
-    extra_dims_st = _arrays(np.int, (max_dims_extra,), elements=extra_dim_gen)
+    extra_dims_st = _arrays(np.intp, (max_dims_extra,), elements=extra_dim_gen)
 
-    mask_st = _arrays(np.bool, (len(inp), max_dims_extra))
+    mask_st = _arrays(np.bool_, (len(parsed_sig), max_dims_extra))
 
     extra_per_arg_st = [just(0) if nn in excluded else
                         integers(min_value=0, max_value=max_extra_per_arg[nn])
-                        for nn in range(len(inp))]
+                        for nn in range(len(parsed_sig))]
     extra_per_arg_st = tuples(*extra_per_arg_st)
 
     shapes_st = builds(_append_bcast_dims,

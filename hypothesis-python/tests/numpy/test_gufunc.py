@@ -342,7 +342,7 @@ def test_unparse_parse(i_parsed_sig, o_parsed_sig):
     signature = unparse(i_parsed_sig) + "->" + unparse(o_parsed_sig)
     # This is a 'private' function of np, so need to test it still works as we
     # think it does.
-    inp, out = npfb._parse_gufunc_signature(signature)
+    inp, out = gu.parse_gufunc_signature(signature)
 
     assert i_parsed_sig == inp
     assert o_parsed_sig == out
@@ -427,6 +427,8 @@ def test_broadcast_shapes_gufunc_arg_shapes(parsed_sig_and_size, excluded,
                              max_dims_extra=max_dims_extra)
 
     shapes = data.draw(S)
+
+    # TODO check excluded
 
     validate_bcast_shapes(shapes, parsed_sig,
                           min_side, max_side, max_dims_extra)
