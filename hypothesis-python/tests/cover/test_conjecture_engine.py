@@ -479,7 +479,7 @@ def test_can_shrink_variable_draws_with_just_deletion(n, monkeypatch):
     # We normally would have populated this in minimize_individual_blocks
     shrinker.is_shrinking_block = lambda x: True
 
-    fixate(Shrinker.example_deletion_with_block_lowering)(shrinker)
+    fixate_passes(shrinker, "example_deletion_with_block_lowering")
 
     assert list(shrinker.shrink_target.buffer) == [1, 1]
 
@@ -660,7 +660,11 @@ def test_can_delete_intervals(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner, "generate_new_examples", generate_new_examples
     )
-    monkeypatch.setattr(Shrinker, "shrink", fixate(Shrinker.adaptive_example_deletion))
+    monkeypatch.setattr(
+        Shrinker,
+        "shrink",
+        lambda self: fixate_passes(self, "adaptive_example_deletion"),
+    )
 
     def f(data):
         while True:
@@ -718,7 +722,9 @@ def test_shrinks_both_interesting_examples(monkeypatch):
 
 
 def test_duplicate_blocks_that_go_away(monkeypatch):
-    monkeypatch.setattr(Shrinker, "shrink", Shrinker.minimize_duplicated_blocks)
+    monkeypatch.setattr(
+        Shrinker, "shrink", lambda s: s.run_shrink_pass("minimize_duplicated_blocks")
+    )
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
@@ -937,6 +943,14 @@ def test_handles_nesting_of_discard_correctly(monkeypatch):
     assert x == hbytes([1, 1])
 
 
+def fixate_passes(shrinker, *passes):
+    prev = None
+    while prev is not shrinker.shrink_target:
+        prev = shrinker.shrink_target
+        for sp in passes:
+            shrinker.run_shrink_pass(sp)
+
+
 def test_can_zero_subintervals(monkeypatch):
     @shrinking_from(hbytes([3, 0, 0, 0, 1]) * 10)
     def shrinker(data):
@@ -949,7 +963,7 @@ def test_can_zero_subintervals(monkeypatch):
                 return
         data.mark_interesting()
 
-    shrinker.run_shrink_pass("zero_examples")
+    fixate_passes(shrinker, "zero_examples")
     assert list(shrinker.buffer) == [0, 1] * 10
 
 
@@ -962,7 +976,9 @@ def test_can_pass_to_an_indirect_descendant(monkeypatch):
         lambda runner: runner.cached_test_function(initial),
     )
 
-    monkeypatch.setattr(Shrinker, "shrink", Shrinker.pass_to_descendant)
+    monkeypatch.setattr(
+        Shrinker, "shrink", lambda self: fixate_passes(self, "pass_to_descendant")
+    )
 
     def tree(data):
         data.start_example(1)
@@ -1073,8 +1089,8 @@ def test_shrinking_blocks_from_common_offset(monkeypatch):
         lambda self: (
             # Run minimize_individual_blocks twice so we have both blocks show
             # as changed regardless of which order this happens in.
-            self.minimize_individual_blocks(),
-            self.minimize_individual_blocks(),
+            self.run_shrink_pass("minimize_individual_blocks"),
+            self.run_shrink_pass("minimize_individual_blocks"),
             self.lower_common_block_offset(),
         ),
     )
@@ -1189,7 +1205,9 @@ def test_can_reorder_examples(monkeypatch):
         ),
     )
 
-    monkeypatch.setattr(Shrinker, "shrink", Shrinker.reorder_examples)
+    monkeypatch.setattr(
+        Shrinker, "shrink", lambda self: self.run_shrink_pass("reorder_examples")
+    )
 
     @run_to_buffer
     def x(data):
@@ -1236,7 +1254,7 @@ def test_block_deletion_can_delete_short_ranges(monkeypatch):
                 data.mark_interesting()
 
     for i in range(1, 5):
-        block_program("X" * i)(shrinker)
+        shrinker.run_shrink_pass(block_program("X" * i))
     assert list(shrinker.shrink_target.buffer) == [0, 4] * 5
 
 
@@ -1305,7 +1323,7 @@ def test_dependent_block_pairs_is_up_to_shrinking_integers():
         if result >= 32768 and cap == 1:
             data.mark_interesting()
 
-    shrinker.minimize_individual_blocks()
+    shrinker.run_shrink_pass("minimize_individual_blocks")
     assert list(shrinker.shrink_target.buffer) == [1, 1, 0, 1, 0, 0, 1]
 
 
@@ -1334,8 +1352,8 @@ def test_finding_a_minimal_balanced_binary_tree():
         if not b:
             data.mark_interesting()
 
-    shrinker.adaptive_example_deletion()
-    shrinker.reorder_examples()
+    shrinker.run_shrink_pass("adaptive_example_deletion")
+    shrinker.run_shrink_pass("reorder_examples")
 
     assert list(shrinker.shrink_target.buffer) == [1, 0, 1, 0, 1, 0, 0]
 
@@ -1461,7 +1479,7 @@ def test_dependent_block_pairs_can_lower_to_zero():
         if n == 1:
             data.mark_interesting()
 
-    shrinker.minimize_individual_blocks()
+    shrinker.run_shrink_pass("minimize_individual_blocks")
     assert list(shrinker.shrink_target.buffer) == [0, 1]
 
 
@@ -1474,7 +1492,7 @@ def test_handle_size_too_large_during_dependent_lowering():
         else:
             data.draw_bits(8)
 
-    shrinker.minimize_individual_blocks()
+    shrinker.run_shrink_pass("minimize_individual_blocks")
 
 
 def test_zero_examples_will_zero_blocks():
@@ -1582,7 +1600,7 @@ def test_block_may_grow_during_lexical_shrinking():
             data.draw_bits(16)
         data.mark_interesting()
 
-    shrinker.minimize_individual_blocks()
+    shrinker.run_shrink_pass("minimize_individual_blocks")
     assert list(shrinker.shrink_target.buffer) == [0, 0, 0]
 
 
@@ -1713,19 +1731,20 @@ def test_shrink_passes_behave_sensibly_with_standard_operators():
 
 def test_shrink_pass_may_go_from_solid_to_dubious():
 
-    initial = hbytes([10])
+    initial = hbytes([10, 10])
 
     @shrinking_from(initial)
     def shrinker(data):
+        m = data.draw_bits(8)
         n = data.draw_bits(8)
-        if n >= 9:
+        if m == 10 and n >= 9:
             data.mark_interesting()
 
     sp = shrinker.shrink_pass("minimize_individual_blocks")
     assert sp.classification == PassClassification.CANDIDATE
     shrinker.run_shrink_pass(sp)
     assert sp.classification == PassClassification.HOPEFUL
-    shrinker.run_shrink_pass(sp)
+    fixate_passes(shrinker, "minimize_individual_blocks")
     assert sp.classification == PassClassification.DUBIOUS
 
 
@@ -1753,14 +1772,13 @@ def test_alphabet_minimization():
 
 
 def test_keeps_using_solid_passes_while_they_shrink_size():
-    good = {
-        hbytes([0, 1, 2, 3, 4, 5]),
-        hbytes([0, 1, 2, 3, 5]),
-        hbytes([0, 1, 3, 5]),
-        hbytes([1, 3, 5]),
-        hbytes([1, 5]),
-    }
-    initial = max(good, key=sort_key)
+    rnd = Random(0)
+    values = list(hrange(256))
+    rnd.shuffle(values)
+
+    good = {hbytes(values[j:]) for j in range(len(values))}
+
+    initial = hbytes(values)
 
     @shrinking_from(initial)
     def shrinker(data):

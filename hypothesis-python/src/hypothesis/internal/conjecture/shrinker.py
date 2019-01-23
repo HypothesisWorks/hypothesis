@@ -20,7 +20,7 @@ from __future__ import absolute_import, division, print_function
 import heapq
 from collections import Counter
 from enum import Enum
-from functools import total_ordering
+from functools import partial, total_ordering
 
 import attr
 
@@ -328,8 +328,14 @@ class Shrinker(object):
 
     def shrink_pass(self, name):
         """Return the ShrinkPass object for the pass with the given name."""
-        if hasattr(Shrinker, name) and name not in self.passes_by_name:
+        if isinstance(name, ShrinkPass):
+            return name
+        if isinstance(name, str):
+            if hasattr(Shrinker, name) and name not in self.passes_by_name:
+                self.add_new_pass(name, classification=PassClassification.SPECIAL)
+        elif hasattr(name, "__name__"):
             self.add_new_pass(name, classification=PassClassification.SPECIAL)
+            name = name.__name__
         return self.passes_by_name[name]
 
     def requeue_passes(self):
@@ -444,8 +450,7 @@ class Shrinker(object):
         this shrinker. This does not handle any requeing that is
         required.
         """
-        if isinstance(sp, str):
-            sp = self.shrink_pass(sp)
+        sp = self.shrink_pass(sp)
 
         self.debug("Shrink Pass %s" % (sp.name,))
 
@@ -453,7 +458,14 @@ class Shrinker(object):
         initial_calls = self.calls
         size = len(self.shrink_target.buffer)
         try:
-            sp.pass_function(self)
+            steps = sp.pass_function(self)
+            if steps is not None:
+                self.random.shuffle(steps)
+                for step in steps:
+                    prev = None
+                    while prev is not self.shrink_target:
+                        prev = self.shrink_target
+                        step()
         finally:
             calls = self.calls - initial_calls
             shrinks = self.shrinks - initial_shrinks
@@ -668,6 +680,10 @@ class Shrinker(object):
     def blocks(self):
         return self.shrink_target.blocks
 
+    @property
+    def examples(self):
+        return self.shrink_target.examples
+
     def all_block_bounds(self):
         return self.shrink_target.all_block_bounds()
 
@@ -718,25 +734,29 @@ class Shrinker(object):
         late in the process when we've got the number of intervals as far down
         as possible.
         """
-        for ex in self.each_non_trivial_example():
-            st = self.shrink_target
-            descendants = sorted(
-                set(
-                    st.buffer[d.start : d.end]
-                    for d in self.shrink_target.examples
-                    if d.start >= ex.start
-                    and d.end <= ex.end
-                    and d.length < ex.length
-                    and d.label == ex.label
-                ),
-                key=sort_key,
-            )
+        return [
+            partial(self.replace_with_descendant, i, j)
+            for i in hrange(len(self.examples))
+            for j in hrange(i + 1, len(self.examples))
+        ]
 
-            for d in descendants:
-                if self.incorporate_new_buffer(
-                    self.buffer[: ex.start] + d + self.buffer[ex.end :]
-                ):
-                    break
+    def replace_with_descendant(self, i, j):
+        assert i < j
+        if j >= len(self.examples):
+            return
+        ancestor = self.examples[i]
+        descendant = self.examples[j]
+        if (
+            descendant.start >= ancestor.end
+            or descendant.length == ancestor.length
+            or descendant.label != ancestor.label
+        ):
+            return
+        self.incorporate_new_buffer(
+            self.buffer[: ancestor.start]
+            + self.buffer[descendant.start : descendant.end]
+            + self.buffer[ancestor.end :]
+        )
 
     def is_shrinking_block(self, i):
         """Checks whether block i has been previously marked as a shrinking
@@ -1114,21 +1134,27 @@ class Shrinker(object):
 
     def example_wise_shrink(self, shrinker, **kwargs):
         """Runs a sequence shrinker on the children of each example."""
-        for ex in self.each_non_trivial_example():
-            st = self.shrink_target
-            pieces = [st.buffer[c.start : c.end] for c in ex.children]
-            if not pieces:
-                pieces = [st.buffer[ex.start : ex.end]]
-            prefix = st.buffer[: ex.start]
-            suffix = st.buffer[ex.end :]
-            shrinker.shrink(
-                pieces,
-                lambda ls: self.incorporate_new_buffer(
-                    prefix + hbytes().join(ls) + suffix
-                ),
-                random=self.random,
-                **kwargs
-            )
+        return [
+            partial(self.run_shrinker_on_children, i, shrinker, **kwargs)
+            for i in hrange(len(self.examples))
+        ]
+
+    def run_shrinker_on_children(self, i, shrinker, **kwargs):
+        if i >= len(self.examples):
+            return
+        ex = self.examples[i]
+        st = self.shrink_target
+        pieces = [st.buffer[c.start : c.end] for c in ex.children]
+        if not pieces:
+            pieces = [st.buffer[ex.start : ex.end]]
+        prefix = st.buffer[: ex.start]
+        suffix = st.buffer[ex.end :]
+        shrinker.shrink(
+            pieces,
+            lambda ls: self.incorporate_new_buffer(prefix + hbytes().join(ls) + suffix),
+            random=self.random,
+            **kwargs
+        )
 
     def adaptive_example_deletion(self):
         """Recursive deletion pass that tries to make the example located at
@@ -1144,31 +1170,43 @@ class Shrinker(object):
         If we do not make any successful changes, we recurse to the example's
         children and attempt the same there.
         """
-        self.example_wise_shrink(Length)
+        return self.example_wise_shrink(Length)
 
     def zero_examples(self):
-        """Attempt to replace each example with a minimal version of itself."""
-        for ex in self.each_non_trivial_example():
-            u = ex.start
-            v = ex.end
-            attempt = self.cached_test_function(
-                self.buffer[:u] + hbytes(v - u) + self.buffer[v:]
+        """Attempts to replace each example with an all-zero (and thus hopefully minimal)
+        version of itself."""
+        return [
+            partial(self.zero_example_step, i)
+            for i in hrange(len(self.shrink_target.examples))
+        ]
+
+    def zero_example_step(self, i):
+        """Individual step for zero_examples"""
+        if i >= len(self.shrink_target.examples):
+            return
+
+        ex = self.shrink_target.examples[i]
+
+        u = ex.start
+        v = ex.end
+        attempt = self.cached_test_function(
+            self.buffer[:u] + hbytes(v - u) + self.buffer[v:]
+        )
+
+        if attempt is Overrun:
+            return
+
+        in_replacement = attempt.examples[ex.index]
+        used = in_replacement.length
+
+        if (
+            not self.__predicate(attempt)
+            and in_replacement.end < len(attempt.buffer)
+            and used < ex.length
+        ):
+            self.incorporate_new_buffer(
+                self.buffer[:u] + hbytes(used) + self.buffer[v:]
             )
-
-            if attempt is Overrun:
-                continue
-
-            in_replacement = attempt.examples[ex.index]
-            used = in_replacement.length
-
-            if (
-                not self.__predicate(attempt)
-                and in_replacement.end < len(attempt.buffer)
-                and used < ex.length
-            ):
-                self.incorporate_new_buffer(
-                    self.buffer[:u] + hbytes(used) + self.buffer[v:]
-                )
 
     def minimize_duplicated_blocks(self):
         """Find blocks that have been duplicated in multiple places and attempt
@@ -1191,37 +1229,34 @@ class Shrinker(object):
         more values at once.
         """
 
-        def canon(b):
-            i = 0
-            while i < len(b) and b[i] == 0:
-                i += 1
-            return b[i:]
-
         counts = Counter(
-            canon(self.shrink_target.buffer[u:v]) for u, v in self.all_block_bounds()
+            non_zero_suffix(self.shrink_target.buffer[u:v])
+            for u, v in self.all_block_bounds()
         )
         counts.pop(hbytes(), None)
-        blocks = [buffer for buffer, count in counts.items() if count > 1]
+        return [
+            partial(self.minimize_duplicates_of, block)
+            for block, count in counts.items()
+            if count > 1
+        ]
 
-        blocks.sort(reverse=True)
-        blocks.sort(key=lambda b: counts[b] * len(b), reverse=True)
-        for block in blocks:
-            targets = [
-                i
-                for i, (u, v) in enumerate(self.all_block_bounds())
-                if canon(self.shrink_target.buffer[u:v]) == block
-            ]
-            # This can happen if some blocks have been lost in the previous
-            # shrinking.
-            if len(targets) <= 1:
-                continue
-
-            Lexical.shrink(
-                block,
-                lambda b: self.try_shrinking_blocks(targets, b),
-                random=self.random,
-                full=False,
-            )
+    def minimize_duplicates_of(self, block):
+        """Individual step for minimize_duplicated_blocks."""
+        targets = [
+            i
+            for i, (u, v) in enumerate(self.all_block_bounds())
+            if non_zero_suffix(self.shrink_target.buffer[u:v]) == block
+        ]
+        # This can happen if some blocks have been lost in the previous
+        # shrinking.
+        if len(targets) <= 1:
+            return
+        Lexical.shrink(
+            block,
+            lambda b: self.try_shrinking_blocks(targets, b),
+            random=self.random,
+            full=False,
+        )
 
     def minimize_floats(self):
         """Some shrinks that we employ that only really make sense for our
@@ -1276,16 +1311,23 @@ class Shrinker(object):
 
         then in our shrunk example, x = 10 rather than say 97.
         """
-        i = len(self.blocks) - 1
-        while i >= 0:
-            u, v = self.blocks[i].bounds
-            Lexical.shrink(
-                self.shrink_target.buffer[u:v],
-                lambda b: self.try_shrinking_blocks((i,), b),
-                random=self.random,
-                full=False,
-            )
-            i -= 1
+        return [
+            partial(self.minimize_individual_block_step, i)
+            for i in hrange(len(self.shrink_target.blocks))
+        ]
+
+    def minimize_individual_block_step(self, i):
+        """Single step for minimize_individual_blocks."""
+
+        if i >= len(self.blocks):
+            return
+        u, v = self.blocks[i].bounds
+        Lexical.shrink(
+            self.shrink_target.buffer[u:v],
+            lambda b: self.try_shrinking_blocks((i,), b),
+            random=self.random,
+            full=False,
+        )
 
     def example_deletion_with_block_lowering(self):
         """Sometimes we get stuck where there is data that we could easily
@@ -1301,31 +1343,34 @@ class Shrinker(object):
         example and every block not inside that example it tries deleting the
         example and modifying the block's value by one in either direction.
         """
-        i = 0
-        while i < len(self.shrink_target.blocks):
-            if not self.is_shrinking_block(i):
-                i += 1
-                continue
+        return [
+            partial(self.lower_block_and_delete_example_step, i, j)
+            for i in hrange(len(self.shrink_target.blocks))
+            for j in hrange(len(self.shrink_target.examples))
+        ]
 
-            u, v = self.blocks[i].bounds
+    def lower_block_and_delete_example_step(self, i, j):
+        """Single step for example_deletion_with_block_lowering."""
+        if i >= len(self.blocks) or j >= len(self.examples):
+            return
 
-            j = 0
-            while j < len(self.shrink_target.examples):
-                n = int_from_bytes(self.shrink_target.buffer[u:v])
-                if n == 0:
-                    break
-                ex = self.shrink_target.examples[j]
-                if ex.start < v or ex.length == 0:
-                    j += 1
-                    continue
+        if not self.is_shrinking_block(i):
+            return
 
-                buf = bytearray(self.shrink_target.buffer)
-                buf[u:v] = int_to_bytes(n - 1, v - u)
-                del buf[ex.start : ex.end]
-                if not self.incorporate_new_buffer(buf):
-                    j += 1
+        u, v = self.blocks[i].bounds
 
-            i += 1
+        n = int_from_bytes(self.shrink_target.buffer[u:v])
+        if n == 0:
+            return
+
+        ex = self.shrink_target.examples[j]
+        if ex.start < v or ex.length == 0:
+            return
+
+        buf = bytearray(self.shrink_target.buffer)
+        buf[u:v] = int_to_bytes(n - 1, v - u)
+        del buf[ex.start : ex.end]
+        self.incorporate_new_buffer(buf)
 
     def minimize_block_pairs_retaining_sum(self):
         """This pass minimizes pairs of blocks subject to the constraint that
@@ -1399,7 +1444,10 @@ class Shrinker(object):
         ``x=""``, ``y="0"``, or the other way around. With reordering it will
         reliably fail with ``x=""``, ``y="0"``.
         """
-        self.example_wise_shrink(Ordering, key=sort_key)
+        return self.example_wise_shrink(Ordering, key=sort_key)
+
+    def minimize_byte(self, c):
+        """Individual step for alphabet_minimize."""
 
     def alphabet_minimize(self):
         """Attempts to minimize the "alphabet" - the set of bytes that
@@ -1415,74 +1463,73 @@ class Shrinker(object):
         # us a good mix of likely to succeed (e.g. rare bytes) vs likely
         # to have a large impact (e.g. common bytes) without having to
         # have any idea which bytes are which.
-        all_bytes = list(hrange(256))
-        self.random.shuffle(all_bytes)
+        return [partial(self.minimize_byte, c) for c in hrange(256)]
 
-        for c in all_bytes:
-            buf = self.buffer
+    def minimize_byte(self, c):
+        """Individual step for alphabet_minimize."""
 
-            if c not in buf:
-                continue
+        buf = self.buffer
 
-            def can_replace_with(d):
-                if d < 0:
-                    return False
+        if c not in buf:
+            return
 
-                if self.consider_new_buffer(hbytes([d if b == c else b for b in buf])):
-                    if d <= 1:
-                        # For small values of d if this succeeds we take this
-                        # as evidence that it is worth doing a a bulk replacement
-                        # where we replace all values which are close
-                        # to c but smaller with d as well. This helps us substantially
-                        # in cases where we have a lot of "dead" bytes that don't really do
-                        # much, as it allows us to replace many of them in one go rather
-                        # than one at a time. An example of where this matters is
-                        # test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe
-                        # in test_shrink_quality.py
-                        def replace_range(k):
-                            if k > c:
-                                return False
+        def can_replace_with(d):
+            if d < 0:
+                return False
 
-                            def should_replace_byte(b):
-                                return c - k <= b <= c and d < b
+            if self.consider_new_buffer(hbytes([d if b == c else b for b in buf])):
+                if d <= 1:
+                    # For small values of d if this succeeds we take this
+                    # as evidence that it is worth doing a a bulk replacement
+                    # where we replace all values which are close
+                    # to c but smaller with d as well. This helps us substantially
+                    # in cases where we have a lot of "dead" bytes that don't really do
+                    # much, as it allows us to replace many of them in one go rather
+                    # than one at a time. An example of where this matters is
+                    # test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe
+                    # in test_shrink_quality.py
+                    def replace_range(k):
+                        if k > c:
+                            return False
 
-                            return self.consider_new_buffer(
-                                hbytes(
-                                    [d if should_replace_byte(b) else b for b in buf]
-                                )
-                            )
+                        def should_replace_byte(b):
+                            return c - k <= b <= c and d < b
 
-                        find_integer(replace_range)
-                    return True
+                        return self.consider_new_buffer(
+                            hbytes([d if should_replace_byte(b) else b for b in buf])
+                        )
 
-            if (
-                # If we cannot replace the current byte with its predecessor,
-                # assume it is already minimal and continue on. This ensures
-                # we make no more than one call per distinct byte value in the
-                # event that no shrinks are possible here.
-                not can_replace_with(c - 1)
-                # We next try replacing with 0 or 1. If this works then
-                # there is nothing else to do here.
-                or can_replace_with(0)
-                or can_replace_with(1)
-                # Finally we try to replace with c - 2 before going on to the
-                # binary search so that in cases which were already nearly
-                # minimal we don't do log(n) extra work.
-                or not can_replace_with(c - 2)
-            ):
-                continue
+                    find_integer(replace_range)
+                return True
 
-            # Now binary search to find a small replacement.
+        if (
+            # If we cannot replace the current byte with its predecessor,
+            # assume it is already minimal and continue on. This ensures
+            # we make no more than one call per distinct byte value in the
+            # event that no shrinks are possible here.
+            not can_replace_with(c - 1)
+            # We next try replacing with 0 or 1. If this works then
+            # there is nothing else to do here.
+            or can_replace_with(0)
+            or can_replace_with(1)
+            # Finally we try to replace with c - 2 before going on to the
+            # binary search so that in cases which were already nearly
+            # minimal we don't do log(n) extra work.
+            or not can_replace_with(c - 2)
+        ):
+            return
 
-            # Invariant: We cannot replace with lo, we can replace with hi.
-            lo = 1
-            hi = c - 2
-            while lo + 1 < hi:
-                mid = (lo + hi) // 2
-                if can_replace_with(mid):
-                    hi = mid
-                else:
-                    lo = mid
+        # Now binary search to find a small replacement.
+
+        # Invariant: We cannot replace with lo, we can replace with hi.
+        lo = 1
+        hi = c - 2
+        while lo + 1 < hi:
+            mid = (lo + hi) // 2
+            if can_replace_with(mid):
+                hi = mid
+            else:
+                lo = mid
 
 
 def block_program(description):
@@ -1500,28 +1547,29 @@ def block_program(description):
     running a block program its score will be updated.
     """
 
-    def run(self):
+    def run_at(self, i):
         n = len(description)
-        i = 0
-        while i + n <= len(self.shrink_target.blocks):
-            attempt = bytearray(self.shrink_target.buffer)
-            failed = False
-            for k, d in reversed(list(enumerate(description))):
-                j = i + k
-                u, v = self.blocks[j].bounds
-                if d == "-":
-                    value = int_from_bytes(attempt[u:v])
-                    if value == 0:
-                        failed = True
-                        break
-                    else:
-                        attempt[u:v] = int_to_bytes(value - 1, v - u)
-                elif d == "X":
-                    del attempt[u:v]
-                else:  # pragma: no cover
-                    assert False, "Unrecognised command %r" % (d,)
-            if failed or not self.incorporate_new_buffer(attempt):
-                i += 1
+        if i + n > len(self.blocks):
+            return
+        attempt = bytearray(self.shrink_target.buffer)
+        failed = False
+        for k, d in reversed(list(enumerate(description))):
+            j = i + k
+            u, v = self.blocks[j].bounds
+            if d == "-":
+                value = int_from_bytes(attempt[u:v])
+                if value == 0:
+                    return
+                else:
+                    attempt[u:v] = int_to_bytes(value - 1, v - u)
+            elif d == "X":
+                del attempt[u:v]
+            else:  # pragma: no cover
+                assert False, "Unrecognised command %r" % (d,)
+        self.incorporate_new_buffer(attempt)
+
+    def run(self):
+        return [partial(run_at, self, i) for i in hrange(len(self.blocks))]
 
     run.command = description
     run.__name__ = "block_program(%r)" % (description,)
@@ -1570,3 +1618,10 @@ class ShrinkPass(object):
     def key(self):
         # Smaller is better.
         return (self.runs, self.failures, self.calls, self.index)
+
+
+def non_zero_suffix(b):
+    i = 0
+    while i < len(b) and b[i] == 0:
+        i += 1
+    return b[i:]
