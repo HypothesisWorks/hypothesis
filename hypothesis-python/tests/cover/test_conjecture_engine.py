@@ -1730,13 +1730,17 @@ def test_shrink_passes_behave_sensibly_with_standard_operators():
 
 def test_shrink_pass_may_go_from_solid_to_dubious():
 
-    initial = hbytes([10, 10])
+    initial = hbytes([10] * 20)
 
     @shrinking_from(initial)
     def shrinker(data):
-        m = data.draw_bits(8)
+        all_10 = True
+        for _ in hrange(19):
+            m = data.draw_bits(8)
+            if m != 10:
+                all_10 = False
         n = data.draw_bits(8)
-        if m == 10 and n >= 9:
+        if all_10 and n >= 9:
             data.mark_interesting()
 
     sp = shrinker.shrink_pass("minimize_individual_blocks")
