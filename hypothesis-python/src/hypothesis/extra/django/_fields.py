@@ -43,13 +43,6 @@ if False:
     from typing import Any, Type, Optional, List, Text, Callable, Union  # noqa
 
 
-def get_tz_strat():
-    # type: () -> st.SearchStrategy[Optional[tzinfo]]
-    if getattr(django.conf.settings, "USE_TZ", False):
-        return timezones()
-    return st.none()
-
-
 # Mapping of field types, to strategy objects or functions of (type) -> strategy
 _global_field_lookup = {
     dm.SmallIntegerField: st.integers(-32768, 32767),
@@ -261,21 +254,12 @@ def from_field(field):
         min_size = 1
         if isinstance(field, (dm.CharField, dm.TextField)) and field.blank:
             choices.insert(0, u"")
-            pass
         elif isinstance(field, (df.Field)) and not field.required:
             choices.insert(0, u"")
             min_size = 0
         strategy = st.sampled_from(choices)
         if isinstance(field, (df.MultipleChoiceField, df.TypedMultipleChoiceField)):
             strategy = st.lists(st.sampled_from(choices), min_size=min_size)
-    # elif isinstance(field, df.ComboField):
-    #     # introspect further
-    #     strategy = False
-    #     for _field in field.fields:
-    #         if not isinstance(strategy, set):
-    #             strategy = from_field(_field)
-    #         else:
-    #             strategy &= from_field(_field)
     else:
         if type(field) not in _global_field_lookup:
             if getattr(field, "null", False):
