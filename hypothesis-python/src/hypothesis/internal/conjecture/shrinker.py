@@ -1549,7 +1549,6 @@ def block_program(description):
         if i + n > len(self.blocks):
             return
         attempt = bytearray(self.shrink_target.buffer)
-        failed = False
         for k, d in reversed(list(enumerate(description))):
             j = i + k
             u, v = self.blocks[j].bounds

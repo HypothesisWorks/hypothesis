@@ -41,7 +41,6 @@ from hypothesis.internal.conjecture.engine import (
     ExitReason,
     RunIsComplete,
     TargetSelector,
-    sort_key,
 )
 from hypothesis.internal.conjecture.shrinker import (
     PassClassification,
