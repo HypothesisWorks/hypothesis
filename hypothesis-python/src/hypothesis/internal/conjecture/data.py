@@ -352,9 +352,9 @@ class ConjectureData(object):
         return result
 
     def write(self, string):
+        string = hbytes(string)
         self.__assert_not_frozen("write")
         self.__check_capacity(len(string))
-        assert isinstance(string, hbytes)
         original = self.index
         self.__write(string, forced=True)
         self.forced_indices.update(hrange(original, self.index))

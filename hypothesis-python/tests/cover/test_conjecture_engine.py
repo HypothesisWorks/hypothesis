@@ -1780,52 +1780,6 @@ def test_keeps_using_solid_passes_while_they_shrink_size():
         assert d2.classification == PassClassification.CANDIDATE
 
 
-def test_will_reset_the_tree_as_it_goes(monkeypatch):
-    monkeypatch.setattr(engine_module, "CACHE_RESET_FREQUENCY", 3)
-
-    def f(data):
-        data.draw_bits(8)
-
-    with deterministic_PRNG():
-        runner = ConjectureRunner(
-            f, settings=settings(database=None, suppress_health_check=HealthCheck.all())
-        )
-
-        def step(n):
-            runner.test_function(ConjectureData.for_buffer([n]))
-
-        step(0)
-        step(1)
-        assert len(runner.tree.nodes[0]) > 1
-        step(2)
-        assert len(runner.tree.nodes[0]) == 1
-
-
-def test_will_not_reset_the_tree_after_interesting_example(monkeypatch):
-    monkeypatch.setattr(engine_module, "CACHE_RESET_FREQUENCY", 3)
-
-    def f(data):
-        if data.draw_bits(8) == 7:
-            data.mark_interesting()
-
-    with deterministic_PRNG():
-        runner = ConjectureRunner(
-            f, settings=settings(database=None, suppress_health_check=HealthCheck.all())
-        )
-
-        def step(n):
-            runner.test_function(ConjectureData.for_buffer([n]))
-
-        step(0)
-        step(1)
-        assert len(runner.tree.nodes) > 1
-        step(7)
-        assert len(runner.tree.nodes) > 1
-        t = len(runner.tree.nodes)
-        runner.shrink_interesting_examples()
-        assert len(runner.tree.nodes) > t
-
-
 fake_data_counter = 0
 
 
@@ -1912,3 +1866,23 @@ def test_float_shrink_can_run_when_canonicalisation_does_not_work(monkeypatch):
     shrinker.minimize_floats()
 
     assert shrinker.shrink_target.buffer == base_buf
+
+
+def test_will_evict_entries_from_the_cache(monkeypatch):
+    monkeypatch.setattr(engine_module, "CACHE_SIZE", 5)
+    count = [0]
+
+    def tf(data):
+        data.draw_bytes(1)
+        count[0] += 1
+
+    runner = ConjectureRunner(tf, settings=TEST_SETTINGS)
+
+    for _ in range(3):
+        for n in range(10):
+            runner.cached_test_function([n])
+
+    # Because we exceeded the cache size, our previous
+    # calls will have been evicted, so each call to
+    # cached_test_function will have to reexecute.
+    assert count[0] == 30

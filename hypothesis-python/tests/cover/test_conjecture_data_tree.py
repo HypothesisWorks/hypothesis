@@ -21,12 +21,8 @@ from random import Random
 
 from hypothesis import HealthCheck, settings
 from hypothesis.internal.compat import hbytes
-from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status
-from hypothesis.internal.conjecture.engine import (
-    ConjectureRunner,
-    ExitReason,
-    RunIsComplete,
-)
+from hypothesis.internal.conjecture.data import ConjectureData, Status
+from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 
 TEST_SETTINGS = settings(
     max_examples=5000, database=None, suppress_health_check=HealthCheck.all()
@@ -49,12 +45,9 @@ def runner_for(*examples):
                 pass
             ran_examples.append((e, data))
         for e, d in ran_examples:
-            cached = runner.tree.lookup(e)
-            if d.status == Status.OVERRUN:
-                assert cached is Overrun
-            else:
-                assert cached.buffer == d.buffer
-                assert cached.status == d.status
+            rewritten, status = runner.tree.rewrite(e)
+            assert status == d.status
+            assert rewritten == d.buffer
         return runner
 
     return accept
@@ -126,9 +119,9 @@ def test_novel_prefixes_are_novel():
     for _ in range(100):
         prefix = runner.tree.generate_novel_prefix(runner.random)
         example = prefix + hbytes(8 - len(prefix))
-        assert runner.tree.lookup(example) is None
+        assert runner.tree.rewrite(example)[1] is None
         result = runner.cached_test_function(example)
-        assert runner.tree.lookup(example) is result
+        assert runner.tree.rewrite(example)[0] == result.buffer
 
 
 def test_overruns_if_not_enough_bytes_for_block():
@@ -136,7 +129,7 @@ def test_overruns_if_not_enough_bytes_for_block():
         lambda data: data.draw_bytes(2), settings=TEST_SETTINGS, random=Random(0)
     )
     runner.cached_test_function(b"\0\0")
-    assert runner.tree.lookup(b"\0") is Overrun
+    assert runner.tree.rewrite(b"\0")[1] == Status.OVERRUN
 
 
 def test_overruns_if_prefix():
@@ -146,4 +139,4 @@ def test_overruns_if_prefix():
         random=Random(0),
     )
     runner.cached_test_function(b"\0\0")
-    assert runner.tree.lookup(b"\0") is Overrun
+    assert runner.tree.rewrite(b"\0")[1] == Status.OVERRUN

@@ -18,7 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 from hypothesis.internal.compat import hbytes, hrange
-from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status
+from hypothesis.internal.conjecture.data import Status
 
 
 class DataTree(object):
@@ -137,7 +137,7 @@ class DataTree(object):
             self.dead.add(node_index)
             # Store the result in the tree as a leaf. This will overwrite the
             # branch node that was created during traversal.
-            self.nodes[node_index] = data
+            self.nodes[node_index] = data.status
 
             # Review the traversed nodes, to see if any should be marked
             # as dead. We check them in reverse order, because as soon as we
@@ -221,20 +221,15 @@ class DataTree(object):
         assert node not in self.dead
         return hbytes(prefix)
 
-    def lookup(self, buffer):
-        """Look up the result of running buffer for a test function that
-        produced the stored data objects. Returns either:
+    def rewrite(self, buffer):
+        """Use previously seen ConjectureData objects to return a tuple of
+        the rewritten buffer and the status we would get from running that
+        buffer with the test function. If the status cannot be predicted
+        from the existing values it will be None."""
+        buffer = hbytes(buffer)
 
-        * a stored ConjectureData object of status >= INVALID which
-          could have resulted from running buffer.
-        * Overrun if running a test function which produced one of the
-          stored data objects must necessarily result in a status of
-          OVERRUN.
-        * None if we cannot infer what the result of running buffer would
-          be from the previously seen ConjectureData values.
-        """
         rewritten = bytearray()
-        would_overrun = False
+        return_status = None
 
         node_index = 0
         for i, c in enumerate(buffer):
@@ -255,7 +250,7 @@ class DataTree(object):
                 # there aren't enough, then it doesn't actually matter
                 # what the values are, we're definitely going to overrun.
                 if i + self.block_sizes[node_index] > len(buffer):
-                    would_overrun = True
+                    return_status = Status.OVERRUN
                     break
             except KeyError:
                 pass
@@ -268,23 +263,23 @@ class DataTree(object):
                 # The byte at this position isn't in the tree, which means
                 # we haven't tested this buffer. Break out of the tree
                 # traversal, and run the test function normally.
+                rewritten.extend(buffer[i + 1 :])
+                assert len(rewritten) == len(buffer)
                 break
             node = self.nodes[node_index]
-            if isinstance(node, ConjectureData):
+            if isinstance(node, Status):
                 # This buffer (or a prefix of it) has already been tested.
                 # Return the stored result instead of trying it again.
-                assert node.status != Status.OVERRUN
-                return node
+                assert node != Status.OVERRUN
+                return_status = node
+                break
         else:
             # Falling off the end of this loop means that we're about to test
             # a prefix of a previously-tested byte stream, so the test would
             # overrun.
-            would_overrun = True
+            return_status = Status.OVERRUN
 
-        if would_overrun:
-            return Overrun
-        else:
-            return None
+        return hbytes(rewritten), return_status
 
 
 def _is_simple_mask(mask):
