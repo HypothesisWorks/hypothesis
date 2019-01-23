@@ -10,6 +10,7 @@ from collections import defaultdict
 import numpy as np
 import numpy.lib.function_base as npfb
 
+from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import arrays, order_check
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.strategies import builds, composite, integers, just, fixed_dictionaries, tuples
@@ -25,8 +26,7 @@ BCAST_DIM = object()
 DEFAULT_MAX_SIDE = 5
 
 # TODO validators:
-#  excluded, max_dims_extra int
-#  accept non-ints min-side and max-side??
+#  min_side, max_side same exact checks as integers
 
 # TODO test sig map and bdim builder
 #   use from hypothesis.internal.compat import integer_types in test
@@ -51,6 +51,24 @@ DEFAULT_MAX_SIDE = 5
 parse_gufunc_signature = npfb._parse_gufunc_signature
 
 
+def check_set_like(arg, name=""):
+    try:
+        0 in arg
+    except TypeError:
+        raise InvalidArgument("Expected set-like but got %s=%r (type=%s)"
+                              % (name, arg, type(arg).__name__))
+
+
+def ensure_int(arg, name=""):
+    try:
+        x = int(arg)
+        assert arg == x
+    except Exception:
+        raise InvalidArgument("%s=%r (type=%s) not representable as int"
+                              % (name, arg, type(arg).__name__))
+    return x
+
+
 def order_check_min_max(min_dict, max_dict, floor=0):
     """Wrapper around argument checker in `hypothesis.extra.numpy`."""
     # TODO use same checks as integers strat
@@ -69,15 +87,13 @@ def _int_or_dict(x, default_val):
     if isinstance(x, defaultdict):
         return x
 
-    default_val = int(default_val)  # Make sure simple int
+    default_val = ensure_int(default_val, "default value")
     try:
         # case 2: x is or can be converted to dict
         D = defaultdict(lambda: default_val, x)
     except TypeError:
         # case 3: x is or can be converted to int => make a const dict
-        default_val = int(x)  # Make sure simple int
-        # TODO use arg check, ensure_int function
-        assert default_val == x, "%s not representable as int" % str(x)
+        default_val = ensure_int(x, "constant value")
         D = defaultdict(lambda: default_val)
     # case 4: if can't be converted to dict or int, then exception raised
     return D
@@ -100,7 +116,7 @@ def _arrays(draw, dtype, shape, elements=None, unique=False):
     However, this appears to be slower.
     """
     # TODO swap order draw dtype, draw if strat
-    shape = tuple(int(aa) for aa in shape)
+    shape = tuple(ensure_int(aa) for aa in shape)
     S = arrays(dtype, shape, elements=elements, unique=unique).map(np.asarray)
     X = draw(S)
     X = X.astype(dtype, copy=False)  # Will never see original => copy=False
@@ -157,7 +173,7 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
 
 
 def _signature_map(map_dict, parsed_sig):
-    '''Map values found in parsed gufunc signature.'''
+    """Map values found in parsed gufunc signature."""
     shapes = [tuple(map_dict[k] for k in arg) for arg in parsed_sig]
     return shapes
 
@@ -208,7 +224,7 @@ def _gufunc_arg_shapes(parsed_sig, min_side, max_side):
                       integers(min_value=min_side[k], max_value=max_side[k]))
                   for k in all_dimensions}
 
-    # Could strategy that draws ints for dimensions and subs them in
+    # Build strategy that draws ints for dimensions and subs them in
     S = builds(_signature_map,
                map_dict=fixed_dictionaries(dim_map_st),
                parsed_sig=just(parsed_sig))
@@ -286,9 +302,11 @@ def gufunc_arg_shapes(signature, excluded=(),
                                  max_dims_extra=3).example()
       [(3, 6), (2, 6)]
     """
+    check_set_like(excluded, name="excluded")
     min_side = _int_or_dict(min_side, 0)
     max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
     order_check_min_max(min_side, max_side)
+    max_dims_extra = ensure_int(max_dims_extra)
     order_check("extra dims", 0, max_dims_extra, GLOBAL_DIMS_MAX)
 
     # Parse out the signature: e.g., parses to [('n', 'm'), ('m', 'p')]
