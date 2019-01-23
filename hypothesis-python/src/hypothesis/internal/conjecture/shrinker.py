@@ -1446,9 +1446,6 @@ class Shrinker(object):
         """
         return self.example_wise_shrink(Ordering, key=sort_key)
 
-    def minimize_byte(self, c):
-        """Individual step for alphabet_minimize."""
-
     def alphabet_minimize(self):
         """Attempts to minimize the "alphabet" - the set of bytes that
         are used in the representation of the current buffer. The main
