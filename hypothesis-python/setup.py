@@ -55,6 +55,7 @@ assert __version__ is not None
 extras = {
     "pytz": ["pytz>=2014.1"],
     "dateutil": ["python-dateutil>=1.4"],
+    "lark": ["lark-parser>=0.6.5"],
     "numpy": ["numpy>=1.9.0"],
     "pandas": ["pandas>=0.19"],
     "pytest": ["pytest>=3.0"],

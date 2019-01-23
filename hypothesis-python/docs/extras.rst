@@ -22,6 +22,9 @@ There are separate pages for :doc:`django` and :doc:`numpy`.
 .. automodule:: hypothesis.extra.dpcontracts
    :members:
 
+.. automodule:: hypothesis.extra.lark
+   :members:
+
 .. automodule:: hypothesis.extra.pytz
    :members:
 

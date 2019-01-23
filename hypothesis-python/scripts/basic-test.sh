@@ -31,6 +31,10 @@ pip install ".[dpcontracts]"
 $PYTEST tests/dpcontracts/
 pip uninstall -y dpcontracts
 
+pip install ".[lark]"
+$PYTEST tests/lark/
+pip uninstall -y lark-parser
+
 # We run a reduced set of tests on the macOS CI so that it runs in vaguely
 # reasonable time.
 if [ "$CIRCLECI" = true ]; then

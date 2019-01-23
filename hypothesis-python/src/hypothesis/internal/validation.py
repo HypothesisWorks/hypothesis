@@ -31,10 +31,10 @@ def check_type(typ, arg, name=""):
     if name:
         name += "="
     if not isinstance(arg, typ):
-        if isinstance(typ, type):
-            typ_string = typ.__name__
-        else:
+        if isinstance(typ, tuple):
             typ_string = "one of %s" % (", ".join(t.__name__ for t in typ))
+        else:
+            typ_string = typ.__name__
         raise InvalidArgument(
             "Expected %s but got %s%r (type=%s)"
             % (typ_string, name, arg, type(arg).__name__)
