@@ -1878,13 +1878,13 @@ def complex_numbers(
         # this and the max_magnitude
         if max_magnitude is None:
             zi = draw(floats(**allow_kw))
-            rmax = float("inf")
+            rmax = None
         else:
             zi = draw(floats(-max_magnitude, max_magnitude, **allow_kw))
             rmax = cathetus(max_magnitude, zi)
         # Draw the real part from the allowed range given the imaginary part
         if min_magnitude is None or math.fabs(zi) >= min_magnitude:
-            zr = draw(floats(-rmax, rmax, **allow_kw))
+            zr = draw(floats(None if rmax is None else -rmax, rmax, **allow_kw))
         else:
             zr = draw(floats(cathetus(min_magnitude, zi), rmax, **allow_kw))
         # Order of conditions carefully tuned so that for a given pair of

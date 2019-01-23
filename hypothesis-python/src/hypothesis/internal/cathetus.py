@@ -55,13 +55,17 @@ def cathetus(h, a):
     if h < a:
         return float(u"nan")
 
+    # Thanks to floating-point precision issues when performing multiple
+    # operations on extremely large or small values, we may rarely calculate
+    # a side length that is longer than the hypotenuse.  This is clearly an
+    # error, so we clip to the hypotenuse as the best available estimate.
     if h > sqrt(float_info.max):
         if h > float_info.max / 2:
-            return sqrt(h - a) * sqrt(h / 2 + a / 2) * sqrt(2)
+            b = sqrt(h - a) * sqrt(h / 2 + a / 2) * sqrt(2)
         else:
-            return sqrt(h - a) * sqrt(h + a)
-
-    if h < sqrt(float_info.min):
-        return sqrt(h - a) * sqrt(h + a)
-
-    return sqrt((h - a) * (h + a))
+            b = sqrt(h - a) * sqrt(h + a)
+    elif h < sqrt(float_info.min):
+        b = sqrt(h - a) * sqrt(h + a)
+    else:
+        b = sqrt((h - a) * (h + a))
+    return min(b, h)

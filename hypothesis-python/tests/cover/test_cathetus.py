@@ -23,7 +23,9 @@ from sys import float_info
 
 import pytest
 
+from hypothesis import assume, given
 from hypothesis.internal.cathetus import cathetus
+from hypothesis.strategies import floats
 
 
 def test_cathetus_subnormal_underflow():
@@ -97,6 +99,17 @@ def test_cathetus_infinite(h, a):
 )
 def test_cathetus_signs(h, a, b):
     assert abs(cathetus(h, a) - b) <= abs(b) * float_info.epsilon
+
+
+@given(
+    h=floats(0) | floats(min_value=1e308, allow_infinity=False),
+    a=floats(0, allow_infinity=False)
+    | floats(min_value=0, max_value=1e250, allow_infinity=False),
+)
+def test_cathetus_always_leq_hypot(h, a):
+    assume(h >= a)
+    b = cathetus(h, a)
+    assert 0 <= b <= h
 
 
 @pytest.mark.parametrize(
