@@ -333,7 +333,7 @@ class Shrinker(object):
         if isinstance(name, str):
             if hasattr(Shrinker, name) and name not in self.passes_by_name:
                 self.add_new_pass(name, classification=PassClassification.SPECIAL)
-        elif hasattr(name, "__name__"):
+        else:
             self.add_new_pass(name, classification=PassClassification.SPECIAL)
             name = name.__name__
         return self.passes_by_name[name]
