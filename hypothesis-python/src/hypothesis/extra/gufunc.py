@@ -12,7 +12,7 @@ import numpy.lib.function_base as npfb
 
 from hypothesis.extra.numpy import arrays, order_check
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.strategies import builds, composite, integers, just, fixed_dictionaries
+from hypothesis.strategies import builds, composite, integers, just, fixed_dictionaries, tuples
 
 # Should not ever need to broadcast beyond this, but should be able to set it
 # as high as 32 before breaking assumptions in numpy.
@@ -205,8 +205,26 @@ def _gufunc_arg_shapes(inp, min_side=0, max_side=5):
 # excluded iterable (__contains__), sig
 
 
-@composite
-def gufunc_arg_shapes(draw, signature, excluded=(),
+def _append_bcast_dims(core_dims, b_dims, mask, n_extra_per_arg):
+    # Could put in some assertions here
+
+    # Build 2D array with extra dimensions
+    # e.g., extra_dims = [[2 5], [2 5]]
+    extra_dims = np.tile(b_dims, (len(core_dims), 1))
+    # e.g., extra_dims = [[1 5], [2 5]]
+    extra_dims[mask] = 1  # This may be outside [min_side, max_side]
+
+    # Get full dimensions (core+extra), will chop some on left randomly
+    # e.g., shapes = [(5, 1, 3), (2, 5, 3, 1)]
+    # We use pp[len(pp) - nn:] instead of pp[-nn:] since that doesn't handle
+    # corner case with nn=0 correctly (seems like an oversight of py slicing).
+    # Call tolist() before tuple to ensure native int type.
+    shapes = [tuple(pp[len(pp) - nn:].tolist()) + ss
+              for ss, pp, nn in zip(core_dims, extra_dims, n_extra_per_arg)]
+    return shapes
+
+
+def gufunc_arg_shapes(signature, excluded=(),
                       min_side=0, max_side=5, max_dims_extra=0):
     """Strategy to generate the shape of ndarrays for arguments to a function
     consistent with its signature with extra dimensions to test broadcasting.
@@ -272,66 +290,33 @@ def gufunc_arg_shapes(draw, signature, excluded=(),
     inp, out = npfb._parse_gufunc_signature(signature)
 
     # Get core shapes before broadcasted dimensions
-    # e.g., shapes = [(1, 3), (3, 1)]
-    shapes = draw(_gufunc_arg_shapes(inp,
-                                     min_side=min_side, max_side=max_side))
-    # Should not be possible if signature parser makes sense
-    assert len(shapes) > 0
+    shapes_st = _gufunc_arg_shapes(inp, min_side=min_side, max_side=max_side)
 
     # If we are not looking for this extra broadcasting dims craziness just
     # return the current draw.
     # TODO use > 0
     if max_dims_extra == 0:
-        return shapes
+        return shapes_st
 
-    # TODO consider separate composite strat that does all this and then only
-    # apply that second then if max_extra > 0
-    # use builds to func that takes:
-    # core_dims, extra_dims vec, mask mat, n_extra vec
-
-    max_core_dims = max(len(ss) for ss in shapes)
-
-    # Which extra dims will just be 1 to get broadcasted, specified by mask
-    n_extra = draw(integers(min_value=0, max_value=max_dims_extra))  # e.g., 2
-    # Make sure always under global max dims
     # TODO max with zero, TODO set GLOBAL DIMS MAX low and run tests
-    # TODO make a list of max for each arg
-    n_extra = min(n_extra, GLOBAL_DIMS_MAX - max_core_dims)
-    # TODO consider just setting n_extra to max_extra
-    # e.g., mask = [[True False], [False False]]
-    mask = draw(_arrays(np.bool, (len(shapes), n_extra)))
+    max_extra_per_arg = [max(0, GLOBAL_DIMS_MAX - len(ss)) for ss in inp]
 
-    # Build 2D array with extra dimensions
-    extra_dim_gen = integers(min_value=min_side[BCAST_DIM],
-                             max_value=max_side[BCAST_DIM])
-    # e.g., extra_dims = [2 5]
     # TODO consider using tuples if faster but assert dtype after tile since
     # len always greater than 0
-    extra_dims = draw(_arrays(np.int, (n_extra,), elements=extra_dim_gen))
-    # e.g., extra_dims = [[2 5], [2 5]]
-    extra_dims = np.tile(extra_dims, (len(shapes), 1))
-    # e.g., extra_dims = [[1 5], [2 5]]
-    extra_dims[mask] = 1  # This may be outside [min_side, max_side]
+    extra_dim_gen = integers(min_value=min_side[BCAST_DIM],
+                             max_value=max_side[BCAST_DIM])
+    extra_dims_st = _arrays(np.int, (max_dims_extra,), elements=extra_dim_gen)
 
-    # How many extra dims on left to include for each argument (implicitly) 1
-    # for each chopped dim. Cannot include any extra for excluded arguments.
-    # e.g., n_extra_per_arg = [1, 2]
-    # TODO consider clipping with global max here instead
-    n_extra_per_arg = [0 if nn in excluded else
-                       draw(integers(min_value=0, max_value=n_extra))
-                       for nn in range(len(shapes))]
+    mask_st = _arrays(np.bool, (len(inp), max_dims_extra))
 
-    # TODO note broadcasted dims of np type and not native, do we care??
-    # Can do tolist() first if we care, comment either way
-    # TODO write check in tests
+    extra_per_arg_st = [just(0) if nn in excluded else
+                        integers(min_value=0, max_value=max_extra_per_arg[nn])
+                        for nn in range(len(inp))]
+    extra_per_arg_st = tuples(*extra_per_arg_st)
 
-    # Get full dimensions (core+extra), will chop some on left randomly
-    # e.g., shapes = [(5, 1, 3), (2, 5, 3, 1)]
-    # We use pp[len(pp) - nn:] instead of pp[-nn:] since that doesn't handle
-    # corner case with nn=0 correctly (seems like an oversight of py slicing).
-    shapes = [tuple(pp[len(pp) - nn:]) + ss
-              for ss, pp, nn in zip(shapes, extra_dims, n_extra_per_arg)]
-    return shapes
+    shapes_st = builds(_append_bcast_dims,
+                       shapes_st, extra_dims_st, mask_st, extra_per_arg_st)
+    return shapes_st
 
 
 def gufunc_args(signature, dtype, elements, unique=False, excluded=(),
