@@ -299,7 +299,8 @@ def gufunc_arg_shapes(signature, excluded=(),
         return shapes_st
 
     # TODO max with zero, TODO set GLOBAL DIMS MAX low and run tests
-    max_extra_per_arg = [max(0, GLOBAL_DIMS_MAX - len(ss)) for ss in inp]
+    max_extra_per_arg = [min(max(0, GLOBAL_DIMS_MAX - len(ss)), max_dims_extra)
+                         for ss in inp]
 
     # TODO consider using tuples if faster but assert dtype after tile since
     # len always greater than 0
