@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.2.0:
+
+------------------
+4.2.0 - 2019-01-23
+------------------
+
+This release adds a new module, ``hypothesis.extra.lark``, which you
+can use to generate strings matching a context-free grammar.
+
+In this initial version, only :pypi:`lark-parser` EBNF grammars are supported,
+by the new :func:`hypothesis.extra.lark.from_lark` function.
+
 .. _v4.1.2:
 
 ------------------
