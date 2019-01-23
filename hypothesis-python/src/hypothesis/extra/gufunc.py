@@ -143,12 +143,13 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
 
 
 def _signature_map(map_dict, parsed_sig):
+    '''Map values found in parsed gufunc signature.'''
     # TODO tests (inverse + const)
     shapes = [tuple(map_dict[k] for k in arg) for arg in parsed_sig]
     return shapes
 
 
-def _gufunc_arg_shapes(signature, min_side=0, max_side=5):
+def _gufunc_arg_shapes(inp, min_side=0, max_side=5):
     """Strategy to generate array shapes for arguments to a function consistent
     with its signature.
 
@@ -183,22 +184,10 @@ def _gufunc_arg_shapes(signature, min_side=0, max_side=5):
                        min_side={'m': 1, 'n': 2}, max_side=3).example()
       [(3, 2), (2,)]
     """
-    # TODO can remove these if private, assume already default dict,
-    # can skip check
-    min_side = _int_or_dict(min_side, 0)
-    max_side = _int_or_dict(max_side, DEFAULT_MAX_SIDE)
-    order_check_min_max(min_side, max_side)
+    # Skipping validation on min and max sides since this function is private.
+    # TODO put in doc string must be default dicts
 
-    # We should check signature.isascii() since there are lot of weird corner
-    # cases with unicode parsing, but isascii() restricts us to Py >=3.7.
-
-    # Parse out the signature
-    # Warning: this uses "private" function of numpy, but it does the job.
-    # parses to [('n', 'm'), ('m', 'p')]
-    # TODO note memoize in regex
-    # TODO look into exception if this is invalid
-    # TODO consider pulling out parsing to calling func
-    inp, out = npfb._parse_gufunc_signature(signature)
+    # Get all dimension names in signature, including numeric constants
     all_dimensions = set([k for arg in inp for k in arg])
 
     # Note that isdigit can be a bit odd with some unicode characters
@@ -207,6 +196,7 @@ def _gufunc_arg_shapes(signature, min_side=0, max_side=5):
                       integers(min_value=min_side[k], max_value=max_side[k]))
                   for k in all_dimensions}
 
+    # Could strategy that draws ints for dimensions and subs them in
     S = builds(_signature_map,
                map_dict=fixed_dictionaries(dim_map_st), parsed_sig=just(inp))
     return S
@@ -275,11 +265,15 @@ def gufunc_arg_shapes(draw, signature, excluded=(),
     order_check_min_max(min_side, max_side)
     order_check("extra dims", 0, max_dims_extra, GLOBAL_DIMS_MAX)
 
-    # TODO parse sig here, then can get list with ndim for each arg
+    # Parse out the signature: e.g., parses to [('n', 'm'), ('m', 'p')]
+    # Warning: this uses "private" function of numpy, but it does the job.
+    # Should also check signature.isascii() since there are lot of weird corner
+    # cases with unicode parsing, but isascii() restricts us to Py >=3.7.
+    inp, out = npfb._parse_gufunc_signature(signature)
 
     # Get core shapes before broadcasted dimensions
     # e.g., shapes = [(1, 3), (3, 1)]
-    shapes = draw(_gufunc_arg_shapes(signature,
+    shapes = draw(_gufunc_arg_shapes(inp,
                                      min_side=min_side, max_side=max_side))
     # Should not be possible if signature parser makes sense
     assert len(shapes) > 0

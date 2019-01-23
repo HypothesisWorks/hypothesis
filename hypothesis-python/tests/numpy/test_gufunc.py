@@ -354,10 +354,11 @@ def test_unparse_parse(i_parsed_sig, o_parsed_sig):
 def test_shapes_gufunc_arg_shapes(parsed_sig_and_size, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
 
-    # We don't care about the output for this function
-    signature = unparse(parsed_sig) + "->()"
+    # This private function assumes already preprocessed sizes to default dict
+    min_side = gu._int_or_dict(min_side, 0)
+    max_side = gu._int_or_dict(max_side, gu.DEFAULT_MAX_SIDE)
 
-    S = gu._gufunc_arg_shapes(signature, min_side=min_side, max_side=max_side)
+    S = gu._gufunc_arg_shapes(parsed_sig, min_side=min_side, max_side=max_side)
 
     shapes = data.draw(S)
     validate_shapes(shapes, parsed_sig, min_side, max_side)
