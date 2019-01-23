@@ -509,7 +509,8 @@ class HealthCheck(Enum):
     @classmethod
     def all(cls):
         # type: () -> List[HealthCheck]
-        return list(HealthCheck)
+        deprecated = [HealthCheck.hung_test]
+        return [x for x in list(HealthCheck) if x not in deprecated]
 
     data_too_large = 1
     """Check for when the typical size of the examples you are generating
@@ -529,13 +530,16 @@ class HealthCheck(Enum):
     is unlikely to do what you want)."""
 
     hung_test = 6
-    """Checks if your tests have been running for a very long time."""
+    """This health check is deprecated and no longer has any effect.
+    You can use the ``max_examples`` and ``deadline`` settings together to cap
+    the total runtime of your tests, rather than the previous fixed limit."""
 
     large_base_example = 7
     """Checks if the natural example to shrink towards is very large."""
 
     not_a_test_method = 8
-    """Checks if @given has been applied to a method of unittest.TestCase."""
+    """Checks if :func:`@given <hypothesis.given>` has been applied to a
+    method of :class:`python:unittest.TestCase`."""
 
 
 @unique
@@ -600,6 +604,12 @@ def validate_health_check_suppressions(suppressions):
             raise InvalidArgument(
                 "Non-HealthCheck value %r of type %s is invalid in suppress_health_check."
                 % (s, type(s).__name__)
+            )
+        if s is HealthCheck.hung_test:
+            note_deprecation(
+                "HealthCheck.hung_test is deprecated and has no "
+                "effect, as we no longer run this health check.",
+                since="RELEASEDAY",
             )
     return suppressions
 

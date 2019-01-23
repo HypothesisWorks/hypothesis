@@ -28,7 +28,7 @@ from hypothesis.control import assume
 from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.searchstrategy.strategies import SearchStrategy
-from tests.common.utils import no_shrink
+from tests.common.utils import checks_deprecated_behaviour, no_shrink
 
 
 def test_slow_generation_fails_a_health_check():
@@ -136,19 +136,9 @@ def test_returning_non_none_is_forbidden():
         a()
 
 
-def test_a_very_slow_test_will_fail_a_health_check():
-    @given(st.integers())
-    @settings(deadline=None)
-    def a(x):
-        time.sleep(1000)
-
-    with raises(FailedHealthCheck):
-        a()
-
-
 def test_the_slow_test_health_check_can_be_disabled():
     @given(st.integers())
-    @settings(suppress_health_check=[HealthCheck.hung_test], deadline=None)
+    @settings(deadline=None)
     def a(x):
         time.sleep(1000)
 
@@ -198,6 +188,11 @@ def test_example_that_shrinks_to_overrun_fails_health_check():
 def test_it_is_an_error_to_suppress_non_iterables():
     with raises(InvalidArgument):
         settings(suppress_health_check=1)
+
+
+@checks_deprecated_behaviour
+def test_hung_test_is_deprecated():
+    settings(suppress_health_check=[HealthCheck.hung_test])
 
 
 def test_it_is_an_error_to_suppress_non_healthchecks():

@@ -27,7 +27,6 @@ from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
 from hypothesis.internal.compat import (
     Counter,
-    benchmark_time,
     ceil,
     hbytes,
     hrange,
@@ -52,7 +51,6 @@ from hypothesis.reporting import debug_report
 __tracebackhide__ = True
 
 
-HUNG_TEST_TIME_LIMIT = 5 * 60
 MAX_SHRINKS = 500
 
 CACHE_RESET_FREQUENCY = 1000
@@ -87,7 +85,6 @@ class ConjectureRunner(object):
         self.call_count = 0
         self.event_call_counts = Counter()
         self.valid_examples = 0
-        self.start_time = benchmark_time()
         self.random = random or Random(getrandbits(128))
         self.database_key = database_key
         self.status_runtimes = {}
@@ -116,17 +113,6 @@ class ConjectureRunner(object):
         return self.tree.is_exhausted
 
     def test_function(self, data):
-        if benchmark_time() - self.start_time >= HUNG_TEST_TIME_LIMIT:
-            fail_health_check(
-                self.settings,
-                (
-                    "Your test has been running for at least five minutes. This "
-                    "is probably not what you intended, so by default Hypothesis "
-                    "turns it into an error."
-                ),
-                HealthCheck.hung_test,
-            )
-
         self.call_count += 1
         try:
             self._test_function(data)
@@ -725,12 +711,9 @@ class ConjectureRunner(object):
             mutations += 1
 
     def _run(self):
-        self.start_time = benchmark_time()
-
         self.reuse_existing_examples()
         self.generate_new_examples()
         self.shrink_interesting_examples()
-
         self.exit_with(ExitReason.finished)
 
     def shrink_interesting_examples(self):
