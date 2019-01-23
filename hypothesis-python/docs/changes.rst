@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.1.2:
+
+------------------
+4.1.2 - 2019-01-23
+------------------
+
+This patch fixes a very rare overflow bug (:issue:`1748`) which could raise an
+``InvalidArgument`` error in :func:`~hypothesis.strategies.complex_numbers`
+even though the arguments were valid.
+
 .. _v4.1.1:
 
 ------------------
