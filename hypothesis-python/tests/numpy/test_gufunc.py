@@ -4,9 +4,9 @@ import string
 # Note: this requires adding `future` to the test requirements!
 from builtins import int as py3int
 from collections import defaultdict
+from functools import reduce
 
 import numpy as np
-import numpy.lib.function_base as npfb
 
 import hypothesis.extra.gufunc as gu
 from hypothesis import given
@@ -196,6 +196,23 @@ def parsed_sigs_and_sizes(draw, min_min_side=0, max_max_side=5, **kwargs):
     return parsed_sig, min_side, max_side
 
 
+@given(parsed_sigs(), parsed_sigs())
+def test_unparse_parse(i_parsed_sig, o_parsed_sig):
+    # Make sure all hard coded literals within specified size
+    # This is actually testing parsed_sigs().
+    labels = list(set([k for arg in i_parsed_sig for k in arg]))
+    assert all((not k.isdigit()) or (int(k) < 10) for k in labels)
+
+    # We don't care about the output for this function
+    signature = unparse(i_parsed_sig) + "->" + unparse(o_parsed_sig)
+    # This is a 'private' function of np, so need to test it still works as we
+    # think it does.
+    inp, out = gu.parse_gufunc_signature(signature)
+
+    assert i_parsed_sig == inp
+    assert o_parsed_sig == out
+
+
 @given(dictionaries(from_regex(VALID_DIM_NAMES), integers()),
        integers(), integers())
 def test_ddict_int_or_dict(D, default_val, default_val2):
@@ -331,21 +348,29 @@ def test_bcast_tuple_of_arrays(args, data):
         validate_elements([xx], dtype=dd, unique=uu)
 
 
-@given(parsed_sigs(), parsed_sigs())
-def test_unparse_parse(i_parsed_sig, o_parsed_sig):
-    # Make sure all hard coded literals within specified size
-    # This is actually testing parsed_sigs().
-    labels = list(set([k for arg in i_parsed_sig for k in arg]))
-    assert all((not k.isdigit()) or (int(k) < 10) for k in labels)
+@given(parsed_sigs())
+def test_const_signature_map(parsed_sig):
+    # Map all dims to zero
+    all_dims = reduce(set.union, [set(arg) for arg in parsed_sig])
+    map_dict = {k: 0 for k in all_dims}
 
-    # We don't care about the output for this function
-    signature = unparse(i_parsed_sig) + "->" + unparse(o_parsed_sig)
-    # This is a 'private' function of np, so need to test it still works as we
-    # think it does.
-    inp, out = gu.parse_gufunc_signature(signature)
+    p_ = gu._signature_map(map_dict, parsed_sig)
 
-    assert i_parsed_sig == inp
-    assert o_parsed_sig == out
+    assert all(all(v == 0 for v in arg) for arg in p_)
+
+
+@given(parsed_sigs())
+def test_inverse_signature_map(parsed_sig):
+    # Build an arbitrary map
+    all_dims = sorted(reduce(set.union, [set(arg) for arg in parsed_sig]))
+    map_dict = dict(zip(all_dims, all_dims[::-1]))
+
+    inv_map = {v: k for k, v in map_dict.items()}
+
+    p_ = gu._signature_map(map_dict, parsed_sig)
+    p_ = gu._signature_map(inv_map, p_)
+
+    assert p_ == parsed_sig
 
 
 # Allow bigger sizes since we only generate the shapes and never alloc arrays

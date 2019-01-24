@@ -51,6 +51,7 @@ parse_gufunc_signature = npfb._parse_gufunc_signature
 
 
 def check_set_like(arg, name=""):
+    """Validate input can be searched like a `set`."""
     try:
         0 in arg
     except TypeError:
@@ -77,6 +78,7 @@ def order_check_min_max(min_dict, max_dict):
 
 
 def ensure_int(arg, name=""):
+    """Validate input as `int` and return it."""
     try:
         x = int(arg)
         assert arg == x  # e.g., check 5.0 and not 5.5 was passed
@@ -141,7 +143,7 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
 
     Parameters
     ----------
-    shapes : list-like of tuples
+    shapes : list of tuples of int
         List of tuples where each tuple is the shape of an argument. A
         `SearchStrategy` for list of tuples is also supported.
     dtype : list-like of dtype
@@ -185,7 +187,22 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
 
 
 def _signature_map(map_dict, parsed_sig):
-    """Map values found in parsed gufunc signature."""
+    """Map values found in parsed gufunc signature.
+
+    Parameters
+    ----------
+    map_dict : dict of str to int
+        Mapping from `str` dimension names to `int`. All strings in
+        `parsed_sig` must have entries in `map_dict`.
+    parsed_sig : list-like of tuples of str
+        gufunc signature that has already been parsed, e.g., using
+        `parse_gufunc_signature`.
+
+    Returns
+    -------
+    shapes : list of tuples of int
+        list of tuples where each tuple is the shape of an argument.
+    """
     shapes = [tuple(map_dict[k] for k in arg) for arg in parsed_sig]
     return shapes
 
@@ -213,7 +230,7 @@ def _gufunc_arg_shapes(parsed_sig, min_side, max_side):
 
     Returns
     -------
-    shapes : list of tuples
+    shapes : list of tuples of int
         list of tuples where each tuple is the shape of an argument.
 
     Examples
@@ -244,6 +261,30 @@ def _gufunc_arg_shapes(parsed_sig, min_side, max_side):
 
 
 def _append_bcast_dims(core_dims, b_dims, set_to_1, n_extra_per_arg):
+    """Add extra broadcast dimensions to core dimensions of array shapes.
+
+    Parameters
+    ----------
+    core_dims : list of tuples of int
+        list of tuples where each tuple is the core shape of an argument. It
+        has length `n_args`.
+    b_dims : ndarray of shape (max_dims_extra,)
+        Must be of `int` dtype and >= 0. Extra dimensions to pre-pend for
+        roadcasting.
+    set_to_1 : ndarray of shape (n_args, max_dims_extra)
+        Must be of `bool` dtype. Which extra dimensions get set to 1 for
+        broadcasting.
+    n_extra_per_arg : like-like of shape (n_args,)
+        Elements must be of int type. Must be in [0, max_dims_extra], how many
+        extra dimensions to pre-pend to each argument.
+
+    Returns
+    -------
+    shapes : list of tuples of int
+        list of tuples where each tuple is the shape of an argument. Extra
+        dimensions for broadcasting will be present in the shapes. It has
+        length `n_args`.
+    """
     # TODO can eliminate these once done with testing
     n_args, max_dims_extra = set_to_1.shape
     assert len(core_dims) == n_args
@@ -307,7 +348,7 @@ def gufunc_arg_shapes(signature, excluded=(),
 
     Returns
     -------
-    shapes : list of tuples
+    shapes : list of tuples of int
         list of tuples where each tuple is the shape of an argument. Extra
         dimensions for broadcasting will be present in the shapes.
 
