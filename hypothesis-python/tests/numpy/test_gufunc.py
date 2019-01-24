@@ -430,6 +430,34 @@ def test_elements_gufunc_args(parsed_sig, min_side, max_side, dtype, data):
     validate_elements(X, choices=choices, dtype=dtype)
 
 
+@given(gu.gufunc_args('(n),(m),(n,m),(n)->()',
+                      dtype=['object', int, bool, int],
+                      elements=[_st_shape, integers(0, 100),
+                                booleans(), integers(0, 100)],
+                      min_side={'n': 1}))  # always at least one arg
+def test_append_bcast_dims(args):
+    core_dims, b_dims, set_to_1, n_extra_per_arg = args
+
+    max_extra = len(b_dims)
+    # Put all in range [0, max_extra]
+    n_extra_per_arg = tuple(n_extra_per_arg % (max_extra + 1))
+
+    shapes = gu._append_bcast_dims(core_dims,
+                                   b_dims, set_to_1, n_extra_per_arg)
+
+    for ii, ss in enumerate(shapes):
+        bb = np.asarray(ss[:len(ss) - len(core_dims[ii])])
+        cc = ss[len(ss) - len(core_dims[ii]):]
+
+        st1 = set_to_1[ii]
+        st1 = st1[len(st1) - len(bb):]
+
+        assert len(bb) == n_extra_per_arg[ii]
+        assert cc == core_dims[ii]
+        assert np.all(bb[st1] == 1)
+        assert np.all(bb[~st1] == b_dims[len(b_dims) - len(bb):][~st1])
+
+
 @given(parsed_sigs_and_sizes(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX,
                              max_max_side=100),
        lists(booleans(), min_size=10, max_size=10),
