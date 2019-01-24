@@ -26,7 +26,6 @@ BCAST_DIM = object()
 # Value used in default dict for max side if variable not specified
 DEFAULT_MAX_SIDE = 5
 
-
 # TODO test sig map and bdim builder
 #   use from hypothesis.internal.compat import integer_types in test
 
@@ -239,7 +238,17 @@ def _gufunc_arg_shapes(parsed_sig, min_side, max_side):
 
 
 def _append_bcast_dims(core_dims, b_dims, mask, n_extra_per_arg):
-    # TODO put in some assertions here
+    # TODO can eliminate these once done with testing
+    n_args, max_dims_extra = mask.shape
+    assert len(core_dims) == n_args
+    assert b_dims.shape == (max_dims_extra,)
+    assert b_dims.dtype.kind == 'i'
+    assert np.all(b_dims >= 0)
+    assert mask.dtype.kind == 'b'
+    n_ = np.array(n_extra_per_arg)
+    assert n_.shape == (n_args,)
+    assert n_.dtype.kind == 'i'
+    assert np.all(n_ >= 0)
 
     # Build 2D array with extra dimensions
     # e.g., extra_dims = [[2 5], [2 5]]
