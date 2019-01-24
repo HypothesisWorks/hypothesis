@@ -243,14 +243,14 @@ def _gufunc_arg_shapes(parsed_sig, min_side, max_side):
     return S
 
 
-def _append_bcast_dims(core_dims, b_dims, mask, n_extra_per_arg):
+def _append_bcast_dims(core_dims, b_dims, set_to_1, n_extra_per_arg):
     # TODO can eliminate these once done with testing
-    n_args, max_dims_extra = mask.shape
+    n_args, max_dims_extra = set_to_1.shape
     assert len(core_dims) == n_args
     assert b_dims.shape == (max_dims_extra,)
     assert b_dims.dtype.kind == 'i'
     assert np.all(b_dims >= 0)
-    assert mask.dtype.kind == 'b'
+    assert set_to_1.dtype.kind == 'b'
     n_ = np.array(n_extra_per_arg)
     assert n_.shape == (n_args,)
     assert n_.dtype.kind == 'i'
@@ -261,7 +261,7 @@ def _append_bcast_dims(core_dims, b_dims, mask, n_extra_per_arg):
     # e.g., extra_dims = [[2 5], [2 5]]
     extra_dims = np.tile(b_dims, (len(core_dims), 1))
     # e.g., extra_dims = [[1 5], [2 5]]
-    extra_dims[mask] = 1  # This may be outside [min_side, max_side]
+    extra_dims[set_to_1] = 1  # This may be outside [min_side, max_side]
 
     # Get full dimensions (core+extra), will chop some on left randomly
     # e.g., shapes = [(5, 1, 3), (2, 5, 3, 1)]
@@ -339,18 +339,17 @@ def gufunc_arg_shapes(signature, excluded=(),
     shapes_st = _gufunc_arg_shapes(parsed_sig,
                                    min_side=min_side, max_side=max_side)
 
-    # If we are not looking for this extra broadcasting dims craziness just
-    # return the current draw.
+    # Skip this bast craziness if we don't want extra dims:
     if max_dims_extra == 0:
         return shapes_st
 
     # We could use tuples instead without creating type ambiguity since
     # max_dims_extra > 0 and avoid calling arrays, but prob ok like this.
-    extra_dim_gen = integers(min_value=min_side[BCAST_DIM],
-                             max_value=max_side[BCAST_DIM])
-    extra_dims_st = _arrays(np.intp, (max_dims_extra,), elements=extra_dim_gen)
+    bcast_dim_st = integers(min_value=min_side[BCAST_DIM],
+                            max_value=max_side[BCAST_DIM])
+    extra_dims_st = _arrays(np.intp, (max_dims_extra,), elements=bcast_dim_st)
 
-    mask_st = _arrays(np.bool_, (len(parsed_sig), max_dims_extra))
+    set_to_1_st = _arrays(np.bool_, (len(parsed_sig), max_dims_extra))
 
     # np.clip will convert to np int but we don't really care.
     max_extra_per_arg = [0 if nn in excluded else
@@ -360,7 +359,7 @@ def gufunc_arg_shapes(signature, excluded=(),
                                 for mm in max_extra_per_arg])
 
     shapes_st = builds(_append_bcast_dims,
-                       shapes_st, extra_dims_st, mask_st, extra_per_arg_st)
+                       shapes_st, extra_dims_st, set_to_1_st, extra_per_arg_st)
     return shapes_st
 
 
