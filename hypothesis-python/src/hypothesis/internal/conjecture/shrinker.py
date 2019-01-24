@@ -1249,7 +1249,8 @@ class Shrinker(object):
         standard float encodings because they are only really meaningful
         there. The logic for detecting this is reasonably precise, but
         it doesn't matter if it's wrong. These are always valid
-        transformations to make, they
+        transformations to make, they just don't necessarily correspond to
+        anything particularly meaningful for non-float values.
         """
         i = 0
         while i < len(self.shrink_target.examples):
