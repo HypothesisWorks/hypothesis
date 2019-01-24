@@ -26,8 +26,6 @@ BCAST_DIM = object()
 # Value used in default dict for max side if variable not specified
 DEFAULT_MAX_SIDE = 5
 
-# TODO tester that transforms somes elements in list with just, or applies
-# just if not iterable
     # TODO max with zero, TODO set GLOBAL DIMS MAX low and run tests
 
 # TODO consider in tests using from_regex(npfb._SIGNATURE)
@@ -167,7 +165,6 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     n = len(shapes)
 
     # Need this since broadcast_to does not like vars of type type
-    # TODO file np bug report on this
     if isinstance(dtype, type):
         dtype = [dtype]
     dtype = np.broadcast_to(dtype, (n,))

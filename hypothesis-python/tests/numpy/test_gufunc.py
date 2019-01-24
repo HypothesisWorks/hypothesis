@@ -250,6 +250,22 @@ def test_arrays(dtype, shape, data):
     assert type(X) == np.ndarray
 
 
+@given(real_scalar_dtypes(), _st_shape, data())
+def test_just_arrays(dtype, shape, data):
+    # unique argument to arrays gets tested in the tuple of arrays tests
+    choices = data.draw(real_from_dtype(dtype))
+
+    # test again, but this time pass in strategy to make sure it can handle it
+    elements = sampled_from(choices)
+    S = gu._arrays(just(dtype), just(shape), elements)
+    X = data.draw(S)
+
+    assert np.shape(X) == shape
+    validate_elements([X], dtype=dtype, choices=choices)
+
+    assert type(X) == np.ndarray
+
+
 # hypothesis.extra.numpy.array_shapes does not support 0 min_size so we roll
 # our own in this case.
 @given(lists(_st_shape, min_size=0, max_size=5),
@@ -275,8 +291,8 @@ def test_just_shapes_tuple_of_arrays(shapes, dtype, unique, data):
     elements = from_dtype(np.dtype(dtype))
 
     # test again, but this time pass in strategy to make sure it can handle it
-    S = gu._tuple_of_arrays(just(shapes), dtype,
-                            elements=elements, unique=unique)
+    S = gu._tuple_of_arrays(just(shapes), just(dtype),
+                            elements=elements, unique=just(unique))
     X = data.draw(S)
 
     validate_elements(X, dtype=dtype, unique=unique)
