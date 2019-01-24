@@ -19,7 +19,6 @@ from __future__ import absolute_import, division, print_function
 
 import itertools
 import re
-import time
 from random import Random, seed as seed_random
 
 import attr
@@ -449,13 +448,6 @@ def test_fails_health_check_for_slow_draws():
     @fails_health_check(HealthCheck.too_slow)
     def _(data):
         data.draw(SLOW)
-
-
-def test_fails_healthcheck_for_hung_test():
-    @fails_health_check(HealthCheck.hung_test)
-    def _(data):
-        data.draw_bytes(1)
-        time.sleep(3600)
 
 
 @pytest.mark.parametrize("n_large", [1, 5, 8, 15])
