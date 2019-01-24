@@ -10,6 +10,7 @@ from collections import defaultdict
 import numpy as np
 import numpy.lib.function_base as npfb
 
+from hypothesis.internal.validation import check_valid_bound, check_valid_interval
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import arrays, order_check
 from hypothesis.searchstrategy import SearchStrategy
@@ -25,8 +26,6 @@ BCAST_DIM = object()
 # Value used in default dict for max side if variable not specified
 DEFAULT_MAX_SIDE = 5
 
-# TODO validators:
-#  min_side, max_side same exact checks as integers
 
 # TODO test sig map and bdim builder
 #   use from hypothesis.internal.compat import integer_types in test
@@ -59,24 +58,32 @@ def check_set_like(arg, name=""):
                               % (name, arg, type(arg).__name__))
 
 
+def check_valid_size_interval(min_size, max_size, name, floor=0):
+    """Check valid for integers strategy and array shapes."""
+    # same checks as done in integers
+    check_valid_bound(min_size, name)
+    check_valid_bound(max_size, name)
+    order_check(name, floor, min_size, max_size)  # ensure non-none & above 0
+    # this is also done in integers, so check for good measure
+    check_valid_interval(min_size, max_size, 'min_size', 'max_size')
+
+
+def order_check_min_max(min_dict, max_dict):
+    """Check min and max dict compatible with integers and array shapes."""
+    check_valid_size_interval(min_dict.default_factory(),
+                              max_dict.default_factory(), "side default")
+    for kk in (set(min_dict.keys()) | set(max_dict.keys())):
+        check_valid_size_interval(min_dict[kk], max_dict[kk], "side %s" % kk)
+
+
 def ensure_int(arg, name=""):
     try:
         x = int(arg)
-        assert arg == x
+        assert arg == x  # e.g., check 5.0 and not 5.5 was passed
     except Exception:
         raise InvalidArgument("%s=%r (type=%s) not representable as int"
                               % (name, arg, type(arg).__name__))
     return x
-
-
-def order_check_min_max(min_dict, max_dict, floor=0):
-    """Wrapper around argument checker in `hypothesis.extra.numpy`."""
-    # TODO use same checks as integers strat
-    order_check("side default", floor,
-                min_dict.default_factory(), max_dict.default_factory())
-
-    for kk in (set(min_dict.keys()) | set(max_dict.keys())):
-        order_check("side %s" % kk, floor, min_dict[kk], max_dict[kk])
 
 
 def _int_or_dict(x, default_val):
