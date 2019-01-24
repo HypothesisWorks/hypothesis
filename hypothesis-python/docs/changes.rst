@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.4.0:
+
+------------------
+4.4.0 - 2019-01-24
+------------------
+
+This release adds the :func:`~hypothesis.extra.django.from_form` function, which allows automatic testing against Django forms. (:issue:`35`)
+
+Thanks to Paul Stiverson for this feature, which resolves our oldest open issue!
+
 .. _v4.3.0:
 
 ------------------
