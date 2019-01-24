@@ -19,6 +19,7 @@ from hypothesis.internal.conjecture.shrinking.length import Length
 from hypothesis.internal.conjecture.shrinking.integer import Integer
 from hypothesis.internal.conjecture.shrinking.lexical import Lexical
 from hypothesis.internal.conjecture.shrinking.ordering import Ordering
+from hypothesis.internal.conjecture.shrinking.floats import Float
 
 
-__all__ = ["Lexical", "Length", "Integer", "Ordering"]
+__all__ = ["Lexical", "Length", "Integer", "Ordering", "Float"]

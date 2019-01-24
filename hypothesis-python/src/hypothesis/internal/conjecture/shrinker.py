@@ -26,7 +26,18 @@ import attr
 
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.data import Overrun, Status
-from hypothesis.internal.conjecture.shrinking import Integer, Length, Lexical, Ordering
+from hypothesis.internal.conjecture.floats import (
+    DRAW_FLOAT_LABEL,
+    float_to_lex,
+    lex_to_float,
+)
+from hypothesis.internal.conjecture.shrinking import (
+    Float,
+    Integer,
+    Length,
+    Lexical,
+    Ordering,
+)
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
 
@@ -213,6 +224,7 @@ class Shrinker(object):
             "zero_examples",
             "adaptive_example_deletion",
             "reorder_examples",
+            "minimize_floats",
             "minimize_duplicated_blocks",
             "minimize_individual_blocks",
         ]
@@ -1223,6 +1235,48 @@ class Shrinker(object):
                 random=self.random,
                 full=False,
             )
+
+    def minimize_floats(self):
+        """Some shrinks that we employ that only really make sense for our
+        specific floating point encoding that are hard to discover from any
+        sort of reasonable general principle. This allows us to make
+        transformations like replacing a NaN with an Infinity or replacing
+        a float with its nearest integers that we would otherwise not be
+        able to due to them requiring very specific transformations of
+        the bit sequence.
+
+        We only apply these transformations to blocks that "look like" our
+        standard float encodings because they are only really meaningful
+        there. The logic for detecting this is reasonably precise, but
+        it doesn't matter if it's wrong. These are always valid
+        transformations to make, they just don't necessarily correspond to
+        anything particularly meaningful for non-float values.
+        """
+        i = 0
+        while i < len(self.shrink_target.examples):
+            ex = self.shrink_target.examples[i]
+            if (
+                ex.label == DRAW_FLOAT_LABEL
+                and len(ex.children) == 2
+                and ex.children[0].length == 8
+            ):
+                u = ex.children[0].start
+                v = ex.children[0].end
+                buf = self.shrink_target.buffer
+                b = buf[u:v]
+                f = lex_to_float(int_from_bytes(b))
+                b2 = int_to_bytes(float_to_lex(f), 8)
+                if b == b2 or self.consider_new_buffer(buf[:u] + b2 + buf[v:]):
+                    Float.shrink(
+                        f,
+                        lambda x: self.consider_new_buffer(
+                            self.shrink_target.buffer[:u]
+                            + int_to_bytes(float_to_lex(x), 8)
+                            + self.shrink_target.buffer[v:]
+                        ),
+                        random=self.random,
+                    )
+            i += 1
 
     def minimize_individual_blocks(self):
         """Attempt to minimize each block in sequence.
