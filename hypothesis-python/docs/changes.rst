@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.3.0:
+
+------------------
+4.3.0 - 2019-01-24
+------------------
+
+This release deprecates ``HealthCheck.hung_test`` and disables the
+associated runtime check for tests that ran for more than five minutes.
+Such a check is redundant now that we enforce the ``deadline`` and
+``max_examples`` setting, which can be adjusted independently.
+
 .. _v4.2.0:
 
 ------------------

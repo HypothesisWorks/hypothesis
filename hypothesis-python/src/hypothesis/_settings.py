@@ -609,7 +609,7 @@ def validate_health_check_suppressions(suppressions):
             note_deprecation(
                 "HealthCheck.hung_test is deprecated and has no "
                 "effect, as we no longer run this health check.",
-                since="RELEASEDAY",
+                since="2019-01-24",
             )
     return suppressions
 
