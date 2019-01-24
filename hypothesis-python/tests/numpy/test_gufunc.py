@@ -81,7 +81,9 @@ def validate_shapes(L, parsed_sig, min_side, max_side):
 
 def validate_bcast_shapes(shapes, parsed_sig,
                           min_side, max_side, max_dims_extra):
-    assert all(len(ss) <= gu.GLOBAL_DIMS_MAX for ss in shapes)
+    # Ok to be above GLOBAL_DIMS_MAX if core dims are too
+    assert all(len(ss) <= gu.GLOBAL_DIMS_MAX or len(ss) == len(pp)
+               for ss, pp in zip(shapes, parsed_sig))
 
     # TODO check all int in list of tuples
 
@@ -383,7 +385,8 @@ def test_inverse_signature_map(parsed_sig):
 
 
 # Allow bigger sizes since we only generate the shapes and never alloc arrays
-@given(parsed_sigs_and_sizes(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX,
+# Try +3 to see what happens if we put something too big in
+@given(parsed_sigs_and_sizes(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX + 3,
                              max_max_side=100), data())
 def test_shapes_gufunc_arg_shapes(parsed_sig_and_size, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
@@ -467,7 +470,8 @@ def test_append_bcast_dims(args):
         assert np.all(bb[~st1] == b_dims[len(b_dims) - len(bb):][~st1])
 
 
-@given(parsed_sigs_and_sizes(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX,
+# Try +3 to see what happens if we put something too big in
+@given(parsed_sigs_and_sizes(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX + 3,
                              max_max_side=100),
        lists(booleans(), min_size=10, max_size=10),
        integers(0, gu.GLOBAL_DIMS_MAX),
