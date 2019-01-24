@@ -31,6 +31,7 @@ DEFAULT_MAX_SIDE = 5
 
 # TODO tester that transforms somes elements in list with just, or applies
 # just if not iterable
+    # TODO max with zero, TODO set GLOBAL DIMS MAX low and run tests
 
 # TODO consider in tests using from_regex(npfb._SIGNATURE)
 
@@ -121,7 +122,12 @@ def _arrays(draw, dtype, shape, elements=None, unique=False):
     ```
     However, this appears to be slower.
     """
-    # TODO swap order draw dtype, draw if strat
+    # Maintain ability of arrays to accept strategies for these args
+    if isinstance(dtype, SearchStrategy):
+        dtype = draw(dtype)
+    if isinstance(shape, SearchStrategy):
+        shape = draw(shape)
+
     shape = tuple(ensure_int(aa) for aa in shape)
     S = arrays(dtype, shape, elements=elements, unique=unique).map(np.asarray)
     X = draw(S)
@@ -249,6 +255,7 @@ def _append_bcast_dims(core_dims, b_dims, mask, n_extra_per_arg):
     assert n_.shape == (n_args,)
     assert n_.dtype.kind == 'i'
     assert np.all(n_ >= 0)
+    assert np.all(n_ <= max_dims_extra)
 
     # Build 2D array with extra dimensions
     # e.g., extra_dims = [[2 5], [2 5]]
@@ -337,22 +344,20 @@ def gufunc_arg_shapes(signature, excluded=(),
     if max_dims_extra == 0:
         return shapes_st
 
-    # TODO max with zero, TODO set GLOBAL DIMS MAX low and run tests
-    max_extra_per_arg = [min(max(0, GLOBAL_DIMS_MAX - len(ss)), max_dims_extra)
-                         for ss in parsed_sig]
-
-    # TODO consider using tuples if faster but assert dtype after tile since
-    # len always greater than 0
+    # We could use tuples instead without creating type ambiguity since
+    # max_dims_extra > 0 and avoid calling arrays, but prob ok like this.
     extra_dim_gen = integers(min_value=min_side[BCAST_DIM],
                              max_value=max_side[BCAST_DIM])
     extra_dims_st = _arrays(np.intp, (max_dims_extra,), elements=extra_dim_gen)
 
     mask_st = _arrays(np.bool_, (len(parsed_sig), max_dims_extra))
 
-    extra_per_arg_st = [just(0) if nn in excluded else
-                        integers(min_value=0, max_value=max_extra_per_arg[nn])
-                        for nn in range(len(parsed_sig))]
-    extra_per_arg_st = tuples(*extra_per_arg_st)
+    # np.clip will convert to np int but we don't really care.
+    max_extra_per_arg = [0 if nn in excluded else
+                         np.clip(GLOBAL_DIMS_MAX - len(ss), 0, max_dims_extra)
+                         for nn, ss in enumerate(parsed_sig)]
+    extra_per_arg_st = tuples(*[integers(min_value=0, max_value=mm)
+                                for mm in max_extra_per_arg])
 
     shapes_st = builds(_append_bcast_dims,
                        shapes_st, extra_dims_st, mask_st, extra_per_arg_st)
