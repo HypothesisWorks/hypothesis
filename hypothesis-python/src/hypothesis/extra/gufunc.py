@@ -26,9 +26,6 @@ BCAST_DIM = object()
 # Value used in default dict for max side if variable not specified
 DEFAULT_MAX_SIDE = 5
 
-# TODO test sig map and bdim builder
-#   use from hypothesis.internal.compat import integer_types in test
-
 # TODO tester that transforms somes elements in list with just, or applies
 # just if not iterable
     # TODO max with zero, TODO set GLOBAL DIMS MAX low and run tests

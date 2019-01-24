@@ -1,8 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 import string
-# Note: this requires adding `future` to the test requirements!
-from builtins import int as py3int
 from collections import defaultdict
 from functools import reduce
 
@@ -11,6 +9,7 @@ import numpy as np
 import hypothesis.extra.gufunc as gu
 from hypothesis import given
 from hypothesis.extra.numpy import from_dtype, scalar_dtypes
+from hypothesis.internal.compat import integer_types
 from hypothesis.strategies import (
     booleans,
     composite,
@@ -40,12 +39,6 @@ def identity(x):
     return x
 
 
-def check_int(x):
-    """Use subroutine for this so in Py3 we can remove the `long`."""
-    # Could also do ``type(x) in (int, long)``, but only on Py2.
-    assert isinstance(x, py3int)
-
-
 def pad_left(L, size, padding):
     L = (padding,) * max(0, size - len(L)) + L
     return L
@@ -72,7 +65,7 @@ def validate_shapes(L, parsed_sig, min_side, max_side):
         assert type(drawn) == tuple
         assert len(spec) == len(drawn)
         for ss, dd in zip(spec, drawn):
-            check_int(dd)
+            assert isinstance(dd, integer_types)
             if ss.isdigit():
                 assert int(ss) == dd
             else:
