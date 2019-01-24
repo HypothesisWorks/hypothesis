@@ -79,7 +79,7 @@ def validate_shapes(L, parsed_sig, min_side, max_side):
                 assert var_size == dd
 
 
-def validate_bcast_shapes(shapes, parsed_sig,
+def validate_bcast_shapes(shapes, parsed_sig, excluded,
                           min_side, max_side, max_dims_extra):
     # Ok to be above GLOBAL_DIMS_MAX if core dims are too
     assert all(len(ss) <= gu.GLOBAL_DIMS_MAX or len(ss) == len(pp)
@@ -88,6 +88,9 @@ def validate_bcast_shapes(shapes, parsed_sig,
     assert type(shapes) is list
     assert all(type(ss) is tuple for ss in shapes)
     assert all(all(type(v) is int for v in ss) for ss in shapes)
+
+    assert all((ii not in excluded) or len(ss) == len(pp)
+               for ii, (ss, pp) in enumerate(zip(shapes, parsed_sig)))
 
     # chop off extra dims then same as gufunc_shape
     core_dims = [tt[len(tt) - len(pp):] for tt, pp in zip(shapes, parsed_sig)]
@@ -132,8 +135,6 @@ def real_scalar_dtypes():
 
     def cast_it(args):
         return args[0](args[1])
-
-    # TODO consider also string native dtypes
 
     S = tuples(sampled_from((str, identity, to_native)), scalar_dtypes())
     S = S.map(cast_it)
@@ -496,9 +497,7 @@ def test_broadcast_shapes_gufunc_arg_shapes(parsed_sig_and_size, excluded,
 
     shapes = data.draw(S)
 
-    # TODO check excluded
-
-    validate_bcast_shapes(shapes, parsed_sig,
+    validate_bcast_shapes(shapes, parsed_sig, excluded,
                           min_side, max_side, max_dims_extra)
 
 
@@ -527,7 +526,7 @@ def test_broadcast_shapes_gufunc_args(parsed_sig_and_size, excluded,
     X = data.draw(S)
     shapes = [np.shape(xx) for xx in X]
 
-    validate_bcast_shapes(shapes, parsed_sig,
+    validate_bcast_shapes(shapes, parsed_sig, excluded,
                           min_side, max_side, max_dims_extra)
     validate_elements(X, dtype=dtype, unique=unique)
 
