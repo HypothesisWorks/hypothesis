@@ -388,13 +388,6 @@ class Shrinker(object):
         be useless and returns False without running it."""
 
         buffer = hbytes(buffer[: self.shrink_target.index])
-        try:
-            existing = self.__test_function_cache[buffer]
-        except KeyError:
-            pass
-        else:
-            return self.incorporate_test_data(existing)
-
         # Sometimes an attempt at lexicographic minimization will do the wrong
         # thing because the buffer has changed under it (e.g. something has
         # turned into a write, the bit size has changed). The result would be
@@ -415,9 +408,8 @@ class Shrinker(object):
         """Takes a ConjectureData or Overrun object updates the current
         shrink_target if this data represents an improvement over it,
         returning True if it is."""
-        if data is Overrun:
+        if data is Overrun or data is self.shrink_target:
             return
-        self.__test_function_cache[data.buffer] = data
         if self.__predicate(data) and sort_key(data.buffer) < sort_key(
             self.shrink_target.buffer
         ):
@@ -433,13 +425,8 @@ class Shrinker(object):
         with status >= INVALID that would result from running this buffer."""
 
         buffer = hbytes(buffer)
-        try:
-            return self.__test_function_cache[buffer]
-        except KeyError:
-            pass
         result = self.__engine.cached_test_function(buffer)
         self.incorporate_test_data(result)
-        self.__test_function_cache[buffer] = result
         return result
 
     def debug(self, msg):
