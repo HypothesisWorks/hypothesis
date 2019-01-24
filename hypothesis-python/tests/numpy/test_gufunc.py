@@ -85,7 +85,9 @@ def validate_bcast_shapes(shapes, parsed_sig,
     assert all(len(ss) <= gu.GLOBAL_DIMS_MAX or len(ss) == len(pp)
                for ss, pp in zip(shapes, parsed_sig))
 
-    # TODO check all int in list of tuples
+    assert type(shapes) is list
+    assert all(type(ss) is tuple for ss in shapes)
+    assert all(all(type(v) is int for v in ss) for ss in shapes)
 
     # chop off extra dims then same as gufunc_shape
     core_dims = [tt[len(tt) - len(pp):] for tt, pp in zip(shapes, parsed_sig)]
