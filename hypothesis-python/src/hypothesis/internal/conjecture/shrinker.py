@@ -290,6 +290,22 @@ class Shrinker(object):
 
         self.initial_calls = self.__engine.call_count
         self.running_passes = []
+        self.add_new_passes(
+            "remove_discarded",
+            "alphabet_minimize",
+            "adaptive_example_deletion",
+            "pass_to_descendant",
+            "zero_examples",
+            "minimize_floats",
+            "minimize_duplicated_blocks",
+            "minimize_individual_blocks",
+            "reorder_examples",
+            block_program("XX"),
+            block_program("-XX"),
+            "minimize_block_pairs_retaining_sum",
+            "shrink_offset_pairs",
+            "example_deletion_with_block_lowering",
+        )
 
     def clear_passes(self):
         """Reset all passes on the shrinker, leaving it in a blank state.
@@ -473,44 +489,15 @@ class Shrinker(object):
         This method iterates to a fixed point and so is idempontent - calling
         it twice will have exactly the same effect as calling it once.
         """
-        self.clear_passes()
-
-        self.add_new_passes(
-            "remove_discarded", "alphabet_minimize", "adaptive_example_deletion"
-        )
-
-        self.fixate_shrink_passes()
-
-        self.add_new_passes(
-            "pass_to_descendant",
-            "zero_examples",
-            "minimize_floats",
-            "minimize_duplicated_blocks",
-            "minimize_individual_blocks",
-            "reorder_examples",
-        )
-
-        self.fixate_shrink_passes()
-
-        self.add_new_passes(
-            block_program("XX"),
-            block_program("-XX"),
-            "minimize_block_pairs_retaining_sum",
-            "shrink_offset_pairs",
-            "example_deletion_with_block_lowering",
-        )
-
-        self.fixate_shrink_passes()
-
-    def fixate_shrink_passes(self):
         any_ran = True
         while any_ran:
             any_ran = False
+            starting_length = len(self.shrink_target.buffer)
 
             for sp in self.running_passes:
                 failures = 0
-                successes = 0
-                while failures < 2 * successes + 1:
+                max_failures = 3
+                while failures < max_failures:
                     initial = self.shrink_target
                     calls = self.calls
                     if not sp.step():
@@ -522,9 +509,15 @@ class Shrinker(object):
                         if self.shrink_target is initial:
                             failures += 1
                         else:
-                            successes += 1
-                            if len(self.shrink_target.buffer) < len(initial.buffer):
-                                failures = 0
+                            failures = 0
+                            max_failures = 10
+                # The early passes tend to be better at reducing the length and the
+                # later passes tend to be more expensive. Because it's cheap to run
+                # a pass if it does little or nothing it is worth restarting whenever
+                # running a pass successfully reduces the size.
+                if len(self.shrink_target.buffer) < starting_length:
+                    assert any_ran
+                    break
 
     @property
     def buffer(self):
