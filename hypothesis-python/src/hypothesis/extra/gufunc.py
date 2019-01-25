@@ -162,6 +162,7 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     -------
     res : tuple of ndarrays
         Resulting ndarrays with shape of `shapes` and elements from `elements`.
+
     """
     if isinstance(shapes, SearchStrategy):
         shapes = draw(shapes)
@@ -199,6 +200,7 @@ def _signature_map(map_dict, parsed_sig):
     -------
     shapes : list of tuples of int
         list of tuples where each tuple is the shape of an argument.
+
     """
     shapes = [tuple(map_dict[k] for k in arg) for arg in parsed_sig]
     return shapes
@@ -222,6 +224,7 @@ def _gufunc_arg_shapes(parsed_sig, min_side, max_side):
     -------
     shapes : list of tuples of int
         list of tuples where each tuple is the shape of an argument.
+
     """
     # Skipping validation on min and max sides since this function is private.
 
@@ -265,6 +268,7 @@ def _append_bcast_dims(core_dims, b_dims, set_to_1, n_extra_per_arg):
         list of tuples where each tuple is the shape of an argument. Extra
         dimensions for broadcasting will be present in the shapes. It has
         length `n_args`.
+
     """
     # Build 2D array with extra dimensions
     # e.g., extra_dims = [[2 5], [2 5]]
@@ -322,7 +326,6 @@ def gufunc_arg_shapes(signature, excluded=(),
 
     Examples
     --------
-
     .. code-block:: pycon
 
       >>> from hypothesis.extra.gufunc import BCAST_DIM
@@ -336,6 +339,7 @@ def gufunc_arg_shapes(signature, excluded=(),
       >>> gufunc_arg_shapes('(m,n),(n)->(m)', excluded=(0,),
                             max_side=20, max_dims_extra=3).example()
       [(11, 13), (1, 1, 1, 13)]
+
     """
     check_set_like(excluded, name="excluded")
     min_side = _int_or_dict(min_side, 0)
@@ -428,7 +432,6 @@ def gufunc_args(signature, dtype, elements, unique=False, excluded=(),
 
     Examples
     --------
-
     .. code-block:: pycon
 
       >>> from hypothesis.extra.gufunc import BCAST_DIM
@@ -444,6 +447,7 @@ def gufunc_args(signature, dtype, elements, unique=False, excluded=(),
       (array([[[[[ True,  True,  True,  True,  True],
                  [False,  True,  True,  True, False]]]]], dtype=bool),
        array([67, 43,  0, 34, 66], dtype=int32))
+
     """
     shape_st = gufunc_arg_shapes(signature, excluded=excluded,
                                  min_side=min_side, max_side=max_side,

@@ -343,14 +343,14 @@ def test_elements_tuple_of_arrays(shapes, dtype, data):
                                 scalar_dtypes(), just(None), booleans()],
                       min_side=1, max_dims_extra=1), data())
 def test_bcast_tuple_of_arrays(args, data):
-    '''Now testing broadcasting of tuple_of_arrays, kind of crazy since it uses
+    """Now testing broadcasting of tuple_of_arrays, kind of crazy since it uses
     gufuncs to test itself. Some awkwardness here since there are a lot of
     corner cases when dealing with object types in the numpy extension.
 
     For completeness, should probably right a function like this for the other
     functions, but there always just pass dtype, elements, unique to
     `_tuple_of_arrays` anyway, so this should be pretty good.
-    '''
+    """
     shapes, dtype, elements, unique = args
 
     shapes = shapes.ravel()
