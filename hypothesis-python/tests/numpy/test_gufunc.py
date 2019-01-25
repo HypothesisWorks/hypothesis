@@ -39,6 +39,11 @@ def identity(x):
     return x
 
 
+def no_weird_digits(ss):
+    ok = all((not cc.isdigit()) or (cc in string.digits) for cc in ss)
+    return ok
+
+
 def pad_left(L, size, padding):
     L = (padding,) * max(0, size - len(L)) + L
     return L
@@ -173,7 +178,8 @@ def parsed_sigs(big=False):
 
     if big:
         # Or throw in anything compatible with regex sig
-        S = S | from_regex(npfb._SIGNATURE).map(gu.parse_gufunc_signature)
+        all_sigs = from_regex(npfb._SIGNATURE).filter(no_weird_digits)
+        S = S | all_sigs.map(gu.parse_gufunc_signature)
 
     return S
 
