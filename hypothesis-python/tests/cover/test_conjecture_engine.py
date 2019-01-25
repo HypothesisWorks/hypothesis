@@ -19,17 +19,17 @@ from __future__ import absolute_import, division, print_function
 
 import itertools
 import re
+import time
 from random import Random, seed as seed_random
 
 import attr
 import pytest
 
 import hypothesis.internal.conjecture.engine as engine_module
-import hypothesis.internal.conjecture.floats as flt
 from hypothesis import HealthCheck, Phase, Verbosity, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck
-from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, int_to_bytes
+from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
     ConjectureData,
@@ -42,12 +42,7 @@ from hypothesis.internal.conjecture.engine import (
     RunIsComplete,
     TargetSelector,
 )
-from hypothesis.internal.conjecture.shrinker import (
-    PassClassification,
-    Shrinker,
-    block_program,
-)
-from hypothesis.internal.conjecture.shrinking import Float
+from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
 from tests.common.strategies import SLOW, HardToShrink
@@ -1576,30 +1571,6 @@ def test_pandas_hack():
     assert list(shrinker.shrink_target.buffer) == [1, 7]
 
 
-def test_passes_can_come_back_to_life():
-    initial = hbytes([1, 2, 3, 4, 5, 6])
-    buf1 = hbytes([0, 1, 3, 4, 5, 6])
-    buf2 = hbytes([0, 1, 3, 4, 4, 6])
-
-    good = {initial, buf1, buf2}
-
-    @shrinking_from(initial)
-    def shrinker(data):
-        string = hbytes([data.draw_bits(8) for _ in range(6)])
-        if string in good:
-            data.mark_interesting()
-
-    shrinker.clear_passes()
-    shrinker.add_new_pass(block_program("--"))
-    shrinker.add_new_pass(block_program("-"))
-
-    shrinker.single_greedy_shrink_iteration()
-    assert shrinker.shrink_target.buffer == buf1
-
-    shrinker.single_greedy_shrink_iteration()
-    assert shrinker.shrink_target.buffer == buf2
-
-
 def test_will_enable_previously_bad_passes_when_failing_to_shrink():
     # We lead the shrinker down the garden path a bit where it keeps making
     # progress but only lexically. When it finally gets down to the minimum
@@ -1638,57 +1609,6 @@ def test_will_enable_previously_bad_passes_when_failing_to_shrink():
     assert shrinker.shrink_target.buffer == final + hbytes([7])
 
 
-def test_shrink_passes_behave_sensibly_with_standard_operators():
-    @shrinking_from(hbytes([1]))
-    def shrinker(data):
-        if data.draw_bits(1):
-            data.mark_interesting()
-
-    passes = shrinker.passes
-
-    lookup = {p: p for p in passes}
-    for p in passes:
-        assert lookup[p] is p
-
-    for p, q in itertools.combinations(passes, 2):
-        assert p < q
-        assert p != q
-
-
-def test_shrink_pass_may_go_from_solid_to_dubious():
-
-    initial = hbytes([10] * 20)
-
-    @shrinking_from(initial)
-    def shrinker(data):
-        all_10 = True
-        for _ in hrange(19):
-            m = data.draw_bits(8)
-            if m != 10:
-                all_10 = False
-        n = data.draw_bits(8)
-        if all_10 and n >= 9:
-            data.mark_interesting()
-
-    sp = shrinker.shrink_pass("minimize_individual_blocks")
-    assert sp.classification == PassClassification.CANDIDATE
-    shrinker.run_shrink_pass(sp)
-    assert sp.classification == PassClassification.HOPEFUL
-    fixate_passes(shrinker, "minimize_individual_blocks")
-    assert sp.classification == PassClassification.DUBIOUS
-
-
-def test_runs_adaptive_delete_on_first_pass_if_discarding_does_not_work():
-    @shrinking_from([0, 1])
-    def shrinker(data):
-        while not data.draw_bits(1):
-            pass
-        data.mark_interesting()
-
-    shrinker.single_greedy_shrink_iteration()
-    assert list(shrinker.buffer) == [1]
-
-
 def test_alphabet_minimization():
     @shrink(hbytes((10, 11)) * 5, "alphabet_minimize")
     def x(data):
@@ -1699,33 +1619,6 @@ def test_alphabet_minimization():
             data.mark_interesting()
 
     assert x == [0, 2] * 5
-
-
-def test_keeps_using_solid_passes_while_they_shrink_size():
-    rnd = Random(0)
-    values = list(hrange(256))
-    rnd.shuffle(values)
-
-    good = {hbytes(values[j:]) for j in range(len(values))}
-
-    initial = hbytes(values)
-
-    @shrinking_from(initial)
-    def shrinker(data):
-        while True:
-            data.draw_bits(8)
-            if hbytes(data.buffer) in good:
-                data.mark_interesting()
-
-    shrinker.clear_passes()
-
-    d1 = shrinker.add_new_pass(block_program("X"))
-    d2 = shrinker.add_new_pass(block_program("-"))
-
-    for _ in range(3):
-        shrinker.single_greedy_shrink_iteration()
-        assert d1.classification == PassClassification.HOPEFUL
-        assert d2.classification == PassClassification.CANDIDATE
 
 
 fake_data_counter = 0
@@ -1797,40 +1690,3 @@ def test_cached_test_function_does_not_reinvoke_on_prefix():
             prefix_data = runner.cached_test_function(hbytes(n))
             assert prefix_data is Overrun
         assert call_count[0] == 1
-
-
-def test_float_shrink_can_run_when_canonicalisation_does_not_work(monkeypatch):
-    # This should be an error when called
-    monkeypatch.setattr(Float, "shrink", None)
-
-    base_buf = int_to_bytes(flt.base_float_to_lex(1000.0), 8) + hbytes(1)
-
-    @shrinking_from(base_buf)
-    def shrinker(data):
-        flt.draw_float(data)
-        if hbytes(data.buffer) == base_buf:
-            data.mark_interesting()
-
-    shrinker.minimize_floats()
-
-    assert shrinker.shrink_target.buffer == base_buf
-
-
-def test_will_evict_entries_from_the_cache(monkeypatch):
-    monkeypatch.setattr(engine_module, "CACHE_SIZE", 5)
-    count = [0]
-
-    def tf(data):
-        data.draw_bytes(1)
-        count[0] += 1
-
-    runner = ConjectureRunner(tf, settings=TEST_SETTINGS)
-
-    for _ in range(3):
-        for n in range(10):
-            runner.cached_test_function([n])
-
-    # Because we exceeded the cache size, our previous
-    # calls will have been evicted, so each call to
-    # cached_test_function will have to reexecute.
-    assert count[0] == 30
