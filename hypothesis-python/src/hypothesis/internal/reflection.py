@@ -374,9 +374,9 @@ def extract_lambda_source(f):
     # AttributeError.
     #
     try:
-        encoding, _ = tokenize.detect_encoding(
-            open(inspect.getsourcefile(f), "rb").readline
-        )
+        with open(inspect.getsourcefile(f), "rb") as src_f:
+            encoding, _ = tokenize.detect_encoding(src_f.readline)
+
         source_bytes = source.encode(encoding)
         source_bytes = source_bytes[lambda_ast.col_offset :].strip()
         source = source_bytes.decode(encoding)
