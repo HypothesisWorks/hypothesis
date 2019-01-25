@@ -19,7 +19,6 @@ from __future__ import absolute_import, division, print_function
 
 import math
 
-from hypothesis.extra.gufunc import gufunc_args, gufunc_arg_shapes  # noqa
 import numpy as np
 
 import hypothesis._strategies as st

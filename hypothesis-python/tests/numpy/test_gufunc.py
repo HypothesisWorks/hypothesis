@@ -9,12 +9,7 @@ import numpy.lib.function_base as npfb
 
 import hypothesis.extra.gufunc as gu
 from hypothesis import given
-from hypothesis.extra.numpy import (
-    from_dtype,
-    gufunc_arg_shapes,
-    gufunc_args,
-    scalar_dtypes,
-)
+from hypothesis.extra.numpy import from_dtype, scalar_dtypes
 from hypothesis.internal.compat import integer_types
 from hypothesis.strategies import (
     booleans,
@@ -342,11 +337,11 @@ def test_elements_tuple_of_arrays(shapes, dtype, data):
     validate_elements(X, choices=choices, dtype=dtype)
 
 
-@given(gufunc_args('(1),(1),(1),()->()',
-                   dtype=['object', 'object', 'object', 'bool'],
-                   elements=[_st_shape,
-                             scalar_dtypes(), just(None), booleans()],
-                   min_side=1, max_dims_extra=1), data())
+@given(gu.gufunc_args('(1),(1),(1),()->()',
+                      dtype=['object', 'object', 'object', 'bool'],
+                      elements=[_st_shape,
+                                scalar_dtypes(), just(None), booleans()],
+                      min_side=1, max_dims_extra=1), data())
 def test_bcast_tuple_of_arrays(args, data):
     '''Now testing broadcasting of tuple_of_arrays, kind of crazy since it uses
     gufuncs to test itself. Some awkwardness here since there are a lot of
@@ -444,8 +439,8 @@ def test_shapes_gufunc_args(parsed_sig_and_size, dtype, unique, data):
     elements = from_dtype(np.dtype(dtype))
 
     # Assumes zero broadcast dims by default
-    S = gufunc_args(signature, min_side=min_side, max_side=max_side,
-                    dtype=dtype, elements=elements, unique=unique)
+    S = gu.gufunc_args(signature, min_side=min_side, max_side=max_side,
+                       dtype=dtype, elements=elements, unique=unique)
 
     X = data.draw(S)
     shapes = [np.shape(xx) for xx in X]
@@ -464,19 +459,19 @@ def test_elements_gufunc_args(parsed_sig, min_side, max_side, dtype, data):
 
     min_side, max_side = sorted([min_side, max_side])
 
-    S = gufunc_args(signature, min_side=min_side, max_side=max_side,
-                    dtype=dtype, elements=elements)
+    S = gu.gufunc_args(signature, min_side=min_side, max_side=max_side,
+                       dtype=dtype, elements=elements)
 
     X = data.draw(S)
 
     validate_elements(X, choices=choices, dtype=dtype)
 
 
-@given(gufunc_args('(n),(m),(n,m),(n)->()',
-                   dtype=['object', int, bool, int],
-                   elements=[_st_shape, integers(0, 100),
-                             booleans(), integers(0, 100)],
-                   min_side={'n': 1}))  # always at least one arg
+@given(gu.gufunc_args('(n),(m),(n,m),(n)->()',
+                      dtype=['object', int, bool, int],
+                      elements=[_st_shape, integers(0, 100),
+                                booleans(), integers(0, 100)],
+                      min_side={'n': 1}))  # always at least one arg
 def test_append_bcast_dims(args):
     core_dims, b_dims, set_to_1, n_extra_per_arg = args
 
@@ -511,9 +506,9 @@ def test_broadcast_shapes_gufunc_arg_shapes(parsed_sig_and_size,
 
     excluded = data.draw(sets(integers(0, len(parsed_sig) - 1)).map(tuple))
 
-    S = gufunc_arg_shapes(signature, excluded=excluded,
-                          min_side=min_side, max_side=max_side,
-                          max_dims_extra=max_dims_extra)
+    S = gu.gufunc_arg_shapes(signature, excluded=excluded,
+                             min_side=min_side, max_side=max_side,
+                             max_dims_extra=max_dims_extra)
 
     shapes = data.draw(S)
 
@@ -534,10 +529,10 @@ def test_broadcast_shapes_gufunc_args(parsed_sig_and_size,
 
     elements = from_dtype(np.dtype(dtype))
 
-    S = gufunc_args(signature, excluded=excluded,
-                    min_side=min_side, max_side=max_side,
-                    max_dims_extra=max_dims_extra,
-                    dtype=dtype, elements=elements, unique=unique)
+    S = gu.gufunc_args(signature, excluded=excluded,
+                       min_side=min_side, max_side=max_side,
+                       max_dims_extra=max_dims_extra,
+                       dtype=dtype, elements=elements, unique=unique)
 
     X = data.draw(S)
     shapes = [np.shape(xx) for xx in X]
@@ -562,10 +557,10 @@ def test_broadcast_elements_gufunc_args(parsed_sig, min_side,
     choices = data.draw(real_from_dtype(dtype))
     elements = sampled_from(choices)
 
-    S = gufunc_args(signature, excluded=excluded,
-                    min_side=min_side, max_side=max_side,
-                    max_dims_extra=max_dims_extra,
-                    dtype=dtype, elements=elements)
+    S = gu.gufunc_args(signature, excluded=excluded,
+                       min_side=min_side, max_side=max_side,
+                       max_dims_extra=max_dims_extra,
+                       dtype=dtype, elements=elements)
 
     X = data.draw(S)
 
