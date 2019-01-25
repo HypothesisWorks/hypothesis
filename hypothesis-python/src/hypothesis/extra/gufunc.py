@@ -292,9 +292,9 @@ def gufunc_arg_shapes(signature, excluded=(),
         of numpy generalized universal function signature, e.g.,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
         Officially, only supporting ascii characters on Py3.
-    excluded : set-like of integers
-        Set of integers representing the positional for which the function will
-        not be vectorized. Uses same format as :obj:`numpy.vectorize`.
+    excluded : set(int)
+        Set-like of integers representing the positional for which the function
+        will not be vectorized. Uses same format as :obj:`numpy.vectorize`.
     min_side : int or dict
         Minimum size of any side of the arrays. It is good to test the corner
         cases of 0 or 1 sized dimensions when applicable, but if not, a min
@@ -314,7 +314,7 @@ def gufunc_arg_shapes(signature, excluded=(),
 
     Returns
     -------
-    shapes : list of tuples of int
+    shapes : list(tuple(int))
         list of tuples where each tuple is the shape of an argument. Extra
         dimensions for broadcasting will be present in the shapes.
 
@@ -385,20 +385,20 @@ def gufunc_args(signature, dtype, elements, unique=False, excluded=(),
         of numpy generalized universal function signature, e.g.,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
         Officially, only supporting ascii characters on Py3.
-    dtype : list-like of dtype
+    dtype : list(:class:`numpy:numpy.dtype`)
         List of numpy `dtype` for each argument. These can be either strings
         (``'int64'``), type (``np.int64``), or numpy `dtype`
         (``np.dtype('int64')``). Built in Python types (`int`, `float`, etc)
         also work. A single `dtype` can be supplied for all arguments.
-    elements : list-like of strategy
-        Strategies to fill in array elements on a per argument basis. One can
-        also specify a single strategy
+    elements : list
+        List of strategies to fill in array elements on a per argument basis.
+        One can also specify a single strategy
         (e.g., :func:`hypothesis.strategies.floats`)
         and have it applied to all arguments.
-    unique : list-like of bool
+    unique : list(bool)
         Boolean flag to specify if all elements in an array must be unique.
         One can also specify a single boolean to apply it to all arguments.
-    excluded : set-like of integers
+    excluded : set(int)
         Set of integers representing the positional for which the function will
         not be vectorized. Uses same format as :obj:`numpy.vectorize`.
     min_side : int or dict
@@ -420,7 +420,7 @@ def gufunc_args(signature, dtype, elements, unique=False, excluded=(),
 
     Returns
     -------
-    res : tuple of ndarrays
+    res : tuple(:class:`numpy:numpy.ndarray`)
         Resulting ndarrays with shapes consistent with `signature` and elements
         from `elements`. Extra dimensions for broadcasting will be present.
 
