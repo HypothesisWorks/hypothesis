@@ -10,11 +10,21 @@ from collections import defaultdict
 import numpy as np
 import numpy.lib.function_base as npfb
 
-from hypothesis.internal.validation import check_valid_bound, check_valid_interval
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import arrays, order_check
+from hypothesis.internal.validation import (
+    check_valid_bound,
+    check_valid_interval,
+)
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.strategies import builds, composite, integers, just, fixed_dictionaries, tuples
+from hypothesis.strategies import (
+    builds,
+    composite,
+    fixed_dictionaries,
+    integers,
+    just,
+    tuples,
+)
 
 # Should not ever need to broadcast beyond this, but should be able to set it
 # as high as 32 before breaking assumptions in numpy.
@@ -25,8 +35,6 @@ GLOBAL_DIMS_MAX = 12
 BCAST_DIM = object()
 # Value used in default dict for max side if variable not specified
 DEFAULT_MAX_SIDE = 5
-
-# sphinx
 
 # TODO isort, flake8, pycodestyle
 
