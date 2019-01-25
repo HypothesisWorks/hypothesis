@@ -19,6 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 import math
 
+from hypothesis.extra.gufunc import gufunc_args, gufunc_arg_shapes  # noqa
 import numpy as np
 
 import hypothesis._strategies as st
@@ -26,7 +27,6 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis import Verbosity
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra._gufuncs import gufunc_args, gufunc_arg_shapes  # noqa
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
