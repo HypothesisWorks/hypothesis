@@ -2,7 +2,6 @@
 # signatures `_parse_gufunc_signature`, which is only available in
 # numpy>=1.12.0 and therefore requires a bump in the requirements for
 # hypothesis.
-# TODO rename this file private and then import to numpy
 from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict
@@ -35,11 +34,6 @@ GLOBAL_DIMS_MAX = 12
 BCAST_DIM = object()
 # Value used in default dict for max side if variable not specified
 DEFAULT_MAX_SIDE = 5
-
-# TODO isort, flake8, pycodestyle
-
-# TODO pull latest, retest, sphinx, recheck style, PR
-# figure out how to squash before PR
 
 # This uses "private" function of numpy, but it does the job. It throws a
 # pretty readable exception for invalid input, so we don't need to add anything
