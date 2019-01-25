@@ -21,6 +21,14 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.4.3:
+
+------------------
+4.4.3 - 2019-01-25
+------------------
+
+This release fixes an open file leak that used to cause ``ResourceWarning``\ s.
+
 .. _v4.4.2:
 
 ------------------
