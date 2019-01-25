@@ -5,6 +5,7 @@ from collections import defaultdict
 from functools import reduce
 
 import numpy as np
+import numpy.lib.function_base as npfb
 
 import hypothesis.extra.gufunc as gu
 from hypothesis import given
@@ -20,6 +21,7 @@ from hypothesis.strategies import (
     just,
     lists,
     sampled_from,
+    sets,
     tuples,
 )
 
@@ -121,8 +123,13 @@ def validate_bcast_shapes(shapes, parsed_sig, excluded,
 def unparse(parsed_sig):
     assert len(parsed_sig) > 0, "gufunc sig does not support no argument funcs"
 
-    sig = [",".join(vv) for vv in parsed_sig]
-    sig = "(" + "),(".join(sig) + ")"
+    i_sig = [",".join(vv) for vv in parsed_sig[0]]
+    i_sig = "(" + "),(".join(i_sig) + ")"
+
+    o_sig = [",".join(vv) for vv in parsed_sig[1]]
+    o_sig = "(" + "),(".join(o_sig) + ")"
+
+    sig = "->".join((i_sig, o_sig))
     return sig
 
 
@@ -152,25 +159,33 @@ def real_from_dtype(dtype, N=10):
     return S
 
 
-def parsed_sigs(max_dims=3, max_args=5):
+def parsed_sigs(big=False):
     """Strategy to generate a parsed gufunc signature.
 
     Note that in general functions can take no-args, but the function signature
     formalism is for >= 1 args. So, there is always at least 1 arg here.
     """
+    max_dims = 3
+    max_args = 5
     # Use | to sample from digits since we would like (small) pure numbers too
     shapes = lists(from_regex(VALID_DIM_NAMES) | sampled_from(string.digits),
                    min_size=0, max_size=max_dims).map(tuple)
     S = lists(shapes, min_size=1, max_size=max_args)
+    S = tuples(S, S)
+
+    if big:
+        # Or throw in anything compatible with regex sig
+        S = S | from_regex(npfb._SIGNATURE).map(gu.parse_gufunc_signature)
+
     return S
 
 
 @composite
-def parsed_sigs_and_sizes(draw, min_min_side=0, max_max_side=5, **kwargs):
-    parsed_sig = draw(parsed_sigs(**kwargs))
+def parsed_sigs_and_sizes(draw, min_min_side=0, max_max_side=5, big=False):
+    parsed_sig = draw(parsed_sigs(big))
     # list of all labels used in sig, includes ints which is ok to include in
     # dict as distractors.
-    labels = list(set([k for arg in parsed_sig for k in arg]))
+    labels = list(set([k for arg in parsed_sig[0] for k in arg]))
     # Also sometimes put the broadcast flag in as label
     labels.append(gu.BCAST_DIM)
 
@@ -194,15 +209,12 @@ def parsed_sigs_and_sizes(draw, min_min_side=0, max_max_side=5, **kwargs):
     return parsed_sig, min_side, max_side
 
 
-@given(parsed_sigs(), parsed_sigs())
-def test_unparse_parse(i_parsed_sig, o_parsed_sig):
-    # Make sure all hard coded literals within specified size
-    # This is actually testing parsed_sigs().
-    labels = list(set([k for arg in i_parsed_sig for k in arg]))
-    assert all((not k.isdigit()) or (int(k) < 10) for k in labels)
+@given(parsed_sigs(big=True))
+def test_unparse_parse(sig):
+    i_parsed_sig, o_parsed_sig = sig
 
     # We don't care about the output for this function
-    signature = unparse(i_parsed_sig) + "->" + unparse(o_parsed_sig)
+    signature = unparse((i_parsed_sig, o_parsed_sig))
     # This is a 'private' function of np, so need to test it still works as we
     # think it does.
     inp, out = gu.parse_gufunc_signature(signature)
@@ -362,8 +374,10 @@ def test_bcast_tuple_of_arrays(args, data):
         validate_elements([xx], dtype=dd, unique=uu)
 
 
-@given(parsed_sigs())
+@given(parsed_sigs(big=True))
 def test_const_signature_map(parsed_sig):
+    parsed_sig, _ = parsed_sig
+
     # Map all dims to zero
     all_dims = reduce(set.union, [set(arg) for arg in parsed_sig])
     map_dict = {k: 0 for k in all_dims}
@@ -373,8 +387,10 @@ def test_const_signature_map(parsed_sig):
     assert all(all(v == 0 for v in arg) for arg in p_)
 
 
-@given(parsed_sigs())
+@given(parsed_sigs(big=True))
 def test_inverse_signature_map(parsed_sig):
+    parsed_sig, _ = parsed_sig
+
     # Build an arbitrary map
     all_dims = sorted(reduce(set.union, [set(arg) for arg in parsed_sig]))
     map_dict = dict(zip(all_dims, all_dims[::-1]))
@@ -389,8 +405,7 @@ def test_inverse_signature_map(parsed_sig):
 
 # Allow bigger sizes since we only generate the shapes and never alloc arrays
 # Try +3 to see what happens if we put something too big in
-@given(parsed_sigs_and_sizes(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX + 3,
-                             max_max_side=100), data())
+@given(parsed_sigs_and_sizes(max_max_side=100, big=True), data())
 def test_shapes_gufunc_arg_shapes(parsed_sig_and_size, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
 
@@ -398,18 +413,19 @@ def test_shapes_gufunc_arg_shapes(parsed_sig_and_size, data):
     min_side = gu._int_or_dict(min_side, 0)
     max_side = gu._int_or_dict(max_side, gu.DEFAULT_MAX_SIDE)
 
-    S = gu._gufunc_arg_shapes(parsed_sig, min_side=min_side, max_side=max_side)
+    S = gu._gufunc_arg_shapes(parsed_sig[0],
+                              min_side=min_side, max_side=max_side)
 
     shapes = data.draw(S)
-    validate_shapes(shapes, parsed_sig, min_side, max_side)
+    validate_shapes(shapes, parsed_sig[0], min_side, max_side)
 
 
-@given(parsed_sigs_and_sizes(), real_scalar_dtypes(), booleans(), data())
+@given(parsed_sigs_and_sizes(big=False),
+       real_scalar_dtypes(), booleans(), data())
 def test_shapes_gufunc_args(parsed_sig_and_size, dtype, unique, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
 
-    # We don't care about the output for this function
-    signature = unparse(parsed_sig) + "->()"
+    signature = unparse(parsed_sig)
 
     # We could also test using elements strategy that then requires casting,
     # but that would be kind of complicated to come up with compatible combos
@@ -422,18 +438,17 @@ def test_shapes_gufunc_args(parsed_sig_and_size, dtype, unique, data):
     X = data.draw(S)
     shapes = [np.shape(xx) for xx in X]
 
-    validate_shapes(shapes, parsed_sig, min_side, max_side)
+    validate_shapes(shapes, parsed_sig[0], min_side, max_side)
     validate_elements(X, dtype=dtype, unique=unique)
 
 
-@given(parsed_sigs(max_args=3), integers(0, 5), integers(0, 5),
+@given(parsed_sigs(big=False), integers(0, 5), integers(0, 5),
        real_scalar_dtypes(), data())
 def test_elements_gufunc_args(parsed_sig, min_side, max_side, dtype, data):
     choices = data.draw(real_from_dtype(dtype))
     elements = sampled_from(choices)
 
-    # We don't care about the output for this function
-    signature = unparse(parsed_sig) + "->()"
+    signature = unparse(parsed_sig)
 
     min_side, max_side = sorted([min_side, max_side])
 
@@ -473,23 +488,16 @@ def test_append_bcast_dims(args):
         assert np.all(bb[~st1] == b_dims[len(b_dims) - len(bb):][~st1])
 
 
-# Try +3 to see what happens if we put something too big in
-@given(parsed_sigs_and_sizes(max_args=10, max_dims=gu.GLOBAL_DIMS_MAX + 3,
-                             max_max_side=100),
-       lists(booleans(), min_size=10, max_size=10),
-       integers(0, gu.GLOBAL_DIMS_MAX),
-       data())
-def test_broadcast_shapes_gufunc_arg_shapes(parsed_sig_and_size, excluded,
+@given(parsed_sigs_and_sizes(max_max_side=100, big=True),
+       integers(0, gu.GLOBAL_DIMS_MAX), data())
+def test_broadcast_shapes_gufunc_arg_shapes(parsed_sig_and_size,
                                             max_dims_extra, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
 
-    # We don't care about the output for this function
-    signature = unparse(parsed_sig) + "->()"
+    signature = unparse(parsed_sig)
+    parsed_sig, _ = parsed_sig
 
-    excluded = excluded[:len(parsed_sig)]
-    assert len(excluded) == len(parsed_sig)  # Make sure excluded long enough
-    excluded, = np.where(excluded)
-    excluded = tuple(excluded)
+    excluded = data.draw(sets(integers(0, len(parsed_sig) - 1)).map(tuple))
 
     S = gu.gufunc_arg_shapes(signature, excluded=excluded,
                              min_side=min_side, max_side=max_side,
@@ -501,20 +509,16 @@ def test_broadcast_shapes_gufunc_arg_shapes(parsed_sig_and_size, excluded,
                           min_side, max_side, max_dims_extra)
 
 
-@given(parsed_sigs_and_sizes(max_args=3),
-       lists(booleans(), min_size=3, max_size=3), integers(0, 3),
-       real_scalar_dtypes(), booleans(), data())
-def test_broadcast_shapes_gufunc_args(parsed_sig_and_size, excluded,
+@given(parsed_sigs_and_sizes(big=False),
+       integers(0, 3), real_scalar_dtypes(), booleans(), data())
+def test_broadcast_shapes_gufunc_args(parsed_sig_and_size,
                                       max_dims_extra, dtype, unique, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
 
-    # We don't care about the output for this function
-    signature = unparse(parsed_sig) + "->()"
+    signature = unparse(parsed_sig)
+    parsed_sig, _ = parsed_sig
 
-    excluded = excluded[:len(parsed_sig)]
-    assert len(excluded) == len(parsed_sig)  # Make sure excluded long enough
-    excluded, = np.where(excluded)
-    excluded = tuple(excluded)
+    excluded = data.draw(sets(integers(0, len(parsed_sig) - 1)).map(tuple))
 
     elements = from_dtype(np.dtype(dtype))
 
@@ -531,18 +535,15 @@ def test_broadcast_shapes_gufunc_args(parsed_sig_and_size, excluded,
     validate_elements(X, dtype=dtype, unique=unique)
 
 
-@given(parsed_sigs(max_args=3), lists(booleans(), min_size=3, max_size=3),
+@given(parsed_sigs(big=False),
        integers(0, 5), integers(0, 5), integers(0, 3), real_scalar_dtypes(),
        data())
-def test_broadcast_elements_gufunc_args(parsed_sig, excluded, min_side,
+def test_broadcast_elements_gufunc_args(parsed_sig, min_side,
                                         max_side, max_dims_extra, dtype, data):
-    # We don't care about the output for this function
-    signature = unparse(parsed_sig) + "->()"
+    signature = unparse(parsed_sig)
+    parsed_sig, _ = parsed_sig
 
-    excluded = excluded[:len(parsed_sig)]
-    assert len(excluded) == len(parsed_sig)  # Make sure excluded long enough
-    excluded, = np.where(excluded)
-    excluded = tuple(excluded)
+    excluded = data.draw(sets(integers(0, len(parsed_sig) - 1)).map(tuple))
 
     min_side, max_side = sorted([min_side, max_side])
 

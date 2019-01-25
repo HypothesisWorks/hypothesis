@@ -26,17 +26,14 @@ BCAST_DIM = object()
 # Value used in default dict for max side if variable not specified
 DEFAULT_MAX_SIDE = 5
 
-    # TODO max with zero, TODO set GLOBAL DIMS MAX low and run tests
-
 # TODO consider in tests using from_regex(npfb._SIGNATURE)
 
 # TODO doc strings need to be redone with interface change
+# Maybe note dtype could be built in type
 
 # TODO check doc string examples with rand seed = 0
 
 # TODO isort
-
-# Maybe note dtype could be built in type
 
 # This uses "private" function of numpy, but it does the job. It throws a
 # pretty readable exception for invalid input, so we don't need to add anything
