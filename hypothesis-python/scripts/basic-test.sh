@@ -15,12 +15,14 @@ pip install .
 
 PYTEST="python -m pytest -n2"
 
-$PYTEST --runpytest=subprocess tests/pytest
+# Run all the no-extra-dependency tests for this version (except slow nocover tests)
+if [ "$(python -c 'import sys; print(sys.version_info[0] == 2)')" = "True" ] ; then
+  $PYTEST tests/cover tests/pytest tests/py2
+else
+  $PYTEST tests/cover tests/pytest tests/py3
+fi
 
-# Run some tests without docstrings or assertions, to catch bugs
-# like issue #822 in one of the test decorators.  See also #1541.
-PYTHONOPTIMIZE=2 $PYTEST tests/cover/test_testdecorators.py
-
+# Run tests for each extra module while the requirements are installed
 pip install ".[pytz, dateutil]"
 $PYTEST tests/datetime/
 pip uninstall -y pytz python-dateutil
@@ -29,11 +31,9 @@ pip install ".[dpcontracts]"
 $PYTEST tests/dpcontracts/
 pip uninstall -y dpcontracts
 
-if [ "$(python -c 'import sys; print(sys.version_info[0] == 2)')" = "True" ] ; then
-  $PYTEST "tests/py2"
-else
-  $PYTEST "tests/py3"
-fi
+pip install ".[lark]"
+$PYTEST tests/lark/
+pip uninstall -y lark-parser
 
 # We run a reduced set of tests on the macOS CI so that it runs in vaguely
 # reasonable time.
@@ -48,6 +48,10 @@ fi
 
 $PYTEST tests/nocover/
 
+# Run some tests without docstrings or assertions, to catch bugs
+# like issue #822 in one of the test decorators.  See also #1541.
+PYTHONOPTIMIZE=2 $PYTEST tests/cover/test_testdecorators.py
+
 if [ "$(python -c 'import platform; print(platform.python_implementation())')" != "PyPy" ]; then
   pip install .[django]
   HYPOTHESIS_DJANGO_USETZ=TRUE python -m tests.django.manage test tests.django
@@ -59,6 +63,4 @@ if [ "$(python -c 'import platform; print(platform.python_implementation())')" !
 
   pip install pandas
   $PYTEST tests/pandas
-
-  pip uninstall -y numpy pandas
 fi

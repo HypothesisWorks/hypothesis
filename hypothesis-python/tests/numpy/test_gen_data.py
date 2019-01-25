@@ -359,6 +359,7 @@ def test_overflowing_integers_are_deprecated(fill, data):
     "dtype,strat",
     [
         ("float16", st.floats(min_value=65520, allow_infinity=False)),
+        ("float32", st.floats(min_value=10 ** 40, allow_infinity=False)),
         ("complex64", st.complex_numbers(10 ** 300, allow_infinity=False)),
         ("U1", st.text(min_size=2, max_size=2)),
         ("S1", st.binary(min_size=2, max_size=2)),

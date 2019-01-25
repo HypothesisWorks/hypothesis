@@ -9,6 +9,7 @@ flake8-alfred
 flake8-docstrings
 ipython
 isort
+lark-parser
 mock
 mypy
 numpy

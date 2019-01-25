@@ -20,10 +20,73 @@ from __future__ import absolute_import, division, print_function
 import contextlib
 import random
 
+from hypothesis.errors import InvalidArgument
+from hypothesis.internal.compat import integer_types
+
+RANDOMS_TO_MANAGE = [random]  # type: list
+
 try:
     import numpy.random as npr
 except ImportError:
-    npr = None
+    pass
+else:
+
+    class NumpyRandomWrapper(object):
+        """A shim to remove those darn underscores."""
+
+        seed = npr.seed
+        getstate = npr.get_state
+        setstate = npr.set_state
+
+    RANDOMS_TO_MANAGE.append(NumpyRandomWrapper)
+
+
+def register_random(r):
+    # type: (random.Random) -> None
+    """Register the given Random instance for management by Hypothesis.
+
+    You can pass ``random.Random`` instances (or other objects with seed,
+    getstate, and setstate methods) to ``register_random(r)`` to have their
+    states seeded and restored in the same way as the global PRNGs from the
+    ``random`` and ``numpy.random`` modules.
+
+    All global PRNGs, from e.g. simulation or scheduling frameworks, should
+    be registered to prevent flaky tests.  Hypothesis will ensure that the
+    PRNG state is consistent for all test runs, or reproducibly varied if you
+    choose to use the :func:`~hypothesis.strategies.random_module` strategy.
+    """
+    if not (hasattr(r, "seed") and hasattr(r, "getstate") and hasattr(r, "setstate")):
+        raise InvalidArgument("r=%r does not have all the required methods" % (r,))
+    if r not in RANDOMS_TO_MANAGE:
+        RANDOMS_TO_MANAGE.append(r)
+
+
+def get_seeder_and_restorer(seed=0):
+    """Return a pair of functions which respectively seed all and restore
+    the state of all registered PRNGs.
+
+    This is used by the core engine via `deterministic_PRNG`, and by users
+    via `register_random`.  We support registration of additional random.Random
+    instances (or other objects with seed, getstate, and setstate methods)
+    to force determinism on simulation or scheduling frameworks which avoid
+    using the global random state.  See e.g. #1709.
+    """
+    assert isinstance(seed, integer_types) and 0 <= seed < 2 ** 32
+    states = []  # type: list
+
+    def seed_all():
+        assert not states
+        for r in RANDOMS_TO_MANAGE:
+            states.append(r.getstate())
+            r.seed(seed)
+
+    def restore_all():
+        assert len(states) == len(RANDOMS_TO_MANAGE)
+        for r, state in zip(RANDOMS_TO_MANAGE, states):
+            r.setstate(state)
+        del states[:]
+
+    return seed_all, restore_all
 
 
 @contextlib.contextmanager
@@ -35,15 +98,9 @@ def deterministic_PRNG():
     bad idea in principle, and breaks all kinds of independence assumptions
     in practice.
     """
-    _random_state = random.getstate()
-    random.seed(0)
-    # These branches are covered by tests/numpy/, not tests/cover/
-    if npr is not None:  # pragma: no cover
-        _npr_state = npr.get_state()
-        npr.seed(0)
+    seed_all, restore_all = get_seeder_and_restorer()
+    seed_all()
     try:
         yield
     finally:
-        random.setstate(_random_state)
-        if npr is not None:  # pragma: no cover
-            npr.set_state(_npr_state)
+        restore_all()

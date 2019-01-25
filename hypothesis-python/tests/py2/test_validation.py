@@ -19,10 +19,15 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesistooling.__main__ import check_requirements
+from hypothesis.errors import InvalidArgument
+from hypothesis.internal.validation import check_type
 
 
-# first broken in https://travis-ci.org/HypothesisWorks/hypothesis/builds/483167698
-@pytest.mark.xfail(strict=True, reason="No idea why this broke on master")
-def test_requirements():
-    check_requirements()
+class OldStyleClass:
+    pass
+
+
+def test_check_type_works_for_old_style_classes():
+    check_type(OldStyleClass, OldStyleClass())
+    with pytest.raises(InvalidArgument):
+        check_type(OldStyleClass, "not an instance")

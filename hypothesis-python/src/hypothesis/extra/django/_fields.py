@@ -24,6 +24,12 @@ from decimal import Decimal
 
 import django
 import django.db.models as dm
+import django.forms as df
+from django.core.validators import (
+    validate_ipv4_address,
+    validate_ipv6_address,
+    validate_ipv46_address,
+)
 
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument
@@ -35,6 +41,7 @@ from hypothesis.strategies import emails
 if False:
     from datetime import tzinfo  # noqa
     from typing import Any, Type, Optional, List, Text, Callable, Union  # noqa
+
 
 # Mapping of field types, to strategy objects or functions of (type) -> strategy
 _global_field_lookup = {
@@ -51,6 +58,14 @@ _global_field_lookup = {
     dm.NullBooleanField: st.one_of(st.none(), st.booleans()),
     dm.URLField: urls(),
     dm.UUIDField: st.uuids(),
+    df.DateField: st.dates(),
+    df.DurationField: st.timedeltas(),
+    df.EmailField: emails(),
+    df.FloatField: st.floats(allow_nan=False, allow_infinity=False),
+    df.IntegerField: st.integers(-2147483648, 2147483647),
+    df.NullBooleanField: st.one_of(st.none(), st.booleans()),
+    df.URLField: urls(),
+    df.UUIDField: st.uuids(),
 }
 
 
@@ -63,6 +78,7 @@ def register_for(field_type):
 
 
 @register_for(dm.DateTimeField)
+@register_for(df.DateTimeField)
 def _for_datetime(field):
     if getattr(django.conf.settings, "USE_TZ", False):
         return st.datetimes(timezones=timezones())
@@ -82,9 +98,16 @@ def using_sqlite():
 
 
 @register_for(dm.TimeField)
-def _for_time(field):
+def _for_model_time(field):
     # SQLITE supports TZ-aware datetimes, but not TZ-aware times.
     if getattr(django.conf.settings, "USE_TZ", False) and not using_sqlite():
+        return st.times(timezones=timezones())
+    return st.times()
+
+
+@register_for(df.TimeField)
+def _for_form_time(field):
+    if getattr(django.conf.settings, "USE_TZ", False):
         return st.times(timezones=timezones())
     return st.times()
 
@@ -99,16 +122,20 @@ def _for_duration(field):
 
 
 @register_for(dm.SlugField)
+@register_for(df.SlugField)
 def _for_slug(field):
+    min_size = 1
+    if getattr(field, "blank", False) or not getattr(field, "required", True):
+        min_size = 0
     return st.text(
         alphabet=string.ascii_letters + string.digits,
-        min_size=(0 if field.blank else 1),
+        min_size=min_size,
         max_size=field.max_length,
     )
 
 
 @register_for(dm.GenericIPAddressField)
-def _for_ip(field):
+def _for_model_ip(field):
     return dict(
         ipv4=ip4_addr_strings(),
         ipv6=ip6_addr_strings(),
@@ -116,7 +143,22 @@ def _for_ip(field):
     )[field.protocol.lower()]
 
 
+@register_for(df.GenericIPAddressField)
+def _for_form_ip(field):
+    # the IP address form fields have no direct indication of which type
+    #  of address they want, so direct comparison with the validator
+    #  function has to be used instead. Sorry for the potato logic here
+    if validate_ipv46_address in field.default_validators:
+        return ip4_addr_strings() | ip6_addr_strings()
+    if validate_ipv4_address in field.default_validators:
+        return ip4_addr_strings()
+    if validate_ipv6_address in field.default_validators:
+        return ip6_addr_strings()
+    raise InvalidArgument("No IP version validator on field=%r" % field)
+
+
 @register_for(dm.DecimalField)
+@register_for(df.DecimalField)
 def _for_decimal(field):
     bound = Decimal(10 ** field.max_digits - 1) / (10 ** field.decimal_places)
     return st.decimals(min_value=-bound, max_value=bound, places=field.decimal_places)
@@ -124,6 +166,8 @@ def _for_decimal(field):
 
 @register_for(dm.CharField)
 @register_for(dm.TextField)
+@register_for(df.CharField)
+@register_for(df.RegexField)
 def _for_text(field):
     # We can infer a vastly more precise strategy by considering the
     # validators as well as the field type.  This is a minimal proof of
@@ -143,13 +187,26 @@ def _for_text(field):
         # compute intersections of the full Python regex language.
         return st.one_of(*[st.from_regex(r) for r in regexes])
     # If there are no (usable) regexes, we use a standard text strategy.
-    return st.text(
+    min_size = 1
+    if getattr(field, "blank", False) or not getattr(field, "required", True):
+        min_size = 0
+    strategy = st.text(
         alphabet=st.characters(
             blacklist_characters=u"\x00", blacklist_categories=("Cs",)
         ),
-        min_size=(0 if field.blank else 1),
+        min_size=min_size,
         max_size=field.max_length,
     )
+    if getattr(field, "required", True):
+        strategy = strategy.filter(lambda s: s.strip())
+    return strategy
+
+
+@register_for(df.BooleanField)
+def _for_form_boolean(field):
+    if field.required:
+        return st.just(True)
+    return st.booleans()
 
 
 def register_field_strategy(field_type, strategy):
@@ -159,7 +216,7 @@ def register_field_strategy(field_type, strategy):
     ``field_type`` must be a subtype of django.db.models.Field, which must not
     already be registered.  ``strategy`` must be a SearchStrategy.
     """
-    if not issubclass(field_type, dm.Field):
+    if not issubclass(field_type, (dm.Field, df.Field)):
         raise InvalidArgument(
             "field_type=%r must be a subtype of Field" % (field_type,)
         )
@@ -183,20 +240,29 @@ def from_field(field):
     than a Field *subtype*, so that it has access to instance attributes
     such as string length and validators.
     """
-    check_type(dm.Field, field, "field")
-    if field.choices:
+    check_type((dm.Field, df.Field), field, "field")
+    if getattr(field, "choices", False):
         choices = []  # type: list
         for value, name_or_optgroup in field.choices:
             if isinstance(name_or_optgroup, (list, tuple)):
                 choices.extend(key for key, _ in name_or_optgroup)
             else:
                 choices.append(value)
+        # form fields automatically include an empty choice, strip it out
+        if u"" in choices:
+            choices.remove(u"")
+        min_size = 1
         if isinstance(field, (dm.CharField, dm.TextField)) and field.blank:
             choices.insert(0, u"")
+        elif isinstance(field, (df.Field)) and not field.required:
+            choices.insert(0, u"")
+            min_size = 0
         strategy = st.sampled_from(choices)
+        if isinstance(field, (df.MultipleChoiceField, df.TypedMultipleChoiceField)):
+            strategy = st.lists(st.sampled_from(choices), min_size=min_size)
     else:
         if type(field) not in _global_field_lookup:
-            if field.null:
+            if getattr(field, "null", False):
                 return st.none()
             raise InvalidArgument("Could not infer a strategy for %r", (field,))
         strategy = _global_field_lookup[type(field)]
@@ -213,6 +279,7 @@ def from_field(field):
                 return False
 
         strategy = strategy.filter(validate)
-    if field.null:
+
+    if getattr(field, "null", False):
         return st.none() | strategy
     return strategy

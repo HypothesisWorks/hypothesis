@@ -479,6 +479,22 @@ If the end user has also specified a custom executor using the
 be applied to the *new* inner test assigned by the test runner.
 
 
+--------------------------------
+Making random code deterministic
+--------------------------------
+
+While Hypothesis' example generation can be used for nondeterministic tests,
+debugging anything nondeterministic is usually a very frustrating excercise.
+To make things worse, our example *shrinking* relies on the same input
+causing the same failure each time - though we show the un-shrunk failure
+and a decent error message if it doesn't.
+
+By default, Hypothesis will handle the global ``random`` and ``numpy.random``
+random number generators for you, and you can register others:
+
+.. autofunction:: hypothesis.register_random
+
+
 -------------------------------
 Using Hypothesis to find values
 -------------------------------

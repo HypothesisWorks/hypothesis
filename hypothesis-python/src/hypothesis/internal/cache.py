@@ -25,6 +25,17 @@ class Entry(object):
     key = attr.ib()
     value = attr.ib()
     score = attr.ib()
+    pins = attr.ib(default=0)
+
+    @property
+    def sort_key(self):
+        if self.pins == 0:
+            # Unpinned entries are sorted by score.
+            return (0, self.score)
+        else:
+            # Pinned entries sort after unpinned ones. Beyond that, we don't
+            # worry about their relative order.
+            return (1,)
 
 
 class GenericCache(object):
@@ -49,7 +60,7 @@ class GenericCache(object):
     on_access and on_evict to implement a specific scoring strategy.
     """
 
-    __slots__ = ("keys_to_indices", "data", "max_size")
+    __slots__ = ("keys_to_indices", "data", "max_size", "__pinned_entry_count")
 
     def __init__(self, max_size):
         self.max_size = max_size
@@ -61,10 +72,14 @@ class GenericCache(object):
         # reordered without updating the index.
         self.keys_to_indices = {}
         self.data = []
+        self.__pinned_entry_count = 0
 
     def __len__(self):
         assert len(self.keys_to_indices) == len(self.data)
         return len(self.data)
+
+    def __contains__(self, key):
+        return key in self.keys_to_indices
 
     def __getitem__(self, key):
         i = self.keys_to_indices[key]
@@ -80,9 +95,14 @@ class GenericCache(object):
         try:
             i = self.keys_to_indices[key]
         except KeyError:
+            if self.max_size == self.__pinned_entry_count:
+                raise ValueError(
+                    "Cannot increase size of cache where all keys have been pinned."
+                )
             entry = Entry(key, value, self.new_entry(key, value))
             if len(self.data) >= self.max_size:
                 evicted = self.data[0]
+                assert evicted.pins == 0
                 del self.keys_to_indices[evicted.key]
                 i = 0
                 self.data[0] = entry
@@ -103,9 +123,44 @@ class GenericCache(object):
                 assert evicted.score <= self.data[0].score
             self.on_evict(evicted.key, evicted.value, evicted.score)
 
+    def __iter__(self):
+        return iter(self.keys_to_indices)
+
+    def pin(self, key):
+        """Mark ``key`` as pinned. That is, it may not be evicted until
+        ``unpin(key)`` has been called. The same key may be pinned multiple
+        times and will not be unpinned until the same number of calls to
+        unpin have been made."""
+        i = self.keys_to_indices[key]
+        entry = self.data[i]
+        entry.pins += 1
+        if entry.pins == 1:
+            self.__pinned_entry_count += 1
+            assert self.__pinned_entry_count <= self.max_size
+            self.__balance(i)
+
+    def unpin(self, key):
+        """Undo one previous call to ``pin(key)``. Once all calls are
+        undone this key may be evicted as normal."""
+        i = self.keys_to_indices[key]
+        entry = self.data[i]
+        if entry.pins == 0:
+            raise ValueError("Key %r has not been pinned" % (key,))
+        entry.pins -= 1
+        if entry.pins == 0:
+            self.__pinned_entry_count -= 1
+            self.__balance(i)
+
+    def is_pinned(self, key):
+        """Returns True if the key is currently pinned."""
+        i = self.keys_to_indices[key]
+        return self.data[i].pins > 0
+
     def clear(self):
+        """Remove all keys, clearing their pinned status."""
         del self.data[:]
         self.keys_to_indices.clear()
+        self.__pinned_entry_count = 0
 
     def __repr__(self):
         return "{%s}" % (", ".join("%r: %r" % (e.key, e.value) for e in self.data),)
@@ -145,7 +200,7 @@ class GenericCache(object):
 
     def __swap(self, i, j):
         assert i < j
-        assert self.data[j].score < self.data[i].score
+        assert self.data[j].sort_key < self.data[i].sort_key
         self.data[i], self.data[j] = self.data[j], self.data[i]
         self.keys_to_indices[self.data[i].key] = i
         self.keys_to_indices[self.data[j].key] = j
@@ -180,7 +235,7 @@ class GenericCache(object):
         i must be the parent of j.
         """
         assert i == (j - 1) // 2
-        return self.data[j].score < self.data[i].score
+        return self.data[j].sort_key < self.data[i].sort_key
 
 
 class LRUReusedCache(GenericCache):

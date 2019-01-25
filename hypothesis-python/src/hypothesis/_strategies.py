@@ -21,7 +21,6 @@ import datetime as dt
 import enum
 import math
 import operator
-import random
 import string
 import sys
 from decimal import Context, Decimal, localcontext
@@ -55,6 +54,7 @@ from hypothesis.internal.conjecture.utils import (
     check_sample,
     integer_range,
 )
+from hypothesis.internal.entropy import get_seeder_and_restorer
 from hypothesis.internal.floats import (
     count_between_floats,
     float_of,
@@ -132,6 +132,7 @@ except ImportError:
     numpy = None
 
 if False:
+    import random  # noqa
     from types import ModuleType  # noqa
     from typing import Any, Dict, Union, Sequence, Callable, Pattern  # noqa
     from typing import TypeVar, Tuple, List, Set, FrozenSet, overload  # noqa
@@ -1089,26 +1090,23 @@ class RandomSeeder(object):
         self.seed = seed
 
     def __repr__(self):
-        return "random.seed(%r)" % (self.seed,)
+        return "RandomSeeder(%r)" % (self.seed,)
 
 
 class RandomModule(SearchStrategy):
     def do_draw(self, data):
         data.can_reproduce_example_from_repr = False
         seed = data.draw(integers(0, 2 ** 32 - 1))
-        state = random.getstate()
-        random.seed(seed)
-        cleanup(lambda: random.setstate(state))
-        if numpy is not None:  # pragma: no cover
-            npstate = numpy.random.get_state()
-            numpy.random.seed(seed)
-            cleanup(lambda: numpy.random.set_state(npstate))
+        seed_all, restore_all = get_seeder_and_restorer(seed)
+        seed_all()
+        cleanup(restore_all)
         return RandomSeeder(seed)
 
 
 @cacheable
 @defines_strategy
 def random_module():
+    # type: () -> SearchStrategy[RandomSeeder]
     """The Hypothesis engine handles PRNG state for the stdlib and Numpy random
     modules internally, always seeding them to zero and restoring the previous
     state after the test.
@@ -1880,13 +1878,13 @@ def complex_numbers(
         # this and the max_magnitude
         if max_magnitude is None:
             zi = draw(floats(**allow_kw))
-            rmax = float("inf")
+            rmax = None
         else:
             zi = draw(floats(-max_magnitude, max_magnitude, **allow_kw))
             rmax = cathetus(max_magnitude, zi)
         # Draw the real part from the allowed range given the imaginary part
         if min_magnitude is None or math.fabs(zi) >= min_magnitude:
-            zr = draw(floats(-rmax, rmax, **allow_kw))
+            zr = draw(floats(None if rmax is None else -rmax, rmax, **allow_kw))
         else:
             zr = draw(floats(cathetus(min_magnitude, zi), rmax, **allow_kw))
         # Order of conditions carefully tuned so that for a given pair of

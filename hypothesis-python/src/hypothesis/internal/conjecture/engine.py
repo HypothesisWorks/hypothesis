@@ -25,9 +25,9 @@ import attr
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
+from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import (
     Counter,
-    benchmark_time,
     ceil,
     hbytes,
     hrange,
@@ -52,10 +52,8 @@ from hypothesis.reporting import debug_report
 __tracebackhide__ = True
 
 
-HUNG_TEST_TIME_LIMIT = 5 * 60
 MAX_SHRINKS = 500
-
-CACHE_RESET_FREQUENCY = 1000
+CACHE_SIZE = 10000
 MUTATION_POOL_SIZE = 100
 
 
@@ -87,7 +85,6 @@ class ConjectureRunner(object):
         self.call_count = 0
         self.event_call_counts = Counter()
         self.valid_examples = 0
-        self.start_time = benchmark_time()
         self.random = random or Random(getrandbits(128))
         self.database_key = database_key
         self.status_runtimes = {}
@@ -107,26 +104,18 @@ class ConjectureRunner(object):
         self.health_check_state = None
 
         self.used_examples_from_database = False
-        self.reset_tree_to_empty()
-
-    def reset_tree_to_empty(self):
         self.tree = DataTree(cap=self.cap)
+
+        # We want to be able to get the ConjectureData object that results
+        # from running a buffer without recalculating, especially during
+        # shrinking where we need to know about the structure of the
+        # executed test case.
+        self.__data_cache = LRUReusedCache(CACHE_SIZE)
 
     def __tree_is_exhausted(self):
         return self.tree.is_exhausted
 
     def test_function(self, data):
-        if benchmark_time() - self.start_time >= HUNG_TEST_TIME_LIMIT:
-            fail_health_check(
-                self.settings,
-                (
-                    "Your test has been running for at least five minutes. This "
-                    "is probably not what you intended, so by default Hypothesis "
-                    "turns it into an error."
-                ),
-                HealthCheck.hung_test,
-            )
-
         self.call_count += 1
         try:
             self._test_function(data)
@@ -166,30 +155,11 @@ class ConjectureRunner(object):
         #    and these will tend to have a very high duplication rate. This is
         #    where the tree usage really shines.
         #
-        # Unfortunately, as well as being the less useful type of tree usage,
-        # the first type is also the most expensive! Once we've entered shrink
-        # mode our time remaining is essentially bounded - we're just here
-        # until we've found the minimal example. In exploration mode, we might
-        # be early on in a very long-running processs, and keeping everything
-        # we've ever seen lying around ends up bloating our memory usage
-        # substantially by causing us to use O(max_examples) memory.
-        #
-        # As a compromise, what we do is reset the cache every so often. This
-        # keeps our memory usage bounded. It has a few unfortunate failure
-        # modes in that it means that we can't always detect when we should
-        # have stopped - if we are exploring a language which has only slightly
-        # more than cache reset frequency number of members, we will end up
-        # exploring indefinitely when we could have stopped. However, this is
-        # a fairly unusual case - thanks to exponential blow-ups in language
-        # size, most languages are either very large (possibly infinite) or
-        # very small. Nevertheless we want CACHE_RESET_FREQUENCY to be quite
-        # high to avoid this case coming up in practice.
-        if (
-            self.call_count % CACHE_RESET_FREQUENCY == 0
-            and not self.interesting_examples
-        ):
-            self.reset_tree_to_empty()
-
+        # In aid of this, we keep around just enough of the structure of the
+        # the tree of examples we've seen so far to let us predict whether
+        # something will lead to a known result, and to canonicalize it into
+        # the buffer that would belong to the ConjectureData that you get
+        # from running it.
         self.tree.add(data)
 
         if data.status == Status.INTERESTING:
@@ -203,11 +173,13 @@ class ConjectureRunner(object):
                 if sort_key(data.buffer) < sort_key(existing.buffer):
                     self.shrinks += 1
                     self.downgrade_buffer(existing.buffer)
+                    self.__data_cache.unpin(existing.buffer)
                     changed = True
 
             if changed:
                 self.save_buffer(data.buffer)
                 self.interesting_examples[key] = data
+                self.__data_cache.pin(data.buffer)
                 self.shrunk_examples.discard(key)
 
             if self.shrinks >= MAX_SHRINKS:
@@ -345,6 +317,10 @@ class ConjectureRunner(object):
         return b".".join((self.database_key, b"coverage"))
 
     def note_details(self, data):
+        if data.status == Status.OVERRUN:
+            self.__data_cache[data.buffer] = Overrun
+        else:
+            self.__data_cache[data.buffer] = data
         runtime = max(data.finish_time - data.start_time, 0.0)
         self.all_runtimes.append(runtime)
         self.all_drawtimes.extend(data.draw_times)
@@ -599,6 +575,9 @@ class ConjectureRunner(object):
             return
 
         zero_data = self.cached_test_function(hbytes(self.settings.buffer_size))
+        if zero_data.status > Status.OVERRUN:
+            self.__data_cache.pin(zero_data.buffer)
+
         if zero_data.status == Status.OVERRUN or (
             zero_data.status == Status.VALID
             and len(zero_data.buffer) * 2 > self.settings.buffer_size
@@ -725,12 +704,9 @@ class ConjectureRunner(object):
             mutations += 1
 
     def _run(self):
-        self.start_time = benchmark_time()
-
         self.reuse_existing_examples()
         self.generate_new_examples()
         self.shrink_interesting_examples()
-
         self.exit_with(ExitReason.finished)
 
     def shrink_interesting_examples(self):
@@ -815,17 +791,40 @@ class ConjectureRunner(object):
         Otherwise we call through to ``test_function``, and return a
         fresh result.
         """
-        result = self.tree.lookup(buffer)
-        if result is not None:
+        buffer = hbytes(buffer)
+        try:
+            return self.__data_cache[buffer]
+        except KeyError:
+            pass
+
+        rewritten, status = self.tree.rewrite(buffer)
+
+        try:
+            result = self.__data_cache[rewritten]
+        except KeyError:
+            pass
+        else:
+            assert result.status != Status.OVERRUN or result is Overrun
+            self.__data_cache[buffer] = result
             return result
 
         # We didn't find a match in the tree, so we need to run the test
         # function normally. Note that test_function will automatically
         # add this to the tree so we don't need to update the cache.
-        result = ConjectureData.for_buffer(buffer)
-        self.test_function(result)
-        if result.status == Status.OVERRUN:
-            return Overrun
+
+        result = None
+
+        if status != Status.OVERRUN:
+            result = ConjectureData.for_buffer(buffer)
+            self.test_function(result)
+            assert status is None or result.status == status
+            status = result.status
+        if status == Status.OVERRUN:
+            result = Overrun
+
+        assert result is not None
+
+        self.__data_cache[buffer] = result
         return result
 
     def event_to_string(self, event):
@@ -929,12 +928,6 @@ class TargetSelector(object):
             self.best_status = data.status
             self.reset()
 
-        # Note that technically data could be a duplicate. This rarely happens
-        # (only if we've exceeded the CACHE_RESET_FREQUENCY number of test
-        # function calls), but it's certainly possible. This could result in
-        # us having the same example multiple times, possibly spread over both
-        # lists. We could check for this, but it's not a major problem so we
-        # don't bother.
         self.fresh_examples.append(data)
         if len(self) > self.pool_size:
             pop_random(self.random, self.used_examples or self.fresh_examples)

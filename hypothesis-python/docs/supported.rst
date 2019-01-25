@@ -11,10 +11,11 @@ for the details.
 Python versions
 ---------------
 
-Hypothesis is supported and tested on CPython 2.7 and CPython 3.4+.
+Hypothesis is supported and tested on CPython 2.7 and CPython 3.4+, i.e.
+`all versisions of CPython with upstream support <https://devguide.python.org/#status-of-python-branches>`_,
 
-Hypothesis also supports PyPy2, and will support PyPy3 when there is a stable
-release supporting Python 3.4+.  Hypothesis does not currently work on Jython,
+Hypothesis also supports the latest PyPy for both Python 2 (until 2020) and Python 3.
+Hypothesis does not currently work on Jython,
 though it probably could (:issue:`174`). IronPython might work but hasn't been
 tested.  32-bit and narrow builds should work, though this is currently only
 tested on Windows.
@@ -57,8 +58,6 @@ In terms of what's actually *known* to work:
 
   * Hypothesis integrates as smoothly with pytest and unittest as we can make it,
     and this is verified as part of the CI.
-    Note however that :func:`@given <hypothesis.given>` should only be used on
-    tests, not :class:`python:unittest.TestCase` setup or teardown methods.
   * :pypi:`pytest` fixtures work in the usual way for tests that have been decorated
     with :func:`@given <hypothesis.given>` - just avoid passing a strategy for
     each argument that will be supplied by a fixture.  However, each fixture

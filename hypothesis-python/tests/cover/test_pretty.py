@@ -63,7 +63,7 @@ from collections import defaultdict, deque
 
 import pytest
 
-from hypothesis.internal.compat import PY3, Counter, OrderedDict, a_good_encoding
+from hypothesis.internal.compat import PY3, PYPY, Counter, OrderedDict, a_good_encoding
 from hypothesis.vendor import pretty
 from tests.common.utils import capture_out
 
@@ -550,6 +550,7 @@ def test_collections_defaultdict():
         assert_equal(pretty.pretty(obj), expected)
 
 
+@pytest.mark.skipif(PY3 and PYPY, reason="slightly different on PyPy3")
 def test_collections_ordereddict():
     # Create OrderedDict with cycle
     a = OrderedDict()

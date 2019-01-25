@@ -43,7 +43,7 @@ Links of interest
 The main Hypothesis site is at `hypothesis.works <https://hypothesis.works/>`_, and contains a lot
 of good introductory and explanatory material.
 
-Extensive documentation and examples of usage are `available at readthedocs <https://hypothesis.readthedocs.io/en/master/>`_.
+Extensive documentation and examples of usage are `available at readthedocs <https://hypothesis.readthedocs.io/en/latest/>`_.
 
 If you want to talk to people about using Hypothesis, `we have both an IRC channel
 and a mailing list <https://hypothesis.readthedocs.io/en/latest/community.html>`_.

@@ -26,129 +26,228 @@ import attr
 
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.data import Overrun, Status
-from hypothesis.internal.conjecture.shrinking import Integer, Length, Lexical, Ordering
+from hypothesis.internal.conjecture.floats import (
+    DRAW_FLOAT_LABEL,
+    float_to_lex,
+    lex_to_float,
+)
+from hypothesis.internal.conjecture.shrinking import (
+    Float,
+    Integer,
+    Length,
+    Lexical,
+    Ordering,
+)
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
 
-def block_program(description):
-    """Mini-DSL for block rewriting. A sequence of commands that will be run
-    over all contiguous sequences of blocks of the description length in order.
-    Commands are:
+def sort_key(buffer):
+    """Returns a sort key such that "simpler" buffers are smaller than
+    "more complicated" ones.
 
-        * ".", keep this block unchanged
-        * "-", subtract one from this block.
-        * "0", replace this block with zero
-        * "X", delete this block
+    We define sort_key so that x is simpler than y if x is shorter than y or if
+    they have the same length and x < y lexicographically. This is called the
+    shortlex order.
 
-    If a command does not apply (currently only because it's - on a zero
-    block) the block will be silently skipped over. As a side effect of
-    running a block program its score will be updated.
+    The reason for using the shortlex order is:
+
+    1. If x is shorter than y then that means we had to make fewer decisions
+       in constructing the test case when we ran x than we did when we ran y.
+    2. If x is the same length as y then replacing a byte with a lower byte
+       corresponds to reducing the value of an integer we drew with draw_bits
+       towards zero.
+    3. We want a total order, and given (2) the natural choices for things of
+       the same size are either the lexicographic or colexicographic orders
+       (the latter being the lexicographic order of the reverse of the string).
+       Because values drawn early in generation potentially get used in more
+       places they potentially have a more significant impact on the final
+       result, so it makes sense to prioritise reducing earlier values over
+       later ones. This makes the lexicographic order the more natural choice.
     """
-
-    def run(self):
-        n = len(description)
-        i = 0
-        while i + n <= len(self.shrink_target.blocks):
-            attempt = bytearray(self.shrink_target.buffer)
-            failed = False
-            for k, d in reversed(list(enumerate(description))):
-                j = i + k
-                u, v = self.blocks[j].bounds
-                if d == "-":
-                    value = int_from_bytes(attempt[u:v])
-                    if value == 0:
-                        failed = True
-                        break
-                    else:
-                        attempt[u:v] = int_to_bytes(value - 1, v - u)
-                elif d == "X":
-                    del attempt[u:v]
-                else:  # pragma: no cover
-                    assert False, "Unrecognised command %r" % (d,)
-            if failed or not self.incorporate_new_buffer(attempt):
-                i += 1
-
-    run.command = description
-    run.__name__ = "block_program(%r)" % (description,)
-    return run
-
-
-class PassClassification(Enum):
-    CANDIDATE = 0
-    HOPEFUL = 1
-    DUBIOUS = 2
-    AVOID = 3
-    SPECIAL = 4
-
-
-@total_ordering
-@attr.s(slots=True, cmp=False)
-class ShrinkPass(object):
-    pass_function = attr.ib()
-    index = attr.ib()
-
-    classification = attr.ib(default=PassClassification.CANDIDATE)
-
-    successes = attr.ib(default=0)
-    runs = attr.ib(default=0)
-    calls = attr.ib(default=0)
-    shrinks = attr.ib(default=0)
-    deletions = attr.ib(default=0)
-
-    @property
-    def failures(self):
-        return self.runs - self.successes
-
-    @property
-    def name(self):
-        return self.pass_function.__name__
-
-    def __eq__(self, other):
-        return self.index == other.index
-
-    def __hash__(self):
-        return hash(self.index)
-
-    def __lt__(self, other):
-        return self.key() < other.key()
-
-    def key(self):
-        # Smaller is better.
-        return (self.runs, self.failures, self.calls, self.index)
+    return (len(buffer), buffer)
 
 
 class Shrinker(object):
     """A shrinker is a child object of a ConjectureRunner which is designed to
-    manage the associated state of a particular shrink problem.
+    manage the associated state of a particular shrink problem. That is, we
+    have some initial ConjectureData object and some property of interest
+    that it satisfies, and we want to find a ConjectureData object with a
+    shortlex (see sort_key above) smaller buffer that exhibits the same
+    property.
 
-    Currently the only shrink problem we care about is "interesting and with a
-    particular interesting_origin", but this is abstracted into a general
-    purpose predicate for more flexibility later - e.g. we are likely to want
-    to shrink with respect to a particular coverage target later.
+    Currently the only property of interest we use is that the status is
+    INTERESTING and the interesting_origin takes on some fixed value, but we
+    may potentially be interested in other use cases later.
+    However we assume that data with a status < VALID never satisfies the predicate.
 
-    Data with a status < VALID may be assumed not to satisfy the predicate.
+    The shrinker keeps track of a value shrink_target which represents the
+    current best known ConjectureData object satisfying the predicate.
+    It refines this value by repeatedly running *shrink passes*, which are
+    methods that perform a series of transformations to the current shrink_target
+    and evaluate the underlying test function to find new ConjectureData
+    objects. If any of these satisfy the predicate, the shrink_target
+    is updated automatically. Shrinking runs until no shrink pass can
+    improve the shrink_target, at which point it stops. It may also be
+    terminated if the underlying engine throws RunIsComplete, but that
+    is handled by the calling code rather than the Shrinker.
 
-    The expected usage pattern is that this is only ever called from within the
-    engine.
+    =======================
+    Designing Shrink Passes
+    =======================
+
+    Generally a shrink pass is just any function that calls
+    cached_test_function and/or incorporate_new_buffer a number of times,
+    but there are a couple of useful things to bear in mind.
+
+    A shrink pass *makes progress* if running it changes self.shrink_target
+    (i.e. it tries a shortlex smaller ConjectureData object satisfying
+    the predicate). The desired end state of shrinking is to find a
+    value such that no shrink pass can make progress, i.e. that we
+    are at a local minimum for each shrink pass.
+
+    In aid of this goal, the main invariant that a shrink pass much
+    satisfy is that whether it makes progress must be deterministic.
+    It is fine (encouraged even) for the specific progress it makes
+    to be non-deterministic, but if you run a shrink pass, it makes
+    no progress, and then you immediately run it again, it should
+    never succeed on the second time. This allows us to stop as soon
+    as we have run each shrink pass and seen no progress on any of
+    them.
+
+    This means that e.g. it's fine to try each of N deletions
+    or replacements in a random order, but it's not OK to try N random
+    deletions (unless you have already shrunk at least once, though we
+    don't currently take advantage of this loophole).
+
+    Shrink passes need to be written so as to be robust against
+    change in the underlying shrink target. It is generally safe
+    to assume that the shrink target does not change prior to the
+    point of first modification - e.g. if you change no bytes at
+    index ``i``, all examples whose start is ``<= i`` still exist,
+    as do all blocks, and the data object is still of length
+    ``>= i + 1``. This can only be violated by bad user code which
+    relies on an external source of non-determinism.
+
+    When the underlying shrink_target changes, shrink
+    passes should not run substantially more test_function calls
+    on success than they do on failure. Say, no more than a constant
+    factor more. In particular shrink passes should not iterate to a
+    fixed point.
+
+    This means that shrink passes are often written with loops that
+    are carefully designed to do the right thing in the case that no
+    shrinks occurred and try to adapt to any changes to do a reasonable
+    job. e.g. say we wanted to write a shrink pass that tried deleting
+    each individual byte (this isn't an especially good choice and if
+    we did we should use :class:`hypothesis.internal.conjecture.shrinking.Length`
+    to do it anyway, but it leads to a simple illustrative example),
+    we might do it by iterating over the buffer like so:
+
+    .. code-block:: python
+
+        i = 0
+        while i < len(self.shrink_target.buffer):
+            if not self.incorporate_new_buffer(
+                self.shrink_target.buffer[: i] +
+                self.shrink_target.buffer[i + 1 :]
+            ):
+                i += 1
+
+    The reason for writing the loop this way is that i is always a
+    valid index into the current buffer, even if the current buffer
+    changes as a result of our actions. When the buffer changes,
+    we leave the index where it is rather than restarting from the
+    beginning, and carry on. This means that the number of steps we
+    run in this case is always bounded above by the number of steps
+    we would run if nothing works.
+
+    Another thing to bear in mind about shrink pass design is that
+    they should prioritise *progress*. If you have N operations that
+    you need to run, you should try to order them in such a way as
+    to avoid stalling, where you have long periods of test function
+    invocations where no shrinks happen. This is bad because whenever
+    we shrink we reduce the amount of work the shrinker has to do
+    in future, and often speed up the test function, so we ideally
+    wanted those shrinks to happen much earlier in the process.
+
+    Sometimes stalls are inevitable of course - e.g. if the pass
+    makes no progress, then the entire thing is just one long stall,
+    but it's helpful to design it so that stalls are less likely
+    in typical behaviour.
+
+    The two easiest ways to do this are:
+
+    * Just run the N steps in random order. As long as a
+      reasonably large proportion of the operations suceed, this
+      guarantees the expected stall length is quite short. The
+      book keeping for making sure this does the right thing when
+      it succeeds can be quite annoying. If you want this approach
+      it may be useful to see if you can build it on top of
+      :class:`~hypothesis.internal.conjecture.shrinking.Length`,
+      which already does the right book keeping for you (as well
+      as the adaptive logic below).
+    * When you have any sort of nested loop, loop in such a way
+      that both loop variables change each time. This prevents
+      stalls which occur when one particular value for the outer
+      loop is impossible to make progress on, rendering the entire
+      inner loop into a stall.
+
+    However, although progress is good, too much progress can be
+    a bad sign! If you're *only* seeing successful reductions,
+    that's probably a sign that you are making changes that are
+    too timid. Two useful things to offset this:
+
+    * It's worth writing shrink passes which are *adaptive*, in
+      the sense that when operations seem to be working really
+      well we try to bundle multiple of them together. This can
+      often be used to turn what would be O(m) successful calls
+      into O(log(m)).
+    * It's often worth trying one or two special minimal values
+      before trying anything more fine grained (e.g. replacing
+      the whole thing with zero).
+
     """
 
-    DEFAULT_PASSES = [
-        "alphabet_minimize",
-        "pass_to_descendant",
-        "zero_examples",
-        "adaptive_example_deletion",
-        "reorder_examples",
-        "minimize_duplicated_blocks",
-        "minimize_individual_blocks",
-    ]
+    def default_passes(self):
+        """Returns the list of shrink passes that are always safe to run,
+        in a good order to run them in.
 
-    EMERGENCY_PASSES = [
-        block_program("-XX"),
-        block_program("XX"),
-        "example_deletion_with_block_lowering",
-        "shrink_offset_pairs",
-        "minimize_block_pairs_retaining_sum",
-    ]
+        These mostly have time
+        complexity that is at most O(n log(n)) in the size of the underlying
+        buffer. pass_to_descendant is an exception in that it technically
+        has worst case complexity O(n^2), but it is rare for it to hit
+        that case and generally runs very few operations at all.
+        """
+        return [
+            "alphabet_minimize",
+            "pass_to_descendant",
+            "zero_examples",
+            "adaptive_example_deletion",
+            "reorder_examples",
+            "minimize_floats",
+            "minimize_duplicated_blocks",
+            "minimize_individual_blocks",
+        ]
+
+    def emergency_passes(self):
+        """Returns the list of emergency shrink passes,
+        in a good order to run them in.
+
+        Emergency passes are ones that we hope don't do anything
+        very useful. The ideal scenario is that we run all of our
+        default passes to a fixed point, then we run all of the
+        emergency passes and they do nothing and we're finished.
+        This is because they're either a bit weird and designed to
+        handle some special case that doesn't come up very often,
+        or because they're very expensive, or both.
+        """
+        return [
+            block_program("-XX"),
+            block_program("XX"),
+            "example_deletion_with_block_lowering",
+            "shrink_offset_pairs",
+            "minimize_block_pairs_retaining_sum",
+        ]
 
     def __init__(self, engine, initial, predicate):
         """Create a shrinker for a particular engine, with a given starting
@@ -186,10 +285,10 @@ class Shrinker(object):
         self.passes_by_name = {}
         self.clear_passes()
 
-        for p in Shrinker.DEFAULT_PASSES:
+        for p in self.default_passes():
             self.add_new_pass(p)
 
-        for p in Shrinker.EMERGENCY_PASSES:
+        for p in self.emergency_passes():
             self.add_new_pass(p, classification=PassClassification.AVOID)
 
         self.add_new_pass(
@@ -211,8 +310,10 @@ class Shrinker(object):
 
         self.known_programs = set()
 
-    def add_new_pass(self, run, classification=PassClassification.CANDIDATE):
+    def add_new_pass(self, run, classification=None):
         """Creates a shrink pass corresponding to calling ``run(self)``"""
+        if classification is None:
+            classification = PassClassification.CANDIDATE
         if isinstance(run, str):
             run = getattr(Shrinker, run)
         p = ShrinkPass(
@@ -226,6 +327,7 @@ class Shrinker(object):
         return p
 
     def shrink_pass(self, name):
+        """Return the ShrinkPass object for the pass with the given name."""
         if hasattr(Shrinker, name) and name not in self.passes_by_name:
             self.add_new_pass(name, classification=PassClassification.SPECIAL)
         return self.passes_by_name[name]
@@ -270,21 +372,22 @@ class Shrinker(object):
 
     @property
     def calls(self):
+        """Return the number of calls that have been made to the underlying
+        test function."""
         return self.__engine.call_count
 
     def consider_new_buffer(self, buffer):
+        """Returns True if after running this buffer the result would be
+        the current shrink_target."""
         buffer = hbytes(buffer)
         return buffer.startswith(self.buffer) or self.incorporate_new_buffer(buffer)
 
     def incorporate_new_buffer(self, buffer):
-        buffer = hbytes(buffer[: self.shrink_target.index])
-        try:
-            existing = self.__test_function_cache[buffer]
-        except KeyError:
-            pass
-        else:
-            return self.incorporate_test_data(existing)
+        """Either runs the test function on this buffer and returns True if
+        that changed the shrink_target, or determines that doing so would
+        be useless and returns False without running it."""
 
+        buffer = hbytes(buffer[: self.shrink_target.index])
         # Sometimes an attempt at lexicographic minimization will do the wrong
         # thing because the buffer has changed under it (e.g. something has
         # turned into a write, the bit size has changed). The result would be
@@ -302,9 +405,11 @@ class Shrinker(object):
         return previous is not self.shrink_target
 
     def incorporate_test_data(self, data):
-        if data is Overrun:
+        """Takes a ConjectureData or Overrun object updates the current
+        shrink_target if this data represents an improvement over it,
+        returning True if it is."""
+        if data is Overrun or data is self.shrink_target:
             return
-        self.__test_function_cache[data.buffer] = data
         if self.__predicate(data) and sort_key(data.buffer) < sort_key(
             self.shrink_target.buffer
         ):
@@ -314,14 +419,14 @@ class Shrinker(object):
         return False
 
     def cached_test_function(self, buffer):
+        """Returns a cached version of the underlying test function, so
+        that the result is either an Overrun object (if the buffer is
+        too short to be a valid test case) or a ConjectureData object
+        with status >= INVALID that would result from running this buffer."""
+
         buffer = hbytes(buffer)
-        try:
-            return self.__test_function_cache[buffer]
-        except KeyError:
-            pass
         result = self.__engine.cached_test_function(buffer)
         self.incorporate_test_data(result)
-        self.__test_function_cache[buffer] = result
         return result
 
     def debug(self, msg):
@@ -1118,6 +1223,48 @@ class Shrinker(object):
                 full=False,
             )
 
+    def minimize_floats(self):
+        """Some shrinks that we employ that only really make sense for our
+        specific floating point encoding that are hard to discover from any
+        sort of reasonable general principle. This allows us to make
+        transformations like replacing a NaN with an Infinity or replacing
+        a float with its nearest integers that we would otherwise not be
+        able to due to them requiring very specific transformations of
+        the bit sequence.
+
+        We only apply these transformations to blocks that "look like" our
+        standard float encodings because they are only really meaningful
+        there. The logic for detecting this is reasonably precise, but
+        it doesn't matter if it's wrong. These are always valid
+        transformations to make, they just don't necessarily correspond to
+        anything particularly meaningful for non-float values.
+        """
+        i = 0
+        while i < len(self.shrink_target.examples):
+            ex = self.shrink_target.examples[i]
+            if (
+                ex.label == DRAW_FLOAT_LABEL
+                and len(ex.children) == 2
+                and ex.children[0].length == 8
+            ):
+                u = ex.children[0].start
+                v = ex.children[0].end
+                buf = self.shrink_target.buffer
+                b = buf[u:v]
+                f = lex_to_float(int_from_bytes(b))
+                b2 = int_to_bytes(float_to_lex(f), 8)
+                if b == b2 or self.consider_new_buffer(buf[:u] + b2 + buf[v:]):
+                    Float.shrink(
+                        f,
+                        lambda x: self.consider_new_buffer(
+                            self.shrink_target.buffer[:u]
+                            + int_to_bytes(float_to_lex(x), 8)
+                            + self.shrink_target.buffer[v:]
+                        ),
+                        random=self.random,
+                    )
+            i += 1
+
     def minimize_individual_blocks(self):
         """Attempt to minimize each block in sequence.
 
@@ -1263,7 +1410,15 @@ class Shrinker(object):
         step that gives us a lot of good opportunities to slip to a smaller
         representation of the same bug.
         """
-        for c in range(255, 0, -1):
+
+        # We perform our normalization in a random order. This helps give
+        # us a good mix of likely to succeed (e.g. rare bytes) vs likely
+        # to have a large impact (e.g. common bytes) without having to
+        # have any idea which bytes are which.
+        all_bytes = list(hrange(256))
+        self.random.shuffle(all_bytes)
+
+        for c in all_bytes:
             buf = self.buffer
 
             if c not in buf:
@@ -1330,5 +1485,88 @@ class Shrinker(object):
                     lo = mid
 
 
-def sort_key(buffer):
-    return (len(buffer), buffer)
+def block_program(description):
+    """Mini-DSL for block rewriting. A sequence of commands that will be run
+    over all contiguous sequences of blocks of the description length in order.
+    Commands are:
+
+        * ".", keep this block unchanged
+        * "-", subtract one from this block.
+        * "0", replace this block with zero
+        * "X", delete this block
+
+    If a command does not apply (currently only because it's - on a zero
+    block) the block will be silently skipped over. As a side effect of
+    running a block program its score will be updated.
+    """
+
+    def run(self):
+        n = len(description)
+        i = 0
+        while i + n <= len(self.shrink_target.blocks):
+            attempt = bytearray(self.shrink_target.buffer)
+            failed = False
+            for k, d in reversed(list(enumerate(description))):
+                j = i + k
+                u, v = self.blocks[j].bounds
+                if d == "-":
+                    value = int_from_bytes(attempt[u:v])
+                    if value == 0:
+                        failed = True
+                        break
+                    else:
+                        attempt[u:v] = int_to_bytes(value - 1, v - u)
+                elif d == "X":
+                    del attempt[u:v]
+                else:  # pragma: no cover
+                    assert False, "Unrecognised command %r" % (d,)
+            if failed or not self.incorporate_new_buffer(attempt):
+                i += 1
+
+    run.command = description
+    run.__name__ = "block_program(%r)" % (description,)
+    return run
+
+
+class PassClassification(Enum):
+    CANDIDATE = 0
+    HOPEFUL = 1
+    DUBIOUS = 2
+    AVOID = 3
+    SPECIAL = 4
+
+
+@total_ordering
+@attr.s(slots=True, cmp=False)
+class ShrinkPass(object):
+    pass_function = attr.ib()
+    index = attr.ib()
+
+    classification = attr.ib(default=PassClassification.CANDIDATE)
+
+    successes = attr.ib(default=0)
+    runs = attr.ib(default=0)
+    calls = attr.ib(default=0)
+    shrinks = attr.ib(default=0)
+    deletions = attr.ib(default=0)
+
+    @property
+    def failures(self):
+        return self.runs - self.successes
+
+    @property
+    def name(self):
+        return self.pass_function.__name__
+
+    def __eq__(self, other):
+        return self.index == other.index
+
+    def __hash__(self):
+        return hash(self.index)
+
+    def __lt__(self, other):
+        return self.key() < other.key()
+
+    def key(self):
+        # Smaller is better.
+        return (self.runs, self.failures, self.calls, self.index)

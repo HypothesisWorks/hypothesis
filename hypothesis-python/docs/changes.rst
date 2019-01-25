@@ -21,6 +21,123 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.4.3:
+
+------------------
+4.4.3 - 2019-01-25
+------------------
+
+This release fixes an open file leak that used to cause ``ResourceWarning``\ s.
+
+.. _v4.4.2:
+
+------------------
+4.4.2 - 2019-01-24
+------------------
+
+This release changes Hypothesis's internal approach to caching the results of executing test cases.
+The result should be that it is now significantly less memory hungry, especially when shrinking large test cases.
+
+Some tests may get slower or faster depending on whether the new or old caching strategy was well suited to them,
+but any change in speed in either direction should be minor.
+
+.. _v4.4.1:
+
+------------------
+4.4.1 - 2019-01-24
+------------------
+
+This patch tightens up some of our internal heuristics to deal with shrinking floating point numbers,
+which will now run in fewer circumstances.
+
+You are fairly unlikely to see much difference from this, but if you do you are likely to see shrinking become slightly faster and/or producing slightly worse results.
+
+.. _v4.4.0:
+
+------------------
+4.4.0 - 2019-01-24
+------------------
+
+This release adds the :func:`~hypothesis.extra.django.from_form` function, which allows automatic testing against Django forms. (:issue:`35`)
+
+Thanks to Paul Stiverson for this feature, which resolves our oldest open issue!
+
+.. _v4.3.0:
+
+------------------
+4.3.0 - 2019-01-24
+------------------
+
+This release deprecates ``HealthCheck.hung_test`` and disables the
+associated runtime check for tests that ran for more than five minutes.
+Such a check is redundant now that we enforce the ``deadline`` and
+``max_examples`` setting, which can be adjusted independently.
+
+.. _v4.2.0:
+
+------------------
+4.2.0 - 2019-01-23
+------------------
+
+This release adds a new module, ``hypothesis.extra.lark``, which you
+can use to generate strings matching a context-free grammar.
+
+In this initial version, only :pypi:`lark-parser` EBNF grammars are supported,
+by the new :func:`hypothesis.extra.lark.from_lark` function.
+
+.. _v4.1.2:
+
+------------------
+4.1.2 - 2019-01-23
+------------------
+
+This patch fixes a very rare overflow bug (:issue:`1748`) which could raise an
+``InvalidArgument`` error in :func:`~hypothesis.strategies.complex_numbers`
+even though the arguments were valid.
+
+.. _v4.1.1:
+
+------------------
+4.1.1 - 2019-01-23
+------------------
+
+This release makes some improvements to internal code organisation and documentation and has no impact on behaviour.
+
+.. _v4.1.0:
+
+------------------
+4.1.0 - 2019-01-22
+------------------
+
+This release adds :func:`~hypothesis.register_random`, which registers
+``random.Random`` instances or compatible objects to be seeded and reset
+by Hypothesis to ensure that test cases are deterministic.
+
+We still recommend explicitly passing a ``random.Random`` instance from
+:func:`~hypothesis.strategies.randoms` if possible, but registering a
+framework-global state for Hypothesis to manage is better than flaky tests!
+
+.. _v4.0.2:
+
+------------------
+4.0.2 - 2019-01-22
+------------------
+
+This patch fixes :issue:`1387`, where bounded :func:`~hypothesis.strategies.integers`
+with a very large range would almost always generate very large numbers.
+Now, we usually use the same tuned distribution as unbounded
+:func:`~hypothesis.strategies.integers`.
+
+.. _v4.0.1:
+
+------------------
+4.0.1 - 2019-01-16
+------------------
+
+This release randomizes the order in which the shrinker tries some of its initial normalization operations.
+You are unlikely to see much difference as a result unless your generated examples are very large.
+In this case you may see some performance improvements in shrinking.
+
 .. _v4.0.0:
 
 ------------------

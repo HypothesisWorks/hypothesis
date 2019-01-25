@@ -27,6 +27,7 @@ from hypothesis._settings import settings, Verbosity, Phase, HealthCheck, unlimi
 from hypothesis.version import __version_info__, __version__
 from hypothesis.control import assume, note, reject, event
 from hypothesis.core import given, find, example, seed, reproduce_failure, PrintSettings
+from hypothesis.internal.entropy import register_random
 from hypothesis.utils.conventions import infer
 
 
@@ -47,6 +48,7 @@ __all__ = [
     "note",
     "event",
     "infer",
+    "register_random",
     "__version__",
     "__version_info__",
 ]
