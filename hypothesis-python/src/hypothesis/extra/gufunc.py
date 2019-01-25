@@ -26,11 +26,7 @@ BCAST_DIM = object()
 # Value used in default dict for max side if variable not specified
 DEFAULT_MAX_SIDE = 5
 
-# TODO doc strings need to be redone with interface change
 # sphinx
-
-# TODO check doc string examples with rand seed = 0
-# TODO some manual examples for main function play around
 
 # TODO isort, flake8, pycodestyle
 
@@ -322,13 +318,16 @@ def gufunc_arg_shapes(signature, excluded=(),
     .. code-block:: pycon
 
       >>> from hypothesis.extra.gufunc import BCAST_DIM
-      >>> gufunc_broadcast_shape('(m,n),(n)->(m)', max_side=9,
-                                 min_side={'m': 1, 'n': 2, BCAST_DIM: 5},
-                                 max_dims_extra=3).example()
-      [(9, 4), (7, 1, 4)]
-      >>> gufunc_broadcast_shape('(m,n),(n)->(m)', excluded=(0,), max_side=9,
-                                 max_dims_extra=3).example()
-      [(3, 6), (2, 6)]
+      >>> gufunc_arg_shapes('(m,n),(n)->(m)',
+                            min_side={'m': 1, 'n': 2}, max_side=3).example()
+      [(2, 3), (3,)]
+      >>> gufunc_arg_shapes('(m,n),(n)->(m)', max_side=9,
+                            min_side={'m': 1, 'n': 2, BCAST_DIM: 5},
+                            max_dims_extra=3).example()
+      [(6, 6, 7), (6, 7)]
+      >>> gufunc_arg_shapes('(m,n),(n)->(m)', excluded=(0,),
+                            max_side=20, max_dims_extra=3).example()
+      [(11, 13), (1, 1, 1, 13)]
     """
     check_set_like(excluded, name="excluded")
     min_side = _int_or_dict(min_side, 0)
@@ -426,18 +425,17 @@ def gufunc_args(signature, dtype, elements, unique=False, excluded=(),
 
       >>> from hypothesis.extra.gufunc import BCAST_DIM
       >>> from hypothesis.strategies import integers, booleans
-      >>> gufunc_broadcast('(m,n),(n)->(m)', dtype=np.int_,
-                           elements=integers(0, 9), max_side=3,
-                           min_side={'m': 1, 'n': 2, BCAST_DIM: 3}).example()
-      (array([[[2, 2, 2],
-               [3, 2, 2],
-               [2, 0, 2]]]), array([[[4, 4, 4]]]))
-      >>> gufunc_broadcast('(m,n),(n)->(m)', dtype=['bool', 'int32'],
+      >>> gufunc_args('(m,n),(n)->(m)',
+                      dtype=np.int_, elements=integers(0, 9), max_side=3,
+                      min_side={'m': 1, 'n': 2, BCAST_DIM: 3}).example()
+      (array([[9, 8, 1],
+              [1, 7, 1]]), array([5, 6, 5]))
+      >>> gufunc_args('(m,n),(n)->(m)', dtype=['bool', 'int32'],
                            elements=[booleans(), integers(0, 100)],
                            unique=[False, True], max_dims_extra=3).example()
-      (array([[[ True,  True,  True],
-               [ True,  True,  True]]], dtype=bool), array([[[51, 75, 78],
-               [98, 99, 50]]], dtype=int32))
+      (array([[[[[ True,  True,  True,  True,  True],
+                 [False,  True,  True,  True, False]]]]], dtype=bool),
+       array([67, 43,  0, 34, 66], dtype=int32))
     """
     shape_st = gufunc_arg_shapes(signature, excluded=excluded,
                                  min_side=min_side, max_side=max_side,
