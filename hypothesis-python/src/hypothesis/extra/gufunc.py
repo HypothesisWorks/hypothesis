@@ -26,8 +26,6 @@ BCAST_DIM = object()
 # Value used in default dict for max side if variable not specified
 DEFAULT_MAX_SIDE = 5
 
-# TODO consider in tests using from_regex(npfb._SIGNATURE)
-
 # TODO doc strings need to be redone with interface change
 # Maybe note dtype could be built in type
 

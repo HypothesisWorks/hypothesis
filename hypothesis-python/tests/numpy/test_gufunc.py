@@ -25,8 +25,6 @@ from hypothesis.strategies import (
     tuples,
 )
 
-# TODO try cranking up maxes on all shape tests and see what happens
-
 # The spec for a dimension name in numpy.lib.function_base is r'\A\w+\Z' but
 # this creates too many weird corner cases on Python3 unicode. Also make sure
 # doesn't start with digits because if it is parsed as number we could end up
@@ -181,7 +179,10 @@ def parsed_sigs(big=False):
 
 
 @composite
-def parsed_sigs_and_sizes(draw, min_min_side=0, max_max_side=5, big=False):
+def parsed_sigs_and_sizes(draw, big=False):
+    min_min_side = 0
+    max_max_side = 100 if big else 5
+
     parsed_sig = draw(parsed_sigs(big))
     # list of all labels used in sig, includes ints which is ok to include in
     # dict as distractors.
@@ -405,7 +406,7 @@ def test_inverse_signature_map(parsed_sig):
 
 # Allow bigger sizes since we only generate the shapes and never alloc arrays
 # Try +3 to see what happens if we put something too big in
-@given(parsed_sigs_and_sizes(max_max_side=100, big=True), data())
+@given(parsed_sigs_and_sizes(big=True), data())
 def test_shapes_gufunc_arg_shapes(parsed_sig_and_size, data):
     parsed_sig, min_side, max_side = parsed_sig_and_size
 
@@ -488,7 +489,7 @@ def test_append_bcast_dims(args):
         assert np.all(bb[~st1] == b_dims[len(b_dims) - len(bb):][~st1])
 
 
-@given(parsed_sigs_and_sizes(max_max_side=100, big=True),
+@given(parsed_sigs_and_sizes(big=True),
        integers(0, gu.GLOBAL_DIMS_MAX), data())
 def test_broadcast_shapes_gufunc_arg_shapes(parsed_sig_and_size,
                                             max_dims_extra, data):
