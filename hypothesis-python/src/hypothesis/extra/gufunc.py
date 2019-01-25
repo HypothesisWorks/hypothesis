@@ -27,11 +27,15 @@ BCAST_DIM = object()
 DEFAULT_MAX_SIDE = 5
 
 # TODO doc strings need to be redone with interface change
-# Maybe note dtype could be built in type
+# sphinx
 
 # TODO check doc string examples with rand seed = 0
+# TODO some manual examples for main function play around
 
-# TODO isort
+# TODO isort, flake8, pycodestyle
+
+# TODO pull latest, retest, sphinx, recheck style, PR
+# figure out how to squash before PR
 
 # This uses "private" function of numpy, but it does the job. It throws a
 # pretty readable exception for invalid input, so we don't need to add anything
@@ -139,8 +143,8 @@ def _tuple_of_arrays(draw, shapes, dtype, elements, unique=False):
     dtype : list-like of dtype
         List of numpy `dtype` for each argument. These can be either strings
         (``'int64'``), type (``np.int64``), or numpy `dtype`
-        (``np.dtype('int64')``). A single `dtype` can be supplied for all
-        arguments.
+        (``np.dtype('int64')``). Built in Python types (`int`, `float`, etc)
+        also work. A single `dtype` can be supplied for all arguments.
     elements : list-like of strategy
         Strategies to fill in array elements on a per argument basis. One can
         also specify a single strategy
@@ -202,34 +206,18 @@ def _gufunc_arg_shapes(parsed_sig, min_side, max_side):
 
     Parameters
     ----------
-    signature : str
-        Signature for shapes to be compatible with. Expects string in format
-        of numpy generalized universal function signature, e.g.,
-        `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
-        Officially, only supporting ascii characters on Py3.
-    min_side : defaultdict
-        Minimum size of any side of the arrays. It is good to test the corner
-        cases of 0 or 1 sized dimensions when applicable, but if not, a min
-        size can be supplied here. Minimums can be provided on a per-dimension
-        basis using a dict, e.g. ``min_side={'n': 2}``.
-    max_side : defaultdict
-        Maximum size of any side of the arrays. This can usually be kept small
-        and still find most corner cases in testing. Dictionaries can also be
-        supplied as with `min_side`.
+    parsed_sig : list-like of tuples of str
+        gufunc signature that has already been parsed, e.g., using
+        `parse_gufunc_signature`.
+    min_side : defaultdict of str to int
+        Minimum size of any of the dimensions in `parsed_sig`.
+    max_side : defaultdict of str to int
+        Maximum size of any of the dimensions in `parsed_sig`.
 
     Returns
     -------
     shapes : list of tuples of int
         list of tuples where each tuple is the shape of an argument.
-
-    Examples
-    --------
-
-    .. code-block:: pycon
-
-      >>> gufunc_shape('(m,n),(n)->(m)',
-                       min_side={'m': 1, 'n': 2}, max_side=3).example()
-      [(3, 2), (2,)]
     """
     # Skipping validation on min and max sides since this function is private.
 
@@ -274,19 +262,6 @@ def _append_bcast_dims(core_dims, b_dims, set_to_1, n_extra_per_arg):
         dimensions for broadcasting will be present in the shapes. It has
         length `n_args`.
     """
-    # TODO can eliminate these once done with testing
-    n_args, max_dims_extra = set_to_1.shape
-    assert len(core_dims) == n_args
-    assert b_dims.shape == (max_dims_extra,)
-    assert b_dims.dtype.kind == 'i'
-    assert np.all(b_dims >= 0)
-    assert set_to_1.dtype.kind == 'b'
-    n_ = np.array(n_extra_per_arg)
-    assert n_.shape == (n_args,)
-    assert n_.dtype.kind == 'i'
-    assert np.all(n_ >= 0)
-    assert np.all(n_ <= max_dims_extra)
-
     # Build 2D array with extra dimensions
     # e.g., extra_dims = [[2 5], [2 5]]
     extra_dims = np.tile(b_dims, (len(core_dims), 1))
@@ -315,7 +290,7 @@ def gufunc_arg_shapes(signature, excluded=(),
         of numpy generalized universal function signature, e.g.,
         `'(m,n),(n)->(m)'` for vectorized matrix-vector multiplication.
         Officially, only supporting ascii characters on Py3.
-    excluded : list-like of integers
+    excluded : set-like of integers
         Set of integers representing the positional for which the function will
         not be vectorized. Uses same format as :obj:`numpy.vectorize`.
     min_side : int or dict
@@ -408,8 +383,8 @@ def gufunc_args(signature, dtype, elements, unique=False, excluded=(),
     dtype : list-like of dtype
         List of numpy `dtype` for each argument. These can be either strings
         (``'int64'``), type (``np.int64``), or numpy `dtype`
-        (``np.dtype('int64')``). A single `dtype` can be supplied for all
-        arguments.
+        (``np.dtype('int64')``). Built in Python types (`int`, `float`, etc)
+        also work. A single `dtype` can be supplied for all arguments.
     elements : list-like of strategy
         Strategies to fill in array elements on a per argument basis. One can
         also specify a single strategy
@@ -418,7 +393,7 @@ def gufunc_args(signature, dtype, elements, unique=False, excluded=(),
     unique : list-like of bool
         Boolean flag to specify if all elements in an array must be unique.
         One can also specify a single boolean to apply it to all arguments.
-    excluded : list-like of integers
+    excluded : set-like of integers
         Set of integers representing the positional for which the function will
         not be vectorized. Uses same format as :obj:`numpy.vectorize`.
     min_side : int or dict
