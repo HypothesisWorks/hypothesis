@@ -98,7 +98,6 @@ class ConjectureRunner(object):
         self.target_selector = TargetSelector(self.random)
 
         self.interesting_examples = {}
-        self.covering_examples = {}
 
         self.shrunk_examples = set()
 
@@ -646,8 +645,6 @@ class ConjectureRunner(object):
                     result = uniform(self.random, n)
                 return self.__zero_bound(data, result)
 
-            targets_found = len(self.covering_examples)
-
             last_data = ConjectureData(
                 max_length=self.settings.buffer_size, draw_bytes=draw_bytes
             )
@@ -702,16 +699,12 @@ class ConjectureRunner(object):
             else:
                 origin = self.target_selector.select()
                 mutations += 1
-                targets_found = len(self.covering_examples)
                 data = ConjectureData(
                     draw_bytes=mutator(origin), max_length=self.settings.buffer_size
                 )
                 self.test_function(data)
                 data.freeze()
-                if (
-                    data.status > origin.status
-                    or len(self.covering_examples) > targets_found
-                ):
+                if data.status > origin.status:
                     mutations = 0
                 elif data.status < origin.status or mutations >= 10:
                     # Cap the variations of a single example and move on to
