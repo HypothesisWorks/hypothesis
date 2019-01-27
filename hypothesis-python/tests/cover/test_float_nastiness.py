@@ -262,3 +262,18 @@ def test_finite_min_bound_does_not_overflow(x):
 @given(st.floats(max_value=-1e304, allow_infinity=False))
 def test_finite_max_bound_does_not_overflow(x):
     assert not math.isinf(x)
+
+
+@given(st.floats(0, 1, exclude_min=True, exclude_max=True))
+def test_can_exclude_endpoints(x):
+    assert 0 < x < 1
+
+
+@given(st.floats(float("-inf"), -1e307, exclude_min=True))
+def test_can_exclude_neg_infinite_endpoint(x):
+    assert not math.isinf(x)
+
+
+@given(st.floats(1e307, float("inf"), exclude_max=True))
+def test_can_exclude_pos_infinite_endpoint(x):
+    assert not math.isinf(x)
