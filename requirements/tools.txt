@@ -17,7 +17,7 @@ certifi==2018.11.29       # via requests
 chardet==3.0.4            # via requests
 click==7.0                # via black, pip-tools, pyupio, safety
 coverage==4.5.2
-decorator==4.3.0          # via ipython, traitlets
+decorator==4.3.2          # via ipython, traitlets
 deprecated==1.2.4         # via pygithub
 django==2.1.5
 docutils==0.14            # via readme-renderer, restructuredtext-lint, sphinx
@@ -37,7 +37,7 @@ ipython==7.2.0
 isort==4.3.4
 jedi==0.13.2              # via ipython
 jinja2==2.10              # via pyupio, sphinx
-lark-parser==0.6.5
+lark-parser==0.6.6
 markupsafe==1.1.0         # via jinja2
 mccabe==0.6.1             # via flake8
 mock==2.0.0
@@ -46,14 +46,14 @@ mypy-extensions==0.4.1    # via mypy
 mypy==0.660
 numpy==1.16.0
 packaging==19.0           # via dparse, pyupio, safety, sphinx
-parso==0.3.1              # via jedi
+parso==0.3.2              # via jedi
 pbr==5.1.1                # via mock, stevedore
 pexpect==4.6.0            # via ipython
 pickleshare==0.7.5        # via ipython
-pip-tools==3.2.0
+pip-tools==3.3.2
 pkginfo==1.5.0.1          # via twine
 pluggy==0.8.1             # via pytest, tox
-prompt-toolkit==2.0.7     # via ipython
+prompt-toolkit==2.0.8     # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.7.0                 # via pytest, tox
 pycodestyle==2.4.0        # via flake8
@@ -83,12 +83,12 @@ sphinxcontrib-websupport==1.1.0  # via sphinx
 stevedore==1.30.0         # via bandit
 toml==0.10.0
 tox==3.7.0
-tqdm==4.29.1              # via pyupio, twine
+tqdm==4.30.0              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.12.1
 typed-ast==1.2.0          # via mypy
 urllib3==1.24.1           # via requests
-virtualenv==16.2.0        # via tox
+virtualenv==16.3.0        # via tox
 wcwidth==0.1.7            # via prompt-toolkit
 webencodings==0.5.1       # via bleach
 wrapt==1.11.1             # via deprecated
