@@ -289,37 +289,16 @@ class Shrinker(object):
         self.shrinks = 0
 
         self.initial_calls = self.__engine.call_count
-        self.running_passes = []
-        self.add_new_passes(
-            "remove_discarded",
-            "alphabet_minimize",
-            "adaptive_example_deletion",
-            "pass_to_descendant",
-            "zero_examples",
-            "minimize_floats",
-            "minimize_duplicated_blocks",
-            "minimize_individual_blocks",
-            "reorder_examples",
-            block_program("XX"),
-            block_program("-XX"),
-            "minimize_block_pairs_retaining_sum",
-            "shrink_offset_pairs",
-            "example_deletion_with_block_lowering",
-        )
+        self.pass_state_by_name = {}
 
-    def clear_passes(self):
-        """Reset all passes on the shrinker, leaving it in a blank state.
+    def pass_state(self, sp):
+        sp = self.shrink_pass(sp)
+        try:
+            return self.pass_state_by_name[sp.name]
+        except KeyError:
+            pass
 
-        This is mostly useful for testing.
-        """
-        self.running_passes = []
-
-    def add_new_passes(self, *sps):
-        for sp in sps:
-            sp = self.shrink_pass(sp)
-            self.running_passes.append(PassState(self, sp))
-
-    add_new_pass = add_new_passes
+        return self.pass_state_by_name.setdefault(sp.name, (PassState(self, sp)))
 
     @property
     def calls(self):
@@ -456,21 +435,25 @@ class Shrinker(object):
                         self.debug("Useless passes:")
                     self.debug("")
                     for p in sorted(
-                        self.running_passes,
-                        key=lambda t: (-t.calls, -t.runs, t.deletions, t.shrinks),
+                        self.pass_state_by_name.values(),
+                        key=lambda t: (-t.deletions, -t.shrinks, -t.calls, -t.runs, t.name),
                     ):
                         if p.calls == 0:
                             continue
                         if (p.shrinks != 0) != useful:
                             continue
 
+                        steps = p.successes + p.failures
+
                         self.debug(
                             (
-                                "  * %s ran %d time%s, making %d call%s of which "
+                                "  * %s ran %d step%s in %d run%s, making %d call%s of which "
                                 "%d shrank, deleting %d byte%s."
                             )
                             % (
                                 p.name,
+                                steps,
+                                s(steps),
                                 p.runs,
                                 s(p.runs),
                                 p.calls,
@@ -489,35 +472,138 @@ class Shrinker(object):
         This method iterates to a fixed point and so is idempontent - calling
         it twice will have exactly the same effect as calling it once.
         """
-        any_ran = True
-        while any_ran:
-            any_ran = False
-            starting_length = len(self.shrink_target.buffer)
+        # Initial set of passes that are designed primarily to normalize the
+        # shrink target. After this has run the same things should be
+        # represented by the same bytes to a fairly large degree, and useful
+        # values should ideally be repeated in many places. This increases the
+        # cache hit rate and hopefully makes it easier for us to shrink later.
+        coarse_passes = [
+            "remove_discarded",
+            "alphabet_minimize",
+            "adaptive_example_deletion",
+            "zero_examples",
+            "propagate_examples",
+            "pass_to_descendant",
+        ]
 
-            for sp in self.running_passes:
-                failures = 0
-                max_failures = 3
-                while failures < max_failures:
-                    initial = self.shrink_target
-                    calls = self.calls
-                    if not sp.step():
-                        break
+        self.fixate_passes(coarse_passes)
 
-                    any_ran = True
+        main_passes = coarse_passes + [
+            "reorder_examples",
+            "minimize_duplicated_blocks",
+            "minimize_floats",
+            "minimize_individual_blocks",
+            block_program("XX"),
+            block_program("-XX"),
+        ]
 
-                    if calls != self.calls:
-                        if self.shrink_target is initial:
-                            failures += 1
-                        else:
-                            failures = 0
-                            max_failures = 10
-                # The early passes tend to be better at reducing the length and the
-                # later passes tend to be more expensive. Because it's cheap to run
-                # a pass if it does little or nothing it is worth restarting whenever
-                # running a pass successfully reduces the size.
-                if len(self.shrink_target.buffer) < starting_length:
-                    assert any_ran
+        self.fixate_passes(main_passes)
+
+        # Passes that we hope don't do anything, because of some combination of
+        # cost of running them and the fact that they're not usually that
+        # useful.
+        emergency_passes = [
+            "minimize_block_pairs_retaining_sum",
+            "shrink_offset_pairs",
+            "example_deletion_with_block_lowering",
+        ]
+        self.fixate_passes(main_passes + emergency_passes)
+
+    def fixate_passes(self, passes):
+        """Run all of ``passes`` until none of them are able to make any
+        progress."""
+        states = [self.pass_state(sp) for sp in passes]
+        runs = 0
+
+        initial = self.shrink_target
+        # We start by just round robinning between the shrink passes until
+        # something works or all of the shrink passes are completed. This is
+        # both much cheaper than running the full Thompson sampling and by
+        # starting by running each shrink pass at least once we get to "prime
+        # the pump" and give us some data on its behaviour.
+        while self.shrink_target is initial:
+            any_available = False
+            for sp in states:
+                if not sp.available:
+                    continue
+                any_available = True
+                self.run_once(sp)
+
+            if not any_available:
+                return
+
+        failures_to_reduce_length = 0
+
+        while True:
+            runs += 1
+
+            # What follows is a slightly ersatz variant of Thompson sampling.
+            # The idea of Thompson sampling is that you build up a Bayesian
+            # model of the probability of success from pulling one of N levers,
+            # and at each step draw a sample from your current posterior
+            # distribution of the parameters and pick the lever with the
+            # highest expected value given that parameter sample.
+            
+            # Applying this directly is complicated by the fact that we have a
+            # rather more complex notion of success, and the cost of pulling
+            # the lever is variable. So we adapt it in a couple not entirely
+            # principled ways.
+
+            # Firstly, we really want to delete data. So we start with a
+            # similar process which selects for passes that might achieve that:
+            # We calculate a Bayesian probability distribution for how likely
+            # a step is to delete any data.
+
+            initial = self.shrink_target
+
+            candidates = [sp for sp in states if sp.available]
+
+            if not candidates:
+                return
+
+            if not any(sp.successes > 0 for sp in candidates):
+                for sp in candidates:
+                    self.run_once(sp)
+                continue
+
+            rest = []
+
+            for sp in candidates:
+                if self.random.random() <= (0.5 + sp.length_reducing_steps) / (1 + sp.steps):
+                    self.run_once(sp)
+                else:
+                    rest.append(sp)
+
+            candidates = rest
+
+            if not candidates:
+                continue
+
+            scores = [
+                self.random.betavariate(sp.shrinks + 0.5, sp.calls - sp.shrinks + 0.5)
+                for sp in candidates
+            ]
+
+            self.debug("Scores: %s" % (', '.join("%s -> %r" % (sp.name, score) for sp, score in zip(candidates, scores)),))
+
+            for _, sp in sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True):
+                calls = self.calls
+                self.run_once(sp)
+                if calls != self.calls:
                     break
+
+    def run_once(self, sp):
+        if not sp.available:
+            return
+        self.debug("Running %s" % (sp.name,))
+        initial_calls = self.calls
+        while self.calls == initial_calls:
+            # If step returns False then we have run every possible
+            # operation for this shrink pass since the last time the
+            # shrink target has changed and there is thus nothing left
+            # to do.
+            if not sp.step():
+                break
 
     @property
     def buffer(self):
@@ -533,6 +619,76 @@ class Shrinker(object):
 
     def all_block_bounds(self):
         return self.shrink_target.all_block_bounds()
+
+    def pairs_for_intermingle(self):
+        return [
+            (i, j)
+            for i in hrange(len(self.examples_by_type))
+            for j in hrange(len(self.examples_by_type[i]))
+        ] + [(i, None) for i in hrange(len(self.examples_by_type))]
+
+    @defines_shrink_pass(pairs_for_intermingle)
+    def reorder_examples(self, i, j):
+        """This pass allows us to reorder the children of each example.
+
+        For example, consider the following:
+
+        .. code-block:: python
+
+            import hypothesis.strategies as st
+            from hypothesis import given
+
+            @given(st.text(), st.text())
+            def test_not_equal(x, y):
+                assert x != y
+
+        Without the ability to reorder x and y this could fail either with
+        ``x=""``, ``y="0"``, or the other way around. With reordering it will
+        reliably fail with ``x=""``, ``y="0"``.
+        """
+        self.intermingle_examples(
+            i, j, lambda values: sorted(values, key=sort_key)
+        )
+
+    @defines_shrink_pass(pairs_for_intermingle)
+    def propagate_examples(self, i, j):
+        """Attempts to replace nearby larger examples with the value at i."""
+        self.intermingle_examples(
+            i, j, lambda values: [min(values, key=sort_key)] * len(values)
+        )
+        
+
+    def intermingle_examples(self, i, j, calc_replacements):
+        if i >= len(self.examples_by_type):
+            return
+
+        examples = self.examples_by_type[i]
+
+        original = self.shrink_target
+        values = [original.buffer[ex.start:ex.end] for ex in examples]
+
+        def can_intermingle(a, b):
+            if b > len(examples) or a < 0:
+                return False
+            replacements = calc_replacements(values[a:b])
+            assert len(replacements) == b - a
+            return self.consider_new_buffer(replace_all(
+                original.buffer, [
+                (ex.start, ex.end, r) for ex, r in zip(
+                    examples[a:b], replacements
+                )
+            ]))
+
+        if j is None:
+            can_intermingle(0, len(examples))
+            return
+
+        if j >= len(self.examples_by_type[i]):
+            return
+        to_right = find_integer(lambda n: can_intermingle(j, j + n))
+        assert to_right > 0
+        if to_right > 1:
+            to_left = find_integer(lambda n: can_intermingle(j - n, j + to_right))
 
     @defines_shrink_pass(
         lambda self: [
@@ -610,7 +766,6 @@ class Shrinker(object):
         """
         return not (self.is_shrinking_block(i) or self.shrink_target.blocks[i].forced)
 
-    @defines_shrink_pass()
     def lower_common_block_offset(self):
         """Sometimes we find ourselves in a situation where changes to one part
         of the byte stream unlock changes to other parts. Sometimes this is
@@ -743,13 +898,15 @@ class Shrinker(object):
             for i in valid_pair:
                 new_blocks[i] = int_to_bytes(int_from_block(i) + o - m, block_len(i))
             buffer = hbytes().join(new_blocks)
-            return self.incorporate_new_buffer(buffer)
+            return self.consider_new_buffer(buffer)
 
         value_i = int_from_block(i)
         value_j = int_from_block(j)
 
         offset = min(value_i, value_j)
-        Integer.shrink(offset, lambda o: reoffset_pair((i, j), o), random=self.random)
+        if reoffset_pair((i, j), 0):
+            return
+        find_integer(lambda n: n <= offset and reoffset_pair((i, j), offset - n))
 
     def mark_shrinking(self, blocks):
         """Mark each of these blocks as a shrinking block: That is, lowering
@@ -814,7 +971,11 @@ class Shrinker(object):
                 break
             u, v = self.blocks[block].bounds
             n = min(v - u, len(b))
-            initial_attempt[v - n : v] = b[-n:]
+            try:
+                initial_attempt[v - n : v] = b[-n:]
+            except IndexError:
+                print(u, v, n, b)
+                raise
 
         start = self.shrink_target.blocks[blocks[0]].start
         end = self.shrink_target.blocks[blocks[-1]].end
@@ -973,6 +1134,15 @@ class Shrinker(object):
                 distinct_partitions.append(prev | endpoints_at_depth[d])
         return [sorted(endpoints) for endpoints in distinct_partitions]
 
+    @derived_value
+    def examples_by_type(self):
+        parts = defaultdict(list)
+        for ex in self.shrink_target.examples:
+            parts[(ex.depth, ex.label)].append(ex)
+        result = [ls for ls in parts.values() if len(ls) > 1]
+        result.sort(key=len, reverse=True)
+        return result
+
     @defines_shrink_pass(
         lambda self: [
             (i, j)
@@ -1026,7 +1196,6 @@ class Shrinker(object):
 
         if ex.trivial:
             return
-
         u = ex.start
         v = ex.end
         attempt = self.cached_test_function(
@@ -1047,6 +1216,11 @@ class Shrinker(object):
             self.incorporate_new_buffer(
                 self.buffer[:u] + hbytes(used) + self.buffer[v:]
             )
+
+    def replace_examples(self, examples, replacements):
+        replacements = list(replacements)
+        assert len(examples) == len(replacements)
+        
 
     def all_duplicated_blocks(self):
         """Returns all non zero suffixes of blocks that appear more than once
@@ -1261,7 +1435,7 @@ class Shrinker(object):
                 attempt[r:s] = int_to_bytes(y, s - r)
             except OverflowError:
                 return False
-            return self.incorporate_new_buffer(attempt)
+            return self.consider_new_buffer(attempt)
 
         # We first attempt to move 1 from m to n. If that works
         # then we treat that as a sign that it's worth trying
@@ -1273,30 +1447,10 @@ class Shrinker(object):
             n = int_from_bytes(self.shrink_target.buffer[r:s])
 
             tot = m + n
-            Integer.shrink(m, lambda x: trial(x, tot - x), random=self.random)
+            find_integer(lambda k: k <= m and trial(m - k, m + k))
 
-    @defines_shrink_pass(example_indices)
-    def reorder_examples(self, i):
-        """This pass allows us to reorder the children of each example.
 
-        For example, consider the following:
-
-        .. code-block:: python
-
-            import hypothesis.strategies as st
-            from hypothesis import given
-
-            @given(st.text(), st.text())
-            def test_not_equal(x, y):
-                assert x != y
-
-        Without the ability to reorder x and y this could fail either with
-        ``x=""``, ``y="0"``, or the other way around. With reordering it will
-        reliably fail with ``x=""``, ``y="0"``.
-        """
-        return self.run_shrinker_on_children(i, Ordering, key=sort_key)
-
-    @defines_shrink_pass(lambda self: [(c,) for c in hrange(256)])
+    @defines_shrink_pass(lambda self: [(c,) for c in sorted(set(self.buffer))])
     def alphabet_minimize(self, c):
         """Attempts to minimize the "alphabet" - the set of bytes that
         are used in the representation of the current buffer. The main
@@ -1428,7 +1582,17 @@ def non_zero_suffix(b):
 
 
 class PassState(object):
-    """Manages the state for running the steps of a single shrink pass."""
+    """Wraps a single shrink pass and manages the state required to run it.
+
+    In particular tracks:
+
+        * Remaining steps to run.
+        * Information that allows it to determine that it's not worth running
+          more steps because the current shrink target is a fixed point of this
+          pass.
+        * Statistics about the total effect of running this shrink pass so far,
+          used for reporting at the end.
+    """
 
     def __init__(self, shrinker, shrink_pass):
         self.__prev = None
@@ -1442,6 +1606,11 @@ class PassState(object):
         self.calls = 0
         self.shrinks = 0
         self.deletions = 0
+        self.steps = 0
+        self.length_reducing_steps = 0
+        self.fractional_reductions = []
+        self.lexical_reducing_steps = 0
+        self.successful_this_run = False
 
     def __repr__(self):
         return "PassState(%s)" % (self.shrink_pass.name,)
@@ -1450,21 +1619,24 @@ class PassState(object):
     def name(self):
         return self.shrink_pass.name
 
-    def step(self):
-        """Either run a single step of the shrink pass and return True,
-        or return False if there is nothing useful for this pass to do
-        until the shrink target next changes."""
+    @property
+    def available(self):
+        self.__refill_if_necessary()
+        return len(self.__queue) > 0
 
-        if not self.__queue:
-            # The shrink target hasn't changed since we last ran through
-            # all of our steps, therefore there is not currently anything
-            # useful for us to do.
-            if self.__prev is self.__shrinker.shrink_target:
-                return False
+    def __refill_if_necessary(self):
+        if not self.__queue and self.__prev is not self.__shrinker.shrink_target:
             self.runs += 1
             self.__prev = self.__shrinker.shrink_target
             self.__queue = list(self.shrink_pass.generate_arguments(self.__shrinker))
             self.__shrinker.random.shuffle(self.__queue)
+            self.successful_this_run = False
+        
+    def step(self):
+        """Either run a single step of the shrink pass and return True,
+        or return False if the current shrink target is a fixed point for this
+        pass."""
+        self.__refill_if_necessary()
 
         if self.__queue:
             args = self.__queue.pop()
@@ -1478,10 +1650,17 @@ class PassState(object):
             finally:
                 calls = self.__shrinker.calls - initial_calls
                 if calls > 0:
+                    self.steps += 1
                     if initial is self.__shrinker.shrink_target:
                         self.failures += 1
                     else:
+                        self.successful_this_run = True
                         self.successes += 1
+                        if len(initial.buffer) > len(self.__shrinker.shrink_target.buffer):
+                            self.length_reducing_steps += 1
+                            self.fractional_reductions.append((len(initial.buffer) - len(self.__shrinker.shrink_target.buffer)) / len(initial.buffer))
+                        else:
+                            self.lexical_reducing_steps += 1
                 shrinks = self.__shrinker.shrinks - initial_shrinks
                 deletions = size - len(self.__shrinker.shrink_target.buffer)
 
@@ -1491,3 +1670,30 @@ class PassState(object):
             return True
         else:
             return False
+
+
+def replace_all(buffer, replacements):
+    prev = 0
+    result = bytearray()
+    for u, v, r in replacements:
+        result.extend(buffer[prev:u])
+        result.extend(r)
+        prev = v
+    result.extend(buffer[prev:])
+    return result
+
+
+def interleave(ls):
+    iters = list(map(iter, ls))
+
+    result = []
+    while iters:
+        next_iters = []
+        for it in iters:
+            try:
+                result.append(next(it))
+                next_iters.append(it)
+            except StopIteration:
+                pass
+        iters = next_iters
+    return result
