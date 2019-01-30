@@ -24,7 +24,7 @@ from random import Random
 import pytest
 
 from hypothesis.internal.compat import ceil
-from hypothesis.internal.conjecture.shrinking import Integer, Length, Lexical, Ordering
+from hypothesis.internal.conjecture.shrinking import Integer, Lexical, Ordering
 
 
 def measure_baseline(cls, value, **kwargs):
@@ -33,7 +33,7 @@ def measure_baseline(cls, value, **kwargs):
     return shrinker.calls
 
 
-@pytest.mark.parametrize("cls", [Lexical, Length, Ordering])
+@pytest.mark.parametrize("cls", [Lexical, Ordering])
 @pytest.mark.parametrize("example", [[255] * 8])
 def test_meets_budgetary_requirements(cls, example):
     # Somewhat arbitrary but not unreasonable budget.

@@ -31,13 +31,7 @@ from hypothesis.internal.conjecture.floats import (
     float_to_lex,
     lex_to_float,
 )
-from hypothesis.internal.conjecture.shrinking import (
-    Float,
-    Integer,
-    Length,
-    Lexical,
-    Ordering,
-)
+from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Ordering
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
 
@@ -138,10 +132,9 @@ class Shrinker(object):
     are carefully designed to do the right thing in the case that no
     shrinks occurred and try to adapt to any changes to do a reasonable
     job. e.g. say we wanted to write a shrink pass that tried deleting
-    each individual byte (this isn't an especially good choice and if
-    we did we should use :class:`hypothesis.internal.conjecture.shrinking.Length`
-    to do it anyway, but it leads to a simple illustrative example),
-    we might do it by iterating over the buffer like so:
+    each individual byte (this isn't an especially good choice, 
+    but it leads to a simple illustrative example), we might do it
+    by iterating over the buffer like so:
 
     .. code-block:: python
 
@@ -181,11 +174,7 @@ class Shrinker(object):
       reasonably large proportion of the operations suceed, this
       guarantees the expected stall length is quite short. The
       book keeping for making sure this does the right thing when
-      it succeeds can be quite annoying. If you want this approach
-      it may be useful to see if you can build it on top of
-      :class:`~hypothesis.internal.conjecture.shrinking.Length`,
-      which already does the right book keeping for you (as well
-      as the adaptive logic below).
+      it succeeds can be quite annoying.
     * When you have any sort of nested loop, loop in such a way
       that both loop variables change each time. This prevents
       stalls which occur when one particular value for the outer
