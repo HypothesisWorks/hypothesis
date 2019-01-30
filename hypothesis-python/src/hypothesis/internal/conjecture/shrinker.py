@@ -18,7 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import heapq
-from collections import Counter
+from collections import Counter, defaultdict
 from enum import Enum
 from functools import total_ordering
 
@@ -249,6 +249,23 @@ class Shrinker(object):
             "minimize_block_pairs_retaining_sum",
         ]
 
+    def derived_value(fn):
+        """It's useful during shrinking to have access to derived values of
+        the current shrink target.
+
+        This decorator allows you to define these as cached properties. They
+        are calculated once, then cached until the shrink target changes, then
+        recalculated the next time they are used."""
+
+        def accept(self):
+            try:
+                return self.__derived_values[fn.__name__]
+            except KeyError:
+                return self.__derived_values.setdefault(fn.__name__, fn(self))
+
+        accept.__name__ = fn.__name__
+        return property(accept)
+
     def __init__(self, engine, initial, predicate):
         """Create a shrinker for a particular engine, with a given starting
         point and predicate. When shrink() is called it will attempt to find an
@@ -262,6 +279,7 @@ class Shrinker(object):
         self.__predicate = predicate
         self.discarding_failed = False
         self.__shrinking_prefixes = set()
+        self.__derived_values = {}
 
         self.initial_size = len(initial.buffer)
 
@@ -668,6 +686,10 @@ class Shrinker(object):
     def blocks(self):
         return self.shrink_target.blocks
 
+    @property
+    def examples(self):
+        return self.shrink_target.examples
+
     def all_block_bounds(self):
         return self.shrink_target.all_block_bounds()
 
@@ -938,6 +960,7 @@ class Shrinker(object):
 
         self.shrink_target = new_target
         self.__shrinking_block_cache = {}
+        self.__derived_values = {}
 
     def try_shrinking_blocks(self, blocks, b):
         """Attempts to replace each block in the blocks list with b. Returns
@@ -1130,6 +1153,24 @@ class Shrinker(object):
                 **kwargs
             )
 
+    @derived_value
+    def fine_grained_partitions(self):
+        """Defines a series of increasingly fine grained partitions of
+        the current buffer aligned with example boundaries. This is
+        primarily useful for adaptive_example_deletion."""
+        endpoints_at_depth = defaultdict(set)
+        max_depth = 0
+        for ex in self.examples:
+            endpoints_at_depth[ex.depth].add(ex.start)
+            endpoints_at_depth[ex.depth].add(ex.end)
+            max_depth = max(max_depth, ex.depth)
+        distinct_partitions = [{0, len(self.buffer)}]
+        for d in hrange(max_depth + 1):
+            prev = distinct_partitions[-1]
+            if not endpoints_at_depth[d].issubset(prev):
+                distinct_partitions.append(prev | endpoints_at_depth[d])
+        return [sorted(endpoints) for endpoints in distinct_partitions[1:]]
+
     def adaptive_example_deletion(self):
         """Recursive deletion pass that tries to make the example located at
         example_index as small as possible. This is the main point at which we
@@ -1144,7 +1185,34 @@ class Shrinker(object):
         If we do not make any successful changes, we recurse to the example's
         children and attempt the same there.
         """
-        self.example_wise_shrink(Length)
+        indices = [
+            (i, j)
+            for i, ls in enumerate(self.fine_grained_partitions)
+            for j in hrange(len(ls))
+        ]
+        self.random.shuffle(indices)
+
+        for i, j in indices:
+            if i >= len(self.fine_grained_partitions):
+                continue
+            partition = self.fine_grained_partitions[i]
+            # No point in trying to delete the last element because that will always
+            # give us a prefix.
+            if j >= len(partition) - 1:
+                continue
+
+            def clear_region(a, b):
+                assert a <= j <= b
+                if a < 0 or b >= len(partition) - 1:
+                    return False
+                return self.consider_new_buffer(
+                    self.buffer[: partition[a]] + self.buffer[partition[b] :]
+                )
+
+            to_right = find_integer(lambda n: clear_region(j, j + n))
+
+            if to_right > 0:
+                j -= find_integer(lambda n: clear_region(j - n, j + to_right))
 
     def zero_examples(self):
         """Attempt to replace each example with a minimal version of itself."""
