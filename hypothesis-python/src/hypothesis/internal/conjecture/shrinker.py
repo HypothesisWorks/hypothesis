@@ -132,7 +132,7 @@ class Shrinker(object):
     are carefully designed to do the right thing in the case that no
     shrinks occurred and try to adapt to any changes to do a reasonable
     job. e.g. say we wanted to write a shrink pass that tried deleting
-    each individual byte (this isn't an especially good choice, 
+    each individual byte (this isn't an especially good choice,
     but it leads to a simple illustrative example), we might do it
     by iterating over the buffer like so:
 
