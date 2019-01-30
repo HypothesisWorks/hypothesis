@@ -21,6 +21,7 @@ import heapq
 from collections import Counter, defaultdict
 from enum import Enum
 from functools import partial
+import math
 
 import attr
 
@@ -477,18 +478,13 @@ class Shrinker(object):
         # represented by the same bytes to a fairly large degree, and useful
         # values should ideally be repeated in many places. This increases the
         # cache hit rate and hopefully makes it easier for us to shrink later.
-        coarse_passes = [
+        main_passes = [
             "remove_discarded",
             "alphabet_minimize",
             "adaptive_example_deletion",
+            "pass_to_descendant",
             "zero_examples",
             "propagate_examples",
-            "pass_to_descendant",
-        ]
-
-        self.fixate_passes(coarse_passes)
-
-        main_passes = coarse_passes + [
             "reorder_examples",
             "minimize_duplicated_blocks",
             "minimize_floats",
@@ -549,11 +545,6 @@ class Shrinker(object):
             # the lever is variable. So we adapt it in a couple not entirely
             # principled ways.
 
-            # Firstly, we really want to delete data. So we start with a
-            # similar process which selects for passes that might achieve that:
-            # We calculate a Bayesian probability distribution for how likely
-            # a step is to delete any data.
-
             initial = self.shrink_target
 
             candidates = [sp for sp in states if sp.available]
@@ -561,32 +552,37 @@ class Shrinker(object):
             if not candidates:
                 return
 
-            if not any(sp.successes > 0 for sp in candidates):
+            if not any(sp.successes > 0 for sp in candidates) or len(candidates) == 1:
                 for sp in candidates:
                     self.run_once(sp)
                 continue
 
-            rest = []
+            # If a pass is likely to delete data we just want to straight up
+            # run it. Conceptually what's going on here is that we treat 
+            # whether a pass deletes data as a Bernoulli distribution and give
+            # it a a Beta(0.5, 0.5) prior, take the posterior based on our
+            # previous runs, and draw a value p from that posterior. We then
+            # simulate a Bernoulli(p) value. If it returns True, that's a
+            # success in our simulated model, so we run the real model to see
+            # if we actually get one.
+            #
+            # If we don't run the shrink pass in this step, we enqueue it for
+            # consideration by the main Thompson sampling.
+
+            scores = []
 
             for sp in candidates:
-                if self.random.random() <= (0.5 + sp.length_reducing_steps) / (1 + sp.steps):
-                    self.run_once(sp)
-                else:
-                    rest.append(sp)
+                p_shrink = self.random.betavariate(sp.param_lexical + sp.param_length, sp.param_fail)
+                p_shrink_length = self.random.betavariate(sp.param_length, sp.param_lexical)
+                scores.append(p_shrink * (
+                    1 - p_shrink_length + 10 * math.log(len(self.buffer)) * p_shrink_length
+                ))
 
-            candidates = rest
+            scored_pairs = sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True)
 
-            if not candidates:
-                continue
+            self.debug("Scores: %s" % (', '.join("%s -> %r" % (sp.name, score) for score, sp in scored_pairs),))
 
-            scores = [
-                self.random.betavariate(sp.shrinks + 0.5, sp.calls - sp.shrinks + 0.5)
-                for sp in candidates
-            ]
-
-            self.debug("Scores: %s" % (', '.join("%s -> %r" % (sp.name, score) for sp, score in zip(candidates, scores)),))
-
-            for _, sp in sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True):
+            for _, sp in scored_pairs:
                 calls = self.calls
                 self.run_once(sp)
                 if calls != self.calls:
@@ -690,16 +686,64 @@ class Shrinker(object):
         if to_right > 1:
             to_left = find_integer(lambda n: can_intermingle(j - n, j + to_right))
 
+    def descendant_pairs(self):
+        examples_by_label = defaultdict(list)
+        for ex in self.examples:
+            examples_by_label[ex.label].append(ex)
+
+        result = []
+        for ex in self.examples:
+            equivalent = examples_by_label[ex.label]
+            if equivalent[-1] is ex:
+                continue
+            i = 0
+            hi = len(equivalent) - 1
+            while i + 1 < hi and equivalent[i] is not ex:
+                mid = (i + hi) // 2
+                ex2 = equivalent[mid]
+                if ex2.index > ex.index:
+                    hi = mid
+                else:
+                    i = mid
+            for ex2 in equivalent[i + 1:]:
+                if ex2.start >= ex.end:
+                    break
+                result.append((ex.index, ex2.index))
+        return result
+
+    @derived_value
+    def descents(self):
+        examples_by_label = defaultdict(list)
+        for ex in self.examples:
+            examples_by_label[ex.label].append(ex.index)
+
+        result = []
+
+        for ls in examples_by_label.values():
+            if len(ls) <= 1:
+                continue
+
+            for i, exi in enumerate(ls[:-1]):
+                ex = self.examples[exi]
+                hi = len(ls) 
+                lo = i + 1
+                if self.examples[ls[lo]].start >= ex.end:
+                    continue
+                while lo + 1 < hi:
+                    mid = (lo + hi) // 2
+                    if self.examples[ls[mid]].start >= ex.end:
+                        hi = mid
+                    else:
+                        lo = mid
+                descents = ls[i + 1:hi]
+                if descents:
+                    result.append((exi, descents))
+        return result
+
     @defines_shrink_pass(
-        lambda self: [
-            (i, j)
-            for i in hrange(len(self.examples))
-            for j in hrange(i + 1, len(self.examples))
-            if self.examples[j].end <= self.examples[i].end
-            and self.examples[j].label == self.examples[i].label
-        ]
+        lambda self: [(i, j) for i, ls in enumerate(self.descents) for j in hrange(len(ls))]
     )
-    def pass_to_descendant(self, i, j):
+    def pass_to_descendant(self, a, b):
         """Attempt to replace each example with a descendant example.
 
         This is designed to deal with strategies that call themselves
@@ -717,17 +761,19 @@ class Shrinker(object):
         late in the process when we've got the number of intervals as far down
         as possible.
         """
-        assert i < j
-        if j >= len(self.examples):
+
+        try:
+            i = self.descents[a][0]
+            j = self.descents[a][1][b]
+        except IndexError:
             return
+
+        assert i < j
         ancestor = self.examples[i]
         descendant = self.examples[j]
-        if (
-            ancestor.trivial
-            or descendant.start >= ancestor.end
-            or descendant.length == ancestor.length
-            or descendant.label != ancestor.label
-        ):
+        assert ancestor.label == descendant.label
+        assert ancestor.start <= descendant.start <= descendant.end <= ancestor.end
+        if ancestor.trivial:
             return
         self.incorporate_new_buffer(
             self.buffer[: ancestor.start]
@@ -1064,7 +1110,7 @@ class Shrinker(object):
                 return True
         return False
 
-    @defines_shrink_pass()
+    @defines_shrink_pass(lambda self: [()] if self.shrink_target.has_discards else [])
     def remove_discarded(self):
         """Try removing all bytes marked as discarded.
 
@@ -1274,7 +1320,19 @@ class Shrinker(object):
     def block_indices(self):
         return [(i,) for i in hrange(len(self.blocks))]
 
-    @defines_shrink_pass(example_indices)
+
+    @derived_value
+    def float_examples(self):
+        return [
+            ex for ex in self.shrink_target.examples
+            if (
+                ex.label == DRAW_FLOAT_LABEL
+                and len(ex.children) == 2
+                and ex.children[0].length == 8
+            )
+        ]
+
+    @defines_shrink_pass(lambda self: [(i,) for i in hrange(len(self.float_examples))])
     def minimize_floats(self, i):
         """Some shrinks that we employ that only really make sense for our
         specific floating point encoding that are hard to discover from any
@@ -1291,9 +1349,9 @@ class Shrinker(object):
         transformations to make, they just don't necessarily correspond to
         anything particularly meaningful for non-float values.
         """
-        if i >= len(self.examples):
+        if i >= len(self.float_examples):
             return
-        ex = self.shrink_target.examples[i]
+        ex = self.float_examples[i]
         if (
             ex.label == DRAW_FLOAT_LABEL
             and len(ex.children) == 2
@@ -1612,6 +1670,11 @@ class PassState(object):
         self.lexical_reducing_steps = 0
         self.successful_this_run = False
 
+        self.param_length = 1.0
+        self.param_lexical = 1.0
+        self.param_fail = 1.0
+        self.normalize_parameters()
+
     def __repr__(self):
         return "PassState(%s)" % (self.shrink_pass.name,)
 
@@ -1631,6 +1694,13 @@ class PassState(object):
             self.__queue = list(self.shrink_pass.generate_arguments(self.__shrinker))
             self.__shrinker.random.shuffle(self.__queue)
             self.successful_this_run = False
+            self.normalize_parameters()
+
+    def normalize_parameters(self):
+        tot = self.param_length + self.param_lexical + self.param_fail
+        self.param_length /= tot
+        self.param_lexical /= tot
+        self.param_fail /= tot
         
     def step(self):
         """Either run a single step of the shrink pass and return True,
@@ -1653,14 +1723,17 @@ class PassState(object):
                     self.steps += 1
                     if initial is self.__shrinker.shrink_target:
                         self.failures += 1
+                        self.param_fail += 1
                     else:
                         self.successful_this_run = True
                         self.successes += 1
                         if len(initial.buffer) > len(self.__shrinker.shrink_target.buffer):
                             self.length_reducing_steps += 1
                             self.fractional_reductions.append((len(initial.buffer) - len(self.__shrinker.shrink_target.buffer)) / len(initial.buffer))
+                            self.param_length += 1
                         else:
                             self.lexical_reducing_steps += 1
+                            self.param_lexical += 1
                 shrinks = self.__shrinker.shrinks - initial_shrinks
                 deletions = size - len(self.__shrinker.shrink_target.buffer)
 
