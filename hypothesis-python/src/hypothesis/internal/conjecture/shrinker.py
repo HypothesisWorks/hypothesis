@@ -1143,10 +1143,15 @@ class Shrinker(object):
             )
 
     @derived_value
-    def fine_grained_partitions(self):
-        """Defines a series of increasingly fine grained partitions of
-        the current buffer aligned with example boundaries. This is
-        primarily useful for adaptive_example_deletion."""
+    def endpoints_by_depth(self):
+        """Defines a series of increasingly fine grained boundaries
+        to partition the current buffer, based on the depth of examples.
+        Each element of the result is the set of endpoints of examples
+        less than or equal to some depth (less than or equal to account
+        for the fact that there might be blocks below that depth and if
+        we ignore those we'll get bad boundaries).
+
+        This is primarily useful for adaptive_example_deletion."""
         endpoints_at_depth = defaultdict(set)
         max_depth = 0
         for ex in self.examples:
@@ -1161,36 +1166,30 @@ class Shrinker(object):
         return [sorted(endpoints) for endpoints in distinct_partitions[1:]]
 
     def adaptive_example_deletion(self):
-        """Recursive deletion pass that tries to make the example located at
-        example_index as small as possible. This is the main point at which we
-        try to lower the size of the data.
+        """Attempts to delete every example from the test case.
 
-        First attempts to replace the example with its minimal possible version
-        using zero_example. If the example is trivial (either because of that
-        or because it was anyway) then we assume there's nothing we can
-        usefully do here and return early. Otherwise, we attempt to minimize it
-        by deleting its children.
-
-        If we do not make any successful changes, we recurse to the example's
-        children and attempt the same there.
+        That is, it is logically equivalent to trying ``self.buffer[:ex.start] +
+        self.buffer[ex.end:]`` for every example ``ex``. The order in which
+        examples are tried is randomized, and when deletion is successful it
+        will attempt to adapt to delete more than one example at a time.
         """
         indices = [
             (i, j)
-            for i, ls in enumerate(self.fine_grained_partitions)
+            for i, ls in enumerate(self.endpoints_by_depth)
             for j in hrange(len(ls))
         ]
         self.random.shuffle(indices)
 
         for i, j in indices:
-            if i >= len(self.fine_grained_partitions):
+            if i >= len(self.endpoints_by_depth):
                 continue
-            partition = self.fine_grained_partitions[i]
+            partition = self.endpoints_by_depth[i]
             # No point in trying to delete the last element because that will always
             # give us a prefix.
             if j >= len(partition) - 1:
                 continue
 
-            def clear_region(a, b):
+            def delete_region(a, b):
                 assert a <= j <= b
                 if a < 0 or b >= len(partition) - 1:
                     return False
@@ -1198,10 +1197,10 @@ class Shrinker(object):
                     self.buffer[: partition[a]] + self.buffer[partition[b] :]
                 )
 
-            to_right = find_integer(lambda n: clear_region(j, j + n))
+            to_right = find_integer(lambda n: delete_region(j, j + n))
 
             if to_right > 0:
-                j -= find_integer(lambda n: clear_region(j - n, j + to_right))
+                find_integer(lambda n: delete_region(j - n, j + to_right))
 
     def zero_examples(self):
         """Attempt to replace each example with a minimal version of itself."""
