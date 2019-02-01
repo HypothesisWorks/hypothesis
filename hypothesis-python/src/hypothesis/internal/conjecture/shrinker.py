@@ -18,7 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import heapq
-from collections import Counter
+from collections import Counter, defaultdict
 from enum import Enum
 from functools import total_ordering
 
@@ -31,13 +31,7 @@ from hypothesis.internal.conjecture.floats import (
     float_to_lex,
     lex_to_float,
 )
-from hypothesis.internal.conjecture.shrinking import (
-    Float,
-    Integer,
-    Length,
-    Lexical,
-    Ordering,
-)
+from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Ordering
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
 
@@ -138,10 +132,9 @@ class Shrinker(object):
     are carefully designed to do the right thing in the case that no
     shrinks occurred and try to adapt to any changes to do a reasonable
     job. e.g. say we wanted to write a shrink pass that tried deleting
-    each individual byte (this isn't an especially good choice and if
-    we did we should use :class:`hypothesis.internal.conjecture.shrinking.Length`
-    to do it anyway, but it leads to a simple illustrative example),
-    we might do it by iterating over the buffer like so:
+    each individual byte (this isn't an especially good choice,
+    but it leads to a simple illustrative example), we might do it
+    by iterating over the buffer like so:
 
     .. code-block:: python
 
@@ -181,11 +174,7 @@ class Shrinker(object):
       reasonably large proportion of the operations suceed, this
       guarantees the expected stall length is quite short. The
       book keeping for making sure this does the right thing when
-      it succeeds can be quite annoying. If you want this approach
-      it may be useful to see if you can build it on top of
-      :class:`~hypothesis.internal.conjecture.shrinking.Length`,
-      which already does the right book keeping for you (as well
-      as the adaptive logic below).
+      it succeeds can be quite annoying.
     * When you have any sort of nested loop, loop in such a way
       that both loop variables change each time. This prevents
       stalls which occur when one particular value for the outer
@@ -249,6 +238,23 @@ class Shrinker(object):
             "minimize_block_pairs_retaining_sum",
         ]
 
+    def derived_value(fn):
+        """It's useful during shrinking to have access to derived values of
+        the current shrink target.
+
+        This decorator allows you to define these as cached properties. They
+        are calculated once, then cached until the shrink target changes, then
+        recalculated the next time they are used."""
+
+        def accept(self):
+            try:
+                return self.__derived_values[fn.__name__]
+            except KeyError:
+                return self.__derived_values.setdefault(fn.__name__, fn(self))
+
+        accept.__name__ = fn.__name__
+        return property(accept)
+
     def __init__(self, engine, initial, predicate):
         """Create a shrinker for a particular engine, with a given starting
         point and predicate. When shrink() is called it will attempt to find an
@@ -262,6 +268,7 @@ class Shrinker(object):
         self.__predicate = predicate
         self.discarding_failed = False
         self.__shrinking_prefixes = set()
+        self.__derived_values = {}
 
         self.initial_size = len(initial.buffer)
 
@@ -668,6 +675,10 @@ class Shrinker(object):
     def blocks(self):
         return self.shrink_target.blocks
 
+    @property
+    def examples(self):
+        return self.shrink_target.examples
+
     def all_block_bounds(self):
         return self.shrink_target.all_block_bounds()
 
@@ -938,6 +949,7 @@ class Shrinker(object):
 
         self.shrink_target = new_target
         self.__shrinking_block_cache = {}
+        self.__derived_values = {}
 
     def try_shrinking_blocks(self, blocks, b):
         """Attempts to replace each block in the blocks list with b. Returns
@@ -1130,21 +1142,65 @@ class Shrinker(object):
                 **kwargs
             )
 
+    @derived_value
+    def endpoints_by_depth(self):
+        """Defines a series of increasingly fine grained boundaries
+        to partition the current buffer, based on the depth of examples.
+        Each element of the result is the set of endpoints of examples
+        less than or equal to some depth (less than or equal to account
+        for the fact that there might be blocks below that depth and if
+        we ignore those we'll get bad boundaries).
+
+        This is primarily useful for adaptive_example_deletion."""
+        endpoints_at_depth = defaultdict(set)
+        max_depth = 0
+        for ex in self.examples:
+            endpoints_at_depth[ex.depth].add(ex.start)
+            endpoints_at_depth[ex.depth].add(ex.end)
+            max_depth = max(max_depth, ex.depth)
+        distinct_partitions = [{0, len(self.buffer)}]
+        for d in hrange(max_depth + 1):
+            prev = distinct_partitions[-1]
+            if not endpoints_at_depth[d].issubset(prev):
+                distinct_partitions.append(prev | endpoints_at_depth[d])
+        return [sorted(endpoints) for endpoints in distinct_partitions[1:]]
+
     def adaptive_example_deletion(self):
-        """Recursive deletion pass that tries to make the example located at
-        example_index as small as possible. This is the main point at which we
-        try to lower the size of the data.
+        """Attempts to delete every example from the test case.
 
-        First attempts to replace the example with its minimal possible version
-        using zero_example. If the example is trivial (either because of that
-        or because it was anyway) then we assume there's nothing we can
-        usefully do here and return early. Otherwise, we attempt to minimize it
-        by deleting its children.
-
-        If we do not make any successful changes, we recurse to the example's
-        children and attempt the same there.
+        That is, it is logically equivalent to trying ``self.buffer[:ex.start] +
+        self.buffer[ex.end:]`` for every example ``ex``. The order in which
+        examples are tried is randomized, and when deletion is successful it
+        will attempt to adapt to delete more than one example at a time.
         """
-        self.example_wise_shrink(Length)
+        indices = [
+            (i, j)
+            for i, ls in enumerate(self.endpoints_by_depth)
+            for j in hrange(len(ls))
+        ]
+        self.random.shuffle(indices)
+
+        for i, j in indices:
+            if i >= len(self.endpoints_by_depth):
+                continue
+            partition = self.endpoints_by_depth[i]
+            # No point in trying to delete the last element because that will always
+            # give us a prefix.
+            if j >= len(partition) - 1:
+                continue
+
+            def delete_region(a, b):
+                assert a <= j <= b
+                if a < 0 or b >= len(partition) - 1:
+                    return False
+                return self.consider_new_buffer(
+                    self.buffer[: partition[a]] + self.buffer[partition[b] :]
+                )
+
+            to_right = find_integer(lambda n: delete_region(j, j + n))
+
+            if to_right > 0:
+                find_integer(lambda n: delete_region(j - n, j + to_right))
 
     def zero_examples(self):
         """Attempt to replace each example with a minimal version of itself."""

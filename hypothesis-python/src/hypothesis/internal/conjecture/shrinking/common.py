@@ -198,7 +198,7 @@ class Shrinker(object):
 
         Does nothing by default.
         """
-        pass
+        raise NotImplementedError()
 
     def short_circuit(self):
         """Possibly attempt to do some shrinking.
