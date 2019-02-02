@@ -6,6 +6,7 @@
 .vagrant
 .DS_Store
 .hypothesis
+.vscode/
 
 # generic build components
 
