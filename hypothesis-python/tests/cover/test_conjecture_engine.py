@@ -982,25 +982,6 @@ def test_can_pass_to_an_indirect_descendant(monkeypatch):
     assert list(x) == [0, 10]
 
 
-def test_shrinking_block_pairs(monkeypatch):
-    monkeypatch.setattr(Shrinker, "shrink", lambda self: (self.shrink_offset_pairs()))
-
-    monkeypatch.setattr(
-        ConjectureRunner,
-        "generate_new_examples",
-        lambda runner: runner.test_function(ConjectureData.for_buffer([12, 10])),
-    )
-
-    @run_to_buffer
-    def x(data):
-        m = data.draw_bits(8)
-        n = data.draw_bits(8)
-        if m == n + 2:
-            data.mark_interesting()
-
-    assert x == hbytes([2, 0])
-
-
 def shrink(buffer, *passes):
     def accept(f):
         shrinker = shrinking_from(buffer)(f)
@@ -1013,57 +994,6 @@ def shrink(buffer, *passes):
         return list(shrinker.buffer)
 
     return accept
-
-
-def test_non_minimal_pair_shrink(monkeypatch):
-    @shrink([12, 10], "shrink_offset_pairs")
-    def x(data):
-        m = data.draw_bits(8)
-        if m < 5:
-            data.mark_invalid()
-        if m == 5:
-            data.mark_interesting()
-        n = data.draw_bits(8)
-        if m == n + 2:
-            data.mark_interesting()
-
-    assert x == [5]
-
-
-def test_buffer_changes_during_pair_shrink(monkeypatch):
-    @shrink([12, 10], "shrink_offset_pairs")
-    def x(data):
-        m = data.draw_bits(8)
-        if m < 5:
-            data.mark_invalid()
-        if m == 5:
-            data.write(hbytes([1]))
-            data.mark_interesting()
-        n = data.draw_bits(8)
-        if m == n + 2:
-            data.mark_interesting()
-
-    assert x == [5, 1]
-
-
-def test_buffer_changes_during_pair_shrink_stays_interesting(monkeypatch):
-    monkeypatch.setattr(Shrinker, "shrink", lambda self: (self.shrink_offset_pairs()))
-
-    monkeypatch.setattr(
-        ConjectureRunner,
-        "generate_new_examples",
-        lambda runner: runner.test_function(ConjectureData.for_buffer([12, 10])),
-    )
-
-    @run_to_buffer
-    def x(data):
-        m = data.draw_bits(8)
-        if m == 12:
-            data.draw_bits(8)
-        if m >= 9:
-            data.mark_interesting()
-
-    assert len(x) == 1
 
 
 def test_shrinking_blocks_from_common_offset(monkeypatch):
@@ -1135,49 +1065,6 @@ def test_large_initial_write():
         runner.run()
 
     assert runner.exit_reason == ExitReason.finished
-
-
-@pytest.mark.parametrize("lo", [0, 1, 50])
-def test_can_shrink_additively(monkeypatch, lo):
-    monkeypatch.setattr(
-        ConjectureRunner,
-        "generate_new_examples",
-        lambda self: self.test_function(ConjectureData.for_buffer(hbytes([100, 100]))),
-    )
-
-    @run_to_buffer
-    def x(data):
-        m = data.draw_bits(8)
-        n = data.draw_bits(8)
-        if m >= lo and m + n == 200:
-            data.mark_interesting()
-
-    assert list(x) == [lo, 200 - lo]
-
-
-def test_can_shrink_additively_losing_size(monkeypatch):
-    monkeypatch.setattr(
-        ConjectureRunner,
-        "generate_new_examples",
-        lambda self: self.test_function(ConjectureData.for_buffer(hbytes([100, 100]))),
-    )
-
-    monkeypatch.setattr(
-        Shrinker, "shrink", lambda self: (self.minimize_block_pairs_retaining_sum(),)
-    )
-
-    @run_to_buffer
-    def x(data):
-        m = data.draw_bits(8)
-        if m >= 10:
-            if m <= 50:
-                data.mark_interesting()
-            else:
-                n = data.draw_bits(8)
-                if m + n == 200:
-                    data.mark_interesting()
-
-    assert len(x) == 1
 
 
 def test_can_reorder_examples(monkeypatch):
@@ -1437,17 +1324,6 @@ def test_exit_because_max_iterations():
 
     assert runner.call_count <= 1000
     assert runner.exit_reason == ExitReason.max_iterations
-
-
-def test_skips_non_payload_blocks_when_reducing_sum():
-    @shrinking_from([10, 10, 10])
-    def shrinker(data):
-        if sum([data.draw_bits(8) for _ in range(3)]) == 30:
-            data.mark_interesting()
-
-    shrinker.is_payload_block = lambda b: b != 1
-    shrinker.minimize_block_pairs_retaining_sum()
-    assert list(shrinker.shrink_target.buffer) == [0, 10, 20]
 
 
 def test_dependent_block_pairs_can_lower_to_zero():

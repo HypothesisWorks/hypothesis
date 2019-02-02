@@ -27,7 +27,7 @@ from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from tests.common.utils import non_covering_examples
-from tests.cover.test_conjecture_engine import run_to_buffer, shrink, shrinking_from
+from tests.cover.test_conjecture_engine import run_to_buffer
 
 
 def test_lot_of_dead_nodes():
@@ -141,51 +141,6 @@ def test_regression_1():
     assert int_from_bytes(x[-2:]) in (254, 512)
 
 
-def test_shrink_offset_pairs_handles_block_structure_change():
-    """Regression test for a rare error in ``shrink_offset_pairs``.
-
-    This test should run without raising an ``IndexError`` in the
-    shrinker.
-    """
-
-    @shrink([235, 0, 0, 255], "shrink_offset_pairs")
-    def f(data):
-        x = data.draw_bytes(1)[0]
-
-        # Change the block structure in response to a shrink improvement,
-        # to trigger the bug.
-        if x == 10:
-            data.draw_bytes(1)
-            data.draw_bytes(1)
-        else:
-            data.draw_bytes(2)
-
-        y = data.draw_bytes(1)[0]
-
-        # Require the target blocks to be non-trivial and have a fixed
-        # difference, so that the intended shrinker pass is used.
-        if x >= 10 and y - x == 20:
-            data.mark_interesting()
-
-    assert f == [10, 0, 0, 30]
-
-
-def test_retaining_sum_considers_zero_destination_blocks():
-    """Explicitly test that this shrink pass will try to move data into blocks
-    that are currently all-zero."""
-
-    @shrink([100, 0, 0], "minimize_block_pairs_retaining_sum")
-    def f(data):
-        x = data.draw_bytes(1)[0]
-        data.draw_bytes(1)
-        y = data.draw_bytes(1)[0]
-
-        if x >= 10 and (x + y) == 100:
-            data.mark_interesting()
-
-    assert f == [10, 0, 90]
-
-
 @given(st.integers(0, 255), st.integers(0, 255))
 def test_cached_with_masked_byte_agrees_with_results(byte_a, byte_b):
     def f(data):
@@ -202,78 +157,3 @@ def test_cached_with_masked_byte_agrees_with_results(byte_a, byte_b):
     # If the cache found an old result, then it should match the real result.
     # If it did not, then it must be because A and B were different.
     assert (cached_a is cached_b) == (cached_a.buffer == data_b.buffer)
-
-
-def test_each_pair_of_blocks():
-    initial = hbytes([1, 1, 1])
-
-    @shrinking_from(initial)
-    def shrinker(data):
-        data.draw_bits(1)
-        data.draw_bits(1)
-        data.draw_bits(1)
-        data.mark_interesting()
-
-    bounds = {
-        (a.bounds, b.bounds)
-        for a, b in shrinker.each_pair_of_blocks(lambda block: True, lambda block: True)
-    }
-
-    assert bounds == {((0, 1), (1, 2)), ((0, 1), (2, 3)), ((1, 2), (2, 3))}
-
-
-def test_each_pair_of_blocks_with_filters():
-    initial = hbytes(5)
-
-    @shrinking_from(initial)
-    def shrinker(data):
-        for x in range(5):
-            data.draw_bits(1)
-        data.mark_interesting()
-
-    blocks = {
-        (a.index, b.index)
-        for a, b in shrinker.each_pair_of_blocks(
-            lambda block: block.index != 1, lambda block: block.index != 3
-        )
-    }
-
-    assert blocks == {(0, 1), (0, 2), (0, 4), (2, 4), (3, 4)}
-
-
-@pytest.mark.parametrize("intervene_at", [(0, 1), (0, 6), (1, 3)])
-def test_each_pair_of_blocks_handles_change(intervene_at):
-    initial = hbytes([9] + [0] * 10)
-
-    @shrinking_from(initial)
-    def shrinker(data):
-        x = data.draw_bits(8)
-        for y in range(x):
-            data.draw_bits(1)
-        data.mark_interesting()
-
-    def blocks(intervene=False):
-        blocks = []
-        for a, b in shrinker.each_pair_of_blocks(
-            lambda block: True, lambda block: True
-        ):
-            assert a.index < b.index < len(shrinker.shrink_target.blocks)
-            if intervene and (a.index, b.index) == intervene_at:
-                shrinker.incorporate_new_buffer(hbytes([3] + [0] * 10))
-            blocks.append((a.index, b.index))
-        return blocks
-
-    original_blocks = blocks()
-    blocks_with_intervention = blocks(intervene=True)
-    blocks_after_intervention = blocks()
-
-    # We should not abort when the change happens but should carry on to include
-    # every pair of indices that we would have if we'd iterated after the change.
-    assert set(blocks_after_intervention).issubset(blocks_with_intervention)
-
-    # Changing the iteration order shouldn't introduce new possible block pairs.
-    assert set(blocks_with_intervention).issubset(original_blocks)
-
-    # We should however not do that by repeating any pairs of block indexes -
-    # repetition should happen the next time the relevant passes are run.
-    assert len(set(blocks_with_intervention)) == len(blocks_with_intervention)
