@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.4.4:
+
+------------------
+4.4.4 - 2019-02-02
+------------------
+
+This release modifies the way that Hypothesis deletes data during shrinking.
+It will primarily be noticeable for very large examples, which should now shrink faster.
+
+The shrinker is now also able to perform some deletions that it could not previously,
+but this is unlikely to be very noticeable.
+
 .. _v4.4.3:
 
 ------------------
