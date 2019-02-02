@@ -463,3 +463,7 @@ def test_fullmatch_matches(pattern, eqiv_pattern):
 def test_fullmatch_must_be_bool():
     with pytest.raises(InvalidArgument):
         st.from_regex("a", fullmatch=None).validate()
+
+
+def test_issue_1786_regression():
+    st.from_regex(re.compile("\\\\", flags=re.IGNORECASE)).validate()
