@@ -34,6 +34,24 @@ structured representation of actions. However the generic state machines are
 more flexible, and are particularly useful if you want the set of currently
 possible actions to depend primarily on external state.
 
+
+.. _data-as-state-machine:
+
+-------------------------------
+You may not need state machines
+-------------------------------
+
+The basic idea of stateful testing is to make Hypothesis choose actions as
+well as values for your test, and state machines are a great declarative way
+to do just that.
+
+For simpler cases though, you might not need them at all - a standard test
+with :func:`@given <hypothesis.given>` might be enough, since you can use
+:func:`~hypothesis.strategies.data` in branches or loops.  In fact, that's
+how the state machine explorer works internally.  For more complex workloads
+though, where a higher level API comes into it's own, keep reading!
+
+
 .. _rulebasedstateful:
 
 -------------------------
@@ -52,11 +70,19 @@ The key difference is that where ``@given`` based tests must be independent,
 rules can be chained together - a single test run may involve multiple rule
 invocations, which may interact in various ways.
 
-A Bundle is a named collection of generated values that can be reused by other
-operations in the test.
+Rules can take normal strategies as arguments, or a specific kind of strategy
+called a Bundle.  A Bundle is a named collection of generated values that can
+be reused by other operations in the test.
 They are populated with the results of rules, and may be used as arguments to
 rules, allowing data to flow from one rule to another, and rules to work on
 the results of previous computations or actions.
+
+You can think of each value that gets added to any Bundle as being assigned to
+a new variable.  Drawing a value from the bundle strategy means choosing one of
+the corresponding variables and using that value, and
+:func:`~hypothesis.stateful.consumes` as a ``del`` statement for that variable.
+If you can replace use of Bundles with instance attributes of the class that
+is often simpler, but often Bundles are strictly more powerful.
 
 The following rule based state machine example is a simplified version of a
 test for Hypothesis's example database implementation. An example database
@@ -88,11 +114,11 @@ in their behaviour.
       values = Bundle('values')
 
       @rule(target=keys, k=st.binary())
-      def k(self, k):
+      def add_key(self, k):
           return k
 
       @rule(target=values, v=st.binary())
-      def v(self, v):
+      def add_value(self, v):
           return v
 
       @rule(k=keys, v=values)
@@ -144,11 +170,11 @@ we would see the following output when run under pytest:
     ------------ Hypothesis ------------
 
     state = DatabaseComparison()
-    v1 = state.k(k=b'')
-    v2 = state.v(v=v1)
-    state.save(k=v1, v=v2)
-    state.delete(k=v1, v=v2)
-    state.values_agree(k=v1)
+    var1 = state.add_key(k=b'')
+    var2 = state.add_value(v=var1)
+    state.save(k=var1, v=var2)
+    state.delete(k=var1, v=var2)
+    state.values_agree(k=var1)
     state.teardown()
 
 Note how it's printed out a very short program that will demonstrate the
@@ -313,6 +339,13 @@ for most things, but the generic state machine functionality can be useful e.g. 
 you want to test things where the set of actions to be taken is more closely
 tied to the state of the system you are testing.
 
+.. note::
+    GenericStateMachine is a *very* thin wrapper around :func:`@given <hypothesis.given>`
+    and :func:`~hypothesis.strategies.data`.  Consider using those primitives directly,
+    as the resulting tests are usually easier to write, understand, and debug.
+    GenericStateMachine only exists because it predates :func:`~hypothesis.strategies.data`,
+    and will be deprecated and removed in a future version (:issue:`1693`).
+
 .. module:: hypothesis.stateful
 .. autoclass:: GenericStateMachine
     :members: steps, execute_step, check_invariants, teardown
@@ -382,10 +415,12 @@ More fine grained control
 -------------------------
 
 If you want to bypass the TestCase infrastructure you can invoke these
-manually. The stateful module exposes the function run_state_machine_as_test,
+manually. The stateful module exposes the function ``run_state_machine_as_test``,
 which takes an arbitrary function returning a GenericStateMachine and an
 optional settings parameter and does the same as the class based runTest
 provided.
 
-In particular this may be useful if you wish to pass parameters to a custom
-__init__ in your subclass.
+This is not recommended as it bypasses some important internal functions,
+including reporting of statistics such as runtimes and :func:`~hypothesis.event`
+calls.  It was originally added to support custom ``__init__`` methods, but
+you can now use :func:`~hypothesis.stateful.initialize` rules instead.
