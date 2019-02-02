@@ -737,18 +737,6 @@ class Shrinker(object):
             i, t.buffer[: t.blocks[i].start] in self.__shrinking_prefixes
         )
 
-    def is_payload_block(self, i):
-        """A block is payload if it is entirely non-structural: We can tinker
-        with its value freely and this will not affect the shape of the input
-        language.
-
-        This is mostly a useful concept when we're doing lexicographic
-        minimimization on multiple blocks at once - by restricting ourself to
-        payload blocks, we expect the shape of the language to not change
-        under us (but must still guard against it doing so).
-        """
-        return not (self.is_shrinking_block(i) or self.shrink_target.blocks[i].forced)
-
     def lower_common_block_offset(self):
         """Sometimes we find ourselves in a situation where changes to one part
         of the byte stream unlock changes to other parts. Sometimes this is
