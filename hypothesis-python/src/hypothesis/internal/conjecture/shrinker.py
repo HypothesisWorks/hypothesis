@@ -680,35 +680,6 @@ class Shrinker(object):
     def all_block_bounds(self):
         return self.shrink_target.all_block_bounds()
 
-    def each_pair_of_blocks(self, accept_first, accept_second):
-        """Yield each pair of blocks ``(a, b)``, such that ``a.index <
-        b.index``, but only if ``accept_first(a)`` and ``accept_second(b)`` are
-        both true."""
-
-        # Iteration order here is significant: Rather than fixing i and looping
-        # over each j, then doing the same, etc. we iterate over the gap between
-        # i and j and then over i. The reason for this is that it ensures that
-        # we try a different value for i and j on each iteration of the inner
-        # loop. This stops us from stalling if we happen to hit on a value of i
-        # where nothing useful can be done.
-        #
-        # In the event that nothing works, this doesn't help and we still make
-        # the same number of calls, but by ensuring that we make progress we
-        # have more opportunities to make shrinks that speed up the tests or
-        # that reduce the number of viable shrinks at the next gap size because
-        # we've lowered some values.
-        offset = 1
-        while offset < len(self.blocks):
-            i = 0
-            while i + offset < len(self.blocks):
-                j = i + offset
-                block_i = self.blocks[i]
-                block_j = self.blocks[j]
-                if accept_first(block_i) and accept_second(block_j):
-                    yield (block_i, block_j)
-                i += 1
-            offset += 1
-
     def pass_to_descendant(self):
         """Attempt to replace each example with a descendant example.
 
