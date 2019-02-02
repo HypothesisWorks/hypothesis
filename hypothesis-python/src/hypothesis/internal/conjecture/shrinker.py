@@ -877,7 +877,7 @@ class Shrinker(object):
                 blocks = blocks[:i]
                 break
             u, v = self.blocks[block].bounds
-            n = min(v - u, len(b))
+            n = min(self.blocks[block.length], len(b))
             initial_attempt[v - n : v] = b[-n:]
 
         start = self.shrink_target.blocks[blocks[0]].start
@@ -1415,14 +1415,15 @@ def block_program(description):
             failed = False
             for k, d in reversed(list(enumerate(description))):
                 j = i + k
-                u, v = self.blocks[j].bounds
+                block = self.blocks[j]
+                u, v = block.bounds
                 if d == "-":
                     value = int_from_bytes(attempt[u:v])
                     if value == 0:
                         failed = True
                         break
                     else:
-                        attempt[u:v] = int_to_bytes(value - 1, v - u)
+                        attempt[u:v] = int_to_bytes(value - 1, block.length)
                 elif d == "X":
                     del attempt[u:v]
                 else:  # pragma: no cover
