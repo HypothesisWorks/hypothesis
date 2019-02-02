@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.4.5:
+
+------------------
+4.4.5 - 2019-02-02
+------------------
+
+This release removes two shrink passes that Hypothesis runs late in the process.
+These were very expensive when the test function was slow and often didn't do anything useful.
+
+Shrinking should get faster for most failing tests.
+If you see any regression in example quality as a result of this release, please let us know.
+
 .. _v4.4.4:
 
 ------------------
