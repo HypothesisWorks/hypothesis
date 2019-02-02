@@ -27,7 +27,7 @@ from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from tests.common.utils import non_covering_examples
-from tests.cover.test_conjecture_engine import run_to_buffer, shrinking_from
+from tests.cover.test_conjecture_engine import run_to_buffer
 
 
 def test_lot_of_dead_nodes():
