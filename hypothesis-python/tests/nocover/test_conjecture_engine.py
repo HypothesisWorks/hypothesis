@@ -27,7 +27,7 @@ from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from tests.common.utils import non_covering_examples
-from tests.cover.test_conjecture_engine import run_to_buffer, shrink, shrinking_from
+from tests.cover.test_conjecture_engine import run_to_buffer, shrinking_from
 
 
 def test_lot_of_dead_nodes():
@@ -139,51 +139,6 @@ def test_regression_1():
     assert list(x)[:-2] == [1, 2, 1, 0, 0, 0, 0, 0]
 
     assert int_from_bytes(x[-2:]) in (254, 512)
-
-
-def test_shrink_offset_pairs_handles_block_structure_change():
-    """Regression test for a rare error in ``shrink_offset_pairs``.
-
-    This test should run without raising an ``IndexError`` in the
-    shrinker.
-    """
-
-    @shrink([235, 0, 0, 255], "shrink_offset_pairs")
-    def f(data):
-        x = data.draw_bytes(1)[0]
-
-        # Change the block structure in response to a shrink improvement,
-        # to trigger the bug.
-        if x == 10:
-            data.draw_bytes(1)
-            data.draw_bytes(1)
-        else:
-            data.draw_bytes(2)
-
-        y = data.draw_bytes(1)[0]
-
-        # Require the target blocks to be non-trivial and have a fixed
-        # difference, so that the intended shrinker pass is used.
-        if x >= 10 and y - x == 20:
-            data.mark_interesting()
-
-    assert f == [10, 0, 0, 30]
-
-
-def test_retaining_sum_considers_zero_destination_blocks():
-    """Explicitly test that this shrink pass will try to move data into blocks
-    that are currently all-zero."""
-
-    @shrink([100, 0, 0], "minimize_block_pairs_retaining_sum")
-    def f(data):
-        x = data.draw_bytes(1)[0]
-        data.draw_bytes(1)
-        y = data.draw_bytes(1)[0]
-
-        if x >= 10 and (x + y) == 100:
-            data.mark_interesting()
-
-    assert f == [10, 0, 90]
 
 
 @given(st.integers(0, 255), st.integers(0, 255))
