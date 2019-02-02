@@ -877,7 +877,7 @@ class Shrinker(object):
                 blocks = blocks[:i]
                 break
             u, v = self.blocks[block].bounds
-            n = min(self.blocks[block.length], len(b))
+            n = min(self.blocks[block].length, len(b))
             initial_attempt[v - n : v] = b[-n:]
 
         start = self.shrink_target.blocks[blocks[0]].start
