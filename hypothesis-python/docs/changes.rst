@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.5.0:
+
+------------------
+4.5.0 - 2019-02-03
+------------------
+
+This release adds ``exclude_min`` and ``exclude_max`` arguments to
+:func:`~hypothesis.strategies.floats`, so that you can easily generate values from
+`open or half-open intervals <https://en.wikipedia.org/wiki/Interval_(mathematics)>`_
+(:issue:`1622`).
+
 .. _v4.4.6:
 
 ------------------
