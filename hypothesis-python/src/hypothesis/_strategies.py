@@ -435,6 +435,8 @@ def floats(
     allow_nan=None,  # type: bool
     allow_infinity=None,  # type: bool
     width=64,  # type: int
+    exclude_min=False,  # type: bool
+    exclude_max=False,  # type: bool
 ):
     # type: (...) -> SearchStrategy[float]
     """Returns a strategy which generates floats.
@@ -456,11 +458,20 @@ def floats(
     Half-precision floats (``width=16``) are only supported on Python 3.6, or
     if :pypi:`Numpy` is installed.
 
+    The exclude_min and exclude_max argument can be used to generate numbers
+    from open or half-open intervals, by excluding the respective endpoints.
+    Attempting to exclude an endpoint which is None will raise an error;
+    use ``allow_infinity=False`` to generate finite floats.  You can however
+    use e.g. ``min_value=float("-inf"), exclude_min=True`` to exclude only
+    one infinite endpoint.
+
     Examples from this strategy have a complicated and hard to explain
     shrinking behaviour, but it tries to improve "human readability". Finite
     numbers will be preferred to infinity and infinity will be preferred to
     NaN.
     """
+    check_type(bool, exclude_min, "exclude_min")
+    check_type(bool, exclude_max, "exclude_max")
 
     if allow_nan is None:
         allow_nan = bool(min_value is None and max_value is None)
@@ -505,6 +516,15 @@ def floats(
             "instead" % (max_arg, width, max_value),
             since="2018-10-10",
         )
+
+    if exclude_min:
+        if min_value is None:
+            raise InvalidArgument("Cannot exclude min_value=None")
+        min_value = next_up(min_value, width=width)
+    if exclude_max:
+        if max_value is None:
+            raise InvalidArgument("Cannot exclude max_value=None")
+        max_value = next_down(max_value, width=width)
 
     check_valid_interval(min_value, max_value, "min_value", "max_value")
     if min_value == float(u"-inf"):
