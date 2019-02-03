@@ -19,6 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 import re
 import string
+from functools import reduce
 
 import hypothesis.strategies as st
 from hypothesis import assume, given, reject
@@ -43,6 +44,7 @@ def conservative_regex(draw):
     result = draw(
         st.one_of(
             st.just(u"."),
+            st.sampled_from([re.escape(c) for c in string.printable]),
             charset(),
             CONSERVATIVE_REGEX.map(lambda s: u"(%s)" % (s,)),
             CONSERVATIVE_REGEX.map(lambda s: s + u"+"),
@@ -59,12 +61,14 @@ def conservative_regex(draw):
 
 
 CONSERVATIVE_REGEX = conservative_regex()
+FLAGS = st.sets(st.sampled_from([getattr(re, "A", 0), re.I, re.M, re.S])).map(
+    lambda flag_set: reduce(int.__or__, flag_set, 0)
+)
 
 
 @given(st.data())
 def test_conservative_regex_are_correct_by_construction(data):
-    pattern = re.compile(data.draw(CONSERVATIVE_REGEX))
-    pattern = re.compile(pattern)
+    pattern = re.compile(data.draw(CONSERVATIVE_REGEX), flags=data.draw(FLAGS))
     result = data.draw(base_regex_strategy(pattern))
     assert pattern.search(result) is not None
 
@@ -76,9 +80,10 @@ def test_fuzz_stuff(data):
         | st.binary(min_size=1, max_size=5)
         | CONSERVATIVE_REGEX.filter(bool)
     )
+    flags = data.draw(FLAGS)
 
     try:
-        regex = re.compile(pattern)
+        regex = re.compile(pattern, flags=flags)
     except re.error:
         reject()
 

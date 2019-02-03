@@ -182,7 +182,10 @@ class CharactersBuilder(object):
         """Add given char to the whitelist."""
         c = self.code_to_char(char)
         self._whitelist_chars.add(c)
-        if self._ignorecase and re.match(c, c.swapcase(), re.IGNORECASE) is not None:
+        if (
+            self._ignorecase
+            and re.match(re.escape(c), c.swapcase(), flags=re.IGNORECASE) is not None
+        ):
             self._whitelist_chars.add(c.swapcase())
 
 
@@ -368,7 +371,8 @@ def _strategy(codes, context, is_unicode):
             c = to_char(value)
             if (
                 context.flags & re.IGNORECASE
-                and re.match(c, c.swapcase(), re.IGNORECASE) is not None
+                and c != c.swapcase()
+                and re.match(re.escape(c), c.swapcase(), re.IGNORECASE) is not None
             ):
                 # We do the explicit check for swapped-case matching because
                 # eg 'ß'.upper() == 'SS' and ignorecase doesn't match it.
@@ -381,7 +385,7 @@ def _strategy(codes, context, is_unicode):
             blacklist = set(c)
             if (
                 context.flags & re.IGNORECASE
-                and re.match(c, c.swapcase(), re.IGNORECASE) is not None
+                and re.match(re.escape(c), c.swapcase(), re.IGNORECASE) is not None
             ):
                 blacklist |= set(c.swapcase())
             if is_unicode:

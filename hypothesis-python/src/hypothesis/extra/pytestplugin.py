@@ -186,7 +186,7 @@ def pytest_collection_modifyitems(items):
                 note_deprecation(
                     "%s is a function that returns a Hypothesis strategy, "
                     "but pytest has collected it as a test function.  This "
-                    "is useless as the function body will never be executed."
+                    "is useless as the function body will never be executed.  "
                     "To define a test function, use @given instead of "
                     "@composite." % (item.nodeid,),
                     since="2018-11-02",
