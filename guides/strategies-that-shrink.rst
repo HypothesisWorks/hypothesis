@@ -66,6 +66,30 @@ that the imaginary part shrinks to zero first, as we think real-valued
 complex numbers are simpler than imaginary-valued complex numbers.
 
 
+Let generation be lucky
+~~~~~~~~~~~~~~~~~~~~~~~
+Sometimes, it's worth searching for a particularly nasty value to try.
+This trick should be used sparingly, and always behind a branch that the
+shrinker can decide not to take such as ``if draw(booleans()):``, but might
+occasionally worth trying.  Measure the results before you keep it!
+
+`Issue #69 <https://github.com/HypothesisWorks/hypothesis/issues/69>`_ provides
+a nice case study: when generating tz-aware datetimes, we would like to generate
+instants that are skipped or repeated due to a daylight-savings transition more
+often than by chance.  Of course, there may or may not be any such moments
+allowed by the bounds and tz strategy!
+
+Eliding much of the detail, a key part is to find such a moment between two
+endpoints, when we can only check whether one or more exists.  The traditional
+approach would be to use a binary search, but this would be relatively expensive
+to shrink as we would pay the log-n cost on every attemted shrink.
+
+Instead of choosing the midpoint, we draw a *random* point between our known
+endpoints, and repeat this until we find a satisfactory moment.  This allows
+the shrinker to delete all the intermediate draws - and appear lucky enough
+to find the moment we were looking for on the first guess!
+
+
 Keep things local
 ~~~~~~~~~~~~~~~~~
 Hypothesis' shrinking engine sees every example as a labelled tree of choices,
