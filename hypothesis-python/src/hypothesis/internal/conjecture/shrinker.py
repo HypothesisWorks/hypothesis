@@ -18,7 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import heapq
-from collections import Counter, defaultdict
+from collections import defaultdict
 from enum import Enum
 from functools import total_ordering
 
@@ -1191,7 +1191,20 @@ class Shrinker(object):
                 self.buffer[:u] + hbytes(used) + self.buffer[v:]
             )
 
-    def minimize_duplicated_blocks(self):
+    def duplicated_block_suffixes(self):
+        duplicates = defaultdict(list)
+        for b in self.blocks:
+            duplicates[non_zero_suffix(self.buffer[b.start : b.end])].append(b.index)
+        return sorted(
+            [
+                (b, indices)
+                for b, indices in duplicates.items()
+                if len(b) > 0 and len(indices) > 1
+            ]
+        )
+
+    @defines_shrink_pass(duplicated_block_suffixes)
+    def minimize_duplicated_blocks(self, block, targets):
         """Find blocks that have been duplicated in multiple places and attempt
         to minimize all of the duplicates simultaneously.
 
@@ -1211,38 +1224,12 @@ class Shrinker(object):
         of the blocks doesn't matter very much because it allows us to replace
         more values at once.
         """
-
-        def canon(b):
-            i = 0
-            while i < len(b) and b[i] == 0:
-                i += 1
-            return b[i:]
-
-        counts = Counter(
-            canon(self.shrink_target.buffer[u:v]) for u, v in self.all_block_bounds()
+        Lexical.shrink(
+            block,
+            lambda b: self.try_shrinking_blocks(targets, b),
+            random=self.random,
+            full=False,
         )
-        counts.pop(hbytes(), None)
-        blocks = [buffer for buffer, count in counts.items() if count > 1]
-
-        blocks.sort(reverse=True)
-        blocks.sort(key=lambda b: counts[b] * len(b), reverse=True)
-        for block in blocks:
-            targets = [
-                i
-                for i, (u, v) in enumerate(self.all_block_bounds())
-                if canon(self.shrink_target.buffer[u:v]) == block
-            ]
-            # This can happen if some blocks have been lost in the previous
-            # shrinking.
-            if len(targets) <= 1:
-                continue
-
-            Lexical.shrink(
-                block,
-                lambda b: self.try_shrinking_blocks(targets, b),
-                random=self.random,
-                full=False,
-            )
 
     def minimize_floats(self):
         """Some shrinks that we employ that only really make sense for our
@@ -1538,3 +1525,12 @@ class ShrinkPass(object):
     def key(self):
         # Smaller is better.
         return (self.runs, self.failures, self.calls, self.index)
+
+
+def non_zero_suffix(b):
+    """Returns the longest suffix of b that starts with a non-zero
+    byte."""
+    i = 0
+    while i < len(b) and b[i] == 0:
+        i += 1
+    return b[i:]
