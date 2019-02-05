@@ -1027,6 +1027,7 @@ class Shrinker(object):
                 return True
         return False
 
+    @defines_shrink_pass(lambda self: [()] if self.shrink_target.has_discards else [])
     def remove_discarded(self):
         """Try removing all bytes marked as discarded.
 
