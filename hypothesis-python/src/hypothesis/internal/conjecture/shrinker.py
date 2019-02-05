@@ -1507,6 +1507,11 @@ class ShrinkPass(object):
     shrinks = attr.ib(default=0)
     deletions = attr.ib(default=0)
 
+    def __attrs_post_init__(self):
+        assert getattr(
+            self.pass_function, "is_shrink_pass", False
+        ), "%s is not a shrink pass" % (self.pass_function.__name__,)
+
     @property
     def failures(self):
         return self.runs - self.successes
