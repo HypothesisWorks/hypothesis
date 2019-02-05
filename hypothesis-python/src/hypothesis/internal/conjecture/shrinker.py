@@ -730,7 +730,44 @@ class Shrinker(object):
     def all_block_bounds(self):
         return self.shrink_target.all_block_bounds()
 
-    def pass_to_descendant(self):
+    @derived_value
+    def examples_by_label(self):
+        """An index of all examples grouped by their label, with
+        the examples stored in their normal index order."""
+
+        examples_by_label = defaultdict(list)
+        for ex in self.examples:
+            examples_by_label[ex.label].append(ex)
+        return dict(examples_by_label)
+
+    def calculate_descents(self):
+        """Returns a list of all pairs (i, j) such that
+        self.examples[i] is an ancestor of self.examples[j] and
+        they have the same label.
+        """
+        result = []
+
+        for ls in self.examples_by_label.values():
+            if len(ls) <= 1:
+                continue
+
+            for i, ex in enumerate(ls[:-1]):
+                hi = len(ls)
+                lo = i + 1
+                if ls[lo].start >= ex.end:
+                    continue
+                while lo + 1 < hi:
+                    mid = (lo + hi) // 2
+                    if ls[mid].start >= ex.end:
+                        hi = mid
+                    else:
+                        lo = mid
+                descents = ls[i + 1 : hi]
+                result.extend([(ex, descendant) for descendant in descents])
+        return result
+
+    @defines_shrink_pass(calculate_descents)
+    def pass_to_descendant(self, ancestor, descendant):
         """Attempt to replace each example with a descendant example.
 
         This is designed to deal with strategies that call themselves
@@ -748,25 +785,12 @@ class Shrinker(object):
         late in the process when we've got the number of intervals as far down
         as possible.
         """
-        for ex in self.each_non_trivial_example():
-            st = self.shrink_target
-            descendants = sorted(
-                set(
-                    st.buffer[d.start : d.end]
-                    for d in self.shrink_target.examples
-                    if d.start >= ex.start
-                    and d.end <= ex.end
-                    and d.length < ex.length
-                    and d.label == ex.label
-                ),
-                key=sort_key,
-            )
 
-            for d in descendants:
-                if self.incorporate_new_buffer(
-                    self.buffer[: ex.start] + d + self.buffer[ex.end :]
-                ):
-                    break
+        self.incorporate_new_buffer(
+            self.buffer[: ancestor.start]
+            + self.buffer[descendant.start : descendant.end]
+            + self.buffer[ancestor.end :]
+        )
 
     def is_shrinking_block(self, i):
         """Checks whether block i has been previously marked as a shrinking
