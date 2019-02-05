@@ -1133,7 +1133,14 @@ class Shrinker(object):
                 distinct_partitions.append(prev | endpoints_at_depth[d])
         return [sorted(endpoints) for endpoints in distinct_partitions[1:]]
 
-    def adaptive_example_deletion(self):
+    @defines_shrink_pass(
+        lambda self: [
+            (i, j)
+            for i, ls in enumerate(self.endpoints_by_depth)
+            for j in hrange(len(ls))
+        ]
+    )
+    def adaptive_example_deletion(self, i, j):
         """Attempts to delete every example from the test case.
 
         That is, it is logically equivalent to trying ``self.buffer[:ex.start] +
@@ -1141,34 +1148,24 @@ class Shrinker(object):
         examples are tried is randomized, and when deletion is successful it
         will attempt to adapt to delete more than one example at a time.
         """
-        indices = [
-            (i, j)
-            for i, ls in enumerate(self.endpoints_by_depth)
-            for j in hrange(len(ls))
-        ]
-        self.random.shuffle(indices)
+        partition = self.endpoints_by_depth[i]
+        # No point in trying to delete the last element because that will always
+        # give us a prefix.
+        if j >= len(partition) - 1:
+            return
 
-        for i, j in indices:
-            if i >= len(self.endpoints_by_depth):
-                continue
-            partition = self.endpoints_by_depth[i]
-            # No point in trying to delete the last element because that will always
-            # give us a prefix.
-            if j >= len(partition) - 1:
-                continue
+        def delete_region(a, b):
+            assert a <= j <= b
+            if a < 0 or b >= len(partition) - 1:
+                return False
+            return self.consider_new_buffer(
+                self.buffer[: partition[a]] + self.buffer[partition[b] :]
+            )
 
-            def delete_region(a, b):
-                assert a <= j <= b
-                if a < 0 or b >= len(partition) - 1:
-                    return False
-                return self.consider_new_buffer(
-                    self.buffer[: partition[a]] + self.buffer[partition[b] :]
-                )
+        to_right = find_integer(lambda n: delete_region(j, j + n))
 
-            to_right = find_integer(lambda n: delete_region(j, j + n))
-
-            if to_right > 0:
-                find_integer(lambda n: delete_region(j - n, j + to_right))
+        if to_right > 0:
+            find_integer(lambda n: delete_region(j - n, j + to_right))
 
     def zero_examples(self):
         """Attempt to replace each example with a minimal version of itself."""
