@@ -417,6 +417,15 @@ settings._define_setting(
     description="""
 Once this many satisfying examples have been considered without finding any
 counter-example, falsification will terminate.
+
+The default value is chosen to suit a workflow where the test will be part of
+a suite that is regularly executed locally or on a CI server, balancing total
+running time against the chance of missing a bug.
+
+If you are writing one-off tests, running tens of thousands of examples is
+quite reasonable as Hypothesis may miss uncommon bugs with default settings.
+For very complex code, we have observed Hypothesis finding novel bugs after
+*several million* examples while testing :pypi:`SymPy`.
 """,
 )
 
