@@ -1275,7 +1275,8 @@ class Shrinker(object):
                 random=self.random,
             )
 
-    def minimize_individual_blocks(self):
+    @defines_shrink_pass(lambda self: [(b,) for b in self.blocks])
+    def minimize_individual_blocks(self, block):
         """Attempt to minimize each block in sequence.
 
         This is the pass that ensures that e.g. each integer we draw is a
@@ -1286,16 +1287,14 @@ class Shrinker(object):
 
         then in our shrunk example, x = 10 rather than say 97.
         """
-        i = len(self.blocks) - 1
-        while i >= 0:
-            u, v = self.blocks[i].bounds
-            Lexical.shrink(
-                self.shrink_target.buffer[u:v],
-                lambda b: self.try_shrinking_blocks((i,), b),
-                random=self.random,
-                full=False,
-            )
-            i -= 1
+        u, v = block.bounds
+        i = block.index
+        Lexical.shrink(
+            self.shrink_target.buffer[u:v],
+            lambda b: self.try_shrinking_blocks((i,), b),
+            random=self.random,
+            full=False,
+        )
 
     def example_deletion_with_block_lowering(self):
         """Sometimes we get stuck where there is data that we could easily
