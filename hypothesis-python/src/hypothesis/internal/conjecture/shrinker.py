@@ -1455,33 +1455,33 @@ def block_program(description):
     running a block program its score will be updated.
     """
 
-    def run(self):
+    def run(self, i):
         n = len(description)
-        i = 0
-        while i + n <= len(self.shrink_target.blocks):
-            attempt = bytearray(self.shrink_target.buffer)
-            failed = False
-            for k, d in reversed(list(enumerate(description))):
-                j = i + k
-                block = self.blocks[j]
-                u, v = block.bounds
-                if d == "-":
-                    value = int_from_bytes(attempt[u:v])
-                    if value == 0:
-                        failed = True
-                        break
-                    else:
-                        attempt[u:v] = int_to_bytes(value - 1, block.length)
-                elif d == "X":
-                    del attempt[u:v]
-                else:  # pragma: no cover
-                    assert False, "Unrecognised command %r" % (d,)
-            if failed or not self.incorporate_new_buffer(attempt):
-                i += 1
+        if i + n > len(self.shrink_target.blocks):
+            return
+        attempt = bytearray(self.shrink_target.buffer)
+        for k, d in reversed(list(enumerate(description))):
+            j = i + k
+            block = self.blocks[j]
+            u, v = block.bounds
+            if d == "-":
+                value = int_from_bytes(attempt[u:v])
+                if value == 0:
+                    return
+                else:
+                    attempt[u:v] = int_to_bytes(value - 1, block.length)
+            elif d == "X":
+                del attempt[u:v]
+            else:  # pragma: no cover
+                assert False, "Unrecognised command %r" % (d,)
+        self.incorporate_new_buffer(attempt)
 
     run.command = description
     run.__name__ = "block_program(%r)" % (description,)
-    return run
+
+    return defines_shrink_pass(lambda self: [(i,) for i in hrange(len(self.blocks))])(
+        run
+    )
 
 
 class PassClassification(Enum):
