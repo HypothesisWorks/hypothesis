@@ -937,6 +937,14 @@ def test_handles_nesting_of_discard_correctly(monkeypatch):
     assert x == hbytes([1, 1])
 
 
+def fixate_shrink_passes(shrinker, *passes):
+    prev = None
+    while prev is not shrinker.shrink_target:
+        prev = shrinker.shrink_target
+        for sp in passes:
+            shrinker.run_shrink_pass(sp)
+
+
 def test_can_zero_subintervals(monkeypatch):
     @shrinking_from(hbytes([3, 0, 0, 0, 1]) * 10)
     def shrinker(data):
@@ -949,7 +957,7 @@ def test_can_zero_subintervals(monkeypatch):
                 return
         data.mark_interesting()
 
-    shrinker.run_shrink_pass("zero_examples")
+    fixate_shrink_passes(shrinker, "zero_examples")
     assert list(shrinker.buffer) == [0, 1] * 10
 
 
@@ -1221,8 +1229,7 @@ def test_finding_a_minimal_balanced_binary_tree():
         if not b:
             data.mark_interesting()
 
-    shrinker.adaptive_example_deletion()
-    shrinker.reorder_examples()
+    fixate_shrink_passes(shrinker, "adaptive_example_deletion", "reorder_examples")
 
     assert list(shrinker.shrink_target.buffer) == [1, 0, 1, 0, 1, 0, 0]
 
