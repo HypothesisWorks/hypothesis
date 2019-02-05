@@ -1330,7 +1330,12 @@ class Shrinker(object):
         del buf[ex.start : ex.end]
         self.incorporate_new_buffer(buf)
 
-    def reorder_examples(self):
+    @defines_shrink_pass(
+        lambda self: [
+            (e,) for e in self.examples if not e.trivial and len(e.children) > 1
+        ]
+    )
+    def reorder_examples(self, ex):
         """This pass allows us to reorder the children of each example.
 
         For example, consider the following:
@@ -1348,7 +1353,17 @@ class Shrinker(object):
         ``x=""``, ``y="0"``, or the other way around. With reordering it will
         reliably fail with ``x=""``, ``y="0"``.
         """
-        self.example_wise_shrink(Ordering, key=sort_key)
+        st = self.shrink_target
+        pieces = [st.buffer[c.start : c.end] for c in ex.children]
+        if not pieces:
+            pieces = [st.buffer[ex.start : ex.end]]
+        prefix = st.buffer[: ex.start]
+        suffix = st.buffer[ex.end :]
+        Ordering.shrink(
+            pieces,
+            lambda ls: self.incorporate_new_buffer(prefix + hbytes().join(ls) + suffix),
+            random=self.random,
+        )
 
     def alphabet_minimize(self):
         """Attempts to minimize the "alphabet" - the set of bytes that
