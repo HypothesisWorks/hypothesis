@@ -1167,29 +1167,29 @@ class Shrinker(object):
         if to_right > 0:
             find_integer(lambda n: delete_region(j - n, j + to_right))
 
-    def zero_examples(self):
+    @defines_shrink_pass(lambda self: [(e,) for e in self.examples if not e.trivial])
+    def zero_examples(self, ex):
         """Attempt to replace each example with a minimal version of itself."""
-        for ex in self.each_non_trivial_example():
-            u = ex.start
-            v = ex.end
-            attempt = self.cached_test_function(
-                self.buffer[:u] + hbytes(v - u) + self.buffer[v:]
+        u = ex.start
+        v = ex.end
+        attempt = self.cached_test_function(
+            self.buffer[:u] + hbytes(v - u) + self.buffer[v:]
+        )
+
+        if attempt is Overrun:
+            return
+
+        in_replacement = attempt.examples[ex.index]
+        used = in_replacement.length
+
+        if (
+            not self.__predicate(attempt)
+            and in_replacement.end < len(attempt.buffer)
+            and used < ex.length
+        ):
+            self.incorporate_new_buffer(
+                self.buffer[:u] + hbytes(used) + self.buffer[v:]
             )
-
-            if attempt is Overrun:
-                continue
-
-            in_replacement = attempt.examples[ex.index]
-            used = in_replacement.length
-
-            if (
-                not self.__predicate(attempt)
-                and in_replacement.end < len(attempt.buffer)
-                and used < ex.length
-            ):
-                self.incorporate_new_buffer(
-                    self.buffer[:u] + hbytes(used) + self.buffer[v:]
-                )
 
     def minimize_duplicated_blocks(self):
         """Find blocks that have been duplicated in multiple places and attempt
