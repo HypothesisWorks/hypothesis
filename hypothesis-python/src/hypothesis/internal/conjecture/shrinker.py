@@ -61,6 +61,56 @@ def sort_key(buffer):
     return (len(buffer), buffer)
 
 
+def defines_shrink_pass(generate_arguments):
+    """A shrink pass bundles together a large number of local changes to
+    the current shrink target.
+
+    Each shrink pass is defined by some function and some arguments to that
+    function. The ``generate_arguments`` function returns all arguments that
+    might be useful to run on the current shrink target.
+
+    The guarantee made by methods defined this way is that after they are
+    called then *either* the shrink target has changed *or* each of
+    ``fn(*args)`` has been called for every ``args`` in ``generate_arguments(self)``.
+    No guarantee is made that all of these will be called if the shrink target
+    changes.
+    """
+
+    def accept(fn):
+        def run(self):
+            # We always maintain ``arguments`` as the current collection
+            # that would be calculated from self, and instead iterate over
+            # indices into it. This means we don't have to duplicate validation
+            # logic between it and the underlying shrink pass function.
+            #
+            # Note that in the event that the shrink target actually changes
+            # this can cause us to miss a few things that we might reasonably
+            # have run. e.g. if we successfully deleted an item then every
+            # index after that point now has an off by one error. This can
+            # cause redundant work but is not a correctness issue, because
+            # we guarantee that if the collection does not change then we will
+            # iterate over every argument, and this is satisfied if the shrink
+            # target never changes when running this pass.
+            arguments = list(generate_arguments(self))
+            indices = list(hrange(len(arguments)))
+            self.random.shuffle(indices)
+            while indices:
+                i = indices.pop()
+                if i >= len(arguments):
+                    continue
+                prev = self.shrink_target
+                args = tuple(arguments[i])
+                fn(self, *args)
+                if prev is not self.shrink_target:
+                    arguments = list(generate_arguments(self))
+
+        run.__name__ = fn.__name__
+        run.is_shrink_pass = True
+        return run
+
+    return accept
+
+
 class Shrinker(object):
     """A shrinker is a child object of a ConjectureRunner which is designed to
     manage the associated state of a particular shrink problem. That is, we
