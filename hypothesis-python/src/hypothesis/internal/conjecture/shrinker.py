@@ -900,12 +900,11 @@ class Shrinker(object):
             self.shrinks += 1
             if (
                 len(new_target.blocks) != len(self.shrink_target.blocks)
-                or new_target.all_block_bounds()
-                != self.shrink_target.all_block_bounds()
+                or new_target.all_block_bounds() != self.all_block_bounds()
             ):
                 self.clear_change_tracking()
             else:
-                for i, (u, v) in enumerate(self.shrink_target.all_block_bounds()):
+                for i, (u, v) in enumerate(self.all_block_bounds()):
                     if i not in self.__changed_blocks and current[u:v] != new[u:v]:
                         self.mark_changed(i)
         else:
