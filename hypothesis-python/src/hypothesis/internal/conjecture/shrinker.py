@@ -1058,41 +1058,6 @@ class Shrinker(object):
             if not self.incorporate_new_buffer(attempt):
                 break
 
-    def each_non_trivial_example(self):
-        """Iterates over all non-trivial examples in the current shrink target,
-        with care taken to ensure that every example yielded is current.
-
-        Makes the assumption that no modifications will be made to the
-        shrink target prior to the currently yielded example. If this
-        assumption is violated this will probably raise an error, so
-        don't do that.
-        """
-        stack = [0]
-
-        while stack:
-            target = stack.pop()
-            if isinstance(target, tuple):
-                parent, i = target
-                parent = self.shrink_target.examples[parent]
-                example_index = parent.children[i].index
-            else:
-                example_index = target
-
-            ex = self.shrink_target.examples[example_index]
-
-            if ex.trivial:
-                continue
-
-            yield ex
-
-            ex = self.shrink_target.examples[example_index]
-
-            if ex.trivial:
-                continue
-
-            for i in range(len(ex.children)):
-                stack.append((example_index, i))
-
     def example_wise_shrink(self, shrinker, **kwargs):
         """Runs a sequence shrinker on the children of each example."""
         for ex in self.each_non_trivial_example():
