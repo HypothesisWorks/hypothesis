@@ -363,8 +363,6 @@ class Shrinker(object):
         self.passes_awaiting_requeue = []
         self.pass_queues = {c: [] for c in PassClassification}
 
-        self.known_programs = set()
-
     def add_new_pass(self, run, classification=None):
         """Creates a shrink pass corresponding to calling ``run(self)``"""
         if classification is None:
@@ -374,8 +372,6 @@ class Shrinker(object):
         p = ShrinkPass(
             pass_function=run, index=len(self.passes), classification=classification
         )
-        if hasattr(run, "command"):
-            self.known_programs.add(run.command)
         self.passes.append(p)
         self.passes_awaiting_requeue.append(p)
         self.passes_by_name[p.name] = p
@@ -1422,7 +1418,6 @@ def block_program(description):
                 assert False, "Unrecognised command %r" % (d,)
         self.incorporate_new_buffer(attempt)
 
-    run.command = description
     run.__name__ = "block_program(%r)" % (description,)
 
     return defines_shrink_pass(lambda self: [(i,) for i in hrange(len(self.blocks))])(
