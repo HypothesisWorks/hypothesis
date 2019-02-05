@@ -811,6 +811,7 @@ class Shrinker(object):
             i, t.buffer[: t.blocks[i].start] in self.__shrinking_prefixes
         )
 
+    @defines_shrink_pass(lambda self: [()])
     def lower_common_block_offset(self):
         """Sometimes we find ourselves in a situation where changes to one part
         of the byte stream unlock changes to other parts. Sometimes this is
