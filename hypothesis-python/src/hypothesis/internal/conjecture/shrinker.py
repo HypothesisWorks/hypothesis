@@ -1303,8 +1303,6 @@ class Shrinker(object):
         """
         st = self.shrink_target
         pieces = [st.buffer[c.start : c.end] for c in ex.children]
-        if not pieces:
-            pieces = [st.buffer[ex.start : ex.end]]
         prefix = st.buffer[: ex.start]
         suffix = st.buffer[ex.end :]
         Ordering.shrink(
