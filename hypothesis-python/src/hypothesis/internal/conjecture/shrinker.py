@@ -1058,24 +1058,6 @@ class Shrinker(object):
             if not self.incorporate_new_buffer(attempt):
                 break
 
-    def example_wise_shrink(self, shrinker, **kwargs):
-        """Runs a sequence shrinker on the children of each example."""
-        for ex in self.each_non_trivial_example():
-            st = self.shrink_target
-            pieces = [st.buffer[c.start : c.end] for c in ex.children]
-            if not pieces:
-                pieces = [st.buffer[ex.start : ex.end]]
-            prefix = st.buffer[: ex.start]
-            suffix = st.buffer[ex.end :]
-            shrinker.shrink(
-                pieces,
-                lambda ls: self.incorporate_new_buffer(
-                    prefix + hbytes().join(ls) + suffix
-                ),
-                random=self.random,
-                **kwargs
-            )
-
     @derived_value
     def endpoints_by_depth(self):
         """Defines a series of increasingly fine grained boundaries
