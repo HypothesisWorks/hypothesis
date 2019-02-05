@@ -153,6 +153,10 @@ class DeadlineExceeded(HypothesisException):
 
 
 class StopTest(BaseException):
+    """Raised when a test should stop running and return control to
+    the Hypothesis engine, which should then continue normally.
+    """
+
     def __init__(self, testcounter):
         super(StopTest, self).__init__(repr(testcounter))
         self.testcounter = testcounter
