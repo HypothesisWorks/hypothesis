@@ -61,7 +61,11 @@ def sort_key(buffer):
     return (len(buffer), buffer)
 
 
-def defines_shrink_pass(generate_arguments):
+SHRINK_PASS_DEFINITIONS = {}
+
+
+@attr.s()
+class ShrinkPassDefinition(object):
     """A shrink pass bundles together a large number of local changes to
     the current shrink target.
 
@@ -76,7 +80,26 @@ def defines_shrink_pass(generate_arguments):
     changes.
     """
 
-    def accept(fn):
+    run_step = attr.ib()
+    generate_arguments = attr.ib()
+
+    @property
+    def name(self):
+        return self.run_step.__name__
+
+    def __attrs_post_init__(self):
+        assert self.name not in SHRINK_PASS_DEFINITIONS, self.name
+        SHRINK_PASS_DEFINITIONS[self.name] = self
+
+
+def defines_shrink_pass(generate_arguments):
+    """A convenient decorator for defining shrink passes."""
+
+    def accept(run_step):
+        definition = ShrinkPassDefinition(
+            generate_arguments=generate_arguments, run_step=run_step
+        )
+
         def run(self):
             # We always maintain ``arguments`` as the current collection
             # that would be calculated from self, and instead iterate over
@@ -100,11 +123,11 @@ def defines_shrink_pass(generate_arguments):
                     continue
                 prev = self.shrink_target
                 args = tuple(arguments[i])
-                fn(self, *args)
+                run_step(self, *args)
                 if prev is not self.shrink_target:
                     arguments = list(generate_arguments(self))
 
-        run.__name__ = fn.__name__
+        run.__name__ = run_step.__name__
         run.is_shrink_pass = True
         return run
 
@@ -1388,6 +1411,9 @@ class Shrinker(object):
                 lo = mid
 
 
+BLOCK_PROGRAMS = {}
+
+
 def block_program(description):
     """Mini-DSL for block rewriting. A sequence of commands that will be run
     over all contiguous sequences of blocks of the description length in order.
@@ -1402,6 +1428,11 @@ def block_program(description):
     block) the block will be silently skipped over. As a side effect of
     running a block program its score will be updated.
     """
+
+    try:
+        return BLOCK_PROGRAMS[description]
+    except KeyError:
+        pass
 
     def generate_arguments(self):
         return [(i,) for i in hrange(len(self.blocks))]
@@ -1429,7 +1460,9 @@ def block_program(description):
 
     run.__name__ = "block_program(%r)" % (description,)
 
-    return defines_shrink_pass(generate_arguments)(run)
+    return BLOCK_PROGRAMS.setdefault(
+        description, defines_shrink_pass(generate_arguments)(run)
+    )
 
 
 class PassClassification(Enum):
