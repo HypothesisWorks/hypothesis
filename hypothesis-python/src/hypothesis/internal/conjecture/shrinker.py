@@ -1403,6 +1403,9 @@ def block_program(description):
     running a block program its score will be updated.
     """
 
+    def generate_arguments(self):
+        return [(i,) for i in hrange(len(self.blocks))]
+
     def run(self, i):
         n = len(description)
         if i + n > len(self.shrink_target.blocks):
@@ -1426,9 +1429,7 @@ def block_program(description):
 
     run.__name__ = "block_program(%r)" % (description,)
 
-    return defines_shrink_pass(lambda self: [(i,) for i in hrange(len(self.blocks))])(
-        run
-    )
+    return defines_shrink_pass(generate_arguments)(run)
 
 
 class PassClassification(Enum):
