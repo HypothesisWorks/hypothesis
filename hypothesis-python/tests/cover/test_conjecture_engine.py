@@ -937,6 +937,14 @@ def test_handles_nesting_of_discard_correctly(monkeypatch):
     assert x == hbytes([1, 1])
 
 
+def fixate_shrink_passes(shrinker, *passes):
+    prev = None
+    while prev is not shrinker.shrink_target:
+        prev = shrinker.shrink_target
+        for sp in passes:
+            shrinker.run_shrink_pass(sp)
+
+
 def test_can_zero_subintervals(monkeypatch):
     @shrinking_from(hbytes([3, 0, 0, 0, 1]) * 10)
     def shrinker(data):
@@ -949,7 +957,7 @@ def test_can_zero_subintervals(monkeypatch):
                 return
         data.mark_interesting()
 
-    shrinker.run_shrink_pass("zero_examples")
+    fixate_shrink_passes(shrinker, "zero_examples")
     assert list(shrinker.buffer) == [0, 1] * 10
 
 
@@ -1221,8 +1229,7 @@ def test_finding_a_minimal_balanced_binary_tree():
         if not b:
             data.mark_interesting()
 
-    shrinker.adaptive_example_deletion()
-    shrinker.reorder_examples()
+    fixate_shrink_passes(shrinker, "adaptive_example_deletion", "reorder_examples")
 
     assert list(shrinker.shrink_target.buffer) == [1, 0, 1, 0, 1, 0, 0]
 
@@ -1364,85 +1371,6 @@ def test_zero_examples_will_zero_blocks():
 
     shrinker.run_shrink_pass("zero_examples")
     assert list(shrinker.shrink_target.buffer) == [1, 0, 1]
-
-
-def test_non_trivial_examples():
-    initial = hbytes([1, 0, 1])
-
-    @shrinking_from(initial)
-    def shrinker(data):
-        data.draw_bits(1)
-        data.draw_bits(1)
-        data.draw_bits(1)
-        data.mark_interesting()
-
-    assert {(ex.start, ex.end) for ex in shrinker.each_non_trivial_example()} == {
-        (0, 3),
-        (0, 1),
-        (2, 3),
-    }
-
-
-def test_become_trivial_during_shrinking():
-    @shrinking_from([1, 1, 1])
-    def shrinker(data):
-        data.draw_bits(1)
-        data.draw_bits(1)
-        data.draw_bits(1)
-        data.mark_interesting()
-
-    for ex in shrinker.each_non_trivial_example():
-        assert ex.length == 3
-        shrinker.incorporate_new_buffer(hbytes(3))
-
-
-def test_continues_iterating_if_an_example_becomes_trivial():
-    @shrinking_from([1, 1, 1])
-    def shrinker(data):
-        data.draw_bits(1)
-        data.draw_bits(1)
-        data.draw_bits(1)
-        data.mark_interesting()
-
-    endpoints = set()
-    for ex in shrinker.each_non_trivial_example():
-        endpoints.add((ex.start, ex.end))
-        if ex.start == 1:
-            shrinker.incorporate_new_buffer([1, 0, 1])
-    assert endpoints == {(0, 3), (0, 1), (1, 2), (2, 3)}
-
-
-def test_each_non_trivial_example_includes_each_non_trivial_example():
-    @shrinking_from([1, 0, 1])
-    def shrinker(data):
-        data.draw_bits(1)
-        data.draw_bits(1)
-        data.draw_bits(1)
-        data.mark_interesting()
-
-    endpoints = {(ex.start, ex.end) for ex in shrinker.each_non_trivial_example()}
-
-    assert endpoints == {(0, 3), (0, 1), (2, 3)}
-
-
-def test_non_trivial_examples_boundaries_can_change():
-    initial = hbytes([2, 1, 1])
-
-    @shrinking_from(initial)
-    def shrinker(data):
-        n = data.draw_bits(8)
-        if n == 2:
-            data.draw_bits(8)
-            data.draw_bits(8)
-        else:
-            data.draw_bits(16)
-        data.mark_interesting()
-
-    it = shrinker.each_non_trivial_example()
-    assert next(it).length == 3
-    shrinker.incorporate_new_buffer([1, 1, 1])
-    assert next(it).length == 2
-    assert next(it).length == 1
 
 
 def test_block_may_grow_during_lexical_shrinking():
