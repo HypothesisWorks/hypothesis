@@ -758,8 +758,7 @@ class Shrinker(object):
                         hi = mid
                     else:
                         lo = mid
-                descents = ls[i + 1 : hi]
-                result.extend([(ex, descendant) for descendant in descents])
+                result.extend([(ex, ls[j]) for j in hrange(i + 1, hi)])
         return result
 
     @defines_shrink_pass(calculate_descents)
