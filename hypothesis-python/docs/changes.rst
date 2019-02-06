@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.5.2:
+
+------------------
+4.5.2 - 2019-02-06
+------------------
+
+This release standardises all of the shrinker's internal operations on running in a random order.
+
+The main effect you will see from this that it should now be much less common for the shrinker to stall for a long time before making further progress.
+In some cases this will correspond to shrinking more slowly, but on average it should result in faster shrinking.
+
 .. _v4.5.1:
 
 ------------------
