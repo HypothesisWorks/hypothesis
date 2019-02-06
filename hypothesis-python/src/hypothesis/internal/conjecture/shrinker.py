@@ -1134,14 +1134,22 @@ class Shrinker(object):
             )
 
     def duplicated_block_suffixes(self):
+        """Returns a list of blocks grouped by their non-zero suffix,
+        as a list of (suffix, indices) pairs, skipping all groupings
+        where there is only one index.
+
+        This is only used for the arguments of minimize_duplicated_blocks.
+        """
         duplicates = defaultdict(list)
-        for b in self.blocks:
-            duplicates[non_zero_suffix(self.buffer[b.start : b.end])].append(b.index)
+        for block in self.blocks:
+            duplicates[non_zero_suffix(self.buffer[block.start : block.end])].append(
+                block.index
+            )
         return sorted(
             [
-                (b, indices)
-                for b, indices in duplicates.items()
-                if len(b) > 0 and len(indices) > 1
+                (suffix, indices)
+                for suffix, indices in duplicates.items()
+                if len(suffix) > 0 and len(indices) > 1
             ]
         )
 
