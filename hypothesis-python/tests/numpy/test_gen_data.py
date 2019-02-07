@@ -92,6 +92,7 @@ def test_generates_unsigned_ints(x):
 
 @given(st.data())
 def test_can_handle_long_shapes(data):
+    """We can eliminate this test once we drop Py2 support."""
     for tt in six.integer_types:
         X = data.draw(nps.arrays(float, (tt(5),)))
         assert X.shape == (5,)
