@@ -571,6 +571,8 @@ class Shrinker(object):
 
             for sp, step in passes_with_steps:
                 sp.run_step(step)
+        for sp in passes:
+            sp.fixed_point_at = self.shrink_target
 
     @property
     def buffer(self):
@@ -1310,6 +1312,7 @@ class ShrinkPass(object):
     __arguments = attr.ib(default=None, init=False)
     __target_at_argument_calculation = attr.ib(default=None, init=False)
 
+    fixed_point_at = attr.ib(default=None)
     successes = attr.ib(default=0)
     runs = attr.ib(default=0)
     calls = attr.ib(default=0)
@@ -1324,6 +1327,8 @@ class ShrinkPass(object):
         return self.__arguments
 
     def generate_steps(self):
+        if self.fixed_point_at is self.shrinker.shrink_target:
+            return []
         return list(hrange(len(self.arguments)))
 
     def run_step(self, i):
