@@ -555,7 +555,6 @@ def test_debug_data(capsys):
     out, _ = capsys.readouterr()
     assert re.match(u"\\d+ bytes \\[.*\\] -> ", out)
     assert "INTERESTING" in out
-    assert "[]" not in out
 
 
 def test_zeroes_bytes_above_bound():
