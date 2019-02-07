@@ -512,6 +512,7 @@ class Shrinker(object):
         # rest). After these have reached a fixed point the test case should
         # be reasonably small and well normalized.
         coarse = [
+            "remove_discarded",
             "alphabet_minimize",
             "pass_to_descendant",
             "zero_examples",
