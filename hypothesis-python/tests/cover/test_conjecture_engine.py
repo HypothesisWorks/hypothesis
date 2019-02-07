@@ -43,11 +43,7 @@ from hypothesis.internal.conjecture.engine import (
     TargetSelector,
     sort_key,
 )
-from hypothesis.internal.conjecture.shrinker import (
-    PassClassification,
-    Shrinker,
-    block_program,
-)
+from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.shrinking import Float
 from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -1434,114 +1430,6 @@ def test_pandas_hack():
     assert list(shrinker.shrink_target.buffer) == [1, 7]
 
 
-def test_passes_can_come_back_to_life():
-    initial = hbytes([1, 2, 3, 4, 5, 6])
-    buf1 = hbytes([0, 1, 3, 4, 5, 6])
-    buf2 = hbytes([0, 1, 3, 4, 4, 6])
-
-    good = {initial, buf1, buf2}
-
-    @shrinking_from(initial)
-    def shrinker(data):
-        string = hbytes([data.draw_bits(8) for _ in range(6)])
-        if string in good:
-            data.mark_interesting()
-
-    shrinker.clear_passes()
-    shrinker.add_new_pass(block_program("--"))
-    shrinker.add_new_pass(block_program("-"))
-
-    shrinker.single_greedy_shrink_iteration()
-    assert shrinker.shrink_target.buffer == buf1
-
-    shrinker.single_greedy_shrink_iteration()
-    assert shrinker.shrink_target.buffer == buf2
-
-
-def test_will_enable_previously_bad_passes_when_failing_to_shrink():
-    # We lead the shrinker down the garden path a bit where it keeps making
-    # progress but only lexically. When it finally gets down to the minimum
-    good = {
-        hbytes([1, 2, 3, 4, 5, 6]),
-        hbytes([1, 2, 3, 4, 5, 5]),
-        hbytes([1, 2, 2, 4, 5, 5]),
-        hbytes([1, 2, 2, 4, 4, 5]),
-        hbytes([0, 2, 2, 4, 4, 5]),
-        hbytes([0, 1, 2, 4, 4, 5]),
-    }
-
-    initial = max(good)
-    final = min(good)
-
-    @shrinking_from(initial + hbytes([0, 7]))
-    def shrinker(data):
-        string = hbytes([data.draw_bits(8) for _ in range(6)])
-        if string in good:
-            n = 0
-            while data.draw_bits(8) != 7:
-                n += 1
-            if not (string == final or n > 0):
-                data.mark_invalid()
-            data.mark_interesting()
-
-    # In order to get to the minimized result we want to run both of these,
-    # but the second pass starts out as disabled (and anyway won't work until
-    # the first has hit fixity).
-    shrinker.clear_passes()
-    shrinker.add_new_pass(block_program("-"))
-    shrinker.add_new_pass(block_program("X"))
-
-    shrinker.shrink()
-
-    assert shrinker.shrink_target.buffer == final + hbytes([7])
-
-
-def test_shrink_passes_behave_sensibly_with_standard_operators():
-    @shrinking_from(hbytes([1]))
-    def shrinker(data):
-        if data.draw_bits(1):
-            data.mark_interesting()
-
-    passes = shrinker.passes
-
-    lookup = {p: p for p in passes}
-    for p in passes:
-        assert lookup[p] is p
-
-    for p, q in itertools.combinations(passes, 2):
-        assert p < q
-        assert p != q
-
-
-def test_shrink_pass_may_go_from_solid_to_dubious():
-
-    initial = hbytes([10])
-
-    @shrinking_from(initial)
-    def shrinker(data):
-        n = data.draw_bits(8)
-        if n >= 9:
-            data.mark_interesting()
-
-    sp = shrinker.shrink_pass("minimize_individual_blocks")
-    assert sp.classification == PassClassification.CANDIDATE
-    shrinker.run_shrink_pass(sp)
-    assert sp.classification == PassClassification.HOPEFUL
-    shrinker.run_shrink_pass(sp)
-    assert sp.classification == PassClassification.DUBIOUS
-
-
-def test_runs_adaptive_delete_on_first_pass_if_discarding_does_not_work():
-    @shrinking_from([0, 1])
-    def shrinker(data):
-        while not data.draw_bits(1):
-            pass
-        data.mark_interesting()
-
-    shrinker.single_greedy_shrink_iteration()
-    assert list(shrinker.buffer) == [1]
-
-
 def test_alphabet_minimization():
     @shrink(hbytes((10, 11)) * 5, "alphabet_minimize")
     def x(data):
@@ -1552,35 +1440,6 @@ def test_alphabet_minimization():
             data.mark_interesting()
 
     assert x == [0, 2] * 5
-
-
-@pytest.mark.xfail()
-def test_keeps_using_solid_passes_while_they_shrink_size():
-    good = {
-        hbytes([0, 1, 2, 3, 4, 5]),
-        hbytes([0, 1, 2, 3, 5]),
-        hbytes([0, 1, 3, 5]),
-        hbytes([1, 3, 5]),
-        hbytes([1, 5]),
-    }
-    initial = max(good, key=sort_key)
-
-    @shrinking_from(initial)
-    def shrinker(data):
-        while True:
-            data.draw_bits(8)
-            if hbytes(data.buffer) in good:
-                data.mark_interesting()
-
-    shrinker.clear_passes()
-
-    d1 = shrinker.add_new_pass(block_program("X"))
-    d2 = shrinker.add_new_pass(block_program("-"))
-
-    for _ in range(3):
-        shrinker.single_greedy_shrink_iteration()
-        assert d1.classification == PassClassification.HOPEFUL
-        assert d2.classification == PassClassification.CANDIDATE
 
 
 fake_data_counter = 0
