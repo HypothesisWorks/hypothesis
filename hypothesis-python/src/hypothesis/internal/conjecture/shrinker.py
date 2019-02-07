@@ -31,6 +31,9 @@ from hypothesis.internal.conjecture.floats import (
 from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Ordering
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
+if False:
+    from typing import Dict  # noqa
+
 
 def sort_key(buffer):
     """Returns a sort key such that "simpler" buffers are smaller than
