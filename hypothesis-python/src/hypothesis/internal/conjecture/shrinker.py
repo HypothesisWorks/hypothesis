@@ -101,31 +101,7 @@ def defines_shrink_pass(generate_arguments):
         )
 
         def run(self):
-            # We always maintain ``arguments`` as the current collection
-            # that would be calculated from self, and instead iterate over
-            # indices into it. This means we don't have to duplicate validation
-            # logic between it and the underlying shrink pass function.
-            #
-            # Note that in the event that the shrink target actually changes
-            # this can cause us to miss a few things that we might reasonably
-            # have run. e.g. if we successfully deleted an item then every
-            # index after that point now has an off by one error. This can
-            # cause redundant work but is not a correctness issue, because
-            # we guarantee that if the collection does not change then we will
-            # iterate over every argument, and this is satisfied if the shrink
-            # target never changes when running this pass.
-            arguments = list(generate_arguments(self))
-            indices = list(hrange(len(arguments)))
-            self.random.shuffle(indices)
-            while indices:
-                i = indices.pop()
-                if i >= len(arguments):
-                    continue
-                prev = self.shrink_target
-                args = tuple(arguments[i])
-                run_step(self, *args)
-                if prev is not self.shrink_target:
-                    arguments = list(generate_arguments(self))
+            return self.run_shrink_pass(definition.name)
 
         run.__name__ = run_step.__name__
         run.is_shrink_pass = True
@@ -390,10 +366,15 @@ class Shrinker(object):
         """Creates a shrink pass corresponding to calling ``run(self)``"""
         if classification is None:
             classification = PassClassification.CANDIDATE
-        if isinstance(run, str):
-            run = getattr(Shrinker, run)
+
+        definition = SHRINK_PASS_DEFINITIONS[run]
+
         p = ShrinkPass(
-            pass_function=run, index=len(self.passes), classification=classification
+            run_with_arguments=definition.run_step,
+            generate_arguments=definition.generate_arguments,
+            shrinker=self,
+            index=len(self.passes),
+            classification=classification,
         )
         self.passes.append(p)
         self.passes_awaiting_requeue.append(p)
@@ -402,7 +383,7 @@ class Shrinker(object):
 
     def shrink_pass(self, name):
         """Return the ShrinkPass object for the pass with the given name."""
-        if hasattr(Shrinker, name) and name not in self.passes_by_name:
+        if name not in self.passes_by_name:
             self.add_new_pass(name, classification=PassClassification.SPECIAL)
         return self.passes_by_name[name]
 
@@ -522,21 +503,16 @@ class Shrinker(object):
             sp = self.shrink_pass(sp)
 
         self.debug("Shrink Pass %s" % (sp.name,))
-
-        initial_shrinks = self.shrinks
-        initial_calls = self.calls
-        size = len(self.shrink_target.buffer)
+        initial_calls = sp.calls
+        initial_shrinks = sp.shrinks
         try:
-            sp.pass_function(self)
-        finally:
-            calls = self.calls - initial_calls
-            shrinks = self.shrinks - initial_shrinks
-            deletions = size - len(self.shrink_target.buffer)
-
-            sp.calls += calls
-            sp.shrinks += shrinks
-            sp.deletions += deletions
             sp.runs += 1
+
+            steps = sp.generate_steps()
+            self.random.shuffle(steps)
+            for s in steps:
+                sp.run_step(s)
+        finally:
             self.debug("Shrink Pass %s completed." % (sp.name,))
 
         # Complex state machine alert! A pass run can either succeed (we made
@@ -563,8 +539,8 @@ class Shrinker(object):
 
         # If the pass didn't actually do anything we don't reclassify it. This
         # is for things like remove_discarded which often are inapplicable.
-        if calls > 0 and sp.classification != PassClassification.SPECIAL:
-            if shrinks == 0:
+        if sp.calls > 0 and sp.classification != PassClassification.SPECIAL:
+            if sp.shrinks == initial_shrinks:
                 if sp.successes > 0:
                     sp.classification = PassClassification.DUBIOUS
                 else:
@@ -1428,41 +1404,39 @@ def block_program(description):
     block) the block will be silently skipped over. As a side effect of
     running a block program its score will be updated.
     """
+    name = "block_program(%r)" % (description,)
 
-    try:
-        return BLOCK_PROGRAMS[description]
-    except KeyError:
-        pass
+    if name not in SHRINK_PASS_DEFINITIONS:
 
-    def generate_arguments(self):
-        return [(i,) for i in hrange(len(self.blocks))]
+        def generate_arguments(self):
+            return [(i,) for i in hrange(len(self.blocks))]
 
-    def run(self, i):
-        n = len(description)
-        if i + n > len(self.shrink_target.blocks):
-            return
-        attempt = bytearray(self.shrink_target.buffer)
-        for k, d in reversed(list(enumerate(description))):
-            j = i + k
-            block = self.blocks[j]
-            u, v = block.bounds
-            if d == "-":
-                value = int_from_bytes(attempt[u:v])
-                if value == 0:
-                    return
-                else:
-                    attempt[u:v] = int_to_bytes(value - 1, block.length)
-            elif d == "X":
-                del attempt[u:v]
-            else:  # pragma: no cover
-                assert False, "Unrecognised command %r" % (d,)
-        self.incorporate_new_buffer(attempt)
+        def run(self, i):
+            n = len(description)
+            if i + n > len(self.shrink_target.blocks):
+                return
+            attempt = bytearray(self.shrink_target.buffer)
+            for k, d in reversed(list(enumerate(description))):
+                j = i + k
+                block = self.blocks[j]
+                u, v = block.bounds
+                if d == "-":
+                    value = int_from_bytes(attempt[u:v])
+                    if value == 0:
+                        return
+                    else:
+                        attempt[u:v] = int_to_bytes(value - 1, block.length)
+                elif d == "X":
+                    del attempt[u:v]
+                else:  # pragma: no cover
+                    assert False, "Unrecognised command %r" % (d,)
+            self.incorporate_new_buffer(attempt)
 
-    run.__name__ = "block_program(%r)" % (description,)
+        run.__name__ = name
 
-    return BLOCK_PROGRAMS.setdefault(
-        description, defines_shrink_pass(generate_arguments)(run)
-    )
+        defines_shrink_pass(generate_arguments)(run)
+        assert name in SHRINK_PASS_DEFINITIONS
+    return name
 
 
 class PassClassification(Enum):
@@ -1476,8 +1450,13 @@ class PassClassification(Enum):
 @total_ordering
 @attr.s(slots=True, cmp=False)
 class ShrinkPass(object):
-    pass_function = attr.ib()
+    run_with_arguments = attr.ib()
+    generate_arguments = attr.ib()
     index = attr.ib()
+    shrinker = attr.ib()
+
+    __arguments = attr.ib(default=None, init=False)
+    __target_at_argument_calculation = attr.ib(default=None, init=False)
 
     classification = attr.ib(default=PassClassification.CANDIDATE)
 
@@ -1487,10 +1466,29 @@ class ShrinkPass(object):
     shrinks = attr.ib(default=0)
     deletions = attr.ib(default=0)
 
-    def __attrs_post_init__(self):
-        assert getattr(
-            self.pass_function, "is_shrink_pass", False
-        ), "%s is not a shrink pass" % (self.pass_function.__name__,)
+    @property
+    def arguments(self):
+        if self.__target_at_argument_calculation is not self.shrinker.shrink_target:
+            self.__arguments = self.generate_arguments(self.shrinker)
+            self.__target_at_argument_calculation = self.shrinker.shrink_target
+        return self.__arguments
+
+    def generate_steps(self):
+        return list(hrange(len(self.arguments)))
+
+    def run_step(self, i):
+        if i >= len(self.arguments):
+            return
+        args = self.arguments[i]
+        initial_shrinks = self.shrinker.shrinks
+        initial_calls = self.shrinker.calls
+        size = len(self.shrinker.shrink_target.buffer)
+        try:
+            self.run_with_arguments(self.shrinker, *args)
+        finally:
+            self.calls += self.shrinker.calls - initial_calls
+            self.shrinks += self.shrinker.shrinks - initial_shrinks
+            self.deletions += size - len(self.shrinker.shrink_target.buffer)
 
     @property
     def failures(self):
@@ -1498,7 +1496,7 @@ class ShrinkPass(object):
 
     @property
     def name(self):
-        return self.pass_function.__name__
+        return self.run_with_arguments.__name__
 
     def __eq__(self, other):
         return self.index == other.index
