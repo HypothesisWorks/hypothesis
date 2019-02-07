@@ -21,6 +21,9 @@ import sys
 
 import numpy as np
 import pytest
+import six
+from tests.common.debug import find_any, minimal
+from tests.common.utils import checks_deprecated_behaviour, flaky
 
 import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
@@ -28,8 +31,6 @@ from hypothesis import assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.searchstrategy import SearchStrategy
-from tests.common.debug import find_any, minimal
-from tests.common.utils import checks_deprecated_behaviour, flaky
 
 STANDARD_TYPES = list(
     map(
@@ -87,6 +88,15 @@ def test_can_handle_zero_dimensions(x):
 @given(nps.arrays(u"uint32", (5, 5)))
 def test_generates_unsigned_ints(x):
     assert (x >= 0).all()
+
+
+@given(st.data())
+def test_can_handle_long_shapes(data):
+    for tt in six.integer_types:
+        X = data.draw(nps.arrays(float, (tt(5),)))
+        assert X.shape == (5,)
+        X = data.draw(nps.arrays(float, (tt(5), tt(5))))
+        assert X.shape == (5, 5)
 
 
 @given(nps.arrays(int, (1,)))
