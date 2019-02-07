@@ -115,15 +115,28 @@ class ConjectureRunner(object):
     def __tree_is_exhausted(self):
         return self.tree.is_exhausted
 
-    def test_function(self, data):
-        self.call_count += 1
+    def __stoppable_test_function(self, data):
+        """Run ``self._test_function``, but convert a ``StopTest`` exception
+        into a normal return.
+        """
         try:
             self._test_function(data)
-            data.freeze()
         except StopTest as e:
-            if e.testcounter != data.testcounter:
-                self.save_buffer(data.buffer)
+            if e.testcounter == data.testcounter:
+                # This StopTest has successfully stopped its test, and can now
+                # be discarded.
+                pass
+            else:
+                # This StopTest was raised by a different ConjectureData. We
+                # need to re-raise it so that it will eventually reach the
+                # correct engine.
                 raise
+
+    def test_function(self, data):
+        self.call_count += 1
+
+        try:
+            self.__stoppable_test_function(data)
         except BaseException:
             self.save_buffer(data.buffer)
             raise
