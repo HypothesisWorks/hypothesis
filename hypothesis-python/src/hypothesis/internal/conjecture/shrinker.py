@@ -58,7 +58,7 @@ def sort_key(buffer):
     return (len(buffer), buffer)
 
 
-SHRINK_PASS_DEFINITIONS = {}
+SHRINK_PASS_DEFINITIONS = {}  # type: Dict[str, ShrinkPassDefinition]
 
 
 @attr.s()
@@ -1244,9 +1244,6 @@ class Shrinker(object):
                 hi = mid
             else:
                 lo = mid
-
-
-BLOCK_PROGRAMS = {}
 
 
 def block_program(description):
