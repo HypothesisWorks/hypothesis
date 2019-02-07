@@ -17,10 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-import heapq
 from collections import defaultdict
-from enum import Enum
-from functools import total_ordering
 
 import attr
 
@@ -410,8 +407,6 @@ class Shrinker(object):
             sp = self.shrink_pass(sp)
 
         self.debug("Shrink Pass %s" % (sp.name,))
-        initial_calls = sp.calls
-        initial_shrinks = sp.shrinks
         try:
             sp.runs += 1
 

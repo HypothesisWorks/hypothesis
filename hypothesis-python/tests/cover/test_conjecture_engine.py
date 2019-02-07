@@ -17,7 +17,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-import itertools
 import re
 from random import Random, seed as seed_random
 
@@ -41,7 +40,6 @@ from hypothesis.internal.conjecture.engine import (
     ExitReason,
     RunIsComplete,
     TargetSelector,
-    sort_key,
 )
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.shrinking import Float
