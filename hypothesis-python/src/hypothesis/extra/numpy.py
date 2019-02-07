@@ -26,7 +26,7 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis import Verbosity
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import hrange, text_type, integer_types
+from hypothesis.internal.compat import hrange, integer_types, text_type
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type

@@ -22,8 +22,6 @@ import sys
 import numpy as np
 import pytest
 import six
-from tests.common.debug import find_any, minimal
-from tests.common.utils import checks_deprecated_behaviour, flaky
 
 import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
@@ -31,6 +29,8 @@ from hypothesis import assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.searchstrategy import SearchStrategy
+from tests.common.debug import find_any, minimal
+from tests.common.utils import checks_deprecated_behaviour, flaky
 
 STANDARD_TYPES = list(
     map(
