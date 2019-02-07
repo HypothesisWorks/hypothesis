@@ -68,7 +68,7 @@ class Example(object):
 
     # Depth of this example in the example tree. The top-level example has a
     # depth of 0.
-    depth = attr.ib()
+    depth = attr.ib(repr=False)
 
     # A label is an opaque value that associates each example with its
     # approximate origin, such as a particular strategy class or a particular
@@ -84,16 +84,16 @@ class Example(object):
     # An example is "trivial" if it only contains forced bytes and zero bytes.
     # All examples start out as trivial, and then get marked non-trivial when
     # we see a byte that is neither forced nor zero.
-    trivial = attr.ib(default=True)
+    trivial = attr.ib(default=True, repr=False)
 
     # True if we believe that the shrinker should be able to delete this
     # example completely, without affecting the value produced by its enclosing
     # strategy. Typically set when a rejection sampler decides to reject a
     # generated value and try again.
-    discarded = attr.ib(default=None)
+    discarded = attr.ib(default=None, repr=False)
 
     # List of child examples, represented as indices into the example list.
-    children = attr.ib(default=attr.Factory(list))
+    children = attr.ib(default=attr.Factory(list), repr=False)
 
     @property
     def length(self):
@@ -119,11 +119,11 @@ class Block(object):
     # True if this block's byte values were forced by a write operation.
     # As long as the bytes before this block remain the same, modifying this
     # block's bytes will have no effect.
-    forced = attr.ib()
+    forced = attr.ib(repr=False)
 
     # True if this block's byte values are all 0. Reading this flag can be
     # more convenient than explicitly checking a slice for non-zero bytes.
-    all_zero = attr.ib()
+    all_zero = attr.ib(repr=False)
 
     @property
     def bounds(self):
