@@ -26,7 +26,7 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis import Verbosity
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import hrange, text_type
+from hypothesis.internal.compat import hrange, integer_types, text_type
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type
@@ -132,7 +132,7 @@ class ArrayStrategy(SearchStrategy):
             shape,
         )
         check_argument(
-            all(isinstance(s, int) for s in shape),
+            all(isinstance(s, integer_types) for s in shape),
             "Array shape must be integer in each dimension, provided shape was {}",
             shape,
         )

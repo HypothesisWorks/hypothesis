@@ -246,6 +246,7 @@ their individual contributions.
 * `Paul Stiverson <https://github.com/thismatters>`_
 * `Peadar Coyle <https://github.com/springcoil>`_ (peadarcoyle@gmail.com)
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
+* `Ryan Turner <https://github.com/rdturnermtl>`_ (ryan.turner@uber.com)
 * `Sam Hames <https://www.github.com/SamHames>`_
 * `Sanyam Khurana <https://github.com/CuriousLearner>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
