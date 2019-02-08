@@ -1354,10 +1354,6 @@ class ShrinkPass(object):
             self.deletions += size - len(self.shrinker.shrink_target.buffer)
 
     @property
-    def failures(self):
-        return self.runs - self.successes
-
-    @property
     def name(self):
         return self.run_with_arguments.__name__
 
