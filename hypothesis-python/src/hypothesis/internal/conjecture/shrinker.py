@@ -1252,6 +1252,46 @@ class Shrinker(object):
             else:
                 lo = mid
 
+    def run_block_program(self, i, description, original, repeats=1):
+        """Block programs are a mini-DSL for block rewriting, defined as a sequence
+        of commands that can be run at some index into the blocks
+
+        Commands are:
+
+            * "-", subtract one from this block.
+            * "X", delete this block
+
+        If a command does not apply (currently only because it's - on a zero
+        block) the block will be silently skipped over.
+
+        This method runs the block program in ``description`` at block index
+        ``i`` on the ConjectureData ``original``. If ``repeats > 1`` then it
+        will attempt to approximate the results of running it that many times.
+
+        Returns True if this successfully changes the underlying shrink target,
+        else False.
+        """
+        if i + len(description) > len(original.blocks) or i < 0:
+            return False
+        attempt = bytearray(original.buffer)
+        for _ in hrange(repeats):
+            for k, d in reversed(list(enumerate(description))):
+                j = i + k
+                u, v = original.blocks[j].bounds
+                if v > len(attempt):
+                    return False
+                if d == "-":
+                    value = int_from_bytes(attempt[u:v])
+                    if value == 0:
+                        return False
+                    else:
+                        attempt[u:v] = int_to_bytes(value - 1, v - u)
+                elif d == "X":
+                    del attempt[u:v]
+                else:  # pragma: no cover
+                    assert False, "Unrecognised command %r" % (d,)
+        return self.incorporate_new_buffer(attempt)
+
 
 def block_program(description):
     """Mini-DSL for block rewriting. A sequence of commands that will be run
@@ -1270,30 +1310,42 @@ def block_program(description):
     name = "block_program(%r)" % (description,)
 
     if name not in SHRINK_PASS_DEFINITIONS:
+        """Defines a shrink pass that runs the block program ``description``
+        at every block index."""
+        n = len(description)
 
         def generate_arguments(self):
-            return [(i,) for i in hrange(len(self.blocks))]
+            return [(i,) for i in hrange(len(self.blocks) - n)]
 
         def run(self, i):
-            n = len(description)
-            if i + n > len(self.shrink_target.blocks):
-                return
-            attempt = bytearray(self.shrink_target.buffer)
-            for k, d in reversed(list(enumerate(description))):
-                j = i + k
-                block = self.blocks[j]
-                u, v = block.bounds
-                if d == "-":
-                    value = int_from_bytes(attempt[u:v])
-                    if value == 0:
-                        return
-                    else:
-                        attempt[u:v] = int_to_bytes(value - 1, block.length)
-                elif d == "X":
-                    del attempt[u:v]
-                else:  # pragma: no cover
-                    assert False, "Unrecognised command %r" % (d,)
-            self.incorporate_new_buffer(attempt)
+            """Adaptively attempt to run the block program at the current
+            index. If this successfully applies the block program ``k`` times
+            then this runs in ``O(log(k))`` test function calls."""
+            assert i + n < len(self.shrink_target.blocks)
+
+            # Because we run in a random order we will often find ourselves in the middle
+            # of a region where we could run the block program. We thus start by moving
+            # left to the beginning of that region if possible in order to to start from
+            # the beginning of that region.
+            def offset_left(k):
+                return i - k * n
+
+            i = offset_left(
+                find_integer(
+                    lambda k: self.run_block_program(
+                        offset_left(k), description, original=self.shrink_target
+                    )
+                )
+            )
+
+            original = self.shrink_target
+
+            # Now try to run the block program multiple times here.
+            find_integer(
+                lambda k: self.run_block_program(
+                    i, description, original=original, repeats=k
+                )
+            )
 
         run.__name__ = name
 

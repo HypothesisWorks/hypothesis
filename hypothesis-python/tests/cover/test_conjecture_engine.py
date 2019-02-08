@@ -1554,3 +1554,17 @@ def test_try_shrinking_blocks_out_of_bounds():
         data.mark_interesting()
 
     assert not shrinker.try_shrinking_blocks((1,), hbytes([1]))
+
+
+def test_block_programs_are_adaptive():
+    @shrinking_from(hbytes(1000) + hbytes([1]))
+    def shrinker(data):
+        while not data.draw_bits(1):
+            pass
+        data.mark_interesting()
+
+    shrinker.clear_passes()
+    shrinker.add_new_pass(block_program("X"))
+    shrinker.shrink()
+    assert len(shrinker.shrink_target.buffer) == 1
+    assert shrinker.calls <= 40
