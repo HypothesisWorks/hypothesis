@@ -515,7 +515,6 @@ class Shrinker(object):
         # rest). After these have reached a fixed point the test case should
         # be reasonably small and well normalized.
         coarse = [
-            "remove_discarded",
             "alphabet_minimize",
             "pass_to_descendant",
             "zero_examples",
@@ -568,8 +567,18 @@ class Shrinker(object):
             ]
             self.random.shuffle(passes_with_steps)
 
+            # We run remove_discarded after every step to do cleanup
+            # keeping track of whether that actually works. Either there is
+            # no discarded data and it is basically free, or it reliably works
+            # and deletes data, or it doesn't work. In that latter case we turn
+            # it off for the rest of this loop through the passes, but will
+            # try again once all of the passes have been run.
+            can_discard = self.remove_discarded()
+
             for sp, step in passes_with_steps:
                 sp.run_step(step)
+                if can_discard:
+                    can_discard &= self.remove_discarded()
         for sp in passes:
             sp.fixed_point_at = self.shrink_target
 
@@ -883,11 +892,10 @@ class Shrinker(object):
                 return True
         return False
 
-    @defines_shrink_pass(lambda self: [()] if self.shrink_target.has_discards else [])
     def remove_discarded(self):
         """Try removing all bytes marked as discarded.
 
-        This pass is primarily to deal with data that has been ignored while
+        This is primarily to deal with data that has been ignored while
         doing rejection sampling - e.g. as a result of an integer range, or a
         filtered strategy.
 
@@ -896,6 +904,9 @@ class Shrinker(object):
         each interval individually. The common case is that all data drawn and
         rejected can just be thrown away immediately in one block, so this pass
         will be much faster than trying each one individually when it works.
+
+        returns False if there is discarded data and removing it does not work,
+        otherwise returns True.
         """
         while self.shrink_target.has_discards:
             discarded = []
@@ -911,7 +922,8 @@ class Shrinker(object):
                 del attempt[u:v]
 
             if not self.incorporate_new_buffer(attempt):
-                break
+                return False
+        return True
 
     @derived_value
     def endpoints_by_depth(self):
