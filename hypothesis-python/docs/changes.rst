@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.5.4:
+
+------------------
+4.5.4 - 2019-02-08
+------------------
+
+Fixes bug in `hypothesis.extra.numpy.arrays` on Python2 where `long` type
+dimensions are not allowed in the shape.
+
 .. _v4.5.3:
 
 ------------------
