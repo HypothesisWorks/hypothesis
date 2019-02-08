@@ -406,8 +406,7 @@ class Shrinker(object):
         this shrinker. This does not handle any requeing that is
         required.
         """
-        if isinstance(sp, str):
-            sp = self.shrink_pass(sp)
+        sp = self.shrink_pass(sp)
 
         self.debug("Shrink Pass %s" % (sp.name,))
         try:
