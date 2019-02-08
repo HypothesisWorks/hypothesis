@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.5.3:
+
+------------------
+4.5.3 - 2019-02-08
+------------------
+
+This release makes a small internal refactoring to clarify how Hypothesis
+instructs tests to stop running when appropriate. There is no user-visible
+change.
+
 .. _v4.5.2:
 
 ------------------
