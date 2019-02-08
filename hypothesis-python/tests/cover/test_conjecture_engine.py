@@ -797,7 +797,7 @@ def test_can_remove_discarded_data():
                 break
         data.mark_interesting()
 
-    shrinker.run_shrink_pass("remove_discarded")
+    shrinker.remove_discarded()
     assert list(shrinker.buffer) == [11]
 
 
@@ -811,7 +811,7 @@ def test_discarding_iterates_to_fixed_point():
             pass
         data.mark_interesting()
 
-    shrinker.run_shrink_pass("remove_discarded")
+    shrinker.remove_discarded()
     assert list(shrinker.buffer) == [1, 0]
 
 
