@@ -86,7 +86,7 @@ def test_can_generate_ignored_tokens():
     strategy = from_lark(Lark(list_grammar, start="list"))
     # A JSON list of strings in canoncial form which does not round-trip,
     # must contain ignorable whitespace in the initial string.
-    find_any(strategy, lambda s: s != json.dumps(json.loads(s)))
+    find_any(strategy, lambda s: "\t" in s)
 
 
 def test_cannot_convert_EBNF_to_strategy_directly():
