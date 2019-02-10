@@ -430,7 +430,20 @@ def defines_dtype_strategy(strat):
     @st.defines_strategy
     @proxies(strat)
     def inner(*args, **kwargs):
-        return strat(*args, **kwargs).map(np.dtype)
+        strategy = strat(*args, **kwargs)
+
+        def convert_to_dtype(x):
+            """Helper to debug issue #1798."""
+            try:
+                return np.dtype(x)
+            except ValueError:
+                print(
+                    "Got invalid dtype value=%r from strategy=%r, function=%r"
+                    % (x, strategy, strat)
+                )
+                raise
+
+        return strategy.map(convert_to_dtype)
 
     return inner
 

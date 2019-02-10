@@ -22,6 +22,7 @@ import pytest
 
 import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
+from hypothesis import given
 from hypothesis.errors import InvalidArgument
 
 
@@ -64,3 +65,19 @@ def e(a, **kwargs):
 def test_raise_invalid_argument(function, kwargs):
     with pytest.raises(InvalidArgument):
         function(**kwargs).example()
+
+
+@nps.defines_dtype_strategy
+def bad_dtype_strategy():
+    return st.just([("f1", "int32"), ("f1", "int32")])
+
+
+@given(st.data())
+def test_bad_dtype_strategy(capsys, data):
+    s = bad_dtype_strategy()
+    with pytest.raises(ValueError):
+        data.draw(s)
+    val = s.wrapped_strategy.mapped_strategy.value
+    assert capsys.readouterr().out.startswith(
+        "Got invalid dtype value=%r from strategy=just(%r), function=" % (val, val)
+    )
