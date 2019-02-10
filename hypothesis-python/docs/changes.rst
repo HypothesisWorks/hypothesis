@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.5.5:
+
+------------------
+4.5.5 - 2019-02-10
+------------------
+
+This patch prints an explanatory note when :issue:`1798` is triggered,
+because the error message from Numpy is too terse to locate the problem.
+
 .. _v4.5.4:
 
 ------------------
