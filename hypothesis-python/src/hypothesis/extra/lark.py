@@ -33,11 +33,9 @@ your own at all.
 
 from __future__ import absolute_import, division, print_function
 
-from weakref import ref as weakref
-
 import attr
 import lark
-from lark.grammar import NonTerminal, Symbol, Terminal
+from lark.grammar import NonTerminal, Terminal
 
 import hypothesis._strategies as st
 from hypothesis.errors import InvalidArgument
@@ -55,7 +53,7 @@ __all__ = ["from_lark"]
 class DrawState(object):
     """Tracks state of a single draw from a lark grammar.
 
-    Currently just wraps a list of tokens that will be emitted at the 
+    Currently just wraps a list of tokens that will be emitted at the
     end, but as we support more sophisticated parsers this will need
     to track more state for e.g. indentation level.
     """
