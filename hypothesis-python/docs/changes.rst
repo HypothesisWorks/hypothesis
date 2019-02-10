@@ -27,8 +27,8 @@ information to the contrary.
 4.5.4 - 2019-02-08
 ------------------
 
-Fixes bug in `hypothesis.extra.numpy.arrays` on Python2 where `long` type
-dimensions are not allowed in the shape.
+In Python 2, ``long`` integers are not allowed in the shape argument to
+:func:`~hypothesis.extra.numpy.arrays`.  Thanks to Ryan Turner for fixing this.
 
 .. _v4.5.3:
 
