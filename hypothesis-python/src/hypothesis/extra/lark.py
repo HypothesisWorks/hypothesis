@@ -86,10 +86,7 @@ class LarkStrategy(SearchStrategy):
         for t in terminals:
             self.names_to_symbols[t.name] = Terminal(t.name)
 
-        try:
-            self.start = self.names_to_symbols[start]
-        except KeyError:
-            raise InvalidArgument("Undefined rule %r" % (start,))
+        self.start = self.names_to_symbols[start]
 
         self.ignored_symbols = st.sampled_from(
             [self.names_to_symbols[n] for n in ignore_names]
@@ -133,7 +130,7 @@ class LarkStrategy(SearchStrategy):
                 strategy = self.terminal_strategies[symbol.name]
             except KeyError:
                 raise InvalidArgument(
-                    "Undefined terminal %r. Generation does not currently support use of %declare."
+                    "Undefined terminal %r. Generation does not currently support use of %%declare."
                     % (symbol.name,)
                 )
             draw_state.result.append(data.draw(strategy))
