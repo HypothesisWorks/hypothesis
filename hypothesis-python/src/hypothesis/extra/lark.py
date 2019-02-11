@@ -33,15 +33,125 @@ your own at all.
 
 from __future__ import absolute_import, division, print_function
 
+import attr
 import lark
+from lark.grammar import NonTerminal, Terminal
 
 import hypothesis._strategies as st
+from hypothesis.errors import InvalidArgument
+from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.validation import check_type
+from hypothesis.searchstrategy import SearchStrategy
 
 if False:
     from typing import Text  # noqa
 
 __all__ = ["from_lark"]
+
+
+@attr.s()
+class DrawState(object):
+    """Tracks state of a single draw from a lark grammar.
+
+    Currently just wraps a list of tokens that will be emitted at the
+    end, but as we support more sophisticated parsers this will need
+    to track more state for e.g. indentation level.
+    """
+
+    # The text output so far as a list of string tokens resulting from
+    # each draw to a non-terminal.
+    result = attr.ib(default=attr.Factory(list))
+
+
+class LarkStrategy(SearchStrategy):
+    """Low-level strategy implementation wrapping a Lark grammar.
+
+    See ``from_lark`` for details.
+    """
+
+    def __init__(self, grammar, start=None):
+        check_type(lark.lark.Lark, grammar, "grammar")
+        if start is None:
+            start = grammar.options.start
+        self.grammar = grammar
+
+        terminals, rules, ignore_names = grammar.grammar.compile()
+
+        self.names_to_symbols = {}
+
+        for r in rules:
+            t = r.origin
+            self.names_to_symbols[t.name] = t
+
+        for t in terminals:
+            self.names_to_symbols[t.name] = Terminal(t.name)
+
+        self.start = self.names_to_symbols[start]
+
+        self.ignored_symbols = st.sampled_from(
+            [self.names_to_symbols[n] for n in ignore_names]
+        )
+
+        self.terminal_strategies = {
+            t.name: st.from_regex(t.pattern.to_regexp(), fullmatch=True)
+            for t in terminals
+        }
+
+        nonterminals = {}
+
+        for rule in rules:
+            nonterminals.setdefault(rule.origin.name, []).append(tuple(rule.expansion))
+
+        for v in nonterminals.values():
+            v.sort(key=len)
+
+        self.nonterminal_strategies = {
+            k: st.sampled_from(v) for k, v in nonterminals.items()
+        }
+
+        self.__rule_labels = {}
+
+    def do_draw(self, data):
+        state = DrawState()
+        self.draw_symbol(data, self.start, state)
+        return u"".join(state.result)
+
+    def rule_label(self, name):
+        try:
+            return self.__rule_labels[name]
+        except KeyError:
+            return self.__rule_labels.setdefault(
+                name, calc_label_from_name("LARK:%s" % (name,))
+            )
+
+    def draw_symbol(self, data, symbol, draw_state):
+        if isinstance(symbol, Terminal):
+            try:
+                strategy = self.terminal_strategies[symbol.name]
+            except KeyError:
+                raise InvalidArgument(
+                    "Undefined terminal %r. Generation does not currently support use of %%declare."
+                    % (symbol.name,)
+                )
+            draw_state.result.append(data.draw(strategy))
+        else:
+            assert isinstance(symbol, NonTerminal)
+            data.start_example(self.rule_label(symbol.name))
+            expansion = data.draw(self.nonterminal_strategies[symbol.name])
+            for e in expansion:
+                self.draw_symbol(data, e, draw_state)
+                self.gen_ignore(data, draw_state)
+            data.stop_example()
+
+    def gen_ignore(self, data, draw_state):
+        if self.ignored_symbols.is_empty:
+            return
+        if data.draw_bits(2) == 3:
+            emit = data.draw(self.ignored_symbols)
+            self.draw_symbol(data, emit, draw_state)
+
+    def calc_has_reusable_values(self, recur):
+        return True
 
 
 @st.cacheable
@@ -59,65 +169,11 @@ def from_lark(grammar, start=None):
     argument to the Lark class.  To generate strings matching a different
     symbol, including terminals, you can override this by passing the
     ``start`` argument to ``from_lark``.
+
+    Currently ``from_lark`` does not support grammars that need custom lexing.
+    Any lexers will be ignored, and any undefined terminals from the use of
+    ``%declare`` will result in generation errors. We hope to support more of
+    these features in future.
     """
-    check_type(lark.lark.Lark, grammar, "grammar")
-    if start is None:
-        start = grammar.options.start
 
-    # Compiling the EBNF grammar to a sanitised and canonicalised BNF
-    # format makes further transformations much easier.
-    terminals, rules, ignore_names = grammar.grammar.compile()
-
-    # Map all terminals to the corresponging regular expression, and
-    # thence to a strategy for producing matching strings.
-    # We'll add strategies for non-terminals to this mapping later.
-    strategies = {
-        t.name: st.from_regex(t.pattern.to_regexp(), fullmatch=True) for t in terminals
-    }
-    if start in strategies:
-        return strategies[start]
-
-    # Reshape our flat list of rules into a dict of rulename to list of
-    # possible productions for that rule.  We sort productions by increasing
-    # number of parts as a heuristic for shrinking order.
-    nonterminals = {
-        origin.name: sorted(
-            [rule.expansion for rule in rules if rule.origin == origin], key=len
-        )
-        for origin in set(rule.origin for rule in rules)
-    }
-
-    @st.cacheable
-    @st.defines_strategy_with_reusable_values
-    def convert(expansion):
-        parts = []
-        for p in expansion:
-            if parts and ignore_names:
-                # Chance to insert ignored substrings between meaningful
-                # tokens, e.g. whitespace between values in JSON.
-                parts.append(
-                    st.just(u"")
-                    | st.one_of([strategies[name] for name in ignore_names])
-                )
-            if p.name in strategies:
-                # This might be a Terminal, or it might be a NonTerminal
-                # that we've previously handled.
-                parts.append(strategies[p.name])
-            else:
-                # It must be the first time we've encountered this NonTerminal.
-                # Recurse to handle it, relying on lazy strategy instantiation
-                # to allow forward references, then add it to the strategies
-                # cache to avoid infinite loops.
-                assert isinstance(p, lark.grammar.NonTerminal)
-                s = st.one_of([convert(ex) for ex in nonterminals[p.name]])
-                parts.append(s)
-                strategies[p.name] = s
-        # Special-case rules with only one expansion; it's worthwhile being
-        # efficient when this includes terminals!  Otherwise, join the parts.
-        if len(parts) == 1:
-            return parts[0]
-        return st.tuples(*parts).map(u"".join)
-
-    # Most grammars describe several production rules, so we check the start
-    # option passed to Lark to see which nonterminal we're going to produce.
-    return st.one_of([convert(ex) for ex in nonterminals[start]])
+    return LarkStrategy(grammar, start)

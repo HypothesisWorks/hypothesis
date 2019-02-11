@@ -86,7 +86,20 @@ def test_can_generate_ignored_tokens():
     strategy = from_lark(Lark(list_grammar, start="list"))
     # A JSON list of strings in canoncial form which does not round-trip,
     # must contain ignorable whitespace in the initial string.
-    find_any(strategy, lambda s: s != json.dumps(json.loads(s)))
+    find_any(strategy, lambda s: "\t" in s)
+
+
+def test_generation_without_whitespace():
+    list_grammar = r"""
+    list : "[" [NUMBER ("," NUMBER)*] "]"
+    NUMBER: /[0-9]+/
+    """
+
+    @given(from_lark(Lark(list_grammar, start="list")))
+    def test(g):
+        assert " " not in g
+
+    test()
 
 
 def test_cannot_convert_EBNF_to_strategy_directly():
@@ -96,3 +109,13 @@ def test_cannot_convert_EBNF_to_strategy_directly():
     with pytest.raises(TypeError):
         # Not even the right number of arguments
         from_lark(EBNF_GRAMMAR, start="value").example()
+
+
+def test_can_not_use_undefined_terminals_yet():
+    grammar = r"""
+    list : "[" ELEMENT ("," ELEMENT)* "]"
+    %declare ELEMENT
+    """
+
+    with pytest.raises(InvalidArgument):
+        from_lark(Lark(grammar, start="list")).example()
