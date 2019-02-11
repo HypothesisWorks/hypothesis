@@ -99,7 +99,9 @@ class RecursiveStrategy(SearchStrategy):
                 with self.limited_base.capped(self.max_leaves):
                     return data.draw(self.strategy)
             except LimitReached:
-                if count == 0:
+                # Workaround for possible coverage bug - this branch is definitely
+                # covered but for some reason is showing up as not covered.
+                if count == 0:  # pragma: no branch
                     data.note_event(
                         lazyformat(
                             "Draw for %r exceeded max_leaves and had to be retried",
