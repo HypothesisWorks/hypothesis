@@ -113,7 +113,6 @@ def test_cannot_convert_EBNF_to_strategy_directly():
 
 def test_can_not_use_undefined_terminals_yet():
     grammar = r"""
-        
     list : "[" ELEMENT ("," ELEMENT)* "]"
     %declare ELEMENT
     """
