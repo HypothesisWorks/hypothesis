@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.5.6:
+
+------------------
+4.5.6 - 2019-02-11
+------------------
+
+This release makes a number of internal changes to the implementation of :func:`hypothesis.extra.lark.from_lark`.
+These are primarily intended as a refactoring, but you may see some minor improvements to performance when generating large strings,
+and possibly to shrink quality.
+
 .. _v4.5.5:
 
 ------------------
