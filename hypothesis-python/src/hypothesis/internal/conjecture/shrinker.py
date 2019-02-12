@@ -805,6 +805,9 @@ class Shrinker(object):
             n = min(self.blocks[block].length, len(b))
             initial_attempt[v - n : v] = b[-n:]
 
+        if not blocks:
+            return False
+
         start = self.shrink_target.blocks[blocks[0]].start
         end = self.shrink_target.blocks[blocks[-1]].end
 
