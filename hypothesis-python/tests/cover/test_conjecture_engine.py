@@ -1545,3 +1545,12 @@ def test_will_evict_entries_from_the_cache(monkeypatch):
     # calls will have been evicted, so each call to
     # cached_test_function will have to reexecute.
     assert count[0] == 30
+
+
+def test_try_shrinking_blocks_out_of_bounds():
+    @shrinking_from(hbytes([1]))
+    def shrinker(data):
+        data.draw_bits(1)
+        data.mark_interesting()
+
+    assert not shrinker.try_shrinking_blocks((1,), hbytes([1]))
