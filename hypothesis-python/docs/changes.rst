@@ -21,6 +21,14 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.5.8:
+
+------------------
+4.5.8 - 2019-02-12
+------------------
+
+This release fixes an internal ``IndexError`` in Hypothesis that could sometimes be triggered during shrinking.
+
 .. _v4.5.7:
 
 ------------------
