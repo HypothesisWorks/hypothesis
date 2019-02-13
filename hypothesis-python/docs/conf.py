@@ -122,6 +122,8 @@ html_static_path = ["_static"]
 
 htmlhelp_basename = "Hypothesisdoc"
 
+html_favicon = "../../brand/favicon.ico"
+
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {}

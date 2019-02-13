@@ -33,3 +33,15 @@ with reStructuredText or Markdown, respectively:
 .. code:: md
 
     [![Tested with Hypothesis](https://img.shields.io/badge/hypothesis-tested-brightgreen.svg)](https://hypothesis.readthedocs.io/)
+
+Finally, we have a beautiful logo which appears online, and often on stickers:
+
+.. image:: ../../brand/dragonfly-rainbow.svg
+   :alt: The Hypothesis logo, a dragonfly with rainbow wings
+   :align: center
+   :width: 50 %
+
+As well as being beautiful, dragonflies actively hunt down bugs for a living!
+You can find the images and a usage guide in the :gh-file:`brand` directory on
+GitHub, or find us at conferences where we often have stickers and sometimes
+other swag.
