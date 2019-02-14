@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.5.10:
+
+-------------------
+4.5.10 - 2019-02-14
+-------------------
+
+This patch fixes an off-by-one error in the maximum length of :func:`~hypothesis.strategies.emails`.
+Thanks to Krzysztof Jurewicz for :pull:`1812`.
+
 .. _v4.5.9:
 
 ------------------
