@@ -274,19 +274,10 @@ class Shrinker(object):
         """
         self.__engine = engine
         self.__predicate = predicate
-        self.discarding_failed = False
         self.__shrinking_prefixes = set()
         self.__derived_values = {}
 
         self.initial_size = len(initial.buffer)
-
-        # We add a second level of caching local to the shrinker. This is a bit
-        # of a hack. Ideally we'd be able to rely on the engine's functionality
-        # for this. Doing it this way has two benefits: Firstly, the engine
-        # does not currently cache overruns (and probably shouldn't, but could
-        # recreate them on demand if necessary), and secondly Python dicts are
-        # much faster than our pure Python tree-based lookups.
-        self.__test_function_cache = {}
 
         # We keep track of the current best example on the shrink_target
         # attribute.
@@ -296,7 +287,6 @@ class Shrinker(object):
 
         self.initial_calls = self.__engine.call_count
 
-        self.current_pass_depth = 0
         self.passes_by_name = {}
         self.clear_passes()
 
