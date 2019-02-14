@@ -533,26 +533,24 @@ class StateForActualGivenExecution(object):
                 with BuildContext(data, is_final=is_final):
                     with deterministic_PRNG():
                         args, kwargs = data.draw(self.search_strategy)
-                    if expected_failure is not None:
-                        text_repr[0] = arg_string(test, args, kwargs)
+                        if expected_failure is not None:
+                            text_repr[0] = arg_string(test, args, kwargs)
 
-                    if print_example:
-                        example = "%s(%s)" % (
-                            test.__name__,
-                            arg_string(test, args, kwargs),
-                        )
-                        try:
-                            ast.parse(example)
-                        except SyntaxError:
-                            data.can_reproduce_example_from_repr = False
-                        report("Falsifying example: %s" % (example,))
-                    elif current_verbosity() >= Verbosity.verbose:
-                        report(
-                            lambda: "Trying example: %s(%s)"
-                            % (test.__name__, arg_string(test, args, kwargs))
-                        )
-
-                    with deterministic_PRNG():
+                        if print_example:
+                            example = "%s(%s)" % (
+                                test.__name__,
+                                arg_string(test, args, kwargs),
+                            )
+                            try:
+                                ast.parse(example)
+                            except SyntaxError:
+                                data.can_reproduce_example_from_repr = False
+                            report("Falsifying example: %s" % (example,))
+                        elif current_verbosity() >= Verbosity.verbose:
+                            report(
+                                lambda: "Trying example: %s(%s)"
+                                % (test.__name__, arg_string(test, args, kwargs))
+                            )
                         return test(*args, **kwargs)
 
         result = self.test_runner(data, run)
