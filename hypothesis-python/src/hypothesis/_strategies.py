@@ -2161,5 +2161,5 @@ def emails():
     local_part = text(local_chars, min_size=1, max_size=64)
     # TODO: include dot-atoms, quoted strings, escaped chars, etc in local part
     return builds(u"{}@{}".format, local_part, domains()).filter(
-        lambda addr: len(addr) <= 255
+        lambda addr: len(addr) <= 254
     )
