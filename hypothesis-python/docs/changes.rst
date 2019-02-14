@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.5.9:
+
+------------------
+4.5.9 - 2019-02-14
+------------------
+
+This patch removes some unused code from the shrinker.
+There is no user-visible change.
+
 .. _v4.5.8:
 
 ------------------
