@@ -103,3 +103,12 @@ def test_registered_Random_is_seeded_by_random_module_strategy():
 
     entropy.RANDOMS_TO_MANAGE.remove(r)
     assert r not in entropy.RANDOMS_TO_MANAGE
+
+
+@given(st.random_module())
+def test_will_actually_use_the_random_seed(rnd):
+    a = random.randint(0, 100)
+    b = random.randint(0, 100)
+    random.seed(rnd.seed)
+    assert a == random.randint(0, 100)
+    assert b == random.randint(0, 100)
