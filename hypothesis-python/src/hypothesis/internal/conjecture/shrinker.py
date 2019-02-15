@@ -508,6 +508,8 @@ class Shrinker(object):
             "pass_to_descendant",
             "zero_examples",
             "adaptive_example_deletion",
+            "bulk_propagate_examples",
+            "bulk_reorder_examples",
         ]
         self.fixate_shrink_passes(coarse)
 
@@ -518,7 +520,8 @@ class Shrinker(object):
         # wasteful. As a result we only start running them after we've hit
         # a fixed point for the coarse passes at least once.
         fine = [
-            "reorder_examples",
+            "local_propagate_examples",
+            "local_reorder_examples",
             "minimize_floats",
             "minimize_duplicated_blocks",
             "minimize_individual_blocks",
@@ -1145,38 +1148,92 @@ class Shrinker(object):
         del buf[ex.start : ex.end]
         self.incorporate_new_buffer(buf)
 
-    @defines_shrink_pass(
-        lambda self: [
-            (e,) for e in self.examples if not e.trivial and len(e.children) > 1
-        ]
-    )
-    def reorder_examples(self, ex):
-        """This pass allows us to reorder the children of each example.
 
-        For example, consider the following:
+    @derived_value
+    def groups_of_interchangeable_examples(self):
+        """Returns a list of lists of the examples partitioned into
+        "interchangeable" groups - ones where we expect that substituting
+        any of the values for any of the others is likely to produce a good
+        result.
 
-        .. code-block:: python
-
-            import hypothesis.strategies as st
-            from hypothesis import given
-
-            @given(st.text(), st.text())
-            def test_not_equal(x, y):
-                assert x != y
-
-        Without the ability to reorder x and y this could fail either with
-        ``x=""``, ``y="0"``, or the other way around. With reordering it will
-        reliably fail with ``x=""``, ``y="0"``.
+        This is primarily used for the various intermingling passes.
         """
-        st = self.shrink_target
-        pieces = [st.buffer[c.start : c.end] for c in ex.children]
-        prefix = st.buffer[: ex.start]
-        suffix = st.buffer[ex.end :]
-        Ordering.shrink(
-            pieces,
-            lambda ls: self.incorporate_new_buffer(prefix + hbytes().join(ls) + suffix),
-            random=self.random,
-        )
+        label_depth_table = {}
+
+        def label_depth(i, label):
+            if i is None:
+                return 0
+            key = (i, label)
+            try:
+                return label_depth_table[key]
+            except KeyError:
+                pass
+            ex = self.examples[i]
+            own = int(ex.label == label)
+            return label_depth_table.setdefault(key, label_depth(ex.parent, label) + own)
+
+        def effective_depth(ex):
+            return label_depth(ex.index, ex.label)
+
+        grouping = defaultdict(list)
+        for ex in self.examples:
+            grouping[(ex.label, effective_depth(ex))].append(ex)
+        results = [v for v in grouping.values() if len(v) > 1]
+        results.sort(key=lambda x: (len(x), x[0].index))
+        return results
+
+    def bulk_intermingle_examples(self, i, mix_values):
+        group = self.groups_of_interchangeable_examples[i]
+        values = mix_values([self.buffer[e.start:e.end] for e in group])
+        self.incorporate_new_buffer(replace_all(self.buffer, [
+            (e.start, e.end, v) for e, v in zip(group, values)
+        ]))
+
+    def groups_for_intermingle(self):
+        return list(hrange(len(self.groups_of_interchangeable_examples))) 
+
+    def mix_as_min(self, values):
+        return [min(values, key=sort_key)] * len(values)
+
+    def mix_as_sorted(self, values):
+        return sorted(values, key=sort_key)
+
+    @defines_shrink_pass(groups_for_intermingle)
+    def bulk_propagate_examples(self, i):
+        return self.bulk_intermingle_examples(i, self.mix_as_min)
+
+    @defines_shrink_pass(groups_for_intermingle)
+    def bulk_reorder_examples(self, i):
+        return self.bulk_intermingle_examples(i, self.mix_as_sorted)
+
+    def pairs_for_intermingle(self):
+        return [(i, j) for i, v in enumerate(self.groups_of_interchangeable_examples) for j in hrange(len(v))]
+
+    def local_intermingle_examples(self, i, j, choose_replacements):
+        grouping = self.groups_of_interchangeable_examples[i]
+        original = self.shrink_target
+        def can_cover_range(a, b):
+            if b > len(grouping) or a < 0:
+                return False
+            targets = grouping[a:b]
+            replacements = choose_replacements([original.buffer[ex.start:ex.end] for ex in targets])
+            assert len(targets) == len(replacements)
+            return self.consider_new_buffer(replace_all(original.buffer, [
+                (e.start, e.end, r) for e, r in zip(targets, replacements)
+            ]))
+
+        to_right = find_integer(lambda k: can_cover_range(j, j + k))
+        # We can always replace the example with itself.
+        assert to_right > 0
+        find_integer(lambda k: can_cover_range(j - k, j + to_right))
+
+    @defines_shrink_pass(pairs_for_intermingle)
+    def local_propagate_examples(self, i, j):
+        self.local_intermingle_examples(i, j, self.mix_as_min)
+
+    @defines_shrink_pass(pairs_for_intermingle)
+    def local_reorder_examples(self, i, j):
+        self.local_intermingle_examples(i, j, self.mix_as_sorted)
 
     @defines_shrink_pass(lambda self: [(c,) for c in hrange(256)])
     def alphabet_minimize(self, c):
@@ -1358,3 +1415,18 @@ def non_zero_suffix(b):
     while i < len(b) and b[i] == 0:
         i += 1
     return b[i:]
+
+def replace_all(buffer, replacements):
+    """Substitute multiple replacement values into a buffer."""
+
+    result = bytearray()
+    prev = 0
+    offset = 0
+    for u, v, r in replacements:
+        result.extend(buffer[prev:u])
+        result.extend(r)
+        prev = v
+        offset += len(r) - (v - u)
+    result.extend(buffer[prev:])
+    assert len(result) == len(buffer) + offset
+    return hbytes(result)
