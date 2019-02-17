@@ -1,10 +1,12 @@
-===================
-Additional packages
-===================
+======================
+First-party extensions
+======================
 
-Hypothesis itself does not have any dependencies, but there are some packages that
-need additional things installed in order to work.
+Hypothesis has minimal dependencies (just :pypi:`attrs`), to maximise
+compatibility and make installing Hypothesis as easy as possible.
 
+Our integrations with specific packages are therefore provided by ``extra``
+modules that need their individual dependencies installed in order to work.
 You can install these dependencies using the setuptools extra feature as e.g.
 ``pip install hypothesis[django]``. This will check installation of compatible versions.
 
