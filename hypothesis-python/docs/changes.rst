@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.6.0:
+
+------------------
+4.6.0 - 2019-02-18
+------------------
+
+This release changes some inconsistent behavior of :func:`~hypothesis.extra.numpy.arrays`
+from the Numpy extra when asked for an array of ``shape=()``.
+:func:`~hypothesis.extra.numpy.arrays` will now always return a Numpy
+:class:`~numpy:numpy.ndarray`, and the array will always be of the requested dtype.
+
+Thanks to Ryan Turner for this change.
+
 .. _v4.5.12:
 
 -------------------
