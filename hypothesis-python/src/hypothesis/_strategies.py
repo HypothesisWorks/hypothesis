@@ -653,7 +653,7 @@ def sampled_from(elements):
 @overload
 def sampled_from(elements):
     # type: (Type[enum.Enum]) -> SearchStrategy[Any]
-    # `SearchStrategy[Enum]` is unreliable due to mataclass issues.
+    # `SearchStrategy[Enum]` is unreliable due to metaclass issues.
     pass  # pragma: no cover
 
 
