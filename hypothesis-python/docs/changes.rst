@@ -21,6 +21,14 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.5.12:
+
+-------------------
+4.5.12 - 2019-02-18
+-------------------
+
+This release fixes a minor typo in an internal comment. There is no user-visible change.
+
 .. _v4.5.11:
 
 -------------------
