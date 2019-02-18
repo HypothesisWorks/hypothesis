@@ -76,8 +76,9 @@ def test_produces_instances(t):
 
 
 @given(nps.arrays(float, ()))
-def test_empty_dimensions_are_scalars(x):
-    assert isinstance(x, np.dtype(float).type)
+def test_empty_dimensions_are_arrays(x):
+    assert isinstance(x, np.ndarray)
+    assert x.dtype.kind == u"f"
 
 
 @given(nps.arrays(float, (1, 0, 1)))
@@ -239,10 +240,43 @@ def test_can_specify_size_as_an_int(dt):
 
 
 @given(st.data())
-def test_can_draw_shapeless_from_scalars(data):
+def test_can_draw_arrays_from_scalars(data):
     dt = data.draw(nps.scalar_dtypes())
     result = data.draw(nps.arrays(dtype=dt, shape=()))
-    assert isinstance(result, dt.type)
+    assert isinstance(result, np.ndarray)
+    assert result.dtype == dt
+
+
+@given(st.data())
+def test_can_cast_for_scalars(data):
+    # Note: this only passes with castable datatypes, certain dtype
+    # combinations will result in an error if numpy is not able to cast them.
+    dt_elements = np.dtype(data.draw(st.sampled_from(["bool", "<i2", ">i2"])))
+    dt_desired = np.dtype(
+        data.draw(st.sampled_from(["<i2", ">i2", "float16", "float32", "float64"]))
+    )
+    result = data.draw(
+        nps.arrays(dtype=dt_desired, elements=nps.from_dtype(dt_elements), shape=())
+    )
+    assert isinstance(result, np.ndarray)
+    assert result.dtype == dt_desired
+
+
+@given(st.data())
+def test_can_cast_for_arrays(data):
+    # Note: this only passes with castable datatypes, certain dtype
+    # combinations will result in an error if numpy is not able to cast them.
+    dt_elements = np.dtype(data.draw(st.sampled_from(["bool", "<i2", ">i2"])))
+    dt_desired = np.dtype(
+        data.draw(st.sampled_from(["<i2", ">i2", "float16", "float32", "float64"]))
+    )
+    result = data.draw(
+        nps.arrays(
+            dtype=dt_desired, elements=nps.from_dtype(dt_elements), shape=(1, 2, 3)
+        )
+    )
+    assert isinstance(result, np.ndarray)
+    assert result.dtype == dt_desired
 
 
 @given(st.data())

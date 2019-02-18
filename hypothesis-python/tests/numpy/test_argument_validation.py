@@ -41,7 +41,6 @@ def e(a, **kwargs):
         e(nps.array_shapes, min_side=0),
         e(nps.arrays, dtype=float, shape=(0.5,)),
         e(nps.arrays, dtype=object, shape=1),
-        e(nps.arrays, dtype=object, shape=(), elements=st.none()),
         e(nps.arrays, dtype=float, shape=1, fill=3),
         e(nps.byte_string_dtypes, min_len=-1),
         e(nps.byte_string_dtypes, min_len=2, max_len=1),
