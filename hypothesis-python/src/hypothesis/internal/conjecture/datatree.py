@@ -151,7 +151,7 @@ class DataTree(object):
             elif not isinstance(node.discovered, Conclusion):
                 self.__inconsistent_generation()
             else:
-                eixsting = node.discovered
+                existing = node.discovered
         else:  # pragma: no cover
             assert False, "Unexpected node type %s" % (node.__class__.__name__,)
         if existing is not None and existing.status != status:

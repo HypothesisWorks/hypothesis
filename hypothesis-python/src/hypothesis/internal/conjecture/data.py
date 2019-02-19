@@ -26,7 +26,6 @@ from hypothesis.internal.compat import (
     benchmark_time,
     bit_length,
     hbytes,
-    hrange,
     int_from_bytes,
     int_to_bytes,
     text_type,

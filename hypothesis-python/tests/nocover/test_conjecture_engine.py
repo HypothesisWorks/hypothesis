@@ -17,15 +17,11 @@
 
 from __future__ import absolute_import, division, print_function
 
-from random import Random
-
-import pytest
-
 from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
-from hypothesis.internal.conjecture.data import ConjectureData, Status
-from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
+from hypothesis.internal.compat import hbytes, int_from_bytes
+from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.engine import ConjectureRunner
 from tests.common.utils import non_covering_examples
 from tests.cover.test_conjecture_engine import run_to_buffer
 
