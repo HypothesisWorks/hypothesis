@@ -41,7 +41,7 @@ lark-parser==0.6.6
 markupsafe==1.1.0         # via jinja2
 mccabe==0.6.1             # via flake8
 mock==2.0.0
-more-itertools==5.0.0     # via pytest
+more-itertools==5.0.0
 mypy-extensions==0.4.1    # via mypy
 mypy==0.670
 numpy==1.16.1

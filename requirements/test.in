@@ -1,4 +1,5 @@
 attrs
 mock
+more-itertools<6 # Py3-only in 6.0+
 pytest
 pytest-xdist
