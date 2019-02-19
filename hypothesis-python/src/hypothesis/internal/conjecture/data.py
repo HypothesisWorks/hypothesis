@@ -170,6 +170,7 @@ class ConjectureData(object):
         self.block_starts = {}
         self.blocks = []
         self.buffer = bytearray()
+        self.index = 0
         self.output = u""
         self.status = Status.VALID
         self.frozen = False
@@ -207,10 +208,6 @@ class ConjectureData(object):
         # We always have a single example wrapping everything. We want to treat
         # that as depth 0 rather than depth 1.
         return len(self.example_stack) - 1
-
-    @property
-    def index(self):
-        return len(self.buffer)
 
     def all_block_bounds(self):
         return [block.bounds for block in self.blocks]
@@ -307,6 +304,7 @@ class ConjectureData(object):
             assert isinstance(self.buffer, hbytes)
             return
         self.finish_time = benchmark_time()
+        assert len(self.buffer) == self.index
 
         while self.example_stack:
             self.stop_example()
@@ -387,6 +385,7 @@ class ConjectureData(object):
         assert len(result) == n
         assert self.index == initial
         self.buffer.extend(result)
+        self.index = len(self.buffer)
         self.stop_example()
 
     def draw_bytes(self, n):
