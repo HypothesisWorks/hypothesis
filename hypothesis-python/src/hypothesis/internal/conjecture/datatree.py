@@ -17,8 +17,102 @@
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis.internal.compat import hbytes, hrange
-from hypothesis.internal.conjecture.data import Status
+from collections import defaultdict
+
+import attr
+
+from hypothesis.errors import Flaky
+from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
+from hypothesis.internal.conjecture.data import (
+    ConjectureData,
+    Status,
+    StopTest,
+    bits_to_bytes,
+)
+
+
+class PreviouslyUnseenBehaviour(Exception):
+    pass
+
+
+@attr.s(slots=True)
+class PendingNode(object):
+    """Mutable wrapper holding a node that records a value (that
+    may not have been set yet)"""
+
+    discovered = attr.ib(default=None)
+
+    @property
+    def is_exhausted(self):
+        if self.discovered is None:
+            return False
+        return self.discovered.is_exhausted
+
+    def update_exhausted(self):
+        pass
+
+
+@attr.s(slots=True)
+class BranchNode(object):
+    """Records a place where ``draw_bits`` was called unforced."""
+
+    bits = attr.ib()
+    children = attr.ib(default=attr.Factory(lambda: defaultdict(PendingNode)))
+    is_exhausted = attr.ib(default=False)
+
+    def child(self, n):
+        child = self.children[n]
+        if isinstance(child, PendingNode) and child.discovered is not None:
+            child = child.discovered
+            self.children[n] = child
+        return child
+
+    def update_exhausted(self):
+        if self.is_exhausted:
+            return
+        if len(self.children) < 1 << self.bits:
+            return
+        self.is_exhausted = all(c.is_exhausted for c in self.children.values())
+
+
+@attr.s(slots=True)
+class WriteNode(object):
+    """Records a place where ``draw_bits`` was called forced."""
+
+    bits = attr.ib()
+    value = attr.ib()
+    only_child = attr.ib(default=attr.Factory(PendingNode))
+
+    def child(self, n):
+        assert n == self.value
+        if (
+            isinstance(self.only_child, PendingNode)
+            and self.only_child.discovered is not None
+        ):
+            self.only_child = self.only_child.discovered
+        return self.only_child
+
+    @property
+    def is_exhausted(self):
+        return self.only_child.is_exhausted
+
+    def update_exhausted(self):
+        pass
+
+
+@attr.s(slots=True)
+class Conclusion(object):
+    status = attr.ib()
+
+    @property
+    def is_exhausted(self):
+        return True
+
+    def update_exhausted(self):
+        pass
+
+
+CONCLUSIONS = {s: Conclusion(s) for s in Status}
 
 
 class DataTree(object):
@@ -28,258 +122,161 @@ class DataTree(object):
     def __init__(self, cap):
         self.cap = cap
 
-        # Previously-tested byte streams are recorded in a prefix tree, so that
-        # we can:
-        # - Avoid testing the same stream twice (in some cases).
-        # - Avoid testing a prefix of a past stream (in some cases),
-        #   since that should only result in overrun.
-        # - Generate stream prefixes that we haven't tried before.
-
-        # Tree nodes are stored in an array to prevent heavy nesting of data
-        # structures. Branches are dicts mapping bytes to child nodes (which
-        # will in general only be partially populated). Leaves are
-        # ConjectureData objects that have been previously seen as the result
-        # of following that path.
-        self.nodes = [{}]
-
-        # A node is dead if there is nothing left to explore past that point.
-        # Recursively, a node is dead if either it is a leaf or every byte
-        # leads to a dead node when starting from here.
-        self.dead = set()
-
-        # We rewrite the byte stream at various points during parsing, to one
-        # that will produce an equivalent result but is in some sense more
-        # canonical. We keep track of these so that when walking the tree we
-        # can identify nodes where the exact byte value doesn't matter and
-        # treat all bytes there as equivalent. This significantly reduces the
-        # size of the search space and removes a lot of redundant examples.
-
-        # Maps tree indices where to the unique byte that is valid at that
-        # point. Corresponds to data.write() calls.
-        self.forced = {}
-
-        # Maps tree indices to a mask that restricts bytes at that point.
-        # Currently this is only updated by draw_bits, but it potentially
-        # could get used elsewhere.
-        self.masks = {}
-
-        # Where a tree node consists of the beginning of a block we track the
-        # size of said block. This allows us to tell when an example is too
-        # short even if it goes off the unexplored region of the tree - if it
-        # is at the beginning of a block of size 4 but only has 3 bytes left,
-        # it's going to overrun the end of the buffer regardless of the
-        # buffer contents.
-        self.block_sizes = {}
+        self.root = PendingNode()
 
     @property
     def is_exhausted(self):
         """Returns True if every possible node is dead and thus the language
         described must have been fully explored."""
-        return 0 in self.dead
+        return self.root.is_exhausted
+
+    def __inconsistent_generation(self):
+        raise Flaky(
+            "Inconsistent data generation! Data generation behaved differently "
+            "between different runs. Is your data generation depending on external "
+            "state?"
+        )
+
+    def __set_conclusion(self, node, status):
+        """Says that ``status`` occurred at node ``node``. This updates the
+        node if necessary and checks for consistency."""
+        existing = None
+        if isinstance(node, Conclusion):
+            existing = node
+        elif isinstance(node, PendingNode):
+            if node.discovered is None:
+                if status == Status.OVERRUN:
+                    return
+                node.discovered = CONCLUSIONS[status]
+            elif not isinstance(node.discovered, Conclusion):
+                self.__inconsistent_generation()
+            else:
+                eixsting = node.discovered
+        else:  # pragma: no cover
+            assert False, "Unexpected node type %s" % (node.__class__.__name__,)
+        if existing is not None and existing.status != status:
+            raise Flaky(
+                "Inconsistent test results! Test case was %s on first run but %s on second"
+                % (existing.status.name, status)
+            )
 
     def add(self, data):
         """Add a ConjectureData object to the current collection."""
 
-        # First, iterate through the result's buffer, to create the node that
-        # will hold this result. Also note any forced or masked bytes.
-        tree_node = self.nodes[0]
-        indices = []
-        node_index = 0
-        for i, b in enumerate(data.buffer):
-            # We build a list of all the node indices visited on our path
-            # through the tree, since we'll need to refer to them later.
-            indices.append(node_index)
+        current_node = self.root
+        trail = [current_node]
+        for b, n in data.blocks_with_values():
+            is_forced = b.forced or b.start >= self.cap
+            if isinstance(current_node, PendingNode):
+                if current_node.discovered is None:
+                    if is_forced:
+                        current_node.discovered = WriteNode(value=n, bits=b.bits)
+                    else:
+                        current_node.discovered = BranchNode(bits=b.bits)
+                current_node = current_node.discovered
+                assert not isinstance(current_node, PendingNode)
+            if (
+                isinstance(current_node, Conclusion)
+                or isinstance(current_node, WriteNode) != is_forced
+                or current_node.bits != b.bits
+                or (isinstance(current_node, WriteNode) and current_node.value != n)
+            ):
+                self.__inconsistent_generation()
+            current_node = current_node.child(n)
+            trail.append(current_node)
 
-            # If this buffer position was forced or masked, then mark its
-            # corresponding node as forced/masked.
-            if i in data.forced_indices:
-                self.forced[node_index] = b
-            try:
-                self.masks[node_index] = data.masked_indices[i]
-            except KeyError:
-                pass
+        self.__set_conclusion(current_node, data.status)
 
-            try:
-                # Use the current byte to find the next node on our path.
-                node_index = tree_node[b]
-            except KeyError:
-                # That node doesn't exist yet, so create it.
-                node_index = len(self.nodes)
-                # Create a new branch node. If this should actually be a leaf
-                # node, it will be overwritten when we store the result.
-                self.nodes.append({})
-                tree_node[b] = node_index
-
-            tree_node = self.nodes[node_index]
-
-            if node_index in self.dead:
-                # This part of the tree has already been marked as dead, so
-                # there's no need to traverse any deeper.
+        while trail:
+            n = trail.pop()
+            n.update_exhausted()
+            if not n.is_exhausted:
                 break
 
-        # At each node that begins a block, record the size of that block.
-        for u, v in data.all_block_bounds():
-            # This can happen if we hit a dead node when walking the buffer.
-            # In that case we already have this section of the tree mapped.
-            if u >= len(indices):
-                break
-            self.block_sizes[indices[u]] = v - u
+        if isinstance(self.root, PendingNode) and self.root.discovered is not None:
+            self.root = self.root.discovered
 
-        # Forcibly mark all nodes beyond the zero-bound point as dead,
-        # because we don't intend to try any other values there.
-        self.dead.update(indices[self.cap :])
-
-        # Now store this result in the tree (if appropriate), and check if
-        # any nodes need to be marked as dead.
-        if data.status != Status.OVERRUN and node_index not in self.dead:
-            # Mark this node as dead, because it produced a result.
-            # Trying to explore suffixes of it would not be helpful.
-            self.dead.add(node_index)
-            # Store the result in the tree as a leaf. This will overwrite the
-            # branch node that was created during traversal.
-            self.nodes[node_index] = data.status
-
-            # Review the traversed nodes, to see if any should be marked
-            # as dead. We check them in reverse order, because as soon as we
-            # find a live node, all nodes before it must still be live too.
-            for j in reversed(indices):
-                mask = self.masks.get(j, 0xFF)
-                assert _is_simple_mask(mask)
-                max_size = mask + 1
-
-                if len(self.nodes[j]) < max_size and j not in self.forced:
-                    # There are still byte values to explore at this node,
-                    # so it isn't dead yet.
-                    break
-                if set(self.nodes[j].values()).issubset(self.dead):
-                    # Everything beyond this node is known to be dead,
-                    # and there are no more values to explore here (see above),
-                    # so this node must be dead too.
-                    self.dead.add(j)
-                else:
-                    # Even though all of this node's possible values have been
-                    # tried, there are still some deeper nodes that remain
-                    # alive, so this node isn't dead yet.
-                    break
+    def mask(self, node_index):
+        return (1 << self.bit_counts.get(node_index, 8)) - 1
 
     def generate_novel_prefix(self, random):
         """Generate a short random string that (after rewriting) is not
         a prefix of any buffer previously added to the tree."""
         assert not self.is_exhausted
+
+        node = self.root
+        if isinstance(node, PendingNode):
+            # We've not explored yet so everything is novel.
+            assert node.discovered is None
+            return hbytes()
+
         prefix = bytearray()
-        node = 0
+
+        def add_value(v):
+            prefix.extend(int_to_bytes(v, bits_to_bytes(node.bits)))
+
         while True:
-            assert len(prefix) < self.cap
-            assert node not in self.dead
-
-            # Figure out the range of byte values we should be trying.
-            # Normally this will be 0-255, unless the current position has a
-            # mask.
-            mask = self.masks.get(node, 0xFF)
-            assert _is_simple_mask(mask)
-            upper_bound = mask + 1
-
-            try:
-                c = self.forced[node]
-                # This position has a forced byte value, so trying a different
-                # value wouldn't be helpful. Just add the forced byte, and
-                # move on to the next position.
-                prefix.append(c)
-                node = self.nodes[node][c]
-                continue
-            except KeyError:
-                pass
-
-            # Provisionally choose the next byte value.
-            # This will change later if we find that it was a bad choice.
-            c = random.randrange(0, upper_bound)
-
-            try:
-                next_node = self.nodes[node][c]
-                if next_node in self.dead:
-                    # Whoops, the byte value we chose for this position has
-                    # already been fully explored. Let's pick a new value, and
-                    # this time choose a value that's definitely still alive.
-                    choices = [
-                        b
-                        for b in hrange(upper_bound)
-                        if self.nodes[node].get(b) not in self.dead
-                    ]
-                    assert choices
-                    c = random.choice(choices)
-                    node = self.nodes[node][c]
-                else:
-                    # The byte value we chose is in the tree, but it still has
-                    # some unexplored descendants, so it's a valid choice.
-                    node = next_node
-                prefix.append(c)
-            except KeyError:
-                # The byte value we chose isn't in the tree at this position,
-                # which means we've successfully found a novel prefix.
-                prefix.append(c)
+            assert not node.is_exhausted
+            if isinstance(node, WriteNode):
+                add_value(node.value)
+                node = node.child(node.value)
+            elif isinstance(node, BranchNode):
+                while True:
+                    v = random.getrandbits(node.bits)
+                    next_node = node.child(v)
+                    if not next_node.is_exhausted:
+                        add_value(v)
+                        node = next_node
+                        break
+            else:
+                assert isinstance(node, PendingNode)
+                assert node.discovered is None
                 break
-        assert node not in self.dead
         return hbytes(prefix)
+
+    def pretend_test_function(self, data):
+        """Simulates the behaviour of the test function recorded in this
+        tree on data, raising PreviouslyUnseenBehaviour if it ever behaves
+        in a way that we do not know the result of.
+
+        Note that currently this method will not call ``start_example`` or
+        ``stop_example`` so will only behave correctly on data that does
+        not care about the example structure. This will likely change in
+        future."""
+        node = self.root
+        while True:
+            if isinstance(node, PendingNode):
+                node = node.discovered
+                if node is None:
+                    raise PreviouslyUnseenBehaviour()
+            elif isinstance(node, WriteNode):
+                data.draw_bits(node.bits, forced=node.value)
+                node = node.child(node.value)
+            elif isinstance(node, BranchNode):
+                node = node.child(data.draw_bits(node.bits))
+            elif isinstance(node, Conclusion):
+                data.conclude_test(node.status)
+            else:
+                assert False
 
     def rewrite(self, buffer):
         """Use previously seen ConjectureData objects to return a tuple of
         the rewritten buffer and the status we would get from running that
         buffer with the test function. If the status cannot be predicted
         from the existing values it will be None."""
+
         buffer = hbytes(buffer)
 
-        rewritten = bytearray()
-        return_status = None
+        data = ConjectureData.for_buffer(buffer)
 
-        node_index = 0
-        for i, c in enumerate(buffer):
-            # If there's a forced value or a mask at this position, then
-            # pretend that the buffer already contains a matching value,
-            # because the test function is going to do the same.
-            try:
-                c = self.forced[node_index]
-            except KeyError:
-                pass
-            try:
-                c = c & self.masks[node_index]
-            except KeyError:
-                pass
+        try:
+            self.pretend_test_function(data)
+        except PreviouslyUnseenBehaviour:
+            return (buffer, None)
+        except StopTest:
+            pass
 
-            try:
-                # If we know how many bytes are read at this point and
-                # there aren't enough, then it doesn't actually matter
-                # what the values are, we're definitely going to overrun.
-                if i + self.block_sizes[node_index] > len(buffer):
-                    return_status = Status.OVERRUN
-                    break
-            except KeyError:
-                pass
-
-            rewritten.append(c)
-
-            try:
-                node_index = self.nodes[node_index][c]
-            except KeyError:
-                # The byte at this position isn't in the tree, which means
-                # we haven't tested this buffer. Break out of the tree
-                # traversal, and run the test function normally.
-                rewritten.extend(buffer[i + 1 :])
-                assert len(rewritten) == len(buffer)
-                break
-            node = self.nodes[node_index]
-            if isinstance(node, Status):
-                # This buffer (or a prefix of it) has already been tested.
-                # Return the stored result instead of trying it again.
-                assert node != Status.OVERRUN
-                return_status = node
-                break
-        else:
-            # Falling off the end of this loop means that we're about to test
-            # a prefix of a previously-tested byte stream, so the test would
-            # overrun.
-            return_status = Status.OVERRUN
-
-        return hbytes(rewritten), return_status
+        return (data.buffer, data.status)
 
 
 def _is_simple_mask(mask):

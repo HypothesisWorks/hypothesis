@@ -27,7 +27,7 @@ import hypothesis.internal.conjecture.engine as engine_module
 import hypothesis.internal.conjecture.floats as flt
 from hypothesis import HealthCheck, Phase, Verbosity, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
-from hypothesis.errors import FailedHealthCheck
+from hypothesis.errors import FailedHealthCheck, Flaky
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
@@ -188,7 +188,8 @@ def test_detects_flakiness():
             data.mark_interesting()
 
     runner = ConjectureRunner(tf)
-    runner.run()
+    with pytest.raises(Flaky):
+        runner.run()
     assert count == [2]
 
 
@@ -306,16 +307,17 @@ def test_phases_can_disable_shrinking():
 
 
 def test_erratic_draws():
-    n = [0]
+    with pytest.raises(Flaky):
+        n = [0]
 
-    @run_to_buffer
-    def x(data):
-        data.draw_bytes(n[0])
-        data.draw_bytes(255 - n[0])
-        if n[0] == 255:
-            data.mark_interesting()
-        else:
-            n[0] += 1
+        @run_to_buffer
+        def x(data):
+            data.draw_bytes(n[0])
+            data.draw_bytes(255 - n[0])
+            if n[0] == 255:
+                data.mark_interesting()
+            else:
+                n[0] += 1
 
 
 def test_no_read_no_shrink():
@@ -368,7 +370,7 @@ def test_fully_exhaust_base(monkeypatch):
     for c in hrange(4):
         runner.cached_test_function([0, c])
 
-    assert 1 in runner.tree.dead
+    assert runner.tree.root.child(0).is_exhausted
 
     runner.run()
 
@@ -864,10 +866,7 @@ def test_exhaustive_enumeration(prefix, bits, seed):
             data = ConjectureData.for_buffer(hbytes(p + hbytes(2 + len(prefix))))
             runner.test_function(data)
             assert data.status == Status.VALID
-            node = 0
-            for b in data.buffer:
-                node = runner.tree.nodes[node][b]
-            assert node in runner.tree.dead
+        assert runner.tree.is_exhausted
     assert len(seen) == size
 
 
