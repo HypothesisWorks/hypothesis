@@ -66,7 +66,7 @@ strategy ``s`` and a function ``f``, then an example ``s.map(f).example()`` is
 
 e.g.:
 
-.. doctest::
+.. code-block:: pycon
 
     >>> lists(integers()).map(sorted).example()
     [-25527, -24245, -23118, -93, -70, -7, 0, 39, 40, 65, 88, 112, 6189, 9480, 19469, 27256, 32526, 1566924430]
@@ -83,7 +83,7 @@ Filtering
 ``filter`` lets you reject some examples. ``s.filter(f).example()`` is some
 example of ``s`` such that ``f(example)`` is truthy.
 
-.. doctest::
+.. code-block:: pycon
 
     >>> integers().filter(lambda x: x > 11).example()
     26126
@@ -93,7 +93,7 @@ example of ``s`` such that ``f(example)`` is truthy.
 It's important to note that ``filter`` isn't magic and if your condition is too
 hard to satisfy then this can fail:
 
-.. doctest::
+.. code-block:: pycon
 
     >>> integers().filter(lambda x: False).example()
     Traceback (most recent call last):
@@ -108,7 +108,7 @@ and then use ``filter`` to remove things that didn't work out. So for example if
 you wanted pairs of integers (x,y) such that x < y you could do the following:
 
 
-.. doctest::
+.. code-block:: pycon
 
     >>> tuples(integers(), integers()).map(sorted).filter(lambda x: x[0] < x[1]).example()
     [-8543729478746591815, 3760495307320535691]
@@ -175,7 +175,7 @@ The way Hypothesis handles this is with the :py:func:`recursive` function
 which you pass in a base case and a function that, given a strategy for your data type,
 returns a new strategy for it. So for example:
 
-.. doctest::
+.. code-block:: pycon
 
     >>> from string import printable; from pprint import pprint
     >>> json = recursive(none() | booleans() | floats() | text(printable),
@@ -195,7 +195,7 @@ The size control of this works by limiting the maximum number of values that can
 we wanted to only generate really small JSON we could do this as:
 
 
-.. doctest::
+.. code-block:: pycon
 
     >>> small_lists = recursive(booleans(), lists, max_leaves=5)
     >>> small_lists.example()
@@ -228,7 +228,7 @@ easier, and usually improves the display of failing examples.
 
 For example, the following gives you a list and an index into it:
 
-.. doctest::
+.. code-block:: pycon
 
     >>> @composite
     ... def list_and_index(draw, elements=integers()):
@@ -241,7 +241,7 @@ except that the result is reproducible and will minimize correctly. The
 decorated function has the initial argument removed from the list, but will
 accept all the others in the expected order. Defaults are preserved.
 
-.. doctest::
+.. code-block:: pycon
 
     >>> list_and_index()
     list_and_index()

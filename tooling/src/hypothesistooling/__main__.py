@@ -30,7 +30,6 @@ import hypothesistooling.projects.conjecturerust as cr
 import hypothesistooling.projects.hypothesispython as hp
 import hypothesistooling.projects.hypothesisruby as hr
 import hypothesistooling.releasemanagement as rm
-from hypothesistooling import fix_doctests as fd
 from hypothesistooling.scripts import pip_tool
 
 TASKS = {}
@@ -239,11 +238,6 @@ def check_format():
 
 def check_not_changed():
     subprocess.check_call(["git", "diff", "--exit-code"])
-
-
-@task()
-def fix_doctests():
-    fd.main()
 
 
 @task()

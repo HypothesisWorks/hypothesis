@@ -191,7 +191,7 @@ conversions behave as you would expect them to. These tests should all pass,
 and are mostly a demonstration of some useful sorts of thing to test with
 Hypothesis, and how the :func:`~hypothesis.strategies.datetimes` strategy works.
 
-.. doctest::
+.. code-block:: pycon
 
     >>> from datetime import timedelta
     >>> from hypothesis.extra.pytz import timezones
