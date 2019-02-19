@@ -19,9 +19,9 @@ The key is that we treat any bug in Hypothesis as a bug in our test suite
 too - and think about the kinds of bugs that might not be caught, then write
 tests that would catch them.
 
-We also use a variety of tools to check our code automatically.  This includes
-formatting, import order, linting, and doctests (so examples in docs don't
-break).  All of this is checked in CI - which means that once the build is
+We also use a variety of tools to check our code automatically, including
+formatting, import order, linting, and typing our API with Mypy.
+All of this is checked in CI - which means that once the build is
 green, humans can all focus on meaningful review rather than nitpicking
 operator spacing.
 

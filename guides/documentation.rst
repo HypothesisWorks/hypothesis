@@ -28,8 +28,8 @@ That's not much advice, but it's what we have so far.
 Using Sphinx
 ------------
 
-We use `the Sphinx documentation system <http://sphinx-doc.org>`_ to run
-doctests and convert the .rst files into html with formatting and
+We use `the Sphinx documentation system <http://sphinx-doc.org>`_ to
+convert the .rst files into html with formatting and
 cross-references.  Without repeating the docs for Sphinx, here are some tips:
 
 - When documenting a Python object (function, class, module, etc.), you can
@@ -45,10 +45,6 @@ cross-references.  Without repeating the docs for Sphinx, here are some tips:
 
 - For the formatting and also hyperlinks, all cross-references should use the
   Sphinx cross-referencing syntax rather than plain text.
-
-- Wherever possible, example code should be written as a doctest.  This
-  ensures that if the example raises deprecation warnings, or simply breaks,
-  it will be flagged in CI and can be fixed immediately.
 
 
 -----------------
@@ -93,15 +89,3 @@ which should:
   "Thanks to <your name> for this bug fix / feature / contribution"
   (depending on which it is).  If this is your first contribution,
   don't forget to add yourself to contributors.rst!
-
-
------------------
-Updating Doctests
------------------
-
-We use the Sphinx ``doctest`` builder to ensure that all example code snippets
-are kept up to date.  To make this less tedious, you can run
-``scripts/fix_doctests.py`` (under Python 3) to... fix failing doctests.
-
-The script is pretty good, but doesn't handle ``+ELLIPSIS`` or
-``+NORMALIZE_WHITESPACE`` options.  Review the diff before committing.

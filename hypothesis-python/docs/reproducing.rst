@@ -109,7 +109,7 @@ When a test fails with a falsifying example, Hypothesis may print out a
 suggestion to use ``@reproduce_failure`` on the test to recreate the problem
 as follows:
 
-.. doctest::
+.. code-block:: pycon
 
     >>> from hypothesis import settings, given, PrintSettings
     >>> import hypothesis.strategies as st

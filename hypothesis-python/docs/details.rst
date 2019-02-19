@@ -24,7 +24,7 @@ intermediate steps of your test. That's where the ``note`` function comes in:
 
 .. autofunction:: hypothesis.note
 
-.. doctest::
+.. code-block:: pycon
 
     >>> from hypothesis import given, note, strategies as st
     >>> @given(st.lists(st.integers()), st.randoms())
@@ -282,7 +282,7 @@ generation. For example for integers you can specify ``min`` and ``max`` values 
 integers you want.
 If you want to see exactly what a strategy produces you can ask for an example:
 
-.. doctest::
+.. code-block:: pycon
 
     >>> integers(min_value=0, max_value=10).example()
     1
@@ -290,7 +290,7 @@ If you want to see exactly what a strategy produces you can ask for an example:
 Many strategies are built out of other strategies. For example, if you want
 to define a tuple you need to say what goes in each element:
 
-.. doctest::
+.. code-block:: pycon
 
     >>> from hypothesis.strategies import tuples
     >>> tuples(integers(), integers()).example()
@@ -506,7 +506,7 @@ experimenting with conditions for filtering data.
 
 .. autofunction:: hypothesis.find
 
-.. doctest::
+.. code-block:: pycon
 
     >>> from hypothesis import find
     >>> from hypothesis.strategies import sets, lists, integers
@@ -524,7 +524,7 @@ predicate it must satisfy.
 Of course not all conditions are satisfiable. If you ask Hypothesis for an
 example to a condition that is always false it will raise an error:
 
-.. doctest::
+.. code-block:: pycon
 
     >>> find(integers(), lambda x: False)
     Traceback (most recent call last):
@@ -554,7 +554,7 @@ no strategy was passed to :func:`~hypothesis.strategies.builds`,
 You can also pass the special value :const:`hypothesis.infer` as a keyword
 argument, to force this inference for arguments with a default value.
 
-.. doctest::
+.. code-block:: pycon
 
     >>> def func(a: int, b: str):
     ...     return [a, b]

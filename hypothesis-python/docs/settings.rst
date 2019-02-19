@@ -84,7 +84,7 @@ To see what's going on while Hypothesis runs your tests, you can turn
 up the verbosity setting. This works with both :func:`~hypothesis.find`
 and :func:`@given <hypothesis.given>`.
 
-.. doctest::
+.. code-block:: pycon
 
     >>> from hypothesis import find, settings, Verbosity
     >>> from hypothesis.strategies import lists, integers
@@ -122,7 +122,7 @@ Building settings objects
 Settings can be created by calling :class:`~hypothesis.settings` with any of the available settings
 values. Any absent ones will be set to defaults:
 
-.. doctest::
+.. code-block:: pycon
 
     >>> from hypothesis import settings
     >>> settings().max_examples
@@ -134,7 +134,7 @@ You can also pass a 'parent' settings object as the first argument,
 and any settings you do not specify as keyword arguments will be
 copied from the parent settings:
 
-.. doctest::
+.. code-block:: pycon
 
     >>> parent = settings(max_examples=10)
     >>> child = settings(parent, deadline=None)
@@ -177,7 +177,7 @@ can be loaded at any time.
 Loading a profile changes the default settings but will not change the behavior
 of tests that explicitly change the settings.
 
-.. doctest::
+.. code-block:: pycon
 
     >>> from hypothesis import settings
     >>> settings.register_profile("ci", max_examples=1000)
@@ -190,7 +190,7 @@ of tests that explicitly change the settings.
 Instead of loading the profile and overriding the defaults you can retrieve profiles for
 specific tests.
 
-.. doctest::
+.. code-block:: pycon
 
     >>> settings.get_profile("ci").max_examples
     1000
@@ -200,7 +200,7 @@ This is the suggested pattern for running your tests on CI.
 The code below should run in a `conftest.py` or any setup/initialization section of your test suite.
 If this variable is not defined the Hypothesis defined defaults will be loaded.
 
-.. doctest::
+.. code-block:: pycon
 
     >>> import os
     >>> from hypothesis import settings, Verbosity
