@@ -183,8 +183,6 @@ class ConjectureData(object):
         global_test_counter += 1
         self.start_time = benchmark_time()
         self.events = set()
-        self.forced_indices = set()
-        self.bit_counts = {}
         self.interesting_origin = None
         self.draw_times = []
         self.max_depth = 0
@@ -351,7 +349,6 @@ class ConjectureData(object):
 
         if forced is not None:
             buf = bytearray(int_to_bytes(forced, n_bytes))
-            self.forced_indices.update(hrange(self.index, self.index + n_bytes))
         else:
             buf = bytearray(self._draw_bytes(self, n_bytes))
         assert len(buf) == n_bytes
@@ -362,7 +359,6 @@ class ConjectureData(object):
             mask = (1 << (n % 8)) - 1
             assert mask != 0
             buf[0] &= mask
-            self.bit_counts[self.index] = n % 8
         buf = hbytes(buf)
         result = int_from_bytes(buf)
 

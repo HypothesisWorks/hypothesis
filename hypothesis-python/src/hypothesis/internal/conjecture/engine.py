@@ -505,13 +505,11 @@ class ConjectureRunner(object):
         """
         initial = len(result)
         if data.depth * 2 >= MAX_DEPTH or data.index >= self.cap:
-            data.forced_indices.update(hrange(data.index, data.index + initial))
             data.hit_zero_bound = True
             result = hbytes(initial)
         elif data.index + initial >= self.cap:
             data.hit_zero_bound = True
             n = self.cap - data.index
-            data.forced_indices.update(hrange(self.cap, data.index + initial))
             result = result[:n] + hbytes(initial - n)
         assert len(result) == initial
         return result
@@ -616,8 +614,8 @@ class ConjectureRunner(object):
             # to be whatever value is written there). That means that once we've
             # tried the zero value, there's nothing left for us to do, so we
             # exit early here.
-            for i in hrange(self.cap):
-                if i not in zero_data.forced_indices:
+            for b in zero_data.blocks:
+                if b.start < self.cap and not b.forced:
                     break
             else:
                 self.exit_with(ExitReason.finished)
@@ -675,8 +673,9 @@ class ConjectureRunner(object):
                 # really "count" for distributional purposes, and if we
                 # leave them in then they can cause the fraction of non
                 # zero bytes to increase on redraw instead of decrease.
-                for i in overdrawn.forced_indices:
-                    buffer[i] = 0
+                for b in overdrawn.blocks:
+                    if b.forced:
+                        buffer[b.start : b.end] = hbytes(b.length)
 
                 self.random.shuffle(buffer)
                 buffer = hbytes(buffer)

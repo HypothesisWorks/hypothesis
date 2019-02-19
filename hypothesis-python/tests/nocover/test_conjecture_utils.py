@@ -44,7 +44,7 @@ def test_gives_the_correct_probabilities():
             assert probabilities[c] >= Fraction(counts[c], 2 ** 16)
         except StopTest:
             pass
-        if 1 in data.forced_indices:
+        if data.blocks[1].forced:
             i += 256
         else:
             i += 1
