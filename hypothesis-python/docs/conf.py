@@ -30,7 +30,6 @@ autodoc_member_order = "bysource"
 
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.doctest",
     "sphinx.ext.extlinks",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
@@ -74,26 +73,6 @@ intersphinx_mapping = {
 }
 
 autodoc_mock_imports = ["pandas"]
-
-doctest_global_setup = """
-# Some standard imports
-from hypothesis import *
-from hypothesis.strategies import *
-# Run deterministically, and don't save examples
-import random
-_random_state = random.getstate()
-random.seed(0)
-doctest_settings = settings(database=None, derandomize=True)
-settings.register_profile('doctests', doctest_settings)
-settings.load_profile('doctests')
-# Never show deprecated behaviour in code examples
-import warnings
-warnings.filterwarnings('error', category=DeprecationWarning)
-"""
-
-doctest_global_cleanup = """
-random.setstate(_random_state)
-"""
 
 # This config value must be a dictionary of external sites, mapping unique
 # short alias names to a base URL and a prefix.
