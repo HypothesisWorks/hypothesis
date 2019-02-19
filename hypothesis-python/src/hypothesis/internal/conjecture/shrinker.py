@@ -22,7 +22,7 @@ from collections import defaultdict
 import attr
 
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.data import Overrun, Status
+from hypothesis.internal.conjecture.data import ConjectureResult, Overrun, Status
 from hypothesis.internal.conjecture.floats import (
     DRAW_FLOAT_LABEL,
     float_to_lex,
@@ -583,8 +583,10 @@ class Shrinker(object):
     def examples(self):
         return self.shrink_target.examples
 
-    def all_block_bounds(self):
-        return self.shrink_target.all_block_bounds()
+    def all_block_bounds(self, target=None):
+        if target is None:
+            target = self.shrink_target
+        return [(b.start, b.end) for b in target.blocks]
 
     @derived_value
     def examples_by_label(self):
@@ -704,7 +706,7 @@ class Shrinker(object):
 
         current = self.shrink_target
 
-        blocked = [current.buffer[u:v] for u, v in current.all_block_bounds()]
+        blocked = [current.buffer[u:v] for u, v in self.all_block_bounds(current)]
 
         changed = [
             i
@@ -749,7 +751,7 @@ class Shrinker(object):
         self.__changed_blocks.add(i)
 
     def update_shrink_target(self, new_target):
-        assert new_target.frozen
+        assert isinstance(new_target, ConjectureResult)
         if self.shrink_target is not None:
             current = self.shrink_target.buffer
             new = new_target.buffer
@@ -757,7 +759,7 @@ class Shrinker(object):
             self.shrinks += 1
             if (
                 len(new_target.blocks) != len(self.shrink_target.blocks)
-                or new_target.all_block_bounds() != self.all_block_bounds()
+                or self.all_block_bounds(new_target) != self.all_block_bounds()
             ):
                 self.clear_change_tracking()
             else:

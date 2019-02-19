@@ -118,7 +118,8 @@ class DataTree(object):
                 break
 
         # At each node that begins a block, record the size of that block.
-        for u, v in data.all_block_bounds():
+        for b in data.blocks:
+            u, v = b.bounds
             # This can happen if we hit a dead node when walking the buffer.
             # In that case we already have this section of the tree mapped.
             if u >= len(indices):

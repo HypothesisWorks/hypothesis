@@ -38,6 +38,7 @@ from hypothesis.internal.compat import (
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
     ConjectureData,
+    ConjectureResult,
     Overrun,
     Status,
     StopTest,
@@ -191,7 +192,7 @@ class ConjectureRunner(object):
 
             if changed:
                 self.save_buffer(data.buffer)
-                self.interesting_examples[key] = data
+                self.interesting_examples[key] = data.as_result()
                 self.__data_cache.pin(data.buffer)
                 self.shrunk_examples.discard(key)
 
@@ -330,10 +331,7 @@ class ConjectureRunner(object):
         return b".".join((self.database_key, b"coverage"))
 
     def note_details(self, data):
-        if data.status == Status.OVERRUN:
-            self.__data_cache[data.buffer] = Overrun
-        else:
-            self.__data_cache[data.buffer] = data
+        self.__data_cache[data.buffer] = data.as_result()
         runtime = max(data.finish_time - data.start_time, 0.0)
         self.all_runtimes.append(runtime)
         self.all_drawtimes.extend(data.draw_times)
@@ -616,10 +614,19 @@ class ConjectureRunner(object):
             # to be whatever value is written there). That means that once we've
             # tried the zero value, there's nothing left for us to do, so we
             # exit early here.
-            for i in hrange(self.cap):
-                if i not in zero_data.forced_indices:
+            has_non_forced = False
+
+            # It's impossible to fall out of this loop normally because if we
+            # did then that would mean that all blocks are writes, so we would
+            # already have triggered the exhaustedness check on the tree and
+            # finished running.
+            for b in zero_data.blocks:  # pragma: no branch
+                if b.start >= self.cap:
                     break
-            else:
+                if not b.forced:
+                    has_non_forced = True
+                    break
+            if not has_non_forced:
                 self.exit_with(ExitReason.finished)
 
         self.health_check_state = HealthCheckState()
@@ -805,15 +812,22 @@ class ConjectureRunner(object):
         fresh result.
         """
         buffer = hbytes(buffer)
+
+        def check_result(result):
+            assert result is Overrun or (
+                isinstance(result, ConjectureResult) and result.status != Status.OVERRUN
+            )
+            return result
+
         try:
-            return self.__data_cache[buffer]
+            return check_result(self.__data_cache[buffer])
         except KeyError:
             pass
 
         rewritten, status = self.tree.rewrite(buffer)
 
         try:
-            result = self.__data_cache[rewritten]
+            result = check_result(self.__data_cache[rewritten])
         except KeyError:
             pass
         else:
@@ -828,8 +842,9 @@ class ConjectureRunner(object):
         result = None
 
         if status != Status.OVERRUN:
-            result = ConjectureData.for_buffer(buffer)
-            self.test_function(result)
+            data = ConjectureData.for_buffer(buffer)
+            self.test_function(data)
+            result = check_result(data.as_result())
             assert status is None or result.status == status
             status = result.status
         if status == Status.OVERRUN:

@@ -612,11 +612,12 @@ class StateForActualGivenExecution(object):
                 raise StopTest(data.testcounter)
             else:
                 tb = get_trimmed_traceback()
-                data.__expected_traceback = "".join(
+                info = data.extra_information
+                info.__expected_traceback = "".join(
                     traceback.format_exception(type(e), e, tb)
                 )
-                data.__expected_exception = e
-                verbose_report(data.__expected_traceback)
+                info.__expected_exception = e
+                verbose_report(info.__expected_traceback)
 
                 origin = traceback.extract_tb(tb)[-1]
                 filename = origin[0]
@@ -667,17 +668,19 @@ class StateForActualGivenExecution(object):
         flaky = 0
 
         for falsifying_example in self.falsifying_examples:
+            info = falsifying_example.extra_information
+
             ran_example = ConjectureData.for_buffer(falsifying_example.buffer)
             self.__was_flaky = False
-            assert falsifying_example.__expected_exception is not None
+            assert info.__expected_exception is not None
             try:
                 self.execute(
                     ran_example,
                     print_example=True,
                     is_final=True,
                     expected_failure=(
-                        falsifying_example.__expected_exception,
-                        falsifying_example.__expected_traceback,
+                        info.__expected_exception,
+                        info.__expected_traceback,
                     ),
                 )
             except (UnsatisfiedAssumption, StopTest):
