@@ -21,6 +21,14 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.6.1:
+
+------------------
+4.6.1 - 2019-02-19
+------------------
+
+This release is a trivial micro-optimisation inside Hypothesis which should result in it using significantly less memory.
+
 .. _v4.6.0:
 
 ------------------
