@@ -342,7 +342,7 @@ class ConjectureData(object):
         returned that integer."""
         self.__assert_not_frozen("draw_bits")
         if n == 0:
-            result = 0
+            return 0
         n_bytes = bits_to_bytes(n)
         self.__check_capacity(n_bytes)
 
@@ -385,8 +385,6 @@ class ConjectureData(object):
         return result
 
     def draw_bytes(self, n):
-        if n == 0:
-            return hbytes(b"")
         return int_to_bytes(self.draw_bits(8 * n), n)
 
     def write(self, string):
