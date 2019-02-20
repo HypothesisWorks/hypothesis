@@ -1567,4 +1567,4 @@ def test_block_programs_are_adaptive():
     shrinker.add_new_pass(block_program("X"))
     shrinker.shrink()
     assert len(shrinker.shrink_target.buffer) == 1
-    assert shrinker.calls <= 40
+    assert shrinker.calls <= 60
