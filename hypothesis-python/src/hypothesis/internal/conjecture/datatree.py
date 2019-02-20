@@ -30,6 +30,9 @@ from hypothesis.internal.conjecture.data import (
     bits_to_bytes,
 )
 
+if False:
+    from typing import Dict
+
 
 class PreviouslyUnseenBehaviour(Exception):
     pass
@@ -57,7 +60,9 @@ class BranchNode(object):
     """Records a place where ``draw_bits`` was called unforced."""
 
     bits = attr.ib()
-    children = attr.ib(default=attr.Factory(lambda: defaultdict(PendingNode)))
+    children = attr.ib(
+        default=attr.Factory(lambda: defaultdict(PendingNode))
+    )  # type: Dict[int, object]
     is_exhausted = attr.ib(default=False)
 
     def child(self, n):
