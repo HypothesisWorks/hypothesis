@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 from enum import IntEnum
+from weakref import ref as weakref
 
 import attr
 
@@ -78,6 +79,14 @@ class Example(object):
     # Index of this example inside the overall list of examples.
     index = attr.ib()
 
+    # Index of the parent of this example, or None if this is the root.
+    parent = attr.ib()
+
+    # A weakref to the owning ConjectureData object. Note that that object
+    # refers back to here, so this can never be GCed, it's only a weak ref
+    # to prevent cycles.
+    owner_ref = attr.ib()
+
     start = attr.ib()
     end = attr.ib(default=None)
 
@@ -92,12 +101,17 @@ class Example(object):
     # generated value and try again.
     discarded = attr.ib(default=None, repr=False)
 
-    # List of child examples, represented as indices into the example list.
-    children = attr.ib(default=attr.Factory(list), repr=False)
-
     @property
     def length(self):
         return self.end - self.start
+
+    @property
+    def owner(self):
+        return self.owner_ref()
+
+    @property
+    def children(self):
+        return self.owner.children(self)
 
 
 @attr.s(slots=True, frozen=True)
@@ -188,6 +202,7 @@ class ConjectureData(object):
         self.examples = []
         self.example_stack = []
         self.has_discards = False
+        self.__children = None
 
         top = self.start_example(TOP_LABEL)
         assert top.depth == 0
@@ -258,16 +273,30 @@ class ConjectureData(object):
         finally:
             self.stop_example()
 
+    def children(self, example):
+        assert self.frozen
+        if self.__children is None:
+            children = [[] for _ in hrange(len(self.examples))]
+            for ex in self.examples:
+                if ex.parent is not None:
+                    children[ex.parent].append(ex)
+            self.__children = children
+        return self.__children[example.index]
+
     def start_example(self, label):
         self.__assert_not_frozen("start_example")
 
         i = len(self.examples)
         new_depth = self.depth + 1
-        ex = Example(index=i, depth=new_depth, label=label, start=self.index)
+        ex = Example(
+            index=i,
+            depth=new_depth,
+            label=label,
+            start=self.index,
+            parent=self.example_stack[-1] if self.example_stack else None,
+            owner_ref=weakref(self),
+        )
         self.examples.append(ex)
-        if self.example_stack:
-            p = self.example_stack[-1]
-            self.examples[p].children.append(ex)
         self.example_stack.append(i)
         self.max_depth = max(self.max_depth, self.depth)
         return ex
