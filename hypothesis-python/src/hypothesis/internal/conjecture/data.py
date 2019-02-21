@@ -33,6 +33,7 @@ from hypothesis.internal.compat import (
 )
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.escalation import mark_for_escalation
+from hypothesis.utils.conventions import UniqueIdentifier
 
 TOP_LABEL = calc_label_from_name("top")
 DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
@@ -166,6 +167,62 @@ global_test_counter = 0
 MAX_DEPTH = 100
 
 
+def calc_examples(self):
+    """Build the list of examples from either a ``ConjectureResult``
+    or a ``ConjectureData`` object by interpreting the recorded
+    example boundaries and parsing them into a tree of ``Example``
+    objects, returning the resulting list.
+
+    This is needed because we want to calculate these lazily.
+    The ``Example`` tree is fairly memory hungry and mildly
+    expensive to compute and, especially during generation, we
+    will often not need it, so we only want to compute it on
+    demand."""
+    assert self.example_boundaries
+
+    example_stack = []
+    examples = []
+
+    non_trivial_block_starts = {
+        b.start for b in self.blocks if not (b.all_zero or b.forced)
+    }
+
+    for index, labels in self.example_boundaries:
+        for label in labels:
+            if label in (Stop, StopDiscard):
+                discard = label is StopDiscard
+                k = example_stack.pop()
+                ex = examples[k]
+                ex.end = index
+
+                if ex.length == 0:
+                    ex.trivial = True
+
+                if example_stack and not ex.trivial:
+                    examples[example_stack[-1]].trivial = False
+
+                ex.discarded = discard
+            else:
+                i = len(examples)
+                ex = Example(
+                    index=i,
+                    depth=len(example_stack),
+                    label=label,
+                    start=index,
+                    trivial=index not in non_trivial_block_starts,
+                )
+                examples.append(ex)
+                if example_stack:
+                    p = example_stack[-1]
+                    examples[p].children.append(ex)
+                example_stack.append(i)
+    for ex in examples:
+        assert ex.end is not None
+
+    assert examples
+    return examples
+
+
 @attr.s(slots=True)
 class ConjectureResult(object):
     """Result class storing the parts of ConjectureData that we
@@ -176,15 +233,29 @@ class ConjectureResult(object):
     interesting_origin = attr.ib()
     buffer = attr.ib()
     blocks = attr.ib()
-    examples = attr.ib()
-    has_discards = attr.ib()
+    example_boundaries = attr.ib()
     output = attr.ib()
     extra_information = attr.ib()
+    __examples = attr.ib(init=False, default=None)
 
     index = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         self.index = len(self.buffer)
+
+    @property
+    def examples(self):
+        if self.__examples is None:
+            self.__examples = calc_examples(self)
+            self.example_boundaries = None
+
+        assert self.example_boundaries is None
+        return self.__examples
+
+
+# Special "labels" used to indicate the end of example boundaries
+Stop = UniqueIdentifier("Stop")
+StopDiscard = UniqueIdentifier("StopDiscard")
 
 
 class ConjectureData(object):
@@ -219,13 +290,20 @@ class ConjectureData(object):
         self.draw_times = []
         self.max_depth = 0
 
-        self.examples = []
-        self.example_stack = []
-        self.has_discards = False
+        self.example_boundaries = []
+
         self.__result = None
 
-        top = self.start_example(TOP_LABEL)
-        assert top.depth == 0
+        # Normally unpopulated but we need this in the niche case
+        # that self.as_result() is Overrun but we still want the
+        # examples for reporting purposes.
+        self.__examples = None
+
+        # We want the top level example to have depth 0, so we start
+        # at -1.
+        self.depth = -1
+
+        self.start_example(TOP_LABEL)
         self.extra_information = ExtraInformation()
 
     def __repr__(self):
@@ -247,9 +325,8 @@ class ConjectureData(object):
                 status=self.status,
                 interesting_origin=self.interesting_origin,
                 buffer=self.buffer,
-                examples=self.examples,
+                example_boundaries=self.example_boundaries,
                 blocks=self.blocks,
-                has_discards=self.has_discards,
                 output=self.output,
                 extra_information=self.extra_information
                 if self.extra_information.has_information()
@@ -260,12 +337,6 @@ class ConjectureData(object):
     def __assert_not_frozen(self, name):
         if self.frozen:
             raise Frozen("Cannot call %s on frozen ConjectureData" % (name,))
-
-    @property
-    def depth(self):
-        # We always have a single example wrapping everything. We want to treat
-        # that as depth 0 rather than depth 1.
-        return len(self.example_stack) - 1
 
     def note(self, value):
         self.__assert_not_frozen("note")
@@ -313,46 +384,36 @@ class ConjectureData(object):
         finally:
             self.stop_example()
 
+    def current_example_labels(self):
+        if not self.example_boundaries or self.example_boundaries[-1][0] < self.index:
+            self.example_boundaries.append((self.index, []))
+        return self.example_boundaries[-1][-1]
+
     def start_example(self, label):
         self.__assert_not_frozen("start_example")
-
-        i = len(self.examples)
-        new_depth = self.depth + 1
-        ex = Example(index=i, depth=new_depth, label=label, start=self.index)
-        self.examples.append(ex)
-        if self.example_stack:
-            p = self.example_stack[-1]
-            self.examples[p].children.append(ex)
-        self.example_stack.append(i)
+        self.current_example_labels().append(label)
+        self.depth += 1
         self.max_depth = max(self.max_depth, self.depth)
-        return ex
 
     def stop_example(self, discard=False):
         if self.frozen:
             return
-
-        k = self.example_stack.pop()
-        ex = self.examples[k]
-        ex.end = self.index
-
-        if self.example_stack and not ex.trivial:
-            self.examples[self.example_stack[-1]].trivial = False
-
-        # We don't want to count empty examples as discards even if the flag
-        # says we should. This leads to situations like
-        # https://github.com/HypothesisWorks/hypothesis/issues/1230
-        # where it can look like we should discard data but there's nothing
-        # useful for us to do.
-        if self.index == ex.start:
-            discard = False
-
-        ex.discarded = discard
-
-        if discard:
-            self.has_discards = True
+        self.current_example_labels().append(StopDiscard if discard else Stop)
+        self.depth -= 1
+        assert self.depth >= -1
 
     def note_event(self, event):
         self.events.add(event)
+
+    @property
+    def examples(self):
+        result = self.as_result()
+        if result is Overrun:
+            if self.__examples is None:
+                self.__examples = calc_examples(self)
+            return self.__examples
+        else:
+            return result.examples
 
     def freeze(self):
         if self.frozen:
@@ -361,23 +422,12 @@ class ConjectureData(object):
         self.finish_time = benchmark_time()
         assert len(self.buffer) == self.index
 
-        while self.example_stack:
+        # Always finish by closing all remaining examples so that we have a
+        # valid tree..
+        while self.depth >= 0:
             self.stop_example()
 
         self.frozen = True
-
-        if self.status >= Status.VALID:
-            discards = []
-            for ex in self.examples:
-                if ex.length == 0:
-                    continue
-                if discards:
-                    u, v = discards[-1]
-                    if u <= ex.start <= ex.end <= v:
-                        continue
-                if ex.discarded:
-                    discards.append((ex.start, ex.end))
-                    continue
 
         self.buffer = hbytes(self.buffer)
         self.events = frozenset(self.events)
@@ -421,7 +471,7 @@ class ConjectureData(object):
             raise StopTest(self.testcounter)
 
     def __write(self, result, forced=False):
-        ex = self.start_example(DRAW_BYTES_LABEL)
+        self.start_example(DRAW_BYTES_LABEL)
         initial = self.index
         n = len(result)
 
@@ -432,7 +482,6 @@ class ConjectureData(object):
             forced=forced,
             all_zero=not any(result),
         )
-        ex.trivial = block.trivial
 
         self.block_starts.setdefault(n, []).append(block.start)
         self.blocks.append(block)

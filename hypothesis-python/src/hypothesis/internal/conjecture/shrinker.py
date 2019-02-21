@@ -902,14 +902,19 @@ class Shrinker(object):
         returns False if there is discarded data and removing it does not work,
         otherwise returns True.
         """
-        while self.shrink_target.has_discards:
+        while True:
             discarded = []
 
             for ex in self.shrink_target.examples:
-                if ex.discarded and (not discarded or ex.start >= discarded[-1][-1]):
+                if (
+                    ex.length > 0
+                    and ex.discarded
+                    and (not discarded or ex.start >= discarded[-1][-1])
+                ):
                     discarded.append((ex.start, ex.end))
 
-            assert discarded
+            if not discarded:
+                break
 
             attempt = bytearray(self.shrink_target.buffer)
             for u, v in reversed(discarded):
