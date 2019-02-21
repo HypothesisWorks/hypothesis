@@ -139,6 +139,14 @@ def test_can_create_arrays_of_composite_types():
         assert isinstance(x, Foo)
 
 
+@given(st.lists(st.integers()), st.data())
+def test_can_create_zero_dim_arrays_of_lists(x, data):
+    arr = data.draw(nps.arrays(object, (), elements=st.just(x)))
+    assert arr.shape == ()
+    assert arr.dtype == np.dtype(object)
+    assert arr.item() == x
+
+
 def test_can_create_arrays_of_tuples():
     arr = minimal(
         nps.arrays(object, 10, st.tuples(st.integers(), st.integers())),
@@ -164,7 +172,7 @@ def test_can_generate_array_shapes(shape):
 
 
 @settings(deadline=None)
-@given(st.integers(1, 10), st.integers(0, 9), st.integers(1), st.integers(0))
+@given(st.integers(0, 10), st.integers(0, 9), st.integers(0), st.integers(0))
 def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
     smallest = minimal(
         nps.array_shapes(
