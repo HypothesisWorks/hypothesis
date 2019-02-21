@@ -21,6 +21,24 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.7.0:
+
+------------------
+4.7.0 - 2019-02-21
+------------------
+
+This patch allows :func:`~hypothesis.extra.numpy.array_shapes` to generate shapes
+with side-length or even dimension zero, though the minimum still defaults to
+one.  These shapes are rare and have some odd behavior, but are particularly
+important to test for just that reason!
+
+In a related bigfix, :func:`~hypothesis.extra.numpy.arrays` now supports generating
+zero-dimensional arrays with `dtype=object` and a strategy for iterable elements.
+Previously, the array element would incorrectly be set to the first item in the
+generated iterable.
+
+Thanks to Ryan Turner for continuing to improve our Numpy support.
+
 .. _v4.6.1:
 
 ------------------
