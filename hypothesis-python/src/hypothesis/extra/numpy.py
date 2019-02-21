@@ -389,7 +389,10 @@ def arrays(
         shape = (shape,)
     shape = tuple(shape)
     if not shape:
-        return np.full(shape=(), fill_value=draw(elements), dtype=dtype)
+        # We use .itemset() instead of np.full because the latter cannot set tuples as elements.
+        arr = np.empty(shape=(), dtype=dtype)
+        arr.itemset(draw(elements))
+        return arr
     fill = fill_for(elements=elements, unique=unique, fill=fill)
     return draw(ArrayStrategy(elements, shape, dtype, fill, unique))
 
@@ -398,8 +401,8 @@ def arrays(
 def array_shapes(min_dims=1, max_dims=3, min_side=1, max_side=10):
     # type: (int, int, int, int) -> st.SearchStrategy[Tuple[int, ...]]
     """Return a strategy for array shapes (tuples of int >= 1)."""
-    order_check("dims", 1, min_dims, max_dims)
-    order_check("side", 1, min_side, max_side)
+    order_check("dims", 0, min_dims, max_dims)
+    order_check("side", 0, min_side, max_side)
     return st.lists(
         st.integers(min_side, max_side), min_size=min_dims, max_size=max_dims
     ).map(tuple)
