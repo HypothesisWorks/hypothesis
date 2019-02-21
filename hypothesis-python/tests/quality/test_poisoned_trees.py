@@ -109,7 +109,7 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
 
     assert len(ConjectureData.for_buffer(data.buffer).draw(strat)) == size
 
-    starts = data.block_starts[2]
+    starts = [b.start for b in data.blocks if b.length == 2]
     assert len(starts) % 2 == 0
 
     for i in hrange(0, len(starts), 2):
