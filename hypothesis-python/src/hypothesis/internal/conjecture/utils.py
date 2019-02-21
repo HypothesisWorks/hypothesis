@@ -154,12 +154,25 @@ def choice(data, values):
     return values[integer_range(data, 0, len(values) - 1)]
 
 
+def getrandbits(data, n):
+    # This method is equivalent to data.draw_bits(n) except that it fails
+    # to set the mask. This method should die but is currently maintaining
+    # bugwards compatibility with some oddities of behaviour that we've
+    # not yet fully debugged. See
+    # https://github.com/HypothesisWorks/hypothesis/issues/1827
+    # for details.
+    n_bytes = n // 8
+    if n % 8 != 0:
+        n_bytes += 1
+    return data.draw_bits(n_bytes * 8) & ((1 << n) - 1)
+
+
 FLOAT_PREFIX = 0b1111111111 << 52
 FULL_FLOAT = int_to_float(FLOAT_PREFIX | ((2 << 53) - 1)) - 1
 
 
 def fractional_float(data):
-    return (int_to_float(FLOAT_PREFIX | data.draw_bits(52)) - 1) / FULL_FLOAT
+    return (int_to_float(FLOAT_PREFIX | getrandbits(data, 52)) - 1) / FULL_FLOAT
 
 
 def boolean(data):
