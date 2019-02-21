@@ -172,3 +172,13 @@ def test_has_cached_examples_even_when_overrun():
     assert d.status == Status.OVERRUN
     assert any(ex.label == 3 and ex.length == 1 for ex in d.examples)
     assert d.examples is d.examples
+
+
+def test_can_write_empty_string():
+    d = ConjectureData.for_buffer([1, 1, 1])
+    d.draw_bits(1)
+    d.write(hbytes())
+    d.draw_bits(1)
+    d.draw_bits(0, forced=0)
+    d.draw_bits(1)
+    assert d.buffer == hbytes([1, 1, 1])

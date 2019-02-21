@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 from array import array
 
-from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
+from hypothesis.internal.compat import hrange
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.floats import float_to_int, int_to_float
 
@@ -246,6 +246,6 @@ def draw_float(data):
 
 
 def write_float(data, f):
-    data.write(int_to_bytes(float_to_lex(abs(f)), 8))
+    data.draw_bits(64, forced=float_to_lex(abs(f)))
     sign = float_to_int(f) >> 63
-    data.write(hbytes([sign]))
+    data.draw_bits(1, forced=sign)

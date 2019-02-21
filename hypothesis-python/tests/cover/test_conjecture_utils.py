@@ -88,20 +88,6 @@ def test_unbiased_coin_has_no_second_order():
     assert counts[False] == counts[True] > 0
 
 
-def test_can_get_odd_number_of_bits():
-    counts = Counter()
-    for i in range(256):
-        x = cu.getrandbits(ConjectureData.for_buffer([i]), 3)
-        assert 0 <= x <= 7
-        counts[x] += 1
-    assert len(set(counts.values())) == 1
-
-
-def test_8_bits_just_reads_stream():
-    for i in range(256):
-        assert cu.getrandbits(ConjectureData.for_buffer([i]), 8) == i
-
-
 def test_drawing_certain_coin_still_writes():
     data = ConjectureData.for_buffer([0, 1])
     assert not data.buffer

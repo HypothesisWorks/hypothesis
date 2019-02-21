@@ -28,7 +28,6 @@ from hypothesis.internal.compat import (
     abc,
     bit_length,
     floor,
-    hbytes,
     hrange,
     int_from_bytes,
     qualname,
@@ -69,7 +68,7 @@ def integer_range(data, lower, upper, center=None):
         # on other values we don't suddenly disappear when the gap shrinks to
         # zero - if that happens then often the data stream becomes misaligned
         # and we fail to shrink in cases where we really should be able to.
-        data.write(hbytes([0]))
+        data.draw_bits(1, forced=0)
         return int(lower)
 
     if center is None:
@@ -155,19 +154,12 @@ def choice(data, values):
     return values[integer_range(data, 0, len(values) - 1)]
 
 
-def getrandbits(data, n):
-    n_bytes = n // 8
-    if n % 8 != 0:
-        n_bytes += 1
-    return int_from_bytes(data.draw_bytes(n_bytes)) & ((1 << n) - 1)
-
-
 FLOAT_PREFIX = 0b1111111111 << 52
 FULL_FLOAT = int_to_float(FLOAT_PREFIX | ((2 << 53) - 1)) - 1
 
 
 def fractional_float(data):
-    return (int_to_float(FLOAT_PREFIX | getrandbits(data, 52)) - 1) / FULL_FLOAT
+    return (int_to_float(FLOAT_PREFIX | data.draw_bits(52)) - 1) / FULL_FLOAT
 
 
 def boolean(data):
@@ -198,10 +190,10 @@ def biased_coin(data, p):
         # to write a byte to the data stream anyway so that these don't cause
         # difficulties when shrinking.
         if p <= 0:
-            data.write(hbytes([0]))
+            data.draw_bits(1, forced=0)
             result = False
         elif p >= 1:
-            data.write(hbytes([1]))
+            data.draw_bits(1, forced=1)
             result = True
         else:
             falsey = floor(256 * (1 - p))

@@ -28,6 +28,7 @@ from hypothesis.internal.compat import (
     hbytes,
     hrange,
     int_from_bytes,
+    int_to_bytes,
     text_type,
     unicode_safe_repr,
 )
@@ -275,7 +276,6 @@ class ConjectureData(object):
         self.max_length = max_length
         self.is_find = False
         self._draw_bytes = draw_bytes
-        self.overdraw = 0
         self.block_starts = {}
         self.blocks = []
         self.buffer = bytearray()
@@ -437,84 +437,95 @@ class ConjectureData(object):
         self.events = frozenset(self.events)
         del self._draw_bytes
 
-    def draw_bits(self, n):
+    def draw_bits(self, n, forced=None):
+        """Return an ``n``-bit integer from the underlying source of
+        bytes. If ``forced`` is set to an integer will instead
+        ignore the underlying source and simulate a draw as if it had
+        returned that integer."""
         self.__assert_not_frozen("draw_bits")
         if n == 0:
-            result = 0
-        elif n % 8 == 0:
-            return int_from_bytes(self.draw_bytes(n // 8))
+            return 0
+        assert n > 0
+        n_bytes = bits_to_bytes(n)
+        self.__check_capacity(n_bytes)
+
+        if forced is not None:
+            buf = bytearray(int_to_bytes(forced, n_bytes))
         else:
-            n_bytes = (n // 8) + 1
-            self.__check_capacity(n_bytes)
             buf = bytearray(self._draw_bytes(self, n_bytes))
-            assert len(buf) == n_bytes
+        assert len(buf) == n_bytes
+
+        # If we have a number of bits that is not a multiple of 8
+        # we have to mask off the high bits.
+        if n % 8 != 0:
             mask = (1 << (n % 8)) - 1
+            assert mask != 0
             buf[0] &= mask
             self.masked_indices[self.index] = mask
-            buf = hbytes(buf)
-            self.__write(buf)
-            result = int_from_bytes(buf)
+        buf = hbytes(buf)
+        result = int_from_bytes(buf)
+
+        self.start_example(DRAW_BYTES_LABEL)
+        initial = self.index
+
+        block = Block(
+            start=initial,
+            end=initial + n_bytes,
+            index=len(self.blocks),
+            forced=forced is not None,
+            all_zero=result == 0,
+        )
+
+        if block.forced:
+            self.forced_indices.update(hrange(block.start, block.end))
+        self.block_starts.setdefault(n_bytes, []).append(block.start)
+        self.blocks.append(block)
+        assert self.blocks[block.index] is block
+        assert self.index == initial
+        self.buffer.extend(buf)
+        self.index = len(self.buffer)
+        self.stop_example()
 
         assert bit_length(result) <= n
         return result
 
+    def draw_bytes(self, n):
+        """Draw n bytes from the underlying source."""
+        return int_to_bytes(self.draw_bits(8 * n), n)
+
     def write(self, string):
-        string = hbytes(string)
+        """Write ``string`` to the output buffer."""
         self.__assert_not_frozen("write")
-        self.__check_capacity(len(string))
-        original = self.index
-        self.__write(string, forced=True)
-        self.forced_indices.update(hrange(original, self.index))
-        return string
+        string = hbytes(string)
+        if not string:
+            return
+        self.draw_bits(len(string) * 8, forced=int_from_bytes(string))
+        return self.buffer[-len(string) :]
 
     def __check_capacity(self, n):
         if self.index + n > self.max_length:
-            self.overdraw = self.index + n - self.max_length
-            self.status = Status.OVERRUN
-            self.freeze()
-            raise StopTest(self.testcounter)
+            self.mark_overrun()
 
-    def __write(self, result, forced=False):
-        self.start_example(DRAW_BYTES_LABEL)
-        initial = self.index
-        n = len(result)
-
-        block = Block(
-            start=initial,
-            end=initial + n,
-            index=len(self.blocks),
-            forced=forced,
-            all_zero=not any(result),
-        )
-
-        self.block_starts.setdefault(n, []).append(block.start)
-        self.blocks.append(block)
-        assert self.blocks[block.index] is block
-        assert len(result) == n
-        assert self.index == initial
-        self.buffer.extend(result)
-        self.index = len(self.buffer)
-        self.stop_example()
-
-    def draw_bytes(self, n):
-        self.__assert_not_frozen("draw_bytes")
-        if n == 0:
-            return hbytes(b"")
-        self.__check_capacity(n)
-        result = self._draw_bytes(self, n)
-        assert len(result) == n
-        self.__write(result)
-        return hbytes(result)
+    def conclude_test(self, status, interesting_origin=None):
+        assert (interesting_origin is None) or (status == Status.INTERESTING)
+        self.__assert_not_frozen("conclude_test")
+        self.interesting_origin = interesting_origin
+        self.status = status
+        self.freeze()
+        raise StopTest(self.testcounter)
 
     def mark_interesting(self, interesting_origin=None):
-        self.__assert_not_frozen("mark_interesting")
-        self.interesting_origin = interesting_origin
-        self.status = Status.INTERESTING
-        self.freeze()
-        raise StopTest(self.testcounter)
+        self.conclude_test(Status.INTERESTING, interesting_origin)
 
     def mark_invalid(self):
-        self.__assert_not_frozen("mark_invalid")
-        self.status = Status.INVALID
-        self.freeze()
-        raise StopTest(self.testcounter)
+        self.conclude_test(Status.INVALID)
+
+    def mark_overrun(self):
+        self.conclude_test(Status.OVERRUN)
+
+
+def bits_to_bytes(n):
+    n_bytes = n // 8
+    if n % 8 != 0:
+        n_bytes += 1
+    return n_bytes
