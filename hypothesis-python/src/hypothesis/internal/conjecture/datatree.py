@@ -30,7 +30,7 @@ from hypothesis.internal.conjecture.data import (
     bits_to_bytes,
 )
 
-if False:
+if False:  # pragma: noqa
     from typing import Dict
 
 
