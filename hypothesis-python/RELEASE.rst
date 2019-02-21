@@ -1,8 +1,13 @@
 RELEASE_TYPE: minor
 
-Fixes that `hypothesis.extra.numpy.array_shapes` cannot take a zero minimum
-dimension or side. We also allow `hypothesis.extra.numpy.arrays` to generate
-zero dimensional arrays with iterable objects (e.g., tuples) as their element.
-These are blocking issues in pull request #1784.
+This patch allows :func:`~hypothesis.extra.numpy.array_shapes` to generate shapes
+with side-length or even dimension zero, though the minimum still defaults to
+one.  These shapes are rare and have some odd behavior, but are particularly
+important to test for just that reason!
 
-Thanks to Ryan Turner for this change.
+In a related bigfix, :func:`~hypothesis.extra.numpy.arrays` now supports generating
+zero-dimensional arrays with `dtype=object` and a strategy for iterable elements.
+Previously, the array element would incorrectly be set to the first item in the
+generated iterable.
+
+Thanks to Ryan Turner for continuing to improve our Numpy support.
