@@ -30,11 +30,11 @@ def test_tracebacks_omit_hypothesis_internals(verbosity):
     @settings(verbosity=verbosity)
     @given(st.just(False))
     def simplest_failure(x):
-        assert x
+        raise ValueError()
 
     try:
         simplest_failure()
-    except AssertionError as e:
+    except ValueError as e:
         tb = traceback.extract_tb(e.__traceback__)
         # Unless in debug mode, Hypothesis adds 1 frame - the least possible!
         # (4 frames: this one, simplest_failure, internal frame, assert False)

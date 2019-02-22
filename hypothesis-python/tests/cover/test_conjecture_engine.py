@@ -831,7 +831,7 @@ def test_discarding_can_fail(monkeypatch):
         data.mark_interesting()
 
     shrinker.remove_discarded()
-    assert shrinker.shrink_target.has_discards
+    assert any(e.discarded and e.length > 0 for e in shrinker.shrink_target.examples)
 
 
 @pytest.mark.parametrize("bits", [3, 9])

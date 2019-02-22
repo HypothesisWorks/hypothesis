@@ -117,14 +117,6 @@ def test_does_not_double_freeze_in_interval_close():
     assert not any(eg.end is None for eg in x.examples)
 
 
-def test_empty_discards_do_not_count():
-    x = ConjectureData.for_buffer(b"")
-    x.start_example(label=1)
-    x.stop_example(discard=True)
-    x.freeze()
-    assert not x.has_discards
-
-
 def test_triviality():
     d = ConjectureData.for_buffer([1, 0, 1])
 
@@ -159,3 +151,24 @@ def test_example_depth_marking():
 
     depths = set((ex.length, ex.depth) for ex in d.examples)
     assert depths == set([(2, 1), (3, 2), (6, 2), (9, 1), (12, 1), (23, 0)])
+
+
+def test_has_examples_even_when_empty():
+    d = ConjectureData.for_buffer(hbytes())
+    d.draw(st.just(False))
+    d.freeze()
+    assert d.examples
+
+
+def test_has_cached_examples_even_when_overrun():
+    d = ConjectureData.for_buffer(hbytes(1))
+    d.start_example(3)
+    d.draw_bits(1)
+    d.stop_example()
+    try:
+        d.draw_bits(1)
+    except StopTest:
+        pass
+    assert d.status == Status.OVERRUN
+    assert any(ex.label == 3 and ex.length == 1 for ex in d.examples)
+    assert d.examples is d.examples
