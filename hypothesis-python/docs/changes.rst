@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.7.4:
+
+------------------
+4.7.4 - 2019-02-22
+------------------
+
+This is a docs-only patch, noting that because :pypi:`Lark` is under active
+development at version 0.x, ``hypothesis[lark]`` APIs may break in minor
+releases if necessary to keep up with the upstream package.
+
 .. _v4.7.3:
 
 ------------------
