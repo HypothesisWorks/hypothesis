@@ -97,7 +97,18 @@ with possible reductions represented as operations on the tree.  An attempted
 shrink succeeds if the new tree can be converted into an example, and the
 resulting example triggers the same bug in the test function.
 
-The simplest way to keep things local is to ensure that any ``.filter(...)``
+The most common way we see users breaking data locality is by drawing a size,
+then drawing a collection of that size.  This is tempting because it's simple
+and it _works_, but it's often much slower than the alternatives.
+
+.. code:: python
+
+    # Both of these strategies can generate exactly the same kind of examples,
+    # but the second has better performance as well as style.
+    integers(0, 10).flatmap(lambda n: st.lists(..., min_size=n, max_size=n))
+    st.lists(..., min_size=1, max_size=10)
+
+Another easy way to keep things local is to ensure that any ``.filter(...)``
 or ``assume(...)`` calls you use are as close as possible to the relevant part
 of the strategy.  That way, Hypothesis can retry just the part that failed
 instead of the entire strategy, which might be much slower.
@@ -107,17 +118,18 @@ valid (and preferably local) shrinks to the final example.  For example:
 
 .. code:: python
 
-    # This form of loop is hard to shrink, because we'd have to reduce
-    # iterations and delete anything in the loop simultaneously.
-    # We *do* try this, but it's relatively expensive.
-    iterations = draw(integers(0, 10))
-    for _ in range(iterations):
+    # This form of loop is hard to shrink, because we'd have to reduce `n` and
+    # delete something in the loop simultaneously.  It's equivalent to the
+    # `.flatmap` example above.  We _do_ shrink this, but much more slowly.
+    n = draw(integers(0, 10))
+    for _ in range(n):
         ...
         draw(...)
         ...
 
-    # In this form, the shrinker can see a repeated struture of labels and
-    # delete one loop iteration without touching anything else.  Much better!
+    # In this form, the shrinker can see a repeated struture of labels
+    # and delete one loop iteration without touching anything else.
+    # We use a variant of this trick to generate collections internally!
     while draw(integers(0, x)) > threshold:
         ...
         draw(...)
