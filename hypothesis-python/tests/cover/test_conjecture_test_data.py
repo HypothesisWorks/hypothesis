@@ -194,3 +194,28 @@ def test_blocks_preserve_identity():
     result = d.as_result()
     for i, b in enumerate(blocks):
         assert result.blocks[i] is b
+
+
+def test_compact_blocks_during_generation():
+    d = ConjectureData.for_buffer([1] * 10)
+    for _ in hrange(5):
+        d.draw_bits(1)
+    assert len(list(d.blocks)) == 5
+    for _ in hrange(5):
+        d.draw_bits(1)
+    assert len(list(d.blocks)) == 10
+
+
+def test_handles_indices_like_a_list():
+    n = 5
+    d = ConjectureData.for_buffer([1] * n)
+    for _ in hrange(n):
+        d.draw_bits(1)
+    assert d.blocks[-1] is d.blocks[n - 1]
+    assert d.blocks[-n] is d.blocks[0]
+
+    with pytest.raises(IndexError):
+        d.blocks[n]
+
+    with pytest.raises(IndexError):
+        d.blocks[-n - 1]
