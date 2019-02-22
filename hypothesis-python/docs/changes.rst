@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.7.2:
+
+------------------
+4.7.2 - 2019-02-22
+------------------
+
+This release changes Hypothesis's internal representation of a test case to calculate some expensive structural information on demand rather than eagerly.
+This should reduce memory usage a fair bit, and may make generation somewhat faster.
+
 .. _v4.7.1:
 
 ------------------
