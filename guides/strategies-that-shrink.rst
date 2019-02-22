@@ -201,10 +201,13 @@ This comes up when choosing which action to take in stateful testing, where
 we would like deleting any single step to still give us a valid buffer (though
 perhaps one which doesn't reproduce the bug).
 
-That means that we need to choose from the same list of options every time,
-even though some might be ruled out by preconditions.  We now implement this
-mainly via the 'shrink open' trick (it's very versatile), but have used other
-approaches in the past.
+That means that we need to choose from the same list of rules every time,
+even though a different subset might ruled out by preconditions if we delete
+one of the earlier steps.  This is implemented using a variant of "lucky
+generation": we choose an index into the full list of rules, and if it's valid
+we're done.  If not, calculate the list of valid rules, choose one, and write
+the index of the chosen rule to the buffer.  Deleting two adjacent blocks
+("invalid index" and "valid choice") will then leave only a valid index!
 
 When choosing a possible value for a "bundle" in stateful testing
 (analogous to a stask of variables), we use an index from the *end* and can
