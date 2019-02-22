@@ -504,10 +504,10 @@ class Shrinker(object):
         # rest). After these have reached a fixed point the test case should
         # be reasonably small and well normalized.
         coarse = [
-            "alphabet_minimize",
             "pass_to_descendant",
-            "zero_examples",
             "adaptive_example_deletion",
+            "alphabet_minimize",
+            "zero_examples",
         ]
         self.fixate_shrink_passes(coarse)
 
@@ -547,13 +547,25 @@ class Shrinker(object):
         initial = None
         while initial is not self.shrink_target:
             initial = self.shrink_target
-            for sp in passes:
-                if sp.arguments:
-                    sp.runs += 1
+            passes_with_steps = []
 
-            passes_with_steps = [
-                (sp, step) for sp in passes for step in sp.generate_steps()
-            ]
+            for sp in passes:
+                if not sp.arguments:
+                    continue
+                sp.runs += 1
+                steps = sp.generate_steps()
+                self.random.shuffle(steps)
+                failures = 0
+                while steps and failures < 10:
+                    initial = self.shrink_target
+                    initial_calls = self.calls
+                    sp.run_step(steps.pop())
+                    if initial_calls != self.calls:
+                        if initial is self.shrink_target:
+                            failures += 1
+                        else:
+                            failures = 0
+                passes_with_steps.extend([(sp, s) for s in steps])
             self.random.shuffle(passes_with_steps)
 
             # We run remove_discarded after every step to do cleanup
