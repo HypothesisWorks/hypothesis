@@ -17,7 +17,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-from array import array
 from collections import defaultdict
 from enum import IntEnum
 
@@ -25,6 +24,7 @@ import attr
 
 from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import (
+    array_or_list,
     benchmark_time,
     bit_length,
     hbytes,
@@ -175,7 +175,7 @@ def calc_bits_to_array_codes():
         trial_number = (1 << len(result)) - 1
         assert trial_number.bit_length() == len(result)
         try:
-            array(code, [trial_number])
+            array_or_list(code, [trial_number])
             result.append(code)
         except OverflowError:
             code = next(code_iter)
@@ -206,7 +206,7 @@ class Blocks(object):
 
     def __init__(self, owner):
         self.owner = owner
-        self.__endpoints = array("B", [])
+        self.__endpoints = array_or_list("B", [])
         self.__blocks = {}
         self.__count = 0
         self.__sparse = True
@@ -222,7 +222,7 @@ class Blocks(object):
         try:
             self.__endpoints.append(n)
         except OverflowError:
-            self.__endpoints = array(
+            self.__endpoints = array_or_list(
                 BIT_LENGTH_TO_ARRAY_CODES[n.bit_length()], self.__endpoints
             )
             self.__endpoints.append(n)
