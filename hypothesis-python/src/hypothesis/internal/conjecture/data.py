@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 from array import array
+from collections import defaultdict
 from enum import IntEnum
 
 import attr
@@ -461,7 +462,10 @@ class ConjectureData(object):
         self.max_length = max_length
         self.is_find = False
         self._draw_bytes = draw_bytes
-        self.block_starts = {}
+        self.overdraw = 0
+        self.__block_starts = defaultdict(list)
+        self.__block_starts_calculated_to = 0
+
         self.blocks = Blocks(self)
         self.buffer = bytearray()
         self.index = 0
@@ -670,7 +674,6 @@ class ConjectureData(object):
         if block.forced:
             self.forced_indices.update(hrange(block.start, block.end))
 
-        self.block_starts.setdefault(n_bytes, []).append(block.start)
         self.buffer.extend(buf)
         self.index = len(self.buffer)
 
@@ -683,6 +686,15 @@ class ConjectureData(object):
 
         assert bit_length(result) <= n
         return result
+
+    @property
+    def block_starts(self):
+        while self.__block_starts_calculated_to < len(self.blocks):
+            i = self.__block_starts_calculated_to
+            self.__block_starts_calculated_to += 1
+            u, v = self.blocks.bounds(i)
+            self.__block_starts[v - u].append(u)
+        return self.__block_starts
 
     def draw_bytes(self, n):
         """Draw n bytes from the underlying source."""
