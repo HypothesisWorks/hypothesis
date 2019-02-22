@@ -423,7 +423,7 @@ class ConjectureData(object):
         assert len(self.buffer) == self.index
 
         # Always finish by closing all remaining examples so that we have a
-        # valid tree..
+        # valid tree.
         while self.depth >= 0:
             self.stop_example()
 
