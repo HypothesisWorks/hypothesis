@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.7.3:
+
+------------------
+4.7.3 - 2019-02-22
+------------------
+
+This changes Hypothesis to no longer import various test frameworks by default (if they are installed).
+which will speed up the initial ``import hypothesis`` call.
+
 .. _v4.7.2:
 
 ------------------
