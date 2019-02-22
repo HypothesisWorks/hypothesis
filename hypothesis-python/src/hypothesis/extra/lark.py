@@ -29,6 +29,11 @@ Lark already `supports loading grammars
 <https://github.com/lark-parser/lark#how-to-use-nearley-grammars-in-lark>`_
 from `nearley.js <https://nearley.js.org/>`_, so you may not have to write
 your own at all.
+
+Note that as Lark is at version 0.x, this module *may* break API compatibility
+in minor releases if supporting the latest version of Lark would otherwise be
+infeasible.  We may also be quite aggressive in bumping the minimum version of
+Lark, unless someone volunteers to either fund or do the maintainence.
 """
 
 from __future__ import absolute_import, division, print_function
