@@ -17,6 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+from array import array
 from enum import IntEnum
 
 import attr
@@ -162,6 +163,177 @@ class Block(object):
         return self.forced or self.all_zero
 
 
+def calc_bits_to_array_codes():
+    """Return a list of the smallest array codes that can be used to
+    represent an unsigned integer of size n, for n from 0 to 64 inclusive.
+    """
+    code_iter = iter(["B", "H", "I", "L", "Q"])
+    result = []
+    code = next(code_iter)
+    while len(result) < 65:
+        trial_number = (1 << len(result)) - 1
+        assert trial_number.bit_length() == len(result)
+        try:
+            array(code, [trial_number])
+            result.append(code)
+        except OverflowError:
+            code = next(code_iter)
+    return result
+
+
+BIT_LENGTH_TO_ARRAY_CODES = calc_bits_to_array_codes()
+
+
+class Blocks(object):
+    """A lazily calculated list of blocks for a particular ``ConjectureResult``
+    or ``ConjectureData`` object.
+
+    Pretends to be a list containing ``Block`` objects but actually only
+    contains their endpoints right up until the point where you want to
+    access the actual block, at which point it is constructed.
+
+    This is designed to be as space efficient as possible, so will at
+    various points silently transform its representation into one
+    that is better suited for the current access pattern.
+
+    In addition, it has a number of convenience methods for accessing
+    properties of the block object at index ``i`` that should generally
+    be preferred to using the Block objects directly, as it will not
+    have to allocate the actual object."""
+
+    __slots__ = ("__endpoints", "owner", "__blocks", "__count", "__sparse")
+
+    def __init__(self, owner):
+        self.owner = owner
+        self.__endpoints = array("B", [])
+        self.__blocks = {}
+        self.__count = 0
+        self.__sparse = True
+
+    def add_endpoint(self, n):
+        """Add n to the list of enpoints."""
+        assert isinstance(self.owner, ConjectureData)
+
+        # We store endpoints as the smallest size integer we can get
+        # away with. When we try to add an endpoint that is too large,
+        # we upgrade the array to the smallest word size needed to store
+        # the new result.
+        try:
+            self.__endpoints.append(n)
+        except OverflowError:
+            self.__endpoints = array(
+                BIT_LENGTH_TO_ARRAY_CODES[n.bit_length()], self.__endpoints
+            )
+            self.__endpoints.append(n)
+
+    def transfer_ownership(self, new_owner):
+        """Used to move ``Blocks`` over to a ``ConjectureResult`` object
+        when that is read to be used and we no longer want to keep the
+        whole ``ConjectureData`` around."""
+        assert isinstance(new_owner, ConjectureResult)
+        self.owner = new_owner
+
+    def start(self, i):
+        """Equivalent to self[i].start."""
+        if i == 0:
+            return 0
+        else:
+            return self.__endpoints[i - 1]
+
+    def end(self, i):
+        """Equivalent to self[i].end."""
+        return self.__endpoints[i]
+
+    def bounds(self, i):
+        """Equivalent to self[i].bounds."""
+        return (self.start(i), self.end(i))
+
+    def all_bounds(self):
+        """Equivalent to [(b.start, b.end) for b in self]."""
+        result = []
+        prev = 0
+        for e in self.__endpoints:
+            result.append((prev, e))
+            prev = e
+        return result
+
+    def __len__(self):
+        return len(self.__endpoints)
+
+    def __known_block(self, i):
+        try:
+            return self.__blocks[i]
+        except (KeyError, IndexError):
+            return None
+
+    def __getitem__(self, i):
+        n = len(self)
+        if i < -n or i >= n:
+            raise IndexError("Index %d out of range [-%d, %d)" % (i, n, n))
+        if i < 0:
+            i += n
+        assert i >= 0
+        result = self.__known_block(i)
+        if result is not None:
+            return result
+
+        # We store the blocks as a sparse dict mapping indices to the
+        # actual result, but this isn't the best representation once we
+        # stop being sparse and want to use most of the blocks. Switch
+        # over to a list at that point.
+        if self.__sparse and len(self.__blocks) * 2 >= len(self.__endpoints):
+            new_blocks = [None] * len(self.__endpoints)
+            for k, v in self.__blocks.items():
+                new_blocks[k] = v
+            self.__sparse = False
+            self.__blocks = new_blocks
+            assert self.__blocks[i] is None
+
+        start = self.start(i)
+        end = self.__endpoints[i]
+        self.__count += 1
+        assert self.__count <= len(self.__endpoints)
+        result = Block(
+            start=start,
+            end=end,
+            index=i,
+            forced=start in self.owner.forced_indices,
+            all_zero=not any(self.owner.buffer[start:end]),
+        )
+        try:
+            self.__blocks[i] = result
+        except IndexError:
+            assert isinstance(self.__blocks, list)
+            assert len(self.__blocks) < len(self.__endpoints)
+            self.__blocks.extend([None] * (len(self.__endpoints) - len(self.__blocks)))
+            self.__blocks[i] = result
+
+        # If this happens then we have now fully calculated every block
+        # and don't need to keep the reference to the owner around. We delete
+        # it here so that there is no circular reference to make the gc work
+        # harder.
+        if self.__count == len(self.__endpoints) and isinstance(
+            self.owner, ConjectureResult
+        ):
+            self.owner = None
+
+        return result
+
+    def __iter__(self):
+        for i in hrange(len(self)):
+            yield self[i]
+
+    def __repr__(self):
+        parts = []
+        for i in hrange(len(self)):
+            b = self.__known_block(i)
+            if b is None:
+                parts.append("...")
+            else:
+                parts.append(repr(b))
+        return "Block([%s])" % (", ".join(parts),)
+
+
 class _Overrun(object):
     status = Status.OVERRUN
 
@@ -251,12 +423,15 @@ class ConjectureResult(object):
     output = attr.ib()
     extra_information = attr.ib()
     has_discards = attr.ib()
-    __examples = attr.ib(init=False, default=None)
+    forced_indices = attr.ib(repr=False)
+
+    __examples = attr.ib(init=False, repr=False, default=None)
 
     index = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         self.index = len(self.buffer)
+        self.forced_indices = frozenset(self.forced_indices)
 
     @property
     def examples(self):
@@ -287,7 +462,7 @@ class ConjectureData(object):
         self.is_find = False
         self._draw_bytes = draw_bytes
         self.block_starts = {}
-        self.blocks = []
+        self.blocks = Blocks(self)
         self.buffer = bytearray()
         self.index = 0
         self.output = u""
@@ -347,7 +522,9 @@ class ConjectureData(object):
                 if self.extra_information.has_information()
                 else None,
                 has_discards=self.has_discards,
+                forced_indices=self.forced_indices,
             )
+            self.blocks.transfer_ownership(self.__result)
         return self.__result
 
     def __assert_not_frozen(self, name):
@@ -492,12 +669,16 @@ class ConjectureData(object):
 
         if block.forced:
             self.forced_indices.update(hrange(block.start, block.end))
+
         self.block_starts.setdefault(n_bytes, []).append(block.start)
-        self.blocks.append(block)
-        assert self.blocks[block.index] is block
-        assert self.index == initial
         self.buffer.extend(buf)
         self.index = len(self.buffer)
+
+        if forced is not None:
+            self.forced_indices.update(hrange(initial, self.index))
+
+        self.blocks.add_endpoint(self.index)
+
         self.stop_example()
 
         assert bit_length(result) <= n

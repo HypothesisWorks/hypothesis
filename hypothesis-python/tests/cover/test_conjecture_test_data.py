@@ -21,7 +21,7 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import Frozen
-from hypothesis.internal.compat import hbytes
+from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
@@ -182,3 +182,15 @@ def test_can_write_empty_string():
     d.draw_bits(0, forced=0)
     d.draw_bits(1)
     assert d.buffer == hbytes([1, 1, 1])
+
+
+def test_blocks_preserve_identity():
+    n = 10
+    d = ConjectureData.for_buffer([1] * 10)
+    for _ in hrange(n):
+        d.draw_bits(1)
+    d.freeze()
+    blocks = [d.blocks[i] for i in range(n)]
+    result = d.as_result()
+    for i, b in enumerate(blocks):
+        assert result.blocks[i] is b
