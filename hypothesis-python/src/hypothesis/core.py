@@ -397,6 +397,23 @@ def process_arguments_to_given(
     return arguments, kwargs, test_runner, search_strategy
 
 
+def run_once(fn):
+    """Wraps a no-args function so that its outcome is cached.
+    We use this for calculating various lists of exceptions
+    the first time we use them."""
+    result = [None]
+
+    def run():
+        if result[0] is None:
+            result[0] = fn()
+            assert result[0] is not None
+        return result[0]
+
+    run.__name__ = fn.__name__
+    return run
+
+
+@run_once
 def skip_exceptions_to_reraise():
     """Return a tuple of exceptions meaning 'skip this test', to re-raise.
 
@@ -432,9 +449,7 @@ def skip_exceptions_to_reraise():
     return tuple(sorted(exceptions, key=str))
 
 
-EXCEPTIONS_TO_RERAISE = skip_exceptions_to_reraise()
-
-
+@run_once
 def failure_exceptions_to_catch():
     """Return a tuple of exceptions meaning 'this test has failed', to catch.
 
@@ -449,9 +464,6 @@ def failure_exceptions_to_catch():
     except ImportError:
         pass
     return tuple(exceptions)
-
-
-EXCEPTIONS_TO_FAIL = failure_exceptions_to_catch()
 
 
 def new_given_argspec(original_argspec, generator_kwargs):
@@ -601,9 +613,9 @@ class StateForActualGivenExecution(object):
             HypothesisDeprecationWarning,
             FailedHealthCheck,
             StopTest,
-        ) + EXCEPTIONS_TO_RERAISE:
+        ) + skip_exceptions_to_reraise():
             raise
-        except EXCEPTIONS_TO_FAIL as e:
+        except failure_exceptions_to_catch() as e:
             escalate_hypothesis_internal_error()
             if data.frozen:
                 # This can happen if an error occurred in a finally
