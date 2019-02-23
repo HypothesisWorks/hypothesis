@@ -1210,9 +1210,13 @@ class Shrinker(object):
         return groups
 
     @defines_shrink_pass(
-        lambda self: [(i,) for i in hrange(len(self.groups_for_reordering))]
+        lambda self: [
+            (self.stable_identifier_for_example(e), l)
+            for e in self.examples
+            for l in sorted({c.label for c in e.children}, key=str)
+        ]
     )
-    def reorder_examples(self, i):
+    def reorder_examples(self, ex_id, label):
         """This pass allows us to reorder the children of each example.
 
         For example, consider the following:
@@ -1230,7 +1234,13 @@ class Shrinker(object):
         ``x=""``, ``y="0"``, or the other way around. With reordering it will
         reliably fail with ``x=""``, ``y="0"``.
         """
-        group = self.groups_for_reordering[i]
+        ex = self.example_for_stable_identifier(ex_id)
+        if ex is None:
+            return
+        group = [c for c in ex.children if c.label == label]
+        if len(group) <= 1:
+            return
+
         st = self.shrink_target
         pieces = [st.buffer[ex.start : ex.end] for ex in group]
         endpoints = [(ex.start, ex.end) for ex in group]
