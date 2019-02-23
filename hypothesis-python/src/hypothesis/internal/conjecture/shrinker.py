@@ -28,7 +28,7 @@ from hypothesis.internal.conjecture.floats import (
     float_to_lex,
     lex_to_float,
 )
-from hypothesis.internal.conjecture.junkdrawer import replace_all
+from hypothesis.internal.conjecture.junkdrawer import pop_random, replace_all
 from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Ordering
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
@@ -551,11 +551,6 @@ class Shrinker(object):
             for sp in passes:
                 sp.runs += 1
 
-            passes_with_steps = [
-                (sp, step) for sp in passes for step in sp.generate_steps()
-            ]
-            self.random.shuffle(passes_with_steps)
-
             # We run remove_discarded after every step to do cleanup
             # keeping track of whether that actually works. Either there is
             # no discarded data and it is basically free, or it reliably works
@@ -564,10 +559,31 @@ class Shrinker(object):
             # try again once all of the passes have been run.
             can_discard = self.remove_discarded()
 
-            for sp, step in passes_with_steps:
-                sp.run_step(step)
-                if can_discard:
-                    can_discard &= self.remove_discarded()
+            passes_with_steps = [(sp, None) for sp in passes]
+
+            while passes_with_steps:
+                to_run_next = []
+
+                for sp, steps in passes_with_steps:
+                    if steps is None:
+                        steps = sp.generate_steps()
+
+                    failures = 0
+                    max_failures = 3
+
+                    while steps and failures < max_failures:
+                        prev_calls = self.calls
+                        prev = self.shrink_target
+                        sp.run_step(pop_random(self.random, steps))
+                        if prev_calls != self.calls:
+                            if can_discard:
+                                can_discard = self.remove_discarded()
+                            if prev is self.shrink_target:
+                                failures += 1
+                    if steps:
+                        to_run_next.append((sp, steps))
+                passes_with_steps = to_run_next
+
         for sp in passes:
             sp.fixed_point_at = self.shrink_target
 
