@@ -732,7 +732,7 @@ class ConjectureData(object):
 
 
 def bits_to_bytes(n):
-    n_bytes = n // 8
-    if n % 8 != 0:
-        n_bytes += 1
-    return n_bytes
+    """The number of bytes required to represent an n-bit number.
+    Equivalent to (n + 7) // 8, but slightly faster. This really is
+    called enough times that that matters."""
+    return (n + 7) >> 3
