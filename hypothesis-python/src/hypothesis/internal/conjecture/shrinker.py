@@ -288,17 +288,6 @@ class Shrinker(object):
         self.initial_calls = self.__engine.call_count
 
         self.passes_by_name = {}
-        self.clear_passes()
-
-    def clear_passes(self):
-        """Reset all passes on the shrinker, leaving it in a blank state.
-
-        This is mostly useful for testing.
-        """
-        # Note that we deliberately do not clear passes_by_name. This means
-        # that we can still look up and explicitly run the standard passes,
-        # they just won't be avaiable by default.
-
         self.passes = []
 
     def add_new_pass(self, run):
