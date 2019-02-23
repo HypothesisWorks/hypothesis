@@ -101,10 +101,7 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
 
     shrinker = runner.new_shrinker(v, lambda x: x.status == Status.INTERESTING)
 
-    shrinker.clear_passes()
-    shrinker.add_new_pass("minimize_individual_blocks")
-
-    shrinker.shrink()
+    shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
 
     v = shrinker.shrink_target
 

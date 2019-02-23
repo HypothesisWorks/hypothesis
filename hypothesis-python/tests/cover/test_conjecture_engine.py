@@ -746,9 +746,7 @@ def test_accidental_duplication(monkeypatch):
         if len(set(b)) == 1:
             data.mark_interesting()
 
-    shrinker.clear_passes()
-    shrinker.add_new_pass("minimize_duplicated_blocks")
-    shrinker.shrink()
+    shrinker.fixate_shrink_passes(["minimize_duplicated_blocks"])
     assert list(shrinker.buffer) == [5] * 7
 
 
@@ -1555,8 +1553,8 @@ def test_block_programs_are_adaptive():
             pass
         data.mark_interesting()
 
-    shrinker.clear_passes()
-    shrinker.add_new_pass(block_program("X"))
-    shrinker.shrink()
+    p = shrinker.add_new_pass(block_program("X"))
+    shrinker.fixate_shrink_passes([p.name])
+
     assert len(shrinker.shrink_target.buffer) == 1
     assert shrinker.calls <= 60
