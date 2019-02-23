@@ -96,7 +96,7 @@ def test_DatetimeStrategy_draw_may_fail():
             return False
 
     strat = DatetimeStrategy(dt.datetime.min, dt.datetime.max, none())
-    failure_inducing = minimal(binary(), is_failure_inducing)
+    failure_inducing = minimal(binary(), is_failure_inducing, timeout_after=30)
     data = ConjectureData.for_buffer(failure_inducing * 100)
     with pytest.raises(StopTest):
         data.draw(strat)

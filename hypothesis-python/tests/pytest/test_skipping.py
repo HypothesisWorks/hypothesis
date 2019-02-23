@@ -17,6 +17,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+import pytest
+
 pytest_plugins = str("pytester")
 
 
@@ -27,13 +29,21 @@ import pytest
 
 @given(xs=integers())
 def test_to_be_skipped(xs):
+    # We always try the simplest example first, raising a Skipped exception
+    # which we know to propagate immediately...
     if xs == 0:
         pytest.skip()
+    # But the pytest 3.0 internals don't have such an exception, so we keep
+    # going and raise a MultipleFailures error.  Ah well.
     else:
         assert xs == 0
 """
 
 
+@pytest.mark.skipif(
+    pytest.__version__.startswith("3.0"),
+    reason="Pytest 3.0 predates a Skipped exception type, so we can't hook into it.",
+)
 def test_no_falsifying_example_if_pytest_skip(testdir):
     """If ``pytest.skip() is called during a test, Hypothesis should not
     continue running the test and shrink process, nor should it print anything
