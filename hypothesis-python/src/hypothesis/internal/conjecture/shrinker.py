@@ -28,6 +28,7 @@ from hypothesis.internal.conjecture.floats import (
     float_to_lex,
     lex_to_float,
 )
+from hypothesis.internal.conjecture.junkdrawer import replace_all
 from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Ordering
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
@@ -1152,12 +1153,19 @@ class Shrinker(object):
         del buf[ex.start : ex.end]
         self.incorporate_new_buffer(buf)
 
+    @derived_value
+    def groups_for_reordering(self):
+        result = defaultdict(list)
+        for e in self.examples:
+            result[(e.parent, e.label)].append(e)
+        groups = [v for v in result.values() if len(v) > 1]
+        groups.sort(key=lambda ls: ls[0].index)
+        return groups
+
     @defines_shrink_pass(
-        lambda self: [
-            (e,) for e in self.examples if not e.trivial and len(e.children) > 1
-        ]
+        lambda self: [(i,) for i in hrange(len(self.groups_for_reordering))]
     )
-    def reorder_examples(self, ex):
+    def reorder_examples(self, i):
         """This pass allows us to reorder the children of each example.
 
         For example, consider the following:
@@ -1175,13 +1183,16 @@ class Shrinker(object):
         ``x=""``, ``y="0"``, or the other way around. With reordering it will
         reliably fail with ``x=""``, ``y="0"``.
         """
+        group = self.groups_for_reordering[i]
         st = self.shrink_target
-        pieces = [st.buffer[c.start : c.end] for c in ex.children]
-        prefix = st.buffer[: ex.start]
-        suffix = st.buffer[ex.end :]
+        pieces = [st.buffer[ex.start : ex.end] for ex in group]
+        endpoints = [(ex.start, ex.end) for ex in group]
+
         Ordering.shrink(
             pieces,
-            lambda ls: self.incorporate_new_buffer(prefix + hbytes().join(ls) + suffix),
+            lambda ls: self.consider_new_buffer(
+                replace_all(st.buffer, [(u, v, r) for (u, v), r in zip(endpoints, ls)])
+            ),
             random=self.random,
         )
 
