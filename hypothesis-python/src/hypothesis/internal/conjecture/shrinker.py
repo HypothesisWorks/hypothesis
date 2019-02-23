@@ -1200,15 +1200,6 @@ class Shrinker(object):
         del buf[ex.start : ex.end]
         self.incorporate_new_buffer(buf)
 
-    @derived_value
-    def groups_for_reordering(self):
-        result = defaultdict(list)
-        for e in self.examples:
-            result[(e.parent, e.label)].append(e)
-        groups = [v for v in result.values() if len(v) > 1]
-        groups.sort(key=lambda ls: ls[0].index)
-        return groups
-
     @defines_shrink_pass(
         lambda self: [
             (self.stable_identifier_for_example(e), l)
