@@ -1573,6 +1573,7 @@ def test_block_programs_are_adaptive():
     assert shrinker.calls <= 60
 
 
+<<<<<<< d0f96579a10a76f5badbd4a2cf81bde46172f24d
 def test_zero_examples_is_adaptive():
     @shrinking_from(hbytes([1]) * 1001)
     def shrinker(data):
@@ -1604,3 +1605,26 @@ def test_zero_examples_does_not_try_to_adapt_across_different_sizes():
     # single-bit block. Did not try to expand regions into the trivial two-byte
     # blocks on each side.
     assert shrinker.calls == initial + 12
+
+
+def test_stable_identifiers_match_their_examples():
+    def tree(data):
+        data.start_example(1)
+        n = data.draw_bits(1)
+        label = data.draw_bits(8)
+        if n:
+            tree(data)
+            tree(data)
+        data.stop_example(1)
+        return label
+
+    initial = hbytes([1, 10, 0, 0, 1, 0, 0, 10, 0, 0])
+
+    @shrinking_from(initial)
+    def shrinker(data):
+        tree(data)
+        data.mark_interesting()
+
+    for ex in shrinker.examples:
+        id = shrinker.stable_identifier_for_example(ex)
+        assert shrinker.example_for_stable_identifier(id) is ex

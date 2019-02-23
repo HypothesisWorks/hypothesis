@@ -610,11 +610,17 @@ class Shrinker(object):
                         hi = mid
                     else:
                         lo = mid
-                result.extend([(ex, ls[j]) for j in hrange(i + 1, hi)])
+                id1 = self.stable_identifier_for_example(ex)
+                result.extend(
+                    [
+                        (id1, self.stable_identifier_for_example(ls[j]))
+                        for j in hrange(i + 1, hi)
+                    ]
+                )
         return result
 
     @defines_shrink_pass(calculate_descents)
-    def pass_to_descendant(self, ancestor, descendant):
+    def pass_to_descendant(self, ancestor_id, descendant_id):
         """Attempt to replace each example with a descendant example.
 
         This is designed to deal with strategies that call themselves
@@ -632,6 +638,12 @@ class Shrinker(object):
         late in the process when we've got the number of intervals as far down
         as possible.
         """
+
+        ancestor = self.example_for_stable_identifier(ancestor_id)
+        descendant = self.example_for_stable_identifier(descendant_id)
+        if descendant is None:
+            return
+        assert ancestor is not None
 
         self.incorporate_new_buffer(
             self.buffer[: ancestor.start]
@@ -1308,6 +1320,61 @@ class Shrinker(object):
                 hi = mid
             else:
                 lo = mid
+
+    @derived_value
+    def example_to_stable_identifier_cache(self):
+        return []
+
+    @derived_value
+    def stable_identifier_to_example_cache(self):
+        return {}
+
+    def stable_identifier_for_example(self, example):
+        """A stable identifier is one that we can reasonably reliably
+        count on referring to "logically the same" example between two
+        different test runs. It is currently represented as a path from
+        the root."""
+
+        i = example.index
+        n = len(self.example_to_stable_identifier_cache)
+        if i >= n:
+            self.example_to_stable_identifier_cache.extend([None] * (i - n + 1))
+            assert i < len(self.example_to_stable_identifier_cache)
+        result = self.example_to_stable_identifier_cache[i]
+        if result is None:
+            if i == 0:
+                result = ()
+            else:
+                result = (
+                    example.child_index,
+                    self.stable_identifier_for_example(self.examples[example.parent]),
+                )
+            self.example_to_stable_identifier_cache[i] = result
+        return result
+
+    def example_for_stable_identifier(self, identifier):
+        """Returns the example in the current shrink target corresponding
+        to this stable identifier, or None if no such example exists."""
+
+        cache = self.stable_identifier_to_example_cache
+        try:
+            return cache[identifier]
+        except KeyError:
+            pass
+        path = []
+        while identifier:
+            child, identifier = identifier
+            path.append(child)
+        path.reverse()
+        ex = self.examples[0]
+        for i in path:
+            try:
+                ex = ex.children[i]
+            except IndexError:
+                ex = None
+                break
+        cache[identifier] = ex
+        return ex
 
     def run_block_program(self, i, description, original, repeats=1):
         """Block programs are a mini-DSL for block rewriting, defined as a sequence
