@@ -1330,6 +1330,11 @@ def block_program(description):
             then this runs in ``O(log(k))`` test function calls."""
             assert i + n < len(self.shrink_target.blocks)
 
+            # First, run the block program at the chosen index. If this fails,
+            # don't do any extra work, so that failure is as cheap as possible.
+            if not self.run_block_program(i, description, original=self.shrink_target):
+                return
+
             # Because we run in a random order we will often find ourselves in the middle
             # of a region where we could run the block program. We thus start by moving
             # left to the beginning of that region if possible in order to to start from

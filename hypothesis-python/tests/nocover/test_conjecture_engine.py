@@ -26,8 +26,9 @@ from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
-from tests.common.utils import non_covering_examples
-from tests.cover.test_conjecture_engine import run_to_buffer
+from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
+from tests.common.utils import counts_calls, non_covering_examples
+from tests.cover.test_conjecture_engine import run_to_buffer, shrinking_from
 
 
 def test_lot_of_dead_nodes():
@@ -157,3 +158,31 @@ def test_cached_with_masked_byte_agrees_with_results(byte_a, byte_b):
     # If the cache found an old result, then it should match the real result.
     # If it did not, then it must be because A and B were different.
     assert (cached_a is cached_b) == (cached_a.buffer == data_b.buffer)
+
+
+def test_block_programs_fail_efficiently(monkeypatch):
+    # Create 256 byte-sized blocks. None of the blocks can be deleted, and
+    # every deletion attempt produces a different buffer.
+    @shrinking_from(hbytes(hrange(256)))
+    def shrinker(data):
+        values = set()
+        for _ in hrange(256):
+            v = data.draw_bits(8)
+            values.add(v)
+        if len(values) == 256:
+            data.mark_interesting()
+
+    monkeypatch.setattr(
+        Shrinker, "run_block_program", counts_calls(Shrinker.run_block_program)
+    )
+
+    shrinker.fixate_shrink_passes([block_program("XX")])
+
+    assert shrinker.shrinks == 0
+    assert 250 <= shrinker.calls <= 260
+
+    # The block program should have been run roughly 255 times, with a little
+    # bit of wiggle room for implementation details.
+    #   - Too many calls mean that failing steps are doing too much work.
+    #   - Too few calls mean that this test is probably miscounting and buggy.
+    assert 250 <= Shrinker.run_block_program.calls <= 260
