@@ -37,7 +37,7 @@ faster.
 4.7.4 - 2019-02-22
 ------------------
 
-This is a docs-only patch, noting that because :pypi:`Lark` is under active
+This is a docs-only patch, noting that because the :pypi:`lark-parser` is under active
 development at version 0.x, ``hypothesis[lark]`` APIs may break in minor
 releases if necessary to keep up with the upstream package.
 
