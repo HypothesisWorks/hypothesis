@@ -277,6 +277,7 @@ class Shrinker(object):
         self.__predicate = predicate
         self.__shrinking_prefixes = set()
         self.__derived_values = {}
+        self.__pending_shrink_explanation = None
 
         self.initial_size = len(initial.buffer)
 
@@ -290,6 +291,12 @@ class Shrinker(object):
 
         self.passes_by_name = {}
         self.passes = []
+
+    def explain_next_call_as(self, explanation):
+        self.__pending_shrink_explanation = explanation
+
+    def clear_call_explanation(self):
+        self.__pending_shrink_explanation = None
 
     def add_new_pass(self, run):
         """Creates a shrink pass corresponding to calling ``run(self)``"""
@@ -365,6 +372,10 @@ class Shrinker(object):
         that the result is either an Overrun object (if the buffer is
         too short to be a valid test case) or a ConjectureData object
         with status >= INVALID that would result from running this buffer."""
+
+        if self.__pending_shrink_explanation is not None:
+            self.debug(self.__pending_shrink_explanation)
+            self.__pending_shrink_explanation = None
 
         buffer = hbytes(buffer)
         result = self.__engine.cached_test_function(buffer)
@@ -1503,16 +1514,19 @@ class ShrinkPass(object):
         return list(self.generate_arguments(self.shrinker))
 
     def run_step(self, args):
-        self.shrinker.debug("%s(%s)" % (self.name, ", ".join(map(repr, args))))
         initial_shrinks = self.shrinker.shrinks
         initial_calls = self.shrinker.calls
         size = len(self.shrinker.shrink_target.buffer)
+        self.shrinker.explain_next_call_as(
+            "%s(%s)" % (self.name, ", ".join(map(repr, args)))
+        )
         try:
             self.run_with_arguments(self.shrinker, *args)
         finally:
             self.calls += self.shrinker.calls - initial_calls
             self.shrinks += self.shrinker.shrinks - initial_shrinks
             self.deletions += size - len(self.shrinker.shrink_target.buffer)
+            self.shrinker.clear_call_explanation()
 
     @property
     def name(self):
