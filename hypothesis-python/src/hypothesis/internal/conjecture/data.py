@@ -92,6 +92,9 @@ class Example(object):
     # Index of this example inside the overall list of examples.
     index = attr.ib()
 
+    # Index of the parent of this example, or None if this is the root.
+    parent = attr.ib()
+
     start = attr.ib()
     end = attr.ib(default=None)
 
@@ -210,6 +213,7 @@ def calc_examples(self):
                     label=label,
                     start=index,
                     trivial=index not in non_trivial_block_starts,
+                    parent=example_stack[-1] if example_stack else None,
                 )
                 examples.append(ex)
                 if example_stack:
