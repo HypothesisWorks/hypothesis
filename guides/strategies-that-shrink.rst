@@ -149,80 +149,110 @@ along with an extensive evaluation.  Contact him if you would like a copy.
 -------------------------------------
 Shrinking in the Hypothesis internals
 -------------------------------------
+The last section is for current or prospective Hypothesis contributors only.
 
-Note: these tricks rely on implementation details that are not available
-to third-party libraries or users, but which are occasionally indispensible
-to get good performance in underlying primitives.
-This last section is therefore written for Hypothesis contributors.
-
-
-"Shrink Open"
-~~~~~~~~~~~~~
-Where filtering would impose an unacceptable performance cost - usually
-worst-case performance with adversarial constraints on the strategy - we
-need a better trick. Fortunately we have one which works *at a low level*;
-we use it in several crucial places internally but it may not be of any use
-for external strategies.
-
-Aside from anything else, **this uses private internals which may be broken
-in any patch release**.  If you intend to try this, please contact us for
-advice first and we may be able to provide a more robust way to do it.
-
-Basically, we ensure that the example we draw has a simple representation
-in the buffer that we can shrink from, even if that's not how we really
-generated it.
-
-First, the "one-shot filter":
-
-- Try to draw an example from ``Maybe``, a strategy that might or might
-  not give us a valid example on the first attempt.  If this succeeds,
-  we're done.
-- If it fails, use an internal API to mark it as invalid.  Then, create
-  a more expensive or less consistent (see below) strategy that will
-  generate an example which *could have come from* ``Maybe`` and draw
-  that example.  Mark this invalid too.  Finally, calculate the buffer
-  that would generate this example from ``Maybe``, and use another internal
-  API to append it to the buffer.
-
-When we go to shrink such a buffer, there are two possibilities:  either
-the first attempt to draw from ``Maybe`` worked, and it shrinks the easy
-way.  Otherwise, we delete the two draws that were marked invalid, and
-try to draw an example from ``Maybe`` using the bytes we wrote - and if
-we got this right, that works and gives the same example we got during
-the generation phase!
-
-(you might be able to guess we use this technique as little as possible)
-
-The second variant lets us use a simple strategy in the shrinking phase,
-but generate (most of) our new examples from a more complex strategy with
-a different distribution.  For example:
-
-1. Draw a byte, a unicode category, and a character from that category.
-2. If the byte is nonzero, write the index of that character to the buffer.
-   Otherwise, draw an index and use the character at that index instead.
-
-This experimental approach generates exotic `unicode characters
-<https://github.com/Zac-HD/hypothesis/blob/f1f951d67f9161947a298db8d5aa12b24a633c2b/hypothesis-python/src/hypothesis/searchstrategy/strings.py#L78-L97>`_
-much more often than uniform generation, but preserves our codepoint-based
-shrinking order.  `See here for more <https://github.com/HypothesisWorks/hypothesis/issues/1401>`_.
+These tricks rely on implementation details that are not available to
+third-party libraries or users, **and can change in any patch release**.
+Occasionally they are also indispensible to get good performance in underlying
+primitives, so please contact us if the public API is not enough and we may
+be able to work something out.
 
 
-Consistent representation of repeated choices
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This comes up when choosing which action to take in stateful testing, where
-we would like deleting any single step to still give us a valid buffer (though
-perhaps one which doesn't reproduce the bug).
+What do internals get you?
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using the low-level, internal APIs complements, rather than changing, the
+principles above.  The bytestream-level view has some important advantages:
 
-That means that we need to choose from the same list of rules every time,
-even though a different subset might ruled out by preconditions if we delete
-one of the earlier steps.  This is implemented using a variant of "lucky
-generation": we choose an index into the full list of rules, and if it's valid
-we're done.  If not, calculate the list of valid rules, choose one, and write
-the index of the chosen rule to the buffer.  Deleting two adjacent blocks
-("invalid index" and "valid choice") will then leave only a valid index!
+Because we operate at the level of bits, the relationship between a value and
+the corresponding buffer is much more obvious.  If we're careful, that means
+we can calculate the value we want and then write the corresponding buffer
+to recreate it when the test case is shrunk or replayed.
 
-When choosing a possible value for a "bundle" in stateful testing
-(analogous to a stask of variables), we use an index from the *end* and can
-therefore remove more distant early entries without disturbing the relevant
-part of the test case.  Search hypothesis/stateful.py for "shrink" and you'll
-find the explanatory comments.
+A small step up from bits, we can also see the spans that indicate a subset
+of the buffer to consider for various transformations such as transposition
+or deletion.
+
+Sometimes these features are the only way to maintain acceptable performance
+in very rare or even pathological cases - consider shrinking a complex number
+with a single allowed magnitude - but it's almost certain that someone will
+need the core strategies to do just that.
+However, using low-level APIs also comes at a cost - they are verbose and
+generally more difficult to use, and can violate key invariants of the engine
+if misused.
+
+Internally, our strategies mostly use the public API or something that looks
+a lot like ``@composite``, so it's fairly easy to follow along.  There are
+just a few tricks enabled by those low-level advantages that we wanted to
+name and document, so we can recognise them discuss them and invent more...
+
+
+Make your own luck
+~~~~~~~~~~~~~~~~~~
+This is the simplest trick that uses our ability to write choices to the
+buffer.  We use it in stateful testing, where there may be many rules but only
+a few of them allowed by their preconditions, and "lucky generation" would
+work but be very inefficient.
+
+1. Draw an index into the unfiltered list of rules.  Return the corresponding
+   rule if it's allowed - we got lucky!  (or someone set us up...)
+2. Create a list of allowed rules, and choose one from that shortlist instead.
+3. Find the index of the chosen rule *in the unfiltered list*, and write that
+   index to the buffer.  Finally, return the chosen rule.
+
+When the shrinker tries to delete the first two draws, the resulting buffer
+will lead to the same rule being chosen at step *one* instead.  We've made
+our own luck!
+
+This trick is expecially useful when we want to avoid rejection sampling
+(the ``.filter`` method, ``assume``) for performance reasons, but also
+need to give the shrinker the same low-level represention for each instance
+of a repeated choice.
+
+
+Flags "shrink open"
+~~~~~~~~~~~~~~~~~~~
+An important insight from `Swarm Testing (PDF) <https://www.cs.utah.edu/~regehr/papers/swarm12.pdf>`__
+is that randomly disabling some features can actually reduce the expected time
+before finding a bug, because some bugs may be suppressed by otherwise common
+features or attributes of the data.
+
+As discussed on  `issue #1401 <https://github.com/HypothesisWorks/hypothesis/issues/1401>`__,
+there are a few points to keep in mind when implementing shrinkable swarm testing:
+
+- You need swarm flags to "shrink open" so that once the shrinker has run to
+  completion, all flags are enabled. e.g. you could do this by generating a
+  set of banned flags.
+- You need to use rejection sampling rather than anything more clever, or at
+  least look like it to the shrinker.  (see e.g. *Make your own luck*, above)
+
+Taking Unicode as an example, we'd like to use our knowledge of Unicode
+categories to generate more complex examples, but shrink the generated string
+without reference to categories.  While we haven't actually implemented this
+yet - it's pretty hairy - the simple version of the idea goes like this:
+
+1. Generate a set of banned categories.
+2. Use ``characters().filter(category_is_not_banned)``
+
+When shrinking, we start by removing categories from the banned set, after
+which characters in the string can be reduced as usual.  In a serious version,
+the make-your-own-luck approach would be essential to make the filter
+reasonably efficient, but that's not a problem internally.
+
+In more complicated structures, it would be nice to generate the flags on first
+use rather than up front before we know if we need them.  The trick there is
+to write each flag to the buffer every time we check it, in such a way that if
+we delete the first use the second turns into an initialisation.
+
+
+Explicit example boundaries
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This is almost always handled implicitly, e.g. by ``cu.many``, but *sometimes*
+it can be useful to explicitly insert boundaries around draws that should be
+deleted simultaneously using ``data.start_example``.  This is used to group
+the value and sign of floating-point numbers, for example, which we split up
+in order to provide a more natural shrinking order.
+
+Explict example management can also be useful to delineate variably-sized
+draws, such as our internal helper ``cu.biased_coin``, which makes eliminating
+dead bytes much cheaper.  Finally, labelling otherwise indistinguishable draws
+means the shrinker can attempt to swap only the like values.
