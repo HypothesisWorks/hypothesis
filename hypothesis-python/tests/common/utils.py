@@ -137,3 +137,18 @@ def non_covering_examples(database):
     return {
         v for k, vs in database.data.items() if not k.endswith(b".coverage") for v in vs
     }
+
+
+def counts_calls(func):
+    """A decorator that counts how many times a function was called, and
+    stores that value in a ``.calls`` attribute.
+    """
+    assert not hasattr(func, "calls")
+
+    @proxies(func)
+    def _inner(*args, **kwargs):
+        _inner.calls += 1
+        return func(*args, **kwargs)
+
+    _inner.calls = 0
+    return _inner
