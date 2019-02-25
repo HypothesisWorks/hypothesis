@@ -421,6 +421,7 @@ class ConjectureRunner(object):
             choices = data.block_starts.get(n, [])
             if choices:
                 i = self.random.choice(choices)
+                assert i + n <= len(data.buffer)
                 return hbytes(data.buffer[i : i + n])
             else:
                 result = uniform(self.random, n)
@@ -480,11 +481,13 @@ class ConjectureRunner(object):
             if data.index + n > len(target_data[0].buffer):
                 result = uniform(self.random, n)
             else:
-                result = self.random.choice(bits)(data, n)
+                draw = self.random.choice(bits)
+                result = draw(data, n)
             p = prefix[0]
             if data.index < len(p):
                 start = p[data.index : data.index + n]
                 result = start + result[len(start) :]
+            assert len(result) == n
             return self.__zero_bound(data, result)
 
         return mutate_from

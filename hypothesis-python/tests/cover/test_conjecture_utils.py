@@ -26,6 +26,7 @@ from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
+from tests.cover.test_conjecture_engine import run_to_buffer
 
 
 def test_does_draw_data_for_empty_range():
@@ -88,20 +89,6 @@ def test_unbiased_coin_has_no_second_order():
     assert counts[False] == counts[True] > 0
 
 
-def test_can_get_odd_number_of_bits():
-    counts = Counter()
-    for i in range(256):
-        x = cu.getrandbits(ConjectureData.for_buffer([i]), 3)
-        assert 0 <= x <= 7
-        counts[x] += 1
-    assert len(set(counts.values())) == 1
-
-
-def test_8_bits_just_reads_stream():
-    for i in range(256):
-        assert cu.getrandbits(ConjectureData.for_buffer([i]), 8) == i
-
-
 def test_drawing_certain_coin_still_writes():
     data = ConjectureData.for_buffer([0, 1])
     assert not data.buffer
@@ -160,3 +147,12 @@ def test_sampler_distribution(weights):
         calculated[base] += (1 - p_alternate) / n
         calculated[alternate] += p_alternate / n
     assert probabilities == calculated
+
+
+def test_get_randbits_can_set_high_bit():
+    @run_to_buffer
+    def x(data):
+        if cu.getrandbits(data, 8) >> 7:
+            data.mark_interesting()
+
+    assert x == hbytes([1 << 7])

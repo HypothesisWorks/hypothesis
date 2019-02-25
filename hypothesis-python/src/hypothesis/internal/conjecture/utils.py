@@ -28,7 +28,6 @@ from hypothesis.internal.compat import (
     abc,
     bit_length,
     floor,
-    hbytes,
     hrange,
     int_from_bytes,
     qualname,
@@ -69,7 +68,7 @@ def integer_range(data, lower, upper, center=None):
         # on other values we don't suddenly disappear when the gap shrinks to
         # zero - if that happens then often the data stream becomes misaligned
         # and we fail to shrink in cases where we really should be able to.
-        data.write(hbytes([0]))
+        data.draw_bits(1, forced=0)
         return int(lower)
 
     if center is None:
@@ -156,10 +155,16 @@ def choice(data, values):
 
 
 def getrandbits(data, n):
+    # This method is equivalent to data.draw_bits(n) except that it fails
+    # to set the mask. This method should die but is currently maintaining
+    # bugwards compatibility with some oddities of behaviour that we've
+    # not yet fully debugged. See
+    # https://github.com/HypothesisWorks/hypothesis/issues/1827
+    # for details.
     n_bytes = n // 8
     if n % 8 != 0:
         n_bytes += 1
-    return int_from_bytes(data.draw_bytes(n_bytes)) & ((1 << n) - 1)
+    return data.draw_bits(n_bytes * 8) & ((1 << n) - 1)
 
 
 FLOAT_PREFIX = 0b1111111111 << 52
@@ -198,10 +203,10 @@ def biased_coin(data, p):
         # to write a byte to the data stream anyway so that these don't cause
         # difficulties when shrinking.
         if p <= 0:
-            data.write(hbytes([0]))
+            data.draw_bits(1, forced=0)
             result = False
         elif p >= 1:
-            data.write(hbytes([1]))
+            data.draw_bits(1, forced=1)
             result = True
         else:
             falsey = floor(256 * (1 - p))

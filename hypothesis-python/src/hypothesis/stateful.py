@@ -43,7 +43,7 @@ from hypothesis._settings import (
 from hypothesis.control import current_build_context
 from hypothesis.core import given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
-from hypothesis.internal.compat import int_to_bytes, string_types
+from hypothesis.internal.compat import string_types
 from hypothesis.internal.reflection import function_digest, nicerepr, proxies
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
@@ -619,8 +619,7 @@ class RuleStrategy(SearchStrategy):
         # Easy, right?
         n = len(self.rules)
         i = cu.integer_range(data, 0, n - 1)
-        u, v = data.blocks[-1].bounds
-        block_length = v - u
+        block_length = data.blocks[-1].length
         rule = self.rules[i]
         if not self.is_valid(rule):
             valid_rules = [j for j, r in enumerate(self.rules) if self.is_valid(r)]
@@ -629,7 +628,9 @@ class RuleStrategy(SearchStrategy):
                     u"No progress can be made from state %r" % (self.machine,)
                 )
             i = valid_rules[cu.integer_range(data, 0, len(valid_rules) - 1)]
-            data.write(int_to_bytes(i, block_length))
+            # Insert a copy of ``i`` into the data stream to make it easier for
+            # the shrinker to delete the initial invalid rule draw.
+            data.draw_bits(block_length * 8, forced=i)
             rule = self.rules[i]
         return (rule, data.draw(rule.arguments_strategy))
 
