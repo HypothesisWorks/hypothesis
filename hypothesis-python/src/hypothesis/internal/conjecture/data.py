@@ -113,9 +113,12 @@ class Example(object):
     # List of child examples, represented as indices into the example list.
     children = attr.ib(default=attr.Factory(list), repr=False)
 
-    @property
-    def length(self):
-        return self.end - self.start
+    # We access length a lot, and Python is annoyingly bad at basic integer
+    # arithmetic, so it makes sense to cache this on a field for speed
+    # reasons. It also reduces allocation, though most of the integers
+    # allocated from this should be easily collected garbage and/or
+    # small enough to be interned.
+    length = attr.ib(init=False, repr=False)
 
 
 @attr.s(slots=True, frozen=True)
@@ -198,6 +201,7 @@ def calc_examples(self):
                 k = example_stack.pop()
                 ex = examples[k]
                 ex.end = index
+                ex.length = ex.end - ex.start
 
                 if ex.length == 0:
                     ex.trivial = True
@@ -241,6 +245,7 @@ class ConjectureResult(object):
     example_boundaries = attr.ib()
     output = attr.ib()
     extra_information = attr.ib()
+    has_discards = attr.ib()
     __examples = attr.ib(init=False, default=None)
 
     index = attr.ib(init=False)
@@ -293,6 +298,7 @@ class ConjectureData(object):
         self.interesting_origin = None
         self.draw_times = []
         self.max_depth = 0
+        self.has_discards = False
 
         self.example_boundaries = []
 
@@ -335,6 +341,7 @@ class ConjectureData(object):
                 extra_information=self.extra_information
                 if self.extra_information.has_information()
                 else None,
+                has_discards=self.has_discards,
             )
         return self.__result
 
@@ -402,6 +409,8 @@ class ConjectureData(object):
     def stop_example(self, discard=False):
         if self.frozen:
             return
+        if discard:
+            self.has_discards = True
         self.current_example_labels().append(StopDiscard if discard else Stop)
         self.depth -= 1
         assert self.depth >= -1
