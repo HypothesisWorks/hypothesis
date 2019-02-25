@@ -241,6 +241,7 @@ class ConjectureResult(object):
     example_boundaries = attr.ib()
     output = attr.ib()
     extra_information = attr.ib()
+    has_discards = attr.ib()
     __examples = attr.ib(init=False, default=None)
 
     index = attr.ib(init=False)
@@ -293,6 +294,7 @@ class ConjectureData(object):
         self.interesting_origin = None
         self.draw_times = []
         self.max_depth = 0
+        self.has_discards = False
 
         self.example_boundaries = []
 
@@ -335,6 +337,7 @@ class ConjectureData(object):
                 extra_information=self.extra_information
                 if self.extra_information.has_information()
                 else None,
+                has_discards=self.has_discards,
             )
         return self.__result
 
@@ -402,6 +405,8 @@ class ConjectureData(object):
     def stop_example(self, discard=False):
         if self.frozen:
             return
+        if discard:
+            self.has_discards = True
         self.current_example_labels().append(StopDiscard if discard else Stop)
         self.depth -= 1
         assert self.depth >= -1

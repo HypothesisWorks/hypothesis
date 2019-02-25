@@ -892,7 +892,7 @@ class Shrinker(object):
         returns False if there is discarded data and removing it does not work,
         otherwise returns True.
         """
-        while True:
+        while self.shrink_target.has_discards:
             discarded = []
 
             for ex in self.shrink_target.examples:
@@ -903,6 +903,10 @@ class Shrinker(object):
                 ):
                     discarded.append((ex.start, ex.end))
 
+            # This can happen if we have discards but they are all of
+            # zero length. This shouldn't happen very often so it's
+            # faster to check for it here than at the point of example
+            # generation.
             if not discarded:
                 break
 
