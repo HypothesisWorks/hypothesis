@@ -813,6 +813,19 @@ def test_discarding_iterates_to_fixed_point():
     assert list(shrinker.buffer) == [1, 0]
 
 
+def test_discarding_is_not_fooled_by_empty_discards():
+    @shrinking_from(hbytes([1, 1]))
+    def shrinker(data):
+        data.draw_bits(1)
+        data.start_example(0)
+        data.stop_example(discard=True)
+        data.draw_bits(1)
+        data.mark_interesting()
+
+    shrinker.remove_discarded()
+    assert shrinker.shrink_target.has_discards
+
+
 def shrink_pass(name):
     def run(self):
         self.run_shrink_pass(name)
