@@ -113,9 +113,12 @@ class Example(object):
     # List of child examples, represented as indices into the example list.
     children = attr.ib(default=attr.Factory(list), repr=False)
 
-    @property
-    def length(self):
-        return self.end - self.start
+    # We access length a lot, and Python is annoyingly bad at basic integer
+    # arithmetic, so it makes sense to cache this on a field for speed
+    # reasons. It also reduces allocation, though most of the integers
+    # allocated from this should be easily collected garbage and/or
+    # small enough to be interned.
+    length = attr.ib(init=False, repr=False)
 
 
 @attr.s(slots=True, frozen=True)
@@ -198,6 +201,7 @@ def calc_examples(self):
                 k = example_stack.pop()
                 ex = examples[k]
                 ex.end = index
+                ex.length = ex.end - ex.start
 
                 if ex.length == 0:
                     ex.trivial = True
