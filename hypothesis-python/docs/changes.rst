@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.7.10:
+
+-------------------
+4.7.10 - 2019-02-25
+-------------------
+
+This release is a purely internal refactoring of Hypothesis's API for representing test cases.
+There should be no user visible effect.
+
 .. _v4.7.9:
 
 ------------------
