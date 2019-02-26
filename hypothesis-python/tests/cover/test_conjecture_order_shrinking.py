@@ -21,6 +21,7 @@ from random import Random
 
 import hypothesis.strategies as st
 from hypothesis import example, given
+from hypothesis.internal.compat import hrange
 from hypothesis.internal.conjecture.shrinking import Ordering
 
 
@@ -50,3 +51,21 @@ def test_can_partially_sort_a_list_2():
         [5, 4, 3, 2, 1, 0], lambda x: x[0] > x[2], random=Random(0), full=True
     )
     assert finish <= (1, 2, 0, 3, 4, 5)
+
+
+def test_adaptively_shrinks_around_hole():
+    initial = list(hrange(1000, 0, -1))
+    initial[500] = 2000
+
+    intended_result = sorted(initial)
+    intended_result.insert(500, intended_result.pop())
+
+    shrinker = Ordering(
+        initial, lambda ls: ls[500] == 2000, random=Random(0), full=True
+    )
+    shrinker.run()
+
+    assert shrinker.current[500] == 2000
+
+    assert list(shrinker.current) == intended_result
+    assert shrinker.calls <= 60
