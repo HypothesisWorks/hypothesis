@@ -192,7 +192,7 @@ class Blocks(object):
         self.__sparse = True
 
     def add_endpoint(self, n):
-        """Add n to the list of enpoints."""
+        """Add n to the list of endpoints."""
         assert isinstance(self.owner, ConjectureData)
         self.__endpoints.append(n)
 
