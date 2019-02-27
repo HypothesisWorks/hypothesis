@@ -261,7 +261,15 @@ class Blocks(object):
 
         start = self.start(i)
         end = self.__endpoints[i]
+
+        # We keep track of the number of blocks that have actually been
+        # instantiated so that when every block that could be instantiated
+        # has been we know that the list is complete and can throw away
+        # some data that we no longer need.
         self.__count += 1
+
+        # Integrity check: We can't have allocated more blocks than we have
+        # endpoints for blocks.
         assert self.__count <= len(self.__endpoints)
         result = Block(
             start=start,
