@@ -76,7 +76,7 @@ class IntList(object):
     __slots__ = ("__underlying",)
 
     def __init__(self):
-        self.__underlying = array_or_list("B")
+        self.__underlying = array_or_list("B", [])
 
     def __len__(self):
         return len(self.__underlying)
