@@ -208,7 +208,7 @@ class Blocks(object):
         if i == 0:
             return 0
         else:
-            return self.__endpoints[i - 1]
+            return self.end(i - 1)
 
     def end(self, i):
         """Equivalent to self[i].end."""
@@ -260,7 +260,7 @@ class Blocks(object):
             assert self.__blocks[i] is None
 
         start = self.start(i)
-        end = self.__endpoints[i]
+        end = self.end(i)
 
         # We keep track of the number of blocks that have actually been
         # instantiated so that when every block that could be instantiated
