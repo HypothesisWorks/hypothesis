@@ -44,25 +44,8 @@ def replace_all(buffer, replacements):
     return hbytes(result)
 
 
-def calc_bits_to_array_codes():
-    """Return a list of the smallest array codes that can be used to
-    represent an unsigned integer of size n, for n from 0 to 64 inclusive.
-    """
-    code_iter = iter(["B", "H", "I", "L", "Q"])
-    result = []
-    code = next(code_iter)
-    while len(result) < 65:
-        trial_number = (1 << len(result)) - 1
-        assert trial_number.bit_length() == len(result)
-        try:
-            array_or_list(code, [trial_number])
-            result.append(code)
-        except OverflowError:
-            code = next(code_iter)
-    return result
-
-
-BIT_LENGTH_TO_ARRAY_CODES = calc_bits_to_array_codes()
+ARRAY_CODES = ["B", "H", "I", "L", "Q"]
+NEXT_ARRAY_CODE = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
 
 
 class IntList(object):
@@ -88,10 +71,11 @@ class IntList(object):
         return iter(self.__underlying)
 
     def append(self, n):
-        try:
-            self.__underlying.append(n)
-        except OverflowError:
-            self.__underlying = array_or_list(
-                BIT_LENGTH_TO_ARRAY_CODES[n.bit_length()], self.__underlying
-            )
-            self.__underlying.append(n)
+        while True:
+            try:
+                self.__underlying.append(n)
+                return
+            except OverflowError:
+                self.__underlying = array_or_list(
+                    NEXT_ARRAY_CODE[self.__underlying.typecode], self.__underlying
+                )
