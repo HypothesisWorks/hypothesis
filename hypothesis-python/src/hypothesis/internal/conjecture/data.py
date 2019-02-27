@@ -24,7 +24,6 @@ import attr
 
 from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import (
-    array_or_list,
     benchmark_time,
     bit_length,
     hbytes,
