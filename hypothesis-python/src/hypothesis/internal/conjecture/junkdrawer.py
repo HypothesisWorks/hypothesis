@@ -22,7 +22,7 @@ anything that lives here, please move it."""
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis.internal.compat import hbytes
+from hypothesis.internal.compat import array_or_list, hbytes
 
 
 def replace_all(buffer, replacements):
@@ -42,3 +42,56 @@ def replace_all(buffer, replacements):
     result.extend(buffer[prev:])
     assert len(result) == len(buffer) + offset
     return hbytes(result)
+
+
+def calc_bits_to_array_codes():
+    """Return a list of the smallest array codes that can be used to
+    represent an unsigned integer of size n, for n from 0 to 64 inclusive.
+    """
+    code_iter = iter(["B", "H", "I", "L", "Q"])
+    result = []
+    code = next(code_iter)
+    while len(result) < 65:
+        trial_number = (1 << len(result)) - 1
+        assert trial_number.bit_length() == len(result)
+        try:
+            array_or_list(code, [trial_number])
+            result.append(code)
+        except OverflowError:
+            code = next(code_iter)
+    return result
+
+
+BIT_LENGTH_TO_ARRAY_CODES = calc_bits_to_array_codes()
+
+
+class IntList(object):
+    """Class for storing a list of non-negative integers compactly.
+
+    We store them as the smallest size integer array we can get
+    away with. When we try to add an integer that is too large,
+    we upgrade the array to the smallest word size needed to store
+    the new value."""
+
+    __slots__ = ("__underlying",)
+
+    def __init__(self):
+        self.__underlying = array_or_list("B")
+
+    def __len__(self):
+        return len(self.__underlying)
+
+    def __getitem__(self, i):
+        return self.__underlying[i]
+
+    def __iter__(self):
+        return iter(self.__underlying)
+
+    def append(self, n):
+        try:
+            self.__underlying.append(n)
+        except OverflowError:
+            self.__underlying = array_or_list(
+                BIT_LENGTH_TO_ARRAY_CODES[n.bit_length()], self.__underlying
+            )
+            self.__underlying.append(n)

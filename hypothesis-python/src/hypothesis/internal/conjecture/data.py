@@ -34,6 +34,7 @@ from hypothesis.internal.compat import (
     text_type,
     unicode_safe_repr,
 )
+from hypothesis.internal.conjecture.junkdrawer import IntList
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.escalation import mark_for_escalation
 from hypothesis.utils.conventions import UniqueIdentifier
@@ -164,27 +165,6 @@ class Block(object):
         return self.forced or self.all_zero
 
 
-def calc_bits_to_array_codes():
-    """Return a list of the smallest array codes that can be used to
-    represent an unsigned integer of size n, for n from 0 to 64 inclusive.
-    """
-    code_iter = iter(["B", "H", "I", "L", "Q"])
-    result = []
-    code = next(code_iter)
-    while len(result) < 65:
-        trial_number = (1 << len(result)) - 1
-        assert trial_number.bit_length() == len(result)
-        try:
-            array_or_list(code, [trial_number])
-            result.append(code)
-        except OverflowError:
-            code = next(code_iter)
-    return result
-
-
-BIT_LENGTH_TO_ARRAY_CODES = calc_bits_to_array_codes()
-
-
 class Blocks(object):
     """A lazily calculated list of blocks for a particular ``ConjectureResult``
     or ``ConjectureData`` object.
@@ -206,7 +186,7 @@ class Blocks(object):
 
     def __init__(self, owner):
         self.owner = owner
-        self.__endpoints = array_or_list("B", [])
+        self.__endpoints = IntList()
         self.__blocks = {}
         self.__count = 0
         self.__sparse = True
@@ -214,18 +194,7 @@ class Blocks(object):
     def add_endpoint(self, n):
         """Add n to the list of enpoints."""
         assert isinstance(self.owner, ConjectureData)
-
-        # We store endpoints as the smallest size integer we can get
-        # away with. When we try to add an endpoint that is too large,
-        # we upgrade the array to the smallest word size needed to store
-        # the new result.
-        try:
-            self.__endpoints.append(n)
-        except OverflowError:
-            self.__endpoints = array_or_list(
-                BIT_LENGTH_TO_ARRAY_CODES[n.bit_length()], self.__endpoints
-            )
-            self.__endpoints.append(n)
+        self.__endpoints.append(n)
 
     def transfer_ownership(self, new_owner):
         """Used to move ``Blocks`` over to a ``ConjectureResult`` object
