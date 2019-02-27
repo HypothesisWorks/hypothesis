@@ -76,6 +76,7 @@ class IntList(object):
                 self.__underlying.append(n)
                 return
             except OverflowError:
+                assert n > 0
                 self.__underlying = array_or_list(
                     NEXT_ARRAY_CODE[self.__underlying.typecode], self.__underlying
                 )
