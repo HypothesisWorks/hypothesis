@@ -1571,3 +1571,36 @@ def test_block_programs_are_adaptive():
 
     assert len(shrinker.shrink_target.buffer) == 1
     assert shrinker.calls <= 60
+
+
+def test_zero_examples_is_adaptive():
+    @shrinking_from(hbytes([1]) * 1001)
+    def shrinker(data):
+        for _ in hrange(1000):
+            data.draw_bits(1)
+        if data.draw_bits(1):
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["zero_examples"])
+
+    assert shrinker.shrink_target.buffer == hbytes(1000) + hbytes([1])
+    assert shrinker.calls <= 60
+
+
+def test_zero_examples_does_not_try_to_adapt_across_different_sizes():
+    @shrinking_from([1, 0, 0] * 10 + [1])
+    def shrinker(data):
+        for _ in hrange(10):
+            data.draw_bits(1)
+            data.draw_bits(16)
+        if data.draw_bits(1):
+            data.mark_interesting()
+
+    initial = shrinker.calls
+    shrinker.zero_examples()
+    assert shrinker.shrink_target.buffer == hbytes(30) + hbytes([1])
+
+    # Tried each of the 1-bit blocks, plus the whole example, plus the final
+    # single-bit block. Did not try to expand regions into the trivial two-byte
+    # blocks on each side.
+    assert shrinker.calls == initial + 12

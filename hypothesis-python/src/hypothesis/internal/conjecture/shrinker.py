@@ -975,9 +975,8 @@ class Shrinker(object):
         if to_right > 0:
             find_integer(lambda n: delete_region(j - n, j + to_right))
 
-    @defines_shrink_pass(lambda self: [(e,) for e in self.examples if not e.trivial])
-    def zero_examples(self, ex):
-        """Attempt to replace each example with a minimal version of itself."""
+    def try_zero_example(self, i):
+        ex = self.examples[i]
         u = ex.start
         v = ex.end
         attempt = self.cached_test_function(
@@ -985,19 +984,66 @@ class Shrinker(object):
         )
 
         if attempt is Overrun:
-            return
+            return False
 
         in_replacement = attempt.examples[ex.index]
         used = in_replacement.length
 
-        if (
-            not self.__predicate(attempt)
-            and in_replacement.end < len(attempt.buffer)
-            and used < ex.length
-        ):
-            self.incorporate_new_buffer(
-                self.buffer[:u] + hbytes(used) + self.buffer[v:]
-            )
+        if attempt is not self.shrink_target:
+            if in_replacement.end < len(attempt.buffer) and used < ex.length:
+                self.incorporate_new_buffer(
+                    self.buffer[:u] + hbytes(used) + self.buffer[v:]
+                )
+        return self.examples[i].trivial
+
+    @defines_shrink_pass(lambda self: [(e.index,) for e in self.examples])
+    def zero_examples(self, ex_index):
+        """Attempt to replace each example with a minimal version of itself."""
+        # If the example is already trivial, assume there's nothing to do here.
+        # We could attempt to use it as an adaptive replacement for other
+        # similar examples, but that seems to be ineffective, resulting mostly
+        # in redundant work rather than helping.
+        if self.examples[ex_index].trivial:
+            return
+
+        if not self.try_zero_example(ex_index):
+            return
+
+        ex = self.examples[ex_index]
+
+        original = self.shrink_target
+        group = self.examples_by_label[ex.label]
+        i = group.index(ex)
+        replacement = self.buffer[ex.start : ex.end]
+
+        # We first expand to cover the trivial region surrounding this group.
+        # This avoids a situation where the adaptive phase "succeeds" a lot by
+        # virtue of not doing anything and then goes into a galloping phase
+        # where it does a bunch of useless work.
+        def all_trivial(a, b):
+            if a < 0 or b > len(group):
+                return False
+            return all(e.trivial for e in group[a:b])
+
+        start, end = expand_region(all_trivial, i, i + 1)
+
+        # If we've got multiple trivial examples of different lengths then
+        # this isn't going to work as a replacement for all of them and so we
+        # skip out early.
+        if any(e.length != len(replacement) for e in group[start:end]):
+            return
+
+        def can_zero(a, b):
+            if a < 0 or b > len(group):
+                return False
+            regions = []
+            for e in group[a:b]:
+                t = (e.start, e.end, replacement)
+                if not regions or t[0] >= regions[-1][1]:
+                    regions.append(t)
+            return self.consider_new_buffer(replace_all(original.buffer, regions))
+
+        expand_region(can_zero, start, end)
 
     def duplicated_block_suffixes(self):
         """Returns a list of blocks grouped by their non-zero suffix,
@@ -1426,3 +1472,12 @@ def non_zero_suffix(b):
     while i < len(b) and b[i] == 0:
         i += 1
     return b[i:]
+
+
+def expand_region(f, a, b):
+    """Attempts to find u, v with u <= a, v >= b such that f(u, v) is true.
+    Assumes that f(a, b) is already true.
+    """
+    b += find_integer(lambda k: f(a, b + k))
+    a -= find_integer(lambda k: f(a - k, b))
+    return (a, b)
