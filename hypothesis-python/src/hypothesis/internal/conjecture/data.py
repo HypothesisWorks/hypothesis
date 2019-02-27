@@ -251,8 +251,8 @@ class Blocks(object):
         # actual result, but this isn't the best representation once we
         # stop being sparse and want to use most of the blocks. Switch
         # over to a list at that point.
-        if self.__sparse and len(self.__blocks) * 2 >= len(self.__endpoints):
-            new_blocks = [None] * len(self.__endpoints)
+        if self.__sparse and len(self.__blocks) * 2 >= len(self):
+            new_blocks = [None] * len(self)
             for k, v in self.__blocks.items():
                 new_blocks[k] = v
             self.__sparse = False
@@ -269,8 +269,8 @@ class Blocks(object):
         self.__count += 1
 
         # Integrity check: We can't have allocated more blocks than we have
-        # endpoints for blocks.
-        assert self.__count <= len(self.__endpoints)
+        # positions for blocks.
+        assert self.__count <= len(self)
         result = Block(
             start=start,
             end=end,
@@ -282,17 +282,15 @@ class Blocks(object):
             self.__blocks[i] = result
         except IndexError:
             assert isinstance(self.__blocks, list)
-            assert len(self.__blocks) < len(self.__endpoints)
-            self.__blocks.extend([None] * (len(self.__endpoints) - len(self.__blocks)))
+            assert len(self.__blocks) < len(self)
+            self.__blocks.extend([None] * (len(self) - len(self.__blocks)))
             self.__blocks[i] = result
 
         # If this happens then we have now fully calculated every block
         # and don't need to keep the reference to the owner around. We delete
         # it here so that there is no circular reference to make the gc work
         # harder.
-        if self.__count == len(self.__endpoints) and isinstance(
-            self.owner, ConjectureResult
-        ):
+        if self.__count == len(self) and isinstance(self.owner, ConjectureResult):
             self.owner = None
 
         return result
