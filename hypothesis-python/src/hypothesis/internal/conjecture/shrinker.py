@@ -736,7 +736,7 @@ class Shrinker(object):
 
         current = self.shrink_target
 
-        blocked = [current.buffer[u:v] for u, v in self.all_block_bounds(current)]
+        blocked = [current.buffer[u:v] for u, v in self.all_block_bounds()]
 
         changed = [
             i
