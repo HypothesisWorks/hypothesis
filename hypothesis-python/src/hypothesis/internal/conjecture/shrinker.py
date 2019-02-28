@@ -787,7 +787,7 @@ class Shrinker(object):
             self.shrinks += 1
             if (
                 len(new_target.blocks) != len(self.shrink_target.blocks)
-                or self.all_block_bounds(new_target) != self.all_block_bounds()
+                or new_target.blocks.endpoints != self.shrink_target.blocks.endpoints
             ):
                 self.clear_change_tracking()
             else:

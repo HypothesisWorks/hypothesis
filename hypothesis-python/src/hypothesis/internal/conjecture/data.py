@@ -181,11 +181,11 @@ class Blocks(object):
     be preferred to using the Block objects directly, as it will not
     have to allocate the actual object."""
 
-    __slots__ = ("__endpoints", "owner", "__blocks", "__count", "__sparse")
+    __slots__ = ("endpoints", "owner", "__blocks", "__count", "__sparse")
 
     def __init__(self, owner):
         self.owner = owner
-        self.__endpoints = IntList()
+        self.endpoints = IntList()
         self.__blocks = {}
         self.__count = 0
         self.__sparse = True
@@ -193,7 +193,7 @@ class Blocks(object):
     def add_endpoint(self, n):
         """Add n to the list of endpoints."""
         assert isinstance(self.owner, ConjectureData)
-        self.__endpoints.append(n)
+        self.endpoints.append(n)
 
     def transfer_ownership(self, new_owner):
         """Used to move ``Blocks`` over to a ``ConjectureResult`` object
@@ -212,7 +212,7 @@ class Blocks(object):
 
     def end(self, i):
         """Equivalent to self[i].end."""
-        return self.__endpoints[i]
+        return self.endpoints[i]
 
     def bounds(self, i):
         """Equivalent to self[i].bounds."""
@@ -220,15 +220,13 @@ class Blocks(object):
 
     def all_bounds(self):
         """Equivalent to [(b.start, b.end) for b in self]."""
-        result = []
         prev = 0
-        for e in self.__endpoints:
-            result.append((prev, e))
+        for e in self.endpoints:
+            yield (prev, e)
             prev = e
-        return result
 
     def __len__(self):
-        return len(self.__endpoints)
+        return len(self.endpoints)
 
     def __known_block(self, i):
         try:
