@@ -17,6 +17,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+import pytest
+
 import hypothesis.strategies as st
 from hypothesis import assume, given
 from hypothesis.internal.conjecture.junkdrawer import IntList
@@ -41,3 +43,11 @@ def test_basic_equality():
     t = x != x
     assert not t
     assert x != "foo"
+
+    s = x == "foo"
+    assert not s
+
+
+def test_error_on_invalid_value():
+    with pytest.raises(ValueError):
+        IntList([-1])
