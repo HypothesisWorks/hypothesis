@@ -603,10 +603,8 @@ class Shrinker(object):
     def examples(self):
         return self.shrink_target.examples
 
-    def all_block_bounds(self, target=None):
-        if target is None:
-            target = self.shrink_target
-        return target.blocks.all_bounds()
+    def all_block_bounds(self):
+        return self.shrink_target.blocks.all_bounds()
 
     @derived_value
     def examples_by_label(self):
