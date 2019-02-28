@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.7.16:
+
+-------------------
+4.7.16 - 2019-02-28
+-------------------
+
+This changes the order in which Hypothesis runs certain operations during shrinking.
+This should significantly decrease memory usage and speed up shrinking of large examples.
+
 .. _v4.7.15:
 
 -------------------
