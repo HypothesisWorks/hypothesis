@@ -1411,7 +1411,7 @@ def test_pandas_hack():
         if data.draw_bits(8) == 7:
             data.mark_interesting()
 
-    shrinker.run_shrink_pass(block_program('-XX'))
+    shrinker.run_shrink_pass(block_program("-XX"))
     assert list(shrinker.shrink_target.buffer) == [1, 7]
 
 
