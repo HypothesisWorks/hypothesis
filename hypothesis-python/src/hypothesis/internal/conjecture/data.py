@@ -201,6 +201,7 @@ class Blocks(object):
         whole ``ConjectureData`` around."""
         assert isinstance(new_owner, ConjectureResult)
         self.owner = new_owner
+        self.__check_completion()
 
     def start(self, i):
         """Equivalent to self[i].start."""
@@ -285,14 +286,21 @@ class Blocks(object):
             self.__blocks.extend([None] * (len(self) - len(self.__blocks)))
             self.__blocks[i] = result
 
-        # If this happens then we have now fully calculated every block
-        # and don't need to keep the reference to the owner around. We delete
-        # it here so that there is no circular reference to make the gc work
-        # harder.
-        if self.__count == len(self) and isinstance(self.owner, ConjectureResult):
-            self.owner = None
+        self.__check_completion()
 
         return result
+
+    def __check_completion(self):
+        """The list of blocks is complete if we have created every ``Block``
+        object that we currently good and know that no more will be created.
+
+        If this happens then we don't need to keep the reference to the
+        owner around, and delete it so that there is no circular reference.
+        The main benefit of this is that the gc doesn't need to run to collect
+        this because normal reference counting is enough.
+        """
+        if self.__count == len(self) and isinstance(self.owner, ConjectureResult):
+            self.owner = None
 
     def __iter__(self):
         for i in hrange(len(self)):
