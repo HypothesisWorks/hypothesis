@@ -118,3 +118,21 @@ def pop_random(random, values):
     i = random.randrange(0, len(values))
     values[i], values[-1] = values[-1], values[i]
     return values.pop()
+
+
+def binary_search(lo, hi, f):
+    """Binary searches in [lo , hi) to find
+    n such that f(n) == f(lo) but f(n + 1) != f(lo).
+    It is implicitly assumed and will not be checked
+    that f(hi) != f(lo).
+    """
+
+    reference = f(lo)
+
+    while lo + 1 < hi:
+        mid = (lo + hi) // 2
+        if f(mid) == reference:
+            lo = mid
+        else:
+            hi = mid
+    return lo

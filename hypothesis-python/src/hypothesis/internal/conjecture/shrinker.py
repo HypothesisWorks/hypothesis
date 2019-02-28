@@ -28,7 +28,11 @@ from hypothesis.internal.conjecture.floats import (
     float_to_lex,
     lex_to_float,
 )
-from hypothesis.internal.conjecture.junkdrawer import pop_random, replace_all
+from hypothesis.internal.conjecture.junkdrawer import (
+    binary_search,
+    pop_random,
+    replace_all,
+)
 from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Ordering
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
@@ -791,7 +795,31 @@ class Shrinker(object):
             ):
                 self.clear_change_tracking()
             else:
-                for i, (u, v) in enumerate(self.all_block_bounds()):
+                blocks = new_target.blocks
+
+                # Index of last block whose contents have been modified, found
+                # by checking if the tail past this point has been modified.
+                last_changed = binary_search(
+                    0,
+                    len(blocks),
+                    lambda i: current[blocks.start(i) :] != new[blocks.start(i) :],
+                )
+
+                # Index of the first block whose contents have been changed,
+                # because we know that this predicate is true for zero (because
+                # the prefix from the start is empty), so the result must be True
+                # for the bytes from the start of this block and False for the
+                # bytes from the end, hence the change is in this block.
+                first_changed = binary_search(
+                    0,
+                    len(blocks),
+                    lambda i: current[: blocks.start(i)] == new[: blocks.start(i)],
+                )
+
+                # Between these two changed regions we now do a linear scan to
+                # check if any specific block values have changed.
+                for i in hrange(first_changed, last_changed + 1):
+                    u, v = blocks.bounds(i)
                     if i not in self.__changed_blocks and current[u:v] != new[u:v]:
                         self.mark_changed(i)
         else:
