@@ -577,7 +577,7 @@ class ConjectureData(object):
         # be until we ran the code under tracemalloc and found a rather significant
         # chunk of allocation was happening here. This was presumably due to varargs
         # or the like, but we didn't investigate further given that it was easy
-        # to fix with this check..
+        # to fix with this check.
         if self.depth > self.max_depth:
             self.max_depth = self.depth
 
