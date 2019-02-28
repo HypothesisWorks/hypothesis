@@ -44,6 +44,7 @@ from hypothesis.internal.conjecture.data import (
     StopTest,
 )
 from hypothesis.internal.conjecture.datatree import DataTree
+from hypothesis.internal.conjecture.junkdrawer import pop_random
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import debug_report
@@ -893,20 +894,6 @@ def _draw_successor(rnd, xs):
 
 def uniform(random, n):
     return int_to_bytes(random.getrandbits(n * 8), n)
-
-
-def pop_random(random, values):
-    """Remove a random element of values, possibly changing the ordering of its
-    elements."""
-
-    # We pick the element at a random index. Rather than removing that element
-    # from the list (which would be an O(n) operation), we swap it to the end
-    # and return the last element of the list. This changes the order of
-    # the elements, but as long as these elements are only accessed through
-    # random sampling that doesn't matter.
-    i = random.randrange(0, len(values))
-    values[i], values[-1] = values[-1], values[i]
-    return values.pop()
 
 
 class TargetSelector(object):
