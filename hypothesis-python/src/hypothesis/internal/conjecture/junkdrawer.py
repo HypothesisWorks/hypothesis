@@ -22,7 +22,7 @@ anything that lives here, please move it."""
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis.internal.compat import hbytes
+from hypothesis.internal.compat import array_or_list, hbytes
 
 
 def replace_all(buffer, replacements):
@@ -42,3 +42,41 @@ def replace_all(buffer, replacements):
     result.extend(buffer[prev:])
     assert len(result) == len(buffer) + offset
     return hbytes(result)
+
+
+ARRAY_CODES = ["B", "H", "I", "L", "Q"]
+NEXT_ARRAY_CODE = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
+
+
+class IntList(object):
+    """Class for storing a list of non-negative integers compactly.
+
+    We store them as the smallest size integer array we can get
+    away with. When we try to add an integer that is too large,
+    we upgrade the array to the smallest word size needed to store
+    the new value."""
+
+    __slots__ = ("__underlying",)
+
+    def __init__(self):
+        self.__underlying = array_or_list("B", [])
+
+    def __len__(self):
+        return len(self.__underlying)
+
+    def __getitem__(self, i):
+        return self.__underlying[i]
+
+    def __iter__(self):
+        return iter(self.__underlying)
+
+    def append(self, n):
+        while True:
+            try:
+                self.__underlying.append(n)
+                return
+            except OverflowError:
+                assert n > 0
+                self.__underlying = array_or_list(
+                    NEXT_ARRAY_CODE[self.__underlying.typecode], self.__underlying
+                )

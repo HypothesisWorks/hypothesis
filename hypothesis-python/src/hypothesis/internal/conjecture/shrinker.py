@@ -575,7 +575,7 @@ class Shrinker(object):
     def all_block_bounds(self, target=None):
         if target is None:
             target = self.shrink_target
-        return [(b.start, b.end) for b in target.blocks]
+        return target.blocks.all_bounds()
 
     @derived_value
     def examples_by_label(self):

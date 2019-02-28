@@ -17,6 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+from collections import defaultdict
 from enum import IntEnum
 
 import attr
@@ -32,6 +33,7 @@ from hypothesis.internal.compat import (
     text_type,
     unicode_safe_repr,
 )
+from hypothesis.internal.conjecture.junkdrawer import IntList
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.escalation import mark_for_escalation
 from hypothesis.utils.conventions import UniqueIdentifier
@@ -162,6 +164,159 @@ class Block(object):
         return self.forced or self.all_zero
 
 
+class Blocks(object):
+    """A lazily calculated list of blocks for a particular ``ConjectureResult``
+    or ``ConjectureData`` object.
+
+    Pretends to be a list containing ``Block`` objects but actually only
+    contains their endpoints right up until the point where you want to
+    access the actual block, at which point it is constructed.
+
+    This is designed to be as space efficient as possible, so will at
+    various points silently transform its representation into one
+    that is better suited for the current access pattern.
+
+    In addition, it has a number of convenience methods for accessing
+    properties of the block object at index ``i`` that should generally
+    be preferred to using the Block objects directly, as it will not
+    have to allocate the actual object."""
+
+    __slots__ = ("__endpoints", "owner", "__blocks", "__count", "__sparse")
+
+    def __init__(self, owner):
+        self.owner = owner
+        self.__endpoints = IntList()
+        self.__blocks = {}
+        self.__count = 0
+        self.__sparse = True
+
+    def add_endpoint(self, n):
+        """Add n to the list of endpoints."""
+        assert isinstance(self.owner, ConjectureData)
+        self.__endpoints.append(n)
+
+    def transfer_ownership(self, new_owner):
+        """Used to move ``Blocks`` over to a ``ConjectureResult`` object
+        when that is read to be used and we no longer want to keep the
+        whole ``ConjectureData`` around."""
+        assert isinstance(new_owner, ConjectureResult)
+        self.owner = new_owner
+        self.__check_completion()
+
+    def start(self, i):
+        """Equivalent to self[i].start."""
+        if i == 0:
+            return 0
+        else:
+            return self.end(i - 1)
+
+    def end(self, i):
+        """Equivalent to self[i].end."""
+        return self.__endpoints[i]
+
+    def bounds(self, i):
+        """Equivalent to self[i].bounds."""
+        return (self.start(i), self.end(i))
+
+    def all_bounds(self):
+        """Equivalent to [(b.start, b.end) for b in self]."""
+        result = []
+        prev = 0
+        for e in self.__endpoints:
+            result.append((prev, e))
+            prev = e
+        return result
+
+    def __len__(self):
+        return len(self.__endpoints)
+
+    def __known_block(self, i):
+        try:
+            return self.__blocks[i]
+        except (KeyError, IndexError):
+            return None
+
+    def __getitem__(self, i):
+        n = len(self)
+        if i < -n or i >= n:
+            raise IndexError("Index %d out of range [-%d, %d)" % (i, n, n))
+        if i < 0:
+            i += n
+        assert i >= 0
+        result = self.__known_block(i)
+        if result is not None:
+            return result
+
+        # We store the blocks as a sparse dict mapping indices to the
+        # actual result, but this isn't the best representation once we
+        # stop being sparse and want to use most of the blocks. Switch
+        # over to a list at that point.
+        if self.__sparse and len(self.__blocks) * 2 >= len(self):
+            new_blocks = [None] * len(self)
+            for k, v in self.__blocks.items():
+                new_blocks[k] = v
+            self.__sparse = False
+            self.__blocks = new_blocks
+            assert self.__blocks[i] is None
+
+        start = self.start(i)
+        end = self.end(i)
+
+        # We keep track of the number of blocks that have actually been
+        # instantiated so that when every block that could be instantiated
+        # has been we know that the list is complete and can throw away
+        # some data that we no longer need.
+        self.__count += 1
+
+        # Integrity check: We can't have allocated more blocks than we have
+        # positions for blocks.
+        assert self.__count <= len(self)
+        result = Block(
+            start=start,
+            end=end,
+            index=i,
+            forced=start in self.owner.forced_indices,
+            all_zero=not any(self.owner.buffer[start:end]),
+        )
+        try:
+            self.__blocks[i] = result
+        except IndexError:
+            assert isinstance(self.__blocks, list)
+            assert len(self.__blocks) < len(self)
+            self.__blocks.extend([None] * (len(self) - len(self.__blocks)))
+            self.__blocks[i] = result
+
+        self.__check_completion()
+
+        return result
+
+    def __check_completion(self):
+        """The list of blocks is complete if we have created every ``Block``
+        object that we currently good and know that no more will be created.
+
+        If this happens then we don't need to keep the reference to the
+        owner around, and delete it so that there is no circular reference.
+        The main benefit of this is that the gc doesn't need to run to collect
+        this because normal reference counting is enough.
+        """
+        if self.__count == len(self) and isinstance(self.owner, ConjectureResult):
+            self.owner = None
+
+    def __iter__(self):
+        for i in hrange(len(self)):
+            yield self[i]
+
+    def __repr__(self):
+        parts = []
+        for i in hrange(len(self)):
+            b = self.__known_block(i)
+            if b is None:
+                parts.append("...")
+            else:
+                parts.append(repr(b))
+        return "Block([%s])" % (", ".join(parts),)
+
+
 class _Overrun(object):
     status = Status.OVERRUN
 
@@ -251,12 +406,15 @@ class ConjectureResult(object):
     output = attr.ib()
     extra_information = attr.ib()
     has_discards = attr.ib()
-    __examples = attr.ib(init=False, default=None)
+    forced_indices = attr.ib(repr=False)
+
+    __examples = attr.ib(init=False, repr=False, default=None)
 
     index = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         self.index = len(self.buffer)
+        self.forced_indices = frozenset(self.forced_indices)
 
     @property
     def examples(self):
@@ -286,8 +444,11 @@ class ConjectureData(object):
         self.max_length = max_length
         self.is_find = False
         self._draw_bytes = draw_bytes
-        self.block_starts = {}
-        self.blocks = []
+        self.overdraw = 0
+        self.__block_starts = defaultdict(list)
+        self.__block_starts_calculated_to = 0
+
+        self.blocks = Blocks(self)
         self.buffer = bytearray()
         self.index = 0
         self.output = u""
@@ -347,7 +508,9 @@ class ConjectureData(object):
                 if self.extra_information.has_information()
                 else None,
                 has_discards=self.has_discards,
+                forced_indices=self.forced_indices,
             )
+            self.blocks.transfer_ownership(self.__result)
         return self.__result
 
     def __assert_not_frozen(self, name):
@@ -492,16 +655,28 @@ class ConjectureData(object):
 
         if block.forced:
             self.forced_indices.update(hrange(block.start, block.end))
-        self.block_starts.setdefault(n_bytes, []).append(block.start)
-        self.blocks.append(block)
-        assert self.blocks[block.index] is block
-        assert self.index == initial
+
         self.buffer.extend(buf)
         self.index = len(self.buffer)
+
+        if forced is not None:
+            self.forced_indices.update(hrange(initial, self.index))
+
+        self.blocks.add_endpoint(self.index)
+
         self.stop_example()
 
         assert bit_length(result) <= n
         return result
+
+    @property
+    def block_starts(self):
+        while self.__block_starts_calculated_to < len(self.blocks):
+            i = self.__block_starts_calculated_to
+            self.__block_starts_calculated_to += 1
+            u, v = self.blocks.bounds(i)
+            self.__block_starts[v - u].append(u)
+        return self.__block_starts
 
     def draw_bytes(self, n):
         """Draw n bytes from the underlying source."""
@@ -539,7 +714,7 @@ class ConjectureData(object):
 
 
 def bits_to_bytes(n):
-    n_bytes = n // 8
-    if n % 8 != 0:
-        n_bytes += 1
-    return n_bytes
+    """The number of bytes required to represent an n-bit number.
+    Equivalent to (n + 7) // 8, but slightly faster. This really is
+    called enough times that that matters."""
+    return (n + 7) >> 3

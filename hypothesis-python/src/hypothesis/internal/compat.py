@@ -598,3 +598,15 @@ except Exception:
     # Can't use ImportError, because of e.g. Django config errors
     def bad_django_TestCase(runner):
         return False
+
+
+if PY2:
+
+    def array_or_list(code, contents):
+        if code in ("q", "Q"):
+            return list(contents)
+        return array.array(code, contents)
+
+
+else:
+    array_or_list = array.array
