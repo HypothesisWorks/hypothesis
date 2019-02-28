@@ -572,7 +572,14 @@ class ConjectureData(object):
         self.__assert_not_frozen("start_example")
         self.current_example_labels().append(label)
         self.depth += 1
-        self.max_depth = max(self.max_depth, self.depth)
+        # Logically it would make sense for this to just be
+        # ``self.depth = max(self.depth, self.max_depth)``, which is what it used to
+        # be until we ran the code under tracemalloc and found a rather significant
+        # chunk of allocation was happening here. This was presumably due to varargs
+        # or the like, but we didn't investigate further given that it was easy
+        # to fix with this check.
+        if self.depth > self.max_depth:
+            self.max_depth = self.depth
 
     def stop_example(self, discard=False):
         if self.frozen:
