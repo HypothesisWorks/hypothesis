@@ -58,8 +58,18 @@ class IntList(object):
 
     __slots__ = ("__underlying",)
 
-    def __init__(self):
-        self.__underlying = array_or_list("B", [])
+    def __init__(self, values=()):
+        for code in ARRAY_CODES:
+            try:
+                self.__underlying = array_or_list(code, values)
+                break
+            except OverflowError:
+                pass
+        else:
+            raise ValueError("Could not create IntList for %r" % (values,))
+
+    def __repr__(self):
+        return "IntList(%r)" % (list(self),)
 
     def __len__(self):
         return len(self.__underlying)
@@ -69,6 +79,20 @@ class IntList(object):
 
     def __iter__(self):
         return iter(self.__underlying)
+
+    def __eq__(self, other):
+        if self is other:
+            return True
+        if not isinstance(other, IntList):
+            return NotImplemented
+        return self.__underlying == other.__underlying
+
+    def __ne__(self, other):
+        if self is other:
+            return False
+        if not isinstance(other, IntList):
+            return NotImplemented
+        return self.__underlying != other.__underlying
 
     def append(self, n):
         while True:
