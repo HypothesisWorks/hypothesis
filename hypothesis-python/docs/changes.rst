@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.7.15:
+
+-------------------
+4.7.15 - 2019-02-28
+-------------------
+
+This release allows Hypothesis to calculate a number of attributes of generated test cases lazily.
+This should significantly reduce memory usage and modestly improve performance,
+especially for large test cases.
+
 .. _v4.7.14:
 
 -------------------
