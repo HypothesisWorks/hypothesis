@@ -11,7 +11,7 @@ This document is organised into three parts:
 
 1. How to tell if you need to think about shrinking (you probably don't!)
 2. Designing for shrinking 'above' the Hypothesis public API
-3. Implementation tricks used in our internals, for interestd contributors
+3. Implementation tricks used in our internals, for interested contributors
 
 It is written for people implementing complex third-party strategies (such
 as `hypothesis-networkx <https://pypi.org/project/hypothesis-networkx/>`__),
