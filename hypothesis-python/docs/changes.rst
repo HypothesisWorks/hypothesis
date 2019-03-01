@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.7.17:
+
+-------------------
+4.7.17 - 2019-03-01
+-------------------
+
+This release makes some micro-optimisations within Hypothesis's internal representation of test cases.
+This should cause heavily nested test cases to allocate less during generation and shrinking,
+which should speed things up slightly.
+
 .. _v4.7.16:
 
 -------------------
