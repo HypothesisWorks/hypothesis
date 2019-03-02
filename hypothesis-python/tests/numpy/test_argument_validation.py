@@ -63,7 +63,7 @@ def e(a, **kwargs):
         e(nps.valid_tuple_axes, ndim=2, min_size=-1),
         e(nps.valid_tuple_axes, ndim=2, min_size=3, max_size=10),
         e(nps.valid_tuple_axes, ndim=2, min_size=2, max_size=1),
-        e(nps.valid_tuple_axes, ndim=2., min_size=2, max_size=1),
+        e(nps.valid_tuple_axes, ndim=2.0, min_size=2, max_size=1),
         e(nps.valid_tuple_axes, ndim=2, min_size=1.0, max_size=2),
         e(nps.valid_tuple_axes, ndim=2, min_size=1, max_size=2.0),
     ],

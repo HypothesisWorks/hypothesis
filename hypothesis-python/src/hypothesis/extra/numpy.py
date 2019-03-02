@@ -654,9 +654,9 @@ def nested_dtypes(
 @st.defines_strategy
 def valid_tuple_axes(ndim, min_size=0, max_size=None):
     # type: (int, int, Optional[int]) -> st.SearchStrategy[Tuple[int, ...]]
-    """ Return a strategy for generating permissible tuple-values for the
+    """Return a strategy for generating permissible tuple-values for the
     ``axis`` argument for a numpy sequential function (e.g.
-    :class:`numpy.sum <numpy:numpy.sum>`), given an array of the specified
+    :func:`numpy.sum <numpy:numpy.sum>`), given an array of the specified
     dimensionality.
 
     All tuples will have an length >= min_size and <= max_size. The default
@@ -677,7 +677,9 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
     check_valid_magnitude(ndim, "ndim")
 
     order_check("len", 0, min_size, max_size)
-    check_argument(min_size <= ndim, "min_len={} is larger than ndim={}", min_size, ndim)
+    check_argument(
+        min_size <= ndim, "min_len={} is larger than ndim={}", min_size, ndim
+    )
     check_type(integer_types, min_size, "min_len")
     check_type(integer_types, max_size, "max_len")
 
@@ -685,8 +687,7 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
 
     # shrink axis values from negative to positive
     return st.integers(min_size, max_size).flatmap(
-        lambda num_axes: st.permutations(tuple(zip(range(ndim), range(-ndim, 0, 1)))).map(
-            lambda axes: axes[:num_axes]).flatmap(
-            lambda x: st.tuples(*(st.sampled_from(item) for item in x))
-        )
+        lambda num_axes: st.permutations(tuple(zip(range(ndim), range(-ndim, 0, 1))))
+        .map(lambda axes: axes[:num_axes])
+        .flatmap(lambda x: st.tuples(*(st.sampled_from(item) for item in x)))
     )

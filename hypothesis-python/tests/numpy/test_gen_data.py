@@ -483,11 +483,7 @@ def test_axes_are_valid_inputs_to_sum(shape, data):
 def test_minimize_tuple_axes(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
     max_size = data.draw(st.integers(min_size, ndim), label="max_size")
-    smallest = minimal(
-        nps.valid_tuple_axes(
-            ndim, min_size, max_size
-        )
-    )
+    smallest = minimal(nps.valid_tuple_axes(ndim, min_size, max_size))
     assert len(smallest) == min_size and all(k > -1 for k in smallest)
 
 
@@ -497,9 +493,6 @@ def test_minimize_negative_tuple_axes(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
     max_size = data.draw(st.integers(min_size, ndim), label="max_size")
     smallest = minimal(
-        nps.valid_tuple_axes(
-            ndim, min_size, max_size
-        ),
-        lambda x: all(i < 0 for i in x)
+        nps.valid_tuple_axes(ndim, min_size, max_size), lambda x: all(i < 0 for i in x)
     )
     assert len(smallest) == min_size
