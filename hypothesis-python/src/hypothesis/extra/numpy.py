@@ -298,11 +298,10 @@ def fill_for(elements, unique, fill, name=""):
     return fill
 
 
-@st.composite
+@st.defines_strategy
 def arrays(
-    draw,  # type: Any
     dtype,  # type: Any
-    shape,  # type: Union[int, Sequence[int]]
+    shape,  # type: Union[int, Sequence[int], st.SearchStrategy[Sequence[int]]]
     elements=None,  # type: st.SearchStrategy[Any]
     fill=None,  # type: st.SearchStrategy[Any]
     unique=False,  # type: bool
@@ -310,12 +309,11 @@ def arrays(
     # type: (...) -> st.SearchStrategy[np.ndarray]
     r"""Returns a strategy for generating :class:`numpy:numpy.ndarray`\ s.
 
-    * ``dtype`` may be any valid input to
-      :class:`numpy.dtype <numpy:numpy.dtype>` (this includes
-      :class:`~numpy:numpy.dtype` objects), or a strategy that generates such
-      values.
-    * ``shape`` may be an integer >= 0, a tuple of length >= 0 of such
-      integers, or a strategy that generates such values.
+    * ``dtype`` may be any valid input to :class:`~numpy:numpy.dtype`
+      (this includes :class:`~numpy:numpy.dtype` objects), or a strategy that
+      generates such values.
+    * ``shape`` may be an integer >= 0, a tuple of such integers, or a
+      strategy that generates such values.
     * ``elements`` is a strategy for generating values to put in the array.
       If it is None a suitable value will be inferred based on the dtype,
       which may give any legal value (including eg ``NaN`` for floats).
@@ -378,23 +376,39 @@ def arrays(
     hundreds or more elements, having a fill value is essential if you want
     your tests to run in reasonable time.
     """
+    # We support passing strategies as arguments for convenience, or at least
+    # for legacy reasons, but don't want to pay the perf cost of a composite
+    # strategy (i.e. repeated argument handling and validation) when it's not
+    # needed.  So we get the best of both worlds by recursing with flatmap,
+    # but only when it's actually needed.
     if isinstance(dtype, SearchStrategy):
-        dtype = draw(dtype)
+        return dtype.flatmap(
+            lambda d: arrays(d, shape, elements=elements, fill=fill, unique=unique)
+        )
+    if isinstance(shape, SearchStrategy):
+        return shape.flatmap(
+            lambda s: arrays(dtype, s, elements=elements, fill=fill, unique=unique)
+        )
+    # From here on, we're only dealing with values and it's relatively simple.
     dtype = np.dtype(dtype)
     if elements is None:
         elements = from_dtype(dtype)
-    if isinstance(shape, SearchStrategy):
-        shape = draw(shape)
     if isinstance(shape, int):
         shape = (shape,)
     shape = tuple(shape)
-    if not shape:
-        # We use .itemset() instead of np.full because the latter cannot set tuples as elements.
-        arr = np.empty(shape=(), dtype=dtype)
-        arr.itemset(draw(elements))
-        return arr
+    if shape == ():
+
+        def zero_dim_array(element):
+            # We use .itemset() instead of np.full because the latter cannot
+            # set tuples or other sequences as elements.
+            arr = np.empty(shape=(), dtype=dtype)
+            arr.itemset(element)
+            return arr
+
+        return st.builds(zero_dim_array, elements)
+
     fill = fill_for(elements=elements, unique=unique, fill=fill)
-    return draw(ArrayStrategy(elements, shape, dtype, fill, unique))
+    return ArrayStrategy(elements, shape, dtype, fill, unique)
 
 
 @st.defines_strategy
