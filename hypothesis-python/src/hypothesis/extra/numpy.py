@@ -29,12 +29,12 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange, integer_types, text_type
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
-from hypothesis.internal.validation import check_type
+from hypothesis.internal.validation import check_type, check_valid_magnitude
 from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
 
 if False:
-    from typing import Any, Union, Sequence, Tuple  # noqa
+    from typing import Any, Union, Sequence, Tuple, Optional  # noqa
     from hypothesis.searchstrategy.strategies import T  # noqa
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
@@ -649,3 +649,44 @@ def nested_dtypes(
     return st.recursive(
         subtype_strategy, lambda x: array_dtypes(x, allow_subarrays=True), max_leaves
     ).filter(lambda d: max_itemsize is None or d.itemsize <= max_itemsize)
+
+
+@st.defines_strategy
+def valid_tuple_axes(ndim, min_size=0, max_size=None):
+    # type: (int, int, Optional[int]) -> st.SearchStrategy[Tuple[int, ...]]
+    """ Return a strategy for generating permissible tuple-values for the
+    ``axis`` argument for a numpy sequential function (e.g.
+    :class:`numpy.sum <numpy:numpy.sum>`), given an array of the specified
+    dimensionality.
+
+    All tuples will have an length >= min_size and <= max_size. The default
+    value for max_len is ``ndim``.
+
+    Examples from this strategy shrink towards an empty tuple.
+
+
+    .. code-block:: pycon
+
+        >>> [valid_tuple_axes(3).example() for i in range(4)]
+        [(-3, 1), (0, 1, -1), (0, 2), (0, -2, 2)]
+    """
+    if max_size is None:
+        max_size = ndim
+
+    check_type(integer_types, ndim, "ndim")
+    check_valid_magnitude(ndim, "ndim")
+
+    order_check("len", 0, min_size, max_size)
+    check_argument(min_size <= ndim, "min_len={} is larger than ndim={}", min_size, ndim)
+    check_type(integer_types, min_size, "min_len")
+    check_type(integer_types, max_size, "max_len")
+
+    max_size = min(ndim, max_size)
+
+    # shrink axis values from negative to positive
+    return st.integers(min_size, max_size).flatmap(
+        lambda num_axes: st.permutations(tuple(zip(range(ndim), range(-ndim, 0, 1)))).map(
+            lambda axes: axes[:num_axes]).flatmap(
+            lambda x: st.tuples(*(st.sampled_from(item) for item in x))
+        )
+    )
