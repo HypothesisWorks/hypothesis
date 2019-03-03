@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.7.18:
+
+-------------------
+4.7.18 - 2019-03-03
+-------------------
+
+This patch removes some overhead from :func:`~hypothesis.extra.numpy.arrays`
+with a constant shape and dtype.  The resulting performance improvement is
+modest, but worthwile for small arrays.
+
 .. _v4.7.17:
 
 -------------------
