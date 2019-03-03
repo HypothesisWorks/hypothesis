@@ -29,7 +29,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange, integer_types, text_type
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
-from hypothesis.internal.validation import check_type, check_valid_magnitude
+from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
 
@@ -685,16 +685,10 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
         max_size = ndim
 
     check_type(integer_types, ndim, "ndim")
-    check_valid_magnitude(ndim, "ndim")
-
-    order_check("len", 0, min_size, max_size)
-    check_argument(
-        min_size <= ndim, "min_len={} is larger than ndim={}", min_size, ndim
-    )
-    check_type(integer_types, min_size, "min_len")
-    check_type(integer_types, max_size, "max_len")
-
-    max_size = min(ndim, max_size)
+    check_type(integer_types, min_size, "min_size")
+    check_type(integer_types, max_size, "max_size")
+    order_check("size", 0, min_size, max_size)
+    check_valid_interval(max_size, ndim, "max_size", "ndim")
 
     # shrink axis values from negative to positive
     return st.integers(min_size, max_size).flatmap(
