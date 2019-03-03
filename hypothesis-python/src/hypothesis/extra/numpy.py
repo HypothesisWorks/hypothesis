@@ -653,7 +653,7 @@ def nested_dtypes(
 
 @st.defines_strategy
 def valid_tuple_axes(ndim, min_size=0, max_size=None):
-    # type: (int, int, Optional[int]) -> st.SearchStrategy[Tuple[int, ...]]
+    # type: (int, int, int) -> st.SearchStrategy[Tuple[int, ...]]
     """Return a strategy for generating permissible tuple-values for the
     ``axis`` argument for a numpy sequential function (e.g.
     :func: `numpy:numpy.sum`), given an array of the specified
