@@ -676,10 +676,12 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
     any type of valid axis object, i.e. integers, tuples, and ``None``:
 
     .. code-block:: pycon
-    >>> from hypothesis.strategies import integers, none
-    >>> from hypothesis.extra.numpy import valid_tuple_axes
-    >>> def valid_axes(ndim):
-    ...     return none() | integers(-ndim, ndim - 1) | valid_tuple_axes(ndim)
+
+        >>> from hypothesis.strategies import integers, none
+        >>> from hypothesis.extra.numpy import valid_tuple_axes
+        >>> def valid_axes(ndim):
+        ...     return none() | integers(-ndim, ndim - 1) | valid_tuple_axes(ndim)
+
     """
     if max_size is None:
         max_size = ndim
