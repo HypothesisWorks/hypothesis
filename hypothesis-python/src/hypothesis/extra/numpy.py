@@ -662,13 +662,24 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
     All tuples will have an length >= min_size and <= max_size. The default
     value for max_len is ``ndim``.
 
-    Examples from this strategy shrink towards an empty tuple.
+    Examples from this strategy shrink towards an empty tuple, which render
+    most sequential functions as no-ops.
 
+    The following are some examples drawn from this strategy.
 
     .. code-block:: pycon
 
         >>> [valid_tuple_axes(3).example() for i in range(4)]
         [(-3, 1), (0, 1, -1), (0, 2), (0, -2, 2)]
+
+    ``valid_tuple_axes`` can be joined with other strategies to generate
+    any type of valid axis object, i.e. integers, tuples, and ``None``:
+
+    .. code-block:: pycon
+    >>> from hypothesis.strategies import integers, none
+    >>> from hypothesis.extra.numpy import valid_tuple_axes
+    >>> def valid_axes(ndim):
+    ...     return none() | integers(-ndim, ndim - 1) | valid_tuple_axes(ndim)
     """
     if max_size is None:
         max_size = ndim
