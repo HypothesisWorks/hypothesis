@@ -126,12 +126,6 @@ class ArrayStrategy(SearchStrategy):
     def __init__(self, element_strategy, shape, dtype, fill, unique):
         self.shape = tuple(shape)
         self.fill = fill
-        assert shape, "Zero-dimensional array shape is special-cased in arrays()"
-        check_argument(
-            all(isinstance(s, integer_types) for s in shape),
-            "Array shape must be integer in each dimension, provided shape was {}",
-            shape,
-        )
         self.array_size = int(np.prod(shape))
         self.dtype = dtype
         self.element_strategy = element_strategy
@@ -393,20 +387,14 @@ def arrays(
     dtype = np.dtype(dtype)
     if elements is None:
         elements = from_dtype(dtype)
-    if isinstance(shape, int):
+    if isinstance(shape, integer_types):
         shape = (shape,)
     shape = tuple(shape)
-    if shape == ():
-
-        def zero_dim_array(element):
-            # We use .itemset() instead of np.full because the latter cannot
-            # set tuples or other sequences as elements.
-            arr = np.empty(shape=(), dtype=dtype)
-            arr.itemset(element)
-            return arr
-
-        return st.builds(zero_dim_array, elements)
-
+    check_argument(
+        all(isinstance(s, integer_types) for s in shape),
+        "Array shape must be integer in each dimension, provided shape was {}",
+        shape,
+    )
     fill = fill_for(elements=elements, unique=unique, fill=fill)
     return ArrayStrategy(elements, shape, dtype, fill, unique)
 
