@@ -1,6 +1,9 @@
 # https://aka.ms/yaml
 variables:
-  # TODO: Set this where necessary
+  # Current tooling indexes directly into os.environ and will
+  # fail without this defined
+  # TODO: Implement specific PR logic and then fix up tooling to be okay
+  # without this environment variable set
   travis_event_type: ''
 
 jobs:
@@ -29,6 +32,9 @@ jobs:
   - job: main
     pool:
       vmImage: 'Ubuntu 16.04'
+    dependsOn:
+      - precheck
+    condition: not(failed())
     strategy:
       matrix:
         check-coverage:
@@ -42,8 +48,8 @@ jobs:
         check-py27:
           TASK: check-py27
         # Python 3.4 doesn't build against libssl-dev on Azure, failing checks
-        #check-py34:
-        #  TASK: check-py34
+        check-py34:
+          TASK: check-py34
         check-py35:
           TASK: check-py35
         check-py37:
@@ -62,6 +68,10 @@ jobs:
   - job: extras
     pool:
       vmImage: 'Ubuntu 16.04'
+    dependsOn:
+      - main
+      - precheck
+    condition: not(failed())
     strategy:
       matrix:
         check-unicode:
