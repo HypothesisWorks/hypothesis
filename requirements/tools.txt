@@ -7,7 +7,7 @@
 alabaster==0.7.12         # via sphinx
 appdirs==1.4.3            # via black
 atomicwrites==1.3.0       # via pytest
-attrs==18.2.0
+attrs==19.1.0
 babel==2.6.0              # via sphinx
 backcall==0.1.0           # via ipython
 bandit==1.5.1
@@ -18,7 +18,7 @@ chardet==3.0.4            # via requests
 click==7.0                # via black, pip-tools, pyupio, safety
 coverage==4.5.2
 decorator==4.3.2          # via ipython, traitlets
-deprecated==1.2.4         # via pygithub
+deprecated==1.2.5         # via pygithub
 django==2.1.7
 docutils==0.14            # via readme-renderer, restructuredtext-lint, sphinx
 dparse==0.4.1             # via pyupio, safety
@@ -27,27 +27,27 @@ filelock==3.0.10          # via tox
 flake8-alfred==1.1.1
 flake8-docstrings==1.3.0
 flake8-polyfill==1.0.2    # via flake8-docstrings
-flake8==3.6.0
+flake8==3.7.7
 gitdb2==2.0.5             # via gitpython
 gitpython==2.1.11         # via bandit
 idna==2.8                 # via requests
 imagesize==1.1.0          # via sphinx
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.3.0
-isort==4.3.8
+isort==4.3.10
 jedi==0.13.3              # via ipython
 jinja2==2.10              # via pyupio, sphinx
 lark-parser==0.6.6
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8
 mock==2.0.0
-more-itertools==5.0.0
+more-itertools==6.0.0
 mypy-extensions==0.4.1    # via mypy
 mypy==0.670
-numpy==1.16.1
+numpy==1.16.2
 packaging==19.0           # via dparse, pyupio, safety, sphinx
 parso==0.3.4              # via jedi
-pbr==5.1.2                # via mock, stevedore
+pbr==5.1.3                # via mock, stevedore
 pexpect==4.6.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pip-tools==3.4.0
@@ -56,9 +56,9 @@ pluggy==0.9.0             # via pytest, tox
 prompt-toolkit==2.0.9     # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.8.0                 # via pytest, tox
-pycodestyle==2.4.0        # via flake8
+pycodestyle==2.5.0        # via flake8
 pydocstyle==3.0.0         # via flake8-docstrings
-pyflakes==2.0.0           # via flake8
+pyflakes==2.1.1           # via flake8
 pygithub==1.43.5          # via pyupio
 pygments==2.3.1           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
@@ -80,7 +80,7 @@ snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.3
 sphinx==1.8.4
 sphinxcontrib-websupport==1.1.0  # via sphinx
-stevedore==1.30.0         # via bandit
+stevedore==1.30.1         # via bandit
 toml==0.10.0
 tox==3.7.0
 tqdm==4.31.1              # via pyupio, twine
@@ -88,7 +88,7 @@ traitlets==4.3.2          # via ipython
 twine==1.13.0
 typed-ast==1.3.1          # via mypy
 urllib3==1.24.1           # via requests
-virtualenv==16.4.1        # via tox
+virtualenv==16.4.3        # via tox
 wcwidth==0.1.7            # via prompt-toolkit
 webencodings==0.5.1       # via bleach
 wrapt==1.11.1             # via deprecated
