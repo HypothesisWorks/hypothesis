@@ -58,11 +58,11 @@ jobs:
         libreadline-dev libsqlite3-dev
       displayName: Install apt dependencies
 
-    - script: >
-        sudo apt-get install
-        libssl1.0-dev
-      condition: eq(variables['TASK'], 'check-py34')
-      displayName: Install extra py34 dependencies
+#    - script: >
+#        sudo apt-get install
+#        libssl1.0-dev
+#      condition: eq(variables['TASK'], 'check-py34')
+#      displayName: Install extra py34 dependencies
 
     - script: ./build.sh
 
