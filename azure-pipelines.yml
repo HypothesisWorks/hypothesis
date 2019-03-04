@@ -82,7 +82,7 @@ jobs:
       displayName: Run build tasks
 
   - job: extras
-    dependsOn: extras
+    dependsOn: main
     pool:
       vmImage: 'Ubuntu 16.04'
     strategy:
