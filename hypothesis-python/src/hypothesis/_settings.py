@@ -440,19 +440,13 @@ your tests slower.
 )
 
 
-def _validate_timeout(n):
-    if n in (not_set, unlimited):
-        return n
-    raise InvalidArgument("The timeout setting has been removed.")
-
-
 settings._define_setting(
     "timeout",
     default=not_set,
     description="The timeout setting has been deprecated and no longer does anything.",
     deprecation_message="The timeout setting can safely be removed with no effect.",
     deprecated_since="2017-11-02",
-    validator=_validate_timeout,
+    options=(not_set, unlimited),
 )
 
 settings._define_setting(
