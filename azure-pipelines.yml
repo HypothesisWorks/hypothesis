@@ -1,5 +1,6 @@
 # https://aka.ms/yaml
 variables:
+  # TODO: Set this where necessary
   travis_event_type: ''
 
 jobs:
@@ -23,9 +24,7 @@ jobs:
         sudo apt-get install
         libreadline-dev libsqlite3-dev
       displayName: Install apt dependencies
-
     - script: ./build.sh
-
 
   - job: main
     pool:
@@ -42,8 +41,9 @@ jobs:
           TASK: check-py36
         check-py27:
           TASK: check-py27
-        check-py34:
-          TASK: check-py34
+        # Python 3.4 doesn't build against libssl-dev on Azure, failing checks
+        #check-py34:
+        #  TASK: check-py34
         check-py35:
           TASK: check-py35
         check-py37:
@@ -57,15 +57,7 @@ jobs:
         sudo apt-get install
         libreadline-dev libsqlite3-dev
       displayName: Install apt dependencies
-
-#    - script: >
-#        sudo apt-get install
-#        libssl1.0-dev
-#      condition: eq(variables['TASK'], 'check-py34')
-#      displayName: Install extra py34 dependencies
-
     - script: ./build.sh
-
 
   - job: extras
     pool:
@@ -99,5 +91,6 @@ jobs:
         sudo apt-get install
         libreadline-dev libsqlite3-dev
       displayName: Install apt dependencies
-
     - script: ./build.sh
+
+# TODO: Deploy jobs dependent on above
