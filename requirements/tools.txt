@@ -18,7 +18,7 @@ chardet==3.0.4            # via requests
 click==7.0                # via black, pip-tools, pyupio, safety
 coverage==4.5.2
 decorator==4.3.2          # via ipython, traitlets
-deprecated==1.2.4         # via pygithub
+deprecated==1.2.5         # via pygithub
 django==2.1.7
 docutils==0.14            # via readme-renderer, restructuredtext-lint, sphinx
 dparse==0.4.1             # via pyupio, safety
