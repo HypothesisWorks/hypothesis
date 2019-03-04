@@ -1,10 +1,12 @@
 # https://aka.ms/yaml
 variables:
+  has_failure: False
   # Current tooling indexes directly into os.environ and will
   # fail without this defined
   # TODO: Implement specific PR logic and then fix up tooling to be okay
   # without this environment variable set
   travis_event_type: ''
+
 
 jobs:
   - job: precheck
@@ -22,19 +24,21 @@ jobs:
           TASK: check-format
         check-rust-tests:
           TASK: check-rust-tests
+    condition: not($(has_failure))
     steps:
     - script: >
         sudo apt-get install
         libreadline-dev libsqlite3-dev
       displayName: Install apt dependencies
     - script: ./build.sh
+      displayName: Run build tasks
+    - script: echo '##vso[task.setvariable variable=has_failure]True'
+      condition: failed()
+      displayName: Set failure flag on failures
 
   - job: main
     pool:
       vmImage: 'Ubuntu 16.04'
-    dependsOn:
-      - precheck
-    condition: not(failed())
     strategy:
       matrix:
         check-coverage:
@@ -58,20 +62,21 @@ jobs:
           TASK: check-quality
         check-ruby-tests:
           TASK: check-ruby-tests
+    condition: not($(has_failure))
     steps:
     - script: >
         sudo apt-get install
         libreadline-dev libsqlite3-dev
       displayName: Install apt dependencies
     - script: ./build.sh
+      displayName: Run build tasks
+    - script: echo '##vso[task.setvariable variable=has_failure]True'
+      condition: failed()
+      displayName: Set failure flag on failures
 
   - job: extras
     pool:
       vmImage: 'Ubuntu 16.04'
-    dependsOn:
-      - main
-      - precheck
-    condition: not(failed())
     strategy:
       matrix:
         check-unicode:
@@ -96,11 +101,16 @@ jobs:
           TASK: check-pandas23
         check-pandas24:
           TASK: check-pandas24
+    condition: not($(has_failure))
     steps:
     - script: >
         sudo apt-get install
         libreadline-dev libsqlite3-dev
       displayName: Install apt dependencies
     - script: ./build.sh
+      displayName: Run build tasks
+    - script: echo '##vso[task.setvariable variable=has_failure]True'
+      condition: failed()
+      displayName: Set failure flag on failures
 
 # TODO: Deploy jobs dependent on above
