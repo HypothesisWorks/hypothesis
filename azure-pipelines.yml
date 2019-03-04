@@ -1,6 +1,6 @@
 # https://aka.ms/yaml
 variables:
-  has_failure: False
+  has_failure: false
   # Current tooling indexes directly into os.environ and will
   # fail without this defined
   # TODO: Implement specific PR logic and then fix up tooling to be okay
@@ -32,7 +32,7 @@ jobs:
       displayName: Install apt dependencies
     - script: ./build.sh
       displayName: Run build tasks
-    - script: echo '##vso[task.setvariable variable=has_failure]True'
+    - script: echo '##vso[task.setvariable variable=has_failure]true'
       condition: failed()
       displayName: Set failure flag on failures
 
@@ -70,7 +70,7 @@ jobs:
       displayName: Install apt dependencies
     - script: ./build.sh
       displayName: Run build tasks
-    - script: echo '##vso[task.setvariable variable=has_failure]True'
+    - script: echo '##vso[task.setvariable variable=has_failure]true'
       condition: failed()
       displayName: Set failure flag
 
@@ -109,7 +109,7 @@ jobs:
       displayName: Install apt dependencies
     - script: ./build.sh
       displayName: Run build tasks
-    - script: echo '##vso[task.setvariable variable=has_failure]True'
+    - script: echo '##vso[task.setvariable variable=has_failure]true'
       condition: failed()
       displayName: Set failure flag
 
