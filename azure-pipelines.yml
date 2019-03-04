@@ -30,8 +30,6 @@ jobs:
       vmImage: 'Ubuntu 16.04'
     strategy:
       matrix:
-        check-whole-repo-tests:
-          TASK: check-whole-repo-tests
         lint:
           TASK: lint
         lint-ruby:
