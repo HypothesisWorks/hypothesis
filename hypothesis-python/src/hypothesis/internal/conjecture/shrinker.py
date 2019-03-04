@@ -28,7 +28,11 @@ from hypothesis.internal.conjecture.floats import (
     float_to_lex,
     lex_to_float,
 )
-from hypothesis.internal.conjecture.junkdrawer import pop_random, replace_all
+from hypothesis.internal.conjecture.junkdrawer import (
+    binary_search,
+    pop_random,
+    replace_all,
+)
 from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Ordering
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
@@ -599,10 +603,8 @@ class Shrinker(object):
     def examples(self):
         return self.shrink_target.examples
 
-    def all_block_bounds(self, target=None):
-        if target is None:
-            target = self.shrink_target
-        return target.blocks.all_bounds()
+    def all_block_bounds(self):
+        return self.shrink_target.blocks.all_bounds()
 
     @derived_value
     def examples_by_label(self):
@@ -734,7 +736,7 @@ class Shrinker(object):
 
         current = self.shrink_target
 
-        blocked = [current.buffer[u:v] for u, v in self.all_block_bounds(current)]
+        blocked = [current.buffer[u:v] for u, v in self.all_block_bounds()]
 
         changed = [
             i
@@ -773,29 +775,66 @@ class Shrinker(object):
             self.__shrinking_prefixes.add(prefix)
 
     def clear_change_tracking(self):
-        self.__changed_blocks.clear()
+        self.__last_checked_changed_at = self.shrink_target
+        self.__all_changed_blocks = set()
 
     def mark_changed(self, i):
         self.__changed_blocks.add(i)
 
+    @property
+    def __changed_blocks(self):
+        if self.__last_checked_changed_at is not self.shrink_target:
+            prev_target = self.__last_checked_changed_at
+            new_target = self.shrink_target
+            assert prev_target is not new_target
+            prev = prev_target.buffer
+            new = new_target.buffer
+            assert sort_key(new) < sort_key(prev)
+
+            if (
+                len(new_target.blocks) != len(prev_target.blocks)
+                or new_target.blocks.endpoints != prev_target.blocks.endpoints
+            ):
+                self.__all_changed_blocks = set()
+            else:
+                blocks = new_target.blocks
+
+                # Index of last block whose contents have been modified, found
+                # by checking if the tail past this point has been modified.
+                last_changed = binary_search(
+                    0,
+                    len(blocks),
+                    lambda i: prev[blocks.start(i) :] != new[blocks.start(i) :],
+                )
+
+                # Index of the first block whose contents have been changed,
+                # because we know that this predicate is true for zero (because
+                # the prefix from the start is empty), so the result must be True
+                # for the bytes from the start of this block and False for the
+                # bytes from the end, hence the change is in this block.
+                first_changed = binary_search(
+                    0,
+                    len(blocks),
+                    lambda i: prev[: blocks.start(i)] == new[: blocks.start(i)],
+                )
+
+                # Between these two changed regions we now do a linear scan to
+                # check if any specific block values have changed.
+                for i in hrange(first_changed, last_changed + 1):
+                    u, v = blocks.bounds(i)
+                    if i not in self.__all_changed_blocks and prev[u:v] != new[u:v]:
+                        self.__all_changed_blocks.add(i)
+            self.__last_checked_changed_at = new_target
+        assert self.__last_checked_changed_at is self.shrink_target
+        return self.__all_changed_blocks
+
     def update_shrink_target(self, new_target):
         assert isinstance(new_target, ConjectureResult)
         if self.shrink_target is not None:
-            current = self.shrink_target.buffer
-            new = new_target.buffer
-            assert sort_key(new) < sort_key(current)
             self.shrinks += 1
-            if (
-                len(new_target.blocks) != len(self.shrink_target.blocks)
-                or self.all_block_bounds(new_target) != self.all_block_bounds()
-            ):
-                self.clear_change_tracking()
-            else:
-                for i, (u, v) in enumerate(self.all_block_bounds()):
-                    if i not in self.__changed_blocks and current[u:v] != new[u:v]:
-                        self.mark_changed(i)
         else:
-            self.__changed_blocks = set()
+            self.__all_changed_blocks = set()
+            self.__last_checked_changed_at = new_target
 
         self.shrink_target = new_target
         self.__shrinking_block_cache = {}
