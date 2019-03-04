@@ -775,7 +775,8 @@ class Shrinker(object):
             self.__shrinking_prefixes.add(prefix)
 
     def clear_change_tracking(self):
-        self.__changed_blocks.clear()
+        self.__last_checked_changed_at = self.shrink_target
+        self.__all_changed_blocks = set()
 
     def mark_changed(self, i):
         self.__changed_blocks.add(i)
