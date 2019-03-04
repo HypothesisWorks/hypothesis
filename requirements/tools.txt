@@ -7,7 +7,7 @@
 alabaster==0.7.12         # via sphinx
 appdirs==1.4.3            # via black
 atomicwrites==1.3.0       # via pytest
-attrs==18.2.0
+attrs==19.1.0
 babel==2.6.0              # via sphinx
 backcall==0.1.0           # via ipython
 bandit==1.5.1
