@@ -1,7 +1,5 @@
 # https://aka.ms/yaml
 variables:
-  # Azure coerces this to a String and empty string is the only falsy value
-  has_failure: ''
   # Current tooling indexes directly into os.environ and will
   # fail without this defined
   # TODO: Implement specific PR logic and then fix up tooling to be okay
@@ -10,6 +8,23 @@ variables:
 
 
 jobs:
+  - job: precheck-concurrent
+    # This job schedules long-running tasks concurrently with the rest of the
+    # build pipeline ensuring that later stages don't block on them
+    pool:
+      vmImage: 'Ubuntu 16.04'
+    strategy:
+      matrix:
+        check-whole-repo-tests:
+          TASK: check-whole-repo-tests
+    steps:
+    - script: >
+        sudo apt-get install
+        libreadline-dev libsqlite3-dev
+      displayName: Install apt dependencies
+    - script: ./build.sh
+      displayName: Run build tasks
+
   - job: precheck
     pool:
       vmImage: 'Ubuntu 16.04'
@@ -25,7 +40,6 @@ jobs:
           TASK: check-format
         check-rust-tests:
           TASK: check-rust-tests
-    condition: not(variables.has_failure)
     steps:
     - script: >
         sudo apt-get install
@@ -33,11 +47,9 @@ jobs:
       displayName: Install apt dependencies
     - script: ./build.sh
       displayName: Run build tasks
-    - script: echo '##vso[task.setvariable variable=has_failure]true'
-      condition: failed()
-      displayName: Set failure flag on failures
 
   - job: main
+    dependsOn: precheck
     pool:
       vmImage: 'Ubuntu 16.04'
     strategy:
@@ -53,8 +65,8 @@ jobs:
         check-py27:
           TASK: check-py27
         # Python 3.4 doesn't build against libssl-dev on Azure, failing checks
-        check-py34:
-          TASK: check-py34
+        #check-py34:
+        #  TASK: check-py34
         check-py35:
           TASK: check-py35
         check-py37:
@@ -63,7 +75,6 @@ jobs:
           TASK: check-quality
         check-ruby-tests:
           TASK: check-ruby-tests
-    condition: not(variables.has_failure)
     steps:
     - script: >
         sudo apt-get install
@@ -71,11 +82,9 @@ jobs:
       displayName: Install apt dependencies
     - script: ./build.sh
       displayName: Run build tasks
-    - script: echo '##vso[task.setvariable variable=has_failure]true'
-      condition: failed()
-      displayName: Set failure flag
 
   - job: extras
+    dependsOn: extras
     pool:
       vmImage: 'Ubuntu 16.04'
     strategy:
@@ -102,7 +111,6 @@ jobs:
           TASK: check-pandas23
         check-pandas24:
           TASK: check-pandas24
-    condition: not(variables.has_failure)
     steps:
     - script: >
         sudo apt-get install
@@ -110,8 +118,5 @@ jobs:
       displayName: Install apt dependencies
     - script: ./build.sh
       displayName: Run build tasks
-    - script: echo '##vso[task.setvariable variable=has_failure]true'
-      condition: failed()
-      displayName: Set failure flag
 
 # TODO: Deploy jobs dependent on above
