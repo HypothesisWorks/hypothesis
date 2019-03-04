@@ -1,6 +1,7 @@
 # https://aka.ms/yaml
 variables:
-  has_failure: false
+  # Azure coerces this to a String and empty string is the only falsy value
+  has_failure: ''
   # Current tooling indexes directly into os.environ and will
   # fail without this defined
   # TODO: Implement specific PR logic and then fix up tooling to be okay
