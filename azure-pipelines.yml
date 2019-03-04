@@ -8,7 +8,7 @@ variables:
 
 
 jobs:
-  - job: precheck-concurrent
+  - job: precheck_concurrent
     # This job schedules long-running tasks concurrently with the rest of the
     # build pipeline ensuring that later stages don't block on them
     pool:
