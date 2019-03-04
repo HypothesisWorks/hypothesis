@@ -24,7 +24,7 @@ jobs:
           TASK: check-format
         check-rust-tests:
           TASK: check-rust-tests
-    condition: not($(has_failure))
+    condition: not(variables.has_failure)
     steps:
     - script: >
         sudo apt-get install
@@ -62,7 +62,7 @@ jobs:
           TASK: check-quality
         check-ruby-tests:
           TASK: check-ruby-tests
-    condition: not($(has_failure))
+    condition: not(variables.has_failure)
     steps:
     - script: >
         sudo apt-get install
@@ -72,7 +72,7 @@ jobs:
       displayName: Run build tasks
     - script: echo '##vso[task.setvariable variable=has_failure]True'
       condition: failed()
-      displayName: Set failure flag on failures
+      displayName: Set failure flag
 
   - job: extras
     pool:
@@ -101,7 +101,7 @@ jobs:
           TASK: check-pandas23
         check-pandas24:
           TASK: check-pandas24
-    condition: not($(has_failure))
+    condition: not(variables.has_failure)
     steps:
     - script: >
         sudo apt-get install
@@ -111,6 +111,6 @@ jobs:
       displayName: Run build tasks
     - script: echo '##vso[task.setvariable variable=has_failure]True'
       condition: failed()
-      displayName: Set failure flag on failures
+      displayName: Set failure flag
 
 # TODO: Deploy jobs dependent on above
