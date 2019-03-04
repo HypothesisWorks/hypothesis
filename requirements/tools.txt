@@ -56,7 +56,7 @@ pluggy==0.9.0             # via pytest, tox
 prompt-toolkit==2.0.9     # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.8.0                 # via pytest, tox
-pycodestyle==2.4.0        # via flake8
+pycodestyle==2.5.0        # via flake8
 pydocstyle==3.0.0         # via flake8-docstrings
 pyflakes==2.0.0           # via flake8
 pygithub==1.43.5          # via pyupio
