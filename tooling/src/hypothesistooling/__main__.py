@@ -399,7 +399,6 @@ def check_py27():
 
 @python_tests
 def check_py34():
-    exit(1)
     run_tox("py34-full", PY34)
 
 
