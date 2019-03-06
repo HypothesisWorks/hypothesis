@@ -425,12 +425,12 @@ def _ensure_positive_int(x, name, since, min_value=0):
 
 
 def _max_examples_validator(x):
-    x = _ensure_positive_int(x, "max_examples", since="RELEASEDAY", min_value=0)
+    x = _ensure_positive_int(x, "max_examples", since="2019-03-06", min_value=0)
     if x == 0:
         note_deprecation(
             "max_examples=%r should be at least one. You can disable example "
             "generation with the `phases` setting instead." % (x,),
-            since="RELEASEDAY",
+            since="2019-03-06",
         )
     return x
 
@@ -457,7 +457,7 @@ For very complex code, we have observed Hypothesis finding novel bugs after
 settings._define_setting(
     "buffer_size",
     default=8 * 1024,
-    validator=lambda x: _ensure_positive_int(x, "buffer_size", since="RELEASEDAY"),
+    validator=lambda x: _ensure_positive_int(x, "buffer_size", since="2019-03-06"),
     show_default=False,
     description="""
 The size of the underlying data used to generate examples. If you need to
@@ -479,7 +479,7 @@ settings._define_setting(
 
 def _derandomize_validator(x):
     if not isinstance(x, bool):
-        note_deprecation("derandomize=%r should be a bool." % (x,), since="RELEASEDAY")
+        note_deprecation("derandomize=%r should be a bool." % (x,), since="2019-03-06")
     return bool(x)
 
 
@@ -666,7 +666,7 @@ def _validate_deadline(x):
         note_deprecation(
             "The deadline=%r must be a duration in milliseconds, or None to disable."
             "  Boolean deadlines are treated as ints, and deprecated." % (x,),
-            since="RELEASEDAY",
+            since="2019-03-06",
         )
     if x is None or isinstance(x, integer_types + (float,)):
         if x is not None and x <= 0:
