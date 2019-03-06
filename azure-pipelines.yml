@@ -73,20 +73,6 @@ jobs:
           TASK: check-quality
         check-ruby-tests:
           TASK: check-ruby-tests
-    steps:
-    - script: >
-        sudo apt-get install
-        libreadline-dev libsqlite3-dev
-      displayName: Install apt dependencies
-    - script: ./build.sh
-      displayName: Run build tasks
-
-  - job: extras
-    dependsOn: main
-    pool:
-      vmImage: 'Ubuntu 16.04'
-    strategy:
-      matrix:
         check-unicode:
           TASK: check-unicode
         check-py27-typing:
