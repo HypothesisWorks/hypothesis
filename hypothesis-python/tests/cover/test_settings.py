@@ -437,3 +437,19 @@ def test_dubious_settings_deprecations(name):
     settings(**{name: 2.5})
     with pytest.raises(InvalidArgument):
         settings(**{name: "2.5"})  # deprecation warning, then type cast error.
+
+
+@checks_deprecated_behaviour
+def test_max_example_eq_0_warns_and_disables_generation():
+    # Terrible way to disable generation, but did predate the phases setting
+    # and existed in our test suite so it's not an error *just* yet.
+    @example(None)
+    @given(st.integers())
+    @settings(max_examples=0)
+    def inner(x):
+        calls[0] += 1
+        assert x is None
+
+    calls = [0]
+    inner()
+    assert calls[0] == 1

@@ -426,6 +426,12 @@ def _ensure_positive_int(x, name, since, min_value=0):
 
 def _max_examples_validator(x):
     x = _ensure_positive_int(x, "max_examples", since="RELEASEDAY", min_value=0)
+    if x == 0:
+        note_deprecation(
+            "max_examples=%r should be at least one. You can disable example "
+            "generation with the `phases` setting instead." % (x,),
+            since="RELEASEDAY",
+        )
     return x
 
 
