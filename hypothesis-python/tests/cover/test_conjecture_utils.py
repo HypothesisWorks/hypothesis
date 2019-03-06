@@ -22,7 +22,7 @@ from fractions import Fraction
 
 import hypothesis.internal.conjecture.utils as cu
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, assume, example, given, settings
+from hypothesis import HealthCheck, Phase, assume, example, given, settings
 from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
@@ -129,7 +129,7 @@ def weights(draw):
 @settings(
     deadline=None,
     suppress_health_check=HealthCheck.all(),
-    max_examples=0 if IN_COVERAGE_TESTS else settings.default.max_examples,
+    phases=[Phase.explicit] if IN_COVERAGE_TESTS else tuple(Phase),
 )
 @given(st.lists(weights(), min_size=1))
 def test_sampler_distribution(weights):

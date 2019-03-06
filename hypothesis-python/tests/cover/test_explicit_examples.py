@@ -21,7 +21,7 @@ from unittest import TestCase
 
 import pytest
 
-from hypothesis import Verbosity, example, given, note, reporting, settings
+from hypothesis import Phase, Verbosity, example, given, note, reporting, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import integer_types, print_unicode
 from hypothesis.strategies import integers, text
@@ -193,7 +193,7 @@ def test_examples_are_tried_in_order():
     @example(x=1)
     @example(x=2)
     @given(integers())
-    @settings(max_examples=0)
+    @settings(phases=[Phase.explicit])
     @example(x=3)
     def test(x):
         print_unicode(u"x -> %d" % (x,))

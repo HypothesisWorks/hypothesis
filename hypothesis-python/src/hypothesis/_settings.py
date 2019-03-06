@@ -37,7 +37,7 @@ from hypothesis.errors import (
     InvalidArgument,
     InvalidState,
 )
-from hypothesis.internal.compat import string_types
+from hypothesis.internal.compat import integer_types, string_types
 from hypothesis.internal.reflection import get_pretty_function_description, proxies
 from hypothesis.internal.validation import check_type, try_convert
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
@@ -297,6 +297,8 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         if options is not None:
             options = tuple(options)
             assert default in options
+        else:
+            assert validator is not None
 
         all_settings[name] = Setting(
             name=name,
@@ -411,9 +413,32 @@ class Setting(object):
     deprecated_since = attr.ib()
 
 
+def _ensure_positive_int(x, name, since, min_value=0):
+    if not isinstance(x, integer_types):
+        note_deprecation(
+            "Passing non-integer %s=%r is deprecated" % (name, x), since=since
+        )
+    x = try_convert(int, x, name)
+    if x < min_value:
+        raise InvalidArgument("%s=%r must be at least %r." % (name, x, min_value))
+    return x
+
+
+def _max_examples_validator(x):
+    x = _ensure_positive_int(x, "max_examples", since="RELEASEDAY", min_value=0)
+    if x == 0:
+        note_deprecation(
+            "max_examples=%r should be at least one. You can disable example "
+            "generation with the `phases` setting instead." % (x,),
+            since="RELEASEDAY",
+        )
+    return x
+
+
 settings._define_setting(
     "max_examples",
     default=100,
+    validator=_max_examples_validator,
     description="""
 Once this many satisfying examples have been considered without finding any
 counter-example, falsification will terminate.
@@ -432,6 +457,8 @@ For very complex code, we have observed Hypothesis finding novel bugs after
 settings._define_setting(
     "buffer_size",
     default=8 * 1024,
+    validator=lambda x: _ensure_positive_int(x, "buffer_size", since="RELEASEDAY"),
+    show_default=False,
     description="""
 The size of the underlying data used to generate examples. If you need to
 generate really large examples you may want to increase this, but it will make
@@ -440,24 +467,26 @@ your tests slower.
 )
 
 
-def _validate_timeout(n):
-    if n in (not_set, unlimited):
-        return n
-    raise InvalidArgument("The timeout setting has been removed.")
-
-
 settings._define_setting(
     "timeout",
     default=not_set,
     description="The timeout setting has been deprecated and no longer does anything.",
     deprecation_message="The timeout setting can safely be removed with no effect.",
     deprecated_since="2017-11-02",
-    validator=_validate_timeout,
+    options=(not_set, unlimited),
 )
+
+
+def _derandomize_validator(x):
+    if not isinstance(x, bool):
+        note_deprecation("derandomize=%r should be a bool." % (x,), since="RELEASEDAY")
+    return bool(x)
+
 
 settings._define_setting(
     "derandomize",
     default=False,
+    validator=_derandomize_validator,
     description="""
 If this is True then hypothesis will run in deterministic mode
 where each falsification uses a random number generator that is seeded
@@ -600,6 +629,7 @@ settings._define_setting(
 settings._define_setting(
     name="stateful_step_count",
     default=50,
+    validator=lambda x: _ensure_positive_int(x, "stateful_step_count", "RELEASEDAY"),
     description="""
 Number of steps to run a stateful program for before giving up on it breaking.
 """,
@@ -632,7 +662,18 @@ settings._define_setting(
 
 
 def _validate_deadline(x):
-    if x is None or isinstance(x, (int, float)):
+    if isinstance(x, bool):
+        note_deprecation(
+            "The deadline=%r must be a duration in milliseconds, or None to disable."
+            "  Boolean deadlines are treated as ints, and deprecated." % (x,),
+            since="RELEASEDAY",
+        )
+    if x is None or isinstance(x, integer_types + (float,)):
+        if x is not None and x <= 0:
+            raise InvalidArgument(
+                "deadline=%r is invalid, because it is impossible to meet a "
+                "deadline <= 0.  Use deadline=None to disable deadlines." % (x,)
+            )
         return x
     raise InvalidArgument(
         "deadline=%r (type %s) must be an integer or float number of milliseconds, "

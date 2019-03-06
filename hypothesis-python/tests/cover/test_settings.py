@@ -112,6 +112,7 @@ def test_can_set_verbosity():
     settings(verbosity=Verbosity.quiet)
     settings(verbosity=Verbosity.normal)
     settings(verbosity=Verbosity.verbose)
+    settings(verbosity=Verbosity.debug)
 
 
 def test_can_not_set_verbosity_to_non_verbosity():
@@ -400,3 +401,55 @@ def test_can_not_set_timeout_to_time():
 def test_derandomise_with_explicit_database_is_invalid():
     with pytest.raises(InvalidArgument):
         settings(derandomize=True, database=ExampleDatabase(":memory:"))
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        dict(max_examples=-1),
+        dict(buffer_size=-1),
+        dict(stateful_step_count=-1),
+        dict(deadline=-1),
+        dict(deadline=0),
+    ],
+)
+def test_invalid_settings_are_errors(kwargs):
+    with pytest.raises(InvalidArgument):
+        settings(**kwargs)
+
+
+@checks_deprecated_behaviour
+def test_boolean_deadlines():
+    settings(deadline=True)
+    with pytest.raises(InvalidArgument):
+        settings(deadline=False)
+
+
+@checks_deprecated_behaviour
+def test_non_boolean_derandomize():
+    assert settings(derandomize=1).derandomize is True
+    assert settings(derandomize=0).derandomize is False
+
+
+@pytest.mark.parametrize("name", ["max_examples", "buffer_size", "stateful_step_count"])
+@checks_deprecated_behaviour
+def test_dubious_settings_deprecations(name):
+    settings(**{name: 2.5})
+    with pytest.raises(InvalidArgument):
+        settings(**{name: "2.5"})  # deprecation warning, then type cast error.
+
+
+@checks_deprecated_behaviour
+def test_max_example_eq_0_warns_and_disables_generation():
+    # Terrible way to disable generation, but did predate the phases setting
+    # and existed in our test suite so it's not an error *just* yet.
+    @example(None)
+    @given(st.integers())
+    @settings(max_examples=0)
+    def inner(x):
+        calls[0] += 1
+        assert x is None
+
+    calls = [0]
+    inner()
+    assert calls[0] == 1
