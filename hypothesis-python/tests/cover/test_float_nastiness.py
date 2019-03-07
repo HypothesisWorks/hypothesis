@@ -25,12 +25,12 @@ from decimal import Decimal
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import assume, given, settings
+from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT, WINDOWS
 from hypothesis.internal.floats import float_to_int, int_to_float, next_down, next_up
 from tests.common.debug import find_any, minimal
-from tests.common.utils import checks_deprecated_behaviour, flaky
+from tests.common.utils import checks_deprecated_behaviour
 
 try:
     import numpy
