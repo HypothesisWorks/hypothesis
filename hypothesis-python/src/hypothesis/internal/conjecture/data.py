@@ -735,7 +735,6 @@ class ConjectureData(object):
     def conclude_test(self, status, interesting_origin=None):
         assert (interesting_origin is None) or (status == Status.INTERESTING)
         self.__assert_not_frozen("conclude_test")
-        self.__concluded = True
         self.interesting_origin = interesting_origin
         self.status = status
         self.freeze()
