@@ -78,33 +78,6 @@ def test_does_not_generate_positive_if_right_boundary_is_negative(x):
     assert math.copysign(1, x) == -1
 
 
-@pytest.mark.xfail(
-    reason="""
-This test mostly only ever worked through coincidence.
-These strategies need more work to achieve this goal.
-"""
-)
-@pytest.mark.parametrize(
-    (u"l", u"r"), [(0.0, 1.0), (-1.0, 0.0), (-sys.float_info.min, sys.float_info.min)]
-)
-def test_can_generate_interval_endpoints(l, r):
-    interval = st.floats(l, r)
-    minimal(interval, lambda x: x == l, settings=settings(max_examples=10000))
-    minimal(interval, lambda x: x == r, settings=settings(max_examples=10000))
-
-
-@pytest.mark.xfail(
-    reason="""
-This test mostly only ever worked through coincidence.
-These strategies need more work to achieve this goal.
-"""
-)
-@flaky(max_runs=4, min_passes=1)
-def test_half_bounded_generates_endpoint():
-    find_any(st.floats(min_value=-1.0), lambda x: x == -1.0)
-    find_any(st.floats(max_value=-1.0), lambda x: x == -1.0)
-
-
 def test_half_bounded_generates_zero():
     find_any(st.floats(min_value=-1.0), lambda x: x == 0.0)
     find_any(st.floats(max_value=1.0), lambda x: x == 0.0)
