@@ -258,7 +258,6 @@ class DataTree(object):
         initial = self.find_necessary_prefix_for_novelty()
 
         while True:
-
             def draw_bytes(data, n):
                 i = data.index
                 if i < len(initial):
@@ -270,7 +269,7 @@ class DataTree(object):
             try:
                 self.simulate_test_function(data)
             except PreviouslyUnseenBehaviour:
-                return data.buffer
+                return hbytes(data.buffer)
 
     def rewrite(self, buffer):
         """Use previously seen ConjectureData objects to return a tuple of
