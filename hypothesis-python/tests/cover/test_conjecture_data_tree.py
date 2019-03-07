@@ -148,7 +148,6 @@ def test_overruns_if_prefix():
     assert runner.tree.rewrite(b"\0")[1] == Status.OVERRUN
 
 
-@pytest.mark.xfail(strict=True)
 def test_stores_the_tree_flat_until_needed():
     @runner_for(hbytes(10))
     def runner(data):
@@ -162,7 +161,6 @@ def test_stores_the_tree_flat_until_needed():
     assert root.transition.status == Status.INTERESTING
 
 
-@pytest.mark.xfail(strict=True)
 def test_split_in_the_middle():
     @runner_for([0, 0, 2], [0, 1, 3])
     def runner(data):
@@ -177,7 +175,6 @@ def test_split_in_the_middle():
     assert list(root.transition.children[1].values) == [3]
 
 
-@pytest.mark.xfail(strict=True)
 def test_stores_forced_nodes():
     @runner_for(hbytes(3))
     def runner(data):
@@ -190,7 +187,6 @@ def test_stores_forced_nodes():
     assert root.forced == {0, 2}
 
 
-@pytest.mark.xfail(strict=True)
 def test_correctly_relocates_forced_nodes():
     @runner_for([0, 0], [1, 0])
     def runner(data):
@@ -214,7 +210,6 @@ def test_can_go_from_interesting_to_valid():
         data.conclude_test(Status.VALID)
 
 
-@pytest.mark.xfail(strict=True)
 def test_going_from_interesting_to_invalid_is_flaky():
     tree = DataTree()
     data = ConjectureData.for_buffer(b"", observer=tree.new_observer())
@@ -226,7 +221,6 @@ def test_going_from_interesting_to_invalid_is_flaky():
         data.conclude_test(Status.INVALID)
 
 
-@pytest.mark.xfail(strict=True)
 def test_concluding_at_prefix_is_flaky():
     tree = DataTree()
     data = ConjectureData.for_buffer(b"\1", observer=tree.new_observer())
@@ -251,7 +245,6 @@ def test_concluding_with_overrun_at_prefix_is_not_flaky():
         data.conclude_test(Status.OVERRUN)
 
 
-@pytest.mark.xfail(strict=True)
 def test_changing_n_bits_is_flaky_in_prefix():
     tree = DataTree()
     data = ConjectureData.for_buffer(b"\1", observer=tree.new_observer())
@@ -264,7 +257,6 @@ def test_changing_n_bits_is_flaky_in_prefix():
         data.draw_bits(2)
 
 
-@pytest.mark.xfail(strict=True)
 def test_changing_n_bits_is_flaky_in_branch():
     tree = DataTree()
 
@@ -279,7 +271,6 @@ def test_changing_n_bits_is_flaky_in_branch():
         data.draw_bits(2)
 
 
-@pytest.mark.xfail(strict=True)
 def test_extending_past_conclusion_is_flaky():
     tree = DataTree()
     data = ConjectureData.for_buffer(b"\1", observer=tree.new_observer())
@@ -294,7 +285,6 @@ def test_extending_past_conclusion_is_flaky():
         data.draw_bits(1)
 
 
-@pytest.mark.xfail(strict=True)
 def test_changing_to_forced_is_flaky():
     tree = DataTree()
     data = ConjectureData.for_buffer(b"\1", observer=tree.new_observer())
@@ -308,7 +298,6 @@ def test_changing_to_forced_is_flaky():
         data.draw_bits(1, forced=0)
 
 
-@pytest.mark.xfail(strict=True)
 def test_changing_value_of_forced_is_flaky():
     tree = DataTree()
     data = ConjectureData.for_buffer(b"\1", observer=tree.new_observer())

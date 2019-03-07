@@ -303,7 +303,6 @@ def test_phases_can_disable_shrinking():
     assert len(seen) == 1
 
 
-@pytest.mark.xfail(strict=True)
 def test_erratic_draws():
     n = [0]
 
