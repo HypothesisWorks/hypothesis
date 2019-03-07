@@ -43,7 +43,7 @@ from hypothesis.internal.conjecture.data import (
     Status,
     StopTest,
 )
-from hypothesis.internal.conjecture.datatree import DataTree
+from hypothesis.internal.conjecture.datatree import DataTree, TreeRecordingObserver
 from hypothesis.internal.conjecture.junkdrawer import pop_random
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
@@ -134,6 +134,7 @@ class ConjectureRunner(object):
                 raise
 
     def test_function(self, data):
+        assert isinstance(data.observer, TreeRecordingObserver)
         self.call_count += 1
 
         try:
