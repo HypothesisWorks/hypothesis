@@ -257,6 +257,7 @@ their individual contributions.
 * `Tessa Bradbury <https://www.github.com/tessereth>`_
 * `Tim Martin <https://www.github.com/timmartin>`_ (tim@asymptotic.co.uk)
 * `Tom McDermott <https://www.github.com/sponster-au>`_ (sponster@gmail.com)
+* `Tyler Gibbons <https://www.github.com/kavec>`_ (tyler.gibbons@flexport.com)
 * `Tyler Nickerson <https://www.github.com/nmbrgts>`_
 * `Vidya Rani <https://www.github.com/vidyarani-dg>`_ (vidyarani.d.g@gmail.com)
 * `Will Hall <https://www.github.com/wrhall>`_ (wrsh07@gmail.com)
