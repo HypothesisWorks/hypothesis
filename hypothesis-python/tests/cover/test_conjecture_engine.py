@@ -38,7 +38,6 @@ from hypothesis.internal.conjecture.data import (
 from hypothesis.internal.conjecture.engine import (
     ConjectureRunner,
     ExitReason,
-    RunIsComplete,
     TargetSelector,
 )
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
@@ -344,33 +343,6 @@ def test_one_dead_branch():
             seen.add(i)
         elif i not in seen:
             data.mark_interesting()
-
-
-def test_fully_exhaust_base(monkeypatch):
-    """In this test we generate all possible values for the first byte but
-    never get to the point where we exhaust the root of the tree."""
-    seed_random(0)
-
-    seen = set()
-
-    def f(data):
-        key = (data.draw_bits(2), data.draw_bits(2))
-        assert key not in seen
-        seen.add(key)
-
-    runner = ConjectureRunner(
-        f,
-        settings=settings(
-            max_examples=10000, phases=no_shrink, buffer_size=1024, database=None
-        ),
-    )
-
-    for c in hrange(4):
-        runner.cached_test_function([0, c])
-
-    assert 1 in runner.tree.dead
-
-    runner.run()
 
 
 def test_saves_on_interrupt():
@@ -828,43 +800,6 @@ def test_discarding_can_fail(monkeypatch):
 
     shrinker.remove_discarded()
     assert any(e.discarded and e.length > 0 for e in shrinker.shrink_target.examples)
-
-
-@pytest.mark.parametrize("bits", [3, 9])
-@pytest.mark.parametrize("prefix", [b"", b"\0"])
-@pytest.mark.parametrize("seed", [0])
-def test_exhaustive_enumeration(prefix, bits, seed):
-    seen = set()
-
-    def f(data):
-        if prefix:
-            data.write(hbytes(prefix))
-            assert len(data.buffer) == len(prefix)
-        k = data.draw_bits(bits)
-        assert k not in seen
-        seen.add(k)
-
-    size = 2 ** bits
-
-    seen_prefixes = set()
-
-    runner = ConjectureRunner(
-        f, settings=settings(database=None, max_examples=size), random=Random(seed)
-    )
-    with pytest.raises(RunIsComplete):
-        runner.cached_test_function(b"")
-        for _ in hrange(size):
-            p = runner.generate_novel_prefix()
-            assert p not in seen_prefixes
-            seen_prefixes.add(p)
-            data = ConjectureData.for_buffer(hbytes(p + hbytes(2 + len(prefix))))
-            runner.test_function(data)
-            assert data.status == Status.VALID
-            node = 0
-            for b in data.buffer:
-                node = runner.tree.nodes[node][b]
-            assert node in runner.tree.dead
-    assert len(seen) == size
 
 
 def test_depth_bounds_in_generation():
