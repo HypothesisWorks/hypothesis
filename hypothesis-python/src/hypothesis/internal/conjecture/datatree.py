@@ -205,7 +205,7 @@ class DataTree(object):
         random sampling, so we will very rapidly exhaust the search
         space. By first searching to find the necessary sequence
         that any novel example must satisfy, we can find novel
-        examples with probabiltiy 1 instead.
+        examples with probability 1 instead.
         """
         necessary_prefix = bytearray()
 
