@@ -151,7 +151,7 @@ def test_stores_the_tree_flat_until_needed():
         data.mark_interesting()
 
     root = runner.tree.root
-    assert len(root.bits) == 10
+    assert len(root.bit_lengths) == 10
     assert len(root.values) == 10
     assert root.transition.status == Status.INTERESTING
 
@@ -165,7 +165,7 @@ def test_split_in_the_middle():
         data.mark_interesting()
 
     root = runner.tree.root
-    assert len(root.bits) == len(root.values) == 1
+    assert len(root.bit_lengths) == len(root.values) == 1
     assert list(root.transition.children[0].values) == [2]
     assert list(root.transition.children[1].values) == [3]
 

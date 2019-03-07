@@ -47,7 +47,7 @@ EMPTY = frozenset()
 
 @attr.s(slots=True)
 class Branch(object):
-    bits = attr.ib()
+    bit_length = attr.ib()
     children = attr.ib()
 
 
@@ -76,26 +76,39 @@ class TreeNode(object):
     but very lightly branching tree and rather than store this as a fully
     recursive structure we flatten prefixes and long branches into
     lists. This significantly compacts the storage requirements.
+
+    A single ``TreeNode`` corresponds to a previously seen sequence
+    of calls to ``ConjectureData`` which we have never seen branch,
+    followed by a ``transition`` which describes what happens next.
     """
 
-    # Records the previously drawn bits and their
-    # corresponding values. Either len(bits) == len(values)
-    # or len(bits) == len(values) + 1 and the last bit call
-    # corresponds to the transition to a child node.
-    bits = attr.ib(default=attr.Factory(list))
+    # Records the previous sequence of calls to ``data.draw_bits``,
+    # with the ``n_bits`` argument going in ``bit_lengths`` and the
+    # values seen in ``values``. These should always have the same
+    # length.
+    bit_lengths = attr.ib(default=attr.Factory(list))
     values = attr.ib(default=attr.Factory(list))
 
-    # The indices of values in the draw list which
-    # were forced. None if no indices have been forced,
-    # purely for space saving reasons (we force quite rarely).
+    # The indices of of the calls to ``draw_bits`` that we have stored
+    # where  ``forced`` is not None. Stored as None if no indices
+    # have been forced, purely for space saving reasons (we force
+    # quite rarely).
     __forced = attr.ib(default=None, init=False)
 
-    # Either a dict whose keys are values drawn from
-    # bits[-1], or a Status object indicating the test
-    # finishes here, or None indicating we don't know
-    # what's supposed to be here yet.
+    # What happens next after observing this sequence of calls.
+    # Either:
+    #
+    # * ``None``, indicating we don't know yet.
+    # * A ``Branch`` object indicating that there is a ``draw_bits``
+    #   call that we have seen take multiple outcomes there.
+    # * A ``Conclusion`` object indicating that ``conclude_test``
+    #   was called here.
     transition = attr.ib(default=None)
 
+    # A tree node is exhausted if every possible sequence of
+    # draws below it has been explored. We store this information
+    # on a field and update it when performing operations that
+    # could change the answer.
     exhausted = attr.ib(default=False, init=False)
 
     @property
@@ -125,18 +138,18 @@ class TreeNode(object):
         key = self.values[i]
 
         child = TreeNode(
-            bits=self.bits[i + 1 :],
+            bit_lengths=self.bit_lengths[i + 1 :],
             values=self.values[i + 1 :],
             transition=self.transition,
         )
-        self.transition = Branch(bits=self.bits[i], children={key: child})
+        self.transition = Branch(bit_length=self.bit_lengths[i], children={key: child})
         if self.__forced is not None:
             child.__forced = {j - i - 1 for j in self.__forced if j > i}
             self.__forced = {j for j in self.__forced if j < i}
         child.check_exhausted()
         del self.values[i:]
-        del self.bits[i:]
-        assert len(self.values) == len(self.bits) == i
+        del self.bit_lengths[i:]
+        assert len(self.values) == len(self.bit_lengths) == i
 
     def check_exhausted(self):
         """Recalculates ``self.exhausted`` if necessary then returns
@@ -148,7 +161,7 @@ class TreeNode(object):
         ):
             if isinstance(self.transition, Conclusion):
                 self.exhausted = True
-            elif len(self.transition.children) == (1 << self.transition.bits):
+            elif len(self.transition.children) == (1 << self.transition.bit_length):
                 self.exhausted = all(
                     v.exhausted for v in self.transition.children.values()
                 )
@@ -183,7 +196,7 @@ class DataTree(object):
         while True:
             assert not current_node.exhausted
             for i, (n_bits, value) in enumerate(
-                zip(current_node.bits, current_node.values)
+                zip(current_node.bit_lengths, current_node.values)
             ):
                 if i in current_node.forced:
                     append_int(n_bits, value)
@@ -198,13 +211,13 @@ class DataTree(object):
                 break
             assert isinstance(branch, Branch)
             while True:
-                v = random.getrandbits(branch.bits)
+                v = random.getrandbits(branch.bit_length)
                 if v not in branch.children:
-                    append_int(branch.bits, v)
+                    append_int(branch.bit_length, v)
                     return hbytes(result)
                 child = branch.children[v]
                 if not child.exhausted:
-                    append_int(branch.bits, v)
+                    append_int(branch.bit_length, v)
                     current_node = child
                     break
 
@@ -232,7 +245,9 @@ class DataTree(object):
         node = self.root
         try:
             while True:
-                for i, (n_bits, previous) in enumerate(zip(node.bits, node.values)):
+                for i, (n_bits, previous) in enumerate(
+                    zip(node.bit_lengths, node.values)
+                ):
                     v = data.draw_bits(
                         n_bits, forced=node.values[i] if i in node.forced else None
                     )
@@ -244,7 +259,7 @@ class DataTree(object):
                 elif node.transition is None:
                     raise PreviouslyUnseenBehaviour()
                 else:
-                    v = data.draw_bits(node.transition.bits)
+                    v = data.draw_bits(node.transition.bit_length)
                     try:
                         node = node.transition.children[v]
                     except KeyError:
@@ -266,9 +281,9 @@ class TreeRecordingObserver(DataObserver):
         i = self.__index_in_current_node
         self.__index_in_current_node += 1
         node = self.__current_node
-        assert len(node.bits) == len(node.values)
-        if i < len(node.bits):
-            if n_bits != node.bits[i]:
+        assert len(node.bit_lengths) == len(node.values)
+        if i < len(node.bit_lengths):
+            if n_bits != node.bit_lengths[i]:
                 inconsistent_generation()
             # Note that we don't check whether a previously
             # forced value is now free. That will be caught
@@ -289,7 +304,7 @@ class TreeRecordingObserver(DataObserver):
         else:
             trans = node.transition
             if trans is None:
-                node.bits.append(n_bits)
+                node.bit_lengths.append(n_bits)
                 node.values.append(value)
                 if forced:
                     node.mark_forced(i)
@@ -300,7 +315,7 @@ class TreeRecordingObserver(DataObserver):
                 inconsistent_generation()
             else:
                 assert isinstance(trans, Branch)
-                if n_bits != trans.bits:
+                if n_bits != trans.bit_length:
                     inconsistent_generation()
                 try:
                     self.__current_node = trans.children[value]

@@ -395,14 +395,6 @@ class DataObserver(object):
     ConjectureData object, primarily used for tracking
     the behaviour in the tree cache."""
 
-    def init(self, data):
-        """Init method to be called with the actual
-        data object at end of __init__.
-
-        FIXME: To be removed during this PR. Only here
-        for interim compatibility.
-        """
-
     def conclude_test(self, status, interesting_origin):
         """Called when ``conclude_test`` is called on the
         observed ``ConjectureData``, with the same arguments.
@@ -516,7 +508,6 @@ class ConjectureData(object):
 
         self.start_example(TOP_LABEL)
         self.extra_information = ExtraInformation()
-        self.observer.init(self)
 
     def __repr__(self):
         return "ConjectureData(%s, %d bytes%s)" % (
