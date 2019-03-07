@@ -1576,3 +1576,14 @@ def test_branch_ending_in_write():
             data = runner.cached_test_function(attempt)
             assert data.status == Status.VALID
             assert attempt.startswith(data.buffer)
+
+
+@pytest.mark.xfail(strict=True)
+def test_exhaust_space():
+    with deterministic_PRNG():
+        runner = ConjectureRunner(
+            lambda data: data.draw_bits(1), settings=TEST_SETTINGS
+        )
+        runner.run()
+        assert runner.tree.is_exhausted
+        assert runner.valid_examples == 2
