@@ -142,9 +142,10 @@ class ConjectureRunner(object):
         except BaseException:
             self.save_buffer(data.buffer)
             raise
+        finally:
+            data.freeze()
+            self.note_details(data)
 
-        data.freeze()
-        self.note_details(data)
         self.target_selector.add(data)
 
         self.debug_data(data)
