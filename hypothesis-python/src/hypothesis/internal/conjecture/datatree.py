@@ -127,9 +127,26 @@ class TreeNode(object):
         if self.__forced is not None:
             child.__forced = {j - i - 1 for j in self.__forced if j > i}
             self.__forced = {j for j in self.__forced if j < i}
+        child.check_exhausted()
         del self.values[i:]
         del self.bits[i:]
         assert len(self.values) == len(self.bits) == i
+
+    def check_exhausted(self):
+        """Recalculates ``self.exhausted`` if necessary then returns
+        it."""
+        if (
+            not self.exhausted
+            and len(self.forced) == len(self.values)
+            and self.transition is not None
+        ):
+            if isinstance(self.transition, Conclusion):
+                self.exhausted = True
+            elif len(self.transition.children) == (1 << self.transition.bits):
+                self.exhausted = all(
+                    v.exhausted for v in self.transition.children.values()
+                )
+        return self.exhausted
 
 
 class DataTree(object):
@@ -143,7 +160,7 @@ class DataTree(object):
     def is_exhausted(self):
         """Returns True if every possible node is dead and thus the language
         described must have been fully explored."""
-        return False
+        return self.root.exhausted
 
     def generate_novel_prefix(self, random):
         """Generate a short random string that (after rewriting) is not
@@ -165,6 +182,7 @@ class TreeRecordingObserver(DataObserver):
     def __init__(self, tree):
         self.__current_node = tree.root
         self.__index_in_current_node = 0
+        self.__trail = [self.__current_node]
 
     def draw_bits(self, n_bits, forced, value):
         i = self.__index_in_current_node
@@ -211,6 +229,8 @@ class TreeRecordingObserver(DataObserver):
                 except KeyError:
                     self.__current_node = trans.children.setdefault(value, TreeNode())
                 self.__index_in_current_node = 0
+        if self.__trail[-1] is not self.__current_node:
+            self.__trail.append(self.__current_node)
 
     def conclude_test(self, status, interesting_origin):
         """Says that ``status`` occurred at node ``node``. This updates the
@@ -239,3 +259,11 @@ class TreeRecordingObserver(DataObserver):
                 )
         else:
             node.transition = new_transition
+
+        assert node is self.__trail[-1]
+        node.check_exhausted()
+        assert len(node.values) > 0 or node.check_exhausted()
+
+        for t in reversed(self.__trail):
+            if not t.check_exhausted():
+                break

@@ -68,7 +68,6 @@ def test_can_lookup_cached_examples_with_forced():
         data.draw_bits(8)
 
 
-@pytest.mark.xfail(strict=True)
 def test_can_detect_when_tree_is_exhausted():
     @runner_for(b"\0", b"\1")
     def runner(data):
@@ -77,7 +76,6 @@ def test_can_detect_when_tree_is_exhausted():
     assert runner.tree.is_exhausted
 
 
-@pytest.mark.xfail(strict=True)
 def test_can_detect_when_tree_is_exhausted_variable_size():
     @runner_for(b"\0", b"\1\0", b"\1\1")
     def runner(data):
@@ -87,7 +85,6 @@ def test_can_detect_when_tree_is_exhausted_variable_size():
     assert runner.tree.is_exhausted
 
 
-@pytest.mark.xfail(strict=True)
 def test_one_dead_branch():
     @runner_for([[0, i] for i in range(16)] + [[i] for i in range(1, 16)])
     def runner(data):
@@ -331,7 +328,6 @@ def test_truncates_if_seen():
     assert tree.rewrite(b) == (b[:2], Status.VALID)
 
 
-@pytest.mark.xfail(strict=True)
 def test_child_becomes_exhausted_after_split():
     tree = DataTree()
     data = ConjectureData.for_buffer([0, 0], observer=tree.new_observer())

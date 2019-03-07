@@ -1577,7 +1577,6 @@ def test_branch_ending_in_write():
             assert attempt.startswith(data.buffer)
 
 
-@pytest.mark.xfail(strict=True)
 def test_exhaust_space():
     with deterministic_PRNG():
         runner = ConjectureRunner(
