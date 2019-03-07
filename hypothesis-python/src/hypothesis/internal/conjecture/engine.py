@@ -32,7 +32,6 @@ from hypothesis.internal.compat import (
     hbytes,
     hrange,
     int_from_bytes,
-    int_to_bytes,
     to_bytes_sequence,
 )
 from hypothesis.internal.conjecture.data import (
