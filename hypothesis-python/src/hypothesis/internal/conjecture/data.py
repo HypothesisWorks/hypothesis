@@ -390,6 +390,30 @@ def calc_examples(self):
     return examples
 
 
+class DataObserver(object):
+    """Observer class for recording the behaviour of a
+    ConjectureData object, primarily used for tracking
+    the behaviour in the tree cache."""
+
+    def conclude_test(self, status, interesting_origin):
+        """Called when ``conclude_test`` is called on the
+        observed ``ConjectureData``, with the same arguments.
+
+        Note that this is called after ``freeze`` has completed.
+        """
+        pass
+
+    def draw_bits(self, n_bits, forced, value):
+        """Called when ``draw_bits`` is called on on the
+        observed ``ConjectureData``.
+        * ``n_bits`` is the number of bits drawn.
+        *  ``forced`` is True if the corresponding
+           draw was forced or ``False`` otherwise.
+        * ``value`` is the result that ``draw_bits`` returned.
+        """
+        pass
+
+
 @attr.s(slots=True)
 class ConjectureResult(object):
     """Result class storing the parts of ConjectureData that we
@@ -431,14 +455,19 @@ StopDiscard = UniqueIdentifier("StopDiscard")
 
 class ConjectureData(object):
     @classmethod
-    def for_buffer(self, buffer):
+    def for_buffer(self, buffer, observer=None):
         buffer = hbytes(buffer)
         return ConjectureData(
             max_length=len(buffer),
             draw_bytes=lambda data, n: hbytes(buffer[data.index : data.index + n]),
+            observer=observer,
         )
 
-    def __init__(self, max_length, draw_bytes):
+    def __init__(self, max_length, draw_bytes, observer=None):
+        if observer is None:
+            observer = DataObserver()
+        assert isinstance(observer, DataObserver)
+        self.observer = observer
         self.max_length = max_length
         self.is_find = False
         self._draw_bytes = draw_bytes
@@ -618,6 +647,7 @@ class ConjectureData(object):
         self.buffer = hbytes(self.buffer)
         self.events = frozenset(self.events)
         del self._draw_bytes
+        self.observer.conclude_test(self.status, self.interesting_origin)
 
     def draw_bits(self, n, forced=None):
         """Return an ``n``-bit integer from the underlying source of
@@ -646,6 +676,8 @@ class ConjectureData(object):
             self.masked_indices[self.index] = mask
         buf = hbytes(buf)
         result = int_from_bytes(buf)
+
+        self.observer.draw_bits(n, forced is not None, result)
 
         self.start_example(DRAW_BYTES_LABEL)
         initial = self.index
@@ -703,6 +735,7 @@ class ConjectureData(object):
     def conclude_test(self, status, interesting_origin=None):
         assert (interesting_origin is None) or (status == Status.INTERESTING)
         self.__assert_not_frozen("conclude_test")
+        self.__concluded = True
         self.interesting_origin = interesting_origin
         self.status = status
         self.freeze()
