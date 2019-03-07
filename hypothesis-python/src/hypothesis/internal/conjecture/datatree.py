@@ -258,6 +258,7 @@ class DataTree(object):
         initial = self.find_necessary_prefix_for_novelty()
 
         while True:
+
             def draw_bytes(data, n):
                 i = data.index
                 if i < len(initial):
