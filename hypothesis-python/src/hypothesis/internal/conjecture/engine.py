@@ -44,7 +44,7 @@ from hypothesis.internal.conjecture.data import (
     StopTest,
 )
 from hypothesis.internal.conjecture.datatree import DataTree, TreeRecordingObserver
-from hypothesis.internal.conjecture.junkdrawer import pop_random
+from hypothesis.internal.conjecture.junkdrawer import pop_random, uniform
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import debug_report
@@ -896,10 +896,6 @@ def _draw_successor(rnd, xs):
             c = rnd.randint(0, 255)
         r.append(c)
     return hbytes(r)
-
-
-def uniform(random, n):
-    return int_to_bytes(random.getrandbits(n * 8), n)
 
 
 class TargetSelector(object):

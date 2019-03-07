@@ -22,7 +22,12 @@ anything that lives here, please move it."""
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis.internal.compat import array_or_list, hbytes, integer_types
+from hypothesis.internal.compat import (
+    array_or_list,
+    hbytes,
+    int_to_bytes,
+    integer_types,
+)
 
 
 def replace_all(buffer, replacements):
@@ -150,3 +155,8 @@ def binary_search(lo, hi, f):
         else:
             hi = mid
     return lo
+
+
+def uniform(random, n):
+    """Returns an hbytes of length n, distributed uniformly at random."""
+    return int_to_bytes(random.getrandbits(n * 8), n)
