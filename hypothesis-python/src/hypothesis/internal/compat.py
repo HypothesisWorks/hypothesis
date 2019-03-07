@@ -601,12 +601,12 @@ except Exception:
 
 
 if PY2:
-
-    def array_or_list(code, contents):
-        if code in ("q", "Q"):
-            return list(contents)
-        return array.array(code, contents)
-
-
+    LIST_CODES = ("q", "Q", "O")
 else:
-    array_or_list = array.array
+    LIST_CODES = ("O",)
+
+
+def array_or_list(code, contents):
+    if code in LIST_CODES:
+        return list(contents)
+    return array.array(code, contents)

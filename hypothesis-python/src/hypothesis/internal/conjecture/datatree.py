@@ -28,6 +28,7 @@ from hypothesis.internal.conjecture.data import (
     StopTest,
     bits_to_bytes,
 )
+from hypothesis.internal.conjecture.junkdrawer import IntList
 
 
 class PreviouslyUnseenBehaviour(HypothesisException):
@@ -86,8 +87,8 @@ class TreeNode(object):
     # with the ``n_bits`` argument going in ``bit_lengths`` and the
     # values seen in ``values``. These should always have the same
     # length.
-    bit_lengths = attr.ib(default=attr.Factory(list))
-    values = attr.ib(default=attr.Factory(list))
+    bit_lengths = attr.ib(default=attr.Factory(IntList))
+    values = attr.ib(default=attr.Factory(IntList))
 
     # The indices of of the calls to ``draw_bits`` that we have stored
     # where  ``forced`` is not None. Stored as None if no indices
