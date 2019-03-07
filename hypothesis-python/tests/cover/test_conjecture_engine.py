@@ -568,7 +568,6 @@ def test_can_increase_number_of_bytes_drawn_in_tail():
     runner.run()
 
 
-@pytest.mark.xfail(strict=True)
 def test_uniqueness_is_preserved_when_writing_at_beginning():
     seen = set()
 

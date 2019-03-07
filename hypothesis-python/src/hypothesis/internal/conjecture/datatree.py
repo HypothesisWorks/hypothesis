@@ -20,8 +20,8 @@ from __future__ import absolute_import, division, print_function
 import attr
 
 from hypothesis.errors import Flaky, HypothesisException
-from hypothesis.internal.compat import hbytes
-from hypothesis.internal.conjecture.data import DataObserver, Status
+from hypothesis.internal.compat import hbytes, int_to_bytes
+from hypothesis.internal.conjecture.data import DataObserver, Status, bits_to_bytes
 
 
 class PreviouslyUnseenBehaviour(HypothesisException):
@@ -165,7 +165,44 @@ class DataTree(object):
     def generate_novel_prefix(self, random):
         """Generate a short random string that (after rewriting) is not
         a prefix of any buffer previously added to the tree."""
-        return hbytes()
+        assert not self.is_exhausted
+
+        result = bytearray()
+
+        def append_int(n_bits, value):
+            result.extend(int_to_bytes(value, bits_to_bytes(n_bits)))
+
+        current_node = self.root
+
+        while True:
+            assert not current_node.exhausted
+            for i, (n_bits, value) in enumerate(
+                zip(current_node.bits, current_node.values)
+            ):
+                if i in current_node.forced:
+                    append_int(n_bits, value)
+                    continue
+                while True:
+                    v = random.getrandbits(n_bits)
+                    if v != value:
+                        append_int(n_bits, v)
+                        return hbytes(result)
+            branch = current_node.transition
+            if branch is None:
+                break
+            assert isinstance(branch, Branch)
+            while True:
+                v = random.getrandbits(branch.bits)
+                if v not in branch.children:
+                    append_int(branch.bits, v)
+                    return hbytes(result)
+                child = branch.children[v]
+                if not child.exhausted:
+                    append_int(branch.bits, v)
+                    current_node = child
+                    break
+
+        return hbytes(result)
 
     def rewrite(self, buffer):
         """Use previously seen ConjectureData objects to return a tuple of
