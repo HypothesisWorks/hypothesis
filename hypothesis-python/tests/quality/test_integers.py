@@ -93,7 +93,7 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
         database_key=None,
     )
 
-    runner.test_function(ConjectureData.for_buffer(blob))
+    runner.cached_test_function(blob)
 
     assert runner.interesting_examples
 

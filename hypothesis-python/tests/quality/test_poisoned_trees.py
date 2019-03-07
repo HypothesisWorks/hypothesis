@@ -94,13 +94,13 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
         if len(v) >= size:
             data.mark_interesting()
 
-    runner = ConjectureRunner(test_function, random=random, settings=TEST_SETTINGS)
+    runner = ConjectureRunner(
+        test_function, random=random, settings=settings(TEST_SETTINGS, buffer_size=LOTS)
+    )
 
     while not runner.interesting_examples:
         runner.test_function(
-            ConjectureData(
-                draw_bytes=lambda data, n: uniform(random, n), max_length=LOTS
-            )
+            runner.new_conjecture_data(lambda data, n: uniform(random, n))
         )
 
     runner.shrink_interesting_examples()
@@ -120,10 +120,6 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
         u = starts[i]
         marker = hbytes([1, 2, 3, 4])
 
-        poisoned_data = ConjectureData.for_buffer(
-            data.buffer[:u] + hbytes([255]) * 4 + data.buffer[u + 4 :] + marker
-        )
-
         def test_function(data):
             v = data.draw(strat)
             m = data.draw_bytes(len(marker))
@@ -132,7 +128,10 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
 
         runner = ConjectureRunner(test_function, random=random, settings=TEST_SETTINGS)
 
-        runner.test_function(poisoned_data)
+        runner.cached_test_function(
+            data.buffer[:u] + hbytes([255]) * 4 + data.buffer[u + 4 :] + marker
+        )
+
         assert runner.interesting_examples
         runner.shrink_interesting_examples()
 

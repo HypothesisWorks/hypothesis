@@ -166,9 +166,7 @@ def float_runner(start, condition):
             data.mark_interesting()
 
     runner = ConjectureRunner(test_function)
-    runner.test_function(
-        ConjectureData.for_buffer(int_to_bytes(flt.float_to_lex(start), 8) + hbytes(1))
-    )
+    runner.cached_test_function(int_to_bytes(flt.float_to_lex(start), 8) + hbytes(1))
     assert runner.interesting_examples
     return runner
 

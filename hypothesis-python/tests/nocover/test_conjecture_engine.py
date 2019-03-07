@@ -17,15 +17,11 @@
 
 from __future__ import absolute_import, division, print_function
 
-from random import Random
-
-import pytest
-
 from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
-from hypothesis.internal.conjecture.data import ConjectureData, Status
-from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
+from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from tests.common.utils import counts_calls, non_covering_examples
 from tests.cover.test_conjecture_engine import run_to_buffer, shrinking_from
@@ -52,7 +48,7 @@ def test_saves_data_while_shrinking(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.test_function(ConjectureData.for_buffer([255] * 10)),
+        lambda runner: runner.cached_test_function([255] * 10),
     )
 
     def f(data):
@@ -77,8 +73,8 @@ def test_can_discard(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer([v for i in range(n) for v in [i, i]])
+        lambda runner: runner.cached_test_function(
+            [v for i in range(n) for v in [i, i]]
         ),
     )
 
@@ -90,38 +86,6 @@ def test_can_discard(monkeypatch):
         data.mark_interesting()
 
     assert len(x) == n
-
-
-def test_exhaustive_enumeration_of_partial_buffer():
-    seen = set()
-
-    def f(data):
-        k = data.draw_bytes(2)
-        assert k[1] == 0
-        assert k not in seen
-        seen.add(k)
-
-    seen_prefixes = set()
-
-    runner = ConjectureRunner(
-        f,
-        settings=settings(database=None, max_examples=256, buffer_size=2),
-        random=Random(0),
-    )
-    with pytest.raises(RunIsComplete):
-        runner.cached_test_function(b"")
-        for _ in hrange(256):
-            p = runner.generate_novel_prefix()
-            assert p not in seen_prefixes
-            seen_prefixes.add(p)
-            data = ConjectureData.for_buffer(hbytes(p + hbytes(2)))
-            runner.test_function(data)
-            assert data.status == Status.VALID
-            node = 0
-            for b in data.buffer:
-                node = runner.tree.nodes[node][b]
-            assert node in runner.tree.dead
-    assert len(seen) == 256
 
 
 def test_regression_1():
@@ -152,7 +116,9 @@ def test_cached_with_masked_byte_agrees_with_results(byte_a, byte_b):
     cached_a = runner.cached_test_function(hbytes([byte_a]))
     cached_b = runner.cached_test_function(hbytes([byte_b]))
 
-    data_b = ConjectureData.for_buffer(hbytes([byte_b]))
+    data_b = ConjectureData.for_buffer(
+        hbytes([byte_b]), observer=runner.tree.new_observer()
+    )
     runner.test_function(data_b)
 
     # If the cache found an old result, then it should match the real result.

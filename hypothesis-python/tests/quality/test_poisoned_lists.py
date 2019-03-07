@@ -77,11 +77,7 @@ class TrialRunner(ConjectureRunner):
             return uniform(self.random, n)
 
         while not self.interesting_examples:
-            self.test_function(
-                ConjectureData(
-                    draw_bytes=draw_bytes, max_length=self.settings.buffer_size
-                )
-            )
+            self.test_function(self.new_conjecture_data(draw_bytes))
 
 
 LOTS = 10 ** 6

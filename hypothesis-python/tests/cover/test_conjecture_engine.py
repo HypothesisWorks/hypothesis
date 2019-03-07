@@ -27,7 +27,7 @@ import hypothesis.internal.conjecture.engine as engine_module
 import hypothesis.internal.conjecture.floats as flt
 from hypothesis import HealthCheck, Phase, Verbosity, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
-from hypothesis.errors import FailedHealthCheck
+from hypothesis.errors import FailedHealthCheck, Flaky
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
@@ -152,9 +152,7 @@ def test_terminates_shrinks(n, monkeypatch):
         def draw_bytes(data, n):
             return hbytes([255] * n)
 
-        self.test_function(
-            ConjectureData(draw_bytes=draw_bytes, max_length=self.settings.buffer_size)
-        )
+        self.test_function(self.new_conjecture_data(draw_bytes))
 
     monkeypatch.setattr(
         ConjectureRunner, "generate_new_examples", generate_new_examples
@@ -188,6 +186,7 @@ def test_detects_flakiness():
 
     runner = ConjectureRunner(tf)
     runner.run()
+    assert runner.exit_reason == ExitReason.flaky
     assert count == [2]
 
 
@@ -304,17 +303,20 @@ def test_phases_can_disable_shrinking():
     assert len(seen) == 1
 
 
+@pytest.mark.xfail(strict=True)
 def test_erratic_draws():
     n = [0]
 
-    @run_to_buffer
-    def x(data):
-        data.draw_bytes(n[0])
-        data.draw_bytes(255 - n[0])
-        if n[0] == 255:
-            data.mark_interesting()
-        else:
-            n[0] += 1
+    with pytest.raises(Flaky):
+
+        @run_to_buffer
+        def x(data):
+            data.draw_bytes(n[0])
+            data.draw_bytes(255 - n[0])
+            if n[0] == 255:
+                data.mark_interesting()
+            else:
+                n[0] += 1
 
 
 def test_no_read_no_shrink():
@@ -459,8 +461,7 @@ def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
     monkeypatch.setattr(Shrinker, "is_shrinking_block", lambda self, i: i == 0)
 
     def gen(self):
-        data = ConjectureData.for_buffer(hbytes(10))
-        self.test_function(data)
+        self.cached_test_function(10)
 
     monkeypatch.setattr(ConjectureRunner, "generate_new_examples", gen)
 
@@ -519,7 +520,7 @@ def test_debug_data(capsys):
             verbosity=Verbosity.debug,
         ),
     )
-    runner.test_function(ConjectureData.for_buffer(buf))
+    runner.cached_test_function(buf)
     runner.run()
 
     out, _ = capsys.readouterr()
@@ -568,6 +569,7 @@ def test_can_increase_number_of_bytes_drawn_in_tail():
     runner.run()
 
 
+@pytest.mark.xfail(strict=True)
 def test_uniqueness_is_preserved_when_writing_at_beginning():
     seen = set()
 
@@ -588,7 +590,7 @@ def test_clears_out_its_database_on_shrinking(
     initial_attempt, skip_target, monkeypatch
 ):
     def generate_new_examples(self):
-        self.test_function(ConjectureData.for_buffer(hbytes([initial_attempt])))
+        self.cached_test_function(initial_attempt)
 
     monkeypatch.setattr(
         ConjectureRunner, "generate_new_examples", generate_new_examples
@@ -638,6 +640,7 @@ def test_can_delete_intervals():
     assert x.buffer == hbytes([1, 3])
 
 
+@pytest.mark.xfail(strict=True)
 def test_detects_too_small_block_starts():
     call_count = [0]
 
@@ -648,8 +651,7 @@ def test_detects_too_small_block_starts():
         data.mark_interesting()
 
     runner = ConjectureRunner(f, settings=settings(database=None))
-    r = ConjectureData.for_buffer(hbytes(8))
-    runner.test_function(r)
+    r = runner.cached_test_function(hbytes(8))
     assert r.status == Status.INTERESTING
     assert call_count[0] == 1
     r2 = runner.cached_test_function(hbytes([255] * 7))
@@ -659,7 +661,7 @@ def test_detects_too_small_block_starts():
 
 def test_shrinks_both_interesting_examples(monkeypatch):
     def generate_new_examples(self):
-        self.test_function(ConjectureData.for_buffer(hbytes([1])))
+        self.cached_test_function(hbytes([1]))
 
     monkeypatch.setattr(
         ConjectureRunner, "generate_new_examples", generate_new_examples
@@ -712,9 +714,7 @@ def test_discarding(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer(hbytes([0, 1] * 10))
-        ),
+        lambda runner: runner.cached_test_function(hbytes([0, 1] * 10)),
     )
 
     @run_to_buffer
@@ -841,9 +841,7 @@ def test_handles_nesting_of_discard_correctly(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer(hbytes([0, 0, 1, 1]))
-        ),
+        lambda runner: runner.cached_test_function(hbytes([0, 0, 1, 1])),
     )
 
     @run_to_buffer
@@ -940,8 +938,6 @@ def test_shrinking_blocks_from_common_offset():
 def test_handle_empty_draws(monkeypatch):
     monkeypatch.setattr(Shrinker, "shrink", Shrinker.adaptive_example_deletion)
 
-    lambda runner: runner.test_function(ConjectureData.for_buffer([1, 1, 0]))
-
     @run_to_buffer
     def x(data):
         while True:
@@ -983,9 +979,7 @@ def test_can_reorder_examples(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.test_function(
-            ConjectureData.for_buffer([1, 0, 1, 1, 0, 1, 0, 0, 0])
-        ),
+        lambda runner: runner.cached_test_function([1, 0, 1, 1, 0, 1, 0, 0, 0]),
     )
 
     monkeypatch.setattr(Shrinker, "shrink", Shrinker.reorder_examples)
@@ -1008,7 +1002,7 @@ def test_permits_but_ignores_raising_order(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.test_function(ConjectureData.for_buffer([1])),
+        lambda runner: runner.cached_test_function([1]),
     )
 
     monkeypatch.setattr(
@@ -1043,7 +1037,7 @@ def test_try_shrinking_blocks_ignores_overrun_blocks(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.test_function(ConjectureData.for_buffer([3, 3, 0, 1])),
+        lambda runner: runner.cached_test_function([3, 3, 0, 1]),
     )
 
     monkeypatch.setattr(
@@ -1077,7 +1071,7 @@ def shrinking_from(start):
                     suppress_health_check=HealthCheck.all(),
                 ),
             )
-            runner.test_function(ConjectureData.for_buffer(start))
+            runner.cached_test_function(start)
             assert runner.interesting_examples
             last_data, = runner.interesting_examples.values()
             return runner.new_shrinker(
@@ -1162,7 +1156,7 @@ def test_database_clears_secondary_key():
     for i in range(10):
         database.save(runner.secondary_key, hbytes([i]))
 
-    runner.test_function(ConjectureData.for_buffer(hbytes([10])))
+    runner.cached_test_function([10])
     assert runner.interesting_examples
 
     assert len(set(database.fetch(key))) == 1
@@ -1198,7 +1192,7 @@ def test_database_uses_values_from_secondary_key():
     for i in range(10):
         database.save(runner.secondary_key, hbytes([i]))
 
-    runner.test_function(ConjectureData.for_buffer(hbytes([10])))
+    runner.cached_test_function([10])
     assert runner.interesting_examples
 
     assert len(set(database.fetch(key))) == 1
@@ -1403,6 +1397,25 @@ def test_target_selector_will_eventually_reuse_examples():
         assert x.global_identifier in seen
 
 
+def test_cached_test_function_returns_right_value():
+    count = [0]
+
+    def tf(data):
+        count[0] += 1
+        data.draw_bits(2)
+        data.mark_interesting()
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(tf, settings=TEST_SETTINGS)
+        for _ in hrange(2):
+            for b in (b"\0", b"\1"):
+                d = runner.cached_test_function(b)
+                assert d.status == Status.INTERESTING
+                assert d.buffer == b
+        assert count[0] == 2
+
+
+@pytest.mark.xfail(strict=True)
 def test_cached_test_function_does_not_reinvoke_on_prefix():
     call_count = [0]
 
@@ -1537,3 +1550,29 @@ def test_stable_identifiers_match_their_examples():
     for ex in shrinker.examples:
         id = shrinker.stable_identifier_for_example(ex)
         assert shrinker.example_for_stable_identifier(id) is ex
+
+
+def test_branch_ending_in_write():
+    seen = set()
+
+    def tf(data):
+        count = 0
+        while data.draw_bits(1):
+            count += 1
+
+        if count > 1:
+            data.draw_bits(1, forced=0)
+
+        b = hbytes(data.buffer)
+        assert b not in seen
+        seen.add(b)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(tf, settings=TEST_SETTINGS)
+
+        for _ in hrange(100):
+            prefix = runner.generate_novel_prefix()
+            attempt = prefix + hbytes(2)
+            data = runner.cached_test_function(attempt)
+            assert data.status == Status.VALID
+            assert attempt.startswith(data.buffer)
