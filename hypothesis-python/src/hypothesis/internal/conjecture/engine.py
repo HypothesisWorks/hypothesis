@@ -105,7 +105,7 @@ class ConjectureRunner(object):
         self.health_check_state = None
 
         self.used_examples_from_database = False
-        self.tree = DataTree(cap=self.cap)
+        self.tree = DataTree()
 
         # We want to be able to get the ConjectureData object that results
         # from running a buffer without recalculating, especially during
@@ -141,10 +141,9 @@ class ConjectureRunner(object):
         except BaseException:
             self.save_buffer(data.buffer)
             raise
-        finally:
-            data.freeze()
-            self.note_details(data)
 
+        data.freeze()
+        self.note_details(data)
         self.target_selector.add(data)
 
         self.debug_data(data)
@@ -174,7 +173,6 @@ class ConjectureRunner(object):
         # something will lead to a known result, and to canonicalize it into
         # the buffer that would belong to the ConjectureData that you get
         # from running it.
-        self.tree.add(data)
 
         if data.status == Status.INTERESTING:
             key = data.interesting_origin
@@ -572,7 +570,9 @@ class ConjectureRunner(object):
             self.used_examples_from_database = len(corpus) > 0
 
             for existing in corpus:
-                last_data = ConjectureData.for_buffer(existing)
+                last_data = ConjectureData.for_buffer(
+                    existing, observer=self.tree.new_observer()
+                )
                 try:
                     self.test_function(last_data)
                 finally:
@@ -649,9 +649,7 @@ class ConjectureRunner(object):
                     result = uniform(self.random, n)
                 return self.__zero_bound(data, result)
 
-            last_data = ConjectureData(
-                max_length=self.settings.buffer_size, draw_bytes=draw_bytes
-            )
+            last_data = self.new_conjecture_data(draw_bytes)
             self.test_function(last_data)
             last_data.freeze()
 
@@ -695,17 +693,13 @@ class ConjectureRunner(object):
                         result += hbytes(n - len(result))
                     return self.__rewrite(data, result)
 
-                data = ConjectureData(
-                    draw_bytes=draw_bytes, max_length=self.settings.buffer_size
-                )
+                data = self.new_conjecture_data(draw_bytes=draw_bytes)
                 self.test_function(data)
                 data.freeze()
             else:
                 origin = self.target_selector.select()
                 mutations += 1
-                data = ConjectureData(
-                    draw_bytes=mutator(origin), max_length=self.settings.buffer_size
-                )
+                data = self.new_conjecture_data(draw_bytes=mutator(origin))
                 self.test_function(data)
                 data.freeze()
                 if data.status > origin.status:
@@ -726,6 +720,16 @@ class ConjectureRunner(object):
         self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 
+    def new_conjecture_data(self, draw_bytes):
+        return ConjectureData(
+            draw_bytes=draw_bytes,
+            max_length=self.settings.buffer_size,
+            observer=self.tree.new_observer(),
+        )
+
+    def new_conjecture_data_for_buffer(self, buffer):
+        return ConjectureData.for_buffer(buffer, observer=self.tree.new_observer())
+
     def shrink_interesting_examples(self):
         """If we've found interesting examples, try to replace each of them
         with a minimal interesting example with the same interesting_origin.
@@ -740,7 +744,7 @@ class ConjectureRunner(object):
             self.interesting_examples.values(), key=lambda d: sort_key(d.buffer)
         ):
             assert prev_data.status == Status.INTERESTING
-            data = ConjectureData.for_buffer(prev_data.buffer)
+            data = self.new_conjecture_data_for_buffer(prev_data.buffer)
             self.test_function(data)
             if data.status != Status.INTERESTING:
                 self.exit_with(ExitReason.flaky)
@@ -839,7 +843,7 @@ class ConjectureRunner(object):
         result = None
 
         if status != Status.OVERRUN:
-            data = ConjectureData.for_buffer(buffer)
+            data = self.new_conjecture_data_for_buffer(buffer)
             self.test_function(data)
             result = check_result(data.as_result())
             assert status is None or result.status == status

@@ -18,7 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 from hypothesis.internal.compat import hbytes, hrange
-from hypothesis.internal.conjecture.data import Status
+from hypothesis.internal.conjecture.data import DataObserver, Status
 
 
 class DataTree(object):
@@ -282,6 +282,9 @@ class DataTree(object):
 
         return hbytes(rewritten), return_status
 
+    def new_observer(self):
+        return TreeRecordingObserver(self)
+
 
 def _is_simple_mask(mask):
     """A simple mask is ``(2 ** n - 1)`` for some ``n``, so it has the effect
@@ -291,3 +294,14 @@ def _is_simple_mask(mask):
     (inclusive), and the total number of these values is ``(mask + 1)``.
     """
     return (mask & (mask + 1)) == 0
+
+
+class TreeRecordingObserver(DataObserver):
+    def __init__(self, tree):
+        self.__tree = tree
+
+    def init(self, data):
+        self.__data = data
+
+    def conclude_test(self, status, interesting_origin):
+        self.__tree.add(self.__data)
