@@ -643,8 +643,8 @@ class ConjectureRunner(object):
             def draw_bytes(data, n):
                 if data.index < len(prefix):
                     result = prefix[data.index : data.index + n]
-                    if len(result) < n:
-                        result += uniform(self.random, n - len(result))
+                    # We always draw prefixes as a whole number of blocks
+                    assert len(result) == n
                 else:
                     result = uniform(self.random, n)
                 return self.__zero_bound(data, result)
