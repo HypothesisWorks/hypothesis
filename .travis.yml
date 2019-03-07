@@ -41,8 +41,7 @@ jobs:
     - stage: main
       env: TASK=check-coverage
     - env: TASK=check-py27
-    - env: TASK=check-py34
-    - env: TASK=check-py37
+    - env: TASK=check-py36
       sudo: required
       dist: xenial
     - env: TASK=check-ruby-tests
