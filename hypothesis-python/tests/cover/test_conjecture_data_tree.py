@@ -45,10 +45,10 @@ def runner_for(*examples):
             e = hbytes(e)
             data = runner.cached_test_function(e)
             ran_examples.append((e, data))
-        #       for e, d in ran_examples:
-        #           rewritten, status = runner.tree.rewrite(e)
-        #           assert status == d.status
-        #           assert rewritten == d.buffer
+        for e, d in ran_examples:
+            rewritten, status = runner.tree.rewrite(e)
+            assert status == d.status
+            assert rewritten == d.buffer
         return runner
 
     return accept
@@ -125,7 +125,6 @@ def test_novel_prefixes_are_novel():
         assert runner.tree.rewrite(example)[0] == result.buffer
 
 
-@pytest.mark.xfail(strict=True)
 def test_overruns_if_not_enough_bytes_for_block():
     runner = ConjectureRunner(
         lambda data: data.draw_bytes(2), settings=TEST_SETTINGS, random=Random(0)
@@ -134,7 +133,6 @@ def test_overruns_if_not_enough_bytes_for_block():
     assert runner.tree.rewrite(b"\0")[1] == Status.OVERRUN
 
 
-@pytest.mark.xfail(strict=True)
 def test_overruns_if_prefix():
     runner = ConjectureRunner(
         lambda data: [data.draw_bits(1) for _ in range(2)],
@@ -314,7 +312,6 @@ def test_does_not_truncate_if_unseen():
     assert tree.rewrite(b) == (b, None)
 
 
-@pytest.mark.xfail(strict=True)
 def test_truncates_if_seen():
     tree = DataTree()
 

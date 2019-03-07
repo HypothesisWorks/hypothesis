@@ -638,7 +638,6 @@ def test_can_delete_intervals():
     assert x.buffer == hbytes([1, 3])
 
 
-@pytest.mark.xfail(strict=True)
 def test_detects_too_small_block_starts():
     call_count = [0]
 
@@ -1413,7 +1412,6 @@ def test_cached_test_function_returns_right_value():
         assert count[0] == 2
 
 
-@pytest.mark.xfail(strict=True)
 def test_cached_test_function_does_not_reinvoke_on_prefix():
     call_count = [0]
 

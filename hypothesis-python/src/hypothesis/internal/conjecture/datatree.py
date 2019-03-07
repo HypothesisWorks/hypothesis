@@ -21,7 +21,13 @@ import attr
 
 from hypothesis.errors import Flaky, HypothesisException
 from hypothesis.internal.compat import hbytes, int_to_bytes
-from hypothesis.internal.conjecture.data import DataObserver, Status, bits_to_bytes
+from hypothesis.internal.conjecture.data import (
+    ConjectureData,
+    DataObserver,
+    Status,
+    StopTest,
+    bits_to_bytes,
+)
 
 
 class PreviouslyUnseenBehaviour(HypothesisException):
@@ -209,7 +215,42 @@ class DataTree(object):
         the rewritten buffer and the status we would get from running that
         buffer with the test function. If the status cannot be predicted
         from the existing values it will be None."""
-        return (buffer, None)
+        buffer = hbytes(buffer)
+
+        data = ConjectureData.for_buffer(buffer)
+        try:
+            self.simulate_test_function(data)
+            return (data.buffer, data.status)
+        except PreviouslyUnseenBehaviour:
+            return (hbytes(data.buffer) + buffer[len(data.buffer) :], None)
+
+    def simulate_test_function(self, data):
+        """Run a simulated version of the test function recorded by
+        this tree. Note that this does not currently call ``stop_example``
+        or ``start_example`` as these are not currently recorded in the
+        tree. This will likely change in future."""
+        node = self.root
+        try:
+            while True:
+                for i, (n_bits, previous) in enumerate(zip(node.bits, node.values)):
+                    v = data.draw_bits(
+                        n_bits, forced=node.values[i] if i in node.forced else None
+                    )
+                    if v != previous:
+                        raise PreviouslyUnseenBehaviour()
+                if isinstance(node.transition, Conclusion):
+                    t = node.transition
+                    data.conclude_test(t.status, t.interesting_origin)
+                elif node.transition is None:
+                    raise PreviouslyUnseenBehaviour()
+                else:
+                    v = data.draw_bits(node.transition.bits)
+                    try:
+                        node = node.transition.children[v]
+                    except KeyError:
+                        raise PreviouslyUnseenBehaviour()
+        except StopTest:
+            pass
 
     def new_observer(self):
         return TreeRecordingObserver(self)
