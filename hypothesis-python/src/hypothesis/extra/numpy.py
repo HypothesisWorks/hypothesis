@@ -677,10 +677,7 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
 
     .. code-block:: pycon
 
-        >>> from hypothesis.strategies import integers, none
-        >>> from hypothesis.extra.numpy import valid_tuple_axes
-        >>> def valid_axes(ndim):
-        ...     return none() | integers(-ndim, ndim - 1) | valid_tuple_axes(ndim)
+        any_axis_strategy = none() | integers(-ndim, ndim - 1) | valid_tuple_axes(ndim)
 
     """
     if max_size is None:
