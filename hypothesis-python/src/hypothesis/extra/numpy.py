@@ -693,8 +693,7 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
     check_valid_interval(max_size, ndim, "max_size", "ndim")
 
     # shrink axis values from negative to positive
-    return st.integers(min_size, max_size).flatmap(
-        lambda num_axes: st.permutations(tuple(zip(range(ndim), range(-ndim, 0, 1))))
-        .map(lambda axes: axes[:num_axes])
-        .flatmap(lambda x: st.tuples(*(st.sampled_from(item) for item in x)))
+    axes = st.integers(0, max(0, 2 * ndim - 1)).map(
+        lambda x: x if x < ndim else x - 2 * ndim
     )
+    return st.lists(axes, min_size, max_size, unique_by=lambda x: x % ndim).map(tuple)

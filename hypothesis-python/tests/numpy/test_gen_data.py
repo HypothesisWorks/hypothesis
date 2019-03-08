@@ -479,7 +479,7 @@ def test_axes_are_valid_inputs_to_sum(shape, data):
 
 
 @settings(deadline=None)
-@given(ndim=st.integers(0, 5), data=st.data())
+@given(ndim=st.integers(0, 3), data=st.data())
 def test_minimize_tuple_axes(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
     max_size = data.draw(st.integers(min_size, ndim), label="max_size")
@@ -488,7 +488,7 @@ def test_minimize_tuple_axes(ndim, data):
 
 
 @settings(deadline=None)
-@given(ndim=st.integers(0, 5), data=st.data())
+@given(ndim=st.integers(0, 3), data=st.data())
 def test_minimize_negative_tuple_axes(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
     max_size = data.draw(st.integers(min_size, ndim), label="max_size")
