@@ -619,7 +619,7 @@ class RuleStrategy(SearchStrategy):
         # Easy, right?
         n = len(self.rules)
         i = cu.integer_range(data, 0, n - 1)
-        block_length = data.blocks[-1].length
+        block_length = data.blocks.last_block_length
         rule = self.rules[i]
         if not self.is_valid(rule):
             valid_rules = [j for j, r in enumerate(self.rules) if self.is_valid(r)]
