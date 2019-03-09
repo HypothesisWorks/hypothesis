@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.9.0:
+
+------------------
+4.9.0 - 2019-03-09
+------------------
+
+This release adds the strategy :func:`~hypothesis.extra.numpy.valid_tuple_axes`,
+which generates tuples of axis-indices that can be passed to the ``axis`` argument
+in NumPy's sequential functions (e.g. :func:`numpy:numpy.sum`).
+
+Thanks to Ryan Soklaski for this strategy.
+
 .. _v4.8.0:
 
 ------------------
