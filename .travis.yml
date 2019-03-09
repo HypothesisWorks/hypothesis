@@ -40,32 +40,12 @@ jobs:
 
     - stage: main
       env: TASK=check-coverage
-    - env: TASK=check-pypy
-    - env: TASK=check-pypy3
-    - env: TASK=check-py36
     - env: TASK=check-py27
-    - env: TASK=check-py34
-    - env: TASK=check-py35
-    - env: TASK=check-py37
+    - env: TASK=check-py36
       sudo: required
       dist: xenial
-    - env: TASK=check-quality
     - env: TASK=check-ruby-tests
-
-    # Less important tests that will probably
-    # pass whenever the above do but are still
-    # worth testing.
-    - stage: extras
-      env: TASK=check-unicode
-    - env: TASK=check-py27-typing
-    - env: TASK=check-nose
-    - env: TASK=check-pytest30
-    - env: TASK=check-django21
-    - env: TASK=check-django20
     - env: TASK=check-django111
-    - env: TASK=check-pandas19
-    - env: TASK=check-pandas22
-    - env: TASK=check-pandas23
     - env: TASK=check-pandas24
 
     - stage: deploy
