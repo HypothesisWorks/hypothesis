@@ -455,6 +455,14 @@ def test_unique_array_with_fill_can_use_all_elements(arr):
     assume(len(set(arr)) == arr.size)
 
 
+@given(nps.arrays(dtype="uint8", shape=25, unique=True, fill=st.nothing()))
+def test_unique_array_without_fill(arr):
+    # This test covers the collision-related branchs for fully dense unique arrays.
+    # Choosing 25 of 256 possible elements means we're almost certain to see colisions
+    # thanks to the 'birthday paradox', but finding unique elemennts is still easy.
+    assume(len(set(arr)) == arr.size)
+
+
 @given(ndim=st.integers(0, 5), data=st.data())
 def test_mapped_positive_axes_are_unique(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
