@@ -56,6 +56,7 @@ def combine_labels(*labels):
 
 
 INTEGER_RANGE_DRAW_LABEL = calc_label_from_name("another draw in integer_range()")
+FILTERED_CHOICE_LABEL = calc_label_from_name("filtered_choice()")
 BIASED_COIN_LABEL = calc_label_from_name("biased_coin()")
 SAMPLE_IN_SAMPLER_LABLE = calc_label_from_name("a sample() in Sampler")
 ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
@@ -152,6 +153,61 @@ def check_sample(values, strategy_name):
 
 def choice(data, values):
     return values[integer_range(data, 0, len(values) - 1)]
+
+
+def filtered_choice(data, values, condition, on_all_filtered=None):
+    """Draw a random value from a non-empty sequence that matches a filter
+    condition.
+    """
+    assert values
+
+    # The two obvious ways of doing this have serious drawbacks:
+    #
+    # - If we perform ordinary rejection sampling, and most values are not
+    #     permitted, then it can take many redraws to find a good value.
+    # - If we filter the list first and draw a value from that, then this draw
+    #   becomes very sensitive to which values pass the filter. If the filter
+    #     is affected by previous draws, then shrinking becomes very fragile.
+    #
+    # We get around those drawbacks by doing the following:
+    #  1. First choose a value unconditionally, and check if it's permitted.
+    #     If it is, that's the chosen value, and we're done.
+    #  2. If not, create a filtered list of only the permitted values, and
+    #     choose one of those at random. (Or complain that the list is empty.)
+    #  3. Write a copy of the chosen value's index back to the data stream.
+    #     When the shrinker deletes the draws from (1) and (2), the test will
+    #     reinterpret this written index as the index drawn by (1). That draw
+    #     will succeed immediately, as though we got lucky and happened to
+    #     pick a permitted value the first time.
+
+    # Mark the region that should be deleted when shrinking open.
+    data.start_example(FILTERED_CHOICE_LABEL)
+
+    # Optimistically choose a value, and hope that it passes the filter.
+    i = integer_range(data, 0, len(values) - 1)
+    block_length = data.blocks.last_block_length
+
+    v = values[i]
+    if condition(v):
+        data.stop_example()
+        return v
+
+    # Build a list of value indices that are permitted by the filter.
+    allowed = [j for (j, v) in enumerate(values) if j != i and condition(v)]
+    if not allowed:
+        # Give the caller a chance to note failure or raise a custom error.
+        if on_all_filtered is not None:
+            on_all_filtered()
+        data.mark_invalid()
+
+    j = choice(data, allowed)
+    data.stop_example()
+
+    # Write the successfully-chosen index back to the data stream.
+    # When the shrinker deletes the preceding example, it will reinterpret
+    # this block as the original optimistic draw, which should succeed.
+    data.draw_bits(block_length * 8, forced=j)
+    return values[j]
 
 
 def getrandbits(data, n):

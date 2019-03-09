@@ -617,21 +617,15 @@ class RuleStrategy(SearchStrategy):
         #      to pick a valid rule.
         #
         # Easy, right?
-        n = len(self.rules)
-        i = cu.integer_range(data, 0, n - 1)
-        block_length = data.blocks.last_block_length
-        rule = self.rules[i]
-        if not self.is_valid(rule):
-            valid_rules = [j for j, r in enumerate(self.rules) if self.is_valid(r)]
-            if not valid_rules:
-                raise InvalidDefinition(
-                    u"No progress can be made from state %r" % (self.machine,)
-                )
-            i = valid_rules[cu.integer_range(data, 0, len(valid_rules) - 1)]
-            # Insert a copy of ``i`` into the data stream to make it easier for
-            # the shrinker to delete the initial invalid rule draw.
-            data.draw_bits(block_length * 8, forced=i)
-            rule = self.rules[i]
+
+        def on_all_filtered():
+            raise InvalidDefinition(
+                u"No progress can be made from state %r" % (self.machine,)
+            )
+
+        rule = cu.filtered_choice(
+            data, self.rules, self.is_valid, on_all_filtered=on_all_filtered
+        )
         return (rule, data.draw(rule.arguments_strategy))
 
     def is_valid(self, rule):
