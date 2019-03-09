@@ -202,6 +202,8 @@ class Blocks(object):
 
     def start(self, i):
         """Equivalent to self[i].start."""
+        i = self._check_index(i)
+
         if i == 0:
             return 0
         else:
@@ -222,6 +224,10 @@ class Blocks(object):
             yield (prev, e)
             prev = e
 
+    @property
+    def last_block_length(self):
+        return self.end(-1) - self.start(-1)
+
     def __len__(self):
         return len(self.endpoints)
 
@@ -231,12 +237,16 @@ class Blocks(object):
         except (KeyError, IndexError):
             return None
 
-    def __getitem__(self, i):
+    def _check_index(self, i):
         n = len(self)
         if i < -n or i >= n:
             raise IndexError("Index %d out of range [-%d, %d)" % (i, n, n))
         if i < 0:
             i += n
+        return i
+
+    def __getitem__(self, i):
+        i = self._check_index(i)
         assert i >= 0
         result = self.__known_block(i)
         if result is not None:
