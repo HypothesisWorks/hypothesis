@@ -124,4 +124,23 @@ jobs:
     - script: "python -m pytest hypothesis-python\\tests\\cover"
       displayName: Run tests
 
+  - job: osx
+    dependsOn: precheck
+    pool:
+      vmImage: 'macOS-10.13'
+    strategy:
+      matrix:
+        check-py27:
+          TASK: check-py27
+        check-py36:
+          TASK: check-py36
+    steps:
+    - script: |
+        brew update
+        brew install readline xz ncurses
+        ./build.sh install-core
+      displayName: Install dependencies
+    - script: ./build.sh
+      displayName: Run tests
+
 # TODO: Deploy jobs dependent on above
