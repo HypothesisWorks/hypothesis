@@ -77,6 +77,10 @@ We have a reasonably distinctive style when it comes to handling arguments:
   If you find yourself inclined to write something like that, instead make it
   take a strategy. If a user wants to pass a value they can wrap it in a call
   to ``just``.
+* If a combination of arguments make it impossible to generate anything,
+  ``raise InvalidArgument`` instead of ``return nothing()``.  Returning the
+  null strategy is conceptually nice, but can lead to silently dropping parts
+  from composed strategies and thus unexpectedly weak tests.
 
 ~~~~~~~~~~~~~~
 Function Names

@@ -93,8 +93,10 @@ class LarkStrategy(SearchStrategy):
 
         self.start = self.names_to_symbols[start]
 
-        self.ignored_symbols = st.sampled_from(
-            [self.names_to_symbols[n] for n in ignore_names]
+        self.ignored_symbols = (
+            st.sampled_from([self.names_to_symbols[n] for n in ignore_names])
+            if ignore_names
+            else st.nothing()
         )
 
         self.terminal_strategies = {

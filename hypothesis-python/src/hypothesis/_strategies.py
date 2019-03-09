@@ -675,6 +675,12 @@ def sampled_from(elements):
     """
     values = check_sample(elements, "sampled_from")
     if not values:
+        note_deprecation(
+            "sampled_from() with nothing to sample is deprecated and will be an "
+            "error in a future version.  It currently returns `st.nothing()`, "
+            "which if unexpected can make parts of a strategy silently vanish.",
+            since="RELEASEDAY",
+        )
         return nothing()
     if len(values) == 1:
         return just(values[0])
@@ -1005,7 +1011,7 @@ def text(
     elif isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:
-        char_strategy = sampled_from(list(alphabet))
+        char_strategy = sampled_from(list(alphabet)) if alphabet else nothing()
         if not isinstance(alphabet, abc.Sequence):
             raise InvalidArgument(
                 "alphabet must be an ordered sequence, or tests may be "
@@ -1596,7 +1602,7 @@ def decimals(
         special.append(Decimal("Infinity"))
     if allow_infinity or (allow_infinity is min_value is None):
         special.append(Decimal("-Infinity"))
-    return strat | sampled_from(special)
+    return strat | (sampled_from(special) if special else nothing())
 
 
 def recursive(
