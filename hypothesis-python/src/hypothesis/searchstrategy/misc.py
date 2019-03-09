@@ -85,3 +85,18 @@ class SampledFromStrategy(SearchStrategy):
 
     def do_draw(self, data):
         return d.choice(data, self.elements)
+
+
+class FilteredSampleStrategy(SearchStrategy):
+    def __init__(self, elements, condition):
+        SearchStrategy.__init__(self)
+        assert isinstance(elements, tuple)
+        assert elements
+        self.elements = elements
+        self.condition = condition
+
+    def calc_has_reusable_values(self, recur):
+        return True
+
+    def do_draw(self, data):
+        return d.filtered_choice(data, self.elements, self.condition)

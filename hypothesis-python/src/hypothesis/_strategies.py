@@ -96,6 +96,7 @@ from hypothesis.searchstrategy.deferred import DeferredStrategy
 from hypothesis.searchstrategy.lazy import LazyStrategy
 from hypothesis.searchstrategy.misc import (
     BoolStrategy,
+    FilteredSampleStrategy,
     JustStrategy,
     SampledFromStrategy,
 )
@@ -685,6 +686,14 @@ def sampled_from(elements):
             lambda s: reduce(operator.or_, s)
         )
     return SampledFromStrategy(values)
+
+
+@defines_strategy
+def filtered_sample(elements, filter):
+    values = check_sample(elements, "filtered_sample")
+    if not values:
+        raise InvalidArgument("Cannot sample from an empty collection")
+    return FilteredSampleStrategy(values, filter)
 
 
 @cacheable
