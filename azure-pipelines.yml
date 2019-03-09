@@ -1,11 +1,4 @@
 # https://aka.ms/yaml
-variables:
-  # Current tooling indexes directly into os.environ and will
-  # fail without this defined
-  # TODO: Implement specific PR logic and then fix up tooling to be okay
-  # without this environment variable set
-  travis_event_type: ''
-
 
 jobs:
   - job: precheck_concurrent
