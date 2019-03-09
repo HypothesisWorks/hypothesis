@@ -29,7 +29,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange, integer_types, text_type
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
-from hypothesis.internal.validation import check_type
+from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
 
@@ -651,3 +651,48 @@ def nested_dtypes(
     return st.recursive(
         subtype_strategy, lambda x: array_dtypes(x, allow_subarrays=True), max_leaves
     ).filter(lambda d: max_itemsize is None or d.itemsize <= max_itemsize)
+
+
+@st.defines_strategy
+def valid_tuple_axes(ndim, min_size=0, max_size=None):
+    # type: (int, int, int) -> st.SearchStrategy[Tuple[int, ...]]
+    """Return a strategy for generating permissible tuple-values for the
+    ``axis`` argument for a numpy sequential function (e.g.
+    :func: `numpy:numpy.sum`), given an array of the specified
+    dimensionality.
+
+    All tuples will have an length >= min_size and <= max_size. The default
+    value for max_len is ``ndim``.
+
+    Examples from this strategy shrink towards an empty tuple, which render
+    most sequential functions as no-ops.
+
+    The following are some examples drawn from this strategy.
+
+    .. code-block:: pycon
+
+        >>> [valid_tuple_axes(3).example() for i in range(4)]
+        [(-3, 1), (0, 1, -1), (0, 2), (0, -2, 2)]
+
+    ``valid_tuple_axes`` can be joined with other strategies to generate
+    any type of valid axis object, i.e. integers, tuples, and ``None``:
+
+    .. code-block:: pycon
+
+        any_axis_strategy = none() | integers(-ndim, ndim - 1) | valid_tuple_axes(ndim)
+
+    """
+    if max_size is None:
+        max_size = ndim
+
+    check_type(integer_types, ndim, "ndim")
+    check_type(integer_types, min_size, "min_size")
+    check_type(integer_types, max_size, "max_size")
+    order_check("size", 0, min_size, max_size)
+    check_valid_interval(max_size, ndim, "max_size", "ndim")
+
+    # shrink axis values from negative to positive
+    axes = st.integers(0, max(0, 2 * ndim - 1)).map(
+        lambda x: x if x < ndim else x - 2 * ndim
+    )
+    return st.lists(axes, min_size, max_size, unique_by=lambda x: x % ndim).map(tuple)
