@@ -1,4 +1,6 @@
-# https://aka.ms/yaml
+# Schema docs at https://aka.ms/yaml
+trigger:
+  - master
 
 jobs:
   - job: precheck_concurrent
