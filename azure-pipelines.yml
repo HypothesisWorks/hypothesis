@@ -6,6 +6,7 @@ jobs:
   - job: precheck_concurrent
     # This job schedules long-running tasks concurrently with the rest of the
     # build pipeline ensuring that later stages don't block on them
+    # We'll merge it back into the `precheck` stage once Pipelines has caching.
     pool:
       vmImage: 'Ubuntu 16.04'
     strategy:
@@ -13,9 +14,7 @@ jobs:
         check-whole-repo-tests:
           TASK: check-whole-repo-tests
     steps:
-    - script: >
-        sudo apt-get install
-        libreadline-dev libsqlite3-dev
+    - script: "sudo apt-get install libreadline-dev libsqlite3-dev"
       displayName: Install apt dependencies
     - script: ./build.sh
       displayName: Run build tasks
@@ -34,9 +33,7 @@ jobs:
         check-rust-tests:
           TASK: check-rust-tests
     steps:
-    - script: >
-        sudo apt-get install
-        libreadline-dev libsqlite3-dev
+    - script: "sudo apt-get install libreadline-dev libsqlite3-dev"
       displayName: Install apt dependencies
     - script: ./build.sh
       displayName: Run build tasks
@@ -57,9 +54,6 @@ jobs:
           TASK: check-py36
         check-py27:
           TASK: check-py27
-        # Python 3.4 doesn't build against libssl-dev on Azure, failing checks
-        #check-py34:
-        #  TASK: check-py34
         check-py35:
           TASK: check-py35
         check-py37:
@@ -91,11 +85,9 @@ jobs:
         check-pandas24:
           TASK: check-pandas24
     steps:
-    - script: >
-        sudo apt-get install
-        libreadline-dev libsqlite3-dev
+    - script: "sudo apt-get install libreadline-dev libsqlite3-dev"
       displayName: Install apt dependencies
     - script: ./build.sh
-      displayName: Run build tasks
+      displayName: Run tests
 
 # TODO: Deploy jobs dependent on above
