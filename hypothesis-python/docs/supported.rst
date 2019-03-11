@@ -11,7 +11,7 @@ for the details.
 Python versions
 ---------------
 
-Hypothesis is supported and tested on CPython 2.7 and CPython 3.4+, i.e.
+Hypothesis is supported and tested on CPython 2.7 and CPython 3.5+, i.e.
 `all versisions of CPython with upstream support <https://devguide.python.org/#status-of-python-branches>`_,
 
 Hypothesis also supports the latest PyPy for both Python 2 (until 2020) and Python 3.

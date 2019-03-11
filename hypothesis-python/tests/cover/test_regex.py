@@ -28,7 +28,6 @@ from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import PY3, hrange, hunichr
 from hypothesis.searchstrategy.regex import (
-    HAS_WEIRD_WORD_CHARS,
     SPACE_CHARS,
     UNICODE_DIGIT_CATEGORIES,
     UNICODE_SPACE_CATEGORIES,
@@ -63,7 +62,7 @@ def is_word(s):
     return all(
         c == "_"
         or (
-            (not HAS_WEIRD_WORD_CHARS or c not in UNICODE_WEIRD_NONWORD_CHARS)
+            (PY3 or c not in UNICODE_WEIRD_NONWORD_CHARS)
             and unicodedata.category(c) in UNICODE_WORD_CATEGORIES
         )
         for c in s

@@ -368,7 +368,6 @@ def run_tox(task, version):
 
 
 PY27 = "2.7.14"
-PY34 = "3.4.8"
 PY35 = "3.5.5"
 PY36 = "3.6.5"
 PY37 = "3.7.0"
@@ -384,7 +383,7 @@ def install_core():
 
 ALIASES = {PYPY2: "pypy", PYPY3: "pypy3"}
 
-for n in [PY27, PY34, PY35, PY36, PY37]:
+for n in [PY27, PY35, PY36, PY37]:
     major, minor, patch = n.split(".")
     ALIASES[n] = "python%s.%s" % (major, minor)
 
@@ -401,11 +400,6 @@ python_tests = task(
 @python_tests
 def check_py27():
     run_tox("py27-full", PY27)
-
-
-@python_tests
-def check_py34():
-    run_tox("py34-full", PY34)
 
 
 @python_tests
