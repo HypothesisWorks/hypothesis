@@ -119,10 +119,7 @@ class IntList(object):
 
     def __upgrade(self):
         code = NEXT_ARRAY_CODE[self.__underlying.typecode]
-        if code == "O":
-            self.__underlying = list(self.__underlying)
-        else:
-            self.__underlying = array_or_list(code, self.__underlying)
+        self.__underlying = array_or_list(code, self.__underlying)
 
 
 def pop_random(random, values):
