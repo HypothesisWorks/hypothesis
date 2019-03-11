@@ -22,7 +22,12 @@ anything that lives here, please move it."""
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis.internal.compat import array_or_list, hbytes
+from hypothesis.internal.compat import (
+    array_or_list,
+    hbytes,
+    int_to_bytes,
+    integer_types,
+)
 
 
 def replace_all(buffer, replacements):
@@ -44,7 +49,7 @@ def replace_all(buffer, replacements):
     return hbytes(result)
 
 
-ARRAY_CODES = ["B", "H", "I", "L", "Q"]
+ARRAY_CODES = ["B", "H", "I", "L", "Q", "O"]
 NEXT_ARRAY_CODE = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
 
 
@@ -65,8 +70,12 @@ class IntList(object):
                 break
             except OverflowError:
                 pass
-        else:
-            raise ValueError("Could not create IntList for %r" % (values,))
+        else:  # pragma: no cover
+            assert False, "Could not create storage for %r" % (values,)
+        if isinstance(self.__underlying, list):
+            for v in self.__underlying:
+                if v < 0 or not isinstance(v, integer_types):
+                    raise ValueError("Could not create IntList for %r" % (values,))
 
     def __repr__(self):
         return "IntList(%r)" % (list(self),)
@@ -75,7 +84,12 @@ class IntList(object):
         return len(self.__underlying)
 
     def __getitem__(self, i):
+        if isinstance(i, slice):
+            return IntList(self.__underlying[i])
         return self.__underlying[i]
+
+    def __delitem__(self, i):
+        del self.__underlying[i]
 
     def __iter__(self):
         return iter(self.__underlying)
@@ -101,9 +115,11 @@ class IntList(object):
                 return
             except OverflowError:
                 assert n > 0
-                self.__underlying = array_or_list(
-                    NEXT_ARRAY_CODE[self.__underlying.typecode], self.__underlying
-                )
+                self.__upgrade()
+
+    def __upgrade(self):
+        code = NEXT_ARRAY_CODE[self.__underlying.typecode]
+        self.__underlying = array_or_list(code, self.__underlying)
 
 
 def pop_random(random, values):
@@ -136,3 +152,8 @@ def binary_search(lo, hi, f):
         else:
             hi = mid
     return lo
+
+
+def uniform(random, n):
+    """Returns an hbytes of length n, distributed uniformly at random."""
+    return int_to_bytes(random.getrandbits(n * 8), n)

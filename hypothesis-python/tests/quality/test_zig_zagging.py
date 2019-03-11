@@ -96,9 +96,7 @@ def test_avoids_zig_zag_trap(p):
         settings=settings(base_settings, phases=(Phase.generate, Phase.shrink)),
     )
 
-    runner.test_function(
-        ConjectureData.for_buffer(b + hbytes([0]) + b + hbytes([1]) + marker)
-    )
+    runner.cached_test_function(b + hbytes([0]) + b + hbytes([1]) + marker)
 
     assert runner.interesting_examples
 

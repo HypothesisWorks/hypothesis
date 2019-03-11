@@ -25,12 +25,12 @@ from decimal import Decimal
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import assume, given, settings
+from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT, WINDOWS
 from hypothesis.internal.floats import float_to_int, int_to_float, next_down, next_up
 from tests.common.debug import find_any, minimal
-from tests.common.utils import checks_deprecated_behaviour, flaky
+from tests.common.utils import checks_deprecated_behaviour
 
 try:
     import numpy
@@ -76,22 +76,6 @@ def test_does_not_generate_negative_if_right_boundary_is_positive(x):
 @given(st.floats(-1.0, -0.0))
 def test_does_not_generate_positive_if_right_boundary_is_negative(x):
     assert math.copysign(1, x) == -1
-
-
-@pytest.mark.parametrize(
-    (u"l", u"r"), [(0.0, 1.0), (-1.0, 0.0), (-sys.float_info.min, sys.float_info.min)]
-)
-@flaky(max_runs=4, min_passes=1)
-def test_can_generate_interval_endpoints(l, r):
-    interval = st.floats(l, r)
-    minimal(interval, lambda x: x == l, settings=settings(max_examples=10000))
-    minimal(interval, lambda x: x == r, settings=settings(max_examples=10000))
-
-
-@flaky(max_runs=4, min_passes=1)
-def test_half_bounded_generates_endpoint():
-    find_any(st.floats(min_value=-1.0), lambda x: x == -1.0)
-    find_any(st.floats(max_value=-1.0), lambda x: x == -1.0)
 
 
 def test_half_bounded_generates_zero():
