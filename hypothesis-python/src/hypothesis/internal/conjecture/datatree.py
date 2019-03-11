@@ -114,6 +114,16 @@ class TreeNode(object):
     # draws below it has been explored. We store this information
     # on a field and update it when performing operations that
     # could change the answer.
+    #
+    # A node may start exhausted, e.g. because it it leads
+    # immediately to a conclusion, but can only go from
+    # non-exhausted to exhausted when one of its children
+    # becomes exhausted or it is marked as a conclusion.
+    #
+    # Therefore we only need to check whether we need to update
+    # this field when the node is first created in ``split_at``
+    # or when we have walked a path through this node to a
+    # conclusion in ``TreeRecordingObserver``.
     is_exhausted = attr.ib(default=False, init=False)
 
     @property
@@ -407,5 +417,9 @@ class TreeRecordingObserver(DataObserver):
         assert len(node.values) > 0 or node.check_exhausted()
 
         for t in reversed(self.__trail):
+            # Any node we've traversed might have now become exhausted.
+            # We check from the right. As soon as we hit a node that
+            # isn't exhausted, this automatically implies that all of
+            # its parents are not exhausted, so we stop.
             if not t.check_exhausted():
                 break
