@@ -21,6 +21,21 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.11.0:
+
+-------------------
+4.11.0 - 2019-03-12
+-------------------
+
+This release deprecates :func:`~hypothesis.strategies.sampled_from` with empty
+sequences.  This returns :func:`~hypothesis.strategies.nothing`, which gives a
+clear error if used directly... but simply vanishes if combined with another
+strategy.
+
+Tests that silently generate less than expected are a serious problem for
+anyone relying on them to find bugs, and we think reliability more important
+than convenience in this case.
+
 .. _v4.10.0:
 
 -------------------

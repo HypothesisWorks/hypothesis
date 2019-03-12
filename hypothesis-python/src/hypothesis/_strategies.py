@@ -679,7 +679,7 @@ def sampled_from(elements):
             "sampled_from() with nothing to sample is deprecated and will be an "
             "error in a future version.  It currently returns `st.nothing()`, "
             "which if unexpected can make parts of a strategy silently vanish.",
-            since="RELEASEDAY",
+            since="2019-03-12",
         )
         return nothing()
     if len(values) == 1:
