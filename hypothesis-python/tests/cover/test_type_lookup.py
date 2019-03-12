@@ -31,6 +31,7 @@ from hypothesis.errors import (
 )
 from hypothesis.internal.compat import PY2, integer_types
 from hypothesis.searchstrategy import types
+from tests.common.utils import checks_deprecated_behaviour
 
 # Build a set of all types output by core strategies
 blacklist = [
@@ -177,6 +178,7 @@ class EmptyEnum(enum.Enum):
     pass
 
 
+@checks_deprecated_behaviour
 def test_error_if_enum_is_empty():
     assert st.from_type(EmptyEnum).is_empty
 

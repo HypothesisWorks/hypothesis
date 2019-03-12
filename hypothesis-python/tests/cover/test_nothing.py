@@ -26,7 +26,9 @@ from tests.common.debug import assert_no_examples, minimal
 
 def test_resampling():
     x = minimal(
-        st.lists(st.integers()).flatmap(lambda x: st.lists(st.sampled_from(x))),
+        st.lists(st.integers(), min_size=1).flatmap(
+            lambda x: st.lists(st.sampled_from(x))
+        ),
         lambda x: len(x) >= 10 and len(set(x)) == 1,
     )
     assert x == [0] * 10
