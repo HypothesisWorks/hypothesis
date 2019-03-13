@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.11.2:
+
+-------------------
+4.11.2 - 2019-03-13
+-------------------
+
+This release removes some internal code that populates a field that is no longer used anywhere.
+This should result in some modest performance and speed improvements and no other user visible effects.
+
 .. _v4.11.1:
 
 -------------------
