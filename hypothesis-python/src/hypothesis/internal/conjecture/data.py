@@ -683,17 +683,6 @@ class ConjectureData(object):
         self.start_example(DRAW_BYTES_LABEL)
         initial = self.index
 
-        block = Block(
-            start=initial,
-            end=initial + n_bytes,
-            index=len(self.blocks),
-            forced=forced is not None,
-            all_zero=result == 0,
-        )
-
-        if block.forced:
-            self.forced_indices.update(hrange(block.start, block.end))
-
         self.buffer.extend(buf)
         self.index = len(self.buffer)
 
