@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.11.5:
+
+-------------------
+4.11.5 - 2019-03-13
+-------------------
+
+This release adds a micro-optimisation to how Hypothesis handles debug reporting internally.
+Hard to shrink test may see a slight performance improvement, but in most common scenarios it is unlikely to be noticeable.
+
 .. _v4.11.4:
 
 -------------------
