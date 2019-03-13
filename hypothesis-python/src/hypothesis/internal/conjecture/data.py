@@ -487,7 +487,6 @@ class ConjectureData(object):
         self.start_time = benchmark_time()
         self.events = set()
         self.forced_indices = set()
-        self.masked_indices = {}
         self.interesting_origin = None
         self.draw_times = []
         self.max_depth = 0
@@ -667,13 +666,6 @@ class ConjectureData(object):
             buf = bytearray(self._draw_bytes(self, n_bytes))
         assert len(buf) == n_bytes
 
-        # If we have a number of bits that is not a multiple of 8
-        # we have to mask off the high bits.
-        if n % 8 != 0:
-            mask = (1 << (n % 8)) - 1
-            assert mask != 0
-            buf[0] &= mask
-            self.masked_indices[self.index] = mask
         buf = hbytes(buf)
         result = int_from_bytes(buf)
 
