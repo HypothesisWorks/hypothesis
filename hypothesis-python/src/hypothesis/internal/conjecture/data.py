@@ -453,6 +453,12 @@ Stop = UniqueIdentifier("Stop")
 StopDiscard = UniqueIdentifier("StopDiscard")
 
 
+# Masks for masking off the first byte of an n-bit buffer.
+# The appropriate mask is stored at position n % 8.
+BYTE_MASKS = [(1 << n) - 1 for n in hrange(8)]
+BYTE_MASKS[0] = 255
+
+
 class ConjectureData(object):
     @classmethod
     def for_buffer(self, buffer, observer=None):
@@ -487,7 +493,6 @@ class ConjectureData(object):
         self.start_time = benchmark_time()
         self.events = set()
         self.forced_indices = set()
-        self.masked_indices = {}
         self.interesting_origin = None
         self.draw_times = []
         self.max_depth = 0
@@ -669,11 +674,7 @@ class ConjectureData(object):
 
         # If we have a number of bits that is not a multiple of 8
         # we have to mask off the high bits.
-        if n % 8 != 0:
-            mask = (1 << (n % 8)) - 1
-            assert mask != 0
-            buf[0] &= mask
-            self.masked_indices[self.index] = mask
+        buf[0] &= BYTE_MASKS[n % 8]
         buf = hbytes(buf)
         result = int_from_bytes(buf)
 
