@@ -51,7 +51,6 @@ except ImportError:
     pytest = None
 
 
-
 __all__ = ["standard_types", "OrderedPair", "TIME_INCREMENT"]
 
 OrderedPair = namedtuple("OrderedPair", ("left", "right"))

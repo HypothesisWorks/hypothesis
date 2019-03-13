@@ -22,7 +22,6 @@ It verifies your code against a wide range of input and minimizes any
 failing examples it finds.
 """
 
-
 from __future__ import absolute_import, division, print_function
 
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings, unlimited
