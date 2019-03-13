@@ -294,7 +294,7 @@ class DataTree(object):
             self.simulate_test_function(data)
             return (data.buffer, data.status)
         except PreviouslyUnseenBehaviour:
-            return (hbytes(data.buffer) + buffer[len(data.buffer) :], None)
+            return (buffer, None)
 
     def simulate_test_function(self, data):
         """Run a simulated version of the test function recorded by
