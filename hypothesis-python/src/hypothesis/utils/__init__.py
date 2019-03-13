@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at

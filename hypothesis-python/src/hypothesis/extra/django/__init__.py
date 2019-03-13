@@ -15,12 +15,14 @@
 #
 # END HEADER
 
+from __future__ import absolute_import, division, print_function
+
 from hypothesis.extra.django._fields import from_field, register_field_strategy
 from hypothesis.extra.django._impl import (
     TestCase,
     TransactionTestCase,
-    from_model,
     from_form,
+    from_model,
 )
 
 __all__ = [

@@ -15,10 +15,11 @@
 #
 # END HEADER
 
+from __future__ import absolute_import, division, print_function
+
+from hypothesis.internal.conjecture.shrinking.floats import Float
 from hypothesis.internal.conjecture.shrinking.integer import Integer
 from hypothesis.internal.conjecture.shrinking.lexical import Lexical
 from hypothesis.internal.conjecture.shrinking.ordering import Ordering
-from hypothesis.internal.conjecture.shrinking.floats import Float
-
 
 __all__ = ["Lexical", "Integer", "Ordering", "Float"]

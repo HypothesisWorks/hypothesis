@@ -23,13 +23,14 @@ failing examples it finds.
 """
 
 
-from hypothesis._settings import settings, Verbosity, Phase, HealthCheck, unlimited
-from hypothesis.version import __version_info__, __version__
-from hypothesis.control import assume, note, reject, event
-from hypothesis.core import given, find, example, seed, reproduce_failure, PrintSettings
+from __future__ import absolute_import, division, print_function
+
+from hypothesis._settings import HealthCheck, Phase, Verbosity, settings, unlimited
+from hypothesis.control import assume, event, note, reject
+from hypothesis.core import PrintSettings, example, find, given, reproduce_failure, seed
 from hypothesis.internal.entropy import register_random
 from hypothesis.utils.conventions import infer
-
+from hypothesis.version import __version__, __version_info__
 
 __all__ = [
     "settings",
