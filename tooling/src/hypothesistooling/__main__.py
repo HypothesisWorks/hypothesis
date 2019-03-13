@@ -260,9 +260,15 @@ def upgrade_requirements():
 
 
 def is_pyup_branch():
-    return os.environ["TRAVIS_EVENT_TYPE"] == "pull_request" and os.environ[
-        "TRAVIS_PULL_REQUEST_BRANCH"
-    ].startswith("pyup-scheduled-update")
+    if os.environ.get("TRAVIS_EVENT_TYPE") == "pull_request" and os.environ.get(
+        "TRAVIS_PULL_REQUEST_BRANCH", ""
+    ).startswith("pyup-scheduled-update"):
+        return True
+    return (
+        os.environ.get("Build.SourceBranchName", "").startswith("pyup-scheduled-update")
+        and os.environ.get("System.PullRequest.IsFork") == "False"
+        and os.environ.get("Build.Reason") == "PullRequest"
+    )
 
 
 def push_pyup_requirements_commit():
