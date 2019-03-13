@@ -14,7 +14,7 @@ jobs:
         check-whole-repo-tests:
           TASK: check-whole-repo-tests
     steps:
-    - script: "sudo apt-get install libreadline-dev libsqlite3-dev"
+    - script: sudo apt-get install libreadline-dev libsqlite3-dev
       displayName: Install apt dependencies
     - script: ./build.sh check-installed
       displayName: Install Python
@@ -35,7 +35,7 @@ jobs:
         check-rust-tests:
           TASK: check-rust-tests
     steps:
-    - script: "sudo apt-get install libreadline-dev libsqlite3-dev"
+    - script: sudo apt-get install libreadline-dev libsqlite3-dev
       displayName: Install apt dependencies
     - script: ./build.sh check-installed
       displayName: Install Python
@@ -89,7 +89,7 @@ jobs:
         check-pandas24:
           TASK: check-pandas24
     steps:
-    - script: "sudo apt-get install libreadline-dev libsqlite3-dev"
+    - script: sudo apt-get install libreadline-dev libsqlite3-dev
       displayName: Install apt dependencies
     - script: ./build.sh check-installed
       displayName: Install Python
@@ -127,7 +127,7 @@ jobs:
         python -m pip install setuptools -r requirements/test.txt
         python -m pip install hypothesis-python/
       displayName: Install dependencies
-    - script: "python -m pytest hypothesis-python\\tests\\cover"
+    - script: python -m pytest hypothesis-python/tests/cover
       displayName: Run tests
 
   - job: osx
