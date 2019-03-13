@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.11.4:
+
+-------------------
+4.11.4 - 2019-03-13
+-------------------
+
+This release removes some redundant code that was no longer needed but was still running a significant amount of computation and allocation on the hot path.
+This should result in a modest speed improvement for most tests, especially those with large test cases.
+
 .. _v4.11.3:
 
 -------------------
