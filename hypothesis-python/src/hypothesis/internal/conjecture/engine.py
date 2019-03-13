@@ -46,7 +46,7 @@ from hypothesis.internal.conjecture.datatree import DataTree, TreeRecordingObser
 from hypothesis.internal.conjecture.junkdrawer import pop_random, uniform
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
-from hypothesis.reporting import debug_report
+from hypothesis.reporting import base_report
 
 # Tell pytest to omit the body of this module from tracebacks
 # https://docs.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
@@ -339,8 +339,8 @@ class ConjectureRunner(object):
             self.event_call_counts[event] += 1
 
     def debug(self, message):
-        with local_settings(self.settings):
-            debug_report(message)
+        if self.settings.verbosity >= Verbosity.debug:
+            base_report(message)
 
     @property
     def report_debug_info(self):
