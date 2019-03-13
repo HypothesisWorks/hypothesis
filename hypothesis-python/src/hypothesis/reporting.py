@@ -64,14 +64,18 @@ def to_text(textish):
 
 def verbose_report(text):
     if current_verbosity() >= Verbosity.verbose:
-        current_reporter()(to_text(text))
+        base_report(text)
 
 
 def debug_report(text):
     if current_verbosity() >= Verbosity.debug:
-        current_reporter()(to_text(text))
+        base_report(text)
 
 
 def report(text):
     if current_verbosity() >= Verbosity.normal:
-        current_reporter()(to_text(text))
+        base_report(text)
+
+
+def base_report(text):
+    current_reporter()(to_text(text))
