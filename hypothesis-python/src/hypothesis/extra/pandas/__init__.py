@@ -15,15 +15,15 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 from hypothesis.extra.pandas.impl import (
-    series,
-    data_frames,
     column,
     columns,
+    data_frames,
     indexes,
     range_indexes,
+    series,
 )
 
 __all__ = ["indexes", "range_indexes", "series", "column", "columns", "data_frames"]

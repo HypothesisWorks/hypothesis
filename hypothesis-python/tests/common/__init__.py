@@ -15,38 +15,40 @@
 #
 # END HEADER
 
+from __future__ import absolute_import, division, print_function
+
 import sys
 from collections import namedtuple
+
+from hypothesis.strategies import (
+    binary,
+    booleans,
+    builds,
+    complex_numbers,
+    decimals,
+    dictionaries,
+    fixed_dictionaries,
+    floats,
+    fractions,
+    frozensets,
+    integers,
+    just,
+    lists,
+    none,
+    one_of,
+    randoms,
+    recursive,
+    sampled_from,
+    sets,
+    text,
+    tuples,
+)
+from tests.common.debug import TIME_INCREMENT
 
 try:
     import pytest
 except ImportError:
     pytest = None
-
-from tests.common.debug import TIME_INCREMENT
-from hypothesis.strategies import (
-    integers,
-    floats,
-    just,
-    one_of,
-    sampled_from,
-    lists,
-    booleans,
-    dictionaries,
-    tuples,
-    frozensets,
-    complex_numbers,
-    sets,
-    text,
-    binary,
-    decimals,
-    fractions,
-    none,
-    randoms,
-    builds,
-    fixed_dictionaries,
-    recursive,
-)
 
 
 __all__ = ["standard_types", "OrderedPair", "TIME_INCREMENT"]

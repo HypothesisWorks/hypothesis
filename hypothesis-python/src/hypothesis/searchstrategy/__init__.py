@@ -18,6 +18,7 @@
 """Package defining SearchStrategy, which is the core type that Hypothesis uses
 to explore data."""
 
+from __future__ import absolute_import, division, print_function
 
 from .strategies import SearchStrategy, check_strategy
 
