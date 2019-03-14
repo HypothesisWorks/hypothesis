@@ -508,12 +508,7 @@ class Shrinker(object):
         # to the test case (alphabet_minimize) or delete data from it (the
         # rest). After these have reached a fixed point the test case should
         # be reasonably small and well normalized.
-        coarse = [
-            "alphabet_minimize",
-            "pass_to_descendant",
-            "zero_examples",
-            "adaptive_example_deletion",
-        ]
+        coarse = ["pass_to_descendant", "adaptive_example_deletion"]
         self.fixate_shrink_passes(coarse)
 
         # "fine" passes are ones that make lots of fine grained changes
@@ -523,6 +518,8 @@ class Shrinker(object):
         # wasteful. As a result we only start running them after we've hit
         # a fixed point for the coarse passes at least once.
         fine = [
+            "alphabet_minimize",
+            "zero_examples",
             "reorder_examples",
             "minimize_floats",
             "minimize_duplicated_blocks",
