@@ -508,7 +508,7 @@ class Shrinker(object):
         # to the test case (alphabet_minimize) or delete data from it (the
         # rest). After these have reached a fixed point the test case should
         # be reasonably small and well normalized.
-        coarse = [block_program("X" * i) for i in hrange(10, 0, -1)] + [
+        coarse = [block_program("X" * i) for i in hrange(5, 0, -1)] + [
             "pass_to_descendant",
             "adaptive_example_deletion",
         ]
