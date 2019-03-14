@@ -284,6 +284,7 @@ class Shrinker(object):
         self.__pending_shrink_explanation = None
 
         self.initial_size = len(initial.buffer)
+        self.last_cleared_tree_at = self.initial_size
 
         # We keep track of the current best example on the shrink_target
         # attribute.
@@ -865,6 +866,10 @@ class Shrinker(object):
         else:
             self.__all_changed_blocks = set()
             self.__last_checked_changed_at = new_target
+
+        if len(new_target.buffer) <= 0.9 * self.last_cleared_tree_at:
+            self.__engine.reset_tree()
+            self.last_cleared_tree_at = len(new_target.buffer)
 
         self.shrink_target = new_target
         self.__shrinking_block_cache = {}

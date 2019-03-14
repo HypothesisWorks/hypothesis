@@ -112,6 +112,11 @@ class ConjectureRunner(object):
         # executed test case.
         self.__data_cache = LRUReusedCache(CACHE_SIZE)
 
+    def reset_tree(self):
+        """Clears the example cache. This is sometimes useful to do in
+        long-running shrink operations."""
+        self.tree = DataTree()
+
     def __tree_is_exhausted(self):
         return self.tree.is_exhausted
 
