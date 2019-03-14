@@ -1598,3 +1598,18 @@ def test_occasionally_clears_cache():
 
     shrinker.adaptive_example_deletion()
     assert 1 <= reset_tree.call_count <= 20
+
+
+def test_does_not_clear_the_cache_when_size_does_not_change():
+    @shrinking_from(hbytes([1] * 100 + [0]))
+    def shrinker(data):
+        for _ in hrange(101):
+            data.draw_bits(1)
+        data.mark_interesting()
+
+    reset_tree = Mock()
+
+    shrinker._Shrinker__engine.reset_tree = reset_tree
+
+    shrinker.zero_examples()
+    assert reset_tree.call_count == 0
