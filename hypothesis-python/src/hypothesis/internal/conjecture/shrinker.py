@@ -508,7 +508,10 @@ class Shrinker(object):
         # to the test case (alphabet_minimize) or delete data from it (the
         # rest). After these have reached a fixed point the test case should
         # be reasonably small and well normalized.
-        coarse = ["pass_to_descendant", "adaptive_example_deletion"]
+        coarse = [block_program("X" * i) for i in hrange(10, 0, -1)] + [
+            "pass_to_descendant",
+            "adaptive_example_deletion",
+        ]
         self.fixate_shrink_passes(coarse)
 
         # "fine" passes are ones that make lots of fine grained changes
@@ -533,11 +536,7 @@ class Shrinker(object):
         # weird hacks that happen to work or they're expensive passes to
         # run. Generally we hope that the emergency passes don't do anything
         # at all.
-        emergency = [
-            block_program("-XX"),
-            block_program("XX"),
-            "example_deletion_with_block_lowering",
-        ]
+        emergency = [block_program("-XX"), "example_deletion_with_block_lowering"]
 
         self.fixate_shrink_passes(coarse + fine + emergency)
 
