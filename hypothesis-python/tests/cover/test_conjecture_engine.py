@@ -22,6 +22,7 @@ from random import Random, seed as seed_random
 
 import attr
 import pytest
+from mock import Mock
 
 import hypothesis.internal.conjecture.engine as engine_module
 import hypothesis.internal.conjecture.floats as flt
@@ -1582,3 +1583,18 @@ def test_exhaust_space():
         runner.run()
         assert runner.tree.is_exhausted
         assert runner.valid_examples == 2
+
+
+def test_occasionally_clears_cache():
+    @shrinking_from(hbytes([1] * 100 + [0]))
+    def shrinker(data):
+        while data.draw_bits(1):
+            pass
+        data.mark_interesting()
+
+    reset_tree = Mock()
+
+    shrinker._Shrinker__engine.reset_tree = reset_tree
+
+    shrinker.adaptive_example_deletion()
+    assert 1 <= reset_tree.call_count <= 20
