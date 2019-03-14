@@ -18,14 +18,12 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-import pytest
 
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, given, reject, settings
-from hypothesis.types import RandomWithSeed as Random
-from tests.common.debug import find_any, minimal
+from tests.common.debug import find_any
 from tests.pandas.helpers import supported_by_pandas
 
 
@@ -124,34 +122,6 @@ def test_can_specify_both_rows_and_columns_dict(d):
 )
 def test_can_fill_in_missing_elements_from_dict(df):
     assert np.isnan(df["A"]).all()
-
-
-subsets = ["", "A", "B", "C", "AB", "AC", "BC", "ABC"]
-
-
-@pytest.mark.parametrize("disable_fill", subsets)
-@pytest.mark.parametrize("non_standard_index", [True, False])
-def test_can_minimize_based_on_two_columns_independently(
-    disable_fill, non_standard_index
-):
-    columns = [
-        pdst.column(
-            name, dtype=bool, fill=st.nothing() if name in disable_fill else None
-        )
-        for name in ["A", "B", "C"]
-    ]
-
-    x = minimal(
-        pdst.data_frames(
-            columns, index=pdst.indexes(dtype=int) if non_standard_index else None
-        ),
-        lambda x: x["A"].any() and x["B"].any() and x["C"].any(),
-        random=Random(0),
-    )
-    assert len(x["A"]) == 1
-    assert x["A"][0] == 1
-    assert x["B"][0] == 1
-    assert x["C"][0] == 1
 
 
 @st.composite
