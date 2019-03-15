@@ -11,7 +11,7 @@ attrs==19.1.0
 babel==2.6.0              # via sphinx
 backcall==0.1.0           # via ipython
 bandit==1.5.1
-black==18.9b0
+black==19.3b0
 bleach==3.1.0             # via readme-renderer
 certifi==2019.3.9         # via requests
 chardet==3.0.4            # via requests
