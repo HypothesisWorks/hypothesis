@@ -504,45 +504,75 @@ class Shrinker(object):
         it twice will have exactly the same effect as calling it once.
         """
 
-        # "coarse" passes are ones which either make large scale modifications
-        # to the test case (alphabet_minimize) or delete data from it (the
-        # rest). After these have reached a fixed point the test case should
-        # be reasonably small and well normalized.
-        coarse = [
-            "alphabet_minimize",
-            "pass_to_descendant",
-            "zero_examples",
-            "adaptive_example_deletion",
-        ]
-        self.fixate_shrink_passes(coarse)
+        # The two main parts of shortlex optimisation are of course making
+        # the test case "short" and "lex" (that is to say, lexicographically.
+        # smaller). Sometimes these are intertwined and it's hard to do one
+        # without the other, but as far as we can we *vastly* prefer to make
+        # the test case shorter over making it lexicographically smaller.
+        # The reason for this is that we can only make O(n) progress on
+        # reducing the size, but at a fixed size there are O(256^n)
+        # lexicographically smaller values. As a result it's easier to
+        # reach a fixed point on size and also every reduction we make
+        # in size reduces the amount of work we have to do lexicographically.
+        # On top of that, reducing the size makes generation much faster,
+        # so even if reducing the size earlier doesn't reduce the number
+        # of test cases we run it may still result in significantly faster
+        # tests.
+        #
+        # As a result of this we start by running a bunch of operations
+        # that are primarily designed to reduce the size of the test.
+        #
+        # These fall into two categories:
+        #
+        # * "structured" ones respect the boundaries of draw calls and are
+        #   likely to correspond to semantically meaningful transformations
+        #   of the generated test case (e.g. deleting an element of a list,
+        #   replacing a tree node with one of its children).
+        # * "unstructured" ones will often not correspond to any meaningful
+        #   transformation but may succeed by accident or because they happen
+        #   to correspond to an unexpectedly meaningful operation (e.g.
+        #   merging two adjacent lists).
+        #
+        # Generally we expect unstructured ones to succeed early on when
+        # the test case has a lot of redundancy because they have plenty
+        # of opportunity to work by accident, and after that they're mostly
+        # unlikely work. As a result we do a slightly odd thing where we
+        # run unstructured deletions as part of the initial pass, but then
+        # we hold off on running them to a fixed point until we've turned
+        # the emergency passes on later.
+        unstructured_deletions = [block_program("X" * i) for i in hrange(5, 0, -1)]
+        structured_deletions = ["pass_to_descendant", "adaptive_example_deletion"]
+        self.fixate_shrink_passes(unstructured_deletions + structured_deletions)
 
-        # "fine" passes are ones that make lots of fine grained changes
-        # to the shrink target. Typically we might expect these to make many
-        # small changes, with some changes unlocking others. Additionally,
-        # if there's more data left to delete then often running these is
-        # wasteful. As a result we only start running them after we've hit
-        # a fixed point for the coarse passes at least once.
+        # "fine" passes are ones that are primarily concerned with lexicographic
+        # reduction. They may still delete data (either deliberately or by accident)
+        # but the distinguishing feature is that it is possible for them to
+        # succeed without the length of the test case changing.
+        # As a result we only start running them after we've hit a fixed point
+        # for the deletion passes at least once.
         fine = [
+            "alphabet_minimize",
+            "zero_examples",
             "reorder_examples",
             "minimize_floats",
             "minimize_duplicated_blocks",
             "minimize_individual_blocks",
         ]
 
-        self.fixate_shrink_passes(coarse + fine)
+        self.fixate_shrink_passes(structured_deletions + fine)
 
         # "emergency" shrink passes are ones that handle cases that we
         # can't currently handle more elegantly - either they're slightly
         # weird hacks that happen to work or they're expensive passes to
         # run. Generally we hope that the emergency passes don't do anything
-        # at all.
-        emergency = [
-            block_program("-XX"),
-            block_program("XX"),
-            "example_deletion_with_block_lowering",
-        ]
+        # at all. We also re-enable the unstructured deletions at this point
+        # in case new ones have been unlocked since we last ran them, but
+        # don't expect that to be a common occurrence..
+        emergency = [block_program("-XX"), "example_deletion_with_block_lowering"]
 
-        self.fixate_shrink_passes(coarse + fine + emergency)
+        self.fixate_shrink_passes(
+            unstructured_deletions + structured_deletions + fine + emergency
+        )
 
     def fixate_shrink_passes(self, passes):
         """Run steps from each pass in ``passes`` until the current shrink target
@@ -1384,62 +1414,19 @@ class Shrinker(object):
             else:
                 lo = mid
 
-    @derived_value
-    def example_to_stable_identifier_cache(self):
-        return []
-
-    @derived_value
-    def stable_identifier_to_example_cache(self):
-        return {}
-
     def stable_identifier_for_example(self, example):
         """A stable identifier is one that we can reasonably reliably
         count on referring to "logically the same" example between two
         different test runs. It is currently represented as a path from
         the root."""
-
-        i = example.index
-        n = len(self.example_to_stable_identifier_cache)
-        if i >= n:
-            self.example_to_stable_identifier_cache.extend([None] * (i - n + 1))
-            assert i < len(self.example_to_stable_identifier_cache)
-        result = self.example_to_stable_identifier_cache[i]
-        if result is None:
-            if i == 0:
-                result = ""
-            else:
-                parent = self.stable_identifier_for_example(
-                    self.examples[example.parent]
-                )
-                child = str(example.child_index)
-                if parent:
-                    result = parent + "," + child
-                else:
-                    result = child
-            self.example_to_stable_identifier_cache[i] = result
-        return result
+        return example.index
 
     def example_for_stable_identifier(self, identifier):
         """Returns the example in the current shrink target corresponding
         to this stable identifier, or None if no such example exists."""
-        if not identifier:
-            return self.examples[0]
-
-        cache = self.stable_identifier_to_example_cache
-        try:
-            return cache[identifier]
-        except KeyError:
-            pass
-        path = list(map(int, identifier.split(",")))
-        ex = self.examples[0]
-        for i in path:
-            try:
-                ex = ex.children[i]
-            except IndexError:
-                ex = None
-                break
-        cache[identifier] = ex
-        return ex
+        if identifier >= len(self.examples):
+            return None
+        return self.shrink_target.examples[identifier]
 
     def run_block_program(self, i, description, original, repeats=1):
         """Block programs are a mini-DSL for block rewriting, defined as a sequence

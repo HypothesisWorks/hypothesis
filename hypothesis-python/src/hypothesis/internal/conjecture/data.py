@@ -101,9 +101,6 @@ class Example(object):
     start = attr.ib()
     end = attr.ib(default=None)
 
-    # Index of example in parent's children, or None if this is the root.
-    child_index = attr.ib(default=None)
-
     # An example is "trivial" if it only contains forced bytes and zero bytes.
     # All examples start out as trivial, and then get marked non-trivial when
     # we see a byte that is neither forced nor zero.
@@ -380,7 +377,6 @@ def calc_examples(self):
                 if example_stack:
                     p = example_stack[-1]
                     children = examples[p].children
-                    ex.child_index = len(children)
                     children.append(ex)
                 example_stack.append(i)
     for ex in examples:
