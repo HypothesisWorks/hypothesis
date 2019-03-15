@@ -17,14 +17,19 @@
 
 from __future__ import absolute_import, division, print_function
 
+import itertools
+
 import pytest
 
+import hypothesis.strategies as st
 from hypothesis import given, strategies as st
-from hypothesis.errors import Frozen
+from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.conjecture.data import (
+    MAX_DEPTH,
     ConjectureData,
     DataObserver,
+    Overrun,
     Status,
     StopTest,
 )
@@ -153,6 +158,8 @@ def test_example_depth_marking():
     d.stop_example()
     d.draw_bytes(12)
     d.freeze()
+
+    assert len(d.examples) == 6
 
     depths = set((ex.length, ex.depth) for ex in d.examples)
     assert depths == set([(2, 1), (3, 2), (6, 2), (9, 1), (12, 1), (23, 0)])
@@ -300,3 +307,166 @@ def test_last_block_length():
     for n in hrange(1, 5 + 1):
         d.draw_bits(n * 8)
         assert d.blocks.last_block_length == n
+
+
+def test_examples_show_up_as_discarded():
+    d = ConjectureData.for_buffer([1, 0, 1])
+
+    d.start_example(1)
+    d.draw_bits(1)
+    d.stop_example(discard=True)
+    d.start_example(1)
+    d.draw_bits(1)
+    d.stop_example()
+    d.freeze()
+
+    assert len([ex for ex in d.examples if ex.discarded]) == 1
+
+
+def test_examples_support_negative_indexing():
+    d = ConjectureData.for_buffer(hbytes(2))
+    d.draw_bits(1)
+    d.draw_bits(1)
+    d.freeze()
+    assert d.examples[-1].length == 1
+
+
+def test_can_override_label():
+    d = ConjectureData.for_buffer(hbytes(2))
+    d.draw(st.booleans(), label=7)
+    d.freeze()
+    assert any(ex.label == 7 for ex in d.examples)
+
+
+def test_will_mark_too_deep_examples_as_invalid():
+    d = ConjectureData.for_buffer(hbytes(0))
+
+    s = st.none()
+    for _ in hrange(MAX_DEPTH + 1):
+        s = s.map(lambda x: x)
+
+    with pytest.raises(StopTest):
+        d.draw(s)
+    assert d.status == Status.INVALID
+
+
+def test_empty_strategy_is_invalid():
+    d = ConjectureData.for_buffer(hbytes(0))
+    with pytest.raises(StopTest):
+        d.draw(st.nothing())
+    assert d.status == Status.INVALID
+
+
+def test_will_error_on_find():
+    d = ConjectureData.for_buffer(hbytes(0))
+    d.is_find = True
+    with pytest.raises(InvalidArgument):
+        d.draw(st.data())
+
+
+def test_can_note_non_str():
+    d = ConjectureData.for_buffer(hbytes(0))
+    x = object()
+    d.note(x)
+    assert repr(x) in d.output
+
+
+def test_can_note_str_as_non_repr():
+    d = ConjectureData.for_buffer(hbytes(0))
+    d.note(u"foo")
+    assert d.output == u"foo"
+
+
+def test_result_is_overrun():
+    d = ConjectureData.for_buffer(hbytes(0))
+    with pytest.raises(StopTest):
+        d.draw_bits(1)
+    assert d.as_result() is Overrun
+
+
+def test_trivial_before_force_agrees_with_trivial_after():
+    d = ConjectureData.for_buffer([0, 1, 1])
+    d.draw_bits(1)
+    d.draw_bits(1, forced=1)
+    d.draw_bits(1)
+
+    t1 = [d.blocks.trivial(i) for i in hrange(3)]
+    d.freeze()
+    r = d.as_result()
+    t2 = [b.trivial for b in r.blocks]
+    assert d.blocks.owner is None
+    t3 = [r.blocks.trivial(i) for i in hrange(3)]
+
+    assert t1 == t2 == t3
+
+
+def test_events_are_noted():
+    d = ConjectureData.for_buffer(())
+    d.note_event("hello")
+    assert "hello" in d.events
+
+
+def test_blocks_end_points():
+    d = ConjectureData.for_buffer(hbytes(4))
+    d.draw_bits(1)
+    d.draw_bits(16, forced=1)
+    d.draw_bits(8)
+    assert (
+        list(d.blocks.all_bounds())
+        == [b.bounds for b in d.blocks]
+        == [(0, 1), (1, 3), (3, 4)]
+    )
+
+
+def test_blocks_lengths():
+    d = ConjectureData.for_buffer(hbytes(7))
+    d.draw_bits(32)
+    d.draw_bits(16)
+    d.draw_bits(1)
+    assert [b.length for b in d.blocks] == [4, 2, 1]
+
+
+def test_child_indices():
+    d = ConjectureData.for_buffer(hbytes(4))
+
+    d.start_example(0)  # examples[1]
+    d.start_example(0)  # examples[2]
+    d.draw_bits(1)  # examples[3]
+    d.draw_bits(1)  # examples[4]
+    d.stop_example()
+    d.stop_example()
+    d.draw_bits(1)  # examples[5]
+    d.draw_bits(1)  # examples[6]
+    d.freeze()
+
+    assert list(d.examples.children[0]) == [1, 5, 6]
+    assert list(d.examples.children[1]) == [2]
+    assert list(d.examples.children[2]) == [3, 4]
+
+    assert d.examples[0].parent is None
+    for ex in list(d.examples)[1:]:
+        assert ex in d.examples[ex.parent].children
+
+
+def test_example_equality():
+    d = ConjectureData.for_buffer(hbytes(2))
+
+    d.start_example(0)
+    d.draw_bits(1)
+    d.stop_example()
+    d.start_example(0)
+    d.draw_bits(1)
+    d.stop_example()
+    d.freeze()
+
+    examples = list(d.examples)
+    for ex1, ex2 in itertools.combinations(examples, 2):
+        assert ex1 != ex2
+        assert not (ex1 == ex2)
+
+    for ex in examples:
+        assert ex == ex
+        not (ex != ex)
+
+        assert not (ex == "hello")
+        assert ex != "hello"

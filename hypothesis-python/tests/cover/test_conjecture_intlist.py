@@ -56,3 +56,10 @@ def test_basic_equality():
 def test_error_on_invalid_value():
     with pytest.raises(ValueError):
         IntList([-1])
+
+
+def test_extend_by_too_large():
+    x = IntList()
+    ls = [1, 10 ** 6]
+    x.extend(ls)
+    assert list(x) == ls
