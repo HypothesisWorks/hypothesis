@@ -635,6 +635,18 @@ Number of steps to run a stateful program for before giving up on it breaking.
 """,
 )
 
+settings._define_setting(
+    name="report_multiple_bugs",
+    default=True,
+    options=(True, False),
+    description="""
+Because Hypothesis runs the test many times, it can sometimes find multiple
+bugs in a single run.  Reporting all of them at once is usually very useful,
+but replacing the exceptions can occasionally clash with debuggers.
+If disabled, only the exception with the smallest minimal example is raised.
+""",
+)
+
 
 def validate_health_check_suppressions(suppressions):
     suppressions = try_convert(list, suppressions, "suppress_health_check")

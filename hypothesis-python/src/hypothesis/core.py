@@ -674,6 +674,8 @@ class StateForActualGivenExecution(object):
 
         if not self.falsifying_examples:
             return
+        elif not self.settings.report_multiple_bugs:
+            del self.falsifying_examples[:-1]
 
         self.failed_normally = True
 
