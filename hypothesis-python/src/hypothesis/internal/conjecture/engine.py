@@ -763,6 +763,12 @@ class ConjectureRunner(object):
             )
             self.debug("Shrinking %r" % (target,))
 
+            if not self.settings.report_multiple_bugs:
+                # If multi-bug reporting is disabled, we shrink our currently-minimal
+                # failure, allowing 'slips' to any bug with a smaller minimal example.
+                self.shrink(example, lambda d: d.status == Status.INTERESTING)
+                return
+
             def predicate(d):
                 if d.status < Status.INTERESTING:
                     return False
