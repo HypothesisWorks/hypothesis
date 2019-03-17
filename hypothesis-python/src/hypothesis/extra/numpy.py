@@ -696,3 +696,80 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
         lambda x: x if x < ndim else x - 2 * ndim
     )
     return st.lists(axes, min_size, max_size, unique_by=lambda x: x % ndim).map(tuple)
+
+
+def _broadcastable_shape(shape, min_dims=0, max_dims=3, min_side=0, max_side=5):
+    if max_dims <= len(shape):
+        return (
+            st.lists(st.booleans(), min_size=min_dims, max_size=max_dims)
+            .map(
+                lambda mask: reversed(
+                    [1 if m else s for m, s in zip(mask, reversed(shape))]
+                )
+            )
+            .map(tuple)
+        )
+
+    max_leading_dims = max_dims - len(shape)
+    min_leading_dims = max(min_dims - len(shape), 0)
+    return (
+        st.lists(
+            st.integers(min_side, max_side),
+            min_size=min_leading_dims,
+            max_size=max_leading_dims,
+        )
+        .map(tuple)
+        .flatmap(
+            lambda lead_shape: st.tuples(
+                st.just(lead_shape),
+                _broadcastable_shape(
+                    shape,
+                    min_dims=len(shape) if lead_shape else min_dims,
+                    max_dims=len(shape),
+                ),
+            ).map(lambda x: x[0] + x[1])
+        )
+    )
+
+
+@st.defines_strategy
+def broadcastable_shape(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
+    # type: (Sequence[int], int, int, int, int) -> st.SearchStrategy[Tuple[int, ...]]
+    """Return a strategy for generating shapes that are broadcast-compatible
+    with the provided shape.
+
+    Examples from this strategy shrink towards a shape with length ``min_dims``.
+    The size of an aligned dimension shrinks away from being a singleton. The
+    size of an unaligned dimension shrink towards ``min_side``.
+
+    * ``shape`` a sequence of integers
+    * ``min_dims`` The smallest length that the generated shape can possess.
+    * ``max_dims`` The largest length that the generated shape can possess.
+      shape can possess.
+    * ``min_side`` The smallest size that an unaligned dimension can possess.
+    * ``max_side`` The largest size that an unaligned dimension can possess.
+
+    The following are some examples drawn from this strategy.
+
+    .. code-block:: pycon
+
+        >>> [broadcastable_shape(shape=(2, 3)).example() for i in range(5)]
+        [(1, 3), (), (2, 3), (2, 1), (4, 5, 1, 3), (3, )]
+
+    """
+    check_type((tuple, list), shape, "shape")
+
+    check_type(integer_types, min_side, "min_side")
+    check_type(integer_types, max_side, "max_side")
+    order_check("side", 0, min_side, max_side)
+
+    check_type(integer_types, min_dims, "min_dims")
+    check_type(integer_types, max_dims, "max_dims")
+    order_check("dims", 0, min_dims, max_dims)
+    return _broadcastable_shape(
+        shape,
+        min_dims=min_dims,
+        max_dims=max_dims,
+        min_side=min_side,
+        max_side=max_side,
+    )
