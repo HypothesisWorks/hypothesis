@@ -24,6 +24,10 @@ def test_bracket_whitespace_is_striped():
     assert get_pretty_function_description(lambda x: (x + 1)) == "lambda x: (x + 1)"
 
 
+def test_no_whitespace_before_colon_with_no_args():
+    assert get_pretty_function_description(eval("lambda: None")) == "lambda: <unknown>"
+
+
 def test_can_have_unicode_in_lambda_sources():
     t = lambda x: "é" not in x
     assert get_pretty_function_description(t) == ('lambda x: "é" not in x')

@@ -294,7 +294,10 @@ def extract_lambda_source(f):
         else:
             arg_strings.append(a)
 
-    if_confused = "lambda %s: <unknown>" % (", ".join(arg_strings),)
+    if arg_strings:
+        if_confused = "lambda %s: <unknown>" % (", ".join(arg_strings),)
+    else:
+        if_confused = "lambda: <unknown>"
     if bad_lambda:  # pragma: no cover
         return if_confused
     try:
