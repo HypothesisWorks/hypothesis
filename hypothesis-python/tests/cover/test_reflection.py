@@ -566,6 +566,23 @@ def test_can_delegate_to_a_function_with_no_positional_args():
     assert bar(2, 1) == (2, 1)
 
 
+@pytest.mark.parametrize(
+    "func,args,expected",
+    [
+        (lambda: None, (), None),
+        (lambda a: a ** 2, (2,), 4),
+        (lambda *a: a, [1, 2, 3], (1, 2, 3)),
+    ],
+)
+def test_can_proxy_lambdas(func, args, expected):
+    @proxies(func)
+    def wrapped(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    assert wrapped.__name__ == "<lambda>"
+    assert wrapped(*args) == expected
+
+
 class Snowman(object):
     def __repr__(self):
         return "☃"

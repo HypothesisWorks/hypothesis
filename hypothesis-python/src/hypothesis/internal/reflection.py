@@ -497,17 +497,14 @@ def source_exec_as_module(source):
     return result
 
 
-COPY_ARGSPEC_SCRIPT = (
-    """
+COPY_ARGSPEC_SCRIPT = """
 from hypothesis.utils.conventions import not_set
 
 def accept(%(funcname)s):
     def %(name)s(%(argspec)s):
         return %(funcname)s(%(invocation)s)
     return %(name)s
-""".strip()
-    + "\n"
-)
+""".lstrip()
 
 
 def define_function_signature(name, docstring, argspec):
@@ -620,7 +617,9 @@ def proxies(target):
         return impersonate(target)(
             wraps(target)(
                 define_function_signature(
-                    target.__name__, target.__doc__, getfullargspec(target)
+                    target.__name__.replace("<lambda>", "_lambda_"),
+                    target.__doc__,
+                    getfullargspec(target),
                 )(proxy)
             )
         )
