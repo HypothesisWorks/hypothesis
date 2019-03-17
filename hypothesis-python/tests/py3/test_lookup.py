@@ -473,3 +473,26 @@ def test_can_register_NewType():
     Name = typing.NewType("Name", str)
     st.register_type_strategy(Name, st.just("Eric Idle"))
     assert st.from_type(Name).example() == "Eric Idle"
+
+
+@given(st.from_type(typing.Callable))
+def test_resolves_bare_callable_to_function(f):
+    val = f()
+    assert val is None
+    with pytest.raises(TypeError):
+        f(1)
+
+
+@given(st.from_type(typing.Callable[[str], int]))
+def test_resolves_callable_with_arg_to_function(f):
+    val = f("1")
+    assert isinstance(val, int)
+
+
+@given(st.from_type(typing.Callable[..., int]))
+def test_resolves_ellipses_callable_to_function(f):
+    val = f()
+    assert isinstance(val, int)
+    f(1)
+    f(1, 2, 3)
+    f(accepts_kwargs_too=1)
