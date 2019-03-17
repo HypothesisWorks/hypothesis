@@ -94,6 +94,7 @@ from hypothesis.searchstrategy.datetime import (
     TimedeltaStrategy,
 )
 from hypothesis.searchstrategy.deferred import DeferredStrategy
+from hypothesis.searchstrategy.functions import FunctionStrategy
 from hypothesis.searchstrategy.lazy import LazyStrategy
 from hypothesis.searchstrategy.misc import (
     BoolStrategy,
@@ -2074,11 +2075,8 @@ class DataStrategy(SearchStrategy):
 
     def __not_a_first_class_strategy(self, name):
         raise InvalidArgument(
-            (
-                "Cannot call %s on a DataStrategy. You should probably be "
-                "using @composite for whatever it is you're trying to do."
-            )
-            % (name,)
+            "Cannot call %s on a DataStrategy. You should probably be using "
+            "@composite for whatever it is you're trying to do." % (name,)
         )
 
 
@@ -2189,3 +2187,33 @@ def emails():
     return builds(u"{}@{}".format, local_part, domains()).filter(
         lambda addr: len(addr) <= 254
     )
+
+
+# Mypy can't yet handle default values with generic types or typevars, but the
+# @overload workaround from https://github.com/python/mypy/issues/3737 doesn't
+# work with @composite functions - Mypy can't see that the function implements
+# `(Any, Callable[..., T], SearchStrategy[T]) -> Callable[..., T]`
+
+
+@defines_strategy
+def functions(like=lambda: None, returns=none()):
+    """A strategy for functions, which can be used in callbacks.
+
+    The generated functions will mimic the interface of ``like``, which must
+    be a callable (including a class, method, or function).  The return value
+    for the function is drawn from the ``returns`` argument, which must be a
+    strategy.
+
+    Note that the generated functions do not validate their arguments, and
+    may return a different value if called again with the same arguments.
+
+    Generated functions can only be called within the scope of the ``@given``
+    which created them.  This strategy does not support ``.example()``.
+    """
+    check_type(SearchStrategy, returns)
+    if not callable(like):
+        raise InvalidArgument(
+            "The first argument to functions() must be a callable to imitate, "
+            "but got non-callable like=%r" % (nicerepr(like),)
+        )
+    return FunctionStrategy(like, returns)
