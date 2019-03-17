@@ -513,7 +513,7 @@ def test_broadcastable_bounds_are_satisfied(shape, data):
     min_side = data.draw(st.integers(0, 10), label="min_side")
     max_side = data.draw(st.integers(min_side, 10), label="max_side")
     bshape = data.draw(
-        nps.broadcastable_shape(
+        nps.broadcastable_shapes(
             shape,
             min_side=min_side,
             max_side=max_side,
@@ -539,14 +539,14 @@ def test_broadcastable_shape_can_broadcast(shape, data):
     min_side = data.draw(st.integers(0, 10), label="min_side")
     max_side = data.draw(st.integers(min_side, 10), label="max_side")
     broadcastable_shape = data.draw(
-        nps.broadcastable_shape(
+        nps.broadcastable_shapes(
             shape,
             min_side=min_side,
             max_side=max_side,
             min_dims=min_dim,
             max_dims=max_dim,
         ),
-        label="broadcastable_shape",
+        label="broadcastable_shapes",
     )
     a = np.empty(shape)
     b = np.empty(broadcastable_shape)
@@ -565,7 +565,7 @@ def test_minimize_broadcastable_shape(shape, data):
     min_side = data.draw(st.integers(0, 2), label="min_side")
     max_side = data.draw(st.integers(min_side, 2), label="max_side")
     smallest = minimal(
-        nps.broadcastable_shape(
+        nps.broadcastable_shapes(
             shape,
             min_side=min_side,
             max_side=max_side,
@@ -589,7 +589,7 @@ def test_minimize_broadcastable_shape_with_leading_dims(shape, data):
     min_side = data.draw(st.integers(0, 10), label="min_side")
     max_side = data.draw(st.integers(min_side, 10), label="max_side")
     smallest = minimal(
-        nps.broadcastable_shape(
+        nps.broadcastable_shapes(
             shape,
             min_side=min_side,
             max_side=max_side,

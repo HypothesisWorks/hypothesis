@@ -698,7 +698,7 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
     return st.lists(axes, min_size, max_size, unique_by=lambda x: x % ndim).map(tuple)
 
 
-def _broadcastable_shape(shape, min_dims=0, max_dims=3, min_side=0, max_side=5):
+def _broadcastable_shapes(shape, min_dims=0, max_dims=3, min_side=0, max_side=5):
     if max_dims <= len(shape):
         return (
             st.lists(st.booleans(), min_size=min_dims, max_size=max_dims)
@@ -722,7 +722,7 @@ def _broadcastable_shape(shape, min_dims=0, max_dims=3, min_side=0, max_side=5):
         .flatmap(
             lambda lead_shape: st.tuples(
                 st.just(lead_shape),
-                _broadcastable_shape(
+                _broadcastable_shapes(
                     shape,
                     min_dims=len(shape) if lead_shape else min_dims,
                     max_dims=len(shape),
@@ -733,7 +733,7 @@ def _broadcastable_shape(shape, min_dims=0, max_dims=3, min_side=0, max_side=5):
 
 
 @st.defines_strategy
-def broadcastable_shape(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
+def broadcastable_shapes(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
     # type: (Sequence[int], int, int, int, int) -> st.SearchStrategy[Tuple[int, ...]]
     """Return a strategy for generating shapes that are broadcast-compatible
     with the provided shape.
@@ -753,7 +753,7 @@ def broadcastable_shape(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
 
     .. code-block:: pycon
 
-        >>> [broadcastable_shape(shape=(2, 3)).example() for i in range(5)]
+        >>> [broadcastable_shapes(shape=(2, 3)).example() for i in range(5)]
         [(1, 3), (), (2, 3), (2, 1), (4, 5, 1, 3), (3, )]
 
     """
@@ -766,7 +766,7 @@ def broadcastable_shape(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
     check_type(integer_types, min_dims, "min_dims")
     check_type(integer_types, max_dims, "max_dims")
     order_check("dims", 0, min_dims, max_dims)
-    return _broadcastable_shape(
+    return _broadcastable_shapes(
         shape,
         min_dims=min_dims,
         max_dims=max_dims,
