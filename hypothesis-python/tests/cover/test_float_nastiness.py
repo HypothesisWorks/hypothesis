@@ -28,7 +28,13 @@ import hypothesis.strategies as st
 from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT, WINDOWS
-from hypothesis.internal.floats import float_to_int, int_to_float, next_down, next_up
+from hypothesis.internal.floats import (
+    float_to_int,
+    int_to_float,
+    is_negative,
+    next_down,
+    next_up,
+)
 from tests.common.debug import find_any, minimal
 from tests.common.utils import checks_deprecated_behaviour
 
@@ -144,14 +150,22 @@ def test_very_narrow_interval():
 def test_up_means_greater(x):
     hi = next_up(x)
     if not x < hi:
-        assert (math.isnan(x) and math.isnan(hi)) or (x > 0 and math.isinf(x))
+        assert (
+            (math.isnan(x) and math.isnan(hi))
+            or (x > 0 and math.isinf(x))
+            or (x == hi == 0 and is_negative(x) and not is_negative(hi))
+        )
 
 
 @given(st.floats())
 def test_down_means_lesser(x):
     lo = next_down(x)
     if not x > lo:
-        assert (math.isnan(x) and math.isnan(lo)) or (x < 0 and math.isinf(x))
+        assert (
+            (math.isnan(x) and math.isnan(lo))
+            or (x < 0 and math.isinf(x))
+            or (x == lo == 0 and is_negative(lo) and not is_negative(x))
+        )
 
 
 @given(st.floats(allow_nan=False, allow_infinity=False))
