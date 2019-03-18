@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.12.0:
+
+-------------------
+4.12.0 - 2019-03-18
+-------------------
+
+This update adds the :obj:`~hypothesis.settings.report_multiple_bugs` setting,
+which you can use to disable multi-bug reporting and only raise whichever bug
+had the smallest minimal example.  This is occasionally useful when using a
+debugger or tools that annotate tracebacks via introspection.
+
 .. _v4.11.7:
 
 -------------------
