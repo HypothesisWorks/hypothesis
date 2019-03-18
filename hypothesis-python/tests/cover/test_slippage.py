@@ -218,3 +218,24 @@ def test_handles_flaky_tests_where_only_one_is_flaky():
 
     with pytest.raises(MultipleFailures):
         test()
+
+
+@pytest.mark.parametrize("allow_multi", [True, False])
+def test_can_disable_multiple_error_reporting(allow_multi):
+    seen = set()
+
+    @settings(database=None, report_multiple_bugs=allow_multi)
+    @given(st.integers(min_value=0))
+    def test(i):
+        # We will pass on the minimal i=0, then fail with a large i, and eventually
+        # slip to i=1 and a different error.  We check both seen and raised errors.
+        if i == 1:
+            seen.add(TypeError)
+            raise TypeError
+        elif i >= 2:
+            seen.add(ValueError)
+            raise ValueError
+
+    with pytest.raises(MultipleFailures if allow_multi else TypeError):
+        test()
+    assert seen == {TypeError, ValueError}
