@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.12.1:
+
+-------------------
+4.12.1 - 2019-03-18
+-------------------
+
+This release should significantly reduce the amount of memory that Hypothesis uses for representing large test cases,
+by storing information in a more compact representation and only unpacking it lazily when it is first needed.
+
 .. _v4.12.0:
 
 -------------------
