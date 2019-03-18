@@ -28,7 +28,13 @@ import hypothesis.strategies as st
 from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT, WINDOWS
-from hypothesis.internal.floats import float_to_int, int_to_float, next_down, next_up
+from hypothesis.internal.floats import (
+    float_to_int,
+    int_to_float,
+    is_negative,
+    next_down,
+    next_up,
+)
 from tests.common.debug import find_any, minimal
 from tests.common.utils import checks_deprecated_behaviour
 
@@ -144,14 +150,22 @@ def test_very_narrow_interval():
 def test_up_means_greater(x):
     hi = next_up(x)
     if not x < hi:
-        assert (math.isnan(x) and math.isnan(hi)) or (x > 0 and math.isinf(x))
+        assert (
+            (math.isnan(x) and math.isnan(hi))
+            or (x > 0 and math.isinf(x))
+            or (x == hi == 0 and is_negative(x) and not is_negative(hi))
+        )
 
 
 @given(st.floats())
 def test_down_means_lesser(x):
     lo = next_down(x)
     if not x > lo:
-        assert (math.isnan(x) and math.isnan(lo)) or (x < 0 and math.isinf(x))
+        assert (
+            (math.isnan(x) and math.isnan(lo))
+            or (x < 0 and math.isinf(x))
+            or (x == lo == 0 and is_negative(lo) and not is_negative(x))
+        )
 
 
 @given(st.floats(allow_nan=False, allow_infinity=False))
@@ -161,13 +175,15 @@ def test_updown_roundtrip(val):
 
 
 @checks_deprecated_behaviour
-@given(st.data(), st.floats(allow_nan=False, allow_infinity=False))
-def test_floats_in_tiny_interval_within_bounds(data, center):
+@pytest.mark.parametrize("xhi", [True, False])
+@pytest.mark.parametrize("xlo", [True, False])
+@given(st.data(), st.floats(allow_nan=False, allow_infinity=False).filter(bool))
+def test_floats_in_tiny_interval_within_bounds(xlo, xhi, data, center):
     assume(not (math.isinf(next_down(center)) or math.isinf(next_up(center))))
     lo = Decimal.from_float(next_down(center)).next_plus()
     hi = Decimal.from_float(next_up(center)).next_minus()
     assert float(lo) < lo < center < hi < float(hi)
-    val = data.draw(st.floats(lo, hi))
+    val = data.draw(st.floats(lo, hi, exclude_min=xlo, exclude_max=xhi))
     assert lo < val < hi
 
 
@@ -261,3 +277,29 @@ def test_can_exclude_neg_infinite_endpoint(x):
 @given(st.floats(1e307, float("inf"), exclude_max=True))
 def test_can_exclude_pos_infinite_endpoint(x):
     assert not math.isinf(x)
+
+
+def test_exclude_infinite_endpoint_is_invalid():
+    with pytest.raises(InvalidArgument):
+        st.floats(min_value=float("inf"), exclude_min=True).validate()
+    with pytest.raises(InvalidArgument):
+        st.floats(max_value=float("-inf"), exclude_max=True).validate()
+
+
+@pytest.mark.parametrize("lo,hi", [(True, False), (False, True), (True, True)])
+@given(bound=st.floats(allow_nan=False, allow_infinity=False).filter(bool))
+def test_exclude_entire_interval(lo, hi, bound):
+    with pytest.raises(InvalidArgument, match="exclude_min=.+ and exclude_max="):
+        st.floats(bound, bound, exclude_min=lo, exclude_max=hi).validate()
+
+
+def test_exclude_zero_interval():
+    st.floats(-0.0, 0.0).validate()
+    st.floats(-0.0, 0.0, exclude_min=True).validate()
+    st.floats(-0.0, 0.0, exclude_max=True).validate()
+
+
+@checks_deprecated_behaviour
+def test_inverse_zero_interval_is_deprecated():
+    st.floats(0.0, -0.0).validate()
+    st.floats(-0.0, 0.0, exclude_min=True, exclude_max=True).validate()
