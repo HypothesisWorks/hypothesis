@@ -2,6 +2,12 @@
 Hypothesis
 ==========
 
+|pipelines|
+
+.. |pipelines| image:: https://dev.azure.com/HypothesisWorks/Hypothesis/_apis/build/status/HypothesisWorks.Hypothesis?branchName=master
+    :target: https://dev.azure.com/HypothesisWorks/Hypothesis/_build/latest?definitionId=1&branchName=master
+    :alt: azure pipelines build status
+
 Hypothesis is family of testing libraries which let you write tests parametrized
 by a source of examples. A Hypothesis implementation then generates simple and
 comprehensible examples that make your tests fail.
