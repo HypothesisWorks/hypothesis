@@ -275,3 +275,10 @@ def test_can_exclude_neg_infinite_endpoint(x):
 @given(st.floats(1e307, float("inf"), exclude_max=True))
 def test_can_exclude_pos_infinite_endpoint(x):
     assert not math.isinf(x)
+
+
+def test_exclude_infinite_endpoint_is_invalid():
+    with pytest.raises(InvalidArgument):
+        st.floats(min_value=float("inf"), exclude_min=True).validate()
+    with pytest.raises(InvalidArgument):
+        st.floats(max_value=float("-inf"), exclude_max=True).validate()

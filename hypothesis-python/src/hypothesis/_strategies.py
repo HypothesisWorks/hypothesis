@@ -517,6 +517,11 @@ def floats(
             since="2018-10-10",
         )
 
+    if exclude_min and (min_value is None or min_value == float("inf")):
+        raise InvalidArgument("Cannot exclude min_value=%r" % (min_value,))
+    if exclude_max and (max_value is None or max_value == float("-inf")):
+        raise InvalidArgument("Cannot exclude max_value=%r" % (max_value,))
+
     if exclude_min:
         if min_value is None:
             raise InvalidArgument("Cannot exclude min_value=None")
