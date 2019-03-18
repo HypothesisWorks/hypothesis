@@ -51,7 +51,7 @@ parso==0.3.4              # via jedi
 pbr==5.1.3                # via mock, stevedore
 pexpect==4.6.0            # via ipython
 pickleshare==0.7.5        # via ipython
-pip-tools==3.4.0
+pip-tools==3.5.0
 pkginfo==1.5.0.1          # via twine
 pluggy==0.9.0             # via pytest, tox
 prompt-toolkit==2.0.9     # via ipython
