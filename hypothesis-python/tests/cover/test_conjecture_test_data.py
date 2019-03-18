@@ -268,3 +268,35 @@ def test_calls_concluded_implicitly():
     x.freeze()
 
     assert observer.conclusion == (Status.VALID, None)
+
+
+def test_handles_start_indices_like_a_list():
+    n = 5
+    d = ConjectureData.for_buffer([1] * n)
+    for _ in hrange(n):
+        d.draw_bits(1)
+
+    for i in hrange(-2 * n, 2 * n + 1):
+        try:
+            start = d.blocks.start(i)
+        except IndexError:
+            # Directly retrieving the start position failed, so check that
+            # indexing also fails.
+            with pytest.raises(IndexError):
+                d.blocks[i]
+            continue
+
+        # Directly retrieving the start position succeeded, so check that
+        # indexing also succeeds, and gives the same position.
+        assert start == d.blocks[i].start
+
+
+def test_last_block_length():
+    d = ConjectureData.for_buffer([0] * 15)
+
+    with pytest.raises(IndexError):
+        d.blocks.last_block_length
+
+    for n in hrange(1, 5 + 1):
+        d.draw_bits(n * 8)
+        assert d.blocks.last_block_length == n
