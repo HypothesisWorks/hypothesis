@@ -297,7 +297,9 @@ def test_exclude_zero_interval():
     st.floats(-0.0, 0.0).validate()
     st.floats(-0.0, 0.0, exclude_min=True).validate()
     st.floats(-0.0, 0.0, exclude_max=True).validate()
-    with pytest.raises(InvalidArgument):
-        st.floats(0.0, -0.0).validate()
-    with pytest.raises(InvalidArgument, match="exclude_min=.+ and exclude_max="):
-        st.floats(-0.0, 0.0, exclude_min=True, exclude_max=True).validate()
+
+
+@checks_deprecated_behaviour
+def test_inverse_zero_interval_is_deprecated():
+    st.floats(0.0, -0.0).validate()
+    st.floats(-0.0, 0.0, exclude_min=True, exclude_max=True).validate()

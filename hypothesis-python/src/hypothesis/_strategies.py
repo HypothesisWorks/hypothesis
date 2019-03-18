@@ -556,7 +556,10 @@ def floats(
         )
         if exclude_min or exclude_max:
             msg += ", exclude_min=%r and exclude_max=%r" % (exclude_min, exclude_max)
-        raise InvalidArgument(msg)
+        if bad_zero_bounds:
+            note_deprecation(msg, since="RELEASEDAY")
+        else:
+            raise InvalidArgument(msg)
 
     if allow_infinity is None:
         allow_infinity = bool(min_value is None or max_value is None)
