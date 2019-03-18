@@ -522,32 +522,41 @@ def floats(
     if exclude_max and (max_value is None or max_value == float("-inf")):
         raise InvalidArgument("Cannot exclude max_value=%r" % (max_value,))
 
-    if exclude_min:
-        if min_value is None:
-            raise InvalidArgument("Cannot exclude min_value=None")
-        min_value = next_up(min_value, width=width)
-    if exclude_max:
-        if max_value is None:
-            raise InvalidArgument("Cannot exclude max_value=None")
-        max_value = next_down(max_value, width=width)
+    if min_value is not None and (
+        exclude_min or (min_arg is not None and min_value < min_arg)
+    ):
+        min_value = next_up(min_value, width)
+        assert min_value > min_arg or min_value == min_arg == 0  # type: ignore
+    if max_value is not None and (
+        exclude_max or (max_arg is not None and max_value > max_arg)
+    ):
+        max_value = next_down(max_value, width)
+        assert max_value < max_arg or max_value == max_arg == 0  # type: ignore
 
-    check_valid_interval(min_value, max_value, "min_value", "max_value")
     if min_value == float(u"-inf"):
         min_value = None
     if max_value == float(u"inf"):
         max_value = None
 
-    if min_value is not None and min_arg is not None and min_value < min_arg:
-        min_value = next_up(min_value, width)
-        assert min_value > min_arg  # type: ignore
-    if max_value is not None and max_arg is not None and max_value > max_arg:
-        max_value = next_down(max_value, width)
-        assert max_value < max_arg  # type: ignore
-    if min_value is not None and max_value is not None and min_value > max_value:
-        raise InvalidArgument(
+    bad_zero_bounds = (
+        min_value == max_value == 0
+        and is_negative(max_value)
+        and not is_negative(min_value)
+    )
+    if (
+        min_value is not None
+        and max_value is not None
+        and (min_value > max_value or bad_zero_bounds)
+    ):
+        # This is a custom alternative to check_valid_interval, because we want
+        # to include the bit-width and exclusion information in the message.
+        msg = (
             "There are no %s-bit floating-point values between min_value=%r "
             "and max_value=%r" % (width, min_arg, max_arg)
         )
+        if exclude_min or exclude_max:
+            msg += ", exclude_min=%r and exclude_max=%r" % (exclude_min, exclude_max)
+        raise InvalidArgument(msg)
 
     if allow_infinity is None:
         allow_infinity = bool(min_value is None or max_value is None)
