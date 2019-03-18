@@ -77,6 +77,13 @@ class IntList(object):
                 if v < 0 or not isinstance(v, integer_types):
                     raise ValueError("Could not create IntList for %r" % (values,))
 
+    @classmethod
+    def of_length(self, n):
+        return IntList(array_or_list("B", [0]) * n)
+
+    def count(self, n):
+        return self.__underlying.count(n)
+
     def __repr__(self):
         return "IntList(%r)" % (list(self),)
 
@@ -109,13 +116,22 @@ class IntList(object):
         return self.__underlying != other.__underlying
 
     def append(self, n):
+        i = len(self)
+        self.__underlying.append(0)
+        self[i] = n
+
+    def __setitem__(self, i, n):
         while True:
             try:
-                self.__underlying.append(n)
+                self.__underlying[i] = n
                 return
             except OverflowError:
                 assert n > 0
                 self.__upgrade()
+
+    def extend(self, ls):
+        for n in ls:
+            self.append(n)
 
     def __upgrade(self):
         code = NEXT_ARRAY_CODE[self.__underlying.typecode]

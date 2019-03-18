@@ -58,13 +58,17 @@ TEST_SETTINGS = settings(
 )
 
 
-def run_to_buffer(f):
+def run_to_data(f):
     with deterministic_PRNG():
         runner = ConjectureRunner(f, settings=TEST_SETTINGS)
         runner.run()
         assert runner.interesting_examples
         last_data, = runner.interesting_examples.values()
-        return hbytes(last_data.buffer)
+        return last_data
+
+
+def run_to_buffer(f):
+    return hbytes(run_to_data(f).buffer)
 
 
 def test_can_index_results():
@@ -423,12 +427,14 @@ def test_fails_health_check_for_slow_draws():
 def test_can_shrink_variable_draws(n_large):
     target = 128 * n_large
 
-    @run_to_buffer
-    def x(data):
+    @run_to_data
+    def data(data):
         n = data.draw_bits(4)
         b = [data.draw_bits(8) for _ in hrange(n)]
         if sum(b) >= target:
             data.mark_interesting()
+
+    x = data.buffer
 
     assert x.count(0) == 0
     assert sum(x[1:]) == target
@@ -1545,7 +1551,7 @@ def test_stable_identifiers_match_their_examples():
 
     for ex in shrinker.examples:
         id = shrinker.stable_identifier_for_example(ex)
-        assert shrinker.example_for_stable_identifier(id) is ex
+        assert shrinker.example_for_stable_identifier(id) == ex
 
 
 def test_branch_ending_in_write():
