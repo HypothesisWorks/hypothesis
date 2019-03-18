@@ -20,7 +20,7 @@ from __future__ import absolute_import, division, print_function
 import hypothesis.strategies as st
 from hypothesis import given, settings
 from hypothesis.control import reject
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
 from hypothesis.internal.compat import OrderedDict
 
 
@@ -45,7 +45,7 @@ def builds_ignoring_invalid(target, *args, **kwargs):
             result = target(*value[0], **value[1])
             result.validate()
             return result
-        except InvalidArgument:
+        except (HypothesisDeprecationWarning, InvalidArgument):
             reject()
 
     return st.tuples(st.tuples(*args), st.fixed_dictionaries(kwargs)).map(splat)
