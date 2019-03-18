@@ -69,7 +69,7 @@ python-dateutil==2.8.0
 python-gitlab==1.8.0      # via pyupio
 pytz==2018.9              # via babel, django
 pyupio==1.0.2
-pyyaml==3.13              # via bandit, dparse, pyupio
+pyyaml==5.1              # via bandit, dparse, pyupio
 readme-renderer==24.0     # via twine
 requests-toolbelt==0.9.1  # via twine
 requests==2.21.0
