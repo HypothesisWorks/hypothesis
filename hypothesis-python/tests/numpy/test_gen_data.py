@@ -553,7 +553,7 @@ def test_broadcastable_shape_can_broadcast(shape, data):
     np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 @given(
     shape=nps.array_shapes(min_dims=0, max_dims=2, min_side=0, max_side=5),
     data=st.data(),
@@ -577,7 +577,7 @@ def test_minimize_broadcastable_shape(shape, data):
     assert all(s == bs for s, bs in zip(reversed(shape), reversed(smallest)))
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 @given(
     shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=10),
     data=st.data(),
