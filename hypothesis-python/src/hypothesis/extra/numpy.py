@@ -34,7 +34,7 @@ from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
 
 if False:
-    from typing import Any, Union, Sequence, Tuple, List, Iterator  # noqa
+    from typing import Any, Union, Sequence, Tuple, List  # noqa
     from hypothesis.searchstrategy.strategies import T  # noqa
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
