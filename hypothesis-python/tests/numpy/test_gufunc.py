@@ -314,37 +314,6 @@ def test_int_int_or_dict(default_val, default_val2):
     assert DD["---"] == default_val
 
 
-@given(real_scalar_dtypes(), _st_shape, data())
-def test_arrays(dtype, shape, data):
-    # unique argument to arrays gets tested in the tuple of arrays tests
-    choices = data.draw(real_from_dtype(dtype))
-
-    elements = sampled_from(choices)
-    S = gu._arrays(dtype, shape, elements)
-    X = data.draw(S)
-
-    assert np.shape(X) == shape
-    validate_elements([X], dtype=dtype, choices=choices)
-
-    assert type(X) == np.ndarray
-
-
-@given(real_scalar_dtypes(), _st_shape, data())
-def test_just_arrays(dtype, shape, data):
-    # unique argument to arrays gets tested in the tuple of arrays tests
-    choices = data.draw(real_from_dtype(dtype))
-
-    # test again, but this time pass in strategy to make sure it can handle it
-    elements = sampled_from(choices)
-    S = gu._arrays(just(dtype), just(shape), elements)
-    X = data.draw(S)
-
-    assert np.shape(X) == shape
-    validate_elements([X], dtype=dtype, choices=choices)
-
-    assert type(X) == np.ndarray
-
-
 # hypothesis.extra.numpy.array_shapes does not support 0 min_size so we roll
 # our own in this case.
 @given(
