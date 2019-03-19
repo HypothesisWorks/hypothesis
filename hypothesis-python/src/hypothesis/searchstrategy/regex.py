@@ -55,10 +55,8 @@ BYTES_LOOKUP = {
     sre.CATEGORY_NOT_WORD: BYTES_ALL - BYTES_WORD,
 }
 
-# On Python < 3.4 (including 2.7), the following unicode chars are weird.
-# They are matched by the \W, meaning 'not word', but unicodedata.category(c)
-# returns one of the word categories above.  There's special handling below.
-HAS_WEIRD_WORD_CHARS = sys.version_info[:2] < (3, 4)
+# On Python 2, these unicode chars are matched by \W, meaning 'not word',
+# but unicodedata.category(c) returns one of the word categories above.
 UNICODE_WEIRD_NONWORD_CHARS = set(u"\U00012432\U00012433\U00012456\U00012457")
 
 
@@ -164,16 +162,12 @@ class CharactersBuilder(object):
         elif category == sre.CATEGORY_WORD:
             self._categories |= UNICODE_WORD_CATEGORIES
             self._whitelist_chars.add(u"_")
-            if HAS_WEIRD_WORD_CHARS and self._unicode:  # pragma: no cover
-                # This code is workaround of weird behavior in
-                # specific Python versions and run only on those versions
+            if self._unicode and not PY3:  # pragma: no cover
                 self._blacklist_chars |= UNICODE_WEIRD_NONWORD_CHARS
         elif category == sre.CATEGORY_NOT_WORD:
             self._categories |= UNICODE_CATEGORIES - UNICODE_WORD_CATEGORIES
             self._blacklist_chars.add(u"_")
-            if HAS_WEIRD_WORD_CHARS and self._unicode:  # pragma: no cover
-                # This code is workaround of weird behavior in
-                # specific Python versions and run only on those versions
+            if self._unicode and not PY3:  # pragma: no cover
                 self._whitelist_chars |= UNICODE_WEIRD_NONWORD_CHARS
         else:  # pragma: no cover
             raise AssertionError("Unknown character category: %s" % category)

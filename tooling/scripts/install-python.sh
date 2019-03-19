@@ -91,9 +91,6 @@ for var in "$@"; do
     2.7.3)
       install 2.7.3 python2.7.3
       ;;
-    3.4)
-      install 3.4.9 python3.4
-      ;;
     3.5)
       install 3.5.6 python3.5
       ;;
