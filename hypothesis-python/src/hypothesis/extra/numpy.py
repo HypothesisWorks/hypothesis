@@ -34,7 +34,7 @@ from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
 
 if False:
-    from typing import Any, Union, Sequence, Tuple  # noqa
+    from typing import Any, Union, Sequence, Tuple, List, Iterator  # noqa
     from hypothesis.searchstrategy.strategies import T  # noqa
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
@@ -698,38 +698,31 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
     return st.lists(axes, min_size, max_size, unique_by=lambda x: x % ndim).map(tuple)
 
 
-def _broadcastable_shapes(shape, min_dims=0, max_dims=3, min_side=0, max_side=5):
-    if max_dims <= len(shape):
-        return (
-            st.lists(st.booleans(), min_size=min_dims, max_size=max_dims)
-            .map(
-                lambda mask: reversed(
-                    [1 if m else s for m, s in zip(mask, reversed(shape))]
-                )
-            )
-            .map(tuple)
-        )
+def _insert_singleton(mask, shape):
+    # type: (Sequence[bool], Sequence[int]) -> List[int]
+    return [1 if m else s for m, s in zip(mask, reversed(shape))][::-1]
 
-    max_leading_dims = max_dims - len(shape)
-    min_leading_dims = max(min_dims - len(shape), 0)
-    return (
-        st.lists(
-            st.integers(min_side, max_side),
-            min_size=min_leading_dims,
-            max_size=max_leading_dims,
-        )
-        .map(tuple)
-        .flatmap(
-            lambda lead_shape: st.tuples(
-                st.just(lead_shape),
-                _broadcastable_shapes(
-                    shape,
-                    min_dims=len(shape) if lead_shape else min_dims,
-                    max_dims=len(shape),
-                ),
-            ).map(lambda x: x[0] + x[1])
-        )
+
+def _aligned_shapes(shape, min_dims, max_dims):
+    # type: (Sequence[int], int, int) -> st.SearchStrategy[List[int]]
+    return st.lists(st.booleans(), min_size=min_dims, max_size=max_dims).map(
+        lambda x: _insert_singleton(x, shape)
     )
+
+
+@st.composite
+def _broadcastable_shapes(draw, shape, min_dims=0, max_dims=3, min_side=0, max_side=5):
+    if max_dims <= len(shape):
+        return tuple(draw(_aligned_shapes(shape, min_dims, max_dims)))
+
+    max_lead = max_dims - len(shape)
+    min_lead = max(min_dims - len(shape), 0)
+    leading = draw(
+        st.lists(st.integers(min_side, max_side), min_size=min_lead, max_size=max_lead)
+    )
+    min_aligned_dim = len(shape) if leading else min_dims
+    aligned = draw(_aligned_shapes(shape, min_dims=min_aligned_dim, max_dims=max_dims))
+    return tuple(leading + aligned)
 
 
 @st.defines_strategy
