@@ -557,7 +557,7 @@ def floats(
         if exclude_min or exclude_max:
             msg += ", exclude_min=%r and exclude_max=%r" % (exclude_min, exclude_max)
         if bad_zero_bounds:
-            note_deprecation(msg, since="RELEASEDAY")
+            note_deprecation(msg, since="2019-03-19")
         else:
             raise InvalidArgument(msg)
 

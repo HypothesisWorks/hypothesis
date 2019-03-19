@@ -21,6 +21,22 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.13.0:
+
+-------------------
+4.13.0 - 2019-03-19
+-------------------
+
+This release makes it an explicit error to call
+:func:`floats(min_value=inf, exclude_min=True) <hypothesis.strategies.floats>` or
+:func:`floats(max_value=-inf, exclude_max=True) <hypothesis.strategies.floats>`,
+as there are no possible values that can be generated (:issue:`1859`).
+
+:func:`floats(min_value=0.0, max_value=-0.0) <hypothesis.strategies.floats>`
+is now deprecated.  While `0. == -0.` and we could thus generate either if
+comparing by value, violating the sequence ordering of floats is a special
+case we don't want or need.
+
 .. _v4.12.1:
 
 -------------------
