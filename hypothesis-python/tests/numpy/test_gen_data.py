@@ -548,8 +548,8 @@ def test_broadcastable_shape_can_broadcast(shape, data):
         ),
         label="broadcastable_shapes",
     )
-    a = np.empty(shape)
-    b = np.empty(broadcastable_shape)
+    a = np.zeros(shape)
+    b = np.zeros(broadcastable_shape)
     np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
 
 
