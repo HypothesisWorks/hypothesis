@@ -23,6 +23,7 @@ from collections import namedtuple
 
 import hypothesis.reporting as reporting
 from hypothesis import HealthCheck, Verbosity, assume, given, note, settings
+from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.strategies import (
     binary,
     booleans,
@@ -417,7 +418,7 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
     with raises(AssertionError):
         with capture_out() as out:
             foo()
-    assert failing == [2]
+    assert failing[0] <= MIN_TEST_CALLS + 2
     assert "Falsifying example" in out.getvalue()
     assert "Lo" in out.getvalue()
 

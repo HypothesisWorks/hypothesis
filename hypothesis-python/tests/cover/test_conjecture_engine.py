@@ -36,6 +36,7 @@ from hypothesis.internal.conjecture.data import (
     Status,
 )
 from hypothesis.internal.conjecture.engine import (
+    MIN_TEST_CALLS,
     ConjectureRunner,
     ExitReason,
     TargetSelector,
@@ -191,7 +192,7 @@ def test_detects_flakiness():
     runner = ConjectureRunner(tf)
     runner.run()
     assert runner.exit_reason == ExitReason.flaky
-    assert count == [2]
+    assert count == [MIN_TEST_CALLS + 1]
 
 
 def test_variadic_draw():
@@ -271,6 +272,32 @@ def test_stops_after_max_examples_when_generating():
     assert len(seen) == 1
 
 
+@pytest.mark.parametrize("examples", [1, 5, 20, 50])
+def test_stops_after_max_examples_when_generating_more_bugs(examples):
+    seen = []
+    bad = [False, False]
+
+    def f(data):
+        seen.append(data.draw_bits(32))
+        # Rare, potentially multi-error conditions
+        if seen[-1] > 2 ** 31:
+            bad[0] = True
+            raise ValueError
+        bad[1] = True
+        raise Exception
+
+    runner = ConjectureRunner(
+        f, settings=settings(max_examples=examples, phases=[Phase.generate])
+    )
+    try:
+        runner.run()
+    except Exception:
+        pass
+    # No matter what, whether examples is larger or smalller than MAX_TEST_CALLS,
+    # we stop looking at max_examples.  (and re-run each failure for the traceback)
+    assert len(seen) <= examples + sum(bad)
+
+
 def test_interleaving_engines():
     children = []
 
@@ -304,7 +331,7 @@ def test_phases_can_disable_shrinking():
         f, settings=settings(database=None, phases=(Phase.reuse, Phase.generate))
     )
     runner.run()
-    assert len(seen) == 1
+    assert len(seen) == MIN_TEST_CALLS
 
 
 def test_erratic_draws():

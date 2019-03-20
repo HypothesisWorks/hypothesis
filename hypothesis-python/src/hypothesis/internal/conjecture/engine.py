@@ -56,6 +56,7 @@ __tracebackhide__ = True
 MAX_SHRINKS = 500
 CACHE_SIZE = 10000
 MUTATION_POOL_SIZE = 100
+MIN_TEST_CALLS = 10
 
 
 @attr.s
@@ -98,6 +99,9 @@ class ConjectureRunner(object):
         self.target_selector = TargetSelector(self.random)
 
         self.interesting_examples = {}
+        # We use call_count because there may be few possible valid_examples.
+        self.first_bug_calls = 0
+        self.last_bug_calls = 0
 
         self.shrunk_examples = set()
 
@@ -182,6 +186,9 @@ class ConjectureRunner(object):
                 existing = self.interesting_examples[key]
             except KeyError:
                 changed = True
+                self.last_bug_calls = self.call_count
+                if not self.first_bug_calls:
+                    self.first_bug_calls = self.call_count
             else:
                 if sort_key(data.buffer) < sort_key(existing.buffer):
                     self.shrinks += 1
@@ -199,6 +206,8 @@ class ConjectureRunner(object):
                 self.exit_with(ExitReason.max_shrinks)
 
         if not self.interesting_examples:
+            # Note that this logic is reproduced to end the generation phase when we
+            # have interesting examples.  Update that too if you change this!
             if self.valid_examples >= self.settings.max_examples:
                 self.exit_with(ExitReason.max_examples)
             if self.call_count >= max(
@@ -588,6 +597,11 @@ class ConjectureRunner(object):
     def generate_new_examples(self):
         if Phase.generate not in self.settings.phases:
             return
+        if self.interesting_examples:
+            # The example database has failing examples from a previous run,
+            # so we'd rather report that they're still failing ASAP than take
+            # the time to look for additional failures.
+            return
 
         zero_data = self.cached_test_function(hbytes(self.settings.buffer_size))
         if zero_data.status > Status.OVERRUN:
@@ -635,8 +649,32 @@ class ConjectureRunner(object):
 
         self.health_check_state = HealthCheckState()
 
+        def should_generate_more():
+            # If we haven't found a bug, keep looking.  We check this before
+            # doing anything else as it's by far the most common case.
+            if not self.interesting_examples:
+                return True
+            assert self.first_bug_calls <= self.last_bug_calls <= self.call_count
+            # End the generation phase where we would have ended it if no bugs
+            # had been found.  Reproduces the exit logic in `self.test_case`.
+            if (
+                self.valid_examples >= self.settings.max_examples
+                or self.call_count >= max(self.settings.max_examples * 10, 1000)
+            ):  # pragma: no cover
+                return False
+            # If we've found a bug and won't report more than one, stop looking.
+            if self.interesting_examples and not self.settings.report_multiple_bugs:
+                return False
+            # Otherwise, keep searching for between ten and 'a heuristic' calls.
+            # We cap 'calls after first bug' so errors are reported reasonably
+            # soon even for tests that are allowed to run for a very long time,
+            # or sooner if the latest half of our test effort has been fruitless.
+            return self.call_count < MIN_TEST_CALLS or self.call_count < min(
+                self.first_bug_calls + 1000, self.last_bug_calls * 2
+            )
+
         count = 0
-        while not self.interesting_examples and (
+        while should_generate_more() and (
             count < 10 or self.health_check_state is not None
         ):
             prefix = self.generate_novel_prefix()
@@ -661,7 +699,7 @@ class ConjectureRunner(object):
 
         zero_bound_queue = []
 
-        while not self.interesting_examples:
+        while should_generate_more():
             if zero_bound_queue:
                 # Whenever we generated an example and it hits a bound
                 # which forces zero blocks into it, this creates a weird
