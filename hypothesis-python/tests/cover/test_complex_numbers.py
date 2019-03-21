@@ -21,7 +21,7 @@ import math
 import sys
 
 import hypothesis.strategies as st
-from hypothesis import assume, given, reject
+from hypothesis import given, reject
 from hypothesis.strategies import complex_numbers
 from tests.common.debug import minimal
 
@@ -93,11 +93,12 @@ def test_minimal_minmax_magnitude():
     ) in (0.5, 1)
 
 
-@given(st.data(), st.floats(0, allow_infinity=False, allow_nan=False))
+@given(st.data(), st.floats(0, 10e300, allow_infinity=False, allow_nan=False))
 def test_minmax_magnitude_equal(data, mag):
     val = data.draw(st.complex_numbers(min_magnitude=mag, max_magnitude=mag))
     try:
-        assume(abs(val) < float("inf"))
+        # Cap magnitude at 10e300 to avoid float overflow, and imprecision
+        # at very large exponents (which makes math.isclose fail)
         assert math.isclose(abs(val), mag)
     except OverflowError:
         reject()
