@@ -27,6 +27,7 @@ Some packages provide strategies directly:
 * :pypi:`hypothesis_sqlalchemy` - strategies to generate :pypi:`SQLAlchemy` objects.
 * :pypi:`hypothesis-ros` - strategies to generate messages and parameters for the `Robot Operating System <https://www.ros.org/>`_.
 * :pypi:`hypothesis-csv` - strategy to generate CSV files.
+* :pypi:`hypothesis-networkx` - strategy to generate :pypi:`networkx` graphs.
 
 Others provide a function to infer a strategy from some other schema:
 
