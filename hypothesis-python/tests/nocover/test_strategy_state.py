@@ -24,7 +24,7 @@ from random import Random
 from hypothesis import Verbosity, assume, settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import PYPY
-from hypothesis.internal.floats import float_to_int, int_to_float
+from hypothesis.internal.floats import float_to_int, int_to_float, is_negative
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.strategies import (
     binary,
@@ -145,6 +145,8 @@ class HypothesisSpec(RuleBasedStateMachine):
                 assume(not f(x))
         left, right = sorted((left, right))
         assert left <= right
+        # exclude deprecated case where left = 0.0 and right = -0.0
+        assume(left or right or not (is_negative(right) and not is_negative(left)))
         return floats(left, right)
 
     @rule(
