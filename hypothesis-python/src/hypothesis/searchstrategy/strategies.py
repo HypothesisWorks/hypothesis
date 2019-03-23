@@ -624,6 +624,37 @@ class FilteredStrategy(SearchStrategy):
                 # As long as we consume data, we'll eventually pass or raise.
                 # But if we don't this could be an infinite loop.
                 assume(data.index > start_index)
+
+        # Special-case for SampledFrom strategy.  This is special even among
+        # strategies with a known and small(ish) list of possible elements,
+        # because it implements drawing directly as choice of an index.
+        # That means we can use the "make your own luck" trick explained in
+        # the shrinking guide to find even very rare allowed values.
+        from hypothesis.searchstrategy.lazy import unwrap_strategies
+        from hypothesis.searchstrategy.misc import SampledFromStrategy
+
+        strategy = unwrap_strategies(self.filtered_strategy)
+        if isinstance(strategy, SampledFromStrategy):
+            # This is equivalent to calculating the allowed values, choosing one,
+            # and writing that index to the buffer - and if `speculative_index`
+            # is larger than the number of allowed values we do just that.
+            # Where it is *smaller*, we can skip processing part of the list.
+            draw_length = data.blocks.last_block_length * 8
+            speculative_index = cu.integer_range(data, 0, len(strategy.elements) - 2)
+            allowed = []
+            for idx, value in enumerate(strategy.elements):
+                if self.condition(value):
+                    allowed.append((idx, value))
+                    if len(allowed) > speculative_index:
+                        data.draw_bits(draw_length, forced=idx)
+                        return value
+            if allowed:
+                idx, value = cu.choice(data, allowed)
+                data.draw_bits(draw_length, forced=idx)
+                return value
+            # If there are no allowed values, fall to the standard handler
+            # to raise UnsatisfiedAssumption as if there was no special case.
+
         data.note_event("Aborted test because unable to satisfy %r" % (self,))
         data.mark_invalid()
         raise AssertionError("Unreachable, for Mypy")  # pragma: no cover

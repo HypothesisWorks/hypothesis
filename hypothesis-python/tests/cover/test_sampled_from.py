@@ -21,7 +21,7 @@ import collections
 import enum
 
 from hypothesis import given
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.strategies import sampled_from
 from tests.common.utils import checks_deprecated_behaviour, fails_with
 
@@ -46,6 +46,17 @@ def test_can_sample_ordereddict_without_warning():
 @given(sampled_from(an_enum))
 def test_can_sample_enums(member):
     assert isinstance(member, an_enum)
+
+
+@fails_with(FailedHealthCheck)
+@given(sampled_from(range(10)).filter(lambda x: x < 0))
+def test_unsat_filtered_sampling(x):
+    assert False
+
+
+@given(sampled_from(range(100)).filter(lambda x: x == 99))
+def test_filtered_sampling_is_efficient(x):
+    assert x == 99
 
 
 @checks_deprecated_behaviour

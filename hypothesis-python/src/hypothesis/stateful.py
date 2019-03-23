@@ -42,8 +42,8 @@ from hypothesis._settings import (
 )
 from hypothesis.control import current_build_context
 from hypothesis.core import given
-from hypothesis.errors import InvalidArgument, InvalidDefinition
-from hypothesis.internal.compat import string_types
+from hypothesis.errors import InvalidArgument, InvalidDefinition, UnsatisfiedAssumption
+from hypothesis.internal.compat import quiet_raise, string_types
 from hypothesis.internal.reflection import function_digest, nicerepr, proxies
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
@@ -595,43 +595,11 @@ class RuleStrategy(SearchStrategy):
         )
 
     def do_draw(self, data):
-        # This strategy is slightly strange in its implementation.
-        # We don't want the interpretation of the rule we draw to change based
-        # on whether other rules satisfy their preconditions or have data in
-        # their bundles. Therefore the index into the rule list needs to stay
-        # stable. BUT we don't want to draw invalid rules. So what we do is we
-        # draw an index. We *could* just loop until it's valid, but if most
-        # rules are invalid then that could result in a very long loop.
-        # So what we do is the following:
-        #
-        #   1. We first draw a rule unconditionally, and check if it's valid.
-        #      If it is, great. Nothing more to do, that's our rule.
-        #   2. If it is invalid, we now calculate the list of valid rules and
-        #      draw from that list (if there are none, that's an error in the
-        #      definition of the machine and we complain to the user about it).
-        #   3. Once we've drawn a valid rule, we write that back to the byte
-        #      stream. As a result, when shrinking runs the shrinker can delete
-        #      the initial failed draw + the draw that lead to us finding an
-        #      index into valid_rules, leaving just the written value of i.
-        #      When this is run, it will look as we got lucky and just happened
-        #      to pick a valid rule.
-        #
-        # Easy, right?
-        n = len(self.rules)
-        i = cu.integer_range(data, 0, n - 1)
-        block_length = data.blocks.last_block_length
-        rule = self.rules[i]
-        if not self.is_valid(rule):
-            valid_rules = [j for j, r in enumerate(self.rules) if self.is_valid(r)]
-            if not valid_rules:
-                raise InvalidDefinition(
-                    u"No progress can be made from state %r" % (self.machine,)
-                )
-            i = valid_rules[cu.integer_range(data, 0, len(valid_rules) - 1)]
-            # Insert a copy of ``i`` into the data stream to make it easier for
-            # the shrinker to delete the initial invalid rule draw.
-            data.draw_bits(block_length * 8, forced=i)
-            rule = self.rules[i]
+        try:
+            rule = data.draw(st.sampled_from(self.rules).filter(self.is_valid))
+        except UnsatisfiedAssumption:
+            msg = "No progress can be made from state %r" % (self.machine,)
+            quiet_raise(InvalidDefinition(msg))
         return (rule, data.draw(rule.arguments_strategy))
 
     def is_valid(self, rule):

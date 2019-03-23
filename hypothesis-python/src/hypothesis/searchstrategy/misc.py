@@ -84,4 +84,10 @@ class SampledFromStrategy(SearchStrategy):
         return is_simple_data(self.elements)
 
     def do_draw(self, data):
+        # In the simple and direct case here, we draw an index into the elements
+        # and return the corresponding value.  There are additional implementations
+        # for s.filter() and lists(s, unique=True) that use the "make your own luck"
+        # trick from our shrinking guide for better efficiency, since we can
+        # calculate the valid elements up front, choose one, and then write the
+        # corresponding index so that the first attempt works while shrinking.
         return d.choice(data, self.elements)
