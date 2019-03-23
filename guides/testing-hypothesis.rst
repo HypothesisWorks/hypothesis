@@ -70,7 +70,7 @@ The following will give you a working virtualenv for running tests in:
   pip install -e .
 
   # Test specific dependencies.
-  pip install pytest-xdist flaky
+  pip install pytest-xdist flaky mock
 
 Now whenever you want to run tests you can just activate the virtualenv
 using ``source testing-venv/bin/activate`` or ``testing-venv\Scripts\activate``
