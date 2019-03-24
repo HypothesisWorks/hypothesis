@@ -21,7 +21,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import example, given, reject
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
 
 base_reusable_strategies = (
     st.text(),
@@ -65,7 +65,7 @@ assert not reusable.is_empty
 def test_reusable_strategies_are_all_reusable(s):
     try:
         s.validate()
-    except InvalidArgument:
+    except (InvalidArgument, HypothesisDeprecationWarning):
         reject()
 
     assert s.has_reusable_values
