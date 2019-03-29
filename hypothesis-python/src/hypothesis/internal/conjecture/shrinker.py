@@ -506,74 +506,24 @@ class Shrinker(object):
         it twice will have exactly the same effect as calling it once.
         """
 
-        # The two main parts of shortlex optimisation are of course making
-        # the test case "short" and "lex" (that is to say, lexicographically.
-        # smaller). Sometimes these are intertwined and it's hard to do one
-        # without the other, but as far as we can we *vastly* prefer to make
-        # the test case shorter over making it lexicographically smaller.
-        # The reason for this is that we can only make O(n) progress on
-        # reducing the size, but at a fixed size there are O(256^n)
-        # lexicographically smaller values. As a result it's easier to
-        # reach a fixed point on size and also every reduction we make
-        # in size reduces the amount of work we have to do lexicographically.
-        # On top of that, reducing the size makes generation much faster,
-        # so even if reducing the size earlier doesn't reduce the number
-        # of test cases we run it may still result in significantly faster
-        # tests.
-        #
-        # As a result of this we start by running a bunch of operations
-        # that are primarily designed to reduce the size of the test.
-        #
-        # These fall into two categories:
-        #
-        # * "structured" ones respect the boundaries of draw calls and are
-        #   likely to correspond to semantically meaningful transformations
-        #   of the generated test case (e.g. deleting an element of a list,
-        #   replacing a tree node with one of its children).
-        # * "unstructured" ones will often not correspond to any meaningful
-        #   transformation but may succeed by accident or because they happen
-        #   to correspond to an unexpectedly meaningful operation (e.g.
-        #   merging two adjacent lists).
-        #
-        # Generally we expect unstructured ones to succeed early on when
-        # the test case has a lot of redundancy because they have plenty
-        # of opportunity to work by accident, and after that they're mostly
-        # unlikely work. As a result we do a slightly odd thing where we
-        # run unstructured deletions as part of the initial pass, but then
-        # we hold off on running them to a fixed point until we've turned
-        # the emergency passes on later.
-        unstructured_deletions = [block_program("X" * i) for i in hrange(5, 0, -1)]
-        structured_deletions = ["pass_to_descendant", "adaptive_example_deletion"]
-        self.fixate_shrink_passes(unstructured_deletions + structured_deletions)
-
-        # "fine" passes are ones that are primarily concerned with lexicographic
-        # reduction. They may still delete data (either deliberately or by accident)
-        # but the distinguishing feature is that it is possible for them to
-        # succeed without the length of the test case changing.
-        # As a result we only start running them after we've hit a fixed point
-        # for the deletion passes at least once.
-        fine = [
-            "alphabet_minimize",
-            "zero_examples",
-            "reorder_examples",
-            "minimize_floats",
-            "minimize_duplicated_blocks",
-            "minimize_individual_blocks",
-        ]
-
-        self.fixate_shrink_passes(structured_deletions + fine)
-
-        # "emergency" shrink passes are ones that handle cases that we
-        # can't currently handle more elegantly - either they're slightly
-        # weird hacks that happen to work or they're expensive passes to
-        # run. Generally we hope that the emergency passes don't do anything
-        # at all. We also re-enable the unstructured deletions at this point
-        # in case new ones have been unlocked since we last ran them, but
-        # don't expect that to be a common occurrence..
-        emergency = [block_program("-XX"), "example_deletion_with_block_lowering"]
-
         self.fixate_shrink_passes(
-            unstructured_deletions + structured_deletions + fine + emergency
+            [
+                block_program("X" * 5),
+                block_program("X" * 4),
+                block_program("X" * 3),
+                block_program("X" * 2),
+                block_program("X" * 1),
+                "pass_to_descendant",
+                "adaptive_example_deletion",
+                "alphabet_minimize",
+                "zero_examples",
+                "reorder_examples",
+                "minimize_floats",
+                "minimize_duplicated_blocks",
+                "minimize_individual_blocks",
+                block_program("-XX"),
+                "example_deletion_with_block_lowering",
+            ]
         )
 
     def fixate_shrink_passes(self, passes):
