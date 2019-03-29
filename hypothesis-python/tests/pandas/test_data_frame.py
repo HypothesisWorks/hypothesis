@@ -126,34 +126,6 @@ def test_can_fill_in_missing_elements_from_dict(df):
     assert np.isnan(df["A"]).all()
 
 
-subsets = ["", "A", "B", "C", "AB", "AC", "BC", "ABC"]
-
-
-@pytest.mark.parametrize("disable_fill", subsets)
-@pytest.mark.parametrize("non_standard_index", [True, False])
-def test_can_minimize_based_on_two_columns_independently(
-    disable_fill, non_standard_index
-):
-    columns = [
-        pdst.column(
-            name, dtype=bool, fill=st.nothing() if name in disable_fill else None
-        )
-        for name in ["A", "B", "C"]
-    ]
-
-    x = minimal(
-        pdst.data_frames(
-            columns, index=pdst.indexes(dtype=int) if non_standard_index else None
-        ),
-        lambda x: x["A"].any() and x["B"].any() and x["C"].any(),
-        random=Random(0),
-    )
-    assert len(x["A"]) == 1
-    assert x["A"][0] == 1
-    assert x["B"][0] == 1
-    assert x["C"][0] == 1
-
-
 @st.composite
 def column_strategy(draw):
     name = draw(st.none() | st.text())
