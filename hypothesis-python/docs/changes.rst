@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.14.1:
+
+-------------------
+4.14.1 - 2019-03-30
+-------------------
+
+This release modifies how Hypothesis selects operations to run during shrinking,
+by causing it to deprioritise previously useless classes of shrink until others have reached a fixed point.
+
+This avoids certain pathological cases where the shrinker gets very close to finishing and then takes a very long time to finish the last small changes because it tries many useless shrinks for each useful one towards the end.
+It also should cause a more modest improvement (probably no more than about 30%) in shrinking performance for most tests.
+
 .. _v4.14.0:
 
 -------------------
