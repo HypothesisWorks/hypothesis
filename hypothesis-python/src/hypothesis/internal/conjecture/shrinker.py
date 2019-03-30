@@ -319,6 +319,8 @@ class Shrinker(object):
 
     def shrink_pass(self, name):
         """Return the ShrinkPass object for the pass with the given name."""
+        if isinstance(name, ShrinkPass):
+            return name
         if name not in self.passes_by_name:
             self.add_new_pass(name)
         return self.passes_by_name[name]
@@ -504,74 +506,24 @@ class Shrinker(object):
         it twice will have exactly the same effect as calling it once.
         """
 
-        # The two main parts of shortlex optimisation are of course making
-        # the test case "short" and "lex" (that is to say, lexicographically.
-        # smaller). Sometimes these are intertwined and it's hard to do one
-        # without the other, but as far as we can we *vastly* prefer to make
-        # the test case shorter over making it lexicographically smaller.
-        # The reason for this is that we can only make O(n) progress on
-        # reducing the size, but at a fixed size there are O(256^n)
-        # lexicographically smaller values. As a result it's easier to
-        # reach a fixed point on size and also every reduction we make
-        # in size reduces the amount of work we have to do lexicographically.
-        # On top of that, reducing the size makes generation much faster,
-        # so even if reducing the size earlier doesn't reduce the number
-        # of test cases we run it may still result in significantly faster
-        # tests.
-        #
-        # As a result of this we start by running a bunch of operations
-        # that are primarily designed to reduce the size of the test.
-        #
-        # These fall into two categories:
-        #
-        # * "structured" ones respect the boundaries of draw calls and are
-        #   likely to correspond to semantically meaningful transformations
-        #   of the generated test case (e.g. deleting an element of a list,
-        #   replacing a tree node with one of its children).
-        # * "unstructured" ones will often not correspond to any meaningful
-        #   transformation but may succeed by accident or because they happen
-        #   to correspond to an unexpectedly meaningful operation (e.g.
-        #   merging two adjacent lists).
-        #
-        # Generally we expect unstructured ones to succeed early on when
-        # the test case has a lot of redundancy because they have plenty
-        # of opportunity to work by accident, and after that they're mostly
-        # unlikely work. As a result we do a slightly odd thing where we
-        # run unstructured deletions as part of the initial pass, but then
-        # we hold off on running them to a fixed point until we've turned
-        # the emergency passes on later.
-        unstructured_deletions = [block_program("X" * i) for i in hrange(5, 0, -1)]
-        structured_deletions = ["pass_to_descendant", "adaptive_example_deletion"]
-        self.fixate_shrink_passes(unstructured_deletions + structured_deletions)
-
-        # "fine" passes are ones that are primarily concerned with lexicographic
-        # reduction. They may still delete data (either deliberately or by accident)
-        # but the distinguishing feature is that it is possible for them to
-        # succeed without the length of the test case changing.
-        # As a result we only start running them after we've hit a fixed point
-        # for the deletion passes at least once.
-        fine = [
-            "alphabet_minimize",
-            "zero_examples",
-            "reorder_examples",
-            "minimize_floats",
-            "minimize_duplicated_blocks",
-            "minimize_individual_blocks",
-        ]
-
-        self.fixate_shrink_passes(structured_deletions + fine)
-
-        # "emergency" shrink passes are ones that handle cases that we
-        # can't currently handle more elegantly - either they're slightly
-        # weird hacks that happen to work or they're expensive passes to
-        # run. Generally we hope that the emergency passes don't do anything
-        # at all. We also re-enable the unstructured deletions at this point
-        # in case new ones have been unlocked since we last ran them, but
-        # don't expect that to be a common occurrence..
-        emergency = [block_program("-XX"), "example_deletion_with_block_lowering"]
-
         self.fixate_shrink_passes(
-            unstructured_deletions + structured_deletions + fine + emergency
+            [
+                block_program("X" * 5),
+                block_program("X" * 4),
+                block_program("X" * 3),
+                block_program("X" * 2),
+                block_program("X" * 1),
+                "pass_to_descendant",
+                "adaptive_example_deletion",
+                "alphabet_minimize",
+                "zero_examples",
+                "reorder_examples",
+                "minimize_floats",
+                "minimize_duplicated_blocks",
+                "minimize_individual_blocks",
+                block_program("-XX"),
+                "example_deletion_with_block_lowering",
+            ]
         )
 
     def fixate_shrink_passes(self, passes):
@@ -593,7 +545,39 @@ class Shrinker(object):
             # try again once all of the passes have been run.
             can_discard = self.remove_discarded()
 
+            # We want to run all steps from each pass, but the order in which
+            # we do this makes a fairly significant difference. If a pass has
+            # a lot of steps but is useless, we'd like to defer running those
+            # steps (many of which will become faster or irrelevant) until
+            # after other, better, passes have had a chance to run.
+            #
+            # An ideal outcome would be that we take every pass/step pair,
+            # run every one of these pairs that would produce a successful
+            # shrink, then run every pair that wouldn't.
+            #
+            # Doing this would of course require us to be magically good at
+            # predicting which pairs would work, and if we could do that then
+            # we wouldn't bother running the unsuccessful ones at all. Instead
+            # what we do is we iterate over them in an order that prioritises
+            # passes that seem to work well and penalises ones that make useless
+            # test calls.
+
+            # The passes we've not run to completion yet, along with the steps
+            # they've yet to run. The steps start out as None, so that we only
+            # calculate the list the first time we run the pass. This is because
+            # if the shrink target changes between calculating steps and running
+            # them, a lot of the steps become invalid. Particularly when the
+            # initial shrink target is large and thus there are a lot of steps
+            # this is potentially fairly wasteful, so we defer calculation to
+            # point of first usage where they will definitely be valid.
             passes_with_steps = [(sp, None) for sp in passes]
+
+            # Run passes that are already at a fixed point last, so that we've
+            # had a chance to unlock them by the time we come to run them.
+            passes_with_steps.sort(
+                key=lambda t: t[0].fixed_point_at is self.shrink_target
+            )
+            successful_passes = set()
 
             while passes_with_steps:
                 to_run_next = []
@@ -602,7 +586,22 @@ class Shrinker(object):
                     if steps is None:
                         steps = sp.generate_steps()
 
+                    # We run each pass until it has failed a certain number
+                    # of times, where a "failure" is any step where it made
+                    # at least one call and did not result in a shrink.
+                    # This gives passes which work reasonably often more of
+                    # chance to run.
                     failures = 0
+                    successes = 0
+
+                    # The choice of 3 is fairly arbitrary and was hand tuned
+                    # to some particular examples. It is very unlikely that
+                    # is the best choice in general, but it's not an
+                    # unreasonable choice: Making it smaller than this would
+                    # give too high a chance of an otherwise very worthwhile
+                    # pass getting screened out too early if it got unlucky,
+                    # and making it much larger than this would result in us
+                    # spending too much time on bad passes.
                     max_failures = 3
 
                     while steps and failures < max_failures:
@@ -614,9 +613,22 @@ class Shrinker(object):
                                 can_discard = self.remove_discarded()
                             if prev is self.shrink_target:
                                 failures += 1
+                            else:
+                                successes += 1
                     if steps:
                         to_run_next.append((sp, steps))
+                    if successes > 0:
+                        successful_passes.add(sp)
+
                 passes_with_steps = to_run_next
+
+            # If only some of our shrink passes are doing anything useful
+            # then run all of those to a fixed point before running the
+            # full set. This is particularly important when an emergency
+            # shrink pass unlocks some non-emergency ones and it suddenly
+            # becomes very expensive to find a bunch of small changes.
+            if 0 < len(successful_passes) < len(passes):
+                self.fixate_shrink_passes(successful_passes)
 
         for sp in passes:
             sp.fixed_point_at = self.shrink_target
