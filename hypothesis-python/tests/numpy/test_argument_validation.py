@@ -74,6 +74,7 @@ def e(a, **kwargs):
         e(nps.broadcastable_shapes, shape=(2, 2), max_dims="a"),
         e(nps.broadcastable_shapes, shape=(2, 2), min_side=-1),
         e(nps.broadcastable_shapes, shape=(2, 2), min_dims=-1),
+        e(nps.broadcastable_shapes, shape=(2, 2), min_dims=1, max_dims=33),
         e(nps.broadcastable_shapes, shape=(2, 2), min_side=1, max_side=0),
         e(nps.broadcastable_shapes, shape=(2, 2), min_dims=1, max_dims=0),
     ],

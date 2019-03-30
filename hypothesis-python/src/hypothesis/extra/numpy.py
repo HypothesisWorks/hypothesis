@@ -738,7 +738,7 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
     * ``shape`` a sequence of integers
     * ``min_dims`` The smallest length that the generated shape can possess.
     * ``max_dims`` The largest length that the generated shape can possess.
-      shape can possess.
+      shape can possess. Cannot exceed 32.
     * ``min_side`` The smallest size that an unaligned dimension can possess.
     * ``max_side`` The largest size that an unaligned dimension can possess.
 
@@ -759,6 +759,8 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
     check_type(integer_types, min_dims, "min_dims")
     check_type(integer_types, max_dims, "max_dims")
     order_check("dims", 0, min_dims, max_dims)
+    if 32 < max_dims:
+        raise InvalidArgument("max_dims cannot exceed 32")
     return _broadcastable_shapes(
         shape,
         min_dims=min_dims,
