@@ -698,31 +698,49 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
     return st.lists(axes, min_size, max_size, unique_by=lambda x: x % ndim).map(tuple)
 
 
-def _insert_singleton(mask, shape):
-    # type: (Sequence[bool], Sequence[int]) -> List[int]
-    return [1 if m else s for m, s in zip(mask, reversed(shape))][::-1]
+class BroadcastShapeStrategy(SearchStrategy):
+    def __init__(self, shape, min_dims, max_dims, min_side, max_side):
+        assert 0 <= min_side <= max_side and 0 <= min_dims <= max_dims <= 32
+        SearchStrategy.__init__(self)
+        self.shape = shape
+        self.side_strat = st.integers(min_side, max_side)
+        self.min_dims = min_dims
+        self.max_dims = max_dims
+        self.min_side = min_side
+        self.max_side = max_side
 
+    def do_draw(self, data):
+        elements = cu.many(
+            data,
+            min_size=self.min_dims,
+            max_size=self.max_dims,
+            average_size=self.min_dims,
+        )
+        result = []
+        reversed_shape = tuple(self.shape[::-1])
+        while elements.more():
+            if len(result) < len(self.shape):
+                # Shrinks towards original shape
+                if reversed_shape[len(result)] == 1:
+                    if self.min_side <= 1 and not data.draw(st.booleans()):
+                        side = 1
+                    else:
+                        side = data.draw(self.side_strat)
 
-def _aligned_shapes(shape, min_dims, max_dims):
-    # type: (Sequence[int], int, int) -> st.SearchStrategy[List[int]]
-    return st.lists(st.booleans(), min_size=min_dims, max_size=max_dims).map(
-        lambda x: _insert_singleton(x, shape)
-    )
-
-
-@st.composite
-def _broadcastable_shapes(draw, shape, min_dims=0, max_dims=3, min_side=0, max_side=5):
-    if max_dims <= len(shape):
-        return tuple(draw(_aligned_shapes(shape, min_dims, max_dims)))
-
-    max_lead = max_dims - len(shape)
-    min_lead = max(min_dims - len(shape), 0)
-    leading = draw(
-        st.lists(st.integers(min_side, max_side), min_size=min_lead, max_size=max_lead)
-    )
-    min_aligned_dim = len(shape) if leading else min_dims
-    aligned = draw(_aligned_shapes(shape, min_dims=min_aligned_dim, max_dims=max_dims))
-    return tuple(leading + aligned)
+                elif self.max_side >= reversed_shape[len(result)] and (
+                    1 > self.max_side
+                    or self.min_side > 1
+                    or not data.draw(st.booleans())
+                ):
+                    side = reversed_shape[len(result)]
+                else:
+                    side = 1
+            else:
+                side = data.draw(self.side_strat)
+            result.append(side)
+        assert self.min_dims <= len(result) <= self.max_dims
+        assert all(self.min_side <= s <= self.max_side for s in result)
+        return tuple(reversed(result))
 
 
 @st.defines_strategy
@@ -735,7 +753,7 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
     The size of an aligned dimension shrinks away from being a singleton. The
     size of an unaligned dimension shrink towards ``min_side``.
 
-    * ``shape`` a sequence of integers
+    * ``shape`` a tuple of integers
     * ``min_dims`` The smallest length that the generated shape can possess.
     * ``max_dims`` The largest length that the generated shape can possess.
       shape can possess. Cannot exceed 32.
@@ -761,7 +779,36 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
     order_check("dims", 0, min_dims, max_dims)
     if 32 < max_dims:
         raise InvalidArgument("max_dims cannot exceed 32")
-    return _broadcastable_shapes(
+
+    min_aligned_shape = tuple(reversed(shape))[:min_dims]
+    viable_lower_bound = all(min_side <= s for s in min_aligned_shape if s != 1)
+    viable_upper_bound = min_side <= 1 <= max_side or all(
+        s <= max_side for s in min_aligned_shape
+    )
+    if not viable_lower_bound:
+        raise InvalidArgument(
+            "Given shape=%r, there are no broadcast-compatible "
+            "shapes that satisfy: min_dims=%s and min_side=%s"
+            % (shape, min_dims, min_side)
+        )
+
+    if not viable_upper_bound:
+        raise InvalidArgument(
+            "Given shape=%r, there are no broadcast-compatible shapes "
+            "that satisfy: min_dims=%s and [min_side=%s, max_side=%s]"
+            % (shape, min_dims, min_side, max_side)
+        )
+
+    for n, s in zip(range(max_dims), reversed(shape)):
+        if s < min_side and s != 1:
+            max_dims = n
+            break
+        elif not (min_side <= 1 <= max_side or s <= max_side):
+            max_dims = n
+            break
+
+    assert min_dims <= max_dims
+    return BroadcastShapeStrategy(
         shape,
         min_dims=min_dims,
         max_dims=max_dims,

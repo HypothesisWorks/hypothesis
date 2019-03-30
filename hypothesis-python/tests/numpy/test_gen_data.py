@@ -506,12 +506,29 @@ def test_minimize_negative_tuple_axes(ndim, data):
     assert len(smallest) == min_size
 
 
-@given(shape=nps.array_shapes(min_side=0, min_dims=0, max_dims=3), data=st.data())
+@settings(deadline=None)
+@given(
+    shape=nps.array_shapes(min_side=0, max_side=5, min_dims=0, max_dims=3),
+    data=st.data(),
+)
 def test_broadcastable_bounds_are_satisfied(shape, data):
     min_dim = data.draw(st.integers(0, 5), label="min_dim")
     max_dim = data.draw(st.integers(min_dim, 5), label="max_dim")
-    min_side = data.draw(st.integers(0, 10), label="min_side")
+    min_side = data.draw(st.integers(0, 5), label="min_side")
     max_side = data.draw(st.integers(min_side, 10), label="max_side")
+    try:
+        data.draw(
+            nps.broadcastable_shapes(
+                shape,
+                min_side=min_side,
+                max_side=max_side,
+                min_dims=min_dim,
+                max_dims=max_dim,
+            )
+        )
+    except InvalidArgument:
+        return
+
     bshape = data.draw(
         nps.broadcastable_shapes(
             shape,
@@ -520,13 +537,11 @@ def test_broadcastable_bounds_are_satisfied(shape, data):
             min_dims=min_dim,
             max_dims=max_dim,
         ),
-        label="broadcastable shape",
+        label="bshape",
     )
-
-    n_leading = max((len(bshape) - len(shape)), 0)
     assert isinstance(bshape, tuple) and all(isinstance(s, int) for s in bshape)
     assert min_dim <= len(bshape) <= max_dim
-    assert all(min_side <= s <= max_side for s in bshape[:n_leading])
+    assert all(min_side <= s <= max_side for s in bshape)
 
 
 @given(
@@ -536,8 +551,16 @@ def test_broadcastable_bounds_are_satisfied(shape, data):
 def test_broadcastable_shape_can_broadcast(shape, data):
     min_dim = data.draw(st.integers(0, 5), label="min_dim")
     max_dim = data.draw(st.integers(min_dim, 5), label="max_dim")
-    min_side = data.draw(st.integers(0, 10), label="min_side")
-    max_side = data.draw(st.integers(min_side, 10), label="max_side")
+    if max_dim and shape:
+        smallest_side = min(shape[::-1][:max_dim])
+        largest_side = max(shape[::-1][:max_dim])
+        min_side = data.draw(st.integers(0, smallest_side), label="min_dim")
+        max_side = data.draw(
+            st.integers(largest_side, largest_side + 2), label="max_dim"
+        )
+    else:
+        min_side = 0
+        max_side = 5
     broadcastable_shape = data.draw(
         nps.broadcastable_shapes(
             shape,
@@ -553,7 +576,7 @@ def test_broadcastable_shape_can_broadcast(shape, data):
     np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
 
 
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None)
 @given(
     shape=nps.array_shapes(min_dims=0, max_dims=2, min_side=0, max_side=5),
     data=st.data(),
@@ -562,8 +585,16 @@ def test_minimize_broadcastable_shape(shape, data):
     # Ensure aligned dimensions of broadcastable shape minimizes to `shape[:-min_dims]`
     min_dim = data.draw(st.integers(0, 3), label="min_dim")
     max_dim = data.draw(st.integers(min_dim, 3), label="max_dim")
-    min_side = data.draw(st.integers(0, 2), label="min_side")
-    max_side = data.draw(st.integers(min_side, 2), label="max_side")
+    if max_dim and shape:
+        smallest_side = min(shape[::-1][:max_dim])
+        largest_side = max(shape[::-1][:max_dim])
+        min_side = data.draw(st.integers(0, smallest_side), label="min_dim")
+        max_side = data.draw(
+            st.integers(largest_side, largest_side + 2), label="max_dim"
+        )
+    else:
+        min_side = 0
+        max_side = 5
     smallest = minimal(
         nps.broadcastable_shapes(
             shape,
@@ -577,17 +608,25 @@ def test_minimize_broadcastable_shape(shape, data):
     assert all(s == bs for s, bs in zip(reversed(shape), reversed(smallest)))
 
 
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None)
 @given(
-    shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=10),
+    shape=nps.array_shapes(min_dims=0, max_dims=2, min_side=0, max_side=4),
     data=st.data(),
 )
 def test_minimize_broadcastable_shape_with_leading_dims(shape, data):
     # Ensure that non-aligned leading dimensions shrink to `min_side`
     min_dim = len(shape) + 1
-    max_dim = data.draw(st.integers(min_dim, 5), label="max_dim")
-    min_side = data.draw(st.integers(0, 10), label="min_side")
-    max_side = data.draw(st.integers(min_side, 10), label="max_side")
+    max_dim = data.draw(st.integers(min_dim, min_dim + 3), label="max_dim")
+    if shape:
+        smallest_side = min(shape[::-1][:max_dim])
+        largest_side = max(shape[::-1][:max_dim])
+        min_side = data.draw(st.integers(0, smallest_side), label="min_dim")
+        max_side = data.draw(
+            st.integers(largest_side, largest_side + 2), label="max_dim"
+        )
+    else:
+        min_side = 0
+        max_side = 5
     smallest = minimal(
         nps.broadcastable_shapes(
             shape,
