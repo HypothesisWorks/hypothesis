@@ -22,6 +22,7 @@ from collections import namedtuple
 
 import pytest
 
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import text_type
 from hypothesis.searchstrategy.strategies import one_of_strategies
 from hypothesis.strategies import booleans, integers, just, randoms, tuples
@@ -93,3 +94,8 @@ def test_can_map_nameless():
 def test_can_flatmap_nameless():
     f = nameless_const(just(3))
     assert repr(f) in repr(integers().flatmap(f))
+
+
+def test_flatmap_with_invalid_expand():
+    with pytest.raises(InvalidArgument):
+        just(100).flatmap(lambda n: "a").example()
