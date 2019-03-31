@@ -617,9 +617,14 @@ def test_minimize_broadcastable_shape_with_leading_dims(shape, data):
 @settings(deadline=None)
 @given(data=st.data())
 def test_reduce_max_dim(data):
-    shape = (5, 3, 2, 1)  # 5 is outside of satisfiable bounds
+    # Ensures that `broadcastable_shapes` limits itself to satisfiable dimensions
+    max_dim = data.draw(st.integers(4, 6), label="max_dim")
+    # broadcastable values can only be drawn for dims 0-3 for these shapes
+    shape = data.draw(st.sampled_from([(5, 3, 2, 1), (0, 3, 2, 1)]), label="shape")
     broadcastable_shape = data.draw(
-        nps.broadcastable_shapes(shape, min_side=2, max_side=3, min_dims=3, max_dims=5),
+        nps.broadcastable_shapes(
+            shape, min_side=2, max_side=3, min_dims=3, max_dims=max_dim
+        ),
         label="broadcastable_shapes",
     )
     assert len(broadcastable_shape) == 3
