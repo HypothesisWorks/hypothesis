@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.14.2:
+
+-------------------
+4.14.2 - 2019-03-31
+-------------------
+
+This patch improves the error message if the function ``f`` in
+:ref:`s.flatmap(f) <flatmap>` does not return a strategy.
+
+Thanks to Kai Chen for this change!
+
 .. _v4.14.1:
 
 -------------------
