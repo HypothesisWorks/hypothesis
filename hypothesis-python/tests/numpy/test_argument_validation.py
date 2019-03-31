@@ -77,6 +77,8 @@ def e(a, **kwargs):
         e(nps.broadcastable_shapes, shape=(2, 2), min_dims=1, max_dims=33),
         e(nps.broadcastable_shapes, shape=(2, 2), min_side=1, max_side=0),
         e(nps.broadcastable_shapes, shape=(2, 2), min_dims=1, max_dims=0),
+        e(nps.broadcastable_shapes, shape=(5, 1), min_dims=2, min_side=2, max_side=3),
+        e(nps.broadcastable_shapes, shape=(0, 1), min_dims=2, min_side=2, max_side=3),
     ],
 )
 def test_raise_invalid_argument(function, kwargs):

@@ -726,10 +726,8 @@ class BroadcastShapeStrategy(SearchStrategy):
                         side = 1
                     else:
                         side = data.draw(self.side_strat)
-
                 elif self.max_side >= reversed_shape[len(result)] and (
-                    1 > self.max_side
-                    or self.min_side > 1
+                    not self.min_side <= 1 <= self.max_side
                     or not data.draw(st.booleans())
                 ):
                     side = reversed_shape[len(result)]
@@ -765,7 +763,7 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
     .. code-block:: pycon
 
         >>> [broadcastable_shapes(shape=(2, 3)).example() for i in range(5)]
-        [(1, 3), (), (2, 3), (2, 1), (4, 5, 1, 3), (3, )]
+        [(1, 3), (), (2, 3), (2, 1), (4, 1, 3), (3, )]
 
     """
     check_type((tuple, list), shape, "shape")
@@ -780,7 +778,7 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
     if 32 < max_dims:
         raise InvalidArgument("max_dims cannot exceed 32")
 
-    min_aligned_shape = tuple(reversed(shape))[:min_dims]
+    min_aligned_shape = shape[::-1][:min_dims]
     viable_lower_bound = all(min_side <= s for s in min_aligned_shape if s != 1)
     viable_upper_bound = min_side <= 1 <= max_side or all(
         s <= max_side for s in min_aligned_shape
@@ -791,14 +789,13 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
             "shapes that satisfy: min_dims=%s and min_side=%s"
             % (shape, min_dims, min_side)
         )
-
     if not viable_upper_bound:
         raise InvalidArgument(
             "Given shape=%r, there are no broadcast-compatible shapes "
             "that satisfy: min_dims=%s and [min_side=%s, max_side=%s]"
             % (shape, min_dims, min_side, max_side)
         )
-
+    # reduce max_dims to exclude unsatisfiable dimensions
     for n, s in zip(range(max_dims), reversed(shape)):
         if s < min_side and s != 1:
             max_dims = n
@@ -806,8 +803,6 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
         elif not (min_side <= 1 <= max_side or s <= max_side):
             max_dims = n
             break
-
-    assert min_dims <= max_dims
     return BroadcastShapeStrategy(
         shape,
         min_dims=min_dims,
