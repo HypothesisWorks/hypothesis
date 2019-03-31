@@ -224,7 +224,7 @@ def test_handles_flaky_tests_where_only_one_is_flaky():
 def test_can_disable_multiple_error_reporting(allow_multi):
     seen = set()
 
-    @settings(database=None, report_multiple_bugs=allow_multi)
+    @settings(database=None, derandomize=True, report_multiple_bugs=allow_multi)
     @given(st.integers(min_value=0))
     def test(i):
         # We will pass on the minimal i=0, then fail with a large i, and eventually
