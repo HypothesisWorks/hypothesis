@@ -349,6 +349,12 @@ class SearchStrategy(Generic[Ex]):
         """
         return FilteredStrategy(condition=condition, strategy=self)
 
+    def do_filtered_draw(self, data, filter_strategy):
+        # Hook for strategies that want to override the behaviour of
+        # FilteredStrategy. Most strategies don't, so by default we delegate
+        # straight back to the default filtered-draw implementation.
+        return filter_strategy.default_do_filtered_draw(data)
+
     @property
     def branches(self):
         # type: () -> List[SearchStrategy[Ex]]
@@ -585,6 +591,9 @@ class MappedSearchStrategy(SearchStrategy):
         ]
 
 
+filter_not_satisfied = UniqueIdentifier("filter not satisfied")
+
+
 class FilteredStrategy(SearchStrategy):
     def __init__(self, strategy, condition):
         super(FilteredStrategy, self).__init__()
@@ -610,6 +619,20 @@ class FilteredStrategy(SearchStrategy):
 
     def do_draw(self, data):
         # type: (ConjectureData) -> Ex
+        result = self.filtered_strategy.do_filtered_draw(
+            data=data, filter_strategy=self
+        )
+        if result is not filter_not_satisfied:
+            return result
+
+        data.note_event("Aborted test because unable to satisfy %r" % (self,))
+        data.mark_invalid()
+        raise AssertionError("Unreachable, for Mypy")  # pragma: no cover
+
+    def note_retried(self, data):
+        data.note_event(lazyformat("Retried draw from %r to satisfy filter", self))
+
+    def default_do_filtered_draw(self, data):
         for i in hrange(3):
             start_index = data.index
             value = data.draw(self.filtered_strategy)
@@ -617,16 +640,13 @@ class FilteredStrategy(SearchStrategy):
                 return value
             else:
                 if i == 0:
-                    data.note_event(
-                        lazyformat("Retried draw from %r to satisfy filter", self)
-                    )
+                    self.note_retried(data)
                 # This is to guard against the case where we consume no data.
                 # As long as we consume data, we'll eventually pass or raise.
                 # But if we don't this could be an infinite loop.
                 assume(data.index > start_index)
-        data.note_event("Aborted test because unable to satisfy %r" % (self,))
-        data.mark_invalid()
-        raise AssertionError("Unreachable, for Mypy")  # pragma: no cover
+
+        return filter_not_satisfied
 
     @property
     def branches(self):
