@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.internal.validation import check_type
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
@@ -40,7 +41,9 @@ class FlatMapStrategy(SearchStrategy):
 
     def do_draw(self, data):
         source = data.draw(self.flatmapped_strategy)
-        return data.draw(self.expand(source))
+        expanded_source = self.expand(source)
+        check_type(SearchStrategy, expanded_source)
+        return data.draw(expanded_source)
 
     @property
     def branches(self):

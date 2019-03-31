@@ -226,6 +226,7 @@ their individual contributions.
 * `Joshua Boone <https://www.github.com/patchedwork>`_ (joshuaboone4190@gmail.com)
 * `jmhsi <https://www.github.com/jmhsi>`_
 * `jwg4 <https://www.github.com/jwg4>`_
+* `Kai Chen <https://www.github.com/kx-chen>`_ (kaichen120@gmail.com)
 * `Karthikeyan Singaravelan <https://www.github.com/tirkarthi>`_ (tir.karthi@gmail.com)
 * `kbara <https://www.github.com/kbara>`_
 * `Kyle Reeve <https://www.github.com/kreeve>`_ (krzw92@gmail.com)
