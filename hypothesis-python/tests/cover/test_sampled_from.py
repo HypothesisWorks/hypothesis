@@ -21,7 +21,8 @@ import collections
 import enum
 
 from hypothesis import given
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import FailedHealthCheck, InvalidArgument
+from hypothesis.internal.compat import hrange
 from hypothesis.strategies import sampled_from
 from tests.common.utils import checks_deprecated_behaviour, fails_with
 
@@ -51,3 +52,19 @@ def test_can_sample_enums(member):
 @checks_deprecated_behaviour
 def test_sampling_empty_is_deprecated():
     assert sampled_from([]).is_empty
+
+
+@fails_with(FailedHealthCheck)
+@given(sampled_from(hrange(10)).filter(lambda x: x < 0))
+def test_unsat_filtered_sampling(x):
+    assert False
+
+
+def test_easy_filtered_sampling():
+    x = sampled_from(hrange(100)).filter(lambda x: x == 0).example()
+    assert x == 0
+
+
+@given(sampled_from(hrange(100)).filter(lambda x: x == 99))
+def test_filtered_sampling_finds_rare_value(x):
+    assert x == 99
