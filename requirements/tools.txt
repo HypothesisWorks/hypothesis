@@ -83,7 +83,7 @@ sphinx==2.0.0
 sphinxcontrib-websupport==1.1.0  # via sphinx
 stevedore==1.30.1         # via bandit
 toml==0.10.0
-tox==3.7.0
+tox==3.8.4
 tqdm==4.31.1              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.13.0
