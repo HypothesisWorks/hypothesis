@@ -19,7 +19,7 @@ click==7.0                # via black, pip-tools, pyupio, safety
 coverage==4.5.3
 decorator==4.4.0          # via ipython, traitlets
 deprecated==1.2.5         # via pygithub
-django==2.1.7
+django==2.2
 docutils==0.14            # via readme-renderer, restructuredtext-lint, sphinx
 dparse==0.4.1             # via pyupio, safety
 dpcontracts==0.6.0
@@ -38,11 +38,11 @@ ipython==7.4.0
 isort==4.3.16
 jedi==0.13.3              # via ipython
 jinja2==2.10              # via pyupio, sphinx
-lark-parser==0.6.7
+lark-parser==0.7.0
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8
 mock==2.0.0
-more-itertools==5.0.0
+more-itertools==7.0.0
 mypy-extensions==0.4.1    # via mypy
 mypy==0.670
 numpy==1.16.2
@@ -64,7 +64,7 @@ pygithub==1.43.5          # via pyupio
 pygments==2.3.1           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pyparsing==2.3.1          # via packaging
-pytest==4.3.1
+pytest==4.4.0
 python-dateutil==2.8.0
 python-gitlab==1.8.0      # via pyupio
 pytz==2018.9              # via babel, django
@@ -79,11 +79,11 @@ six==1.12.0               # via bandit, bleach, dparse, mock, more-itertools, pa
 smmap2==2.0.5             # via gitdb2
 snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.3
-sphinx==1.8.5
+sphinx==2.0.0
 sphinxcontrib-websupport==1.1.0  # via sphinx
 stevedore==1.30.1         # via bandit
 toml==0.10.0
-tox==3.7.0
+tox==3.8.4
 tqdm==4.31.1              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.13.0
