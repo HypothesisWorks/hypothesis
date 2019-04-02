@@ -443,10 +443,9 @@ def standard_tox_task(name):
 
 standard_tox_task("nose")
 standard_tox_task("pytest30")
-standard_tox_task("django21")
-standard_tox_task("django20")
-standard_tox_task("django111")
 
+for n in [20, 21, 22, 111]:
+    standard_tox_task("django%d" % (n,))
 for n in [19, 20, 21, 22, 23, 24]:
     standard_tox_task("pandas%d" % (n,))
 
