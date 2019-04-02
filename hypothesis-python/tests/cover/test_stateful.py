@@ -795,6 +795,7 @@ def test_removes_needless_steps():
     but will still fail with very high probability.
     """
 
+    @Settings(derandomize=True)
     class IncorrectDeletion(RuleBasedStateMachine):
         def __init__(self):
             super(IncorrectDeletion, self).__init__()

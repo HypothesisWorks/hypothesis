@@ -100,7 +100,7 @@ def test_includes_intermediate_results_in_verbose_mode():
     with capture_verbosity() as o:
 
         @fails
-        @settings(verbosity=Verbosity.verbose, database=None)
+        @settings(verbosity=Verbosity.verbose, database=None, derandomize=True)
         @given(lists(integers(), min_size=1))
         def test_foo(x):
             assert sum(x) < 1000000
