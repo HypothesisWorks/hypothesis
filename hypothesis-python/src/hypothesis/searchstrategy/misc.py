@@ -18,7 +18,8 @@
 from __future__ import absolute_import, division, print_function
 
 import hypothesis.internal.conjecture.utils as d
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.internal.compat import bit_length, hrange
+from hypothesis.searchstrategy.strategies import SearchStrategy, filter_not_satisfied
 
 
 class BoolStrategy(SearchStrategy):
@@ -85,3 +86,66 @@ class SampledFromStrategy(SearchStrategy):
 
     def do_draw(self, data):
         return d.choice(data, self.elements)
+
+    def do_filtered_draw(self, data, filter_strategy):
+        # Set of indices that have been tried so far, so that we never test
+        # the same element twice during a draw.
+        known_bad_indices = set()
+
+        def check_index(i):
+            """Return ``True`` if the element at ``i`` satisfies the filter
+            condition.
+            """
+            if i in known_bad_indices:
+                return False
+            ok = filter_strategy.condition(self.elements[i])
+            if not ok:
+                if not known_bad_indices:
+                    filter_strategy.note_retried(data)
+                known_bad_indices.add(i)
+            return ok
+
+        # Start with ordinary rejection sampling. It's fast if it works, and
+        # if it doesn't work then it was only a small amount of overhead.
+        for _ in hrange(3):
+            i = d.integer_range(data, 0, len(self.elements) - 1)
+            if check_index(i):
+                return self.elements[i]
+
+        # Figure out the bit-length of the index that we will write back after
+        # choosing an allowed element.
+        write_length = bit_length(len(self.elements))
+
+        # Impose an arbitrary cutoff to prevent us from wasting too much time
+        # on very large element lists.
+        cutoff = 10000
+
+        # Before building the list of allowed indices, speculatively choose
+        # one of them. We don't yet know how many allowed indices there will be,
+        # so this choice might be out-of-bounds, but that's OK.
+        max_good_indices = min(len(self.elements) - len(known_bad_indices), cutoff)
+        speculative_index = d.integer_range(data, 0, max_good_indices - 1)
+
+        # Calculate the indices of allowed values, so that we can choose one
+        # of them at random. But if we encounter the speculatively-chosen one,
+        # just use that and return immediately.
+        allowed_indices = []
+        for i in hrange(min(len(self.elements), cutoff)):
+            if check_index(i):
+                allowed_indices.append(i)
+                if len(allowed_indices) > speculative_index:
+                    # Early-exit case: We reached the speculative index, so
+                    # we just return the corresponding element.
+                    data.draw_bits(write_length, forced=i)
+                    return self.elements[i]
+
+        # The speculative index didn't work out, but at this point we've built
+        # the complete list of allowed indices, so we can just choose one of
+        # them.
+        if allowed_indices:
+            i = d.choice(data, allowed_indices)
+            data.draw_bits(write_length, forced=i)
+            return self.elements[i]
+        # If there are no allowed indices, the filter couldn't be satisfied.
+
+        return filter_not_satisfied
