@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.14.3:
+
+-------------------
+4.14.3 - 2019-04-03
+-------------------
+
+This patch adds an internal special case to make
+:func:`sampled_from(...).filter(...) <hypothesis.strategies.sampled_from>`
+much more efficient when the filter rejects most elements (:issue:`1885`).
+
 .. _v4.14.2:
 
 -------------------
