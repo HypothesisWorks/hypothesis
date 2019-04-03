@@ -23,7 +23,7 @@ import pytest
 from django.db import IntegrityError
 from django.test import TestCase as DjangoTestCase
 
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, Verbosity, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from hypothesis.internal.compat import PYPY
@@ -64,7 +64,9 @@ class TestWorkflow(VanillaTestCase):
 
         class LocalTest(TestCase):
             @given(integers().map(break_the_db))
-            @settings(suppress_health_check=HealthCheck.all())
+            @settings(
+                suppress_health_check=HealthCheck.all(), verbosity=Verbosity.quiet
+            )
             def test_does_not_break_other_things(self, unused):
                 pass
 

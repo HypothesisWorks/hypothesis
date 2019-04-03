@@ -74,6 +74,8 @@ jobs:
           TASK: check-nose
         check-pytest30:
           TASK: check-pytest30
+        check-django22:
+          TASK: check-django22
         check-django21:
           TASK: check-django21
         check-django20:
