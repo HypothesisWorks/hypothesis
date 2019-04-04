@@ -246,6 +246,7 @@ their individual contributions.
 * `Paul Lorett Amazona <https://github.com/whatevergeek>`_
 * `Paul Stiverson <https://github.com/thismatters>`_
 * `Peadar Coyle <https://github.com/springcoil>`_ (peadarcoyle@gmail.com)
+* `Pierre-Jean Campigotto <https://github.com/PJCampi>`_
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
 * `Ryan Turner <https://github.com/rdturnermtl>`_ (ryan.turner@uber.com)
 * `Sam Hames <https://www.github.com/SamHames>`_
