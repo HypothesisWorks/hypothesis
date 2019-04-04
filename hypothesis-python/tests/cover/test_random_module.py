@@ -22,9 +22,10 @@ import random
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, register_random, reporting
+from hypothesis import find, given, register_random, reporting
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import entropy
+from hypothesis.internal.entropy import deterministic_PRNG
 from tests.common.utils import capture_out
 
 
@@ -112,3 +113,31 @@ def test_will_actually_use_the_random_seed(rnd):
     random.seed(rnd.seed)
     assert a == random.randint(0, 100)
     assert b == random.randint(0, 100)
+
+
+def test_given_does_not_pollute_state():
+    with deterministic_PRNG():
+
+        @given(st.random_module())
+        def test(r):
+            pass
+
+        test()
+        state_a = random.getstate()
+
+        test()
+        state_b = random.getstate()
+
+        assert state_a != state_b
+
+
+def test_find_does_not_pollute_state():
+    with deterministic_PRNG():
+
+        find(st.random_module(), lambda r: True)
+        state_a = random.getstate()
+
+        find(st.random_module(), lambda r: True)
+        state_b = random.getstate()
+
+        assert state_a != state_b
