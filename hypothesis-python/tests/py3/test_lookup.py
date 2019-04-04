@@ -467,3 +467,9 @@ def test_resolving_recursive_type():
 def test_resolves_empty_Tuple_issue_1583_regression(ex):
     # See e.g. https://github.com/python/mypy/commit/71332d58
     assert ex == ()
+
+
+def test_can_register_NewType():
+    Name = typing.NewType("Name", str)
+    st.register_type_strategy(Name, st.just("Eric Idle"))
+    assert st.from_type(Name).example() == "Eric Idle"

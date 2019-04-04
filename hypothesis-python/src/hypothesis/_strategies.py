@@ -26,7 +26,7 @@ import sys
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import reduce
-from inspect import isclass, isfunction
+from inspect import isclass
 from uuid import UUID
 
 import attr
@@ -1307,15 +1307,11 @@ def from_type(thing):
 
     if typing is not None:  # pragma: no branch
         if not isinstance(thing, type):
-            # At runtime, `typing.NewType` returns an identity function rather
-            # than an actual type, but we can check that for a possible match
-            # and then read the magic attribute to unwrap it.
-            if (
-                hasattr(thing, "__supertype__")
-                and hasattr(typing, "NewType")
-                and isfunction(thing)
-                and getattr(thing, "__module__", 0) == "typing"
-            ):
+            if types.is_a_new_type(thing):
+                # Check if we have an explicitly registered strategy for this thing,
+                # resolve it so, and otherwise resolve as for the base type.
+                if thing in types._global_type_lookup:
+                    return as_strategy(types._global_type_lookup[thing], thing)
                 return from_type(thing.__supertype__)
             # Under Python 3.6, Unions are not instances of `type` - but we
             # still want to resolve them!

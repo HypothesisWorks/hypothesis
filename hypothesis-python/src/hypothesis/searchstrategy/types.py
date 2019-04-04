@@ -22,6 +22,7 @@ import datetime
 import decimal
 import fractions
 import functools
+import inspect
 import io
 import numbers
 import uuid
@@ -61,9 +62,24 @@ def try_issubclass(thing, superclass):
         return False
 
 
+def is_a_new_type(thing):
+    # At runtime, `typing.NewType` returns an identity function rather
+    # than an actual type, but we can check whether that thing matches.
+    return (
+        hasattr(thing, "__supertype__")
+        and hasattr(typing, "NewType")
+        and inspect.isfunction(thing)
+        and getattr(thing, "__module__", None) == "typing"
+    )
+
+
 def is_a_type(thing):
     """Return True if thing is a type or a generic type like thing."""
-    return isinstance(thing, type) or isinstance(thing, typing_root_type)
+    return (
+        isinstance(thing, type)
+        or isinstance(thing, typing_root_type)
+        or is_a_new_type(thing)
+    )
 
 
 def from_typing_type(thing):
