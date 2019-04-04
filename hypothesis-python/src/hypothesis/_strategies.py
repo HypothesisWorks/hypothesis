@@ -67,6 +67,7 @@ from hypothesis.internal.floats import (
 from hypothesis.internal.reflection import (
     define_function_signature,
     is_typed_named_tuple,
+    nicerepr,
     proxies,
     required_args,
 )
@@ -1287,6 +1288,23 @@ def from_type(thing):
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.searchstrategy import types
 
+    def as_strategy(strat_or_callable, thing):
+        # User-provided strategies need some validation, and callables even more
+        # of it.  We do this in three places, hence the helper function
+        if not isinstance(strat_or_callable, SearchStrategy):
+            assert callable(strat_or_callable)  # Validated in register_type_strategy
+            strategy = strat_or_callable(thing)
+        else:
+            strategy = strat_or_callable
+        if not isinstance(strategy, SearchStrategy):
+            raise ResolutionFailed(
+                "Error: %s was registered for %r, but returned non-strategy %r"
+                % (thing, nicerepr(strat_or_callable), strategy)
+            )
+        if strategy.is_empty:
+            raise ResolutionFailed("Error: %r resolved to an empty strategy" % (thing,))
+        return strategy
+
     if typing is not None:  # pragma: no branch
         if not isinstance(thing, type):
             # At runtime, `typing.NewType` returns an identity function rather
@@ -1321,12 +1339,7 @@ def from_type(thing):
     # lookup may be a strategy or a function from type -> strategy; and we
     # convert empty results into an explicit error.
     if thing in types._global_type_lookup:
-        strategy = types._global_type_lookup[thing]
-        if not isinstance(strategy, SearchStrategy):
-            strategy = strategy(thing)  # type: ignore
-        if strategy.is_empty:  # type: ignore
-            raise ResolutionFailed("Error: %r resolved to an empty strategy" % (thing,))
-        return strategy  # type: ignore
+        return as_strategy(types._global_type_lookup[thing], thing)
     # If there's no explicitly registered strategy, maybe a subtype of thing
     # is registered - if so, we can resolve it to the subclass strategy.
     # We'll start by checking if thing is from from the typing module,
@@ -1340,19 +1353,13 @@ def from_type(thing):
     # type.  For example, `Number -> integers() | floats()`, but bools() is
     # not included because bool is a subclass of int as well as Number.
     strategies = [
-        v if isinstance(v, SearchStrategy) else v(thing)  # type: ignore
+        as_strategy(v, thing)
         for k, v in types._global_type_lookup.items()
         if isinstance(k, type)
         and issubclass(k, thing)
         and sum(types.try_issubclass(k, typ) for typ in types._global_type_lookup) == 1
     ]
-    empty = ", ".join(repr(s) for s in strategies if s.is_empty)
-    if empty:
-        raise ResolutionFailed(
-            "Could not resolve %s to a strategy; consider using "
-            "register_type_strategy" % empty
-        )
-    elif strategies:
+    if strategies:
         return one_of(strategies)
     # If we don't have a strategy registered for this type or any subtype, we
     # may be able to fall back on type annotations.
