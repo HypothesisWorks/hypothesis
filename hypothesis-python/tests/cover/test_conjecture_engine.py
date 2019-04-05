@@ -18,7 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import re
-from random import Random, seed as seed_random
+from random import Random
 
 import attr
 import pytest
@@ -335,19 +335,19 @@ def test_no_read_no_shrink():
 
 
 def test_one_dead_branch():
-    seed_random(0)
-    seen = set()
+    with deterministic_PRNG():
+        seen = set()
 
-    @run_to_buffer
-    def x(data):
-        i = data.draw_bytes(1)[0]
-        if i > 0:
-            data.mark_invalid()
-        i = data.draw_bytes(1)[0]
-        if len(seen) < 255:
-            seen.add(i)
-        elif i not in seen:
-            data.mark_interesting()
+        @run_to_buffer
+        def x(data):
+            i = data.draw_bytes(1)[0]
+            if i > 0:
+                data.mark_invalid()
+            i = data.draw_bytes(1)[0]
+            if len(seen) < 255:
+                seen.add(i)
+            elif i not in seen:
+                data.mark_interesting()
 
 
 def test_saves_on_interrupt():

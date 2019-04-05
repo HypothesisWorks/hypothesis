@@ -542,8 +542,8 @@ class StateForActualGivenExecution(object):
             if not hasattr(data, "can_reproduce_example_from_repr"):
                 data.can_reproduce_example_from_repr = True
             with local_settings(self.settings):
-                with BuildContext(data, is_final=is_final):
-                    with deterministic_PRNG():
+                with deterministic_PRNG():
+                    with BuildContext(data, is_final=is_final):
                         args, kwargs = data.draw(self.search_strategy)
                         if expected_failure is not None:
                             text_repr[0] = arg_string(test, args, kwargs)
@@ -1070,15 +1070,15 @@ def find(
     last_repr = [None]
 
     def template_condition(data):
-        with BuildContext(data):
-            try:
-                data.is_find = True
-                with deterministic_PRNG():
+        with deterministic_PRNG():
+            with BuildContext(data):
+                try:
+                    data.is_find = True
                     result = data.draw(search)
                     data.note(result)
                     success = condition(result)
-            except UnsatisfiedAssumption:
-                data.mark_invalid()
+                except UnsatisfiedAssumption:
+                    data.mark_invalid()
 
         if success:
             successful_examples[0] += 1
@@ -1109,8 +1109,8 @@ def find(
         data = ConjectureData.for_buffer(
             list(runner.interesting_examples.values())[0].buffer
         )
-        with BuildContext(data):
-            with deterministic_PRNG():
+        with deterministic_PRNG():
+            with BuildContext(data):
                 return data.draw(search)
     if runner.valid_examples == 0 and (runner.exit_reason != ExitReason.finished):
         raise Unsatisfiable(
