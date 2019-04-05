@@ -21,6 +21,20 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.14.4:
+
+-------------------
+4.14.4 - 2019-04-05
+-------------------
+
+This release fixes a bug that prevented
+:func:`~hypothesis.strategies.random_module`
+from correctly restoring the previous state of the ``random`` module.
+
+The random state was instead being restored to a temporary deterministic
+state, which accidentally caused subsequent tests to see the same random values
+across multiple test runs.
+
 .. _v4.14.3:
 
 -------------------
