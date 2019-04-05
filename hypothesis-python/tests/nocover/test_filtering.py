@@ -19,7 +19,9 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
+import hypothesis.strategies as st
 from hypothesis import given
+from hypothesis.internal.compat import hrange
 from hypothesis.strategies import integers, lists
 
 
@@ -33,3 +35,46 @@ def test_filter_correctly(specifier, condition):
         assert condition(x)
 
     test_is_filtered()
+
+
+# A variety of strategies that generate the integers 1-20 inclusive, but might
+# differ in their support for special-case filtering.
+one_to_twenty_strategies = [
+    st.integers(1, 20),
+    st.integers(0, 19).map(lambda x: x + 1),
+    st.sampled_from(hrange(1, 21)),
+    st.sampled_from(hrange(0, 20)).map(lambda x: x + 1),
+]
+
+
+@pytest.mark.parametrize("base", one_to_twenty_strategies)
+@given(
+    data=st.data(),
+    forbidden_values=st.lists(st.integers(1, 20), max_size=19, unique=True),
+)
+def test_chained_filters_agree(data, forbidden_values, base):
+    def forbid(s, forbidden):
+        """Helper function to avoid Python variable scoping issues."""
+        return s.filter(lambda x: x != forbidden)
+
+    s = base
+    for forbidden in forbidden_values:
+        s = forbid(s, forbidden)
+
+    x = data.draw(s)
+    assert 1 <= x <= 20
+    assert x not in forbidden_values
+
+
+@pytest.mark.parametrize("base", one_to_twenty_strategies)
+def test_chained_filters_repr(base):
+    def foo(x):
+        return x != 0
+
+    def bar(x):
+        return x != 2
+
+    filtered = base.filter(foo)
+    chained = filtered.filter(bar)
+    assert repr(chained) == "%r.filter(foo).filter(bar)" % (base,)
+    assert repr(filtered) == "%r.filter(foo)" % (base,)

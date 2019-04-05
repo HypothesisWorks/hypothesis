@@ -43,3 +43,21 @@ def test_filter_large_lists(n):
     run()
 
     assert cond.calls < filter_limit
+
+
+def rare_value_strategy(n, target):
+    def forbid(s, forbidden):
+        """Helper function to avoid Python variable scoping issues."""
+        return s.filter(lambda x: x != forbidden)
+
+    s = st.sampled_from(hrange(n))
+    for i in hrange(n):
+        if i != target:
+            s = forbid(s, i)
+
+    return s
+
+
+@given(rare_value_strategy(n=128, target=80))
+def test_chained_filters_find_rare_value(x):
+    assert x == 80

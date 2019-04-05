@@ -347,7 +347,7 @@ class SearchStrategy(Generic[Ex]):
 
         This method is part of the public API.
         """
-        return FilteredStrategy(condition=condition, strategy=self)
+        return FilteredStrategy(conditions=(condition,), strategy=self)
 
     def do_filtered_draw(self, data, filter_strategy):
         # Hook for strategies that want to override the behaviour of
@@ -595,10 +595,22 @@ filter_not_satisfied = UniqueIdentifier("filter not satisfied")
 
 
 class FilteredStrategy(SearchStrategy):
-    def __init__(self, strategy, condition):
+    def __init__(self, strategy, conditions):
         super(FilteredStrategy, self).__init__()
-        self.condition = condition
-        self.filtered_strategy = strategy
+        if isinstance(strategy, FilteredStrategy):
+            # Flatten chained filters into a single filter with multiple
+            # conditions.
+            self.flat_conditions = strategy.flat_conditions + conditions
+            self.filtered_strategy = strategy.filtered_strategy
+        else:
+            self.flat_conditions = conditions
+            self.filtered_strategy = strategy
+
+        assert self.flat_conditions
+        assert isinstance(self.flat_conditions, tuple)
+        assert not isinstance(self.filtered_strategy, FilteredStrategy)
+
+        self.__condition = None
 
     def calc_is_empty(self, recur):
         return recur(self.filtered_strategy)
@@ -608,14 +620,31 @@ class FilteredStrategy(SearchStrategy):
 
     def __repr__(self):
         if not hasattr(self, "_cached_repr"):
-            self._cached_repr = "%r.filter(%s)" % (
+            self._cached_repr = "%r%s" % (
                 self.filtered_strategy,
-                get_pretty_function_description(self.condition),
+                "".join(
+                    ".filter(%s)" % get_pretty_function_description(cond)
+                    for cond in self.flat_conditions
+                ),
             )
         return self._cached_repr
 
     def do_validate(self):
         self.filtered_strategy.validate()
+
+    @property
+    def condition(self):
+        if self.__condition is None:
+            assert self.flat_conditions
+            if len(self.flat_conditions) == 1:
+                # Avoid an extra indirection in the common case of only one
+                # condition.
+                self.__condition = self.flat_conditions[0]
+            else:
+                self.__condition = lambda x: all(
+                    cond(x) for cond in self.flat_conditions
+                )
+        return self.__condition
 
     def do_draw(self, data):
         # type: (ConjectureData) -> Ex
@@ -652,7 +681,7 @@ class FilteredStrategy(SearchStrategy):
     def branches(self):
         # type: () -> List[SearchStrategy[Ex]]
         return [
-            FilteredStrategy(strategy=strategy, condition=self.condition)
+            FilteredStrategy(strategy=strategy, conditions=self.flat_conditions)
             for strategy in self.filtered_strategy.branches
         ]
 
