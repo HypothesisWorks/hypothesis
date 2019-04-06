@@ -23,6 +23,7 @@ from __future__ import absolute_import, division, print_function
 import ast
 import base64
 import contextlib
+import datetime
 import inspect
 import os
 import random as rnd_module
@@ -529,7 +530,7 @@ class StateForActualGivenExecution(object):
                 result = self.test(*args, **kwargs)
                 finish = benchmark_time()
                 internal_draw_time = sum(data.draw_times[initial_draws:])
-                runtime = (finish - start - internal_draw_time) * 1000
+                runtime = datetime.timedelta(microseconds=((finish - start - internal_draw_time) * 1000000))
                 self.__test_runtime = runtime
                 current_deadline = self.settings.deadline
                 if not is_final:
