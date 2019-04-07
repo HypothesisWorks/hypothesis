@@ -21,7 +21,7 @@ import collections
 import enum
 
 from hypothesis import given
-from hypothesis.errors import FailedHealthCheck, InvalidArgument
+from hypothesis.errors import FailedHealthCheck, InvalidArgument, Unsatisfiable
 from hypothesis.internal.compat import hrange
 from hypothesis.strategies import sampled_from
 from tests.common.utils import checks_deprecated_behaviour, fails_with
@@ -57,6 +57,14 @@ def test_sampling_empty_is_deprecated():
 @fails_with(FailedHealthCheck)
 @given(sampled_from(hrange(10)).filter(lambda x: x < 0))
 def test_unsat_filtered_sampling(x):
+    assert False
+
+
+@fails_with(Unsatisfiable)
+@given(sampled_from(hrange(2)).filter(lambda x: x < 0))
+def test_unsat_filtered_sampling_in_rejection_stage(x):
+    # Rejecting all possible indices before we calculate the allowed indices
+    # takes an early exit path, so we need this test to cover that branch.
     assert False
 
 
