@@ -21,8 +21,9 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given
+from hypothesis.errors import FailedHealthCheck
 from hypothesis.internal.compat import hrange
-from tests.common.utils import counts_calls
+from tests.common.utils import counts_calls, fails_with
 
 
 @pytest.mark.parametrize("n", [100, 10 ** 5, 10 ** 6, 2 ** 25])
@@ -61,3 +62,14 @@ def rare_value_strategy(n, target):
 @given(rare_value_strategy(n=128, target=80))
 def test_chained_filters_find_rare_value(x):
     assert x == 80
+
+
+@fails_with(FailedHealthCheck)
+@given(st.sets(st.sampled_from(range(10)), min_size=11))
+def test_unsat_sets_of_samples(x):
+    assert False
+
+
+@given(st.sets(st.sampled_from(range(50)), min_size=50))
+def test_efficient_sets_of_samples(x):
+    assert x == set(range(50))

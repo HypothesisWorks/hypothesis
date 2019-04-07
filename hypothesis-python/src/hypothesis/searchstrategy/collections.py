@@ -21,7 +21,11 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import OrderedDict
 from hypothesis.internal.conjecture.utils import combine_labels
-from hypothesis.searchstrategy.strategies import MappedSearchStrategy, SearchStrategy
+from hypothesis.searchstrategy.strategies import (
+    MappedSearchStrategy,
+    SearchStrategy,
+    filter_not_satisfied,
+)
 
 
 class TupleStrategy(SearchStrategy):
@@ -143,13 +147,18 @@ class UniqueListStrategy(ListStrategy):
         seen = set()
         result = []
 
+        # We construct a filtered strategy here rather than using a check-and-reject
+        # approach because some strategies have special logic for generation under a
+        # filter, and FilteredStrategy can consolidate multiple filters.
+        filtered = self.element_strategy.filter(lambda val: self.key(val) not in seen)
         while elements.more():
-            value = data.draw(self.element_strategy)
-            k = self.key(value)
-            if k in seen:
+            value = filtered.filtered_strategy.do_filtered_draw(
+                data=data, filter_strategy=filtered
+            )
+            if value is filter_not_satisfied:
                 elements.reject()
             else:
-                seen.add(k)
+                seen.add(self.key(value))
                 result.append(value)
         assert self.max_size >= len(result) >= self.min_size
         return result
