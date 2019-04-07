@@ -30,7 +30,6 @@ It requires ``dpcontracts >= 0.4``.
 from __future__ import absolute_import, division, print_function
 
 from dpcontracts import PreconditionError
-
 from hypothesis import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.reflection import proxies

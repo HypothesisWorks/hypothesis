@@ -18,8 +18,8 @@
 from __future__ import absolute_import, division, print_function
 
 import pytest
-from dpcontracts import require
 
+from dpcontracts import require
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.dpcontracts import fulfill

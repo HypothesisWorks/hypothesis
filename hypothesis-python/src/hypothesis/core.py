@@ -530,7 +530,9 @@ class StateForActualGivenExecution(object):
                 result = self.test(*args, **kwargs)
                 finish = benchmark_time()
                 internal_draw_time = sum(data.draw_times[initial_draws:])
-                runtime = datetime.timedelta(microseconds=((finish - start - internal_draw_time) * 1000000))
+                runtime = datetime.timedelta(
+                    seconds=finish - start - internal_draw_time
+                )
                 self.__test_runtime = runtime
                 current_deadline = self.settings.deadline
                 if not is_final:

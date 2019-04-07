@@ -680,23 +680,23 @@ def _validate_deadline(x):
             "  Boolean deadlines are treated as ints, and deprecated." % (x,),
             since="2019-03-06",
         )
-    if x is None or isinstance(x, integer_types + (float,)):
-        if x is not None and x <= 0:
+    if x is None:
+        return x
+    if isinstance(x, integer_types + (float,)):
+        if x <= 0:
             raise InvalidArgument(
                 "deadline=%r is invalid, because it is impossible to meet a "
                 "deadline <= 0.  Use deadline=None to disable deadlines." % (x,)
             )
-        # check if x is larger than timedelta's max value (1000000000 days - 1 microsecond)
-        if x >= 86400000000000000:
+        if x > datetime.timedelta.max.total_seconds() * 1000:
             raise InvalidArgument(
                 "deadline=%r is invalid, because it is impossible to meet a "
-                "deadline > datetime.timedelta.max. Use deadline=None to disable deadlines." % (x,)
+                "deadline > datetime.timedelta.max. Use deadline=None to disable deadlines."
+                % (x,)
             )
-        if x is None:
-            return x
         return datetime.timedelta(microseconds=x * 1000)
     if isinstance(x, datetime.timedelta):
-        if x.days < 0 or x == datetime.timedelta():
+        if x <= datetime.timedelta(0):
             raise InvalidArgument(
                 "deadline=%r is invalid, because it is impossible to meet a "
                 "deadline <= 0. Use deadline=None to disable deadlines." % (x,)

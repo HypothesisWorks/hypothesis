@@ -17,10 +17,10 @@
 
 from __future__ import absolute_import, division, print_function
 
-import yaml
 from pyup.config import Config
 
 import hypothesistooling as tools
+import yaml
 
 
 def test_pyup_yml_is_valid():
