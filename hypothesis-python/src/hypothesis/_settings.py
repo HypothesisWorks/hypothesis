@@ -687,15 +687,16 @@ def _validate_deadline(x):
                 "deadline <= 0.  Use deadline=None to disable deadlines." % (x,)
             )
         # check if x is larger than timedelta's max value (1000000000 days - 1 microsecond)
-        if x > 86400000000000000 - 1:
+        if x >= 86400000000000000:
             raise InvalidArgument(
                 "deadline=%r is invalid, because it is impossible to meet a "
                 "deadline > datetime.timedelta.max. Use deadline=None to disable deadlines." % (x,)
             )
-            return datetime.timedelta(microseconds=x * 1000)
-        return x
+        if x is None:
+            return x
+        return datetime.timedelta(microseconds=x * 1000)
     if isinstance(x, datetime.timedelta):
-        if x.days < 0:
+        if x.days < 0 or x == datetime.timedelta():
             raise InvalidArgument(
                 "deadline=%r is invalid, because it is impossible to meet a "
                 "deadline <= 0. Use deadline=None to disable deadlines." % (x,)

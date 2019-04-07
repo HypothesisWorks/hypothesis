@@ -20,7 +20,7 @@ from __future__ import absolute_import, division, print_function
 import re
 import subprocess
 import sys
-
+import datetime
 import pytest
 
 import hypothesis.strategies as st
@@ -322,6 +322,54 @@ def test_setattr_on_settings_singleton_is_error():
     # Should be setting attributes on settings.default, not settings!
     with pytest.raises(AttributeError):
         settings.max_examples = 10
+
+
+def test_deadline_given_valid_int():
+    x = settings(deadline=1000).deadline
+    assert isinstance(x, datetime.timedelta)
+    assert x.days == 0 and x.seconds == 1 and x.microseconds == 0
+
+
+def test_deadline_given_zero():
+    with pytest.raises(InvalidArgument):
+        settings(deadline=0)
+
+
+def test_deadline_given_valid_float():
+    x = settings(deadline=2050.25).deadline
+    assert isinstance(x, datetime.timedelta)
+    assert x.days == 0 and x.seconds == 2 and x.microseconds == 25250
+
+
+def test_deadline_given_negative_float():
+    with pytest.raises(InvalidArgument):
+        settings(deadline=-0.7)
+
+
+def test_deadline_given_float_greater_than_timedelta_max():
+    with pytest.raises(InvalidArgument):
+        settings(deadline=86400000000000000.2)
+
+
+def test_deadline_given_none():
+    x = settings(deadline=None).deadline
+    assert x is None
+
+
+def test_deadline_given_valid_timedelta():
+    x = settings(deadline=datetime.timedelta(days=1, microseconds=15030000)).deadline
+    assert isinstance(x, datetime.timedelta)
+    assert x.days == 1 and x.seconds == 15 and x.microseconds == 30000
+
+
+def test_deadline_given_zero_timedelta():
+    with pytest.raises(InvalidArgument):
+        settings(deadline=datetime.timedelta())
+
+
+def test_deadline_given_negative_timedelta():
+    with pytest.raises(InvalidArgument):
+        settings(deadline=datetime.timedelta(microseconds=-1))
 
 
 @pytest.mark.parametrize(
