@@ -112,6 +112,11 @@ class SampledFromStrategy(SearchStrategy):
             if check_index(i):
                 return self.elements[i]
 
+        # If we've tried all the possible elements, give up now.
+        max_good_indices = len(self.elements) - len(known_bad_indices)
+        if not max_good_indices:
+            return filter_not_satisfied
+
         # Figure out the bit-length of the index that we will write back after
         # choosing an allowed element.
         write_length = bit_length(len(self.elements))
@@ -119,11 +124,11 @@ class SampledFromStrategy(SearchStrategy):
         # Impose an arbitrary cutoff to prevent us from wasting too much time
         # on very large element lists.
         cutoff = 10000
+        max_good_indices = min(max_good_indices, cutoff)
 
         # Before building the list of allowed indices, speculatively choose
         # one of them. We don't yet know how many allowed indices there will be,
         # so this choice might be out-of-bounds, but that's OK.
-        max_good_indices = min(len(self.elements) - len(known_bad_indices), cutoff)
         speculative_index = d.integer_range(data, 0, max_good_indices - 1)
 
         # Calculate the indices of allowed values, so that we can choose one
