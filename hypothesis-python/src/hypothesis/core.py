@@ -584,7 +584,11 @@ class StateForActualGivenExecution(object):
                         "variability in your test timings, consider turning "
                         "deadlines off for this test by setting deadline=None."
                     )
-                    % (exception.runtime, self.settings.deadline, self.__test_runtime)
+                    % (
+                        exception.runtime.total_seconds() * 1000,
+                        self.settings.deadline.total_seconds() * 1000,
+                        self.__test_runtime.total_seconds() * 1000,
+                    )
                 )
             else:
                 report("Failed to reproduce exception. Expected: \n" + traceback)
