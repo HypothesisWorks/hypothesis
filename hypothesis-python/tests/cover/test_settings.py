@@ -339,7 +339,7 @@ def test_deadline_given_valid_int():
 def test_deadline_given_valid_float():
     x = settings(deadline=2050.25).deadline
     assert isinstance(x, datetime.timedelta)
-    assert x.days == 0 and x.seconds == 2 and x.microseconds == 25250
+    assert x.days == 0 and x.seconds == 2 and x.microseconds == 50250
 
 
 def test_deadline_given_valid_timedelta():
