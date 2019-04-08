@@ -536,7 +536,7 @@ class StateForActualGivenExecution(object):
                 self.__test_runtime = runtime
                 current_deadline = self.settings.deadline
                 if not is_final:
-                    current_deadline *= 1.25
+                    current_deadline = (current_deadline // 4) * 5
                 if runtime >= current_deadline:
                     raise DeadlineExceeded(runtime, self.settings.deadline)
                 return result
