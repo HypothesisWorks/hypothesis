@@ -37,7 +37,7 @@ from hypothesis.errors import (
     InvalidArgument,
     InvalidState,
 )
-from hypothesis.internal.compat import integer_types, string_types
+from hypothesis.internal.compat import integer_types, quiet_raise, string_types
 from hypothesis.internal.reflection import get_pretty_function_description, proxies
 from hypothesis.internal.validation import check_type, try_convert
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
@@ -673,6 +673,13 @@ settings._define_setting(
 )
 
 
+class duration(datetime.timedelta):
+    """A timedelta specifically measured in milliseconds."""
+
+    def __repr__(self):
+        return "timedelta(milliseconds=%r)" % (self.total_seconds() * 1000,)
+
+
 def _validate_deadline(x):
     if isinstance(x, bool):
         note_deprecation(
@@ -680,26 +687,38 @@ def _validate_deadline(x):
             "  Boolean deadlines are treated as ints, and deprecated." % (x,),
             since="2019-03-06",
         )
-    if x is None or isinstance(x, integer_types + (float,)):
-        if x is not None and x <= 0:
+    if x is None:
+        return x
+    if isinstance(x, integer_types + (float,)):
+        try:
+            x = duration(milliseconds=x)
+        except OverflowError:
+            quiet_raise(
+                InvalidArgument(
+                    "deadline=%r is invalid, because it is too large to represent "
+                    "as a timedelta. Use deadline=None to disable deadlines." % (x,)
+                )
+            )
+    if isinstance(x, datetime.timedelta):
+        if x <= datetime.timedelta(0):
             raise InvalidArgument(
                 "deadline=%r is invalid, because it is impossible to meet a "
-                "deadline <= 0.  Use deadline=None to disable deadlines." % (x,)
+                "deadline <= 0. Use deadline=None to disable deadlines." % (x,)
             )
-        return x
+        return duration(seconds=x.total_seconds())
     raise InvalidArgument(
-        "deadline=%r (type %s) must be an integer or float number of milliseconds, "
+        "deadline=%r (type %s) must be a timedelta object, an integer or float number of milliseconds, "
         "or None to disable the per-test-case deadline." % (x, type(x).__name__)
     )
 
 
 settings._define_setting(
     "deadline",
-    default=200,
+    default=duration(milliseconds=200),
     validator=_validate_deadline,
     description=u"""
-If set, a time in milliseconds (which may be a float to express
-smaller units of time) that each individual example (i.e. each time your test
+If set, a duration (as timedelta, or integer or float number of milliseconds)
+that each individual example (i.e. each time your test
 function is called, not the whole decorated test) within a test is not
 allowed to exceed. Tests which take longer than that may be converted into
 errors (but will not necessarily be if close to the deadline, to allow some

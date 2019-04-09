@@ -146,7 +146,7 @@ class DeadlineExceeded(HypothesisException):
     def __init__(self, runtime, deadline):
         super(DeadlineExceeded, self).__init__(
             "Test took %.2fms, which exceeds the deadline of %.2fms"
-            % (runtime, deadline)
+            % (runtime.total_seconds() * 1000, deadline.total_seconds() * 1000)
         )
         self.runtime = runtime
         self.deadline = deadline

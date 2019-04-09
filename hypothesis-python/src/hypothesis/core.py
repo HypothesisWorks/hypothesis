@@ -23,6 +23,7 @@ from __future__ import absolute_import, division, print_function
 import ast
 import base64
 import contextlib
+import datetime
 import inspect
 import os
 import random as rnd_module
@@ -529,11 +530,13 @@ class StateForActualGivenExecution(object):
                 result = self.test(*args, **kwargs)
                 finish = benchmark_time()
                 internal_draw_time = sum(data.draw_times[initial_draws:])
-                runtime = (finish - start - internal_draw_time) * 1000
+                runtime = datetime.timedelta(
+                    seconds=finish - start - internal_draw_time
+                )
                 self.__test_runtime = runtime
                 current_deadline = self.settings.deadline
                 if not is_final:
-                    current_deadline *= 1.25
+                    current_deadline = (current_deadline // 4) * 5
                 if runtime >= current_deadline:
                     raise DeadlineExceeded(runtime, self.settings.deadline)
                 return result
@@ -581,7 +584,11 @@ class StateForActualGivenExecution(object):
                         "variability in your test timings, consider turning "
                         "deadlines off for this test by setting deadline=None."
                     )
-                    % (exception.runtime, self.settings.deadline, self.__test_runtime)
+                    % (
+                        exception.runtime.total_seconds() * 1000,
+                        self.settings.deadline.total_seconds() * 1000,
+                        self.__test_runtime.total_seconds() * 1000,
+                    )
                 )
             else:
                 report("Failed to reproduce exception. Expected: \n" + traceback)
