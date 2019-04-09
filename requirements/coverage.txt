@@ -5,7 +5,7 @@
 #    pip-compile requirements/coverage.in --output-file requirements/coverage.txt
 #
 coverage==4.5.3
-lark-parser==0.6.7
+lark-parser==0.7.0
 numpy==1.16.2
 pandas==0.24.2
 python-dateutil==2.8.0    # via pandas
