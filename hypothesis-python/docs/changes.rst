@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.14.7:
+
+-------------------
+4.14.7 - 2019-04-09
+-------------------
+
+This patch makes the type annotations on ``hypothesis.extra.dateutil``
+compatible with :pypi:`mypy` 0.700.
+
 .. _v4.14.6:
 
 -------------------
