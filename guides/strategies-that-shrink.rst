@@ -189,9 +189,14 @@ name and document, so we can recognise them discuss them and invent more...
 Make your own luck
 ~~~~~~~~~~~~~~~~~~
 This is the simplest trick that uses our ability to write choices to the
-buffer.  We use it in stateful testing, where there may be many rules but only
-a few of them allowed by their preconditions, and "lucky generation" would
-work but be very inefficient.
+buffer.  We use it for ``sampled_from(...).filter(...)``, after trying an
+initial draw with the usual rejection sampling technique, and added the
+``SearchStrategy.do_filtered_draw`` method so other strategies can opt-in
+as we design similar tricks for their structure.
+
+It was originally designed for stateful testing, where "lucky generation"
+might be inefficient if there are many rules but only a few allowed by their
+preconditions.  Here's how it works for stateful testing:
 
 1. Draw an index into the unfiltered list of rules.  Return the corresponding
    rule if it's allowed - we got lucky!  (or someone set us up...)
