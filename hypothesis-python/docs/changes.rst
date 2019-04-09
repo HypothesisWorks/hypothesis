@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.15.0:
+
+-------------------
+4.15.0 - 2019-04-09
+-------------------
+
+This release supports passing a :class:`~python:datetime.timedelta` as the
+:obj:`~hypothesis.settings.deadline` setting, so you no longer have to remember
+that the number is in milliseconds (:issue:`1900`).
+
+Thanks to Damon Francisco for this change!
+
 .. _v4.14.7:
 
 -------------------
