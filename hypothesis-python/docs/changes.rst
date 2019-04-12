@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.16.0:
+
+-------------------
+4.16.0 - 2019-04-12
+-------------------
+
+This release allows :func:`~hypothesis.strategies.register_type_strategy` to be used
+with :obj:`python:typing.NewType` instances.  This may be useful to e.g. provide
+only positive integers for :func:`from_type(UserId) <hypothesis.strategies.from_type>`
+with a ``UserId = NewType('UserId', int)`` type.
+
+Thanks to PJCampi for suggesting and writing the patch!
+
 .. _v4.15.0:
 
 -------------------
