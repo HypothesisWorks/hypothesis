@@ -116,10 +116,13 @@ class UnknownType(ParentUnknownType):
         pass
 
 
-def test_custom_type_resolution():
+def test_custom_type_resolution_fails_without_registering():
     fails = st.from_type(UnknownType)
     with pytest.raises(ResolutionFailed):
         fails.example()
+
+
+def test_custom_type_resolution():
     sentinel = object()
     try:
         st.register_type_strategy(UnknownType, st.just(sentinel))
@@ -129,9 +132,29 @@ def test_custom_type_resolution():
     finally:
         types._global_type_lookup.pop(UnknownType)
         st.from_type.__clear_cache()
-    fails = st.from_type(UnknownType)
-    with pytest.raises(ResolutionFailed):
-        fails.example()
+        assert UnknownType not in types._global_type_lookup
+
+
+def test_custom_type_resolution_with_function():
+    sentinel = object()
+    try:
+        st.register_type_strategy(UnknownType, lambda _: st.just(sentinel))
+        assert st.from_type(UnknownType).example() is sentinel
+        assert st.from_type(ParentUnknownType).example() is sentinel
+    finally:
+        types._global_type_lookup.pop(UnknownType)
+        st.from_type.__clear_cache()
+
+
+def test_custom_type_resolution_with_function_non_strategy():
+    try:
+        st.register_type_strategy(UnknownType, lambda _: None)
+        with pytest.raises(ResolutionFailed):
+            st.from_type(UnknownType).example()
+        with pytest.raises(ResolutionFailed):
+            st.from_type(ParentUnknownType).example()
+    finally:
+        types._global_type_lookup.pop(UnknownType)
 
 
 def test_errors_if_generic_resolves_empty():
