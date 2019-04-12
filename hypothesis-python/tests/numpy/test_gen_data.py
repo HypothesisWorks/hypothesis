@@ -25,7 +25,7 @@ import six
 
 import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
-from hypothesis import assume, given, settings
+from hypothesis import assume, given, settings, note
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.searchstrategy import SearchStrategy
@@ -540,8 +540,8 @@ def _draw_valid_bounds(data, shape, max_dim):
 
     smallest_side = min(shape[::-1][:max_dim])
     largest_side = max(shape[::-1][:max_dim])
-    min_side = data.draw(st.integers(0, smallest_side), label="min_dim")
-    max_side = data.draw(st.integers(largest_side, largest_side + 2), label="max_dim")
+    min_side = data.draw(st.integers(0, smallest_side), label="min_side")
+    max_side = data.draw(st.integers(largest_side, largest_side + 2), label="max_side")
     return min_side, max_side
 
 
@@ -570,13 +570,13 @@ def test_broadcastable_shape_can_broadcast(shape, data):
 
 @settings(deadline=None)
 @given(
-    shape=nps.array_shapes(min_dims=0, max_dims=2, min_side=0, max_side=5),
+    shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=5),
     data=st.data(),
 )
 def test_minimize_broadcastable_shape(shape, data):
-    # Ensure aligned dimensions of broadcastable shape minimizes to `shape[:-min_dims]`
-    min_dim = data.draw(st.integers(0, 3), label="min_dim")
-    max_dim = data.draw(st.integers(min_dim, 3), label="max_dim")
+    # Ensure aligned dimensions of broadcastable shape minimizes to `(1,) * min_dim`
+    min_dim = data.draw(st.integers(0, 5), label="min_dim")
+    max_dim = data.draw(st.integers(min_dim, 5), label="max_dim")
     min_side, max_side = _draw_valid_bounds(data, shape, max_dim)
     smallest = minimal(
         nps.broadcastable_shapes(
@@ -587,8 +587,13 @@ def test_minimize_broadcastable_shape(shape, data):
             max_dims=max_dim,
         )
     )
-    assert len(smallest) == min_dim
-    assert all(s == bs for s, bs in zip(reversed(shape), reversed(smallest)))
+    note("(smallest): {}".format(smallest))
+    n_leading = max(len(smallest) - len(shape), 0)
+    n_aligned = max(len(smallest) - n_leading, 0)
+    expected = [min_side] * n_leading + [
+        1 if min_side <= 1 <= max_side else i for i in shape[len(shape) - n_aligned :]
+    ]
+    assert tuple(expected) == smallest
 
 
 @settings(deadline=None)

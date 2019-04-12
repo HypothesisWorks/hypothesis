@@ -727,8 +727,7 @@ class BroadcastShapeStrategy(SearchStrategy):
                     else:
                         side = data.draw(self.side_strat)
                 elif self.max_side >= reversed_shape[len(result)] and (
-                    not self.min_side <= 1 <= self.max_side
-                    or not data.draw(st.booleans())
+                    not self.min_side <= 1 <= self.max_side or data.draw(st.booleans())
                 ):
                     side = reversed_shape[len(result)]
                 else:
