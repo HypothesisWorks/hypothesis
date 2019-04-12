@@ -100,8 +100,8 @@ class ConjectureRunner(object):
 
         self.interesting_examples = {}
         # We use call_count because there may be few possible valid_examples.
-        self.first_bug_calls = 0
-        self.last_bug_calls = 0
+        self.first_bug_found_at = None
+        self.last_bug_found_at = None
 
         self.shrunk_examples = set()
 
@@ -186,9 +186,9 @@ class ConjectureRunner(object):
                 existing = self.interesting_examples[key]
             except KeyError:
                 changed = True
-                self.last_bug_calls = self.call_count
-                if not self.first_bug_calls:
-                    self.first_bug_calls = self.call_count
+                self.last_bug_found_at = self.call_count
+                if self.first_bug_found_at is None:
+                    self.first_bug_found_at = self.call_count
             else:
                 if sort_key(data.buffer) < sort_key(existing.buffer):
                     self.shrinks += 1
@@ -206,8 +206,10 @@ class ConjectureRunner(object):
                 self.exit_with(ExitReason.max_shrinks)
 
         if not self.interesting_examples:
-            # Note that this logic is reproduced to end the generation phase when we
-            # have interesting examples.  Update that too if you change this!
+            # Note that this logic is reproduced to end the generation phase when
+            # we have interesting examples.  Update that too if you change this!
+            # (The doubled implementation is because here we exit the engine entirely,
+            #  while in the other case below we just want to move on to shrinking.)
             if self.valid_examples >= self.settings.max_examples:
                 self.exit_with(ExitReason.max_examples)
             if self.call_count >= max(
@@ -654,23 +656,26 @@ class ConjectureRunner(object):
             # doing anything else as it's by far the most common case.
             if not self.interesting_examples:
                 return True
-            assert self.first_bug_calls <= self.last_bug_calls <= self.call_count
-            # End the generation phase where we would have ended it if no bugs
-            # had been found.  Reproduces the exit logic in `self.test_case`.
+            # If we've found a bug and won't report more than one, stop looking.
+            elif not self.settings.report_multiple_bugs:
+                return False
+            assert self.first_bug_found_at <= self.last_bug_found_at <= self.call_count
+            # End the generation phase where we would have ended it if no bugs had
+            # been found.  This reproduces the exit logic in `self.test_function`,
+            # but with the important distinction that this clause will move on to
+            # the shrinking phase having found one or more bugs, while the other
+            # will exit having found zero bugs.
             if (
                 self.valid_examples >= self.settings.max_examples
                 or self.call_count >= max(self.settings.max_examples * 10, 1000)
             ):  # pragma: no cover
-                return False
-            # If we've found a bug and won't report more than one, stop looking.
-            if self.interesting_examples and not self.settings.report_multiple_bugs:
                 return False
             # Otherwise, keep searching for between ten and 'a heuristic' calls.
             # We cap 'calls after first bug' so errors are reported reasonably
             # soon even for tests that are allowed to run for a very long time,
             # or sooner if the latest half of our test effort has been fruitless.
             return self.call_count < MIN_TEST_CALLS or self.call_count < min(
-                self.first_bug_calls + 1000, self.last_bug_calls * 2
+                self.first_bug_found_at + 1000, self.last_bug_found_at * 2
             )
 
         count = 0
