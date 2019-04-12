@@ -121,15 +121,14 @@ jobs:
       inputs:
         versionSpec: '$(python.version)'
         architecture: '$(python.architecture)'
-    # TODO: installing `hypothesis-python/[all]` leads to some Numpy-related
-    # errors at pytest collection time, but I'm not sure why.  Once we fix
-    # that, we can test the extras on Windows, and thus drop Appveyor.
     - script: |
-        python -m pip install --upgrade setuptools pip wheel twine
-        python -m pip install setuptools -r requirements/test.txt
-        python -m pip install hypothesis-python/
+        pip install --upgrade setuptools pip wheel
+        pip install setuptools -r requirements/test.txt
+        pip install hypothesis-python/[all]
       displayName: Install dependencies
-    - script: python -m pytest hypothesis-python/tests/cover
+    - script: |
+        cd hypothesis-python
+        pytest tests/cover/ tests/datetime/ tests/dpcontracts/ tests/lark/ tests/numpy/ tests/pandas/ tests/pytest/
       displayName: Run tests
 
   - job: osx
