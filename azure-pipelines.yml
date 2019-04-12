@@ -42,7 +42,59 @@ jobs:
     - script: ./build.sh
       displayName: Run build tasks
 
-  - job: main
+  - job: windows
+    dependsOn: precheck
+    pool:
+      vmImage: 'windows-2019'
+    strategy:
+      matrix:
+        check-py27-x64:
+          python.version: '2.7'
+          python.architecture: 'x64'
+        check-py27-x86:
+          python.version: '2.7'
+          python.architecture: 'x86'
+        check-py36-x64:
+          python.version: '3.6'
+          python.architecture: 'x64'
+        check-py36-x86:
+          python.version: '3.6'
+          python.architecture: 'x86'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+        architecture: '$(python.architecture)'
+    - script: |
+        pip install --upgrade setuptools pip wheel
+        pip install setuptools -r requirements/test.txt
+        pip install hypothesis-python/[all]
+      displayName: Install dependencies
+    - script: |
+        cd hypothesis-python
+        pytest tests/cover/ tests/datetime/ tests/dpcontracts/ tests/lark/ tests/numpy/ tests/pandas/ tests/pytest/
+      displayName: Run tests
+
+  - job: osx
+    dependsOn: precheck
+    pool:
+      vmImage: 'macOS-10.13'
+    strategy:
+      matrix:
+        check-py27:
+          TASK: check-py27
+        check-py36:
+          TASK: check-py36
+    steps:
+    - script: |
+        brew update
+        brew install readline xz ncurses
+        ./build.sh install-core
+      displayName: Install dependencies
+    - script: ./build.sh
+      displayName: Run tests
+
+  - job: linux
     dependsOn: precheck
     pool:
       vmImage: 'Ubuntu 16.04'
@@ -95,58 +147,6 @@ jobs:
       displayName: Install apt dependencies
     - script: ./build.sh check-installed
       displayName: Install Python
-    - script: ./build.sh
-      displayName: Run tests
-
-  - job: windows
-    dependsOn: precheck
-    pool:
-      vmImage: 'windows-2019'
-    strategy:
-      matrix:
-        check-py27-x64:
-          python.version: '2.7'
-          python.architecture: 'x64'
-        check-py27-x86:
-          python.version: '2.7'
-          python.architecture: 'x86'
-        check-py36-x64:
-          python.version: '3.6'
-          python.architecture: 'x64'
-        check-py36-x86:
-          python.version: '3.6'
-          python.architecture: 'x86'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '$(python.version)'
-        architecture: '$(python.architecture)'
-    - script: |
-        pip install --upgrade setuptools pip wheel
-        pip install setuptools -r requirements/test.txt
-        pip install hypothesis-python/[all]
-      displayName: Install dependencies
-    - script: |
-        cd hypothesis-python
-        pytest tests/cover/ tests/datetime/ tests/dpcontracts/ tests/lark/ tests/numpy/ tests/pandas/ tests/pytest/
-      displayName: Run tests
-
-  - job: osx
-    dependsOn: precheck
-    pool:
-      vmImage: 'macOS-10.13'
-    strategy:
-      matrix:
-        check-py27:
-          TASK: check-py27
-        check-py36:
-          TASK: check-py36
-    steps:
-    - script: |
-        brew update
-        brew install readline xz ncurses
-        ./build.sh install-core
-      displayName: Install dependencies
     - script: ./build.sh
       displayName: Run tests
 
