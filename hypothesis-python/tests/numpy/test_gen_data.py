@@ -511,7 +511,7 @@ def test_minimize_negative_tuple_axes(ndim, data):
     shape=nps.array_shapes(min_side=0, max_side=4, min_dims=0, max_dims=3),
     data=st.data(),
 )
-def test_broadcastable_bounds_are_satisfied(shape, data):
+def test_broadcastable_shape_bounds_are_satisfied(shape, data):
     min_dim = data.draw(st.integers(0, 4), label="min_dim")
     max_dim = data.draw(st.integers(min_dim, 4), label="max_dim")
     min_side = data.draw(st.integers(0, 3), label="min_side")
@@ -598,7 +598,7 @@ def test_minimize_broadcastable_shape(shape, data):
 
 @settings(deadline=None)
 @given(data=st.data())
-def test_reduce_max_dim(data):
+def test_broadcastable_shape_adjusts_max_dim(data):
     # Ensures that `broadcastable_shapes` limits itself to satisfiable dimensions
     max_dim = data.draw(st.integers(4, 6), label="max_dim")
     # broadcastable values can only be drawn for dims 0-3 for these shapes
@@ -617,7 +617,7 @@ def test_reduce_max_dim(data):
 
 @settings(deadline=None)
 @given(data=st.data())
-def test_singleton_out_of_bounds(data):
+def test_broadcastable_shape_shrinking_with_singleton_out_of_bounds(data):
     min_dim = data.draw(st.integers(0, 4), label="min_dim")
     max_dim = data.draw(st.integers(min_dim, 4), label="max_dim")
     min_side = data.draw(st.integers(2, 3), label="min_side")

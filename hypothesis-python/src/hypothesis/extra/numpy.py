@@ -747,7 +747,7 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
     with the provided shape.
 
     Examples from this strategy shrink towards a shape with length ``min_dims``.
-    The size of an aligned dimension shrinks away from being a singleton. The
+    The size of an aligned dimension shrinks towards being a singleton. The
     size of an unaligned dimension shrink towards ``min_side``.
 
     * ``shape`` a tuple of integers
