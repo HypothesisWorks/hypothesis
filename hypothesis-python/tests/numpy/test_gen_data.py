@@ -25,7 +25,7 @@ import six
 
 import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
-from hypothesis import assume, given, settings, note
+from hypothesis import assume, given, note, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.searchstrategy import SearchStrategy
