@@ -773,14 +773,15 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
     if max_dims is None:
         max_dims = max(len(shape), min_dims)
 
+    check_type(integer_types, max_dims, "max_dims")
+    order_check("dims", 0, min_dims, max_dims)
+
     if max_side is None:
         max_side = max(tuple(shape[:max_dims]) + (min_side,)) + 2
 
     check_type(integer_types, max_side, "max_side")
     order_check("side", 0, min_side, max_side)
 
-    check_type(integer_types, max_dims, "max_dims")
-    order_check("dims", 0, min_dims, max_dims)
     if 32 < max_dims:
         raise InvalidArgument("max_dims cannot exceed 32")
 

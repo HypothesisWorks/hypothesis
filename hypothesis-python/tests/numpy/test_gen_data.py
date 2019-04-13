@@ -607,7 +607,7 @@ def test_minimize_broadcastable_shape(shape, data):
 
 @settings(deadline=None)
 @given(data=st.data())
-def test_broadcastable_shape_adjusts_max_dim(data):
+def test_broadcastable_shape_adjusts_max_dim_with_explicit_bounds(data):
     # Ensures that `broadcastable_shapes` limits itself to satisfiable dimensions
     max_dim = data.draw(st.integers(4, 6), label="max_dim")
     # broadcastable values can only be drawn for dims 0-3 for these shapes
