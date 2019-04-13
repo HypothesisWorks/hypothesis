@@ -34,7 +34,7 @@ from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
 
 if False:
-    from typing import Any, Union, Sequence, Tuple, List  # noqa
+    from typing import Any, Union, Sequence, Tuple, Optional  # noqa
     from hypothesis.searchstrategy.strategies import T  # noqa
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
@@ -741,8 +741,8 @@ class BroadcastShapeStrategy(SearchStrategy):
 
 
 @st.defines_strategy
-def broadcastable_shapes(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
-    # type: (Sequence[int], int, int, int, int) -> st.SearchStrategy[Tuple[int, ...]]
+def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=None):
+    # type: (Sequence[int], int, Optional[int], int, Optional[int]) -> st.SearchStrategy[Tuple[int, ...]]
     """Return a strategy for generating shapes that are broadcast-compatible
     with the provided shape.
 
@@ -766,42 +766,61 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=3, min_side=1, max_side=5):
 
     """
     check_type((tuple, list), shape, "shape")
-
+    strict_check = max_side is None or max_dims is None
     check_type(integer_types, min_side, "min_side")
+
+    check_type(integer_types, min_dims, "min_dims")
+    if max_dims is None:
+        max_dims = max(len(shape), min_dims)
+
+    if max_side is None:
+        max_side = max(tuple(shape[:max_dims]) + (min_side,)) + 2
+
     check_type(integer_types, max_side, "max_side")
     order_check("side", 0, min_side, max_side)
 
-    check_type(integer_types, min_dims, "min_dims")
     check_type(integer_types, max_dims, "max_dims")
     order_check("dims", 0, min_dims, max_dims)
     if 32 < max_dims:
         raise InvalidArgument("max_dims cannot exceed 32")
 
-    min_aligned_shape = shape[::-1][:min_dims]
-    viable_lower_bound = all(min_side <= s for s in min_aligned_shape if s != 1)
-    viable_upper_bound = min_side <= 1 <= max_side or all(
-        s <= max_side for s in min_aligned_shape
-    )
-    if not viable_lower_bound:
+    if not all(min_side <= s for s in shape[::-1][:min_dims] if s != 1):
         raise InvalidArgument(
             "Given shape=%r, there are no broadcast-compatible "
             "shapes that satisfy: min_dims=%s and min_side=%s"
             % (shape, min_dims, min_side)
         )
-    if not viable_upper_bound:
+
+    dims, bnd_name = (max_dims, "max_dims") if strict_check else (min_dims, "min_dims")
+
+    # check for unsatisfiable min_side
+    if not all(min_side <= s for s in shape[::-1][:dims] if s != 1):
+        raise InvalidArgument(
+            "Given shape=%r, there are no broadcast-compatible "
+            "shapes that satisfy: %s=%s and min_side=%s"
+            % (shape, bnd_name, dims, min_side)
+        )
+
+    # check for unsatisfiable [min_side, max_side]
+    if not (
+        min_side <= 1 <= max_side or all(s <= max_side for s in shape[::-1][:dims])
+    ):
         raise InvalidArgument(
             "Given shape=%r, there are no broadcast-compatible shapes "
-            "that satisfy: min_dims=%s and [min_side=%s, max_side=%s]"
-            % (shape, min_dims, min_side, max_side)
+            "that satisfy: %s=%s and [min_side=%s, max_side=%s]"
+            % (shape, bnd_name, dims, min_side, max_side)
         )
-    # reduce max_dims to exclude unsatisfiable dimensions
-    for n, s in zip(range(max_dims), reversed(shape)):
-        if s < min_side and s != 1:
-            max_dims = n
-            break
-        elif not (min_side <= 1 <= max_side or s <= max_side):
-            max_dims = n
-            break
+
+    if not strict_check:
+        # reduce max_dims to exclude unsatisfiable dimensions
+        for n, s in zip(range(max_dims), reversed(shape)):
+            if s < min_side and s != 1:
+                max_dims = n
+                break
+            elif not (min_side <= 1 <= max_side or s <= max_side):
+                max_dims = n
+                break
+
     return BroadcastShapeStrategy(
         shape,
         min_dims=min_dims,

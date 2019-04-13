@@ -513,9 +513,11 @@ def test_minimize_negative_tuple_axes(ndim, data):
 )
 def test_broadcastable_shape_bounds_are_satisfied(shape, data):
     min_dim = data.draw(st.integers(0, 4), label="min_dim")
-    max_dim = data.draw(st.integers(min_dim, 4), label="max_dim")
+    max_dim = data.draw(st.one_of(st.none(), st.integers(min_dim, 4)), label="max_dim")
     min_side = data.draw(st.integers(0, 3), label="min_side")
-    max_side = data.draw(st.integers(min_side, 6), label="max_side")
+    max_side = data.draw(
+        st.one_of(st.none(), st.integers(min_side, 6)), label="max_side"
+    )
     try:
         bshape = data.draw(
             nps.broadcastable_shapes(
@@ -529,6 +531,13 @@ def test_broadcastable_shape_bounds_are_satisfied(shape, data):
         )
     except InvalidArgument:
         return
+
+    if max_dim is None:
+        max_dim = max(len(shape), min_dim)
+
+    if max_side is None:
+        max_side = max(tuple(shape[:max_dim]) + (min_side,)) + 2
+
     assert isinstance(bshape, tuple) and all(isinstance(s, int) for s in bshape)
     assert min_dim <= len(bshape) <= max_dim
     assert all(min_side <= s <= max_side for s in bshape)
