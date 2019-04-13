@@ -74,11 +74,12 @@ def e(a, **kwargs):
         e(nps.broadcastable_shapes, shape=(2, 2), max_dims="a"),
         e(nps.broadcastable_shapes, shape=(2, 2), min_side=-1),
         e(nps.broadcastable_shapes, shape=(2, 2), min_dims=-1),
+        e(nps.broadcastable_shapes, shape=(2, 2), min_dims=33, max_dims=None),
         e(nps.broadcastable_shapes, shape=(2, 2), min_dims=1, max_dims=33),
         e(nps.broadcastable_shapes, shape=(2, 2), min_side=1, max_side=0),
         e(nps.broadcastable_shapes, shape=(2, 2), min_dims=1, max_dims=0),
         e(
-            nps.broadcastable_shapes,
+            nps.broadcastable_shapes,  # max_side too small
             shape=(5, 1),
             min_dims=2,
             max_dims=4,
@@ -86,7 +87,7 @@ def e(a, **kwargs):
             max_side=3,
         ),
         e(
-            nps.broadcastable_shapes,
+            nps.broadcastable_shapes,  # min_side too large
             shape=(0, 1),
             min_dims=2,
             max_dims=4,
@@ -94,7 +95,7 @@ def e(a, **kwargs):
             max_side=3,
         ),
         e(
-            nps.broadcastable_shapes,
+            nps.broadcastable_shapes,  # default max_dims unsatisfiable
             shape=(5, 3, 2, 1),
             min_dims=3,
             max_dims=None,
@@ -102,7 +103,7 @@ def e(a, **kwargs):
             max_side=3,
         ),
         e(
-            nps.broadcastable_shapes,
+            nps.broadcastable_shapes,  # default max_dims unsatisfiable
             shape=(0, 3, 2, 1),
             min_dims=3,
             max_dims=None,
