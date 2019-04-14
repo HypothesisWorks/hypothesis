@@ -20,7 +20,7 @@ from __future__ import absolute_import, division, print_function
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import Phase, given, settings
+from hypothesis import Phase, assume, given, settings
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import Flaky, MultipleFailures
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
@@ -36,6 +36,9 @@ def test_raises_multiple_failures_with_varying_type():
         if abs(i) < 1000:
             return
         if target[0] is None:
+            # Ensure that we have some space to shrink into, so we can't
+            # trigger an minimal example and mask the other exception type.
+            assume(1003 < abs(i))
             target[0] = i
         exc_class = TypeError if target[0] == i else ValueError
         raise exc_class()
