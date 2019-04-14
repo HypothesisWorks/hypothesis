@@ -27,7 +27,7 @@ class BoolStrategy(SearchStrategy):
     distribution."""
 
     def __repr__(self):
-        return u"BoolStrategy()"
+        return "BoolStrategy()"
 
     def calc_has_reusable_values(self, recur):
         return True
