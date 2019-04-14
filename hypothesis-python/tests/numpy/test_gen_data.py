@@ -602,7 +602,7 @@ def test_broadcastable_shape_can_broadcast(min_dim, shape, data):
     np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
 
 
-@settings(deadline=None, max_examples=1000)
+@settings(deadline=None)
 @given(
     min_dim=st.integers(0, 5),
     shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=5),
@@ -695,8 +695,21 @@ def test_broadcastable_shape_shrinking_with_singleton_out_of_bounds(
 
 
 @settings(deadline=None)
-@given(shape=st.just((1, 2)))
-def test_broadcastable_shape_can_generate_max_dim_shape(shape):
+@given(
+    shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=5),
+    max_dims=st.integers(0, 6),
+    data=st.data(),
+)
+def test_broadcastable_shape_can_generate_arbitrary_ndims(shape, max_dims, data):
+    # ensures that generates shapes can possess any length in [min_dims, max_dims]
+    desired_ndim = data.draw(st.integers(0, max_dims), label="desired_ndim")
+    min_dims = data.draw(
+        st.one_of(st.none(), st.integers(0, desired_ndim)), label="min_dims"
+    )
+    args = (
+        dict(min_dims=min_dims) if min_dims is not None else {}
+    )  # check default arg behavior too
     minimal(
-        nps.broadcastable_shapes(shape, min_dims=0, max_dims=4), lambda x: len(x) == 2
+        nps.broadcastable_shapes(shape, min_side=0, max_dims=max_dims, **args),
+        lambda x: len(x) == desired_ndim,
     )

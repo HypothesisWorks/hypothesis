@@ -714,7 +714,10 @@ class BroadcastShapeStrategy(SearchStrategy):
             data,
             min_size=self.min_dims,
             max_size=self.max_dims,
-            average_size=self.min_dims,
+            average_size=min(
+                max(self.min_dims * 2, self.min_dims + 5),
+                0.5 * (self.min_dims + self.max_dims),
+            ),
         )
         result = []
         reversed_shape = tuple(self.shape[::-1])
@@ -757,7 +760,7 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
       is ``2 + max(len(shape), min_dims)``.
     * ``min_side`` The smallest size that an unaligned dimension can possess.
     * ``max_side`` The largest size that an unaligned dimension can possess.
-      The default value is 2 + 'max-aligned-dimension'.
+      The default value is 2 + 'size-of-largest-aligned-dimension'.
 
     The following are some examples drawn from this strategy.
 
