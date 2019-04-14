@@ -753,9 +753,11 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
     * ``shape`` a tuple of integers
     * ``min_dims`` The smallest length that the generated shape can possess.
     * ``max_dims`` The largest length that the generated shape can possess.
-      shape can possess. Cannot exceed 32.
+      shape can possess. Cannot exceed 32. The default-value for ``max_dims``
+      is ``2 + max(len(shape), min_dims)``.
     * ``min_side`` The smallest size that an unaligned dimension can possess.
     * ``max_side`` The largest size that an unaligned dimension can possess.
+      The default value is 2 + 'max-aligned-dimension'.
 
     The following are some examples drawn from this strategy.
 
@@ -771,13 +773,13 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
 
     check_type(integer_types, min_dims, "min_dims")
     if max_dims is None:
-        max_dims = max(len(shape), min_dims)
+        max_dims = max(len(shape), min_dims) + 2
 
     check_type(integer_types, max_dims, "max_dims")
     order_check("dims", 0, min_dims, max_dims)
 
     if max_side is None:
-        max_side = max(tuple(shape[:max_dims]) + (min_side,)) + 2
+        max_side = max(tuple(shape[::-1][:max_dims]) + (min_side,)) + 2
 
     check_type(integer_types, max_side, "max_side")
     order_check("side", 0, min_side, max_side)
