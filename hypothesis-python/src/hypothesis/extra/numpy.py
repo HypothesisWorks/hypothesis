@@ -781,7 +781,7 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
         check_type(integer_types, max_dims, "max_dims")
 
     if max_side is None:
-        max_side = max(tuple(shape[::-1][:max_dims]) + (min_side,)) + 2
+        max_side = max(tuple(shape[-max_dims:]) + (min_side,)) + 2
     else:
         check_type(integer_types, max_side, "max_side")
 
