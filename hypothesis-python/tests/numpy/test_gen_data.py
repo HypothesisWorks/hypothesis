@@ -709,7 +709,7 @@ def test_broadcastable_shape_can_generate_arbitrary_ndims(shape, max_dims, data)
     args = (
         dict(min_dims=min_dims) if min_dims is not None else {}
     )  # check default arg behavior too
-    minimal(
+    find_any(
         nps.broadcastable_shapes(shape, min_side=0, max_dims=max_dims, **args),
         lambda x: len(x) == desired_ndim,
     )
