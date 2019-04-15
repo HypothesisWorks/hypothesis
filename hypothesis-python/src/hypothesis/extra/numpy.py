@@ -770,7 +770,7 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
         [(1, 3), (), (2, 3), (2, 1), (4, 1, 3), (3, )]
 
     """
-    check_type((tuple, list), shape, "shape")
+    check_type(tuple, shape, "shape")
     strict_check = max_side is None or max_dims is None
     check_type(integer_types, min_side, "min_side")
 
