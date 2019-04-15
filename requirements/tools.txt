@@ -42,7 +42,7 @@ lark-parser==0.7.0
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8
 mock==2.0.0
-more-itertools==5.0.0
+more-itertools==7.0.0
 mypy-extensions==0.4.1    # via mypy
 mypy==0.700
 numpy==1.16.2
