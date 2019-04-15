@@ -700,7 +700,8 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
 
 class BroadcastShapeStrategy(SearchStrategy):
     def __init__(self, shape, min_dims, max_dims, min_side, max_side):
-        assert 0 <= min_side <= max_side and 0 <= min_dims <= max_dims <= 32
+        assert 0 <= min_side <= max_side
+        assert 0 <= min_dims <= max_dims <= 32
         SearchStrategy.__init__(self)
         self.shape = shape
         self.side_strat = st.integers(min_side, max_side)
