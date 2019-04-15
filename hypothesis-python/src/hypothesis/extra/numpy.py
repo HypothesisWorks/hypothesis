@@ -791,13 +791,6 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
     if 32 < max_dims:
         raise InvalidArgument("max_dims cannot exceed 32")
 
-    if not all(min_side <= s for s in shape[::-1][:min_dims] if s != 1):
-        raise InvalidArgument(
-            "Given shape=%r, there are no broadcast-compatible "
-            "shapes that satisfy: min_dims=%s and min_side=%s"
-            % (shape, min_dims, min_side)
-        )
-
     dims, bnd_name = (max_dims, "max_dims") if strict_check else (min_dims, "min_dims")
 
     # check for unsatisfiable min_side
