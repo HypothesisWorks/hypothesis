@@ -249,6 +249,7 @@ their individual contributions.
 * `Peadar Coyle <https://github.com/springcoil>`_ (peadarcoyle@gmail.com)
 * `Pierre-Jean Campigotto <https://github.com/PJCampi>`_
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
+* `Ryan Soklaski <https://www.github.com/rsokl>`_ (rsoklaski@gmail.com)
 * `Ryan Turner <https://github.com/rdturnermtl>`_ (ryan.turner@uber.com)
 * `Sam Hames <https://www.github.com/SamHames>`_
 * `Sanyam Khurana <https://github.com/CuriousLearner>`_
