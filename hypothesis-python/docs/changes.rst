@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.17.1:
+
+-------------------
+4.17.1 - 2019-04-16
+-------------------
+
+This patch allows Hypothesis to try a few more examples after finding the
+first bug, in hopes of reporting multiple distinct bugs.  The heuristics
+described in :issue:`847` ensure that we avoid wasting time on fruitless
+searches, while still surfacing each bug as soon as possible.
+
 .. _v4.17.0:
 
 -------------------
