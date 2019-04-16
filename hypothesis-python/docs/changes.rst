@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.17.0:
+
+-------------------
+4.17.0 - 2019-04-16
+-------------------
+
+This release adds the strategy :func:`~hypothesis.extra.numpy.broadcastable_shapes`,
+which generates array shapes that are `broadcast-compatible <https://www.pythonlikeyoumeanit.com/Module3_IntroducingNumpy/Broadcasting.html#Rules-of-Broadcasting>`_
+with a provided shape.
+
 .. _v4.16.0:
 
 -------------------
