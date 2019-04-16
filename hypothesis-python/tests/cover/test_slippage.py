@@ -20,9 +20,10 @@ from __future__ import absolute_import, division, print_function
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import Phase, given, settings
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import Flaky, MultipleFailures
+from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from tests.common.utils import capture_out, non_covering_examples
 
 
@@ -239,3 +240,51 @@ def test_can_disable_multiple_error_reporting(allow_multi):
     with pytest.raises(MultipleFailures if allow_multi else TypeError):
         test()
     assert seen == {TypeError, ValueError}
+
+
+def test_finds_multiple_failures_in_generation():
+    @settings(phases=[Phase.generate])
+    @given(st.lists(st.floats()))
+    def test(x):
+        mean = sum(x) / len(x)  # ZeroDivisionError
+        if len(x) == 1:
+            assert mean == x[0]  # x[0] is nan
+        assert min(x) <= mean <= max(x)  # x contains nan or +&- inf
+
+    with pytest.raises(MultipleFailures):
+        test()
+
+
+def test_stops_immediately_if_not_report_multiple_bugs():
+    seen = set()
+
+    @settings(phases=[Phase.generate], report_multiple_bugs=False)
+    @given(st.integers())
+    def test(x):
+        seen.add(x)
+        assert False
+
+    with pytest.raises(AssertionError):
+        test()
+    assert len(seen) == 1
+
+
+def test_stops_immediately_on_replay():
+    seen = set()
+
+    @settings(database=InMemoryExampleDatabase())
+    @given(st.integers())
+    def test(x):
+        seen.add(x)
+        assert x
+
+    # On the first run, we look for up to ten examples:
+    with pytest.raises(AssertionError):
+        test()
+    assert 1 < len(seen) <= MIN_TEST_CALLS
+
+    # With failing examples in the database, we stop at one.
+    seen.clear()
+    with pytest.raises(AssertionError):
+        test()
+    assert len(seen) == 1
