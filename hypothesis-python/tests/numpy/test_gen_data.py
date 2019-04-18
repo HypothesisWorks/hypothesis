@@ -30,7 +30,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.searchstrategy import SearchStrategy
 from tests.common.debug import find_any, minimal
-from tests.common.utils import checks_deprecated_behaviour, flaky
+from tests.common.utils import checks_deprecated_behaviour, fails_with, flaky
 
 STANDARD_TYPES = list(
     map(
@@ -319,46 +319,37 @@ def test_may_fill_with_nan_when_unique_is_set():
     )
 
 
-def test_is_still_unique_with_nan_fill():
-    @given(
-        nps.arrays(
-            dtype=float,
-            elements=st.floats(allow_nan=False),
-            shape=10,
-            unique=True,
-            fill=st.just(float("nan")),
-        )
+@given(
+    nps.arrays(
+        dtype=float,
+        elements=st.floats(allow_nan=False),
+        shape=10,
+        unique=True,
+        fill=st.just(float("nan")),
     )
-    def test(xs):
-        assert len(set(xs)) == len(xs)
+)
+def test_is_still_unique_with_nan_fill(xs):
+    assert len(set(xs)) == len(xs)
 
-    test()
 
-
-def test_may_not_fill_with_non_nan_when_unique_is_set():
-    @given(
-        nps.arrays(
-            dtype=float,
-            elements=st.floats(allow_nan=False),
-            shape=10,
-            unique=True,
-            fill=st.just(0.0),
-        )
+@fails_with(InvalidArgument)
+@given(
+    nps.arrays(
+        dtype=float,
+        elements=st.floats(allow_nan=False),
+        shape=10,
+        unique=True,
+        fill=st.just(0.0),
     )
-    def test(arr):
-        pass
-
-    with pytest.raises(InvalidArgument):
-        test()
+)
+def test_may_not_fill_with_non_nan_when_unique_is_set(arr):
+    pass
 
 
-def test_may_not_fill_with_non_nan_when_unique_is_set_and_type_is_not_number():
-    @given(nps.arrays(dtype="U", shape=10, unique=True, fill=st.just(u"")))
-    def test(arr):
-        pass
-
-    with pytest.raises(InvalidArgument):
-        test()
+@fails_with(InvalidArgument)
+@given(nps.arrays(dtype="U", shape=10, unique=True, fill=st.just(u"")))
+def test_may_not_fill_with_non_nan_when_unique_is_set_and_type_is_not_number(arr):
+    pass
 
 
 @given(
