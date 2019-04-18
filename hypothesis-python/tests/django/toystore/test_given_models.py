@@ -154,8 +154,8 @@ class TestGetsBasicModels(TestCase):
         assert x.company.name == x.name + u"_company"
 
     @given(from_model(CustomishDefault, customish=infer))
-    def test_customish_default_generated(self, x):
-        assert x.customish == u"b"
+    def test_customish_default_overridden_by_infer(self, x):
+        assert x.customish == u"a"
 
     @given(from_model(CustomishDefault, customish=infer))
     def test_customish_infer_uses_registered_instead_of_default(self, x):

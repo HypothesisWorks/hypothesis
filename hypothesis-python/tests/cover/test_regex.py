@@ -104,12 +104,14 @@ def test_matching(category, predicate, invert, is_unicode):
     if predicate is None:
         # Special behaviour due to \x1c, INFORMATION SEPARATOR FOUR
         predicate = is_unicode_space if is_unicode else is_space
-    pred = predicate
     if invert:
         category = category.swapcase()
 
         def pred(s):
             return not predicate(s)
+
+    else:
+        pred = predicate
 
     _test_matching_pattern(category, pred, is_unicode)
 
@@ -224,7 +226,7 @@ def test_groups(pattern, is_unicode, invert):
         pattern = pattern.swapcase()
         _p = group_pred
 
-        def group_pred(s):
+        def group_pred(s):  # pylint:disable=function-redefined
             return not _p(s)
 
     pattern = u"^%s\\Z" % (pattern,)
