@@ -171,7 +171,7 @@ def test_can_generate_array_shapes(shape):
     assert all(isinstance(i, int) for i in shape)
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 @given(st.integers(0, 10), st.integers(0, 9), st.integers(0), st.integers(0))
 def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
     smallest = minimal(
@@ -477,7 +477,7 @@ def test_axes_are_valid_inputs_to_sum(shape, data):
     np.sum(x, axes)
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 @given(ndim=st.integers(0, 3), data=st.data())
 def test_minimize_tuple_axes(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
@@ -486,7 +486,7 @@ def test_minimize_tuple_axes(ndim, data):
     assert len(smallest) == min_size and all(k > -1 for k in smallest)
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 @given(ndim=st.integers(0, 3), data=st.data())
 def test_minimize_negative_tuple_axes(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
@@ -497,7 +497,7 @@ def test_minimize_negative_tuple_axes(ndim, data):
     assert len(smallest) == min_size
 
 
-@settings(deadline=None, max_examples=1000)
+@settings(deadline=None)
 @given(
     shape=nps.array_shapes(min_side=0, max_side=4, min_dims=0, max_dims=3),
     data=st.data(),
@@ -521,7 +521,7 @@ def test_broadcastable_shape_bounds_are_satisfied(shape, data):
             label="bshape",
         )
     except InvalidArgument:
-        return
+        assume(False)
 
     if max_dim is None:
         max_dim = max(len(shape), min_dim) + 2
@@ -569,7 +569,7 @@ def test_broadcastable_shape_has_good_default_values(shape, data):
     np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
 
 
-@settings(deadline=None, max_examples=1000)
+@settings(deadline=None)
 @given(
     min_dim=st.integers(0, 5),
     shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=10),
@@ -593,7 +593,7 @@ def test_broadcastable_shape_can_broadcast(min_dim, shape, data):
     np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 @given(
     min_dim=st.integers(0, 5),
     shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=5),
@@ -639,7 +639,7 @@ def test_broadcastable_shape_adjusts_max_dim_with_explicit_bounds(max_dim, data)
     np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 @given(min_dim=st.integers(0, 4), min_side=st.integers(2, 3), data=st.data())
 def test_broadcastable_shape_shrinking_with_singleton_out_of_bounds(
     min_dim, min_side, data
