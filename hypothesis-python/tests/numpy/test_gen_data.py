@@ -472,7 +472,7 @@ def test_length_bounds_are_satisfied(ndim, data):
 
 @given(shape=nps.array_shapes(), data=st.data())
 def test_axes_are_valid_inputs_to_sum(shape, data):
-    x = np.zeros(shape)
+    x = np.zeros(shape, dtype="uint8")
     axes = data.draw(nps.valid_tuple_axes(ndim=len(shape)), label="axes")
     np.sum(x, axes)
 
@@ -556,7 +556,7 @@ def _draw_valid_bounds(data, shape, max_dim, permit_none=True):
 
 @settings(deadline=None, max_examples=1000)
 @given(
-    shape=nps.array_shapes(min_dims=0, max_dims=6, min_side=1, max_side=20),
+    shape=nps.array_shapes(min_dims=0, max_dims=6, min_side=1, max_side=5),
     data=st.data(),
 )
 def test_broadcastable_shape_has_good_default_values(shape, data):
@@ -564,8 +564,8 @@ def test_broadcastable_shape_has_good_default_values(shape, data):
     broadcastable_shape = data.draw(
         nps.broadcastable_shapes(shape), label="broadcastable_shapes"
     )
-    a = np.zeros(shape)
-    b = np.zeros(broadcastable_shape)
+    a = np.zeros(shape, dtype="uint8")
+    b = np.zeros(broadcastable_shape, dtype="uint8")
     np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
 
 
@@ -588,8 +588,8 @@ def test_broadcastable_shape_can_broadcast(min_dim, shape, data):
         ),
         label="broadcastable_shapes",
     )
-    a = np.zeros(shape)
-    b = np.zeros(broadcastable_shape)
+    a = np.zeros(shape, dtype="uint8")
+    b = np.zeros(broadcastable_shape, dtype="uint8")
     np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
 
 
@@ -634,8 +634,8 @@ def test_broadcastable_shape_adjusts_max_dim_with_explicit_bounds(max_dim, data)
         label="broadcastable_shapes",
     )
     assert len(broadcastable_shape) == 3
-    a = np.zeros(shape)
-    b = np.zeros(broadcastable_shape)
+    a = np.zeros(shape, dtype="uint8")
+    b = np.zeros(broadcastable_shape, dtype="uint8")
     np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
 
 
