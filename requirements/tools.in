@@ -15,6 +15,7 @@ more-itertools<6  # Py3-only in 6.0+
 mypy
 numpy
 pip-tools
+pylint
 pytest
 python-dateutil
 pyupio
