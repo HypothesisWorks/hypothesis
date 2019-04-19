@@ -30,7 +30,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.searchstrategy import SearchStrategy
 from tests.common.debug import find_any, minimal
-from tests.common.utils import checks_deprecated_behaviour, flaky
+from tests.common.utils import checks_deprecated_behaviour, fails_with, flaky
 
 STANDARD_TYPES = list(
     map(
@@ -171,7 +171,7 @@ def test_can_generate_array_shapes(shape):
     assert all(isinstance(i, int) for i in shape)
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 @given(st.integers(0, 10), st.integers(0, 9), st.integers(0), st.integers(0))
 def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
     smallest = minimal(
@@ -319,46 +319,37 @@ def test_may_fill_with_nan_when_unique_is_set():
     )
 
 
-def test_is_still_unique_with_nan_fill():
-    @given(
-        nps.arrays(
-            dtype=float,
-            elements=st.floats(allow_nan=False),
-            shape=10,
-            unique=True,
-            fill=st.just(float("nan")),
-        )
+@given(
+    nps.arrays(
+        dtype=float,
+        elements=st.floats(allow_nan=False),
+        shape=10,
+        unique=True,
+        fill=st.just(float("nan")),
     )
-    def test(xs):
-        assert len(set(xs)) == len(xs)
+)
+def test_is_still_unique_with_nan_fill(xs):
+    assert len(set(xs)) == len(xs)
 
-    test()
 
-
-def test_may_not_fill_with_non_nan_when_unique_is_set():
-    @given(
-        nps.arrays(
-            dtype=float,
-            elements=st.floats(allow_nan=False),
-            shape=10,
-            unique=True,
-            fill=st.just(0.0),
-        )
+@fails_with(InvalidArgument)
+@given(
+    nps.arrays(
+        dtype=float,
+        elements=st.floats(allow_nan=False),
+        shape=10,
+        unique=True,
+        fill=st.just(0.0),
     )
-    def test(arr):
-        pass
-
-    with pytest.raises(InvalidArgument):
-        test()
+)
+def test_may_not_fill_with_non_nan_when_unique_is_set(arr):
+    pass
 
 
-def test_may_not_fill_with_non_nan_when_unique_is_set_and_type_is_not_number():
-    @given(nps.arrays(dtype="U", shape=10, unique=True, fill=st.just(u"")))
-    def test(arr):
-        pass
-
-    with pytest.raises(InvalidArgument):
-        test()
+@fails_with(InvalidArgument)
+@given(nps.arrays(dtype="U", shape=10, unique=True, fill=st.just(u"")))
+def test_may_not_fill_with_non_nan_when_unique_is_set_and_type_is_not_number(arr):
+    pass
 
 
 @given(
@@ -481,12 +472,12 @@ def test_length_bounds_are_satisfied(ndim, data):
 
 @given(shape=nps.array_shapes(), data=st.data())
 def test_axes_are_valid_inputs_to_sum(shape, data):
-    x = np.zeros(shape)
+    x = np.zeros(shape, dtype="uint8")
     axes = data.draw(nps.valid_tuple_axes(ndim=len(shape)), label="axes")
     np.sum(x, axes)
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 @given(ndim=st.integers(0, 3), data=st.data())
 def test_minimize_tuple_axes(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
@@ -495,7 +486,7 @@ def test_minimize_tuple_axes(ndim, data):
     assert len(smallest) == min_size and all(k > -1 for k in smallest)
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 @given(ndim=st.integers(0, 3), data=st.data())
 def test_minimize_negative_tuple_axes(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
@@ -506,7 +497,7 @@ def test_minimize_negative_tuple_axes(ndim, data):
     assert len(smallest) == min_size
 
 
-@settings(deadline=None, max_examples=1000)
+@settings(deadline=None)
 @given(
     shape=nps.array_shapes(min_side=0, max_side=4, min_dims=0, max_dims=3),
     data=st.data(),
@@ -530,7 +521,7 @@ def test_broadcastable_shape_bounds_are_satisfied(shape, data):
             label="bshape",
         )
     except InvalidArgument:
-        return
+        assume(False)
 
     if max_dim is None:
         max_dim = max(len(shape), min_dim) + 2
@@ -565,7 +556,7 @@ def _draw_valid_bounds(data, shape, max_dim, permit_none=True):
 
 @settings(deadline=None, max_examples=1000)
 @given(
-    shape=nps.array_shapes(min_dims=0, max_dims=6, min_side=1, max_side=20),
+    shape=nps.array_shapes(min_dims=0, max_dims=6, min_side=1, max_side=5),
     data=st.data(),
 )
 def test_broadcastable_shape_has_good_default_values(shape, data):
@@ -573,12 +564,12 @@ def test_broadcastable_shape_has_good_default_values(shape, data):
     broadcastable_shape = data.draw(
         nps.broadcastable_shapes(shape), label="broadcastable_shapes"
     )
-    a = np.zeros(shape)
-    b = np.zeros(broadcastable_shape)
+    a = np.zeros(shape, dtype="uint8")
+    b = np.zeros(broadcastable_shape, dtype="uint8")
     np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
 
 
-@settings(deadline=None, max_examples=1000)
+@settings(deadline=None)
 @given(
     min_dim=st.integers(0, 5),
     shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=10),
@@ -597,12 +588,12 @@ def test_broadcastable_shape_can_broadcast(min_dim, shape, data):
         ),
         label="broadcastable_shapes",
     )
-    a = np.zeros(shape)
-    b = np.zeros(broadcastable_shape)
+    a = np.zeros(shape, dtype="uint8")
+    b = np.zeros(broadcastable_shape, dtype="uint8")
     np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 @given(
     min_dim=st.integers(0, 5),
     shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=5),
@@ -643,12 +634,12 @@ def test_broadcastable_shape_adjusts_max_dim_with_explicit_bounds(max_dim, data)
         label="broadcastable_shapes",
     )
     assert len(broadcastable_shape) == 3
-    a = np.zeros(shape)
-    b = np.zeros(broadcastable_shape)
+    a = np.zeros(shape, dtype="uint8")
+    b = np.zeros(broadcastable_shape, dtype="uint8")
     np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=10)
 @given(min_dim=st.integers(0, 4), min_side=st.integers(2, 3), data=st.data())
 def test_broadcastable_shape_shrinking_with_singleton_out_of_bounds(
     min_dim, min_side, data

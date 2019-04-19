@@ -37,6 +37,7 @@ from hypothesis.strategies import (
     tuples,
 )
 from tests.common.debug import find_any, minimal
+from tests.common.utils import flaky
 
 
 @pytest.mark.parametrize(
@@ -128,6 +129,7 @@ def test_lists_of_lower_bounded_length(n):
     assert sum(x) == 2 * n
 
 
+@flaky(min_passes=1, max_runs=2)
 def test_can_find_unique_lists_of_non_set_order():
     # This test checks that our strategy for unique lists doesn't accidentally
     # depend on the iteration order of sets.
