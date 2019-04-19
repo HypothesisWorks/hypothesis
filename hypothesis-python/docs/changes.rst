@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.17.2:
+
+-------------------
+4.17.2 - 2019-04-19
+-------------------
+
+This release refactors stateful rule selection to share the new machinery
+with :func:`~hypothesis.strategies.sampled_from` instead of using the original
+independent implementation.
+
 .. _v4.17.1:
 
 -------------------
