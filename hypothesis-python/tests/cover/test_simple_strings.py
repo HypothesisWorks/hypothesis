@@ -19,12 +19,10 @@ from __future__ import absolute_import, division, print_function
 
 from random import Random
 
-import pytest
-
 from hypothesis import given
 from hypothesis.strategies import binary, characters, text, tuples
 from tests.common.debug import minimal
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import checks_deprecated_behaviour, fails_with
 
 
 def test_can_minimize_up_to_zero():
@@ -62,19 +60,15 @@ def test_finds_single_element_strings():
     assert minimal(text(), bool, random=Random(4)) == u"0"
 
 
-def test_binary_respects_changes_in_size():
-    @given(binary())
-    def test_foo(x):
-        assert len(x) <= 5
+@fails_with(AssertionError)
+@given(binary())
+def test_binary_generates_large_examples(x):
+    assert len(x) <= 20
 
-    with pytest.raises(AssertionError):
-        test_foo()
 
-    @given(binary(max_size=5))
-    def test_foo(x):
-        assert len(x) <= 5
-
-    test_foo()
+@given(binary(max_size=5))
+def test_binary_respects_max_size(x):
+    assert len(x) <= 5
 
 
 def test_does_not_simplify_into_surrogates():

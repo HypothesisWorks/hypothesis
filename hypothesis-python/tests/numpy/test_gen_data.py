@@ -672,29 +672,6 @@ def test_broadcastable_shape_shrinking_with_singleton_out_of_bounds(
 
 
 @settings(deadline=None)
-@given(min_dim=st.integers(0, 4), min_side=st.integers(2, 3), data=st.data())
-def test_broadcastable_shape_shrinking_with_singleton_out_of_bounds(
-    min_dim, min_side, data
-):
-    max_dim = data.draw(st.one_of(st.none(), st.integers(min_dim, 4)), label="max_dim")
-    max_side = data.draw(
-        st.one_of(st.none(), st.integers(min_side, 6)), label="max_side"
-    )
-    ndims = data.draw(st.integers(1, 4), label="ndim")
-    shape = (1,) * ndims
-    smallest = minimal(
-        nps.broadcastable_shapes(
-            shape,
-            min_side=min_side,
-            max_side=max_side,
-            min_dims=min_dim,
-            max_dims=max_dim,
-        )
-    )
-    assert smallest == (min_side,) * min_dim
-
-
-@settings(deadline=None)
 @given(
     shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=5),
     max_dims=st.integers(0, 6),

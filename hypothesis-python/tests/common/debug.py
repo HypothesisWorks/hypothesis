@@ -33,18 +33,16 @@ def minimal(definition, condition=None, settings=None, timeout_after=10, random=
 
     runtime = []
 
-    if condition is None:
-
-        def condition(x):
-            return True
-
     def wrapped_condition(x):
         if timeout_after is not None:
             if runtime:
                 runtime[0] += TIME_INCREMENT
                 if runtime[0] >= timeout_after:
                     raise Timeout()
-        result = condition(x)
+        if condition is None:
+            result = True
+        else:
+            result = condition(x)
         if result and not runtime:
             runtime.append(0.0)
         return result
@@ -52,14 +50,8 @@ def minimal(definition, condition=None, settings=None, timeout_after=10, random=
     return find(definition, wrapped_condition, settings=settings, random=random)
 
 
-def find_any(definition, condition=None, settings=None, random=None):
+def find_any(definition, condition=lambda _: True, settings=None, random=None):
     settings = Settings(settings, max_examples=10000, phases=no_shrink, database=None)
-
-    if condition is None:
-
-        def condition(x):
-            return True
-
     return find(definition, condition, settings=settings, random=random)
 
 

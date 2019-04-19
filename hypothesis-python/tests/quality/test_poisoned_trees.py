@@ -120,13 +120,15 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
         u = starts[i]
         marker = hbytes([1, 2, 3, 4])
 
-        def test_function(data):
+        def test_function_with_poison(data):
             v = data.draw(strat)
             m = data.draw_bytes(len(marker))
             if POISON in v and m == marker:
                 data.mark_interesting()
 
-        runner = ConjectureRunner(test_function, random=random, settings=TEST_SETTINGS)
+        runner = ConjectureRunner(
+            test_function_with_poison, random=random, settings=TEST_SETTINGS
+        )
 
         runner.cached_test_function(
             data.buffer[:u] + hbytes([255]) * 4 + data.buffer[u + 4 :] + marker
