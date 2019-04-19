@@ -98,7 +98,7 @@ def test_composite_of_lists():
     def f(draw):
         return draw(st.integers()) + draw(st.integers())
 
-    assert minimal(st.lists(f()), lambda x: len(x) >= 10) == [0] * 10
+    assert minimal(st.lists(f()), lambda x: len(x) >= 5) == [0] * 5
 
 
 @flaky(min_passes=3, max_runs=5)
