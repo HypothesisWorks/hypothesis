@@ -187,6 +187,7 @@ _global_type_lookup = {
     numbers.Number: st.complex_numbers(),
     numbers.Integral: st.integers(),
     numbers.Complex: st.complex_numbers(),
+    slice: st.builds(slice, st.none() | st.integers(), st.none() | st.integers(), st.none() | st.integers()),
     # Pull requests with more types welcome!
 }
 
