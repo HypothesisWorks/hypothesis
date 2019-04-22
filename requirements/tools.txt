@@ -46,7 +46,7 @@ mccabe==0.6.1             # via flake8, pylint
 mock==2.0.0
 more-itertools==7.0.0
 mypy-extensions==0.4.1    # via mypy
-mypy==0.700
+mypy==0.701
 numpy==1.16.3
 packaging==19.0           # via dparse, pyupio, safety, sphinx
 parso==0.4.0              # via jedi
