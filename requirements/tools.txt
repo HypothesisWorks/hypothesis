@@ -47,7 +47,7 @@ mock==2.0.0
 more-itertools==5.0.0
 mypy-extensions==0.4.1    # via mypy
 mypy==0.700
-numpy==1.16.2
+numpy==1.16.3
 packaging==19.0           # via dparse, pyupio, safety, sphinx
 parso==0.4.0              # via jedi
 pbr==5.1.3                # via mock, stevedore
