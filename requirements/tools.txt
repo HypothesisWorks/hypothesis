@@ -62,7 +62,7 @@ py==1.8.0                 # via pytest, tox
 pycodestyle==2.5.0        # via flake8
 pydocstyle==3.0.0         # via flake8-docstrings
 pyflakes==2.1.1           # via flake8
-pygithub==1.43.6          # via pyupio
+pygithub==1.43.7          # via pyupio
 pygments==2.3.1           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pylint==2.3.1
