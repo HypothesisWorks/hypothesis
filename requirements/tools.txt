@@ -46,8 +46,8 @@ mccabe==0.6.1             # via flake8, pylint
 mock==2.0.0
 more-itertools==5.0.0
 mypy-extensions==0.4.1    # via mypy
-mypy==0.700
-numpy==1.16.2
+mypy==0.701
+numpy==1.16.3
 packaging==19.0           # via dparse, pyupio, safety, sphinx
 parso==0.4.0              # via jedi
 pbr==5.1.3                # via mock, stevedore
@@ -62,12 +62,12 @@ py==1.8.0                 # via pytest, tox
 pycodestyle==2.5.0        # via flake8
 pydocstyle==3.0.0         # via flake8-docstrings
 pyflakes==2.1.1           # via flake8
-pygithub==1.43.6          # via pyupio
+pygithub==1.43.7          # via pyupio
 pygments==2.3.1           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pylint==2.3.1
 pyparsing==2.4.0          # via packaging
-pytest==4.4.0
+pytest==4.4.1
 python-dateutil==2.8.0
 python-gitlab==1.8.0      # via pyupio
 pytz==2019.1              # via babel, django
@@ -92,12 +92,12 @@ sphinxcontrib-serializinghtml==1.1.3  # via sphinx
 sqlparse==0.3.0           # via django
 stevedore==1.30.1         # via bandit
 toml==0.10.0
-tox==3.8.6
+tox==3.9.0
 tqdm==4.31.1              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.13.0
-typed-ast==1.3.1          # via astroid, mypy
-urllib3==1.24.1           # via requests
+typed-ast==1.3.4          # via astroid, mypy
+urllib3==1.24.2           # via requests
 virtualenv==16.4.3        # via tox
 wcwidth==0.1.7            # via prompt-toolkit
 webencodings==0.5.1       # via bleach
