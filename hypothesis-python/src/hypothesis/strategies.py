@@ -38,6 +38,7 @@ from hypothesis._strategies import (
     from_regex,
     from_type,
     frozensets,
+    functions,
     integers,
     iterables,
     just,
@@ -87,6 +88,7 @@ __all__ = [
     "from_regex",
     "from_type",
     "frozensets",
+    "functions",
     "integers",
     "iterables",
     "just",
@@ -115,3 +117,4 @@ assert _strategies.issubset(set(__all__)), _strategies - set(__all__)
 del _strategies, absolute_import, division, print_function
 _public = {n for n in dir() if n[0] not in "_@"}
 assert set(__all__) == _public, set(__all__) - _public
+del _public

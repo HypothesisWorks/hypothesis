@@ -101,7 +101,7 @@ def test_composite_of_lists():
     assert minimal(st.lists(f()), lambda x: len(x) >= 10) == [0] * 10
 
 
-@flaky(min_passes=3, max_runs=5)
+@flaky(min_passes=2, max_runs=5)
 def test_can_shrink_matrices_with_length_param():
     @st.composite
     def matrix(draw):

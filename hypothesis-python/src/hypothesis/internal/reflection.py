@@ -294,7 +294,10 @@ def extract_lambda_source(f):
         else:
             arg_strings.append(a)
 
-    if_confused = "lambda %s: <unknown>" % (", ".join(arg_strings),)
+    if arg_strings:
+        if_confused = "lambda %s: <unknown>" % (", ".join(arg_strings),)
+    else:
+        if_confused = "lambda: <unknown>"
     if bad_lambda:  # pragma: no cover
         return if_confused
     try:
@@ -494,17 +497,14 @@ def source_exec_as_module(source):
     return result
 
 
-COPY_ARGSPEC_SCRIPT = (
-    """
+COPY_ARGSPEC_SCRIPT = """
 from hypothesis.utils.conventions import not_set
 
 def accept(%(funcname)s):
     def %(name)s(%(argspec)s):
         return %(funcname)s(%(invocation)s)
     return %(name)s
-""".strip()
-    + "\n"
-)
+""".lstrip()
 
 
 def define_function_signature(name, docstring, argspec):
@@ -617,7 +617,9 @@ def proxies(target):
         return impersonate(target)(
             wraps(target)(
                 define_function_signature(
-                    target.__name__, target.__doc__, getfullargspec(target)
+                    target.__name__.replace("<lambda>", "_lambda_"),
+                    target.__doc__,
+                    getfullargspec(target),
                 )(proxy)
             )
         )

@@ -177,6 +177,7 @@ _global_type_lookup = {
     set: st.builds(set),
     frozenset: st.builds(frozenset),
     dict: st.builds(dict),
+    type(lambda: None): st.functions(),
     # Built-in types
     type(Ellipsis): st.just(Ellipsis),
     type(NotImplemented): st.just(NotImplemented),
@@ -336,3 +337,15 @@ else:
     @register(typing.Iterator, st.iterables(st.nothing()))
     def resolve_Iterator(thing):
         return st.iterables(st.from_type(thing.__args__[0]))
+
+    @register(typing.Callable, st.functions())
+    def resolve_Callable(thing):
+        # Generated functions either accept no arguments, or arbitrary arguments.
+        # This is looser than ideal, but anything tighter would generally break
+        # use of keyword arguments and we'd rather not force positional-only.
+        if not thing.__args__:  # pragma: no cover  # varies by minor version
+            return st.functions()
+        return st.functions(
+            like=(lambda: None) if len(thing.__args__) == 1 else (lambda *a, **k: None),
+            returns=st.from_type(thing.__args__[-1]),
+        )
