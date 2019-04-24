@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.18.0:
+
+-------------------
+4.18.0 - 2019-04-24
+-------------------
+
+This release adds the :func:`~hypothesis.strategies.functions` strategy,
+which can be used to imitate your 'real' function for callbacks.
+
 .. _v4.17.2:
 
 -------------------
