@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.18.1:
+
+-------------------
+4.18.1 - 2019-04-29
+-------------------
+
+This patch improves the performance of unique collections such as
+:func:`hypothesis.strategies.sets` when the elements are drawn from a
+:func:`hypothesis.strategies.sampled_from` strategy (:issue:`1115`).
+
 .. _v4.18.0:
 
 -------------------
