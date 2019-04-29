@@ -392,6 +392,10 @@ else:
         "co_cellvars",
     ]
 
+    if sys.version_info >= (3, 8, 0):
+        # PEP 570 added "positional only arguments"
+        CODE_FIELD_ORDER.insert(1, "co_posonlyargcount")
+
 
 def update_code_location(code, newfile, newlineno):
     """Take a code object and lie shamelessly about where it comes from.
