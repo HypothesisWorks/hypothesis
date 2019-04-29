@@ -427,8 +427,7 @@ def get_pretty_function_description(f):
         return repr(f)
     name = f.__name__
     if name == "<lambda>":
-        result = extract_lambda_source(f)
-        return result
+        return extract_lambda_source(f)
     elif isinstance(f, types.MethodType):
         self = f.__self__
         if not (self is None or inspect.isclass(self)):
