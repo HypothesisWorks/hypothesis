@@ -680,7 +680,9 @@ class ConjectureRunner(object):
 
         count = 0
         while should_generate_more() and (
-            count < 10 or self.health_check_state is not None
+            count < 10
+            or self.health_check_state is not None
+            or len(self.target_selector) == 0
         ):
             prefix = self.generate_novel_prefix()
 
