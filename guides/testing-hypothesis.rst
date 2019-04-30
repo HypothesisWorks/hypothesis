@@ -169,5 +169,5 @@ Some useful arguments to pytest include:
   of the test names. For example ``-kfoo`` will only run tests that have "foo" as
   a substring of their name. You can also use composite expressions here.
   e.g. ``-k'foo and not bar'`` will run anything containing foo that doesn't
-  also contain bar. [More information on how to select tests to run can be found
-  in the pytest documentation](https://docs.pytest.org/en/latest/usage.html#specifying-tests-selecting-tests).
+  also contain bar.  `More information on how to select tests to run can be found
+  in the pytest documentation <https://docs.pytest.org/en/latest/usage.html#specifying-tests-selecting-tests>`__.

@@ -20,7 +20,7 @@ shapes and generate all kinds of fixed-size or compound dtypes.
 
 .. automodule:: hypothesis.extra.numpy
    :members:
-   :exclude-members: ArrayStrategy
+   :exclude-members: ArrayStrategy, BroadcastShapeStrategy
 
 .. _hypothesis-pandas:
 
