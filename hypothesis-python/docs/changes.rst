@@ -42,8 +42,8 @@ Thanks to Paul Ganssle for identifying and fixing this bug.
 -------------------
 
 This patch improves the performance of unique collections such as
-:func:`hypothesis.strategies.sets` when the elements are drawn from a
-:func:`hypothesis.strategies.sampled_from` strategy (:issue:`1115`).
+:func:`~hypothesis.strategies.sets` when the elements are drawn from a
+:func:`~hypothesis.strategies.sampled_from` strategy (:issue:`1115`).
 
 .. _v4.18.0:
 
