@@ -21,6 +21,20 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.18.2:
+
+-------------------
+4.18.2 - 2019-04-30
+-------------------
+
+This patch makes Hypothesis compatible with the Python 3.8 alpha, which
+changed the representation of code objects to support positional-only
+arguments.  Note however that Hypothesis does not (yet) support such
+functions as e.g. arguments to :func:`~hypothesis.strategies.builds`
+or inputs to :func:`@given <hypothesis.given>`.
+
+Thanks to Paul Ganssle for identifying and fixing this bug.
+
 .. _v4.18.1:
 
 -------------------
