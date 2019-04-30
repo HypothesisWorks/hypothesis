@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.18.3:
+
+-------------------
+4.18.3 - 2019-04-30
+-------------------
+
+This release fixes a very rare edge case in the test-case mutator,
+which could cause an internal error with certain unusual tests.
+
 .. _v4.18.2:
 
 -------------------
