@@ -682,6 +682,10 @@ class ConjectureRunner(object):
         while should_generate_more() and (
             count < 10
             or self.health_check_state is not None
+            # If we have not found a valid prefix yet, the target selector will
+            # be empty and the mutation stage will fail with a very rare internal
+            # error.  We therefore continue this initial random generation step
+            # until we have found at least one prefix to mutate.
             or len(self.target_selector) == 0
         ):
             prefix = self.generate_novel_prefix()
