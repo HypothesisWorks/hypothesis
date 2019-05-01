@@ -207,34 +207,23 @@ The Shrinker
 ------------
 
 The shrinking part of Hypothesis is organised into a single class called ``Shrinker``
-that lives in ``engine.py``.
+that lives in ``hypothesis/internal/conjecture/shrinker.py``.
 
 Its job is to take an initial ``ConjectureData`` object and some predicate that
 it satisfies, and to try to produce a simpler ``ConjectureData`` object that
 also satisfies that predicate.
 
-~~~~~~~~~~~~~~
-Search Process
-~~~~~~~~~~~~~~
-
-The search process mostly happens in the ``shrink`` method. It is split into
-two parts: ``greedy_shrink`` and ``escape_local_minimum``. The former is a
-greedy algorithm, meaning that it will only ever call the predicate with values
-that are strictly smaller than our current best. This mostly works very well,
-but sometimes it gets stuck. So what we do is after we have run that we try
-restarting the process from something like our final state but a bit fuzzed and
-run the greedy shrink again. We keep doing this as long as it results in a
-smaller value than our previous best.
-
-The greedy shrinker is where almost all of the work happens. It is organised
-into a large number of search passes, and is designed to run until all of those
-passes fail to make any improvements.
+The search process mostly happens in the ``shrink`` method, which tries various
+shrink passes in the ``greedy_shrink`` method and then reports on the outcome.
+For details, you are strongly encouraged to read the source code.  It is very
+well commented, and as the subject of active research often has newer techniques
+than are documented here.
 
 ~~~~~~~~~~~~~
 Search Passes
 ~~~~~~~~~~~~~
 
-Search passes are methods on the ``Shrinker`` class in ``engine.py``. They are
+Search passes are methods on the ``Shrinker`` class. They are
 designed to take the current shrink target and try a number of things that might
 be sensible shrinks of it.
 
