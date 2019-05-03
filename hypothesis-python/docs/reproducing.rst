@@ -93,7 +93,7 @@ The seed will not be printed if you could simply use ``@example`` instead.
 .. _reproduce_failure:
 
 -------------------------------------------------------
-Reproducing an example with with ``@reproduce_failure``
+Reproducing an example with ``@reproduce_failure``
 -------------------------------------------------------
 
 Hypothesis has an opaque binary representation that it uses for all examples it
