@@ -229,6 +229,7 @@ their individual contributions.
 * `jwg4 <https://www.github.com/jwg4>`_
 * `Kai Chen <https://www.github.com/kx-chen>`_ (kaichen120@gmail.com)
 * `Karthikeyan Singaravelan <https://www.github.com/tirkarthi>`_ (tir.karthi@gmail.com)
+* `Katrina Durance <https://github.com/kdurance>`_
 * `kbara <https://www.github.com/kbara>`_
 * `Kyle Reeve <https://www.github.com/kreeve>`_ (krzw92@gmail.com)
 * `Lee Begg <https://www.github.com/llnz2>`_

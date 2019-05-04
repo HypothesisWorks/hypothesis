@@ -196,6 +196,17 @@ if PY2:
         {
             int: st.integers().filter(lambda x: isinstance(x, int)),
             long: st.integers().map(long),  # noqa
+            xrange: integers(min_value=0).map(xrange)
+            | builds(xrange, integers(), integers())
+            | builds(xrange, integers(), integers(), integers()),
+        }
+    )
+else:
+    _global_type_lookup.update(
+        {
+            range: integers(min_value=0).map(range)
+            | builds(range, integers(), integers())
+            | builds(range, integers(), integers(), integers())
         }
     )
 
