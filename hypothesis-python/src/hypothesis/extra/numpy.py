@@ -400,11 +400,30 @@ def arrays(
 
 
 @st.defines_strategy
-def array_shapes(min_dims=1, max_dims=3, min_side=1, max_side=10):
+def array_shapes(min_dims=1, max_dims=None, min_side=1, max_side=None):
     # type: (int, int, int, int) -> st.SearchStrategy[Tuple[int, ...]]
     """Return a strategy for array shapes (tuples of int >= 1)."""
+    check_type(integer_types, min_dims, "min_dims")
+    check_type(integer_types, min_side, "min_side")
+    if min_dims > 32:
+        raise InvalidArgument(
+            "Got min_dims=%r, but numpy does not support arrays greater than 32 dimensions"
+            % min_dims
+        )
+    if max_dims is None:
+        max_dims = min(min_dims + 2, 32)
+    check_type(integer_types, max_dims, "max_dims")
+    if max_dims > 32:
+        raise InvalidArgument(
+            "Got max_dims=%r, but numpy does not support arrays greater than 32 dimensions"
+            % max_dims
+        )
+    if max_side is None:
+        max_side = min_side + 5
+    check_type(integer_types, max_side, "max_side")
     order_check("dims", 0, min_dims, max_dims)
     order_check("side", 0, min_side, max_side)
+
     return st.lists(
         st.integers(min_side, max_side), min_size=min_dims, max_size=max_dims
     ).map(tuple)
