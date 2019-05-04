@@ -182,6 +182,13 @@ def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
     assert len(smallest) == min_dims and all(k == min_side for k in smallest)
 
 
+@pytest.mark.parametrize(
+    "kwargs", [dict(min_side=100), dict(min_dims=15), dict(min_dims=32)]
+)
+def test_interesting_array_shapes_argument(kwargs):
+    nps.array_shapes(**kwargs).example()
+
+
 @given(nps.scalar_dtypes())
 def test_can_generate_scalar_dtypes(dtype):
     assert isinstance(dtype, np.dtype)
