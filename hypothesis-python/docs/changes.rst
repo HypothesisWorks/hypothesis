@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.21.0:
+
+-------------------
+4.21.0 - 2019-05-05
+-------------------
+
+The :func:`~hypothesis.strategies.from_type` strategy now supports
+:class:`python:slice` objects.
+
+Thanks to Charlie El. Awbery for writing this feature at the
+`PyCon 2019 Mentored Sprints <https://uspycon.org/2019/hatchery/mentoredsprints/>`__.
+
 .. _v4.20.0:
 
 -------------------
