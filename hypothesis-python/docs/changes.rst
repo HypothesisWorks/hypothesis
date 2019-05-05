@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.19.0:
+
+-------------------
+4.19.0 - 2019-05-05
+-------------------
+
+The :func:`~hypothesis.strategies.from_type` strategy now supports
+:class:`python:range` objects (or ``xrange`` on Python 2).
+
+Thanks to Katrina Durance for writing this feature at the
+`PyCon 2019 Mentored Sprints <https://us.pycon.org/2019/hatchery/mentoredsprints/>`_.
+
 .. _v4.18.3:
 
 -------------------
