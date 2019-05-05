@@ -224,9 +224,16 @@ New settings should:
    have more than one value for a setting across any of its runs, it should be
    some sort of global configuration, not a setting.
 
-Removing settings is not something we have done so far, so the exact process
-is still up in the air, but it should involve a careful deprecation path where
-the default behaviour does not change without first introducing warnings.
+When deprecating a setting for later removal, we prefer to change the default
+value of the setting to a private singleton (``not_set``), and implement the
+future behaviour immediately.  Passing any other value triggers a deprecation
+warning, but is otherwise a no-op (i.e. we still use the future behaviour).
+
+For settings where this would be especially disruptive, we have also prefixed
+that deprecation process with a process where we emit a warning, add a special
+value that can be passed to opt-in to the future behaviour, and then in the
+following major release we deprecate *that*, make it an no-op, and make it an
+error to pass any other value.
 
 ~~~~~~~~~~~~~~
 Engine Changes

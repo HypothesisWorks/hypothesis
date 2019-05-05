@@ -31,7 +31,7 @@ The :func:`~hypothesis.strategies.from_type` strategy now supports
 :class:`python:slice` objects.
 
 Thanks to Charlie El. Awbery for writing this feature at the
-`PyCon 2019 Mentored Sprints <https://uspycon.org/2019/hatchery/mentoredsprints/>`__.
+`PyCon 2019 Mentored Sprints <https://us.pycon.org/2019/hatchery/mentoredsprints/>`__.
 
 .. _v4.20.0:
 
