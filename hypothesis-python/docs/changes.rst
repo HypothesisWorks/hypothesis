@@ -21,6 +21,21 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.20.0:
+
+-------------------
+4.20.0 - 2019-05-05
+-------------------
+
+This release improves the :func:`~hypothesis.extra.numpy.array_shapes`
+strategy, to choose an appropriate ``max_side`` argument based on the
+``min_side``, and ``max_dims`` based on the ``min_dims``.  An explicit
+error is raised for dimensions greater than 32, which are not supported
+by Numpy, as for other invalid combinations of arguments.
+
+Thanks to Jenny Rouleau for writing this feature at the
+`PyCon 2019 Mentored Sprints <https://us.pycon.org/2019/hatchery/mentoredsprints/>`_.
+
 .. _v4.19.0:
 
 -------------------
