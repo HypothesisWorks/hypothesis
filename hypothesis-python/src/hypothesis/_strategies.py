@@ -2031,6 +2031,13 @@ def runner(default=not_set):
 
 
 class DataObject(object):
+    """This type only exists so that you can write type hints for tests using
+    the :func:`~hypothesis.strategies.data` strategy.  Do not use it directly!
+    """
+
+    # Note that "only exists" here really means "is only exported to users",
+    # but we want to treat it as "semi-stable", not document it as "public API".
+
     def __init__(self, data):
         self.count = 0
         self.conjecture_data = data
@@ -2039,6 +2046,7 @@ class DataObject(object):
         return "data(...)"
 
     def draw(self, strategy, label=None):
+        # type: (SearchStrategy[Ex], Any) -> Ex
         result = self.conjecture_data.draw(strategy)
         self.count += 1
         if label is not None:
@@ -2082,7 +2090,7 @@ class DataStrategy(SearchStrategy):
 
 @cacheable
 def data():
-    # type: () -> SearchStrategy[Any]
+    # type: () -> SearchStrategy[DataObject]
     """This isn't really a normal strategy, but instead gives you an object
     which can be used to draw data interactively from other strategies.
 

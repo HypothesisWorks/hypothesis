@@ -44,10 +44,13 @@ def get_mypy_analysed_type(fname, val):
     # See https://mypy.readthedocs.io/en/latest/common_issues.html#reveal-type
     # The shell output for `reveal_type([1, 2, 3])` looks like a literal:
     # file.py:2: error: Revealed type is 'builtins.list[builtins.int*]'
-    typ = out.split("error: Revealed type is ")[1].strip().strip("'")
-    qualname = "hypothesis.searchstrategy.strategies.SearchStrategy"
-    assert typ.startswith(qualname)
-    return typ[len(qualname) + 1 : -1].replace("builtins.", "").replace("*", "")
+    return (
+        out.split("error: Revealed type is ")[1]
+        .strip()
+        .strip("'")
+        .replace("builtins.", "")
+        .replace("*", "")
+    )
 
 
 @pytest.mark.parametrize(
@@ -59,6 +62,7 @@ def get_mypy_analysed_type(fname, val):
         ("booleans().filter(bool)", "bool"),
         ("lists(none())", "list[None]"),
         ("dictionaries(integers(), datetimes())", "dict[int, datetime.datetime]"),
+        ("data()", "hypothesis._strategies.DataObject"),
         # Ex`-1 stands for recursion in the whole type, i.e. Ex`0 == Union[...]
         ("recursive(integers(), lists)", "Union[list[Ex`-1], int]"),
         # See https://github.com/python/mypy/issues/5269 - fix the hints on
@@ -74,5 +78,17 @@ def test_revealed_types(tmpdir, val, expect):
         "s = {}\n"
         "reveal_type(s)\n".format(val)
     )
-    got = get_mypy_analysed_type(str(f.realpath()), val)
-    assert got == expect
+    typ = get_mypy_analysed_type(str(f.realpath()), val)
+    assert typ == "hypothesis.searchstrategy.strategies.SearchStrategy[%s]" % expect
+
+
+def test_data_object_type_tracing(tmpdir):
+    f = tmpdir.join("chech_mypy_on_st_data.py")
+    f.write(
+        "from hypothesis.strategies import data, integers\n"
+        "d = data().example()\n"
+        "s = d.draw(integers())\n"
+        "reveal_type(s)\n"
+    )
+    got = get_mypy_analysed_type(str(f.realpath()), "data().draw(integers())")
+    assert got == "int"
