@@ -34,7 +34,7 @@ error is raised for dimensions greater than 32, which are not supported
 by Numpy, as for other invalid combinations of arguments.
 
 Thanks to Jenny Rouleau for writing this feature at the
-`PyCon 2019 Mentored Sprints <https://us.pycon.org/2019/hatchery/mentoredsprints/>`_.
+`PyCon 2019 Mentored Sprints <https://us.pycon.org/2019/hatchery/mentoredsprints/>`__.
 
 .. _v4.19.0:
 
@@ -46,7 +46,7 @@ The :func:`~hypothesis.strategies.from_type` strategy now supports
 :class:`python:range` objects (or ``xrange`` on Python 2).
 
 Thanks to Katrina Durance for writing this feature at the
-`PyCon 2019 Mentored Sprints <https://us.pycon.org/2019/hatchery/mentoredsprints/>`_.
+`PyCon 2019 Mentored Sprints <https://us.pycon.org/2019/hatchery/mentoredsprints/>`__.
 
 .. _v4.18.3:
 
