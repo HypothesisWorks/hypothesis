@@ -2217,3 +2217,47 @@ def functions(like=lambda: None, returns=none()):
             "but got non-callable like=%r" % (nicerepr(like),)
         )
     return FunctionStrategy(like, returns)
+
+@composite
+def slices(draw, size):
+    """Generates slices that will select indices up to the supplied size
+
+    Generated slices will have start and stop indices that range from 0 to size - 1 
+    and will step in the appropriate direction. Slices should only produce an empty selection
+    if the start and end are the same.
+
+    Examples from this strategy shrink toward 0 and smaller values
+    """
+    check_valid_integer(size)
+    if size is None or size < 1:
+        raise InvalidArgument("Size must be at least one")
+
+    min_start = 0
+    max_start = size
+    min_step = 1
+
+    start = draw(one_of(integers(min_start, max_start - 1), none())) # Start is inclusive
+    
+    # Stop should be within start +- size
+    min_stop = max(start - size, min_start) if start else min_start
+    max_stop = min(start + size, size) if start else size 
+    
+    stop = draw(one_of(integers(min_stop, max_stop), none())) # Stop is exclusive for slice
+
+    if start is None and stop is None:
+        max_step = size
+    elif start is None:
+        max_step = stop
+    elif stop is None:
+        max_step = start
+    else:
+        start_index = size + start if start < 0 else start
+        stop_index = size + stop if stop < 0 else stop
+        max_step = max(start_index, stop_index) - min(start_index, stop_index)
+
+    step = draw(integers(min_step, max_step or 1)) 
+
+    if (stop or 0) < (start or 0):
+        step *= -1
+
+    return slice(start, stop, step)
