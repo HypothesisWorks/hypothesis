@@ -386,7 +386,6 @@ class many(object):
         if self.drawn:
             self.data.stop_example(discard=self.rejected)
 
-        self.drawn = True
         self.rejected = False
 
         self.data.start_example(ONE_FROM_MANY_LABEL)
@@ -402,7 +401,11 @@ class many(object):
                 p_continue = 0.0
             else:
                 p_continue = self.stopping_value
-            should_continue = biased_coin(self.data, p_continue)
+
+            if self.count == 0 and p_continue > 0 and self.min_size == 0:
+                should_continue = boolean(self.data)
+            else:
+                should_continue = biased_coin(self.data, p_continue)
 
         if should_continue:
             self.count += 1
