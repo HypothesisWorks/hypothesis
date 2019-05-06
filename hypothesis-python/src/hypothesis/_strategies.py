@@ -718,7 +718,7 @@ def lists(
     elements,  # type: SearchStrategy[Ex]
     min_size=0,  # type: int
     max_size=None,  # type: int
-    unique_by=None,  # type: Callable[..., Any]
+    unique_by=None,  # type: Union[Callable, Tuple[Callable, ...]]
     unique=False,  # type: bool
 ):
     # type: (...) -> SearchStrategy[List[Ex]]
@@ -731,10 +731,20 @@ def lists(
     object equality, as if unique_by was ``lambda x: x``. This comparison only
     works for hashable types.
 
-    if unique_by is not None it must be a function returning a hashable type
-    when given a value drawn from elements. The resulting list will satisfy the
-    condition that for ``i`` != ``j``, ``unique_by(result[i])`` !=
-    ``unique_by(result[j])``.
+    If unique_by is not None it must be a callable or tuple of callables
+    returning a hashable type when given a value drawn from elements. The
+    resulting list will satisfy the condition that for ``i`` != ``j``,
+    ``unique_by(result[i])`` != ``unique_by(result[j])``.
+
+    If ``unique_by`` is a tuple of callables the uniqueness will be respective
+    to each callable.
+
+    For example, the following will produce two columns of integers with both
+    columns being unique respectively.
+    .. code-block:: pycon
+
+        >>> twoints = st.tuples(st.integers(), st.integers())
+        >>> st.lists(twoints, unique_by=(lambda x: x[0], lambda x: x[1]))
 
     Examples from this strategy shrink by trying to remove elements from the
     list, and by shrinking each individual element of the list.
@@ -755,8 +765,19 @@ def lists(
     if max_size == 0:
         return builds(list)
     if unique_by is not None:
+        if not (callable(unique_by) or isinstance(unique_by, tuple)):
+            raise InvalidArgument(
+                "unique_by=%r is not a callable or tuple of callables" % (unique_by)
+            )
+        if callable(unique_by):
+            unique_by = (unique_by,)
+        if len(unique_by) == 0:
+            raise InvalidArgument("unique_by is empty")
+        for i, f in enumerate(unique_by):
+            if not callable(f):
+                raise InvalidArgument("unique_by[%i]=%r is not a callable" % (i, f))
         return UniqueListStrategy(
-            elements=elements, max_size=max_size, min_size=min_size, key=unique_by
+            elements=elements, max_size=max_size, min_size=min_size, keys=unique_by
         )
     return ListStrategy(elements, min_size=min_size, max_size=max_size)
 

@@ -129,9 +129,9 @@ class ListStrategy(SearchStrategy):
 
 
 class UniqueListStrategy(ListStrategy):
-    def __init__(self, elements, min_size, max_size, key):
+    def __init__(self, elements, min_size, max_size, keys):
         super(UniqueListStrategy, self).__init__(elements, min_size, max_size)
-        self.key = key
+        self.keys = keys
 
     def do_draw(self, data):
         if self.element_strategy.is_empty:
@@ -144,13 +144,17 @@ class UniqueListStrategy(ListStrategy):
             max_size=self.max_size,
             average_size=self.average_size,
         )
-        seen = set()
+        seen_sets = tuple(set() for _ in self.keys)
         result = []
 
         # We construct a filtered strategy here rather than using a check-and-reject
         # approach because some strategies have special logic for generation under a
         # filter, and FilteredStrategy can consolidate multiple filters.
-        filtered = self.element_strategy.filter(lambda val: self.key(val) not in seen)
+        filtered = self.element_strategy.filter(
+            lambda val: all(
+                key(val) not in seen for (key, seen) in zip(self.keys, seen_sets)
+            )
+        )
         while elements.more():
             value = filtered.filtered_strategy.do_filtered_draw(
                 data=data, filter_strategy=filtered
@@ -158,7 +162,8 @@ class UniqueListStrategy(ListStrategy):
             if value is filter_not_satisfied:
                 elements.reject()
             else:
-                seen.add(self.key(value))
+                for key, seen in zip(self.keys, seen_sets):
+                    seen.add(key(value))
                 result.append(value)
         assert self.max_size >= len(result) >= self.min_size
         return result
