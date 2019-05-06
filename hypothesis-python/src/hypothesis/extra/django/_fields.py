@@ -231,6 +231,22 @@ def register_field_strategy(field_type, strategy):
     _global_field_lookup[field_type] = strategy
 
 
+def get_string_field_bounds(field):
+
+    min_size = 1
+    if getattr(field, "blank", False) or not getattr(field, "required", True):
+        min_size = 0
+    min_size = max([min_size]) + [
+        v.min_length for v in field.validators
+        if isinstance(v, django.core.validators.MinLengthValidator)
+    ]
+    max_size = max([field.max_length]) + [
+        v.max_length for v in field.validators
+        if isinstance(v, django.core.validators.MaxLengthValidator)
+    ]
+    return min_size,  max_size
+
+
 def from_field(field):
     # type: (Type[dm.Field]) -> st.SearchStrategy[dm.Field]
     """Return a strategy for values that fit the given field.
@@ -251,7 +267,8 @@ def from_field(field):
         # form fields automatically include an empty choice, strip it out
         if u"" in choices:
             choices.remove(u"")
-        min_size = 1
+
+        min_size, max_size = get_string_field_bounds(field)
         if isinstance(field, (dm.CharField, dm.TextField)) and field.blank:
             choices.insert(0, u"")
         elif isinstance(field, (df.Field)) and not field.required:
@@ -259,7 +276,8 @@ def from_field(field):
             min_size = 0
         strategy = st.sampled_from(choices)
         if isinstance(field, (df.MultipleChoiceField, df.TypedMultipleChoiceField)):
-            strategy = st.lists(st.sampled_from(choices), min_size=min_size)
+            strategy = st.lists(st.sampled_from(choices),
+                                min_size=min_size, max_size=max_size)
     else:
         if type(field) not in _global_field_lookup:
             if getattr(field, "null", False):
