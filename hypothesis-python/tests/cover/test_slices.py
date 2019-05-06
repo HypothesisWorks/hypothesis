@@ -1,12 +1,12 @@
-from hypothesis import strategies as st, given
+from hypothesis import strategies as st
 from tests.common.debug import minimal, find_any, assert_all_examples
-from hypothesis.errors import InvalidArgument
 
 
 def test_stop_stays_within_bounds():
     size = 1000
     assert_all_examples(
-        st.slices(size), lambda x: x.stop is None or (x.stop >= 0 and x.stop <= size)
+        st.slices(size), 
+        lambda x: x.stop is None or (x.stop >= 0 and x.stop <= size)
     )
 
 
