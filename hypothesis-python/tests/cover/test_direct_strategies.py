@@ -158,6 +158,11 @@ def fn_ktest(*fnkwargs):
     (ds.characters, {"max_codepoint": "1"}),
     (ds.characters, {"whitelist_categories": []}),
     (ds.characters, {"whitelist_categories": ["Nd"], "blacklist_categories": ["Nd"]}),
+    (ds.slices, {"size": 0}),
+    (ds.slices, {"size": None}),
+    (ds.slices, {"size": "chips"}),
+    (ds.slices, {"size": -1}),
+    (ds.slices, {"size": 2.3}),
 )
 def test_validates_keyword_arguments(fn, kwargs):
     with pytest.raises(InvalidArgument):

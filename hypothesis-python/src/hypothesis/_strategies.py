@@ -2218,6 +2218,7 @@ def functions(like=lambda: None, returns=none()):
         )
     return FunctionStrategy(like, returns)
 
+
 @composite
 def slices(draw, size):
     """Generates slices that will select indices up to the supplied size
@@ -2236,13 +2237,17 @@ def slices(draw, size):
     max_start = size
     min_step = 1
 
-    start = draw(one_of(integers(min_start, max_start - 1), none())) # Start is inclusive
-    
+    start = draw(
+        one_of(integers(min_start, max_start - 1), none())
+    )  # Start is inclusive
+
     # Stop should be within start +- size
     min_stop = max(start - size, min_start) if start else min_start
-    max_stop = min(start + size, size) if start else size 
-    
-    stop = draw(one_of(integers(min_stop, max_stop), none())) # Stop is exclusive for slice
+    max_stop = min(start + size, size) if start else size
+
+    stop = draw(
+        one_of(integers(min_stop, max_stop), none())
+    )  # Stop is exclusive for slice
 
     if start is None and stop is None:
         max_step = size
@@ -2255,7 +2260,7 @@ def slices(draw, size):
         stop_index = size + stop if stop < 0 else stop
         max_step = max(start_index, stop_index) - min(start_index, stop_index)
 
-    step = draw(integers(min_step, max_step or 1)) 
+    step = draw(integers(min_step, max_step or 1))
 
     if (stop or 0) < (start or 0):
         step *= -1
