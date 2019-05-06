@@ -167,3 +167,16 @@ def test_minimize_dicts_with_incompatible_keys():
     assert minimal(
         fixed_dictionaries({1: booleans(), u"hi": lists(booleans())}), lambda x: True
     ) == {1: False, u"hi": []}
+
+
+@given(
+    lists(
+        tuples(integers(), integers()),
+        min_size=2,
+        unique_by=(lambda x: x[0], lambda x: x[1]),
+    )
+)
+def test_lists_unique_by_tuple_funcs(ls):
+    firstitems, seconditems = zip(*ls)
+    assert len(set(firstitems)) == len(firstitems)
+    assert len(set(seconditems)) == len(seconditems)
