@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.21.1:
+
+-------------------
+4.21.1 - 2019-05-06
+-------------------
+
+This patch cleans up the internals of :func:`~hypothesis.strategies.one_of`.
+You may see a slight change to the distribution of examples from this strategy
+but there is no change to the public API.
+
+Thanks to Marco Sirabella for writing this patch at the PyCon 2019 sprints!
+
 .. _v4.21.0:
 
 -------------------
