@@ -238,6 +238,7 @@ their individual contributions.
 * `Lisa Goeller <https://www.github.com/lgoeller>`_
 * `Louis Taylor <https://github.com/kragniz>`_
 * `Luke Barone-Adesi <https://github.com/baluke>`_
+* `Marco Sirabella <https://www.github.com/mjsir911>`_
 * `marekventur <https://www.github.com/marekventur>`_
 * `Marius Gedminas <https://www.github.com/mgedmin>`_ (marius@gedmin.as)
 * `Markus Unterwaditzer <https://github.com/untitaker>`_ (markus@unterwaditzer.net)
