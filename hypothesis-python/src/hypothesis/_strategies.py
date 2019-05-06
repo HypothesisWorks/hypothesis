@@ -2223,7 +2223,7 @@ def functions(like=lambda: None, returns=none()):
 def slices(draw, size):
     """Generates slices that will select indices up to the supplied size
 
-    Generated slices will have start and stop indices that range from 0 to size - 1 
+    Generated slices will have start and stop indices that range from 0 to size - 1
     and will step in the appropriate direction. Slices should only produce an empty selection
     if the start and end are the same.
 
