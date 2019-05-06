@@ -66,7 +66,7 @@ class RecursiveStrategy(SearchStrategy):
 
         strategies = [self.limited_base, self.extend(self.limited_base)]
         while 2 ** len(strategies) <= max_leaves:
-            strategies.append(extend(OneOfStrategy(tuple(strategies), bias=0.8)))
+            strategies.append(extend(OneOfStrategy(tuple(strategies))))
         self.strategy = OneOfStrategy(strategies)
 
     def __repr__(self):

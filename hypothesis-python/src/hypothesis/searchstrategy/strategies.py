@@ -432,24 +432,12 @@ class OneOfStrategy(SearchStrategy):
     conditional distribution of that strategy.
     """
 
-    def __init__(self, strategies, bias=None):
+    def __init__(self, strategies):
         SearchStrategy.__init__(self)
         strategies = tuple(strategies)
         self.original_strategies = list(strategies)
         self.__element_strategies = None
-        self.bias = bias
         self.__in_branches = False
-        self.__sampler = None
-
-    @property
-    def sampler(self):
-        if self.__sampler is None:
-            assert self.bias is not None
-            assert 0 < self.bias < 1
-            self.__sampler = cu.Sampler(
-                [self.bias ** i for i in range(len(self.element_strategies))]
-            )
-        return self.__sampler
 
     def calc_is_empty(self, recur):
         return all(recur(e) for e in self.original_strategies)
@@ -505,11 +493,7 @@ class OneOfStrategy(SearchStrategy):
         if n == 1:
             return data.draw(self.element_strategies[0])
 
-        if self.bias is None:
-            i = cu.integer_range(data, 0, n - 1)
-        else:
-            i = self.sampler.sample(data)
-            assert 0 <= i < n
+        i = cu.integer_range(data, 0, n - 1)
 
         return data.draw(self.element_strategies[i], label=self.branch_labels[i])
 
@@ -522,7 +506,7 @@ class OneOfStrategy(SearchStrategy):
 
     @property
     def branches(self):
-        if self.bias is None and not self.__in_branches:
+        if not self.__in_branches:
             try:
                 self.__in_branches = True
                 return self.element_strategies
