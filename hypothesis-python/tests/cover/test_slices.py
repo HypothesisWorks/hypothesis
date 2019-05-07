@@ -17,7 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 from tests.common.debug import assert_all_examples, find_any, minimal
 
 
@@ -51,33 +51,40 @@ def test_step_will_not_be_zero():
     assert_all_examples(st.slices(size), lambda x: x.step != 0)
 
 
-def test_step_will_be_negative():
-    size = 10000
+@given(st.integers(2, 1000))
+@settings(deadline=None)
+def test_step_will_be_negative(size):
+    # The size starts at 2 because a step size of -1 and +1 for a size 1 slice will produce the same indices
     find_any(st.slices(size), lambda x: x.step <= 0)
 
 
-def test_step_will_be_positive():
-    size = 10000
+@given(st.integers(1, 1000))
+@settings(deadline=None)
+def test_step_will_be_positive(size):
     find_any(st.slices(size), lambda x: x.step > 0)
 
 
-def test_stop_will_equal_size():
-    size = 10000
+@given(st.integers(1, 10))
+@settings(deadline=None)
+def test_stop_will_equal_size(size):
     find_any(st.slices(size), lambda x: x.stop == size)
 
 
-def test_start_will_equal_size():
-    size = 10000
+@given(st.integers(1, 10))
+@settings(deadline=None)
+def test_start_will_equal_size(size):
     find_any(st.slices(size), lambda x: x.start == size - 1)
 
 
-def test_start_will_equal_0():
-    size = 10000
+@given(st.integers(1, 1000))
+@settings(deadline=None)
+def test_start_will_equal_0(size):
     find_any(st.slices(size), lambda x: x.start == 0)
 
 
-def test_start_will_equal_stop():
-    size = 10000
+@given(st.integers(1, 1000))
+@settings(deadline=None)
+def test_start_will_equal_stop(size):
     find_any(st.slices(size), lambda x: x.start == x.stop)
 
 

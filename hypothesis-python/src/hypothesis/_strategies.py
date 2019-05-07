@@ -2233,22 +2233,19 @@ def slices(draw, size):
     if size is None or size < 1:
         raise InvalidArgument("Size must be at least one")
 
-    min_start = 0
-    max_start = size
+    min_start = min_stop = 0
+    max_start = max_stop = size
     min_step = 1
 
     start = draw(
         one_of(integers(min_start, max_start - 1), none())
     )  # Start is inclusive
 
-    # Stop should be within start +- size
-    min_stop = max(start - size, min_start) if start else min_start
-    max_stop = min(start + size, size) if start else size
-
     stop = draw(
         one_of(integers(min_stop, max_stop), none())
     )  # Stop is exclusive for slice
 
+    # Limit step size to be reasonable
     if start is None and stop is None:
         max_step = size
     elif start is None:
@@ -2258,7 +2255,7 @@ def slices(draw, size):
     else:
         start_index = size + start if start < 0 else start
         stop_index = size + stop if stop < 0 else stop
-        max_step = max(start_index, stop_index) - min(start_index, stop_index)
+        max_step = abs(start_index - stop_index)
 
     step = draw(integers(min_step, max_step or 1))
 
