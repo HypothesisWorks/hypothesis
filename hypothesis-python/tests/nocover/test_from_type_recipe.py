@@ -7,7 +7,7 @@ import numbers
 import uuid
 
 import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import given
 
 
 def everything_except(excluded_types):
@@ -50,11 +50,6 @@ many_types = [
 ]
 
 
-# TODO failing seed: @seed(3239923953324650810165101787612320707)
-# TODO add custom class to list of many-types
-
-
-@settings(max_examples=5000)
 @given(
     excluded_types=st.lists(
         st.sampled_from(many_types), min_size=1, max_size=3, unique=True
