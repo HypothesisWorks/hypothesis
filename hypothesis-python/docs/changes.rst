@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.22.3:
+
+-------------------
+4.22.3 - 2019-05-07
+-------------------
+
+This patch exposes :class:`~hypothesis.strategies.DataObject`, *solely*
+to support more precise type hints.  Objects of this type are provided
+by :func:`~hypothesis.strategies.data`, and can be used to draw examples
+from strategies intermixed with your test code.
+
 .. _v4.22.2:
 
 -------------------
