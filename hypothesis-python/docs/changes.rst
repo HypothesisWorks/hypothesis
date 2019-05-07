@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.22.2:
+
+-------------------
+4.22.2 - 2019-05-07
+-------------------
+
+This patch fixes the very rare :issue:`1798` in
+:func:`~hypothesis.extra.numpy.array_dtypes`,
+which caused an internal error in our tests.
+
 .. _v4.22.1:
 
 -------------------
