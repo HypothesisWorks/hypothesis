@@ -273,3 +273,4 @@ their individual contributions.
 * `Will Thompson <https://www.github.com/wjt>`_ (will@willthompson.co.uk)
 * `Wilfred Hughes <https://www.github.com/wilfred>`_
 * `Zac Hatfield-Dodds <https://www.github.com/Zac-HD>`_ (zac.hatfield.dodds@gmail.com)
+* `Zebulun Arendsee <https://www.github.com/arendsee>`_ (zbwrnz@gmail.com)
