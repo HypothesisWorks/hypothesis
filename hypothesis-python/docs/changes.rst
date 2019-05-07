@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.22.1:
+
+-------------------
+4.22.1 - 2019-05-07
+-------------------
+
+This patch fixes a rare bug in :func:`from_type(range) <hypothesis.strategies.from_type>`.
+
+Thanks to Zebulun Arendsee for fixing the bug at the PyCon 2019 Sprints.
+
 .. _v4.22.0:
 
 -------------------
