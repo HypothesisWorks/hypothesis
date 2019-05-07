@@ -17,38 +17,55 @@
 
 from __future__ import absolute_import, division, print_function
 
+import pytest
+
 from hypothesis import given, settings, strategies as st
 from tests.common.debug import assert_all_examples, find_any, minimal
 
+use_several_sizes = pytest.mark.parametrize("size", [1, 2, 5, 10, 100, 1000])
 
-def test_stop_stays_within_bounds():
-    size = 1000
+
+@use_several_sizes
+def test_stop_stays_within_bounds(size):
     assert_all_examples(
         st.slices(size), lambda x: x.stop is None or (x.stop >= 0 and x.stop <= size)
     )
 
 
-def test_start_stay_within_bounds():
-    size = 1000
+@use_several_sizes
+def test_start_stay_within_bounds(size):
     assert_all_examples(
-        st.slices(size),
-        lambda x: x.start is None or (x.start >= 0 and x.start <= size - 1),
+        st.slices(size), lambda x: x.start is None or (x.start >= 0 and x.start <= size)
     )
 
 
-def test_step_stays_within_bounds():
-    size = 1000
+@use_several_sizes
+def test_step_stays_within_bounds(size):
     # indices -> (start, stop, step)
+    # Stop is exclusive so we use -1 as the bottom
     assert_all_examples(
         st.slices(size),
-        lambda x: x.indices(size)[0] + x.indices(size)[2] <= size
-        and x.indices(size)[0] + x.indices(size)[2] >= 0,
+        lambda x: (
+            (
+                x.indices(size)[0] + x.indices(size)[2] <= size
+                and x.indices(size)[0] + x.indices(size)[2] >= -1
+            )
+        )
+        or x.start == x.stop,
     )
 
 
-def test_step_will_not_be_zero():
-    size = 1000
+@use_several_sizes
+def test_step_will_not_be_zero(size):
     assert_all_examples(st.slices(size), lambda x: x.step != 0)
+
+
+@use_several_sizes
+def test_slices_will_shrink(size):
+    sliced = minimal(st.slices(size))
+    assert sliced.start == 0 or sliced.start is None
+    assert sliced.stop == 0 or sliced.stop is None
+    assert sliced.step == 1
 
 
 @given(st.integers(1, 1000))
@@ -85,11 +102,3 @@ def test_start_will_equal_0(size):
 @settings(deadline=None)
 def test_start_will_equal_stop(size):
     find_any(st.slices(size), lambda x: x.start == x.stop)
-
-
-def test_splices_will_shrink():
-    size = 1000000
-    sliced = minimal(st.slices(size))
-    assert sliced.start == 0
-    assert sliced.stop == 0 or sliced.stop is None
-    assert sliced.step == 1
