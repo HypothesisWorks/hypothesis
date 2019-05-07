@@ -1316,7 +1316,7 @@ def from_type(thing):
         ...         # draws from the list of registered builtin types
         ...         from_type(type)
         ...         # maps the drawn type to its associated strategy
-        ...         .flatmap(lambda x: from_type(x))
+        ...         .flatmap(from_type)
         ...         .filter(lambda x: not isinstance(x, excluded_types))
         ...     )
 

@@ -25,14 +25,13 @@ import uuid
 
 import hypothesis.strategies as st
 from hypothesis import given
-from hypothesis.internal.compat import hbytes
 
 
 def everything_except(excluded_types):
     """Recipe copied from the docstring of ``from_type``"""
     return (
         st.from_type(type)
-        .flatmap(lambda x: st.from_type(x))
+        .flatmap(st.from_type)
         .filter(lambda x: not isinstance(x, excluded_types))
     )
 
@@ -40,7 +39,6 @@ def everything_except(excluded_types):
 many_types = [
     bool,
     bytearray,
-    hbytes,
     complex,
     datetime.date,
     datetime.datetime,
@@ -62,7 +60,6 @@ many_types = [
     range,
     set,
     slice,
-    str,
     tuple,
     uuid.UUID,
 ]
