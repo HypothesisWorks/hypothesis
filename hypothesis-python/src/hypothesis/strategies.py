@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 from hypothesis._strategies import (
+    DataObject,
     _strategies,
     binary,
     booleans,
@@ -76,6 +77,7 @@ __all__ = [
     "complex_numbers",
     "composite",
     "data",
+    "DataObject",
     "dates",
     "datetimes",
     "decimals",
