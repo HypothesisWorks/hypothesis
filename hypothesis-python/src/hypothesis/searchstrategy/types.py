@@ -204,7 +204,9 @@ if PY2:
             long: st.integers().map(long),  # noqa
             xrange: st.integers(min_value=0).map(xrange)  # noqa
             | st.builds(xrange, st.integers(), st.integers())  # noqa
-            | st.builds(xrange, st.integers(), st.integers(), st.integers()).filter(bool),  # noqa
+            | st.builds(
+                xrange, st.integers(), st.integers(), st.integers().filter(bool)  # noqa
+            ),
         }
     )
 else:
@@ -212,7 +214,7 @@ else:
         {
             range: st.integers(min_value=0).map(range)
             | st.builds(range, st.integers(), st.integers())
-            | st.builds(range, st.integers(), st.integers(), st.integers()).filter(bool)
+            | st.builds(range, st.integers(), st.integers(), st.integers().filter(bool))
         }
     )
 
