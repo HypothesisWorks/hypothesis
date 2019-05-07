@@ -1305,6 +1305,23 @@ def from_type(thing):
        other elements in the lookup.
     4. Finally, if ``thing`` has type annotations for all required arguments,
        it is resolved via :func:`~hypothesis.strategies.builds`.
+
+    There is a valuable recipe for leveraging ``from_type`` to generate
+    "everything except" values from a specified type. I.e.
+
+    .. code-block:: pycon
+
+        >>> def everything_except(excluded_types):
+        ...     return (
+        ...         from_type(type)
+        ...         .flatmap(lambda x: from_type(x))
+        ...         .filter(lambda x: not isinstance(x, excluded_types))
+        ...     )
+
+     For example, ``everything_except(int)`` is a strategy that will generate
+     values from all of the strategies registered with the builtin types other
+     than those that draw ``int`` values. This is useful writing tests that do
+     input validation.
     """
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
