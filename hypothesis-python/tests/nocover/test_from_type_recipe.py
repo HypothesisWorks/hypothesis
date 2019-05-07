@@ -57,7 +57,6 @@ many_types = [
     numbers.Number,
     numbers.Rational,
     numbers.Real,
-    range,
     set,
     slice,
     tuple,
