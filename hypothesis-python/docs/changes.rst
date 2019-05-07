@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.22.0:
+
+-------------------
+4.22.0 - 2019-05-07
+-------------------
+
+The ``unique_by`` argument to :obj:`~hypothesis.strategies.lists` now accepts a
+tuple of callables such that every element of the generated list will be unique
+with respect to each callable in the tuple (:issue:`1916`).
+
+Thanks to Marco Sirabella for this feature at the PyCon 2019 sprints!
+
 .. _v4.21.1:
 
 -------------------
