@@ -51,11 +51,10 @@ def test_step_will_not_be_zero():
     assert_all_examples(st.slices(size), lambda x: x.step != 0)
 
 
-@given(st.integers(2, 1000))
+@given(st.integers(1, 1000))
 @settings(deadline=None)
 def test_step_will_be_negative(size):
-    # The size starts at 2 because a step size of -1 and +1 for a size 1 slice will produce the same indices
-    find_any(st.slices(size), lambda x: x.step <= 0)
+    find_any(st.slices(size), lambda x: x.step < 0)
 
 
 @given(st.integers(1, 1000))

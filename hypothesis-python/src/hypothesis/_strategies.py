@@ -2237,9 +2237,7 @@ def slices(draw, size):
     max_start = max_stop = size
     min_step = 1
 
-    start = draw(
-        one_of(integers(min_start, max_start - 1), none())
-    )  # Start is inclusive
+    start = draw(one_of(integers(min_start, max_start), none()))  # Start is inclusive
 
     stop = draw(
         one_of(integers(min_stop, max_stop), none())
