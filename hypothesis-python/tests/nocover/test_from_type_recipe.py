@@ -50,6 +50,7 @@ many_types = [
 
 
 # TODO failing seed: @seed(3239923953324650810165101787612320707)
+# TODO add custom class to list of many-types
 
 
 @settings(max_examples=5000)
