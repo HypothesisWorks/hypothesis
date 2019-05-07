@@ -11,6 +11,7 @@ from hypothesis import given, settings
 
 
 def everything_except(excluded_types):
+    """Recipe copied from the docstring of ``from_type``"""
     return (
         st.from_type(type)
         .flatmap(lambda x: st.from_type(x))
@@ -60,6 +61,6 @@ many_types = [
     ).map(tuple),
     data=st.data(),
 )
-def test_everything_but_recipe(excluded_types, data):
+def test_recipe_for_everything_except(excluded_types, data):
     value = data.draw(everything_except(excluded_types), label="value")
     assert not isinstance(value, excluded_types)
