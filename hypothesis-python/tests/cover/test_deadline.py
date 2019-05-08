@@ -70,15 +70,15 @@ def test_raises_flaky_if_a_test_becomes_fast_on_rerun():
 
 def test_deadlines_participate_in_shrinking():
     @settings(deadline=500)
-    @given(st.integers())
+    @given(st.integers(min_value=0))
     def slow_if_large(i):
-        if i >= 10000:
+        if i >= 1000:
             time.sleep(1)
 
     with capture_out() as o:
         with pytest.raises(DeadlineExceeded):
             slow_if_large()
-    assert "slow_if_large(i=10000)" in o.getvalue()
+    assert "slow_if_large(i=1000)" in o.getvalue()
 
 
 def test_keeps_you_well_above_the_deadline():
