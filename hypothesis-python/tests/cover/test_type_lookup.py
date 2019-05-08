@@ -17,21 +17,15 @@
 
 from __future__ import absolute_import, division, print_function
 
-import enum
-
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, infer
+from hypothesis import given
 from hypothesis._strategies import _strategies
-from hypothesis.errors import (
-    HypothesisDeprecationWarning,
-    InvalidArgument,
-    ResolutionFailed,
-)
+from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
 from hypothesis.internal.compat import PY2, integer_types
 from hypothesis.searchstrategy import types
-from tests.common.utils import checks_deprecated_behaviour
+from hypothesis.searchstrategy.types import _global_type_lookup
 
 # Build a set of all types output by core strategies
 blacklist = [
@@ -75,146 +69,8 @@ def test_lookup_knows_about_all_core_strategies():
     assert not cannot_lookup
 
 
-def test_lookup_keys_are_types():
-    with pytest.raises(InvalidArgument):
-        st.register_type_strategy("int", st.integers())
-    assert "int" not in types._global_type_lookup
-
-
-def test_lookup_values_are_strategies():
-    with pytest.raises(InvalidArgument):
-        st.register_type_strategy(int, 42)
-    assert 42 not in types._global_type_lookup.values()
-
-
-@pytest.mark.parametrize("typ", sorted(types_with_core_strat, key=str))
-def test_lookup_overrides_defaults(typ):
-    sentinel = object()
-    try:
-        strat = types._global_type_lookup[typ]
-        st.register_type_strategy(typ, st.just(sentinel))
-        assert st.from_type(typ).example() is sentinel
-    finally:
-        st.register_type_strategy(typ, strat)
-        st.from_type.__clear_cache()
-    assert st.from_type(typ).example() is not sentinel
-
-
-class ParentUnknownType(object):
-    pass
-
-
-def test_can_resolve_trivial_types():
-    # Under Python 2, this inherits a special wrapper_descriptor slots
-    # thing from object.__init__, which chokes inspect.getargspec.
-    # from_type should and does work anyway; see issues #1655 and #1656.
-    st.from_type(ParentUnknownType).example()
-
-
-class UnknownType(ParentUnknownType):
-    def __init__(self, arg):
-        pass
-
-
-def test_custom_type_resolution_fails_without_registering():
-    fails = st.from_type(UnknownType)
-    with pytest.raises(ResolutionFailed):
-        fails.example()
-
-
-def test_custom_type_resolution():
-    sentinel = object()
-    try:
-        st.register_type_strategy(UnknownType, st.just(sentinel))
-        assert st.from_type(UnknownType).example() is sentinel
-        # Also covered by registration of child class
-        assert st.from_type(ParentUnknownType).example() is sentinel
-    finally:
-        types._global_type_lookup.pop(UnknownType)
-        st.from_type.__clear_cache()
-        assert UnknownType not in types._global_type_lookup
-
-
-def test_custom_type_resolution_with_function():
-    sentinel = object()
-    try:
-        st.register_type_strategy(UnknownType, lambda _: st.just(sentinel))
-        assert st.from_type(UnknownType).example() is sentinel
-        assert st.from_type(ParentUnknownType).example() is sentinel
-    finally:
-        types._global_type_lookup.pop(UnknownType)
-        st.from_type.__clear_cache()
-
-
-def test_custom_type_resolution_with_function_non_strategy():
-    try:
-        st.register_type_strategy(UnknownType, lambda _: None)
-        with pytest.raises(ResolutionFailed):
-            st.from_type(UnknownType).example()
-        with pytest.raises(ResolutionFailed):
-            st.from_type(ParentUnknownType).example()
-    finally:
-        types._global_type_lookup.pop(UnknownType)
-
-
-def test_errors_if_generic_resolves_empty():
-    try:
-        st.register_type_strategy(UnknownType, lambda _: st.nothing())
-        fails_1 = st.from_type(UnknownType)
-        with pytest.raises(ResolutionFailed):
-            fails_1.example()
-        fails_2 = st.from_type(ParentUnknownType)
-        with pytest.raises(ResolutionFailed):
-            fails_2.example()
-    finally:
-        types._global_type_lookup.pop(UnknownType)
-        st.from_type.__clear_cache()
-
-
-def test_cannot_register_empty():
-    # Cannot register and did not register
-    with pytest.raises(InvalidArgument):
-        st.register_type_strategy(UnknownType, st.nothing())
-    fails = st.from_type(UnknownType)
-    with pytest.raises(ResolutionFailed):
-        fails.example()
-    assert UnknownType not in types._global_type_lookup
-
-
-def test_pulic_interface_works():
-    st.from_type(int).example()
-    fails = st.from_type("not a type or annotated function")
-    with pytest.raises(InvalidArgument):
-        fails.example()
-
-
-def test_given_can_infer_on_py2():
-    # Editing annotations before decorating is hilariously awkward, but works!
-    def inner(a):
-        pass
-
-    inner.__annotations__ = {"a": int}
-    given(a=infer)(inner)()
-
-
-class EmptyEnum(enum.Enum):
-    pass
-
-
-@checks_deprecated_behaviour
-def test_error_if_enum_is_empty():
-    assert st.from_type(EmptyEnum).is_empty
-
-
-class BrokenClass(object):
-    __init__ = "Hello!"
-
-
-def test_uninspectable_builds():
-    with pytest.raises(TypeError, match="object is not callable"):
-        st.builds(BrokenClass).example()
-
-
-def test_uninspectable_from_type():
-    with pytest.raises(TypeError, match="object is not callable"):
-        st.from_type(BrokenClass).example()
+@pytest.mark.parametrize("typ", sorted(_global_type_lookup, key=str))
+@given(data=st.data())
+def test_can_generate_from_all_registered_types(data, typ):
+    value = data.draw(st.from_type(typ), label="value")
+    assert isinstance(value, typ)
