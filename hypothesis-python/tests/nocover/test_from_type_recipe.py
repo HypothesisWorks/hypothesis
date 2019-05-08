@@ -17,14 +17,9 @@
 
 from __future__ import absolute_import, division, print_function
 
-import datetime
-import decimal
-import fractions
-import numbers
-import uuid
-
 import hypothesis.strategies as st
 from hypothesis import given
+from hypothesis.searchstrategy.types import _global_type_lookup
 
 
 def everything_except(excluded_types):
@@ -36,40 +31,15 @@ def everything_except(excluded_types):
     )
 
 
-many_types = [
-    bool,
-    bytearray,
-    complex,
-    datetime.date,
-    datetime.datetime,
-    datetime.time,
-    datetime.timedelta,
-    decimal.Decimal,
-    dict,
-    float,
-    fractions.Fraction,
-    frozenset,
-    int,
-    list,
-    memoryview,
-    numbers.Complex,
-    numbers.Integral,
-    numbers.Number,
-    numbers.Rational,
-    numbers.Real,
-    set,
-    slice,
-    tuple,
-    uuid.UUID,
-]
-
-
 @given(
     excluded_types=st.lists(
-        st.sampled_from(many_types), min_size=1, max_size=3, unique=True
+        st.sampled_from([x for x in _global_type_lookup if x.__module__ != "typing"]),
+        min_size=1,
+        max_size=3,
+        unique=True,
     ).map(tuple),
     data=st.data(),
 )
 def test_recipe_for_everything_except(excluded_types, data):
-    value = data.draw(everything_except(excluded_types), label="value")
+    value = data.draw(everything_except(excluded_types))
     assert not isinstance(value, excluded_types)
