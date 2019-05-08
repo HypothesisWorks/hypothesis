@@ -221,8 +221,18 @@ def format():
                 o.write("\n\n")
                 o.write(source)
             o.write("\n")
-    pip_tool("isort", *files_to_format)
 
+    pip_tool(
+        "autoflake",
+        "--recursive",
+        "--in-place",
+        "--exclude=compat.py",
+        "--remove-all-unused-imports",
+        "--remove-duplicate-keys",
+        "--remove-unused-variables",
+        *files_to_format,
+    )
+    pip_tool("isort", *files_to_format)
     pip_tool("black", *files_to_format)
 
 

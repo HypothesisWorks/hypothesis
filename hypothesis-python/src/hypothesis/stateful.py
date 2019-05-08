@@ -206,11 +206,9 @@ class GenericStateMachine(
 
         Does nothing by default.
         """
-        pass
 
     def check_invariants(self):
         """Called after initializing and after executing each step."""
-        pass
 
     _test_case_cache = {}  # type: dict
 

@@ -55,4 +55,3 @@ class test_given_on_setUp_fails_health_check(unittest.TestCase):
 
     def test(self):
         """Provide something to set up for, so the setUp method is called."""
-        pass
