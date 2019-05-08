@@ -184,7 +184,6 @@ class GenericCache(object):
     def on_evict(self, key, value, score):
         """Called after a key has been evicted, with the score it had had at
         the point of eviction."""
-        pass
 
     def check_valid(self):
         """Debugging method for use in tests.

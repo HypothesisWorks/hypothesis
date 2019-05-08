@@ -235,18 +235,15 @@ class ExampleProperty(object):
         """Called at the start of each example, with ``i`` the
         index of the example and ``label_index`` the index of
         its label in ``self.examples.labels``."""
-        pass
 
     def block(self, i):
         """Called with each ``draw_bits`` call, with ``i`` the index of the
         corresonding block in ``self.examples.blocks``"""
-        pass
 
     def stop_example(self, i, discarded):
         """Called at the end of each example, with ``i`` the
         index of the example and ``discarded`` being ``True`` if ``stop_example``
         was called with ``discard=True``."""
-        pass
 
     def finish(self):
         return self.result
@@ -677,7 +674,6 @@ class DataObserver(object):
 
         Note that this is called after ``freeze`` has completed.
         """
-        pass
 
     def draw_bits(self, n_bits, forced, value):
         """Called when ``draw_bits`` is called on on the
@@ -687,7 +683,6 @@ class DataObserver(object):
            draw was forced or ``False`` otherwise.
         * ``value`` is the result that ``draw_bits`` returned.
         """
-        pass
 
 
 @attr.s(slots=True)

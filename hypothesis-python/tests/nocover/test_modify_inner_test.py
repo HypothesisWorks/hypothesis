@@ -30,7 +30,6 @@ def always_passes(*args, **kwargs):
     For example, pytest-trio would take the inner test, wrap it in an
     async-to-sync converter, and use the new func (not always_passes).
     """
-    pass
 
 
 @given(st.integers())

@@ -98,7 +98,6 @@ class Shrinker(object):
         Convenience function for children that doesn't require messing
         with the signature of init.
         """
-        pass
 
     def delegate(self, other_class, convert_to, convert_from, **kwargs):
         """Delegates shrinking to another shrinker class, by converting the
