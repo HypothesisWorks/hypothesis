@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.23.0:
+
+-------------------
+4.23.0 - 2019-05-08
+-------------------
+
+This release implements the :func:`~hypothesis.strategies.slices` strategy,
+to generate slices of a length-``size`` sequence.
+
+Thanks to Daniel J. West for writing this patch at the PyCon 2019 sprints!
+
 .. _v4.22.3:
 
 -------------------
