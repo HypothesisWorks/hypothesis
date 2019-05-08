@@ -17,8 +17,30 @@
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis.internal.floats import count_between_floats
+import math
+
+import pytest
+
+from hypothesis.internal.floats import count_between_floats, next_down, next_up
 
 
 def test_can_handle_straddling_zero():
     assert count_between_floats(-0.0, 0.0) == 2
+
+
+@pytest.mark.parametrize(
+    "func,val",
+    [
+        (next_up, float("nan")),
+        (next_up, float("inf")),
+        (next_up, -0.0),
+        (next_down, float("nan")),
+        (next_down, float("-inf")),
+        (next_down, 0.0),
+    ],
+)
+def test_next_float_equal(func, val):
+    if math.isnan(val):
+        assert math.isnan(func(val))
+    else:
+        assert func(val) == val

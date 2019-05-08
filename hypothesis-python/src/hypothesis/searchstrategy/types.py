@@ -25,6 +25,7 @@ import functools
 import inspect
 import io
 import numbers
+import sys
 import uuid
 
 import hypothesis.strategies as st
@@ -198,14 +199,16 @@ _global_type_lookup = {
 }
 
 if PY2:
+    # xrange's |stop - start| must fit in a C long
+    int64_strat = st.integers(-sys.maxint // 2, sys.maxint // 2)  # noqa
     _global_type_lookup.update(
         {
             int: st.integers().filter(lambda x: isinstance(x, int)),
             long: st.integers().map(long),  # noqa
-            xrange: st.integers(min_value=0).map(xrange)  # noqa
-            | st.builds(xrange, st.integers(), st.integers())  # noqa
+            xrange: st.integers(min_value=0, max_value=sys.maxint).map(xrange)  # noqa
+            | st.builds(xrange, int64_strat, int64_strat)  # noqa
             | st.builds(
-                xrange, st.integers(), st.integers(), st.integers().filter(bool)  # noqa
+                xrange, int64_strat, int64_strat, int64_strat.filter(bool)  # noqa
             ),
         }
     )

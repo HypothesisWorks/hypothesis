@@ -31,6 +31,7 @@ from hypothesis.errors import (
 )
 from hypothesis.internal.compat import PY2, integer_types
 from hypothesis.searchstrategy import types
+from hypothesis.searchstrategy.types import _global_type_lookup
 from tests.common.utils import checks_deprecated_behaviour
 
 # Build a set of all types output by core strategies
@@ -218,3 +219,12 @@ def test_uninspectable_builds():
 def test_uninspectable_from_type():
     with pytest.raises(TypeError, match="object is not callable"):
         st.from_type(BrokenClass).example()
+
+
+@pytest.mark.parametrize(
+    "typ", sorted([x for x in _global_type_lookup if x.__module__ != "typing"], key=str)
+)
+@given(data=st.data())
+def test_can_generate_from_all_registered_types(data, typ):
+    value = data.draw(st.from_type(typ), label="value")
+    assert isinstance(value, typ)
