@@ -69,7 +69,9 @@ def test_lookup_knows_about_all_core_strategies():
     assert not cannot_lookup
 
 
-@pytest.mark.parametrize("typ", sorted(_global_type_lookup, key=str))
+@pytest.mark.parametrize(
+    "typ", sorted([x for x in _global_type_lookup if x.__module__ != "typing"], key=str)
+)
 @given(data=st.data())
 def test_can_generate_from_all_registered_types(data, typ):
     value = data.draw(st.from_type(typ), label="value")
