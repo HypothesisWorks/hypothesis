@@ -200,9 +200,7 @@ _global_type_lookup = {
 
 if PY2:
     # xrange's |stop - start| must fit in a C long
-    int64_strat = st.integers(
-        min_value=-sys.maxint // 2, max_value=sys.maxint // 2
-    )  # noqa
+    int64_strat = st.integers(-sys.maxint // 2, sys.maxint // 2)  # noqa
     _global_type_lookup.update(
         {
             int: st.integers().filter(lambda x: isinstance(x, int)),
