@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.23.2:
+
+-------------------
+4.23.2 - 2019-05-08
+-------------------
+
+This patch uses :pypi:`autoflake` to remove some pointless ``pass`` statements,
+which improves our workflow but has no user-visible impact.
+
 .. _v4.23.1:
 
 -------------------
