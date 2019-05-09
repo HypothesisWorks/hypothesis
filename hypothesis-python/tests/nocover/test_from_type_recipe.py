@@ -33,7 +33,11 @@ def everything_except(excluded_types):
 
 @given(
     excluded_types=st.lists(
-        st.sampled_from([x for x in _global_type_lookup if x.__module__ != "typing"]),
+        st.sampled_from(
+            sorted(
+                [x for x in _global_type_lookup if x.__module__ != "typing"], key=str
+            )
+        ),
         min_size=1,
         max_size=3,
         unique=True,
