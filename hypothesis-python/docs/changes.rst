@@ -21,6 +21,14 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.23.4:
+
+-------------------
+4.23.4 - 2019-05-09
+-------------------
+
+Fixes a minor formatting issue the docstring of :func:`~hypothesis.strategies.from_type`
+
 .. _v4.23.3:
 
 -------------------
