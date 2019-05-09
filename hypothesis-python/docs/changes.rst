@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.23.3:
+
+-------------------
+4.23.3 - 2019-05-09
+-------------------
+
+Adds a recipe to the docstring of :func:`~hypothesis.strategies.from_type`
+that describes a means for drawing values for "everything except" a specified type.
+This recipe is especially useful for writing tests that perform input-type validation.
+
 .. _v4.23.2:
 
 -------------------
