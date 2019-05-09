@@ -1317,13 +1317,13 @@ def from_type(thing):
                 .filter(lambda x: not isinstance(x, excluded_types))
             )
 
-     For example, ``everything_except(int)`` returns a strategy that can
-     generate anything that ``from_type()`` can ever generate, except for
-     instances of :class:python:int, and excluding instances of types
-     added via :func:~hypothesis.strategies.register_type_strategy.
+    For example, ``everything_except(int)`` returns a strategy that can
+    generate anything that ``from_type()`` can ever generate, except for
+    instances of :class:python:int, and excluding instances of types
+    added via :func:~hypothesis.strategies.register_type_strategy.
 
-     This is useful when writing tests which check that invalid input is
-     rejected in a certain way.
+    This is useful when writing tests which check that invalid input is
+    rejected in a certain way.
     """
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
