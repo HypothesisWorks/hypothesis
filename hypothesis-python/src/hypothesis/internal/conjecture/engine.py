@@ -503,9 +503,6 @@ class ConjectureRunner(object):
 
         return mutate_from
 
-    def __rewrite(self, data, result):
-        return self.__zero_bound(data, result)
-
     def __zero_bound(self, data, result):
         """This tries to get the size of the generated data under control by
         replacing the result with zero if we are too deep or have already
@@ -741,7 +738,7 @@ class ConjectureRunner(object):
                     result = buffer[data.index : data.index + n]
                     if len(result) < n:
                         result += hbytes(n - len(result))
-                    return self.__rewrite(data, result)
+                    return self.__zero_bound(data, result)
 
                 data = self.new_conjecture_data(draw_bytes=draw_bytes)
                 self.test_function(data)
