@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.23.5:
+
+-------------------
+4.23.5 - 2019-05-16
+-------------------
+
+This release slightly simplifies a small part of the core engine.
+There is no user-visible change.
+
 .. _v4.23.4:
 
 -------------------
