@@ -232,6 +232,7 @@ def format():
         "--remove-unused-variables",
         *files_to_format,
     )
+    pip_tool("pyupgrade", "--keep-percent-format", *files_to_format)
     pip_tool("isort", *files_to_format)
     pip_tool("black", *files_to_format)
 

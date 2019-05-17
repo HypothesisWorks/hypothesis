@@ -19,6 +19,7 @@ pip-tools
 pylint
 pytest
 python-dateutil
+pyupgrade
 pyupio
 requests
 restructuredtext-lint
