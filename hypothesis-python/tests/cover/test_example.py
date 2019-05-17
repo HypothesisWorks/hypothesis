@@ -48,7 +48,7 @@ def test_exception_in_compare_can_still_have_example():
 
 def test_does_not_always_give_the_same_example():
     s = st.integers()
-    assert len(set(s.example() for _ in range(100))) >= 10
+    assert len({s.example() for _ in range(100)}) >= 10
 
 
 def test_raises_on_no_examples():

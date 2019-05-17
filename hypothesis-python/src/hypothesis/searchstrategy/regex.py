@@ -36,16 +36,16 @@ UNICODE_CATEGORIES = set(categories())
 
 SPACE_CHARS = set(u" \t\n\r\f\v")
 UNICODE_SPACE_CHARS = SPACE_CHARS | set(u"\x1c\x1d\x1e\x1f\x85")
-UNICODE_DIGIT_CATEGORIES = set(["Nd"])
+UNICODE_DIGIT_CATEGORIES = {"Nd"}
 UNICODE_SPACE_CATEGORIES = set(as_general_categories("Z"))
 UNICODE_LETTER_CATEGORIES = set(as_general_categories("L"))
 UNICODE_WORD_CATEGORIES = set(as_general_categories(["L", "N"]))
 
 # This is verbose, but correct on all versions of Python
-BYTES_ALL = set(int_to_byte(i) for i in range(256))
-BYTES_DIGIT = set(b for b in BYTES_ALL if re.match(b"\\d", b))
-BYTES_SPACE = set(b for b in BYTES_ALL if re.match(b"\\s", b))
-BYTES_WORD = set(b for b in BYTES_ALL if re.match(b"\\w", b))
+BYTES_ALL = {int_to_byte(i) for i in range(256)}
+BYTES_DIGIT = {b for b in BYTES_ALL if re.match(b"\\d", b)}
+BYTES_SPACE = {b for b in BYTES_ALL if re.match(b"\\s", b)}
+BYTES_WORD = {b for b in BYTES_ALL if re.match(b"\\w", b)}
 BYTES_LOOKUP = {
     sre.CATEGORY_DIGIT: BYTES_DIGIT,
     sre.CATEGORY_SPACE: BYTES_SPACE,

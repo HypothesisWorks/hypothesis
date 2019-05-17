@@ -424,7 +424,7 @@ def skip_exceptions_to_reraise():
     import unittest
 
     # This is a set because nose may simply re-export unittest.SkipTest
-    exceptions = set([unittest.SkipTest])
+    exceptions = {unittest.SkipTest}
 
     try:  # pragma: no cover
         from unittest2 import SkipTest

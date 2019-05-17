@@ -188,7 +188,7 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
             except TypeError:
                 self.keys = tuple(sorted(strategy_dict.keys(), key=repr))
         super(FixedKeysDictStrategy, self).__init__(
-            strategy=TupleStrategy((strategy_dict[k] for k in self.keys))
+            strategy=TupleStrategy(strategy_dict[k] for k in self.keys)
         )
 
     def calc_is_empty(self, recur):

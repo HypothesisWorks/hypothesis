@@ -73,7 +73,7 @@ def test_minimize_one_of():
 
 def test_minimize_mixed_list():
     mixed = minimal(lists(integers() | text()), lambda x: len(x) >= 10)
-    assert set(mixed).issubset(set((0, u"")))
+    assert set(mixed).issubset({0, u""})
 
 
 def test_minimize_longer_string():
@@ -85,14 +85,11 @@ def test_minimize_longer_list_of_strings():
 
 
 def test_minimize_3_set():
-    assert minimal(sets(integers()), lambda x: len(x) >= 3) in (
-        set((0, 1, 2)),
-        set((-1, 0, 1)),
-    )
+    assert minimal(sets(integers()), lambda x: len(x) >= 3) in ({0, 1, 2}, {-1, 0, 1})
 
 
 def test_minimize_3_set_of_tuples():
-    assert minimal(sets(tuples(integers())), lambda x: len(x) >= 2) == set(((0,), (1,)))
+    assert minimal(sets(tuples(integers())), lambda x: len(x) >= 2) == {(0,), (1,)}
 
 
 def test_minimize_sets_of_sets():
@@ -163,7 +160,7 @@ def test_dictionary(dict_class):
         lambda t: len(t) >= 3,
     )
     assert isinstance(x, dict_class)
-    assert set(x.values()) == set((u"",))
+    assert set(x.values()) == {u""}
     for k in x:
         if k < 0:
             assert k + 1 in x
@@ -301,7 +298,7 @@ def test_minimize_dict():
 def test_minimize_list_of_sets():
     assert minimal(
         lists(sets(booleans())), lambda x: len(list(filter(None, x))) >= 3
-    ) == ([set((False,))] * 3)
+    ) == ([{False}] * 3)
 
 
 def test_minimize_list_of_lists():

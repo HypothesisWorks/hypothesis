@@ -94,7 +94,7 @@ Strategies = st.recursive(
 )
 
 
-strategy_globals = dict((k, getattr(st, k)) for k in dir(st))
+strategy_globals = {k: getattr(st, k) for k in dir(st)}
 
 strategy_globals["OrderedDict"] = OrderedDict
 strategy_globals["inf"] = float("inf")
