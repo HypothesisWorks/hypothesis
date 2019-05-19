@@ -249,11 +249,11 @@ def test_sets():
     objects = [
         set(),
         frozenset(),
-        set([1]),
+        {1},
         frozenset([1]),
-        set([1, 2]),
+        {1, 2},
         frozenset([1, 2]),
-        set([-1, -2, -3]),
+        {-1, -2, -3},
     ]
     expected = [
         "set()",
@@ -270,14 +270,14 @@ def test_sets():
 
 
 def test_unsortable_set():
-    xs = set([1, 2, 3, "foo", "bar", "baz", object()])
+    xs = {1, 2, 3, "foo", "bar", "baz", object()}
     p = pretty.pretty(xs)
     for x in xs:
         assert pretty.pretty(x) in p
 
 
 def test_unsortable_dict():
-    xs = dict((k, 1) for k in [1, 2, 3, "foo", "bar", "baz", object()])
+    xs = {k: 1 for k in [1, 2, 3, "foo", "bar", "baz", object()]}
     p = pretty.pretty(xs)
     for x in xs:
         assert pretty.pretty(x) in p
@@ -389,7 +389,7 @@ def test_long_tuple():
 
 
 def test_long_dict():
-    d = dict((n, n) for n in range(10000))
+    d = {n: n for n in range(10000)}
     p = pretty.pretty(d)
     last2 = p.rsplit("\n", 2)[-2:]
     assert_equal(last2, [" 999: 999,", " ...}"])

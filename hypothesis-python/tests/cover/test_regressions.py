@@ -82,7 +82,7 @@ def test_mock_injection():
 
 def test_regression_issue_1230():
     strategy = st.builds(
-        lambda x, y: dict((list(x.items()) + list(y.items()))),
+        lambda x, y: dict(list(x.items()) + list(y.items())),
         st.fixed_dictionaries({"0": st.text()}),
         st.builds(
             lambda dictionary, keys: {key: dictionary[key] for key in keys},

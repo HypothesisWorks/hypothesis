@@ -161,8 +161,8 @@ def test_example_depth_marking():
 
     assert len(d.examples) == 6
 
-    depths = set((ex.length, ex.depth) for ex in d.examples)
-    assert depths == set([(2, 1), (3, 2), (6, 2), (9, 1), (12, 1), (23, 0)])
+    depths = {(ex.length, ex.depth) for ex in d.examples}
+    assert depths == {(2, 1), (3, 2), (6, 2), (9, 1), (12, 1), (23, 0)}
 
 
 def test_has_examples_even_when_empty():

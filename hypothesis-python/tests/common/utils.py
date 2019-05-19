@@ -130,7 +130,7 @@ def checks_deprecated_behaviour(func):
 
 
 def all_values(db):
-    return set(v for vs in db.data.values() for v in vs)
+    return {v for vs in db.data.values() for v in vs}
 
 
 def non_covering_examples(database):

@@ -493,7 +493,7 @@ def dtype_factory(kind, sizes, valid_sizes, endianness):
             valid_sizes,
         )
         if all(isinstance(s, int) for s in sizes):
-            sizes = sorted(set(s // 8 for s in sizes))
+            sizes = sorted({s // 8 for s in sizes})
     strat = st.sampled_from(sizes)
     if "{}" not in kind:
         kind += "{}"

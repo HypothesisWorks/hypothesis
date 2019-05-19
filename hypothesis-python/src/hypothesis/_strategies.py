@@ -1236,7 +1236,7 @@ def builds(
             "builds(), but is only allowed as a keyword arg"
         )
     required = required_args(target, args, kwargs) or set()
-    to_infer = set(k for k, v in kwargs.items() if v is infer)
+    to_infer = {k for k, v in kwargs.items() if v is infer}
     if required or to_infer:
         if isclass(target) and attr.has(target):
             # Use our custom introspection for attrs classes

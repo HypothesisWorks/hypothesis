@@ -50,6 +50,6 @@ def test_can_collectively_minimize(spec):
             settings=settings(max_examples=2000),
         )
         assert len(xs) == n
-        assert 2 <= len(set((map(repr, xs)))) <= 3
+        assert 2 <= len(set(map(repr, xs))) <= 3
     except NoSuchExample:
         pass

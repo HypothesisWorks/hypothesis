@@ -72,6 +72,7 @@ pytest==4.5.0
 python-dateutil==2.8.0
 python-gitlab==1.8.0      # via pyupio
 pytz==2019.1              # via babel, django
+pyupgrade==1.17.0
 pyupio==1.0.2
 pyyaml==5.1               # via bandit, dparse, pyupio
 readme-renderer==24.0     # via twine
@@ -92,6 +93,7 @@ sphinxcontrib-qthelp==1.0.2  # via sphinx
 sphinxcontrib-serializinghtml==1.1.3  # via sphinx
 sqlparse==0.3.0           # via django
 stevedore==1.30.1         # via bandit
+tokenize-rt==2.2.0        # via pyupgrade
 toml==0.10.0
 tox==3.10.0
 tqdm==4.31.1              # via pyupio, twine

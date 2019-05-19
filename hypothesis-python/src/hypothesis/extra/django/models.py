@@ -93,7 +93,7 @@ def models(
     if missed:
         raise InvalidArgument(
             u"Missing arguments for mandatory field%s %s for model %s"
-            % (u"s" if missed else u"", u", ".join(missed), model.__name__)
+            % (u"s" if len(missed) > 1 else u"", u", ".join(missed), model.__name__)
         )
 
     for field in result:
