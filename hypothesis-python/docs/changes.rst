@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.23.6:
+
+-------------------
+4.23.6 - 2019-05-19
+-------------------
+
+This release adds the :pypi:`pyupgrade` fixer to our code style,
+for consistent use of dict and set literals and comprehensions.
+
 .. _v4.23.5:
 
 -------------------
