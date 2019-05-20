@@ -72,7 +72,7 @@ pytest==4.5.0
 python-dateutil==2.8.0
 python-gitlab==1.8.0      # via pyupio
 pytz==2019.1              # via babel, django
-pyupgrade==1.17.0
+pyupgrade==1.17.1
 pyupio==1.0.2
 pyyaml==5.1               # via bandit, dparse, pyupio
 readme-renderer==24.0     # via twine
