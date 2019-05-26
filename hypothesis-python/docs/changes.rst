@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.23.7:
+
+-------------------
+4.23.7 - 2019-05-26
+-------------------
+
+This patch clarifies some error messages when the test function signature
+is incompatible with the arguments to :func:`@given <hypothesis.given>`,
+especially when the :obj:`@settings() <hypothesis.settings>` decorator
+is also used (:issue:`1978`).
+
 .. _v4.23.6:
 
 -------------------
