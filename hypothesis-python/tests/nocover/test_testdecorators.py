@@ -18,7 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 from hypothesis import HealthCheck, given, reject, settings
-from hypothesis.errors import Unsatisfiable
+from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.strategies import integers
 from tests.common.utils import raises
 
@@ -44,3 +44,20 @@ def test_contains_the_test_function_name_in_the_exception_string():
     with raises(Unsatisfiable) as e:
         Foo().this_has_a_unique_name_and_lives_on_a_class()
     assert (Foo.this_has_a_unique_name_and_lives_on_a_class.__name__) in e.value.args[0]
+
+
+def test_signature_mismatch_error_message():
+    # Regression test for issue #1978
+
+    @settings(max_examples=2)
+    @given(x=integers())
+    def bad_test():
+        pass
+
+    try:
+        bad_test()
+    except InvalidArgument as e:
+        assert (
+            str(e) == "bad_test() got an unexpected keyword argument 'x', "
+            "from `x=integers()` in @given"
+        )
