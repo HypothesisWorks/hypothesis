@@ -26,7 +26,6 @@ from hypothesis import HealthCheck, Phase, assume, example, given, settings
 from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
-from tests.cover.test_conjecture_engine import run_to_buffer
 
 
 def test_does_draw_data_for_empty_range():
@@ -147,12 +146,3 @@ def test_sampler_distribution(weights):
         calculated[base] += (1 - p_alternate) / n
         calculated[alternate] += p_alternate / n
     assert probabilities == calculated
-
-
-def test_get_randbits_can_set_high_bit():
-    @run_to_buffer
-    def x(data):
-        if cu.getrandbits(data, 8) >> 7:
-            data.mark_interesting()
-
-    assert x == hbytes([1 << 7])
