@@ -456,14 +456,11 @@ For very complex code, we have observed Hypothesis finding novel bugs after
 
 settings._define_setting(
     "buffer_size",
-    default=8 * 1024,
+    default=not_set,
     validator=lambda x: _ensure_positive_int(x, "buffer_size", since="2019-03-06"),
-    show_default=False,
-    description="""
-The size of the underlying data used to generate examples. If you need to
-generate really large examples you may want to increase this, but it will make
-your tests slower.
-""",
+    description="The buffer_size setting has been deprecated and no longer does anything.",
+    deprecation_message="The buffer_size setting can safely be removed with no effect.",
+    deprecated_since="RELEASEDAY",
 )
 
 

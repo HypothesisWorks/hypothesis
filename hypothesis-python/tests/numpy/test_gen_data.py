@@ -199,7 +199,7 @@ def test_can_generate_compound_dtypes(dtype):
     assert isinstance(dtype, np.dtype)
 
 
-@given(nps.nested_dtypes(max_itemsize=settings.default.buffer_size // 10), st.data())
+@given(nps.nested_dtypes(max_itemsize=400), st.data())
 def test_infer_strategy_from_dtype(dtype, data):
     # Given a dtype
     assert isinstance(dtype, np.dtype)
@@ -226,7 +226,7 @@ def test_minimise_nested_types():
 def test_minimise_array_strategy():
     smallest = minimal(
         nps.arrays(
-            nps.nested_dtypes(max_itemsize=settings.default.buffer_size // 3 ** 3),
+            nps.nested_dtypes(max_itemsize=200),
             nps.array_shapes(max_dims=3, max_side=3),
         )
     )

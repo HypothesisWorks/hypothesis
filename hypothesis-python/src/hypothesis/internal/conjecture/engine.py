@@ -57,6 +57,7 @@ MAX_SHRINKS = 500
 CACHE_SIZE = 10000
 MUTATION_POOL_SIZE = 100
 MIN_TEST_CALLS = 10
+BUFFER_SIZE = 8 * 1024
 
 
 @attr.s
@@ -237,7 +238,7 @@ class ConjectureRunner(object):
 
     @property
     def cap(self):
-        return self.settings.buffer_size // 2
+        return BUFFER_SIZE // 2
 
     def record_for_health_check(self, data):
         # Once we've actually found a bug, there's no point in trying to run
@@ -602,13 +603,12 @@ class ConjectureRunner(object):
             # the time to look for additional failures.
             return
 
-        zero_data = self.cached_test_function(hbytes(self.settings.buffer_size))
+        zero_data = self.cached_test_function(hbytes(BUFFER_SIZE))
         if zero_data.status > Status.OVERRUN:
             self.__data_cache.pin(zero_data.buffer)
 
         if zero_data.status == Status.OVERRUN or (
-            zero_data.status == Status.VALID
-            and len(zero_data.buffer) * 2 > self.settings.buffer_size
+            zero_data.status == Status.VALID and len(zero_data.buffer) * 2 > BUFFER_SIZE
         ):
             fail_health_check(
                 self.settings,
@@ -770,7 +770,7 @@ class ConjectureRunner(object):
     def new_conjecture_data(self, draw_bytes):
         return ConjectureData(
             draw_bytes=draw_bytes,
-            max_length=self.settings.buffer_size,
+            max_length=BUFFER_SIZE,
             observer=self.tree.new_observer(),
         )
 

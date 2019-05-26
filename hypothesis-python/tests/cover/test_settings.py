@@ -480,6 +480,11 @@ def test_dubious_settings_deprecations(name):
 
 
 @checks_deprecated_behaviour
+def test_buffer_size_deprecated():
+    assert settings(buffer_size=100).buffer_size == 100
+
+
+@checks_deprecated_behaviour
 def test_max_example_eq_0_warns_and_disables_generation():
     # Terrible way to disable generation, but did predate the phases setting
     # and existed in our test suite so it's not an error *just* yet.
