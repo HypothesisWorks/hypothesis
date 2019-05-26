@@ -89,7 +89,17 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
     @given(st.data())
     def run_state_machine(factory, data):
         machine = factory()
-        check_type(GenericStateMachine, machine, "state_machine_factory()")
+        if isinstance(machine, GenericStateMachine) and not isinstance(
+            machine, RuleBasedStateMachine
+        ):
+            note_deprecation(
+                "%s inherits from GenericStateMachine, which is deprecated.  Use a "
+                "RuleBasedStateMachine, or a test function with st.data(), instead."
+                % (type(machine).__name__,),
+                since="RELEASEDAY",
+            )
+        else:
+            check_type(RuleBasedStateMachine, machine, "state_machine_factory()")
         data.conjecture_data.hypothesis_runner = machine
 
         n_steps = settings.stateful_step_count
@@ -150,25 +160,28 @@ class GenericStateMachineMeta(type):
 class GenericStateMachine(
     GenericStateMachineMeta("GenericStateMachine", (object,), {})  # type: ignore
 ):
-    """A GenericStateMachine is the basic entry point into Hypothesis's
-    approach to stateful testing.
+    """A GenericStateMachine is a deprecated approach to stateful testing.
 
-    The intent is for it to be subclassed to provide state machine descriptions
+    In earlier versions of Hypothesis, you would define ``steps``,
+    ``execute_step``, ``teardown``, and ``check_invariants`` methods;
+    and the engine would then run something like the following::
 
-    The way this is used is that Hypothesis will repeatedly execute something
-    that looks something like::
+        @given(st.data())
+        def test_the_stateful_thing(data):
+            x = MyStatemachineSubclass()
+            x.check_invariants()
+            try:
+                for _ in range(50):
+                    step = data.draw(x.steps())
+                    x.execute_step(step)
+                    x.check_invariants()
+            finally:
+                x.teardown()
 
-        x = MyStatemachineSubclass()
-        x.check_invariants()
-        try:
-            for _ in range(n_steps):
-                x.execute_step(x.steps().example())
-                x.check_invariants()
-        finally:
-            x.teardown()
-
-    And if this ever produces an error it will shrink it down to a small
-    sequence of example choices demonstrating that.
+    We now recommend using rule-based stateful testing instead wherever
+    possible.  If your test is better expressed in the above format than
+    as a rule-based state machine, we suggest "unrolling" your method
+    definitions into a simple test function with the above control flow.
     """
 
     def steps(self):

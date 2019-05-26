@@ -23,7 +23,7 @@ import pytest
 
 from hypothesis import find, given, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.stateful import GenericStateMachine
+from hypothesis.stateful import RuleBasedStateMachine, rule
 
 
 def test_cannot_use_without_a_runner():
@@ -60,12 +60,10 @@ class TestStuff(TestCase):
         assert runner is self
 
 
-class RunnerStateMachine(GenericStateMachine):
-    def steps(self):
-        return st.runner()
-
-    def execute_step(self, step):
-        assert self is step
+class RunnerStateMachine(RuleBasedStateMachine):
+    @rule(runner=st.runner())
+    def step(self, runner):
+        assert runner is self
 
 
 TestState = RunnerStateMachine.TestCase
