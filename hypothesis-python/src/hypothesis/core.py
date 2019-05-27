@@ -230,6 +230,7 @@ def is_invalid_test(name, original_argspec, generator_arguments, generator_kwarg
         def wrapped_test(*arguments, **kwargs):
             raise InvalidArgument(message)
 
+        wrapped_test.is_hypothesis_test = True
         return wrapped_test
 
     if not (generator_arguments or generator_kwargs):
@@ -244,12 +245,11 @@ def is_invalid_test(name, original_argspec, generator_arguments, generator_kwarg
         )
 
     if len(generator_arguments) > len(original_argspec.args):
+        args = tuple(generator_arguments)
         return invalid(
-            (
-                "Too many positional arguments for %s() (got %d but"
-                " expected at most %d"
-            )
-            % (name, len(generator_arguments), len(original_argspec.args))
+            "Too many positional arguments for %s() were passed to @given "
+            "- expected at most %d arguments, but got %d %r"
+            % (name, len(original_argspec.args), len(args), args)
         )
 
     if infer in generator_arguments:
@@ -266,16 +266,15 @@ def is_invalid_test(name, original_argspec, generator_arguments, generator_kwarg
         if k not in original_argspec.args + original_argspec.kwonlyargs
     ]
     if extra_kwargs and not original_argspec.varkw:
+        arg = extra_kwargs[0]
         return invalid(
-            "%s() got an unexpected keyword argument %r" % (name, extra_kwargs[0])
+            "%s() got an unexpected keyword argument %r, from `%s=%r` in @given"
+            % (name, arg, arg, generator_kwargs[arg])
         )
     for a in original_argspec.args:
         if isinstance(a, list):  # pragma: no cover
             return invalid(
-                (
-                    "Cannot decorate function %s() because it has "
-                    "destructuring arguments"
-                )
+                "Cannot decorate function %s() because it has destructuring arguments"
                 % (name,)
             )
     if original_argspec.defaults or original_argspec.kwonlydefaults:
