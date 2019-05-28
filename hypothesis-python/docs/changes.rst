@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.23.9:
+
+-------------------
+4.23.9 - 2019-05-28
+-------------------
+
+This patch fixes a very rare example database issue with file permissions.
+
+When running a test that uses both :func:`@given <hypothesis.given>`
+and ``pytest.mark.parametrize``, using :pypi:`pytest-xdist` on Windows,
+with failing examples in the database, two attempts to read a file could
+overlap and we caught ``FileNotFound`` but not other ``OSError``\ s.
+
 .. _v4.23.8:
 
 -------------------
