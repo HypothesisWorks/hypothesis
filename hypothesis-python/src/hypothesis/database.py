@@ -24,7 +24,7 @@ from hashlib import sha1
 
 from hypothesis.configuration import storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
-from hypothesis.internal.compat import FileNotFoundError, hbytes
+from hypothesis.internal.compat import hbytes
 from hypothesis.utils.conventions import not_set
 
 
@@ -171,7 +171,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             try:
                 with open(os.path.join(kp, path), "rb") as i:
                     yield hbytes(i.read())
-            except FileNotFoundError:
+            except EnvironmentError:
                 pass
 
     def save(self, key, value):
