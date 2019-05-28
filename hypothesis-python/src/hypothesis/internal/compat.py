@@ -525,27 +525,6 @@ def implements_iterator(it):
     return it
 
 
-if PY3:
-    FileNotFoundError = FileNotFoundError  # type: Type[IOError]
-else:
-    FileNotFoundError = IOError
-
-# We need to know what sort of exception gets thrown when you try to write over
-# an existing file where you're not allowed to. This is rather less consistent
-# between versions than might be hoped.
-if PY3:
-    FileExistsError = FileExistsError  # type: Type[IOError]
-
-elif WINDOWS:
-    FileExistsError = WindowsError
-
-else:
-    # This doesn't happen in this case: We're not on windows and don't support
-    # the x flag because it's Python 2, so there are no places where this can
-    # be thrown.
-    FileExistsError = None
-
-
 # Under Python 2, math.floor and math.ceil return floats, which cannot
 # represent large integers - eg `float(2**53) == float(2**53 + 1)`.
 # We therefore implement them entirely in (long) integer operations.
