@@ -98,17 +98,11 @@ def test_prints_statistics_for_unittest_tests(testdir):
 
 
 STATEFUL_TESTSUITE = """
+from hypothesis.stateful import RuleBasedStateMachine, rule
 
-from hypothesis import given
-from hypothesis.strategies import integers
-from hypothesis.stateful import GenericStateMachine
-
-
-class Stuff(GenericStateMachine):
-    def steps(self):
-        return integers()
-
-    def execute_step(self, step):
+class Stuff(RuleBasedStateMachine):
+    @rule()
+    def step(self):
         pass
 
 TestStuff = Stuff.TestCase

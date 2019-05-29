@@ -333,82 +333,10 @@ invariants, you should store relevant data on the instance instead.
 Generic state machines
 ----------------------
 
-The class :class:`~hypothesis.stateful.GenericStateMachine` is the underlying machinery of stateful testing
-in Hypothesis. Chances are you will want to use the rule based stateful testing
-for most things, but the generic state machine functionality can be useful e.g. if
-you want to test things where the set of actions to be taken is more closely
-tied to the state of the system you are testing.
+.. warning::
+    ``GenericStateMachine`` is deprecated and will be removed in a future version.
 
-.. note::
-    GenericStateMachine is a *very* thin wrapper around :func:`@given <hypothesis.given>`
-    and :func:`~hypothesis.strategies.data`.  Consider using those primitives directly,
-    as the resulting tests are usually easier to write, understand, and debug.
-    GenericStateMachine only exists because it predates :func:`~hypothesis.strategies.data`,
-    and will be deprecated and removed in a future version (:issue:`1693`).
-
-.. module:: hypothesis.stateful
-.. autoclass:: GenericStateMachine
-    :members: steps, execute_step, check_invariants, teardown
-
-For example, here we use stateful testing as a sort of link checker, to test
-`hypothesis.works <https://hypothesis.works>`_ for broken links or links that
-use HTTP instead of HTTPS.
-
-.. code:: python
-
-  from hypothesis.stateful import GenericStateMachine
-  import hypothesis.strategies as st
-  from requests_html import HTMLSession
-
-
-  class LinkChecker(GenericStateMachine):
-      def __init__(self):
-          super(LinkChecker, self).__init__()
-          self.session = HTMLSession()
-          self.result = None
-
-      def steps(self):
-          if self.result is None:
-              # Always start on the home page
-              return st.just("https://hypothesis.works/")
-          else:
-              return st.sampled_from([
-                  l
-                  for l in self.result.html.absolute_links
-                  # Don't try to crawl to other people's sites
-                  if l.startswith("https://hypothesis.works") and
-                  # Avoid Cloudflare's bot protection. We are a bot but we don't
-                  # care about the info it's hiding.
-                  '/cdn-cgi/' not in l
-              ])
-
-      def execute_step(self, step):
-          self.result = self.session.get(step)
-
-          assert self.result.status_code == 200
-
-          for l in self.result.html.absolute_links:
-              # All links should be HTTPS
-              assert "https://hypothesis.works/" not in l
-
-
-  TestLinks = LinkChecker.TestCase
-
-Running this (at the time of writing this documentation) produced the following
-output:
-
-::
-
-  AssertionError: assert 'https://hypothesis.works/' not in 'http://hypoth...test-fixtures/'
-  'https://hypothesis.works/' is contained here:
-    https://hypothesis.works/articles/hypothesis-pytest-fixtures/
-  ? +++++++++++++++++++++++++
-
-    ------------ Hypothesis ------------
-
-  Step #1: 'https://hypothesis.works/'
-  Step #2: 'https://hypothesis.works/articles/'
-
+.. autoclass:: hypothesis.stateful.GenericStateMachine
 
 -------------------------
 More fine grained control
@@ -416,7 +344,7 @@ More fine grained control
 
 If you want to bypass the TestCase infrastructure you can invoke these
 manually. The stateful module exposes the function ``run_state_machine_as_test``,
-which takes an arbitrary function returning a GenericStateMachine and an
+which takes an arbitrary function returning a RuleBasedStateMachine and an
 optional settings parameter and does the same as the class based runTest
 provided.
 
