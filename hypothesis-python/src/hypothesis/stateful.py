@@ -96,7 +96,7 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
                 "%s inherits from GenericStateMachine, which is deprecated.  Use a "
                 "RuleBasedStateMachine, or a test function with st.data(), instead."
                 % (type(machine).__name__,),
-                since="RELEASEDAY",
+                since="2019-05-29",
             )
         else:
             check_type(RuleBasedStateMachine, machine, "state_machine_factory()")
