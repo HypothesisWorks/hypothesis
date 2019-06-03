@@ -23,9 +23,7 @@ import pytest
 
 from hypothesis import given
 from hypothesis.internal.compat import hrange
-from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
-from hypothesis.searchstrategy.datetime import DatetimeStrategy
-from hypothesis.strategies import binary, dates, datetimes, none, timedeltas, times
+from hypothesis.strategies import dates, datetimes, timedeltas, times
 from tests.common.debug import find_any, minimal
 
 
@@ -88,21 +86,6 @@ def test_bordering_on_a_leap_year():
     assert x.year == 2004
 
 
-def test_DatetimeStrategy_draw_may_fail():
-    def is_failure_inducing(b):
-        try:
-            return strat._attempt_one_draw(ConjectureData.for_buffer(b)) is None
-        except StopTest:
-            return False
-
-    strat = DatetimeStrategy(dt.datetime.min, dt.datetime.max, none())
-    failure_inducing = minimal(binary(), is_failure_inducing, timeout_after=30)
-    data = ConjectureData.for_buffer(failure_inducing * 100)
-    with pytest.raises(StopTest):
-        data.draw(strat)
-    assert data.status == Status.INVALID
-
-
 def test_can_find_after_the_year_2000():
     assert minimal(dates(), lambda x: x.year > 2000).year == 2001
 
@@ -111,9 +94,9 @@ def test_can_find_before_the_year_2000():
     assert minimal(dates(), lambda x: x.year < 2000).year == 1999
 
 
-def test_can_find_each_month():
-    for month in hrange(1, 13):
-        find_any(dates(), lambda x: x.month == month)
+@pytest.mark.parametrize("month", hrange(1, 13))
+def test_can_find_each_month(month):
+    find_any(dates(), lambda x: x.month == month)
 
 
 def test_min_year_is_respected():
