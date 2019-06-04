@@ -182,7 +182,7 @@ def convert_keyword_arguments(function, args, kwargs):
             else:
                 raise TypeError("No value provided for argument %r" % (arg_name))
 
-    if kwargs and not argspec.varkw:
+    if kwargs and not (argspec.varkw or argspec.kwonlyargs):
         if len(kwargs) > 1:
             raise TypeError(
                 "%s() got unexpected keyword arguments %s"
