@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.24.1:
+
+-------------------
+4.24.1 - 2019-06-04
+-------------------
+
+This patch fixes :issue:`1999`, a spurious bug raised when a :func:`@st.composite <hypothesis.strategies.composite>` function was passed a keyword-only argument.
+
+Thanks to Jim Nicholls for his fantastic bug report.
+
 .. _v4.24.0:
 
 -------------------
