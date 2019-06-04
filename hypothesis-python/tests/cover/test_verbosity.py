@@ -23,6 +23,7 @@ from hypothesis import find, given
 from hypothesis._settings import Verbosity, settings
 from hypothesis.reporting import default as default_reporter, with_reporter
 from hypothesis.strategies import booleans, integers, lists
+from tests.common.debug import minimal
 from tests.common.utils import capture_out, fails
 
 
@@ -60,16 +61,11 @@ def test_does_not_log_in_quiet_mode():
 
 def test_includes_progress_in_verbose_mode():
     with capture_verbosity() as o:
-
-        def foo():
-            find(
-                lists(integers()),
-                lambda x: sum(x) >= 100,
-                settings=settings(verbosity=Verbosity.verbose, database=None),
-            )
-
-        foo()
-
+        minimal(
+            lists(integers(), min_size=1),
+            lambda x: sum(x) >= 100,
+            settings(verbosity=Verbosity.verbose),
+        )
     out = o.getvalue()
     assert out
     assert u"Shrunk example" in out
