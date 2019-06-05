@@ -28,7 +28,7 @@ class Timeout(BaseException):
     pass
 
 
-def minimal(definition, condition=None, settings=None, timeout_after=10, random=None):
+def minimal(definition, condition=None, settings=None, timeout_after=10):
     settings = Settings(settings, max_examples=50000, database=None)
 
     runtime = []
@@ -47,27 +47,16 @@ def minimal(definition, condition=None, settings=None, timeout_after=10, random=
             runtime.append(0.0)
         return result
 
-    return find(definition, wrapped_condition, settings=settings, random=random)
+    return find(definition, wrapped_condition, settings=settings)
 
 
-def find_any(definition, condition=lambda _: True, settings=None, random=None):
-    settings = Settings(settings, max_examples=10000, phases=no_shrink, database=None)
-    return find(definition, condition, settings=settings, random=random)
+def find_any(definition, condition=lambda _: True, settings=None):
+    return minimal(definition, condition, settings=Settings(settings, phases=no_shrink))
 
 
-def assert_no_examples(strategy, condition=None):
-    if condition is None:
-
-        def predicate(x):
-            reject()
-
-    else:
-
-        def predicate(x):
-            assume(condition(x))
-
+def assert_no_examples(strategy, condition=lambda _: True):
     try:
-        result = find(strategy, predicate, settings=Settings(phases=no_shrink))
+        result = find_any(strategy, condition)
         assert False, "Expected no results but found %r" % (result,)
     except (Unsatisfiable, NoSuchExample):
         pass
@@ -82,9 +71,7 @@ def assert_all_examples(strategy, predicate):
 
     @given(strategy)
     def assert_examples(s):
-        assert predicate(s), "Found %r using strategy %s which does not match" % (
-            s,
-            strategy,
-        )
+        msg = "Found %r using strategy %s which does not match" % (s, strategy)
+        assert predicate(s), msg
 
     assert_examples()
