@@ -22,3 +22,4 @@ exclude_lines =
     __deepcopy__
     except ImportError:
     if PY2:
+    assert all\(.+\)
