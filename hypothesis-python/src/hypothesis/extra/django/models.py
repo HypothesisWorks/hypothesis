@@ -34,7 +34,7 @@ if False:
 def add_default_field_mapping(field_type, strategy):
     # type: (Type[dm.Field], st.SearchStrategy[Any]) -> None
     note_deprecation(
-        "This function is deprecated; use `hypothesis.extra.django."
+        "`hypothesis.extra.django.models.add_default_field_mapping` is deprecated; use `hypothesis.extra.django."
         "register_field_strategy` instead.",
         since="2019-01-10",
     )
@@ -76,7 +76,7 @@ def models(
       shop_strategy = models(Shop, company=models(Company))
     """
     note_deprecation(
-        "This function is deprecated; use `hypothesis.extra.django."
+        "`hypothesis.extra.django.models.models` is deprecated; use `hypothesis.extra.django."
         "from_model` instead.",
         since="2019-01-10",
     )
