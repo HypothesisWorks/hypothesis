@@ -21,7 +21,7 @@ click==7.0                # via black, pip-tools, pyupio, safety
 coverage==4.5.3
 decorator==4.4.0          # via ipython, traitlets
 deprecated==1.2.5         # via pygithub
-django==2.2.1
+django==2.2.2
 docutils==0.14            # via readme-renderer, restructuredtext-lint, sphinx
 dparse==0.4.1             # via pyupio, safety
 dpcontracts==0.6.0
@@ -35,6 +35,7 @@ gitdb2==2.0.5             # via gitpython
 gitpython==2.1.11         # via bandit
 idna==2.8                 # via requests
 imagesize==1.1.0          # via sphinx
+importlib-metadata==0.17  # via pluggy, pytest
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.5.0
 isort==4.3.20
@@ -48,15 +49,15 @@ mock==3.0.5
 more-itertools==5.0.0
 mypy-extensions==0.4.1    # via mypy
 mypy==0.701
-numpy==1.16.3
-packaging==19.0           # via dparse, pyupio, safety, sphinx
+numpy==1.16.4
+packaging==19.0           # via dparse, pytest, pyupio, safety, sphinx
 parso==0.4.0              # via jedi
-pbr==5.2.0                # via stevedore
+pbr==5.2.1                # via stevedore
 pexpect==4.7.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pip-tools==3.7.0
 pkginfo==1.5.0.1          # via twine
-pluggy==0.11.0            # via pytest, tox
+pluggy==0.12.0            # via pytest, tox
 prompt-toolkit==2.0.9     # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.8.0                 # via pytest, tox
@@ -64,15 +65,15 @@ pycodestyle==2.5.0        # via flake8
 pydocstyle==3.0.0         # via flake8-docstrings
 pyflakes==2.1.1           # via autoflake, flake8
 pygithub==1.43.7          # via pyupio
-pygments==2.4.1           # via ipython, readme-renderer, sphinx
+pygments==2.4.2           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pylint==2.3.1
 pyparsing==2.4.0          # via packaging
-pytest==4.5.0
+pytest==4.6.1
 python-dateutil==2.8.0
 python-gitlab==1.8.0      # via pyupio
 pytz==2019.1              # via babel, django
-pyupgrade==1.17.1
+pyupgrade==1.18.0
 pyupio==1.0.2
 pyyaml==5.1               # via bandit, dparse, pyupio
 readme-renderer==24.0     # via twine
@@ -84,7 +85,7 @@ six==1.12.0               # via astroid, bandit, bleach, dparse, mock, more-iter
 smmap2==2.0.5             # via gitdb2
 snowballstemmer==1.2.1    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.3
-sphinx==2.0.1
+sphinx==2.1.0
 sphinxcontrib-applehelp==1.0.1  # via sphinx
 sphinxcontrib-devhelp==1.0.1  # via sphinx
 sphinxcontrib-htmlhelp==1.0.2  # via sphinx
@@ -105,3 +106,4 @@ virtualenv==16.6.0        # via tox
 wcwidth==0.1.7            # via prompt-toolkit, pytest
 webencodings==0.5.1       # via bleach
 wrapt==1.11.1             # via astroid, deprecated
+zipp==0.5.1               # via importlib-metadata
