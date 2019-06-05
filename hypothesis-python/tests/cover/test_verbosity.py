@@ -68,8 +68,8 @@ def test_includes_progress_in_verbose_mode():
         )
     out = o.getvalue()
     assert out
-    assert u"Shrunk example" in out
-    assert u"Found satisfying example" in out
+    assert u"Trying example: " in out
+    assert u"Falsifying example: " in out
 
 
 def test_prints_initial_attempts_on_find():
