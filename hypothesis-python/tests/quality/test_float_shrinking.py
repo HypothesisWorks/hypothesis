@@ -54,6 +54,6 @@ def test_shrinks_downwards_to_integers_when_fractional(b):
     g = minimal(
         st.floats(),
         lambda x: assume((0 < x < (2 ** 53)) and int(x) != x) and x >= b,
-        settings=settings(verbosity=Verbosity.quiet),
+        settings=settings(verbosity=Verbosity.quiet, max_examples=10 ** 6),
     )
     assert g == b + 0.5

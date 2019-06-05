@@ -80,16 +80,16 @@ def test_step_will_be_positive(size):
     find_any(st.slices(size), lambda x: x.step > 0)
 
 
-@given(st.integers(1, 10))
-@settings(deadline=None)
+@pytest.mark.parametrize("size", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 def test_stop_will_equal_size(size):
-    find_any(st.slices(size), lambda x: x.stop == size)
+    find_any(st.slices(size), lambda x: x.stop == size, settings(max_examples=10 ** 6))
 
 
-@given(st.integers(1, 10))
-@settings(deadline=None)
+@pytest.mark.parametrize("size", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 def test_start_will_equal_size(size):
-    find_any(st.slices(size), lambda x: x.start == size - 1)
+    find_any(
+        st.slices(size), lambda x: x.start == size - 1, settings(max_examples=10 ** 6)
+    )
 
 
 @given(st.integers(1, 1000))

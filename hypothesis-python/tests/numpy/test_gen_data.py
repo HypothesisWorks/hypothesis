@@ -687,4 +687,5 @@ def test_broadcastable_shape_can_generate_arbitrary_ndims(shape, max_dims, data)
     find_any(
         nps.broadcastable_shapes(shape, min_side=0, max_dims=max_dims, **args),
         lambda x: len(x) == desired_ndim,
+        settings(max_examples=10 ** 6),
     )

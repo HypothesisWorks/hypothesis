@@ -21,7 +21,7 @@ import decimal
 
 import pytest
 
-from hypothesis import assume, given, reject
+from hypothesis import assume, given, reject, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import data, decimals, fractions, integers, none, tuples
 from tests.common.debug import find_any
@@ -88,7 +88,7 @@ def test_decimals_include_nan():
 
 
 def test_decimals_include_inf():
-    find_any(decimals(), lambda x: x.is_infinite())
+    find_any(decimals(), lambda x: x.is_infinite(), settings(max_examples=10 ** 6))
 
 
 @given(decimals(allow_nan=False))
