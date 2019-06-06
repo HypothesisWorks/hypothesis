@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.24.2:
+
+-------------------
+4.24.2 - 2019-06-06
+-------------------
+
+Deprecation messages for functions in ``hypothesis.extra.django.models`` now
+explicitly name the deprecated function to make it easier to track down usages.
+Thanks to Kristian Glass for this contribution!
+
 .. _v4.24.1:
 
 -------------------
