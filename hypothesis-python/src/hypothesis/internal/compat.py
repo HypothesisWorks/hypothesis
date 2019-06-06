@@ -407,6 +407,13 @@ def update_code_location(code, newfile, newlineno):
     code you're probably here because it's broken something and now
     you're angry at me. Sorry.
     """
+    if hasattr(code, "replace"):
+        # Python 3.8.
+        return code.replace(
+            co_filename=newfile,
+            co_firstlineno=newlineno
+        )
+
     unpacked = [getattr(code, name) for name in CODE_FIELD_ORDER]
     unpacked[CODE_FIELD_ORDER.index("co_filename")] = newfile
     unpacked[CODE_FIELD_ORDER.index("co_firstlineno")] = newlineno
