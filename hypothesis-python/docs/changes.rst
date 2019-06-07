@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.24.3:
+
+-------------------
+4.24.3 - 2019-06-07
+-------------------
+
+This patch improves the implementation of an internal wrapper on Python 3.8
+beta1 (and will break on the alphas; but they're not meant to be stable).
+On other versions, there is no change at all.
+
+Thanks to Daniel Hahler for the patch, and Victor Stinner for his work
+on :bpo:`37032` that made it possible.
+
 .. _v4.24.2:
 
 -------------------
