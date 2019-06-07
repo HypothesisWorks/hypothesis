@@ -374,6 +374,9 @@ if PY2:
         "co_cellvars",
     ]
 else:
+    # This field order is accurate for 3.5 - 3.7, but not 3.8 when a new field
+    # was added for positional-only arguments.  However it also added a .replace()
+    # method that we use instead of field indices, so they're fine as-is.
     CODE_FIELD_ORDER = [
         "co_argcount",
         "co_kwonlyargcount",
@@ -392,10 +395,6 @@ else:
         "co_cellvars",
     ]
 
-    if sys.version_info >= (3, 8, 0):
-        # PEP 570 added "positional only arguments"
-        CODE_FIELD_ORDER.insert(1, "co_posonlyargcount")
-
 
 def update_code_location(code, newfile, newlineno):
     """Take a code object and lie shamelessly about where it comes from.
@@ -407,6 +406,12 @@ def update_code_location(code, newfile, newlineno):
     code you're probably here because it's broken something and now
     you're angry at me. Sorry.
     """
+    if hasattr(code, "replace"):
+        # Python 3.8 added positional-only params (PEP 570), and thus changed
+        # the layout of code objects.  In beta1, the `.replace()` method was
+        # added to facilitate future-proof code.  See BPO-37032 for details.
+        return code.replace(co_filename=newfile, co_firstlineno=newlineno)
+
     unpacked = [getattr(code, name) for name in CODE_FIELD_ORDER]
     unpacked[CODE_FIELD_ORDER.index("co_filename")] = newfile
     unpacked[CODE_FIELD_ORDER.index("co_firstlineno")] = newlineno

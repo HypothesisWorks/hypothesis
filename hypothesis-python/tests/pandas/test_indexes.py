@@ -24,7 +24,7 @@ import pytest
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, assume, given, reject, settings
+from hypothesis import HealthCheck, given, reject, settings
 from hypothesis.errors import NoExamples
 from tests.pandas.helpers import supported_by_pandas
 
@@ -72,13 +72,17 @@ def test_generate_arbitrary_indices(data):
     min_size = data.draw(st.integers(0, 10), "min_size")
     max_size = data.draw(st.none() | st.integers(min_size, min_size + 10), "max_size")
     unique = data.draw(st.booleans(), "unique")
-    dtype = data.draw(npst.scalar_dtypes(), "dtype")
-    assume(supported_by_pandas(dtype))
-
-    # Pandas bug: https://github.com/pandas-dev/pandas/pull/14916 until 0.20;
-    # then int64 indexes are inferred from uint64 values.
-    assume(dtype.kind != "u")
-
+    dtype = data.draw(
+        st.one_of(
+            npst.boolean_dtypes(),
+            npst.integer_dtypes(endianness="="),
+            npst.floating_dtypes(endianness="="),
+            npst.complex_number_dtypes(endianness="="),
+            npst.datetime64_dtypes(endianness="="),
+            npst.timedelta64_dtypes(endianness="="),
+        ).filter(supported_by_pandas),
+        "dtype",
+    )
     pass_elements = data.draw(st.booleans(), "pass_elements")
 
     converted_dtype = pandas.Index([], dtype=dtype).dtype
@@ -109,8 +113,7 @@ def test_generate_arbitrary_indices(data):
         else:
             raise
     if dtype is None:
-        if pandas.__version__ >= "0.19":
-            assert index.dtype == inferred_dtype
+        assert index.dtype == inferred_dtype
     else:
         assert index.dtype == converted_dtype
 
