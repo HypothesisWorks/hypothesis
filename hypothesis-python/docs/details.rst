@@ -382,6 +382,34 @@ Check :ref:`the notes on framework compatibility <framework-compatibility>`
 to see how this affects other testing libraries you may be using.
 
 
+.. _targeted-search:
+
+---------------------------
+Targeted example generation
+---------------------------
+
+Targeted property-based testing combines the advantages of both search-based
+and property-based testing.  Instead of being completely random, T-PBT uses
+a search-based component to guide the input generation towards values that
+have a higher probability of falsifying a property.  This explores the input
+space more effectively and requires fewer tests to find a bug or achieve a
+high confidence in the system being tested than random PBT.
+(`Löscher and Sagonas <http://proper.softlab.ntua.gr/Publications.html>`__)
+
+This is not *always* a good idea - for example calculating the search metric
+might take time better spent running more uniformly-random test cases - but
+Hypothesis has **experimental** support for targeted PBT you may wish to try.
+
+.. autofunction:: hypothesis.target
+
+We recommend that users also skim the papers introducing targeted PBT;
+from `ISSTA 2017 <http://proper.softlab.ntua.gr/papers/issta2017.pdf>`__
+and `ICST 2018 <http://proper.softlab.ntua.gr/papers/icst2018.pdf>`__.
+For the curious, the initial implementation in Hypothesis uses hill-climbing
+search via a mutating fuzzer, with some tactics inspired by simulated
+annealing to avoid getting stuck and endlessly mutating a local maximum.
+
+
 .. _custom-function-execution:
 
 -------------------------

@@ -32,7 +32,7 @@ from hypothesis._settings import (
     settings,
     unlimited,
 )
-from hypothesis.control import assume, event, note, reject
+from hypothesis.control import assume, event, note, reject, target
 from hypothesis.core import example, find, given, reproduce_failure, seed
 from hypothesis.internal.entropy import register_random
 from hypothesis.utils.conventions import infer
@@ -56,6 +56,7 @@ __all__ = [
     "event",
     "infer",
     "register_random",
+    "target",
     "__version__",
     "__version_info__",
 ]

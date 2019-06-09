@@ -17,10 +17,13 @@
 
 from __future__ import absolute_import, division, print_function
 
+import math
 import traceback
 
 from hypothesis import Verbosity, settings
 from hypothesis.errors import CleanupFailed, InvalidArgument, UnsatisfiedAssumption
+from hypothesis.internal.compat import string_types
+from hypothesis.internal.validation import check_type
 from hypothesis.reporting import report
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
@@ -125,3 +128,50 @@ def event(value):
 
     if context.data is not None:
         context.data.note_event(value)
+
+
+def target(observation, label=""):
+    # type: (float, str) -> None
+    """Calling this function with a ``float`` observation gives it feedback
+    with which to guide our search for inputs that will cause an error, in
+    addition to all the usual heuristics.  Observations must always be finite.
+
+    Hypothesis will try to maximize the observed value over several examples;
+    almost any metric will work so long as it makes sense to increase it.
+    For example, ``-abs(error)`` is a metric that increases as ``error``
+    approaches zero.
+
+    Example metrics:
+
+    - Number of elements in a collection, or tasks in a queue
+    - Mean or maximum runtime of a task (or both, if you use ``label``)
+    - Compression ratio for data (perhaps per-algorithm or per-level)
+    - Number of steps taken by a state machine
+
+    The optional ``label`` argument can be used to distinguish between
+    and therefore separately optimise distinct observations, such as the
+    mean and standard deviation of a dataset.
+
+    If ``hypothesis.target`` is called multiple times within a single test
+    case with a specific label, this is treated as if you only called it once
+    with the best result for that label.  For example, calling
+    ``target(high_score, "highest score")`` on every frame of an arcade game
+    would tag that test case with the highest score reached in that session.
+
+    .. note::
+        **The more examples you run, the better this technique works.**
+
+        As a rule of thumb, the targeting effect is noticeable above
+        :obj:`max_exmples=1000 <hypothesis.settings.max_examples>`,
+        and immediately obvious by around ten thousand examples
+        *per label* used by your test.
+
+    .. note::
+        ``hypothesis.target`` is considered experimental, and may be radically
+        changed or even removed in a future version.  If you find it useful,
+        please let us know so we can share and build on that success!
+    """
+    check_type(float, observation, "observation")
+    if math.isinf(observation) or math.isnan(observation):
+        raise InvalidArgument("observation=%r must be a finite float." % observation)
+    check_type(string_types, label, "label")
