@@ -756,6 +756,10 @@ class ConjectureData(object):
 
         self.__result = None
 
+        # Observations used for targeted search.  They'll be aggregated in
+        # ConjectureRunner.generate_new_examples and fed to TargetSelector.
+        self.target_observations = {}
+
         # Normally unpopulated but we need this in the niche case
         # that self.as_result() is Overrun but we still want the
         # examples for reporting purposes.

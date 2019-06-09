@@ -1346,6 +1346,7 @@ fake_data_counter = 0
 class FakeData(object):
     status = attr.ib(default=Status.VALID)
     global_identifer = attr.ib(init=False)
+    target_observations = attr.ib(factory=dict)
 
     def __attrs_post_init__(self):
         global fake_data_counter
@@ -1359,6 +1360,29 @@ def test_target_selector_will_maintain_a_bounded_pool():
     for i in range(100):
         selector.add(FakeData())
         assert len(selector) == min(i + 1, 3)
+
+
+def test_target_selector_can_discard_labels():
+    selector = TargetSelector(random=Random(0), pool_size=2)
+    for i in range(10):
+        selector.add(FakeData(target_observations={str(i): 0.0}))
+        assert len(selector) <= 2
+
+
+@pytest.mark.parametrize("pool_size", [5, 25])
+def test_target_selector_will_maintain_a_bounded_size_with_scores(pool_size):
+    selector = TargetSelector(random=Random(0), pool_size=pool_size)
+    selector.add(FakeData())
+
+    for i in range(100):
+        selector.add(FakeData(target_observations={str(i // 3 == 0): float(i % 30)}))
+        assert len(selector) <= pool_size
+        for label, pool in selector.scored_examples.items():
+            scores = [ex.target_observations[label] for ex in pool]
+            assert scores == sorted(scores, reverse=True)
+
+    selector.add(FakeData())
+    assert len(selector) <= pool_size
 
 
 def test_target_selector_will_use_novel_examples_preferentially():

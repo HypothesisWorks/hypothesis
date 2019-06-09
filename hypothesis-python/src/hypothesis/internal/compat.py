@@ -42,6 +42,22 @@ try:
 except ImportError:
     import collections as abc  # type: ignore
 
+try:
+    from itertools import accumulate
+except ImportError:
+
+    def accumulate(iterable, func=lambda a, b: a + b):
+        it = iter(iterable)
+        try:
+            total = next(it)
+        except StopIteration:
+            return
+        yield total
+        for element in it:
+            total = func(total, element)
+            yield total
+
+
 if False:
     from typing import Type, Tuple  # noqa
 

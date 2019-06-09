@@ -57,6 +57,17 @@ def test_multiple_target_calls(args):
         target(observation, label)
 
 
+@given(
+    st.lists(st.floats(allow_nan=False, allow_infinity=False), min_size=11, max_size=20)
+)
+def test_respects_max_pool_size(observations):
+    """Using many examples of several labels like this stresses the
+    pool-size logic and internal assertions in TargetSelector.
+    """
+    for i, obs in enumerate(observations):
+        target(obs, label=str(i))
+
+
 def everything_except(type_):
     # Note: we would usually stick to fater traditional or parametrized
     # tests to check that invalid inputs are rejected, but for `target()`
@@ -78,3 +89,8 @@ def everything_except(type_):
 def test_disallowed_inputs_to_target(observation, label):
     with pytest.raises(InvalidArgument):
         target(observation, label)
+
+
+def test_cannot_target_outside_test():
+    with pytest.raises(InvalidArgument):
+        target(1.0, "example label")

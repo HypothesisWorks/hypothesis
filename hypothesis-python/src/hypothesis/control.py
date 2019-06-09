@@ -24,7 +24,7 @@ from hypothesis import Verbosity, settings
 from hypothesis.errors import CleanupFailed, InvalidArgument, UnsatisfiedAssumption
 from hypothesis.internal.compat import string_types
 from hypothesis.internal.validation import check_type
-from hypothesis.reporting import report
+from hypothesis.reporting import report, verbose_report
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 if False:
@@ -175,3 +175,12 @@ def target(observation, label=""):
     if math.isinf(observation) or math.isnan(observation):
         raise InvalidArgument("observation=%r must be a finite float." % observation)
     check_type(string_types, label, "label")
+
+    context = _current_build_context.value
+    if context is None:
+        raise InvalidArgument("Calling target() outside of a test is invalid.")
+    verbose_report("Saw target(observation=%r, label=%r)" % (observation, label))
+
+    if context.data is not None:
+        if observation > context.data.target_observations.get(label, float("-inf")):
+            context.data.target_observations[label] = observation
