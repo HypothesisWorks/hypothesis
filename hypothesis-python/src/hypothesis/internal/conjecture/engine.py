@@ -679,39 +679,39 @@ class ConjectureRunner(object):
             )
 
         count = 0
-        while should_generate_more() and (
-            count < 10
-            or self.health_check_state is not None
-            # If we have not found a valid prefix yet, the target selector will
-            # be empty and the mutation stage will fail with a very rare internal
-            # error.  We therefore continue this initial random generation step
-            # until we have found at least one prefix to mutate.
-            or len(self.target_selector) == 0
-        ):
-            prefix = self.generate_novel_prefix()
-
-            def draw_bytes(data, n):
-                if data.index < len(prefix):
-                    result = prefix[data.index : data.index + n]
-                    # We always draw prefixes as a whole number of blocks
-                    assert len(result) == n
-                else:
-                    result = uniform(self.random, n)
-                return self.__zero_bound(data, result)
-
-            last_data = self.new_conjecture_data(draw_bytes)
-            self.test_function(last_data)
-            last_data.freeze()
-
-            count += 1
-
         mutations = 0
         mutator = self._new_mutator()
-
         zero_bound_queue = []
 
         while should_generate_more():
-            if zero_bound_queue:
+            if (
+                count < 10
+                or self.health_check_state is not None
+                # If we have not found a valid prefix yet, the target selector will
+                # be empty and the mutation stage will fail with a very rare internal
+                # error.  We therefore continue this initial random generation step
+                # until we have found at least one prefix to mutate.
+                or len(self.target_selector) == 0
+                # For long-running tests, if we are not currently dealing with an
+                # overrun we want a small chance to generate an entirely novel buffer.
+                or not (zero_bound_queue or self.random.randrange(20))
+            ):
+                prefix = self.generate_novel_prefix()
+
+                def draw_bytes(data, n):
+                    if data.index < len(prefix):
+                        result = prefix[data.index : data.index + n]
+                        # We always draw prefixes as a whole number of blocks
+                        assert len(result) == n
+                    else:
+                        result = uniform(self.random, n)
+                    return self.__zero_bound(data, result)
+
+                data = self.new_conjecture_data(draw_bytes)
+                self.test_function(data)
+                data.freeze()
+                count += 1
+            elif zero_bound_queue:
                 # Whenever we generated an example and it hits a bound
                 # which forces zero blocks into it, this creates a weird
                 # distortion effect by making certain parts of the data
