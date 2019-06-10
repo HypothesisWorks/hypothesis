@@ -17,12 +17,14 @@
 
 from __future__ import absolute_import, division, print_function
 
+import random
 from distutils.version import LooseVersion
 
 import pytest
 
 from hypothesis import Verbosity, core, settings
 from hypothesis._settings import note_deprecation
+from hypothesis.errors import Flaky
 from hypothesis.internal.compat import OrderedDict, text_type
 from hypothesis.internal.detection import is_hypothesis_test
 from hypothesis.reporting import default as default_reporter, with_reporter
@@ -108,6 +110,7 @@ def pytest_configure(config):
 
 
 gathered_statistics = OrderedDict()  # type: dict
+states_after = {}  # type: dict
 
 
 @pytest.hookimpl(hookwrapper=True)
@@ -124,9 +127,34 @@ def pytest_runtest_call(item):
 
         with collector.with_value(note_statistics):
             with with_reporter(store):
+                random.seed(random.randrange(2 ** 32))
+                before = random.getstate()
                 yield
+                after = random.getstate()
         if store.results:
             item.hypothesis_report_information = list(store.results)
+        # What's all this messing with randomness for, you ask?
+        # https://github.com/HypothesisWorks/hypothesis/issues/1919
+        #
+        # That is, we want to detect any cases where a test (or Hypothesis)
+        # seeds or sets the random state without restoring it afterwards,
+        # which pollutes the whole test suite with correlations.
+        # We do that by first perturbing the state using seed(randrange()),
+        # then comparing the state before and after; and checking that if
+        # it changed we're in a novel state.
+        #
+        # This detects previous leaks!  It only works if more than one test
+        # leaks the same state, but that's been the case for all so far.
+        if after in states_after and before != after:
+            raise Flaky(
+                "%r finished with the global `random.getstate()` in an identical "
+                "state to another test which started from a *different* state.  "
+                "You probably used random.seed or random.setstate without cleaning "
+                "up afterwards, which substantially weakens Hypothesis test suites."
+                "  If you *want* this determinism, use the `derandomize` setting."
+                % (item.nodeid,)
+            )
+        states_after[after] = before
 
 
 @pytest.hookimpl(hookwrapper=True)
