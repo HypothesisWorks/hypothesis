@@ -15,7 +15,7 @@ backcall==0.1.0           # via ipython
 bandit==1.6.1
 black==19.3b0
 bleach==3.1.0             # via readme-renderer
-certifi==2019.3.9         # via requests
+certifi==2019.6.16         # via requests
 chardet==3.0.4            # via requests
 click==7.0                # via black, pip-tools, pyupio, safety
 coverage==4.5.3
