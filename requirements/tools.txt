@@ -12,10 +12,10 @@ attrs==19.1.0
 autoflake==1.3
 babel==2.7.0              # via sphinx
 backcall==0.1.0           # via ipython
-bandit==1.6.0
+bandit==1.6.1
 black==19.3b0
 bleach==3.1.0             # via readme-renderer
-certifi==2019.3.9         # via requests
+certifi==2019.6.16        # via requests
 chardet==3.0.4            # via requests
 click==7.0                # via black, pip-tools, pyupio, safety
 coverage==4.5.3
@@ -35,7 +35,7 @@ gitdb2==2.0.5             # via gitpython
 gitpython==2.1.11         # via bandit
 idna==2.8                 # via requests
 imagesize==1.1.0          # via sphinx
-importlib-metadata==0.17  # via pluggy, pytest
+importlib-metadata==0.18  # via pluggy, pytest
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.5.0
 isort==4.3.20
@@ -52,7 +52,7 @@ mypy==0.701
 numpy==1.16.4
 packaging==19.0           # via dparse, pytest, pyupio, safety, sphinx
 parso==0.4.0              # via jedi
-pbr==5.2.1                # via stevedore
+pbr==5.3.0                # via stevedore
 pexpect==4.7.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pip-tools==3.8.0
@@ -69,11 +69,11 @@ pygments==2.4.2           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pylint==2.3.1
 pyparsing==2.4.0          # via packaging
-pytest==4.6.2
+pytest==4.6.3
 python-dateutil==2.8.0
 python-gitlab==1.8.0      # via pyupio
 pytz==2019.1              # via babel, django
-pyupgrade==1.18.0
+pyupgrade==1.19.0
 pyupio==1.0.2
 pyyaml==5.1.1             # via bandit, dparse, pyupio
 readme-renderer==24.0     # via twine
@@ -94,7 +94,7 @@ sphinxcontrib-qthelp==1.0.2  # via sphinx
 sphinxcontrib-serializinghtml==1.1.3  # via sphinx
 sqlparse==0.3.0           # via django
 stevedore==1.30.1         # via bandit
-tokenize-rt==2.2.0        # via pyupgrade
+tokenize-rt==3.0.1        # via pyupgrade
 toml==0.10.0
 tox==3.12.1
 tqdm==4.32.1              # via pyupio, twine
@@ -102,7 +102,7 @@ traitlets==4.3.2          # via ipython
 twine==1.13.0
 typed-ast==1.3.5          # via astroid, mypy
 urllib3==1.25.3           # via requests
-virtualenv==16.6.0        # via tox
+virtualenv==16.6.1        # via tox
 wcwidth==0.1.7            # via prompt-toolkit, pytest
 webencodings==0.5.1       # via bleach
 wrapt==1.11.1             # via astroid, deprecated
