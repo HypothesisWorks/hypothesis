@@ -127,6 +127,7 @@ class SearchStrategy(Generic[Ex]):
                 pass
 
             mapping = {}
+            sentinel = object()
             hit_recursion = [False]
 
             # For a first pass we do a direct recursive calculation of the
@@ -138,17 +139,15 @@ class SearchStrategy(Generic[Ex]):
                     return forced_value(strat)
                 except AttributeError:
                     pass
-                try:
-                    result = mapping[strat]
-                    if result is calculating:
-                        hit_recursion[0] = True
-                        return default
-                    else:
-                        return result
-                except KeyError:
+                result = mapping.get(strat, sentinel)
+                if result is calculating:
+                    hit_recursion[0] = True
+                    return default
+                elif result is sentinel:
                     mapping[strat] = calculating
                     mapping[strat] = getattr(strat, calculation)(recur)
                     return mapping[strat]
+                return result
 
             recur(self)
 
@@ -177,12 +176,12 @@ class SearchStrategy(Generic[Ex]):
                     except AttributeError:
                         pass
                     listeners[other].add(strat)
-                    try:
-                        return mapping[other]
-                    except KeyError:
+                    result = mapping.get(other, sentinel)
+                    if result is sentinel:
                         needs_update.add(other)
                         mapping[other] = default
                         return default
+                    return result
 
                 return recur_inner
 
