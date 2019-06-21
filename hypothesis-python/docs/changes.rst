@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.24.4:
+
+-------------------
+4.24.4 - 2019-06-21
+-------------------
+
+This patch fixes :issue:`2014`, where our compatibility layer broke with version
+3.7.4 of the :pypi:`typing` module backport on PyPI.
+
+This issue only affects Python 2.  We remind users that Hypothesis, like many other
+packages, `will drop Python 2 support on 2020-01-01 <https://python3statement.org>`__
+and already has several features that are only available on Python 3.
+
 .. _v4.24.3:
 
 -------------------
