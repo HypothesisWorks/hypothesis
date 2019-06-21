@@ -298,10 +298,12 @@ except ImportError:
     typing_root_type = ()  # type: Tuple[type, ...]
     ForwardRef = None
 else:
-    if hasattr(typing, "_Final"):  # new in Python 3.7
+    try:
+        # These types are new in Python 3.7, but also (partially) backported to the
+        # typing backport on PyPI.  Use if possible; or fall back to older names.
         typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
         ForwardRef = typing.ForwardRef  # type: ignore
-    else:
+    except AttributeError:
         typing_root_type = (typing.TypingMeta, typing.TypeVar)  # type: ignore
         ForwardRef = typing._ForwardRef  # type: ignore
 
