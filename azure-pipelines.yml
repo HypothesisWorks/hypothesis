@@ -3,29 +3,13 @@ trigger:
   - master
 
 jobs:
-  - job: precheck_concurrent
-    # This job schedules long-running tasks concurrently with the rest of the
-    # build pipeline ensuring that later stages don't block on them
-    # We'll merge it back into the `precheck` stage once Pipelines has caching.
+  - job: linux
     pool:
       vmImage: 'Ubuntu 16.04'
     strategy:
       matrix:
         check-whole-repo-tests:
           TASK: check-whole-repo-tests
-    steps:
-    - script: sudo apt-get install libreadline-dev libsqlite3-dev
-      displayName: Install apt dependencies
-    - script: ./build.sh check-installed
-      displayName: Install Python
-    - script: ./build.sh
-      displayName: Run build tasks
-
-  - job: precheck
-    pool:
-      vmImage: 'Ubuntu 16.04'
-    strategy:
-      matrix:
         lint:
           TASK: lint
         lint-ruby:
@@ -34,72 +18,6 @@ jobs:
           TASK: check-format
         check-rust-tests:
           TASK: check-rust-tests
-    steps:
-    - script: sudo apt-get install libreadline-dev libsqlite3-dev
-      displayName: Install apt dependencies
-    - script: ./build.sh check-installed
-      displayName: Install Python
-    - script: ./build.sh
-      displayName: Run build tasks
-
-  - job: windows
-    dependsOn: precheck
-    pool:
-      vmImage: 'windows-2019'
-    strategy:
-      matrix:
-        check-py27-x64:
-          python.version: '2.7'
-          python.architecture: 'x64'
-        check-py27-x86:
-          python.version: '2.7'
-          python.architecture: 'x86'
-        check-py36-x64:
-          python.version: '3.6'
-          python.architecture: 'x64'
-        check-py36-x86:
-          python.version: '3.6'
-          python.architecture: 'x86'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '$(python.version)'
-        architecture: '$(python.architecture)'
-    - script: |
-        pip install --upgrade setuptools pip wheel
-        pip install setuptools -r requirements/test.txt
-        pip install hypothesis-python/[all]
-      displayName: Install dependencies
-    - script: |
-        cd hypothesis-python
-        pytest tests/cover/ tests/datetime/ tests/dpcontracts/ tests/lark/ tests/numpy/ tests/pandas/ tests/pytest/
-      displayName: Run tests
-
-  - job: osx
-    dependsOn: precheck
-    pool:
-      vmImage: 'macOS-10.13'
-    strategy:
-      matrix:
-        check-py27:
-          TASK: check-py27
-        check-py36:
-          TASK: check-py36
-    steps:
-    - script: |
-        brew update
-        brew install readline xz ncurses
-        ./build.sh install-core
-      displayName: Install dependencies
-    - script: ./build.sh
-      displayName: Run tests
-
-  - job: linux
-    dependsOn: precheck
-    pool:
-      vmImage: 'Ubuntu 16.04'
-    strategy:
-      matrix:
         check-coverage:
           TASK: check-coverage
         check-pypy:
@@ -143,10 +61,60 @@ jobs:
         check-pandas24:
           TASK: check-pandas24
     steps:
-    - script: sudo apt-get install libreadline-dev libsqlite3-dev
+    - script: sudo apt-get update && sudo apt-get install libreadline-dev libsqlite3-dev
       displayName: Install apt dependencies
     - script: ./build.sh check-installed
       displayName: Install Python
+    - script: ./build.sh
+      displayName: Run tests
+
+  - job: windows
+    pool:
+      vmImage: 'windows-2019'
+    strategy:
+      matrix:
+        check-py27-x64:
+          python.version: '2.7'
+          python.architecture: 'x64'
+        check-py27-x86:
+          python.version: '2.7'
+          python.architecture: 'x86'
+        check-py36-x64:
+          python.version: '3.6'
+          python.architecture: 'x64'
+        check-py36-x86:
+          python.version: '3.6'
+          python.architecture: 'x86'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+        architecture: '$(python.architecture)'
+    - script: |
+        pip install --upgrade setuptools pip wheel
+        pip install setuptools -r requirements/test.txt
+        pip install hypothesis-python/[all]
+      displayName: Install dependencies
+    - script: |
+        cd hypothesis-python
+        pytest tests/cover/ tests/datetime/ tests/dpcontracts/ tests/lark/ tests/numpy/ tests/pandas/ tests/pytest/
+      displayName: Run tests
+
+  - job: osx
+    pool:
+      vmImage: 'macOS-10.13'
+    strategy:
+      matrix:
+        check-py27:
+          TASK: check-py27
+        check-py36:
+          TASK: check-py36
+    steps:
+    - script: |
+        brew update
+        brew install readline xz ncurses
+        ./build.sh install-core
+      displayName: Install dependencies
     - script: ./build.sh
       displayName: Run tests
 
