@@ -88,9 +88,8 @@ Regularly verifying this
 ------------------------
 
 Everything mentioned above as explicitly supported is checked on every commit
-with `Travis <https://travis-ci.org/HypothesisWorks/hypothesis>`_,
-`Appveyor <https://ci.appveyor.com/project/DRMacIver/hypothesis>`_, and
-`CircleCI <https://circleci.com/gh/HypothesisWorks/hypothesis>`_.
+with `Travis <https://travis-ci.org/HypothesisWorks/hypothesis>`__, and
+`Azure Pipelines <https://dev.azure.com/HypothesisWorks/Hypothesis/>`__.
 Our continous delivery pipeline runs all of these checks before publishing
 each release, so when we say they're supported we really mean it.
 

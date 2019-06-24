@@ -146,8 +146,9 @@ def changelog():
 def build_distribution():
     if os.path.exists(DIST):
         shutil.rmtree(DIST)
-
-    subprocess.check_output([sys.executable, "setup.py", "sdist", "--dist-dir", DIST])
+    subprocess.check_output(
+        [sys.executable, "setup.py", "sdist", "bdist_wheel", "--dist-dir", DIST]
+    )
 
 
 def upload_distribution():

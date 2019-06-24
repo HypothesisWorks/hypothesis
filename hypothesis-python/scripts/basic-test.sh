@@ -35,13 +35,6 @@ pip install ".[lark]"
 $PYTEST tests/lark/
 pip uninstall -y lark-parser
 
-# We run a reduced set of tests on the macOS CI so that it runs in vaguely
-# reasonable time.
-if [ "$CIRCLECI" = true ]; then
-  echo Skipping the rest of the test suite on CircleCI.
-  exit 0
-fi
-
 if [ "$(python -c 'import sys; print(sys.version_info[:2] in ((2, 7), (3, 6)))')" = "False" ] ; then
   exit 0
 fi
