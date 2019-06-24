@@ -702,3 +702,101 @@ def test_broadcastable_shape_can_generate_arbitrary_ndims(shape, max_dims, data)
         lambda x: len(x) == desired_ndim,
         settings(max_examples=10 ** 6),
     )
+
+
+@settings(deadline=None)
+@given(
+    shape=nps.array_shapes(min_dims=1, min_side=1),
+    dtype=st.one_of(nps.unsigned_integer_dtypes(), nps.integer_dtypes()),
+    data=st.data(),
+)
+def test_advanced_integer_index_is_valid_with_default_result_shape(shape, dtype, data):
+    index = data.draw(nps.integer_array_indices(shape, dtype=dtype))
+    x = np.zeros(shape)
+    out = x[index]  # raises if the index is invalid
+    assert not np.shares_memory(x, out)  # advanced indexing should not return a view
+    assert all(dtype == x.dtype for x in index)
+
+
+@settings(deadline=None)
+@given(
+    shape=nps.array_shapes(min_dims=1, min_side=1),
+    min_dims=st.integers(0, 3),
+    min_side=st.integers(0, 3),
+    dtype=st.one_of(nps.unsigned_integer_dtypes(), nps.integer_dtypes()),
+    data=st.data(),
+)
+def test_advanced_integer_index_is_valid_and_satisfies_bounds(
+    shape, min_dims, min_side, dtype, data
+):
+    max_side = data.draw(st.integers(min_side, min_side + 2), label="max_side")
+    max_dims = data.draw(st.integers(min_dims, min_dims + 2), label="max_dims")
+    index = data.draw(
+        nps.integer_array_indices(
+            shape,
+            result_shape=nps.array_shapes(
+                min_dims=min_dims,
+                max_dims=max_dims,
+                min_side=min_side,
+                max_side=max_side,
+            ),
+            dtype=dtype,
+        )
+    )
+    x = np.zeros(shape)
+    out = x[index]  # raises if the index is invalid
+    assert all(min_side <= s <= max_side for s in out.shape)
+    assert min_dims <= out.ndim <= max_dims
+    assert not np.shares_memory(x, out)  # advanced indexing should not return a view
+    assert all(dtype == x.dtype for x in index)
+
+
+@settings(deadline=None)
+@given(
+    shape=nps.array_shapes(min_dims=1, min_side=1),
+    min_dims=st.integers(0, 3),
+    min_side=st.integers(0, 3),
+    dtype=st.sampled_from(["uint8", "int8"]),
+    data=st.data(),
+)
+def test_advanced_integer_index_minimizes_as_documented(
+    shape, min_dims, min_side, dtype, data
+):
+    max_side = data.draw(st.integers(min_side, min_side + 2), label="max_side")
+    max_dims = data.draw(st.integers(min_dims, min_dims + 2), label="max_dims")
+    result_shape = nps.array_shapes(
+        min_dims=min_dims, max_dims=max_dims, min_side=min_side, max_side=max_side
+    )
+    smallest = minimal(
+        nps.integer_array_indices(shape, result_shape=result_shape, dtype=dtype)
+    )
+    desired = len(shape) * (np.zeros(min_dims * [min_side]),)
+    assert len(smallest) == len(desired)
+    for s, d in zip(smallest, desired):
+        np.testing.assert_array_equal(s, d)
+
+
+@settings(deadline=None, max_examples=10)
+@given(
+    shape=nps.array_shapes(min_dims=1, max_dims=2, min_side=1, max_side=3),
+    data=st.data(),
+)
+def test_advanced_integer_index_can_generate_any_pattern(shape, data):
+    # ensures that generated index-arrays can be used to yield any pattern of elements from an array
+    x = np.arange(np.product(shape)).reshape(shape)
+
+    target = data.draw(
+        nps.arrays(
+            shape=nps.array_shapes(min_dims=1, max_dims=2, min_side=1, max_side=2),
+            elements=st.sampled_from(x.flatten()),
+            dtype=x.dtype,
+        ),
+        label="target",
+    )
+    find_any(
+        nps.integer_array_indices(
+            shape, result_shape=st.just(target.shape), dtype=np.dtype("int8")
+        ),
+        lambda index: np.all(target == x[index]),
+        settings(max_examples=10 ** 6),
+    )

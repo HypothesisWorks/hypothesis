@@ -37,6 +37,8 @@ if False:
     from typing import Any, Union, Sequence, Tuple, Optional  # noqa
     from hypothesis.searchstrategy.strategies import T  # noqa
 
+    Shape = Tuple[int, ...]  # noqa
+
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
 
 
@@ -295,7 +297,7 @@ def fill_for(elements, unique, fill, name=""):
 @st.defines_strategy
 def arrays(
     dtype,  # type: Any
-    shape,  # type: Union[int, Sequence[int], st.SearchStrategy[Sequence[int]]]
+    shape,  # type: Union[int, Shape, st.SearchStrategy[Shape]]
     elements=None,  # type: st.SearchStrategy[Any]
     fill=None,  # type: st.SearchStrategy[Any]
     unique=False,  # type: bool
@@ -401,7 +403,7 @@ def arrays(
 
 @st.defines_strategy
 def array_shapes(min_dims=1, max_dims=None, min_side=1, max_side=None):
-    # type: (int, int, int, int) -> st.SearchStrategy[Tuple[int, ...]]
+    # type: (int, int, int, int) -> st.SearchStrategy[Shape]
     """Return a strategy for array shapes (tuples of int >= 1)."""
     check_type(integer_types, min_dims, "min_dims")
     check_type(integer_types, min_side, "min_side")
@@ -672,7 +674,7 @@ def nested_dtypes(
 
 @st.defines_strategy
 def valid_tuple_axes(ndim, min_size=0, max_size=None):
-    # type: (int, int, int) -> st.SearchStrategy[Tuple[int, ...]]
+    # type: (int, int, int) -> st.SearchStrategy[Shape]
     """Return a strategy for generating permissible tuple-values for the
     ``axis`` argument for a numpy sequential function (e.g.
     :func:`numpy:numpy.sum`), given an array of the specified
@@ -763,7 +765,7 @@ class BroadcastShapeStrategy(SearchStrategy):
 
 @st.defines_strategy
 def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=None):
-    # type: (Sequence[int], int, Optional[int], int, Optional[int]) -> st.SearchStrategy[Tuple[int, ...]]
+    # type: (Shape, int, int, int, int) -> st.SearchStrategy[Shape]
     """Return a strategy for generating shapes that are broadcast-compatible
     with the provided shape.
 
@@ -845,4 +847,69 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
         max_dims=max_dims,
         min_side=min_side,
         max_side=max_side,
+    )
+
+
+@st.defines_strategy
+def integer_array_indices(shape, result_shape=array_shapes(), dtype="int"):
+    # type: (Shape, SearchStrategy[Shape], np.dtype) -> st.SearchStrategy[Tuple[np.ndarray, ...]]
+    """Return a search strategy for tuples of integer-arrays that, when used
+    to index into an array of shape ``shape``, given an array whose shape
+    was drawn from ``result_shape``.
+
+    Examples from this strategy shrink towards the tuple of index-arrays::
+
+        len(shape) * (np.zeros(drawn_result_shape, dtype), )
+
+    * ``shape`` a tuple of integers that indicates the shape of the array,
+      whose indices are being generated.
+    * ``result_shape`` a strategy for generating tuples of integers, which
+      describe the shape of the resulting index arrays. The default is
+      :func:`~hypothesis.extra.numpy.array_shapes`.  The shape drawn from
+      this strategy determines the shape of the array that will be produced
+      when the corresponding example from ``integer_array_indices`` is used
+      as an index.
+    * ``dtype`` the integer data type of the generated index-arrays. Negative
+      integer indices can be generated if a signed integer type is specified.
+
+    Recall that an array can be indexed using a tuple of integer-arrays to
+    access its members in an arbitrary order, producing an array with an
+    arbitrary shape. For example:
+
+    .. code-block:: pycon
+
+        >>> from numpy import array
+        >>> x = array([-0, -1, -2, -3, -4])
+        >>> ind = (array([[4, 0], [0, 1]]),)  # a tuple containing a 2D integer-array
+        >>> x[ind]  # the resulting array is commensurate with the indexing array(s)
+        array([[-4,  0],
+               [0, -1]])
+
+    Note that this strategy does not accommodate all variations of so-called
+    'advanced indexing', as prescribed by NumPy's nomenclature.  Combinations
+    of basic and advanced indexes are too complex to usefully define in a
+    standard strategy; we leave application-specific strategies to the user.
+    Advanced-boolean indexing can be defined as ``arrays(shape=..., dtype=bool)``,
+    and is similarly left to the user.
+    """
+    check_type(tuple, shape, "shape")
+    check_argument(
+        shape and all(isinstance(x, integer_types) and x > 0 for x in shape),
+        "shape=%r must be a non-empty tuple of integers > 0" % (shape,),
+    )
+    check_type(SearchStrategy, result_shape, "result_shape")
+    check_argument(
+        np.issubdtype(dtype, np.integer), "dtype=%r must be an integer dtype" % (dtype,)
+    )
+    signed = np.issubdtype(dtype, np.signedinteger)
+
+    def array_for(index_shape, size):
+        return arrays(
+            dtype=dtype,
+            shape=index_shape,
+            elements=st.integers(-size if signed else 0, size - 1),
+        )
+
+    return result_shape.flatmap(
+        lambda index_shape: st.tuples(*[array_for(index_shape, size) for size in shape])
     )
