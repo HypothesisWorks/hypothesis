@@ -48,7 +48,7 @@ Inkscape:
 
 GIMP:
 
-.. image:: inkscape.png
+.. image:: gimp.png
     :width: 800px
     :align: left
     :alt: GIMP showing Hypothesis colour palette
