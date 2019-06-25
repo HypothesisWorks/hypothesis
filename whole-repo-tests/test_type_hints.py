@@ -45,7 +45,7 @@ def get_mypy_analysed_type(fname, val):
     # The shell output for `reveal_type([1, 2, 3])` looks like a literal:
     # file.py:2: error: Revealed type is 'builtins.list[builtins.int*]'
     return (
-        out.split("error: Revealed type is ")[1]
+        out.split("Revealed type is ")[1]
         .strip()
         .strip("'")
         .replace("builtins.", "")
