@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import datetime as dt
+from calendar import monthrange
 
 from hypothesis.internal.conjecture import utils
 from hypothesis.searchstrategy.strategies import SearchStrategy
@@ -44,12 +45,14 @@ class DatetimeStrategy(SearchStrategy):
         self.max_dt = max_value
         self.tz_strat = timezones_strat
 
-    def _attempt_one_draw(self, data):
+    def do_draw(self, data):
         result = dict()
         cap_low, cap_high = True, True
         for name in ("year", "month", "day", "hour", "minute", "second", "microsecond"):
             low = getattr(self.min_dt if cap_low else dt.datetime.min, name)
             high = getattr(self.max_dt if cap_high else dt.datetime.max, name)
+            if name == "day" and not cap_high:
+                _, high = monthrange(**result)
             if name == "year":
                 val = utils.integer_range(data, low, high, 2000)
             else:
@@ -57,26 +60,17 @@ class DatetimeStrategy(SearchStrategy):
             result[name] = val
             cap_low = cap_low and val == low
             cap_high = cap_high and val == high
+        result = dt.datetime(**result)
         tz = data.draw(self.tz_strat)
         try:
-            result = dt.datetime(**result)
             if is_pytz_timezone(tz):
                 # Can't just construct; see http://pytz.sourceforge.net
                 return tz.normalize(tz.localize(result))
             return result.replace(tzinfo=tz)
         except (ValueError, OverflowError):
-            return None
-
-    def do_draw(self, data):
-        for _ in range(3):
-            result = self._attempt_one_draw(data)
-            if result is not None:
-                return result
-        data.note_event(
-            "3 attempts to create a datetime between %r and %r "
-            "with timezone from %r failed." % (self.min_dt, self.max_dt, self.tz_strat)
-        )
-        data.mark_invalid()
+            msg = "Failed to draw a datetime between %r and %r with timezone from %r."
+            data.note_event(msg % (self.min_dt, self.max_dt, self.tz_strat))
+            data.mark_invalid()
 
 
 class DateStrategy(SearchStrategy):
