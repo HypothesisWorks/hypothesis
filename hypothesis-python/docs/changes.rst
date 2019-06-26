@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.24.6:
+
+-------------------
+4.24.6 - 2019-06-26
+-------------------
+
+This patch makes :func:`~hypothesis.strategies.datetimes` more efficient,
+as it now handles short months correctly by construction instead of filtering.
+
 .. _v4.24.5:
 
 -------------------
