@@ -17,8 +17,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-from random import Random
-
 from hypothesis import given
 from hypothesis.strategies import binary, characters, text, tuples
 from tests.common.debug import minimal
@@ -57,7 +55,7 @@ def test_will_find_ascii_examples_given_the_chance():
 
 
 def test_finds_single_element_strings():
-    assert minimal(text(), bool, random=Random(4)) == u"0"
+    assert minimal(text(), bool) == u"0"
 
 
 @fails_with(AssertionError)

@@ -21,7 +21,7 @@ import datetime as dt
 
 import pytest
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.internal.compat import hrange
 from hypothesis.strategies import dates, datetimes, timedeltas, times
 from tests.common.debug import find_any, minimal
@@ -96,7 +96,7 @@ def test_can_find_before_the_year_2000():
 
 @pytest.mark.parametrize("month", hrange(1, 13))
 def test_can_find_each_month(month):
-    find_any(dates(), lambda x: x.month == month)
+    find_any(dates(), lambda x: x.month == month, settings(max_examples=10 ** 6))
 
 
 def test_min_year_is_respected():

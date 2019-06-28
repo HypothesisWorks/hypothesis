@@ -20,7 +20,7 @@ from __future__ import absolute_import, division, print_function
 import pytest
 
 from hypothesis import settings
-from hypothesis.errors import NoSuchExample
+from hypothesis.errors import Unsatisfiable
 from hypothesis.strategies import lists
 from tests.common import standard_types
 from tests.common.debug import minimal
@@ -35,21 +35,13 @@ def test_can_collectively_minimize(spec):
     answer fast enough."""
     n = 10
 
-    def distinct_reprs(x):
-        result = set()
-        for t in x:
-            result.add(repr(t))
-            if len(result) >= 2:
-                return True
-        return False
-
     try:
         xs = minimal(
             lists(spec, min_size=n, max_size=n),
-            distinct_reprs,
-            settings=settings(max_examples=2000),
+            lambda x: len(set(map(repr, x))) >= 2,
+            settings(max_examples=2000),
         )
         assert len(xs) == n
         assert 2 <= len(set(map(repr, xs))) <= 3
-    except NoSuchExample:
+    except Unsatisfiable:
         pass

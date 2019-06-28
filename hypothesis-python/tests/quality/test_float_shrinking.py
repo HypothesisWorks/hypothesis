@@ -17,8 +17,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-from random import Random
-
 import pytest
 
 import hypothesis.strategies as st
@@ -45,12 +43,7 @@ def test_can_shrink_in_variable_sized_context(n):
 @given(st.floats(min_value=0, allow_infinity=False, allow_nan=False))
 @settings(deadline=None, suppress_health_check=HealthCheck.all())
 def test_shrinks_downwards_to_integers(f):
-    g = minimal(
-        st.floats(),
-        lambda x: x >= f,
-        random=Random(0),
-        settings=settings(verbosity=Verbosity.quiet),
-    )
+    g = minimal(st.floats(), lambda x: x >= f, settings(verbosity=Verbosity.quiet))
     assert g == ceil(f)
 
 
@@ -61,7 +54,6 @@ def test_shrinks_downwards_to_integers_when_fractional(b):
     g = minimal(
         st.floats(),
         lambda x: assume((0 < x < (2 ** 53)) and int(x) != x) and x >= b,
-        random=Random(0),
-        settings=settings(verbosity=Verbosity.quiet),
+        settings=settings(verbosity=Verbosity.quiet, max_examples=10 ** 6),
     )
     assert g == b + 0.5

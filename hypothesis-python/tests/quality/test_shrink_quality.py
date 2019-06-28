@@ -20,7 +20,6 @@ from __future__ import absolute_import, division, print_function
 from collections import namedtuple
 from fractions import Fraction
 from functools import reduce
-from random import Random
 
 import pytest
 
@@ -220,7 +219,6 @@ def test_containment(n, seed):
         tuples(lists(integers()), integers()),
         lambda x: x[1] in x[0] and x[1] >= n,
         timeout_after=60,
-        random=Random(seed),
     )
     assert iv == ([n], n)
 
@@ -237,10 +235,7 @@ def test_duplicate_containment():
 
 @pytest.mark.parametrize("seed", [11, 28, 37])
 def test_reordering_bytes(seed):
-    ls = minimal(
-        lists(integers()), lambda x: sum(x) >= 10 and len(x) >= 3, random=Random(seed)
-    )
-
+    ls = minimal(lists(integers()), lambda x: sum(x) >= 10 and len(x) >= 3)
     assert ls == sorted(ls)
 
 

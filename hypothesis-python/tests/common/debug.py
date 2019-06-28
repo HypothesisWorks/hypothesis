@@ -17,8 +17,9 @@
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis import assume, find, given, reject, settings as Settings
+from hypothesis import HealthCheck, Verbosity, given, settings as Settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
+from hypothesis.internal.reflection import get_pretty_function_description
 from tests.common.utils import no_shrink
 
 TIME_INCREMENT = 0.01
@@ -28,10 +29,9 @@ class Timeout(BaseException):
     pass
 
 
-def minimal(definition, condition=None, settings=None, timeout_after=10, random=None):
-    settings = Settings(settings, max_examples=50000, database=None)
-
-    runtime = []
+def minimal(definition, condition=lambda x: True, settings=None, timeout_after=10):
+    class Found(Exception):
+        """Signal that the example matches condition."""
 
     def wrapped_condition(x):
         if timeout_after is not None:
@@ -39,35 +39,44 @@ def minimal(definition, condition=None, settings=None, timeout_after=10, random=
                 runtime[0] += TIME_INCREMENT
                 if runtime[0] >= timeout_after:
                     raise Timeout()
-        if condition is None:
-            result = True
-        else:
-            result = condition(x)
+        result = condition(x)
         if result and not runtime:
             runtime.append(0.0)
         return result
 
-    return find(definition, wrapped_condition, settings=settings, random=random)
+    @given(definition)
+    @Settings(
+        parent=settings or Settings(max_examples=50000, verbosity=Verbosity.quiet),
+        suppress_health_check=HealthCheck.all(),
+        report_multiple_bugs=False,
+        derandomize=True,
+        database=None,
+    )
+    def inner(x):
+        if wrapped_condition(x):
+            result[:] = [x]
+            raise Found
 
-
-def find_any(definition, condition=lambda _: True, settings=None, random=None):
-    settings = Settings(settings, max_examples=10000, phases=no_shrink, database=None)
-    return find(definition, condition, settings=settings, random=random)
-
-
-def assert_no_examples(strategy, condition=None):
-    if condition is None:
-
-        def predicate(x):
-            reject()
-
-    else:
-
-        def predicate(x):
-            assume(condition(x))
-
+    definition.validate()
+    runtime = []
+    result = []
     try:
-        result = find(strategy, predicate, settings=Settings(phases=no_shrink))
+        inner()
+    except Found:
+        return result[0]
+    raise Unsatisfiable(
+        "Could not find any examples from %r that satisfied %s"
+        % (definition, get_pretty_function_description(condition))
+    )
+
+
+def find_any(definition, condition=lambda _: True, settings=None):
+    return minimal(definition, condition, settings=Settings(settings, phases=no_shrink))
+
+
+def assert_no_examples(strategy, condition=lambda _: True):
+    try:
+        result = find_any(strategy, condition)
         assert False, "Expected no results but found %r" % (result,)
     except (Unsatisfiable, NoSuchExample):
         pass
@@ -82,9 +91,7 @@ def assert_all_examples(strategy, predicate):
 
     @given(strategy)
     def assert_examples(s):
-        assert predicate(s), "Found %r using strategy %s which does not match" % (
-            s,
-            strategy,
-        )
+        msg = "Found %r using strategy %s which does not match" % (s, strategy)
+        assert predicate(s), msg
 
     assert_examples()

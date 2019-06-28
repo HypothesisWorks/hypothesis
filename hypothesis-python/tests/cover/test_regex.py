@@ -24,7 +24,7 @@ import unicodedata
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import assume, given
+from hypothesis import assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import PY3, hrange, hunichr
 from hypothesis.searchstrategy.regex import (
@@ -189,12 +189,16 @@ def test_any_doesnt_generate_newline():
 
 @pytest.mark.parametrize("pattern", [re.compile(u"\\A.\\Z", re.DOTALL), u"(?s)\\A.\\Z"])
 def test_any_with_dotall_generate_newline(pattern):
-    find_any(st.from_regex(pattern), lambda s: s == u"\n")
+    find_any(
+        st.from_regex(pattern), lambda s: s == u"\n", settings(max_examples=10 ** 6)
+    )
 
 
 @pytest.mark.parametrize("pattern", [re.compile(b"\\A.\\Z", re.DOTALL), b"(?s)\\A.\\Z"])
 def test_any_with_dotall_generate_newline_binary(pattern):
-    find_any(st.from_regex(pattern), lambda s: s == b"\n")
+    find_any(
+        st.from_regex(pattern), lambda s: s == b"\n", settings(max_examples=10 ** 6)
+    )
 
 
 @pytest.mark.parametrize(
@@ -437,7 +441,11 @@ def test_issue_992_regression(data):
     ],
 )
 def test_fullmatch_generates_example(pattern, matching_str):
-    find_any(st.from_regex(pattern, fullmatch=True), lambda s: s == matching_str)
+    find_any(
+        st.from_regex(pattern, fullmatch=True),
+        lambda s: s == matching_str,
+        settings(max_examples=10 ** 6),
+    )
 
 
 @pytest.mark.parametrize(

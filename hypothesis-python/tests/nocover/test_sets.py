@@ -18,20 +18,13 @@
 from __future__ import absolute_import, division, print_function
 
 from hypothesis import given, settings
-from hypothesis.strategies import floats, integers, randoms, sets
+from hypothesis.strategies import floats, integers, sets
 from tests.common.debug import find_any
 
 
-@given(randoms())
-@settings(max_examples=5, deadline=None)
-def test_can_draw_sets_of_hard_to_find_elements(rnd):
+def test_can_draw_sets_of_hard_to_find_elements():
     rarebool = floats(0, 1).map(lambda x: x <= 0.05)
-    find_any(
-        sets(rarebool, min_size=2),
-        lambda x: True,
-        random=rnd,
-        settings=settings(database=None),
-    )
+    find_any(sets(rarebool, min_size=2), settings=settings(deadline=None))
 
 
 @given(sets(integers(), max_size=0))

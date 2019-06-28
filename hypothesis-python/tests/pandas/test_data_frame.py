@@ -220,10 +220,10 @@ def test_uniqueness_does_not_affect_other_rows_1():
 def test_uniqueness_does_not_affect_other_rows_2():
     data_frames = pdst.data_frames(
         [
-            pdst.column("A", dtype=int, unique=False),
+            pdst.column("A", dtype=bool, unique=False),
             pdst.column("B", dtype=int, unique=True),
         ],
-        rows=st.tuples(st.integers(0, 10), st.integers(0, 10)),
+        rows=st.tuples(st.booleans(), st.integers(0, 10)),
         index=pdst.range_indexes(2, 2),
     )
     find_any(data_frames, lambda x: x["A"][0] == x["A"][1])
