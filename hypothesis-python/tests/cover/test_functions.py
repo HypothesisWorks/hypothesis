@@ -78,11 +78,6 @@ def test_functions_lambda_with_arg(f):
     assert isinstance(f(1), bool)
 
 
-def test_functions_example_is_invalid():
-    with pytest.raises(InvalidArgument):
-        functions().example()
-
-
 @pytest.mark.parametrize("like,returns", [(None, booleans()), (lambda: None, None)])
 def test_invalid_arguments(like, returns):
     with pytest.raises(InvalidArgument):

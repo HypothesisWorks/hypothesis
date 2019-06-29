@@ -27,7 +27,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, assume, given, infer, settings
-from hypothesis.errors import InvalidArgument, NoExamples, ResolutionFailed
+from hypothesis.errors import InvalidArgument, ResolutionFailed, Unsatisfiable
 from hypothesis.internal.compat import (
     ForwardRef,
     get_type_hints,
@@ -173,7 +173,7 @@ def test_variable_length_tuples(n):
     type_ = typing.Tuple[int, ...]
     try:
         from_type(type_).filter(lambda ex: len(ex) == n).example()
-    except NoExamples:
+    except Unsatisfiable:
         if sys.version_info[:2] < (3, 6):
             pytest.skip()
         raise

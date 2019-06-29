@@ -23,19 +23,14 @@ from random import Random
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import example, find, given, settings
-from hypothesis.control import _current_build_context
-from hypothesis.errors import HypothesisException, NoExamples
-from tests.common.utils import fails_with
+from hypothesis import example, find, given
+from hypothesis.errors import HypothesisException, Unsatisfiable
+from tests.common.utils import checks_deprecated_behaviour, fails_with
 
 
-@settings(deadline=None)
-@given(st.integers())
-def test_deterministic_examples_are_deterministic(seed):
-    with _current_build_context.with_value(None):
-        assert st.lists(st.integers()).example(Random(seed)) == st.lists(
-            st.integers()
-        ).example(Random(seed))
+@checks_deprecated_behaviour
+def test_deterministic_examples_are_deprecated():
+    st.integers().example(Random())
 
 
 def test_example_of_none_is_none():
@@ -52,7 +47,7 @@ def test_does_not_always_give_the_same_example():
 
 
 def test_raises_on_no_examples():
-    with pytest.raises(NoExamples):
+    with pytest.raises(Unsatisfiable):
         st.nothing().example()
 
 

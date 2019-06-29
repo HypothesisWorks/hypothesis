@@ -18,17 +18,19 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict
+from random import choice as random_choice
 
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis._settings import Phase
-from hypothesis.control import _current_build_context, assume
-from hypothesis.errors import (
-    HypothesisException,
-    NoExamples,
-    NoSuchExample,
-    Unsatisfiable,
-    UnsatisfiedAssumption,
+from hypothesis._settings import (
+    HealthCheck,
+    Phase,
+    Verbosity,
+    not_set,
+    note_deprecation,
+    settings,
 )
+from hypothesis.control import _current_build_context, assume
+from hypothesis.errors import HypothesisException, UnsatisfiedAssumption
 from hypothesis.internal.compat import bit_length, hrange
 from hypothesis.internal.conjecture.utils import (
     LABEL_MASK,
@@ -43,12 +45,12 @@ from hypothesis.internal.validation import check_type
 from hypothesis.utils.conventions import UniqueIdentifier
 
 try:
-    from random import Random  # noqa
     from typing import List, Callable, TypeVar, Generic, Optional  # noqa
 
     Ex = TypeVar("Ex", covariant=True)
     T = TypeVar("T")
 
+    from hypothesis._settings import UniqueIdentifier  # noqa
     from hypothesis.internal.conjecture.data import ConjectureData  # noqa
 
 except ImportError:  # pragma: no cover
@@ -252,8 +254,8 @@ class SearchStrategy(Generic[Ex]):
     def calc_has_reusable_values(self, recur):
         return False
 
-    def example(self, random=None):
-        # type: (Random) -> Ex
+    def example(self, random=not_set):
+        # type: (UniqueIdentifier) -> Ex
         """Provide an example of the sort of value that this strategy
         generates. This is biased to be slightly simpler than is typical for
         values from this strategy, for clarity purposes.
@@ -263,6 +265,9 @@ class SearchStrategy(Generic[Ex]):
 
         This method is part of the public API.
         """
+        if random is not not_set:
+            note_deprecation("The random argument does nothing", since="RELEASEDAY")
+
         context = _current_build_context.value
         if context is not None:
             if context.data is not None and context.data.depth > 0:
@@ -284,37 +289,25 @@ class SearchStrategy(Generic[Ex]):
                     "#drawing-interactively-in-tests for more details."
                 )
 
-        from hypothesis import find, settings, Verbosity
+        from hypothesis.core import given
 
-        # Conjecture will always try the zero example first. This would result
-        # in us producing the same example each time, which is boring, so we
-        # deliberately skip the first example it feeds us.
-        first = []  # type: list
+        # Note: this function has a weird name because it might appear in
+        # tracebacks, and we want users to know that they can ignore it.
+        @given(self)
+        @settings(
+            database=None,
+            max_examples=10,
+            deadline=None,
+            verbosity=Verbosity.quiet,
+            phases=(Phase.generate,),
+            suppress_health_check=HealthCheck.all(),
+        )
+        def example_generating_inner_function(ex):
+            examples.append(ex)
 
-        def condition(x):
-            if first:
-                return True
-            else:
-                first.append(x)
-                return False
-
-        try:
-            return find(
-                self,
-                condition,
-                random=random,
-                settings=settings(
-                    database=None,
-                    verbosity=Verbosity.quiet,
-                    phases=tuple(set(Phase) - {Phase.shrink}),
-                ),
-            )
-        except (NoSuchExample, Unsatisfiable):
-            # This can happen when a strategy has only one example. e.g.
-            # st.just(x). In that case we wanted the first example after all.
-            if first:
-                return first[0]
-            raise NoExamples(u"Could not find any valid examples in 100 tries")
+        examples = []  # type: List[Ex]
+        example_generating_inner_function()
+        return random_choice(examples)
 
     def map(self, pack):
         # type: (Callable[[Ex], T]) -> SearchStrategy[T]

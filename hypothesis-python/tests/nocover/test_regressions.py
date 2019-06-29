@@ -17,26 +17,28 @@
 
 from __future__ import absolute_import, division, print_function
 
-import warnings
+import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import HypothesisDeprecationWarning
-from hypothesis.strategies import composite, integers
 
 
 def test_note_deprecation_blames_right_code_issue_652():
     msg = "this is an arbitrary deprecation warning message"
 
-    @composite
+    @st.composite
     def deprecated_strategy(draw):
-        draw(integers())
+        draw(st.none())
         note_deprecation(msg, since="RELEASEDAY")
 
-    with warnings.catch_warnings(record=True) as log:
-        warnings.simplefilter("always")
-        deprecated_strategy().example()
+    @given(deprecated_strategy())
+    def f(x):
+        pass
+
+    with pytest.warns(HypothesisDeprecationWarning) as log:
+        f()
 
     assert len(log) == 1
     record, = log
