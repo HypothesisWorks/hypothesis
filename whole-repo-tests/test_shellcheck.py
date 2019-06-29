@@ -26,4 +26,6 @@ SCRIPTS = [f for f in tools.all_files() if f.endswith(".sh")]
 
 
 def test_all_shell_scripts_are_valid():
-    subprocess.check_call([install.SHELLCHECK, *SCRIPTS], cwd=tools.ROOT)
+    subprocess.check_call(
+        [install.SHELLCHECK, "--exclude=SC1073", *SCRIPTS], cwd=tools.ROOT
+    )

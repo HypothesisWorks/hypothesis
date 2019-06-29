@@ -25,6 +25,7 @@ does).
 from __future__ import absolute_import, division, print_function
 
 import os
+import shutil
 import subprocess
 
 import hypothesistooling.scripts as scripts
@@ -57,7 +58,9 @@ def ensure_python(version):
 
 STACK = os.path.join(HOME, ".local", "bin", "stack")
 GHC = os.path.join(HOME, ".local", "bin", "ghc")
-SHELLCHECK = os.path.join(HOME, ".local", "bin", "shellcheck")
+SHELLCHECK = shutil.which("shellcheck") or os.path.join(
+    HOME, ".local", "bin", "shellcheck"
+)
 
 
 def ensure_stack():
@@ -90,9 +93,13 @@ def ensure_ghc():
 def ensure_shellcheck():
     if os.path.exists(SHELLCHECK):
         return
-    update_stack()
-    ensure_ghc()
-    subprocess.check_call([STACK, "install", "ShellCheck"])
+    if shutil.which("apt-get") is not None:
+        subprocess.check_call(["apt-get", "update"])
+        subprocess.check_call(["apt-get", "install", "shellcheck"])
+    else:
+        update_stack()
+        ensure_ghc()
+        subprocess.check_call([STACK, "install", "ShellCheck"])
 
 
 @once
