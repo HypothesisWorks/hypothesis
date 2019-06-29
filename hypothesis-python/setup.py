@@ -91,6 +91,7 @@ setuptools.setup(
     project_urls={
         "Website": "https://hypothesis.works",
         "Documentation": "https://hypothesis.readthedocs.io",
+        "Funding": "https://tidelift.com/subscription/pkg/pypi-hypothesis?utm_source=pypi-hypothesis&utm_medium=referral&utm_campaign=pypi",
         "Issues": "https://github.com/HypothesisWorks/hypothesis/issues",
     },
     license="MPL v2",

@@ -26,6 +26,23 @@ Hypothesis is extremely practical and advances the state of the art of
 unit testing by some way. It's easy to use, stable, and powerful. If
 you're not using Hypothesis to test your project then you're missing out.
 
+.. |tideliftlogo| image:: https://cdn2.hubspot.net/hubfs/4008838/website/logos/Tidelift_primary-shorthand-logo.png
+   :width: 75
+   :alt: Tidelift logo
+   :target: `Tidelift Subscription`_
+
+.. list-table::
+   :widths: 10 100
+
+   * - |tideliftlogo|
+     - Professional support for Hypothesis is available as part of the
+       `Tidelift Subscription`_.  Tidelift which gives software development
+       teams a single source for professional assurances about their
+       open-source dependencies.
+
+.. _Tidelift Subscription: https://tidelift.com/subscription/pkg/pypi-hypothesis?utm_source=pypi-hypothesis&utm_medium=referral&utm_campaign=readme
+
+
 ------------------------
 Quick Start/Installation
 ------------------------
@@ -57,3 +74,6 @@ If you want to hear from people who are already using Hypothesis, some of them `
 about it <https://hypothesis.readthedocs.io/en/latest/endorsements.html>`_.
 
 If you want to create a downstream package of Hypothesis, please read `these guidelines for packagers <https://hypothesis.readthedocs.io/en/latest/packaging.html>`_.
+
+Hypothesis has never had a security vulnerability, but if you need to report the first
+you can do so via the `Tidelift security contact <https://tidelift.com/security>`_.
