@@ -101,9 +101,7 @@ def defines_shrink_pass(generate_arguments):
     """A convenient decorator for defining shrink passes."""
 
     def accept(run_step):
-        ShrinkPassDefinition(
-            generate_arguments=generate_arguments, run_step=run_step
-        )
+        ShrinkPassDefinition(generate_arguments=generate_arguments, run_step=run_step)
 
         def run(self):
             assert False, "Shrink passes should not be run directly"
