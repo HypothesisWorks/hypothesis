@@ -68,6 +68,24 @@ def has_source_changes():
     return tools.has_changes([PYTHON_SRC])
 
 
+def build_docs(builder="html"):
+    # See https://www.sphinx-doc.org/en/stable/man/sphinx-build.html
+    # (unfortunately most options only have the short flag version)
+    tools.scripts.pip_tool(
+        "sphinx-build",
+        "-n",
+        "-W",
+        "--keep-going",
+        "-T",
+        "-E",
+        "-b",
+        builder,
+        "docs",
+        "docs/_build/" + builder,
+        cwd=HYPOTHESIS_PYTHON,
+    )
+
+
 CHANGELOG_ANCHOR = re.compile(r"^\.\. _v\d+\.\d+\.\d+:$")
 CHANGELOG_BORDER = re.compile(r"^-+$")
 CHANGELOG_HEADER = re.compile(r"^\d+\.\d+\.\d+ - \d\d\d\d-\d\d-\d\d$")
@@ -159,11 +177,26 @@ def upload_distribution():
             "-m",
             "twine",
             "upload",
+            "--skip-existing",
             "--config-file",
             tools.PYPIRC,
             os.path.join(DIST, "*"),
         ]
     )
+
+    # Construct plain-text + markdown version of this changelog entry,
+    # with link to canonical source.
+    build_docs(builder="text")
+    textfile = os.path.join(HYPOTHESIS_PYTHON, "docs", "_build", "text", "changes.txt")
+    with open(textfile) as f:
+        lines = f.readlines()
+    entries = [i for i, l in enumerate(lines) if CHANGELOG_HEADER.match(l)]
+    changelog_body = "".join(lines[entries[0] + 2 : entries[1]]).strip() + (
+        "\n\n*[The canonical version of these notes (with links) is on readthedocs.]"
+        "(https://hypothesis.readthedocs.io/en/latest/changes.html#v%s).*"
+        % (current_version().replace(".", "-"),)
+    )
+
     # Create a GitHub release, to trigger Zenodo DOI minting.  See
     # https://developer.github.com/v3/repos/releases/#create-a-release
     requests.post(
@@ -171,15 +204,20 @@ def upload_distribution():
         json=dict(
             tag_name=tag_name(),
             name="Hypothesis for Python - version " + current_version(),
-            body=(
-                "You can [read the changelog for this release here]("
-                "https://hypothesis.readthedocs.io/en/latest/changes.html#v"
-                "%s)." % (current_version().replace(".", "-"),)
-            ),
+            body=changelog_body,
         ),
         timeout=120,  # seconds
         # Scoped personal access token, stored in Travis environ variable
         auth=("Zac-HD", os.environ["Zac_release_token"]),
+    ).raise_for_status()
+
+    # Post the release notes to Tidelift too - see https://tidelift.com/docs/api
+    requests.post(
+        "https://api.tidelift.com/external-api/lifting/pypi/hypothesis/release-notes/"
+        + current_version(),
+        json={"body": changelog_body},
+        headers={"Authorization": "Bearer {}".format(os.environ["TIDELIFT_API_TOKEN"])},
+        timeout=120,  # seconds
     ).raise_for_status()
 
 
