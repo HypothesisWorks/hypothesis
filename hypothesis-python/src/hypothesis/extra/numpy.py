@@ -709,8 +709,8 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
     check_valid_interval(max_size, ndim, "max_size", "ndim")
 
     # shrink axis values from negative to positive
-    axes = st.integers(0, max(0, 2 * ndim - 1)).map(
-        lambda x: x if x < ndim else x - 2 * ndim
+    axes = st.tuples(st.booleans(), st.integers(0, ndim - 1)).map(
+        lambda args: args[1] - ndim if args[0] else args[1]
     )
     return st.lists(axes, min_size, max_size, unique_by=lambda x: x % ndim).map(tuple)
 

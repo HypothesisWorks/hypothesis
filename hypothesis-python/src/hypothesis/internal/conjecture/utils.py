@@ -90,7 +90,6 @@ def integer_range(data, lower, upper, center=None):
     assert gap > 0
 
     bits = bit_length(gap)
-    probe = gap + 1
 
     if bits > 24 and data.draw_bits(3):
         # For large ranges, we combine the uniform random distribution from draw_bits
@@ -100,10 +99,17 @@ def integer_range(data, lower, upper, center=None):
         sizes = [8, 16, 32, 64, 128]
         bits = min(bits, sizes[idx])
 
-    while probe > gap:
-        data.start_example(INTEGER_RANGE_DRAW_LABEL)
-        probe = data.draw_bits(bits)
-        data.stop_example(discard=probe > gap)
+    data.start_example(INTEGER_RANGE_DRAW_LABEL)
+    probe = data.draw_bits(bits)
+    data.stop_example()
+    # Rejection sampling interacts badly with our prefix tree (see e.g. #1864),
+    # so we want to adjust this value to fit in the range *without* distorting
+    # the distribution.
+    high = (1 << bits) - 1
+    if high > gap:
+        leave = gap - (high - gap)
+        if probe > leave:
+            probe = leave + (probe - leave) // 2
 
     if above:
         result = center + probe

@@ -211,7 +211,7 @@ def test_uniqueness_does_not_affect_other_rows_1():
             pdst.column("A", dtype=int, unique=True),
             pdst.column("B", dtype=int, unique=False),
         ],
-        rows=st.tuples(st.integers(0, 10), st.integers(0, 10)),
+        rows=st.tuples(st.integers(0, 3), st.integers(0, 3)),
         index=pdst.range_indexes(2, 2),
     )
     find_any(data_frames, lambda x: x["B"][0] == x["B"][1])

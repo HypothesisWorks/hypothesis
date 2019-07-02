@@ -20,16 +20,7 @@ from __future__ import absolute_import, division, print_function
 from random import Random
 
 import hypothesis.strategies as st
-from hypothesis import (
-    HealthCheck,
-    Phase,
-    Verbosity,
-    assume,
-    example,
-    given,
-    reject,
-    settings,
-)
+from hypothesis import HealthCheck, Phase, Verbosity, assume, given, reject, settings
 from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -52,9 +43,6 @@ def problems(draw):
             pass
 
 
-@example((2, b"\x00\x00\n\x01"))
-@example((1, b"\x00\x00\x06\x01"))
-@example(problem=(32768, b"\x03\x01\x00\x00\x00\x00\x00\x01\x00\x02\x01"))
 @settings(
     suppress_health_check=HealthCheck.all(),
     deadline=None,

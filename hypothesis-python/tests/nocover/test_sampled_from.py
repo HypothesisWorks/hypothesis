@@ -73,3 +73,14 @@ def test_unsat_sets_of_samples(x):
 @given(st.sets(st.sampled_from(range(50)), min_size=50))
 def test_efficient_sets_of_samples(x):
     assert x == set(range(50))
+
+
+def test_stops_quickly():
+    # https://github.com/HypothesisWorks/hypothesis/issues/2027
+    @given(st.sampled_from(range(3)))
+    def inner(x):
+        count[0] += 1
+
+    count = [0]
+    inner()
+    assert 2 < count[0] <= 4
