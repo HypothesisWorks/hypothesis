@@ -119,6 +119,7 @@ def fn_ktest(*fnkwargs):
     (ds.lists, {"elements": ds.integers(), "unique_by": 1}),
     (ds.lists, {"elements": ds.integers(), "unique_by": ()}),
     (ds.lists, {"elements": ds.integers(), "unique_by": (1,)}),
+    (ds.lists, {"elements": ds.sampled_from([0, 1]), "min_size": 3, "unique": True}),
     (ds.text, {"min_size": 10, "max_size": 9}),
     (ds.text, {"alphabet": [1]}),
     (ds.text, {"alphabet": ["abc"]}),
