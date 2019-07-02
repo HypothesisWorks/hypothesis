@@ -94,9 +94,7 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
         if len(v) >= size:
             data.mark_interesting()
 
-    runner = ConjectureRunner(
-        test_function, random=random, settings=settings(TEST_SETTINGS, buffer_size=LOTS)
-    )
+    runner = ConjectureRunner(test_function, random=random, settings=TEST_SETTINGS)
 
     while not runner.interesting_examples:
         runner.test_function(

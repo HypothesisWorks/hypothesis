@@ -100,7 +100,6 @@ def run_language_test_for(root, data, seed):
         test,
         settings=settings(
             max_examples=1,
-            buffer_size=512,
             database=None,
             suppress_health_check=HealthCheck.all(),
             verbosity=Verbosity.quiet,

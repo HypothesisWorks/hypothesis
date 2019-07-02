@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import re
+from contextlib import contextmanager
 from random import Random
 
 import attr
@@ -52,10 +53,7 @@ SOME_LABEL = calc_label_from_name("some label")
 
 
 TEST_SETTINGS = settings(
-    max_examples=5000,
-    buffer_size=1024,
-    database=None,
-    suppress_health_check=HealthCheck.all(),
+    max_examples=5000, database=None, suppress_health_check=HealthCheck.all()
 )
 
 
@@ -70,6 +68,16 @@ def run_to_data(f):
 
 def run_to_buffer(f):
     return hbytes(run_to_data(f).buffer)
+
+
+@contextmanager
+def buffer_size_limit(n):
+    original = engine_module.BUFFER_SIZE
+    try:
+        engine_module.BUFFER_SIZE = n
+        yield
+    finally:
+        engine_module.BUFFER_SIZE = original
 
 
 def test_can_index_results():
@@ -235,10 +243,9 @@ def test_can_navigate_to_a_valid_example():
         data.draw_bytes(i)
         data.mark_interesting()
 
-    runner = ConjectureRunner(
-        f, settings=settings(max_examples=5000, buffer_size=2, database=None)
-    )
-    runner.run()
+    runner = ConjectureRunner(f, settings=settings(max_examples=5000, database=None))
+    with buffer_size_limit(2):
+        runner.run()
     assert runner.interesting_examples
 
 
@@ -408,11 +415,7 @@ def fails_health_check(label, **kwargs):
         runner = ConjectureRunner(
             f,
             settings=settings(
-                max_examples=100,
-                phases=no_shrink,
-                buffer_size=1024,
-                database=None,
-                **kwargs
+                max_examples=100, phases=no_shrink, database=None, **kwargs
             ),
         )
 
@@ -546,7 +549,6 @@ def test_debug_data(capsys):
         f,
         settings=settings(
             max_examples=5000,
-            buffer_size=1024,
             database=None,
             suppress_health_check=HealthCheck.all(),
             verbosity=Verbosity.debug,
@@ -566,7 +568,8 @@ def test_zeroes_bytes_above_bound():
             x = data.draw_bytes(9)
             assert not any(x[4:8])
 
-    ConjectureRunner(f, settings=settings(buffer_size=10)).run()
+    with buffer_size_limit(10):
+        ConjectureRunner(f).run()
 
 
 def test_can_write_bytes_towards_the_end():
@@ -578,7 +581,8 @@ def test_can_write_bytes_towards_the_end():
             data.write(hbytes(buf))
             assert hbytes(data.buffer[-len(buf) :]) == buf
 
-    ConjectureRunner(f, settings=settings(buffer_size=10)).run()
+    with buffer_size_limit(10):
+        ConjectureRunner(f).run()
 
 
 def test_can_increase_number_of_bytes_drawn_in_tail():
@@ -592,13 +596,11 @@ def test_can_increase_number_of_bytes_drawn_in_tail():
         assert not any(b)
 
     runner = ConjectureRunner(
-        f,
-        settings=settings(
-            max_examples=100, buffer_size=11, suppress_health_check=HealthCheck.all()
-        ),
+        f, settings=settings(max_examples=100, suppress_health_check=HealthCheck.all())
     )
 
-    runner.run()
+    with buffer_size_limit(11):
+        runner.run()
 
 
 def test_uniqueness_is_preserved_when_writing_at_beginning():
@@ -995,12 +997,12 @@ def test_large_initial_write():
             f,
             settings=settings(
                 max_examples=5000,
-                buffer_size=1024,
                 database=None,
                 suppress_health_check=HealthCheck.all(),
             ),
         )
-        runner.run()
+        with buffer_size_limit(1024):
+            runner.run()
 
     assert runner.exit_reason == ExitReason.finished
 
@@ -1096,7 +1098,6 @@ def shrinking_from(start):
                 f,
                 settings=settings(
                     max_examples=5000,
-                    buffer_size=1024,
                     database=None,
                     suppress_health_check=HealthCheck.all(),
                 ),
@@ -1175,10 +1176,7 @@ def test_database_clears_secondary_key():
     runner = ConjectureRunner(
         f,
         settings=settings(
-            max_examples=1,
-            buffer_size=1024,
-            database=database,
-            suppress_health_check=HealthCheck.all(),
+            max_examples=1, database=database, suppress_health_check=HealthCheck.all()
         ),
         database_key=key,
     )
@@ -1211,10 +1209,7 @@ def test_database_uses_values_from_secondary_key():
     runner = ConjectureRunner(
         f,
         settings=settings(
-            max_examples=1,
-            buffer_size=1024,
-            database=database,
-            suppress_health_check=HealthCheck.all(),
+            max_examples=1, database=database, suppress_health_check=HealthCheck.all()
         ),
         database_key=key,
     )
@@ -1248,10 +1243,7 @@ def test_exit_because_max_iterations():
     runner = ConjectureRunner(
         f,
         settings=settings(
-            max_examples=1,
-            buffer_size=1024,
-            database=None,
-            suppress_health_check=HealthCheck.all(),
+            max_examples=1, database=None, suppress_health_check=HealthCheck.all()
         ),
     )
 
