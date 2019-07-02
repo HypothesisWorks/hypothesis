@@ -75,3 +75,4 @@ addons:
   apt:
     packages:
       - libgmp-dev
+      - shellcheck
