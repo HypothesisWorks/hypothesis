@@ -88,6 +88,11 @@ setuptools.setup(
     package_dir={"": SOURCE},
     package_data={"hypothesis": ["py.typed"]},
     url="https://github.com/HypothesisWorks/hypothesis/tree/master/hypothesis-python",
+    project_urls={
+        "Website": "https://hypothesis.works",
+        "Documentation": "https://hypothesis.readthedocs.io",
+        "Issues": "https://github.com/HypothesisWorks/hypothesis/issues",
+    },
     license="MPL v2",
     description="A library for property based testing",
     zip_safe=False,
@@ -115,5 +120,6 @@ setuptools.setup(
     ],
     entry_points={"pytest11": ["hypothesispytest = hypothesis.extra.pytestplugin"]},
     long_description=open(README).read(),
+    long_description_content_type="text/x-rst",
     keywords="python testing fuzzing property-based-testing",
 )

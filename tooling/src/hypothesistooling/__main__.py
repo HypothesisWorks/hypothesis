@@ -347,20 +347,7 @@ def documentation():
     try:
         if hp.has_release():
             hp.update_changelog_and_version()
-        pip_tool(
-            # See https://www.sphinx-doc.org/en/stable/man/sphinx-build.html
-            "sphinx-build",
-            "-n",
-            "-W",
-            "--keep-going",
-            "-T",
-            "-E",
-            "-b",
-            "html",
-            "docs",
-            "docs/_build/html",
-            cwd=hp.HYPOTHESIS_PYTHON,
-        )
+        hp.build_docs()
     finally:
         subprocess.check_call(
             ["git", "checkout", "docs/changes.rst", "src/hypothesis/version.py"],
