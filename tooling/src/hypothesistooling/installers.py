@@ -93,13 +93,9 @@ def ensure_ghc():
 def ensure_shellcheck():
     if os.path.exists(SHELLCHECK):
         return
-    if shutil.which("apt-get") is not None:
-        subprocess.check_call(["apt-get", "update"])
-        subprocess.check_call(["apt-get", "install", "shellcheck"])
-    else:
-        update_stack()
-        ensure_ghc()
-        subprocess.check_call([STACK, "install", "ShellCheck"])
+    update_stack()
+    ensure_ghc()
+    subprocess.check_call([STACK, "install", "ShellCheck"])
 
 
 @once
