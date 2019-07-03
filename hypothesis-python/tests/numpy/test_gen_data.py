@@ -313,6 +313,19 @@ def test_array_values_are_unique(arr):
     assert len(set(arr)) == len(arr)
 
 
+@given(
+    nps.arrays(
+        elements=st.just(0.0),
+        dtype=float,
+        fill=st.just(float("nan")),
+        shape=st.integers(0, 20),
+        unique=True,
+    )
+)
+def test_array_values_are_unique_high_collision(arr):
+    assert (arr == 0.0).sum() <= 1
+
+
 def test_may_fill_with_nan_when_unique_is_set():
     find_any(
         nps.arrays(
