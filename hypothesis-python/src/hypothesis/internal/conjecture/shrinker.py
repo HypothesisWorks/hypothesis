@@ -103,7 +103,7 @@ def defines_shrink_pass(generate_arguments):
     def accept(run_step):
         ShrinkPassDefinition(generate_arguments=generate_arguments, run_step=run_step)
 
-        def run(self):
+        def run(self):  # pragma: no cover
             assert False, "Shrink passes should not be run directly"
 
         run.__name__ = run_step.__name__
