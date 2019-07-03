@@ -460,7 +460,7 @@ settings._define_setting(
     validator=lambda x: _ensure_positive_int(x, "buffer_size", since="2019-03-06"),
     description="The buffer_size setting has been deprecated and no longer does anything.",
     deprecation_message="The buffer_size setting can safely be removed with no effect.",
-    deprecated_since="RELEASEDAY",
+    deprecated_since="2019-07-03",
 )
 
 

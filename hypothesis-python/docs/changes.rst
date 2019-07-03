@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.25.0:
+
+-------------------
+4.25.0 - 2019-07-03
+-------------------
+
+This release deprecates and disables the ``buffer_size`` setting,
+which should have been treated as a private implementation detail
+all along.  We recommend simply deleting this settings argument.
+
 .. _v4.24.6:
 
 -------------------
