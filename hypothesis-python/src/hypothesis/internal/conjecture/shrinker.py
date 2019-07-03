@@ -101,12 +101,10 @@ def defines_shrink_pass(generate_arguments):
     """A convenient decorator for defining shrink passes."""
 
     def accept(run_step):
-        definition = ShrinkPassDefinition(
-            generate_arguments=generate_arguments, run_step=run_step
-        )
+        ShrinkPassDefinition(generate_arguments=generate_arguments, run_step=run_step)
 
-        def run(self):
-            return self.run_shrink_pass(definition.name)
+        def run(self):  # pragma: no cover
+            assert False, "Shrink passes should not be run directly"
 
         run.__name__ = run_step.__name__
         run.is_shrink_pass = True
@@ -394,27 +392,6 @@ class Shrinker(object):
     @property
     def random(self):
         return self.__engine.random
-
-    def run_shrink_pass(self, sp):
-        """Runs the function associated with ShrinkPass sp and updates the
-        relevant metadata.
-
-        Note that sp may or may not be a pass currently associated with
-        this shrinker. This does not handle any requeing that is
-        required.
-        """
-        sp = self.shrink_pass(sp)
-
-        self.debug("Shrink Pass %s" % (sp.name,))
-        try:
-            sp.runs += 1
-
-            steps = sp.generate_steps()
-            self.random.shuffle(steps)
-            for s in steps:
-                sp.run_step(s)
-        finally:
-            self.debug("Shrink Pass %s completed." % (sp.name,))
 
     def shrink(self):
         """Run the full set of shrinks and update shrink_target.
