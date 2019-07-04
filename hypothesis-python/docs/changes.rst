@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.26.1:
+
+-------------------
+4.26.1 - 2019-07-04
+-------------------
+
+This release adds the strategy :func:`~hypothesis.extra.numpy.integer_array_indices`,
+which generates tuples of Numpy arrays that can be used for
+`advanced indexing <http://www.pythonlikeyoumeanit.com/Module3_IntroducingNumpy/AdvancedIndexing.html#Integer-Array-Indexing>`_
+to select an array of a specified shape.
+
 .. _v4.26.0:
 
 -------------------
