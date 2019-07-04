@@ -470,3 +470,16 @@ def test_example_equality():
 
         assert not (ex == "hello")
         assert ex != "hello"
+
+
+def test_discarded_data_is_eventually_terminated():
+
+    data = ConjectureData.for_buffer(hbytes(100))
+
+    with pytest.raises(StopTest):
+        for _ in hrange(100):
+            data.start_example(1)
+            data.draw_bits(1)
+            data.stop_example(discard=True)
+
+    assert data.status == Status.INVALID

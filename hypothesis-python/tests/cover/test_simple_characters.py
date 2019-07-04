@@ -130,7 +130,6 @@ def test_whitelisted_characters_override():
     assert_no_examples(st, lambda c: c not in good_characters + "0123456789")
 
 
-@pytest.mark.skip  # temporary skip due to 560 second (!) perf regression; see #1864
 def test_blacklisted_characters():
     bad_chars = u"te02тест49st"
     st = characters(
