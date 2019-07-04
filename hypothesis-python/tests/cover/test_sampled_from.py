@@ -20,6 +20,7 @@ from __future__ import absolute_import, division, print_function
 import collections
 import enum
 
+import hypothesis.strategies as st
 from hypothesis import given
 from hypothesis.errors import FailedHealthCheck, InvalidArgument, Unsatisfiable
 from hypothesis.internal.compat import hrange
@@ -76,3 +77,18 @@ def test_easy_filtered_sampling():
 @given(sampled_from(hrange(100)).filter(lambda x: x == 99))
 def test_filtered_sampling_finds_rare_value(x):
     assert x == 99
+
+
+@given(st.sets(st.sampled_from(range(50)), min_size=50))
+def test_efficient_sets_of_samples(x):
+    assert x == set(range(50))
+
+
+@given(st.lists(st.sampled_from([0] * 100), unique=True))
+def test_does_not_include_duplicates_even_when_duplicated_in_collection(ls):
+    assert len(ls) <= 1
+
+
+@given(st.lists(st.sampled_from(hrange(100)), max_size=3, unique=True))
+def test_max_size_is_respected_with_unique_sampled_from(ls):
+    assert len(ls) <= 3

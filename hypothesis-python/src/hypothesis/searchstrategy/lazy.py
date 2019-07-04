@@ -80,7 +80,7 @@ class LazyStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         self.__wrapped_strategy = None
         self.__representation = None
-        self.__function = function
+        self.function = function
         self.__args = args
         self.__kwargs = kwargs
 
@@ -109,11 +109,11 @@ class LazyStrategy(SearchStrategy):
                 k: unwrap_strategies(v) for k, v in self.__kwargs.items()
             }
 
-            base = self.__function(*self.__args, **self.__kwargs)
+            base = self.function(*self.__args, **self.__kwargs)
             if unwrapped_args == self.__args and unwrapped_kwargs == self.__kwargs:
                 self.__wrapped_strategy = base
             else:
-                self.__wrapped_strategy = self.__function(
+                self.__wrapped_strategy = self.function(
                     *unwrapped_args, **unwrapped_kwargs
                 )
         return self.__wrapped_strategy
@@ -127,7 +127,7 @@ class LazyStrategy(SearchStrategy):
         if self.__representation is None:
             _args = self.__args
             _kwargs = self.__kwargs
-            argspec = getfullargspec(self.__function)
+            argspec = getfullargspec(self.function)
             defaults = dict(argspec.kwonlydefaults or {})
             if argspec.defaults is not None:
                 for name, value in zip(
@@ -136,19 +136,19 @@ class LazyStrategy(SearchStrategy):
                     defaults[name] = value
             if len(argspec.args) > 1 or argspec.defaults:
                 _args, _kwargs = convert_positional_arguments(
-                    self.__function, _args, _kwargs
+                    self.function, _args, _kwargs
                 )
             else:
                 _args, _kwargs = convert_keyword_arguments(
-                    self.__function, _args, _kwargs
+                    self.function, _args, _kwargs
                 )
             kwargs_for_repr = dict(_kwargs)
             for k, v in defaults.items():
                 if k in kwargs_for_repr and kwargs_for_repr[k] is defaults[k]:
                     del kwargs_for_repr[k]
             self.__representation = "%s(%s)" % (
-                self.__function.__name__,
-                arg_string(self.__function, _args, kwargs_for_repr, reorder=False),
+                self.function.__name__,
+                arg_string(self.function, _args, kwargs_for_repr, reorder=False),
             )
         return self.__representation
 

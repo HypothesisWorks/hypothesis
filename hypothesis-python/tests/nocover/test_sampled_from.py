@@ -21,7 +21,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given
-from hypothesis.errors import FailedHealthCheck
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange
 from tests.common.utils import counts_calls, fails_with
 
@@ -64,7 +64,7 @@ def test_chained_filters_find_rare_value(x):
     assert x == 80
 
 
-@fails_with(FailedHealthCheck)
+@fails_with(InvalidArgument)
 @given(st.sets(st.sampled_from(range(10)), min_size=11))
 def test_unsat_sets_of_samples(x):
     assert False

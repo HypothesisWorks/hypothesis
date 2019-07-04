@@ -173,3 +173,51 @@ def binary_search(lo, hi, f):
 def uniform(random, n):
     """Returns an hbytes of length n, distributed uniformly at random."""
     return int_to_bytes(random.getrandbits(n * 8), n)
+
+
+class LazySequenceCopy(object):
+    """A "copy" of a sequence that works by inserting a mask in front
+    of the underlying sequence, so that you can mutate it without changing
+    the underlying sequence. Effectively behaves as if you could do list(x)
+    in O(1) time. The full list API is not supported yet but there's no reason
+    in principle it couldn't be."""
+
+    def __init__(self, values):
+        self.__values = values
+        self.__len = len(values)
+        self.__mask = None
+
+    def __len__(self):
+        return self.__len
+
+    def pop(self):
+        if len(self) == 0:
+            raise IndexError("Cannot pop from empty list")
+        result = self[-1]
+        self.__len -= 1
+        if self.__mask is not None:
+            self.__mask.pop(self.__len, None)
+        return result
+
+    def __getitem__(self, i):
+        i = self.__check_index(i)
+        default = self.__values[i]
+        if self.__mask is None:
+            return default
+        else:
+            return self.__mask.get(i, default)
+
+    def __setitem__(self, i, v):
+        i = self.__check_index(i)
+        if self.__mask is None:
+            self.__mask = {}
+        self.__mask[i] = v
+
+    def __check_index(self, i):
+        n = len(self)
+        if i < -n or i >= n:
+            raise IndexError("Index %d out of range [0, %d)" % (i, n))
+        if i < 0:
+            i += n
+        assert 0 <= i < n
+        return i

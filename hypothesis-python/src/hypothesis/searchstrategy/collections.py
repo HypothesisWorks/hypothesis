@@ -20,6 +20,7 @@ from __future__ import absolute_import, division, print_function
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import OrderedDict
+from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 from hypothesis.internal.conjecture.utils import combine_labels
 from hypothesis.searchstrategy.strategies import (
     MappedSearchStrategy,
@@ -165,6 +166,40 @@ class UniqueListStrategy(ListStrategy):
                 for key, seen in zip(self.keys, seen_sets):
                     seen.add(key(value))
                 result.append(value)
+        assert self.max_size >= len(result) >= self.min_size
+        return result
+
+
+class UniqueSampledListStrategy(ListStrategy):
+    def __init__(self, elements, min_size, max_size, keys):
+        super(UniqueSampledListStrategy, self).__init__(elements, min_size, max_size)
+        self.keys = keys
+
+    def do_draw(self, data):
+        should_draw = cu.many(
+            data,
+            min_size=self.min_size,
+            max_size=self.max_size,
+            average_size=self.average_size,
+        )
+        seen_sets = tuple(set() for _ in self.keys)
+        result = []
+
+        remaining = LazySequenceCopy(self.element_strategy.elements)
+
+        while should_draw.more():
+            i = len(remaining) - 1
+            j = cu.integer_range(data, 0, i)
+            if j != i:
+                remaining[i], remaining[j] = remaining[j], remaining[i]
+            value = remaining.pop()
+
+            if all(key(value) not in seen for (key, seen) in zip(self.keys, seen_sets)):
+                for key, seen in zip(self.keys, seen_sets):
+                    seen.add(key(value))
+                result.append(value)
+            else:
+                should_draw.reject()
         assert self.max_size >= len(result) >= self.min_size
         return result
 

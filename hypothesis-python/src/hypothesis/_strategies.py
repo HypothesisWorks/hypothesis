@@ -87,6 +87,7 @@ from hypothesis.searchstrategy.collections import (
     ListStrategy,
     TupleStrategy,
     UniqueListStrategy,
+    UniqueSampledListStrategy,
 )
 from hypothesis.searchstrategy.datetime import (
     DateStrategy,
@@ -775,6 +776,26 @@ def lists(
         for i, f in enumerate(unique_by):
             if not callable(f):
                 raise InvalidArgument("unique_by[%i]=%r is not a callable" % (i, f))
+        # Note that lazy strategies automatically unwrap when passed to a defines_strategy
+        # function.
+        if isinstance(elements, SampledFromStrategy):
+            element_count = len(elements.elements)
+            if min_size > element_count:
+                raise InvalidArgument(
+                    "Cannot create a collection of min_size=%r unique elements with "
+                    "values drawn from only %d distinct elements"
+                    % (min_size, element_count)
+                )
+
+            if max_size is not None:
+                max_size = min(max_size, element_count)
+            else:
+                max_size = element_count
+
+            return UniqueSampledListStrategy(
+                elements=elements, max_size=max_size, min_size=min_size, keys=unique_by
+            )
+
         return UniqueListStrategy(
             elements=elements, max_size=max_size, min_size=min_size, keys=unique_by
         )
