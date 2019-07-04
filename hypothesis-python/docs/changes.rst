@@ -21,6 +21,20 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.26.2:
+
+-------------------
+4.26.2 - 2019-07-04
+-------------------
+
+This release fixes :issue:`1864`, where some simple tests would perform very slowly,
+because they would run many times with each subsequent run being progressively slower.
+They will now stop after a more reasonable number of runs without hitting this problem.
+
+Unless you are hitting exactly this issue, it is unlikely that this release will have any effect,
+but certain classes of custom generators that are currently very slow may become a bit faster,
+or start to trigger health check failures.
+
 .. _v4.26.1:
 
 -------------------
