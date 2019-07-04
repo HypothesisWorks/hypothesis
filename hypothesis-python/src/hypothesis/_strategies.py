@@ -1339,8 +1339,8 @@ def from_type(thing):
 
     For example, ``everything_except(int)`` returns a strategy that can
     generate anything that ``from_type()`` can ever generate, except for
-    instances of :class:python:int, and excluding instances of types
-    added via :func:~hypothesis.strategies.register_type_strategy.
+    instances of :class:`python:int`, and excluding instances of types
+    added via :func:`~hypothesis.strategies.register_type_strategy`.
 
     This is useful when writing tests which check that invalid input is
     rejected in a certain way.

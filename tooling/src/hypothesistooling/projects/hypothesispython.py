@@ -193,7 +193,7 @@ def upload_distribution():
     entries = [i for i, l in enumerate(lines) if CHANGELOG_HEADER.match(l)]
     changelog_body = "".join(lines[entries[0] + 2 : entries[1]]).strip() + (
         "\n\n*[The canonical version of these notes (with links) is on readthedocs.]"
-        "(https://hypothesis.readthedocs.io/en/latest/changes.html#v%s).*"
+        "(https://hypothesis.readthedocs.io/en/latest/changes.html#v%s)*"
         % (current_version().replace(".", "-"),)
     )
 
