@@ -17,8 +17,10 @@
 
 from __future__ import absolute_import, division, print_function
 
+import hypothesis.strategies as st
 from hypothesis import HealthCheck, Verbosity, given, settings as Settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
+from hypothesis.internal.conjecture.data import ConjectureData, StopTest
 from hypothesis.internal.reflection import get_pretty_function_description
 from tests.common.utils import no_shrink
 
@@ -95,3 +97,15 @@ def assert_all_examples(strategy, predicate):
         assert predicate(s), msg
 
     assert_examples()
+
+
+def assert_can_trigger_event(strategy, predicate):
+    def test(buf):
+        data = ConjectureData.for_buffer(buf)
+        try:
+            data.draw(strategy)
+        except StopTest:
+            pass
+        return any(predicate(e) for e in data.events)
+
+    find_any(st.binary(), test)
