@@ -167,7 +167,7 @@ def test_shrinks_both_failures():
     duds = set()
     second_target = [None]
 
-    @settings(database=None)
+    @settings(database=None, max_examples=1000)
     @given(st.integers(min_value=0).map(int))
     def test(i):
         if i >= 10000:
