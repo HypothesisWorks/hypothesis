@@ -341,20 +341,6 @@ def test_child_becomes_exhausted_after_split():
     assert tree.root.transition.children[0].is_exhausted
 
 
-def test_will_avoid_exhausted_branches_for_necessary_prefix():
-    tree = DataTree()
-    data = ConjectureData.for_buffer([0], observer=tree.new_observer())
-    data.draw_bits(1)
-    data.freeze()
-
-    data = ConjectureData.for_buffer([1, 1], observer=tree.new_observer())
-    data.draw_bits(1)
-    data.draw_bits(8)
-    data.freeze()
-
-    assert list(tree.find_necessary_prefix_for_novelty()) == [1]
-
-
 def test_will_generate_novel_prefix_to_avoid_exhausted_branches():
     tree = DataTree()
     data = ConjectureData.for_buffer([1], observer=tree.new_observer())

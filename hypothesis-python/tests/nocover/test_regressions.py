@@ -19,6 +19,8 @@ from __future__ import absolute_import, division, print_function
 
 import warnings
 
+import hypothesis.strategies as st
+from hypothesis import given
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.strategies import composite, integers
@@ -42,3 +44,11 @@ def test_note_deprecation_blames_right_code_issue_652():
     assert isinstance(record.message, HypothesisDeprecationWarning)
     assert record.message.args == (msg,)
     assert record.filename == __file__
+
+
+@given(
+    x=st.one_of(st.just(0) | st.just(1)),
+    y=st.one_of(st.just(0) | st.just(1) | st.just(2)),
+)
+def test_performance_issue_2027(x, y):
+    pass

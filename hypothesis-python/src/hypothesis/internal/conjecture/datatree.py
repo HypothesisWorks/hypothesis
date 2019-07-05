@@ -28,7 +28,7 @@ from hypothesis.internal.conjecture.data import (
     StopTest,
     bits_to_bytes,
 )
-from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
+from hypothesis.internal.conjecture.junkdrawer import IntList
 
 
 class PreviouslyUnseenBehaviour(HypothesisException):
@@ -196,31 +196,19 @@ class DataTree(object):
         described must have been fully explored."""
         return self.root.is_exhausted
 
-    def find_necessary_prefix_for_novelty(self):
-        """Finds a prefix that any novel example must start with.
-        This is currently only used for generate_novel_prefix, where
-        it allows us to significantly speed it up in the case where
-        we start with a very shallow tree.
+    def generate_novel_prefix(self, random):
+        """Generate a short random string that (after rewriting) is not
+        a prefix of any buffer previously added to the tree.
 
-        For example, suppose we had a test function that looked like:
-
-        .. code-block:: python
-
-            def test_function(data):
-                while data.draw_bits(1):
-                    pass
-
-        This has a unique example of size ``n`` for any ``n``, but we
-        only draw that example with probability ``2 ** (-n)`` through
-        random sampling, so we will very rapidly exhaust the search
-        space. By first searching to find the necessary sequence
-        that any novel example must satisfy, we can find novel
-        examples with probability 1 instead.
+        The resulting prefix is essentially arbitrary - it would be nice
+        for it to be uniform at random, but previous attempts to do that
+        have proven too expensive.
         """
-        necessary_prefix = bytearray()
+        assert not self.is_exhausted
+        novel_prefix = bytearray()
 
         def append_int(n_bits, value):
-            necessary_prefix.extend(int_to_bytes(value, bits_to_bytes(n_bits)))
+            novel_prefix.extend(int_to_bytes(value, bits_to_bytes(n_bits)))
 
         current_node = self.root
         while True:
@@ -231,56 +219,33 @@ class DataTree(object):
                 if i in current_node.forced:
                     append_int(n_bits, value)
                 else:
+                    while True:
+                        k = random.getrandbits(n_bits)
+                        if k != value:
+                            append_int(n_bits, k)
+                            break
                     # We've now found a value that is allowed to
                     # vary, so what follows is not fixed.
-                    return hbytes(necessary_prefix)
+                    return hbytes(novel_prefix)
             else:
                 assert not isinstance(current_node.transition, Conclusion)
                 if current_node.transition is None:
-                    return hbytes(necessary_prefix)
+                    return hbytes(novel_prefix)
                 branch = current_node.transition
                 assert isinstance(branch, Branch)
-                if len(branch.children) < branch.max_children:
-                    return hbytes(necessary_prefix)
-                else:
-                    choices = [
-                        (k, v) for k, v in branch.children.items() if not v.is_exhausted
-                    ]
-                    assert len(choices) > 0
-                    if len(choices) == 1:
-                        k, v = choices[0]
-                        append_int(branch.bit_length, k)
-                        current_node = v
-                    else:
-                        return hbytes(necessary_prefix)
+                n_bits = branch.bit_length
 
-    def generate_novel_prefix(self, random):
-        """Generate a short random string that (after rewriting) is not
-        a prefix of any buffer previously added to the tree.
-
-        This is logically equivalent to generating the test case uniformly
-        at random and returning the first point at which we hit unknown
-        territory, but with an optimisation for the only common case where
-        that would be inefficient.
-        """
-        assert not self.is_exhausted
-
-        initial = self.find_necessary_prefix_for_novelty()
-
-        while True:
-
-            def draw_bytes(data, n):
-                i = data.index
-                if i < len(initial):
-                    return initial[i : i + n]
-                else:
-                    return uniform(random, n)
-
-            data = ConjectureData(draw_bytes=draw_bytes, max_length=float("inf"))
-            try:
-                self.simulate_test_function(data)
-            except PreviouslyUnseenBehaviour:
-                return hbytes(data.buffer)
+                while True:
+                    k = random.getrandbits(n_bits)
+                    try:
+                        child = branch.children[k]
+                    except KeyError:
+                        append_int(n_bits, k)
+                        return hbytes(novel_prefix)
+                    if not child.is_exhausted:
+                        append_int(n_bits, k)
+                        current_node = child
+                        break
 
     def rewrite(self, buffer):
         """Use previously seen ConjectureData objects to return a tuple of

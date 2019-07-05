@@ -26,7 +26,7 @@ from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
 from hypothesis.strategies import datetimes, sampled_from, times
-from tests.common.debug import minimal
+from tests.common.debug import assert_can_trigger_event, minimal
 
 
 def test_utc_is_minimal():
@@ -97,3 +97,12 @@ def test_can_generate_non_utc():
 def test_time_bounds_must_be_naive(name, val):
     with pytest.raises(InvalidArgument):
         times(**{name: val}).validate()
+
+
+def test_can_trigger_error_in_draw_near_max_date():
+    assert_can_trigger_event(
+        datetimes(
+            min_value=dt.datetime.max - dt.timedelta(days=3), timezones=timezones()
+        ),
+        lambda event: "Failed to draw a datetime" in event,
+    )
