@@ -17,7 +17,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-from collections import Iterable, OrderedDict
 from copy import copy
 
 import attr
@@ -29,7 +28,7 @@ import hypothesis.extra.numpy as npst
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import OrderedDict, abc, hrange
 from hypothesis.internal.coverage import check, check_function
 from hypothesis.internal.validation import (
     check_type,
@@ -489,7 +488,7 @@ def data_frames(
                 @check_function
                 def row():
                     result = draw(rows)
-                    check_type(Iterable, result, "draw(row)")
+                    check_type(abc.Iterable, result, "draw(row)")
                     return result
 
                 if len(index) > 0:
