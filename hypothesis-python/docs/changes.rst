@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.26.4:
+
+-------------------
+4.26.4 - 2019-07-07
+-------------------
+
+This patch ensures that the Pandas extra will keep working when Python 3.8
+removes abstract base classes from the top-level :obj:`python:collections`
+namespace.  This also fixes the relevant warning in Python 3.7, but there
+is no other difference in behaviour and you do not need to do anything.
+
 .. _v4.26.3:
 
 -------------------
