@@ -22,8 +22,9 @@ from hypothesis.strategies import *
 
 
 def test_can_star_import_from_hypothesis():
-    find(
-        lists(integers()),
-        lambda x: sum(x) > 1,
-        settings=settings(max_examples=10000, verbosity=Verbosity.quiet),
-    )
+    @given(lists(integers()))
+    @settings(max_examples=10000, verbosity=Verbosity.quiet)
+    def f(x):
+        pass
+
+    f()

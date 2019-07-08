@@ -2154,10 +2154,6 @@ def data():
     """This isn't really a normal strategy, but instead gives you an object
     which can be used to draw data interactively from other strategies.
 
-    It can only be used within :func:`@given <hypothesis.given>`, not
-    :func:`find() <hypothesis.find>`. This is because the lifetime
-    of the object cannot outlast the test body.
-
     See :ref:`the rest of the documentation <interactive-draw>` for more
     complete information.
 

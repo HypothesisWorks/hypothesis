@@ -81,16 +81,18 @@ Seeing intermediate result
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To see what's going on while Hypothesis runs your tests, you can turn
-up the verbosity setting. This works with both :func:`~hypothesis.find`
-and :func:`@given <hypothesis.given>`.
+up the verbosity setting.
 
 .. code-block:: pycon
 
     >>> from hypothesis import find, settings, Verbosity
     >>> from hypothesis.strategies import lists, integers
-    >>> find(lists(integers()), any, settings=settings(verbosity=Verbosity.verbose))
-    Tried non-satisfying example []
-    Found satisfying example [-1198601713, -67, 116, -29578]
+    >>> @given(lists(integers())
+    ... @settings(verbosity=Verbosity.verbose))
+    ... def f(x): assert not any(x)
+    ... f()
+    Trying example: []
+    Falsifying example: [-1198601713, -67, 116, -29578]
     Shrunk example to [-1198601713]
     Shrunk example to [-1198601600]
     Shrunk example to [-1191228800]

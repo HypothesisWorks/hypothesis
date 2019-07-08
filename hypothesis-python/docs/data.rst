@@ -98,7 +98,7 @@ hard to satisfy then this can fail:
     >>> integers().filter(lambda x: False).example()
     Traceback (most recent call last):
         ...
-    hypothesis.errors.NoExamples: Could not find any valid examples in 20 tries
+    hypothesis.errors.Unsatisfiable: Could not find any valid examples in 20 tries
 
 In general you should try to use ``filter`` only to avoid corner cases that you
 don't want rather than attempting to cut out a large chunk of the search space.
@@ -133,13 +133,13 @@ length:
 
     >>> rectangle_lists = integers(min_value=0, max_value=10).flatmap(
     ... lambda n: lists(lists(integers(), min_size=n, max_size=n)))
-    >>> find(rectangle_lists, lambda x: True)
+    >>> rectangle_lists.example()
     []
-    >>> find(rectangle_lists, lambda x: len(x) >= 10)
+    >>> rectangle_lists.filter(lambda x: len(x) >= 10).example()
     [[], [], [], [], [], [], [], [], [], []]
-    >>> find(rectangle_lists, lambda t: len(t) >= 3 and len(t[0]) >= 3)
+    >>> rectangle_lists.filter(lambda t: len(t) >= 3 and len(t[0]) >= 3).example()
     [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
-    >>> find(rectangle_lists, lambda t: sum(len(s) for s in t) >= 10)
+    >>> rectangle_lists.filter(lambda t: sum(len(s) for s in t) >= 10).example()
     [[0], [0], [0], [0], [0], [0], [0], [0], [0], [0]]
 
 In this example we first choose a length for our tuples, then we build a
