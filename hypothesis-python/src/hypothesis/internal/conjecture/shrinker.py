@@ -28,11 +28,7 @@ from hypothesis.internal.conjecture.floats import (
     float_to_lex,
     lex_to_float,
 )
-from hypothesis.internal.conjecture.junkdrawer import (
-    binary_search,
-    pop_random,
-    replace_all,
-)
+from hypothesis.internal.conjecture.junkdrawer import binary_search, replace_all
 from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Ordering
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
@@ -508,11 +504,9 @@ class Shrinker(object):
         is a fixed point of all of them."""
         passes = list(map(self.shrink_pass, passes))
 
-        initial = None
-        while initial is not self.shrink_target:
-            initial = self.shrink_target
-            for sp in passes:
-                sp.runs += 1
+        any_ran = True
+        while any_ran:
+            any_ran = False
 
             # We run remove_discarded after every step to do cleanup
             # keeping track of whether that actually works. Either there is
@@ -522,82 +516,43 @@ class Shrinker(object):
             # try again once all of the passes have been run.
             can_discard = self.remove_discarded()
 
-            # We want to run all steps from each pass, but the order in which
-            # we do this makes a fairly significant difference. If a pass has
-            # a lot of steps but is useless, we'd like to defer running those
-            # steps (many of which will become faster or irrelevant) until
-            # after other, better, passes have had a chance to run.
-            #
-            # An ideal outcome would be that we take every pass/step pair,
-            # run every one of these pairs that would produce a successful
-            # shrink, then run every pair that wouldn't.
-            #
-            # Doing this would of course require us to be magically good at
-            # predicting which pairs would work, and if we could do that then
-            # we wouldn't bother running the unsuccessful ones at all. Instead
-            # what we do is we iterate over them in an order that prioritises
-            # passes that seem to work well and penalises ones that make useless
-            # test calls.
-
-            # The passes we've not run to completion yet, along with the steps
-            # they've yet to run. The steps start out as None, so that we only
-            # calculate the list the first time we run the pass. This is because
-            # if the shrink target changes between calculating steps and running
-            # them, a lot of the steps become invalid. Particularly when the
-            # initial shrink target is large and thus there are a lot of steps
-            # this is potentially fairly wasteful, so we defer calculation to
-            # point of first usage where they will definitely be valid.
-            passes_with_steps = [(sp, None) for sp in passes]
-
-            # Run passes that are already at a fixed point last, so that we've
-            # had a chance to unlock them by the time we come to run them.
-            passes_with_steps.sort(
-                key=lambda t: t[0].fixed_point_at is self.shrink_target
-            )
             successful_passes = set()
 
-            while passes_with_steps:
-                to_run_next = []
+            for sp in passes:
+                # We run each pass until it has failed a certain number
+                # of times, where a "failure" is any step where it made
+                # at least one call and did not result in a shrink.
+                # This gives passes which work reasonably often more of
+                # chance to run.
+                failures = 0
+                successes = 0
 
-                for sp, steps in passes_with_steps:
-                    if steps is None:
-                        steps = sp.generate_steps()
+                # The choice of 3 is fairly arbitrary and was hand tuned
+                # to some particular examples. It is very unlikely that
+                # is the best choice in general, but it's not an
+                # unreasonable choice: Making it smaller than this would
+                # give too high a chance of an otherwise very worthwhile
+                # pass getting screened out too early if it got unlucky,
+                # and making it much larger than this would result in us
+                # spending too much time on bad passes.
+                max_failures = 3
 
-                    # We run each pass until it has failed a certain number
-                    # of times, where a "failure" is any step where it made
-                    # at least one call and did not result in a shrink.
-                    # This gives passes which work reasonably often more of
-                    # chance to run.
-                    failures = 0
-                    successes = 0
-
-                    # The choice of 3 is fairly arbitrary and was hand tuned
-                    # to some particular examples. It is very unlikely that
-                    # is the best choice in general, but it's not an
-                    # unreasonable choice: Making it smaller than this would
-                    # give too high a chance of an otherwise very worthwhile
-                    # pass getting screened out too early if it got unlucky,
-                    # and making it much larger than this would result in us
-                    # spending too much time on bad passes.
-                    max_failures = 3
-
-                    while steps and failures < max_failures:
-                        prev_calls = self.calls
-                        prev = self.shrink_target
-                        sp.run_step(pop_random(self.random, steps))
-                        if prev_calls != self.calls:
-                            if can_discard:
-                                can_discard = self.remove_discarded()
-                            if prev is self.shrink_target:
-                                failures += 1
-                            else:
-                                successes += 1
-                    if steps:
-                        to_run_next.append((sp, steps))
-                    if successes > 0:
-                        successful_passes.add(sp)
-
-                passes_with_steps = to_run_next
+                while failures < max_failures:
+                    prev_calls = self.calls
+                    prev = self.shrink_target
+                    if sp.step():
+                        any_ran = True
+                    else:
+                        break
+                    if prev_calls != self.calls:
+                        if can_discard:
+                            can_discard = self.remove_discarded()
+                        if prev is self.shrink_target:
+                            failures += 1
+                        else:
+                            successes += 1
+                if successes > 0:
+                    successful_passes.add(sp)
 
             # If only some of our shrink passes are doing anything useful
             # then run all of those to a fixed point before running the
@@ -1532,17 +1487,26 @@ class ShrinkPass(object):
     index = attr.ib()
     shrinker = attr.ib()
 
+    steps = attr.ib(default=None)
     fixed_point_at = attr.ib(default=None)
+    generated_at = attr.ib(default=None)
     successes = attr.ib(default=0)
     runs = attr.ib(default=0)
     calls = attr.ib(default=0)
     shrinks = attr.ib(default=0)
     deletions = attr.ib(default=0)
 
-    def generate_steps(self):
+    def step(self):
         if self.fixed_point_at is self.shrinker.shrink_target:
-            return []
-        return list(self.generate_arguments(self.shrinker))
+            return False
+        if not self.steps and self.generated_at is not self.shrinker.shrink_target:
+            self.steps = list(self.generate_arguments(self.shrinker))
+            self.shrinker.random.shuffle(self.steps)
+            self.generated_at = self.shrinker.shrink_target
+        if not self.steps:
+            return False
+        self.run_step(self.steps.pop())
+        return True
 
     def run_step(self, args):
         initial_shrinks = self.shrinker.shrinks
