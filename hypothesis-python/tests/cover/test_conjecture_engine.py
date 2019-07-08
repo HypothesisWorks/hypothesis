@@ -479,10 +479,7 @@ def test_can_shrink_variable_draws_with_just_deletion(n, monkeypatch):
         if any(b):
             data.mark_interesting()
 
-    # We normally would have populated this in minimize_individual_blocks
-    shrinker.is_shrinking_block = lambda x: True
-
-    shrinker.fixate_shrink_passes(["example_deletion_with_block_lowering"])
+    shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
 
     assert list(shrinker.shrink_target.buffer) == [1, 1]
 
@@ -491,13 +488,8 @@ def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
     monkeypatch.setattr(
         Shrinker,
         "shrink",
-        lambda self: self.fixate_shrink_passes(
-            ["example_deletion_with_block_lowering"]
-        ),
+        lambda self: self.fixate_shrink_passes(["minimize_individual_blocks"]),
     )
-    # Would normally be added by minimize_individual_blocks, but we skip
-    # that phase in this test.
-    monkeypatch.setattr(Shrinker, "is_shrinking_block", lambda self, i: i == 0)
 
     def gen(self):
         self.cached_test_function(10)

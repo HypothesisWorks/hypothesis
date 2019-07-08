@@ -273,7 +273,6 @@ class Shrinker(object):
         """
         self.__engine = engine
         self.__predicate = predicate
-        self.__shrinking_prefixes = set()
         self.__derived_values = {}
         self.__pending_shrink_explanation = None
 
@@ -362,7 +361,6 @@ class Shrinker(object):
             self.shrink_target.buffer
         ):
             self.update_shrink_target(data)
-            self.__shrinking_block_cache = {}
             return True
         return False
 
@@ -489,9 +487,8 @@ class Shrinker(object):
                 "reorder_examples",
                 "minimize_floats",
                 "minimize_duplicated_blocks",
-                "minimize_individual_blocks",
                 block_program("-XX"),
-                "example_deletion_with_block_lowering",
+                "minimize_individual_blocks",
             ]
         )
 
@@ -643,25 +640,6 @@ class Shrinker(object):
             + self.buffer[ancestor.end :]
         )
 
-    def is_shrinking_block(self, i):
-        """Checks whether block i has been previously marked as a shrinking
-        block.
-
-        If the shrink target has changed since i was last checked, will
-        attempt to calculate if an equivalent block in a previous shrink
-        target was marked as shrinking.
-        """
-        if not self.__shrinking_prefixes:
-            return False
-        try:
-            return self.__shrinking_block_cache[i]
-        except KeyError:
-            pass
-        t = self.shrink_target
-        return self.__shrinking_block_cache.setdefault(
-            i, t.buffer[: t.blocks[i].start] in self.__shrinking_prefixes
-        )
-
     def lower_common_block_offset(self):
         """Sometimes we find ourselves in a situation where changes to one part
         of the byte stream unlock changes to other parts. Sometimes this is
@@ -727,17 +705,6 @@ class Shrinker(object):
         Integer.shrink(offset, reoffset, random=self.random)
         self.clear_change_tracking()
 
-    def mark_shrinking(self, blocks):
-        """Mark each of these blocks as a shrinking block: That is, lowering
-        its value lexicographically may cause less data to be drawn after."""
-        t = self.shrink_target
-        for i in blocks:
-            if self.__shrinking_block_cache.get(i) is True:
-                continue
-            self.__shrinking_block_cache[i] = True
-            prefix = t.buffer[: t.blocks[i].start]
-            self.__shrinking_prefixes.add(prefix)
-
     def clear_change_tracking(self):
         self.__last_checked_changed_at = self.shrink_target
         self.__all_changed_blocks = set()
@@ -801,15 +768,12 @@ class Shrinker(object):
             self.__last_checked_changed_at = new_target
 
         self.shrink_target = new_target
-        self.__shrinking_block_cache = {}
         self.__derived_values = {}
 
     def try_shrinking_blocks(self, blocks, b):
         """Attempts to replace each block in the blocks list with b. Returns
         True if it succeeded (which may include some additional modifications
         to shrink_target).
-
-        May call mark_shrinking with b if this causes a reduction in size.
 
         In current usage it is expected that each of the blocks currently have
         the same value, although this is not essential. Note that b must be
@@ -859,12 +823,10 @@ class Shrinker(object):
         if lost_data <= 0:
             return False
 
-        self.mark_shrinking(blocks)
-
         # We now look for contiguous regions to delete that might help fix up
         # this failed shrink. We only look for contiguous regions of the right
         # lengths because doing anything more than that starts to get very
-        # expensive. See example_deletion_with_block_lowering for where we
+        # expensive. See minimize_individual_blocks for where we
         # try to be more aggressive.
         regions_to_delete = {(end, end + lost_data)}
 
@@ -1178,8 +1140,23 @@ class Shrinker(object):
         assert x < 10
 
         then in our shrunk example, x = 10 rather than say 97.
+
+        If we are unsuccessful at minimizing a block of interest we then
+        check if that's because it's changing the size of the test case and,
+        if so, we also make an attempt to delete parts of the test case to
+        see if that fixes it.
+
+        We handle most of the common cases in try_shrinking_blocks which is
+        pretty good at clearing out large contiguous blocks of dead space,
+        but it fails when there is data that has to stay in particular places
+        in the list.
         """
         block = chooser.choose(self.blocks)
+
+        if block.trivial:
+            return
+
+        initial = self.shrink_target
         u, v = block.bounds
         i = block.index
         Lexical.shrink(
@@ -1189,22 +1166,27 @@ class Shrinker(object):
             full=False,
         )
 
-    @defines_shrink_pass()
-    def example_deletion_with_block_lowering(self, chooser):
-        """Sometimes we get stuck where there is data that we could easily
-        delete, but it changes the number of examples generated, so we have to
-        change that at the same time.
+        if self.shrink_target is not initial:
+            return
 
-        We handle most of the common cases in try_shrinking_blocks which is
-        pretty good at clearing out large contiguous blocks of dead space,
-        but it fails when there is data that has to stay in particular places
-        in the list.
+        lowered = (
+            self.buffer[: block.start]
+            + int_to_bytes(
+                int_from_bytes(self.buffer[block.start : block.end]) - 1, block.length
+            )
+            + self.buffer[block.end :]
+        )
+        attempt = self.cached_test_function(lowered)
+        if (
+            attempt.status < Status.VALID
+            or len(attempt.buffer) == len(self.buffer)
+            or len(attempt.buffer) == block.end
+        ):
+            return
 
-        This pass exists as an emergency procedure to get us unstuck. For every
-        example and every block not inside that example it tries deleting the
-        example and modifying the block's value by one in either direction.
-        """
-        block = chooser.choose(self.blocks, lambda b: self.is_shrinking_block(b.index))
+        # If it were then the lexical shrink should have worked and we could
+        # never have got here.
+        assert attempt is not self.shrink_target
 
         lo = 0
         hi = len(self.examples)
@@ -1224,12 +1206,7 @@ class Shrinker(object):
 
         u, v = block.bounds
 
-        n = int_from_bytes(self.shrink_target.buffer[u:v])
-        if n == 0:
-            return
-
-        buf = bytearray(self.shrink_target.buffer)
-        buf[u:v] = int_to_bytes(n - 1, v - u)
+        buf = bytearray(lowered)
         del buf[ex.start : ex.end]
         self.incorporate_new_buffer(buf)
 
