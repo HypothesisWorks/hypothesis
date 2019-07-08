@@ -266,7 +266,7 @@ class SearchStrategy(Generic[Ex]):
         This method is part of the public API.
         """
         if random is not not_set:
-            note_deprecation("The random argument does nothing", since="RELEASEDAY")
+            note_deprecation("The random argument does nothing", since="2019-07-08")
 
         context = _current_build_context.value
         if context is not None:
