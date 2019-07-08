@@ -25,7 +25,7 @@ import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, given, reject, settings
-from hypothesis.errors import NoExamples
+from hypothesis.errors import Unsatisfiable
 from tests.pandas.helpers import supported_by_pandas
 
 
@@ -40,7 +40,7 @@ def test_gets_right_dtype_for_empty_indices_with_elements(ix):
 
 
 def test_does_not_generate_impossible_conditions():
-    with pytest.raises(NoExamples):
+    with pytest.raises(Unsatisfiable):
         pdst.indexes(min_size=3, max_size=3, dtype=bool).example()
 
 

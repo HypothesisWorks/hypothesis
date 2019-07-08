@@ -96,3 +96,7 @@ def test_pytest_skip_skips_shrinking():
     with pytest.raises(Skipped):
         inner()
     assert len([x for x in values if x > 100]) == 1
+
+
+def test_can_find_with_db_eq_none():
+    find(s.integers(), bool, settings(database=None))

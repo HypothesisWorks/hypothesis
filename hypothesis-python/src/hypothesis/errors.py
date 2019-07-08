@@ -46,12 +46,6 @@ class NoSuchExample(HypothesisException):
         )
 
 
-class NoExamples(HypothesisException):
-    """Raised when example() is called on a strategy but we cannot find any
-    examples after enough tries that we really should have been able to if this
-    was ever going to work."""
-
-
 class Unsatisfiable(HypothesisException):
     """We ran out of time or examples before we could find enough examples
     which satisfy the assumptions of this hypothesis.

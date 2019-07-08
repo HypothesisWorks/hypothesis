@@ -71,7 +71,7 @@ def test_slices_will_shrink(size):
 @given(st.integers(1, 1000))
 @settings(deadline=None)
 def test_step_will_be_negative(size):
-    find_any(st.slices(size), lambda x: x.step < 0)
+    find_any(st.slices(size), lambda x: x.step < 0, settings(max_examples=10 ** 6))
 
 
 @given(st.integers(1, 1000))
