@@ -47,7 +47,7 @@ from hypothesis.internal.conjecture.shrinking import Float
 from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
 from tests.common.strategies import SLOW, HardToShrink
-from tests.common.utils import counts_calls, no_shrink
+from tests.common.utils import no_shrink
 
 SOME_LABEL = calc_label_from_name("some label")
 
@@ -1510,29 +1510,6 @@ def test_zero_examples_is_adaptive():
     assert shrinker.calls <= 60
 
 
-def test_stable_identifiers_match_their_examples():
-    def tree(data):
-        data.start_example(1)
-        n = data.draw_bits(1)
-        label = data.draw_bits(8)
-        if n:
-            tree(data)
-            tree(data)
-        data.stop_example(1)
-        return label
-
-    initial = hbytes([1, 10, 0, 0, 1, 0, 0, 10, 0, 0])
-
-    @shrinking_from(initial)
-    def shrinker(data):
-        tree(data)
-        data.mark_interesting()
-
-    for ex in shrinker.examples:
-        id = shrinker.stable_identifier_for_example(ex)
-        assert shrinker.example_for_stable_identifier(id) == ex
-
-
 def test_branch_ending_in_write():
     seen = set()
 
@@ -1567,48 +1544,3 @@ def test_exhaust_space():
         runner.run()
         assert runner.tree.is_exhausted
         assert runner.valid_examples == 2
-
-
-@pytest.mark.parametrize(
-    "pass_name",
-    [
-        "pass_to_descendant",
-        "adaptive_example_deletion",
-        "zero_examples",
-        "minimize_floats",
-        "example_deletion_with_block_lowering",
-        "reorder_examples",
-    ],
-)
-def test_shrinker_skips_stale_examples(monkeypatch, pass_name):
-    # Pretend that all example identifiers are stale, to test that this case
-    # is handled cleanly.
-    monkeypatch.setattr(
-        Shrinker, "example_for_stable_identifier", counts_calls(lambda self, x: None)
-    )
-
-    # For "example_deletion_with_block_lowering", also pretend that all blocks
-    # are shrinking blocks, so that steps can be generated.
-    monkeypatch.setattr(
-        Shrinker, "is_shrinking_block", counts_calls(lambda self, i: True)
-    )
-
-    # Declare a test function that should satisfy step generation for all of
-    # the relevant shrink passes.
-    @shrinking_from([255] * 5)
-    def shrinker(data):
-        total = 0
-        data.start_example(0)
-        for _ in range(5):
-            data.start_example(0)
-            total += data.draw_bits(8)
-            data.stop_example(0)
-        data.stop_example(0)
-
-        data.mark_interesting()
-
-    # Run the shrink pass; this should not throw.
-    shrinker.fixate_shrink_passes([pass_name])
-
-    # Confirm that the pass had to deal with stale examples.
-    assert Shrinker.example_for_stable_identifier.calls > 0

@@ -53,6 +53,7 @@ def minimal(definition, condition=lambda x: True, settings=None, timeout_after=1
         report_multiple_bugs=False,
         derandomize=True,
         database=None,
+        # verbosity=Verbosity.debug
     )
     def inner(x):
         if wrapped_condition(x):

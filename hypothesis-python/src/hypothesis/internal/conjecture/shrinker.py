@@ -22,6 +22,7 @@ from collections import defaultdict
 import attr
 
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, int_to_bytes
+from hypothesis.internal.conjecture.choicetree import ChoiceTree
 from hypothesis.internal.conjecture.data import ConjectureResult, Overrun, Status
 from hypothesis.internal.conjecture.floats import (
     DRAW_FLOAT_LABEL,
@@ -81,23 +82,22 @@ class ShrinkPassDefinition(object):
     changes.
     """
 
-    run_step = attr.ib()
-    generate_arguments = attr.ib()
+    run_with_chooser = attr.ib()
 
     @property
     def name(self):
-        return self.run_step.__name__
+        return self.run_with_chooser.__name__
 
     def __attrs_post_init__(self):
         assert self.name not in SHRINK_PASS_DEFINITIONS, self.name
         SHRINK_PASS_DEFINITIONS[self.name] = self
 
 
-def defines_shrink_pass(generate_arguments):
+def defines_shrink_pass():
     """A convenient decorator for defining shrink passes."""
 
     def accept(run_step):
-        ShrinkPassDefinition(generate_arguments=generate_arguments, run_step=run_step)
+        ShrinkPassDefinition(run_with_chooser=run_step)
 
         def run(self):  # pragma: no cover
             assert False, "Shrink passes should not be run directly"
@@ -302,8 +302,7 @@ class Shrinker(object):
         definition = SHRINK_PASS_DEFINITIONS[run]
 
         p = ShrinkPass(
-            run_with_arguments=definition.run_step,
-            generate_arguments=definition.generate_arguments,
+            run_with_chooser=definition.run_with_chooser,
             shrinker=self,
             index=len(self.passes),
         )
@@ -445,8 +444,7 @@ class Shrinker(object):
                         self.debug("Useless passes:")
                     self.debug("")
                     for p in sorted(
-                        self.passes,
-                        key=lambda t: (-t.calls, -t.runs, t.deletions, t.shrinks),
+                        self.passes, key=lambda t: (-t.calls, t.deletions, t.shrinks)
                     ):
                         if p.calls == 0:
                             continue
@@ -455,13 +453,11 @@ class Shrinker(object):
 
                         self.debug(
                             (
-                                "  * %s ran %d time%s, making %d call%s of which "
+                                "  * %s ran made %d call%s of which "
                                 "%d shrank, deleting %d byte%s."
                             )
                             % (
                                 p.name,
-                                p.runs,
-                                s(p.runs),
                                 p.calls,
                                 s(p.calls),
                                 p.shrinks,
@@ -498,6 +494,10 @@ class Shrinker(object):
                 "example_deletion_with_block_lowering",
             ]
         )
+
+    @derived_value
+    def shrink_pass_choice_trees(self):
+        return defaultdict(ChoiceTree)
 
     def fixate_shrink_passes(self, passes):
         """Run steps from each pass in ``passes`` until the current shrink target
@@ -590,39 +590,12 @@ class Shrinker(object):
             examples_by_label[ex.label].append(ex)
         return dict(examples_by_label)
 
-    def calculate_descents(self):
-        """Returns a list of all pairs (i, j) such that
-        self.examples[i] is an ancestor of self.examples[j] and
-        they have the same label.
-        """
-        result = []
+    @derived_value
+    def distinct_labels(self):
+        return sorted(self.examples_by_label, key=str)
 
-        for ls in self.examples_by_label.values():
-            if len(ls) <= 1:
-                continue
-
-            for i, ex in enumerate(ls[:-1]):
-                hi = len(ls)
-                lo = i + 1
-                if ls[lo].start >= ex.end:
-                    continue
-                while lo + 1 < hi:
-                    mid = (lo + hi) // 2
-                    if ls[mid].start >= ex.end:
-                        hi = mid
-                    else:
-                        lo = mid
-                id1 = self.stable_identifier_for_example(ex)
-                result.extend(
-                    [
-                        (id1, self.stable_identifier_for_example(ls[j]))
-                        for j in hrange(i + 1, hi)
-                    ]
-                )
-        return result
-
-    @defines_shrink_pass(calculate_descents)
-    def pass_to_descendant(self, ancestor_id, descendant_id):
+    @defines_shrink_pass()
+    def pass_to_descendant(self, chooser):
         """Attempt to replace each example with a descendant example.
 
         This is designed to deal with strategies that call themselves
@@ -641,11 +614,28 @@ class Shrinker(object):
         as possible.
         """
 
-        ancestor = self.example_for_stable_identifier(ancestor_id)
-        descendant = self.example_for_stable_identifier(descendant_id)
-        if descendant is None:
-            return
-        assert ancestor is not None
+        label = chooser.choose(
+            self.distinct_labels, lambda l: len(self.examples_by_label[l]) >= 1
+        )
+
+        ls = self.examples_by_label[label]
+
+        i = chooser.choose(hrange(len(ls)))
+
+        ancestor = ls[i]
+
+        lo = i + 1
+        hi = len(ls)
+        while lo + 1 < hi:
+            mid = (lo + hi) // 2
+            if ls[mid].start >= ancestor.end:
+                hi = mid
+            else:
+                lo = mid
+
+        j = chooser.choose(hrange(i + 1, hi), lambda j: ls[j].length > 0)
+
+        descendant = ls[j]
 
         self.incorporate_new_buffer(
             self.buffer[: ancestor.start]
@@ -969,12 +959,8 @@ class Shrinker(object):
                 return False
         return True
 
-    @derived_value
-    def stable_identifier_arguments(self):
-        return [(self.stable_identifier_for_example(ex),) for ex in self.examples]
-
-    @defines_shrink_pass(lambda self: self.stable_identifier_arguments)
-    def adaptive_example_deletion(self, example_id):
+    @defines_shrink_pass()
+    def adaptive_example_deletion(self, chooser):
         """Attempts to delete every example from the test case.
 
         That is, it is logically equivalent to trying ``self.buffer[:ex.start] +
@@ -982,9 +968,9 @@ class Shrinker(object):
         examples are tried is randomized, and when deletion is successful it
         will attempt to adapt to delete more than one example at a time.
         """
-        example = self.example_for_stable_identifier(example_id)
+        example = chooser.choose(self.examples)
 
-        if example is None or not self.incorporate_new_buffer(
+        if not self.incorporate_new_buffer(
             self.buffer[: example.start] + self.buffer[example.end :]
         ):
             return
@@ -1035,17 +1021,16 @@ class Shrinker(object):
                 )
         return self.examples[ex.index].trivial
 
-    @defines_shrink_pass(lambda self: self.stable_identifier_arguments)
-    def zero_examples(self, ex_id):
+    @defines_shrink_pass()
+    def zero_examples(self, chooser):
         """Attempt to replace each example with a minimal version of itself."""
-        ex = self.example_for_stable_identifier(ex_id)
-        """Attempt to replace each example with a minimal version of itself."""
+
+        ex = chooser.choose(self.examples, lambda ex: not ex.trivial)
+
         # If the example is already trivial, assume there's nothing to do here.
         # We could attempt to use it as an adaptive replacement for other
         # similar examples, but that seems to be ineffective, resulting mostly
         # in redundant work rather than helping.
-        if ex is None or ex.trivial:
-            return
 
         if not self.try_zero_example(ex):
             return
@@ -1102,10 +1087,12 @@ class Shrinker(object):
             )
         return duplicates
 
-    @defines_shrink_pass(
-        lambda self: [(b,) for b in sorted(self.blocks_by_non_zero_suffix)]
-    )
-    def minimize_duplicated_blocks(self, block):
+    @derived_value
+    def duplicated_block_suffixes(self):
+        return sorted(self.blocks_by_non_zero_suffix)
+
+    @defines_shrink_pass()
+    def minimize_duplicated_blocks(self, chooser):
         """Find blocks that have been duplicated in multiple places and attempt
         to minimize all of the duplicates simultaneously.
 
@@ -1125,6 +1112,7 @@ class Shrinker(object):
         of the blocks doesn't matter very much because it allows us to replace
         more values at once.
         """
+        block = chooser.choose(self.duplicated_block_suffixes)
         targets = self.blocks_by_non_zero_suffix[block]
         if len(targets) <= 1:
             return
@@ -1135,8 +1123,8 @@ class Shrinker(object):
             full=False,
         )
 
-    @defines_shrink_pass(lambda self: self.stable_identifier_arguments)
-    def minimize_floats(self, ex_id):
+    @defines_shrink_pass()
+    def minimize_floats(self, chooser):
         """Some shrinks that we employ that only really make sense for our
         specific floating point encoding that are hard to discover from any
         sort of reasonable general principle. This allows us to make
@@ -1152,13 +1140,16 @@ class Shrinker(object):
         transformations to make, they just don't necessarily correspond to
         anything particularly meaningful for non-float values.
         """
-        ex = self.example_for_stable_identifier(ex_id)
-        if ex is None or not (
-            ex.label == DRAW_FLOAT_LABEL
-            and len(ex.children) == 2
-            and ex.children[0].length == 8
-        ):
-            return
+
+        ex = chooser.choose(
+            self.examples,
+            lambda ex: (
+                ex.label == DRAW_FLOAT_LABEL
+                and len(ex.children) == 2
+                and ex.children[0].length == 8
+            ),
+        )
+
         u = ex.children[0].start
         v = ex.children[0].end
         buf = self.shrink_target.buffer
@@ -1176,8 +1167,8 @@ class Shrinker(object):
                 random=self.random,
             )
 
-    @defines_shrink_pass(lambda self: [(i,) for i in hrange(len(self.blocks))])
-    def minimize_individual_blocks(self, i):
+    @defines_shrink_pass()
+    def minimize_individual_blocks(self, chooser):
         """Attempt to minimize each block in sequence.
 
         This is the pass that ensures that e.g. each integer we draw is a
@@ -1188,9 +1179,7 @@ class Shrinker(object):
 
         then in our shrunk example, x = 10 rather than say 97.
         """
-        if i >= len(self.blocks):
-            return
-        block = self.blocks[i]
+        block = chooser.choose(self.blocks)
         u, v = block.bounds
         i = block.index
         Lexical.shrink(
@@ -1200,16 +1189,8 @@ class Shrinker(object):
             full=False,
         )
 
-    @defines_shrink_pass(
-        lambda self: [
-            (i, self.stable_identifier_for_example(ex))
-            for i in hrange(len(self.blocks))
-            if self.is_shrinking_block(i)
-            for ex in self.examples
-            if ex.length > 0 and ex.start >= self.blocks[i].end
-        ]
-    )
-    def example_deletion_with_block_lowering(self, block_i, ex_id):
+    @defines_shrink_pass()
+    def example_deletion_with_block_lowering(self, chooser):
         """Sometimes we get stuck where there is data that we could easily
         delete, but it changes the number of examples generated, so we have to
         change that at the same time.
@@ -1223,12 +1204,24 @@ class Shrinker(object):
         example and every block not inside that example it tries deleting the
         example and modifying the block's value by one in either direction.
         """
-        if block_i >= len(self.blocks):
-            return
-        block = self.blocks[block_i]
-        ex = self.example_for_stable_identifier(ex_id)
-        if ex is None:
-            return
+        block = chooser.choose(self.blocks, lambda b: self.is_shrinking_block(b.index))
+
+        lo = 0
+        hi = len(self.examples)
+        while lo + 1 < hi:
+            mid = (lo + hi) // 2
+            ex = self.examples[mid]
+            if ex.start >= block.end:
+                hi = mid
+            else:
+                lo = mid
+
+        ex = self.examples[
+            chooser.choose(
+                hrange(hi, len(self.examples)), lambda i: self.examples[i].length > 0
+            )
+        ]
+
         u, v = block.bounds
 
         n = int_from_bytes(self.shrink_target.buffer[u:v])
@@ -1240,14 +1233,8 @@ class Shrinker(object):
         del buf[ex.start : ex.end]
         self.incorporate_new_buffer(buf)
 
-    @defines_shrink_pass(
-        lambda self: [
-            (self.stable_identifier_for_example(e), l)
-            for e in self.examples
-            for l in sorted({c.label for c in e.children}, key=str)
-        ]
-    )
-    def reorder_examples(self, ex_id, label):
+    @defines_shrink_pass()
+    def reorder_examples(self, chooser):
         """This pass allows us to reorder the children of each example.
 
         For example, consider the following:
@@ -1265,9 +1252,9 @@ class Shrinker(object):
         ``x=""``, ``y="0"``, or the other way around. With reordering it will
         reliably fail with ``x=""``, ``y="0"``.
         """
-        ex = self.example_for_stable_identifier(ex_id)
-        if ex is None:
-            return
+        ex = chooser.choose(self.examples)
+        label = chooser.choose(ex.children).label
+
         group = [c for c in ex.children if c.label == label]
         if len(group) <= 1:
             return
@@ -1284,8 +1271,12 @@ class Shrinker(object):
             random=self.random,
         )
 
-    @defines_shrink_pass(lambda self: [(c,) for c in hrange(256)])
-    def alphabet_minimize(self, c):
+    @derived_value
+    def alphabet(self):
+        return sorted(set(self.buffer))
+
+    @defines_shrink_pass()
+    def alphabet_minimize(self, chooser):
         """Attempts to minimize the "alphabet" - the set of bytes that
         are used in the representation of the current buffer. The main
         benefit of this is that it significantly increases our cache hit rate
@@ -1294,11 +1285,8 @@ class Shrinker(object):
         step that gives us a lot of good opportunities to slip to a smaller
         representation of the same bug.
         """
-
+        c = chooser.choose(self.alphabet)
         buf = self.buffer
-
-        if c not in buf:
-            return
 
         def can_replace_with(d):
             if d < 0:
@@ -1357,20 +1345,6 @@ class Shrinker(object):
                 hi = mid
             else:
                 lo = mid
-
-    def stable_identifier_for_example(self, example):
-        """A stable identifier is one that we can reasonably reliably
-        count on referring to "logically the same" example between two
-        different test runs. It is currently represented as a path from
-        the root."""
-        return example.index
-
-    def example_for_stable_identifier(self, identifier):
-        """Returns the example in the current shrink target corresponding
-        to this stable identifier, or None if no such example exists."""
-        if identifier >= len(self.examples):
-            return None
-        return self.shrink_target.examples[identifier]
 
     def run_block_program(self, i, description, original, repeats=1):
         """Block programs are a mini-DSL for block rewriting, defined as a sequence
@@ -1434,16 +1408,11 @@ def block_program(description):
         at every block index."""
         n = len(description)
 
-        def generate_arguments(self):
-            return [(i,) for i in hrange(len(self.blocks))]
-
-        def run(self, i):
+        def run(self, chooser):
             """Adaptively attempt to run the block program at the current
             index. If this successfully applies the block program ``k`` times
             then this runs in ``O(log(k))`` test function calls."""
-            if i + n >= len(self.shrink_target.blocks):
-                return
-
+            i = chooser.choose(hrange(len(self.shrink_target.blocks) - n))
             # First, run the block program at the chosen index. If this fails,
             # don't do any extra work, so that failure is as cheap as possible.
             if not self.run_block_program(i, description, original=self.shrink_target):
@@ -1475,23 +1444,20 @@ def block_program(description):
 
         run.__name__ = name
 
-        defines_shrink_pass(generate_arguments)(run)
+        defines_shrink_pass()(run)
         assert name in SHRINK_PASS_DEFINITIONS
     return name
 
 
 @attr.s(slots=True, cmp=False)
 class ShrinkPass(object):
-    run_with_arguments = attr.ib()
-    generate_arguments = attr.ib()
+    run_with_chooser = attr.ib()
     index = attr.ib()
     shrinker = attr.ib()
 
-    steps = attr.ib(default=None)
+    next_probe = attr.ib(default=())
     fixed_point_at = attr.ib(default=None)
-    generated_at = attr.ib(default=None)
     successes = attr.ib(default=0)
-    runs = attr.ib(default=0)
     calls = attr.ib(default=0)
     shrinks = attr.ib(default=0)
     deletions = attr.ib(default=0)
@@ -1499,33 +1465,30 @@ class ShrinkPass(object):
     def step(self):
         if self.fixed_point_at is self.shrinker.shrink_target:
             return False
-        if not self.steps and self.generated_at is not self.shrinker.shrink_target:
-            self.steps = list(self.generate_arguments(self.shrinker))
-            self.shrinker.random.shuffle(self.steps)
-            self.generated_at = self.shrinker.shrink_target
-        if not self.steps:
-            return False
-        self.run_step(self.steps.pop())
-        return True
 
-    def run_step(self, args):
+        tree = self.shrinker.shrink_pass_choice_trees[self]
+        if tree.exhausted:
+            return False
+
         initial_shrinks = self.shrinker.shrinks
         initial_calls = self.shrinker.calls
         size = len(self.shrinker.shrink_target.buffer)
-        self.shrinker.explain_next_call_as(
-            "%s(%s)" % (self.name, ", ".join(map(repr, args)))
-        )
+        self.shrinker.explain_next_call_as(self.name)
         try:
-            self.run_with_arguments(self.shrinker, *args)
+            self.next_probe = tree.step(
+                self.next_probe,
+                lambda chooser: self.run_with_chooser(self.shrinker, chooser),
+            )
         finally:
             self.calls += self.shrinker.calls - initial_calls
             self.shrinks += self.shrinker.shrinks - initial_shrinks
             self.deletions += size - len(self.shrinker.shrink_target.buffer)
             self.shrinker.clear_call_explanation()
+        return True
 
     @property
     def name(self):
-        return self.run_with_arguments.__name__
+        return self.run_with_chooser.__name__
 
 
 def non_zero_suffix(b):
