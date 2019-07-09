@@ -51,14 +51,12 @@ UNICODE_EMITTING = """
 import pytest
 from hypothesis import given, settings, Verbosity
 from hypothesis.strategies import text
-from hypothesis.internal.compat import PY3
-import sys
 
 def test_emits_unicode():
     @settings(verbosity=Verbosity.verbose)
     @given(text())
     def test_should_emit_unicode(t):
-        assert all(ord(c) <= 1000 for c in t)
+        assert all([ord(c) <= 1000 for c in t])
     with pytest.raises(AssertionError):
         test_should_emit_unicode()
 """
@@ -78,7 +76,13 @@ def test_output_emitting_unicode(testdir, monkeypatch):
     )
     out = "\n".join(result.stdout.lines)
     assert "test_emits_unicode" in out
-    assert hunichr(1001) in out or escape_unicode_characters(hunichr(1001)) in out
+    # Shrinks to either codepoint 1001, or U+2028 LINE SEPARATOR
+    assert (
+        hunichr(1001) in out
+        or escape_unicode_characters(hunichr(1001)) in out
+        or "\u2028" in out
+        or escape_unicode_characters("\u2028") in out
+    )
     assert result.ret == 0
 
 

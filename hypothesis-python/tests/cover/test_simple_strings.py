@@ -17,10 +17,12 @@
 
 from __future__ import absolute_import, division, print_function
 
+import unicodedata
+
 from hypothesis import given
 from hypothesis.strategies import binary, characters, text, tuples
 from tests.common.debug import minimal
-from tests.common.utils import checks_deprecated_behaviour, fails_with
+from tests.common.utils import checks_deprecated_behaviour, fails
 
 
 def test_can_minimize_up_to_zero():
@@ -63,7 +65,7 @@ def test_finds_single_element_strings():
     assert minimal(text(), bool) == u"0"
 
 
-@fails_with(AssertionError)
+@fails
 @given(binary())
 def test_binary_generates_large_examples(x):
     assert len(x) <= 20
@@ -129,3 +131,15 @@ def test_can_set_max_size_large(s):
 @checks_deprecated_behaviour
 def test_explicit_alphabet_None_is_deprecated():
     text(alphabet=None).example()
+
+
+@fails
+@given(text(min_size=2))
+def test_can_find_non_NFC_normalised_strings_issue_341(s):
+    assert s == unicodedata.normalize("NFC", s)
+
+
+@fails
+@given(text(min_size=1))
+def test_can_find_non_NFD_normalised_strings_issue_341(s):
+    assert s == unicodedata.normalize("NFD", s)

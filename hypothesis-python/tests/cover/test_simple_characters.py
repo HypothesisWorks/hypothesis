@@ -21,6 +21,7 @@ import unicodedata
 
 import pytest
 
+from hypothesis import settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import text_type
 from hypothesis.strategies import characters
@@ -63,8 +64,9 @@ def test_characters_of_specific_groups():
 
 def test_characters_of_major_categories():
     st = characters(whitelist_categories=("L", "N"))
-    find_any(st, lambda c: unicodedata.category(c).startswith("L"))
-    find_any(st, lambda c: unicodedata.category(c).startswith("N"))
+    more = settings(max_examples=10 ** 6)
+    find_any(st, lambda c: unicodedata.category(c).startswith("L"), more)
+    find_any(st, lambda c: unicodedata.category(c).startswith("N"), more)
     assert_no_examples(st, lambda c: unicodedata.category(c)[0] not in ("L", "N"))
 
 

@@ -61,13 +61,16 @@ SAMPLE_IN_SAMPLER_LABLE = calc_label_from_name("a sample() in Sampler")
 ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
 
 
-def integer_range(data, lower, upper, center=None):
+def integer_range(data, lower, upper, center=None, forced=None):
     assert lower <= upper
+    if forced is not None:
+        assert lower <= forced <= upper
     if lower == upper:
         # Write a value even when this is trival so that when a bound depends
         # on other values we don't suddenly disappear when the gap shrinks to
         # zero - if that happens then often the data stream becomes misaligned
         # and we fail to shrink in cases where we really should be able to.
+        assert forced is None or forced == 0
         data.draw_bits(1, forced=0)
         return int(lower)
 
@@ -79,20 +82,29 @@ def integer_range(data, lower, upper, center=None):
         above = False
     elif center == lower:
         above = True
+    elif forced is not None:
+        above = forced >= center
+        data.draw_bits(1, forced=int(above))
     else:
-        above = boolean(data)
+        above = bool(data.draw_bits(1))
 
     if above:
         gap = upper - center
+        if forced is not None:
+            forced -= center
     else:
         gap = center - lower
+        if forced is not None:
+            forced = center - forced
 
     assert gap > 0
 
     bits = bit_length(gap)
     probe = gap + 1
 
-    if bits > 24 and data.draw_bits(3):
+    if bits > 24 and forced is not None:
+        data.draw_bits(3, forced=0)
+    elif bits > 24 and data.draw_bits(3):
         # For large ranges, we combine the uniform random distribution from draw_bits
         # with the weighting scheme used by WideRangeIntStrategy with moderate chance.
         # Cutoff at 2 ** 24 so unicode choice is uniform but 32bit distribution is not.
@@ -102,7 +114,7 @@ def integer_range(data, lower, upper, center=None):
 
     while probe > gap:
         data.start_example(INTEGER_RANGE_DRAW_LABEL)
-        probe = data.draw_bits(bits)
+        probe = data.draw_bits(bits, forced=forced)
         data.stop_example(discard=probe > gap)
 
     if above:
@@ -150,8 +162,8 @@ def check_sample(values, strategy_name):
     return tuple(values)
 
 
-def choice(data, values):
-    return values[integer_range(data, 0, len(values) - 1)]
+def choice(data, values, center=0, forced=None):
+    return values[integer_range(data, 0, len(values) - 1, center, forced)]
 
 
 FLOAT_PREFIX = 0b1111111111 << 52

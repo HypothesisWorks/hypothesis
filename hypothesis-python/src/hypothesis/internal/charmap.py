@@ -32,7 +32,7 @@ if False:
     from typing import Dict, Tuple
 
     intervals = Tuple[Tuple[int, int], ...]
-    cache_type = Dict[Tuple[Tuple[str, ...], int, int, intervals], intervals]
+    cache_type = Dict[Tuple[Tuple[str, ...], int, int, intervals], Tuple[intervals]]
 
 
 def charmap_file():
@@ -365,13 +365,22 @@ def query(
         return limited_category_index_cache[qkey]
     except KeyError:
         pass
-    base = _query_for_key(catkey)
-    result = []
-    for u, v in base:
-        if v >= min_codepoint and u <= max_codepoint:
-            result.append((max(u, min_codepoint), min(v, max_codepoint)))
-    result = tuple(result)
-    result = _union_intervals(result, character_intervals)
-    result = _subtract_intervals(result, exclude_intervals)
-    limited_category_index_cache[qkey] = result
-    return result
+    out = []
+    for cat in categories():
+        if cat in catkey:
+            base = _query_for_key((cat,))
+        else:
+            base = ()
+        result = []
+        for u, v in base:
+            if v >= min_codepoint and u <= max_codepoint:
+                result.append((max(u, min_codepoint), min(v, max_codepoint)))
+        include_chars = _intervals(
+            [c for c in (include_characters or "") if unicodedata.category(c) == cat]
+        )
+        result = _union_intervals(tuple(result), include_chars)
+        result = _subtract_intervals(result, exclude_intervals)
+        if result:
+            out.append(result)
+    limited_category_index_cache[qkey] = tuple(out)
+    return tuple(out)
