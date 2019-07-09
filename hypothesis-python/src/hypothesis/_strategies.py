@@ -38,7 +38,6 @@ from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import as_general_categories
 from hypothesis.internal.compat import (
-    abc,
     ceil,
     floor,
     gcd,
@@ -1071,28 +1070,24 @@ def text(
     elif isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:
-        char_strategy = sampled_from(list(alphabet)) if alphabet else nothing()
-        if not isinstance(alphabet, abc.Sequence):
-            raise InvalidArgument(
-                "alphabet must be an ordered sequence, or tests may be "
-                "flaky and shrinking weaker, but a %r is not a type of "
-                "sequence." % (type(alphabet),)
-            )
         non_string = [c for c in alphabet if not isinstance(c, string_types)]
         if non_string:
             raise InvalidArgument(
                 "The following elements in alphabet are not unicode "
                 "strings:  %r" % (non_string,)
             )
-        not_one_char = [
-            c for c in alphabet if isinstance(c, string_types) and len(c) != 1
-        ]
+        not_one_char = [c for c in alphabet if len(c) != 1]
         if not_one_char:
             raise InvalidArgument(
                 "The following elements in alphabet are not of length "
                 "one, which leads to violation of size constraints:  %r"
                 % (not_one_char,)
             )
+        char_strategy = (
+            characters(whitelist_categories=(), whitelist_characters=alphabet)
+            if alphabet
+            else nothing()
+        )
     if (max_size == 0 or char_strategy.is_empty) and not min_size:
         return just(u"")
     return StringStrategy(lists(char_strategy, min_size=min_size, max_size=max_size))

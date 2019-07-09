@@ -230,6 +230,7 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.fixed_dictionaries, {"mapping": {1: ds.integers()}}),
     (ds.dictionaries, {"keys": ds.booleans(), "values": ds.integers()}),
     (ds.text, {"alphabet": "abc"}),
+    (ds.text, {"alphabet": set("abc")}),
     (ds.text, {"alphabet": ""}),
     (ds.text, {"alphabet": ds.sampled_from("abc")}),
     (ds.characters, {"whitelist_categories": ["N"]}),
@@ -278,11 +279,6 @@ def test_builds_raises_if_non_callable_as_first_arg(non_callable):
     # callable) must be specified as the first one.
     with pytest.raises(InvalidArgument):
         ds.builds(non_callable, target=lambda x: x).example()
-
-
-def test_text_raises_error_on_non_sequence_alphabet():
-    with pytest.raises(InvalidArgument):
-        ds.text(set("abc")).validate()
 
 
 def test_tuples_raise_error_on_bad_kwargs():
