@@ -495,47 +495,6 @@ random number generators for you, and you can register others:
 .. autofunction:: hypothesis.register_random
 
 
--------------------------------
-Using Hypothesis to find values
--------------------------------
-
-You can use Hypothesis's data exploration features to find values satisfying
-some predicate.  This is generally useful for exploring custom strategies
-defined with :func:`@composite <hypothesis.strategies.composite>`, or
-experimenting with conditions for filtering data.
-
-.. autofunction:: hypothesis.find
-
-.. code-block:: pycon
-
-    >>> from hypothesis import find
-    >>> from hypothesis.strategies import sets, lists, integers
-    >>> find(lists(integers()), lambda x: sum(x) >= 10)
-    [10]
-    >>> find(lists(integers()), lambda x: sum(x) >= 10 and len(x) >= 3)
-    [0, 0, 10]
-    >>> find(sets(integers()), lambda x: sum(x) >= 10 and len(x) >= 3)
-    {0, 1, 9}
-
-The first argument to :func:`~hypothesis.find` describes data in the usual way for an argument to
-:func:`~hypothesis.given`, and supports :doc:`all the same data types <data>`. The second is a
-predicate it must satisfy.
-
-Of course not all conditions are satisfiable. If you ask Hypothesis for an
-example to a condition that is always false it will raise an error:
-
-.. code-block:: pycon
-
-    >>> find(integers(), lambda x: False)
-    Traceback (most recent call last):
-        ...
-    hypothesis.errors.NoSuchExample: No examples of condition lambda x: <unknown>
-
-(The ``lambda x: unknown`` is because Hypothesis can't retrieve the source code
-of lambdas from the interactive python console. It gives a better error message
-most of the time which contains the actual condition)
-
-
 .. _type-inference:
 
 -------------------

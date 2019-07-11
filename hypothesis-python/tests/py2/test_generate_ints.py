@@ -20,10 +20,10 @@ from __future__ import absolute_import, division, print_function
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import find
+from tests.common.debug import minimal
 
 
 @pytest.mark.parametrize("kwargs", [{}, {"min_value": 0}, {"max_value": 0}])
 def test_generates_an_int_as_the_min_value(kwargs):
-    n = find(st.integers(**kwargs), lambda x: True)
+    n = minimal(st.integers(**kwargs))
     assert isinstance(n, int)

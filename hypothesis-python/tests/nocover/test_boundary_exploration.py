@@ -20,8 +20,9 @@ from __future__ import absolute_import, division, print_function
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, Verbosity, find, given, reject, settings
-from hypothesis.errors import NoSuchExample
+from hypothesis import HealthCheck, Verbosity, given, reject, settings
+from hypothesis.errors import Unsatisfiable
+from tests.common.debug import minimal
 from tests.common.utils import no_shrink
 
 
@@ -38,12 +39,12 @@ def test_explore_arbitrary_function(strat, data):
             return cache.setdefault(x, data.draw(st.booleans(), label=repr(x)))
 
     try:
-        find(
+        minimal(
             strat,
             predicate,
             settings=settings(
                 max_examples=10, database=None, verbosity=Verbosity.quiet
             ),
         )
-    except NoSuchExample:
+    except Unsatisfiable:
         reject()

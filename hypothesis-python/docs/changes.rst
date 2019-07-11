@@ -1576,7 +1576,7 @@ is only recorded internally and has no user-visible effect.
 -------------------
 
 This release changes the stateful testing backend from
-:func:`~hypothesis.find` to use :func:`@given <hypothesis.given>`
+``find()`` to use :func:`@given <hypothesis.given>`
 (:issue:`1300`).  This doesn't change how you create stateful tests,
 but does make them run more like other Hypothesis tests.
 
@@ -3140,7 +3140,7 @@ knowledge of our internals (:issue:`535`).
   and poor interaction with :obj:`~hypothesis.settings.max_examples`.
 - ``HYPOTHESIS_VERBOSITY_LEVEL`` is now deprecated.  Set
   :obj:`~hypothesis.settings.verbosity` through the profile system instead.
-- Examples tried by :func:`~hypothesis.find` are now reported at ``debug``
+- Examples tried by ``find()`` are now reported at ``debug``
   verbosity level (as well as ``verbose`` level).
 
 .. _v3.55.6:
@@ -3257,7 +3257,7 @@ This patch fixes the ``min_satisfying_examples`` settings
 documentation, by explaining that example shrinking is tracked at the level
 of the underlying bytestream rather than the output value.
 
-The output from :func:`~hypothesis.find` in verbose mode has also been
+The output from ``find()`` in verbose mode has also been
 adjusted - see :ref:`the example session <verbose-output>` - to avoid
 duplicating lines when the example repr is constant, even if the underlying
 representation has been shrunken.
@@ -5694,7 +5694,7 @@ Minor bug fix release.
 * Remove duplicated __all__ exports from hypothesis.strategies (thanks to
   Piët Delport).
 * Update headers to point to new repository location.
-* Allow use of strategies that can't be used in :func:`~hypothesis.find`
+* Allow use of strategies that can't be used in ``find()``
   (e.g. ``choices()``) in stateful testing.
 
 
@@ -5817,7 +5817,7 @@ New features:
 New limitations:
 
 * ``choices()`` and ``streaming()``
-  strategies may no longer be used with :func:`~hypothesis.find`. Neither may
+  strategies may no longer be used with ``find()``. Neither may
   :func:`~hypothesis.strategies.data` (this is the change that necessitated a major version bump).
 
 Feature removal:
