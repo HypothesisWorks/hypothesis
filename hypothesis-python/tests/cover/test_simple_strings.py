@@ -54,6 +54,11 @@ def test_will_find_ascii_examples_given_the_chance():
     assert u"0" in s
 
 
+def test_minimisation_consistent_with_characters():
+    s = minimal(text("FEDCBA", min_size=3))
+    assert s == "AAA"
+
+
 def test_finds_single_element_strings():
     assert minimal(text(), bool) == u"0"
 
