@@ -36,8 +36,8 @@ cross-references.  Without repeating the docs for Sphinx, here are some tips:
   use autodoc to insert and interpret the docstring.
 
 - When referencing a function, you can insert a reference to a function as
-  (eg) ``:func:`hypothesis.given`\ ``, which will appear as
-  ``hypothesis.given()`` with a hyperlink to the apropriate docs.  You can
+  (eg) ``:func:`hypothesis.given`\``, which will appear as
+  ``hypothesis.given()`` with a hyperlink to the appropriate docs.  You can
   show only the last part (unqualified name) by adding a tilde at the start,
   like ``:func:`~hypothesis.given`\ `` -> ``given()``.  Finally, you can give
   it alternative link text in the usual way:
@@ -81,8 +81,6 @@ Running Sphinx Locally
 then 
 
 ``sphinx-autobuild -b html -n -W -T -E -B . _build/html/``
-
-
 
 
 -----------------

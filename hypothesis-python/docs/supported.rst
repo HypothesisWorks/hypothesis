@@ -12,7 +12,7 @@ Python versions
 ---------------
 
 Hypothesis is supported and tested on CPython 2.7 and CPython 3.5+, i.e.
-`all versisions of CPython with upstream support <https://devguide.python.org/#status-of-python-branches>`_,
+`all versions of CPython with upstream support <https://devguide.python.org/#status-of-python-branches>`_,
 
 Hypothesis also supports the latest PyPy for both Python 2 (until 2020) and Python 3.
 Hypothesis does not currently work on Jython,
@@ -90,7 +90,7 @@ Regularly verifying this
 Everything mentioned above as explicitly supported is checked on every commit
 with `Travis <https://travis-ci.org/HypothesisWorks/hypothesis>`__, and
 `Azure Pipelines <https://dev.azure.com/HypothesisWorks/Hypothesis/>`__.
-Our continous delivery pipeline runs all of these checks before publishing
+Our continuous delivery pipeline runs all of these checks before publishing
 each release, so when we say they're supported we really mean it.
 
 -------------------

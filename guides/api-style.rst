@@ -41,7 +41,7 @@ Guidelines for strategies
 * It should not include distribution hints. The arguments should only specify
   how to produce a valid value, not statistical properties of values.
 * Strategies should try to paper over non-uniformity in the underlying types
-  as much as possible (e.g. ``hypothesis.extra.numpy`` has a number of
+  as much as possible (e.g. :func:`~hypothesis.extra.numpy` has a number of
   workarounds for numpy's odd behaviour around object arrays).
 
 ~~~~~~~~~~~~~~~~~
@@ -162,9 +162,9 @@ A catalogue of current violations
 The following are places where we currently deviate from this style. Some of
 these should be considered targets for deprecation and/or improvement.
 
-* ``hypothesis.extra.numpy`` has some arguments which can be either
+* :func:`~hypothesis.extra.numpy` has some arguments which can be either
   strategies or values.
-* ``hypothesis.extra.numpy`` assumes arrays are fixed size and doesn't have
+* :func:`~hypothesis.extra.numpy` assumes arrays are fixed size and doesn't have
   ``min_size`` and ``max_size`` arguments (but this is probably OK because of
   more complicated shapes of array).
 * ``hypothesis.stateful`` is a great big subclassing based train wreck.
