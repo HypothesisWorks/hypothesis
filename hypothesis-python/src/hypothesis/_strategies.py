@@ -904,10 +904,11 @@ def dictionaries(
     # type: (...) -> SearchStrategy[Dict[Ex, T]]
     # Describing the exact dict_class to Mypy drops the key and value types,
     # so we report Dict[K, V] instead of Mapping[Any, Any] for now.  Sorry!
-    """Generates dictionaries of type dict_class with keys drawn from the keys
-    argument and values drawn from the values argument.
+    """Generates dictionaries of type ``dict_class`` with keys drawn from the ``keys``
+    argument and values drawn from the ``values`` argument.
 
-    The size parameters have the same interpretation as for lists.
+    The size parameters have the same interpretation as for
+    :func:`~hypothesis.strategies.lists`.
 
     Examples from this strategy shrink by trying to remove keys from the
     generated dictionary, and by shrinking each generated key and value.
@@ -1043,7 +1044,7 @@ def text(
 ):
     # type: (...) -> SearchStrategy[Text]
     """Generates values of a unicode text type (unicode on python 2, str on
-    python 3) with values drawn from alphabet, which should be an iterable of
+    python 3) with values drawn from ``alphabet``, which should be an iterable of
     length one strings or a strategy generating such strings.
 
     The default alphabet strategy can generate the full unicode range but
@@ -1051,7 +1052,7 @@ def text(
     encoding.  You can use :func:`~hypothesis.strategies.characters` without
     arguments to find surrogate-related bugs such as :bpo:`34454`.
 
-    min_size and max_size have the usual interpretations.
+    ``min_size`` and ``max_size`` have the usual interpretations.
     Note that Python measures string length by counting codepoints: U+00C5
     ``Å`` is a single character, while U+0041 U+030A ``Å`` is two - the ``A``,
     and a combining ring above.
@@ -1445,13 +1446,13 @@ def fractions(
     # type: (...) -> SearchStrategy[Fraction]
     """Returns a strategy which generates Fractions.
 
-    If min_value is not None then all generated values are no less than
-    min_value.  If max_value is not None then all generated values are no
-    greater than max_value.  min_value and max_value may be anything accepted
+    If ``min_value`` is not None then all generated values are no less than
+    ``min_value``.  If ``max_value`` is not None then all generated values are no
+    greater than ``max_value``.  ``min_value`` and ``max_value`` may be anything accepted
     by the :class:`~fractions.Fraction` constructor.
 
-    If max_denominator is not None then the denominator of any generated
-    values is no greater than max_denominator. Note that max_denominator must
+    If ``max_denominator`` is not None then the denominator of any generated
+    values is no greater than ``max_denominator``. Note that ``max_denominator`` must
     be None or a positive integer.
 
     Examples from this strategy shrink towards smaller denominators, then
