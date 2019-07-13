@@ -800,3 +800,26 @@ def test_advanced_integer_index_can_generate_any_pattern(shape, data):
         lambda index: np.all(target == x[index]),
         settings(max_examples=10 ** 6),
     )
+
+
+@settings(deadline=None)
+@given(
+    numpy_array=nps.arrays(dtype=nps.array_dtypes(), shape=nps.array_shapes()),
+    allow_ellipsis=st.booleans(),
+    allow_newaxis=st.booleans(),
+    data=st.data(),
+)
+def test_basic_indices_can_generate_valid_patterns(
+    numpy_array, allow_ellipsis, allow_newaxis, data
+):
+    # ensures that generated index-arrays can be used to yield any pattern of elements from an array
+    max_dims = data.draw(st.one_of(st.integers(0, len(numpy_array.shape)), st.none()))
+    target = data.draw(
+        nps.basic_indices(
+            shape=numpy_array.shape,
+            allow_ellipsis=allow_ellipsis,
+            allow_newaxis=allow_newaxis,
+            max_dims=max_dims,
+        )
+    )
+    numpy_array[target]

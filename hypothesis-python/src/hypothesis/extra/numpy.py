@@ -913,3 +913,69 @@ def integer_array_indices(shape, result_shape=array_shapes(), dtype="int"):
     return result_shape.flatmap(
         lambda index_shape: st.tuples(*[array_for(index_shape, size) for size in shape])
     )
+
+
+@st.defines_strategy
+def basic_indices(shape, allow_ellipsis=True, allow_newaxis=False, max_dims=None):
+    # type: (Shape, bool, bool, int) -> st.SearchStrategy
+
+    """Return a search strategy for tuples of integer-arrays that, when used
+    to index into an array of shape ``shape``, given an array whose shape
+    was drawn from ``result_shape``.
+
+    Examples from this strategy shrink towards the tuple of index-arrays::
+
+        len(shape) * (np.zeros(drawn_result_shape, dtype), )
+
+    * ``shape`` a tuple of integers that indicates the shape of the array,
+      whose indices are being generated.
+    * ``allow_ellipsis`` Ellipsis expand to the number of ``:`` objects
+      needed to make a selection tuple of the same length as ``x.ndim``
+      (from the ``numpy`` documentation).
+    * ``allow_newaxis`` each newaxis object in the selection tuple serves to
+      expand the dimensions of the resulting selection by one unit-length
+      dimension. The added dimension is the position of the newaxis object
+      in the selection tuple (from the ``numpy`` documentation).
+    * ``max_dims`` The largest length that the generated shape can possess.
+      shape can possess. Cannot exceed 32. The default-value for ``max_dims``
+      is ``2 + max(len(shape), min_dims)``.
+
+    """
+    check_type(tuple, shape, "shape")
+    if max_dims is not None:
+        check_type(integer_types, max_dims, "max_dims")
+        if max_dims > 32:
+            raise InvalidArgument(
+                "Got max_dims=%r, but numpy does not support arrays greater than 32 dimensions"
+                % max_dims
+            )
+
+    # Add optional elements to a new list
+    add_to_index_list = []
+    if allow_ellipsis:
+        add_to_index_list.append(st.just(Ellipsis))
+    if allow_newaxis:
+        add_to_index_list.append(st.just(np.newaxis))
+
+    # Strategy for each individual dimension
+    one_dim_index = lambda size: st.one_of(
+        [st.integers(-size, size - 1)]
+        + [st.slices(size)]  # integer index
+        + add_to_index_list  # slice  # ellipsis and/or np.newaxis
+    )
+
+    if max_dims is None:
+        strategy = st.tuples(*(one_dim_index(s) for s in shape))
+    else:
+        # Sample a number in the (0, maxdims) range and
+        # get thus many individual dimensions
+        strategy = st.integers(min_value=0, max_value=max_dims).flatmap(
+            lambda n: st.tuples(*(one_dim_index(s) for s in shape[:n]))
+        )
+
+    if allow_ellipsis:
+        # There may only be a single Ellipsis present
+        strategy = strategy.filter(
+            lambda inds: sum([element is Ellipsis for element in inds]) < 2
+        )
+    return strategy
