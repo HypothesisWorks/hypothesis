@@ -22,7 +22,6 @@ from copy import deepcopy
 from functools import partial
 
 import pytest
-from mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
 from hypothesis.internal.compat import PY2, PY3, FullArgSpec, getfullargspec
 from hypothesis.internal.reflection import (
@@ -41,6 +40,11 @@ from hypothesis.internal.reflection import (
     unbind_method,
 )
 from tests.common.utils import raises
+
+try:
+    from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
+except ImportError:
+    from mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
 
 def do_conversion_test(f, args, kwargs):

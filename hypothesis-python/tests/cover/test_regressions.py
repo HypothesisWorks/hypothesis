@@ -23,6 +23,11 @@ import pytest
 
 from hypothesis import Verbosity, assume, given, seed, settings, strategies as st
 
+try:
+    from unittest.mock import Mock
+except ImportError:
+    from mock import Mock
+
 
 def strat():
     return st.builds(dict, one=strat_one())
@@ -66,7 +71,6 @@ def test_mock_injection():
     (covers https://github.com/HypothesisWorks/hypothesis-
     python/issues/491)
     """
-    from mock import Mock
 
     class Bar:
         pass
