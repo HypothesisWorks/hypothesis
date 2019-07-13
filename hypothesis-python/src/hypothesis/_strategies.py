@@ -723,8 +723,7 @@ def lists(
     # type: (...) -> SearchStrategy[List[Ex]]
     """Returns a list containing values drawn from elements with length in the
     interval [min_size, max_size] (no bounds in that direction if these are
-    None). If max_size is 0 then elements may be None and only the empty list
-    will be drawn.
+    None). If max_size is 0, only the empty list will be drawn.
 
     If unique is True (or something that evaluates to True), we compare direct
     object equality, as if unique_by was ``lambda x: x``. This comparison only
