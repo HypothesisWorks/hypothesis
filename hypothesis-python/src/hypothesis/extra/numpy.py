@@ -133,42 +133,18 @@ class ArrayStrategy(SearchStrategy):
         self.element_strategy = element_strategy
         self.unique = unique
 
-        # Used by self.insert_element to check that the value can be stored
-        # in the array without e.g. overflowing.  See issues #1385 and #1591.
-        if dtype.kind in (u"i", u"u"):
-            self.check_cast = lambda x: np.can_cast(x, self.dtype, "safe")
-        elif dtype.kind == u"f" and dtype.itemsize == 2:
-            max_f2 = (2.0 - 2 ** -10) * 2 ** 15
-            self.check_cast = lambda x: (not np.isfinite(x)) or (-max_f2 <= x <= max_f2)
-        elif dtype.kind == u"f" and dtype.itemsize == 4:
-            max_f4 = (2.0 - 2 ** -23) * 2 ** 127
-            self.check_cast = lambda x: (not np.isfinite(x)) or (-max_f4 <= x <= max_f4)
-        elif dtype.kind == u"c" and dtype.itemsize == 8:
-            max_f4 = (2.0 - 2 ** -23) * 2 ** 127
-            self.check_cast = lambda x: (not np.isfinite(x)) or (
-                -max_f4 <= x.real <= max_f4 and -max_f4 <= x.imag <= max_f4
-            )
-        elif dtype.kind == u"U":
-            length = dtype.itemsize // 4
-            self.check_cast = lambda x: len(x) <= length and u"\0" not in x[length:]
-        elif dtype.kind in (u"S", u"a"):
-            self.check_cast = (
-                lambda x: len(x) <= dtype.itemsize and b"\0" not in x[dtype.itemsize :]
-            )
-        else:
-            self.check_cast = lambda x: True
-
     def set_element(self, data, result, idx, strategy=None):
         strategy = strategy or self.element_strategy
         val = data.draw(strategy)
         result[idx] = val
-        if self._report_overflow and not self.check_cast(val):
+        if self._report_overflow and val != result[idx] and val == val:
             note_deprecation(
                 "Generated array element %r from %r cannot be represented as "
-                "dtype %r - instead it becomes %r .  Consider using a more "
-                "precise strategy, as this will be an error in a future "
-                "version." % (val, strategy, self.dtype, result[idx]),
-                since="2018-10-25",
+                "dtype %r - instead it becomes %r (type %r).  Consider using a more "
+                "precise strategy, for example passing the `width` argument to "
+                "`floats()`, as this will be an error in a future version."
+                % (val, strategy, self.dtype, result[idx], type(result[idx])),
+                since="RELEASEDAY",
             )
             # Because the message includes the value of the generated element,
             # it would be easy to spam users with thousands of warnings.
@@ -180,7 +156,8 @@ class ArrayStrategy(SearchStrategy):
             return np.zeros(dtype=self.dtype, shape=self.shape)
 
         # Reset this flag for each test case to emit warnings from set_element
-        self._report_overflow = True
+        # Skip the check for object or void (multi-element) dtypes
+        self._report_overflow = self.dtype.kind not in ("O", "V")
 
         # This could legitimately be a np.empty, but the performance gains for
         # that would be so marginal that there's really not much point risking

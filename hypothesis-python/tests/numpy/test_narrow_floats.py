@@ -18,10 +18,22 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+import pytest
 
 from hypothesis import given
-from hypothesis.extra.numpy import from_dtype, integer_dtypes
+from hypothesis.extra.numpy import arrays, from_dtype, integer_dtypes
 from hypothesis.strategies import data, floats, integers
+
+
+@pytest.mark.parametrize("dtype", [np.float16, np.float32, np.float64])
+@pytest.mark.parametrize("low", [-2.0, -1.0, 0.0, 1.0])
+@given(data())
+def test_bad_float_exclude_min_in_array(dtype, low, data):
+    elements = floats(
+        low, low + 1, exclude_min=True, width=np.dtype(dtype).itemsize * 8
+    )
+    x = data.draw(arrays(dtype, shape=(1,), elements=elements), label="x")
+    assert np.all(low < x)
 
 
 @given(floats(width=32))
