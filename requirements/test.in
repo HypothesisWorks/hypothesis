@@ -1,4 +1,3 @@
 attrs
-mock
 pytest
 pytest-xdist
