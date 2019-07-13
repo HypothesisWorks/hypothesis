@@ -142,6 +142,7 @@ def test_apparently_instantaneous_tests():
 def test_flaky_exit():
     first = [True]
 
+    @settings(derandomize=True)
     @given(st.integers())
     def test(i):
         if i > 1001:
