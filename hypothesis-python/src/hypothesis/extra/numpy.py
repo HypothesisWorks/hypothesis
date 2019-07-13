@@ -917,15 +917,9 @@ def integer_array_indices(shape, result_shape=array_shapes(), dtype="int"):
 
 @st.defines_strategy
 def basic_indices(shape, allow_ellipsis=True, allow_newaxis=False, max_dims=None):
-    # type: (Shape, bool, bool, int) -> st.SearchStrategy
+    # type: (Shape, bool, bool, int) -> st.SearchStrategy[Any]
+    """Return a search strategy for numpy indices.
 
-    """Return a search strategy for tuples of integer-arrays that, when used
-    to index into an array of shape ``shape``, given an array whose shape
-    was drawn from ``result_shape``.
-
-    Examples from this strategy shrink towards the tuple of index-arrays::
-
-        len(shape) * (np.zeros(drawn_result_shape, dtype), )
 
     * ``shape`` a tuple of integers that indicates the shape of the array,
       whose indices are being generated.
@@ -958,11 +952,12 @@ def basic_indices(shape, allow_ellipsis=True, allow_newaxis=False, max_dims=None
         add_to_index_list.append(st.just(np.newaxis))
 
     # Strategy for each individual dimension
-    one_dim_index = lambda size: st.one_of(
-        [st.integers(-size, size - 1)]
-        + [st.slices(size)]  # integer index
-        + add_to_index_list  # slice  # ellipsis and/or np.newaxis
-    )
+    def one_dim_index(size):
+        return st.one_of(
+            [st.integers(-size, size - 1)]
+            + [st.slices(size)]  # integer index
+            + add_to_index_list  # slice  # ellipsis and/or np.newaxis
+        )
 
     if max_dims is None:
         strategy = st.tuples(*(one_dim_index(s) for s in shape))
