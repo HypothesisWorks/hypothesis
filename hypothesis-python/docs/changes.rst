@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.28.2:
+
+-------------------
+4.28.2 - 2019-07-14
+-------------------
+
+This patch improves the docstrings of several Hypothesis strategies, by
+clarifying markup and adding cross-references.  There is no runtime change.
+
+Thanks to Elizabeth Williams and Serah Njambi Rono for their contributions
+at the SciPy 2019 sprints!
+
 .. _v4.28.1:
 
 -------------------
