@@ -484,7 +484,7 @@ Making random code deterministic
 --------------------------------
 
 While Hypothesis' example generation can be used for nondeterministic tests,
-debugging anything nondeterministic is usually a very frustrating excercise.
+debugging anything nondeterministic is usually a very frustrating exercise.
 To make things worse, our example *shrinking* relies on the same input
 causing the same failure each time - though we show the un-shrunk failure
 and a decent error message if it doesn't.

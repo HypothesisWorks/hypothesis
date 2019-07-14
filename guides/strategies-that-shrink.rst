@@ -57,10 +57,10 @@ where magnitude constraints were added to the ``complex_numbers`` strategy,
 makes a nice case study.  We wanted to continue shrinking the real and
 imaginary parts like ``builds(complex, floats(), floats())``.
 
-In a worst-case scenario, the performance of filtering could be arbitarily
+In a worst-case scenario, the performance of filtering could be arbitrarily
 bad, while a 'generate and scale' approach would mean that simple inputs
 could lead to irrational outputs.  Instead, we choose an imaginary part
-between +/- max_magnitute, then calculate the resulting bounds on the real
+between +/- max_magnitude, then calculate the resulting bounds on the real
 part and draw it from a strategy that will always be valid.  This ensures
 that the imaginary part shrinks to zero first, as we think real-valued
 complex numbers are simpler than imaginary-valued complex numbers.
@@ -82,7 +82,7 @@ allowed by the bounds and tz strategy!
 Eliding much of the detail, a key part is to find such a moment between two
 endpoints, when we can only check whether one or more exists.  The traditional
 approach would be to use a binary search, but this would be relatively expensive
-to shrink as we would pay the log-n cost on every attemted shrink.
+to shrink as we would pay the log-n cost on every attempted shrink.
 
 Instead of choosing the midpoint, we draw a *random* point between our known
 endpoints, and repeat this until we find a satisfactory moment.  This allows
@@ -127,7 +127,7 @@ valid (and preferably local) shrinks to the final example.  For example:
         draw(...)
         ...
 
-    # In this form, the shrinker can see a repeated struture of labels
+    # In this form, the shrinker can see a repeated structure of labels
     # and delete one loop iteration without touching anything else.
     # We use a variant of this trick to generate collections internally!
     while draw(integers(0, x)) > threshold:
@@ -140,7 +140,8 @@ object at the same time, again so they can be modified or deleted together.
 
 The exact behaviour of the shrinking is a topic of active research and
 development, so if you are interested in the details we recommend reading
-the "internals.rst" guide and the well-commented source code in
+the `internals guide <https://github.com/HypothesisWorks/hypothesis/blob/master/guides/internals.rst>`_
+and the well-commented source code in
 ``hypothesis.internal.conjecture``.  An earlier (mid-2018) version is
 illustrated in David's draft paper *Test-Case Reduction for Free*,
 along with an extensive evaluation.  Contact him if you would like a copy.
@@ -153,7 +154,7 @@ The last section is for current or prospective Hypothesis contributors only.
 
 These tricks rely on implementation details that are not available to
 third-party libraries or users, **and can change in any patch release**.
-Occasionally they are also indispensible to get good performance in underlying
+Occasionally they are also indispensable to get good performance in underlying
 primitives, so please contact us if the public API is not enough and we may
 be able to work something out.
 
@@ -208,9 +209,9 @@ When the shrinker tries to delete the first two draws, the resulting buffer
 will lead to the same rule being chosen at step *one* instead.  We've made
 our own luck!
 
-This trick is expecially useful when we want to avoid rejection sampling
+This trick is especially useful when we want to avoid rejection sampling
 (the ``.filter`` method, ``assume``) for performance reasons, but also
-need to give the shrinker the same low-level represention for each instance
+need to give the shrinker the same low-level representation for each instance
 of a repeated choice.
 
 
@@ -257,7 +258,7 @@ deleted simultaneously using ``data.start_example``.  This is used to group
 the value and sign of floating-point numbers, for example, which we split up
 in order to provide a more natural shrinking order.
 
-Explict example management can also be useful to delineate variably-sized
+Explicit example management can also be useful to delineate variably-sized
 draws, such as our internal helper ``cu.biased_coin``, which makes eliminating
 dead bytes much cheaper.  Finally, labelling otherwise indistinguishable draws
 means the shrinker can attempt to swap only the like values.

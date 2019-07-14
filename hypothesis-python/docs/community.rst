@@ -16,7 +16,7 @@ Hypothesis related at all.  If you post a question on StackOverflow, please use 
 Please note that `the Hypothesis code of conduct <https://github.com/HypothesisWorks/hypothesis/blob/master/CODE_OF_CONDUCT.rst>`_
 applies in all Hypothesis community spaces.
 
-If you would like to cite Hypothesis, please consider `our sugested citation
+If you would like to cite Hypothesis, please consider `our suggested citation
 <https://github.com/HypothesisWorks/hypothesis/blob/master/CITATION>`_.
 
 If you like repo badges, we suggest the following badge, which you can add
