@@ -140,8 +140,9 @@ object at the same time, again so they can be modified or deleted together.
 
 The exact behaviour of the shrinking is a topic of active research and
 development, so if you are interested in the details we recommend reading
-the `internals guide <https://github.com/HypothesisWorks/hypothesis/blob/master/guides/internals.rst>`_ and the well-commented source code in
-:func:`~hypothesis.internal.conjecture`.  An earlier (mid-2018) version is
+the `internals guide <https://github.com/HypothesisWorks/hypothesis/blob/master/guides/internals.rst>`_
+and the well-commented source code in
+``hypothesis.internal.conjecture``.  An earlier (mid-2018) version is
 illustrated in David's draft paper *Test-Case Reduction for Free*,
 along with an extensive evaluation.  Contact him if you would like a copy.
 

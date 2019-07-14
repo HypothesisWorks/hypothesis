@@ -725,11 +725,11 @@ def lists(
     interval [min_size, max_size] (no bounds in that direction if these are
     None). If max_size is 0, only the empty list will be drawn.
 
-    If unique is True (or something that evaluates to True), we compare direct
+    If ``unique`` is True (or something that evaluates to True), we compare direct
     object equality, as if unique_by was ``lambda x: x``. This comparison only
     works for hashable types.
 
-    If unique_by is not None it must be a callable or tuple of callables
+    If ``unique_by`` is not None it must be a callable or tuple of callables
     returning a hashable type when given a value drawn from elements. The
     resulting list will satisfy the condition that for ``i`` != ``j``,
     ``unique_by(result[i])`` != ``unique_by(result[j])``.

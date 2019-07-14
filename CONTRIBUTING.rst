@@ -134,7 +134,7 @@ features (if you need them) and better long-term guarantees about maintenance.
 We particularly encourage pull requests for new composable primitives that
 make implementing other strategies easier, or for widely used types in the
 Python standard library.  Strategies for other things are also welcome;
-anything with external dependencies just goes in :mod:`~hypothesis.extra`.
+anything with external dependencies just goes in ``hypothesis.extra``.
 
 ~~~~~~~~~
 The build

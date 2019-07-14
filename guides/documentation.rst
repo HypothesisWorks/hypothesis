@@ -45,42 +45,6 @@ cross-references.  Without repeating the docs for Sphinx, here are some tips:
 
 - For the formatting and also hyperlinks, all cross-references should use the
   Sphinx cross-referencing syntax rather than plain text.
-  
-~~~~~~~~~~~~~~~~~~~~~~
-Running Sphinx Locally
-~~~~~~~~~~~~~~~~~~~~~~
-
-- Clone the repository
-
-``git clone https://github.com/HypothesisWorks/hypothesis.git``
-
-- [Recommended] Create a virtual environment with `virtualenv <https://virtualenv.pypa.io/en/latest/>`_ so you can build Hypothesis docs locally without altering your system packages. For example:
-
-.. code:: bash
-
-  virtualenv venv
-  source venv/bin/activate
-  pip install hypothesis
-
-- Navigate to your local copy of the cloned repository
-
-``cd <your/cloned/hypothesis/repository``
-
-- Install project requirements
-
-``pip install -r requirements/tools.txt``
-
-- Navigate to the docs folder
-
-``cd hypothesis-python/docs``
-
-- Ask Sphinx to auto-build your docs locally so you can see changes as you go along:
-
-``pip install sphinx-autobuild``
-
-then 
-
-``sphinx-autobuild -b html -n -W -T -E -B . _build/html/``
 
 
 -----------------
