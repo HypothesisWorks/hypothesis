@@ -171,7 +171,9 @@ def test_arbitrary_data_frames(data):
     )
 
     try:
-        df = data.draw(pdst.data_frames(columns))
+        # Use raw data to work around pandas bug in repr. See
+        # https://github.com/pandas-dev/pandas/issues/27484
+        df = data.conjecture_data.draw(pdst.data_frames(columns))
     except Exception as e:
         if type(e).__name__ == "OutOfBoundsDatetime":
             # See https://github.com/HypothesisWorks/hypothesis-python/pull/826
