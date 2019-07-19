@@ -37,7 +37,7 @@ from hypothesis import (
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument, UnsatisfiedAssumption
 from hypothesis.internal.compat import hbytes
-from tests.common.utils import capture_out, no_shrink
+from tests.common.utils import capture_out, checks_deprecated_behaviour, no_shrink
 
 
 @example(hbytes(20))  # shorter compressed
@@ -118,7 +118,7 @@ def test_errors_with_did_not_reproduce_if_rejected():
 def test_prints_reproduction_if_requested():
     failing_example = [None]
 
-    @settings(print_blob=PrintSettings.ALWAYS, database=None)
+    @settings(print_blob=True, database=None)
     @given(st.integers())
     def test(i):
         if failing_example[0] is None and i != 0:
@@ -150,7 +150,7 @@ def test_does_not_print_reproduction_for_simple_examples_by_default():
     assert "@reproduce_failure" not in o.getvalue()
 
 
-def test_does_print_reproduction_for_simple_data_examples_by_default():
+def test_does_not_print_reproduction_for_simple_data_examples_by_default():
     @given(st.data())
     def test(data):
         data.draw(st.integers())
@@ -159,7 +159,7 @@ def test_does_print_reproduction_for_simple_data_examples_by_default():
     with capture_out() as o:
         with pytest.raises(AssertionError):
             test()
-    assert "@reproduce_failure" in o.getvalue()
+    assert "@reproduce_failure" not in o.getvalue()
 
 
 def test_does_not_print_reproduction_for_large_data_examples_by_default():
@@ -181,20 +181,8 @@ class Foo(object):
         return "not a valid python expression"
 
 
-def test_does_print_reproduction_given_an_invalid_repr():
-    @given(st.integers().map(lambda x: Foo()))
-    def test(i):
-        raise ValueError()
-
-    with capture_out() as o:
-        with pytest.raises(ValueError):
-            test()
-
-    assert "@reproduce_failure" in o.getvalue()
-
-
 def test_does_not_print_reproduction_if_told_not_to():
-    @settings(print_blob=PrintSettings.NEVER)
+    @settings(print_blob=False)
     @given(st.integers().map(lambda x: Foo()))
     def test(i):
         raise ValueError()
@@ -230,3 +218,16 @@ def test_does_not_print_reproduction_if_verbosity_set_to_quiet():
             test_always_fails()
 
     assert "@reproduce_failure" not in out.getvalue()
+
+
+@pytest.mark.parametrize(
+    "ps,b",
+    [
+        (PrintSettings.NEVER, False),
+        (PrintSettings.INFER, True),
+        (PrintSettings.ALWAYS, True),
+    ],
+)
+@checks_deprecated_behaviour
+def test_converts_print_settings_to_boolean(ps, b):
+    assert settings(print_blob=ps).print_blob is b

@@ -39,7 +39,6 @@ import hypothesis.strategies as st
 from hypothesis._settings import (
     HealthCheck,
     Phase,
-    PrintSettings,
     Verbosity,
     local_settings,
     note_deprecation,
@@ -724,26 +723,15 @@ class StateForActualGivenExecution(object):
                 # second branch still complains about lack of coverage even if
                 # you add a pragma: no cover to it!
                 # See https://bitbucket.org/ned/coveragepy/issues/623/
-                if self.settings.print_blob is not PrintSettings.NEVER:
-                    failure_blob = encode_failure(falsifying_example.buffer)
-                    # Have to use the example we actually ran, not the original
-                    # falsifying example! Otherwise we won't catch problems
-                    # where the repr of the generated example doesn't parse.
-                    can_use_repr = ran_example.can_reproduce_example_from_repr
-                    if self.settings.print_blob is PrintSettings.ALWAYS or (
-                        self.settings.print_blob is PrintSettings.INFER
-                        and self.settings.verbosity >= Verbosity.normal
-                        and not can_use_repr
-                        and len(failure_blob) < 200
-                    ):
-                        report(
-                            (
-                                "\nYou can reproduce this example by temporarily "
-                                "adding @reproduce_failure(%r, %r) as a decorator "
-                                "on your test case"
-                            )
-                            % (__version__, failure_blob)
+                if self.settings.print_blob:
+                    report(
+                        (
+                            "\nYou can reproduce this example by temporarily "
+                            "adding @reproduce_failure(%r, %r) as a decorator "
+                            "on your test case"
                         )
+                        % (__version__, encode_failure(falsifying_example.buffer))
+                    )
             if self.__was_flaky:
                 flaky += 1
 
