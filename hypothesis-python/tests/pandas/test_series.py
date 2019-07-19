@@ -32,7 +32,9 @@ from tests.pandas.helpers import supported_by_pandas
 def test_can_create_a_series_of_any_dtype(data):
     dtype = np.dtype(data.draw(npst.scalar_dtypes()))
     assume(supported_by_pandas(dtype))
-    series = data.draw(pdst.series(dtype=dtype))
+    # Use raw data to work around pandas bug in repr. See
+    # https://github.com/pandas-dev/pandas/issues/27484
+    series = data.conjecture_data.draw(pdst.series(dtype=dtype))
     assert series.dtype == pandas.Series([], dtype=dtype).dtype
 
 
