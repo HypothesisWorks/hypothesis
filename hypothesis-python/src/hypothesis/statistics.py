@@ -73,8 +73,10 @@ class Statistics(object):
             )
 
         self.events = [
-            "%.2f%%, %s" % (c / engine.call_count * 100, e)
-            for e, c in sorted(engine.event_call_counts.items(), key=lambda x: -x[1])
+            "%6.2f%%, %s" % (c / engine.call_count * 100, e)
+            for e, c in sorted(
+                engine.event_call_counts.items(), key=lambda x: (-x[1], x[0])
+            )
         ]
 
         total_runtime = math.fsum(engine.all_runtimes)
