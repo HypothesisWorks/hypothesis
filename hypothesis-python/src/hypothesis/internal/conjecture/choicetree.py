@@ -100,7 +100,7 @@ class Chooser(object):
         while len(next_value) > 0 and next_value[-1] == 0:
             next_value.pop()
 
-        return next_value
+        return tuple(next_value)
 
 
 class ChoiceTree(object):

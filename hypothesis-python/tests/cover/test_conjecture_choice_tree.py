@@ -66,3 +66,33 @@ def test_all_filtered_child():
         chooser.choose(hrange(10), condition=lambda j: False)
 
     assert all_filtered == []
+
+
+def test_skips_over_exhausted_children():
+
+    results = []
+
+    def f(chooser):
+        results.append(
+            (
+                chooser.choose(hrange(3), condition=lambda x: x > 0),
+                chooser.choose(hrange(2)),
+            )
+        )
+
+    tree = ChoiceTree()
+
+    tree.step((1, 0), f)
+    tree.step((1, 1), f)
+    tree.step((0, 0), f)
+
+    assert results == [(1, 0), (1, 1), (2, 0)]
+
+
+def test_wraps_around_to_beginning():
+    def f(chooser):
+        chooser.choose(hrange(3))
+
+    tree = ChoiceTree()
+
+    assert tree.step((2,), f) == ()
