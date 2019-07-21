@@ -197,18 +197,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
     def __call__(self, test):
         """Make the settings object (self) an attribute of the test.
 
-        The settings are later discovered by looking them up on the test
-        itself.
-
-        Also, we want to issue a deprecation warning for settings used alone
-        (without @given) so, note the deprecation in the new test, but also
-        attach the version without the warning as an attribute, so that @given
-        can unwrap it (since if @given is used, that means we don't want the
-        deprecation warning).
-
-        When it's time to turn the warning into an error, we'll raise an
-        exception instead of calling note_deprecation (and can delete
-        "test(*args, **kwargs)").
+        The settings are later discovered by looking them up on the test itself.
         """
         if not callable(test):
             raise InvalidArgument(
@@ -235,6 +224,8 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
                     "functions, or on subclasses of GenericStateMachine."
                 )
         if hasattr(test, "_hypothesis_internal_settings_applied"):
+            # Can't use _hypothesis_internal_use_settings as an indicator that
+            # @settings was applied, because @given also assigns that attribute.
             raise InvalidArgument(
                 "%s has already been decorated with a settings object."
                 "\n    Previous:  %r\n    This:  %r"
@@ -246,29 +237,26 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
             )
 
         test._hypothesis_internal_use_settings = self
-
-        # For double-@settings check:
         test._hypothesis_internal_settings_applied = True
+        if getattr(test, "is_hypothesis_test", False):
+            return test
 
         @proxies(test)
         def new_test(*args, **kwargs):
+            """@given has not been applied to `test`, so we replace it with this
+            wrapper so that using *only* @settings is an error.
+
+            We then attach the actual test as an attribute of this function, so
+            that we can unwrap it if @given is applied after the settings decorator.
+            """
             raise InvalidArgument(
                 "Using `@settings` on a test without `@given` is completely pointless."
             )
 
-        # @given will get the test from this attribution (rather than use the
-        # version with the deprecation warning)
         new_test._hypothesis_internal_test_function_without_warning = test
-
-        # This means @given has been applied, so we don't need to worry about
-        # warning for @settings alone.
-        has_given_applied = getattr(test, "is_hypothesis_test", False)
-        test_to_use = test if has_given_applied else new_test
-        test_to_use._hypothesis_internal_use_settings = self
-        # Can't use _hypothesis_internal_use_settings as an indicator that
-        # @settings was applied, because @given also assigns that attribute.
-        test._hypothesis_internal_settings_applied = True
-        return test_to_use
+        new_test._hypothesis_internal_use_settings = self
+        new_test._hypothesis_internal_settings_applied = True
+        return new_test
 
     @classmethod
     def _define_setting(
