@@ -578,13 +578,6 @@ class HealthCheck(Enum):
 
 
 @unique
-class Statistics(IntEnum):
-    never = 0
-    interesting = 1
-    always = 2
-
-
-@unique
 class Verbosity(IntEnum):
     quiet = 0
     normal = 1
