@@ -23,6 +23,7 @@ import hypothesis.strategies as st
 from hypothesis import Phase, example, given, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import InvalidArgument
+from tests.common.utils import checks_deprecated_behaviour
 
 
 @example(11)
@@ -57,6 +58,11 @@ def test_sorts_and_dedupes_phases(arg, expected):
 
 
 def test_phases_default_to_all():
+    assert settings().phases == tuple(Phase)
+
+
+@checks_deprecated_behaviour
+def test_phases_none_equals_all():
     assert settings(phases=None).phases == tuple(Phase)
 
 

@@ -602,7 +602,8 @@ settings._define_setting(
 
 def _validate_phases(phases):
     if phases is None:
-        return tuple(Phase)
+        phases = tuple(Phase)
+        note_deprecation("Use phases=%r, not None." % (phases,), since="RELEASEDAY")
     phases = tuple(phases)
     for a in phases:
         if not isinstance(a, Phase):
