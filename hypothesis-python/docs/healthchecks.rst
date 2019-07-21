@@ -27,6 +27,7 @@ Using a value of ``HealthCheck.all()`` will disable all health checks.
 .. autoclass:: HealthCheck
    :undoc-members:
    :inherited-members:
+   :exclude-members: all
 
 
 .. _deprecation-policy:

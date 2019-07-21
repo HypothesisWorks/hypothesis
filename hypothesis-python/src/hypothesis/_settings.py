@@ -95,7 +95,7 @@ class settingsProperty(object):
         return "\n\n".join(
             [
                 description,
-                "default value: %s" % (default,),
+                "default value: ``%s``" % (default,),
                 (deprecation_message or "").strip(),
             ]
         ).strip()
@@ -149,6 +149,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
     _WHITELISTED_REAL_PROPERTIES = ["_construction_complete", "storage"]
     __definitions_are_locked = False
     _profiles = {}  # type: dict
+    __module__ = "hypothesis"
 
     def __getattr__(self, name):
         if name in all_settings:
@@ -212,7 +213,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         if not callable(test):
             raise InvalidArgument(
                 "settings objects can be called as a decorator with @given, "
-                "but test=%r" % (test,)
+                "but decorated test=%r is not callable." % (test,)
             )
         if inspect.isclass(test):
             from hypothesis.stateful import GenericStateMachine
@@ -515,8 +516,8 @@ settings._define_setting(
     show_default=False,
     description="""
 An instance of hypothesis.database.ExampleDatabase that will be
-used to save examples to and load previous examples from. May be None
-in which case no storage will be used, `:memory:` for an in-memory
+used to save examples to and load previous examples from. May be ``None``
+in which case no storage will be used, ``":memory:"`` for an in-memory
 database, or any path for a directory-based example database.
 """,
     validator=_validate_database,
@@ -529,6 +530,9 @@ class Phase(IntEnum):
     reuse = 1
     generate = 2
     shrink = 3
+
+    def __repr__(self):
+        return "Phase.%s" % (self.name,)
 
 
 @unique
@@ -574,7 +578,7 @@ class HealthCheck(Enum):
 
     not_a_test_method = 8
     """Checks if :func:`@given <hypothesis.given>` has been applied to a
-    method of :class:`python:unittest.TestCase`."""
+    method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
 
 
 @unique
@@ -603,7 +607,7 @@ def _validate_phases(phases):
     for a in phases:
         if not isinstance(a, Phase):
             raise InvalidArgument("%r is not a valid phase" % (a,))
-    return phases
+    return tuple(p for p in list(Phase) if p in phases)
 
 
 settings._define_setting(
@@ -611,7 +615,7 @@ settings._define_setting(
     default=tuple(Phase),
     description=(
         "Control which phases should be run. "
-        + "See :ref:`the full documentation for more details <phases>`"
+        "See :ref:`the full documentation for more details <phases>`"
     ),
     validator=_validate_phases,
 )
@@ -658,7 +662,7 @@ def validate_health_check_suppressions(suppressions):
 settings._define_setting(
     "suppress_health_check",
     default=(),
-    description="""A list of health checks to disable.""",
+    description="""A list of :class:`~hypothesis.HealthCheck` items to disable.""",
     validator=validate_health_check_suppressions,
 )
 
@@ -667,7 +671,8 @@ class duration(datetime.timedelta):
     """A timedelta specifically measured in milliseconds."""
 
     def __repr__(self):
-        return "timedelta(milliseconds=%r)" % (self.total_seconds() * 1000,)
+        ms = self.total_seconds() * 1000
+        return "timedelta(milliseconds=%r)" % (int(ms) if ms == int(ms) else ms,)
 
 
 def _validate_deadline(x):

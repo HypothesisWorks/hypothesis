@@ -45,6 +45,17 @@ def test_this_would_fail_if_you_ran_it(b):
     assert False
 
 
+@pytest.mark.parametrize(
+    "arg,expected",
+    [
+        (tuple(Phase)[::-1], tuple(Phase)),
+        ([Phase.explicit, Phase.explicit], (Phase.explicit,)),
+    ],
+)
+def test_sorts_and_dedupes_phases(arg, expected):
+    assert settings(phases=arg).phases == expected
+
+
 def test_phases_default_to_all():
     assert settings(phases=None).phases == tuple(Phase)
 
