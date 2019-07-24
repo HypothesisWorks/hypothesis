@@ -1166,10 +1166,7 @@ class Shrinker(object):
         but it fails when there is data that has to stay in particular places
         in the list.
         """
-        block = chooser.choose(self.blocks)
-
-        if block.trivial:
-            return
+        block = chooser.choose(self.blocks, lambda b: not b.trivial)
 
         initial = self.shrink_target
         u, v = block.bounds
