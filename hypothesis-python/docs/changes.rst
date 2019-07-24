@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.31.0:
+
+-------------------
+4.31.0 - 2019-07-24
+-------------------
+
+This release simplifies the logic of the :attr:`~hypothesis.settings.print_blob` setting by removing the option to set it to ``PrintSettings.INFER``.
+As a result the ``print_blob`` setting now takes a single boolean value, and the use of ``PrintSettings`` is deprecated.
+
 .. _v4.28.2:
 
 -------------------
