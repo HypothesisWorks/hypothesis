@@ -58,8 +58,7 @@ class Chooser(object):
         while node.size > 0:
             count += 1
             assert count <= len(values)
-            child_size = node.children[i].size
-            if child_size != 0:
+            if not node.children[i].exhausted:
                 v = values[i]
                 if condition(v):
                     self.__choices.append(i)
