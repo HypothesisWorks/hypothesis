@@ -451,7 +451,7 @@ class Shrinker(object):
 
                         self.debug(
                             (
-                                "  * %s ran made %d call%s of which "
+                                "  * %s made %d call%s of which "
                                 "%d shrank, deleting %d byte%s."
                             )
                             % (
