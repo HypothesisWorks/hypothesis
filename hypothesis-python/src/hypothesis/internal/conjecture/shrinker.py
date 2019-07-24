@@ -642,7 +642,7 @@ class Shrinker(object):
 
         ls = self.examples_by_label[label]
 
-        i = chooser.choose(hrange(len(ls)))
+        i = chooser.choose(hrange(len(ls) - 1))
 
         ancestor = ls[i]
         descendant = chooser.choose(
