@@ -591,6 +591,31 @@ class Shrinker(object):
     def distinct_labels(self):
         return sorted(self.examples_by_label, key=str)
 
+    @derived_value
+    def __descendants_cache(self):
+        return {}
+
+    def descendants(self, label, i):
+        key = (label, i)
+        try:
+            return self.__descendants_cache[key]
+        except KeyError:
+            pass
+
+        ls = self.examples_by_label[label]
+        ancestor = ls[i]
+
+        lo = i + 1
+        hi = len(ls)
+        while lo + 1 < hi:
+            mid = (lo + hi) // 2
+            if ls[mid].start >= ancestor.end:
+                hi = mid
+            else:
+                lo = mid
+
+        return self.__descendants_cache.setdefault(key, ls[i + 1 : hi])
+
     @defines_shrink_pass()
     def pass_to_descendant(self, chooser):
         """Attempt to replace each example with a descendant example.
@@ -620,19 +645,9 @@ class Shrinker(object):
         i = chooser.choose(hrange(len(ls)))
 
         ancestor = ls[i]
-
-        lo = i + 1
-        hi = len(ls)
-        while lo + 1 < hi:
-            mid = (lo + hi) // 2
-            if ls[mid].start >= ancestor.end:
-                hi = mid
-            else:
-                lo = mid
-
-        j = chooser.choose(hrange(i + 1, hi), lambda j: ls[j].length > 0)
-
-        descendant = ls[j]
+        descendant = chooser.choose(
+            self.descendants(label, i), lambda ex: ex.length > 0
+        )
 
         self.incorporate_new_buffer(
             self.buffer[: ancestor.start]
