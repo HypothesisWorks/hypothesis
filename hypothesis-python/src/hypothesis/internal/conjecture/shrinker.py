@@ -612,7 +612,7 @@ class Shrinker(object):
         """
 
         label = chooser.choose(
-            self.distinct_labels, lambda l: len(self.examples_by_label[l]) >= 1
+            self.distinct_labels, lambda l: len(self.examples_by_label[l]) >= 2
         )
 
         ls = self.examples_by_label[label]
