@@ -31,7 +31,6 @@ class Chooser(object):
         self.__node_trail = [tree.root]
         self.__choices = []
         self.__finished = False
-        self.__depth = 0
 
     def choose(self, values, condition=lambda x: True):
         """Return some element of values satisfying the condition
@@ -46,11 +45,12 @@ class Chooser(object):
 
         assert node.size > 0 or len(values) == 0
 
-        if self.__depth < len(self.__prefix):
-            i = self.__prefix[self.__depth]
+        depth = len(self.__choices)
+
+        if depth < len(self.__prefix):
+            i = self.__prefix[depth]
             if i >= len(values):
                 i = 0
-            self.__depth += 1
         else:
             i = 0
 
