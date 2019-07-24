@@ -18,7 +18,6 @@
 from __future__ import absolute_import, division, print_function
 
 import datetime
-import re
 import subprocess
 import sys
 
@@ -27,7 +26,6 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import example, given, unlimited
 from hypothesis._settings import (
-    PrintSettings,
     Verbosity,
     default_variable,
     local_settings,
@@ -35,11 +33,7 @@ from hypothesis._settings import (
     settings,
 )
 from hypothesis.database import ExampleDatabase
-from hypothesis.errors import (
-    HypothesisDeprecationWarning,
-    InvalidArgument,
-    InvalidState,
-)
+from hypothesis.errors import InvalidArgument, InvalidState
 from hypothesis.stateful import GenericStateMachine, RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
 from tests.common.utils import checks_deprecated_behaviour, fails_with
@@ -364,21 +358,7 @@ def test_invalid_deadline(x):
         settings(deadline=x)
 
 
-@pytest.mark.parametrize(
-    ("value", "replacement", "suggestion"),
-    [
-        (False, PrintSettings.NEVER, "PrintSettings.NEVER"),
-        (True, PrintSettings.ALWAYS, "PrintSettings.ALWAYS"),
-    ],
-)
-def test_can_set_print_blob_to_deprecated_bool(value, replacement, suggestion):
-    with pytest.warns(HypothesisDeprecationWarning, match=re.escape(suggestion)):
-        s = settings(print_blob=value)
-
-    assert s.print_blob == replacement
-
-
-@pytest.mark.parametrize("value", [0, 1, "always"])
+@pytest.mark.parametrize("value", ["always"])
 def test_can_not_set_print_blob_to_non_print_settings(value):
     with pytest.raises(InvalidArgument):
         settings(print_blob=value)

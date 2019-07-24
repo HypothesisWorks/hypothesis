@@ -23,13 +23,7 @@ from collections import defaultdict, namedtuple
 import pytest
 from _pytest.outcomes import Failed, Skipped
 
-from hypothesis import (
-    PrintSettings,
-    __version__,
-    reproduce_failure,
-    seed,
-    settings as Settings,
-)
+from hypothesis import __version__, reproduce_failure, seed, settings as Settings
 from hypothesis.control import current_build_context
 from hypothesis.database import ExampleDatabase
 from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDefinition
@@ -58,7 +52,7 @@ from hypothesis.strategies import (
 )
 from tests.common.utils import capture_out, checks_deprecated_behaviour, raises
 
-NO_BLOB_SETTINGS = Settings(print_blob=PrintSettings.NEVER)
+NO_BLOB_SETTINGS = Settings(print_blob=False)
 
 
 class SetStateMachine(GenericStateMachine):

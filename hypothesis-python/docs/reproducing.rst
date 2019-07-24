@@ -114,7 +114,7 @@ as follows:
     >>> from hypothesis import settings, given, PrintSettings
     >>> import hypothesis.strategies as st
     >>> @given(st.floats())
-    ... @settings(print_blob=PrintSettings.ALWAYS)
+    ... @settings(print_blob=True)
     ... def test(f):
     ...     assert f == f
     ...
@@ -132,8 +132,5 @@ anything else involved, might of course affect the behaviour of the test! Note
 that changing the version of Hypothesis will result in a different error -
 each ``@reproduce_failure`` invocation is specific to a Hypothesis version).
 
-When to do this is controlled by the :attr:`~hypothesis.settings.print_blob`
-setting, which may be one of the following values:
-
-.. autoclass:: hypothesis.PrintSettings
-  :members:
+By default these messages are not printed.
+If you want to see these you must set the :attr:`~hypothesis.settings.print_blob` setting to ``True``.

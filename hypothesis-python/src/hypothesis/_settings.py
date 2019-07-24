@@ -734,15 +734,8 @@ class PrintSettings(Enum):
     """Never print a blob."""
 
     INFER = 1
-    """Make an educated guess as to whether it would be appropriate to print
-    the blob.
-
-    The current rules are that this will print if:
-
-    1. The output from Hypothesis appears to be unsuitable for use with
-       :func:`~hypothesis.example`, and
-    2. The output is not too long, and
-    3. Verbosity is at least normal."""
+    """This option is deprecated and will be treated as equivalent to
+    ALWAYS."""
 
     ALWAYS = 2
     """Always print a blob on failure."""
@@ -752,11 +745,8 @@ class PrintSettings(Enum):
 
 
 def _validate_print_blob(value):
-    if isinstance(value, bool):
-        if value:
-            replacement = PrintSettings.ALWAYS
-        else:
-            replacement = PrintSettings.NEVER
+    if isinstance(value, PrintSettings):
+        replacement = value != PrintSettings.NEVER
 
         note_deprecation(
             "Setting print_blob=%r is deprecated and will become an error "
@@ -766,23 +756,19 @@ def _validate_print_blob(value):
         )
         return replacement
 
-    # Values that aren't bool or PrintSettings will be turned into hard errors
-    # by the 'options' check.
+    check_type(bool, value, "print_blob")
+
     return value
 
 
 settings._define_setting(
     "print_blob",
-    default=PrintSettings.INFER,
+    default=False,
     description="""
-Determines whether to print blobs after tests that can be used to reproduce
-failures.
-
-See :ref:`the documentation on @reproduce_failure <reproduce_failure>` for
-more details of this behaviour.
+If set to True, Hypothesis will print code for failing examples that can be used with
+:func:`@reproduce_failure <hypothesis.reproduce_failure>` to reproduce the failing example.
 """,
     validator=_validate_print_blob,
-    options=tuple(PrintSettings),
 )
 
 settings.lock_further_definitions()

@@ -24,9 +24,16 @@ failing examples it finds.
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis._settings import HealthCheck, Phase, Verbosity, settings, unlimited
+from hypothesis._settings import (
+    HealthCheck,
+    Phase,
+    PrintSettings,
+    Verbosity,
+    settings,
+    unlimited,
+)
 from hypothesis.control import assume, event, note, reject
-from hypothesis.core import PrintSettings, example, find, given, reproduce_failure, seed
+from hypothesis.core import example, find, given, reproduce_failure, seed
 from hypothesis.internal.entropy import register_random
 from hypothesis.utils.conventions import infer
 from hypothesis.version import __version__, __version_info__
