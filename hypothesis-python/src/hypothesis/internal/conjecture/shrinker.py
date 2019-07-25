@@ -1200,19 +1200,23 @@ class Shrinker(object):
         # never have got here.
         assert attempt is not self.shrink_target
 
-        lo = 0
-        hi = len(self.examples)
-        while lo + 1 < hi:
-            mid = (lo + hi) // 2
-            ex = self.examples[mid]
-            if ex.start >= block.end:
-                hi = mid
-            else:
-                lo = mid
+        @self.cached(block.index)
+        def first_example_after_block():
+            lo = 0
+            hi = len(self.examples)
+            while lo + 1 < hi:
+                mid = (lo + hi) // 2
+                ex = self.examples[mid]
+                if ex.start >= block.end:
+                    hi = mid
+                else:
+                    lo = mid
+            return hi
 
         ex = self.examples[
             chooser.choose(
-                hrange(hi, len(self.examples)), lambda i: self.examples[i].length > 0
+                hrange(first_example_after_block, len(self.examples)),
+                lambda i: self.examples[i].length > 0,
             )
         ]
 
