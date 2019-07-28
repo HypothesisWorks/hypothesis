@@ -1697,7 +1697,7 @@ cause errors on Python 3 due to internal rounding.
 -------------------
 
 Hypothesis now seeds and resets the global state of
-:class:`np.random <numpy:numpy.random.RandomState>` for each
+:mod:`np.random <numpy:numpy.random>` for each
 test case, to ensure that tests are reproducible.
 
 This matches and complements the existing handling of the

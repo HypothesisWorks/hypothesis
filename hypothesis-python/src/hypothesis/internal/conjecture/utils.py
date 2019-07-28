@@ -39,7 +39,7 @@ LABEL_MASK = 2 ** 64 - 1
 
 
 def calc_label_from_name(name):
-    hashed = hashlib.md5(str_to_bytes(name)).digest()
+    hashed = hashlib.sha384(str_to_bytes(name)).digest()
     return int_from_bytes(hashed[:8])
 
 
