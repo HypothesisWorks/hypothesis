@@ -477,7 +477,7 @@ def check_examples2():
 
 @examples_task
 def check_examples3():
-    run_tox("examples2", PY36)
+    run_tox("examples3", PY36)
 
 
 @python_tests
