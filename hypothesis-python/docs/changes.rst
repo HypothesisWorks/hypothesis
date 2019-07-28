@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.31.1:
+
+-------------------
+4.31.1 - 2019-07-28
+-------------------
+
+This patch changes an internal use of MD5 to SHA hashes, to better support
+users subject to FIPS-140.  There is no user-visible or API change.
+
+Thanks to Alex Gaynor for this patch.
+
 .. _v4.31.0:
 
 -------------------
