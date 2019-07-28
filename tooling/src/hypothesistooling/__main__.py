@@ -377,7 +377,7 @@ def run_tox(task, version):
 
 PY27 = "2.7.14"
 PY35 = "3.5.5"
-PY36 = "3.6.5"
+PY36 = "3.6.8"
 PY37 = "3.7.0"
 PYPY2 = "pypy2.7-5.10.0"
 PYPY3 = "pypy3.5-5.10.1"

@@ -61,6 +61,9 @@ jobs:
         check-pandas24:
           TASK: check-pandas24
     steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.6'
     - script: sudo apt-get update && sudo apt-get install libreadline-dev libsqlite3-dev shellcheck
       displayName: Install apt dependencies
     - script: ./build.sh check-installed
@@ -130,6 +133,9 @@ jobs:
         check-py36:
           TASK: check-py36
     steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.6'
     - script: |
         brew update
         brew install readline xz ncurses
