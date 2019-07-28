@@ -144,7 +144,7 @@ class ArrayStrategy(SearchStrategy):
                 "precise strategy, for example passing the `width` argument to "
                 "`floats()`, as this will be an error in a future version."
                 % (val, strategy, self.dtype, result[idx], type(result[idx])),
-                since="RELEASEDAY",
+                since="2019-07-28",
             )
             # Because the message includes the value of the generated element,
             # it would be easy to spam users with thousands of warnings.

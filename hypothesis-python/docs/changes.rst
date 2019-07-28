@@ -21,6 +21,22 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.32.0:
+
+-------------------
+4.32.0 - 2019-07-28
+-------------------
+
+This release makes :func:`~hypothesis.extra.numpy.arrays` more pedantic about
+``elements`` strategies that cannot be exactly represented as array elements.
+
+In practice, you will see new warnings if you were using a ``float16`` or
+``float32`` dtype without passing :func:`~hypothesis.strategies.floats` the
+``width=16`` or ``width=32`` arguments respectively.
+
+The previous behaviour could lead to silent truncation, and thus some elements
+being equal to an explicitly excluded bound (:issue:`1899`).
+
 .. _v4.31.1:
 
 -------------------
