@@ -18,13 +18,66 @@
 from __future__ import absolute_import, division, print_function
 
 import decimal
+from math import copysign
 
 import pytest
 
 from hypothesis import assume, given, reject, settings
-from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import data, decimals, fractions, integers, none, tuples
+from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
+from hypothesis.internal.floats import next_down
+from hypothesis.strategies import (
+    booleans,
+    data,
+    decimals,
+    floats,
+    fractions,
+    integers,
+    none,
+    tuples,
+)
 from tests.common.debug import find_any
+
+
+@given(data())
+def test_fuzz_floats_bounds(data):
+    bound = none() | floats(allow_nan=False)
+    low, high = data.draw(tuples(bound, bound), label="low, high")
+    if low is not None and high is not None and low > high:
+        low, high = high, low
+    exmin = (
+        low is not None
+        and low != float("inf")
+        and data.draw(booleans(), label="exclude_min")
+    )
+    exmax = (
+        high is not None
+        and high != float("-inf")
+        and data.draw(booleans(), label="exclude_max")
+    )
+    try:
+        val = data.draw(
+            floats(low, high, exclude_min=exmin, exclude_max=exmax), label="value"
+        )
+        assume(val)  # positive/negative zero is an issue
+    except (InvalidArgument, HypothesisDeprecationWarning):
+        assert (
+            (exmin and exmax and low == next_down(high))
+            or (low == high and (exmin or exmax))
+            or (
+                low == high == 0
+                and copysign(1.0, low) == 1
+                and copysign(1.0, high) == -1
+            )
+        )
+        reject()  # no floats in required range
+    if low is not None:
+        assert low <= val
+    if high is not None:
+        assert val <= high
+    if exmin:
+        assert low != val
+    if exmax:
+        assert high != val
 
 
 @given(data())

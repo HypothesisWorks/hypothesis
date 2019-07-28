@@ -268,7 +268,7 @@ def test_can_cast_for_scalars(data):
     # combinations will result in an error if numpy is not able to cast them.
     dt_elements = np.dtype(data.draw(st.sampled_from(["bool", "<i2", ">i2"])))
     dt_desired = np.dtype(
-        data.draw(st.sampled_from(["<i2", ">i2", "float16", "float32", "float64"]))
+        data.draw(st.sampled_from(["<i2", ">i2", "float32", "float64"]))
     )
     result = data.draw(
         nps.arrays(dtype=dt_desired, elements=nps.from_dtype(dt_elements), shape=())
@@ -283,7 +283,7 @@ def test_can_cast_for_arrays(data):
     # combinations will result in an error if numpy is not able to cast them.
     dt_elements = np.dtype(data.draw(st.sampled_from(["bool", "<i2", ">i2"])))
     dt_desired = np.dtype(
-        data.draw(st.sampled_from(["<i2", ">i2", "float16", "float32", "float64"]))
+        data.draw(st.sampled_from(["<i2", ">i2", "float32", "float64"]))
     )
     result = data.draw(
         nps.arrays(
