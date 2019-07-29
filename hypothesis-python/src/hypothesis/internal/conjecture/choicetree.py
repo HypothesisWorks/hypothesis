@@ -39,11 +39,11 @@ class Chooser(object):
         """
         assert not self.__finished
         node = self.__node_trail[-1]
-        if node.size is None:
-            node.size = len(values)
+        if node.live_child_count is None:
+            node.live_child_count = len(values)
             node.n = len(values)
 
-        assert node.size > 0 or len(values) == 0
+        assert node.live_child_count > 0 or len(values) == 0
 
         depth = len(self.__choices)
 
@@ -55,7 +55,7 @@ class Chooser(object):
             i = 0
 
         count = 0
-        while node.size > 0:
+        while node.live_child_count > 0:
             count += 1
             assert count <= len(values)
             if not node.children[i].exhausted:
@@ -66,7 +66,7 @@ class Chooser(object):
                     return v
                 else:
                     node.children[i] = DeadNode
-                    node.size -= 1
+                    node.live_child_count -= 1
             i = (i + 1) % len(values)
         raise DeadBranch()
 
@@ -87,14 +87,14 @@ class Chooser(object):
                 else:
                     break
 
-        self.__node_trail[-1].size = 0
+        self.__node_trail[-1].live_child_count = 0
         while len(self.__node_trail) > 1 and self.__node_trail[-1].exhausted:
             self.__node_trail.pop()
             assert len(self.__node_trail) == len(self.__choices)
             i = self.__choices.pop()
             target = self.__node_trail[-1]
             target.children[i] = DeadNode
-            target.size -= 1
+            target.live_child_count -= 1
 
         while len(next_value) > 0 and next_value[-1] == 0:
             next_value.pop()
@@ -129,16 +129,16 @@ class ChoiceTree(object):
 class TreeNode(object):
     def __init__(self):
         self.children = defaultdict(TreeNode)
-        self.size = None
+        self.live_child_count = None
         self.n = None
 
     @property
     def exhausted(self):
-        return self.size == 0
+        return self.live_child_count == 0
 
 
 DeadNode = TreeNode()
-DeadNode.size = 0
+DeadNode.live_child_count = 0
 
 
 class DeadBranch(Exception):
