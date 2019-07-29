@@ -1448,7 +1448,7 @@ class ShrinkPass(object):
     index = attr.ib()
     shrinker = attr.ib()
 
-    next_probe = attr.ib(default=())
+    next_prefix = attr.ib(default=())
     fixed_point_at = attr.ib(default=None)
     successes = attr.ib(default=0)
     calls = attr.ib(default=0)
@@ -1468,8 +1468,8 @@ class ShrinkPass(object):
         size = len(self.shrinker.shrink_target.buffer)
         self.shrinker.explain_next_call_as(self.name)
         try:
-            self.next_probe = tree.step(
-                self.next_probe,
+            self.next_prefix = tree.step(
+                self.next_prefix,
                 lambda chooser: self.run_with_chooser(self.shrinker, chooser),
             )
         finally:
