@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.32.1:
+
+-------------------
+4.32.1 - 2019-07-29
+-------------------
+
+This release changes how the shrinker represents its progress internally. For large generated test cases
+this should result in significantly less memory usage and possibly faster shrinking. Small generated
+test cases may be slightly slower to shrink but this shouldn't be very noticeable.
+
 .. _v4.32.0:
 
 -------------------
