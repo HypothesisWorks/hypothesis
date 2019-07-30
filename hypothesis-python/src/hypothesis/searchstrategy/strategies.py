@@ -538,7 +538,7 @@ class MappedSearchStrategy(SearchStrategy):
     def do_validate(self):
         self.mapped_strategy.validate()
 
-    def pack(self, x):  # type: ignore
+    def pack(self, x):
         """Take a value produced by the underlying mapped_strategy and turn it
         into a value suitable for outputting from this strategy."""
         raise NotImplementedError("%s.pack()" % (self.__class__.__name__))
