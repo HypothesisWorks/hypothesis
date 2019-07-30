@@ -28,9 +28,13 @@ import pytest
 import hypothesis.strategies as ds
 from hypothesis import given, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.reflection import nicerepr
+from hypothesis.vendor.pretty import pretty
 from tests.common.debug import minimal
 from tests.common.utils import checks_deprecated_behaviour
+
+# Use `pretty` instead of `repr` for building test names, so that set and dict
+# parameters print consistently across multiple worker processes with different
+# PYTHONHASHSEED values.
 
 
 def fn_test(*fnkwargs):
@@ -39,7 +43,7 @@ def fn_test(*fnkwargs):
         ("fn", "args"),
         fnkwargs,
         ids=[
-            "%s(%s)" % (fn.__name__, ", ".join(map(nicerepr, args)))
+            "%s(%s)" % (fn.__name__, ", ".join(map(pretty, args)))
             for fn, args in fnkwargs
         ],
     )
@@ -50,14 +54,7 @@ def fn_ktest(*fnkwargs):
     return pytest.mark.parametrize(
         ("fn", "kwargs"),
         fnkwargs,
-        ids=[
-            "%s(%s)"
-            % (
-                fn.__name__,
-                ", ".join(sorted("%s=%r" % (k, v) for k, v in kwargs.items())),
-            )
-            for fn, kwargs in fnkwargs
-        ],
+        ids=["%s(**%s)" % (fn.__name__, pretty(kwargs)) for fn, kwargs in fnkwargs],
     )
 
 
