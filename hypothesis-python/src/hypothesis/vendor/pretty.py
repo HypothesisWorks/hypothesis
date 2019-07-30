@@ -506,7 +506,7 @@ class GroupQueue(object):
 
 
 try:
-    _baseclass_reprs = (object.__repr__, types.InstanceType.__repr__)  # type: ignore
+    _baseclass_reprs = (object.__repr__, types.InstanceType.__repr__)
 except AttributeError:  # Python 3
     _baseclass_reprs = (object.__repr__,)  # type: ignore
 
@@ -809,12 +809,12 @@ _type_pprinters = {
 }
 
 try:  # pragma: no cover
-    if types.DictProxyType != dict:  # type: ignore
-        _type_pprinters[types.DictProxyType] = _dict_pprinter_factory(  # type: ignore
+    if types.DictProxyType != dict:
+        _type_pprinters[types.DictProxyType] = _dict_pprinter_factory(
             "<dictproxy {", "}>"
         )
-    _type_pprinters[types.ClassType] = _type_pprint  # type: ignore
-    _type_pprinters[types.SliceType] = _repr_pprint  # type: ignore
+    _type_pprinters[types.ClassType] = _type_pprint
+    _type_pprinters[types.SliceType] = _repr_pprint
 except AttributeError:  # Python 3
     _type_pprinters[slice] = _repr_pprint
 
