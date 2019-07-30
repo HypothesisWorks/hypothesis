@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.32.2:
+
+-------------------
+4.32.2 - 2019-07-30
+-------------------
+
+This patch updates some internal comments for :pypi:`mypy` 0.720.
+There is no user-visible impact.
+
 .. _v4.32.1:
 
 -------------------
