@@ -44,6 +44,7 @@ from lark.grammar import NonTerminal, Terminal
 
 import hypothesis._strategies as st
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.compat import getfullargspec
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.validation import check_type
 from hypothesis.searchstrategy import SearchStrategy
@@ -78,9 +79,14 @@ class LarkStrategy(SearchStrategy):
         check_type(lark.lark.Lark, grammar, "grammar")
         if start is None:
             start = grammar.options.start
+        if not isinstance(start, list):
+            start = [start]
         self.grammar = grammar
 
-        terminals, rules, ignore_names = grammar.grammar.compile()
+        if "start" in getfullargspec(grammar.grammar.compile).args:
+            terminals, rules, ignore_names = grammar.grammar.compile(start)
+        else:
+            terminals, rules, ignore_names = grammar.grammar.compile()
 
         self.names_to_symbols = {}
 
@@ -91,7 +97,7 @@ class LarkStrategy(SearchStrategy):
         for t in terminals:
             self.names_to_symbols[t.name] = Terminal(t.name)
 
-        self.start = self.names_to_symbols[start]
+        self.start = st.sampled_from([self.names_to_symbols[s] for s in start])
 
         self.ignored_symbols = (
             st.sampled_from([self.names_to_symbols[n] for n in ignore_names])
@@ -120,7 +126,8 @@ class LarkStrategy(SearchStrategy):
 
     def do_draw(self, data):
         state = DrawState()
-        self.draw_symbol(data, self.start, state)
+        start = data.draw(self.start)
+        self.draw_symbol(data, start, state)
         return u"".join(state.result)
 
     def rule_label(self, name):
