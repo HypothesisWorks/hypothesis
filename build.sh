@@ -17,9 +17,14 @@ SCRIPTS="$ROOT/tooling/scripts"
 # shellcheck source=tooling/scripts/common.sh
 source "$SCRIPTS/common.sh"
 
-"$SCRIPTS/ensure-python.sh" 3.6.5
-
-PYTHON=$(pythonloc 3.6.5)/bin/python
+if [ -n "${PIPELINE_WORKSPACE-}" ] ; then
+    # We're on Azure Pipelines and already set up a suitable Python
+    PYTHON=$(command -v python)
+else
+    # Otherwise, we install it from scratch
+    "$SCRIPTS/ensure-python.sh" 3.6.8
+    PYTHON=$(pythonloc 3.6.8)/bin/python
+fi
 
 TOOL_REQUIREMENTS="$ROOT/requirements/tools.txt"
 

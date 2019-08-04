@@ -377,7 +377,7 @@ def run_tox(task, version):
 
 PY27 = "2.7.14"
 PY35 = "3.5.5"
-PY36 = "3.6.5"
+PY36 = "3.6.8"
 PY37 = "3.7.0"
 PYPY2 = "pypy2.7-5.10.0"
 PYPY3 = "pypy3.5-5.10.1"
@@ -477,7 +477,7 @@ def check_examples2():
 
 @examples_task
 def check_examples3():
-    run_tox("examples2", PY36)
+    run_tox("examples3", PY36)
 
 
 @python_tests
