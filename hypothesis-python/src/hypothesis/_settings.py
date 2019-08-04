@@ -95,7 +95,7 @@ class settingsProperty(object):
         return "\n\n".join(
             [
                 description,
-                "default value: %s" % (default,),
+                "default value: ``%s``" % (default,),
                 (deprecation_message or "").strip(),
             ]
         ).strip()
@@ -149,6 +149,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
     _WHITELISTED_REAL_PROPERTIES = ["_construction_complete", "storage"]
     __definitions_are_locked = False
     _profiles = {}  # type: dict
+    __module__ = "hypothesis"
 
     def __getattr__(self, name):
         if name in all_settings:
@@ -196,23 +197,12 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
     def __call__(self, test):
         """Make the settings object (self) an attribute of the test.
 
-        The settings are later discovered by looking them up on the test
-        itself.
-
-        Also, we want to issue a deprecation warning for settings used alone
-        (without @given) so, note the deprecation in the new test, but also
-        attach the version without the warning as an attribute, so that @given
-        can unwrap it (since if @given is used, that means we don't want the
-        deprecation warning).
-
-        When it's time to turn the warning into an error, we'll raise an
-        exception instead of calling note_deprecation (and can delete
-        "test(*args, **kwargs)").
+        The settings are later discovered by looking them up on the test itself.
         """
         if not callable(test):
             raise InvalidArgument(
                 "settings objects can be called as a decorator with @given, "
-                "but test=%r" % (test,)
+                "but decorated test=%r is not callable." % (test,)
             )
         if inspect.isclass(test):
             from hypothesis.stateful import GenericStateMachine
@@ -234,6 +224,8 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
                     "functions, or on subclasses of GenericStateMachine."
                 )
         if hasattr(test, "_hypothesis_internal_settings_applied"):
+            # Can't use _hypothesis_internal_use_settings as an indicator that
+            # @settings was applied, because @given also assigns that attribute.
             raise InvalidArgument(
                 "%s has already been decorated with a settings object."
                 "\n    Previous:  %r\n    This:  %r"
@@ -245,29 +237,26 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
             )
 
         test._hypothesis_internal_use_settings = self
-
-        # For double-@settings check:
         test._hypothesis_internal_settings_applied = True
+        if getattr(test, "is_hypothesis_test", False):
+            return test
 
         @proxies(test)
         def new_test(*args, **kwargs):
+            """@given has not been applied to `test`, so we replace it with this
+            wrapper so that using *only* @settings is an error.
+
+            We then attach the actual test as an attribute of this function, so
+            that we can unwrap it if @given is applied after the settings decorator.
+            """
             raise InvalidArgument(
                 "Using `@settings` on a test without `@given` is completely pointless."
             )
 
-        # @given will get the test from this attribution (rather than use the
-        # version with the deprecation warning)
         new_test._hypothesis_internal_test_function_without_warning = test
-
-        # This means @given has been applied, so we don't need to worry about
-        # warning for @settings alone.
-        has_given_applied = getattr(test, "is_hypothesis_test", False)
-        test_to_use = test if has_given_applied else new_test
-        test_to_use._hypothesis_internal_use_settings = self
-        # Can't use _hypothesis_internal_use_settings as an indicator that
-        # @settings was applied, because @given also assigns that attribute.
-        test._hypothesis_internal_settings_applied = True
-        return test_to_use
+        new_test._hypothesis_internal_use_settings = self
+        new_test._hypothesis_internal_settings_applied = True
+        return new_test
 
     @classmethod
     def _define_setting(
@@ -515,8 +504,8 @@ settings._define_setting(
     show_default=False,
     description="""
 An instance of hypothesis.database.ExampleDatabase that will be
-used to save examples to and load previous examples from. May be None
-in which case no storage will be used, `:memory:` for an in-memory
+used to save examples to and load previous examples from. May be ``None``
+in which case no storage will be used, ``":memory:"`` for an in-memory
 database, or any path for a directory-based example database.
 """,
     validator=_validate_database,
@@ -529,6 +518,9 @@ class Phase(IntEnum):
     reuse = 1
     generate = 2
     shrink = 3
+
+    def __repr__(self):
+        return "Phase.%s" % (self.name,)
 
 
 @unique
@@ -574,14 +566,7 @@ class HealthCheck(Enum):
 
     not_a_test_method = 8
     """Checks if :func:`@given <hypothesis.given>` has been applied to a
-    method of :class:`python:unittest.TestCase`."""
-
-
-@unique
-class Statistics(IntEnum):
-    never = 0
-    interesting = 1
-    always = 2
+    method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
 
 
 @unique
@@ -605,12 +590,13 @@ settings._define_setting(
 
 def _validate_phases(phases):
     if phases is None:
-        return tuple(Phase)
+        phases = tuple(Phase)
+        note_deprecation("Use phases=%r, not None." % (phases,), since="RELEASEDAY")
     phases = tuple(phases)
     for a in phases:
         if not isinstance(a, Phase):
             raise InvalidArgument("%r is not a valid phase" % (a,))
-    return phases
+    return tuple(p for p in list(Phase) if p in phases)
 
 
 settings._define_setting(
@@ -618,7 +604,7 @@ settings._define_setting(
     default=tuple(Phase),
     description=(
         "Control which phases should be run. "
-        + "See :ref:`the full documentation for more details <phases>`"
+        "See :ref:`the full documentation for more details <phases>`"
     ),
     validator=_validate_phases,
 )
@@ -626,7 +612,7 @@ settings._define_setting(
 settings._define_setting(
     name="stateful_step_count",
     default=50,
-    validator=lambda x: _ensure_positive_int(x, "stateful_step_count", "RELEASEDAY"),
+    validator=lambda x: _ensure_positive_int(x, "stateful_step_count", "2019-03-06"),
     description="""
 Number of steps to run a stateful program for before giving up on it breaking.
 """,
@@ -665,7 +651,7 @@ def validate_health_check_suppressions(suppressions):
 settings._define_setting(
     "suppress_health_check",
     default=(),
-    description="""A list of health checks to disable.""",
+    description="""A list of :class:`~hypothesis.HealthCheck` items to disable.""",
     validator=validate_health_check_suppressions,
 )
 
@@ -674,7 +660,8 @@ class duration(datetime.timedelta):
     """A timedelta specifically measured in milliseconds."""
 
     def __repr__(self):
-        return "timedelta(milliseconds=%r)" % (self.total_seconds() * 1000,)
+        ms = self.total_seconds() * 1000
+        return "timedelta(milliseconds=%r)" % (int(ms) if ms == int(ms) else ms,)
 
 
 def _validate_deadline(x):
