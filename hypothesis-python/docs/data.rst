@@ -13,12 +13,23 @@ and how to build them. Strategies have a variety of other important internal
 features, such as how they simplify, but the data they can generate is the only
 public part of their API.
 
+~~~~~~~~~~~~~~~
+Core Strategies
+~~~~~~~~~~~~~~~
+
 Functions for building strategies are all available in the hypothesis.strategies
 module. The salient functions from it are as follows:
 
 .. automodule:: hypothesis.strategies
   :members:
   :exclude-members: SearchStrategy
+
+~~~~~~~~~~~~~~~~~~~~~~
+Provisional Strategies
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: hypothesis.provisional
+  :members:
 
 .. _shrinking:
 
@@ -171,9 +182,9 @@ The problem is that you cannot call a strategy recursively and expect it to not 
 blow up and eat all your memory.  The other problem here is that not all unicode strings
 display consistently on different machines, so we'll restrict them in our doctest.
 
-The way Hypothesis handles this is with the :py:func:`recursive` function
-which you pass in a base case and a function that, given a strategy for your data type,
-returns a new strategy for it. So for example:
+The way Hypothesis handles this is with the :func:`~hypothesis.strategies.recursive`
+strategy which you pass in a base case and a function that, given a strategy
+for your data type, returns a new strategy for it. So for example:
 
 .. code-block:: pycon
 

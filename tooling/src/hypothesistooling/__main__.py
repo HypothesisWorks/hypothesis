@@ -329,16 +329,14 @@ def push_pyup_requirements_commit():
 
 @task()
 def check_requirements():
-    if is_pyup_branch():
+    if is_pyup_branch() and tools.last_committer() != tools.TOOLING_COMMITER_NAME:
         # Recompile to fix broken formatting etc., but ensure there can't be a loop.
-        should_recompile = tools.last_committer() != tools.TOOLING_COMMITER_NAME
-        compile_requirements(upgrade=should_recompile)
+        compile_requirements(upgrade=True)
+        if tools.has_uncommitted_changes("requirements"):
+            push_pyup_requirements_commit()
+            raise RuntimeError("Pushed new requirements; check next build.")
     else:
         compile_requirements(upgrade=False)
-
-    if tools.has_uncommitted_changes("requirements"):
-        push_pyup_requirements_commit()
-        raise RuntimeError("Pushed new requirements; check next build.")
 
 
 @task(if_changed=hp.HYPOTHESIS_PYTHON)

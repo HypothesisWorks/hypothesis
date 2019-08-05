@@ -171,7 +171,7 @@ class TestGetsBasicModels(TestCase):
         assert isinstance(x.uuid, UUID)
         assert isinstance(x.slug, text_type)
         assert u" " not in x.slug
-        assert isinstance(x.ipv4, str)
+        assert isinstance(x.ipv4, text_type)
         assert len(x.ipv4.split(".")) == 4
         assert all(int(i) in range(256) for i in x.ipv4.split("."))
         assert isinstance(x.ipv6, text_type)
