@@ -33,6 +33,8 @@ pip uninstall -y dpcontracts
 
 pip install ".[lark]"
 $PYTEST tests/lark/
+pip install lark-parser==0.7.1
+$PYTEST tests/lark/
 pip uninstall -y lark-parser
 
 if [ "$(python -c 'import sys; print(sys.version_info[:2] in ((2, 7), (3, 6)))')" = "False" ] ; then
