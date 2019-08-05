@@ -85,7 +85,8 @@ class LarkStrategy(SearchStrategy):
 
         if "start" in getfullargspec(grammar.grammar.compile).args:
             terminals, rules, ignore_names = grammar.grammar.compile(start)
-        else:
+        else:  # pragma: no cover
+            # This branch is to support lark <= 0.7.1, without the start argument.
             terminals, rules, ignore_names = grammar.grammar.compile()
 
         self.names_to_symbols = {}
