@@ -329,6 +329,7 @@ def query(
     max_codepoint=None,
     include_characters="",
     exclude_characters="",
+    encoding=None,
 ):
     """Return a tuple of intervals covering the codepoints for all characters
     that meet the critera (min_codepoint <= codepoint(c) <= max_codepoint and
@@ -369,6 +370,21 @@ def query(
         if v >= min_codepoint and u <= max_codepoint:
             result.append((max(u, min_codepoint), min(v, max_codepoint)))
     result = tuple(result)
+    if encoding is not None:
+        try:
+            encoding_module = __import__(
+                "encodings" + encoding, fromlist=["decoding_table"]
+            )
+            decoding_table = encoding_module.decoding_table
+            valid_characters = "".join(raw_char for raw_char in decoding_table)
+            valid_char_intervals = _intervals(valid_characters)
+            invalid_char_intervals = _subtract_intervals(result, valid_char_intervals)
+            exclude_intervals = _union_intervals(
+                exclude_intervals, invalid_char_intervals
+            )
+        except ImportError:
+            # TODO: Use the right error.
+            pass
     result = _union_intervals(result, character_intervals)
     result = _subtract_intervals(result, exclude_intervals)
     limited_category_index_cache[qkey] = result

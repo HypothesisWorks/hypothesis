@@ -17,6 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
 from hypothesis.internal.compat import binary_type, hunichr
@@ -36,6 +37,7 @@ class OneCharStringStrategy(SearchStrategy):
         min_codepoint=None,
         max_codepoint=None,
         whitelist_characters=None,
+        encoding=None,
     ):
         assert set(whitelist_categories or ()).issubset(charmap.categories())
         assert set(blacklist_categories or ()).issubset(charmap.categories())
@@ -46,6 +48,7 @@ class OneCharStringStrategy(SearchStrategy):
             max_codepoint=max_codepoint,
             include_characters=whitelist_characters,
             exclude_characters=blacklist_characters,
+            encoding=encoding,
         )
         if not intervals:
             arguments = [
