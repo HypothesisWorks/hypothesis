@@ -44,7 +44,7 @@ from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 if False:
-    from typing import Any, Dict, List  # noqa
+    from typing import Any, ContextManager, Dict, List  # noqa
 
 __all__ = ["settings"]
 
@@ -521,6 +521,14 @@ class Phase(IntEnum):
 
     def __repr__(self):
         return "Phase.%s" % (self.name,)
+
+
+@contextlib.contextmanager
+def current_phase(phase):
+    thread_local_data = threading.local()
+    thread_local_data.current_phase = phase
+    yield
+    delattr(thread_local_data, "current_phase")
 
 
 @unique

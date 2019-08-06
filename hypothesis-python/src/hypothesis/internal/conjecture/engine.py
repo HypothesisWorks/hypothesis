@@ -24,7 +24,7 @@ from weakref import WeakKeyDictionary
 import attr
 
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
-from hypothesis._settings import local_settings
+from hypothesis._settings import current_phase, local_settings
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import (
     Counter,
@@ -94,6 +94,7 @@ class ConjectureRunner(object):
 
         self.all_drawtimes = []
         self.all_runtimes = []
+        self.timing = {_k: [] for _k in Phase}
 
         self.events_to_strings = WeakKeyDictionary()
 
@@ -762,9 +763,12 @@ class ConjectureRunner(object):
             mutations += 1
 
     def _run(self):
-        self.reuse_existing_examples()
-        self.generate_new_examples()
-        self.shrink_interesting_examples()
+        with current_phase(Phase.reuse):
+            self.reuse_existing_examples()
+        with current_phase(Phase.generate):
+            self.generate_new_examples()
+        with current_phase(Phase.shrink):
+            self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 
     def new_conjecture_data(self, draw_bytes):

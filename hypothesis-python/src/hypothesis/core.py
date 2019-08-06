@@ -40,6 +40,7 @@ from hypothesis._settings import (
     HealthCheck,
     Phase,
     Verbosity,
+    current_phase,
     local_settings,
     note_deprecation,
     settings as Settings,
@@ -951,9 +952,10 @@ def given(
                         "generated?"
                     )
 
-            execute_explicit_examples(
-                test_runner, test, wrapped_test, settings, arguments, kwargs
-            )
+            with current_phase(Phase.explicit):
+                execute_explicit_examples(
+                    test_runner, test, wrapped_test, settings, arguments, kwargs
+                )
 
             if settings.max_examples <= 0:
                 return
