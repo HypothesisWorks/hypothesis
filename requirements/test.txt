@@ -10,10 +10,10 @@ attrs==19.1.0
 execnet==1.6.1            # via pytest-xdist
 importlib-metadata==0.19  # via pluggy, pytest
 more-itertools==7.2.0     # via pytest
-packaging==19.0           # via pytest
+packaging==19.1           # via pytest
 pluggy==0.12.0            # via pytest
 py==1.8.0                 # via pytest
-pyparsing==2.4.1.1          # via packaging
+pyparsing==2.4.2          # via packaging
 pytest-forked==1.0.2      # via pytest-xdist
 pytest-xdist==1.29.0
 pytest==5.0.1
