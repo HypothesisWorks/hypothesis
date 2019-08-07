@@ -117,7 +117,7 @@ jobs:
         architecture: '$(python.architecture)'
     - script: |
         pip install --upgrade setuptools pip wheel
-        pip install setuptools -r requirements/test2.txt
+        pip install setuptools -r requirements/py2.txt
         pip install hypothesis-python/[all]
       displayName: Install dependencies
     - script: |
