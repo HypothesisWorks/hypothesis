@@ -26,7 +26,7 @@ from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.lark import from_lark
 from hypothesis.internal.compat import integer_types, text_type
-from hypothesis.strategies import data
+from hypothesis.strategies import data, just
 from tests.common.debug import find_any
 
 # Adapted from the official Lark tutorial, with modifications to ensure
@@ -49,6 +49,11 @@ EBNF_GRAMMAR = r"""
 
     WS : /[ \t\r\n]+/
     %ignore WS
+"""
+
+LIST_GRAMMAR = r"""
+list : "[" [NUMBER ("," NUMBER)*] "]"
+NUMBER: /[0-9]+/
 """
 
 
@@ -90,16 +95,7 @@ def test_can_generate_ignored_tokens():
 
 
 def test_generation_without_whitespace():
-    list_grammar = r"""
-    list : "[" [NUMBER ("," NUMBER)*] "]"
-    NUMBER: /[0-9]+/
-    """
-
-    @given(from_lark(Lark(list_grammar, start="list")))
-    def test(g):
-        assert " " not in g
-
-    test()
+    find_any(from_lark(Lark(LIST_GRAMMAR, start="list")), lambda g: " " not in g)
 
 
 def test_cannot_convert_EBNF_to_strategy_directly():
@@ -109,13 +105,38 @@ def test_cannot_convert_EBNF_to_strategy_directly():
     with pytest.raises(TypeError):
         # Not even the right number of arguments
         from_lark(EBNF_GRAMMAR, start="value").example()
+    with pytest.raises(InvalidArgument):
+        # Wrong type for explicit_strategies
+        from_lark(Lark(LIST_GRAMMAR, start="list"), explicit=[]).example()
 
 
-def test_can_not_use_undefined_terminals_yet():
-    grammar = r"""
-    list : "[" ELEMENT ("," ELEMENT)* "]"
+def test_undefined_terminals_require_explicit_strategies():
+    elem_grammar = r"""
+    list : "[" [ELEMENT ("," ELEMENT)*] "]"
     %declare ELEMENT
     """
-
     with pytest.raises(InvalidArgument):
-        from_lark(Lark(grammar, start="list")).example()
+        from_lark(Lark(elem_grammar, start="list")).example()
+    strategy = {"ELEMENT": just("200")}
+    from_lark(Lark(elem_grammar, start="list"), explicit=strategy).example()
+
+
+def test_cannot_use_explicit_strategies_for_unknown_terminals():
+    with pytest.raises(InvalidArgument):
+        from_lark(
+            Lark(LIST_GRAMMAR, start="list"), explicit={"unused_name": just("")}
+        ).example()
+
+
+def test_non_string_explicit_strategies_are_invalid():
+    with pytest.raises(InvalidArgument):
+        from_lark(
+            Lark(LIST_GRAMMAR, start="list"), explicit={"NUMBER": just(0)}
+        ).example()
+
+
+@given(
+    string=from_lark(Lark(LIST_GRAMMAR, start="list"), explicit={"NUMBER": just("0")})
+)
+def test_can_override_defined_terminal(string):
+    assert sum(json.loads(string)) == 0

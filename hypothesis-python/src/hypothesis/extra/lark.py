@@ -44,13 +44,13 @@ from lark.grammar import NonTerminal, Terminal
 
 import hypothesis._strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import getfullargspec
+from hypothesis.internal.compat import getfullargspec, string_types
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.validation import check_type
 from hypothesis.searchstrategy import SearchStrategy
 
 if False:
-    from typing import Text  # noqa
+    from typing import Dict, Text  # noqa
 
 __all__ = ["from_lark"]
 
@@ -69,14 +69,28 @@ class DrawState(object):
     result = attr.ib(default=attr.Factory(list))
 
 
+def get_terminal_names(terminals, rules, ignore_names):
+    """Get names of all terminals in the grammar.
+
+    The arguments are the results of calling ``Lark.grammar.compile()``,
+    so you would think that the ``terminals`` and ``ignore_names`` would
+    have it all... but they omit terminals created with ``@declare``,
+    which appear only in the expansion(s) of nonterminals.
+    """
+    names = {t.name for t in terminals} | set(ignore_names)
+    for rule in rules:
+        names |= {t.name for t in rule.expansion if isinstance(t, Terminal)}
+    return names
+
+
 class LarkStrategy(SearchStrategy):
     """Low-level strategy implementation wrapping a Lark grammar.
 
     See ``from_lark`` for details.
     """
 
-    def __init__(self, grammar, start=None):
-        check_type(lark.lark.Lark, grammar, "grammar")
+    def __init__(self, grammar, start, explicit):
+        assert isinstance(grammar, lark.lark.Lark)
         if start is None:
             start = grammar.options.start
         if not isinstance(start, list):
@@ -110,6 +124,16 @@ class LarkStrategy(SearchStrategy):
             t.name: st.from_regex(t.pattern.to_regexp(), fullmatch=True)
             for t in terminals
         }
+        unknown_explicit = set(explicit) - get_terminal_names(
+            terminals, rules, ignore_names
+        )
+        if unknown_explicit:
+            raise InvalidArgument(
+                "The following arguments were passed as explicit_strategies, "
+                "but there is no such terminal production in this grammar: %r"
+                % (sorted(unknown_explicit),)
+            )
+        self.terminal_strategies.update(explicit)
 
         nonterminals = {}
 
@@ -145,8 +169,10 @@ class LarkStrategy(SearchStrategy):
                 strategy = self.terminal_strategies[symbol.name]
             except KeyError:
                 raise InvalidArgument(
-                    "Undefined terminal %r. Generation does not currently support use of %%declare."
-                    % (symbol.name,)
+                    "Undefined terminal %r. Generation does not currently support "
+                    "use of %%declare unless you pass `explicit`, a dict of "
+                    'names-to-strategies, such as `{%r: st.just("")}`'
+                    % (symbol.name, symbol.name)
                 )
             draw_state.result.append(data.draw(strategy))
         else:
@@ -169,10 +195,22 @@ class LarkStrategy(SearchStrategy):
         return True
 
 
+def check_explicit(name):
+    def inner(value):
+        check_type(string_types, value, "value drawn from " + name)
+        return value
+
+    return inner
+
+
 @st.cacheable
 @st.defines_strategy_with_reusable_values
-def from_lark(grammar, start=None):
-    # type: (lark.lark.Lark, Text) -> st.SearchStrategy[Text]
+def from_lark(
+    grammar,  # type: lark.lark.Lark
+    start=None,  # type: Text
+    explicit=None,  # type: Dict[Text, st.SearchStrategy[Text]]
+):
+    # type: (...) -> st.SearchStrategy[Text]
     """A strategy for strings accepted by the given context-free grammar.
 
     ``grammar`` must be a ``Lark`` object, which wraps an EBNF specification.
@@ -183,12 +221,26 @@ def from_lark(grammar, start=None):
     nonterminal ``start`` symbol in the grammar, which was supplied as an
     argument to the Lark class.  To generate strings matching a different
     symbol, including terminals, you can override this by passing the
-    ``start`` argument to ``from_lark``.
+    ``start`` argument to ``from_lark``.  Note that Lark may remove unreachable
+    productions when the grammar is compiled, so you should probably pass the
+    same value for ``start`` to both.
 
     Currently ``from_lark`` does not support grammars that need custom lexing.
     Any lexers will be ignored, and any undefined terminals from the use of
-    ``%declare`` will result in generation errors. We hope to support more of
-    these features in future.
-    """
+    ``%declare`` will result in generation errors.  To define strategies for
+    such terminals, pass a dictionary mapping their name to a corresponding
+    strategy as the ``explicit`` argument.
 
-    return LarkStrategy(grammar, start)
+    The :pypi:`hypothesmith` project includes a strategy for Python source,
+    based on a grammar and careful post-processing.
+    """
+    check_type(lark.lark.Lark, grammar, "grammar")
+    if explicit is None:
+        explicit = {}
+    else:
+        check_type(dict, explicit, "explicit")
+        explicit = {
+            k: v.map(check_explicit("explicit[%r]=%r" % (k, v)))
+            for k, v in explicit.items()
+        }
+    return LarkStrategy(grammar, start, explicit)
