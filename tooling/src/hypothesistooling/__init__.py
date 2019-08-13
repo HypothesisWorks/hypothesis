@@ -71,21 +71,17 @@ def point_of_divergence():
 
 
 def has_changes(files):
-    return (
-        subprocess.call(
-            [
-                "git",
-                "diff",
-                "--no-patch",
-                "--exit-code",
-                point_of_divergence(),
-                "HEAD",
-                "--",
-                *files,
-            ]
-        )
-        != 0
-    )
+    command = [
+        "git",
+        "diff",
+        "--no-patch",
+        "--exit-code",
+        point_of_divergence(),
+        "HEAD",
+        "--",
+        *files,
+    ]
+    return subprocess.call(command) != 0
 
 
 def has_uncommitted_changes(filename):
@@ -105,8 +101,11 @@ def git(*args):
     subprocess.check_call(("git",) + args)
 
 
+TOOLING_COMMITER_NAME = "Travis CI on behalf of David R. MacIver"
+
+
 def configure_git():
-    git("config", "user.name", "Travis CI on behalf of David R. MacIver")
+    git("config", "user.name", TOOLING_COMMITER_NAME)
     git("config", "user.email", "david@drmaciver.com")
     git("config", "core.sshCommand", "ssh -i deploy_key")
     git("remote", "add", "ssh-origin", "git@github.com:HypothesisWorks/hypothesis.git")
@@ -138,34 +137,6 @@ def assert_can_release():
 
 def has_travis_secrets():
     return os.environ.get("TRAVIS_SECURE_ENV_VARS", None) == "true"
-
-
-def build_jobs():
-    """Query the Travis API to find out what the state of the other build jobs
-    is.
-
-    Note: This usage of Travis has been somewhat reverse engineered due
-    to a certain dearth of documentation as to what values what takes
-    when.
-    """
-    import requests
-
-    build_id = os.environ["TRAVIS_BUILD_ID"]
-
-    url = "https://api.travis-ci.org/builds/%s" % (build_id,)
-    data = requests.get(
-        url, headers={"Accept": "application/vnd.travis-ci.2+json"}
-    ).json()
-
-    matrix = data["jobs"]
-
-    jobs = {}
-
-    for m in matrix:
-        name = m["config"]["env"].replace("TASK=", "")
-        status = m["state"]
-        jobs.setdefault(status, []).append(name)
-    return jobs
 
 
 def modified_files():

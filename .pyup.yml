@@ -10,3 +10,4 @@ requirements:
       pin: True
 
 schedule: "every week on monday"
+search: False
