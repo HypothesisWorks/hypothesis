@@ -26,7 +26,7 @@ import sys
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import reduce
-from inspect import isclass
+from inspect import isabstract, isclass
 from uuid import UUID
 
 import attr
@@ -1308,7 +1308,7 @@ def from_type(thing):
     naive time and datetime strategies.
 
     The resolution logic may be changed in a future version, but currently
-    tries these four options:
+    tries these five options:
 
     1. If ``thing`` is in the default lookup mapping or user-registered lookup,
        return the corresponding strategy.  The default lookup covers all types
@@ -1319,7 +1319,13 @@ def from_type(thing):
        the union of the strategies for those types that are not subtypes of
        other elements in the lookup.
     4. Finally, if ``thing`` has type annotations for all required arguments,
-       it is resolved via :func:`~hypothesis.strategies.builds`.
+       and is not an abstract class, it is resolved via
+       :func:`~hypothesis.strategies.builds`.
+    5. Because :mod:`abstract types <python:abc>` cannot be instantiated,
+       we treat abstract types as the union of their concrete subclasses.
+       Note that this lookup works via inheritance but not via
+       :obj:`~python:abc.ABCMeta.register`, so you may still need to use
+       :func:`~hypothesis.strategies.register_type_strategy`.
 
     There is a valuable recipe for leveraging ``from_type()`` to generate
     "everything except" values from a specified type. I.e.
@@ -1430,7 +1436,15 @@ def from_type(thing):
             "using register_type_strategy" % (thing,)
         )
     # Finally, try to build an instance by calling the type object
-    return builds(thing)
+    if not isabstract(thing):
+        return builds(thing)
+    subclasses = thing.__subclasses__()
+    if not subclasses:
+        raise ResolutionFailed(
+            "Could not resolve %r to a strategy, because it is an abstract type "
+            "without any subclasses. Consider using register_type_strategy" % (thing,)
+        )
+    return sampled_from(subclasses).flatmap(from_type)
 
 
 @cacheable

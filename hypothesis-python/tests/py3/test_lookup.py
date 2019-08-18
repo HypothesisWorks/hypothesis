@@ -17,6 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+import abc
 import collections
 import enum
 import io
@@ -37,6 +38,7 @@ from hypothesis.internal.compat import (
 from hypothesis.searchstrategy import types
 from hypothesis.strategies import from_type
 from tests.common.debug import minimal
+from tests.common.utils import fails_with
 
 typing = pytest.importorskip("typing")
 sentinel = object()
@@ -496,3 +498,32 @@ def test_resolves_ellipses_callable_to_function(f):
     f(1)
     f(1, 2, 3)
     f(accepts_kwargs_too=1)
+
+
+class AbstractFoo(abc.ABC):
+    @abc.abstractmethod
+    def foo(self):
+        pass
+
+
+class ConcreteFoo(AbstractFoo):
+    def foo(self):
+        pass
+
+
+@given(st.from_type(AbstractFoo))
+def test_can_resolve_abstract_class(instance):
+    assert isinstance(instance, ConcreteFoo)
+    instance.foo()
+
+
+class AbstractBar(abc.ABC):
+    @abc.abstractmethod
+    def bar(self):
+        pass
+
+
+@fails_with(ResolutionFailed)
+@given(st.from_type(AbstractBar))
+def test_cannot_resolve_abstract_class_with_no_concrete_subclass(instance):
+    assert False, "test body unreachable as strategy cannot resolve"
