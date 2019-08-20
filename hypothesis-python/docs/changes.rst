@@ -21,6 +21,22 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.33.0:
+
+-------------------
+4.33.0 - 2019-08-20
+-------------------
+
+This release improves the :func:`~hypothesis.provisional.domains`
+strategy, as well as the :func:`~hypothesis.provisional.urls` and
+the :func:`~hypothesis.strategies.emails` strategies which use it.
+These strategies now use the full IANA list of Top Level Domains
+and are correct as per :rfc:`1035`.
+
+Passing tests using these strategies may now fail.
+
+Thanks to `TechDragon <https://github.com/techdragon>`__ for this improvement.
+
 .. _v4.32.3:
 
 -------------------
