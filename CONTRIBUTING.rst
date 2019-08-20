@@ -260,6 +260,7 @@ their individual contributions.
 * `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
 * `Ryan Soklaski <https://www.github.com/rsokl>`_ (rsoklaski@gmail.com)
 * `Ryan Turner <https://github.com/rdturnermtl>`_ (ryan.turner@uber.com)
+* `Sam Bishop (TechDragon) <https://github.com/techdragon>`_ (sam@techdragon.io)
 * `Sam Hames <https://www.github.com/SamHames>`_
 * `Sanyam Khurana <https://github.com/CuriousLearner>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)

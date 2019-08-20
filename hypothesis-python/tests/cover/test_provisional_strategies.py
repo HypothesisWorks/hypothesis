@@ -21,8 +21,11 @@ import re
 import string
 from binascii import unhexlify
 
+import pytest
+
 from hypothesis import given
-from hypothesis.provisional import ip4_addr_strings, ip6_addr_strings, urls
+from hypothesis.errors import InvalidArgument
+from hypothesis.provisional import domains, ip4_addr_strings, ip6_addr_strings, urls
 
 
 @given(urls())
@@ -53,3 +56,16 @@ def test_is_IP6_addr(address):
     assert all(len(part) == 4 for part in as_hex)
     raw = unhexlify(address.replace(u":", u"").encode("ascii"))
     assert len(raw) == 16
+
+
+@pytest.mark.parametrize("max_length", [-1, 0, 3, 4.0, 256])
+@pytest.mark.parametrize("max_element_length", [-1, 0, 4.0, 64, 128])
+def test_invalid_domain_arguments(max_length, max_element_length):
+    with pytest.raises(InvalidArgument):
+        domains(max_length=max_length, max_element_length=max_element_length).example()
+
+
+@pytest.mark.parametrize("max_length", [None, 4, 8, 255])
+@pytest.mark.parametrize("max_element_length", [None, 1, 2, 4, 8, 63])
+def test_valid_domains_arguments(max_length, max_element_length):
+    domains(max_length=max_length, max_element_length=max_element_length).example()
