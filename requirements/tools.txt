@@ -33,8 +33,7 @@ flake8-docstrings==1.3.1
 flake8-polyfill==1.0.2    # via flake8-docstrings
 flake8==3.7.8
 gitdb2==2.0.5             # via gitpython
-gitdb==0.6.4              # via gitpython
-gitpython==3.0.0          # via bandit
+gitpython==3.0.1          # via bandit
 idna==2.8                 # via requests
 imagesize==1.1.0          # via sphinx
 importlib-metadata==0.19  # via pluggy, pytest, tox
@@ -43,7 +42,7 @@ ipython==7.7.0
 isort==4.3.21
 jedi==0.15.1              # via ipython
 jinja2==2.10.1            # via pyupio, sphinx
-lark-parser==0.7.2
+lark-parser==0.7.3
 lazy-object-proxy==1.4.1  # via astroid
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8, pylint
@@ -63,14 +62,14 @@ prompt-toolkit==2.0.9     # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.8.0                 # via pytest, tox
 pycodestyle==2.5.0        # via flake8
-pydocstyle==4.0.0         # via flake8-docstrings
+pydocstyle==4.0.1         # via flake8-docstrings
 pyflakes==2.1.1           # via autoflake, flake8
 pygithub==1.43.8          # via pyupio
 pygments==2.4.2           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pylint==2.3.1
 pyparsing==2.4.2          # via packaging
-pytest==5.0.1
+pytest==5.1.1
 python-dateutil==2.8.0
 python-gitlab==1.10.0     # via pyupio
 pytz==2019.2              # via babel, django
@@ -84,10 +83,9 @@ restructuredtext-lint==1.3.0
 safety==1.8.5             # via pyupio
 six==1.12.0               # via astroid, bandit, bleach, dparse, packaging, pip-tools, prompt-toolkit, python-dateutil, python-gitlab, pyupio, readme-renderer, stevedore, tox, traitlets
 smmap2==2.0.5             # via gitdb2
-smmap==0.9.0              # via gitdb
 snowballstemmer==1.9.0    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.3
-sphinx==2.1.2
+sphinx==2.2.0
 sphinxcontrib-applehelp==1.0.1  # via sphinx
 sphinxcontrib-devhelp==1.0.1  # via sphinx
 sphinxcontrib-htmlhelp==1.0.2  # via sphinx
@@ -99,13 +97,13 @@ stevedore==1.30.1         # via bandit
 tokenize-rt==3.2.0        # via pyupgrade
 toml==0.10.0
 tox==3.13.2
-tqdm==4.33.0              # via pyupio, twine
+tqdm==4.34.0              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.13.0
 typed-ast==1.4.0          # via astroid, mypy
 typing-extensions==3.7.4  # via mypy
 urllib3==1.25.3           # via requests
-virtualenv==16.7.2        # via tox
+virtualenv==16.7.3        # via tox
 wcwidth==0.1.7            # via prompt-toolkit, pytest
 webencodings==0.5.1       # via bleach
 wrapt==1.11.2             # via astroid, deprecated
