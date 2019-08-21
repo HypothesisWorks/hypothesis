@@ -28,7 +28,9 @@ from hypothesis.internal.compat import (
 
 try:
     import numpy
-except ImportError:
+except (ImportError, TypeError):  # pragma: no cover
+    # We catch TypeError because that can be raised if Numpy is installed on
+    # PyPy for Python 2.7; and we only need a workaround until 2020-01-01.
     numpy = None
 
 

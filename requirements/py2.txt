@@ -10,6 +10,7 @@ execnet==1.6.0            # via pytest-xdist
 importlib-metadata==0.18  # via pluggy, pytest
 mock==3.0.5
 more-itertools==5.0.0
+numpy==1.16.4             # last compatible with Python 2
 packaging==19.0           # via pytest
 pluggy==0.12.0            # via pytest
 py==1.8.0                 # via pytest
