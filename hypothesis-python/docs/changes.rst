@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.33.1:
+
+-------------------
+4.33.1 - 2019-08-21
+-------------------
+
+This patch works around a crash when an incompatible version of Numpy
+is installed under PyPy 5.10 (Python 2.7).
+
+If you are still using Python 2, please upgrade to Python 3 as soon
+as possible - it will be unsupported at the end of this year.
+
 .. _v4.33.0:
 
 -------------------
