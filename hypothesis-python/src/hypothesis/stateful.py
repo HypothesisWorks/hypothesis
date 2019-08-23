@@ -309,6 +309,12 @@ class Bundle(SearchStrategy):
         reference = data.draw(self.__reference_strategy)
         return machine.names_to_values[reference.name]
 
+    def available(self, data):
+        # ``self_strategy`` is a constant, so drawing from it doesn't count
+        # as a real value draw.
+        machine = data.draw(self_strategy)
+        return bool(machine.bundle(self.name))
+
 
 class BundleConsumer(Bundle):
     def __init__(self, bundle):

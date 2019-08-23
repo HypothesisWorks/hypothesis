@@ -225,6 +225,18 @@ class SearchStrategy(Generic[Ex]):
         accept.__name__ = name
         return property(accept)
 
+    def available(self, data):
+        """Returns whether this strategy can *currently* draw any
+        values. This typically useful for stateful testing where ``Bundle``
+        grows over time a list of value to choose from.
+
+        Unlike ``empty`` property, this method's return value may change
+        over time.
+        Note: ``data`` parameter will only be used for introspection and no
+        value drawn from it.
+        """
+        return not self.is_empty
+
     # Returns True if this strategy can never draw a value and will always
     # result in the data being marked invalid.
     # The fact that this returns False does not guarantee that a valid value
@@ -480,14 +492,17 @@ class OneOfStrategy(SearchStrategy):
 
     def do_draw(self, data):
         # type: (ConjectureData) -> Ex
-        n = len(self.element_strategies)
-        assert n > 0
-        if n == 1:
-            return data.draw(self.element_strategies[0])
+        assert len(self.element_strategies) > 0
 
-        i = cu.integer_range(data, 0, n - 1)
-
-        return data.draw(self.element_strategies[i], label=self.branch_labels[i])
+        available_strategies = [x for x in self.element_strategies if x.available(data)]
+        n = len(available_strategies)
+        if n == 0:
+            data.mark_invalid()
+        elif n == 1:
+            return data.draw(available_strategies[0])
+        else:
+            i = cu.integer_range(data, 0, n - 1)
+            return data.draw(available_strategies[i], label=self.branch_labels[i])
 
     def __repr__(self):
         return "one_of(%s)" % ", ".join(map(repr, self.original_strategies))
