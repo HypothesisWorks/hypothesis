@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.34.0:
+
+-------------------
+4.34.0 - 2019-08-23
+-------------------
+
+The :func:`~hypothesis.strategies.from_type` strategy now knows to look up
+the subclasses of abstract types, which cannot be instantiated directly.
+
+This is very useful for :pypi:`hypothesmith` to support :pypi:`libCST`.
+
 .. _v4.33.1:
 
 -------------------
