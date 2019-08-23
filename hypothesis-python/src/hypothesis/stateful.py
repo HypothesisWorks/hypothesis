@@ -327,6 +327,17 @@ class Bundle(SearchStrategy):
             return "Bundle(name=%r)" % (self.name,)
         return "Bundle(name=%r, consume=%r)" % (self.name, consume)
 
+    def calc_is_empty(self, recur):
+        # We assume that a bundle will grow over time
+        return False
+
+    def available(self, data):
+        # ``self_strategy`` is an instance of the ``st.runner()`` strategy.
+        # Hence drawing from it only returns the current state machine without
+        # modifying the underlying buffer.
+        machine = data.draw(self_strategy)
+        return bool(machine.bundle(self.name))
+
 
 class BundleConsumer(Bundle):
     def __init__(self, bundle):
