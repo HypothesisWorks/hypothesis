@@ -33,7 +33,7 @@ flake8-docstrings==1.3.1
 flake8-polyfill==1.0.2    # via flake8-docstrings
 flake8==3.7.8
 gitdb2==2.0.5             # via gitpython
-gitpython==3.0.1          # via bandit
+gitpython==3.0.2          # via bandit
 idna==2.8                 # via requests
 imagesize==1.1.0          # via sphinx
 importlib-metadata==0.19  # via pluggy, pytest, tox
@@ -43,7 +43,7 @@ isort==4.3.21
 jedi==0.15.1              # via ipython
 jinja2==2.10.1            # via pyupio, sphinx
 lark-parser==0.7.3
-lazy-object-proxy==1.4.1  # via astroid
+lazy-object-proxy==1.4.2  # via astroid
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8, pylint
 more-itertools==7.2.0     # via pytest
@@ -55,7 +55,7 @@ parso==0.5.1              # via jedi
 pbr==5.4.2                # via stevedore
 pexpect==4.7.0            # via ipython
 pickleshare==0.7.5        # via ipython
-pip-tools==4.0.0
+pip-tools==4.1.0
 pkginfo==1.5.0.1          # via twine
 pluggy==0.12.0            # via pytest, tox
 prompt-toolkit==2.0.9     # via ipython
@@ -97,17 +97,17 @@ stevedore==1.30.1         # via bandit
 tokenize-rt==3.2.0        # via pyupgrade
 toml==0.10.0
 tox==3.13.2
-tqdm==4.34.0              # via pyupio, twine
+tqdm==4.35.0              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.13.0
 typed-ast==1.4.0          # via astroid, mypy
 typing-extensions==3.7.4  # via mypy
 urllib3==1.25.3           # via requests
-virtualenv==16.7.3        # via tox
+virtualenv==16.7.4        # via tox
 wcwidth==0.1.7            # via prompt-toolkit, pytest
 webencodings==0.5.1       # via bleach
 wrapt==1.11.2             # via astroid, deprecated
-zipp==0.5.2               # via importlib-metadata
+zipp==0.6.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools==41.1.0        # via ipython, safety, sphinx, twine
