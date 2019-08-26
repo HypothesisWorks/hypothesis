@@ -33,7 +33,7 @@ flake8-docstrings==1.3.1
 flake8-polyfill==1.0.2    # via flake8-docstrings
 flake8==3.7.8
 gitdb2==2.0.5             # via gitpython
-gitpython==3.0.1          # via bandit
+gitpython==3.0.2          # via bandit
 idna==2.8                 # via requests
 imagesize==1.1.0          # via sphinx
 importlib-metadata==0.19  # via pluggy, pytest, tox
