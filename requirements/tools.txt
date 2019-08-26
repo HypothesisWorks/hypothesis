@@ -19,7 +19,6 @@ certifi==2019.6.16        # via requests
 chardet==3.0.4            # via requests
 click==7.0                # via black, pip-tools, pyupio, safety
 coverage==4.5.4
-ddt==1.2.1                # via gitpython
 decorator==4.4.0          # via ipython, traitlets
 deprecated==1.2.6         # via pygithub
 django==2.2.4
@@ -46,7 +45,7 @@ lark-parser==0.7.3
 lazy-object-proxy==1.4.2  # via astroid
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8, pylint
-more-itertools==7.2.0     # via pytest
+more-itertools==7.2.0     # via pytest, zipp
 mypy-extensions==0.4.1    # via mypy
 mypy==0.720
 numpy==1.17.0
@@ -110,4 +109,4 @@ wrapt==1.11.2             # via astroid, deprecated
 zipp==0.6.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==41.1.0        # via ipython, safety, sphinx, twine
+# setuptools==41.2.0        # via ipython, safety, sphinx, twine
