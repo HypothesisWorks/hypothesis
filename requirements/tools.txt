@@ -97,7 +97,7 @@ stevedore==1.30.1         # via bandit
 tokenize-rt==3.2.0        # via pyupgrade
 toml==0.10.0
 tox==3.13.2
-tqdm==4.34.0              # via pyupio, twine
+tqdm==4.35.0              # via pyupio, twine
 traitlets==4.3.2          # via ipython
 twine==1.13.0
 typed-ast==1.4.0          # via astroid, mypy
