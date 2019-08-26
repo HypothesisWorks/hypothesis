@@ -4,4 +4,4 @@
 #
 #    pip-compile --output-file=requirements/typing.txt requirements/typing.in
 #
-typing==3.7.4
+typing==3.7.4.1
