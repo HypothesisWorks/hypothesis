@@ -21,7 +21,7 @@ click==7.0                # via black, pip-tools, pyupio, safety
 coverage==4.5.4
 decorator==4.4.0          # via ipython, traitlets
 deprecated==1.2.6         # via pygithub
-django==2.2.4
+django==2.2.5
 docutils==0.15.2          # via readme-renderer, restructuredtext-lint, sphinx
 dparse==0.4.1             # via pyupio, safety
 dpcontracts==0.6.0
