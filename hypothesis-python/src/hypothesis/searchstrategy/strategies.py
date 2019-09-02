@@ -20,6 +20,7 @@ from __future__ import absolute_import, division, print_function
 from collections import defaultdict
 from random import choice as random_choice
 
+import hypothesis._strategies as st
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis._settings import (
     HealthCheck,
@@ -494,15 +495,8 @@ class OneOfStrategy(SearchStrategy):
         # type: (ConjectureData) -> Ex
         assert len(self.element_strategies) > 0
 
-        available_strategies = [x for x in self.element_strategies if x.available(data)]
-        n = len(available_strategies)
-        if n == 0:
-            data.mark_invalid()
-        elif n == 1:
-            return data.draw(available_strategies[0])
-        else:
-            i = cu.integer_range(data, 0, n - 1)
-            return data.draw(available_strategies[i], label=self.branch_labels[i])
+        strategy = st.sampled_from(self.element_strategies).filter(lambda s: s.available(data)).flatmap(lambda s: s)
+        return data.draw(strategy)
 
     def __repr__(self):
         return "one_of(%s)" % ", ".join(map(repr, self.original_strategies))
