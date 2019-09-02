@@ -310,8 +310,9 @@ class Bundle(SearchStrategy):
         return machine.names_to_values[reference.name]
 
     def available(self, data):
-        # ``self_strategy`` is a constant, so drawing from it doesn't count
-        # as a real value draw.
+        # ``self_strategy`` is an instance of the ``st.runner()`` strategy.
+        # Hence drawing from it only returns the current state machine without
+        # modifying the underlying buffer.
         machine = data.draw(self_strategy)
         return bool(machine.bundle(self.name))
 
