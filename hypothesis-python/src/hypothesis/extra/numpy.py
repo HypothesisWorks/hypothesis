@@ -600,14 +600,14 @@ def byte_string_dtypes(endianness="?", min_len=1, max_len=16):
         note_deprecation(
             "generating byte string dtypes for unspecified length ('S0') "
             "is deprecated. min_len will be 1 instead.",
-            since="RELEASEDAY"
+            since="RELEASEDAY",
         )
         min_len = 1
     if max_len == 0:
         note_deprecation(
             "generating byte string dtypes for unspecified length ('S0') "
             "is deprecated. max_len will be 1 instead.",
-            since="RELEASEDAY"
+            since="RELEASEDAY",
         )
         max_len = 1
 
@@ -629,14 +629,14 @@ def unicode_string_dtypes(endianness="?", min_len=1, max_len=16):
         note_deprecation(
             "generating unicode string dtypes for unspecified length ('U0') "
             "is deprecated. min_len will be 1 instead.",
-            since="RELEASEDAY"
+            since="RELEASEDAY",
         )
         min_len = 1
     if max_len == 0:
         note_deprecation(
             "generating unicode string dtypes for unspecified length ('U0') "
             "is deprecated. max_len will be 1 instead.",
-            since="RELEASEDAY"
+            since="RELEASEDAY",
         )
         max_len = 1
 
