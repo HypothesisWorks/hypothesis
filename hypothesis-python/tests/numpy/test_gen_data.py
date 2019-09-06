@@ -194,9 +194,27 @@ def test_can_generate_scalar_dtypes(dtype):
     assert isinstance(dtype, np.dtype)
 
 
-@given(nps.nested_dtypes())
+@given(
+    nps.nested_dtypes(
+        subtype_strategy=st.one_of(
+            nps.scalar_dtypes(), nps.byte_string_dtypes(), nps.unicode_string_dtypes()
+        )
+    )
+)
 def test_can_generate_compound_dtypes(dtype):
     assert isinstance(dtype, np.dtype)
+
+
+@given(
+    nps.nested_dtypes(
+        subtype_strategy=st.one_of(
+            nps.scalar_dtypes(), nps.byte_string_dtypes(), nps.unicode_string_dtypes()
+        )
+    ).flatmap(lambda dt: nps.arrays(dtype=dt, shape=1))
+)
+def test_can_generate_data_compound_dtypes(arr):
+    # This is meant to catch the class of errors which prompted PR #2085
+    assert isinstance(arr, np.ndarray)
 
 
 @given(nps.nested_dtypes(max_itemsize=400), st.data())
