@@ -73,7 +73,7 @@ class ListStrategy(SearchStrategy):
         self.max_size = max_size if max_size is not None else float("inf")
         assert 0 <= self.min_size <= self.max_size
         self.average_size = min(
-            max(self.min_size * 2, self.min_size + 5),
+            max(self.min_size * 2, self.min_size + 10),
             0.5 * (self.min_size + self.max_size),
         )
         self.element_strategy = elements
