@@ -31,6 +31,8 @@ def check_type(typ, arg, name=""):
     if name:
         name += "="
     if not isinstance(arg, typ):
+        if isinstance(typ, tuple) and len(typ) == 1:
+            typ = typ[0]
         if isinstance(typ, tuple):
             typ_string = "one of %s" % (", ".join(t.__name__ for t in typ))
         else:
@@ -120,7 +122,7 @@ def check_valid_size(value, name):
             since="2018-10-11",
         )
     else:
-        check_type(integer_types, value)
+        check_type(integer_types, value, name)
     if value < 0:
         raise InvalidArgument(u"Invalid size %s=%r < 0" % (name, value))
 

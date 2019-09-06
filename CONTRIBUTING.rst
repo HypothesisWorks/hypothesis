@@ -269,6 +269,7 @@ their individual contributions.
 * `Sushobhit <https://github.com/sushobhit27>`_ (sushobhitsolanki@gmail.com)
 * `Tariq Khokhar <https://www.github.com/tkb>`_ (tariq@khokhar.net)
 * `Tessa Bradbury <https://www.github.com/tessereth>`_
+* `Thomas Grainge <https://www.github.com/tgrainge>`_
 * `Tim Martin <https://www.github.com/timmartin>`_ (tim@asymptotic.co.uk)
 * `Tom McDermott <https://www.github.com/sponster-au>`_ (sponster@gmail.com)
 * `Tyler Gibbons <https://www.github.com/kavec>`_ (tyler.gibbons@flexport.com)
