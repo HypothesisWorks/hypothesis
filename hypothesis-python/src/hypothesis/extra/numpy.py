@@ -590,7 +590,12 @@ def timedelta64_dtypes(max_period="Y", min_period="ns", endianness="?"):
 def byte_string_dtypes(endianness="?", min_len=1, max_len=16):
     # type: (str, int, int) -> st.SearchStrategy[np.dtype]
     """Return a strategy for generating bytestring dtypes, of various lengths
-    and byteorder."""
+    and byteorder.
+
+    While Hypothesis' string strategies can generate empty strings, string
+    dtypes with length 0 indicate that size is still to be determined, so
+    the minimum length for string dtypes is 1.
+    """
     if min_len == 0:
         note_deprecation(
             "generating byte string dtypes for unspecified length ('S0') "
@@ -614,7 +619,12 @@ def byte_string_dtypes(endianness="?", min_len=1, max_len=16):
 def unicode_string_dtypes(endianness="?", min_len=1, max_len=16):
     # type: (str, int, int) -> st.SearchStrategy[np.dtype]
     """Return a strategy for generating unicode string dtypes, of various
-    lengths and byteorder."""
+    lengths and byteorder.
+
+    While Hypothesis' string strategies can generate empty strings, string
+    dtypes with length 0 indicate that size is still to be determined, so
+    the minimum length for string dtypes is 1.
+    """
     if min_len == 0:
         note_deprecation(
             "generating unicode string dtypes for unspecified length ('U0') "
