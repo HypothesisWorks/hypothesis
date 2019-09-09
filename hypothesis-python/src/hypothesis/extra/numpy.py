@@ -26,7 +26,7 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis import Verbosity
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import hrange, integer_types
+from hypothesis.internal.compat import PY2, hrange, integer_types
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type, check_valid_interval
@@ -615,11 +615,15 @@ def array_dtypes(
     """Return a strategy for generating array (compound) dtypes, with members
     drawn from the given subtype strategy."""
     order_check("size", 0, min_size, max_size)
-    native_strings = st.from_type(str).filter(bool)  # See issue #1798 re: filter!
-    elements = st.tuples(native_strings, subtype_strategy)
+    # Field names must be native strings and the empty string is weird; see #1963.
+    if PY2:
+        field_names = st.binary(min_size=1)
+    else:
+        field_names = st.text(min_size=1)
+    elements = st.tuples(field_names, subtype_strategy)
     if allow_subarrays:
         elements |= st.tuples(
-            native_strings, subtype_strategy, array_shapes(max_dims=2, max_side=2)
+            field_names, subtype_strategy, array_shapes(max_dims=2, max_side=2)
         )
     return st.lists(
         elements=elements,
