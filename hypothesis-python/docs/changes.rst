@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.35.1:
+
+-------------------
+4.35.1 - 2019-09-09
+-------------------
+
+This patch improves the messaging that comes from invalid size arguments
+to collection strategies such as :func:`~hypothesis.strategies.lists`.
+
 .. _v4.35.0:
 
 -------------------
