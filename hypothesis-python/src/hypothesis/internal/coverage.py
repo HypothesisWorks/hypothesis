@@ -50,7 +50,8 @@ def pretty_file_name(f):
         pass
 
     parts = f.split(os.path.sep)
-    parts = parts[-parts[::-1].index("hypothesis") :]
+    if "hypothesis" in parts:
+        parts = parts[-parts[::-1].index("hypothesis") :]
     result = os.path.sep.join(parts)
     pretty_file_name_cache[f] = result
     return result

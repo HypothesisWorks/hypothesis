@@ -23,6 +23,7 @@ import pytest
 
 from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.validation import check_type
 from hypothesis.strategies import (
     binary,
     booleans,
@@ -247,3 +248,15 @@ def test_valid_sizes(strategy, min_size, max_size):
 
     with pytest.raises(InvalidArgument):
         test()
+
+
+def test_check_type_with_tuple_of_length_two():
+    # This test covers logic for length-two tuples that is essential on PY2,
+    # e.g. string_types (str, unicode) which are all length-one on Python 3.
+    def type_checker(x):
+        check_type((int, str), x, "x")
+
+    type_checker(1)
+    type_checker("1")
+    with pytest.raises(InvalidArgument, match="Expected one of int, str but got "):
+        type_checker(1.0)
