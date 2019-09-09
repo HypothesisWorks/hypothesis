@@ -50,7 +50,7 @@ mypy==0.720
 numpy==1.17.2
 packaging==19.1           # via dparse, pytest, pyupio, safety, sphinx, tox
 parso==0.5.1              # via jedi
-pbr==5.4.2                # via stevedore
+pbr==5.4.3                # via stevedore
 pexpect==4.7.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pip-tools==4.1.0
