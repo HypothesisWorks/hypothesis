@@ -24,6 +24,7 @@ import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
+from tests.common.utils import checks_deprecated_behaviour
 
 
 def e(a, **kwargs):
@@ -142,3 +143,17 @@ def test_bad_dtype_strategy(capsys, data):
     assert capsys.readouterr().out.startswith(
         "Got invalid dtype value=%r from strategy=just(%r), function=" % (val, val)
     )
+
+
+@checks_deprecated_behaviour
+@given(st.data())
+def test_byte_string_dtype_len_0(data):
+    s = nps.byte_string_dtypes(min_len=0, max_len=0)
+    assert data.draw(s).itemsize == 1
+
+
+@checks_deprecated_behaviour
+@given(st.data())
+def test_unicode_string_dtype_len_0(data):
+    s = nps.unicode_string_dtypes(min_len=0, max_len=0)
+    assert data.draw(s).itemsize == 4

@@ -587,20 +587,60 @@ def timedelta64_dtypes(max_period="Y", min_period="ns", endianness="?"):
 
 
 @defines_dtype_strategy
-def byte_string_dtypes(endianness="?", min_len=0, max_len=16):
+def byte_string_dtypes(endianness="?", min_len=1, max_len=16):
     # type: (str, int, int) -> st.SearchStrategy[np.dtype]
     """Return a strategy for generating bytestring dtypes, of various lengths
-    and byteorder."""
-    order_check("len", 0, min_len, max_len)
+    and byteorder.
+
+    While Hypothesis' string strategies can generate empty strings, string
+    dtypes with length 0 indicate that size is still to be determined, so
+    the minimum length for string dtypes is 1.
+    """
+    if min_len == 0:
+        note_deprecation(
+            "generating byte string dtypes for unspecified length ('S0') "
+            "is deprecated. min_len will be 1 instead.",
+            since="RELEASEDAY",
+        )
+        min_len = 1
+    if max_len == 0:
+        note_deprecation(
+            "generating byte string dtypes for unspecified length ('S0') "
+            "is deprecated. max_len will be 1 instead.",
+            since="RELEASEDAY",
+        )
+        max_len = 1
+
+    order_check("len", 1, min_len, max_len)
     return dtype_factory("S", list(range(min_len, max_len + 1)), None, endianness)
 
 
 @defines_dtype_strategy
-def unicode_string_dtypes(endianness="?", min_len=0, max_len=16):
+def unicode_string_dtypes(endianness="?", min_len=1, max_len=16):
     # type: (str, int, int) -> st.SearchStrategy[np.dtype]
     """Return a strategy for generating unicode string dtypes, of various
-    lengths and byteorder."""
-    order_check("len", 0, min_len, max_len)
+    lengths and byteorder.
+
+    While Hypothesis' string strategies can generate empty strings, string
+    dtypes with length 0 indicate that size is still to be determined, so
+    the minimum length for string dtypes is 1.
+    """
+    if min_len == 0:
+        note_deprecation(
+            "generating unicode string dtypes for unspecified length ('U0') "
+            "is deprecated. min_len will be 1 instead.",
+            since="RELEASEDAY",
+        )
+        min_len = 1
+    if max_len == 0:
+        note_deprecation(
+            "generating unicode string dtypes for unspecified length ('U0') "
+            "is deprecated. max_len will be 1 instead.",
+            since="RELEASEDAY",
+        )
+        max_len = 1
+
+    order_check("len", 1, min_len, max_len)
     return dtype_factory("U", list(range(min_len, max_len + 1)), None, endianness)
 
 
