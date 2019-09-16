@@ -17,6 +17,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+import typing
+
 import attr
 import pytest
 
@@ -28,6 +30,12 @@ from hypothesis.errors import ResolutionFailed
 @attr.s
 class Inferrables(object):
     type_ = attr.ib(type=int)
+
+    type_typing_list = attr.ib(type=typing.List[int])
+    type_typing_list_of_list = attr.ib(type=typing.List[typing.List[int]])
+    type_typing_dict = attr.ib(type=typing.Dict[str, int])
+    type_typing_union = attr.ib(type=typing.Union[str, int])
+
     type_converter = attr.ib(converter=bool)
     validator_type = attr.ib(validator=attr.validators.instance_of(str))
     validator_type_tuple = attr.ib(validator=attr.validators.instance_of((str, int)))

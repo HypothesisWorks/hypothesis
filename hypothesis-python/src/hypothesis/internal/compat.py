@@ -304,7 +304,11 @@ else:
         typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
         ForwardRef = typing.ForwardRef  # type: ignore
     except AttributeError:
-        typing_root_type = (typing.TypingMeta, typing.TypeVar)  # type: ignore
+        typing_root_type = (
+            typing.TypingMeta,
+            typing.TypeVar,
+            typing._FinalTypingBase,
+        )  # type: ignore
         ForwardRef = typing._ForwardRef  # type: ignore
 
 
