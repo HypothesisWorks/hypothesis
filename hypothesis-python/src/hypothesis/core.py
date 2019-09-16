@@ -508,14 +508,7 @@ class StateForActualGivenExecution(object):
 
         self.used_examples_from_database = False
 
-    def execute(
-        self,
-        data,
-        print_example=False,
-        is_final=False,
-        expected_failure=None,
-        collect=False,
-    ):
+    def execute(self, data, print_example=False, is_final=False, expected_failure=None):
         text_repr = [None]
         if self.settings.deadline is None:
             test = self.test
