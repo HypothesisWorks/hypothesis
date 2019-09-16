@@ -8,10 +8,10 @@ apipkg==1.5               # via execnet
 atomicwrites==1.3.0       # via pytest
 attrs==19.1.0
 execnet==1.7.1            # via pytest-xdist
-importlib-metadata==0.20  # via pluggy, pytest
+importlib-metadata==0.23  # via pluggy, pytest
 more-itertools==7.2.0     # via pytest, zipp
 packaging==19.1           # via pytest
-pluggy==0.12.0            # via pytest
+pluggy==0.13.0            # via pytest
 py==1.8.0                 # via pytest
 pyparsing==2.4.2          # via packaging
 pytest-forked==1.0.2      # via pytest-xdist
