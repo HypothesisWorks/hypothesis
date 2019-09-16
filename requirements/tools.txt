@@ -15,7 +15,7 @@ backcall==0.1.0           # via ipython
 bandit==1.6.2
 black==19.3b0
 bleach==3.1.0             # via readme-renderer
-certifi==2019.6.16        # via requests
+certifi==2019.9.11        # via requests
 chardet==3.0.4            # via requests
 click==7.0                # via black, pip-tools, pyupio, safety
 coverage==4.5.4
@@ -34,7 +34,7 @@ gitdb2==2.0.5             # via gitpython
 gitpython==3.0.2          # via bandit
 idna==2.8                 # via requests
 imagesize==1.1.0          # via sphinx
-importlib-metadata==0.20  # via pluggy, pytest, tox
+importlib-metadata==0.22  # via pluggy, pytest, tox
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.8.0
 isort==4.3.21
@@ -55,7 +55,7 @@ pexpect==4.7.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pip-tools==4.1.0
 pkginfo==1.5.0.1          # via twine
-pluggy==0.12.0            # via pytest, tox
+pluggy==0.13.0            # via pytest, tox
 prompt-toolkit==2.0.9     # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.8.0                 # via pytest, tox
