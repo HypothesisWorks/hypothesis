@@ -25,7 +25,7 @@ import attr
 import hypothesis.strategies as st
 from hypothesis.errors import ResolutionFailed
 from hypothesis.internal.compat import get_type_hints, string_types
-from hypothesis.searchstrategy.types import type_sorting_key
+from hypothesis.searchstrategy.types import is_a_type, type_sorting_key
 from hypothesis.utils.conventions import infer
 
 
@@ -124,7 +124,7 @@ def types_to_strategy(attrib, types):
 
     # Otherwise, try the `type` attribute as a fallback, and finally try
     # the type hints on a converter (desperate!) before giving up.
-    if isinstance(getattr(attrib, "type", None), type):
+    if is_a_type(getattr(attrib, "type", None)):
         # The convoluted test is because variable annotations may be stored
         # in string form; attrs doesn't evaluate them and we don't handle them.
         # See PEP 526, PEP 563, and Hypothesis issue #1004 for details.

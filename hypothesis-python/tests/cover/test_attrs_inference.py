@@ -24,6 +24,11 @@ import hypothesis.strategies as st
 from hypothesis import given, infer
 from hypothesis.errors import ResolutionFailed
 
+try:
+    import typing
+except ImportError:
+    typing = None
+
 
 @attr.s
 class Inferrables(object):
@@ -54,6 +59,14 @@ class Inferrables(object):
     validator_in_multiple_strings = attr.ib(
         validator=[attr.validators.in_("abcd"), attr.validators.in_(["ab", "cd"])]
     )
+
+    if typing is not None:
+        typing_list = attr.ib(type=typing.List[int])
+        typing_list_of_list = attr.ib(type=typing.List[typing.List[int]])
+        typing_dict = attr.ib(type=typing.Dict[str, int])
+        typing_union = attr.ib(type=typing.Optional[bool])
+        typing_union = attr.ib(type=typing.Union[str, int])
+
     has_default = attr.ib(default=0)
     has_default_factory = attr.ib(default=attr.Factory(list))
     has_default_factory_takes_self = attr.ib(  # uninferrable but has default

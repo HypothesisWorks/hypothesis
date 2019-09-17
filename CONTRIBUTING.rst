@@ -227,6 +227,7 @@ their individual contributions.
 * `JP Viljoen <https://github.com/froztbyte>`_ (froztbyte@froztbyte.net)
 * `Jochen Müller <https://github.com/jomuel>`_
 * `Joey Tuong <https://github.com/tetrapus>`_
+* `Jonathan Gayvallet <https://github.com/Meallia>`_ (jonathan.gayvallet@orange.com)
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (jonty@jonty.co.uk)
 * `Joshua Boone <https://www.github.com/patchedwork>`_ (joshuaboone4190@gmail.com)
 * `jmhsi <https://www.github.com/jmhsi>`_
