@@ -21,4 +21,3 @@ pytest==4.6.4
 six==1.12.0               # via mock, more-itertools, packaging, pytest-xdist
 wcwidth==0.1.7            # via pytest
 zipp==0.5.1               # via importlib-metadata
-typing==3.7.4.1

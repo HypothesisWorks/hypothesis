@@ -307,7 +307,7 @@ else:
         typing_root_type = (
             typing.TypingMeta,
             typing.TypeVar,
-            typing._FinalTypingBase,
+            typing._Union,
         )  # type: ignore
         ForwardRef = typing._ForwardRef  # type: ignore
 

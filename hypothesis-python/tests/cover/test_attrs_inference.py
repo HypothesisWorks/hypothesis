@@ -17,8 +17,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-import typing
-
 import attr
 import pytest
 
@@ -26,16 +24,15 @@ import hypothesis.strategies as st
 from hypothesis import given, infer
 from hypothesis.errors import ResolutionFailed
 
+try:
+    import typing
+except ImportError:
+    typing = None
+
 
 @attr.s
 class Inferrables(object):
     type_ = attr.ib(type=int)
-
-    type_typing_list = attr.ib(type=typing.List[int])
-    type_typing_list_of_list = attr.ib(type=typing.List[typing.List[int]])
-    type_typing_dict = attr.ib(type=typing.Dict[str, int])
-    type_typing_union = attr.ib(type=typing.Union[str, int])
-
     type_converter = attr.ib(converter=bool)
     validator_type = attr.ib(validator=attr.validators.instance_of(str))
     validator_type_tuple = attr.ib(validator=attr.validators.instance_of((str, int)))
@@ -62,6 +59,14 @@ class Inferrables(object):
     validator_in_multiple_strings = attr.ib(
         validator=[attr.validators.in_("abcd"), attr.validators.in_(["ab", "cd"])]
     )
+
+    if typing is not None:
+        typing_list = attr.ib(type=typing.List[int])
+        typing_list_of_list = attr.ib(type=typing.List[typing.List[int]])
+        typing_dict = attr.ib(type=typing.Dict[str, int])
+        typing_union = attr.ib(type=typing.Optional[bool])
+        typing_union = attr.ib(type=typing.Union[str, int])
+
     has_default = attr.ib(default=0)
     has_default_factory = attr.ib(default=attr.Factory(list))
     has_default_factory_takes_self = attr.ib(  # uninferrable but has default
