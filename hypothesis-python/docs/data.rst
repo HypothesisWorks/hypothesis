@@ -274,7 +274,7 @@ You can use :func:`assume <hypothesis.assume>` inside composite functions:
 
     @composite
     def distinct_strings_with_common_characters(draw):
-        x = draw(text(), min_size=1)
+        x = draw(text(min_size=1))
         y = draw(text(alphabet=x))
         assume(x != y)
         return (x, y)
