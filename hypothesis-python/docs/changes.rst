@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.36.2:
+
+-------------------
+4.36.2 - 2019-09-20
+-------------------
+
+This patch disables part of the :mod:`typing`-based inference for the
+:pypi:`attrs` package under Python 3.5.0, which has some incompatible
+internal details (:issue:`2095`).
+
 .. _v4.36.1:
 
 -------------------
