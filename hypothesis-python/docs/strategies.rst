@@ -37,6 +37,7 @@ Others provide a function to infer a strategy from some other schema:
 * :pypi:`hypothesis-mongoengine` - infer strategies from a :pypi:`mongoengine` model.
 * :pypi:`hypothesis-pb` - infer strategies from `Protocol Buffer
   <https://developers.google.com/protocol-buffers/>`_ schemas.
+* :pypi:`hypothesis-auto` - infer strategies from a function's type annotations.
 
 
 -----------------
