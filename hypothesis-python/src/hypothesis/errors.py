@@ -112,6 +112,12 @@ class FailedHealthCheck(HypothesisWarning):
         self.health_check = check
 
 
+class NonInteractiveExampleWarning(HypothesisWarning):
+    """SearchStrategy.example() is designed for interactive use,
+    but should never be used in the body of a test.
+    """
+
+
 class HypothesisDeprecationWarning(HypothesisWarning, FutureWarning):
     """A deprecation warning issued by Hypothesis.
 

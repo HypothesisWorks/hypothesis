@@ -12,7 +12,9 @@ mock==3.0.5
 more-itertools==5.0.0
 numpy==1.16.4             # last compatible with Python 2
 packaging==19.0           # via pytest
+pexpect==4.7.0
 pluggy==0.12.0            # via pytest
+ptyprocess==0.6.0         # via pexpect
 py==1.8.0                 # via pytest
 pyparsing==2.4.0          # via packaging
 pytest-forked==1.0.2      # via pytest-xdist

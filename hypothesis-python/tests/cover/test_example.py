@@ -17,14 +17,22 @@
 
 from __future__ import absolute_import, division, print_function
 
+import sys
+import warnings
 from decimal import Decimal
 from random import Random
 
+import pexpect
 import pytest
 
 import hypothesis.strategies as st
 from hypothesis import example, find, given
-from hypothesis.errors import HypothesisException, Unsatisfiable
+from hypothesis.errors import (
+    HypothesisException,
+    NonInteractiveExampleWarning,
+    Unsatisfiable,
+)
+from hypothesis.internal.compat import WINDOWS
 from tests.common.utils import checks_deprecated_behaviour, fails_with
 
 
@@ -66,3 +74,21 @@ def test_example_inside_find():
 @fails_with(HypothesisException)
 def test_example_inside_strategy():
     st.booleans().map(lambda x: st.integers().example()).example()
+
+
+def test_non_interactive_example_emits_warning():
+    # We have this warning disabled for most of our tests, because self-testing
+    # Hypothesis means `.example()` can be a good idea when it never is for users.
+    with warnings.catch_warnings():
+        warnings.simplefilter("always")
+        with pytest.warns(NonInteractiveExampleWarning):
+            st.text().example()
+
+
+@pytest.mark.skipif(WINDOWS, reason="pexpect.spawn not supported on Windows")
+def test_interactive_example_does_not_emit_warning():
+    child = pexpect.spawn("%s -Werror" % (sys.executable,))
+    child.expect(">>> ", timeout=1)
+    child.sendline("from hypothesis.strategies import none")
+    child.sendline("none().example()")
+    child.sendline("quit(code=0)")
