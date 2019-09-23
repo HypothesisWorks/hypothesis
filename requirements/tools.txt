@@ -48,7 +48,7 @@ more-itertools==7.2.0     # via pytest, zipp
 mypy-extensions==0.4.1    # via mypy
 mypy==0.720
 numpy==1.17.2
-packaging==19.1           # via dparse, pytest, pyupio, safety, sphinx, tox
+packaging==19.2           # via dparse, pytest, pyupio, safety, sphinx, tox
 parso==0.5.1              # via jedi
 pbr==5.4.3                # via stevedore
 pexpect==4.7.0            # via ipython
