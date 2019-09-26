@@ -99,7 +99,6 @@ from hypothesis.searchstrategy.lazy import LazyStrategy
 from hypothesis.searchstrategy.misc import (
     BoolStrategy,
     JustStrategy,
-    SampledFromStrategy,
 )
 from hypothesis.searchstrategy.numbers import (
     BoundedIntStrategy,
@@ -109,7 +108,7 @@ from hypothesis.searchstrategy.numbers import (
 )
 from hypothesis.searchstrategy.recursive import RecursiveStrategy
 from hypothesis.searchstrategy.shared import SharedStrategy
-from hypothesis.searchstrategy.strategies import OneOfStrategy
+from hypothesis.searchstrategy.strategies import OneOfStrategy, SampledFromStrategy
 from hypothesis.searchstrategy.strings import (
     BinaryStringStrategy,
     FixedSizeBytes,
