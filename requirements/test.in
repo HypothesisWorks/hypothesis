@@ -1,3 +1,4 @@
 attrs
+pexpect
 pytest
 pytest-xdist

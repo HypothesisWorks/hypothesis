@@ -17,6 +17,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+import sys
+import warnings
 from collections import defaultdict
 from random import choice as random_choice
 
@@ -30,7 +32,11 @@ from hypothesis._settings import (
     settings,
 )
 from hypothesis.control import _current_build_context, assume
-from hypothesis.errors import HypothesisException, UnsatisfiedAssumption
+from hypothesis.errors import (
+    HypothesisException,
+    NonInteractiveExampleWarning,
+    UnsatisfiedAssumption,
+)
 from hypothesis.internal.compat import bit_length, hrange
 from hypothesis.internal.conjecture.utils import (
     LABEL_MASK,
@@ -267,6 +273,17 @@ class SearchStrategy(Generic[Ex]):
         """
         if random is not not_set:
             note_deprecation("The random argument does nothing", since="2019-07-08")
+
+        if getattr(sys, "ps1", None) is None:  # pragma: no branch
+            # The other branch *is* covered in cover/test_examples.py; but as that
+            # uses `pexpect` for an interactive session `coverage` doesn't see it.
+            warnings.warn(
+                "The `.example()` method is good for exploring strategies, but should "
+                "only be used interactively.  We recommend using `@given` for tests - "
+                "it performs better, saves and replays failures to avoid flakiness, "
+                "and reports minimal examples. (strategy: %r)" % (self,),
+                NonInteractiveExampleWarning,
+            )
 
         context = _current_build_context.value
         if context is not None:
