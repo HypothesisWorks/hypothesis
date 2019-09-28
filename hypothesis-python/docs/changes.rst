@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.37.0:
+
+-------------------
+4.37.0 - 2019-09-28
+-------------------
+
+This release emits a warning if you use the ``.example()`` method of
+a strategy in a non-interactive context.
+
+:func:`~hypothesis.given` is a much better choice for writing tests,
+whether you care about performance, minimal examples, reproducing
+failures, or even just the variety of inputs that will be tested!
+
 .. _v4.36.2:
 
 -------------------
