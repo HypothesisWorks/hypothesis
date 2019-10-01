@@ -257,13 +257,15 @@ else:
     _global_type_lookup.update(
         {
             typing.ByteString: st.binary(),
-            typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),
-            typing.io.TextIO: st.builds(io.StringIO, st.text()),
             typing.Reversible: st.lists(st.integers()),
             typing.SupportsAbs: st.complex_numbers(),
             typing.SupportsComplex: st.complex_numbers(),
             typing.SupportsFloat: st.floats(),
             typing.SupportsInt: st.floats(),
+            # xIO are only available in .io on Python 3.5, but available directly
+            # as typing.*IO from 3.6 onwards and mypy 0.730 errors on the compat form.
+            typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),  # type: ignore
+            typing.io.TextIO: st.builds(io.StringIO, st.text()),  # type: ignore
         }
     )
 
