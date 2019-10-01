@@ -17,6 +17,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+from operator import itemgetter
+
 import pytest
 
 from hypothesis import example, given, strategies as st, target
@@ -45,11 +47,9 @@ def test_target_without_label(observation):
 
 @given(
     st.lists(
-        st.tuples(
-            st.floats(allow_nan=False, allow_infinity=False),
-            st.sampled_from(["a", "few", "labels"]) | st.text(),
-        ),
+        st.tuples(st.floats(allow_nan=False, allow_infinity=False), st.text()),
         min_size=1,
+        unique_by=itemgetter(1),
     )
 )
 def test_multiple_target_calls(args):
@@ -94,3 +94,17 @@ def test_disallowed_inputs_to_target(observation, label):
 def test_cannot_target_outside_test():
     with pytest.raises(InvalidArgument):
         target(1.0, "example label")
+
+
+@given(st.none())
+def test_cannot_target_same_label_twice(_):
+    target(0.0, label="label")
+    with pytest.raises(InvalidArgument):
+        target(1.0, label="label")
+
+
+@given(st.none())
+def test_cannot_target_default_label_twice(_):
+    target(0.0)
+    with pytest.raises(InvalidArgument):
+        target(1.0)

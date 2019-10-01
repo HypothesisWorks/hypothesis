@@ -150,13 +150,8 @@ def target(observation, label=""):
 
     The optional ``label`` argument can be used to distinguish between
     and therefore separately optimise distinct observations, such as the
-    mean and standard deviation of a dataset.
-
-    If ``hypothesis.target`` is called multiple times within a single test
-    case with a specific label, this is treated as if you only called it once
-    with the best result for that label.  For example, calling
-    ``target(high_score, "highest score")`` on every frame of an arcade game
-    would tag that test case with the highest score reached in that session.
+    mean and standard deviation of a dataset.  It is an error to call
+    ``target()`` with any label more than once per test case.
 
     .. note::
         **The more examples you run, the better this technique works.**
@@ -182,5 +177,10 @@ def target(observation, label=""):
     verbose_report("Saw target(observation=%r, label=%r)" % (observation, label))
 
     if context.data is not None:
-        if observation > context.data.target_observations.get(label, float("-inf")):
+        if label in context.data.target_observations:
+            raise InvalidArgument(
+                "Calling target(%r, label=%r) would overwrite target(%r, label=%r)"
+                % (observation, label, context.data.target_observations[label], label)
+            )
+        else:
             context.data.target_observations[label] = observation
