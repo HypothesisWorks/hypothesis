@@ -17,6 +17,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+from bisect import bisect
+from collections import defaultdict
 from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
@@ -28,6 +30,7 @@ from hypothesis._settings import local_settings
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import (
     Counter,
+    accumulate,
     ceil,
     hbytes,
     hrange,
@@ -676,39 +679,39 @@ class ConjectureRunner(object):
             )
 
         count = 0
-        while should_generate_more() and (
-            count < 10
-            or self.health_check_state is not None
-            # If we have not found a valid prefix yet, the target selector will
-            # be empty and the mutation stage will fail with a very rare internal
-            # error.  We therefore continue this initial random generation step
-            # until we have found at least one prefix to mutate.
-            or len(self.target_selector) == 0
-        ):
-            prefix = self.generate_novel_prefix()
-
-            def draw_bytes(data, n):
-                if data.index < len(prefix):
-                    result = prefix[data.index : data.index + n]
-                    # We always draw prefixes as a whole number of blocks
-                    assert len(result) == n
-                else:
-                    result = uniform(self.random, n)
-                return self.__zero_bound(data, result)
-
-            last_data = self.new_conjecture_data(draw_bytes)
-            self.test_function(last_data)
-            last_data.freeze()
-
-            count += 1
-
         mutations = 0
         mutator = self._new_mutator()
-
         zero_bound_queue = []
 
         while should_generate_more():
-            if zero_bound_queue:
+            if (
+                count < 10
+                or self.health_check_state is not None
+                # If we have not found a valid prefix yet, the target selector will
+                # be empty and the mutation stage will fail with a very rare internal
+                # error.  We therefore continue this initial random generation step
+                # until we have found at least one prefix to mutate.
+                or len(self.target_selector) == 0
+                # For long-running tests, if we are not currently dealing with an
+                # overrun we want a small chance to generate an entirely novel buffer.
+                or not (zero_bound_queue or self.random.randrange(20))
+            ):
+                prefix = self.generate_novel_prefix()
+
+                def draw_bytes(data, n):
+                    if data.index < len(prefix):
+                        result = prefix[data.index : data.index + n]
+                        # We always draw prefixes as a whole number of blocks
+                        assert len(result) == n
+                    else:
+                        result = uniform(self.random, n)
+                    return self.__zero_bound(data, result)
+
+                data = self.new_conjecture_data(draw_bytes)
+                self.test_function(data)
+                data.freeze()
+                count += 1
+            elif zero_bound_queue:
                 # Whenever we generated an example and it hits a bound
                 # which forces zero blocks into it, this creates a weird
                 # distortion effect by making certain parts of the data
@@ -961,9 +964,12 @@ class TargetSelector(object):
        counting INTERESTING, which is special).
     2. We preferentially return examples we've never returned before when
        select() is called.
-    3. The number of retained examples is never more than self.pool_size, with
-       past examples discarded automatically, preferring ones that we have
-       already explored from.
+       If ``target()`` is in use, we maintain a pool of the best examples
+       for each known label, choose a random label, and choose an example
+       from that pool with higher-ranked examples more probable.
+    3. The number of retained examples is never more than the greater of
+       self.pool_size, with older examples discarded automatically, preferring
+       ones that we have already explored from.
 
     These invariants are fairly heavily prone to change - they're not
     especially well validated as being optimal, and are mostly just a decent
@@ -974,14 +980,20 @@ class TargetSelector(object):
         self.random = random
         self.best_status = Status.OVERRUN
         self.pool_size = pool_size
+        self.weights = tuple(accumulate(0.5 ** i for i in range(10)))
         self.reset()
 
     def __len__(self):
-        return len(self.fresh_examples) + len(self.used_examples)
+        return (
+            len(self.fresh_examples)
+            + len(self.used_examples)
+            + sum(len(pool) for pool in self.scored_examples.values())
+        )
 
     def reset(self):
         self.fresh_examples = []
         self.used_examples = []
+        self.scored_examples = defaultdict(list)
 
     def add(self, data):
         if data.status == Status.INTERESTING:
@@ -992,12 +1004,45 @@ class TargetSelector(object):
             self.best_status = data.status
             self.reset()
 
-        self.fresh_examples.append(data)
+        for label, score in data.target_observations.items():
+            pool = self.scored_examples[label]
+            negative_scores = [-d.target_observations[label] for d in pool]
+            pool.insert(bisect(negative_scores, -score), data)
+            if len(pool) > len(self.weights):
+                pool.pop()
+            self.maybe_discard_one()
+
+        if not self.scored_examples:
+            self.fresh_examples.append(data)
+            self.maybe_discard_one()
+
+    def maybe_discard_one(self):
         if len(self) > self.pool_size:
-            pop_random(self.random, self.used_examples or self.fresh_examples)
-            assert self.pool_size == len(self)
+            if self.used_examples or self.fresh_examples:
+                pop_random(self.random, self.used_examples or self.fresh_examples)
+            else:
+                # Get an arbitrary label from those with the longest pools,
+                # discard the lowest-scored example from that pool,
+                # and discard the label if it had no other examples.
+                label, pool = max(
+                    self.scored_examples.items(), key=lambda kv: len(kv[1])
+                )
+                pool.pop()
+                if not pool:
+                    self.scored_examples.pop(label)
+            assert len(self) == self.pool_size
 
     def select(self):
+        # If we have feedback from targeted PBT, choose a label and then an example
+        # from that pool.  Each example is twice as likely as the next-highest-ranked.
+        if self.scored_examples:  # pragma: no cover
+            # For some reason this clause is often showing up as uncovered,
+            # though tests/cover/test_targeting.py definitely executes it :-/
+            pool = self.random.choice(list(self.scored_examples.values()))
+            stop_at = self.random.random() * self.weights[len(pool) - 1]
+            return pool[bisect(self.weights, stop_at)]
+
+        # Otherwise, prefer first-time mutations to previously-mutated examples
         if self.fresh_examples:
             result = pop_random(self.random, self.fresh_examples)
             self.used_examples.append(result)
