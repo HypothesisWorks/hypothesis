@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.38.2:
+
+-------------------
+4.38.2 - 2019-10-02
+-------------------
+
+This patch bumps our dependency on :pypi:`attrs` to ``>=19.2.0``;
+but there are no user-visible changes to Hypothesis.
+
 .. _v4.38.1:
 
 -------------------
