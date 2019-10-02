@@ -45,12 +45,12 @@ def from_attrs(target, args, kwargs, to_infer):
 
 def from_attrs_attribute(attrib, target):
     """Infer a strategy from the metadata on an attr.Attribute object."""
-    # Try inferring from the default argument.  Note that this will only help
+    # Try inferring from the default argument.  Note that this will only help if
     # the user passed `infer` to builds() for this attribute, but in that case
     # we use it as the minimal example.
     default = st.nothing()
     if isinstance(attrib.default, attr.Factory):
-        if not getattr(attrib.default, "takes_self", False):  # new in 17.1
+        if not attrib.default.takes_self:
             default = st.builds(attrib.default.factory)
     elif attrib.default is not attr.NOTHING:
         default = st.just(attrib.default)
