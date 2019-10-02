@@ -4,7 +4,7 @@
 #
 apipkg==1.5               # via execnet
 atomicwrites==1.3.0       # via pytest
-attrs==19.1.0
+attrs==19.2.0
 colorama==0.4.1           # via pytest
 execnet==1.6.0            # via pytest-xdist
 importlib-metadata==0.18  # via pluggy, pytest

@@ -1442,7 +1442,7 @@ def block_program(description):
     return name
 
 
-@attr.s(slots=True, cmp=False)
+@attr.s(slots=True, eq=False)
 class ShrinkPass(object):
     run_with_chooser = attr.ib()
     index = attr.ib()
