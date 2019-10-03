@@ -42,7 +42,6 @@ def hypothesis_home_dir():
         __hypothesis_home_directory = os.getenv("HYPOTHESIS_STORAGE_DIRECTORY")
     if not __hypothesis_home_directory:
         __hypothesis_home_directory = __hypothesis_home_directory_default
-        mkdir_p(__hypothesis_home_directory)
     return __hypothesis_home_directory
 
 

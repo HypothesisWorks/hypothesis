@@ -22,10 +22,26 @@ import os
 import warnings
 from hashlib import sha1
 
-from hypothesis.configuration import storage_directory
+from hypothesis.configuration import hypothesis_home_dir
 from hypothesis.errors import HypothesisException, HypothesisWarning
 from hypothesis.internal.compat import hbytes
 from hypothesis.utils.conventions import not_set
+
+
+def _usable_dir(path):
+    """
+    Returns True iff the desired path can be used as database path because
+    either the directory exists and can be used, or its root directory can
+    be used and we can make the directory as needed.
+    """
+    while True:
+        # This loop terminates because the topmost dir ('/' on unix) will always
+        # exist.
+        if os.path.exists(path):
+            usable = os.path.isdir(path) and os.access(path, os.R_OK | os.W_OK | os.X_OK)
+            return usable
+        else:
+            path = os.path.dirname(path)
 
 
 def _db_for_path(path=None):
@@ -36,12 +52,9 @@ def _db_for_path(path=None):
                 "effect.  Configure your database location via a settings profile instead.\n"
                 "https://hypothesis.readthedocs.io/en/latest/settings.html#settings-profiles"
             )
-        # Note: storage_directory attempts to create the dir in question, so
-        # if os.access fails there *must* be a fatal permissions issue.
-        path = storage_directory("examples")
-        if os.access(path, os.R_OK | os.W_OK | os.X_OK):
-            return _db_for_path(path)
-        else:  # pragma: no cover
+
+        path = os.path.join(hypothesis_home_dir(), "examples")
+        if not _usable_dir(path):  # pragma: no cover
             warnings.warn(
                 HypothesisWarning(
                     "The database setting is not configured, and the default "
@@ -158,7 +171,6 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         except KeyError:
             pass
         directory = os.path.join(self.path, _hash(key))
-        mkdirp(directory)
         self.keypaths[key] = directory
         return directory
 
@@ -167,6 +179,8 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
     def fetch(self, key):
         kp = self._key_path(key)
+        if not os.path.exists(kp):
+            return
         for path in os.listdir(kp):
             try:
                 with open(os.path.join(kp, path), "rb") as i:
@@ -175,6 +189,10 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
                 pass
 
     def save(self, key, value):
+        # Note: we attempt to create the dir in question now. We
+        # already checked for permissions, but there can still be other issues,
+        # e.g. the disk is full
+        mkdirp(self._key_path(key))
         path = self._value_path(key, value)
         if not os.path.exists(path):
             suffix = binascii.hexlify(os.urandom(16))
