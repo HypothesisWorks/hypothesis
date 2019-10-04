@@ -24,7 +24,6 @@ from __future__ import absolute_import, division, print_function
 import ast
 import hashlib
 import inspect
-import os.path
 import re
 import tokenize
 import types
@@ -32,7 +31,6 @@ import uuid
 from functools import wraps
 from types import ModuleType
 
-from hypothesis.configuration import hypothesis_home_dir
 from hypothesis.internal.compat import (
     ARG_NAME_ATTRIBUTE,
     getfullargspec,
