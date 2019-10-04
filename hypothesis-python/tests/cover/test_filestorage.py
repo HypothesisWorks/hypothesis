@@ -53,6 +53,6 @@ def test_will_pick_up_location_from_env(monkeypatch, tmpdir):
     assert fs.hypothesis_home_dir() == tmpdir
 
 
-def test_storage_directories_are_created_automatically(tmpdir):
+def test_storage_directories_are_not_created_automatically(tmpdir):
     fs.set_hypothesis_home_dir(str(tmpdir))
-    assert os.path.exists(fs.storage_directory(u"badgers"))
+    assert not os.path.exists(fs.storage_directory(u"badgers"))

@@ -474,10 +474,6 @@ def check_valid_identifier(identifier):
         raise ValueError("%r is not a valid python identifier" % (identifier,))
 
 
-def eval_directory():
-    return os.path.join(hypothesis_home_dir(), "eval_source")
-
-
 eval_cache = {}  # type: dict
 
 

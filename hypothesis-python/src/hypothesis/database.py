@@ -22,7 +22,7 @@ import os
 import warnings
 from hashlib import sha1
 
-from hypothesis.configuration import hypothesis_home_dir
+from hypothesis.configuration import mkdir_p, storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
 from hypothesis.internal.compat import hbytes
 from hypothesis.utils.conventions import not_set
@@ -34,16 +34,10 @@ def _usable_dir(path):
     either the directory exists and can be used, or its root directory can
     be used and we can make the directory as needed.
     """
-    while True:
-        # This loop terminates because the topmost dir ('/' on unix) will always
-        # exist.
-        if os.path.exists(path):
-            usable = os.path.isdir(path) and os.access(
-                path, os.R_OK | os.W_OK | os.X_OK
-            )
-            return usable
-        else:
-            path = os.path.dirname(path)
+    while not os.path.exists(path):
+        # Loop terminates because the root dir ('/' on unix) always exists.
+        path = os.path.dirname(path)
+    return os.path.isdir(path) and os.access(path, os.R_OK | os.W_OK | os.X_OK)
 
 
 def _db_for_path(path=None):
@@ -55,7 +49,7 @@ def _db_for_path(path=None):
                 "https://hypothesis.readthedocs.io/en/latest/settings.html#settings-profiles"
             )
 
-        path = os.path.join(hypothesis_home_dir(), "examples")
+        path = storage_directory("examples")
         if not _usable_dir(path):  # pragma: no cover
             warnings.warn(
                 HypothesisWarning(
@@ -144,14 +138,6 @@ class InMemoryExampleDatabase(ExampleDatabase):
         pass
 
 
-def mkdirp(path):
-    try:
-        os.makedirs(path)
-    except OSError:
-        pass
-    return path
-
-
 def _hash(key):
     return sha1(key).hexdigest()[:16]
 
@@ -194,7 +180,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         # Note: we attempt to create the dir in question now. We
         # already checked for permissions, but there can still be other issues,
         # e.g. the disk is full
-        mkdirp(self._key_path(key))
+        mkdir_p(self._key_path(key))
         path = self._value_path(key, value)
         if not os.path.exists(path):
             suffix = binascii.hexlify(os.urandom(16))
@@ -215,7 +201,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             self.save(src, value)
             return
         try:
-            os.rename(self._value_path(src, value), self._value_path(dest, value))
+            os.renames(self._value_path(src, value), self._value_path(dest, value))
         except OSError:
             self.delete(src, value)
             self.save(dest, value)

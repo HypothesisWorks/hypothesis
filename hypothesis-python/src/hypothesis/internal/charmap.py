@@ -24,7 +24,7 @@ import sys
 import tempfile
 import unicodedata
 
-from hypothesis.configuration import hypothesis_home_dir, tmpdir
+from hypothesis.configuration import mkdir_p, storage_directory
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hunichr
 
@@ -36,11 +36,8 @@ if False:
 
 
 def charmap_file():
-    return os.path.join(
-        hypothesis_home_dir(),
-        "unicodedata",
-        unicodedata.unidata_version,
-        "charmap.json.gz",
+    return storage_directory(
+        "unicode_data", unicodedata.unidata_version, "charmap.json.gz"
     )
 
 
@@ -76,9 +73,9 @@ def charmap():
 
             try:
                 # Write the Unicode table atomically
-                # The call to tmpdir creates the directory (if it doesn't exist
-                # yet). This is fine, since we'll be writing to it anyway.
-                fd, tmpfile = tempfile.mkstemp(dir=tmpdir())
+                tmpdir = storage_directory("tmp")
+                mkdir_p(tmpdir)
+                fd, tmpfile = tempfile.mkstemp(dir=tmpdir)
                 os.close(fd)
                 # Explicitly set the mtime to get reproducible output
                 with gzip.GzipFile(tmpfile, "wb", mtime=1) as o:
