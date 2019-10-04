@@ -372,12 +372,15 @@ def run_tox(task, version):
     pip_tool("tox", "-e", task, env=env, cwd=hp.HYPOTHESIS_PYTHON)
 
 
-PY27 = "2.7.14"
-PY35 = "3.5.5"
-PY36 = "3.6.8"
-PY37 = "3.7.0"
+# Via https://github.com/pyenv/pyenv/tree/master/plugins/python-build/share/python-build
+PY27 = "2.7.16"
+PY35 = "3.5.7"
+PY36 = "3.6.9"
+PY37 = "3.7.4"
+PY38 = "3.8.0rc1"
 PYPY2 = "pypy2.7-5.10.0"
-PYPY3 = "pypy3.5-5.10.1"
+PYPY35 = "pypy3.5-7.0.0"
+PYPY36 = "pypy3.6-7.1.1"
 
 
 @task()
@@ -386,9 +389,9 @@ def install_core():
     install.python_executable(PY36)
 
 
-ALIASES = {PYPY2: "pypy", PYPY3: "pypy3"}
+ALIASES = {PYPY2: "pypy", PYPY35: "pypy3", PYPY36: "pypy3"}
 
-for n in [PY27, PY35, PY36, PY37]:
+for n in [PY27, PY35, PY36, PY37, PY38]:
     major, minor, patch = n.split(".")
     ALIASES[n] = "python%s.%s" % (major, minor)
 
@@ -423,13 +426,23 @@ def check_py37():
 
 
 @python_tests
+def check_py38():
+    run_tox("py38-full", PY38)
+
+
+@python_tests
 def check_pypy():
     run_tox("pypy-full", PYPY2)
 
 
 @python_tests
-def check_pypy3():
-    run_tox("pypy3-full", PYPY3)
+def check_pypy35():
+    run_tox("pypy3-full", PYPY35)
+
+
+@python_tests
+def check_pypy36():
+    run_tox("pypy3-full", PYPY36)
 
 
 @python_tests

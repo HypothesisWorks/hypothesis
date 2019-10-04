@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import asyncio
+import sys
 import unittest
 from unittest import TestCase
 
@@ -58,6 +59,23 @@ class TestAsyncio(TestCase):
             raise error
 
     @pytest.mark.skipif(PYPY, reason="Error in asyncio.new_event_loop()")
+    @pytest.mark.skipif(sys.version_info[:2] >= (3, 8), reason="deprecated @coroutine")
+    @given(st.text())
+    @asyncio.coroutine
+    def test_foo(self, x):
+        assume(x)
+        yield from asyncio.sleep(0.001)
+        assert x
+
+
+class TestAsyncioRun(TestCase):
+
+    timeout = 5
+
+    def execute_example(self, f):
+        asyncio.run(f())
+
+    @pytest.mark.skipif(sys.version_info[:2] < (3, 7), reason="asyncio.run() is new")
     @given(st.text())
     @asyncio.coroutine
     def test_foo(self, x):

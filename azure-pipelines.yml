@@ -22,8 +22,10 @@ jobs:
           TASK: check-coverage
         check-pypy:
           TASK: check-pypy
-        check-pypy3:
-          TASK: check-pypy3
+        check-pypy35:
+          TASK: check-pypy35
+        check-pypy36:
+          TASK: check-pypy36
         check-py36:
           TASK: check-py36
         check-py27:
@@ -32,6 +34,8 @@ jobs:
           TASK: check-py35
         check-py37:
           TASK: check-py37
+        check-py38:
+          TASK: check-py38
         check-quality:
           TASK: check-quality
         check-ruby-tests:
