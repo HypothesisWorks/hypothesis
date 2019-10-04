@@ -36,21 +36,10 @@ def mkdir_p(path):
         pass
 
 
-def hypothesis_home_dir():
+def storage_directory(*names):
     global __hypothesis_home_directory
     if not __hypothesis_home_directory:
         __hypothesis_home_directory = os.getenv("HYPOTHESIS_STORAGE_DIRECTORY")
     if not __hypothesis_home_directory:
         __hypothesis_home_directory = __hypothesis_home_directory_default
-        mkdir_p(__hypothesis_home_directory)
-    return __hypothesis_home_directory
-
-
-def storage_directory(*names):
-    path = os.path.join(hypothesis_home_dir(), *names)
-    mkdir_p(path)
-    return path
-
-
-def tmpdir():
-    return storage_directory("tmp")
+    return os.path.join(__hypothesis_home_directory, *names)

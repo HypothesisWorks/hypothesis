@@ -29,7 +29,6 @@ from hypothesis.internal.reflection import (
     convert_keyword_arguments,
     convert_positional_arguments,
     define_function_signature,
-    eval_directory,
     fully_qualified_name,
     function_digest,
     get_pretty_function_description,
@@ -633,11 +632,6 @@ if not PY3:
 
         assert arg_string(foo, [BittySnowman()], {}) == "x=☃"
         assert arg_string(foo, [], {"x": BittySnowman()}) == "x=☃"
-
-
-def test_does_not_put_eval_directory_on_path():
-    source_exec_as_module("hello = 'world'")
-    assert eval_directory() not in sys.path
 
 
 def test_kwargs_appear_in_arg_string():

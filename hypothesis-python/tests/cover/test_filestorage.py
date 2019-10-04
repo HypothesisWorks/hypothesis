@@ -26,7 +26,7 @@ previous_home_dir = None
 
 def setup_function(function):
     global previous_home_dir
-    previous_home_dir = fs.hypothesis_home_dir()
+    previous_home_dir = fs.storage_directory()
     fs.set_hypothesis_home_dir(None)
 
 
@@ -37,12 +37,12 @@ def teardown_function(function):
 
 
 def test_defaults_to_the_default():
-    assert fs.hypothesis_home_dir() == fs.__hypothesis_home_directory_default
+    assert fs.storage_directory() == fs.__hypothesis_home_directory_default
 
 
 def test_can_set_homedir_and_it_will_exist(tmpdir):
     fs.set_hypothesis_home_dir(str(tmpdir.mkdir(u"kittens")))
-    d = fs.hypothesis_home_dir()
+    d = fs.storage_directory()
     assert u"kittens" in d
     assert os.path.exists(d)
 
@@ -50,9 +50,9 @@ def test_can_set_homedir_and_it_will_exist(tmpdir):
 def test_will_pick_up_location_from_env(monkeypatch, tmpdir):
     tmpdir = str(tmpdir)
     monkeypatch.setattr(os, "environ", {"HYPOTHESIS_STORAGE_DIRECTORY": tmpdir})
-    assert fs.hypothesis_home_dir() == tmpdir
+    assert fs.storage_directory() == tmpdir
 
 
-def test_storage_directories_are_created_automatically(tmpdir):
+def test_storage_directories_are_not_created_automatically(tmpdir):
     fs.set_hypothesis_home_dir(str(tmpdir))
-    assert os.path.exists(fs.storage_directory(u"badgers"))
+    assert not os.path.exists(fs.storage_directory(u"badgers"))

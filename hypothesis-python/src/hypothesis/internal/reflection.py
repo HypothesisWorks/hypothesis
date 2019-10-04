@@ -31,7 +31,6 @@ import uuid
 from functools import wraps
 from types import ModuleType
 
-from hypothesis.configuration import storage_directory
 from hypothesis.internal.compat import (
     ARG_NAME_ATTRIBUTE,
     getfullargspec,
@@ -471,10 +470,6 @@ def unbind_method(f):
 def check_valid_identifier(identifier):
     if not isidentifier(identifier):
         raise ValueError("%r is not a valid python identifier" % (identifier,))
-
-
-def eval_directory():
-    return storage_directory("eval_source")
 
 
 eval_cache = {}  # type: dict
