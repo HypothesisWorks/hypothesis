@@ -372,10 +372,11 @@ def run_tox(task, version):
     pip_tool("tox", "-e", task, env=env, cwd=hp.HYPOTHESIS_PYTHON)
 
 
-PY27 = "2.7.14"
-PY35 = "3.5.5"
-PY36 = "3.6.8"
-PY37 = "3.7.0"
+# Via https://github.com/pyenv/pyenv/tree/master/plugins/python-build/share/python-build
+PY27 = "2.7.16"
+PY35 = "3.5.7"
+PY36 = "3.6.9"
+PY37 = "3.7.4"
 PYPY2 = "pypy2.7-5.10.0"
 PYPY3 = "pypy3.5-5.10.1"
 
