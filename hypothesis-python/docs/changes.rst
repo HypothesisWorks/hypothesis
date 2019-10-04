@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.38.3:
+
+-------------------
+4.38.3 - 2019-10-04
+-------------------
+
+This patch defers creation of the ``.hypothesis`` directory until we have
+something to store in it, meaning that it will appear when Hypothesis is
+used rather than simply installed.
+
+Thanks to Peter C Kroon for the Hacktoberfest patch!
+
 .. _v4.38.2:
 
 -------------------
