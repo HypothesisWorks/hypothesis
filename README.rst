@@ -9,7 +9,7 @@ This simplifies writing your tests and makes them more powerful at the same time
 by letting software automate the boring bits and do them to a higher standard than a human would,
 freeing you to focus on the higher level test logic.
 
-This sort of testing is often called "property-based testing",
+This sort of testing is often called "property-based testing"
 and the most widely known implementation of the concept is the Haskell
 library `QuickCheck <https://hackage.haskell.org/package/QuickCheck>`_,
 but Hypothesis differs significantly from QuickCheck and is designed to fit
