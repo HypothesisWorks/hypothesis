@@ -377,6 +377,7 @@ PY27 = "2.7.16"
 PY35 = "3.5.7"
 PY36 = "3.6.9"
 PY37 = "3.7.4"
+PY38 = "3.8.0rc1"
 PYPY2 = "pypy2.7-5.10.0"
 PYPY35 = "pypy3.5-7.0.0"
 PYPY36 = "pypy3.6-7.1.1"
@@ -390,7 +391,7 @@ def install_core():
 
 ALIASES = {PYPY2: "pypy", PYPY35: "pypy3", PYPY36: "pypy3"}
 
-for n in [PY27, PY35, PY36, PY37]:
+for n in [PY27, PY35, PY36, PY37, PY38]:
     major, minor, patch = n.split(".")
     ALIASES[n] = "python%s.%s" % (major, minor)
 
@@ -422,6 +423,11 @@ def check_py36():
 @python_tests
 def check_py37():
     run_tox("py37-full", PY37)
+
+
+@python_tests
+def check_py38():
+    run_tox("py38-full", PY38)
 
 
 @python_tests
