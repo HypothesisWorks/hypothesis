@@ -21,7 +21,7 @@ import os.path
 
 import hypothesis.strategies as st
 from hypothesis import assume, core, find, given, settings
-from hypothesis.database import InMemoryExampleDatabase, ExampleDatabase
+from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.compat import hbytes
 from tests.common.utils import (
@@ -151,11 +151,11 @@ def test_does_not_use_database_when_seed_is_forced(monkeypatch):
 
 @given(st.binary(), st.binary())
 def test_database_not_created_when_not_used(tmp_path_factory, key, value):
-    path = tmp_path_factory.mktemp('hypothesis') / 'examples'
-    assert not os.path.exists(path)
+    path = tmp_path_factory.mktemp("hypothesis") / "examples"
+    assert not os.path.exists(str(path))
     database = ExampleDatabase(path)
     assert not list(database.fetch(key))
-    assert not os.path.exists(path)
+    assert not os.path.exists(str(path))
     database.save(key, value)
-    assert os.path.exists(path)
+    assert os.path.exists(str(path))
     assert list(database.fetch(key)) == [value]

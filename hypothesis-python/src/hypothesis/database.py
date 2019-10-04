@@ -38,7 +38,9 @@ def _usable_dir(path):
         # This loop terminates because the topmost dir ('/' on unix) will always
         # exist.
         if os.path.exists(path):
-            usable = os.path.isdir(path) and os.access(path, os.R_OK | os.W_OK | os.X_OK)
+            usable = os.path.isdir(path) and os.access(
+                path, os.R_OK | os.W_OK | os.X_OK
+            )
             return usable
         else:
             path = os.path.dirname(path)

@@ -24,6 +24,7 @@ from __future__ import absolute_import, division, print_function
 import ast
 import hashlib
 import inspect
+import os.path
 import re
 import tokenize
 import types
@@ -31,7 +32,7 @@ import uuid
 from functools import wraps
 from types import ModuleType
 
-from hypothesis.configuration import storage_directory
+from hypothesis.configuration import hypothesis_home_dir
 from hypothesis.internal.compat import (
     ARG_NAME_ATTRIBUTE,
     getfullargspec,
@@ -474,7 +475,7 @@ def check_valid_identifier(identifier):
 
 
 def eval_directory():
-    return storage_directory("eval_source")
+    return os.path.join(hypothesis_home_dir(), "eval_source")
 
 
 eval_cache = {}  # type: dict
