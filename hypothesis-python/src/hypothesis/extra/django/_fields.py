@@ -40,7 +40,7 @@ from hypothesis.strategies import emails
 
 if False:
     from datetime import tzinfo  # noqa
-    from typing import Any, Type, Optional, List, Text, Callable, Union  # noqa
+    from typing import Any, Dict, Type, Optional, List, Text, Callable, Union  # noqa
 
 
 # Mapping of field types, to strategy objects or functions of (type) -> strategy
@@ -66,7 +66,7 @@ _global_field_lookup = {
     df.NullBooleanField: st.one_of(st.none(), st.booleans()),
     df.URLField: urls(),
     df.UUIDField: st.uuids(),
-}
+}  # type: Dict[Any, Union[st.SearchStrategy, Callable[[Any], st.SearchStrategy]]]
 
 
 def register_for(field_type):
@@ -265,7 +265,7 @@ def from_field(field):
             if getattr(field, "null", False):
                 return st.none()
             raise InvalidArgument("Could not infer a strategy for %r", (field,))
-        strategy = _global_field_lookup[type(field)]
+        strategy = _global_field_lookup[type(field)]  # type: ignore
         if not isinstance(strategy, st.SearchStrategy):
             strategy = strategy(field)
     assert isinstance(strategy, st.SearchStrategy)

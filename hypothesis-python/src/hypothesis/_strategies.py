@@ -137,7 +137,7 @@ if False:
     import random  # noqa
     from types import ModuleType  # noqa
     from typing import Any, Dict, Union, Sequence, Callable, Pattern  # noqa
-    from typing import TypeVar, Tuple, List, Set, FrozenSet, overload  # noqa
+    from typing import TypeVar, Tuple, Iterable, List, Set, FrozenSet, overload  # noqa
     from typing import Type, Text, AnyStr, Optional  # noqa
 
     from hypothesis.utils.conventions import InferType  # noqa
@@ -345,7 +345,7 @@ def one_of(*args):
 @cacheable
 @defines_strategy_with_reusable_values
 def integers(min_value=None, max_value=None):
-    # type: (Real, Real) -> SearchStrategy[int]
+    # type: (int, int) -> SearchStrategy[int]
     """Returns a strategy which generates integers; in Python 2 these may be
     ints or longs.
 
@@ -854,7 +854,14 @@ class PrettyIter(object):
 
 
 @defines_strategy
-def iterables(elements, min_size=0, max_size=None, unique_by=None, unique=False):
+def iterables(
+    elements,  # type: SearchStrategy[Ex]
+    min_size=0,  # type: int
+    max_size=None,  # type: int
+    unique_by=None,  # type: Union[Callable, Tuple[Callable, ...]]
+    unique=False,  # type: bool
+):
+    # type: (...) -> SearchStrategy[Iterable[Ex]]
     """This has the same behaviour as lists, but returns iterables instead.
 
     Some iterables cannot be indexed (e.g. sets) and some do not have a
@@ -2085,6 +2092,7 @@ class RunnerStrategy(SearchStrategy):
 
 @defines_strategy_with_reusable_values
 def runner(default=not_set):
+    # type: (Any) -> SearchStrategy[Any]
     """A strategy for getting "the current test runner", whatever that may be.
     The exact meaning depends on the entry point, but it will usually be the
     associated 'self' value for it.
@@ -2243,6 +2251,7 @@ def deferred(definition):
 
 @defines_strategy_with_reusable_values
 def emails():
+    # type: () -> SearchStrategy[Text]
     """A strategy for generating email addresses as unicode strings. The
     address format is specified in :rfc:`5322#section-3.4.1`. Values shrink
     towards shorter local-parts and host domains.
@@ -2260,14 +2269,14 @@ def emails():
     )
 
 
-# Mypy can't yet handle default values with generic types or typevars, but the
-# @overload workaround from https://github.com/python/mypy/issues/3737 doesn't
-# work with @composite functions - Mypy can't see that the function implements
-# `(Any, Callable[..., T], SearchStrategy[T]) -> Callable[..., T]`
-
-
 @defines_strategy
-def functions(like=lambda: None, returns=none()):
+def functions(
+    like=lambda: None,  # type: Callable[..., Any]
+    returns=none(),  # type: SearchStrategy[Any]
+):
+    # type: (...) -> SearchStrategy[Callable[..., Any]]
+    # The proper type signature of `functions()` would have T instead of Any, but mypy
+    # disallows default args for generics: https://github.com/python/mypy/issues/3737
     """A strategy for functions, which can be used in callbacks.
 
     The generated functions will mimic the interface of ``like``, which must
@@ -2292,6 +2301,7 @@ def functions(like=lambda: None, returns=none()):
 
 @composite
 def slices(draw, size):
+    # type: (Any, int) -> slice
     """Generates slices that will select indices up to the supplied size
 
     Generated slices will have start and stop indices that range from 0 to size - 1

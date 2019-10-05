@@ -37,7 +37,7 @@ def get_mypy_analysed_type(fname, val):
         encoding="utf-8",
         universal_newlines=True,
         # We set the MYPYPATH explicitly, because PEP561 discovery wasn't
-        # working in CI as of mypy==0.600 - hopefully a temporary workaround.
+        # working in CI as of mypy==0.730 - hopefully a temporary workaround.
         env=dict(os.environ, MYPYPATH=PYTHON_SRC),
     ).stdout.read()
     assert len(out.splitlines()) == 1
@@ -83,7 +83,7 @@ def test_revealed_types(tmpdir, val, expect):
 
 
 def test_data_object_type_tracing(tmpdir):
-    f = tmpdir.join("chech_mypy_on_st_data.py")
+    f = tmpdir.join("check_mypy_on_st_data.py")
     f.write(
         "from hypothesis.strategies import data, integers\n"
         "d = data().example()\n"
