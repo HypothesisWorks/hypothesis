@@ -114,11 +114,7 @@ class LarkStrategy(SearchStrategy):
 
         self.start = st.sampled_from([self.names_to_symbols[s] for s in start])
 
-        self.ignored_symbols = (
-            st.sampled_from([self.names_to_symbols[n] for n in ignore_names])
-            if ignore_names
-            else st.nothing()
-        )
+        self.ignored_symbols = tuple(self.names_to_symbols[n] for n in ignore_names)
 
         self.terminal_strategies = {
             t.name: st.from_regex(t.pattern.to_regexp(), fullmatch=True)
@@ -185,10 +181,8 @@ class LarkStrategy(SearchStrategy):
             data.stop_example()
 
     def gen_ignore(self, data, draw_state):
-        if self.ignored_symbols.is_empty:
-            return
-        if data.draw_bits(2) == 3:
-            emit = data.draw(self.ignored_symbols)
+        if self.ignored_symbols and data.draw_bits(2) == 3:
+            emit = data.draw(st.sampled_from(self.ignored_symbols))
             self.draw_symbol(data, emit, draw_state)
 
     def calc_has_reusable_values(self, recur):
