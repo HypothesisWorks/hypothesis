@@ -43,11 +43,11 @@ Others provide a function to infer a strategy from some other schema:
 Other Cool Things
 -----------------
 
-:pypi:`swagger-conformance` is powered by Hypothesis and :pypi:`pyswagger`.
-Based on a `Swagger specification <https://swagger.io/>`_, it can build and
-run an entire test suite to check that the implementation matches the spec.
-The command-line version can test apps written in any language, simply by
-passing the file or URL path to the schema to check!
+:pypi:`schemathesis` is a tool for testing web applications built with `Open API / Swagger specifications <https://swagger.io/>`_.
+It reads the schema and generates test cases which will ensure that the application is compliant with its schema.
+The application under test could be written in any language, the only thing you need is a valid API schema in a supported format.
+Includes CLI and convenient :pypi:`pytest` integration.
+Powered by Hypothesis and :pypi:`hypothesis-jsonschema`, inspired by the earlier :pypi:`swagger-conformance` library.
 
 `Trio <https://trio.readthedocs.io/>`_ is an async framework with "an obsessive
 focus on usability and correctness", so naturally it works with Hypothesis!
