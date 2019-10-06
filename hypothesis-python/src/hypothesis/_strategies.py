@@ -886,8 +886,8 @@ def fixed_dictionaries(mapping):
     the generated dictionary.
     """
     check_type(dict, mapping, "mapping")
-    for v in mapping.values():
-        check_strategy(v)
+    for k, v in mapping.items():
+        check_strategy(v, "mapping[%r]" % (k,))
     return FixedKeysDictStrategy(mapping)
 
 
