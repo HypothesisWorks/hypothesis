@@ -31,7 +31,6 @@ class DeferredStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         self.__wrapped_strategy = None
         self.__in_repr = False
-        self.__is_empty = None
         self.__definition = definition
 
     @property
