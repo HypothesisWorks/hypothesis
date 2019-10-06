@@ -22,46 +22,12 @@ from hypothesis.internal.compat import bit_length, hrange
 from hypothesis.searchstrategy.strategies import SearchStrategy, filter_not_satisfied
 
 
-class BoolStrategy(SearchStrategy):
-    """A strategy that produces Booleans with a Bernoulli conditional
-    distribution."""
-
-    def __repr__(self):
-        return "BoolStrategy()"
-
-    def calc_has_reusable_values(self, recur):
-        return True
-
-    def do_draw(self, data):
-        return d.boolean(data)
-
-
 def is_simple_data(value):
     try:
         hash(value)
         return True
     except TypeError:
         return False
-
-
-class JustStrategy(SearchStrategy):
-    """A strategy which always returns a single fixed value."""
-
-    def __init__(self, value):
-        SearchStrategy.__init__(self)
-        self.value = value
-
-    def __repr__(self):
-        return "just(%r)" % (self.value,)
-
-    def calc_has_reusable_values(self, recur):
-        return True
-
-    def calc_is_cacheable(self, recur):
-        return is_simple_data(self.value)
-
-    def do_draw(self, data):
-        return self.value
 
 
 class SampledFromStrategy(SearchStrategy):
@@ -154,3 +120,30 @@ class SampledFromStrategy(SearchStrategy):
         # If there are no allowed indices, the filter couldn't be satisfied.
 
         return filter_not_satisfied
+
+
+class JustStrategy(SampledFromStrategy):
+    """A strategy which always returns a single fixed value.
+
+    It's implemented as a length-one SampledFromStrategy so that all our
+    special-case logic for filtering and sets applies also to just(x).
+    """
+
+    def __init__(self, value):
+        SampledFromStrategy.__init__(self, [value])
+
+    @property
+    def value(self):
+        return self.elements[0]
+
+    def __repr__(self):
+        return "just(%r)" % (self.value,)
+
+    def calc_has_reusable_values(self, recur):
+        return True
+
+    def calc_is_cacheable(self, recur):
+        return is_simple_data(self.value)
+
+    def do_draw(self, data):
+        return self.value

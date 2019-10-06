@@ -155,10 +155,7 @@ def test_can_draw_empty_set_from_unsatisfiable_strategy():
     assert find_any(sets(integers().filter(lambda s: False))) == set()
 
 
-small_set = sets(none())
-
-
-@given(lists(small_set, min_size=10))
+@given(lists(sets(none()), min_size=10))
 def test_small_sized_sets(x):
     pass
 
