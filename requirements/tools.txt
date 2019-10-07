@@ -96,7 +96,7 @@ tokenize-rt==3.2.0        # via pyupgrade
 toml==0.10.0
 tox==3.14.0
 tqdm==4.36.1              # via pyupio, twine
-traitlets==4.3.2          # via ipython
+traitlets==4.3.3          # via ipython
 twine==2.0.0
 typed-ast==1.4.0          # via astroid, mypy
 typing-extensions==3.7.4  # via mypy
