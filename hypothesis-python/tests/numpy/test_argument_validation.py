@@ -117,6 +117,17 @@ def e(a, **kwargs):
             min_side=2,
             max_side=3,
         ),
+        e(nps.basic_indices, shape=0),
+        e(nps.basic_indices, shape=("1", "2")),
+        e(nps.basic_indices, shape=(0, -1)),
+        e(nps.basic_indices, shape=(0, 0), allow_newaxis=None),
+        e(nps.basic_indices, shape=(0, 0), allow_ellipsis=None),
+        e(nps.basic_indices, shape=(0, 0), min_dims=-1),
+        e(nps.basic_indices, shape=(0, 0), min_dims=1.0),
+        e(nps.basic_indices, shape=(0, 0), max_dims=-1),
+        e(nps.basic_indices, shape=(0, 0), max_dims=1.0),
+        e(nps.basic_indices, shape=(0, 0), min_dims=2, max_dims=1),
+        e(nps.basic_indices, shape=(0, 0), max_dims=50),
         e(nps.integer_array_indices, shape=()),
         e(nps.integer_array_indices, shape=(2, 0)),
         e(nps.integer_array_indices, shape="a"),
@@ -157,3 +168,10 @@ def test_byte_string_dtype_len_0(data):
 def test_unicode_string_dtype_len_0(data):
     s = nps.unicode_string_dtypes(min_len=0, max_len=0)
     assert data.draw(s).itemsize == 4
+
+
+def test_test_basic_indices_kwonly_emulation():
+    with pytest.raises(InvalidArgument):
+        nps.basic_indices((), 0, 1).validate()
+    with pytest.raises(InvalidArgument):
+        nps.basic_indices((), __reserved=None).validate()

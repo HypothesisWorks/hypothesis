@@ -818,3 +818,77 @@ def test_advanced_integer_index_can_generate_any_pattern(shape, data):
         lambda index: np.all(target == x[index]),
         settings(max_examples=10 ** 6),
     )
+
+
+@pytest.mark.parametrize(
+    "condition",
+    [
+        lambda ix: Ellipsis in ix,
+        lambda ix: Ellipsis not in ix,
+        lambda ix: np.newaxis in ix,
+        lambda ix: np.newaxis not in ix,
+    ],
+)
+def test_test_basic_indices_options(condition):
+    indexers = nps.array_shapes(min_dims=0, max_dims=32).flatmap(
+        lambda shape: nps.basic_indices(shape, allow_newaxis=True)
+    )
+    find_any(indexers, condition)
+
+
+def test_test_basic_indices_can_generate_empty_tuple():
+    find_any(nps.basic_indices(shape=(0, 0), allow_ellipsis=True), lambda ix: ix == ())
+
+
+def test_test_basic_indices_can_generate_long_ellipsis():
+    # Runs of slice(None) - such as [0,:,:,:,0] - can be replaced by e.g. [0,...,0]
+    find_any(
+        nps.basic_indices(shape=(1, 0, 0, 0, 1), allow_ellipsis=True),
+        lambda ix: len(ix) == 3 and ix[1] == Ellipsis,
+    )
+
+
+@given(
+    shape=nps.array_shapes(min_dims=0, max_side=4)
+    | nps.array_shapes(min_dims=0, min_side=0, max_side=10),
+    min_dims=st.integers(0, 5),
+    allow_ellipsis=st.booleans(),
+    allow_newaxis=st.booleans(),
+    data=st.data(),
+)
+def test_basic_indices_generate_valid_indexers(
+    shape, min_dims, allow_ellipsis, allow_newaxis, data
+):
+    max_dims = data.draw(st.none() | st.integers(min_dims, 32), label="max_dims")
+    indexer = data.draw(
+        nps.basic_indices(
+            shape,
+            min_dims=min_dims,
+            max_dims=max_dims,
+            allow_ellipsis=allow_ellipsis,
+            allow_newaxis=allow_newaxis,
+        ),
+        label="indexer",
+    )
+    # Check that disallowed things are indeed absent
+    if not allow_newaxis:
+        assert 0 <= len(indexer) <= len(shape) + int(allow_ellipsis)
+        assert np.newaxis not in shape
+    if not allow_ellipsis:
+        assert Ellipsis not in shape
+
+    if 0 in shape:
+        # If there's a zero in the shape, the array will have no elements.
+        array = np.zeros(shape)
+        assert array.size == 0
+    elif np.prod(shape) <= 10 ** 5:
+        # If it's small enough to instantiate, do so with distinct elements.
+        array = np.arange(np.prod(shape)).reshape(shape)
+    else:
+        # We can't cheat on this one, so just try another.
+        assume(False)
+    view = array[indexer]
+    if not np.isscalar(view):
+        assert min_dims <= view.ndim <= (32 if max_dims is None else max_dims)
+        if view.size:
+            assert np.shares_memory(view, array)

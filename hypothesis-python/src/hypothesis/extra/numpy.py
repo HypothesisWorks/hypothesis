@@ -23,7 +23,7 @@ import numpy as np
 
 import hypothesis._strategies as st
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis import Verbosity
+from hypothesis import Verbosity, assume
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import PY2, hrange, integer_types
@@ -32,12 +32,14 @@ from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.utils.conventions import not_set
 
 if False:
     from typing import Any, Union, Sequence, Tuple, Optional  # noqa
     from hypothesis.searchstrategy.strategies import T  # noqa
 
     Shape = Tuple[int, ...]  # noqa
+    BasicIndex = Tuple[Union[int, slice, ellipsis, np.newaxis], ...]  # noqa
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
 
@@ -868,6 +870,121 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
         max_dims=max_dims,
         min_side=min_side,
         max_side=max_side,
+    )
+
+
+class BasicIndexStrategy(SearchStrategy):
+    def __init__(self, shape, min_dims, max_dims, allow_ellipsis, allow_newaxis):
+        assert 0 <= min_dims <= max_dims <= 32
+        SearchStrategy.__init__(self)
+        self.shape = shape
+        self.min_dims = min_dims
+        self.max_dims = max_dims
+        self.allow_ellipsis = allow_ellipsis
+        self.allow_newaxis = allow_newaxis
+
+    def do_draw(self, data):
+        # General plan: determine the actual selection up front with a straightforward
+        # approach that shrinks well, then complicate it by inserting other things.
+        result = []
+        for dim_size in self.shape:
+            if dim_size == 0:
+                result.append(slice(None))
+                continue
+            strategy = st.integers(-dim_size, dim_size - 1) | st.slices(dim_size)
+            result.append(data.draw(strategy))
+        # Insert some number of new size-one dimensions if allowed
+        result_dims = sum(isinstance(idx, slice) for idx in result)
+        while (
+            self.allow_newaxis
+            and result_dims < self.max_dims
+            and (result_dims < self.min_dims or data.draw(st.booleans()))
+        ):
+            result.insert(data.draw(st.integers(0, len(result))), np.newaxis)
+            result_dims += 1
+        # Check that we'll have the right number of dimensions; reject if not.
+        # It's easy to do this by construction iff you don't care about shrinking,
+        # which is really important for array shapes.  So we filter instead.
+        assume(self.min_dims <= result_dims <= self.max_dims)
+        # This is a quick-and-dirty way to insert ..., xor shorten the indexer,
+        # but it means we don't have to do any structural analysis.
+        if self.allow_ellipsis and data.draw(st.booleans()):
+            # Choose an index; then replace all adjacent whole-dimension slices.
+            i = j = data.draw(st.integers(0, len(result)))
+            while i > 0 and result[i - 1] == slice(None):
+                i -= 1
+            while j < len(result) and result[j] == slice(None):
+                j += 1
+            result[i:j] = [Ellipsis]
+        else:
+            while result[-1:] == [slice(None, None)] and data.draw(st.integers(0, 7)):
+                result.pop()
+        return tuple(result)
+
+
+@st.defines_strategy
+def basic_indices(
+    shape,
+    __reserved=not_set,
+    min_dims=0,
+    max_dims=None,
+    allow_newaxis=False,
+    allow_ellipsis=True,
+):
+    # type: (Shape, Any, int, int, bool, bool) -> st.SearchStrategy[BasicIndex]
+    """
+    The ``basic_indices`` strategy generates `basic indexes
+    <https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html>`__  for
+    arrays of the specified shape, which may include dimensions of size zero.
+
+    It generates tuples containing some mix of integers, :obj:`python:slice` objects,
+    ``...`` (Ellipsis), and :obj:`numpy:numpy.newaxis`; which when used to index a
+    ``shape``-shaped array will produce either a scalar or a shared-memory view.
+
+    * ``shape``: the array shape that will be indexed, as a tuple of integers >= 0.
+      This must be at least two-dimensional for a tuple to be a valid basic index;
+      for one-dimensional arrays use :func:`~hypothesis.strategies.slices` instead.
+    * ``min_dims``: the minimum dimensionality of the resulting view from use of
+      the generated index.  When ``min_dims == 0``, scalars and zero-dimensional
+      arrays are both allowed.
+    * ``max_dims``: the maximum dimensionality of the resulting view.
+      If not specified, it defaults to ``max(len(shape), min_dims) + 2``.
+    * ``allow_ellipsis``: whether ``...``` is allowed in the index.
+    * ``allow_newaxis``: whether :obj:`numpy:numpy.newaxis` is allowed in the index.
+
+    Note that the length of the generated tuple may be anywhere between zero
+    and ``min_dims``.  It may not match the length of ``shape``, or even the
+    dimensionality of the array view resulting from its use!
+    """
+    # Arguments to exclude scalars, zero-dim arrays, and dims of size zero were
+    # all considered and rejected.  We want users to explicitly consider those
+    # cases if they're dealing in general indexers, and while it's fiddly we can
+    # back-compatibly add them later (hence using __reserved to sim kwonlyargs).
+    check_type(tuple, shape, "shape")
+    if __reserved is not not_set:
+        raise InvalidArgument("Do not pass the __reserved argument.")
+    check_type(bool, allow_ellipsis, "allow_ellipsis")
+    check_type(bool, allow_newaxis, "allow_newaxis")
+    check_type(integer_types, min_dims, "min_dims")
+    if max_dims is None:
+        max_dims = min(max(len(shape), min_dims) + 2, 32)
+    else:
+        check_type(integer_types, max_dims, "max_dims")
+    order_check("dims", 0, min_dims, max_dims)
+    check_argument(
+        max_dims <= 32,
+        "max_dims=%r, but numpy arrays have at most 32 dimensions" % (max_dims,),
+    )
+    check_argument(
+        all(isinstance(x, integer_types) and x >= 0 for x in shape),
+        "shape=%r, but all dimensions must be of integer size >= 0" % (shape,),
+    )
+    return BasicIndexStrategy(
+        shape,
+        min_dims=min_dims,
+        max_dims=max_dims,
+        allow_ellipsis=allow_ellipsis,
+        allow_newaxis=allow_newaxis,
     )
 
 
