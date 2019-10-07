@@ -56,7 +56,7 @@ pickleshare==0.7.5        # via ipython
 pip-tools==4.1.0
 pkginfo==1.5.0.1          # via twine
 pluggy==0.13.0            # via pytest, tox
-prompt-toolkit==2.0.10     # via ipython
+prompt-toolkit==2.0.10    # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.8.0                 # via pytest, tox
 pycodestyle==2.5.0        # via flake8
@@ -108,4 +108,4 @@ wrapt==1.11.2             # via astroid, deprecated
 zipp==0.6.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==41.2.0        # via ipython, safety, sphinx, twine
+# setuptools==41.4.0        # via ipython, safety, sphinx, twine
