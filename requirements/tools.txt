@@ -45,7 +45,7 @@ lazy-object-proxy==1.4.2  # via astroid
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8, pylint
 more-itertools==7.2.0     # via pytest, zipp
-mypy-extensions==0.4.1    # via mypy
+mypy-extensions==0.4.2    # via mypy
 mypy==0.730
 numpy==1.17.2
 packaging==19.2           # via dparse, pytest, pyupio, safety, sphinx, tox
