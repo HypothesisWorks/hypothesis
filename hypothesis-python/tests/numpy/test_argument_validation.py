@@ -118,8 +118,6 @@ def e(a, **kwargs):
             max_side=3,
         ),
         e(nps.basic_indices, shape=0),
-        e(nps.basic_indices, shape=()),
-        e(nps.basic_indices, shape=(0,)),
         e(nps.basic_indices, shape=("1", "2")),
         e(nps.basic_indices, shape=(0, -1)),
         e(nps.basic_indices, shape=(0, 0), allow_newaxis=None),

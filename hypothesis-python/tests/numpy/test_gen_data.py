@@ -830,7 +830,7 @@ def test_advanced_integer_index_can_generate_any_pattern(shape, data):
     ],
 )
 def test_test_basic_indices_options(condition):
-    indexers = nps.array_shapes(min_dims=2, max_dims=32).flatmap(
+    indexers = nps.array_shapes(min_dims=0, max_dims=32).flatmap(
         lambda shape: nps.basic_indices(shape, allow_newaxis=True)
     )
     find_any(indexers, condition)
@@ -849,8 +849,8 @@ def test_test_basic_indices_can_generate_long_ellipsis():
 
 
 @given(
-    shape=nps.array_shapes(min_dims=2, max_side=4)
-    | nps.array_shapes(min_dims=2, min_side=0, max_side=10),
+    shape=nps.array_shapes(min_dims=0, max_side=4)
+    | nps.array_shapes(min_dims=0, min_side=0, max_side=10),
     min_dims=st.integers(0, 5),
     allow_ellipsis=st.booleans(),
     allow_newaxis=st.booleans(),

@@ -948,6 +948,7 @@ def basic_indices(
       the generated index.  When ``min_dims == 0``, scalars and zero-dimensional
       arrays are both allowed.
     * ``max_dims``: the maximum dimensionality of the resulting view.
+      If not specified, it defaults to ``max(len(shape), min_dims) + 2``.
     * ``allow_ellipsis``: whether ``...``` is allowed in the index.
     * ``allow_newaxis``: whether :obj:`numpy:numpy.newaxis` is allowed in the index.
 
@@ -973,11 +974,6 @@ def basic_indices(
     check_argument(
         max_dims <= 32,
         "max_dims=%r, but numpy arrays have at most 32 dimensions" % (max_dims,),
-    )
-    check_argument(
-        len(shape) >= 2,
-        "shape=%r must be at least two-dimensional for basic indexing "
-        "to work with `...` or `np.newaxis`." % (shape,),
     )
     check_argument(
         all(isinstance(x, integer_types) and x >= 0 for x in shape),
