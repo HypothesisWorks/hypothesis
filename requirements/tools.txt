@@ -69,7 +69,7 @@ pylint==2.4.2
 pyparsing==2.4.2          # via packaging
 pytest==5.2.1
 python-dateutil==2.8.0
-python-gitlab==1.11.0     # via pyupio
+python-gitlab==1.12.0     # via pyupio
 pytz==2019.2              # via babel, django
 pyupgrade==1.24.0
 pyupio==1.0.2
