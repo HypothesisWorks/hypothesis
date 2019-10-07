@@ -31,7 +31,7 @@ flake8-alfred==1.1.1
 flake8-docstrings==1.5.0
 flake8==3.7.8
 gitdb2==2.0.6             # via gitpython
-gitpython==3.0.2          # via bandit
+gitpython==3.0.3          # via bandit
 idna==2.8                 # via requests
 imagesize==1.1.0          # via sphinx
 importlib-metadata==0.23  # via pluggy, pytest, tox
@@ -39,13 +39,13 @@ ipython-genutils==0.2.0   # via traitlets
 ipython==7.8.0
 isort==4.3.21
 jedi==0.15.1              # via ipython
-jinja2==2.10.1            # via pyupio, sphinx
-lark-parser==0.7.5
+jinja2==2.10.3            # via pyupio, sphinx
+lark-parser==0.7.7
 lazy-object-proxy==1.4.2  # via astroid
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8, pylint
 more-itertools==7.2.0     # via pytest, zipp
-mypy-extensions==0.4.1    # via mypy
+mypy-extensions==0.4.2    # via mypy
 mypy==0.730
 numpy==1.17.2
 packaging==19.2           # via dparse, pytest, pyupio, safety, sphinx, tox
@@ -56,7 +56,7 @@ pickleshare==0.7.5        # via ipython
 pip-tools==4.1.0
 pkginfo==1.5.0.1          # via twine
 pluggy==0.13.0            # via pytest, tox
-prompt-toolkit==2.0.9     # via ipython
+prompt-toolkit==2.0.10    # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.8.0                 # via pytest, tox
 pycodestyle==2.5.0        # via flake8
@@ -67,10 +67,10 @@ pygments==2.4.2           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pylint==2.4.2
 pyparsing==2.4.2          # via packaging
-pytest==5.2.0
+pytest==5.2.1
 python-dateutil==2.8.0
-python-gitlab==1.11.0     # via pyupio
-pytz==2019.2              # via babel, django
+python-gitlab==1.12.0     # via pyupio
+pytz==2019.3              # via babel, django
 pyupgrade==1.24.0
 pyupio==1.0.2
 pyyaml==5.1.2             # via bandit, dparse, pyupio
@@ -81,7 +81,7 @@ restructuredtext-lint==1.3.0
 safety==1.8.5             # via pyupio
 six==1.12.0               # via astroid, bandit, bleach, dparse, packaging, pip-tools, prompt-toolkit, python-dateutil, python-gitlab, pyupio, readme-renderer, stevedore, tox, traitlets
 smmap2==2.0.5             # via gitdb2
-snowballstemmer==1.9.1    # via pydocstyle, sphinx
+snowballstemmer==2.0.0    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.3
 sphinx==2.2.0
 sphinxcontrib-applehelp==1.0.1  # via sphinx
@@ -96,7 +96,7 @@ tokenize-rt==3.2.0        # via pyupgrade
 toml==0.10.0
 tox==3.14.0
 tqdm==4.36.1              # via pyupio, twine
-traitlets==4.3.2          # via ipython
+traitlets==4.3.3          # via ipython
 twine==2.0.0
 typed-ast==1.4.0          # via astroid, mypy
 typing-extensions==3.7.4  # via mypy
@@ -108,4 +108,4 @@ wrapt==1.11.2             # via astroid, deprecated
 zipp==0.6.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==41.2.0        # via ipython, safety, sphinx, twine
+# setuptools==41.4.0        # via ipython, safety, sphinx, twine
