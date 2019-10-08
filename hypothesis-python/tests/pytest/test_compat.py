@@ -19,8 +19,8 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis.database import InMemoryExampleDatabase
 from hypothesis import given, settings
+from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.strategies import booleans
 
 
@@ -38,7 +38,8 @@ DB = InMemoryExampleDatabase()
 @pytest.mark.parametrize("hi", (1, 2, 3))
 @pytest.mark.xfail()
 def test_dummy_for_parametrized_db_keys(hi, i):
-    assert False  # Test *must* fail for it to end up the database anyway
+    assert i  # Test *must* fail for it to end up the database anyway
+    print(DB.data)
 
 
 def test_DB_keys_for_parametrized_test():
