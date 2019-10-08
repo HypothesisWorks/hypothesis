@@ -180,6 +180,10 @@ def pytest_collection_modifyitems(items):
             continue
         if is_hypothesis_test(item.obj):
             item.add_marker("hypothesis")
+            if item.get_closest_marker("parametrize") is not None:
+                item.obj.hypothesis.inner_test._hypothesis_internal_add_digest = item.nodeid.encode(
+                    "utf-8"
+                )
         if getattr(item.obj, "is_hypothesis_strategy_function", False):
 
             def note_strategy_is_not_test(*args, **kwargs):
