@@ -46,8 +46,8 @@ jobs:
           TASK: check-py27-typing
         check-nose:
           TASK: check-nose
-        check-pytest30:
-          TASK: check-pytest30
+        check-pytest43:
+          TASK: check-pytest43
         check-django22:
           TASK: check-django22
         check-django21:
