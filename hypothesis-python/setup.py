@@ -58,7 +58,7 @@ extras = {
     "lark": ["lark-parser>=0.6.5"],
     "numpy": ["numpy>=1.9.0"],
     "pandas": ["pandas>=0.19"],
-    "pytest": ["pytest>=3.0"],
+    "pytest": ["pytest>=4.3"],
     "dpcontracts": ["dpcontracts>=0.4"],
     # We only support Django versions with upstream support - see
     # https://www.djangoproject.com/download/#supported-versions
