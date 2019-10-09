@@ -115,6 +115,12 @@ def pytest_runtest_call(item):
     if not (hasattr(item, "obj") and is_hypothesis_test(item.obj)):
         yield
     else:
+        if item.get_closest_marker("parametrize") is not None:
+            # Give every parametrized test invocation a unique database key
+            item.obj.hypothesis.inner_test._hypothesis_internal_add_digest = item.nodeid.encode(
+                "utf-8"
+            )
+
         store = StoringReporter(item.config)
 
         def note_statistics(stats):

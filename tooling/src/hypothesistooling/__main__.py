@@ -460,7 +460,7 @@ def standard_tox_task(name):
 
 
 standard_tox_task("nose")
-standard_tox_task("pytest30")
+standard_tox_task("pytest43")
 
 for n in [20, 21, 22, 111]:
     standard_tox_task("django%d" % (n,))
