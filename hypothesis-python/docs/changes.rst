@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.39.1:
+
+-------------------
+4.39.1 - 2019-10-09
+-------------------
+
+If a value in a dict passed to :func:`~hypothesis.strategies.fixed_dictionaries`
+is not a strategy, Hypothesis now tells you which one.
+
 .. _v4.39.0:
 
 -------------------
