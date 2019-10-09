@@ -51,7 +51,7 @@ from hypothesis.internal.validation import check_type
 from hypothesis.utils.conventions import UniqueIdentifier
 
 try:
-    from typing import List, Callable, TypeVar, Generic, Optional  # noqa
+    from typing import Any, List, Callable, TypeVar, Generic, Optional  # noqa
 
     Ex = TypeVar("Ex", covariant=True)
     T = TypeVar("T")
@@ -348,7 +348,7 @@ class SearchStrategy(Generic[Ex]):
         return FlatMapStrategy(expand=expand, strategy=self)
 
     def filter(self, condition):
-        # type: (Callable[[Ex], bool]) -> SearchStrategy[Ex]
+        # type: (Callable[[Ex], Any]) -> SearchStrategy[Ex]
         """Returns a new strategy that generates values from this strategy
         which satisfy the provided condition. Note that if the condition is too
         hard to satisfy this might result in your tests failing with

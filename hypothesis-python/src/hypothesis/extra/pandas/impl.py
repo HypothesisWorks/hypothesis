@@ -48,7 +48,7 @@ except ImportError:  # pragma: no cover
 
 
 if False:
-    from typing import Any, Union, Sequence, Set  # noqa
+    from typing import Any, List, Union, Sequence, Set  # noqa
     from hypothesis.searchstrategy.strategies import Ex  # noqa
 
 
@@ -341,6 +341,7 @@ def columns(
     fill=None,  # type: st.SearchStrategy[Ex]
     unique=False,  # type: bool
 ):
+    # type: (...) -> List[column]
     """A convenience function for producing a list of :class:`column` objects
     of the same general shape.
 
