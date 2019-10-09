@@ -96,11 +96,7 @@ from hypothesis.searchstrategy.datetime import (
 from hypothesis.searchstrategy.deferred import DeferredStrategy
 from hypothesis.searchstrategy.functions import FunctionStrategy
 from hypothesis.searchstrategy.lazy import LazyStrategy
-from hypothesis.searchstrategy.misc import (
-    BoolStrategy,
-    JustStrategy,
-    SampledFromStrategy,
-)
+from hypothesis.searchstrategy.misc import JustStrategy, SampledFromStrategy
 from hypothesis.searchstrategy.numbers import (
     BoundedIntStrategy,
     FixedBoundedFloatStrategy,
@@ -425,7 +421,7 @@ def booleans():
     Examples from this strategy will shrink towards False (i.e.
     shrinking will try to replace True with False where possible).
     """
-    return BoolStrategy()
+    return sampled_from([False, True])
 
 
 @cacheable

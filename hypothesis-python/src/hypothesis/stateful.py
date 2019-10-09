@@ -42,7 +42,7 @@ from hypothesis._settings import (
 )
 from hypothesis.control import current_build_context
 from hypothesis.core import given
-from hypothesis.errors import HypothesisException, InvalidArgument, InvalidDefinition
+from hypothesis.errors import InvalidArgument, InvalidDefinition
 from hypothesis.internal.compat import quiet_raise, string_types
 from hypothesis.internal.reflection import function_digest, nicerepr, proxies
 from hypothesis.internal.validation import check_type
@@ -606,12 +606,10 @@ class RuleStrategy(SearchStrategy):
         )
 
     def do_draw(self, data):
-        try:
-            rule = data.draw(st.sampled_from(self.rules).filter(self.is_valid))
-        except HypothesisException:
-            # FailedHealthCheck or UnsatisfiedAssumption depending on user settings.
+        if not any(self.is_valid(rule) for rule in self.rules):
             msg = u"No progress can be made from state %r" % (self.machine,)
             quiet_raise(InvalidDefinition(msg))
+        rule = data.draw(st.sampled_from(self.rules).filter(self.is_valid))
         return (rule, data.draw(rule.arguments_strategy))
 
     def is_valid(self, rule):
