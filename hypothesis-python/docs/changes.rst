@@ -21,6 +21,20 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.39.3:
+
+-------------------
+4.39.3 - 2019-10-09
+-------------------
+
+This patch improves our type hints on the :func:`~hypothesis.strategies.emails`,
+:func:`~hypothesis.strategies.functions`, :func:`~hypothesis.strategies.integers`,
+:func:`~hypothesis.strategies.iterables`, and :func:`~hypothesis.strategies.slices`
+strategies, as well as the ``.filter()`` method.
+
+There is no runtime change, but if you use :pypi:`mypy` or a similar
+type-checker on your tests the results will be a bit more precise.
+
 .. _v4.39.2:
 
 -------------------
