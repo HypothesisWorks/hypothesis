@@ -68,6 +68,13 @@ We have a reasonably distinctive style when it comes to handling arguments:
 * It's worth thinking about the order of arguments: the first one or two
   arguments are likely to be passed positionally, so try to put values there
   where this is useful and not too confusing.
+* Any unusual arguments should be keyword-only to the greatest extent possible.
+  For example, the ideal signature for lists would be
+  ``lists(elements, min_size=0, max_size=None, *, unique_by=None, unique=False)``
+  because the ``elements`` and sizes arguments are common and easy to understand
+  from the call site, while boolean flags or non-shared arguments demand names
+  to be understood.  When adding new arguments, ``__reserved=not_set`` is a
+  Python2-compatible way of implementing kwonly args manually.
 * When adding arguments to strategies, think carefully about whether the user
   is likely to want that value to vary often. If so, make it a strategy instead
   of a value. In particular if it's likely to be common that they would want to

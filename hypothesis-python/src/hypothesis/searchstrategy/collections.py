@@ -234,3 +234,47 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
 
     def pack(self, value):
         return self.dict_type(zip(self.keys, value))
+
+
+class FixedAndOptionalKeysDictStrategy(SearchStrategy):
+    """A strategy which produces dicts with a fixed set of keys, given a
+    strategy for each of their equivalent values.
+
+    e.g. {'foo' : some_int_strategy} would generate dicts with the single
+    key 'foo' mapping to some integer.
+    """
+
+    def __init__(self, strategy_dict, optional):
+        self.required = strategy_dict
+        self.fixed = FixedKeysDictStrategy(strategy_dict)
+        self.optional = optional
+
+        if isinstance(self.optional, OrderedDict):
+            self.optional_keys = tuple(self.optional.keys())
+        else:
+            try:
+                self.optional_keys = tuple(sorted(self.optional.keys()))
+            except TypeError:
+                self.optional_keys = tuple(sorted(self.optional.keys(), key=repr))
+
+    def calc_is_empty(self, recur):
+        return recur(self.fixed)
+
+    def __repr__(self):
+        return "FixedAndOptionalKeysDictStrategy(%r, %r)" % (
+            self.required,
+            self.optional,
+        )
+
+    def do_draw(self, data):
+        result = data.draw(self.fixed)
+        remaining = [k for k in self.optional_keys if not self.optional[k].is_empty]
+        should_draw = cu.many(
+            data, min_size=0, max_size=len(remaining), average_size=len(remaining) / 2
+        )
+        while should_draw.more():
+            j = cu.integer_range(data, 0, len(remaining) - 1)
+            remaining[-1], remaining[j] = remaining[j], remaining[-1]
+            key = remaining.pop()
+            result[key] = data.draw(self.optional[key])
+        return result

@@ -82,6 +82,7 @@ from hypothesis.internal.validation import (
 )
 from hypothesis.searchstrategy import SearchStrategy, check_strategy
 from hypothesis.searchstrategy.collections import (
+    FixedAndOptionalKeysDictStrategy,
     FixedKeysDictStrategy,
     ListStrategy,
     TupleStrategy,
@@ -875,8 +876,12 @@ def iterables(
 
 
 @defines_strategy
-def fixed_dictionaries(mapping):
-    # type: (Dict[T, SearchStrategy[Ex]]) -> SearchStrategy[Dict[T, Ex]]
+def fixed_dictionaries(
+    mapping,  # type: Dict[T, SearchStrategy[Ex]]
+    __reserved=not_set,  # type: Any
+    optional=None,  # type: Dict[T, SearchStrategy[Ex]]
+):
+    # type: (...) -> SearchStrategy[Dict[T, Ex]]
     """Generates a dictionary of the same type as mapping with a fixed set of
     keys mapping to strategies. mapping must be a dict subclass.
 
@@ -891,6 +896,23 @@ def fixed_dictionaries(mapping):
     check_type(dict, mapping, "mapping")
     for k, v in mapping.items():
         check_strategy(v, "mapping[%r]" % (k,))
+    if __reserved is not not_set:
+        raise InvalidArgument("Do not pass __reserved; got %r" % (__reserved,))
+    if optional is not None:
+        check_type(dict, optional, "optional")
+        for k, v in optional.items():
+            check_strategy(v, "optional[%r]" % (k,))
+        if type(mapping) != type(optional):
+            raise InvalidArgument(
+                "Got arguments of different types: mapping=%s, optional=%s"
+                % (nicerepr(type(mapping)), nicerepr(type(optional)))
+            )
+        if set(mapping) & set(optional):
+            raise InvalidArgument(
+                "The following keys were in both mapping and optional, "
+                "which is invalid: %r" % (set(mapping) & set(optional))
+            )
+        return FixedAndOptionalKeysDictStrategy(mapping, optional)
     return FixedKeysDictStrategy(mapping)
 
 
