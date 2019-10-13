@@ -117,3 +117,50 @@ def test_repeats_healthcheck_when_following_seed_instruction(testdir, tmpdir):
     rerun2 = testdir.runpytest(script, "--verbose", "--strict", "--hypothesis-seed=10")
     rerun2_output = "\n".join(rerun2.stdout.lines)
     assert "FailedHealthCheck" not in rerun2_output
+
+
+BAD_USE_OF_SEED = """
+import random
+import pytest
+from hypothesis import given
+from hypothesis.strategies import integers
+
+@pytest.fixture(autouse=True)
+def fix():
+    random.seed(1337)
+
+@given(integers())
+def test_foo(x):
+    pass
+
+@given(integers())
+def test_bar(x):
+    pass
+"""
+
+
+def test_detects_tests_seeding(testdir):
+    # Checks that our detection actually works
+    script = testdir.makepyfile(BAD_USE_OF_SEED)
+    testdir.runpytest(script, "-Werror").assert_outcomes(passed=1, failed=1)
+
+
+RANDOM_MODULE_STRATEGY_REGRESSION = """
+import random
+from hypothesis import given
+from hypothesis.strategies import random_module
+
+@given(random_module())
+def test_foo(x):
+    pass
+
+@given(random_module())
+def test_bar(x):
+    pass
+"""
+
+
+def test_detects_polluted_global_random_state(testdir):
+    # Regression test for https://github.com/HypothesisWorks/hypothesis/issues/1918
+    script = testdir.makepyfile(RANDOM_MODULE_STRATEGY_REGRESSION)
+    testdir.runpytest(script, "-Werror").assert_outcomes(passed=2, failed=0)

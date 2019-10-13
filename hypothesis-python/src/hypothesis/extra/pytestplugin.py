@@ -17,12 +17,15 @@
 
 from __future__ import absolute_import, division, print_function
 
+import random
+import warnings
 from distutils.version import LooseVersion
 
 import pytest
 
 from hypothesis import Verbosity, core, settings
 from hypothesis._settings import note_deprecation
+from hypothesis.errors import HypothesisWarning
 from hypothesis.internal.compat import OrderedDict, text_type
 from hypothesis.internal.detection import is_hypothesis_test
 from hypothesis.reporting import default as default_reporter, with_reporter
@@ -108,6 +111,7 @@ def pytest_configure(config):
 
 
 gathered_statistics = OrderedDict()  # type: dict
+states_after = {}  # type: dict
 
 
 @pytest.hookimpl(hookwrapper=True)
@@ -128,11 +132,33 @@ def pytest_runtest_call(item):
             gathered_statistics[item.nodeid] = lines
             item.hypothesis_statistics = lines
 
+        # Peturb PRNG so that we can detect e.g. everything calling seed(0)
+        random.seed(random.randrange(2 ** 32))
+        before = hash(random.getstate())
+
         with collector.with_value(note_statistics):
             with with_reporter(store):
                 yield
         if store.results:
             item.hypothesis_report_information = list(store.results)
+
+        # We want to detect any cases where a test (or Hypothesis) seeds or sets the
+        # random state without restoring it afterwards, which pollutes the whole test
+        # suite with correlations.  This check works if more than one test leaks the
+        # same state, which has been true of all our problems so far.  See #1919.
+        after = hash(random.getstate())
+        if before != after:
+            if after in states_after:
+                warnings.warn(
+                    "%r and %r both used the `random` module, and somehow finished "
+                    "with the same global `random.getstate()`, probably thanks to "
+                    "`random.seed()`.\n    This makes Hypothesis test suites much "
+                    "weaker by linking behaviour of different tests - if you *want* "
+                    "determinism, use the `derandomize` setting instead."
+                    % (item.nodeid, states_after[after]),
+                    HypothesisWarning,
+                )
+            states_after[after] = item.nodeid
 
 
 @pytest.hookimpl(hookwrapper=True)
