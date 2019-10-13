@@ -36,6 +36,8 @@ VERBOSITY_OPTION = "--hypothesis-verbosity"
 PRINT_STATISTICS_OPTION = "--hypothesis-show-statistics"
 SEED_OPTION = "--hypothesis-seed"
 
+SOURCE_OF_GOOD_SEEDS = random.Random()
+
 
 class StoringReporter(object):
     def __init__(self, config):
@@ -132,8 +134,10 @@ def pytest_runtest_call(item):
             gathered_statistics[item.nodeid] = lines
             item.hypothesis_statistics = lines
 
-        # Peturb PRNG so that we can detect e.g. everything calling seed(0)
-        random.seed(random.randrange(2 ** 32))
+        # We start by peturbing the state of the PRNG, using a module-local Random
+        # instance.  Without this, repeatedly seeding shows as "no use of random"
+        # because the state before and after are always the same!
+        random.seed(SOURCE_OF_GOOD_SEEDS.randrange(2 ** 32))
         before = random.getstate()
 
         with collector.with_value(note_statistics):
