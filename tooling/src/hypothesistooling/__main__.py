@@ -179,6 +179,9 @@ def format():
             return False
         return path.endswith(".py")
 
+    def should_format_doc_file(path):
+        return path.endswith((".rst", ".md"))
+
     changed = tools.modified_files()
 
     format_all = os.environ.get("FORMAT_ALL", "").lower() == "true"
@@ -188,6 +191,9 @@ def format():
         format_all = True
 
     files = tools.all_files() if format_all else changed
+
+    doc_files_to_format = [f for f in sorted(files) if should_format_doc_file(f)]
+    pip_tool("blacken-docs", *doc_files_to_format)
 
     files_to_format = [f for f in sorted(files) if should_format_file(f)]
 
