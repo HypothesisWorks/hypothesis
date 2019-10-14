@@ -160,29 +160,6 @@ class ConjectureRunner(object):
         if data.status == Status.VALID:
             self.valid_examples += 1
 
-        # Record the test result in the tree, to avoid unnecessary work in
-        # the future.
-
-        # The tree has two main uses:
-
-        # 1. It is mildly useful in some cases during generation where there is
-        #    a high probability of duplication but it is possible to generate
-        #    many examples. e.g. if we had input of the form none() | text()
-        #    then we would generate duplicates 50% of the time, and would
-        #    like to avoid that and spend more time exploring the text() half
-        #    of the search space. The tree allows us to predict in advance if
-        #    the test would lead to a duplicate and avoid that.
-        # 2. When shrinking it is *extremely* useful to be able to anticipate
-        #    duplication, because we try many similar and smaller test cases,
-        #    and these will tend to have a very high duplication rate. This is
-        #    where the tree usage really shines.
-        #
-        # In aid of this, we keep around just enough of the structure of the
-        # the tree of examples we've seen so far to let us predict whether
-        # something will lead to a known result, and to canonicalize it into
-        # the buffer that would belong to the ConjectureData that you get
-        # from running it.
-
         if data.status == Status.INTERESTING:
             key = data.interesting_origin
             changed = False
