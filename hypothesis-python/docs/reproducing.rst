@@ -59,7 +59,9 @@ styles will work as expected:
   def test_some_code(x):
       assert True
 
+
   from unittest import TestCase
+
 
   class TestThings(TestCase):
       @given(text())

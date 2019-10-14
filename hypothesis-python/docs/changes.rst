@@ -3058,6 +3058,7 @@ For example, consider the following test:
     import hypothesis.strategies as st
     from hypothesis import given
 
+
     @given(st.text(), st.text())
     def test_non_equal(x, y):
         assert x != y
@@ -3096,6 +3097,7 @@ For example, consider the following test:
 
     import hypothesis.strategies as st
     from hypothesis import given
+
 
     @given(st.integers(), st.integers())
     def test_does_not_exceed_100(m, n):

@@ -15,6 +15,7 @@ decorator:
 
     from hypothesis import given, settings
 
+
     @given(integers())
     @settings(max_examples=500)
     def test_this_thoroughly(x):
@@ -30,6 +31,7 @@ the same. The following is exactly equivalent:
 .. code:: python
 
     from hypothesis import given, settings
+
 
     @settings(max_examples=500)
     @given(integers())

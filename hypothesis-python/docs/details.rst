@@ -62,6 +62,7 @@ For example if you ran the following with ``--hypothesis-show-statistics``:
 
   from hypothesis import given, strategies as st
 
+
   @given(st.integers())
   def test_integers(i):
       pass
@@ -90,6 +91,7 @@ which describe some aspect of the data generation:
 
   from hypothesis import given, strategies as st
 
+
   @given(st.integers().filter(lambda x: x % 2 == 0))
   def test_even_integers(i):
       pass
@@ -115,6 +117,7 @@ You can also mark custom events in a test using the ``event`` function:
 .. code:: python
 
   from hypothesis import given, event, strategies as st
+
 
   @given(st.integers().filter(lambda x: x % 2 == 0))
   def test_even_integers(i):
@@ -181,6 +184,7 @@ So lets block off this particular example:
 
   from math import isnan
 
+
   @given(floats())
   def test_negation_is_self_inverse_for_non_nan(x):
       assume(not isnan(x))
@@ -221,7 +225,7 @@ Suppose we had the following:
 
   @given(lists(integers()))
   def test_sum_is_positive(xs):
-    assert sum(xs) > 0
+      assert sum(xs) > 0
 
 Unsurprisingly this fails and gives the falsifying example ``[]``.
 
@@ -314,27 +318,32 @@ For example all of the following are valid uses:
 
   @given(integers(), integers())
   def a(x, y):
-    pass
+      pass
+
 
   @given(integers())
   def b(x, y):
-    pass
+      pass
+
 
   @given(y=integers())
   def c(x, y):
-    pass
+      pass
+
 
   @given(x=integers())
   def d(x, y):
-    pass
+      pass
+
 
   @given(x=integers(), y=integers())
   def e(x, **kwargs):
-    pass
+      pass
+
 
   @given(x=integers(), y=integers())
   def f(x, *args, **kwargs):
-    pass
+      pass
 
 
   class SomeTest(TestCase):
@@ -350,13 +359,16 @@ The following are not:
   def g(x, y):
       pass
 
+
   @given(integers())
   def h(x, *args):
       pass
 
+
   @given(integers(), x=integers())
   def i(x, y):
       pass
+
 
   @given()
   def j(x, y):
@@ -442,6 +454,7 @@ the following executor runs all its code twice:
 
     from unittest import TestCase
 
+
     class TestTryReallyHard(TestCase):
         @given(integers())
         def test_something(self, i):
@@ -462,6 +475,7 @@ executor is invalid:
 
     from unittest import TestCase
 
+
     class TestRunTwice(TestCase):
         def execute_example(self, f):
             return f()()
@@ -471,6 +485,7 @@ and should be rewritten as:
 .. code:: python
 
     from unittest import TestCase
+
 
     class TestRunTwice(TestCase):
         def execute_example(self, f):
@@ -492,6 +507,8 @@ transformation before applying :func:`@given <hypothesis.given>`.
     @pytest.mark.trio
     async def test(x):
         ...
+
+
     # Illustrative code, inside the pytest-trio plugin
     test.hypothesis.inner_test = lambda x: trio.run(test, x)
 
@@ -558,10 +575,14 @@ fill in an argument from its type annotation.
 .. code:: python
 
     @given(a=infer)
-    def test(a: int): pass
+    def test(a: int):
+        pass
+
+
     # is equivalent to
     @given(a=integers())
-    def test(a): pass
+    def test(a):
+        pass
 
 ~~~~~~~~~~~
 Limitations
@@ -623,7 +644,8 @@ supported use-case, again on a best-effort provisional basis.  For example:
 
 .. code:: python
 
-    def foo_strategy() -> SearchStrategy[Foo]: ...
+    def foo_strategy() -> SearchStrategy[Foo]:
+        ...
 
 .. class:: hypothesis.strategies.SearchStrategy
 

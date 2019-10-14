@@ -61,7 +61,7 @@ end
 ```python
 @given(integers(), integers())
 def test_integers_commute(m, n):
-  assert m + n == n + m
+    assert m + n == n + m
 ```
 
 The in-line style is slightly more verbose, but vastly more flexible

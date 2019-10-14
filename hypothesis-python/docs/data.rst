@@ -332,8 +332,8 @@ For instance:
 
     @given(data())
     def test_draw_sequentially(data):
-        x = data.draw(integers(), label='First number')
-        y = data.draw(integers(min_value=x), label='Second number')
+        x = data.draw(integers(), label="First number")
+        y = data.draw(integers(min_value=x), label="Second number")
         assert x < y
 
 will produce the output:

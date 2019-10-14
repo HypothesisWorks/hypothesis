@@ -110,8 +110,8 @@ in their behaviour.
           self.database = DirectoryBasedExampleDatabase(self.tempd)
           self.model = defaultdict(set)
 
-      keys = Bundle('keys')
-      values = Bundle('values')
+      keys = Bundle("keys")
+      values = Bundle("values")
 
       @rule(target=keys, k=st.binary())
       def add_key(self, k):
@@ -157,7 +157,7 @@ from it:
   TestTrees = DatabaseComparison.TestCase
 
   # Or just run with pytest's unittest support
-  if __name__ == '__main__':
+  if __name__ == "__main__":
       unittest.main()
 
 This test currently passes, but if we comment out the line where we call ``self.model[k].discard(v)``,
@@ -190,7 +190,9 @@ fewer examples with larger programs you could change the settings to:
 
 .. code:: python
 
-  DatabaseComparison.TestCase.settings = settings(max_examples=50, stateful_step_count=100)
+  DatabaseComparison.TestCase.settings = settings(
+      max_examples=50, stateful_step_count=100
+  )
 
 Which doubles the number of steps each program runs and halves the number of
 test cases that will be run.
@@ -236,22 +238,23 @@ Initializes are typically useful to populate bundles:
 
     name_strategy = st.text(min_size=1).filter(lambda x: "/" not in x)
 
+
     class NumberModifier(RuleBasedStateMachine):
 
-        folders = Bundle('folders')
-        files = Bundle('files')
+        folders = Bundle("folders")
+        files = Bundle("files")
 
         @initialize(target=folders)
         def init_folders(self):
-            return '/'
+            return "/"
 
         @rule(target=folders, name=name_strategy)
         def create_folder(self, parent, name):
-            return '%s/%s' % (parent, name)
+            return "%s/%s" % (parent, name)
 
         @rule(target=files, name=name_strategy)
         def create_file(self, parent, name):
-            return '%s/%s' % (parent, name)
+            return "%s/%s" % (parent, name)
 
 
 -------------
@@ -270,6 +273,7 @@ that returns True or False based on the RuleBasedStateMachine instance.
 .. code:: python
 
     from hypothesis.stateful import RuleBasedStateMachine, rule, precondition
+
 
     class NumberModifier(RuleBasedStateMachine):
 
@@ -307,6 +311,7 @@ decorator that marks a function to be run after every step.
 
     from hypothesis.stateful import RuleBasedStateMachine, rule, invariant
 
+
     class NumberModifier(RuleBasedStateMachine):
 
         num = 0
@@ -320,6 +325,7 @@ decorator that marks a function to be run after every step.
         @invariant()
         def divide_with_one(self):
             assert self.num % 2 == 0
+
 
     NumberTest = NumberModifier.TestCase
 

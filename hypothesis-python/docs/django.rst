@@ -123,8 +123,10 @@ the *flatmap* function as follows:
 
   from hypothesis.strategies import lists, just
 
+
   def generate_with_shops(company):
-    return lists(from_model(Shop, company=just(company))).map(lambda _: company)
+      return lists(from_model(Shop, company=just(company))).map(lambda _: company)
+
 
   company_with_shops_strategy = from_model(Company).flatmap(generate_with_shops)
 
@@ -180,8 +182,8 @@ default example of this is the :class:`~django:django.forms.SplitDateTimeField`.
 .. code:: python
 
   class CustomerForm(forms.Form):
-    name = forms.CharField()
-    birth_date_time = forms.SplitDateTimeField()
+      name = forms.CharField()
+      birth_date_time = forms.SplitDateTimeField()
 
 ``from_form`` supports ``MultiValueField`` subclasses directly, however if you
 want to define your own strategy be forewarned that Django binds data for a
@@ -194,9 +196,9 @@ like this:
 .. code:: python
 
   {
-    'name': 'Samuel John',
-    'birth_date_time_0': '2018-05-19',  # the date, as the first sub-field
-    'birth_date_time_1': '15:18:00'     # the time, as the second sub-field
+      "name": "Samuel John",
+      "birth_date_time_0": "2018-05-19",  # the date, as the first sub-field
+      "birth_date_time_1": "15:18:00",  # the time, as the second sub-field
   }
 
 Thus, if you want to define your own strategies for such a field you must
@@ -204,4 +206,4 @@ address your sub-fields appropriately:
 
 .. code:: python
 
-  from_form(CustomerForm, birth_date_time_0=just('2018-05-19'))
+  from_form(CustomerForm, birth_date_time_0=just("2018-05-19"))

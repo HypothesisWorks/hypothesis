@@ -23,7 +23,7 @@ functional modifications):
 
   def encode(input_string):
       count = 1
-      prev = ''
+      prev = ""
       lst = []
       for character in input_string:
           if character != prev:
@@ -40,7 +40,7 @@ functional modifications):
 
 
   def decode(lst):
-      q = ''
+      q = ""
       for character, count in lst:
           q += character * count
       return q
@@ -60,6 +60,7 @@ Lets see how you'd do that with Hypothesis:
 
   from hypothesis import given
   from hypothesis.strategies import text
+
 
   @given(text())
   def test_decode_inverts_encode(s):
@@ -104,8 +105,9 @@ explicitly by using the :func:`@example <hypothesis.example>` decorator:
   from hypothesis import given, example
   from hypothesis.strategies import text
 
+
   @given(text())
-  @example('')
+  @example("")
   def test_decode_inverts_encode(s):
       assert decode(encode(s)) == s
 
@@ -121,7 +123,7 @@ well as positional. The following would have worked just as well:
 .. code:: python
 
   @given(s=text())
-  @example(s='')
+  @example(s="")
   def test_decode_inverts_encode(s):
       assert decode(encode(s)) == s
 
@@ -131,21 +133,21 @@ each time. Say we missed a line in our ``encode`` method:
 .. code:: python
 
   def encode(input_string):
-    count = 1
-    prev = ''
-    lst = []
-    for character in input_string:
-        if character != prev:
-            if prev:
-                entry = (prev, count)
-                lst.append(entry)
-            # count = 1  # Missing reset operation
-            prev = character
-        else:
-            count += 1
-    entry = (character, count)
-    lst.append(entry)
-    return lst
+      count = 1
+      prev = ""
+      lst = []
+      for character in input_string:
+          if character != prev:
+              if prev:
+                  entry = (prev, count)
+                  lst.append(entry)
+              # count = 1  # Missing reset operation
+              prev = character
+          else:
+              count += 1
+      entry = (character, count)
+      lst.append(entry)
+      return lst
 
 Hypothesis quickly informs us of the following example:
 
@@ -192,7 +194,7 @@ also have run it explicitly ourselves:
 
 .. code:: python
 
-  if __name__ == '__main__':
+  if __name__ == "__main__":
       test_decode_inverts_encode()
 
 We could also have done this as a :class:`python:unittest.TestCase`:
@@ -201,12 +203,14 @@ We could also have done this as a :class:`python:unittest.TestCase`:
 
   import unittest
 
+
   class TestEncoding(unittest.TestCase):
       @given(text())
       def test_decode_inverts_encode(self, s):
           self.assertEqual(decode(encode(s)), s)
 
-  if __name__ == '__main__':
+
+  if __name__ == "__main__":
       unittest.main()
 
 A detail: This works because Hypothesis ignores any arguments it hasn't been
@@ -233,13 +237,16 @@ Here are some other examples of how you could use that:
     from hypothesis import given
     import hypothesis.strategies as st
 
+
     @given(st.integers(), st.integers())
     def test_ints_are_commutative(x, y):
         assert x + y == y + x
 
+
     @given(x=st.integers(), y=st.integers())
     def test_ints_cancel(x, y):
         assert (x + y) - y == x
+
 
     @given(st.lists(st.integers()))
     def test_reversing_twice_gives_same_list(xs):
@@ -249,6 +256,7 @@ Here are some other examples of how you could use that:
         ys.reverse()
         ys.reverse()
         assert xs == ys
+
 
     @given(st.tuples(st.booleans(), st.text()))
     def test_look_tuples_work_too(t):
