@@ -40,7 +40,7 @@ a strategy for Django models:
 For example, using `the trivial django project we have for testing
 <https://github.com/HypothesisWorks/hypothesis/blob/master/hypothesis-python/tests/django/toystore/models.py>`_:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from hypothesis.extra.django import from_model
     >>> from toystore.models import Customer
@@ -72,7 +72,7 @@ pass a strategy to skip validation at the strategy level:
     is implemented, but there will always be some edge cases that require you
     to pass an explicit strategy.
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from hypothesis.strategies import integers
     >>> c = from_model(Customer, age=integers(min_value=0, max_value=120)).example()
@@ -93,7 +93,7 @@ Custom field types
 If you have a custom Django field type you can register it with Hypothesis's
 model deriving functionality by registering a default strategy for it:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> from toystore.models import CustomishField, Customish
     >>> from_model(Customish).example()

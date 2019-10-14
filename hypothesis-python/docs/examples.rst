@@ -150,7 +150,7 @@ Hypothesis quickly gives us an example of this *still* being wrong:
 
 .. code:: python
 
-  [Node(0, (False,)), Node(-1, (True,)), Node(-2, (False, False))])
+  [Node(0, (False,)), Node(-1, (True,)), Node(-2, (False, False))]
 
 
 Now this is a more interesting example. None of the nodes will sort equal. What is
