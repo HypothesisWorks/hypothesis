@@ -27,7 +27,6 @@ import inspect
 import re
 import tokenize
 import types
-import uuid
 from functools import wraps
 from types import ModuleType
 
@@ -55,17 +54,15 @@ def fully_qualified_name(f):
 
 
 def is_mock(obj):
-    """Determine if the given argument is a mock type.
+    """Determine if the given argument is a mock type."""
 
-    We want to be able to detect these when dealing with various test
-    args. As they are sneaky and can look like almost anything else,
-    we'll check this by looking for random attributes.  This is more
-    robust than looking for types.
-    """
-    for _ in range(10):
-        if not hasattr(obj, str(uuid.uuid4())):
-            return False
-    return True
+    # We want to be able to detect these when dealing with various test
+    # args. As they are sneaky and can look like almost anything else,
+    # we'll check this by looking for an attribute with a name that it's really
+    # unlikely to implement accidentally, and that anyone who implements it
+    # deliberately should know what they're doing. This is more robust than
+    # looking for types.
+    return hasattr(obj, "hypothesis_internal_is_this_a_mock_check")
 
 
 def function_digest(function):
