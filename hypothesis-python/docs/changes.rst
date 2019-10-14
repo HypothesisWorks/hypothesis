@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.40.1:
+
+-------------------
+4.40.1 - 2019-10-14
+-------------------
+
+This release changes how Hypothesis checks if a parameter to a test function is a mock object.
+It is unlikely to have any noticeable effect, but may result in a small performance improvement,
+especially for test functions where a mock object is being passed as the first argument.
+
 .. _v4.40.0:
 
 -------------------
