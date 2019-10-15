@@ -195,9 +195,9 @@ def test_stops_after_x_shrinks(monkeypatch):
 
     monkeypatch.setattr(engine, "MAX_SHRINKS", 0)
 
-    @given(st.integers())
+    @given(st.integers(min_value=0))
     def test(n):
-        assert n < 100
+        assert n < 10
 
     stats = call_for_statistics(test)
     assert "shrunk example" in stats.exit_reason
