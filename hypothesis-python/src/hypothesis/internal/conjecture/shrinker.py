@@ -503,6 +503,7 @@ class Shrinker(object):
                 "minimize_duplicated_blocks",
                 block_program("-XX"),
                 "minimize_individual_blocks",
+                block_program("--X"),
             ]
         )
 
