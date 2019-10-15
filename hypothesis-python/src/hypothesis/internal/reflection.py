@@ -25,7 +25,6 @@ import ast
 import hashlib
 import inspect
 import re
-import tokenize
 import types
 from functools import wraps
 from types import ModuleType
@@ -42,6 +41,11 @@ from hypothesis.internal.compat import (
     update_code_location,
 )
 from hypothesis.vendor.pretty import pretty
+
+try:
+    from tokenize import detect_encoding
+except ImportError:  # pragma: no cover
+    detect_encoding = None
 
 
 def fully_qualified_name(f):
@@ -370,16 +374,16 @@ def extract_lambda_source(f):
     # in Python 3.2 or later.  But that's okay, because the only version that
     # affects for us is Python 2.7, and 2.7 doesn't support non-ASCII identifiers:
     # https://www.python.org/dev/peps/pep-3131/. In this case we'll get an
-    # AttributeError.
+    # TypeError again because we set detect_encoding to None above.
     #
     try:
         with open(inspect.getsourcefile(f), "rb") as src_f:
-            encoding, _ = tokenize.detect_encoding(src_f.readline)
+            encoding, _ = detect_encoding(src_f.readline)
 
         source_bytes = source.encode(encoding)
         source_bytes = source_bytes[lambda_ast.col_offset :].strip()
         source = source_bytes.decode(encoding)
-    except (AttributeError, OSError, TypeError):
+    except (OSError, TypeError):
         source = source[lambda_ast.col_offset :].strip()
 
     # This ValueError can be thrown in Python 3 if:
