@@ -11,8 +11,7 @@ e.g.
 
 .. code-block:: python
 
-  @given(st.lists(
-    st.floats(allow_nan=False, allow_infinity=False), min_size=1))
+  @given(st.lists(st.floats(allow_nan=False, allow_infinity=False), min_size=1))
   def test_mean(xs):
       assert min(xs) <= mean(xs) <= max(xs)
 

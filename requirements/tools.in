@@ -2,6 +2,7 @@ attrs
 autoflake
 bandit
 black
+blacken-docs
 coverage
 django
 dpcontracts

@@ -31,7 +31,7 @@ Suppose we've got the following type:
         def sorts_before(self, other):
             if len(self.value) >= len(other.value):
                 return False
-            return other.value[:len(self.value)] == self.value
+            return other.value[: len(self.value)] == self.value
 
 
 Each node is a label and a sequence of some data, and we have the relationship
@@ -79,7 +79,7 @@ First we write a function to verify that our desired outcome holds:
 
   def is_prefix_sorted(xs):
       for i in range(len(xs)):
-          for j in range(i+1, len(xs)):
+          for j in range(i + 1, len(xs)):
               if xs[j].sorts_before(xs[i]):
                   return False
       return True
@@ -97,10 +97,7 @@ First we need to define a strategy for Node:
   from hypothesis import settings, strategies
   import hypothesis.strategies as s
 
-  NodeStrategy = s.builds(
-    Node,
-    s.integers(),
-    s.lists(s.booleans(), max_size=10))
+  NodeStrategy = s.builds(Node, s.integers(), s.lists(s.booleans(), max_size=10))
 
 We want to generate *short* lists of values so that there's a decent chance of
 one being a prefix of the other (this is also why the choice of bool as the
@@ -112,6 +109,7 @@ We can now write a test:
 .. code:: python
 
   from hypothesis import given
+
 
   @given(s.lists(NodeStrategy))
   def test_sorting_nodes_is_prefix_sorted(xs):
@@ -152,7 +150,7 @@ Hypothesis quickly gives us an example of this *still* being wrong:
 
 .. code:: python
 
-  [Node(0, (False,)), Node(-1, (True,)), Node(-2, (False, False))])
+  [Node(0, (False,)), Node(-1, (True,)), Node(-2, (False, False))]
 
 
 Now this is a more interesting example. None of the nodes will sort equal. What is
@@ -169,9 +167,9 @@ So, convinced that our implementation is broken, we write a better one:
         for i in hrange(1, len(xs)):
             j = i - 1
             while j >= 0:
-                if xs[j].sorts_before(xs[j+1]):
+                if xs[j].sorts_before(xs[j + 1]):
                     break
-                xs[j], xs[j+1] = xs[j+1], xs[j]
+                xs[j], xs[j + 1] = xs[j + 1], xs[j]
                 j -= 1
 
 This is just insertion sort slightly modified - we swap a node backwards until swapping
@@ -262,7 +260,7 @@ Without further ado, here is the code:
 
     # We need at least three candidates and at least three voters to have a
     # paradox; anything less can only lead to victories or at worst ties.
-    @given(lists(permutations(['A', 'B', 'C']), min_size=3))
+    @given(lists(permutations(["A", "B", "C"]), min_size=3))
     def test_elections_are_transitive(election):
         all_candidates = {"A", "B", "C"}
 
@@ -271,7 +269,7 @@ Without further ado, here is the code:
         counts = Counter()
         for vote in election:
             for i in range(len(vote)):
-                for j in range(i+1, len(vote)):
+                for j in range(i + 1, len(vote)):
                     counts[(vote[i], vote[j])] += 1
 
         # Now look at which pairs of candidates one has a majority over the
@@ -293,7 +291,7 @@ vary) is:
 
 .. code:: python
 
-    [['A', 'B', 'C'], ['B', 'C', 'A'], ['C', 'A', 'B']]
+    [["A", "B", "C"], ["B", "C", "A"], ["C", "A", "B"]]
 
 Which does indeed do the job: The majority (votes 0 and 1) prefer B to C, the
 majority (votes 0 and 2) prefer A to B and the majority (votes 1 and 2) prefer
@@ -334,31 +332,32 @@ The :pypi:`swagger-conformance` package provides an excellent example of this!
 
 
     # We just pass in our API credentials via environment variables.
-    waspfinder_token = os.getenv('WASPFINDER_TOKEN')
-    waspfinder_user = os.getenv('WASPFINDER_USER')
+    waspfinder_token = os.getenv("WASPFINDER_TOKEN")
+    waspfinder_user = os.getenv("WASPFINDER_USER")
     assert waspfinder_token is not None
     assert waspfinder_user is not None
 
-    GoalData = st.fixed_dictionaries({
-        'title': st.text(),
-        'goal_type': st.sampled_from([
-            "hustler", "biker", "gainer", "fatloser", "inboxer",
-            "drinker", "custom"]),
-        'goaldate': st.one_of(st.none(), st.floats()),
-        'goalval': st.one_of(st.none(), st.floats()),
-        'rate': st.one_of(st.none(), st.floats()),
-        'initval': st.floats(),
-        'panic': st.floats(),
-        'secret': st.booleans(),
-        'datapublic': st.booleans(),
-    })
+    GoalData = st.fixed_dictionaries(
+        {
+            "title": st.text(),
+            "goal_type": st.sampled_from(
+                ["hustler", "biker", "gainer", "fatloser", "inboxer", "drinker", "custom"]
+            ),
+            "goaldate": st.one_of(st.none(), st.floats()),
+            "goalval": st.one_of(st.none(), st.floats()),
+            "rate": st.one_of(st.none(), st.floats()),
+            "initval": st.floats(),
+            "panic": st.floats(),
+            "secret": st.booleans(),
+            "datapublic": st.booleans(),
+        }
+    )
 
 
-    needs2 = ['goaldate', 'goalval', 'rate']
+    needs2 = ["goaldate", "goalval", "rate"]
 
 
     class WaspfinderTest(unittest.TestCase):
-
         @given(GoalData)
         def test_create_goal_dry_run(self, data):
             # We want slug to be unique for each run so that multiple test runs
@@ -394,7 +393,9 @@ The :pypi:`swagger-conformance` package provides an excellent example of this!
                     data[d] = str(v)
             result = requests.post(
                 "https://waspfinder.example.com/api/v1/users/"
-                "%s/goals.json" % (waspfinder_user,), data=data)
+                "%s/goals.json" % (waspfinder_user,),
+                data=data,
+            )
 
             # Lets not hammer the API too badly. This will of course make the
             # tests even slower than they otherwise would have been, but that's
@@ -406,5 +407,6 @@ The :pypi:`swagger-conformance` package provides an excellent example of this!
             # then tried doing more with the result, but this is a good start.
             self.assertNotEqual(result.status_code, 500)
 
-    if __name__ == '__main__':
+
+    if __name__ == "__main__":
         unittest.main()
