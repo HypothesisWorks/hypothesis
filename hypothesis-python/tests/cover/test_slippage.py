@@ -245,10 +245,10 @@ def test_can_disable_multiple_error_reporting(allow_multi):
     assert seen == {TypeError, ValueError}
 
 
-@flaky(max_runs=3, min_passes=2)
+@flaky(max_runs=4, min_passes=3)
 def test_finds_multiple_failures_in_generation():
-    # Very rarely, this raises ZeroDivisionError instead of MultipleFailure,
-    # because we never generated NaN.  We therefore allow one additional run.
+    # Occasionally this raises ZeroDivisionError instead of MultipleFailure,
+    # because we never generated NaN.  We therefore allow two additional runs.
     @settings(phases=[Phase.generate])
     @given(st.lists(st.floats()))
     def test(x):
