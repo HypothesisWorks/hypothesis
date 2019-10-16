@@ -51,7 +51,6 @@ matrix:
 
 stages:
     - precheck
-      if: type = push
     - name: deploy
       if: type = push
 
