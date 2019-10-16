@@ -31,6 +31,7 @@ from types import ModuleType
 
 from hypothesis.internal.compat import (
     ARG_NAME_ATTRIBUTE,
+    PY2,
     getfullargspec,
     hrange,
     isidentifier,
@@ -46,6 +47,11 @@ try:
     from tokenize import detect_encoding
 except ImportError:  # pragma: no cover
     detect_encoding = None
+
+if False:
+    from typing import TypeVar  # noqa
+
+    C = TypeVar("C", bound=callable)
 
 
 def fully_qualified_name(f):
@@ -620,3 +626,38 @@ def proxies(target):
         )
 
     return accept
+
+
+def reserved_means_kwonly_star(func):
+    # type: (C) -> C
+    """A decorator to implement Python-2-compatible kwonly args.
+
+    The following functions behave identically:
+        def f(a, __reserved=not_set, b=None): ...
+        def f(a, *, b=None): ...
+
+    Obviously this doesn't allow required kwonly args, but it's a nice way
+    of defining forward-compatible APIs given our plans to turn all args
+    with default values into kwonly args.
+    """
+    if PY2:
+        return func
+
+    signature = inspect.signature(func)
+    seen = False
+    parameters = []
+    for param in signature.parameters.values():
+        assert param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+        if param.name == "__reserved":
+            seen = True
+        elif not seen:
+            parameters.append(param)
+        else:
+            parameters.append(param.replace(kind=inspect.Parameter.KEYWORD_ONLY))
+    assert seen, "function does not have `__reserved` argument"
+
+    func.__signature__ = signature.replace(parameters=parameters)
+    newsig = define_function_signature(
+        func.__name__, func.__doc__, getfullargspec(func)
+    )
+    return impersonate(func)(wraps(func)(newsig(func)))

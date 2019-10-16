@@ -17,6 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+from collections import OrderedDict
 from random import Random
 
 import pytest
@@ -48,6 +49,11 @@ from tests.common.utils import flaky
         (set(), sets(none(), max_size=0)),
         (frozenset(), frozensets(none(), max_size=0)),
         ({}, fixed_dictionaries({})),
+        ({}, fixed_dictionaries({}, optional={})),
+        (OrderedDict(), fixed_dictionaries(OrderedDict(), optional=OrderedDict())),
+        ({}, fixed_dictionaries({}, optional={1: booleans()})),
+        ({0: False}, fixed_dictionaries({0: booleans()}, optional={1: booleans()})),
+        ({}, fixed_dictionaries({}, optional={(): booleans(), 0: booleans()})),
         ([], lists(nothing())),
         ([], lists(nothing(), unique=True)),
     ],
@@ -88,6 +94,11 @@ def test_ordered_dictionaries_preserve_keys():
     r.shuffle(keys)
     x = fixed_dictionaries(OrderedDict([(k, booleans()) for k in keys])).example()
     assert list(x.keys()) == keys
+
+
+@given(fixed_dictionaries({}, optional={0: booleans(), 1: nothing(), 2: booleans()}))
+def test_fixed_dictionaries_with_optional_and_empty_keys(d):
+    assert 1 not in d
 
 
 @pytest.mark.parametrize(u"n", range(10))

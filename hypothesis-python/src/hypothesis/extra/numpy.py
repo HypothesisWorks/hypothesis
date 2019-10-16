@@ -28,7 +28,7 @@ from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import PY2, hrange, integer_types
 from hypothesis.internal.coverage import check_function
-from hypothesis.internal.reflection import proxies
+from hypothesis.internal.reflection import proxies, reserved_means_kwonly_star
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
@@ -923,6 +923,7 @@ class BasicIndexStrategy(SearchStrategy):
 
 
 @st.defines_strategy
+@reserved_means_kwonly_star
 def basic_indices(
     shape,
     __reserved=not_set,
