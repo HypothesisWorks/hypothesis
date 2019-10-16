@@ -28,6 +28,8 @@ Some packages provide strategies directly:
 * :pypi:`hypothesis-ros` - strategies to generate messages and parameters for the `Robot Operating System <https://www.ros.org/>`_.
 * :pypi:`hypothesis-csv` - strategy to generate CSV files.
 * :pypi:`hypothesis-networkx` - strategy to generate :pypi:`networkx` graphs.
+* :pypi:`hypothesis-bio` - strategies for bioinformatics data, such as DNA, codons, FASTA, and FASTQ formats.
+* :pypi:`hypothesmith` - strategy to generate syntatically-valid Python code.
 
 Others provide a function to infer a strategy from some other schema:
 
@@ -55,6 +57,11 @@ focus on usability and correctness", so naturally it works with Hypothesis!
 that allows ``@given(...)`` to work with Trio-style async test functions, and
 :pypi:`hypothesis-trio` includes stateful testing extensions to support
 concurrent programs.
+
+:pypi:`pymtl3` is "an open-source Python-based hardware generation, simulation,
+and verification framework with multi-level hardware modeling support", which
+ships with Hypothesis integrations to check that all of those levels are
+eqivalent, from function-level to register-transfer level and even to hardware.
 
 :pypi:`libarchimedes` makes it easy to use Hypothesis in
 `the Hy language <https://github.com/hylang/hy>`_, a Lisp embedded in Python.
