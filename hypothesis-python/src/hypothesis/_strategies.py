@@ -69,6 +69,7 @@ from hypothesis.internal.reflection import (
     nicerepr,
     proxies,
     required_args,
+    reserved_means_kwonly_star,
 )
 from hypothesis.internal.validation import (
     check_type,
@@ -876,6 +877,7 @@ def iterables(
 
 
 @defines_strategy
+@reserved_means_kwonly_star
 def fixed_dictionaries(
     mapping,  # type: Dict[T, SearchStrategy[Ex]]
     __reserved=not_set,  # type: Any

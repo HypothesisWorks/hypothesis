@@ -171,7 +171,7 @@ def test_unicode_string_dtype_len_0(data):
 
 
 def test_test_basic_indices_kwonly_emulation():
-    with pytest.raises(InvalidArgument):
+    with pytest.raises(TypeError):
         nps.basic_indices((), 0, 1).validate()
-    with pytest.raises(InvalidArgument):
+    with pytest.raises(TypeError):
         nps.basic_indices((), __reserved=None).validate()

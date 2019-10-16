@@ -140,7 +140,6 @@ def fn_ktest(*fnkwargs):
     (ds.complex_numbers, {"max_magnitude": 2, "allow_nan": True}),
     (ds.fixed_dictionaries, {"mapping": "fish"}),
     (ds.fixed_dictionaries, {"mapping": {1: "fish"}}),
-    (ds.fixed_dictionaries, {"mapping": {}, "__reserved": None}),
     (ds.fixed_dictionaries, {"mapping": {}, "optional": "fish"}),
     (ds.fixed_dictionaries, {"mapping": {}, "optional": {1: "fish"}}),
     (ds.fixed_dictionaries, {"mapping": {}, "optional": collections.OrderedDict()}),
