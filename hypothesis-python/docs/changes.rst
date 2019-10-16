@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.41.1:
+
+-------------------
+4.41.1 - 2019-10-16
+-------------------
+
+This release makes ``--hypothesis-show-statistics`` much more useful for
+tests using a :class:`~hypothesis.stateful.RuleBasedStateMachine`, by
+simplifying the reprs so that events are aggregated correctly.
+
 .. _v4.41.0:
 
 -------------------
