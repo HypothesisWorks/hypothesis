@@ -490,7 +490,7 @@ def source_exec_as_module(source):
 
     result = ModuleType(
         "hypothesis_temporary_module_%s"
-        % (hashlib.sha1(str_to_bytes(source)).hexdigest(),)
+        % (hashlib.sha384(str_to_bytes(source)).hexdigest(),)
     )
     assert isinstance(source, str)
     exec(source, result.__dict__)
