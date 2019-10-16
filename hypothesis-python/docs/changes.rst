@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.41.0:
+
+-------------------
+4.41.0 - 2019-10-16
+-------------------
+
+This release upgrades the :func:`~hypothesis.strategies.fixed_dictionaries`
+strategy to support ``optional`` keys (:issue:`1913`).
+
 .. _v4.40.2:
 
 -------------------
