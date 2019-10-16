@@ -388,6 +388,60 @@ class MachineUsingMultiple(RuleBasedStateMachine):
 TestMachineUsingMultiple = MachineUsingMultiple.TestCase
 
 
+def test_multiple_variables_printed():
+    class ProducesMultiple(RuleBasedStateMachine):
+        b = Bundle("b")
+
+        @initialize(target=b)
+        def populate_bundle(self):
+            return multiple(1, 2)
+
+        @rule()
+        def fail_fast(self):
+            assert False
+
+    with capture_out() as o:
+        # The state machine must raise an exception for the
+        # falsifying example to be printed.
+        with raises(AssertionError):
+            run_state_machine_as_test(ProducesMultiple)
+
+    # This is tightly coupled to the output format of the step printing.
+    # The first line is "Falsifying Example:..." the second is creating
+    # the state machine, the third is calling the "initialize" method.
+    assignment_line = o.getvalue().split("\n")[2]
+    # 'populate_bundle()' returns 2 values, so should be
+    # expanded to 2 variables.
+    assert assignment_line == "v1, v2 = state.populate_bundle()"
+
+
+def test_no_variables_printed():
+    class ProducesNoVariables(RuleBasedStateMachine):
+        b = Bundle("b")
+
+        @initialize(target=b)
+        def populate_bundle(self):
+            return multiple()
+
+        @rule()
+        def fail_fast(self):
+            assert False
+
+    with capture_out() as o:
+        # The state machine must raise an exception for the
+        # falsifying example to be printed.
+        with raises(AssertionError):
+            run_state_machine_as_test(ProducesNoVariables)
+
+    # This is tightly coupled to the output format of the step printing.
+    # The first line is "Falsifying Example:..." the second is creating
+    # the state machine, the third is calling the "initialize" method.
+    assignment_line = o.getvalue().split("\n")[2]
+    # 'populate_bundle()' returns 0 values, so there should be no
+    # variable assignment.
+    assert assignment_line == "state.populate_bundle()"
+
+
 def test_consumes_typecheck():
     with pytest.raises(TypeError):
         consumes(integers())
