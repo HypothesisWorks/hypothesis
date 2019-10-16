@@ -27,7 +27,7 @@ which the testing library then attempts to generate test cases to refute.
 For a general introduction to property-based testing, see [@PraiseOfPBT].
 
 Hypothesis is a mature property-based testing library for Python,
-and is one of very few widely used examples of such a library outside of functional programming languages,
+and is one of very few widely used examples of such a library outside of functional programming languages.
 It will be of interest both to researchers using Python for developing scientific software,
 and to software testing researchers as a platform for research in its own right.
 
