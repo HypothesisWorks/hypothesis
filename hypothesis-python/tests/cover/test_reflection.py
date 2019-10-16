@@ -23,6 +23,7 @@ from functools import partial
 
 import pytest
 
+import hypothesis.internal.reflection as reflection
 from hypothesis.internal.compat import PY2, PY3, FullArgSpec, getfullargspec
 from hypothesis.internal.reflection import (
     arg_string,
@@ -693,32 +694,22 @@ def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():
 
 
 @pytest.mark.skipif(PY2, reason="detect_encoding does not exist in Python 2")
-def test_can_render_lambda_with_no_encoding():
+def test_can_render_lambda_with_no_encoding(monkeypatch):
     is_positive = lambda x: x > 0
 
-    # Monkey-patching out the `tokenize.detect_encoding` method here means
+    # Monkey-patching out the `detect_encoding` method here means
     # that our reflection can't detect the encoding of the source file, and
     # has to fall back to assuming it's ASCII.
-    import tokenize
 
-    old_detect_encoding = tokenize.detect_encoding
-    try:
-        del tokenize.detect_encoding
-        assert get_pretty_function_description(is_positive) == "lambda x: x > 0"
-    finally:
-        tokenize.detect_encoding = old_detect_encoding
+    monkeypatch.setattr(reflection, "detect_encoding", None)
+    assert get_pretty_function_description(is_positive) == "lambda x: x > 0"
 
 
 @pytest.mark.skipif(PY2, reason="detect_encoding does not exist in Python 2")
-def test_does_not_crash_on_utf8_lambda_without_encoding():
-    # Monkey-patching out the `tokenize.detect_encoding` method here means
+def test_does_not_crash_on_utf8_lambda_without_encoding(monkeypatch):
+    # Monkey-patching out the `detect_encoding` method here means
     # that our reflection can't detect the encoding of the source file, and
     # has to fall back to assuming it's ASCII.
-    import tokenize
 
-    old_detect_encoding = tokenize.detect_encoding
-    try:
-        del tokenize.detect_encoding
-        assert get_pretty_function_description(is_str_pi) == "lambda x: <unknown>"
-    finally:
-        tokenize.detect_encoding = old_detect_encoding
+    monkeypatch.setattr(reflection, "detect_encoding", None)
+    assert get_pretty_function_description(is_str_pi) == "lambda x: <unknown>"
