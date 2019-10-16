@@ -44,7 +44,7 @@ from hypothesis.control import current_build_context
 from hypothesis.core import given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
 from hypothesis.internal.compat import quiet_raise, string_types
-from hypothesis.internal.reflection import function_digest, nicerepr, proxies
+from hypothesis.internal.reflection import function_digest, nicerepr, proxies, qualname
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
 from hypothesis.searchstrategy.strategies import OneOfStrategy, SearchStrategy
@@ -256,7 +256,7 @@ class GenericStateMachine(
 @attr.s()
 class Rule(object):
     targets = attr.ib()
-    function = attr.ib()
+    function = attr.ib(repr=qualname)
     arguments = attr.ib()
     precondition = attr.ib()
     bundles = attr.ib(init=False)
@@ -308,6 +308,12 @@ class Bundle(SearchStrategy):
         machine = data.draw(self_strategy)
         reference = data.draw(self.__reference_strategy)
         return machine.names_to_values[reference.name]
+
+    def __repr__(self):
+        consume = self.__reference_strategy.consume
+        if consume is False:
+            return "Bundle(name=%r)" % (self.name,)
+        return "Bundle(name=%r, consume=%r)" % (self.name, consume)
 
 
 class BundleConsumer(Bundle):
@@ -603,6 +609,12 @@ class RuleStrategy(SearchStrategy):
                 len(rule.arguments),
                 rule.function.__name__,
             )
+        )
+
+    def __repr__(self):
+        return "%s(machine=%s({...}))" % (
+            self.__class__.__name__,
+            self.machine.__class__.__name__,
         )
 
     def do_draw(self, data):
