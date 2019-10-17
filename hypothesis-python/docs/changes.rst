@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.41.2:
+
+-------------------
+4.41.2 - 2019-10-17
+-------------------
+
+This patch changes some internal hashes to SHA384, to better support
+users subject to FIPS-140. There is no user-visible API change.
+
+Thanks to Paul Kehrer for this contribution!
+
 .. _v4.41.1:
 
 -------------------
