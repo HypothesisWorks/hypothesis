@@ -13,6 +13,7 @@ authors:
     - name: David R. MacIver
       orcid: 0000-0002-8635-3223
     - name: Zac Hatfield Dodds
+      orcid: 0000-0002-8646-8362
 
 ---
 
