@@ -20,7 +20,7 @@ from __future__ import absolute_import, division, print_function
 import binascii
 import os
 import warnings
-from hashlib import sha1
+from hashlib import sha384
 
 from hypothesis.configuration import mkdir_p, storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
@@ -139,7 +139,7 @@ class InMemoryExampleDatabase(ExampleDatabase):
 
 
 def _hash(key):
-    return sha1(key).hexdigest()[:16]
+    return sha384(key).hexdigest()[:16]
 
 
 class DirectoryBasedExampleDatabase(ExampleDatabase):
@@ -163,7 +163,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         return directory
 
     def _value_path(self, key, value):
-        return os.path.join(self._key_path(key), sha1(value).hexdigest()[:16])
+        return os.path.join(self._key_path(key), sha384(value).hexdigest()[:16])
 
     def fetch(self, key):
         kp = self._key_path(key)

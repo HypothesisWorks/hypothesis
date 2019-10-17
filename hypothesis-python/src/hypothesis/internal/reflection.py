@@ -82,7 +82,7 @@ def function_digest(function):
 
     No guarantee of uniqueness though it usually will be.
     """
-    hasher = hashlib.md5()
+    hasher = hashlib.sha384()
     try:
         hasher.update(to_unicode(inspect.getsource(function)).encode("utf-8"))
     # Different errors on different versions of python. What fun.
@@ -490,7 +490,7 @@ def source_exec_as_module(source):
 
     result = ModuleType(
         "hypothesis_temporary_module_%s"
-        % (hashlib.sha1(str_to_bytes(source)).hexdigest(),)
+        % (hashlib.sha384(str_to_bytes(source)).hexdigest(),)
     )
     assert isinstance(source, str)
     exec(source, result.__dict__)

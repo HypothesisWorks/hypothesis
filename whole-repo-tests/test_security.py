@@ -23,4 +23,5 @@ from hypothesistooling.scripts import pip_tool
 
 def test_bandit_passes_on_hypothesis():
     # pypi.org/project/bandit has the table of error codes, or `bandit --help`
-    pip_tool("bandit", "--skip", "B101,B102,B110,B303,B311", "--recursive", PYTHON_SRC)
+    # Note that e.g. the hash type is important for users subject to FIPS-140.
+    pip_tool("bandit", "--skip=B101,B102,B110,B311", "--recursive", PYTHON_SRC)

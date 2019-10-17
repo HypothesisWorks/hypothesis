@@ -255,6 +255,7 @@ their individual contributions.
 * `mulkieran <https://www.github.com/mulkieran>`_
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
 * `Paul Ganssle <https://ganssle.io>`_ (paul@ganssle.io)
+* `Paul Kehrer <https://github.com/reaperhulk>`_
 * `Paul Lorett Amazona <https://github.com/whatevergeek>`_
 * `Paul Stiverson <https://github.com/thismatters>`_
 * `Peadar Coyle <https://github.com/springcoil>`_ (peadarcoyle@gmail.com)

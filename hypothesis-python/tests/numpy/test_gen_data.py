@@ -848,6 +848,12 @@ def test_test_basic_indices_can_generate_long_ellipsis():
     )
 
 
+@given(nps.basic_indices(shape=(0, 0, 0, 0, 0)).filter(lambda idx: Ellipsis in idx))
+def test_test_basic_indices_replaces_whole_axis_slices_with_ellipsis(idx):
+    # If ... is in the slice, it replaces all ,:, entries for this shape.
+    assert slice(None) not in idx
+
+
 @given(
     shape=nps.array_shapes(min_dims=0, max_side=4)
     | nps.array_shapes(min_dims=0, min_side=0, max_side=10),
