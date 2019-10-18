@@ -16,7 +16,7 @@
 # END HEADER
 
 from __future__ import absolute_import, division, print_function
-
+import math
 from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
@@ -26,7 +26,7 @@ import attr
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.internal.compat import Counter, ceil, hbytes, int_from_bytes
+from hypothesis.internal.compat import Counter, ceil, hbytes, int_from_bytes, hrange
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
@@ -512,7 +512,7 @@ class ConjectureRunner(object):
                     if self.random.random() <= parameter.zero_chance:
                         return hbytes(n)
                     else:
-                        return uniform(self.random, n)
+                        return self.random.choice(parameter.alphabet(n))
 
             data = self.new_conjecture_data(draw_bytes)
             self.test_function(data)
@@ -520,7 +520,7 @@ class ConjectureRunner(object):
             if (
                 data.status < Status.VALID
                 or len(data.buffer) * 2 >= BUFFER_SIZE
-                or count > 10
+                or count > 5
             ):
                 count = 0
                 parameter = GenerationParameters(self.random)
@@ -688,9 +688,29 @@ class ConjectureRunner(object):
 class GenerationParameters(object):
     """Parameters to control generation of examples."""
 
+    AVERAGE_ALPHABET_SIZE = 3
+
+    ALPHABET_FACTOR= math.log(1.0 - 1.0 / AVERAGE_ALPHABET_SIZE)
+
     def __init__(self, random):
         self.__random = random
         self.__zero_chance = None
+        self.__alphabet = {}
+
+    def alphabet(self, n_bytes):
+        try:
+            return self.__alphabet[n_bytes]
+        except KeyError:
+            pass
+
+        size = int(math.log(self.__random.random()) / GenerationParameters.ALPHABET_FACTOR) + 1
+        assert size > 0
+
+        size = self.__random.randint(1, 10)
+
+        return self.__alphabet.setdefault(n_bytes, [
+            uniform(self.__random, n_bytes) for _ in hrange(size)
+        ])
 
     @property
     def zero_chance(self):
