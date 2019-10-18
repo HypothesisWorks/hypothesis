@@ -81,6 +81,7 @@ def consistently_increment_time(monkeypatch):
 
 
 random_states_after_tests = {}
+independent_random = random.Random()
 
 
 @pytest.hookimpl(hookwrapper=True)
@@ -93,7 +94,7 @@ def pytest_runtest_call(item):
         # We start by peturbing the state of the PRNG, because repeatedly
         # leaking PRNG state resets state_after to the (previously leaked)
         # state_before, and that just shows as "no use of random".
-        random.seed(random.randrange(2 ** 32))
+        random.seed(independent_random.randrange(2 ** 32))
         before = random.getstate()
         yield
         after = random.getstate()
