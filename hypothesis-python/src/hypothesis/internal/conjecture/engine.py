@@ -509,10 +509,7 @@ class ConjectureRunner(object):
                     assert len(result) == n
                     return result
                 else:
-                    if self.random.random() <= parameter.zero_chance:
-                        return hbytes(n)
-                    else:
-                        return self.random.choice(parameter.alphabet(n))
+                    return parameter.draw_bytes(n)
 
             data = self.new_conjecture_data(draw_bytes)
             self.test_function(data)
@@ -695,7 +692,19 @@ class GenerationParameters(object):
     def __init__(self, random):
         self.__random = random
         self.__zero_chance = None
+        self.__pure_chance = None
         self.__alphabet = {}
+
+    def draw_bytes(self, n):
+        if self.__random.random() <= self.zero_chance:
+            return hbytes(n)
+
+        alphabet = self.alphabet(n)
+
+        if alphabet is None:
+            return uniform(self.__random, n)
+
+        return self.__random.choice(self.alphabet(n))
 
     def alphabet(self, n_bytes):
         try:
@@ -703,14 +712,18 @@ class GenerationParameters(object):
         except KeyError:
             pass
 
-        size = int(math.log(self.__random.random()) / GenerationParameters.ALPHABET_FACTOR) + 1
-        assert size > 0
+        if self.__random.random() <= self.pure_chance:
+            # Don't use an alphabet for 
+            result = None
+        else:
 
-        size = self.__random.randint(1, 10)
+            size = int(math.log(self.__random.random()) / GenerationParameters.ALPHABET_FACTOR) + 1
+            assert size > 0
 
-        return self.__alphabet.setdefault(n_bytes, [
-            uniform(self.__random, n_bytes) for _ in hrange(size)
-        ])
+            size = self.__random.randint(1, 10)
+            result = [uniform(self.__random, n_bytes) for _ in hrange(size)]
+        self.__alphabet[n_bytes] = result
+        return result
 
     @property
     def zero_chance(self):
@@ -725,3 +738,11 @@ class GenerationParameters(object):
             else:
                 self.__zero_chance = self.__random.random() * 0.5
         return self.__zero_chance
+
+    @property
+    def pure_chance(self):
+        """Returns a probability with which any given draw_bytes call should
+        be forced to be all pure."""
+        if self.__pure_chance is None:
+            self.__pure_chance = self.__random.random()
+        return self.__pure_chance
