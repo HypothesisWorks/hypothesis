@@ -27,7 +27,7 @@ tests specify properties that hold for a wide range of inputs,
 which the testing library then attempts to generate test cases to refute.
 For a general introduction to property-based testing, see [@PraiseOfPBT].
 
-Hypothesis is a mature and widely used^[It has over 100,000 downloads per week, over a thousands open source projects use it, and in 2018 the more than 4% of Python users surveyed by the PSF reported using it.] property-based testing library for Python,
+Hypothesis is a mature and widely used^[It has over 100,000 downloads per week, over a thousand open source projects use it, and in 2018 more than 4% of Python users surveyed by the PSF reported using it.] property-based testing library for Python,
 and is one of very few widely used examples of such a library outside of functional programming languages.
 It will be of interest both to researchers using Python for developing scientific software,
 and to software testing researchers as a platform for research in its own right.
