@@ -16,6 +16,7 @@
 # END HEADER
 
 from __future__ import absolute_import, division, print_function
+
 import math
 from enum import Enum
 from random import Random, getrandbits
@@ -26,7 +27,7 @@ import attr
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.internal.compat import Counter, ceil, hbytes, int_from_bytes, hrange
+from hypothesis.internal.compat import Counter, ceil, hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
@@ -687,7 +688,7 @@ class GenerationParameters(object):
 
     AVERAGE_ALPHABET_SIZE = 3
 
-    ALPHABET_FACTOR= math.log(1.0 - 1.0 / AVERAGE_ALPHABET_SIZE)
+    ALPHABET_FACTOR = math.log(1.0 - 1.0 / AVERAGE_ALPHABET_SIZE)
 
     def __init__(self, random):
         self.__random = random
@@ -713,11 +714,17 @@ class GenerationParameters(object):
             pass
 
         if self.__random.random() <= self.pure_chance:
-            # Don't use an alphabet for 
+            # Don't use an alphabet for
             result = None
         else:
 
-            size = int(math.log(self.__random.random()) / GenerationParameters.ALPHABET_FACTOR) + 1
+            size = (
+                int(
+                    math.log(self.__random.random())
+                    / GenerationParameters.ALPHABET_FACTOR
+                )
+                + 1
+            )
             assert size > 0
 
             size = self.__random.randint(1, 10)
