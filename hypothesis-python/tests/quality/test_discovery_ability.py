@@ -53,7 +53,6 @@ from hypothesis.strategies import (
 from tests.common.utils import no_shrink
 
 RUNS = 100
-REQUIRED_RUNS = 50
 
 
 INITIAL_LAMBDA = re.compile(u"^lambda[^:]*:\\s*")
@@ -67,7 +66,9 @@ class HypothesisFalsified(AssertionError):
     pass
 
 
-def define_test(specifier, predicate, condition=None):
+def define_test(specifier, predicate, condition=None, p=0.5):
+    required_runs = int(RUNS * p)
+
     def run_test():
         if condition is None:
 
@@ -99,7 +100,7 @@ def define_test(specifier, predicate, condition=None):
             runner.run()
             if runner.interesting_examples:
                 successes += 1
-                if successes >= REQUIRED_RUNS:
+                if successes >= required_runs:
                     return
         event = reflection.get_pretty_function_description(predicate)
         if condition is not None:
@@ -111,7 +112,7 @@ def define_test(specifier, predicate, condition=None):
             successes,
             RUNS,
             successes / RUNS,
-            (REQUIRED_RUNS / RUNS),
+            (required_runs / RUNS),
         )
         raise HypothesisFalsified(description + u" rejected")
 
@@ -141,7 +142,7 @@ test_can_produce_ascii_strings = define_test(
 )
 
 test_can_produce_long_strings_with_no_ascii = define_test(
-    text(min_size=5), lambda x: all(ord(c) > 127 for c in x)
+    text(min_size=5), lambda x: all(ord(c) > 127 for c in x), p=0.1
 )
 
 test_can_produce_short_strings_with_some_non_ascii = define_test(
@@ -162,7 +163,7 @@ test_can_produce_floats_near_right = define_test(floats(0, 1), lambda t: t > 0.8
 
 test_can_produce_floats_in_middle = define_test(floats(0, 1), lambda t: 0.2 <= t <= 0.8)
 
-test_can_produce_long_lists = define_test(lists(integers()), long_list)
+test_can_produce_long_lists = define_test(lists(integers()), long_list, p=0.3)
 
 test_can_produce_short_lists = define_test(lists(integers()), lambda x: len(x) <= 10)
 
