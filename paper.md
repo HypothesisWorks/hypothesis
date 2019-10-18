@@ -47,7 +47,7 @@ For example, hypothesis-networkx^[https://pypi.org/project/hypothesis-networkx/]
 and hypothesis-bio^[https://pypi.org/project/hypothesis-bio/] generates formats suitable for bioinformatics.
 As it is used by more researchers, the number of research applications will only increase.
 
-By lowering the barrier to effective testing significantly, Hypothesis makes testing of research software written in Python much more compelling,
+By lowering the barrier to effective testing, Hypothesis makes testing of research software written in Python much more compelling,
 and has the potential to significantly improve the quality of the associated scientific research as a result.
 
 # Hypothesis for Software Testing Research
