@@ -226,6 +226,7 @@ their individual contributions.
 * `J.J. Green <http://soliton.vm.bytemark.co.uk/pub/jjg/>`_
 * `JP Viljoen <https://github.com/froztbyte>`_ (froztbyte@froztbyte.net)
 * `Jochen Müller <https://github.com/jomuel>`_
+* `Joseph Weston <https://github.com/jbweston>`_
 * `Joey Tuong <https://github.com/tetrapus>`_
 * `Jonathan Gayvallet <https://github.com/Meallia>`_ (jonathan.gayvallet@orange.com)
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (jonty@jonty.co.uk)
