@@ -100,7 +100,7 @@ def clear_cache_after_draw(draw, base_strategy):
 class Context(object):
     __slots__ = ["flags"]
 
-    def __init__(self, groups=None, flags=0):
+    def __init__(self, flags):
         self.flags = flags
 
 
