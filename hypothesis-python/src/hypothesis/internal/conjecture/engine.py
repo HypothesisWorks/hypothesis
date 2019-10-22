@@ -713,11 +713,16 @@ class GenerationParameters(object):
         self.__alphabet = {}
 
     def draw_bytes(self, n):
+        """Draw an n-byte block from the distribution defined by this instance
+        of generation parameters."""
         alphabet = self.alphabet(n)
 
         if alphabet is None:
             return uniform(self.__random, n)
 
+        return self.__draw_without_alphabet(n)
+
+    def __draw_without_alphabet(self, n):
         if self.__random.random() <= self.zero_chance:
             return hbytes(n)
 
@@ -727,13 +732,25 @@ class GenerationParameters(object):
         return self.__random.choice(self.alphabet(n))
 
     def alphabet(self, n_bytes):
+        """Returns an alphabet - a list of values to use for all blocks with
+        this number of bytes - or None if this value should be generated
+        without an alphabet.
+
+        This is designed to promote duplication in the test case that would
+        otherwise happen with very low probability.
+        """
         try:
             return self.__alphabet[n_bytes]
         except KeyError:
             pass
 
         if self.__random.random() <= self.pure_chance:
-            # Don't use an alphabet for
+            # Sometiems we don't want to use an alphabet (e.g. for generating
+            # sets of integers having a small alphabet is disastrous), so with
+            # some probability we want to generate choices that do not use the
+            # alphabet. As with other factors we set this probability globally
+            # across the whole choice of distribution so we have various levels
+            # of mixing.
             result = None
         else:
 
@@ -747,13 +764,7 @@ class GenerationParameters(object):
             assert size > 0
 
             size = self.__random.randint(1, 10)
-            result = [uniform(self.__random, n_bytes) for _ in hrange(size)]
-
-            if self.__random.random() <= self.zero_chance:
-                result.append(hbytes(n_bytes))
-
-            if self.__random.random() <= self.max_chance:
-                result.append(hbytes([255]) * n_bytes)
+            result = [self.__draw_without_alphabet(n_bytes) for _ in hrange(size)]
 
         self.__alphabet[n_bytes] = result
         return result
@@ -761,7 +772,9 @@ class GenerationParameters(object):
     @property
     def max_chance(self):
         """Returns a probability with which any given draw_bytes call should
-        be forced to be all zero."""
+        be forced to be all 255 bytes. This is an important value because it
+        can make it more likely to push us into rare corners of the search
+        space, especially when biased_coin is being used."""
         if self.__max_chance is None:
             # We want to generate pure random examples every now and then. This
             # is partly to offset too strong a bias to zero and partly because
@@ -772,7 +785,9 @@ class GenerationParameters(object):
     @property
     def zero_chance(self):
         """Returns a probability with which any given draw_bytes call should
-        be forced to be all zero."""
+        be forced to be all zero. This is an important value especially because
+        it will tend to force the test case to be smaller than it otherwise
+        would be."""
         if self.__zero_chance is None:
             # We want to generate pure random examples every now and then. This
             # is partly to offset too strong a bias to zero and partly because
