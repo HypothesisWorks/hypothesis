@@ -55,7 +55,10 @@ def test_stops_after_ten_times_max_examples_if_not_satisfying():
     with pytest.raises(Unsatisfiable):
         find(s.integers(0, 10000), track, settings=settings(max_examples=max_examples))
 
-    assert count[0] == 10 * max_examples
+    # Very occasionally we can generate overflows in generation, which also
+    # count towards our example budget, which means that we don't hit the
+    # maximum.
+    assert count[0] <= 10 * max_examples
 
 
 some_normal_settings = settings()
