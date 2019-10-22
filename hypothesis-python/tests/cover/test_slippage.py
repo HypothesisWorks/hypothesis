@@ -258,7 +258,7 @@ def test_finds_multiple_failures_in_generation():
         can keep generating larger examples and still find new bugs after that
         point."""
         if not special:
-            if len(seen) >= 10 and x >= 10 ** 6:
+            if len(seen) >= 10 and x <= 10 ** 5:
                 special.append(x)
             else:
                 seen.add(x)
