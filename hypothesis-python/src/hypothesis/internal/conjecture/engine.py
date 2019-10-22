@@ -497,8 +497,23 @@ class ConjectureRunner(object):
                 self.first_bug_found_at + 1000, self.last_bug_found_at * 2
             )
 
-        count = 0
+        # GenerationParameters are a set of decisions we make that are global
+        # to the whole test case, used to bias the data generation in various
+        # ways. This is an approach very very loosely inspired by the paper
+        # "Swarm testing." by Groce et al. in that it induces deliberate
+        # correlation between otherwise independent decisions made during the
+        # generation process.
+        #
+        # More importantly the generation is designed to make certain scenarios
+        # more likely (e.g. small examples, duplicated values), which can help
+        # or hurt in terms of finding interesting things. Whenever the result
+        # of our generation is a bad test case, for whatever definition of
+        # "bad" we like (currently, invalid or too large), we ditch the
+        # parameter early. This allows us to potentially generate good test
+        # cases significantly more often than we otherwise would, by selecting
+        # for parameters that make them more likely.
         parameter = GenerationParameters(self.random)
+        count = 0
 
         while should_generate_more():
             prefix = self.generate_novel_prefix()
