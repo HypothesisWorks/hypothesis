@@ -753,7 +753,8 @@ class GenerationParameters(object):
             # of mixing.
             result = None
         else:
-
+            # We draw the size as a geometric distribution with average size
+            # GenerationParameters.AVERAGE_ALPHABET_SIZE.
             size = (
                 int(
                     math.log(self.__random.random())
