@@ -967,15 +967,6 @@ class ConjectureData(object):
         assert bit_length(result) <= n
         return result
 
-    @property
-    def block_starts(self):
-        while self.__block_starts_calculated_to < len(self.blocks):
-            i = self.__block_starts_calculated_to
-            self.__block_starts_calculated_to += 1
-            u, v = self.blocks.bounds(i)
-            self.__block_starts[v - u].append(u)
-        return self.__block_starts
-
     def draw_bytes(self, n):
         """Draw n bytes from the underlying source."""
         return int_to_bytes(self.draw_bits(8 * n), n)
