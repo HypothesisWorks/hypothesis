@@ -718,9 +718,9 @@ class GenerationParameters(object):
         alphabet = self.alphabet(n)
 
         if alphabet is None:
-            return uniform(self.__random, n)
+            return self.__draw_without_alphabet(n)
 
-        return self.__draw_without_alphabet(n)
+        return self.__random.choice(alphabet)
 
     def __draw_without_alphabet(self, n):
         if self.__random.random() <= self.zero_chance:
@@ -729,7 +729,7 @@ class GenerationParameters(object):
         if self.__random.random() <= self.max_chance:
             return hbytes([255]) * n
 
-        return self.__random.choice(self.alphabet(n))
+        return uniform(self.__random, n)
 
     def alphabet(self, n_bytes):
         """Returns an alphabet - a list of values to use for all blocks with
