@@ -559,7 +559,9 @@ def test_settings_attribute_is_validated():
 def test_saves_failing_example_in_database():
     db = ExampleDatabase(":memory:")
     with raises(AssertionError):
-        run_state_machine_as_test(SetStateMachine, Settings(database=db))
+        run_state_machine_as_test(
+            SetStateMachine, Settings(database=db, max_examples=100)
+        )
     assert any(list(db.data.values()))
 
 
@@ -790,7 +792,9 @@ def test_removes_needless_steps():
 
     with capture_out() as o:
         with pytest.raises(AssertionError):
-            run_state_machine_as_test(IncorrectDeletion, settings=Settings(max_examples=100))
+            run_state_machine_as_test(
+                IncorrectDeletion, settings=Settings(max_examples=100)
+            )
 
     assert o.getvalue().count(" = state.k(") == 1
     assert o.getvalue().count(" = state.v(") == 1
