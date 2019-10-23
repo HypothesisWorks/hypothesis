@@ -759,7 +759,7 @@ def test_removes_needless_steps():
     but will still fail with very high probability.
     """
 
-    @Settings(derandomize=True)
+    @Settings(derandomize=True, max_examples=1000)
     class IncorrectDeletion(RuleBasedStateMachine):
         def __init__(self):
             super(IncorrectDeletion, self).__init__()
@@ -792,9 +792,7 @@ def test_removes_needless_steps():
 
     with capture_out() as o:
         with pytest.raises(AssertionError):
-            run_state_machine_as_test(
-                IncorrectDeletion, settings=Settings(max_examples=100)
-            )
+            run_state_machine_as_test(IncorrectDeletion)
 
     assert o.getvalue().count(" = state.k(") == 1
     assert o.getvalue().count(" = state.v(") == 1
