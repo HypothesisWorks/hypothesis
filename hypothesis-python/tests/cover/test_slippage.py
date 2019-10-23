@@ -249,7 +249,7 @@ def test_finds_multiple_failures_in_generation():
     special = []
     seen = set()
 
-    @settings(phases=[Phase.generate])
+    @settings(phases=[Phase.generate], max_examples=100)
     @given(st.integers(min_value=0))
     def test(x):
         """Constructs a test so the 10th largeish example we've seen is a

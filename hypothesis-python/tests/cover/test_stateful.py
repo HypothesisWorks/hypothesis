@@ -790,7 +790,7 @@ def test_removes_needless_steps():
 
     with capture_out() as o:
         with pytest.raises(AssertionError):
-            run_state_machine_as_test(IncorrectDeletion)
+            run_state_machine_as_test(IncorrectDeletion, settings=Settings(max_examples=100))
 
     assert o.getvalue().count(" = state.k(") == 1
     assert o.getvalue().count(" = state.v(") == 1
