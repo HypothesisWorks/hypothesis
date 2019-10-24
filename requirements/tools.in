@@ -17,6 +17,7 @@ numpy
 pip-tools
 pylint
 pytest
+pytest-xdist
 python-dateutil
 pyupgrade
 pyupio
