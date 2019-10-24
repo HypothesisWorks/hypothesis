@@ -13,7 +13,7 @@ for k, v in sorted(dict(os.environ).items()):
 pip install .
 
 
-PYTEST="python -m pytest -n2"
+PYTEST="python -m pytest"
 
 # Run all the no-extra-dependency tests for this version (except slow nocover tests)
 if [ "$(python -c 'import sys; print(sys.version_info[0] == 2)')" = "True" ] ; then

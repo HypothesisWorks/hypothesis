@@ -66,12 +66,14 @@ if IN_COVERAGE_TESTS:
 
     written = set()  # type: Set[Tuple[str, bool]]
 
+    branch_file = os.path.join("branch-check", str(os.getpid()))
+
     def record_branch(name, value):
         key = (name, value)
         if key in written:
             return
         written.add(key)
-        with open("branch-check", "a") as log:
+        with open(branch_file, "a") as log:
             log.write(json.dumps({"name": name, "value": value}) + "\n")
 
     description_stack = []

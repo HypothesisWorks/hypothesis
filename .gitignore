@@ -24,7 +24,8 @@ docs/_build
 *.egg-info
 _build
 .tox
-.coverage
+.coverage*
+branch-check
 .pypirc
 htmlcov
 build

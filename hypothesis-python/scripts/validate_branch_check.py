@@ -20,15 +20,17 @@ from __future__ import absolute_import, division, print_function
 import json
 import sys
 from collections import defaultdict
+from glob import glob
 
 if __name__ == "__main__":
-    with open("branch-check") as i:
-        data = [json.loads(l) for l in i]
-
     checks = defaultdict(set)
 
-    for d in data:
-        checks[d["name"]].add(d["value"])
+    for f in glob("branch-check/*"):
+        with open(f) as i:
+            data = [json.loads(l) for l in i]
+
+        for d in data:
+            checks[d["name"]].add(d["value"])
 
     always_true = []
     always_false = []
