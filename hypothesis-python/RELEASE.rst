@@ -11,3 +11,8 @@ particular test suites.
 
 If you see any significant regressions in Hypothesis's ability to find bugs in
 your code as a result of this release, please file an issue to let us know.
+
+Users of the new  :ref:`targeted property-based testing <targeted-search>`
+functionality are reasonably likely to see *improvements* in data generation,
+as this release changes the search algorithm for targeted property based
+testing to one that is more likely to be productive than the existing approach.

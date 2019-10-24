@@ -698,6 +698,7 @@ class ConjectureResult(object):
     output = attr.ib()
     extra_information = attr.ib()
     has_discards = attr.ib()
+    target_observations = attr.ib()
     forced_indices = attr.ib(repr=False)
     examples = attr.ib(repr=False)
 
@@ -800,6 +801,7 @@ class ConjectureData(object):
                 if self.extra_information.has_information()
                 else None,
                 has_discards=self.has_discards,
+                target_observations=self.target_observations,
                 forced_indices=self.forced_indices,
             )
             self.blocks.transfer_ownership(self.__result)

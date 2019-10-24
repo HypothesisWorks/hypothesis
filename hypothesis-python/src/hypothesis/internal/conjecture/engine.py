@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import math
+from collections import defaultdict
 from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
@@ -44,6 +45,9 @@ from hypothesis.reporting import base_report
 # Tell pytest to omit the body of this module from tracebacks
 # https://docs.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
 __tracebackhide__ = True
+
+
+NO_SCORE = float("-inf")
 
 
 MAX_SHRINKS = 500
@@ -102,6 +106,8 @@ class ConjectureRunner(object):
         self.used_examples_from_database = False
         self.tree = DataTree()
 
+        self.best_observed_targets = defaultdict(lambda: NO_SCORE)
+
         # We want to be able to get the ConjectureData object that results
         # from running a buffer without recalculating, especially during
         # shrinking where we need to know about the structure of the
@@ -142,6 +148,10 @@ class ConjectureRunner(object):
             self.note_details(data)
 
         self.debug_data(data)
+
+        if data.status >= Status.VALID:
+            for k, v in data.target_observations.items():
+                self.best_observed_targets[k] = max(self.best_observed_targets[k], v)
 
         if data.status == Status.VALID:
             self.valid_examples += 1
@@ -450,6 +460,8 @@ class ConjectureRunner(object):
         if zero_data.status > Status.OVERRUN:
             self.__data_cache.pin(zero_data.buffer)
 
+        self.optimise_all(zero_data)
+
         if zero_data.status == Status.OVERRUN or (
             zero_data.status == Status.VALID and len(zero_data.buffer) * 2 > BUFFER_SIZE
         ):
@@ -518,17 +530,11 @@ class ConjectureRunner(object):
         while should_generate_more():
             prefix = self.generate_novel_prefix()
 
-            def draw_bytes(data, n):
-                if data.index < len(prefix):
-                    result = prefix[data.index : data.index + n]
-                    # We always draw prefixes as a whole number of blocks
-                    assert len(result) == n
-                    return result
-                else:
-                    return parameter.draw_bytes(n)
-
-            data = self.new_conjecture_data(draw_bytes)
+            data = self.new_conjecture_data(draw_bytes_with(prefix, parameter))
             self.test_function(data)
+
+            self.optimise_all(data)
+
             count += 1
             if (
                 data.status < Status.VALID
@@ -537,6 +543,13 @@ class ConjectureRunner(object):
             ):
                 count = 0
                 parameter = GenerationParameters(self.random)
+
+    def optimise_all(self, data):
+        """If the data or result object is suitable for hill climbing, run hill
+        climbing on all of its target observations."""
+        if data.status == Status.VALID:
+            for target, score in data.target_observations.items():
+                self.new_optimiser(data, target).run()
 
     def _run(self):
         self.reuse_existing_examples()
@@ -635,6 +648,11 @@ class ConjectureRunner(object):
     def new_shrinker(self, example, predicate):
         return Shrinker(self, example, predicate)
 
+    def new_optimiser(self, example, target):
+        from hypothesis.internal.conjecture.optimiser import Optimiser
+
+        return Optimiser(self, example, target)
+
     def cached_test_function(self, buffer):
         """Checks the tree to see if we've tested this buffer, and returns the
         previous result if we have.
@@ -698,6 +716,9 @@ class ConjectureRunner(object):
         return result
 
 
+generation_parameters_count = 0
+
+
 class GenerationParameters(object):
     """Parameters to control generation of examples."""
 
@@ -711,6 +732,14 @@ class GenerationParameters(object):
         self.__max_chance = None
         self.__pure_chance = None
         self.__alphabet = {}
+
+        global generation_parameters_count
+        generation_parameters_count += 1
+
+        self.__id = generation_parameters_count
+
+    def __repr__(self):
+        return "GenerationParameters(%d)" % (self.__id,)
 
     def draw_bytes(self, n):
         """Draw an n-byte block from the distribution defined by this instance
@@ -806,3 +835,31 @@ class GenerationParameters(object):
         if self.__pure_chance is None:
             self.__pure_chance = self.__random.random()
         return self.__pure_chance
+
+
+def draw_bytes_with(prefix, parameter):
+    def draw_bytes(data, n):
+        if data.index < len(prefix):
+            result = prefix[data.index : data.index + n]
+            # We always draw prefixes as a whole number of blocks
+            return result
+        return parameter.draw_bytes(n)
+
+    return draw_bytes
+
+
+class DataClassification(Enum):
+    """When we generate some data and decide what we want to do about that it
+    can have one of three outcomes, and we want to make different decisions
+    based on that."""
+
+    # This data was actively bad in some way and we want to avoid generating
+    # things like it.
+    BAD = 1
+    # This data is basically fine. We don't really care about it one way or
+    # another.
+    NEUTRAL = 2
+
+    # This data exhibited some good behaviour that we would like to try to do
+    # more of.
+    GOOD = 3

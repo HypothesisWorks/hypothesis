@@ -799,6 +799,7 @@ def test_removes_needless_steps():
 
 
 def test_prints_equal_values_with_correct_variable_name():
+    @Settings(max_examples=100)
     class MovesBetweenBundles(RuleBasedStateMachine):
         b1 = Bundle("b1")
         b2 = Bundle("b2")
