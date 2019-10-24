@@ -504,7 +504,7 @@ def check_unicode():
 @task()
 def check_whole_repo_tests():
     install.ensure_shellcheck()
-    subprocess.check_call([sys.executable, "-m", "pytest", tools.REPO_TESTS])
+    subprocess.check_call([sys.executable, "-m", "pytest", "-n0", tools.REPO_TESTS])
 
 
 @task()
