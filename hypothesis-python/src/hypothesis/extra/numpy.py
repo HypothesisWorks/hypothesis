@@ -35,7 +35,7 @@ from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.utils.conventions import not_set
 
 if False:
-    from typing import Any, Union, Sequence, Tuple, Optional  # noqa
+    from typing import Any, List, Union, Sequence, Tuple  # noqa
     from hypothesis.searchstrategy.strategies import T  # noqa
 
     Shape = Tuple[int, ...]  # noqa
@@ -1051,4 +1051,170 @@ def integer_array_indices(shape, result_shape=array_shapes(), dtype="int"):
 
     return result_shape.flatmap(
         lambda index_shape: st.tuples(*[array_for(index_shape, size) for size in shape])
+    )
+
+
+class MultipleShapesStrategy(SearchStrategy):
+    def __init__(
+        self,
+        inputs,
+        base_shape=(),
+        __reserved=not_set,
+        min_dims=0,
+        max_dims=None,
+        min_side=1,
+        max_side=None,
+    ):
+        assert 0 <= min_side <= max_side
+        assert 0 <= min_dims <= max_dims <= 32
+        SearchStrategy.__init__(self)
+        self.base_shape = base_shape
+        self.side_strat = st.integers(min_side, max_side)
+        self.num_shapes = inputs
+        self.min_dims = min_dims
+        self.max_dims = max_dims
+        self.min_side = min_side
+        self.max_side = max_side
+
+    def _pick_shape(self, data, shapes):
+        # type: (Any, List[List[Any]]) -> List[Any]
+        """Returns a shape such that all shapes are filled up to `min_dims`,
+        in order of ascending length. Beyond this, shapes are chosen randomly
+        to grow up to `max_dims`"""
+        underfilled = [shape for shape in shapes if len(shape) < self.min_dims]
+        if underfilled:
+            return min(underfilled, key=len)
+
+        return data.draw(
+            st.sampled_from([shape for shape in shapes if len(shape) < self.max_dims])
+        )
+
+    def do_draw(self, data):
+        min_total = self.min_dims * self.num_shapes
+        max_total = self.max_dims * self.num_shapes
+
+        elements = cu.many(
+            data,
+            min_size=min_total,
+            max_size=max_total,
+            average_size=min(
+                max(min_total * 2, min_total + 5), 0.5 * (min_total + max_total)
+            ),
+        )
+
+        # All shapes are handled in column-major order; i.e. they are reversed
+        shapes = [[] for _ in range(self.num_shapes)]
+        result_shape = list(self.base_shape[::-1])
+        while elements.more():
+            updated_shape = self._pick_shape(data, shapes)
+            if len(updated_shape) < len(result_shape):
+                # Shrinks towards original base-shape
+                if result_shape[len(updated_shape)] == 1:
+                    if self.min_side <= 1 and not data.draw(st.booleans()):
+                        side = 1
+                    else:
+                        side = data.draw(self.side_strat)
+                elif self.max_side >= result_shape[len(updated_shape)] and (
+                    not self.min_side <= 1 <= self.max_side or data.draw(st.booleans())
+                ):
+                    side = result_shape[len(updated_shape)]
+                else:
+                    side = 1
+            else:
+                side = data.draw(self.side_strat)
+            updated_shape.append(side)
+
+            # update the resulting shape, based on broadcasting semantics
+            if len(updated_shape) > len(result_shape):
+                result_shape.append(updated_shape[-1])
+            elif updated_shape[-1] != 1 and result_shape[len(updated_shape) - 1] == 1:
+                result_shape[len(updated_shape) - 1] = updated_shape[-1]
+
+        result_shape = result_shape[: max(len(s) for s in shapes)]
+
+        assert len(result_shape) == self.num_shapes
+        assert all(self.min_dims <= len(s) <= self.max_dims for s in shapes)
+        assert all(self.min_side <= s <= self.max_side for side in shapes for s in side)
+
+        return (
+            tuple(tuple(reversed(shape)) for shape in shapes),
+            tuple(reversed(result_shape)),
+        )
+
+
+@st.defines_strategy
+@reserved_means_kwonly_star
+def multiple_shapes(
+    inputs,
+    base_shape=(),
+    __reserved=not_set,
+    min_dims=0,
+    max_dims=None,
+    min_side=1,
+    max_side=None,
+):
+    # type: (int, Shape, Any, int, int, int, int) -> st.SearchStrategy[Tuple[Tuple[Shape, ...], Shape]]
+
+    check_type(integer_types, inputs, "inputs")
+    if inputs < 0:
+        raise InvalidArgument("inputs=%s must be a non-negative integer." % (inputs,))
+
+    check_type(tuple, base_shape, "shape")
+    strict_check = max_side is None or max_dims is None
+    check_type(integer_types, min_side, "min_side")
+    check_type(integer_types, min_dims, "min_dims")
+
+    if max_dims is None:
+        max_dims = max(len(base_shape), min_dims) + 2
+    else:
+        check_type(integer_types, max_dims, "max_dims")
+
+    if max_side is None:
+        max_side = max(tuple(base_shape[-max_dims:]) + (min_side,)) + 2
+    else:
+        check_type(integer_types, max_side, "max_side")
+
+    order_check("dims", 0, min_dims, max_dims)
+    order_check("side", 0, min_side, max_side)
+
+    if 32 < max_dims:
+        raise InvalidArgument("max_dims cannot exceed 32")
+
+    dims, bnd_name = (max_dims, "max_dims") if strict_check else (min_dims, "min_dims")
+
+    # check for unsatisfiable min_side
+    if not all(min_side <= s for s in base_shape[::-1][:dims] if s != 1):
+        raise InvalidArgument(
+            "Given shape=%r, there are no broadcast-compatible "
+            "shapes that satisfy: %s=%s and min_side=%s"
+            % (base_shape, bnd_name, dims, min_side)
+        )
+
+    # check for unsatisfiable [min_side, max_side]
+    if not (
+        min_side <= 1 <= max_side or all(s <= max_side for s in base_shape[::-1][:dims])
+    ):
+        raise InvalidArgument(
+            "Given shape=%r, there are no broadcast-compatible shapes "
+            "that satisfy: %s=%s and [min_side=%s, max_side=%s]"
+            % (base_shape, bnd_name, dims, min_side, max_side)
+        )
+
+    if not strict_check:
+        # reduce max_dims to exclude unsatisfiable dimensions
+        for n, s in zip(range(max_dims), reversed(base_shape)):
+            if s < min_side and s != 1:
+                max_dims = n
+                break
+            elif not (min_side <= 1 <= max_side or s <= max_side):
+                max_dims = n
+                break
+
+    return MultipleShapesStrategy(
+        inputs,
+        base_shape,
+        min_dims=min_dims,
+        max_dims=max_dims,
+        min_side=min_side,
+        max_side=max_side,
     )
