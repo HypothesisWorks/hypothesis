@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis import assume, given, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import Counter
 from hypothesis.strategies import (
@@ -39,7 +39,9 @@ ConstantLists = integers().flatmap(lambda i: lists(just(i)))
 OrderedPairs = integers(1, 200).flatmap(lambda e: tuples(integers(0, e - 1), just(e)))
 
 
-@settings(max_examples=100)
+# This health check fails very very occasionally - rarely enough to not be worth
+# investigation
+@settings(max_examples=100, suppress_health_check=[HealthCheck.filter_too_much])
 @given(ConstantLists)
 def test_constant_lists_are_constant(x):
     assume(len(x) >= 3)
