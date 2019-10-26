@@ -951,18 +951,21 @@ def test_broadcastable_shape_can_generate_arbitrary_ndims(shape, max_dims, data)
 
 @settings(deadline=None)
 @given(
-    inputs=st.integers(1, 5),
+    inputs=st.integers(1, 3),
     base_shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=5),
-    max_dims=st.integers(0, 6),
+    max_dims=st.integers(0, 4),
     data=st.data(),
 )
 def test_multiple_broadcastable_shapes_can_generate_arbitrary_ndims(
     inputs, base_shape, max_dims, data
 ):
-    # ensures that generates shapes can possess any length in [min_dims, max_dims]
-    desired_ndim = data.draw(st.integers(0, max_dims), label="desired_ndim")
+    # ensures that each generated shape can possess any length in [min_dims, max_dims]
+    desired_ndims = data.draw(
+        st.lists(st.integers(0, max_dims), min_size=inputs, max_size=inputs),
+        label="desired_ndims",
+    )
     min_dims = data.draw(
-        st.one_of(st.none(), st.integers(0, desired_ndim)), label="min_dims"
+        st.one_of(st.none(), st.integers(0, min(desired_ndims))), label="min_dims"
     )
     args = (
         dict(min_dims=min_dims) if min_dims is not None else {}
@@ -971,7 +974,7 @@ def test_multiple_broadcastable_shapes_can_generate_arbitrary_ndims(
         nps.multiple_shapes(
             inputs=inputs, base_shape=base_shape, min_side=0, max_dims=max_dims, **args
         ),
-        lambda x: any(len(s) == desired_ndim for s in x[0]),
+        lambda x: set(len(s) for s in x[0]) == set(desired_ndims),
         settings(max_examples=10 ** 6),
     )
 
