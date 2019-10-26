@@ -1034,7 +1034,9 @@ class MultipleShapesStrategy(SearchStrategy):
             elif updated_shape[-1] != 1 and result_shape[len(updated_shape) - 1] == 1:
                 result_shape[len(updated_shape) - 1] = updated_shape[-1]
 
-        result_shape = result_shape[: max(len(s) for s in shapes)]
+        result_shape = result_shape[
+            : max(len(self.base_shape), max((len(s) for s in shapes), default=0))
+        ]
 
         assert len(shapes) == self.num_shapes
         assert all(self.min_dims <= len(s) <= self.max_dims for s in shapes)
