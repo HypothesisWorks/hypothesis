@@ -18,7 +18,11 @@
 from __future__ import absolute_import, division, print_function
 
 import sys
-from itertools import zip_longest
+
+try:
+    from itertools import zip_longest
+except ImportError:
+    from itertools import izip_longest as zip_longest
 
 import numpy as np
 import pytest
