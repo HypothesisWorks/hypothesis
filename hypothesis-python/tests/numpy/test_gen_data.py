@@ -673,9 +673,9 @@ def test_broadcastable_shape_has_good_default_values(shape, data):
     broadcastable_shape = data.draw(
         nps.broadcastable_shapes(shape), label="broadcastable_shapes"
     )
-    _broadcast_shapes(
-        shape, broadcastable_shape
-    )  # error if drawn shape for b is not broadcast-compatible
+
+    # error if drawn shape for b is not broadcast-compatible
+    _broadcast_shapes(shape, broadcastable_shape)
 
 
 @settings(deadline=None)
@@ -697,9 +697,9 @@ def test_broadcastable_shape_can_broadcast(min_dim, shape, data):
         ),
         label="broadcastable_shapes",
     )
-    _broadcast_shapes(
-        shape, broadcastable_shape
-    )  # error if drawn shape for b is not broadcast-compatible
+
+    # error if drawn shape for b is not broadcast-compatible
+    _broadcast_shapes(shape, broadcastable_shape)
 
 
 @settings(deadline=None, max_examples=10)
@@ -743,9 +743,9 @@ def test_broadcastable_shape_adjusts_max_dim_with_explicit_bounds(max_dim, data)
         label="broadcastable_shapes",
     )
     assert len(broadcastable_shape) == 3
-    _broadcast_shapes(
-        shape, broadcastable_shape
-    )  # error if drawn shape for b is not broadcast-compatible
+
+    # error if drawn shape for b is not broadcast-compatible
+    _broadcast_shapes(shape, broadcastable_shape)
 
 
 @settings(deadline=None, max_examples=10)
