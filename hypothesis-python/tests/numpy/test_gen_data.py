@@ -574,6 +574,51 @@ def test_broadcastable_shape_bounds_are_satisfied(shape, data):
     assert all(min_side <= s <= max_side for s in bshape)
 
 
+@settings(deadline=None, suppress_health_check=[HealthCheck.too_slow])
+@given(
+    inputs=st.integers(1, 4),
+    base_shape=nps.array_shapes(min_side=0, max_side=4, min_dims=0, max_dims=3),
+    data=st.data(),
+)
+def test_multiple_broadcastable_shape_bounds_are_satisfied(inputs, base_shape, data):
+    min_dim = data.draw(st.integers(0, 4), label="min_dim")
+    max_dim = data.draw(st.one_of(st.none(), st.integers(min_dim, 4)), label="max_dim")
+    min_side = data.draw(st.integers(0, 3), label="min_side")
+    max_side = data.draw(
+        st.one_of(st.none(), st.integers(min_side, 6)), label="max_side"
+    )
+    try:
+        shapes, result = data.draw(
+            nps.multiple_shapes(
+                inputs=inputs,
+                base_shape=base_shape,
+                min_side=min_side,
+                max_side=max_side,
+                min_dims=min_dim,
+                max_dims=max_dim,
+            ),
+            label="shapes, result",
+        )
+    except InvalidArgument:
+        assume(False)
+        return
+
+    if max_dim is None:
+        max_dim = max(len(base_shape), min_dim) + 2
+
+    if max_side is None:
+        max_side = max(tuple(base_shape[::-1][:max_dim]) + (min_side,)) + 2
+
+    assert isinstance(shapes, tuple)
+    assert isinstance(result, tuple)
+    assert all(isinstance(s, int) for s in result)
+
+    for bshape in shapes:
+        assert isinstance(bshape, tuple) and all(isinstance(s, int) for s in bshape)
+        assert min_dim <= len(bshape) <= max_dim
+        assert all(min_side <= s <= max_side for s in bshape)
+
+
 def _draw_valid_bounds(data, shape, max_dim, permit_none=True):
     if max_dim == 0 or not shape:
         return 0, None
@@ -698,12 +743,6 @@ def test_multiple_shapes_has_good_default_values(inputs, base_shape, data):
     shapes, result = data.draw(
         nps.multiple_shapes(inputs=inputs, base_shape=base_shape),
         label="shapes, result",
-    )
-    assert isinstance(result, tuple) and all(isinstance(i, int) for i in result)
-    assert (
-        isinstance(shapes, tuple)
-        and all(isinstance(s, tuple) for s in shapes)
-        and all(isinstance(i, int) for s in shapes for i in s)
     )
     assert len(shapes) == inputs
     # raises if shapes are not mutually-compatible
