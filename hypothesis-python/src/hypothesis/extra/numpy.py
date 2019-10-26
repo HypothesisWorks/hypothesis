@@ -1085,6 +1085,7 @@ def multiple_shapes(
     The following are some examples drawn from this strategy.
 
     .. code-block:: pycon
+
         >>> # Each example will draw three shapes,
         ... # and each shape is broadcast-compatible
         ... # with `(2, 3)`
