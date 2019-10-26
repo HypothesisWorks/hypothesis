@@ -740,52 +740,6 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
     return st.lists(axes, min_size, max_size, unique_by=lambda x: x % ndim).map(tuple)
 
 
-class BroadcastShapeStrategy(SearchStrategy):
-    def __init__(self, shape, min_dims, max_dims, min_side, max_side):
-        assert 0 <= min_side <= max_side
-        assert 0 <= min_dims <= max_dims <= 32
-        SearchStrategy.__init__(self)
-        self.shape = shape
-        self.side_strat = st.integers(min_side, max_side)
-        self.min_dims = min_dims
-        self.max_dims = max_dims
-        self.min_side = min_side
-        self.max_side = max_side
-
-    def do_draw(self, data):
-        elements = cu.many(
-            data,
-            min_size=self.min_dims,
-            max_size=self.max_dims,
-            average_size=min(
-                max(self.min_dims * 2, self.min_dims + 5),
-                0.5 * (self.min_dims + self.max_dims),
-            ),
-        )
-        result = []
-        reversed_shape = tuple(self.shape[::-1])
-        while elements.more():
-            if len(result) < len(self.shape):
-                # Shrinks towards original shape
-                if reversed_shape[len(result)] == 1:
-                    if self.min_side <= 1 and not data.draw(st.booleans()):
-                        side = 1
-                    else:
-                        side = data.draw(self.side_strat)
-                elif self.max_side >= reversed_shape[len(result)] and (
-                    not self.min_side <= 1 <= self.max_side or data.draw(st.booleans())
-                ):
-                    side = reversed_shape[len(result)]
-                else:
-                    side = 1
-            else:
-                side = data.draw(self.side_strat)
-            result.append(side)
-        assert self.min_dims <= len(result) <= self.max_dims
-        assert all(self.min_side <= s <= self.max_side for s in result)
-        return tuple(reversed(result))
-
-
 @st.defines_strategy
 def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=None):
     # type: (Shape, int, int, int, int) -> st.SearchStrategy[Shape]
@@ -813,64 +767,14 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
         [(1, 3), (), (2, 3), (2, 1), (4, 1, 3), (3, )]
 
     """
-    check_type(tuple, shape, "shape")
-    strict_check = max_side is None or max_dims is None
-    check_type(integer_types, min_side, "min_side")
-    check_type(integer_types, min_dims, "min_dims")
-
-    if max_dims is None:
-        max_dims = max(len(shape), min_dims) + 2
-    else:
-        check_type(integer_types, max_dims, "max_dims")
-
-    if max_side is None:
-        max_side = max(tuple(shape[-max_dims:]) + (min_side,)) + 2
-    else:
-        check_type(integer_types, max_side, "max_side")
-
-    order_check("dims", 0, min_dims, max_dims)
-    order_check("side", 0, min_side, max_side)
-
-    if 32 < max_dims:
-        raise InvalidArgument("max_dims cannot exceed 32")
-
-    dims, bnd_name = (max_dims, "max_dims") if strict_check else (min_dims, "min_dims")
-
-    # check for unsatisfiable min_side
-    if not all(min_side <= s for s in shape[::-1][:dims] if s != 1):
-        raise InvalidArgument(
-            "Given shape=%r, there are no broadcast-compatible "
-            "shapes that satisfy: %s=%s and min_side=%s"
-            % (shape, bnd_name, dims, min_side)
-        )
-
-    # check for unsatisfiable [min_side, max_side]
-    if not (
-        min_side <= 1 <= max_side or all(s <= max_side for s in shape[::-1][:dims])
-    ):
-        raise InvalidArgument(
-            "Given shape=%r, there are no broadcast-compatible shapes "
-            "that satisfy: %s=%s and [min_side=%s, max_side=%s]"
-            % (shape, bnd_name, dims, min_side, max_side)
-        )
-
-    if not strict_check:
-        # reduce max_dims to exclude unsatisfiable dimensions
-        for n, s in zip(range(max_dims), reversed(shape)):
-            if s < min_side and s != 1:
-                max_dims = n
-                break
-            elif not (min_side <= 1 <= max_side or s <= max_side):
-                max_dims = n
-                break
-
-    return BroadcastShapeStrategy(
-        shape,
+    return multiple_shapes(
+        inputs=1,
+        base_shape=shape,
         min_dims=min_dims,
         max_dims=max_dims,
         min_side=min_side,
         max_side=max_side,
-    )
+    ).map(lambda x: x[0][0])
 
 
 class BasicIndexStrategy(SearchStrategy):
@@ -1132,7 +1036,7 @@ class MultipleShapesStrategy(SearchStrategy):
 
         result_shape = result_shape[: max(len(s) for s in shapes)]
 
-        assert len(result_shape) == self.num_shapes
+        assert len(shapes) == self.num_shapes
         assert all(self.min_dims <= len(s) <= self.max_dims for s in shapes)
         assert all(self.min_side <= s <= self.max_side for side in shapes for s in side)
 
