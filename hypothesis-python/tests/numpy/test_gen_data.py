@@ -561,6 +561,7 @@ def test_broadcastable_shape_bounds_are_satisfied(shape, data):
         )
     except InvalidArgument:
         assume(False)
+        return
 
     if max_dim is None:
         max_dim = max(len(shape), min_dim) + 2
@@ -818,7 +819,7 @@ def test_minimize_multiple_broadcastable_shape(inputs, min_dim, base_shape, data
     )
     note("(smallest_shapes, result): {}".format((smallest_shapes, result)))
     assert len(smallest_shapes) == inputs
-    assert result == _broadcast_shapes(*smallest_shapes, base_shape)
+    assert result == _broadcast_shapes(base_shape, *smallest_shapes)
     for smallest in smallest_shapes:
         n_leading = max(len(smallest) - len(base_shape), 0)
         n_aligned = max(len(smallest) - n_leading, 0)
@@ -928,7 +929,7 @@ def test_multiple_broadcastable_shapes_shrinking_with_singleton_out_of_bounds(
     )
     note("(smallest_shapes, result): {}".format((smallest_shapes, result)))
     assert len(smallest_shapes) == inputs
-    assert result == _broadcast_shapes(*smallest_shapes, base_shape)
+    assert result == _broadcast_shapes(base_shape, *smallest_shapes)
     for smallest in smallest_shapes:
         assert smallest == (min_side,) * min_dim
 
@@ -980,7 +981,7 @@ def test_multiple_broadcastable_shapes_can_generate_arbitrary_ndims(
         nps.multiple_shapes(
             inputs=inputs, base_shape=base_shape, min_side=0, max_dims=max_dims, **args
         ),
-        lambda x: set(len(s) for s in x[0]) == set(desired_ndims),
+        lambda x: {len(s) for s in x[0]} == set(desired_ndims),
         settings(max_examples=10 ** 6),
     )
 
