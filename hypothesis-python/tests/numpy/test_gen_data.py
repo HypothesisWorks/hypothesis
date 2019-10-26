@@ -19,11 +19,6 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 
-try:
-    from itertools import zip_longest
-except ImportError:
-    from itertools import izip_longest as zip_longest
-
 import numpy as np
 import pytest
 import six
@@ -36,6 +31,12 @@ from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.searchstrategy import SearchStrategy
 from tests.common.debug import find_any, minimal
 from tests.common.utils import checks_deprecated_behaviour, fails_with, flaky
+
+try:
+    from itertools import zip_longest
+except ImportError:
+    from itertools import izip_longest as zip_longest
+
 
 STANDARD_TYPES = list(
     map(
