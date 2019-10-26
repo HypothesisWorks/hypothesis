@@ -698,6 +698,12 @@ def test_multiple_shapes_has_good_default_values(inputs, base_shape, data):
         nps.multiple_shapes(inputs=inputs, base_shape=base_shape),
         label="shapes, result",
     )
+    assert isinstance(result, tuple) and all(isinstance(i, int) for i in result)
+    assert (
+        isinstance(shapes, tuple)
+        and all(isinstance(s, tuple) for s in shapes)
+        and all(isinstance(i, int) for s in shapes for i in s)
+    )
     assert len(shapes) == inputs
     # raises if shapes are not mutually-compatible
     assert result == _broadcast_shapes(base_shape, *shapes)
