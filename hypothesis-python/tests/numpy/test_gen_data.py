@@ -19,6 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 from itertools import zip_longest
+
 import numpy as np
 import pytest
 import six
@@ -610,8 +611,10 @@ def _broadcast_shapes(*shapes):
     inputs shapes together.
 
     Raises ValueError if the shapes are not broadcast-compatible"""
-    if len(shapes) < 2:
-        return shapes
+    assert len(shapes)
+    if len(shapes) == 1:
+        return shapes[0]
+
     out = _broadcast_two_shapes(*shapes[:2])
     for shape in shapes[2:]:
         out = _broadcast_two_shapes(out, shape)
@@ -621,13 +624,18 @@ def _broadcast_shapes(*shapes):
 @settings(deadline=None, max_examples=500)
 @given(
     shapes=st.lists(
-        nps.array_shapes(min_dims=0, min_side=0, max_dims=6, max_side=6), min_size=2
+        nps.array_shapes(min_dims=0, min_side=0, max_dims=6, max_side=6), min_size=1
     )
 )
 def test_broadcastable_shape_util(shapes):
     """Ensures that `_broadcast_shapes` raises when fed incompatible shapes,
     and ensures that it produces the true broadcasted shape"""
+    if len(shapes) == 1:
+        assert _broadcast_shapes(*shapes) == shapes[0]
+        return
+
     arrs = [np.zeros(s, dtype=np.uint8) for s in shapes]
+
     try:
         broadcast_out = np.broadcast_arrays(*arrs)
     except ValueError:
@@ -678,6 +686,23 @@ def test_broadcastable_shape_has_good_default_values(shape, data):
     _broadcast_shapes(shape, broadcastable_shape)
 
 
+@settings(deadline=None, max_examples=1000)
+@given(
+    base_shape=nps.array_shapes(min_dims=0, max_dims=6, min_side=1, max_side=5),
+    inputs=st.integers(1, 10),
+    data=st.data(),
+)
+def test_multiple_shapes_has_good_default_values(inputs, base_shape, data):
+    # This test ensures that default parameters can always produce broadcast-compatible shapes
+    shapes, result = data.draw(
+        nps.multiple_shapes(inputs=inputs, base_shape=base_shape),
+        label="shapes, result",
+    )
+    assert len(shapes) == inputs
+    # raises if shapes are not mutually-compatible
+    assert result == _broadcast_shapes(base_shape, *shapes)
+
+
 @settings(deadline=None)
 @given(
     min_dim=st.integers(0, 5),
@@ -700,6 +725,32 @@ def test_broadcastable_shape_can_broadcast(min_dim, shape, data):
 
     # error if drawn shape for b is not broadcast-compatible
     _broadcast_shapes(shape, broadcastable_shape)
+
+
+@settings(deadline=None)
+@given(
+    inputs=st.integers(1, 10),
+    min_dim=st.integers(0, 5),
+    base_shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=10),
+    data=st.data(),
+)
+def test_multiple_broadcastable_shape_can_broadcast(inputs, min_dim, base_shape, data):
+    max_dim = data.draw(st.one_of(st.none(), st.integers(min_dim, 5)), label="max_dim")
+    min_side, max_side = _draw_valid_bounds(data, base_shape, max_dim)
+    shapes, result = data.draw(
+        nps.multiple_shapes(
+            inputs=inputs,
+            base_shape=base_shape,
+            min_side=min_side,
+            max_side=max_side,
+            min_dims=min_dim,
+            max_dims=max_dim,
+        ),
+        label="shapes, result",
+    )
+
+    # error if drawn shapes are not mutually broadcast-compatible
+    assert result == _broadcast_shapes(base_shape, *shapes)
 
 
 @settings(deadline=None, max_examples=10)
@@ -730,6 +781,48 @@ def test_minimize_broadcastable_shape(min_dim, shape, data):
     assert tuple(expected) == smallest
 
 
+@settings(deadline=None, max_examples=10)
+@given(
+    inputs=st.integers(1, 3),
+    min_dim=st.integers(0, 5),
+    base_shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=5),
+    data=st.data(),
+)
+def test_minimize_multiple_broadcastable_shape(inputs, min_dim, base_shape, data):
+    # Ensure aligned dimensions of broadcastable shape minimizes to `(1,) * min_dim`
+    max_dim = data.draw(st.one_of(st.none(), st.integers(min_dim, 5)), label="max_dim")
+    min_side, max_side = _draw_valid_bounds(
+        data, base_shape, max_dim, permit_none=False
+    )
+
+    if inputs > 1:
+        # shrinking gets a little bit hairy when we have empty axes
+        # and multiple inputs
+        assume(min_side > 0)
+    note("(min_side, max_side): {}".format((min_side, max_side)))
+    smallest_shapes, result = minimal(
+        nps.multiple_shapes(
+            inputs=inputs,
+            base_shape=base_shape,
+            min_side=min_side,
+            max_side=max_side,
+            min_dims=min_dim,
+            max_dims=max_dim,
+        )
+    )
+    note("(smallest_shapes, result): {}".format((smallest_shapes, result)))
+    assert len(smallest_shapes) == inputs
+    assert result == _broadcast_shapes(*smallest_shapes, base_shape)
+    for smallest in smallest_shapes:
+        n_leading = max(len(smallest) - len(base_shape), 0)
+        n_aligned = max(len(smallest) - n_leading, 0)
+        expected = [min_side] * n_leading + [
+            1 if min_side <= 1 <= max_side else i
+            for i in base_shape[len(base_shape) - n_aligned :]
+        ]
+        assert tuple(expected) == smallest
+
+
 @settings(deadline=None)
 @given(max_dim=st.integers(4, 6), data=st.data())
 def test_broadcastable_shape_adjusts_max_dim_with_explicit_bounds(max_dim, data):
@@ -746,6 +839,34 @@ def test_broadcastable_shape_adjusts_max_dim_with_explicit_bounds(max_dim, data)
 
     # error if drawn shape for b is not broadcast-compatible
     _broadcast_shapes(shape, broadcastable_shape)
+
+
+@settings(deadline=None)
+@given(max_dim=st.integers(4, 6), inputs=st.integers(0, 3), data=st.data())
+def test_multiple_broadcastable_shape_adjusts_max_dim_with_explicit_bounds(
+    max_dim, inputs, data
+):
+    # Ensures that `multiple_shapes` limits itself to satisfiable dimensions
+    # Broadcastable values can only be drawn for dims 0-3 for these shapes
+    base_shape = data.draw(
+        st.sampled_from([(5, 3, 2, 1), (0, 3, 2, 1)]), label="base_shape"
+    )
+    shapes, result = data.draw(
+        nps.multiple_shapes(
+            inputs=inputs,
+            base_shape=base_shape,
+            min_side=2,
+            max_side=3,
+            min_dims=3,
+            max_dims=max_dim,
+        ),
+        label="shapes, result",
+    )
+    assert all(len(s) == 3 for s in shapes)
+
+    # error if drawn shape for b is not broadcast-compatible
+    assert len(shapes) == inputs
+    assert result == _broadcast_shapes(base_shape, *shapes)
 
 
 @settings(deadline=None, max_examples=10)
@@ -771,6 +892,41 @@ def test_broadcastable_shape_shrinking_with_singleton_out_of_bounds(
     assert smallest == (min_side,) * min_dim
 
 
+@settings(deadline=None, max_examples=10)
+@given(
+    inputs=st.integers(1, 4),
+    min_dim=st.integers(0, 4),
+    min_side=st.integers(2, 3),
+    data=st.data(),
+)
+def test_multiple_broadcastable_shapes_shrinking_with_singleton_out_of_bounds(
+    inputs, min_dim, min_side, data
+):
+    """Ensures that shapes minimize to `(min_side,) * min_dim` when singleton dimensions
+    are disallowed."""
+    max_dim = data.draw(st.one_of(st.none(), st.integers(min_dim, 4)), label="max_dim")
+    max_side = data.draw(
+        st.one_of(st.none(), st.integers(min_side, 6)), label="max_side"
+    )
+    ndims = data.draw(st.integers(1, 4), label="ndim")
+    base_shape = (1,) * ndims
+    smallest_shapes, result = minimal(
+        nps.multiple_shapes(
+            inputs=inputs,
+            base_shape=base_shape,
+            min_side=min_side,
+            max_side=max_side,
+            min_dims=min_dim,
+            max_dims=max_dim,
+        )
+    )
+    note("(smallest_shapes, result): {}".format((smallest_shapes, result)))
+    assert len(smallest_shapes) == inputs
+    assert result == _broadcast_shapes(*smallest_shapes, base_shape)
+    for smallest in smallest_shapes:
+        assert smallest == (min_side,) * min_dim
+
+
 @settings(deadline=None)
 @given(
     shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=5),
@@ -789,6 +945,33 @@ def test_broadcastable_shape_can_generate_arbitrary_ndims(shape, max_dims, data)
     find_any(
         nps.broadcastable_shapes(shape, min_side=0, max_dims=max_dims, **args),
         lambda x: len(x) == desired_ndim,
+        settings(max_examples=10 ** 6),
+    )
+
+
+@settings(deadline=None)
+@given(
+    inputs=st.integers(1, 5),
+    base_shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=5),
+    max_dims=st.integers(0, 6),
+    data=st.data(),
+)
+def test_multiple_broadcastable_shapes_can_generate_arbitrary_ndims(
+    inputs, base_shape, max_dims, data
+):
+    # ensures that generates shapes can possess any length in [min_dims, max_dims]
+    desired_ndim = data.draw(st.integers(0, max_dims), label="desired_ndim")
+    min_dims = data.draw(
+        st.one_of(st.none(), st.integers(0, desired_ndim)), label="min_dims"
+    )
+    args = (
+        dict(min_dims=min_dims) if min_dims is not None else {}
+    )  # check default arg behavior too
+    find_any(
+        nps.multiple_shapes(
+            inputs=inputs, base_shape=base_shape, min_side=0, max_dims=max_dims, **args
+        ),
+        lambda x: any(len(s) == desired_ndim for s in x[0]),
         settings(max_examples=10 ** 6),
     )
 
