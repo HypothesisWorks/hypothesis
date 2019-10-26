@@ -753,7 +753,7 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
     * ``shape`` a tuple of integers
     * ``min_dims`` The smallest length that the generated shape can possess.
     * ``max_dims`` The largest length that the generated shape can possess.
-      shape can possess. Cannot exceed 32. The default-value for ``max_dims``
+      Cannot exceed 32. The default-value for ``max_dims``
       is ``2 + max(len(shape), min_dims)``.
     * ``min_side`` The smallest size that an unaligned dimension can possess.
     * ``max_side`` The largest size that an unaligned dimension can possess.
@@ -1060,7 +1060,42 @@ def multiple_shapes(
     max_side=None,
 ):
     # type: (int, Shape, Any, int, int, int, int) -> st.SearchStrategy[Tuple[Tuple[Shape, ...], Shape]]
+    """Return a strategy for generating a specified number of shapes, N, that are
+    mutually-broadcastable with one another and with the provided "base-shape".
 
+    The strategy will generate a tuple of:
+     * the N generated shapes
+     * the resulting shape, produced by broadcasting the N shapes with the base-shape
+
+    Each shape produced from this strategy shrinks towards a shape with length
+    ``min_dims``. The size of an aligned dimension shrinks towards being a singleton.
+    The size of an unaligned dimension shrink towards ``min_side``.
+
+    * ``inputs`` The number of mutually broadcast-compatible shapes to generate.
+    * ``base-shape`` The shape against which all generated shapes can broadcast.
+       The default shape is empty, which corresponds to a scalar.
+    * ``min_dims`` The smallest length that any generated shape can possess.
+    * ``max_dims`` The largest length that any generated shape can possess.
+      Cannot exceed 32. The default-value for ``max_dims`` is
+      ``2 + max(len(shape), min_dims)``.
+    * ``min_side`` The smallest size that an unaligned dimension can possess.
+    * ``max_side`` The largest size that an unaligned dimension can possess.
+      The default value is 2 + 'size-of-largest-aligned-dimension'.
+
+    The following are some examples drawn from this strategy.
+
+    .. code-block:: pycon
+        >>> # Each example will draw three shapes,
+        ... # and each shape is broadcast-compatible
+        ... # with `(2, 3)`
+        >>> [multiple_shapes(inputs=3, base_shape=(2, 3)).example() for i in range(5)]
+        [(((), (2, 1), (1, 1)), (2, 3)),
+         (((2, 3), (3, 1, 1), (2, 1)), (3, 2, 3)),
+         (((), (3,), (3,)), (2, 3)),
+         (((), (3,), ()), (2, 3)),
+         (((1,), (), (1, 1, 3)), (1, 2, 3))]
+
+    """
     check_type(integer_types, inputs, "inputs")
     if inputs < 0:
         raise InvalidArgument("inputs=%s must be a non-negative integer." % (inputs,))
