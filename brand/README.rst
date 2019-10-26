@@ -16,7 +16,18 @@ and if you're not sure whether a specific use is OK, please get in touch and ask
 For example, we often bring Hypothesis stickers to conferences but can't make
 it to everything.  If you want to print your own Hypothesis stickers, upload
 the image to `StickerMule <https://www.stickermule.com/custom-stickers>`__
-and pick one of the vinyl options - that's how we get ours!
+and pick one of the die-cut vinyl options - that's how we get ours!
+
+.. image:: ./stickers.jpg
+   :alt: Hypothesis stickers suitable for your laptop
+
+Zac also hands out `custom hard-enamel pins <./pin.jpg>`__ to Hypothesis contributors,
+including anyone who has a pull request merged, does outreach, attends a paid workshop,
+donates money, and so on - we value all kinds of contributions!
+
+Like stickers, you can collect a pin in person at certain Python conferences, or
+`sponsor Zac <https://github.com/sponsors/Zac-HD/>`__ to get them by Australia Post.
+
 
 Colour palette in GIMP format
 #############################
