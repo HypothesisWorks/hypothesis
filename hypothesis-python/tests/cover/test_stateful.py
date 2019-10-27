@@ -559,7 +559,9 @@ def test_settings_attribute_is_validated():
 def test_saves_failing_example_in_database():
     db = ExampleDatabase(":memory:")
     with raises(AssertionError):
-        run_state_machine_as_test(SetStateMachine, Settings(database=db))
+        run_state_machine_as_test(
+            SetStateMachine, Settings(database=db, max_examples=100)
+        )
     assert any(list(db.data.values()))
 
 
@@ -757,7 +759,7 @@ def test_removes_needless_steps():
     but will still fail with very high probability.
     """
 
-    @Settings(derandomize=True)
+    @Settings(derandomize=True, max_examples=1000)
     class IncorrectDeletion(RuleBasedStateMachine):
         def __init__(self):
             super(IncorrectDeletion, self).__init__()
@@ -797,6 +799,7 @@ def test_removes_needless_steps():
 
 
 def test_prints_equal_values_with_correct_variable_name():
+    @Settings(max_examples=100)
     class MovesBetweenBundles(RuleBasedStateMachine):
         b1 = Bundle("b1")
         b2 = Bundle("b2")

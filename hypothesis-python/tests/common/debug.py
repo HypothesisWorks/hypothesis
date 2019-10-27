@@ -73,7 +73,14 @@ def minimal(definition, condition=lambda x: True, settings=None, timeout_after=1
 
 
 def find_any(definition, condition=lambda _: True, settings=None):
-    return minimal(definition, condition, settings=Settings(settings, phases=no_shrink))
+    settings = settings or Settings.default
+    return minimal(
+        definition,
+        condition,
+        settings=Settings(
+            settings, phases=no_shrink, max_examples=max(1000, settings.max_examples)
+        ),
+    )
 
 
 def assert_no_examples(strategy, condition=lambda _: True):

@@ -698,6 +698,7 @@ class ConjectureResult(object):
     output = attr.ib()
     extra_information = attr.ib()
     has_discards = attr.ib()
+    target_observations = attr.ib()
     forced_indices = attr.ib(repr=False)
     examples = attr.ib(repr=False)
 
@@ -800,6 +801,7 @@ class ConjectureData(object):
                 if self.extra_information.has_information()
                 else None,
                 has_discards=self.has_discards,
+                target_observations=self.target_observations,
                 forced_indices=self.forced_indices,
             )
             self.blocks.transfer_ownership(self.__result)
@@ -966,15 +968,6 @@ class ConjectureData(object):
 
         assert bit_length(result) <= n
         return result
-
-    @property
-    def block_starts(self):
-        while self.__block_starts_calculated_to < len(self.blocks):
-            i = self.__block_starts_calculated_to
-            self.__block_starts_calculated_to += 1
-            u, v = self.blocks.bounds(i)
-            self.__block_starts[v - u].append(u)
-        return self.__block_starts
 
     def draw_bytes(self, n):
         """Draw n bytes from the underlying source."""

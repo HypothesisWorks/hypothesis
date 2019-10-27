@@ -21,7 +21,6 @@ import re
 from contextlib import contextmanager
 from random import Random
 
-import attr
 import pytest
 
 import hypothesis.internal.conjecture.engine as engine_module
@@ -30,17 +29,11 @@ from hypothesis import HealthCheck, Phase, Verbosity, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck, Flaky
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.data import (
-    MAX_DEPTH,
-    ConjectureData,
-    Overrun,
-    Status,
-)
+from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status
 from hypothesis.internal.conjecture.engine import (
     MIN_TEST_CALLS,
     ConjectureRunner,
     ExitReason,
-    TargetSelector,
 )
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.shrinking import Float
@@ -98,19 +91,6 @@ def test_non_cloneable_intervals():
         data.mark_interesting()
 
     assert x == hbytes(19)
-
-
-def test_duplicate_buffers():
-    @run_to_buffer
-    def x(data):
-        t = data.draw_bytes(10)
-        if not any(t):
-            data.mark_invalid()
-        s = data.draw_bytes(10)
-        if s == t:
-            data.mark_interesting()
-
-    assert x == hbytes([0] * 9 + [1]) * 2
 
 
 def test_deletable_draws():
@@ -558,16 +538,6 @@ def test_debug_data(capsys):
     assert "INTERESTING" in out
 
 
-def test_zeroes_bytes_above_bound():
-    def f(data):
-        if data.draw_bits(1):
-            x = data.draw_bytes(9)
-            assert not any(x[4:8])
-
-    with buffer_size_limit(10):
-        ConjectureRunner(f).run()
-
-
 def test_can_write_bytes_towards_the_end():
     buf = b"\1\2\3"
 
@@ -579,24 +549,6 @@ def test_can_write_bytes_towards_the_end():
 
     with buffer_size_limit(10):
         ConjectureRunner(f).run()
-
-
-def test_can_increase_number_of_bytes_drawn_in_tail():
-    # This is designed to trigger a case where the zero bound queue will end up
-    # increasing the size of data drawn because moving zeroes into the initial
-    # prefix will increase the amount drawn.
-    def f(data):
-        x = data.draw_bytes(5)
-        n = x.count(0)
-        b = data.draw_bytes(n + 1)
-        assert not any(b)
-
-    runner = ConjectureRunner(
-        f, settings=settings(max_examples=100, suppress_health_check=HealthCheck.all())
-    )
-
-    with buffer_size_limit(11):
-        runner.run()
 
 
 def test_uniqueness_is_preserved_when_writing_at_beginning():
@@ -813,24 +765,6 @@ def test_discarding_can_fail(monkeypatch):
     assert any(e.discarded and e.length > 0 for e in shrinker.shrink_target.examples)
 
 
-def test_depth_bounds_in_generation():
-    depth = [0]
-
-    def tails(data, n):
-        depth[0] = max(depth[0], n)
-        if data.draw_bits(8):
-            data.start_example(SOME_LABEL)
-            tails(data, n + 1)
-            data.stop_example()
-
-    def f(data):
-        tails(data, 0)
-
-    runner = ConjectureRunner(f, settings=settings(database=None, max_examples=20))
-    runner.run()
-    assert 0 < depth[0] <= MAX_DEPTH
-
-
 def test_shrinking_from_mostly_zero(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
@@ -961,28 +895,6 @@ def test_handle_empty_draws(monkeypatch):
         data.mark_interesting()
 
     assert x == hbytes([0])
-
-
-def test_large_initial_write():
-    big = hbytes(b"\xff") * 512
-
-    def f(data):
-        data.write(big)
-        data.draw_bits(63)
-
-    with deterministic_PRNG():
-        runner = ConjectureRunner(
-            f,
-            settings=settings(
-                max_examples=5000,
-                database=None,
-                suppress_health_check=HealthCheck.all(),
-            ),
-        )
-        with buffer_size_limit(1024):
-            runner.run()
-
-    assert runner.exit_reason == ExitReason.finished
 
 
 def test_can_reorder_examples():
@@ -1337,81 +1249,6 @@ def test_alphabet_minimization():
             data.mark_interesting()
 
     assert x == [0, 2] * 5
-
-
-fake_data_counter = 0
-
-
-@attr.s()
-class FakeData(object):
-    status = attr.ib(default=Status.VALID)
-    global_identifer = attr.ib(init=False)
-    target_observations = attr.ib(factory=dict)
-
-    def __attrs_post_init__(self):
-        global fake_data_counter
-        fake_data_counter += 1
-        self.global_identifier = fake_data_counter
-
-
-def test_target_selector_will_maintain_a_bounded_pool():
-    selector = TargetSelector(random=Random(0), pool_size=3)
-
-    for i in range(100):
-        selector.add(FakeData())
-        assert len(selector) == min(i + 1, 3)
-
-
-def test_target_selector_can_discard_labels():
-    selector = TargetSelector(random=Random(0), pool_size=2)
-    for i in range(10):
-        selector.add(FakeData(target_observations={str(i): 0.0}))
-        assert len(selector) <= 2
-
-
-@pytest.mark.parametrize("pool_size", [5, 25])
-def test_target_selector_will_maintain_a_bounded_size_with_scores(pool_size):
-    selector = TargetSelector(random=Random(0), pool_size=pool_size)
-    selector.add(FakeData())
-
-    for i in range(100):
-        selector.add(FakeData(target_observations={str(i // 3 == 0): float(i % 30)}))
-        assert len(selector) <= pool_size
-        for label, pool in selector.scored_examples.items():
-            scores = [ex.target_observations[label] for ex in pool]
-            assert scores == sorted(scores, reverse=True)
-
-    selector.add(FakeData())
-    assert len(selector) <= pool_size
-
-
-def test_target_selector_will_use_novel_examples_preferentially():
-    selector = TargetSelector(random=Random(0), pool_size=3)
-    seen = set()
-
-    for i in range(100):
-        selector.add(FakeData())
-        assert len(selector) == min(i + 1, 3)
-        t = selector.select().global_identifier
-        assert t not in seen
-        seen.add(t)
-
-
-def test_target_selector_will_eventually_reuse_examples():
-    selector = TargetSelector(random=Random(0), pool_size=2)
-    seen = set()
-
-    selector.add(FakeData())
-    selector.add(FakeData())
-
-    for _ in range(2):
-        x = selector.select()
-        assert x.global_identifier not in seen
-        seen.add(x.global_identifier)
-
-    for _ in range(2):
-        x = selector.select()
-        assert x.global_identifier in seen
 
 
 def test_cached_test_function_returns_right_value():

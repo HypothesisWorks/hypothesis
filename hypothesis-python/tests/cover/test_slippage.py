@@ -24,7 +24,7 @@ from hypothesis import Phase, assume, given, settings
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import Flaky, MultipleFailures
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
-from tests.common.utils import capture_out, flaky, non_covering_examples
+from tests.common.utils import capture_out, non_covering_examples
 
 
 def test_raises_multiple_failures_with_varying_type():
@@ -245,17 +245,26 @@ def test_can_disable_multiple_error_reporting(allow_multi):
     assert seen == {TypeError, ValueError}
 
 
-@flaky(max_runs=3, min_passes=2)
 def test_finds_multiple_failures_in_generation():
-    # Very rarely, this raises ZeroDivisionError instead of MultipleFailure,
-    # because we never generated NaN.  We therefore allow one additional run.
-    @settings(phases=[Phase.generate])
-    @given(st.lists(st.floats()))
+    special = []
+    seen = set()
+
+    @settings(phases=[Phase.generate], max_examples=100)
+    @given(st.integers(min_value=0))
     def test(x):
-        mean = sum(x) / len(x)  # ZeroDivisionError
-        if len(x) == 1:
-            assert mean == x[0]  # x[0] is nan
-        assert min(x) <= mean <= max(x)  # x contains nan or +&- inf
+        """Constructs a test so the 10th largeish example we've seen is a
+        special failure, and anything new we see after that point that
+        is larger than it is a different failure. This demonstrates that we
+        can keep generating larger examples and still find new bugs after that
+        point."""
+        if not special:
+            if len(seen) >= 10 and x <= 1000:
+                special.append(x)
+            else:
+                seen.add(x)
+        if special:
+            assert x in seen or (x <= special[0])
+        assert x not in special
 
     with pytest.raises(MultipleFailures):
         test()

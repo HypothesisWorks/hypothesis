@@ -21,7 +21,7 @@ from operator import itemgetter
 
 import pytest
 
-from hypothesis import example, given, strategies as st, target
+from hypothesis import Phase, example, given, settings, strategies as st, target
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import string_types
 
@@ -108,3 +108,34 @@ def test_cannot_target_default_label_twice(_):
     target(0.0)
     with pytest.raises(InvalidArgument):
         target(1.0)
+
+
+@given(st.lists(st.integers()), st.none())
+def test_targeting_with_following_empty(ls, n):
+    # This exercises some logic in the optimiser that prevents it from trying
+    # to mutate empty examples at the end of the test case.
+    target(float(len(ls)))
+
+
+@given(
+    st.tuples(
+        *([st.none()] * 10 + [st.integers()] + [st.none()] * 10 + [st.integers()])
+    )
+)
+def test_targeting_with_many_empty(_):
+    # This exercises some logic in the optimiser that prevents it from trying
+    # to mutate empty examples in the middle of the test case.
+    target(1.0)
+
+
+def test_targeting_increases_max_length():
+    strat = st.lists(st.booleans())
+
+    @settings(database=None, max_examples=200, phases=[Phase.generate])
+    @given(strat)
+    def test_with_targeting(ls):
+        target(float(len(ls)))
+        assert len(ls) <= 100
+
+    with pytest.raises(AssertionError):
+        test_with_targeting()

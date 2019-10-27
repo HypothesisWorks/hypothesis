@@ -17,7 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-from bisect import bisect
+import math
 from collections import defaultdict
 from enum import Enum
 from random import Random, getrandbits
@@ -28,17 +28,8 @@ import attr
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.internal.compat import (
-    Counter,
-    accumulate,
-    ceil,
-    hbytes,
-    hrange,
-    int_from_bytes,
-    to_bytes_sequence,
-)
+from hypothesis.internal.compat import Counter, ceil, hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import (
-    MAX_DEPTH,
     ConjectureData,
     ConjectureResult,
     Overrun,
@@ -46,7 +37,7 @@ from hypothesis.internal.conjecture.data import (
     StopTest,
 )
 from hypothesis.internal.conjecture.datatree import DataTree, TreeRecordingObserver
-from hypothesis.internal.conjecture.junkdrawer import pop_random, uniform
+from hypothesis.internal.conjecture.junkdrawer import uniform
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import base_report
@@ -54,6 +45,9 @@ from hypothesis.reporting import base_report
 # Tell pytest to omit the body of this module from tracebacks
 # https://docs.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
 __tracebackhide__ = True
+
+
+NO_SCORE = float("-inf")
 
 
 MAX_SHRINKS = 500
@@ -100,8 +94,6 @@ class ConjectureRunner(object):
 
         self.events_to_strings = WeakKeyDictionary()
 
-        self.target_selector = TargetSelector(self.random)
-
         self.interesting_examples = {}
         # We use call_count because there may be few possible valid_examples.
         self.first_bug_found_at = None
@@ -113,6 +105,8 @@ class ConjectureRunner(object):
 
         self.used_examples_from_database = False
         self.tree = DataTree()
+
+        self.best_observed_targets = defaultdict(lambda: NO_SCORE)
 
         # We want to be able to get the ConjectureData object that results
         # from running a buffer without recalculating, especially during
@@ -153,35 +147,14 @@ class ConjectureRunner(object):
             data.freeze()
             self.note_details(data)
 
-        self.target_selector.add(data)
-
         self.debug_data(data)
+
+        if data.status >= Status.VALID:
+            for k, v in data.target_observations.items():
+                self.best_observed_targets[k] = max(self.best_observed_targets[k], v)
 
         if data.status == Status.VALID:
             self.valid_examples += 1
-
-        # Record the test result in the tree, to avoid unnecessary work in
-        # the future.
-
-        # The tree has two main uses:
-
-        # 1. It is mildly useful in some cases during generation where there is
-        #    a high probability of duplication but it is possible to generate
-        #    many examples. e.g. if we had input of the form none() | text()
-        #    then we would generate duplicates 50% of the time, and would
-        #    like to avoid that and spend more time exploring the text() half
-        #    of the search space. The tree allows us to predict in advance if
-        #    the test would lead to a duplicate and avoid that.
-        # 2. When shrinking it is *extremely* useful to be able to anticipate
-        #    duplication, because we try many similar and smaller test cases,
-        #    and these will tend to have a very high duplication rate. This is
-        #    where the tree usage really shines.
-        #
-        # In aid of this, we keep around just enough of the structure of the
-        # the tree of examples we've seen so far to let us predict whether
-        # something will lead to a known result, and to canonicalize it into
-        # the buffer that would belong to the ConjectureData that you get
-        # from running it.
 
         if data.status == Status.INTERESTING:
             key = data.interesting_origin
@@ -238,10 +211,6 @@ class ConjectureRunner(object):
         test run should have already stopped due to tree exhaustion.
         """
         return self.tree.generate_novel_prefix(self.random)
-
-    @property
-    def cap(self):
-        return BUFFER_SIZE // 2
 
     def record_for_health_check(self, data):
         # Once we've actually found a bug, there's no point in trying to run
@@ -409,125 +378,6 @@ class ConjectureRunner(object):
                 % (self.call_count, self.valid_examples, self.shrinks)
             )
 
-    def _new_mutator(self):
-        target_data = [None]
-
-        def draw_new(data, n):
-            return uniform(self.random, n)
-
-        def draw_existing(data, n):
-            return target_data[0].buffer[data.index : data.index + n]
-
-        def draw_smaller(data, n):
-            existing = target_data[0].buffer[data.index : data.index + n]
-            r = uniform(self.random, n)
-            if r <= existing:
-                return r
-            return _draw_predecessor(self.random, existing)
-
-        def draw_larger(data, n):
-            existing = target_data[0].buffer[data.index : data.index + n]
-            r = uniform(self.random, n)
-            if r >= existing:
-                return r
-            return _draw_successor(self.random, existing)
-
-        def reuse_existing(data, n):
-            choices = data.block_starts.get(n, [])
-            if choices:
-                i = self.random.choice(choices)
-                assert i + n <= len(data.buffer)
-                return hbytes(data.buffer[i : i + n])
-            else:
-                result = uniform(self.random, n)
-                assert isinstance(result, hbytes)
-                return result
-
-        def flip_bit(data, n):
-            buf = bytearray(target_data[0].buffer[data.index : data.index + n])
-            i = self.random.randint(0, n - 1)
-            k = self.random.randint(0, 7)
-            buf[i] ^= 1 << k
-            return hbytes(buf)
-
-        def draw_zero(data, n):
-            return hbytes(b"\0" * n)
-
-        def draw_max(data, n):
-            return hbytes([255]) * n
-
-        def draw_constant(data, n):
-            return hbytes([self.random.randint(0, 255)]) * n
-
-        def redraw_last(data, n):
-            u = target_data[0].blocks[-1].start
-            if data.index + n <= u:
-                return target_data[0].buffer[data.index : data.index + n]
-            else:
-                return uniform(self.random, n)
-
-        options = [
-            draw_new,
-            redraw_last,
-            redraw_last,
-            reuse_existing,
-            reuse_existing,
-            draw_existing,
-            draw_smaller,
-            draw_larger,
-            flip_bit,
-            draw_zero,
-            draw_max,
-            draw_zero,
-            draw_max,
-            draw_constant,
-        ]
-
-        bits = [self.random.choice(options) for _ in hrange(3)]
-
-        prefix = [None]
-
-        def mutate_from(origin):
-            target_data[0] = origin
-            prefix[0] = self.generate_novel_prefix()
-            return draw_mutated
-
-        def draw_mutated(data, n):
-            if data.index + n > len(target_data[0].buffer):
-                result = uniform(self.random, n)
-            else:
-                draw = self.random.choice(bits)
-                result = draw(data, n)
-            p = prefix[0]
-            if data.index < len(p):
-                start = p[data.index : data.index + n]
-                result = start + result[len(start) :]
-            assert len(result) == n
-            return self.__zero_bound(data, result)
-
-        return mutate_from
-
-    def __zero_bound(self, data, result):
-        """This tries to get the size of the generated data under control by
-        replacing the result with zero if we are too deep or have already
-        generated too much data.
-
-        This causes us to enter "shrinking mode" there and thus reduce
-        the size of the generated data.
-        """
-        initial = len(result)
-        if data.depth * 2 >= MAX_DEPTH or data.index >= self.cap:
-            data.forced_indices.update(hrange(data.index, data.index + initial))
-            data.hit_zero_bound = True
-            result = hbytes(initial)
-        elif data.index + initial >= self.cap:
-            data.hit_zero_bound = True
-            n = self.cap - data.index
-            data.forced_indices.update(hrange(self.cap, data.index + initial))
-            result = result[:n] + hbytes(initial - n)
-        assert len(result) == initial
-        return result
-
     @property
     def database(self):
         if self.database_key is None:
@@ -610,6 +460,8 @@ class ConjectureRunner(object):
         if zero_data.status > Status.OVERRUN:
             self.__data_cache.pin(zero_data.buffer)
 
+        self.optimise_all(zero_data)
+
         if zero_data.status == Status.OVERRUN or (
             zero_data.status == Status.VALID and len(zero_data.buffer) * 2 > BUFFER_SIZE
         ):
@@ -627,27 +479,6 @@ class ConjectureRunner(object):
                 "one_of(none(), some_complex_strategy)?",
                 HealthCheck.large_base_example,
             )
-
-        if zero_data is not Overrun:
-            # If the language starts with writes of length >= cap then there is
-            # only one string in it: Everything after cap is forced to be zero (or
-            # to be whatever value is written there). That means that once we've
-            # tried the zero value, there's nothing left for us to do, so we
-            # exit early here.
-            has_non_forced = False
-
-            # It's impossible to fall out of this loop normally because if we
-            # did then that would mean that all blocks are writes, so we would
-            # already have triggered the exhaustedness check on the tree and
-            # finished running.
-            for b in zero_data.blocks:  # pragma: no branch
-                if b.start >= self.cap:
-                    break
-                if not b.forced:
-                    has_non_forced = True
-                    break
-            if not has_non_forced:
-                self.exit_with(ExitReason.finished)
 
         self.health_check_state = HealthCheckState()
 
@@ -678,91 +509,47 @@ class ConjectureRunner(object):
                 self.first_bug_found_at + 1000, self.last_bug_found_at * 2
             )
 
+        # GenerationParameters are a set of decisions we make that are global
+        # to the whole test case, used to bias the data generation in various
+        # ways. This is an approach very very loosely inspired by the paper
+        # "Swarm testing." by Groce et al. in that it induces deliberate
+        # correlation between otherwise independent decisions made during the
+        # generation process.
+        #
+        # More importantly the generation is designed to make certain scenarios
+        # more likely (e.g. small examples, duplicated values), which can help
+        # or hurt in terms of finding interesting things. Whenever the result
+        # of our generation is a bad test case, for whatever definition of
+        # "bad" we like (currently, invalid or too large), we ditch the
+        # parameter early. This allows us to potentially generate good test
+        # cases significantly more often than we otherwise would, by selecting
+        # for parameters that make them more likely.
+        parameter = GenerationParameters(self.random)
         count = 0
-        mutations = 0
-        mutator = self._new_mutator()
-        zero_bound_queue = []
 
         while should_generate_more():
+            prefix = self.generate_novel_prefix()
+
+            data = self.new_conjecture_data(draw_bytes_with(prefix, parameter))
+            self.test_function(data)
+
+            self.optimise_all(data)
+
+            count += 1
             if (
-                count < 10
-                or self.health_check_state is not None
-                # If we have not found a valid prefix yet, the target selector will
-                # be empty and the mutation stage will fail with a very rare internal
-                # error.  We therefore continue this initial random generation step
-                # until we have found at least one prefix to mutate.
-                or len(self.target_selector) == 0
-                # For long-running tests, if we are not currently dealing with an
-                # overrun we want a small chance to generate an entirely novel buffer.
-                or not (zero_bound_queue or self.random.randrange(20))
+                data.status < Status.VALID
+                or len(data.buffer) * 2 >= BUFFER_SIZE
+                or count > 5
             ):
-                prefix = self.generate_novel_prefix()
+                count = 0
+                parameter = GenerationParameters(self.random)
 
-                def draw_bytes(data, n):
-                    if data.index < len(prefix):
-                        result = prefix[data.index : data.index + n]
-                        # We always draw prefixes as a whole number of blocks
-                        assert len(result) == n
-                    else:
-                        result = uniform(self.random, n)
-                    return self.__zero_bound(data, result)
-
-                data = self.new_conjecture_data(draw_bytes)
-                self.test_function(data)
-                data.freeze()
-                count += 1
-            elif zero_bound_queue:
-                # Whenever we generated an example and it hits a bound
-                # which forces zero blocks into it, this creates a weird
-                # distortion effect by making certain parts of the data
-                # stream (especially ones to the right) much more likely
-                # to be zero. We fix this by redistributing the generated
-                # data by shuffling it randomly. This results in the
-                # zero data being spread evenly throughout the buffer.
-                # Hopefully the shrinking this causes will cause us to
-                # naturally fail to hit the bound.
-                # If it doesn't then we will queue the new version up again
-                # (now with more zeros) and try again.
-                overdrawn = zero_bound_queue.pop()
-                buffer = bytearray(overdrawn.buffer)
-
-                # These will have values written to them that are different
-                # from what's in them anyway, so the value there doesn't
-                # really "count" for distributional purposes, and if we
-                # leave them in then they can cause the fraction of non
-                # zero bytes to increase on redraw instead of decrease.
-                for i in overdrawn.forced_indices:
-                    buffer[i] = 0
-
-                self.random.shuffle(buffer)
-                buffer = hbytes(buffer)
-
-                def draw_bytes(data, n):
-                    result = buffer[data.index : data.index + n]
-                    if len(result) < n:
-                        result += hbytes(n - len(result))
-                    return self.__zero_bound(data, result)
-
-                data = self.new_conjecture_data(draw_bytes=draw_bytes)
-                self.test_function(data)
-                data.freeze()
-            else:
-                origin = self.target_selector.select()
-                mutations += 1
-                data = self.new_conjecture_data(draw_bytes=mutator(origin))
-                self.test_function(data)
-                data.freeze()
-                if data.status > origin.status:
-                    mutations = 0
-                elif data.status < origin.status or mutations >= 10:
-                    # Cap the variations of a single example and move on to
-                    # an entirely fresh start.  Ten is an entirely arbitrary
-                    # constant, but it's been working well for years.
-                    mutations = 0
-                    mutator = self._new_mutator()
-            if getattr(data, "hit_zero_bound", False):
-                zero_bound_queue.append(data)
-            mutations += 1
+    def optimise_all(self, data):
+        """If the data or result object is suitable for hill climbing, run hill
+        climbing on all of its target observations."""
+        if data.status == Status.VALID:
+            for target, score in data.target_observations.items():
+                self.new_optimiser(data, target).run()
 
     def _run(self):
         self.reuse_existing_examples()
@@ -861,6 +648,11 @@ class ConjectureRunner(object):
     def new_shrinker(self, example, predicate):
         return Shrinker(self, example, predicate)
 
+    def new_optimiser(self, example, target):
+        from hypothesis.internal.conjecture.optimiser import Optimiser
+
+        return Optimiser(self, example, target)
+
     def cached_test_function(self, buffer):
         """Checks the tree to see if we've tested this buffer, and returns the
         previous result if we have.
@@ -924,128 +716,150 @@ class ConjectureRunner(object):
         return result
 
 
-def _draw_predecessor(rnd, xs):
-    r = bytearray()
-    any_strict = False
-    for x in to_bytes_sequence(xs):
-        if not any_strict:
-            c = rnd.randint(0, x)
-            if c < x:
-                any_strict = True
+generation_parameters_count = 0
+
+
+class GenerationParameters(object):
+    """Parameters to control generation of examples."""
+
+    AVERAGE_ALPHABET_SIZE = 3
+
+    ALPHABET_FACTOR = math.log(1.0 - 1.0 / AVERAGE_ALPHABET_SIZE)
+
+    def __init__(self, random):
+        self.__random = random
+        self.__zero_chance = None
+        self.__max_chance = None
+        self.__pure_chance = None
+        self.__alphabet = {}
+
+        global generation_parameters_count
+        generation_parameters_count += 1
+
+        self.__id = generation_parameters_count
+
+    def __repr__(self):
+        return "GenerationParameters(%d)" % (self.__id,)
+
+    def draw_bytes(self, n):
+        """Draw an n-byte block from the distribution defined by this instance
+        of generation parameters."""
+        alphabet = self.alphabet(n)
+
+        if alphabet is None:
+            return self.__draw_without_alphabet(n)
+
+        return self.__random.choice(alphabet)
+
+    def __draw_without_alphabet(self, n):
+        if self.__random.random() <= self.zero_chance:
+            return hbytes(n)
+
+        if self.__random.random() <= self.max_chance:
+            return hbytes([255]) * n
+
+        return uniform(self.__random, n)
+
+    def alphabet(self, n_bytes):
+        """Returns an alphabet - a list of values to use for all blocks with
+        this number of bytes - or None if this value should be generated
+        without an alphabet.
+
+        This is designed to promote duplication in the test case that would
+        otherwise happen with very low probability.
+        """
+        try:
+            return self.__alphabet[n_bytes]
+        except KeyError:
+            pass
+
+        if self.__random.random() <= self.pure_chance:
+            # Sometiems we don't want to use an alphabet (e.g. for generating
+            # sets of integers having a small alphabet is disastrous), so with
+            # some probability we want to generate choices that do not use the
+            # alphabet. As with other factors we set this probability globally
+            # across the whole choice of distribution so we have various levels
+            # of mixing.
+            result = None
         else:
-            c = rnd.randint(0, 255)
-        r.append(c)
-    return hbytes(r)
-
-
-def _draw_successor(rnd, xs):
-    r = bytearray()
-    any_strict = False
-    for x in to_bytes_sequence(xs):
-        if not any_strict:
-            c = rnd.randint(x, 255)
-            if c > x:
-                any_strict = True
-        else:
-            c = rnd.randint(0, 255)
-        r.append(c)
-    return hbytes(r)
-
-
-class TargetSelector(object):
-    """Data structure for selecting targets to use for mutation.
-
-    The main purpose of the TargetSelector is to maintain a pool of "reasonably
-    useful" examples, while keeping the pool of bounded size.
-
-    In particular it ensures:
-
-    1. We only retain examples of the best status we've seen so far (not
-       counting INTERESTING, which is special).
-    2. We preferentially return examples we've never returned before when
-       select() is called.
-       If ``target()`` is in use, we maintain a pool of the best examples
-       for each known label, choose a random label, and choose an example
-       from that pool with higher-ranked examples more probable.
-    3. The number of retained examples is never more than the greater of
-       self.pool_size, with older examples discarded automatically, preferring
-       ones that we have already explored from.
-
-    These invariants are fairly heavily prone to change - they're not
-    especially well validated as being optimal, and are mostly just a decent
-    compromise between diversity and keeping the pool size bounded.
-    """
-
-    def __init__(self, random, pool_size=MUTATION_POOL_SIZE):
-        self.random = random
-        self.best_status = Status.OVERRUN
-        self.pool_size = pool_size
-        self.weights = tuple(accumulate(0.5 ** i for i in range(10)))
-        self.reset()
-
-    def __len__(self):
-        return (
-            len(self.fresh_examples)
-            + len(self.used_examples)
-            + sum(len(pool) for pool in self.scored_examples.values())
-        )
-
-    def reset(self):
-        self.fresh_examples = []
-        self.used_examples = []
-        self.scored_examples = defaultdict(list)
-
-    def add(self, data):
-        if data.status == Status.INTERESTING:
-            return
-        if data.status < self.best_status:
-            return
-        if data.status > self.best_status:
-            self.best_status = data.status
-            self.reset()
-
-        for label, score in data.target_observations.items():
-            pool = self.scored_examples[label]
-            negative_scores = [-d.target_observations[label] for d in pool]
-            pool.insert(bisect(negative_scores, -score), data)
-            if len(pool) > len(self.weights):
-                pool.pop()
-            self.maybe_discard_one()
-
-        if not self.scored_examples:
-            self.fresh_examples.append(data)
-            self.maybe_discard_one()
-
-    def maybe_discard_one(self):
-        if len(self) > self.pool_size:
-            if self.used_examples or self.fresh_examples:
-                pop_random(self.random, self.used_examples or self.fresh_examples)
-            else:
-                # Get an arbitrary label from those with the longest pools,
-                # discard the lowest-scored example from that pool,
-                # and discard the label if it had no other examples.
-                label, pool = max(
-                    self.scored_examples.items(), key=lambda kv: len(kv[1])
+            # We draw the size as a geometric distribution with average size
+            # GenerationParameters.AVERAGE_ALPHABET_SIZE.
+            size = (
+                int(
+                    math.log(self.__random.random())
+                    / GenerationParameters.ALPHABET_FACTOR
                 )
-                pool.pop()
-                if not pool:
-                    self.scored_examples.pop(label)
-            assert len(self) == self.pool_size
+                + 1
+            )
+            assert size > 0
 
-    def select(self):
-        # If we have feedback from targeted PBT, choose a label and then an example
-        # from that pool.  Each example is twice as likely as the next-highest-ranked.
-        if self.scored_examples:  # pragma: no cover
-            # For some reason this clause is often showing up as uncovered,
-            # though tests/cover/test_targeting.py definitely executes it :-/
-            pool = self.random.choice(list(self.scored_examples.values()))
-            stop_at = self.random.random() * self.weights[len(pool) - 1]
-            return pool[bisect(self.weights, stop_at)]
+            size = self.__random.randint(1, 10)
+            result = [self.__draw_without_alphabet(n_bytes) for _ in hrange(size)]
 
-        # Otherwise, prefer first-time mutations to previously-mutated examples
-        if self.fresh_examples:
-            result = pop_random(self.random, self.fresh_examples)
-            self.used_examples.append(result)
+        self.__alphabet[n_bytes] = result
+        return result
+
+    @property
+    def max_chance(self):
+        """Returns a probability with which any given draw_bytes call should
+        be forced to be all 255 bytes. This is an important value because it
+        can make it more likely to push us into rare corners of the search
+        space, especially when biased_coin is being used."""
+        if self.__max_chance is None:
+            # We want to generate pure random examples every now and then. This
+            # is partly to offset too strong a bias to zero and partly because
+            # some user defined strategies may not play well with zero biasing.
+            self.__max_chance = self.__random.random() * 0.01
+        return self.__max_chance
+
+    @property
+    def zero_chance(self):
+        """Returns a probability with which any given draw_bytes call should
+        be forced to be all zero. This is an important value especially because
+        it will tend to force the test case to be smaller than it otherwise
+        would be."""
+        if self.__zero_chance is None:
+            # We want to generate pure random examples every now and then. This
+            # is partly to offset too strong a bias to zero and partly because
+            # some user defined strategies may not play well with zero biasing.
+            if self.__random.randrange(0, 10) == 0:
+                self.__zero_chance = 0.0
+            else:
+                self.__zero_chance = self.__random.random() * 0.5
+        return self.__zero_chance
+
+    @property
+    def pure_chance(self):
+        """Returns a probability with which any given draw_bytes call should
+        be forced to be all pure."""
+        if self.__pure_chance is None:
+            self.__pure_chance = self.__random.random()
+        return self.__pure_chance
+
+
+def draw_bytes_with(prefix, parameter):
+    def draw_bytes(data, n):
+        if data.index < len(prefix):
+            result = prefix[data.index : data.index + n]
+            # We always draw prefixes as a whole number of blocks
             return result
-        else:
-            return self.random.choice(self.used_examples)
+        return parameter.draw_bytes(n)
+
+    return draw_bytes
+
+
+class DataClassification(Enum):
+    """When we generate some data and decide what we want to do about that it
+    can have one of three outcomes, and we want to make different decisions
+    based on that."""
+
+    # This data was actively bad in some way and we want to avoid generating
+    # things like it.
+    BAD = 1
+    # This data is basically fine. We don't really care about it one way or
+    # another.
+    NEUTRAL = 2
+
+    # This data exhibited some good behaviour that we would like to try to do
+    # more of.
+    GOOD = 3

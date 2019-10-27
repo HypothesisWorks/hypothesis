@@ -57,7 +57,7 @@ def test_notes_hard_to_satisfy():
     @given(st.integers())
     @settings(suppress_health_check=HealthCheck.all())
     def test(i):
-        assume(i == 0)
+        assume(i == 13)
 
     stats = call_for_statistics(test)
     assert "satisfied assumptions" in stats.exit_reason

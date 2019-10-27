@@ -829,18 +829,18 @@ def test_advanced_integer_index_can_generate_any_pattern(shape, data):
         lambda ix: np.newaxis not in ix,
     ],
 )
-def test_test_basic_indices_options(condition):
+def test_basic_indices_options(condition):
     indexers = nps.array_shapes(min_dims=0, max_dims=32).flatmap(
         lambda shape: nps.basic_indices(shape, allow_newaxis=True)
     )
     find_any(indexers, condition)
 
 
-def test_test_basic_indices_can_generate_empty_tuple():
+def test_basic_indices_can_generate_empty_tuple():
     find_any(nps.basic_indices(shape=(0, 0), allow_ellipsis=True), lambda ix: ix == ())
 
 
-def test_test_basic_indices_can_generate_long_ellipsis():
+def test_basic_indices_can_generate_long_ellipsis():
     # Runs of slice(None) - such as [0,:,:,:,0] - can be replaced by e.g. [0,...,0]
     find_any(
         nps.basic_indices(shape=(1, 0, 0, 0, 1), allow_ellipsis=True),
@@ -849,7 +849,7 @@ def test_test_basic_indices_can_generate_long_ellipsis():
 
 
 @given(nps.basic_indices(shape=(0, 0, 0, 0, 0)).filter(lambda idx: Ellipsis in idx))
-def test_test_basic_indices_replaces_whole_axis_slices_with_ellipsis(idx):
+def test_basic_indices_replaces_whole_axis_slices_with_ellipsis(idx):
     # If ... is in the slice, it replaces all ,:, entries for this shape.
     assert slice(None) not in idx
 
