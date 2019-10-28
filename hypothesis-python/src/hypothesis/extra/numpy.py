@@ -760,7 +760,7 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
     with the provided shape.
 
     Examples from this strategy shrink towards a shape with length ``min_dims``.
-    The size of an aligned dimension shrinks towards being a singleton. The
+    The size of an aligned dimension shrinks towards having a size of 1. The
     size of an unaligned dimension shrink towards ``min_side``.
 
     * ``shape`` a tuple of integers
@@ -1080,8 +1080,8 @@ def multiple_shapes(
      * the resulting shape, produced by broadcasting the N shapes with the base-shape
 
     Each shape produced from this strategy shrinks towards a shape with length
-    ``min_dims``. The size of an aligned dimension shrinks towards being a singleton.
-    The size of an unaligned dimension shrink towards ``min_side``.
+    ``min_dims``. The size of an aligned dimension shrinks towards being having
+    a size of 1. The size of an unaligned dimension shrink towards ``min_side``.
 
     * ``inputs`` The number of mutually broadcast-compatible shapes to generate.
     * ``base-shape`` The shape against which all generated shapes can broadcast.
