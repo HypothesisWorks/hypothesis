@@ -84,7 +84,7 @@ six==1.12.0               # via astroid, bandit, bleach, dparse, packaging, pip-
 smmap2==2.0.5             # via gitdb2
 snowballstemmer==2.0.0    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.3
-sphinx==2.2.0
+sphinx==2.2.1
 sphinxcontrib-applehelp==1.0.1  # via sphinx
 sphinxcontrib-devhelp==1.0.1  # via sphinx
 sphinxcontrib-htmlhelp==1.0.2  # via sphinx
