@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import math
+from collections import namedtuple
 
 import numpy as np
 
@@ -34,11 +35,23 @@ from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.utils.conventions import not_set
 
+try:
+    from typing import NamedTuple, Tuple
+
+    Shape = Tuple[int, ...]
+    MultipleShapes = NamedTuple(
+        "MultipleShapes", [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)]
+    )
+except ImportError:
+    MultipleShapes = namedtuple(
+        "MultipleShapes", ["input_shapes", "result_shape"]
+    )  # type: ignore
+
+
 if False:
     from typing import Any, List, Union, Sequence, Tuple  # noqa
     from hypothesis.searchstrategy.strategies import T  # noqa
 
-    Shape = Tuple[int, ...]  # noqa
     BasicIndex = Tuple[Union[int, slice, ellipsis, np.newaxis], ...]  # noqa
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
@@ -1041,7 +1054,7 @@ class MultipleShapesStrategy(SearchStrategy):
         assert all(self.min_dims <= len(s) <= self.max_dims for s in shapes)
         assert all(self.min_side <= s <= self.max_side for side in shapes for s in side)
 
-        return (
+        return MultipleShapes(
             tuple(tuple(reversed(shape)) for shape in shapes),
             tuple(reversed(result_shape)),
         )
@@ -1058,7 +1071,7 @@ def multiple_shapes(
     min_side=1,
     max_side=None,
 ):
-    # type: (int, Shape, Any, int, int, int, int) -> st.SearchStrategy[Tuple[Tuple[Shape, ...], Shape]]
+    # type: (int, Shape, Any, int, int, int, int) -> st.SearchStrategy[MultipleShapes]
     """Return a strategy for generating a specified number of shapes, N, that are
     mutually-broadcastable with one another and with the provided "base-shape".
 
