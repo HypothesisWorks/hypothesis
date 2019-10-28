@@ -32,6 +32,8 @@ from hypothesis.searchstrategy import SearchStrategy
 from tests.common.debug import find_any, minimal
 from tests.common.utils import checks_deprecated_behaviour, fails_with, flaky
 
+from functools import reduce
+
 try:
     from itertools import zip_longest
 except ImportError:
@@ -666,10 +668,7 @@ def _broadcast_shapes(*shapes):
     if len(shapes) == 1:
         return shapes[0]
 
-    out = _broadcast_two_shapes(*shapes[:2])
-    for shape in shapes[2:]:
-        out = _broadcast_two_shapes(out, shape)
-    return out
+    return reduce(_broadcast_two_shapes, shapes, ())
 
 
 @settings(deadline=None, max_examples=500)
