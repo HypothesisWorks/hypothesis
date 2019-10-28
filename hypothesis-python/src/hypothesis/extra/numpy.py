@@ -995,19 +995,6 @@ class MultipleShapesStrategy(SearchStrategy):
 
         self.size_one_allowed = self.min_side <= 1 <= self.max_side
 
-    def _pick_shape(self, data, shapes):
-        # type: (Any, List[List[Any]]) -> List[Any]
-        """Returns a shape such that all shapes are filled up to `min_dims`,
-        in order of ascending length. Beyond this, shapes are chosen randomly
-        to grow up to `max_dims`"""
-        underfilled = [shape for shape in shapes if len(shape) < self.min_dims]
-        if underfilled:
-            return min(underfilled, key=len)
-
-        return data.draw(
-            st.sampled_from([shape for shape in shapes if len(shape) < self.max_dims])
-        )
-
     def do_draw(self, data):
         # All shapes are handled in column-major order; i.e. they are reversed
         base_shape = self.base_shape[::-1]
@@ -1018,29 +1005,26 @@ class MultipleShapesStrategy(SearchStrategy):
         for dim_count in range(1, self.max_dims + 1):
             dim = dim_count - 1
             if len(base_shape) < dim_count or base_shape[dim] == 1:
-                # dim is unrestricted by the base-shape
+                # dim is unrestricted by the base-shape: shrink to min_side
                 dim_side = data.draw(self.side_strat)
             elif base_shape[dim] <= self.max_side:
                 # dim is aligned with non-singleton base-dim
                 dim_side = base_shape[dim]
             else:
+                # only a singleton is valid in alignment with the base-dim
                 dim_side = 1
 
             for shape_id, shape in enumerate(shapes):
                 if dim_count <= len(base_shape) and self.size_one_allowed:
-                    # side is aligned with base-shape
-                    side = data.draw(
-                        # aligned: shrink towards original size 1
-                        # unaligned: shrink towards min-side
-                        st.sampled_from(
-                            [1, dim_side] if base_shape[dim] != 1 else [dim_side, 1]
-                        )
-                    )
+                    # aligned: shrink towards size 1
+                    side = data.draw(st.sampled_from([1, dim_side]))
                 else:
                     side = dim_side
 
                 if self.min_dims < dim_count:
-                    use[shape_id] &= cu.biased_coin(data, 1 / (1 + self.max_dims - dim))
+                    use[shape_id] &= cu.biased_coin(
+                        data, 1 / (1 + (self.max_dims - dim) / 10)
+                    )
 
                 if use[shape_id]:
                     shape.append(side)
@@ -1048,8 +1032,8 @@ class MultipleShapesStrategy(SearchStrategy):
                         result_shape.append(shape[-1])
                     elif shape[-1] != 1 and result_shape[dim] == 1:
                         result_shape[dim] = shape[-1]
-                elif not any(use):
-                    break
+            if not any(use):
+                break
 
         max_len = max(len(s) for s in shapes) if shapes else 0
         result_shape = result_shape[: max(len(self.base_shape), max_len)]
