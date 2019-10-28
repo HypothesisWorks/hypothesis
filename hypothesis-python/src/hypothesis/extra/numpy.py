@@ -993,6 +993,8 @@ class MultipleShapesStrategy(SearchStrategy):
         self.min_side = min_side
         self.max_side = max_side
 
+        self.size_one_allowed = self.min_side <= 1 <= self.max_side
+
     def _pick_shape(self, data, shapes):
         # type: (Any, List[List[Any]]) -> List[Any]
         """Returns a shape such that all shapes are filled up to `min_dims`,
@@ -1007,45 +1009,47 @@ class MultipleShapesStrategy(SearchStrategy):
         )
 
     def do_draw(self, data):
-        min_total = self.min_dims * self.num_shapes
-        max_total = self.max_dims * self.num_shapes
-
-        elements = cu.many(
-            data,
-            min_size=min_total,
-            max_size=max_total,
-            average_size=min(
-                max(min_total * 2, min_total + 5), 0.5 * (min_total + max_total)
-            ),
-        )
-
         # All shapes are handled in column-major order; i.e. they are reversed
+        base_shape = self.base_shape[::-1]
+        result_shape = list(base_shape)
         shapes = [[] for _ in range(self.num_shapes)]
-        result_shape = list(self.base_shape[::-1])
-        while elements.more():
-            updated_shape = self._pick_shape(data, shapes)
-            if len(updated_shape) < len(result_shape):
-                # Shrinks towards original base-shape
-                if result_shape[len(updated_shape)] == 1:
-                    if self.min_side <= 1 and not data.draw(st.booleans()):
-                        side = 1
-                    else:
-                        side = data.draw(self.side_strat)
-                elif self.max_side >= result_shape[len(updated_shape)] and (
-                    not self.min_side <= 1 <= self.max_side or data.draw(st.booleans())
-                ):
-                    side = result_shape[len(updated_shape)]
-                else:
-                    side = 1
-            else:
-                side = data.draw(self.side_strat)
-            updated_shape.append(side)
+        use = [True for _ in range(self.num_shapes)]
 
-            # update the resulting shape, based on broadcasting semantics
-            if len(updated_shape) > len(result_shape):
-                result_shape.append(updated_shape[-1])
-            elif updated_shape[-1] != 1 and result_shape[len(updated_shape) - 1] == 1:
-                result_shape[len(updated_shape) - 1] = updated_shape[-1]
+        for dim_count in range(1, self.max_dims + 1):
+            dim = dim_count - 1
+            if len(base_shape) < dim_count or base_shape[dim] == 1:
+                # dim is unrestricted by the base-shape
+                dim_side = data.draw(self.side_strat)
+            elif base_shape[dim] <= self.max_side:
+                # dim is aligned with non-singleton base-dim
+                dim_side = base_shape[dim]
+            else:
+                dim_side = 1
+
+            for shape_id, shape in enumerate(shapes):
+                if dim_count <= len(base_shape) and self.size_one_allowed:
+                    # side is aligned with base-shape
+                    side = data.draw(
+                        # aligned: shrink towards original size 1
+                        # unaligned: shrink towards min-side
+                        st.sampled_from(
+                            [1, dim_side] if base_shape[dim] != 1 else [dim_side, 1]
+                        )
+                    )
+                else:
+                    side = dim_side
+
+                if self.min_dims < dim_count:
+                    use[shape_id] &= cu.biased_coin(data, 1 / (1 + self.max_dims - dim))
+
+                if use[shape_id]:
+                    shape.append(side)
+                    if len(result_shape) < len(shape):
+                        result_shape.append(shape[-1])
+                    elif shape[-1] != 1 and result_shape[dim] == 1:
+                        result_shape[dim] = shape[-1]
+                elif not any(use):
+                    break
 
         max_len = max(len(s) for s in shapes) if shapes else 0
         result_shape = result_shape[: max(len(self.base_shape), max_len)]
