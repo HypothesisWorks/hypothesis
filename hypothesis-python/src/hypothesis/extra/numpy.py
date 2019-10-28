@@ -49,7 +49,7 @@ except ImportError:
 
 
 if False:
-    from typing import Any, List, Union, Sequence, Tuple  # noqa
+    from typing import Any, Union, Sequence, Tuple  # noqa
     from hypothesis.searchstrategy.strategies import T  # noqa
 
     BasicIndex = Tuple[Union[int, slice, ellipsis, np.newaxis], ...]  # noqa
