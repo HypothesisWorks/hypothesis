@@ -20,7 +20,7 @@ certifi==2019.9.11        # via requests
 chardet==3.0.4            # via requests
 click==7.0                # via black, pip-tools, pyupio, safety
 coverage==4.5.4
-decorator==4.4.0          # via ipython, traitlets
+decorator==4.4.1          # via ipython, traitlets
 deprecated==1.2.6         # via pygithub
 django==2.2.6
 docutils==0.15.2          # via readme-renderer, restructuredtext-lint, sphinx
