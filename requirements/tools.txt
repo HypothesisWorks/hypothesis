@@ -109,4 +109,4 @@ wrapt==1.11.2             # via astroid, deprecated
 zipp==0.6.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==41.4.0        # via ipython, safety, sphinx, twine
+# setuptools==41.5.0        # via ipython, safety, sphinx, twine
