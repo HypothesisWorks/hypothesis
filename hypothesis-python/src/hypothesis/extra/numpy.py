@@ -1119,7 +1119,7 @@ def multiple_shapes(
     check_type(integer_types, min_dims, "min_dims")
 
     if max_dims is None:
-        max_dims = max(len(base_shape), min_dims) + 2
+        max_dims = min(32, max(len(base_shape), min_dims) + 2)
     else:
         check_type(integer_types, max_dims, "max_dims")
 
