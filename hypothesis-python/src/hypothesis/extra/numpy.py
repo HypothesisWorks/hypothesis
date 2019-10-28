@@ -1100,7 +1100,7 @@ def multiple_shapes(
     if inputs < 0:
         raise InvalidArgument("inputs=%s must be a non-negative integer." % (inputs,))
 
-    check_type(tuple, base_shape, "shape")
+    check_type(tuple, base_shape, "base_shape")
     strict_check = max_side is None or max_dims is None
     check_type(integer_types, min_side, "min_side")
     check_type(integer_types, min_dims, "min_dims")
@@ -1126,7 +1126,7 @@ def multiple_shapes(
     # check for unsatisfiable min_side
     if not all(min_side <= s for s in base_shape[::-1][:dims] if s != 1):
         raise InvalidArgument(
-            "Given shape=%r, there are no broadcast-compatible "
+            "Given base_shape=%r, there are no broadcast-compatible "
             "shapes that satisfy: %s=%s and min_side=%s"
             % (base_shape, bnd_name, dims, min_side)
         )
@@ -1136,8 +1136,8 @@ def multiple_shapes(
         min_side <= 1 <= max_side or all(s <= max_side for s in base_shape[::-1][:dims])
     ):
         raise InvalidArgument(
-            "Given shape=%r, there are no broadcast-compatible shapes "
-            "that satisfy: %s=%s and [min_side=%s, max_side=%s]"
+            "Given base_shape=%r, there are no broadcast-compatible shapes "
+            "that satisfy all of %s=%s, min_side=%s, and max_side=%s"
             % (base_shape, bnd_name, dims, min_side, max_side)
         )
 
