@@ -20,7 +20,7 @@ certifi==2019.9.11        # via requests
 chardet==3.0.4            # via requests
 click==7.0                # via black, pip-tools, pyupio, safety
 coverage==4.5.4
-decorator==4.4.0          # via ipython, traitlets
+decorator==4.4.1          # via ipython, traitlets
 deprecated==1.2.6         # via pygithub
 django==2.2.6
 docutils==0.15.2          # via readme-renderer, restructuredtext-lint, sphinx
@@ -32,17 +32,17 @@ flake8-alfred==1.1.1
 flake8-docstrings==1.5.0
 flake8==3.7.8
 gitdb2==2.0.6             # via gitpython
-gitpython==3.0.3          # via bandit
+gitpython==3.0.4          # via bandit
 idna==2.8                 # via requests
 imagesize==1.1.0          # via sphinx
 importlib-metadata==0.23  # via pluggy, pytest, tox
 ipython-genutils==0.2.0   # via traitlets
-ipython==7.8.0
+ipython==7.9.0
 isort==4.3.21
 jedi==0.15.1              # via ipython
 jinja2==2.10.3            # via pyupio, sphinx
 lark-parser==0.7.7
-lazy-object-proxy==1.4.2  # via astroid
+lazy-object-proxy==1.4.3  # via astroid
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8, pylint
 more-itertools==7.2.0     # via pytest, zipp
@@ -68,7 +68,7 @@ pygments==2.4.2           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pylint==2.4.3
 pyparsing==2.4.2          # via packaging
-pytest==5.2.1
+pytest==5.2.2
 python-dateutil==2.8.0
 python-gitlab==1.12.1     # via pyupio
 pytz==2019.3              # via babel, django
@@ -84,7 +84,7 @@ six==1.12.0               # via astroid, bandit, bleach, dparse, packaging, pip-
 smmap2==2.0.5             # via gitdb2
 snowballstemmer==2.0.0    # via pydocstyle, sphinx
 sphinx-rtd-theme==0.4.3
-sphinx==2.2.0
+sphinx==2.2.1
 sphinxcontrib-applehelp==1.0.1  # via sphinx
 sphinxcontrib-devhelp==1.0.1  # via sphinx
 sphinxcontrib-htmlhelp==1.0.2  # via sphinx
@@ -100,13 +100,13 @@ tqdm==4.36.1              # via pyupio, twine
 traitlets==4.3.3          # via ipython
 twine==2.0.0
 typed-ast==1.4.0          # via astroid, mypy
-typing-extensions==3.7.4  # via mypy
+typing-extensions==3.7.4.1  # via mypy
 urllib3==1.25.6           # via requests
-virtualenv==16.7.6        # via tox
+virtualenv==16.7.7        # via tox
 wcwidth==0.1.7            # via prompt-toolkit, pytest
 webencodings==0.5.1       # via bleach
 wrapt==1.11.2             # via astroid, deprecated
 zipp==0.6.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==41.4.0        # via ipython, safety, sphinx, twine
+# setuptools==41.5.0        # via ipython, safety, sphinx, twine
