@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import sys
+from functools import reduce
 
 import numpy as np
 import pytest
@@ -31,8 +32,6 @@ from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.searchstrategy import SearchStrategy
 from tests.common.debug import find_any, minimal
 from tests.common.utils import checks_deprecated_behaviour, fails_with, flaky
-
-from functools import reduce
 
 try:
     from itertools import zip_longest
