@@ -983,7 +983,6 @@ class MutuallyBroadcastableShapesStrategy(SearchStrategy):
         self,
         inputs,
         base_shape=(),
-        __reserved=not_set,
         min_dims=0,
         max_dims=None,
         min_side=1,
