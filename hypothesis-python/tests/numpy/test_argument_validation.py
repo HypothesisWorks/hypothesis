@@ -117,7 +117,7 @@ def e(a, **kwargs):
             min_side=2,
             max_side=3,
         ),
-        e(nps.mutually_broadcastable_shapes, num_shapes=-1),
+        e(nps.mutually_broadcastable_shapes, num_shapes=0),
         e(nps.mutually_broadcastable_shapes, num_shapes="a"),
         e(nps.mutually_broadcastable_shapes, num_shapes=2, base_shape="a"),
         e(

@@ -696,30 +696,6 @@ def test_broadcastable_shape_util(shapes):
     assert broadcast_out[0].shape == broadcasted_shape
 
 
-@settings(deadline=None)
-@given(
-    min_dim=st.integers(0, 5),
-    base_shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=10),
-    data=st.data(),
-)
-def test_multiple_shapes_0_input_is_noop(min_dim, base_shape, data):
-    max_dim = data.draw(st.one_of(st.none(), st.integers(min_dim, 5)), label="max_dim")
-    min_side, max_side = _draw_valid_bounds(data, base_shape, max_dim)
-    shapes, result = data.draw(
-        nps.mutually_broadcastable_shapes(
-            num_shapes=0,
-            base_shape=base_shape,
-            min_side=min_side,
-            max_side=max_side,
-            min_dims=min_dim,
-            max_dims=max_dim,
-        ),
-        label="shapes, result",
-    )
-    assert isinstance(shapes, tuple) and len(shapes) == 0
-    assert result == base_shape
-
-
 @settings(deadline=None, max_examples=1000)
 @given(
     shape=nps.array_shapes(min_dims=0, max_dims=6, min_side=1, max_side=5),
@@ -891,7 +867,7 @@ def test_broadcastable_shape_adjusts_max_dim_with_explicit_bounds(max_dim, data)
 
 
 @settings(deadline=None)
-@given(max_dim=st.integers(4, 6), inputs=st.integers(0, 3), data=st.data())
+@given(max_dim=st.integers(4, 6), inputs=st.integers(1, 3), data=st.data())
 def test_multiple_broadcastable_shape_adjusts_max_dim_with_explicit_bounds(
     max_dim, inputs, data
 ):

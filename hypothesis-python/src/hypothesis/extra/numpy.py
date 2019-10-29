@@ -1123,9 +1123,7 @@ def mutually_broadcastable_shapes(
 
     check_type(integer_types, num_shapes, "num_shapes")
     if num_shapes < 1:
-        raise InvalidArgument(
-            "num_shapes=%s must be a non-negative integer." % (num_shapes,)
-        )
+        raise InvalidArgument("num_shapes=%s must be at least 1." % (num_shapes,))
 
     check_type(tuple, base_shape, "base_shape")
     strict_check = max_side is None or max_dims is None
