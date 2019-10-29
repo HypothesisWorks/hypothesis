@@ -1080,7 +1080,7 @@ def mutually_broadcastable_shapes(
     min_side=1,
     max_side=None,
 ):
-    # type: (Any, int, Shape , int, int, int, int) -> st.SearchStrategy[MultipleShapes]
+    # type: (Any, Any, Shape , int, int, int, int) -> st.SearchStrategy[MultipleShapes]
     """Return a strategy for generating a specified number of shapes, N, that are
     mutually-broadcastable with one another and with the provided "base-shape".
 
