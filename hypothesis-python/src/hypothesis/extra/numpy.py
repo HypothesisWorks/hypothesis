@@ -39,12 +39,13 @@ try:
     from typing import NamedTuple, Tuple
 
     Shape = Tuple[int, ...]
-    MultipleShapes = NamedTuple(
-        "MultipleShapes", [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)]
+    BroadcastableShapes = NamedTuple(
+        "BroadcastableShapes",
+        [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
     )
 except ImportError:
-    MultipleShapes = namedtuple(
-        "MultipleShapes", ["input_shapes", "result_shape"]
+    BroadcastableShapes = namedtuple(
+        "BroadcastableShapes", ["input_shapes", "result_shape"]
     )  # type: ignore
 
 
@@ -1063,7 +1064,7 @@ class MutuallyBroadcastableShapesStrategy(SearchStrategy):
         assert all(self.min_dims <= len(s) <= self.max_dims for s in shapes)
         assert all(self.min_side <= s <= self.max_side for side in shapes for s in side)
 
-        return MultipleShapes(
+        return BroadcastableShapes(
             tuple(tuple(reversed(shape)) for shape in shapes),
             tuple(reversed(result_shape)),
         )
@@ -1080,7 +1081,7 @@ def mutually_broadcastable_shapes(
     min_side=1,
     max_side=None,
 ):
-    # type: (Any, Any, Shape , int, int, int, int) -> st.SearchStrategy[MultipleShapes]
+    # type: (Any, Any, Shape , int, int, int, int) -> st.SearchStrategy[BroadcastableShapes]
     """Return a strategy for generating a specified number of shapes, N, that are
     mutually-broadcastable with one another and with the provided "base-shape".
 
@@ -1112,17 +1113,17 @@ def mutually_broadcastable_shapes(
         ... # and each shape is broadcast-compatible
         ... # with `(2, 3)`
         >>> [mutually_broadcastable_shapes(num_shapes=3, base_shape=(2, 3)).example() for i in range(5)]
-        [MultipleShapes(input_shapes=((4, 1, 3), (4, 2, 3), ()), result_shape=(4, 2, 3)),
-         MultipleShapes(input_shapes=((3,), (1,), (2, 1)), result_shape=(2, 3)),
-         MultipleShapes(input_shapes=((3,), (1, 3), (2, 3)), result_shape=(2, 3)),
-         MultipleShapes(input_shapes=((), (), ()), result_shape=(2, 3)),
-         MultipleShapes(input_shapes=((3,), (), (3,)), result_shape=(2, 3))]
+        [BroadcastableShapes(input_shapes=((4, 1, 3), (4, 2, 3), ()), result_shape=(4, 2, 3)),
+         BroadcastableShapes(input_shapes=((3,), (1,), (2, 1)), result_shape=(2, 3)),
+         BroadcastableShapes(input_shapes=((3,), (1, 3), (2, 3)), result_shape=(2, 3)),
+         BroadcastableShapes(input_shapes=((), (), ()), result_shape=(2, 3)),
+         BroadcastableShapes(input_shapes=((3,), (), (3,)), result_shape=(2, 3))]
     """
     if __reserved is not not_set:
         raise InvalidArgument("Do not pass the __reserved argument.")
 
     check_type(integer_types, num_shapes, "num_shapes")
-    if num_shapes < 0:
+    if num_shapes < 1:
         raise InvalidArgument(
             "num_shapes=%s must be a non-negative integer." % (num_shapes,)
         )
