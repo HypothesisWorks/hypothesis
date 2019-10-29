@@ -22,7 +22,7 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from tests.common.debug import minimal
+from tests.common.debug import find_any, minimal
 
 
 @given(st.recursive(st.booleans(), st.lists, max_leaves=10))
@@ -54,6 +54,29 @@ def test_recursive_call_validates_base_is_strategy():
     x = st.recursive(1, lambda x: st.none())
     with pytest.raises(InvalidArgument):
         x.example()
+
+
+def test_can_find_exactly_max_leaves():
+    strat = st.recursive(st.none(), lambda x: st.tuples(x, x), max_leaves=5)
+
+    def enough_leaves(t):
+        print(t)
+        count = 0
+        stack = [t]
+        while stack:
+            s = stack.pop()
+            if s is None:
+                count += 1
+            else:
+                stack.extend(s)
+        return count >= 5
+
+    find_any(strat, enough_leaves)
+
+
+@given(st.recursive(st.none(), lambda x: st.tuples(x, x), max_leaves=1))
+def test_can_exclude_branching_with_max_leaves(t):
+    assert t is None
 
 
 @given(st.recursive(st.none(), lambda x: st.one_of(x, x)))

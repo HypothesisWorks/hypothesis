@@ -36,6 +36,9 @@ class LimitedStrategy(SearchStrategy):
         self.marker = 0
         self.currently_capped = False
 
+    def __repr__(self):
+        return "LimitedStrategy(%r)" % (self.base_strategy,)
+
     def do_validate(self):
         self.base_strategy.validate()
 
@@ -65,7 +68,7 @@ class RecursiveStrategy(SearchStrategy):
         self.extend = extend
 
         strategies = [self.limited_base, self.extend(self.limited_base)]
-        while 2 ** len(strategies) <= max_leaves:
+        while 2 ** (len(strategies) - 1) <= max_leaves:
             strategies.append(extend(OneOfStrategy(tuple(strategies))))
         self.strategy = OneOfStrategy(strategies)
 
