@@ -275,6 +275,12 @@ else:
         _global_type_lookup[typing.SupportsRound] = st.complex_numbers()
     except AttributeError:  # pragma: no cover
         pass
+    try:
+        _global_type_lookup[typing.SupportsIndex] = st.one_of(
+            st.integers(), st.booleans()
+        )
+    except AttributeError:  # pragma: no cover
+        pass
 
     def register(type_, fallback=None):
         if isinstance(type_, str):
