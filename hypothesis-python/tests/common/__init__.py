@@ -91,7 +91,7 @@ standard_types = [
     sampled_from(("a", "b", "c")),
     integers(),
     integers(min_value=3),
-    integers(min_value=(-2 ** 32), max_value=(2 ** 64)),
+    integers(min_value=(-(2 ** 32)), max_value=(2 ** 64)),
     floats(),
     floats(min_value=-2.0, max_value=3.0),
     floats(),

@@ -104,7 +104,7 @@ def types_to_strategy(attrib, types):
     strategy from the mess."""
     # If we know types from the validator(s), that's sufficient.
     if len(types) == 1:
-        typ, = types
+        (typ,) = types
         if isinstance(typ, tuple):
             return st.one_of(*map(st.from_type, typ))
         return st.from_type(typ)

@@ -84,7 +84,7 @@ def test_single_integer_range_is_range():
 
 
 def test_minimal_small_number_in_large_range():
-    assert minimal(integers((-2 ** 32), 2 ** 32), lambda x: x >= 101) == 101
+    assert minimal(integers((-(2 ** 32)), 2 ** 32), lambda x: x >= 101) == 101
 
 
 def test_minimal_small_sum_float_list():

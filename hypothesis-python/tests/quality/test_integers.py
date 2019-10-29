@@ -98,7 +98,7 @@ def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
 
     assert runner.interesting_examples
 
-    v, = runner.interesting_examples.values()
+    (v,) = runner.interesting_examples.values()
 
     shrinker = runner.new_shrinker(v, lambda x: x.status == Status.INTERESTING)
 
