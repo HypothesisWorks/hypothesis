@@ -42,9 +42,9 @@ try:
     BroadcastableShapes = NamedTuple(
         "BroadcastableShapes",
         [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
-    )  # type: ignore
+    )
 except ImportError:
-    BroadcastableShapes = namedtuple(
+    BroadcastableShapes = namedtuple(  # type: ignore
         "BroadcastableShapes", ["input_shapes", "result_shape"]
     )
 
