@@ -117,46 +117,76 @@ def e(a, **kwargs):
             min_side=2,
             max_side=3,
         ),
-        e(nps.mutually_broadcastable_shapes, inputs=-1),
-        e(nps.mutually_broadcastable_shapes, inputs="a"),
-        e(nps.mutually_broadcastable_shapes, inputs=2, base_shape="a"),
-        e(nps.mutually_broadcastable_shapes, inputs=2, base_shape=(2, 2), min_side="a"),
-        e(nps.mutually_broadcastable_shapes, inputs=2, base_shape=(2, 2), min_dims="a"),
-        e(nps.mutually_broadcastable_shapes, inputs=2, base_shape=(2, 2), max_side="a"),
-        e(nps.mutually_broadcastable_shapes, inputs=2, base_shape=(2, 2), max_dims="a"),
-        e(nps.mutually_broadcastable_shapes, inputs=2, base_shape=(2, 2), min_side=-1),
-        e(nps.mutually_broadcastable_shapes, inputs=2, base_shape=(2, 2), min_dims=-1),
+        e(nps.mutually_broadcastable_shapes, num_shapes=-1),
+        e(nps.mutually_broadcastable_shapes, num_shapes="a"),
+        e(nps.mutually_broadcastable_shapes, num_shapes=2, base_shape="a"),
         e(
             nps.mutually_broadcastable_shapes,
-            inputs=2,
+            num_shapes=2,
+            base_shape=(2, 2),
+            min_side="a",
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,
+            num_shapes=2,
+            base_shape=(2, 2),
+            min_dims="a",
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,
+            num_shapes=2,
+            base_shape=(2, 2),
+            max_side="a",
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,
+            num_shapes=2,
+            base_shape=(2, 2),
+            max_dims="a",
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,
+            num_shapes=2,
+            base_shape=(2, 2),
+            min_side=-1,
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,
+            num_shapes=2,
+            base_shape=(2, 2),
+            min_dims=-1,
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,
+            num_shapes=2,
             base_shape=(2, 2),
             min_dims=33,
             max_dims=None,
         ),
         e(
             nps.mutually_broadcastable_shapes,
-            inputs=2,
+            num_shapes=2,
             base_shape=(2, 2),
             min_dims=1,
             max_dims=33,
         ),
         e(
             nps.mutually_broadcastable_shapes,
-            inputs=2,
+            num_shapes=2,
             base_shape=(2, 2),
             min_side=1,
             max_side=0,
         ),
         e(
             nps.mutually_broadcastable_shapes,
-            inputs=2,
+            num_shapes=2,
             base_shape=(2, 2),
             min_dims=1,
             max_dims=0,
         ),
         e(
             nps.mutually_broadcastable_shapes,
-            inputs=2,  # max_side too small
+            num_shapes=2,  # max_side too small
             base_shape=(5, 1),
             min_dims=2,
             max_dims=4,
@@ -165,7 +195,7 @@ def e(a, **kwargs):
         ),
         e(
             nps.mutually_broadcastable_shapes,
-            inputs=2,  # min_side too large
+            num_shapes=2,  # min_side too large
             base_shape=(0, 1),
             min_dims=2,
             max_dims=4,
@@ -174,7 +204,7 @@ def e(a, **kwargs):
         ),
         e(
             nps.mutually_broadcastable_shapes,
-            inputs=2,  # default max_dims unsatisfiable
+            num_shapes=2,  # default max_dims unsatisfiable
             base_shape=(5, 3, 2, 1),
             min_dims=3,
             max_dims=None,
@@ -183,7 +213,7 @@ def e(a, **kwargs):
         ),
         e(
             nps.mutually_broadcastable_shapes,
-            inputs=2,  # default max_dims unsatisfiable
+            num_shapes=2,  # default max_dims unsatisfiable
             base_shape=(0, 3, 2, 1),
             min_dims=3,
             max_dims=None,
