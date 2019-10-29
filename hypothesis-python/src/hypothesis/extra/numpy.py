@@ -1023,7 +1023,7 @@ class MultipleShapesStrategy(SearchStrategy):
 
                 if self.min_dims < dim_count:
                     use[shape_id] &= cu.biased_coin(
-                        data, 1 / (1 + (self.max_dims - dim) / 10)
+                        data, 1 - 1 / (1 + (self.max_dims - dim))
                     )
 
                 if use[shape_id]:
