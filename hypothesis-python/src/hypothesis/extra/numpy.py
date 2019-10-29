@@ -1010,6 +1010,11 @@ class MutuallyBroadcastableShapesStrategy(SearchStrategy):
 
         for dim_count in range(1, self.max_dims + 1):
             dim = dim_count - 1
+
+            # We begin by drawing a valid dimension-size for the given
+            # dimension. This restricts the variability across the shapes
+            # at this dimension such that they can only choose between
+            # this size and a singleton dimension.
             if len(base_shape) < dim_count or base_shape[dim] == 1:
                 # dim is unrestricted by the base-shape: shrink to min_side
                 dim_side = data.draw(self.side_strat)
@@ -1021,12 +1026,22 @@ class MutuallyBroadcastableShapesStrategy(SearchStrategy):
                 dim_side = 1
 
             for shape_id, shape in enumerate(shapes):
+                # Populating this dimension-size for each shape, either
+                # the drawn size is used or, if permitted, a singleton
+                # dimension.
                 if dim_count <= len(base_shape) and self.size_one_allowed:
                     # aligned: shrink towards size 1
                     side = data.draw(st.sampled_from([1, dim_side]))
                 else:
                     side = dim_side
 
+                # Use a trick where where a biased coin
+                # is queried to see if the given shape-tuple
+                # will continue to be grown.
+                # All of the relevant draws will still be made
+                # for the given shape-tuple, even if it is no longer
+                # being added to. This helps to ensure more stable
+                # shrinking behavior.
                 if self.min_dims < dim_count:
                     use[shape_id] &= cu.biased_coin(
                         data, 1 - 1 / (1 + self.max_dims - dim)
