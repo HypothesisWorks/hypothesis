@@ -248,3 +248,12 @@ def test_test_basic_indices_kwonly_emulation():
         nps.basic_indices((), 0, 1).validate()
     with pytest.raises(TypeError):
         nps.basic_indices((), __reserved=None).validate()
+
+
+def test_test_mutually_broadcastable_shapes_kwonly_emulation():
+    with pytest.raises(TypeError):
+        nps.mutually_broadcastable_shapes().validate()
+    with pytest.raises(TypeError):
+        nps.mutually_broadcastable_shapes(1).validate()
+    with pytest.raises(TypeError):
+        nps.basic_indices(inputs=1, __reserved=None).validate()
