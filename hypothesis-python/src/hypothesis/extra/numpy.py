@@ -759,6 +759,12 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
     """Return a strategy for generating shapes that are broadcast-compatible
     with the provided shape.
 
+<<<<<<< HEAD
+=======
+    This strategy simply calls the ``mutually_broadcastable_shapes`` strategy with ``inputs=1``,
+    and returns the sole generated shape.
+
+>>>>>>> update name: multiple_shapes -> mutually_broadcastable_shapes
     Examples from this strategy shrink towards a shape with length ``min_dims``.
     The size of an aligned dimension shrinks towards having a size of 1. The
     size of an unaligned dimension shrink towards ``min_side``.
@@ -780,7 +786,7 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
         [(1, 3), (), (2, 3), (2, 1), (4, 1, 3), (3, )]
 
     """
-    return multiple_shapes(
+    return mutually_broadcastable_shapes(
         inputs=1,
         base_shape=shape,
         min_dims=min_dims,
@@ -971,7 +977,7 @@ def integer_array_indices(shape, result_shape=array_shapes(), dtype="int"):
     )
 
 
-class MultipleShapesStrategy(SearchStrategy):
+class MutuallyBroadcastableShapesStrategy(SearchStrategy):
     def __init__(
         self,
         inputs,
@@ -1050,7 +1056,7 @@ class MultipleShapesStrategy(SearchStrategy):
 
 @st.defines_strategy
 @reserved_means_kwonly_star
-def multiple_shapes(
+def mutually_broadcastable_shapes(
     inputs,
     base_shape=(),
     __reserved=not_set,
@@ -1063,9 +1069,10 @@ def multiple_shapes(
     """Return a strategy for generating a specified number of shapes, N, that are
     mutually-broadcastable with one another and with the provided "base-shape".
 
-    The strategy will generate a tuple of:
-     * the N generated shapes
-     * the resulting shape, produced by broadcasting the N shapes with the base-shape
+    The strategy will generate a named-tuple of:
+     * input_shapes: the N generated shapes
+     * result_shape: the resulting shape, produced by broadcasting the
+       N shapes with the base-shape
 
     Each shape produced from this strategy shrinks towards a shape with length
     ``min_dims``. The size of an aligned dimension shrinks towards being having
@@ -1089,13 +1096,12 @@ def multiple_shapes(
         >>> # Each example will draw three shapes,
         ... # and each shape is broadcast-compatible
         ... # with `(2, 3)`
-        >>> [multiple_shapes(inputs=3, base_shape=(2, 3)).example() for i in range(5)]
-        [(((), (2, 1), (1, 1)), (2, 3)),
-         (((2, 3), (3, 1, 1), (2, 1)), (3, 2, 3)),
-         (((), (3,), (3,)), (2, 3)),
-         (((), (3,), ()), (2, 3)),
-         (((1,), (), (1, 1, 3)), (1, 2, 3))]
-
+        >>> [mutually_broadcastable_shapes(inputs=3, base_shape=(2, 3)).example() for i in range(5)]
+        [MultipleShapes(input_shapes=((4, 1, 3), (4, 2, 3), ()), result_shape=(4, 2, 3)),
+         MultipleShapes(input_shapes=((3,), (1,), (2, 1)), result_shape=(2, 3)),
+         MultipleShapes(input_shapes=((3,), (1, 3), (2, 3)), result_shape=(2, 3)),
+         MultipleShapes(input_shapes=((), (), ()), result_shape=(2, 3)),
+         MultipleShapes(input_shapes=((3,), (), (3,)), result_shape=(2, 3))]
     """
     check_type(integer_types, inputs, "inputs")
     if inputs < 0:
@@ -1152,7 +1158,7 @@ def multiple_shapes(
                 max_dims = n
                 break
 
-    return MultipleShapesStrategy(
+    return MutuallyBroadcastableShapesStrategy(
         inputs,
         base_shape,
         min_dims=min_dims,
