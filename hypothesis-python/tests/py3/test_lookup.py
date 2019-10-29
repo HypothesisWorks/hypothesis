@@ -245,6 +245,15 @@ def test_register_generic_typing_strats():
         typing.SupportsFloat,
         typing.SupportsInt,
         typing.SupportsRound,
+        pytest.param(
+            typing.SupportsIndex if sys.version_info >= (3, 8) else None,
+            marks=[
+                pytest.mark.skipif(
+                    sys.version_info < (3, 8),
+                    reason="SupportsIndex was added in Python 3.8",
+                )
+            ],
+        ),
     ],
 )
 def test_resolves_weird_types(typ):
