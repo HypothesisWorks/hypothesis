@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.42.1:
+
+-------------------
+4.42.1 - 2019-10-30
+-------------------
+
+Python 3.8's new :class:`python:typing.SupportsIndex` type - see :pep:`357`
+for details - is now  supported in :func:`~hypothesis.strategies.from_type`.
+
+Thanks to Grigorios Giannakopoulos for the patch!
+
 .. _v4.42.0:
 
 -------------------
