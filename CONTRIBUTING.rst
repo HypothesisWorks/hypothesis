@@ -276,6 +276,7 @@ their individual contributions.
 * `Tim Martin <https://www.github.com/timmartin>`_ (tim@asymptotic.co.uk)
 * `Thomas Kluyver <https://www.github.com/takluyver>`_ (thomas@kluyver.me.uk)
 * `Tom McDermott <https://www.github.com/sponster-au>`_ (sponster@gmail.com)
+* `Tom Milligan <https://www.github.com/tommilligan>`_ (code@tommilligan.net)
 * `Tyler Gibbons <https://www.github.com/kavec>`_ (tyler.gibbons@flexport.com)
 * `Tyler Nickerson <https://www.github.com/nmbrgts>`_
 * `Vidya Rani <https://www.github.com/vidyarani-dg>`_ (vidyarani.d.g@gmail.com)

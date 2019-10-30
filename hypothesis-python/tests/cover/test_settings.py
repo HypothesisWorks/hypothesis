@@ -20,12 +20,14 @@ from __future__ import absolute_import, division, print_function
 import datetime
 import subprocess
 import sys
+from unittest import TestCase
 
 import pytest
 
 import hypothesis.strategies as st
 from hypothesis import example, given, unlimited
 from hypothesis._settings import (
+    Phase,
     Verbosity,
     default_variable,
     local_settings,
@@ -36,7 +38,7 @@ from hypothesis.database import ExampleDatabase
 from hypothesis.errors import InvalidArgument, InvalidState
 from hypothesis.stateful import GenericStateMachine, RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
-from tests.common.utils import checks_deprecated_behaviour, fails_with
+from tests.common.utils import checks_deprecated_behaviour, counts_calls, fails_with
 
 
 def test_has_docstrings():
@@ -239,13 +241,25 @@ def test_settings_in_strategies_are_from_test_scope(s):
     assert s.max_examples == 7
 
 
-def test_settings_alone():
-    @settings()
-    def test_nothing():
-        pass
+TEST_SETTINGS_ALONE = """
+from hypothesis import settings
+from hypothesis.strategies import integers
 
-    with pytest.raises(InvalidArgument):
-        test_nothing()
+@settings()
+def test_settings_alone():
+    pass
+"""
+
+
+def test_settings_alone(testdir):
+    script = testdir.makepyfile(TEST_SETTINGS_ALONE)
+    result = testdir.runpytest(script)
+    out = "\n".join(result.stdout.lines)
+    assert (
+        "Using `@settings` on a test without `@given` is completely pointless." in out
+    )
+    assert "InvalidArgument" in out
+    assert result.ret == 1
 
 
 @fails_with(InvalidArgument)
@@ -310,6 +324,32 @@ def test_database_is_reference_preserved():
 def test_settings_apply_for_explicit_examples(x):
     # Regression test for #1521
     assert settings.default.verbosity == Verbosity.verbose
+
+
+class TestGivenExampleSettingsExplicitCalled(TestCase):
+    """Real nasty edge case here.
+
+    in #2160, if ``example`` is after ``given`` but before ``settings``,
+    it will be completely ignored.
+
+    If we set phases to only ``explicit``, the test case will never be called!
+
+    We have to run an assertion outside of the test case itself.
+    """
+
+    @counts_calls
+    def call_target(self):
+        pass
+
+    @given(st.booleans())
+    @example(True)
+    @settings(phases=[Phase.explicit])
+    def test_example_explicit(self, x):
+        self.call_target()
+
+    def tearDown(self):
+        # In #2160, this is 0.
+        assert self.call_target.calls == 1
 
 
 def test_setattr_on_settings_singleton_is_error():

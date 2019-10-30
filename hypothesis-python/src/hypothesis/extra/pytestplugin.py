@@ -23,6 +23,7 @@ import pytest
 
 from hypothesis import Verbosity, core, settings
 from hypothesis._settings import note_deprecation
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import OrderedDict, text_type
 from hypothesis.internal.detection import is_hypothesis_test
 from hypothesis.reporting import default as default_reporter, with_reporter
@@ -112,7 +113,15 @@ gathered_statistics = OrderedDict()  # type: dict
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_call(item):
-    if not (hasattr(item, "obj") and is_hypothesis_test(item.obj)):
+    if not hasattr(item, "obj"):
+        yield
+    elif not is_hypothesis_test(item.obj):
+        # If @given was not applied, check whether other hypothesis decorators
+        # were applied, and fail if so
+        if getattr(item.obj, "_hypothesis_internal_settings_applied", False):
+            raise InvalidArgument(
+                "Using `@settings` on a test without `@given` is completely pointless."
+            )
         yield
     else:
         if item.get_closest_marker("parametrize") is not None:

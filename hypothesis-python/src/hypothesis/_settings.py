@@ -38,7 +38,7 @@ from hypothesis.errors import (
     InvalidState,
 )
 from hypothesis.internal.compat import integer_types, quiet_raise, string_types
-from hypothesis.internal.reflection import get_pretty_function_description, proxies
+from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type, try_convert
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.utils.dynamicvariables import DynamicVariable
@@ -238,25 +238,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
 
         test._hypothesis_internal_use_settings = self
         test._hypothesis_internal_settings_applied = True
-        if getattr(test, "is_hypothesis_test", False):
-            return test
-
-        @proxies(test)
-        def new_test(*args, **kwargs):
-            """@given has not been applied to `test`, so we replace it with this
-            wrapper so that using *only* @settings is an error.
-
-            We then attach the actual test as an attribute of this function, so
-            that we can unwrap it if @given is applied after the settings decorator.
-            """
-            raise InvalidArgument(
-                "Using `@settings` on a test without `@given` is completely pointless."
-            )
-
-        new_test._hypothesis_internal_test_function_without_warning = test
-        new_test._hypothesis_internal_use_settings = self
-        new_test._hypothesis_internal_settings_applied = True
-        return new_test
+        return test
 
     @classmethod
     def _define_setting(
