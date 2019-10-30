@@ -41,7 +41,7 @@ def test_note_deprecation_blames_right_code_issue_652():
         f()
 
     assert len(log) == 1
-    record, = log
+    (record,) = log
     # We got the warning we expected, from the right file
     assert isinstance(record.message, HypothesisDeprecationWarning)
     assert record.message.args == (msg,)

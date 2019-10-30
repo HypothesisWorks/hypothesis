@@ -96,7 +96,7 @@ def from_dtype(dtype):
             res = st.just(dtype.str.split("[")[-1][:-1])
         else:
             res = st.sampled_from(TIME_RESOLUTIONS)
-        result = st.builds(dtype.type, st.integers(-2 ** 63, 2 ** 63 - 1), res)
+        result = st.builds(dtype.type, st.integers(-(2 ** 63), 2 ** 63 - 1), res)
     else:
         raise InvalidArgument(u"No strategy inference for {}".format(dtype))
     return result.map(dtype.type)

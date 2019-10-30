@@ -103,6 +103,6 @@ def test_minimal_poisoned_containers(seed, size, p, strategy_class, monkeypatch)
 
     runner = TrialRunner(test_function, random=Random(seed), settings=TRIAL_SETTINGS)
     runner.run()
-    v, = runner.interesting_examples.values()
+    (v,) = runner.interesting_examples.values()
     result = ConjectureData.for_buffer(v.buffer).draw(strategy)
     assert len(result) == 1

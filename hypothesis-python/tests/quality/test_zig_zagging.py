@@ -102,7 +102,7 @@ def test_avoids_zig_zag_trap(p):
 
     runner.run()
 
-    v, = runner.interesting_examples.values()
+    (v,) = runner.interesting_examples.values()
 
     data = ConjectureData.for_buffer(v.buffer)
 

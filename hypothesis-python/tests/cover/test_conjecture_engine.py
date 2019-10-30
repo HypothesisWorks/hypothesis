@@ -55,7 +55,7 @@ def run_to_data(f):
         runner = ConjectureRunner(f, settings=TEST_SETTINGS)
         runner.run()
         assert runner.interesting_examples
-        last_data, = runner.interesting_examples.values()
+        (last_data,) = runner.interesting_examples.values()
         return last_data
 
 
@@ -120,7 +120,7 @@ def test_can_load_data_from_a_corpus():
 
     runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
     runner.run()
-    last_data, = runner.interesting_examples.values()
+    (last_data,) = runner.interesting_examples.values()
     assert last_data.buffer == value
     assert len(list(db.fetch(key))) == 1
 
@@ -159,7 +159,7 @@ def test_terminates_shrinks(n, monkeypatch):
         database_key=b"key",
     )
     runner.run()
-    last_data, = runner.interesting_examples.values()
+    (last_data,) = runner.interesting_examples.values()
     assert last_data.status == Status.INTERESTING
     assert runner.shrinks == n
     in_db = set(db.data[runner.secondary_key])
@@ -987,7 +987,7 @@ def shrinking_from(start):
             )
             runner.cached_test_function(start)
             assert runner.interesting_examples
-            last_data, = runner.interesting_examples.values()
+            (last_data,) = runner.interesting_examples.values()
             return runner.new_shrinker(
                 last_data, lambda d: d.status == Status.INTERESTING
             )
@@ -1113,7 +1113,7 @@ def test_database_uses_values_from_secondary_key():
         range(6, 11)
     )
 
-    v, = runner.interesting_examples.values()
+    (v,) = runner.interesting_examples.values()
 
     assert list(v.buffer) == [5]
 

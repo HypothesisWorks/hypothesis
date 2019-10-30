@@ -174,7 +174,7 @@ def float_runner(start, condition):
 def minimal_from(start, condition):
     runner = float_runner(start, condition)
     runner.shrink_interesting_examples()
-    v, = runner.interesting_examples.values()
+    (v,) = runner.interesting_examples.values()
     result = flt.draw_float(ConjectureData.for_buffer(v.buffer))
     assert condition(result)
     return result
@@ -235,5 +235,5 @@ def test_converts_floats_to_integer_form(f):
 
     runner = float_runner(f, lambda g: g == f)
     runner.shrink_interesting_examples()
-    v, = runner.interesting_examples.values()
+    (v,) = runner.interesting_examples.values()
     assert v.buffer[:-1] < buf
