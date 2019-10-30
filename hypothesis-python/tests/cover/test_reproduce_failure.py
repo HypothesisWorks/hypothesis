@@ -63,6 +63,12 @@ def test_decoding_may_fail(t):
         assert False, "decoding failed with %r, not InvalidArgument" % (e,)
 
 
+def test_invalid_base_64_gives_invalid_argument():
+    with pytest.raises(InvalidArgument) as exc_info:
+        decode_failure(b"/")
+    assert "Invalid base64 encoded" in exc_info.value.args[0]
+
+
 def test_reproduces_the_failure():
     b = b"hello world"
     n = len(b)
