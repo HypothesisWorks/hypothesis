@@ -167,7 +167,7 @@ def boolean(data):
 
 
 def biased_coin(data, p):
-    """Return False with probability p (assuming a uniform generator),
+    """Return True with probability p (assuming a uniform generator),
     shrinking towards False."""
     data.start_example(BIASED_COIN_LABEL)
     while True:
