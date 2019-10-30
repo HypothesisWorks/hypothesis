@@ -85,10 +85,18 @@ def is_a_type(thing):
     )
 
 
+def is_typing_literal(thing):
+    return (
+        hasattr(typing, "Literal")
+        and getattr(thing, "__origin__", None) == typing.Literal
+    )
+
+
 def from_typing_type(thing):
     # We start with special-case support for Union and Tuple - the latter
-    # isn't actually a generic type.  Support for Callable may be added to
-    # this section later.
+    # isn't actually a generic type. Then we handle Literal since it doesn't
+    # support `isinstance`. Support for Callable may be added to this section
+    # later.
     # We then explicitly error on non-Generic types, which don't carry enough
     # information to sensibly resolve to strategies at runtime.
     # Finally, we run a variation of the subclass lookup in st.from_type
@@ -117,6 +125,16 @@ def from_typing_type(thing):
         elif len(elem_types) == 1 and elem_types[0] == ():
             return st.tuples()  # Empty tuple; see issue #1583
         return st.tuples(*map(st.from_type, elem_types))
+    if is_typing_literal(thing):  # pragma: no cover  # new in Python 3.8
+        args_dfs_stack = list(thing.__args__)
+        literals = []
+        while args_dfs_stack:
+            arg = args_dfs_stack.pop()
+            if is_typing_literal(arg):
+                args_dfs_stack.extend(reversed(arg.__args__))
+            else:
+                literals.append(arg)
+        return st.sampled_from(literals)
     if isinstance(thing, typing.TypeVar):
         if getattr(thing, "__bound__", None) is not None:
             strat = unwrap_strategies(st.from_type(thing.__bound__))
