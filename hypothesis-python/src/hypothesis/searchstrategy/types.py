@@ -238,6 +238,9 @@ try:  # pragma: no cover
         array_shapes,
         scalar_dtypes,
         nested_dtypes,
+        from_dtype,
+        integer_dtypes,
+        unsigned_integer_dtypes,
     )
 
     _global_type_lookup.update(
@@ -247,7 +250,7 @@ try:  # pragma: no cover
         }
     )
 except ImportError:  # pragma: no cover
-    pass
+    np = None
 
 try:
     import typing
@@ -273,6 +276,13 @@ else:
         # These aren't present in the typing module backport.
         _global_type_lookup[typing.SupportsBytes] = st.binary()
         _global_type_lookup[typing.SupportsRound] = st.complex_numbers()
+    except AttributeError:  # pragma: no cover
+        pass
+    try:
+        strat = st.integers() | st.booleans()
+        if np is not None:  # pragma: no branch
+            strat |= (unsigned_integer_dtypes() | integer_dtypes()).flatmap(from_dtype)
+        _global_type_lookup[typing.SupportsIndex] = strat  # type: ignore
     except AttributeError:  # pragma: no cover
         pass
 

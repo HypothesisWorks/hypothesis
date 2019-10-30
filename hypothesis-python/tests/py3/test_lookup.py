@@ -232,6 +232,13 @@ def test_register_generic_typing_strats():
         st.from_type.__clear_cache()
 
 
+def if_available(name):
+    try:
+        return getattr(typing, name)
+    except AttributeError:
+        return pytest.param(name, marks=[pytest.mark.skip])
+
+
 @pytest.mark.parametrize(
     "typ",
     [
@@ -245,6 +252,7 @@ def test_register_generic_typing_strats():
         typing.SupportsFloat,
         typing.SupportsInt,
         typing.SupportsRound,
+        if_available("SupportsIndex"),
     ],
 )
 def test_resolves_weird_types(typ):
