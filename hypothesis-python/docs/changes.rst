@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.42.3:
+
+-------------------
+4.42.3 - 2019-10-30
+-------------------
+
+This release updates Hypothesis's formatting to the new version of black, and
+has absolutely no user visible effect.
+
 .. _v4.42.2:
 
 -------------------
