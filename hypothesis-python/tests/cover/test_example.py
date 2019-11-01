@@ -88,6 +88,10 @@ def test_non_interactive_example_emits_warning():
 @pytest.mark.skipif(WINDOWS, reason="pexpect.spawn not supported on Windows")
 def test_interactive_example_does_not_emit_warning():
     child = pexpect.spawn("%s -Werror" % (sys.executable,))
+    # If this test mysteriously fails here, it might be that your python
+    # can't launch cleanly with "-Werror". If you are running tests manually
+    # from a virtualenv, you might need to update your copy of virtualenv
+    # and create a fresh environment.
     child.expect(">>> ", timeout=1)
     child.sendline("from hypothesis.strategies import none")
     child.sendline("none().example()")
