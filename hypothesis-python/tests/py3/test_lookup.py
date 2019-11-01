@@ -37,7 +37,7 @@ from hypothesis.internal.compat import (
 )
 from hypothesis.searchstrategy import types
 from hypothesis.strategies import from_type
-from tests.common.debug import minimal
+from tests.common.debug import find_any, minimal
 from tests.common.utils import fails_with
 
 typing = pytest.importorskip("typing")
@@ -259,11 +259,30 @@ def test_resolves_weird_types(typ):
     from_type(typ).example()
 
 
+class Foo:
+    def __init__(self, x):
+        pass
+
+
+class Bar(Foo):
+    pass
+
+
+class Baz(Foo):
+    pass
+
+
+st.register_type_strategy(Bar, st.builds(Bar, st.integers()))
+st.register_type_strategy(Baz, st.builds(Baz, st.integers()))
+
+
 @pytest.mark.parametrize(
     "var,expected",
     [
         (typing.TypeVar("V"), object),
         (typing.TypeVar("V", bound=int), int),
+        (typing.TypeVar("V", bound=Foo), (Bar, Baz)),
+        (typing.TypeVar("V", bound=typing.Union[int, str]), (int, str)),
         (typing.TypeVar("V", int, str), (int, str)),
     ],
 )
@@ -275,6 +294,15 @@ def test_typevar_type_is_consistent(data, var, expected):
     assume(v1 != v2)  # Values may vary, just not types
     assert type(v1) == type(v2)
     assert isinstance(v1, expected)
+
+
+def test_distinct_typevars_same_constraint():
+    A = typing.TypeVar("A", int, str)
+    B = typing.TypeVar("B", int, str)
+    find_any(
+        st.tuples(st.from_type(A), st.from_type(B)),
+        lambda ab: type(ab[0]) != type(ab[1]),  # noqa
+    )
 
 
 def annotated_func(a: int, b: int = 2, *, c: int, d: int = 4):
