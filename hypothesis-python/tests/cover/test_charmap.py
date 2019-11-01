@@ -20,6 +20,7 @@ from __future__ import absolute_import, division, print_function
 import os
 import sys
 import tempfile
+import time
 import unicodedata
 
 import hypothesis.internal.charmap as cm
@@ -107,6 +108,20 @@ def test_recreate_charmap():
     y = cm.charmap()
     assert x is not y
     assert x == y
+
+
+def test_uses_cached_charmap():
+    cm.charmap()
+    atime = time.time() - 1000
+    mtime = atime
+    os.utime(cm.charmap_file(), (atime, mtime))
+
+    # Force reload of charmap from cache file.
+    cm._charmap = None
+    cm.charmap()
+    statinfo = os.stat(cm.charmap_file())
+    assert statinfo.st_atime == atime
+    assert statinfo.st_mtime == mtime
 
 
 def test_union_empty():

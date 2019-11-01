@@ -59,7 +59,7 @@ def charmap():
         f = charmap_file()
         try:
             with gzip.GzipFile(f, "rb") as i:
-                tmp_charmap = dict(json.loads(i))
+                tmp_charmap = dict(json.load(i))
 
         except Exception:
             tmp_charmap = {}
