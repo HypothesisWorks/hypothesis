@@ -28,7 +28,7 @@ from tests.common.utils import capture_out
 
 def test_reports_passes():
     @given(st.integers())
-    @settings(verbosity=Verbosity.debug)
+    @settings(verbosity=Verbosity.debug, max_examples=1000)
     def test(i):
         assert i < 10
 
