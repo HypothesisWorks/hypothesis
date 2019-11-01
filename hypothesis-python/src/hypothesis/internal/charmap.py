@@ -62,14 +62,7 @@ def charmap():
                 tmp_charmap = dict(json.loads(i))
 
         except Exception:
-            tmp_charmap = {}
-            for i in range(0, sys.maxunicode + 1):
-                cat = unicodedata.category(hunichr(i))
-                rs = tmp_charmap.setdefault(cat, [])
-                if rs and rs[-1][-1] == i - 1:
-                    rs[-1][-1] += 1
-                else:
-                    rs.append([i, i])
+            tmp_charmap = _generate_charmap()
 
             try:
                 # Write the Unicode table atomically
@@ -100,6 +93,35 @@ def charmap():
 
     assert _charmap is not None
     return _charmap
+
+
+def _generate_charmap():
+    # Unicode category of current range, eg. 'Cu'.
+    current_cat = None
+
+    # Character code where current range started.
+    current_cat_start = None
+
+    # List of `(Unicode char category, start, end)` tuples.
+    ranges = []
+
+    # nb. `sys.maxunicode` is ~1M, so this loop is performance sensitive.
+    category = unicodedata.category
+    for i in range(0, sys.maxunicode + 1):
+        cat = category(hunichr(i))
+        if cat != current_cat:
+            if current_cat is not None:
+                ranges.append((current_cat, current_cat_start, i - 1))
+            current_cat = cat
+            current_cat_start = i
+    ranges.append((current_cat, current_cat_start, sys.maxunicode))
+
+    charmap = {}
+    for cat, start, end in ranges:
+        rs = charmap.setdefault(cat, [])
+        rs.append([start, end])
+
+    return charmap
 
 
 _categories = None
