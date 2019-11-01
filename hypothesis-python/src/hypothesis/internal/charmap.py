@@ -59,7 +59,10 @@ def charmap():
         f = charmap_file()
         try:
             with gzip.GzipFile(f, "rb") as i:
-                tmp_charmap = dict(json.load(i))
+                # When the minimum Python 3 version becomes 3.6, this can be
+                # simplified to `json.load(i)` without needing to decode first.
+                data = i.read().decode()
+                tmp_charmap = dict(json.loads(data))
 
         except Exception:
             tmp_charmap = {}
