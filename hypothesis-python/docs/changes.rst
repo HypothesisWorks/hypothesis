@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.42.4:
+
+-------------------
+4.42.4 - 2019-11-01
+-------------------
+
+This release fixes a bug (:issue:`2160`) where decorators applied after
+:func:`@settings <hypothesis.settings>` and before
+:func:`@given <hypothesis.given>` were ignored.
+
+Thanks to Tom Milligan for this bugfix!
+
 .. _v4.42.3:
 
 -------------------
