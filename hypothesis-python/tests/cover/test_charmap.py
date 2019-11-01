@@ -112,15 +112,17 @@ def test_recreate_charmap():
 
 def test_uses_cached_charmap():
     cm.charmap()
-    atime = time.time() - 1000
-    mtime = atime
-    os.utime(cm.charmap_file(), (atime, mtime))
 
-    # Force reload of charmap from cache file.
+    # Reset the last-modified time of the cache file to a point in the past.
+    mtime = int(time.time() - 1000)
+    os.utime(cm.charmap_file(), (mtime, mtime))
+    statinfo = os.stat(cm.charmap_file())
+    assert statinfo.st_mtime == mtime
+
+    # Force reload of charmap from cache file and check that mtime is unchanged.
     cm._charmap = None
     cm.charmap()
     statinfo = os.stat(cm.charmap_file())
-    assert statinfo.st_atime == atime
     assert statinfo.st_mtime == mtime
 
 
