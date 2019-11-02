@@ -580,12 +580,12 @@ def test_broadcastable_shape_bounds_are_satisfied(shape, data):
     assert all(min_side <= s <= max_side for s in bshape)
 
 
-@settings(deadline=None, suppress_health_check=[HealthCheck.too_slow])
-@given(
-    num_shapes=st.integers(1, 4),
-    base_shape=nps.array_shapes(min_side=0, max_side=4, min_dims=0, max_dims=3),
-    data=st.data(),
-)
+ANY_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=0, max_side=32)
+ANY_NONZERO_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=1, max_side=32)
+
+
+@settings(deadline=None)
+@given(num_shapes=st.integers(1, 4), base_shape=ANY_SHAPE, data=st.data())
 def test_mutually_broadcastable_shape_bounds_are_satisfied(
     num_shapes, base_shape, data
 ):
@@ -698,11 +698,8 @@ def test_broadcastable_shape_util(shapes):
     assert broadcast_out[0].shape == broadcasted_shape
 
 
-@settings(deadline=None, max_examples=1000)
-@given(
-    shape=nps.array_shapes(min_dims=0, max_dims=6, min_side=1, max_side=5),
-    data=st.data(),
-)
+@settings(deadline=None, max_examples=200)
+@given(shape=ANY_NONZERO_SHAPE, data=st.data())
 def test_broadcastable_shape_has_good_default_values(shape, data):
     # This test ensures that default parameters can always produce broadcast-compatible shapes
     broadcastable_shape = data.draw(
@@ -713,12 +710,8 @@ def test_broadcastable_shape_has_good_default_values(shape, data):
     _broadcast_shapes(shape, broadcastable_shape)
 
 
-@settings(deadline=None, max_examples=1000)
-@given(
-    base_shape=nps.array_shapes(min_dims=0, max_dims=6, min_side=1, max_side=5),
-    num_shapes=st.integers(1, 10),
-    data=st.data(),
-)
+@settings(deadline=None, max_examples=200)
+@given(base_shape=ANY_SHAPE, num_shapes=st.integers(1, 10), data=st.data())
 def test_multiple_shapes_has_good_default_values(num_shapes, base_shape, data):
     # This test ensures that default parameters can always produce broadcast-compatible shapes
     shapes, result = data.draw(
@@ -731,11 +724,7 @@ def test_multiple_shapes_has_good_default_values(num_shapes, base_shape, data):
 
 
 @settings(deadline=None)
-@given(
-    min_dim=st.integers(0, 5),
-    shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=10),
-    data=st.data(),
-)
+@given(min_dim=st.integers(0, 5), shape=ANY_SHAPE, data=st.data())
 def test_broadcastable_shape_can_broadcast(min_dim, shape, data):
     max_dim = data.draw(st.one_of(st.none(), st.integers(min_dim, 5)), label="max_dim")
     min_side, max_side = _draw_valid_bounds(data, shape, max_dim)
@@ -758,7 +747,7 @@ def test_broadcastable_shape_can_broadcast(min_dim, shape, data):
 @given(
     num_shapes=st.integers(1, 10),
     min_dim=st.integers(0, 5),
-    base_shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=10),
+    base_shape=ANY_SHAPE,
     data=st.data(),
 )
 def test_mutually_broadcastable_shape_can_broadcast(
@@ -782,7 +771,7 @@ def test_mutually_broadcastable_shape_can_broadcast(
     assert result == _broadcast_shapes(base_shape, *shapes)
 
 
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=50)
 @given(
     min_dim=st.integers(0, 5),
     shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=5),
@@ -810,7 +799,7 @@ def test_minimize_broadcastable_shape(min_dim, shape, data):
     assert tuple(expected) == smallest
 
 
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=50)
 @given(
     num_shapes=st.integers(1, 3),
     min_dim=st.integers(0, 5),
@@ -935,7 +924,7 @@ def test_broadcastable_shape_shrinking_with_singleton_out_of_bounds(
     assert smallest == (min_side,) * min_dim
 
 
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=50)
 @given(
     num_shapes=st.integers(1, 4),
     min_dim=st.integers(0, 4),
