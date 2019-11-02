@@ -975,7 +975,7 @@ def integer_array_indices(shape, result_shape=array_shapes(), dtype="int"):
 class MutuallyBroadcastableShapesStrategy(SearchStrategy):
     def __init__(
         self,
-        inputs,
+        num_shapes,
         base_shape=(),
         min_dims=0,
         max_dims=None,
@@ -987,7 +987,7 @@ class MutuallyBroadcastableShapesStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         self.base_shape = base_shape
         self.side_strat = st.integers(min_side, max_side)
-        self.num_shapes = inputs
+        self.num_shapes = num_shapes
         self.min_dims = min_dims
         self.max_dims = max_dims
         self.min_side = min_side
@@ -1057,8 +1057,8 @@ class MutuallyBroadcastableShapesStrategy(SearchStrategy):
         assert all(self.min_side <= s <= self.max_side for side in shapes for s in side)
 
         return BroadcastableShapes(
-            tuple(tuple(reversed(shape)) for shape in shapes),
-            tuple(reversed(result_shape)),
+            input_shapes=tuple(tuple(reversed(shape)) for shape in shapes),
+            result_shape=tuple(reversed(result_shape)),
         )
 
 
@@ -1170,8 +1170,8 @@ def mutually_broadcastable_shapes(
                 break
 
     return MutuallyBroadcastableShapesStrategy(
-        num_shapes,
-        base_shape,
+        num_shapes=num_shapes,
+        base_shape=base_shape,
         min_dims=min_dims,
         max_dims=max_dims,
         min_side=min_side,
