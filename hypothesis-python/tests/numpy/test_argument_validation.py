@@ -280,10 +280,10 @@ def test_test_basic_indices_kwonly_emulation():
         nps.basic_indices((), __reserved=None).validate()
 
 
-def test_test_mutually_broadcastable_shapes_kwonly_emulation():
+@pytest.mark.parametrize("args", ({}, (1,), dict(num_shapes=1, __reserved=None)))
+def test_test_mutually_broadcastable_shapes_kwonly_emulation(args):
     with pytest.raises(TypeError):
-        nps.mutually_broadcastable_shapes().validate()
-    with pytest.raises(TypeError):
-        nps.mutually_broadcastable_shapes(1).validate()
-    with pytest.raises(TypeError):
-        nps.basic_indices(inputs=1, __reserved=None).validate()
+        if isinstance(args, dict):
+            nps.mutually_broadcastable_shapes(**args).validate()
+        else:
+            nps.mutually_broadcastable_shapes(*args).validate()
