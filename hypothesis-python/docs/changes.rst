@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.42.6:
+
+-------------------
+4.42.6 - 2019-11-02
+-------------------
+
+This release fixes a bug (:issue:`2166`) where a Unicode character info
+cache file was generated but never used on subsequent test runs, causing tests
+to run more slowly than they should have.
+
+Thanks to Robert Knight for this bugfix!
+
 .. _v4.42.5:
 
 -------------------
