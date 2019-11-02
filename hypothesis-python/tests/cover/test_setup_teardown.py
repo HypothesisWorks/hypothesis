@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis import assume, given
+from hypothesis import assume, given, settings
 from hypothesis.strategies import integers, text
 
 
@@ -45,6 +45,7 @@ class SomeGivens(object):
         pass
 
     @given(integers())
+    @settings(max_examples=1000)
     def give_me_a_positive_int(self, x):
         assert x >= 0
 

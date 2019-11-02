@@ -22,7 +22,7 @@ from distutils.version import LooseVersion
 import pytest
 
 from hypothesis import Verbosity, core, settings
-from hypothesis._settings import note_deprecation
+from hypothesis._settings import Verbosity, note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import OrderedDict, text_type
 from hypothesis.internal.detection import is_hypothesis_test
@@ -79,7 +79,8 @@ def pytest_report_header(config):
     settings_str = settings.get_profile(profile).show_changed()
     if settings_str != "":
         settings_str = " -> %s" % (settings_str)
-    return "hypothesis profile %r%s" % (profile, settings_str)
+    if config.option.verbose >= 1 or settings.default.verbosity >= Verbosity.verbose:
+        return "hypothesis profile %r%s" % (profile, settings_str)
 
 
 def pytest_configure(config):

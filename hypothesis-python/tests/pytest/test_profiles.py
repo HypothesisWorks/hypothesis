@@ -17,6 +17,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+import pytest
+
 from hypothesis.extra.pytestplugin import LOAD_PROFILE_OPTION
 from hypothesis.version import __version__
 
@@ -37,11 +39,23 @@ def test_this_one_is_ok():
 """
 
 
-def test_runs_reporting_hook(testdir):
+def test_does_not_run_reporting_hook_by_default(testdir):
     script = testdir.makepyfile(TESTSUITE)
     testdir.makeconftest(CONFTEST)
     result = testdir.runpytest(script, LOAD_PROFILE_OPTION, "test")
     out = "\n".join(result.stdout.lines)
     assert "1 passed" in out
+    assert "hypothesis profile" not in out
+    assert __version__ in out
+
+
+@pytest.mark.parametrize("option", ["-v", "--hypothesis-verbosity=verbose"])
+def test_runs_reporting_hook_in_any_verbose_mode(testdir, option):
+    script = testdir.makepyfile(TESTSUITE)
+    testdir.makeconftest(CONFTEST)
+    result = testdir.runpytest(script, LOAD_PROFILE_OPTION, "test", option)
+    out = "\n".join(result.stdout.lines)
+    assert "1 passed" in out
     assert "max_examples=1" in out
+    assert "hypothesis profile" in out
     assert __version__ in out
