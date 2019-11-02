@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import sys
+from functools import reduce
 
 import numpy as np
 import pytest
@@ -31,6 +32,12 @@ from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.searchstrategy import SearchStrategy
 from tests.common.debug import find_any, minimal
 from tests.common.utils import checks_deprecated_behaviour, fails_with, flaky
+
+try:
+    from itertools import zip_longest
+except ImportError:
+    from itertools import izip_longest as zip_longest
+
 
 STANDARD_TYPES = list(
     map(
@@ -560,6 +567,7 @@ def test_broadcastable_shape_bounds_are_satisfied(shape, data):
         )
     except InvalidArgument:
         assume(False)
+        return
 
     if max_dim is None:
         max_dim = max(len(shape), min_dim) + 2
@@ -570,6 +578,10 @@ def test_broadcastable_shape_bounds_are_satisfied(shape, data):
     assert isinstance(bshape, tuple) and all(isinstance(s, int) for s in bshape)
     assert min_dim <= len(bshape) <= max_dim
     assert all(min_side <= s <= max_side for s in bshape)
+
+
+ANY_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=0, max_side=32)
+ANY_NONZERO_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=1, max_side=32)
 
 
 def _draw_valid_bounds(data, shape, max_dim, permit_none=True):
@@ -592,29 +604,73 @@ def _draw_valid_bounds(data, shape, max_dim, permit_none=True):
     return min_side, max_side
 
 
-@settings(deadline=None, max_examples=1000)
+def _broadcast_two_shapes(shape_a, shape_b):
+    # type: (nps.Shape, nps.Shape) -> nps.Shape
+    result = []
+    for a, b in zip_longest(reversed(shape_a), reversed(shape_b), fillvalue=1):
+        if a != b and (a != 1) and (b != 1):
+            raise ValueError(
+                "shapes %r and %r are not broadcast-compatible" % (shape_a, shape_b)
+            )
+        result.append(a if a != 1 else b)
+
+    return tuple(reversed(result))
+
+
+def _broadcast_shapes(*shapes):
+    """Returns the shape resulting from broadcasting the
+    input shapes together.
+
+    Raises ValueError if the shapes are not broadcast-compatible"""
+    assert len(shapes)
+    if len(shapes) == 1:
+        return shapes[0]
+
+    return reduce(_broadcast_two_shapes, shapes, ())
+
+
+@settings(deadline=None, max_examples=500)
 @given(
-    shape=nps.array_shapes(min_dims=0, max_dims=6, min_side=1, max_side=5),
-    data=st.data(),
+    shapes=st.lists(
+        nps.array_shapes(min_dims=0, min_side=0, max_dims=6, max_side=6), min_size=1
+    )
 )
+def test_broadcastable_shape_util(shapes):
+    """Ensures that `_broadcast_shapes` raises when fed incompatible shapes,
+    and ensures that it produces the true broadcasted shape"""
+    if len(shapes) == 1:
+        assert _broadcast_shapes(*shapes) == shapes[0]
+        return
+
+    arrs = [np.zeros(s, dtype=np.uint8) for s in shapes]
+
+    try:
+        broadcast_out = np.broadcast_arrays(*arrs)
+    except ValueError:
+        with pytest.raises(ValueError):
+            _broadcast_shapes(*shapes)
+        return
+    broadcasted_shape = _broadcast_shapes(*shapes)
+
+    assert broadcast_out[0].shape == broadcasted_shape
+
+
+@settings(deadline=None, max_examples=200)
+@given(shape=ANY_NONZERO_SHAPE, data=st.data())
 def test_broadcastable_shape_has_good_default_values(shape, data):
     # This test ensures that default parameters can always produce broadcast-compatible shapes
     broadcastable_shape = data.draw(
         nps.broadcastable_shapes(shape), label="broadcastable_shapes"
     )
-    a = np.zeros(shape, dtype="uint8")
-    b = np.zeros(broadcastable_shape, dtype="uint8")
-    np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
+
+    # error if drawn shape for b is not broadcast-compatible
+    _broadcast_shapes(shape, broadcastable_shape)
 
 
 @settings(deadline=None)
-@given(
-    min_dim=st.integers(0, 5),
-    shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=10),
-    data=st.data(),
-)
+@given(min_dim=st.integers(0, 32), shape=ANY_SHAPE, data=st.data())
 def test_broadcastable_shape_can_broadcast(min_dim, shape, data):
-    max_dim = data.draw(st.one_of(st.none(), st.integers(min_dim, 5)), label="max_dim")
+    max_dim = data.draw(st.one_of(st.none(), st.integers(min_dim, 32)), label="max_dim")
     min_side, max_side = _draw_valid_bounds(data, shape, max_dim)
     broadcastable_shape = data.draw(
         nps.broadcastable_shapes(
@@ -626,12 +682,12 @@ def test_broadcastable_shape_can_broadcast(min_dim, shape, data):
         ),
         label="broadcastable_shapes",
     )
-    a = np.zeros(shape, dtype="uint8")
-    b = np.zeros(broadcastable_shape, dtype="uint8")
-    np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
+
+    # error if drawn shape for b is not broadcast-compatible
+    _broadcast_shapes(shape, broadcastable_shape)
 
 
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=50)
 @given(
     min_dim=st.integers(0, 5),
     shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=5),
@@ -672,9 +728,9 @@ def test_broadcastable_shape_adjusts_max_dim_with_explicit_bounds(max_dim, data)
         label="broadcastable_shapes",
     )
     assert len(broadcastable_shape) == 3
-    a = np.zeros(shape, dtype="uint8")
-    b = np.zeros(broadcastable_shape, dtype="uint8")
-    np.broadcast(a, b)  # error if drawn shape for b is not broadcast-compatible
+
+    # error if drawn shape for b is not broadcast-compatible
+    _broadcast_shapes(shape, broadcastable_shape)
 
 
 @settings(deadline=None, max_examples=10)
