@@ -726,9 +726,9 @@ def test_mutually_broadcastableshapes_has_good_default_values(
 
 
 @settings(deadline=None)
-@given(min_dim=st.integers(0, 5), shape=ANY_SHAPE, data=st.data())
+@given(min_dim=st.integers(0, 32), shape=ANY_SHAPE, data=st.data())
 def test_broadcastable_shape_can_broadcast(min_dim, shape, data):
-    max_dim = data.draw(st.one_of(st.none(), st.integers(min_dim, 5)), label="max_dim")
+    max_dim = data.draw(st.one_of(st.none(), st.integers(min_dim, 32)), label="max_dim")
     min_side, max_side = _draw_valid_bounds(data, shape, max_dim)
     broadcastable_shape = data.draw(
         nps.broadcastable_shapes(
@@ -748,14 +748,14 @@ def test_broadcastable_shape_can_broadcast(min_dim, shape, data):
 @settings(deadline=None)
 @given(
     num_shapes=st.integers(1, 10),
-    min_dim=st.integers(0, 5),
+    min_dim=st.integers(0, 32),
     base_shape=ANY_SHAPE,
     data=st.data(),
 )
 def test_mutually_broadcastable_shape_can_broadcast(
     num_shapes, min_dim, base_shape, data
 ):
-    max_dim = data.draw(st.one_of(st.none(), st.integers(min_dim, 5)), label="max_dim")
+    max_dim = data.draw(st.one_of(st.none(), st.integers(min_dim, 32)), label="max_dim")
     min_side, max_side = _draw_valid_bounds(data, base_shape, max_dim)
     shapes, result = data.draw(
         nps.mutually_broadcastable_shapes(
