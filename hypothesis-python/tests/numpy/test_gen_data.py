@@ -881,7 +881,7 @@ def test_mutually_broadcastable_shape_adjusts_max_dim_with_default_bounds(
     max_side, min_dims, num_shapes, data
 ):
     # Ensures that `mutually_broadcastable_shapes` limits itself to satisfiable dimensions
-    # Broadcastable values can only be drawn for dims 0-3 for these shapes
+    # when a default `max_dims` is derived.
     base_shape = data.draw(
         st.sampled_from([(5, 3, 2, 1), (0, 3, 2, 1)]), label="base_shape"
     )
@@ -898,6 +898,7 @@ def test_mutually_broadcastable_shape_adjusts_max_dim_with_default_bounds(
             label="shapes, result",
         )
     except InvalidArgument:
+        # There is no satisfiable `max_dims` for us to tune
         assert min_dims == 4 and (max_side == 3 or base_shape[0] == 0)
         return
 
