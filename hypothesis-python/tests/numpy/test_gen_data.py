@@ -609,7 +609,7 @@ def test_mutually_broadcastable_shape_bounds_are_satisfied(
         )
     except InvalidArgument:
         assume(False)
-        return
+        assert False, "unreachable"
 
     if max_dim is None:
         max_dim = max(len(base_shape), min_dim) + 2
