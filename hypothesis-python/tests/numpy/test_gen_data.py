@@ -712,7 +712,9 @@ def test_broadcastable_shape_has_good_default_values(shape, data):
 
 @settings(deadline=None, max_examples=200)
 @given(base_shape=ANY_SHAPE, num_shapes=st.integers(1, 10), data=st.data())
-def test_multiple_shapes_has_good_default_values(num_shapes, base_shape, data):
+def test_mutually_broadcastableshapes_has_good_default_values(
+    num_shapes, base_shape, data
+):
     # This test ensures that default parameters can always produce broadcast-compatible shapes
     shapes, result = data.draw(
         nps.mutually_broadcastable_shapes(num_shapes=num_shapes, base_shape=base_shape),
