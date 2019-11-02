@@ -43,7 +43,7 @@ from hypothesis._settings import (
 from hypothesis.control import current_build_context
 from hypothesis.core import given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
-from hypothesis.internal.compat import quiet_raise, string_types
+from hypothesis.internal.compat import hrange, quiet_raise, string_types
 from hypothesis.internal.reflection import function_digest, nicerepr, proxies, qualname
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
@@ -117,9 +117,16 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
 
             while should_continue.more():
                 value = data.conjecture_data.draw(machine.steps())
-                if print_steps:
-                    machine.print_step(value)
-                machine.execute_step(value)
+                # Assign 'result' here in case 'execute_step' fails below
+                result = multiple()
+                try:
+                    result = machine.execute_step(value)
+                finally:
+                    if print_steps:
+                        # 'result' is only used if the step has target bundles.
+                        # If it does, and the result is a 'MultipleResult',
+                        # then 'print_step' prints a multi-variable assignment.
+                        machine.print_step(value, result)
                 machine.check_invariants()
         finally:
             if print_steps:
@@ -190,7 +197,10 @@ class GenericStateMachine(
         raise NotImplementedError(u"%r.steps()" % (self,))
 
     def execute_step(self, step):
-        """Execute a step that has been previously drawn from self.steps()"""
+        """Execute a step that has been previously drawn from self.steps()
+
+        Returns the result of the step execution.
+        """
         raise NotImplementedError(u"%r.execute_step()" % (self,))
 
     def print_start(self):
@@ -205,10 +215,10 @@ class GenericStateMachine(
         By default does nothing.
         """
 
-    def print_step(self, step):
+    def print_step(self, step, result):
         """Print a step to the current reporter.
 
-        This is called right before a step is executed.
+        This is called right after a step is executed.
         """
         self.step_count = getattr(self, u"step_count", 0) + 1
         report(u"Step #%d: %s" % (self.step_count, nicerepr(step)))
@@ -682,6 +692,11 @@ class RuleBasedStateMachine(GenericStateMachine):
     def upcoming_name(self):
         return u"v%d" % (self.name_counter,)
 
+    def last_names(self, n):
+        assert self.name_counter > n
+        count = self.name_counter
+        return [u"v%d" % (i,) for i in hrange(count - n, count)]
+
     def new_name(self):
         result = self.upcoming_name()
         self.name_counter += 1
@@ -777,16 +792,27 @@ class RuleBasedStateMachine(GenericStateMachine):
     def print_end(self):
         report(u"state.teardown()")
 
-    def print_step(self, step):
+    def print_step(self, step, result):
         rule, data = step
         data_repr = {}
         for k, v in data.items():
             data_repr[k] = self.__pretty(v)
         self.step_count = getattr(self, u"step_count", 0) + 1
+        # If the step has target bundles, and the result is a MultipleResults
+        # then we want to assign to multiple variables.
+        if isinstance(result, MultipleResults):
+            n_output_vars = len(result.values)
+        else:
+            n_output_vars = 1
+        output_assignment = (
+            u"%s = " % (", ".join(self.last_names(n_output_vars)),)
+            if rule.targets and n_output_vars >= 1
+            else u""
+        )
         report(
             u"%sstate.%s(%s)"
             % (
-                u"%s = " % (self.upcoming_name(),) if rule.targets else u"",
+                output_assignment,
                 rule.function.__name__,
                 u", ".join(u"%s=%s" % kv for kv in data_repr.items()),
             )
@@ -816,6 +842,7 @@ class RuleBasedStateMachine(GenericStateMachine):
                 self._add_result_to_targets(rule.targets, result)
         if self._initialize_rules_to_run:
             self._initialize_rules_to_run.remove(rule)
+        return result
 
     def check_invariants(self):
         for invar in self.invariants():
