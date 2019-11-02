@@ -35,7 +35,7 @@ from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.utils.conventions import not_set
 
-try:
+if not PY2:
     from typing import NamedTuple, Tuple
 
     Shape = Tuple[int, ...]
@@ -43,7 +43,7 @@ try:
         "BroadcastableShapes",
         [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
     )
-except ImportError:
+else:
     BroadcastableShapes = namedtuple(  # type: ignore
         "BroadcastableShapes", ["input_shapes", "result_shape"]
     )
