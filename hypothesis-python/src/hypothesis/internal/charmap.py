@@ -59,17 +59,25 @@ def charmap():
         f = charmap_file()
         try:
             with gzip.GzipFile(f, "rb") as i:
-                tmp_charmap = dict(json.loads(i))
+                # When the minimum Python 3 version becomes 3.6, this can be
+                # simplified to `json.load(i)` without needing to decode first.
+                data = i.read().decode()
+                tmp_charmap = dict(json.loads(data))
 
         except Exception:
+            # This loop is reduced to using only local variables for performance;
+            # indexing and updating containers is a ~3x slowdown.  This doesn't fix
+            # https://github.com/HypothesisWorks/hypothesis/issues/2108 but it helps.
+            category = unicodedata.category  # Local variable -> ~20% speedup!
             tmp_charmap = {}
-            for i in range(0, sys.maxunicode + 1):
-                cat = unicodedata.category(hunichr(i))
-                rs = tmp_charmap.setdefault(cat, [])
-                if rs and rs[-1][-1] == i - 1:
-                    rs[-1][-1] += 1
-                else:
-                    rs.append([i, i])
+            last_cat = category(hunichr(0))
+            last_start = 0
+            for i in range(1, sys.maxunicode + 1):
+                cat = category(hunichr(i))
+                if cat != last_cat:
+                    tmp_charmap.setdefault(last_cat, []).append([last_start, i - 1])
+                    last_cat, last_start = cat, i
+            tmp_charmap.setdefault(last_cat, []).append([last_start, sys.maxunicode])
 
             try:
                 # Write the Unicode table atomically
