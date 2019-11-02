@@ -203,20 +203,20 @@ def e(a, **kwargs):
             max_side=3,
         ),
         e(
-            nps.mutually_broadcastable_shapes,  # default max_dims unsatisfiable
-            num_shapes=2,
+            nps.mutually_broadcastable_shapes,  # user-specified max_dims unsatisfiable
+            num_shapes=1,
             base_shape=(5, 3, 2, 1),
             min_dims=3,
-            max_dims=None,
+            max_dims=4,
             min_side=2,
             max_side=3,
         ),
         e(
-            nps.mutually_broadcastable_shapes,  # default max_dims unsatisfiable
+            nps.mutually_broadcastable_shapes,  # user-specified max_dims unsatisfiable
             num_shapes=2,
             base_shape=(0, 3, 2, 1),
             min_dims=3,
-            max_dims=None,
+            max_dims=4,
             min_side=2,
             max_side=3,
         ),

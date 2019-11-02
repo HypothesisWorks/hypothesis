@@ -871,27 +871,40 @@ def test_broadcastable_shape_adjusts_max_dim_with_explicit_bounds(max_dim, data)
 
 
 @settings(deadline=None)
-@given(max_dim=st.integers(4, 6), num_shapes=st.integers(1, 3), data=st.data())
-def test_mutually_broadcastable_shape_adjusts_max_dim_with_explicit_bounds(
-    max_dim, num_shapes, data
+@given(
+    max_side=st.sampled_from([3, None]),
+    min_dims=st.integers(0, 4),
+    num_shapes=st.integers(1, 3),
+    data=st.data(),
+)
+def test_mutually_broadcastable_shape_adjusts_max_dim_with_default_bounds(
+    max_side, min_dims, num_shapes, data
 ):
     # Ensures that `mutually_broadcastable_shapes` limits itself to satisfiable dimensions
     # Broadcastable values can only be drawn for dims 0-3 for these shapes
     base_shape = data.draw(
         st.sampled_from([(5, 3, 2, 1), (0, 3, 2, 1)]), label="base_shape"
     )
-    shapes, result = data.draw(
-        nps.mutually_broadcastable_shapes(
-            num_shapes=num_shapes,
-            base_shape=base_shape,
-            min_side=2,
-            max_side=3,
-            min_dims=3,
-            max_dims=max_dim,
-        ),
-        label="shapes, result",
-    )
-    assert all(len(s) == 3 for s in shapes)
+
+    try:
+        shapes, result = data.draw(
+            nps.mutually_broadcastable_shapes(
+                num_shapes=num_shapes,
+                base_shape=base_shape,
+                min_side=2,
+                max_side=max_side,
+                min_dims=min_dims,
+            ),
+            label="shapes, result",
+        )
+    except InvalidArgument:
+        assert min_dims == 4 and (max_side == 3 or base_shape[0] == 0)
+        return
+
+    if max_side == 3 or base_shape[0] == 0:
+        assert all(len(s) <= 3 for s in shapes)
+    elif min_dims == 4:
+        assert all(4 <= len(s) for s in shapes)
 
     # error if drawn shape for b is not broadcast-compatible
     assert len(shapes) == num_shapes
