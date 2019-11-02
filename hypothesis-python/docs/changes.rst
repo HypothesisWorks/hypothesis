@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.42.7:
+
+-------------------
+4.42.7 - 2019-11-02
+-------------------
+
+This patch makes stateful step printing expand the result of a step into
+multiple variables when a MultipleResult is returned (:issue:`2139`).
+Thanks to Joseph Weston for reporting and fixing this bug!
+
 .. _v4.42.6:
 
 -------------------
