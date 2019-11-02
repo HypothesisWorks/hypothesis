@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.42.8:
+
+-------------------
+4.42.8 - 2019-11-02
+-------------------
+
+This patch ensures that we only add profile information to the pytest header
+if running either pytest or Hypothesis in verbose mode, matching the
+`builtin cache plugin <https://docs.pytest.org/en/latest/cache.html>`__
+(:issue:`2155`).
+
 .. _v4.42.7:
 
 -------------------
