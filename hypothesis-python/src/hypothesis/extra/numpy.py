@@ -44,7 +44,7 @@ if not PY2:
         [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
     )
 else:
-    BroadcastableShapes = namedtuple(  # type: ignore
+    BroadcastableShapes = namedtuple(
         "BroadcastableShapes", ["input_shapes", "result_shape"]
     )
 
