@@ -1050,8 +1050,7 @@ class MutuallyBroadcastableShapesStrategy(SearchStrategy):
             if not any(use):
                 break
 
-        max_len = max(len(s) for s in shapes) if shapes else 0
-        result_shape = result_shape[: max(len(self.base_shape), max_len)]
+        result_shape = result_shape[: max(map(len, [self.base_shape] + shapes))]
 
         assert len(shapes) == self.num_shapes
         assert all(self.min_dims <= len(s) <= self.max_dims for s in shapes)
