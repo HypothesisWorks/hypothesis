@@ -28,14 +28,14 @@ import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, assume, given, note, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import binary_type, text_type
+from hypothesis.internal.compat import PY2, binary_type, text_type
 from hypothesis.searchstrategy import SearchStrategy
 from tests.common.debug import find_any, minimal
 from tests.common.utils import checks_deprecated_behaviour, fails_with, flaky
 
-try:
+if not PY2:
     from itertools import zip_longest
-except ImportError:
+else:  # pragma: no cover
     from itertools import izip_longest as zip_longest
 
 
@@ -567,7 +567,7 @@ def test_broadcastable_shape_bounds_are_satisfied(shape, data):
         )
     except InvalidArgument:
         assume(False)
-        return
+        assert False, "unreachable"
 
     if max_dim is None:
         max_dim = max(len(shape), min_dim) + 2
