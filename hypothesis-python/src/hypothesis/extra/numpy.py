@@ -760,12 +760,6 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
     """Return a strategy for generating shapes that are broadcast-compatible
     with the provided shape.
 
-<<<<<<< HEAD
-=======
-    This strategy simply calls the ``mutually_broadcastable_shapes`` strategy with ``inputs=1``,
-    and returns the sole generated shape.
-
->>>>>>> update name: multiple_shapes -> mutually_broadcastable_shapes
     Examples from this strategy shrink towards a shape with length ``min_dims``.
     The size of an aligned dimension shrinks towards having a size of 1. The
     size of an unaligned dimension shrink towards ``min_side``.
