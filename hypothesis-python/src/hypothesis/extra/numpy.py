@@ -43,7 +43,7 @@ if not PY2:
         "BroadcastableShapes",
         [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
     )
-else:
+else:  # pragma: no cover
     BroadcastableShapes = namedtuple(
         "BroadcastableShapes", ["input_shapes", "result_shape"]
     )
