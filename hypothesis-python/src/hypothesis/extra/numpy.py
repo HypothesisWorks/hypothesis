@@ -52,7 +52,6 @@ if False:
     from typing import Any, Union, Sequence, Tuple, Optional  # noqa
     from hypothesis.searchstrategy.strategies import T  # noqa
 
-    Shape = Tuple[int, ...]  # noqa
     BasicIndex = Tuple[Union[int, slice, ellipsis, np.newaxis], ...]  # noqa
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
