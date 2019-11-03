@@ -957,8 +957,9 @@ def mutually_broadcastable_shapes(
        The default shape is empty, which corresponds to a scalar.
     * ``min_dims`` The smallest length that any generated shape can possess.
     * ``max_dims`` The largest length that any generated shape can possess.
-      Cannot exceed 32. The default-value for ``max_dims`` is
-      ``2 + max(len(shape), min_dims)``.
+      It cannot exceed 32, which is the greatest supported dimensionality for a
+      numpy array. The default-value for ``max_dims`` is
+      ``2 + max(len(shape), min_dims)`` - capped at 32.
     * ``min_side`` The smallest size that an unaligned dimension can possess.
     * ``max_side`` The largest size that an unaligned dimension can possess.
       The default value is 2 + 'size-of-largest-aligned-dimension'.
