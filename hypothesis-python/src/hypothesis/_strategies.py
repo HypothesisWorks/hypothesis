@@ -1437,7 +1437,7 @@ def from_type(thing):
     # not included because bool is a subclass of int as well as Number.
     strategies = [
         as_strategy(v, thing)
-        for k, v in types._global_type_lookup.items()
+        for k, v in sorted(types._global_type_lookup.items(), key=repr)
         if isinstance(k, type)
         and issubclass(k, thing)
         and sum(types.try_issubclass(k, typ) for typ in types._global_type_lookup) == 1

@@ -38,6 +38,8 @@ from hypothesis.internal.compat import (
     text_type,
     typing_root_type,
 )
+from hypothesis.searchstrategy.lazy import unwrap_strategies
+from hypothesis.searchstrategy.strategies import OneOfStrategy
 
 
 def type_sorting_key(t):
@@ -117,10 +119,20 @@ def from_typing_type(thing):
         return st.tuples(*map(st.from_type, elem_types))
     if isinstance(thing, typing.TypeVar):
         if getattr(thing, "__bound__", None) is not None:
-            return st.from_type(thing.__bound__)
+            strat = unwrap_strategies(st.from_type(thing.__bound__))
+            if not isinstance(strat, OneOfStrategy):
+                return strat
+            # The bound was a union, or we resolved it as a union of subtypes,
+            # so we need to unpack the strategy to ensure consistency across uses.
+            # This incantation runs a sampled_from over the strategies inferred for
+            # each part of the union, wraps that in shared so that we only generate
+            # from one type per testcase, and flatmaps that back to instances.
+            return st.shared(
+                st.sampled_from(strat.original_strategies), key="typevar=%r" % (thing,)
+            ).flatmap(lambda s: s)
         if getattr(thing, "__constraints__", None):
             return st.shared(
-                st.sampled_from(thing.__constraints__), key="typevar-with-constraint"
+                st.sampled_from(thing.__constraints__), key="typevar=%r" % (thing,)
             ).flatmap(st.from_type)
         # Constraints may be None or () on various Python versions.
         return st.text()  # An arbitrary type for the typevar
