@@ -42,14 +42,14 @@ if PY2:  # pragma: no cover
 else:
     from typing import NamedTuple, Tuple
 
-    Shape = Tuple[int, ...]
+    Shape = Tuple[int, ...]  # noqa
     BroadcastableShapes = NamedTuple(
         "BroadcastableShapes",
         [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
     )
 
 if False:
-    from typing import Any, Union, Sequence, Tuple, Optional  # noqa
+    from typing import Any, Union, Sequence, Tuple  # noqa
     from hypothesis.searchstrategy.strategies import T  # noqa
 
     BasicIndex = Tuple[Union[int, slice, ellipsis, np.newaxis], ...]  # noqa
