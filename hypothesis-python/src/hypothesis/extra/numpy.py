@@ -793,14 +793,13 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
     with the provided shape.
 
     Examples from this strategy shrink towards a shape with length ``min_dims``.
-    The size of an aligned dimension shrinks towards being a singleton. The
+    The size of an aligned dimension shrinks towards size ``1``. The
     size of an unaligned dimension shrink towards ``min_side``.
 
     * ``shape`` a tuple of integers
     * ``min_dims`` The smallest length that the generated shape can possess.
     * ``max_dims`` The largest length that the generated shape can possess.
-      shape can possess. Cannot exceed 32. The default-value for ``max_dims``
-      is ``2 + max(len(shape), min_dims)``.
+      The default-value for ``max_dims`` is ``min(32, max(len(shape), min_dims) + 2)``.
     * ``min_side`` The smallest size that an unaligned dimension can possess.
     * ``max_side`` The largest size that an unaligned dimension can possess.
       The default value is 2 + 'size-of-largest-aligned-dimension'.
@@ -819,7 +818,7 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
     check_type(integer_types, min_dims, "min_dims")
 
     if max_dims is None:
-        max_dims = max(len(shape), min_dims) + 2
+        max_dims = min(32, max(len(shape), min_dims) + 2)
     else:
         check_type(integer_types, max_dims, "max_dims")
 
