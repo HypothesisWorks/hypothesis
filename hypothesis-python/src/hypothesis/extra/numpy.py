@@ -754,52 +754,6 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
     return st.lists(axes, min_size, max_size, unique_by=lambda x: x % ndim).map(tuple)
 
 
-class BroadcastShapeStrategy(SearchStrategy):
-    def __init__(self, shape, min_dims, max_dims, min_side, max_side):
-        assert 0 <= min_side <= max_side
-        assert 0 <= min_dims <= max_dims <= 32
-        SearchStrategy.__init__(self)
-        self.shape = shape
-        self.side_strat = st.integers(min_side, max_side)
-        self.min_dims = min_dims
-        self.max_dims = max_dims
-        self.min_side = min_side
-        self.max_side = max_side
-
-    def do_draw(self, data):
-        elements = cu.many(
-            data,
-            min_size=self.min_dims,
-            max_size=self.max_dims,
-            average_size=min(
-                max(self.min_dims * 2, self.min_dims + 5),
-                0.5 * (self.min_dims + self.max_dims),
-            ),
-        )
-        result = []
-        reversed_shape = tuple(self.shape[::-1])
-        while elements.more():
-            if len(result) < len(self.shape):
-                # Shrinks towards original shape
-                if reversed_shape[len(result)] == 1:
-                    if self.min_side <= 1 and not data.draw(st.booleans()):
-                        side = 1
-                    else:
-                        side = data.draw(self.side_strat)
-                elif self.max_side >= reversed_shape[len(result)] and (
-                    not self.min_side <= 1 <= self.max_side or data.draw(st.booleans())
-                ):
-                    side = reversed_shape[len(result)]
-                else:
-                    side = 1
-            else:
-                side = data.draw(self.side_strat)
-            result.append(side)
-        assert self.min_dims <= len(result) <= self.max_dims
-        assert all(self.min_side <= s <= self.max_side for s in result)
-        return tuple(reversed(result))
-
-
 @st.defines_strategy
 def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=None):
     # type: (Shape, int, int, int, int) -> st.SearchStrategy[Shape]
@@ -877,13 +831,14 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
                 max_dims = n
                 break
 
-    return BroadcastShapeStrategy(
-        shape,
+    return MutuallyBroadcastableShapesStrategy(
+        num_shapes=1,
+        base_shape=shape,
         min_dims=min_dims,
         max_dims=max_dims,
         min_side=min_side,
         max_side=max_side,
-    )
+    ).map(lambda x: x.input_shapes[0])
 
 
 class MutuallyBroadcastableShapesStrategy(SearchStrategy):
