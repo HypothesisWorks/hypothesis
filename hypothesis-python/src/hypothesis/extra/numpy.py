@@ -35,7 +35,7 @@ from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.utils.conventions import not_set
 
-if PY2:  # pragma: no cover
+if PY2:
     BroadcastableShapes = namedtuple(
         "BroadcastableShapes", ["input_shapes", "result_shape"]
     )
