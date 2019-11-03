@@ -897,13 +897,11 @@ class MutuallyBroadcastableShapesStrategy(SearchStrategy):
                 else:
                     side = dim_side
 
-                # Use a trick where where a biased coin
-                # is queried to see if the given shape-tuple
-                # will continue to be grown.
-                # All of the relevant draws will still be made
-                # for the given shape-tuple, even if it is no longer
-                # being added to. This helps to ensure more stable
-                # shrinking behavior.
+                # Use a trick where where a biased coin is queried to see
+                # if the given shape-tuple will continue to be grown. All
+                # of the relevant draws will still be made for the given
+                # shape-tuple even if it is no longer being added to.
+                # This helps to ensure more stable shrinking behavior.
                 if self.min_dims < dim_count:
                     use[shape_id] &= cu.biased_coin(
                         data, 1 - 1 / (1 + self.max_dims - dim)
