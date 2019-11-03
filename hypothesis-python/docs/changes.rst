@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.42.10:
+
+--------------------
+4.42.10 - 2019-11-03
+--------------------
+
+This release fixes :func:`~hypothesis.strategies.from_type` when used with
+bounded or constrained :obj:`python:typing.TypeVar` objects (:issue:`2094`).
+
+Previously, distinct typevars with the same constraints would be treated as all
+single typevar, and in cases where a typevar bound was resolved to a union of
+subclasses this could result in mixed types being generated for that typevar.
+
 .. _v4.42.9:
 
 -------------------
