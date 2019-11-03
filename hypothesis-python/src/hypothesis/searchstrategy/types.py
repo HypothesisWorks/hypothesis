@@ -124,6 +124,9 @@ def from_typing_type(thing):
                 return strat
             # The bound was a union, or we resolved it as a union of subtypes,
             # so we need to unpack the strategy to ensure consistency across uses.
+            # This incantation runs a sampled_from over the strategies inferred for
+            # each part of the union, wraps that in shared so that we only generate
+            # from one type per testcase, and flatmaps that back to instances.
             return st.shared(
                 st.sampled_from(strat.original_strategies), key="typevar=%r" % (thing,)
             ).flatmap(lambda s: s)
