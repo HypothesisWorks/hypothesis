@@ -35,17 +35,17 @@ from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.utils.conventions import not_set
 
-if not PY2:
+if PY2:  # pragma: no cover
+    BroadcastableShapes = namedtuple(
+        "BroadcastableShapes", ["input_shapes", "result_shape"]
+    )
+else:
     from typing import NamedTuple, Tuple
 
     Shape = Tuple[int, ...]
     BroadcastableShapes = NamedTuple(
         "BroadcastableShapes",
         [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
-    )
-else:  # pragma: no cover
-    BroadcastableShapes = namedtuple(
-        "BroadcastableShapes", ["input_shapes", "result_shape"]
     )
 
 if False:
