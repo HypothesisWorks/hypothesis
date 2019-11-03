@@ -942,6 +942,39 @@ def test_mutually_broadcastable_shapes_shrinking_with_singleton_out_of_bounds(
         assert smallest == (min_side,) * min_dims
 
 
+@given(
+    num_shapes=st.integers(1, 4),
+    min_dims=st.integers(1, 32),
+    max_side=st.integers(1, 6),
+    data=st.data(),
+)
+def test_mutually_broadcastable_shapes_only_singleton_is_valid(
+    num_shapes, min_dims, max_side, data
+):
+    """Ensures that, when all aligned base-shape dim sizes are larger
+    than ``max_side``, only singletons can be drawn"""
+    max_dims = data.draw(st.integers(min_dims, 32), label="max_dims")
+    base_shape = data.draw(
+        nps.array_shapes(min_side=max_side + 1, min_dims=1), label="base_shape"
+    )
+    input_shapes, result = data.draw(
+        nps.mutually_broadcastable_shapes(
+            num_shapes=num_shapes,
+            base_shape=base_shape,
+            min_side=1,
+            max_side=max_side,
+            min_dims=min_dims,
+            max_dims=max_dims,
+        ),
+        label="input_shapes, result",
+    )
+
+    assert len(input_shapes) == num_shapes
+    assert result == _broadcast_shapes(base_shape, *input_shapes)
+    for shape in input_shapes:
+        assert all([i == 1 for i in shape[-len(base_shape) :]])
+
+
 @settings(deadline=None)
 @given(
     shape=nps.array_shapes(min_dims=0, max_dims=3, min_side=0, max_side=5),
