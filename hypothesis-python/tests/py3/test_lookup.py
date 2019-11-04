@@ -305,6 +305,32 @@ def test_distinct_typevars_same_constraint():
     )
 
 
+@pytest.mark.skipif(
+    not hasattr(typing, "Literal"), reason="`typing.Literal` is not available."
+)
+@pytest.mark.parametrize("value", ["dog", b"goldfish", 42, 63.4, -80.5, False])
+def test_typing_Literal(value):
+    assert from_type(typing.Literal[value]).example() == value
+
+
+@pytest.mark.skipif(
+    not hasattr(typing, "Literal"), reason="`typing.Literal` is not available."
+)
+@given(st.data())
+def test_typing_Literal_nested(data):
+    lit = typing.Literal
+    values = [
+        (lit["hamster", 0], ("hamster", 0)),
+        (lit[26, False, "bunny", 130], (26, False, "bunny", 130)),
+        (lit[lit[1]], {1}),
+        (lit[lit[1], 2], {1, 2}),
+        (lit[1, lit[2], 3], {1, 2, 3}),
+        (lit[lit[lit[1], lit[2]], lit[lit[3], lit[4]]], {1, 2, 3, 4}),
+    ]
+    literal_type, flattened_literals = data.draw(st.sampled_from(values))
+    assert data.draw(st.from_type(literal_type)) in flattened_literals
+
+
 def annotated_func(a: int, b: int = 2, *, c: int, d: int = 4):
     return a + b + c + d
 
