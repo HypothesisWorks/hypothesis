@@ -34,12 +34,12 @@ jobs:
     - stage: precheck
       env: TASK=check-whole-repo-tests
     - env: TASK=lint
-    - env: TASK=lint-ruby
-    - env: TASK=check-rust-tests
-    - env: TASK=check-ruby-tests
     - env: TASK=check-py36
       sudo: required
       dist: xenial
+    - env: TASK=lint-ruby
+    - env: TASK=check-ruby-tests
+    - env: TASK=check-rust-tests
     - stage: deploy
       env: TASK=deploy
 

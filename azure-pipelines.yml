@@ -40,32 +40,6 @@ jobs:
           TASK: check-quality
         check-ruby-tests:
           TASK: check-ruby-tests
-        check-unicode:
-          TASK: check-unicode
-        check-py27-typing:
-          TASK: check-py27-typing
-        check-nose:
-          TASK: check-nose
-        check-pytest43:
-          TASK: check-pytest43
-        check-django22:
-          TASK: check-django22
-        check-django21:
-          TASK: check-django21
-        check-django20:
-          TASK: check-django20
-        check-django111:
-          TASK: check-django111
-        check-pandas19:
-          TASK: check-pandas19
-        check-pandas22:
-          TASK: check-pandas22
-        check-pandas23:
-          TASK: check-pandas23
-        check-pandas24:
-          TASK: check-pandas24
-        check-pandas25:
-          TASK: check-pandas25
     steps:
     - task: UsePythonVersion@0
       inputs:
@@ -77,9 +51,7 @@ jobs:
     - script: ./build.sh
       displayName: Run tests
 
-  # prefix `a_` because jobs start running in roughly alphabetical order,
-  # and starting these longer-running jobs early improves utilisation.
-  - job: a_windows
+  - job: windows
     pool:
       vmImage: 'windows-2019'
     strategy:
@@ -149,6 +121,50 @@ jobs:
         brew install readline xz ncurses
         ./build.sh install-core
       displayName: Install dependencies
+    - script: ./build.sh
+      displayName: Run tests
+
+  # We run these quick jobs last for higher utilisation of concurrent jobs,
+  # and because they're unlikely to fail if everything else is passing.
+  - job: specificdeps
+    pool:
+      vmImage: 'Ubuntu 16.04'
+    strategy:
+      matrix:
+        check-unicode:
+          TASK: check-unicode
+        check-py27-typing:
+          TASK: check-py27-typing
+        check-nose:
+          TASK: check-nose
+        check-pytest43:
+          TASK: check-pytest43
+        check-django22:
+          TASK: check-django22
+        check-django21:
+          TASK: check-django21
+        check-django20:
+          TASK: check-django20
+        check-django111:
+          TASK: check-django111
+        check-pandas19:
+          TASK: check-pandas19
+        check-pandas22:
+          TASK: check-pandas22
+        check-pandas23:
+          TASK: check-pandas23
+        check-pandas24:
+          TASK: check-pandas24
+        check-pandas25:
+          TASK: check-pandas25
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.6'
+    - script: sudo apt-get update && sudo apt-get install libreadline-dev libsqlite3-dev shellcheck
+      displayName: Install apt dependencies
+    - script: ./build.sh check-installed
+      displayName: Install Python
     - script: ./build.sh
       displayName: Run tests
 
