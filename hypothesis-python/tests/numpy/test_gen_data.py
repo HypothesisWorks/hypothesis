@@ -26,7 +26,7 @@ import six
 
 import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
-from hypothesis import assume, given, note, settings
+from hypothesis import HealthCheck, assume, given, note, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import PY2, binary_type, text_type
 from hypothesis.searchstrategy import SearchStrategy
@@ -544,7 +544,7 @@ def test_minimize_negative_tuple_axes(ndim, data):
     assert len(smallest) == min_size
 
 
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=[HealthCheck.too_slow])
 @given(shape=ANY_SHAPE, data=st.data())
 def test_broadcastable_shape_bounds_are_satisfied(shape, data):
     min_dims = data.draw(st.integers(0, 32), label="min_dims")
