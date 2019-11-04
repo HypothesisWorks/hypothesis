@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.43.1:
+
+-------------------
+4.43.1 - 2019-11-04
+-------------------
+
+Python 3.8's new :obj:`python:typing.Literal` type - see :pep:`586` for
+details - is now  supported in :func:`~hypothesis.strategies.from_type`.
+
 .. _v4.43.0:
 
 -------------------
