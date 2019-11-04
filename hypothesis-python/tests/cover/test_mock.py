@@ -19,7 +19,7 @@
 import math
 from unittest import mock
 
-from _pytest.capture import CaptureFixture
+from _pytest.config import Config
 
 import hypothesis.strategies as st
 from hypothesis import given
@@ -34,15 +34,15 @@ def test_can_mock_inside_given_without_fixture(atan, thing):
 
 @mock.patch("math.atan")
 @given(thing=st.text())
-def test_can_mock_outside_given_with_fixture(atan, capsys, thing):
+def test_can_mock_outside_given_with_fixture(atan, pytestconfig, thing):
     assert isinstance(atan, mock.MagicMock)
     assert isinstance(math.atan, mock.MagicMock)
-    assert isinstance(capsys, CaptureFixture)
+    assert isinstance(pytestconfig, Config)
 
 
 @given(thing=st.text())
-def test_can_mock_within_test_with_fixture(capsys, thing):
-    assert isinstance(capsys, CaptureFixture)
+def test_can_mock_within_test_with_fixture(pytestconfig, thing):
+    assert isinstance(pytestconfig, Config)
     assert not isinstance(math.atan, mock.MagicMock)
     with mock.patch("math.atan") as atan:
         assert isinstance(atan, mock.MagicMock)

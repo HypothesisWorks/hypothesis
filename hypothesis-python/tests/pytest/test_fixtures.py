@@ -21,18 +21,20 @@ from hypothesis import example, given
 from hypothesis.strategies import integers
 from tests.common.utils import fails
 
+pytest_plugins = "pytester"
 
-@pytest.fixture
+
+@pytest.fixture(scope="session")
 def infinity():
     return float("inf")
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def mock_fixture():
     return Mock()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def spec_fixture():
     class Foo:
         def __init__(self):
@@ -77,3 +79,26 @@ def test_can_inject_mock_via_fixture(mock_fixture, xs):
 def test_can_inject_autospecced_mock_via_fixture(spec_fixture, xs):
     spec_fixture.bar.return_value = float("inf")
     assert xs <= spec_fixture.bar()
+
+
+TESTSUITE = """
+import pytest
+from hypothesis import given, strategies as st
+
+@pytest.fixture(scope="function", autouse=True)
+def autofix(request):
+    pass
+
+@given(x=st.integers())
+def test_requests_function_scoped_fixture(capsys, x):
+    pass
+
+@given(x=st.integers())
+def test_autouse_function_scoped_fixture(x):
+    pass
+"""
+
+
+def test_given_plus_function_scoped_non_autouse_fixtures_are_deprecated(testdir):
+    script = testdir.makepyfile(TESTSUITE)
+    testdir.runpytest(script, "-Werror").assert_outcomes(passed=1, failed=1)
