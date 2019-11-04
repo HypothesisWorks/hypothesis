@@ -126,7 +126,7 @@ def test_exact_timing():
         time.sleep(0.5)
 
     stats = call_for_statistics(test)
-    assert re.match(r"~ 5\d\dms", stats.runtimes)
+    assert re.match(r"~ [56]\d\dms", stats.runtimes) is not None, stats.runtimes
 
 
 def test_apparently_instantaneous_tests():

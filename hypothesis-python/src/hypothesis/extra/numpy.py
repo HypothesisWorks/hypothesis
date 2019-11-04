@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import math
+from collections import namedtuple
 
 import numpy as np
 
@@ -34,11 +35,23 @@ from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.utils.conventions import not_set
 
-if False:
-    from typing import Any, Union, Sequence, Tuple, Optional  # noqa
-    from hypothesis.searchstrategy.strategies import T  # noqa
+if PY2:
+    BroadcastableShapes = namedtuple(
+        "BroadcastableShapes", ["input_shapes", "result_shape"]
+    )
+else:
+    from typing import NamedTuple, Tuple
 
     Shape = Tuple[int, ...]  # noqa
+    BroadcastableShapes = NamedTuple(
+        "BroadcastableShapes",
+        [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
+    )
+
+if False:
+    from typing import Any, Union, Sequence, Tuple  # noqa
+    from hypothesis.searchstrategy.strategies import T  # noqa
+
     BasicIndex = Tuple[Union[int, slice, ellipsis, np.newaxis], ...]  # noqa
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
@@ -740,52 +753,6 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
     return st.lists(axes, min_size, max_size, unique_by=lambda x: x % ndim).map(tuple)
 
 
-class BroadcastShapeStrategy(SearchStrategy):
-    def __init__(self, shape, min_dims, max_dims, min_side, max_side):
-        assert 0 <= min_side <= max_side
-        assert 0 <= min_dims <= max_dims <= 32
-        SearchStrategy.__init__(self)
-        self.shape = shape
-        self.side_strat = st.integers(min_side, max_side)
-        self.min_dims = min_dims
-        self.max_dims = max_dims
-        self.min_side = min_side
-        self.max_side = max_side
-
-    def do_draw(self, data):
-        elements = cu.many(
-            data,
-            min_size=self.min_dims,
-            max_size=self.max_dims,
-            average_size=min(
-                max(self.min_dims * 2, self.min_dims + 5),
-                0.5 * (self.min_dims + self.max_dims),
-            ),
-        )
-        result = []
-        reversed_shape = tuple(self.shape[::-1])
-        while elements.more():
-            if len(result) < len(self.shape):
-                # Shrinks towards original shape
-                if reversed_shape[len(result)] == 1:
-                    if self.min_side <= 1 and not data.draw(st.booleans()):
-                        side = 1
-                    else:
-                        side = data.draw(self.side_strat)
-                elif self.max_side >= reversed_shape[len(result)] and (
-                    not self.min_side <= 1 <= self.max_side or data.draw(st.booleans())
-                ):
-                    side = reversed_shape[len(result)]
-                else:
-                    side = 1
-            else:
-                side = data.draw(self.side_strat)
-            result.append(side)
-        assert self.min_dims <= len(result) <= self.max_dims
-        assert all(self.min_side <= s <= self.max_side for s in result)
-        return tuple(reversed(result))
-
-
 @st.defines_strategy
 def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=None):
     # type: (Shape, int, int, int, int) -> st.SearchStrategy[Shape]
@@ -863,8 +830,216 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
                 max_dims = n
                 break
 
-    return BroadcastShapeStrategy(
-        shape,
+    return MutuallyBroadcastableShapesStrategy(
+        num_shapes=1,
+        base_shape=shape,
+        min_dims=min_dims,
+        max_dims=max_dims,
+        min_side=min_side,
+        max_side=max_side,
+    ).map(lambda x: x.input_shapes[0])
+
+
+class MutuallyBroadcastableShapesStrategy(SearchStrategy):
+    def __init__(
+        self,
+        num_shapes,
+        base_shape=(),
+        min_dims=0,
+        max_dims=None,
+        min_side=1,
+        max_side=None,
+    ):
+        assert 0 <= min_side <= max_side
+        assert 0 <= min_dims <= max_dims <= 32
+        SearchStrategy.__init__(self)
+        self.base_shape = base_shape
+        self.side_strat = st.integers(min_side, max_side)
+        self.num_shapes = num_shapes
+        self.min_dims = min_dims
+        self.max_dims = max_dims
+        self.min_side = min_side
+        self.max_side = max_side
+
+        self.size_one_allowed = self.min_side <= 1 <= self.max_side
+
+    def do_draw(self, data):
+        # All shapes are handled in column-major order; i.e. they are reversed
+        base_shape = self.base_shape[::-1]
+        result_shape = list(base_shape)
+        shapes = [[] for _ in range(self.num_shapes)]
+        use = [True for _ in range(self.num_shapes)]
+
+        for dim_count in range(1, self.max_dims + 1):
+            dim = dim_count - 1
+
+            # We begin by drawing a valid dimension-size for the given
+            # dimension. This restricts the variability across the shapes
+            # at this dimension such that they can only choose between
+            # this size and a singleton dimension.
+            if len(base_shape) < dim_count or base_shape[dim] == 1:
+                # dim is unrestricted by the base-shape: shrink to min_side
+                dim_side = data.draw(self.side_strat)
+            elif base_shape[dim] <= self.max_side:
+                # dim is aligned with non-singleton base-dim
+                dim_side = base_shape[dim]
+            else:
+                # only a singleton is valid in alignment with the base-dim
+                dim_side = 1
+
+            for shape_id, shape in enumerate(shapes):
+                # Populating this dimension-size for each shape, either
+                # the drawn size is used or, if permitted, a singleton
+                # dimension.
+                if dim_count <= len(base_shape) and self.size_one_allowed:
+                    # aligned: shrink towards size 1
+                    side = data.draw(st.sampled_from([1, dim_side]))
+                else:
+                    side = dim_side
+
+                # Use a trick where where a biased coin is queried to see
+                # if the given shape-tuple will continue to be grown. All
+                # of the relevant draws will still be made for the given
+                # shape-tuple even if it is no longer being added to.
+                # This helps to ensure more stable shrinking behavior.
+                if self.min_dims < dim_count:
+                    use[shape_id] &= cu.biased_coin(
+                        data, 1 - 1 / (1 + self.max_dims - dim)
+                    )
+
+                if use[shape_id]:
+                    shape.append(side)
+                    if len(result_shape) < len(shape):
+                        result_shape.append(shape[-1])
+                    elif shape[-1] != 1 and result_shape[dim] == 1:
+                        result_shape[dim] = shape[-1]
+            if not any(use):
+                break
+
+        result_shape = result_shape[: max(map(len, [self.base_shape] + shapes))]
+
+        assert len(shapes) == self.num_shapes
+        assert all(self.min_dims <= len(s) <= self.max_dims for s in shapes)
+        assert all(self.min_side <= s <= self.max_side for side in shapes for s in side)
+
+        return BroadcastableShapes(
+            input_shapes=tuple(tuple(reversed(shape)) for shape in shapes),
+            result_shape=tuple(reversed(result_shape)),
+        )
+
+
+@st.defines_strategy
+@reserved_means_kwonly_star
+def mutually_broadcastable_shapes(
+    __reserved=not_set,
+    num_shapes=not_set,
+    base_shape=(),
+    min_dims=0,
+    max_dims=None,
+    min_side=1,
+    max_side=None,
+):
+    # type: (Any, Any, Shape , int, int, int, int) -> st.SearchStrategy[BroadcastableShapes]
+    """Return a strategy for generating a specified number of shapes, N, that are
+    mutually-broadcastable with one another and with the provided "base-shape".
+
+    The strategy will generate a named-tuple of:
+     * input_shapes: the N generated shapes
+     * result_shape: the resulting shape, produced by broadcasting the
+       N shapes with the base-shape
+
+    Each shape produced from this strategy shrinks towards a shape with length
+    ``min_dims``. The size of an aligned dimension shrinks towards being having
+    a size of 1. The size of an unaligned dimension shrink towards ``min_side``.
+
+    * ``num_shapes`` The number of mutually broadcast-compatible shapes to generate.
+    * ``base-shape`` The shape against which all generated shapes can broadcast.
+       The default shape is empty, which corresponds to a scalar and thus does not
+       constrain broadcasting at all.
+    * ``min_dims`` The smallest length that any generated shape can possess.
+    * ``max_dims`` The largest length that any generated shape can possess.
+      It cannot exceed 32, which is the greatest supported dimensionality for a
+      numpy array. The default-value for ``max_dims`` is
+      ``2 + max(len(shape), min_dims)`` - capped at 32.
+    * ``min_side`` The smallest size that an unaligned dimension can possess.
+    * ``max_side`` The largest size that an unaligned dimension can possess.
+      The default value is 2 + 'size-of-largest-aligned-dimension'.
+
+    The following are some examples drawn from this strategy.
+
+    .. code-block:: pycon
+
+        >>> # Each example will draw three shapes,
+        ... # and each shape is broadcast-compatible
+        ... # with `(2, 3)`
+        >>> [mutually_broadcastable_shapes(num_shapes=3, base_shape=(2, 3)).example() for i in range(5)]
+        [BroadcastableShapes(input_shapes=((4, 1, 3), (4, 2, 3), ()), result_shape=(4, 2, 3)),
+         BroadcastableShapes(input_shapes=((3,), (1,), (2, 1)), result_shape=(2, 3)),
+         BroadcastableShapes(input_shapes=((3,), (1, 3), (2, 3)), result_shape=(2, 3)),
+         BroadcastableShapes(input_shapes=((), (), ()), result_shape=(2, 3)),
+         BroadcastableShapes(input_shapes=((3,), (), (3,)), result_shape=(2, 3))]
+    """
+    if __reserved is not not_set:
+        raise InvalidArgument("Do not pass the __reserved argument.")
+
+    check_type(integer_types, num_shapes, "num_shapes")
+    if num_shapes < 1:
+        raise InvalidArgument("num_shapes=%s must be at least 1." % (num_shapes,))
+
+    check_type(tuple, base_shape, "base_shape")
+    strict_check = max_dims is not None
+    check_type(integer_types, min_side, "min_side")
+    check_type(integer_types, min_dims, "min_dims")
+
+    if max_dims is None:
+        max_dims = min(32, max(len(base_shape), min_dims) + 2)
+    else:
+        check_type(integer_types, max_dims, "max_dims")
+
+    if max_side is None:
+        max_side = max(tuple(base_shape[-max_dims:]) + (min_side,)) + 2
+    else:
+        check_type(integer_types, max_side, "max_side")
+
+    order_check("dims", 0, min_dims, max_dims)
+    order_check("side", 0, min_side, max_side)
+
+    if 32 < max_dims:
+        raise InvalidArgument("max_dims cannot exceed 32")
+
+    dims, bnd_name = (max_dims, "max_dims") if strict_check else (min_dims, "min_dims")
+
+    # check for unsatisfiable min_side
+    if not all(min_side <= s for s in base_shape[::-1][:dims] if s != 1):
+        raise InvalidArgument(
+            "Given base_shape=%r, there are no broadcast-compatible "
+            "shapes that satisfy: %s=%s and min_side=%s"
+            % (base_shape, bnd_name, dims, min_side)
+        )
+
+    # check for unsatisfiable [min_side, max_side]
+    if not (
+        min_side <= 1 <= max_side or all(s <= max_side for s in base_shape[::-1][:dims])
+    ):
+        raise InvalidArgument(
+            "Given base_shape=%r, there are no broadcast-compatible shapes "
+            "that satisfy all of %s=%s, min_side=%s, and max_side=%s"
+            % (base_shape, bnd_name, dims, min_side, max_side)
+        )
+
+    if not strict_check:
+        # reduce max_dims to exclude unsatisfiable dimensions
+        for n, s in zip(range(max_dims), reversed(base_shape)):
+            if s < min_side and s != 1:
+                max_dims = n
+                break
+            elif not (min_side <= 1 <= max_side or s <= max_side):
+                max_dims = n
+                break
+
+    return MutuallyBroadcastableShapesStrategy(
+        num_shapes=num_shapes,
+        base_shape=base_shape,
         min_dims=min_dims,
         max_dims=max_dims,
         min_side=min_side,
