@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.43.3:
+
+-------------------
+4.43.3 - 2019-11-05
+-------------------
+
+We've adopted :pypi:`flake8-bugbear` to check for a few more style issues,
+and this patch implements the minor internal cleanups it suggested.
+There is no user-visible change.
+
 .. _v4.43.2:
 
 -------------------
