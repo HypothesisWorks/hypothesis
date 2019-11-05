@@ -239,11 +239,12 @@ def test_will_fill_missing_columns_in_tuple_row(df):
         assert d == 7
 
 
+@settings(suppress_health_check=[HealthCheck.filter_too_much])
 @given(
     pdst.data_frames(
         index=pdst.range_indexes(10, 10),
         columns=[pdst.column(elements=st.integers(0, 9), fill=None, unique=True)],
     )
 )
-def test_cen_generate_unique_columns(df):
+def test_can_generate_unique_columns(df):
     assert set(df[0]) == set(range(10))

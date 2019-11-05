@@ -883,6 +883,7 @@ def test_prints_equal_values_with_correct_variable_name():
 
 
 def test_initialize_rule():
+    @Settings(max_examples=1000)
     class WithInitializeRules(RuleBasedStateMachine):
         initialized = []
 
