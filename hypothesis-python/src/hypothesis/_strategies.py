@@ -239,7 +239,7 @@ class Nothing(SearchStrategy):
     def do_draw(self, data):
         # This method should never be called because draw() will mark the
         # data as invalid immediately because is_empty is True.
-        raise NotImplementedError  # pragma: no cover
+        raise NotImplementedError("This should never happen")  # pragma: no cover
 
     def calc_has_reusable_values(self, recur):
         return True
