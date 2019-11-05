@@ -8,6 +8,7 @@ django
 dpcontracts
 flake8
 flake8-alfred
+flake8-bugbear
 flake8-docstrings
 ipython
 isort
