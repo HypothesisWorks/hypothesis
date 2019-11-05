@@ -2137,6 +2137,7 @@ class DataObject(object):
 
     def draw(self, strategy, label=None):
         # type: (SearchStrategy[Ex], Any) -> Ex
+        check_type(SearchStrategy, strategy, "strategy")
         result = self.conjecture_data.draw(strategy)
         self.count += 1
         if label is not None:
