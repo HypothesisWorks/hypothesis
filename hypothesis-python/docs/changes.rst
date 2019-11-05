@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.43.4:
+
+-------------------
+4.43.4 - 2019-11-05
+-------------------
+
+This patch corrects the exception type and error message you get if you attempt
+to use :func:`~hypothesis.strategies.data` to draw from something which is not
+a strategy.  This never worked, but the error is more helpful now.
+
 .. _v4.43.3:
 
 -------------------
