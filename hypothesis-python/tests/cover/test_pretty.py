@@ -498,7 +498,7 @@ def test_fail_gracefully_on_bogus__qualname__and__name__():
         __name__ = 5
 
     class Type(object):
-        __metaclass__ = Meta
+        __metaclass__ = Meta  # noqa
         __qualname__ = 5
 
     stream = StringIO()

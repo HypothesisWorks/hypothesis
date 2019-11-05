@@ -110,16 +110,6 @@ def test_drawing_an_exact_fraction_coin():
     assert count == 3
 
 
-@st.composite
-def weights(draw):
-    parts = draw(st.lists(st.integers()))
-    parts.reverse()
-    base = Fraction(1, 1)
-    for p in parts:
-        base = Fraction(1) / (1 + base)
-    return base
-
-
 @example([Fraction(1, 3), Fraction(1, 3), Fraction(1, 3)])
 @example([Fraction(1, 1), Fraction(1, 2)])
 @example([Fraction(1, 2), Fraction(4, 10)])
@@ -130,7 +120,7 @@ def weights(draw):
     suppress_health_check=HealthCheck.all(),
     phases=[Phase.explicit] if IN_COVERAGE_TESTS else tuple(Phase),
 )
-@given(st.lists(weights(), min_size=1))
+@given(st.lists(st.fractions(min_value=0, max_value=1), min_size=1))
 def test_sampler_distribution(weights):
     total = sum(weights)
     n = len(weights)

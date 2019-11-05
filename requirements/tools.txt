@@ -29,6 +29,7 @@ dpcontracts==0.6.0
 entrypoints==0.3          # via flake8
 filelock==3.0.12          # via tox
 flake8-alfred==1.1.1
+flake8-bugbear==19.8.0
 flake8-docstrings==1.5.0
 flake8==3.7.9
 gitdb2==2.0.6             # via gitpython

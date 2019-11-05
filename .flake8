@@ -7,7 +7,7 @@ exclude =
     test_imports.py,
     hypothesis-python/tests/py2/*,
     test_lambda_formatting.py
-ignore = F811,D1,D205,D209,D213,D400,D401,D412,D413,D999,D202,E203,E501,W503
+ignore = F811,D1,D205,D209,D213,D400,D401,D412,D413,D999,D202,E203,E501,W503,B008,B011
 
 # Use flake8-alfred to forbid builtins that require compatibility wrappers.
 warn-symbols=

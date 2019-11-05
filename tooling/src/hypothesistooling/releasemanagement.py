@@ -61,7 +61,7 @@ def extract_assignment_from_string(contents, name):
 
     matcher = assignment_matcher(name)
 
-    for i, l in enumerate(lines):
+    for l in lines:
         match = matcher.match(l)
         if match is not None:
             return match[2].strip()

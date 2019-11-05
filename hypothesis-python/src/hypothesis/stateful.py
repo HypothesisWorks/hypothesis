@@ -712,7 +712,7 @@ class RuleBasedStateMachine(GenericStateMachine):
         except KeyError:
             pass
 
-        for k, v in inspect.getmembers(cls):
+        for _, v in inspect.getmembers(cls):
             r = getattr(v, INITIALIZE_RULE_MARKER, None)
             if r is not None:
                 cls.define_initialize_rule(
@@ -728,7 +728,7 @@ class RuleBasedStateMachine(GenericStateMachine):
         except KeyError:
             pass
 
-        for k, v in inspect.getmembers(cls):
+        for _, v in inspect.getmembers(cls):
             r = getattr(v, RULE_MARKER, None)
             if r is not None:
                 cls.define_rule(r.targets, r.function, r.arguments, r.precondition)
@@ -743,7 +743,7 @@ class RuleBasedStateMachine(GenericStateMachine):
             pass
 
         target = []
-        for k, v in inspect.getmembers(cls):
+        for _, v in inspect.getmembers(cls):
             i = getattr(v, INVARIANT_MARKER, None)
             if i is not None:
                 target.append(i)

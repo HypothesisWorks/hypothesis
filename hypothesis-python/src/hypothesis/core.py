@@ -956,10 +956,10 @@ def given(
                 if isinstance(runner, TestCase) and hasattr(runner, "subTest"):
                     subTest = runner.subTest
                     try:
-                        setattr(runner, "subTest", fake_subTest)
+                        runner.subTest = fake_subTest
                         state.run()
                     finally:
-                        setattr(runner, "subTest", subTest)
+                        runner.subTest = subTest
                 else:
                     state.run()
             except BaseException as e:

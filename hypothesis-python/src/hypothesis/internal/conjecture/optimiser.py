@@ -102,7 +102,7 @@ class Optimiser(object):
             """Select any non-empty example, uniformly at random."""
             while True:
                 i = self.random.randrange(0, len(d.examples))
-                if d.examples[i].length > 0:
+                if d.examples[i].length > 0:  # pragma: no branch  # flaky coverage :/
                     return i
 
         self.do_hill_climbing(last_example)

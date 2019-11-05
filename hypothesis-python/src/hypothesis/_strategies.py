@@ -239,7 +239,7 @@ class Nothing(SearchStrategy):
     def do_draw(self, data):
         # This method should never be called because draw() will mark the
         # data as invalid immediately because is_empty is True.
-        assert False  # pragma: no cover
+        raise NotImplementedError("This should never happen")  # pragma: no cover
 
     def calc_has_reusable_values(self, recur):
         return True
@@ -1498,14 +1498,9 @@ def fractions(
     """
     min_value = try_convert(Fraction, min_value, "min_value")
     max_value = try_convert(Fraction, max_value, "max_value")
-
-    if (
-        min_value is not None
-        and not isinstance(min_value, Fraction)
-        or max_value is not None
-        and not isinstance(max_value, Fraction)
-    ):
-        assert False, "Unreachable for Mypy"  # pragma: no cover
+    # These assertions tell Mypy what happened in try_convert
+    assert min_value is None or isinstance(min_value, Fraction)
+    assert max_value is None or isinstance(max_value, Fraction)
 
     check_valid_interval(min_value, max_value, "min_value", "max_value")
     check_valid_integer(max_denominator)
