@@ -38,9 +38,11 @@ details - is now  supported in :func:`~hypothesis.strategies.from_type`.
 
 This release adds the strategy :func:`~hypothesis.extra.numpy.mutually_broadcastable_shapes`, which generates multiple array shapes that are mutually broadcast-compatible with an optional user-specified base-shape.
 
-This is a generalisation of :func:`~hypothesis.extra.numpy.broadcastable_shapes`. It relies heavily on non-public internals for performance when generating and shrinking examples. We intend to support generating shapes matching a ufunc signature in a future version.
+This is a generalisation of :func:`~hypothesis.extra.numpy.broadcastable_shapes`.
+It relies heavily on non-public internals for performance when generating and shrinking examples.
+We intend to support generating shapes matching a ufunc signature in a future version (:issue:`2174`).
 
-Thanks to Ryan Soklaski, Zac Dodds, and @rdturnermtl who contributed to this new feature.
+Thanks to Ryan Soklaski, Zac Hatfield-Dodds, and @rdturnermtl who contributed to this new feature.
 
 .. _v4.42.10:
 
@@ -82,7 +84,7 @@ if running either pytest or Hypothesis in verbose mode, matching the
 -------------------
 
 This patch makes stateful step printing expand the result of a step into
-multiple variables when a MultipleResult is returned (:issue:`2139`).
+multiple variables when you return :func:`~hypothesis.stateful.multiple` (:issue:`2139`).
 Thanks to Joseph Weston for reporting and fixing this bug!
 
 .. _v4.42.6:
@@ -123,7 +125,7 @@ Thanks to Tom Milligan for this bugfix!
 4.42.3 - 2019-10-30
 -------------------
 
-This release updates Hypothesis's formatting to the new version of black, and
+This release updates Hypothesis's formatting to the new version of :pypi:`black`, and
 has absolutely no user visible effect.
 
 .. _v4.42.2:

@@ -944,9 +944,10 @@ def mutually_broadcastable_shapes(
     mutually-broadcastable with one another and with the provided "base-shape".
 
     The strategy will generate a named-tuple of:
-     * input_shapes: the N generated shapes
-     * result_shape: the resulting shape, produced by broadcasting the
-       N shapes with the base-shape
+
+    * input_shapes: the N generated shapes
+    * result_shape: the resulting shape, produced by broadcasting the
+      N shapes with the base-shape
 
     Each shape produced from this strategy shrinks towards a shape with length
     ``min_dims``. The size of an aligned dimension shrinks towards being having
@@ -954,13 +955,13 @@ def mutually_broadcastable_shapes(
 
     * ``num_shapes`` The number of mutually broadcast-compatible shapes to generate.
     * ``base-shape`` The shape against which all generated shapes can broadcast.
-       The default shape is empty, which corresponds to a scalar and thus does not
-       constrain broadcasting at all.
+      The default shape is empty, which corresponds to a scalar and thus does not
+      constrain broadcasting at all.
     * ``min_dims`` The smallest length that any generated shape can possess.
     * ``max_dims`` The largest length that any generated shape can possess.
       It cannot exceed 32, which is the greatest supported dimensionality for a
       numpy array. The default-value for ``max_dims`` is
-      ``2 + max(len(shape), min_dims)`` - capped at 32.
+      ``2 + max(len(shape), min_dims)``, capped at 32.
     * ``min_side`` The smallest size that an unaligned dimension can possess.
     * ``max_side`` The largest size that an unaligned dimension can possess.
       The default value is 2 + 'size-of-largest-aligned-dimension'.
@@ -969,15 +970,14 @@ def mutually_broadcastable_shapes(
 
     .. code-block:: pycon
 
-        >>> # Each example will draw three shapes,
-        ... # and each shape is broadcast-compatible
-        ... # with `(2, 3)`
-        >>> [mutually_broadcastable_shapes(num_shapes=3, base_shape=(2, 3)).example() for i in range(5)]
-        [BroadcastableShapes(input_shapes=((4, 1, 3), (4, 2, 3), ()), result_shape=(4, 2, 3)),
-         BroadcastableShapes(input_shapes=((3,), (1,), (2, 1)), result_shape=(2, 3)),
-         BroadcastableShapes(input_shapes=((3,), (1, 3), (2, 3)), result_shape=(2, 3)),
-         BroadcastableShapes(input_shapes=((), (), ()), result_shape=(2, 3)),
-         BroadcastableShapes(input_shapes=((3,), (), (3,)), result_shape=(2, 3))]
+        >>> # Draw three shapes, and each shape is broadcast-compatible with `(2, 3)`
+        >>> for _ in range(5):
+        ...     mutually_broadcastable_shapes(num_shapes=3, base_shape=(2, 3)).example()
+        BroadcastableShapes(input_shapes=((4, 1, 3), (4, 2, 3), ()), result_shape=(4, 2, 3))
+        BroadcastableShapes(input_shapes=((3,), (1,), (2, 1)), result_shape=(2, 3))
+        BroadcastableShapes(input_shapes=((3,), (1, 3), (2, 3)), result_shape=(2, 3))
+        BroadcastableShapes(input_shapes=((), (), ()), result_shape=(2, 3))
+        BroadcastableShapes(input_shapes=((3,), (), (3,)), result_shape=(2, 3))
     """
     if __reserved is not not_set:
         raise InvalidArgument("Do not pass the __reserved argument.")
