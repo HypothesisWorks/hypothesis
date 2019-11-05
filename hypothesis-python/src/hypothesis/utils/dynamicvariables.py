@@ -32,7 +32,7 @@ class DynamicVariable(object):
 
     @value.setter
     def value(self, value):
-        setattr(self.data, "value", value)
+        self.data.value = value
 
     @contextmanager
     def with_value(self, value):

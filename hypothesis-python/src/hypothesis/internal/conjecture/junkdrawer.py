@@ -71,7 +71,7 @@ class IntList(object):
             except OverflowError:
                 pass
         else:  # pragma: no cover
-            assert False, "Could not create storage for %r" % (values,)
+            raise AssertionError("Could not create storage for %r" % (values,))
         if isinstance(self.__underlying, list):
             for v in self.__underlying:
                 if v < 0 or not isinstance(v, integer_types):

@@ -144,7 +144,7 @@ class LazyStrategy(SearchStrategy):
                 )
             kwargs_for_repr = dict(_kwargs)
             for k, v in defaults.items():
-                if k in kwargs_for_repr and kwargs_for_repr[k] is defaults[k]:
+                if k in kwargs_for_repr and kwargs_for_repr[k] is v:
                     del kwargs_for_repr[k]
             self.__representation = "%s(%s)" % (
                 self.function.__name__,

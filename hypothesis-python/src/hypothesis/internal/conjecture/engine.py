@@ -548,7 +548,7 @@ class ConjectureRunner(object):
         """If the data or result object is suitable for hill climbing, run hill
         climbing on all of its target observations."""
         if data.status == Status.VALID:
-            for target, score in data.target_observations.items():
+            for target in data.target_observations:
                 self.new_optimiser(data, target).run()
 
     def _run(self):

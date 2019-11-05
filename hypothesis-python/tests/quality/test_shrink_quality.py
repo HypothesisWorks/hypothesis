@@ -327,7 +327,7 @@ def test_can_find_sets_unique_by_incomplete_data():
     assert len(ls) == size
     values = sorted(list(map(max, ls)))
     assert values[-1] - values[0] == size - 1
-    for u, v in ls:
+    for u, _ in ls:
         assert u <= 0
 
 
