@@ -456,3 +456,25 @@ def test_no_nan_for_min_max_values(value, parameter_name):
         assert not math.isnan(xs)
 
     test_not_nan()
+
+
+class Sneaky(object):
+    """It's like a strategy, but it's not a strategy."""
+
+    is_empty = False
+    depth = 0
+    label = 0
+
+    def do_draw(self, data):
+        pass
+
+    def validate(self):
+        pass
+
+
+@pytest.mark.parametrize("value", [5, Sneaky()])
+@pytest.mark.parametrize("label", [None, "not a strategy"])
+@given(data=ds.data())
+def test_data_explicitly_rejects_non_strategies(data, value, label):
+    with pytest.raises(InvalidArgument):
+        data.draw(value, label=label)
