@@ -29,6 +29,7 @@ from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT, WINDOWS
 from hypothesis.internal.floats import (
+    float_of,
     float_to_int,
     int_to_float,
     is_negative,
@@ -303,3 +304,25 @@ def test_exclude_zero_interval():
 def test_inverse_zero_interval_is_deprecated():
     st.floats(0.0, -0.0).validate()
     st.floats(-0.0, 0.0, exclude_min=True, exclude_max=True).validate()
+
+
+WIDTHS = (64, 32)
+if numpy or CAN_PACK_HALF_FLOAT:
+    WIDTHS += (16,)
+
+
+@pytest.mark.parametrize("nonfloat", [st.nothing(), st.none()])
+@given(data=st.data(), width=st.sampled_from(WIDTHS))
+def test_fuzzing_floats_bounds(data, width, nonfloat):
+    lo = data.draw(nonfloat | st.floats(allow_nan=False, width=width), label="lo")
+    hi = data.draw(nonfloat | st.floats(allow_nan=False, width=width), label="hi")
+    if lo is not None and hi is not None and lo > hi:
+        lo, hi = hi, lo
+    assume(lo != 0 or hi != 0)
+    value = data.draw(
+        st.floats(min_value=lo, max_value=hi, width=width, allow_nan=False),
+        label="value",
+    )
+    assert value == float_of(value, width=width)
+    assert lo is None or lo <= value
+    assert hi is None or value <= hi
