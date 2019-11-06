@@ -23,7 +23,6 @@ import hypothesis.internal.conjecture.floats as flt
 import hypothesis.internal.conjecture.utils as d
 from hypothesis.control import assume
 from hypothesis.internal.conjecture.utils import calc_label_from_name
-from hypothesis.internal.floats import sign
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
@@ -135,10 +134,6 @@ class FloatStrategy(SearchStrategy):
             data.stop_example(discard=True)
 
 
-def float_order_key(k):
-    return (sign(k), k)
-
-
 class FixedBoundedFloatStrategy(SearchStrategy):
     """A strategy for floats distributed between two endpoints.
 
@@ -148,15 +143,12 @@ class FixedBoundedFloatStrategy(SearchStrategy):
 
     def __init__(self, lower_bound, upper_bound):
         SearchStrategy.__init__(self)
-        self.lower_bound = float(lower_bound)
-        self.upper_bound = float(upper_bound)
-        assert not math.isinf(self.upper_bound - self.lower_bound)
-        lb = float_order_key(self.lower_bound)
-        ub = float_order_key(self.upper_bound)
-
-        self.critical = [z for z in (-0.0, 0.0) if lb <= float_order_key(z) <= ub]
-        self.critical.append(self.lower_bound)
-        self.critical.append(self.upper_bound)
+        assert isinstance(lower_bound, float)
+        assert isinstance(upper_bound, float)
+        assert 0 <= lower_bound < upper_bound
+        assert math.copysign(1, lower_bound) == 1, "lower bound may not be -0.0"
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
 
     def __repr__(self):
         return "FixedBoundedFloatStrategy(%s, %s)" % (
@@ -169,9 +161,4 @@ class FixedBoundedFloatStrategy(SearchStrategy):
             self.upper_bound - self.lower_bound
         ) * d.fractional_float(data)
         assume(self.lower_bound <= f <= self.upper_bound)
-        assume(sign(self.lower_bound) <= sign(f) <= sign(self.upper_bound))
-        # Special handling for bounds of -0.0
-        for g in [self.lower_bound, self.upper_bound]:
-            if f == g:
-                f = math.copysign(f, g)
         return f
