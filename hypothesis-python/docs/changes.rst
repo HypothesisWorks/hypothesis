@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.43.5:
+
+-------------------
+4.43.5 - 2019-11-06
+-------------------
+
+This patch removes an unused internal flag.
+There is no user-visible change.
+
 .. _v4.43.4:
 
 -------------------
