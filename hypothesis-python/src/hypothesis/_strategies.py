@@ -1203,7 +1203,6 @@ class RandomSeeder(object):
 
 class RandomModule(SearchStrategy):
     def do_draw(self, data):
-        data.can_reproduce_example_from_repr = False
         seed = data.draw(integers(0, 2 ** 32 - 1))
         seed_all, restore_all = get_seeder_and_restorer(seed)
         seed_all()
@@ -2151,8 +2150,6 @@ class DataStrategy(SearchStrategy):
     supports_find = False
 
     def do_draw(self, data):
-        data.can_reproduce_example_from_repr = False
-
         if not hasattr(data, "hypothesis_shared_data_strategy"):
             data.hypothesis_shared_data_strategy = DataObject(data)
         return data.hypothesis_shared_data_strategy
