@@ -573,26 +573,31 @@ def floats(
     elif max_value == float("-inf"):
         raise InvalidArgument("allow_infinity=False excludes max_value=-inf")
 
+    unbounded_floats = FloatStrategy(
+        allow_infinity=allow_infinity, allow_nan=allow_nan, width=width
+    )
+
     if min_value is None and max_value is None:
-        result = FloatStrategy(
-            allow_infinity=allow_infinity, allow_nan=allow_nan
-        )  # type: SearchStrategy[float]
+        return unbounded_floats
     elif min_value is not None and max_value is not None:
         if min_value == max_value:
             assert isinstance(min_value, float)
             result = just(min_value)
         elif is_negative(min_value):
             if is_negative(max_value):
-                result = floats(min_value=-max_value, max_value=-min_value).map(
-                    operator.neg
-                )
-            else:
-                result = floats(min_value=0.0, max_value=max_value) | floats(
-                    min_value=0.0, max_value=-min_value
+                return floats(
+                    min_value=-max_value, max_value=-min_value, width=width
                 ).map(operator.neg)
+            else:
+                return one_of(
+                    floats(min_value=0.0, max_value=max_value, width=width),
+                    floats(min_value=0.0, max_value=-min_value, width=width).map(
+                        operator.neg
+                    ),
+                )
         elif count_between_floats(min_value, max_value) > 1000:
-            result = FixedBoundedFloatStrategy(
-                lower_bound=min_value, upper_bound=max_value
+            return FixedBoundedFloatStrategy(
+                lower_bound=min_value, upper_bound=max_value, width=width
             )
         else:
             ub_int = float_to_int(max_value, width)
@@ -603,42 +608,34 @@ def floats(
             )
     elif min_value is not None:
         assert isinstance(min_value, float)
-        if min_value < 0:
-            result = floats(min_value=0.0, allow_infinity=allow_infinity) | floats(
-                min_value=min_value, max_value=-0.0
+        if is_negative(min_value):
+            return one_of(
+                unbounded_floats.map(abs),
+                floats(min_value=min_value, max_value=-0.0, width=width),
             )
         else:
-            result = floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                lambda x: min_value + abs(x)  # type: ignore
-            )
-            if not allow_infinity:
-                result = result.filter(lambda x: not math.isinf(x))
-        if min_value == 0 and not is_negative(min_value):
-            result = result.filter(lambda x: math.copysign(1.0, x) == 1)
+            result = unbounded_floats.map(lambda x: min_value + abs(x))
     else:
         assert isinstance(max_value, float)
-        if max_value > 0:
-            result = floats(min_value=0.0, max_value=max_value) | floats(
-                max_value=-0.0, allow_infinity=allow_infinity
+        if not is_negative(max_value):
+            return one_of(
+                floats(min_value=0.0, max_value=max_value, width=width),
+                unbounded_floats.map(lambda x: -abs(x)),
             )
         else:
-            result = floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                lambda x: max_value - abs(x)  # type: ignore
-            )
-            if not allow_infinity:
-                result = result.filter(lambda x: not math.isinf(x))
-        if max_value == 0 and is_negative(max_value):
-            result = result.filter(is_negative)
+            result = unbounded_floats.map(lambda x: max_value - abs(x))
 
     if width < 64:
 
         def downcast(x):
             try:
                 return float_of(x, width)
-            except OverflowError:
+            except OverflowError:  # pragma: no cover
                 reject()
 
-        return result.map(downcast)
+        result = result.map(downcast)
+    if not allow_infinity:
+        result = result.filter(lambda x: not math.isinf(x))
     return result
 
 
