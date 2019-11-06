@@ -129,9 +129,10 @@ class FloatStrategy(SearchStrategy):
             else:
                 result = self.nasty_floats[i - 1]
                 flt.write_float(data, result)
-            data.stop_example()
             if self.permitted(result):
+                data.stop_example()
                 return result
+            data.stop_example(discard=True)
 
 
 def float_order_key(k):
