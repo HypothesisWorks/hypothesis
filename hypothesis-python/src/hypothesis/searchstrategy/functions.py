@@ -42,7 +42,6 @@ class FunctionStrategy(SearchStrategy):
                     "This generated %s function can only be called within the "
                     "scope of the @given that created it." % (nicerepr(self.like),)
                 )
-            data.can_reproduce_example_from_repr = False
             val = data.draw(self.returns)
             note(
                 "Called function: %s(%s) -> %r"

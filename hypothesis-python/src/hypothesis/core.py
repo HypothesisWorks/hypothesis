@@ -20,7 +20,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-import ast
 import base64
 import contextlib
 import datetime
@@ -534,8 +533,6 @@ class StateForActualGivenExecution(object):
                 return result
 
         def run(data):
-            if not hasattr(data, "can_reproduce_example_from_repr"):
-                data.can_reproduce_example_from_repr = True
             with local_settings(self.settings):
                 with deterministic_PRNG():
                     with BuildContext(data, is_final=is_final):
@@ -548,10 +545,6 @@ class StateForActualGivenExecution(object):
                                 test.__name__,
                                 arg_string(test, args, kwargs),
                             )
-                            try:
-                                ast.parse(example)
-                            except SyntaxError:
-                                data.can_reproduce_example_from_repr = False
                             report("Falsifying example: %s" % (example,))
                         elif current_verbosity() >= Verbosity.verbose:
                             report(
