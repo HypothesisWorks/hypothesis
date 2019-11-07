@@ -323,6 +323,8 @@ def execute_explicit_examples(
                 with BuildContext(None) as b:
                     verbose_report("Trying example: " + example_string)
                     test_runner(None, lambda data: test(*arguments, **example_kwargs))
+            except KeyboardInterrupt:
+                raise
             except BaseException:
                 report("Falsifying example: " + example_string)
                 for n in b.notes:
@@ -695,6 +697,8 @@ class StateForActualGivenExecution(object):
                     "Unreliable assumption: An example which satisfied "
                     "assumptions on the first run now fails it."
                 )
+            except KeyboardInterrupt:
+                raise
             except BaseException as e:
                 if len(self.falsifying_examples) <= 1:
                     raise
@@ -955,6 +959,8 @@ def given(
                         runner.subTest = subTest
                 else:
                     state.run()
+            except KeyboardInterrupt:
+                raise
             except BaseException as e:
                 generated_seed = wrapped_test._hypothesis_internal_use_generated_seed
                 with local_settings(settings):

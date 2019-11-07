@@ -140,6 +140,8 @@ class ConjectureRunner(object):
 
         try:
             self.__stoppable_test_function(data)
+        except KeyboardInterrupt:
+            raise
         except BaseException:
             self.save_buffer(data.buffer)
             raise

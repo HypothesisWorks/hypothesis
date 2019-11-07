@@ -82,6 +82,8 @@ class BuildContext(object):
         for task in self.tasks:
             try:
                 task()
+            except KeyboardInterrupt:
+                raise
             except BaseException:
                 any_failed = True
                 report(traceback.format_exc())

@@ -851,6 +851,8 @@ class ConjectureData(object):
                         return strategy.do_draw(self)
                     finally:
                         self.draw_times.append(benchmark_time() - start_time)
+                except KeyboardInterrupt:
+                    raise
                 except BaseException as e:
                     mark_for_escalation(e)
                     raise
