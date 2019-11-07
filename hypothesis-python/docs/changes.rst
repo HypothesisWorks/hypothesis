@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.43.6:
+
+-------------------
+4.43.6 - 2019-11-07
+-------------------
+
+This patch refactors ``width`` handling in :func:`~hypothesis.strategies.floats`;
+you may notice small performance improvements but the main purpose is to
+enable work on :issue:`1704` (improving shrinking of bounded floats).
+
 .. _v4.43.5:
 
 -------------------
