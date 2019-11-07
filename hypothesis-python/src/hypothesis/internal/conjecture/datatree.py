@@ -235,6 +235,7 @@ class DataTree(object):
                 assert isinstance(branch, Branch)
                 n_bits = branch.bit_length
 
+                check_counter = 0
                 while True:
                     k = random.getrandbits(n_bits)
                     try:
@@ -246,6 +247,12 @@ class DataTree(object):
                         append_int(n_bits, k)
                         current_node = child
                         break
+                    check_counter += 1
+                    assert (
+                        check_counter != 1000
+                        or len(branch.children) < (2 ** n_bits)
+                        or any(not v.is_exhausted for v in branch.children.values())
+                    )
 
     def rewrite(self, buffer):
         """Use previously seen ConjectureData objects to return a tuple of
