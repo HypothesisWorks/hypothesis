@@ -49,7 +49,7 @@ EMPTY = frozenset()
 @attr.s(slots=True)
 class Branch(object):
     bit_length = attr.ib()
-    children = attr.ib()
+    children = attr.ib(repr=False)
 
     @property
     def max_children(self):
