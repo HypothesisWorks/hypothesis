@@ -26,7 +26,7 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import assume, given, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import PY3, PYPY, hrange, hunichr
+from hypothesis.internal.compat import PY2, PY3, PYPY, hrange, hunichr
 from hypothesis.searchstrategy.regex import (
     SPACE_CHARS,
     UNICODE_DIGIT_CATEGORIES,
@@ -288,8 +288,8 @@ def test_groupref_not_shared_between_regex():
 
 
 @pytest.mark.skipif(
-    PYPY and sys.version_info[:2] == (3, 6),  # Skip for now so we can test the rest
-    reason=r"Under PyPy3.6, the pattern generates but does not match \x80\x80",
+    PYPY or PY2,  # Skip for now so we can test the rest
+    reason=r"Triggers bugs in poor handling of unicode in re for these implementations",
 )
 @given(st.data())
 def test_group_ref_is_not_shared_between_identical_regex(data):
