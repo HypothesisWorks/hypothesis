@@ -223,6 +223,9 @@ class WithRunner(SearchStrategy):
         data.hypothesis_runner = self.runner
         return self.base.do_draw(data)
 
+    def do_validate(self):
+        self.base.validate()
+
 
 def is_invalid_test(name, original_argspec, generator_arguments, generator_kwargs):
     def invalid(message):

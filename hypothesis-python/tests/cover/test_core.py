@@ -22,7 +22,7 @@ from _pytest.outcomes import Failed, Skipped
 
 import hypothesis.strategies as s
 from hypothesis import find, given, reject, settings
-from hypothesis.errors import NoSuchExample, Unsatisfiable
+from hypothesis.errors import InvalidArgument, NoSuchExample, Unsatisfiable
 from tests.common.utils import checks_deprecated_behaviour
 
 
@@ -113,3 +113,16 @@ def test_can_find_with_db_eq_none():
 def test_no_such_example():
     with pytest.raises(NoSuchExample):
         find(s.none(), bool, database_key=b"no such example")
+
+
+def test_validates_strategies_for_test_method():
+    invalid_strategy = s.lists(s.nothing(), min_size=1)
+
+    class TestStrategyValidation(object):
+        @given(invalid_strategy)
+        def test_method_with_bad_strategy(self, x):
+            pass
+
+    instance = TestStrategyValidation()
+    with pytest.raises(InvalidArgument):
+        instance.test_method_with_bad_strategy()
