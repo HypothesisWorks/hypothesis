@@ -356,3 +356,20 @@ def test_will_generate_novel_prefix_to_avoid_exhausted_branches():
 
     assert len(prefix) == 2
     assert prefix[0] == 0
+
+
+def test_will_mark_changes_in_discard_as_flaky():
+    tree = DataTree()
+    data = ConjectureData.for_buffer([1, 1], observer=tree.new_observer())
+    data.start_example(10)
+    data.draw_bits(1)
+    data.stop_example()
+    data.draw_bits(1)
+    data.freeze()
+
+    data = ConjectureData.for_buffer([1, 1], observer=tree.new_observer())
+    data.start_example(10)
+    data.draw_bits(1)
+
+    with pytest.raises(Flaky):
+        data.stop_example(discard=True)

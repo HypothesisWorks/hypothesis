@@ -684,6 +684,9 @@ class DataObserver(object):
         * ``value`` is the result that ``draw_bits`` returned.
         """
 
+    def kill_branch(self):
+        """Mark this part of the tree as not worth re-exploring."""
+
 
 @attr.s(slots=True)
 class ConjectureResult(object):
@@ -897,6 +900,8 @@ class ConjectureData(object):
                     self.mark_invalid()
             else:
                 self.consecutive_discard_counts[-1] = 0
+        if discard:
+            self.observer.kill_branch()
 
     def note_event(self, event):
         self.events.add(event)
