@@ -478,3 +478,13 @@ class Sneaky(object):
 def test_data_explicitly_rejects_non_strategies(data, value, label):
     with pytest.raises(InvalidArgument):
         data.draw(value, label=label)
+
+
+@given(ds.integers().filter(bool).filter(lambda x: x % 3))
+def test_chained_filter(x):
+    assert x and x % 3
+
+
+def test_chained_filter_tracks_all_conditions():
+    s = ds.integers().filter(bool).filter(lambda x: x % 3)
+    assert len(s.flat_conditions) == 2

@@ -21,9 +21,9 @@ import math
 
 import hypothesis.internal.conjecture.floats as flt
 import hypothesis.internal.conjecture.utils as d
-from hypothesis.control import assume
+from hypothesis.control import assume, reject
 from hypothesis.internal.conjecture.utils import calc_label_from_name
-from hypothesis.internal.floats import sign
+from hypothesis.internal.floats import float_of
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
@@ -96,20 +96,24 @@ FLOAT_STRATEGY_DO_DRAW_LABEL = calc_label_from_name(
 class FloatStrategy(SearchStrategy):
     """Generic superclass for strategies which produce floats."""
 
-    def __init__(self, allow_infinity, allow_nan):
+    def __init__(self, allow_infinity, allow_nan, width):
         SearchStrategy.__init__(self)
         assert isinstance(allow_infinity, bool)
         assert isinstance(allow_nan, bool)
+        assert width in (16, 32, 64)
         self.allow_infinity = allow_infinity
         self.allow_nan = allow_nan
+        self.width = width
 
-        self.nasty_floats = [f for f in NASTY_FLOATS if self.permitted(f)]
+        self.nasty_floats = [
+            float_of(f, self.width) for f in NASTY_FLOATS if self.permitted(f)
+        ]
         weights = [0.2 * len(self.nasty_floats)] + [0.8] * len(self.nasty_floats)
         self.sampler = d.Sampler(weights)
 
     def __repr__(self):
-        return "{}(allow_infinity={}, allow_nan={})".format(
-            self.__class__.__name__, self.allow_infinity, self.allow_nan
+        return "{}(allow_infinity={}, allow_nan={}, width={})".format(
+            self.__class__.__name__, self.allow_infinity, self.allow_nan, self.width
         )
 
     def permitted(self, f):
@@ -118,6 +122,12 @@ class FloatStrategy(SearchStrategy):
             return False
         if not self.allow_nan and math.isnan(f):
             return False
+        if self.width < 64:
+            try:
+                float_of(f, self.width)
+                return True
+            except OverflowError:  # pragma: no cover
+                return False
         return True
 
     def do_draw(self, data):
@@ -129,13 +139,12 @@ class FloatStrategy(SearchStrategy):
             else:
                 result = self.nasty_floats[i - 1]
                 flt.write_float(data, result)
-            data.stop_example()
             if self.permitted(result):
+                data.stop_example()
+                if self.width < 64:
+                    return float_of(result, self.width)
                 return result
-
-
-def float_order_key(k):
-    return (sign(k), k)
+            data.stop_example(discard=True)
 
 
 class FixedBoundedFloatStrategy(SearchStrategy):
@@ -145,32 +154,32 @@ class FixedBoundedFloatStrategy(SearchStrategy):
     closer to one of the ends.
     """
 
-    def __init__(self, lower_bound, upper_bound):
+    def __init__(self, lower_bound, upper_bound, width):
         SearchStrategy.__init__(self)
-        self.lower_bound = float(lower_bound)
-        self.upper_bound = float(upper_bound)
-        assert not math.isinf(self.upper_bound - self.lower_bound)
-        lb = float_order_key(self.lower_bound)
-        ub = float_order_key(self.upper_bound)
-
-        self.critical = [z for z in (-0.0, 0.0) if lb <= float_order_key(z) <= ub]
-        self.critical.append(self.lower_bound)
-        self.critical.append(self.upper_bound)
+        assert isinstance(lower_bound, float)
+        assert isinstance(upper_bound, float)
+        assert 0 <= lower_bound < upper_bound
+        assert math.copysign(1, lower_bound) == 1, "lower bound may not be -0.0"
+        assert width in (16, 32, 64)
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+        self.width = width
 
     def __repr__(self):
-        return "FixedBoundedFloatStrategy(%s, %s)" % (
+        return "FixedBoundedFloatStrategy(%s, %s, %s)" % (
             self.lower_bound,
             self.upper_bound,
+            self.width,
         )
 
     def do_draw(self, data):
         f = self.lower_bound + (
             self.upper_bound - self.lower_bound
         ) * d.fractional_float(data)
+        if self.width < 64:
+            try:
+                f = float_of(f, self.width)
+            except OverflowError:  # pragma: no cover
+                reject()
         assume(self.lower_bound <= f <= self.upper_bound)
-        assume(sign(self.lower_bound) <= sign(f) <= sign(self.upper_bound))
-        # Special handling for bounds of -0.0
-        for g in [self.lower_bound, self.upper_bound]:
-            if f == g:
-                f = math.copysign(f, g)
         return f
