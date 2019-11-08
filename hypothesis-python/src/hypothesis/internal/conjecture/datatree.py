@@ -227,8 +227,6 @@ class DataTree(object):
 
         current_node = self.root
         while True:
-            len(novel_prefix)
-
             assert not current_node.is_exhausted
             for i, (n_bits, value) in enumerate(
                 zip(current_node.bit_lengths, current_node.values)
