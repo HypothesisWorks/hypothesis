@@ -31,6 +31,7 @@ def test_keyboardinterrupt_in_strategy_no_rerun():
         nonlocal runs
         runs += 1
         if runs == interrupt:
+            #import pdb; pdb.set_trace()
             raise KeyboardInterrupt
         return draw(integers())
 

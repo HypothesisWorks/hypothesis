@@ -601,6 +601,8 @@ class StateForActualGivenExecution(object):
                     % (self.test.__name__, result),
                     HealthCheck.return_value,
                 )
+        except KeyboardInterrupt:
+            raise
         except UnsatisfiedAssumption:
             data.mark_invalid()
         except (
