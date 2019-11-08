@@ -694,7 +694,7 @@ class ConjectureRunner(object):
             data = self.new_conjecture_data_for_buffer(buffer)
             self.test_function(data)
             result = check_result(data.as_result())
-            assert status is None or result.status == status
+            assert status is None or result.status == status, (status, result.status)
             status = result.status
         if status == Status.OVERRUN:
             result = Overrun

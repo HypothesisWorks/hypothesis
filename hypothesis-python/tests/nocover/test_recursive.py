@@ -111,7 +111,7 @@ def test_can_use_recursive_data_in_sets():
                     break
             return result
 
-    x = find_any(nested_sets, lambda x: len(flatten(x)) == 2, settings(deadline=None))
+    x = minimal(nested_sets, lambda x: len(flatten(x)) == 2, settings(deadline=None))
     assert x in (
         frozenset((False, True)),
         frozenset((False, frozenset((True,)))),

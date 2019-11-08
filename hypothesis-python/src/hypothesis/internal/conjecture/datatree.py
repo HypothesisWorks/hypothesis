@@ -47,9 +47,22 @@ EMPTY = frozenset()
 
 
 @attr.s(slots=True)
+class Killed(object):
+    """Represents a transition to part of the tree which has been marked as
+    "killed", meaning we want to treat it as not worth exploring, so it will
+    be treated as if it were completely explored for the purposes of
+    exhaustion."""
+
+    next_node = attr.ib()
+
+
+@attr.s(slots=True)
 class Branch(object):
+    """Represents a transition where multiple choices can be made as to what
+    to drawn."""
+
     bit_length = attr.ib()
-    children = attr.ib()
+    children = attr.ib(repr=False)
 
     @property
     def max_children(self):
@@ -58,6 +71,8 @@ class Branch(object):
 
 @attr.s(slots=True, frozen=True)
 class Conclusion(object):
+    """Represents a transition to a finished state."""
+
     status = attr.ib()
     interesting_origin = attr.ib()
 
@@ -174,7 +189,7 @@ class TreeNode(object):
             and len(self.forced) == len(self.values)
             and self.transition is not None
         ):
-            if isinstance(self.transition, Conclusion):
+            if isinstance(self.transition, (Conclusion, Killed)):
                 self.is_exhausted = True
             elif len(self.transition.children) == self.transition.max_children:
                 self.is_exhausted = all(
@@ -228,13 +243,14 @@ class DataTree(object):
                     # vary, so what follows is not fixed.
                     return hbytes(novel_prefix)
             else:
-                assert not isinstance(current_node.transition, Conclusion)
+                assert not isinstance(current_node.transition, (Conclusion, Killed))
                 if current_node.transition is None:
                     return hbytes(novel_prefix)
                 branch = current_node.transition
                 assert isinstance(branch, Branch)
                 n_bits = branch.bit_length
 
+                check_counter = 0
                 while True:
                     k = random.getrandbits(n_bits)
                     try:
@@ -246,6 +262,15 @@ class DataTree(object):
                         append_int(n_bits, k)
                         current_node = child
                         break
+                    check_counter += 1
+                    # We don't expect this assertion to ever fire, but coverage
+                    # wants the loop inside to run if you have branch checking
+                    # on, hence the pragma.
+                    assert (  # pragma: no cover
+                        check_counter != 1000
+                        or len(branch.children) < (2 ** n_bits)
+                        or any([not v.is_exhausted for v in branch.children.values()])
+                    )
 
     def rewrite(self, buffer):
         """Use previously seen ConjectureData objects to return a tuple of
@@ -282,12 +307,15 @@ class DataTree(object):
                     data.conclude_test(t.status, t.interesting_origin)
                 elif node.transition is None:
                     raise PreviouslyUnseenBehaviour()
-                else:
+                elif isinstance(node.transition, Branch):
                     v = data.draw_bits(node.transition.bit_length)
                     try:
                         node = node.transition.children[v]
                     except KeyError:
                         raise PreviouslyUnseenBehaviour()
+                else:
+                    assert isinstance(node.transition, Killed)
+                    node = node.transition.next_node
         except StopTest:
             pass
 
@@ -300,6 +328,7 @@ class TreeRecordingObserver(DataObserver):
         self.__current_node = tree.root
         self.__index_in_current_node = 0
         self.__trail = [self.__current_node]
+        self.__killed = False
 
     def draw_bits(self, n_bits, forced, value):
         i = self.__index_in_current_node
@@ -349,6 +378,27 @@ class TreeRecordingObserver(DataObserver):
         if self.__trail[-1] is not self.__current_node:
             self.__trail.append(self.__current_node)
 
+    def kill_branch(self):
+        """Mark this part of the tree as not worth re-exploring."""
+        if self.__killed:
+            return
+
+        self.__killed = True
+
+        if self.__index_in_current_node < len(self.__current_node.values) or (
+            self.__current_node.transition is not None
+            and not isinstance(self.__current_node.transition, Killed)
+        ):
+            inconsistent_generation()
+
+        if self.__current_node.transition is None:
+            self.__current_node.transition = Killed(TreeNode())
+            self.__update_exhausted()
+
+        self.__current_node = self.__current_node.transition.next_node
+        self.__index_in_current_node = 0
+        self.__trail.append(self.__current_node)
+
     def conclude_test(self, status, interesting_origin):
         """Says that ``status`` occurred at node ``node``. This updates the
         node if necessary and checks for consistency."""
@@ -381,6 +431,10 @@ class TreeRecordingObserver(DataObserver):
         node.check_exhausted()
         assert len(node.values) > 0 or node.check_exhausted()
 
+        if not self.__killed:
+            self.__update_exhausted()
+
+    def __update_exhausted(self):
         for t in reversed(self.__trail):
             # Any node we've traversed might have now become exhausted.
             # We check from the right. As soon as we hit a node that

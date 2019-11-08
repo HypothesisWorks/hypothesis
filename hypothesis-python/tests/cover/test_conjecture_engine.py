@@ -37,7 +37,11 @@ from hypothesis.internal.conjecture.engine import (
 )
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.shrinking import Float
-from hypothesis.internal.conjecture.utils import Sampler, calc_label_from_name
+from hypothesis.internal.conjecture.utils import (
+    Sampler,
+    calc_label_from_name,
+    integer_range,
+)
 from hypothesis.internal.entropy import deterministic_PRNG
 from tests.common.strategies import SLOW, HardToShrink
 from tests.common.utils import no_shrink
@@ -727,12 +731,12 @@ def test_can_remove_discarded_data():
 
 
 def test_discarding_iterates_to_fixed_point():
-    @shrinking_from(hbytes([1] * 10) + hbytes([0]))
+    @shrinking_from(hbytes(list(hrange(100, -1, -1))))
     def shrinker(data):
         data.start_example(0)
-        data.draw_bits(1)
+        data.draw_bits(8)
         data.stop_example(discard=True)
-        while data.draw_bits(1):
+        while data.draw_bits(8):
             pass
         data.mark_interesting()
 
@@ -1397,3 +1401,41 @@ def test_exhaust_space():
         runner.run()
         assert runner.tree.is_exhausted
         assert runner.valid_examples == 2
+
+
+SMALL_COUNT_SETTINGS = settings(TEST_SETTINGS, max_examples=500)
+
+
+def test_discards_kill_branches():
+    starts = set()
+
+    with deterministic_PRNG():
+
+        def test(data):
+            assert runner.call_count <= 256
+            while True:
+                data.start_example(1)
+                b = data.draw_bits(8)
+                data.stop_example(b != 0)
+                if len(data.buffer) == 1:
+                    s = hbytes(data.buffer)
+                    assert s not in starts
+                    starts.add(s)
+                if b == 0:
+                    break
+
+        runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
+        runner.run()
+        assert runner.call_count == 256
+
+
+@pytest.mark.parametrize("n", range(1, 32))
+def test_number_of_examples_in_integer_range_is_bounded(n):
+    with deterministic_PRNG():
+
+        def test(data):
+            assert runner.call_count <= 2 * n
+            integer_range(data, 0, n)
+
+        runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
+        runner.run()
