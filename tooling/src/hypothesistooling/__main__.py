@@ -28,7 +28,6 @@ import hypothesistooling as tools
 import hypothesistooling.installers as install
 import hypothesistooling.projects.conjecturerust as cr
 import hypothesistooling.projects.hypothesispython as hp
-import hypothesistooling.projects.hypothesisruby as hr
 import hypothesistooling.releasemanagement as rm
 from hypothesistooling.scripts import pip_tool
 
@@ -514,28 +513,9 @@ def shell():
     IPython.start_ipython([])
 
 
-def ruby_task(fn):
-    return task(if_changed=(hr.HYPOTHESIS_RUBY,))(fn)
-
-
-@ruby_task
-def lint_ruby():
-    hr.rake_task("checkformat")
-
-
-@ruby_task
-def check_ruby_tests():
-    hr.rake_task("test")
-
-
 @task()
 def python(*args):
     os.execv(sys.executable, (sys.executable,) + args)
-
-
-@task()
-def bundle(*args):
-    hr.bundle(*args)
 
 
 rust_task = task(if_changed=(cr.BASE_DIR,))
