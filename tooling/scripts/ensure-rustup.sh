@@ -2,15 +2,23 @@
 
 set -o errexit
 set -o nounset
+set -x
 
-if ! command -v rustup > /dev/null ; then
+HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# shellcheck source=tooling/scripts/common.sh
+source "$HERE/common.sh"
+
+RUSTUP="$CARGO_HOME/bin/rustup"
+
+if ! [ -e "$RUSTUP" ] ; then
   curl https://sh.rustup.rs -sSf | sh -s -- -y
 fi
 
-if ! rustup show | grep stable > /dev/null ; then
-  rustup install stable
+if ! "$RUSTUP" show | grep stable > /dev/null ; then
+"  $RUSTUP" install stable
 fi
 
-rustup default stable
+"$RUSTUP" default stable
 
-rustup update stable
+"$RUSTUP" update stable

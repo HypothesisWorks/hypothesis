@@ -12,8 +12,6 @@ jobs:
           TASK: check-whole-repo-tests
         lint:
           TASK: lint
-        lint-ruby:
-          TASK: lint-ruby
         check-format:
           TASK: check-format
         check-rust-tests:
@@ -38,8 +36,6 @@ jobs:
           TASK: check-py38
         check-quality:
           TASK: check-quality
-        check-ruby-tests:
-          TASK: check-ruby-tests
     steps:
     - task: UsePythonVersion@0
       inputs:

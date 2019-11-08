@@ -193,11 +193,10 @@ SECRETS = os.path.join(ROOT, "secrets")
 DEPLOY_KEY = os.path.join(SECRETS, "deploy_key")
 PYPIRC = os.path.join(SECRETS, ".pypirc")
 
-RUBYGEMS_API_KEY = os.path.join(SECRETS, "api_key.yaml")
 CARGO_API_KEY = os.path.join(SECRETS, "cargo-credentials")
 
 
-SECRET_FILES = [DEPLOY_KEY, PYPIRC, RUBYGEMS_API_KEY, CARGO_API_KEY]
+SECRET_FILES = [DEPLOY_KEY, PYPIRC, CARGO_API_KEY]
 
 
 def decrypt_secrets():
@@ -239,6 +238,5 @@ IS_PULL_REQUEST = IS_TRAVIS_PULL_REQUEST or IS_CIRCLE_PULL_REQUEST
 def all_projects():
     import hypothesistooling.projects.conjecturerust as cr
     import hypothesistooling.projects.hypothesispython as hp
-    import hypothesistooling.projects.hypothesisruby as hr
 
-    return [cr, hp, hr]
+    return [cr, hp]
