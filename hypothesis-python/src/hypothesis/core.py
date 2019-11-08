@@ -90,7 +90,7 @@ from hypothesis.internal.reflection import (
 )
 from hypothesis.reporting import current_verbosity, report, verbose_report
 from hypothesis.searchstrategy.collections import TupleStrategy
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.searchstrategy.strategies import MappedSearchStrategy, SearchStrategy
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.utils.conventions import infer
 from hypothesis.version import __version__
@@ -213,15 +213,18 @@ def decode_failure(blob):
         )
 
 
-class WithRunner(SearchStrategy):
+class WithRunner(MappedSearchStrategy):
     def __init__(self, base, runner):
         assert runner is not None
-        self.base = base
+        MappedSearchStrategy.__init__(self, base)
         self.runner = runner
 
     def do_draw(self, data):
         data.hypothesis_runner = self.runner
-        return self.base.do_draw(data)
+        return self.mapped_strategy.do_draw(data)
+
+    def __repr__(self):
+        return "WithRunner(%r, runner=%r)" % (self.mapped_strategy, self.runner)
 
 
 def is_invalid_test(name, original_argspec, generator_arguments, generator_kwargs):
