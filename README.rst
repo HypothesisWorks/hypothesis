@@ -37,7 +37,7 @@ The two prototype implementations of Hypothesis for other languages are:
   be mostly unmaintained) and as a result is currently unsupported pending a
   rewrite of the bridging code between Rust and Ruby. We don't at present have
   the time or funding for this project, but it is likely not a massive undertaking
-  if anyone would like to provide either of these..
+  if anyone would like to provide either of these.
 * `Hypothesis for Java <https://github.com/HypothesisWorks/hypothesis-java>`_
   is a prototype written some time ago. It's far from feature complete and is
   not under active development, but was intended to prove the viability of the
