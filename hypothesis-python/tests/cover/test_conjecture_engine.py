@@ -1439,3 +1439,36 @@ def test_number_of_examples_in_integer_range_is_bounded(n):
 
         runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
         runner.run()
+
+
+def test_detect_threshold_as_relevant():
+    with deterministic_PRNG():
+
+        def test(data):
+            n = data.draw_bits(32)
+            data.target_observations["score"] = n
+            data.target_observations["irrelevant"] = data.draw_bits(32)
+            if n >= 1000:
+                data.mark_interesting()
+
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        runner.run()
+
+        assert runner.thresholds(None) == ["score"]
+
+
+def test_does_not_use_erratic_as_threshold():
+    with deterministic_PRNG():
+
+        def test(data):
+            n = data.draw_bits(32)
+            data.target_observations["score"] = n
+            if data.draw_bits(1):
+                data.target_observations["irrelevant"] = data.draw_bits(32)
+            if n >= 1000:
+                data.mark_interesting()
+
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        runner.run()
+
+        assert runner.thresholds(None) == ["score"]

@@ -114,6 +114,10 @@ class ConjectureRunner(object):
         # executed test case.
         self.__data_cache = LRUReusedCache(CACHE_SIZE)
 
+        self.largest_uninteresting_score = defaultdict(lambda: -float("inf"))
+        self.smallest_interesting_score = defaultdict(lambda: float("inf"))
+        self.possible_thresholds = {}
+
     def __tree_is_exhausted(self):
         return self.tree.is_exhausted
 
@@ -133,6 +137,18 @@ class ConjectureRunner(object):
                 # need to re-raise it so that it will eventually reach the
                 # correct engine.
                 raise
+
+    def thresholds(self, interesting_origin):
+        """Returns any target observations such that every interesting example
+        with this interesting_origin has this target, and every valid example
+        with this target has a strictly smaller score than every interesting
+        example with this origin and target."""
+        return [
+            t
+            for t in self.possible_thresholds[interesting_origin]
+            if self.largest_uninteresting_score[t]
+            < self.smallest_interesting_score[(t, interesting_origin)]
+        ]
 
     def test_function(self, data):
         assert isinstance(data.observer, TreeRecordingObserver)
@@ -155,6 +171,11 @@ class ConjectureRunner(object):
 
         if data.status == Status.VALID:
             self.valid_examples += 1
+
+            for target, score in data.target_observations.items():
+                self.largest_uninteresting_score[target] = max(
+                    score, self.largest_uninteresting_score[target]
+                )
 
         if data.status == Status.INTERESTING:
             key = data.interesting_origin
@@ -181,6 +202,23 @@ class ConjectureRunner(object):
 
             if self.shrinks >= MAX_SHRINKS:
                 self.exit_with(ExitReason.max_shrinks)
+
+            if data.interesting_origin not in self.possible_thresholds:
+                self.possible_thresholds[data.interesting_origin] = set(
+                    data.target_observations
+                )
+            else:
+                self.possible_thresholds[data.interesting_origin] &= set(
+                    data.target_observations
+                )
+
+            for target in self.possible_thresholds[data.interesting_origin]:
+                threshold_key = (target, data.interesting_origin)
+
+                self.smallest_interesting_score[threshold_key] = min(
+                    self.smallest_interesting_score[threshold_key],
+                    data.target_observations[target],
+                )
 
         if not self.interesting_examples:
             # Note that this logic is reproduced to end the generation phase when
