@@ -17,6 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+import os
 import sys
 import warnings
 from decimal import Decimal
@@ -95,7 +96,12 @@ def test_interactive_example_does_not_emit_warning():
         # and create a fresh environment.
         child.expect(">>> ", timeout=1)
     except pexpect.exceptions.EOF:
-        pytest.skip("Unable to run python with -Werror, this may be the result of having a very old virtualenv")
+        # See https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables
+        assert "Build.ArtifactStagingDirectory" not in os.environ
+        pytest.skip(
+            "Unable to run python with -Werror, this may be the result of "
+            "having a very old virtualenv"
+        )
     child.sendline("from hypothesis.strategies import none")
     child.sendline("none().example()")
     child.sendline("quit(code=0)")
