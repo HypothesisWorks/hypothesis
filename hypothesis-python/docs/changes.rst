@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.43.8:
+
+-------------------
+4.43.8 - 2019-11-08
+-------------------
+
+This release ensures that the strategies passed to
+:func:`@given <hypothesis.given>` are properly validated when applied to a test
+method inside a test class.
+
+This should result in clearer error messages when some of those strategies are
+invalid.
+
 .. _v4.43.7:
 
 -------------------
