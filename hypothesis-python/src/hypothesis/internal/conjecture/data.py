@@ -901,6 +901,30 @@ class ConjectureData(object):
             else:
                 self.consecutive_discard_counts[-1] = 0
         if discard:
+            # Once we've discarded an example, every test case starting with
+            # this prefix contains discards. We prune the tree at that point so
+            # as to avoid future test cases bothering with this region, on the
+            # assumption that some example that you could have used instead
+            # there would *not* trigger the discard. This greatly speeds up
+            # test case generation in some cases, because it allows us to
+            # ignore large swathes of the search space that are effectively
+            # redundant.
+            #
+            # A scenario that can cause us problems but which we deliberately
+            # have decided not to support is that if there are side effects
+            # during data generation then you may end up with a scenario where
+            # every good test case generates a discard because the discarded
+            # section sets up important things for later. This is not terribly
+            # likely and all that you see in this case is some degradation in
+            # quality of testing, so we don't worry about it.
+            #
+            # Note that killing the branch does *not* mean we will never
+            # explore below this point, and in particular we may do so during
+            # shrinking. Any explicit request for a data object that starts
+            # with the branch here will work just fine, but novel prefix
+            # generation will avoid it, and we can use it to detect when we
+            # have explored the entire tree (up to redundancy).
+
             self.observer.kill_branch()
 
     def note_event(self, event):
