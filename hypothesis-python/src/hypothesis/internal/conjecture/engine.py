@@ -178,31 +178,6 @@ class ConjectureRunner(object):
                 )
 
         if data.status == Status.INTERESTING:
-            key = data.interesting_origin
-            changed = False
-            try:
-                existing = self.interesting_examples[key]
-            except KeyError:
-                changed = True
-                self.last_bug_found_at = self.call_count
-                if self.first_bug_found_at is None:
-                    self.first_bug_found_at = self.call_count
-            else:
-                if sort_key(data.buffer) < sort_key(existing.buffer):
-                    self.shrinks += 1
-                    self.downgrade_buffer(existing.buffer)
-                    self.__data_cache.unpin(existing.buffer)
-                    changed = True
-
-            if changed:
-                self.save_buffer(data.buffer)
-                self.interesting_examples[key] = data.as_result()
-                self.__data_cache.pin(data.buffer)
-                self.shrunk_examples.discard(key)
-
-            if self.shrinks >= MAX_SHRINKS:
-                self.exit_with(ExitReason.max_shrinks)
-
             if data.interesting_origin not in self.possible_thresholds:
                 self.possible_thresholds[data.interesting_origin] = set(
                     data.target_observations
@@ -219,6 +194,46 @@ class ConjectureRunner(object):
                     self.smallest_interesting_score[threshold_key],
                     data.target_observations[target],
                 )
+
+            key = data.interesting_origin
+            changed = False
+            try:
+                existing = self.interesting_examples[key]
+            except KeyError:
+                changed = True
+                self.last_bug_found_at = self.call_count
+                if self.first_bug_found_at is None:
+                    self.first_bug_found_at = self.call_count
+            else:
+                thresholds = self.thresholds(data.interesting_origin)
+
+                any_lower = any(
+                    data.target_observations[t] < existing.target_observations[t]
+                    for t in thresholds
+                )
+
+                any_greater = any(
+                    data.target_observations[t] > existing.target_observations[t]
+                    for t in thresholds
+                )
+
+                if not any_lower and (
+                    any_greater or sort_key(data.buffer) < sort_key(existing.buffer)
+                ):
+
+                    self.shrinks += 1
+                    self.downgrade_buffer(existing.buffer)
+                    self.__data_cache.unpin(existing.buffer)
+                    changed = True
+
+            if changed:
+                self.save_buffer(data.buffer)
+                self.interesting_examples[key] = data.as_result()
+                self.__data_cache.pin(data.buffer)
+                self.shrunk_examples.discard(key)
+
+            if self.shrinks >= MAX_SHRINKS:
+                self.exit_with(ExitReason.max_shrinks)
 
         if not self.interesting_examples:
             # Note that this logic is reproduced to end the generation phase when
@@ -635,6 +650,9 @@ class ConjectureRunner(object):
                 ],
                 key=lambda kv: (sort_key(kv[1].buffer), sort_key(repr(kv[0]))),
             )
+
+            previous_thresholds = self.thresholds(target)
+
             self.debug("Shrinking %r" % (target,))
 
             if not self.settings.report_multiple_bugs:
@@ -646,11 +664,16 @@ class ConjectureRunner(object):
             def predicate(d):
                 if d.status < Status.INTERESTING:
                     return False
-                return d.interesting_origin == target
+                if d.interesting_origin != target:
+                    return False
+                return (
+                    d.buffer == self.interesting_examples[d.interesting_origin].buffer
+                )
 
             self.shrink(example, predicate)
 
-            self.shrunk_examples.add(target)
+            if self.thresholds(target) == previous_thresholds:
+                self.shrunk_examples.add(target)
 
     def clear_secondary_key(self):
         if self.has_existing_examples():

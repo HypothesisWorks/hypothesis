@@ -1472,3 +1472,55 @@ def test_does_not_use_erratic_as_threshold():
         runner.run()
 
         assert runner.thresholds(None) == ["score"]
+
+
+def test_retains_lower_bound_on_score_when_reducing():
+    max_score = [0]
+
+    with deterministic_PRNG():
+
+        def test(data):
+            n = data.draw_bits(32)
+            data.target_observations["score"] = n
+            data.target_observations["irrelevant"] = data.draw_bits(32)
+            max_score[0] = max(max_score[0], n)
+            if n >= 1000:
+                data.mark_interesting()
+
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        runner.run()
+
+    data = ConjectureData.for_buffer(runner.interesting_examples[None].buffer)
+
+    n = data.draw_bits(32)
+    m = data.draw_bits(32)
+
+    assert max_score[0] == n > 1000
+    assert m == 0
+
+
+def test_will_minimize_scores_that_are_not_thresholds():
+    with deterministic_PRNG():
+
+        def test(data):
+            n = data.draw_bits(32)
+            data.target_observations["score"] = n
+            m = data.draw_bits(32)
+            if m >= 200:
+                data.mark_interesting()
+
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+
+        runner.cached_test_function([255] * 8)
+
+        assert runner.interesting_examples
+
+        runner.shrink_interesting_examples()
+
+    data = ConjectureData.for_buffer(runner.interesting_examples[None].buffer)
+
+    n = data.draw_bits(32)
+    m = data.draw_bits(32)
+
+    assert n == 0
+    assert m == 200
