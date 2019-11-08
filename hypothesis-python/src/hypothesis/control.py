@@ -141,6 +141,12 @@ def target(observation, label=""):
     For example, ``-abs(error)`` is a metric that increases as ``error``
     approaches zero.
 
+    Additionally, targets may be used to control shrinking: If a target seems
+    to determine whether a test fails (e.g. this will happen if you have an
+    assertion that a target is below some value) then during shrinking
+    Hypothesis will try to ensure that the target scores remain large, even
+    if this results in larger falsifying examples.
+
     Example metrics:
 
     - Number of elements in a collection, or tasks in a queue
