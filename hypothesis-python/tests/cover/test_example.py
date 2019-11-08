@@ -90,17 +90,14 @@ def test_non_interactive_example_emits_warning():
 def test_interactive_example_does_not_emit_warning():
     try:
         child = pexpect.spawn("%s -Werror" % (sys.executable,))
-        # If this test mysteriously fails here, it might be that your python
-        # can't launch cleanly with "-Werror". If you are running tests manually
-        # from a virtualenv, you might need to update your copy of virtualenv
-        # and create a fresh environment.
         child.expect(">>> ", timeout=1)
     except pexpect.exceptions.EOF:
         # See https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables
         assert "Build.ArtifactStagingDirectory" not in os.environ
         pytest.skip(
-            "Unable to run python with -Werror, this may be the result of "
-            "having a very old virtualenv"
+            "Unable to run python with -Werror.  This may be because you are "
+            "running from an old virtual environment - update your installed "
+            "copy of `virtualenv` and then create a fresh environment."
         )
     child.sendline("from hypothesis.strategies import none")
     child.sendline("none().example()")
