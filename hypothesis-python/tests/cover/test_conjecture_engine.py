@@ -50,10 +50,7 @@ SOME_LABEL = calc_label_from_name("some label")
 
 
 TEST_SETTINGS = settings(
-    max_examples=5000,
-    database=None,
-    suppress_health_check=HealthCheck.all(),
-    verbosity=Verbosity.debug,
+    max_examples=5000, database=None, suppress_health_check=HealthCheck.all()
 )
 
 
