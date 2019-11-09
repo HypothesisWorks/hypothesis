@@ -24,7 +24,6 @@ import base64
 import contextlib
 import datetime
 import inspect
-import os
 import random as rnd_module
 import traceback
 import warnings
@@ -483,11 +482,6 @@ def new_given_argspec(original_argspec, generator_kwargs):
     return original_argspec._replace(
         args=new_args, kwonlyargs=new_kwonlyargs, annotations=annots
     )
-
-
-ROOT = os.path.dirname(__file__)
-
-STDLIB = os.path.dirname(os.__file__)
 
 
 class StateForActualGivenExecution(object):
