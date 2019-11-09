@@ -830,16 +830,20 @@ class ConjectureData(object):
                 % (strategy,)
             )
 
+        at_top_level = self.depth == 0
+        if at_top_level:
+            # We start this timer early, because accessing attributes on a LazyStrategy
+            # can be almost arbitrarily slow.  In cases like characters() and text()
+            # where we cache something expensive, this led to Flaky deadline errors!
+            # See https://github.com/HypothesisWorks/hypothesis/issues/2108
+            start_time = benchmark_time()
+
         if strategy.is_empty:
             self.mark_invalid()
 
         if self.depth >= MAX_DEPTH:
             self.mark_invalid()
 
-        return self.__draw(strategy, label=label)
-
-    def __draw(self, strategy, label):
-        at_top_level = self.depth == 0
         if label is None:
             label = strategy.label
         self.start_example(label=label)
@@ -849,7 +853,6 @@ class ConjectureData(object):
             else:
                 try:
                     strategy.validate()
-                    start_time = benchmark_time()
                     try:
                         return strategy.do_draw(self)
                     finally:
