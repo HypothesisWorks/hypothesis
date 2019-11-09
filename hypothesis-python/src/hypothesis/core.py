@@ -683,6 +683,7 @@ class StateForActualGivenExecution(object):
             ran_example = ConjectureData.for_buffer(falsifying_example.buffer)
             self.__was_flaky = False
             assert info.__expected_exception is not None
+            interrupted = False
             try:
                 self.execute(
                     ran_example,
@@ -693,14 +694,15 @@ class StateForActualGivenExecution(object):
                         info.__expected_traceback,
                     ),
                 )
+            except KeyboardInterrupt:
+                interrupted = True
+                raise
             except (UnsatisfiedAssumption, StopTest):
                 report(traceback.format_exc())
                 self.__flaky(
                     "Unreliable assumption: An example which satisfied "
                     "assumptions on the first run now fails it."
                 )
-            except KeyboardInterrupt:
-                raise
             except BaseException as e:
                 if len(self.falsifying_examples) <= 1:
                     raise
@@ -715,7 +717,7 @@ class StateForActualGivenExecution(object):
                 # second branch still complains about lack of coverage even if
                 # you add a pragma: no cover to it!
                 # See https://bitbucket.org/ned/coveragepy/issues/623/
-                if self.settings.print_blob:
+                if self.settings.print_blob and not interrupted:
                     report(
                         (
                             "\nYou can reproduce this example by temporarily "

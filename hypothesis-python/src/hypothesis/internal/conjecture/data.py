@@ -840,6 +840,7 @@ class ConjectureData(object):
         if label is None:
             label = strategy.label
         self.start_example(label=label)
+        interrupted = False
         try:
             if not at_top_level:
                 return strategy.do_draw(self)
@@ -856,8 +857,12 @@ class ConjectureData(object):
                 except BaseException as e:
                     mark_for_escalation(e)
                     raise
+        except KeyboardInterrupt:
+            interrupted = True
+            raise
         finally:
-            self.stop_example()
+            if not interrupted:
+                self.stop_example()
 
     def start_example(self, label):
         self.__assert_not_frozen("start_example")

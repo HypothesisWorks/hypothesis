@@ -31,7 +31,7 @@ def test_keyboardinterrupt_in_strategy_no_rerun():
         nonlocal runs
         runs += 1
         if runs == interrupt:
-            #import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             raise KeyboardInterrupt
         return draw(integers())
 
@@ -45,3 +45,17 @@ def test_keyboardinterrupt_in_strategy_no_rerun():
     assert runs == interrupt
 
 
+def test_systemexit_no_rerun():
+    runs = 0
+    interrupt = 3
+    @given(integers())
+    def test_raise_systemexit(x):
+        nonlocal runs
+        runs += 1
+        if runs == interrupt:
+            raise SystemExit
+
+    with pytest.raises(SystemExit):
+        test_raise_systemexit()
+
+    assert runs == interrupt
