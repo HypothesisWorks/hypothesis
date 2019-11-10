@@ -23,8 +23,8 @@ from pytest import param
 
 import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
-from hypothesis import example, given, settings
-from tests.common.debug import find_any
+from hypothesis import example, given, settings, note
+from tests.common.debug import find_any, minimal
 from hypothesis.errors import InvalidArgument
 
 
@@ -133,6 +133,49 @@ def test_matmul_signature_can_exercise_all_combination_of_optional_dims(
         lambda shapes: shapes == target_shapes,
         settings(max_examples=10 ** 6),
     )
+
+
+@settings(deadline=None, max_examples=50)
+@given(
+    min_dims=st.integers(0, 4),
+    min_side=st.integers(2, 3),
+    n_fixed=st.booleans(),
+    data=st.data(),
+)
+def test_matmul_sig_shrinks_as_documented(min_dims, min_side, n_fixed, data):
+    sig = "(m?,n),(n,p?)->(m?,p?)"
+    if n_fixed:
+        n_value = data.draw(st.integers(0, 4))
+        sig = sig.replace("n", str(n_value))
+    else:
+        n_value = min_side
+
+    note("signature: {}".format(sig))
+    max_dims = data.draw(st.none() | st.integers(min_dims, 4), label="max_dims")
+    max_side = data.draw(st.none() | st.integers(min_side, 6), label="max_side")
+
+    smallest_shapes, result = minimal(
+        nps.mutually_broadcastable_shapes(
+            gufunc=sig,
+            min_side=min_side,
+            max_side=max_side,
+            min_dims=min_dims,
+            max_dims=max_dims,
+        )
+    )
+    note("(smallest_shapes, result): {}".format((smallest_shapes, result)))
+
+    # if min_dims >= 1 then core dims are never excluded
+    # otherwise, should shrink towards excluding all optional dims
+    expected_input_0 = (
+        (n_value,) if min_dims == 0 else (min_side,) * min_dims + (min_side, n_value)
+    )
+    assert expected_input_0 == smallest_shapes[0]
+
+    expected_input_1 = (
+        (n_value,) if min_dims == 0 else (min_side,) * min_dims + (n_value, min_side)
+    )
+    assert expected_input_1 == smallest_shapes[1]
 
 
 def gufunc_sig_to_einsum_sig(gufunc_sig):
