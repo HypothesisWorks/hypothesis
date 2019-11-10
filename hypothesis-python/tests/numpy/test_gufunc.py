@@ -90,3 +90,24 @@ def test_hypothesis_signature_parses(sig):
 
 def test_frozen_dims_signature():
     nps._hypothesis_parse_gufunc_signature("(2),(3)->(4)")
+
+
+@st.composite
+def gufunc_arrays(draw, shape_strat, **kwargs):
+    """An example user strategy built on top of mutually_broadcastable_shapes."""
+    input_shapes, result_shape = draw(shape_strat)
+    arrays_strat = st.tuples(*(nps.arrays(shape=s, **kwargs) for s in input_shapes))
+    return draw(arrays_strat), result_shape
+
+
+@given(
+    gufunc_arrays(
+        nps.mutually_broadcastable_shapes(gufunc=np.matmul),
+        dtype="float64",
+        elements=st.floats(0, 1000),
+    )
+)
+def test_matmul_gufunc_shapes(everything):
+    arrays, result_shape = everything
+    out = np.matmul(*arrays)
+    assert out.shape == result_shape

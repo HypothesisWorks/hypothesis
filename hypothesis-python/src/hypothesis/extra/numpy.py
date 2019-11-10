@@ -867,11 +867,55 @@ class MutuallyBroadcastableShapesStrategy(SearchStrategy):
         self.size_one_allowed = self.min_side <= 1 <= self.max_side
 
     def do_draw(self, data):
+        # We don't usually have a gufunc signature; do the common case first & fast.
+        if self.signature is None:
+            return self._draw_loop_dimensions(data)
+
+        # When we *do*, draw the core dims, then draw loop dims, and finally combine.
+        core_in, core_res = self._draw_core_dimensions(data)
+
+        # If some core shape has ommited optional dimensions, it's an error to add
+        # loop dimensions to it.  We never omit core dims if min_dims >= 1.
+        use = [None not in shp for shp in core_in]
+        loop_in, loop_res = self._draw_loop_dimensions(data, use=use)
+
+        def add_shape(loop, core):
+            return tuple(x for x in (loop + core)[-32:] if x is not None)
+
+        return BroadcastableShapes(
+            input_shapes=tuple(add_shape(l, c) for l, c in zip(loop_in, core_in)),
+            result_shape=add_shape(loop_res, core_res),
+        )
+
+    def _draw_core_dimensions(self, data):
+        # Draw gufunc core dimensions, with None standing for optional dimensions
+        # that will not be present in the final shape.  We track omitted dims so
+        # that we can do an accurate per-shape length cap.
+        dims = {}
+        shapes = []
+        for shape in self.signature.input_shapes + (self.signature.result_shape,):
+            shapes.append([])
+            for name in shape:
+                dim = name.strip("?")
+                try:
+                    shapes[-1].append(int(dim))
+                except ValueError:
+                    if dim not in dims:
+                        dims[dim] = data.draw(self.side_strat)
+                        if self.min_dims == 0 and not data.draw_bits(3):
+                            dims[dim + "?"] = None
+                        else:
+                            dims[dim + "?"] = dims[dim]
+                    shapes[-1].append(dims[name])
+        return tuple(tuple(s) for s in shapes[:-1]), tuple(shapes[-1])
+
+    def _draw_loop_dimensions(self, data, use=None):
         # All shapes are handled in column-major order; i.e. they are reversed
         base_shape = self.base_shape[::-1]
         result_shape = list(base_shape)
         shapes = [[] for _ in range(self.num_shapes)]
-        use = [True for _ in range(self.num_shapes)]
+        if use is None:
+            use = [True for _ in range(self.num_shapes)]
 
         for dim_count in range(1, self.max_dims + 1):
             dim = dim_count - 1
