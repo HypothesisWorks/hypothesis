@@ -18,6 +18,8 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+import pytest
+from pytest import param
 
 import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
@@ -110,4 +112,53 @@ def gufunc_arrays(draw, shape_strat, **kwargs):
 def test_matmul_gufunc_shapes(everything):
     arrays, result_shape = everything
     out = np.matmul(*arrays)
+    assert out.shape == result_shape
+
+
+def gufunc_sig_to_einsum_sig(gufunc_sig):
+    """E.g. (i,j),(j,k)->(i,k) becomes ...ij,...jk->...ik"""
+
+    def einlabels(labels):
+        assert "x" not in labels, "we reserve x for fixed-dimensions"
+        return "..." + "".join((i if not i.isdigit() else "x" for i in labels))
+
+    gufunc_sig = nps._hypothesis_parse_gufunc_signature(gufunc_sig)
+    input_sig = ",".join(map(einlabels, gufunc_sig.input_shapes))
+    return input_sig + "->" + einlabels(gufunc_sig.result_shape)
+
+
+@pytest.mark.parametrize(
+    ("gufunc_sig"),
+    [
+        param("()->()", id="unary sum"),
+        param("(),()->()", id="binary sum"),
+        param("(),(),()->()", id="trinary sum"),
+        param("(i)->()", id="sum1d"),
+        param("(i,j)->(j)", id="sum rows"),
+        param("(i),(i)->()", id="inner1d"),
+        param("(i),(i),(i)->()", id="trinary inner1d"),
+        param("(m,n),(n,p)->(m,p)", id="matmat"),
+        param("(n),(n,p)->(p)", id="vecmat"),
+        param("(i,t),(j,t)->(i,j)", id="outer-inner"),
+        param("(3),(3)->(3)", id="cross1d"),
+        param("(i,j)->(j,i)", id="transpose"),
+        param("(i),(j)->(i,j)", id="outer"),
+        param("(i,3),(3,k)->(3,i,k)", id="fixed dim outer product"),
+        param("(i),(j),(k)->(i,j,k)", id="trinary outer"),
+        param("(i,i)->(i)", id="trace"),
+        param("(j,i,i,j)->(i,j)", id="bigger trace"),
+        param("(k),(j,i,k,i,j),(j,i)->(i,j)", id="trace product"),
+    ],
+)
+@given(data=st.data())
+def test_einsum_gufunc_shapes(gufunc_sig, data):
+    arrays, result_shape = data.draw(
+        gufunc_arrays(
+            nps.mutually_broadcastable_shapes(gufunc=gufunc_sig),
+            dtype="float64",
+            elements=st.floats(0, 1000),
+        ),
+        label="arrays, result_shape",
+    )
+    out = np.einsum(gufunc_sig_to_einsum_sig(gufunc_sig), *arrays)
     assert out.shape == result_shape
