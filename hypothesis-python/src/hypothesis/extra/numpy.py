@@ -1037,6 +1037,31 @@ def mutually_broadcastable_shapes(
         BroadcastableShapes(input_shapes=((3,), (1, 3), (2, 3)), result_shape=(2, 3))
         BroadcastableShapes(input_shapes=((), (), ()), result_shape=(2, 3))
         BroadcastableShapes(input_shapes=((3,), (), (3,)), result_shape=(2, 3))
+
+    **Use with Generalised Universal Function signatures**
+
+    A :np-ref:`universal function <ufuncs.html>` (or ufunc for short) is a function
+    that operates on ndarrays in an element-by-element fashion, supporting array
+    broadcasting, type casting, and several other standard features.
+    A :np-ref:`generalised ufunc <c-api.generalized-ufuncs.html>` operates on
+    sub-arrays rather than elements, based on the "signature" of the function.
+    Compare e.g. :obj:`numpy:numpy.add` (ufunc) to :obj:`numpy:numpy.matmul` (gufunc).
+
+    To generate shapes for a gufunc, you can pass the ``gufunc`` argument *instead of*
+    ``num_shapes``.  This may be a gufunc signature string, or a gufunc object.
+
+    In this case, the ``side`` arguments are applied to the 'core dimensions' as well,
+    ignoring any frozen dimensions.  ``base_shape``  and the ``dims`` arguments are
+    applied to the 'loop dimensions'.  If necessary, the dimensionality of each shape
+    is silently capped to respect the 32-dimension limit.
+
+    .. code-block:: pycon
+
+        >>> # np.matmul.signature == "(m?,n),(n,p?)->(m?,p?)"
+        >>> mutually_broadcastable_shapes(gufunc=np.matmul).example()
+        BroadcastableShapes(input_shapes=((2,), (2,)), result_shape=())
+        BroadcastableShapes(input_shapes=((3, 4, 2), (1, 2)), result_shape=(3, 4))
+        BroadcastableShapes(input_shapes=((4, 2), (1, 2, 3)), result_shape=(4, 3))
     """
     if __reserved is not not_set:
         raise InvalidArgument("Do not pass the __reserved argument.")

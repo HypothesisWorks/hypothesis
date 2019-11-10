@@ -86,6 +86,7 @@ extlinks = {
     "pull": (_repo + "pull/%s", "pull request #"),
     "pypi": ("https://pypi.org/project/%s", ""),
     "bpo": ("https://bugs.python.org/issue%s", "bpo-"),
+    "np-ref": ("https://docs.scipy.org/doc/numpy/reference/%s", ""),
 }
 
 # -- Options for HTML output ----------------------------------------------
