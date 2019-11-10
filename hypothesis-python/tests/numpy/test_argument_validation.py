@@ -28,7 +28,8 @@ from tests.common.utils import checks_deprecated_behaviour
 
 
 def e(a, **kwargs):
-    return (a, kwargs)
+    rep = "%s(%s)" % (a.__name__, ", ".join("%s=%r" % it for it in kwargs.items()))
+    return pytest.param(a, kwargs, id=rep)
 
 
 @pytest.mark.parametrize(
@@ -117,70 +118,59 @@ def e(a, **kwargs):
             min_side=2,
             max_side=3,
         ),
+        e(nps.mutually_broadcastable_shapes),
         e(nps.mutually_broadcastable_shapes, num_shapes=0),
         e(nps.mutually_broadcastable_shapes, num_shapes="a"),
         e(nps.mutually_broadcastable_shapes, num_shapes=2, base_shape="a"),
         e(
             nps.mutually_broadcastable_shapes,  # min_side is invalid type
             num_shapes=2,
-            base_shape=(2, 2),
             min_side="a",
         ),
         e(
             nps.mutually_broadcastable_shapes,  # min_dims is invalid type
             num_shapes=2,
-            base_shape=(2, 2),
             min_dims="a",
         ),
         e(
             nps.mutually_broadcastable_shapes,  # max_side is invalid type
             num_shapes=2,
-            base_shape=(2, 2),
             max_side="a",
         ),
         e(
             nps.mutually_broadcastable_shapes,  # max_side is invalid type
             num_shapes=2,
-            base_shape=(2, 2),
             max_dims="a",
         ),
         e(
             nps.mutually_broadcastable_shapes,  # min_side is out of domain
             num_shapes=2,
-            base_shape=(2, 2),
             min_side=-1,
         ),
         e(
             nps.mutually_broadcastable_shapes,  # min_dims is out of domain
             num_shapes=2,
-            base_shape=(2, 2),
             min_dims=-1,
         ),
         e(
             nps.mutually_broadcastable_shapes,  # min_dims is out of domain
             num_shapes=2,
-            base_shape=(2, 2),
             min_dims=33,
-            max_dims=None,
         ),
         e(
             nps.mutually_broadcastable_shapes,  # max_dims is out of domain
             num_shapes=2,
-            base_shape=(2, 2),
-            min_dims=1,
             max_dims=33,
         ),
         e(
             nps.mutually_broadcastable_shapes,  # max_side < min_side
             num_shapes=2,
-            base_shape=(2, 2),
             min_side=1,
             max_side=0,
         ),
         e(
             nps.mutually_broadcastable_shapes,  # max_dims < min_dims
             num_shapes=2,
-            base_shape=(2, 2),
             min_dims=1,
             max_dims=0,
         ),
@@ -219,6 +209,35 @@ def e(a, **kwargs):
             max_dims=4,
             min_side=2,
             max_side=3,
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,  # valid to pass num_shapes xor gufunc
+            num_shapes=2,
+            gufunc="()->()",
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,  # non-ufunc callables are not valid
+            gufunc=sum,
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,  # element-wise ufunc has no signature
+            gufunc=numpy.add,
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,  # multiple outputs not yet supported
+            gufunc="()->(),()",
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,  # signature must be in string format
+            gufunc=([(), ()], [()]),
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,  # string must match signature regex
+            gufunc="this string isn't a valid signature",
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,  # shape with too many dimensions
+            gufunc="(" + ",".join("d{}".format(n) for n in range(33)) + ")->()",
         ),
         e(nps.basic_indices, shape=0),
         e(nps.basic_indices, shape=("1", "2")),

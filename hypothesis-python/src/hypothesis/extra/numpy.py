@@ -18,6 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import math
+import re
 from collections import namedtuple
 
 import numpy as np
@@ -29,11 +30,11 @@ from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import PY2, hrange, integer_types
 from hypothesis.internal.coverage import check_function
-from hypothesis.internal.reflection import proxies, reserved_means_kwonly_star
+from hypothesis.internal.reflection import proxies, qualname, reserved_means_kwonly_star
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.reporting import current_verbosity
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.utils.conventions import not_set
+from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
 if PY2:
     BroadcastableShapes = namedtuple(
@@ -844,6 +845,7 @@ class MutuallyBroadcastableShapesStrategy(SearchStrategy):
     def __init__(
         self,
         num_shapes,
+        signature=None,
         base_shape=(),
         min_dims=0,
         max_dims=None,
@@ -856,6 +858,7 @@ class MutuallyBroadcastableShapesStrategy(SearchStrategy):
         self.base_shape = base_shape
         self.side_strat = st.integers(min_side, max_side)
         self.num_shapes = num_shapes
+        self.signature = signature
         self.min_dims = min_dims
         self.max_dims = max_dims
         self.min_side = min_side
@@ -928,18 +931,74 @@ class MutuallyBroadcastableShapesStrategy(SearchStrategy):
         )
 
 
+# See https://docs.scipy.org/doc/numpy/reference/c-api.generalized-ufuncs.html
+# Implementation based on numpy.lib.function_base._parse_gufunc_signature
+# with minor upgrades to handle numeric and optional dimensions.  Examples:
+#
+#     add       (),()->()                   binary ufunc
+#     sum1d     (i)->()                     reduction
+#     inner1d   (i),(i)->()                 vector-vector multiplication
+#     matmat    (m,n),(n,p)->(m,p)          matrix multiplication
+#     vecmat    (n),(n,p)->(p)              vector-matrix multiplication
+#     matvec    (m,n),(n)->(m)              matrix-vector multiplication
+#     matmul    (m?,n),(n,p?)->(m?,p?)      combination of the four above
+#     cross1d   (3),(3)->(3)                cross product with frozen dimensions
+#
+# Note that while no examples of such usage are given, Numpy does allow
+# generalised ufuncs that have *multiple output arrays*.  This is not
+# currently supported by Hypothesis - please contact us if you would use it!
+#
+# We are unsure if gufuncs allow frozen dimensions to be optional, but it's
+# easy enough to support here - and so we will unless we learn otherwise.
+#
+_DIMENSION = r"\w+\??"  # Note that \w permits digits too!
+_SHAPE = r"\((?:{0}(?:,{0})".format(_DIMENSION) + r"{0,31})?\)"
+_ARGUMENT_LIST = "{0}(?:,{0})*".format(_SHAPE)
+_SIGNATURE = r"^{}->{}$".format(_ARGUMENT_LIST, _SHAPE)
+_SIGNATURE_MULTIPLE_OUTPUT = r"^{0}->{0}$".format(_ARGUMENT_LIST)
+
+_GUfuncSig = namedtuple("_GUfuncSig", ["input_shapes", "result_shape"])
+
+
+def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
+    # Disable all_checks to better match the Numpy version, for testing
+    if not re.match(_SIGNATURE, signature):
+        if re.match(_SIGNATURE_MULTIPLE_OUTPUT, signature):
+            raise InvalidArgument(
+                "Hypothesis does not yet support generalised ufunc signatures "
+                "with multiple output arrays - mostly because we don't know of "
+                "anyone who uses them!  Please get in touch with us to fix that."
+                "\n (signature=%r)" % (signature,)
+            )
+        if re.match(np.lib.function_base._SIGNATURE, signature):
+            raise InvalidArgument(
+                "signature=%r matches Numpy's regex for gufunc signatures, but "
+                "contains shapes with more than 32 dimensions and is thus invalid."
+                % (signature,)
+            )
+        raise InvalidArgument("%r is not a valid gufunc signature" % (signature,))
+    input_shapes, output_shapes = (
+        tuple(tuple(re.findall(_DIMENSION, a)) for a in re.findall(_SHAPE, arg_list))
+        for arg_list in signature.split("->")
+    )
+    assert len(output_shapes) == 1
+    result_shape = output_shapes[0]
+    return _GUfuncSig(input_shapes=input_shapes, result_shape=result_shape)
+
+
 @st.defines_strategy
 @reserved_means_kwonly_star
 def mutually_broadcastable_shapes(
-    __reserved=not_set,
-    num_shapes=not_set,
-    base_shape=(),
-    min_dims=0,
-    max_dims=None,
-    min_side=1,
-    max_side=None,
+    __reserved=not_set,  # type: Any
+    num_shapes=not_set,  # type: Union[UniqueIdentifier, int]
+    gufunc=not_set,  # type: Union[UniqueIdentifier, str, np.ufunc]
+    base_shape=(),  # type: Shape
+    min_dims=0,  # type: int
+    max_dims=None,  # type: int
+    min_side=1,  # type: int
+    max_side=None,  # type: int
 ):
-    # type: (Any, Any, Shape , int, int, int, int) -> st.SearchStrategy[BroadcastableShapes]
+    # type: (...) -> st.SearchStrategy[BroadcastableShapes]
     """Return a strategy for generating a specified number of shapes, N, that are
     mutually-broadcastable with one another and with the provided "base-shape".
 
@@ -982,9 +1041,28 @@ def mutually_broadcastable_shapes(
     if __reserved is not not_set:
         raise InvalidArgument("Do not pass the __reserved argument.")
 
-    check_type(integer_types, num_shapes, "num_shapes")
-    if num_shapes < 1:
-        raise InvalidArgument("num_shapes=%s must be at least 1." % (num_shapes,))
+    if gufunc is not_set:
+        check_type(integer_types, num_shapes, "num_shapes")
+        assert isinstance(num_shapes, integer_types)  # for mypy
+        if num_shapes < 1:
+            raise InvalidArgument("num_shapes=%s must be at least 1." % (num_shapes,))
+        signature = None
+    elif num_shapes is not_set:
+        if callable(gufunc):
+            check_type(np.ufunc, gufunc, "gufunc (as callable)")
+            if gufunc.signature is None:
+                raise InvalidArgument(
+                    "gufunc=%s is an element-wise ufunc, not a generalised ufunc, "
+                    "so the signature attribute is None.  Use `num_shapes` instead."
+                    "\n    For more information, see https://docs.scipy.org/doc/"
+                    "numpy/reference/c-api.generalized-ufuncs.html"
+                    % (qualname(gufunc),)
+                )
+            gufunc = gufunc.signature
+        check_type(str, gufunc, "gufunc (as signature string)")
+        signature = _hypothesis_parse_gufunc_signature(gufunc)
+    else:
+        raise InvalidArgument("Pass either the `num_shapes` or the `gufunc` argument.")
 
     check_type(tuple, base_shape, "base_shape")
     strict_check = max_dims is not None
@@ -1039,6 +1117,7 @@ def mutually_broadcastable_shapes(
 
     return MutuallyBroadcastableShapesStrategy(
         num_shapes=num_shapes,
+        signature=signature,
         base_shape=base_shape,
         min_dims=min_dims,
         max_dims=max_dims,
