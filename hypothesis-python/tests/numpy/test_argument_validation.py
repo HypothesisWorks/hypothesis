@@ -247,6 +247,16 @@ def e(a, **kwargs):
             nps.mutually_broadcastable_shapes,  # shape with too many dimensions
             gufunc="(" + ",".join("d{}".format(n) for n in range(33)) + ")->()",
         ),
+        e(
+            nps.mutually_broadcastable_shapes,  # max_dims too large given ufunc
+            gufunc=numpy.matmul,
+            max_dims=32,
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,  # least valid max_dims is < min_dims
+            gufunc=numpy.matmul,
+            min_dims=32,
+        ),
         e(nps.basic_indices, shape=0),
         e(nps.basic_indices, shape=("1", "2")),
         e(nps.basic_indices, shape=(0, -1)),

@@ -1098,6 +1098,7 @@ def mutually_broadcastable_shapes(
         if num_shapes < 1:
             raise InvalidArgument("num_shapes=%s must be at least 1." % (num_shapes,))
         signature = None
+        sig_dims = 0
     elif num_shapes is not_set:
         if callable(gufunc):
             check_type(np.ufunc, gufunc, "gufunc (as callable)")
@@ -1112,6 +1113,8 @@ def mutually_broadcastable_shapes(
             gufunc = gufunc.signature
         check_type(str, gufunc, "gufunc (as signature string)")
         signature = _hypothesis_parse_gufunc_signature(gufunc)
+        sig_dims = min(map(len, signature.input_shapes + (signature.result_shape,)))
+        num_shapes = len(signature.input_shapes)
     else:
         raise InvalidArgument("Pass either the `num_shapes` or the `gufunc` argument.")
 
@@ -1121,7 +1124,7 @@ def mutually_broadcastable_shapes(
     check_type(integer_types, min_dims, "min_dims")
 
     if max_dims is None:
-        max_dims = min(32, max(len(base_shape), min_dims) + 2)
+        max_dims = min(32 - sig_dims, max(len(base_shape), min_dims) + 2)
     else:
         check_type(integer_types, max_dims, "max_dims")
 
@@ -1133,8 +1136,13 @@ def mutually_broadcastable_shapes(
     order_check("dims", 0, min_dims, max_dims)
     order_check("side", 0, min_side, max_side)
 
-    if 32 < max_dims:
-        raise InvalidArgument("max_dims cannot exceed 32")
+    if 32 - sig_dims < max_dims:
+        if sig_dims == 0:
+            raise InvalidArgument("max_dims cannot exceed 32")
+        raise InvalidArgument(
+            "max_dims=%r would exceed the 32-dimension limit given gufunc=%r"
+            % (gufunc, signature)
+        )
 
     dims, bnd_name = (max_dims, "max_dims") if strict_check else (min_dims, "min_dims")
 
