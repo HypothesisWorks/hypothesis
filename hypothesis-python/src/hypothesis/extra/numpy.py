@@ -28,7 +28,7 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis import Verbosity, assume
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import PY2, hrange, integer_types
+from hypothesis.internal.compat import PY2, hrange, integer_types, quiet_raise
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies, qualname, reserved_means_kwonly_star
 from hypothesis.internal.validation import check_type, check_valid_interval
@@ -983,6 +983,32 @@ def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
     )
     assert len(output_shapes) == 1
     result_shape = output_shapes[0]
+    if all_checks:
+        # Check that there are no names in output shape that do not appear in inputs.
+        # (kept out of parser function for easier generation of test values)
+        # We also disallow frozen optional dimensions - this is ambiguous as there is
+        # no way to share an un-named dimension between shapes.  Maybe just padding?
+        # Anyway, we disallow it pending clarification from upstream.
+        frozen_optional_err = (
+            "Got dimension %r, but handling of frozen optional dimensions "
+            "is ambiguous.  If you known how this should work, please "
+            "contact us to get this fixed and documented (signature=%r)."
+        )
+        only_out_err = (
+            "The %r dimension only appears in the output shape, and is "
+            "not frozen, so the size is not determined (signature=%r)."
+        )
+        names_in = {n.strip("?") for shp in input_shapes for n in shp}
+        names_out = {n.strip("?") for n in result_shape}
+        for shape in input_shapes + (result_shape,):
+            for name in shape:
+                try:
+                    int(name.strip("?"))
+                    if "?" in name:
+                        raise InvalidArgument(frozen_optional_err % (name, signature))
+                except ValueError:
+                    if name.strip("?") in (names_out - names_in):
+                        quiet_raise(InvalidArgument(only_out_err % (name, signature)))
     return _GUfuncSig(input_shapes=input_shapes, result_shape=result_shape)
 
 

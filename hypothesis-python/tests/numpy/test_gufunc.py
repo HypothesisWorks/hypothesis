@@ -86,3 +86,7 @@ def test_hypothesis_signature_parses(sig):
         hy_sig = nps._hypothesis_parse_gufunc_signature(sig, all_checks=False)
         np_sig = np.lib.function_base._parse_gufunc_signature(sig)
         assert np_sig == hy_sig_2_np_sig(hy_sig)
+
+
+def test_frozen_dims_signature():
+    nps._hypothesis_parse_gufunc_signature("(2),(3)->(4)")

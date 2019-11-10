@@ -228,6 +228,14 @@ def e(a, **kwargs):
             gufunc="()->(),()",
         ),
         e(
+            nps.mutually_broadcastable_shapes,  # output has dimension not in inputs
+            gufunc="()->(i)",
+        ),
+        e(
+            nps.mutually_broadcastable_shapes,  # frozen-optional is ambiguous & banned
+            gufunc="(2?)->()",
+        ),
+        e(
             nps.mutually_broadcastable_shapes,  # signature must be in string format
             gufunc=([(), ()], [()]),
         ),
