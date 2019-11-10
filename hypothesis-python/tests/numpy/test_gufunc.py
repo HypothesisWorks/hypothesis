@@ -23,7 +23,8 @@ from pytest import param
 
 import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
-from hypothesis import example, given
+from hypothesis import example, given, settings
+from tests.common.debug import find_any
 from hypothesis.errors import InvalidArgument
 
 
@@ -113,6 +114,25 @@ def test_matmul_gufunc_shapes(everything):
     arrays, result_shape = everything
     out = np.matmul(*arrays)
     assert out.shape == result_shape
+
+
+@settings(deadline=None, max_examples=10)
+@pytest.mark.parametrize(
+    "target_sig",
+    ("(i),(i)->()", "(m,n),(n,p)->(m,p)", "(n),(n,p)->(p)", "(m,n),(n)->(m)"),
+)
+@given(data=st.data())
+def test_matmul_signature_can_exercise_all_combination_of_optional_dims(
+    target_sig, data
+):
+    target_shapes = data.draw(
+        nps.mutually_broadcastable_shapes(gufunc=target_sig, max_dims=0)
+    )
+    find_any(
+        nps.mutually_broadcastable_shapes(gufunc="(m?,n),(n,p?)->(m?,p?)", max_dims=0),
+        lambda shapes: shapes == target_shapes,
+        settings(max_examples=10 ** 6),
+    )
 
 
 def gufunc_sig_to_einsum_sig(gufunc_sig):
