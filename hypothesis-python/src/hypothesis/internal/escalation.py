@@ -37,6 +37,9 @@ if False:
 
 
 def belongs_to(package):
+    if not hasattr(package, "__file__"):  # pragma: no cover
+        return lambda filepath: False
+
     root = os.path.dirname(package.__file__)
     cache = {text_type: {}, binary_type: {}}
 
