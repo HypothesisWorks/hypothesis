@@ -12,9 +12,19 @@ authors:
 
     - name: David R. MacIver
       orcid: 0000-0002-8635-3223
+      affiliation: 1
     - name: Zac Hatfield Dodds
       orcid: 0000-0002-8646-8362
+      affiliation: 2
     - name: many other contributors
+affiliations:
+  - name: Imperial College London
+    index: 1
+  - name: Australian National University: Canberra
+    index: 2
+date: 11 November 2019
+bibliography: paper.bib
+
 ---
 
 # Summary
