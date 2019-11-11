@@ -21,7 +21,7 @@ authors:
 affiliations:
   - name: Imperial College London
     index: 1
-  - name: Australian National University: Canberra
+  - name: Australian National University
     index: 2
   - name: Various
     index: 3
