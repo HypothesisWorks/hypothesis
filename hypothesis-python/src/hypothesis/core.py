@@ -323,8 +323,6 @@ def execute_explicit_examples(
                 with BuildContext(None) as b:
                     verbose_report("Trying example: " + example_string)
                     test_runner(None, lambda data: test(*arguments, **example_kwargs))
-            except KeyboardInterrupt:
-                raise
             except BaseException:
                 report("Falsifying example: " + example_string)
                 for n in b.notes:
@@ -601,8 +599,6 @@ class StateForActualGivenExecution(object):
                     % (self.test.__name__, result),
                     HealthCheck.return_value,
                 )
-        except KeyboardInterrupt:
-            raise
         except UnsatisfiedAssumption:
             data.mark_invalid()
         except (
@@ -683,7 +679,6 @@ class StateForActualGivenExecution(object):
             ran_example = ConjectureData.for_buffer(falsifying_example.buffer)
             self.__was_flaky = False
             assert info.__expected_exception is not None
-            interrupted = False
             try:
                 self.execute(
                     ran_example,
@@ -694,9 +689,6 @@ class StateForActualGivenExecution(object):
                         info.__expected_traceback,
                     ),
                 )
-            except KeyboardInterrupt:
-                interrupted = True
-                raise
             except (UnsatisfiedAssumption, StopTest):
                 report(traceback.format_exc())
                 self.__flaky(
@@ -717,7 +709,7 @@ class StateForActualGivenExecution(object):
                 # second branch still complains about lack of coverage even if
                 # you add a pragma: no cover to it!
                 # See https://bitbucket.org/ned/coveragepy/issues/623/
-                if self.settings.print_blob and not interrupted:
+                if self.settings.print_blob:
                     report(
                         (
                             "\nYou can reproduce this example by temporarily "
@@ -963,8 +955,6 @@ def given(
                         runner.subTest = subTest
                 else:
                     state.run()
-            except KeyboardInterrupt:
-                raise
             except BaseException as e:
                 generated_seed = wrapped_test._hypothesis_internal_use_generated_seed
                 with local_settings(settings):

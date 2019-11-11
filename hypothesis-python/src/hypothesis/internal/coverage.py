@@ -92,8 +92,6 @@ if IN_COVERAGE_TESTS:
             description = " in ".join(reversed(description_stack)) + " passed"
             yield
             record_branch(description, True)
-        except KeyboardInterrupt:
-            raise
         except BaseException:
             record_branch(description, False)
             raise
