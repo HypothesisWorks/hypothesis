@@ -66,7 +66,7 @@ Much of software testing research boils down to variants on the following proble
 Given some interestingness test (e.g. that it triggers a bug in some software),
 how do we generate a "good" test case that passes that interestingness test?
 
-Particular subproblems of this are:
+Particular sub-problems of this are:
 
 1. How do we generate test cases that satisfy difficult interestingness tests?
 2. How do we ensure we generate only valid test cases? (the *test-case validity problem* - see @DBLP:conf/pldi/RegehrCCEEY12)
@@ -76,10 +76,11 @@ Traditionally property-based testing has adopted random test-case generation to 
 followed by test-case reduction (see @DBLP:conf/pldi/RegehrCCEEY12, @DBLP:journals/tse/ZellerH02) to turn them into more human readable ones,
 requiring the users to manually specify a *validity oracle* (a predicate that identifies if an arbitrary test case is valid) to avoid invalid test cases.
 
-The chief limitations of this from a user's point of view are that writing correct validity oracles is difficult and annoying,
-and that random generation, while often much better than hand-written examples, is not especially good at satisfying difficult properties.
-Fortunately it is very easy to define correct random generators,
-and the users can then defer the rest of the work until their tests start finding bugs, when they are more likely to be willing to do the work.
+The chief limitations of this from a user's point of view are:
+
+* Writing correct validity oracles is difficult and annoying.
+* Random generation, while often much better than hand-written examples, is not especially good at satisfying difficult properties.
+* Writing test-case reducers that work well for your problem domain is a specialised skill that few people have or want to acquire.
 
 The chief limitation from a researcher's point of view is that trying to improve on random generation's ability to find bugs will typically require modification of existing tests to support new ways of generating data,
 and typically these modifications are significantly more complex than writing the random generator would have been.
@@ -87,13 +88,14 @@ Users are rarely going to be willing to undertake the work themselves,
 which leaves researchers in the unfortunate position of having to put in a significant amount of work per project to understand how to test it.
 
 Hypothesis avoids both of these problems by using a single universal representation for test cases.
-Ensuring that test cases produced from this format are valid is relatively easy, no more difficult than ensuring that randomly generated tests cases are valid at least,
+Ensuring that test cases produced from this format are valid is relatively easy, no more difficult than ensuring that randomly generated tests cases are valid,
 and improvements to the generation process can operate solely on this universal representation rather than requiring adapting to each test.
 
 Currently Hypothesis uses this format to support two major use cases:
 
 1. It is the basis of its approach to test-case reduction, allowing it to support more powerful test-case reduction than is found in most property-based testing libraries with no user intervention.
-2. It supports Targeted Property-Based Testing [@DBLP:conf/issta/LoscherS17], which uses a score to guide testing towards a particular goal (e.g. maximising an error term). Normally this would require custom mutation operators per test.
+2. It supports Targeted Property-Based Testing [@DBLP:conf/issta/LoscherS17], which uses a score to guide testing towards a particular goal (e.g. maximising an error term). In the original implementation this would require custom mutation operators per test,
+   but in Hypothesis this mutation is transparent to the user and they need only specify the goal.
 
 The internal format is flexible and contains rich information about the structure of generated test cases,
 so it is likely future versions of the software will see other features built on top of it,
