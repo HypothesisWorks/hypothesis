@@ -48,7 +48,7 @@ Python has a rich and thriving ecosystem of scientific software, and Hypothesis 
 This is particularly useful for foundational libraries on which the scientific software ecosystem is built,
 but any researcher who tests their software in Python can benefit from these facilities. 
 
-For example, it has found bugs in astropy ([@astropy:2018]) and numpy ([@DBLP:journals/cse/WaltCV11]),
+For example, it has found bugs in astropy [@astropy:2018] and numpy [@DBLP:journals/cse/WaltCV11],
 both of which are foundational libraries on which a significant amount of research is based.
 In particular it has proven very effective at finding numerical stability issues in such software.
 
@@ -76,7 +76,7 @@ Particular subproblems of this are:
 3. How do we generate human readable test cases?
  
 Traditionally property-based testing has adopted random test-case generation to find interesting test cases,
-followed by test-case reduction (see [@DBLP:conf/pldi/RegehrCCEEY12, DBLP:journals/tse/ZellerH02]) to turn them into human readable ones,
+followed by test-case reduction (see @DBLP:conf/pldi/RegehrCCEEY12, @DBLP:journals/tse/ZellerH02) to turn them into more human readable ones,
 requiring the users to manually specify a *validity oracle* (a predicate that identifies if an arbitrary test case is valid) to avoid invalid test cases.
 
 The chief limitations of this from a user's point of view are that writing correct validity oracles is difficult and annoying,
@@ -96,7 +96,7 @@ and improvements to the generation process can operate solely on this universal 
 Currently Hypothesis uses this format to support two major use cases:
 
 1. It is the basis of its approach to test-case reduction, allowing it to support more powerful test-case reduction than is found in most property-based testing libraries with no user intervention.
-2. It supports Targeted Property-Based Testing ([@DBLP:conf/issta/LoscherS17]), which uses a score to guide testing towards a particular goal (e.g. maximising an error term). Normally this would require custom mutation operators per test.
+2. It supports Targeted Property-Based Testing [@DBLP:conf/issta/LoscherS17], which uses a score to guide testing towards a particular goal (e.g. maximising an error term). Normally this would require custom mutation operators per test.
 
 The internal format is flexible and contains rich information about the structure of generated test cases,
 so it is likely future versions of the software will see other features built on top of it,
