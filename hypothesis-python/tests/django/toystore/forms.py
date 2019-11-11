@@ -82,7 +82,7 @@ class BasicFieldForm(ReprForm):
     _boolean_required = forms.BooleanField()
     _boolean = forms.BooleanField(required=False)
     # This took me too long to figure out... The BooleanField will actually
-    # raise a ValidationError when it recieves a value of False. Why they
+    # raise a ValidationError when it receives a value of False. Why they
     # didn't call it a TrueOnlyField escapes me, but *if* you actually want
     # to accept both True and False in your BooleanField, make sure you set
     # `required=False`. This behavior has been hotly contested in the bug
