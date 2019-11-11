@@ -17,11 +17,14 @@ authors:
       orcid: 0000-0002-8646-8362
       affiliation: 2
     - name: many other contributors
+      affiliation: 3
 affiliations:
   - name: Imperial College London
     index: 1
   - name: Australian National University: Canberra
     index: 2
+  - name: Various
+    index: 3
 date: 11 November 2019
 bibliography: paper.bib
 
