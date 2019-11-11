@@ -45,12 +45,9 @@ and to software testing researchers as a platform for research in its own right.
 # Hypothesis for Testing Scientific Software
 
 Python has a rich and thriving ecosystem of scientific software, and Hypothesis is helpful for ensuring its correctness.
-This is particularly useful for foundational libraries on which the scientific software ecosystem is built,
-but any researcher who tests their software in Python can benefit from these facilities. 
-
-For example, it has found bugs in astropy [@astropy:2018] and numpy [@DBLP:journals/cse/WaltCV11],
-both of which are foundational libraries on which a significant amount of research is based.
-In particular it has proven very effective at finding numerical stability issues in such software.
+Any researcher who tests their software in Python can benefit from these facilities,
+but it is particularly useful for improving the correctness foundational libraries on which the scientific software ecosystem is built.
+For example, it has found bugs in astropy [@astropy:2018]^[e.g. https://github.com/astropy/astropy/pull/9328, https://github.com/astropy/astropy/pull/9532] and numpy [@DBLP:journals/cse/WaltCV11]^[e.g. https://github.com/numpy/numpy/issues/10930, https://github.com/numpy/numpy/issues/13089, https://github.com/numpy/numpy/issues/14239].
 
 Additionally, Hypothesis is easily extensible, and has a number of user-provided exceptions for specific research applications.
 For example, hypothesis-networkx^[https://pypi.org/project/hypothesis-networkx/] generates graph data structures,
