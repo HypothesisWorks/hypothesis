@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.44.1:
+
+-------------------
+4.44.1 - 2019-11-11
+-------------------
+
+This patch allows Hypothesis to run in environments that do not specify
+a ``__file__``, such as a :mod:`python:zipapp` (:issue:`2196`).
+
 .. _v4.44.0:
 
 -------------------
