@@ -1455,6 +1455,7 @@ def test_detect_threshold_as_relevant():
         runner.run()
 
         assert runner.thresholds(None) == ["score"]
+        assert runner.shrinks > 0
 
 
 def test_does_not_use_erratic_as_threshold():
@@ -1472,6 +1473,7 @@ def test_does_not_use_erratic_as_threshold():
         runner.run()
 
         assert runner.thresholds(None) == ["score"]
+        assert runner.shrinks > 0
 
 
 def test_retains_lower_bound_on_score_when_reducing():
@@ -1489,6 +1491,7 @@ def test_retains_lower_bound_on_score_when_reducing():
 
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
         runner.run()
+        assert runner.shrinks > 0
 
     data = ConjectureData.for_buffer(runner.interesting_examples[None].buffer)
 
@@ -1516,6 +1519,7 @@ def test_will_minimize_scores_that_are_not_thresholds():
         assert runner.interesting_examples
 
         runner.shrink_interesting_examples()
+        assert runner.shrinks > 0
 
     data = ConjectureData.for_buffer(runner.interesting_examples[None].buffer)
 
