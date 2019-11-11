@@ -23,9 +23,9 @@ from pytest import param
 
 import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
-from hypothesis import example, given, settings, note
-from tests.common.debug import find_any, minimal
+from hypothesis import example, given, note, settings
 from hypothesis.errors import InvalidArgument
+from tests.common.debug import find_any, minimal
 
 
 def use_signature_examples(func):
@@ -105,7 +105,7 @@ def gufunc_arrays(draw, shape_strat, **kwargs):
 
 @given(
     gufunc_arrays(
-        nps.mutually_broadcastable_shapes(gufunc=np.matmul),
+        nps.mutually_broadcastable_shapes(signature=np.matmul.signature),
         dtype="float64",
         elements=st.floats(0, 1000),
     )
@@ -126,10 +126,12 @@ def test_matmul_signature_can_exercise_all_combination_of_optional_dims(
     target_sig, data
 ):
     target_shapes = data.draw(
-        nps.mutually_broadcastable_shapes(gufunc=target_sig, max_dims=0)
+        nps.mutually_broadcastable_shapes(signature=target_sig, max_dims=0)
     )
     find_any(
-        nps.mutually_broadcastable_shapes(gufunc="(m?,n),(n,p?)->(m?,p?)", max_dims=0),
+        nps.mutually_broadcastable_shapes(
+            signature="(m?,n),(n,p?)->(m?,p?)", max_dims=0
+        ),
         lambda shapes: shapes == target_shapes,
         settings(max_examples=10 ** 6),
     )
@@ -156,7 +158,7 @@ def test_matmul_sig_shrinks_as_documented(min_dims, min_side, n_fixed, data):
 
     smallest_shapes, result = minimal(
         nps.mutually_broadcastable_shapes(
-            gufunc=sig,
+            signature=sig,
             min_side=min_side,
             max_side=max_side,
             min_dims=min_dims,
@@ -183,7 +185,7 @@ def gufunc_sig_to_einsum_sig(gufunc_sig):
 
     def einlabels(labels):
         assert "x" not in labels, "we reserve x for fixed-dimensions"
-        return "..." + "".join((i if not i.isdigit() else "x" for i in labels))
+        return "..." + "".join(i if not i.isdigit() else "x" for i in labels)
 
     gufunc_sig = nps._hypothesis_parse_gufunc_signature(gufunc_sig)
     input_sig = ",".join(map(einlabels, gufunc_sig.input_shapes))
@@ -217,7 +219,7 @@ def gufunc_sig_to_einsum_sig(gufunc_sig):
 def test_einsum_gufunc_shapes(gufunc_sig, data):
     arrays, result_shape = data.draw(
         gufunc_arrays(
-            nps.mutually_broadcastable_shapes(gufunc=gufunc_sig),
+            nps.mutually_broadcastable_shapes(signature=gufunc_sig),
             dtype="float64",
             elements=st.floats(0, 1000),
         ),

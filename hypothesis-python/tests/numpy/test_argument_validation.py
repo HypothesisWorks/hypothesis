@@ -213,48 +213,44 @@ def e(a, **kwargs):
         e(
             nps.mutually_broadcastable_shapes,  # valid to pass num_shapes xor gufunc
             num_shapes=2,
-            gufunc="()->()",
+            signature="()->()",
         ),
         e(
-            nps.mutually_broadcastable_shapes,  # non-ufunc callables are not valid
-            gufunc=sum,
-        ),
-        e(
-            nps.mutually_broadcastable_shapes,  # element-wise ufunc has no signature
-            gufunc=numpy.add,
+            nps.mutually_broadcastable_shapes,  # element-wise ufunc has signature=None
+            signature=numpy.add.signature,
         ),
         e(
             nps.mutually_broadcastable_shapes,  # multiple outputs not yet supported
-            gufunc="()->(),()",
+            signature="()->(),()",
         ),
         e(
             nps.mutually_broadcastable_shapes,  # output has dimension not in inputs
-            gufunc="()->(i)",
+            signature="()->(i)",
         ),
         e(
             nps.mutually_broadcastable_shapes,  # frozen-optional is ambiguous & banned
-            gufunc="(2?)->()",
+            signature="(2?)->()",
         ),
         e(
             nps.mutually_broadcastable_shapes,  # signature must be in string format
-            gufunc=([(), ()], [()]),
+            signature=([(), ()], [()]),
         ),
         e(
             nps.mutually_broadcastable_shapes,  # string must match signature regex
-            gufunc="this string isn't a valid signature",
+            signature="this string isn't a valid signature",
         ),
         e(
             nps.mutually_broadcastable_shapes,  # shape with too many dimensions
-            gufunc="(" + ",".join("d{}".format(n) for n in range(33)) + ")->()",
+            signature="(" + ",".join("d{}".format(n) for n in range(33)) + ")->()",
         ),
         e(
             nps.mutually_broadcastable_shapes,  # max_dims too large given ufunc
-            gufunc=numpy.matmul,
+            signature=numpy.matmul.signature,
             max_dims=32,
         ),
         e(
             nps.mutually_broadcastable_shapes,  # least valid max_dims is < min_dims
-            gufunc=numpy.matmul,
+            signature=numpy.matmul.signature,
             min_dims=32,
         ),
         e(nps.basic_indices, shape=0),
