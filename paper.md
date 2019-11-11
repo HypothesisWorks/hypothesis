@@ -1,15 +1,14 @@
 ---
-
 title: 'Hypothesis: A new approach to property-based testing'
+date: 1 November 2019
+bibliography: paper.bib
 tags:
     - Python
     - testing
     - test-case reduction
     - test-case generation
     - property-based testing
-
 authors:
-
     - name: David R. MacIver
       orcid: 0000-0002-8635-3223
       affiliation: 1
@@ -19,15 +18,12 @@ authors:
     - name: many other contributors
       affiliation: 3
 affiliations:
-  - name: Imperial College London
-    index: 1
-  - name: Australian National University
-    index: 2
-  - name: Various
-    index: 3
-date: 11 November 2019
-bibliography: paper.bib
-
+    - name: Imperial College London
+      index: 1
+    - name: Australian National University
+      index: 2
+    - name: Various
+      index: 3
 ---
 
 # Summary
