@@ -27,6 +27,7 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis.control import assume
 from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
+from hypothesis.searchstrategy.lazy import LazyStrategy
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from tests.common.utils import checks_deprecated_behaviour, no_shrink
 
@@ -198,3 +199,24 @@ def test_hung_test_is_deprecated():
 def test_it_is_an_error_to_suppress_non_healthchecks():
     with raises(InvalidArgument):
         settings(suppress_health_check=[1])
+
+
+slow_down_init = True
+
+
+def slow_init_integers(*args, **kwargs):
+    # This mimics st.characters() or st.text(), which perform some
+    # expensive Unicode calculations when the cache is empty.
+    global slow_down_init
+    if slow_down_init:
+        time.sleep(0.5)  # We monkeypatch time, so this is fast
+        slow_down_init = False
+    return st.integers(*args, **kwargs)
+
+
+@given(st.data())
+def test_lazy_slow_initialization_issue_2108_regression(data):
+    # Slow init in strategies wrapped in a LazyStrategy, inside an interactive draw,
+    # should be attributed to drawing from the strategy (not the test function).
+    # Specificially, this used to fail with a DeadlineExceeded error.
+    data.draw(LazyStrategy(slow_init_integers, (), {}))
