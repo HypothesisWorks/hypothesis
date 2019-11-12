@@ -1,36 +1,35 @@
+from __future__ import absolute_import, division, print_function
+
 import pytest
 
-from hypothesis import assume, given, infer, reject, settings
-from hypothesis.errors import InvalidArgument, Unsatisfiable
-from hypothesis.strategies import integers, composite
-from tests.common.utils import fails_with
+from hypothesis import given
+from hypothesis.strategies import composite, integers
 
 
 def test_keyboardinterrupt_no_rerun():
-    runs = 0
+    runs = [0]
     interrupt = 3
+
     @given(integers())
     def test_raise_keyboardinterrupt(x):
-        nonlocal runs
-        runs += 1
-        if runs == interrupt:
+        runs[0] += 1
+        if runs[0] == interrupt:
             raise KeyboardInterrupt
 
     with pytest.raises(KeyboardInterrupt):
         test_raise_keyboardinterrupt()
 
-    assert runs == interrupt
+    assert runs[0] == interrupt
 
 
 def test_keyboardinterrupt_in_strategy_no_rerun():
-    runs = 0
+    runs = [0]
     interrupt = 3
 
     @composite
     def interrupt_eventually(draw):
-        nonlocal runs
-        runs += 1
-        if runs == interrupt:
+        runs[0] += 1
+        if runs[0] == interrupt:
             # import pdb; pdb.set_trace()
             raise KeyboardInterrupt
         return draw(integers())
@@ -42,20 +41,20 @@ def test_keyboardinterrupt_in_strategy_no_rerun():
     with pytest.raises(KeyboardInterrupt):
         test_do_nothing()
 
-    assert runs == interrupt
+    assert runs[0] == interrupt
 
 
 def test_systemexit_no_rerun():
-    runs = 0
+    runs = [0]
     interrupt = 3
+
     @given(integers())
     def test_raise_systemexit(x):
-        nonlocal runs
-        runs += 1
-        if runs == interrupt:
+        runs[0] += 1
+        if runs[0] == interrupt:
             raise SystemExit
 
     with pytest.raises(SystemExit):
         test_raise_systemexit()
 
-    assert runs == interrupt
+    assert runs[0] == interrupt
