@@ -284,7 +284,7 @@ def is_invalid_test(name, original_argspec, generator_arguments, generator_kwarg
         repr(kw) for kw in original_argspec.kwonlyargs if kw not in generator_kwargs
     ]
     if missing:
-        raise InvalidArgument(
+        return invalid(
             "Missing required kwarg{}: {}".format(
                 "s" if len(missing) > 1 else "", ", ".join(missing)
             )

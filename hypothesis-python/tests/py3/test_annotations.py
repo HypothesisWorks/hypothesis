@@ -75,11 +75,12 @@ def test_py3only_lambda_formatting(lam, source):
 
 
 def test_given_notices_missing_kwonly_args():
-    with pytest.raises(InvalidArgument):
+    @given(a=st.none())
+    def reqs_kwonly(*, a, b):
+        pass
 
-        @given(a=st.none())
-        def reqs_kwonly(*, a, b):
-            pass
+    with pytest.raises(InvalidArgument):
+        reqs_kwonly()
 
 
 def test_converter_handles_kwonly_args():
