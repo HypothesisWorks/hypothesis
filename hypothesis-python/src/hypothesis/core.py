@@ -505,7 +505,9 @@ class StateForActualGivenExecution(object):
 
         self.used_examples_from_database = False
 
-    def execute(self, data, print_example=False, is_final=False, expected_failure=None):
+    def execute_once(
+        self, data, print_example=False, is_final=False, expected_failure=None
+    ):
         text_repr = [None]
         if self.settings.deadline is None:
             test = self.test
@@ -584,9 +586,9 @@ class StateForActualGivenExecution(object):
             )
         return result
 
-    def evaluate_test_data(self, data):
+    def _execute_once_for_engine(self, data):
         try:
-            result = self.execute(data)
+            result = self.execute_once(data)
             if result is not None:
                 fail_health_check(
                     self.settings,
@@ -626,7 +628,7 @@ class StateForActualGivenExecution(object):
                 lineno = origin[1]
                 data.mark_interesting((type(e), filename, lineno))
 
-    def run(self):
+    def run_engine(self):
         # Tell pytest to omit the body of this function from tracebacks
         __tracebackhide__ = True
         if global_force_seed is None:
@@ -634,7 +636,7 @@ class StateForActualGivenExecution(object):
         else:
             database_key = None
         runner = ConjectureRunner(
-            self.evaluate_test_data,
+            self._execute_once_for_engine,
             settings=self.settings,
             random=self.random,
             database_key=database_key,
@@ -678,7 +680,7 @@ class StateForActualGivenExecution(object):
             self.__was_flaky = False
             assert info.__expected_exception is not None
             try:
-                self.execute(
+                self.execute_once(
                     ran_example,
                     print_example=True,
                     is_final=True,
@@ -921,7 +923,7 @@ def given(
                         % (expected_version, __version__)
                     )
                 try:
-                    state.execute(
+                    state.execute_once(
                         ConjectureData.for_buffer(decode_failure(failure)),
                         print_example=True,
                         is_final=True,
@@ -967,11 +969,11 @@ def given(
                     subTest = runner.subTest
                     try:
                         runner.subTest = fake_subTest
-                        state.run()
+                        state.run_engine()
                     finally:
                         runner.subTest = subTest
                 else:
-                    state.run()
+                    state.run_engine()
             except BaseException as e:
                 # The exception caught here should either be an actual test
                 # failure (or MultipleFailures), or some kind of fatal error
