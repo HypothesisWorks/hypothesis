@@ -227,6 +227,14 @@ class WithRunner(MappedSearchStrategy):
 
 
 def is_invalid_test(name, original_argspec, generator_arguments, generator_kwargs):
+    """Check the arguments to ``@given`` for basic usage constraints.
+
+    Most errors are not raised immediately; instead we return a dummy test
+    function that will raise the appropriate error if it is actually called.
+    When the user runs a subset of tests (e.g via ``pytest -k``), errors will
+    only be reported for tests that actually ran.
+    """
+
     def invalid(message):
         def wrapped_test(*arguments, **kwargs):
             raise InvalidArgument(message)
@@ -349,14 +357,7 @@ def get_random_for_wrapped_test(test, wrapped_test):
 
 
 def process_arguments_to_given(
-    wrapped_test,
-    arguments,
-    kwargs,
-    generator_arguments,
-    generator_kwargs,
-    argspec,
-    test,
-    settings,
+    wrapped_test, arguments, kwargs, generator_kwargs, argspec, test, settings,
 ):
     selfy = None
     arguments, kwargs = convert_positional_arguments(wrapped_test, arguments, kwargs)
@@ -807,13 +808,21 @@ def given(
             test.__name__, original_argspec, generator_arguments, generator_kwargs
         )
 
+        # If the argument check found problems, return a dummy test function
+        # that will raise an error if it is actually called.
         if check_invalid is not None:
             return check_invalid
 
-        for name, strategy in zip(
-            reversed(original_argspec.args), reversed(generator_arguments)
-        ):
-            generator_kwargs[name] = strategy
+        # Because the argument check succeeded, we can convert @given's
+        # positional arguments into keyword arguments for simplicity.
+        if generator_arguments:
+            assert not generator_kwargs
+            for name, strategy in zip(
+                reversed(original_argspec.args), reversed(generator_arguments)
+            ):
+                generator_kwargs[name] = strategy
+        # These have been converted, so delete them to prevent accidental use.
+        del generator_arguments
 
         argspec = new_given_argspec(original_argspec, generator_kwargs)
 
@@ -842,6 +851,8 @@ def given(
 
             random = get_random_for_wrapped_test(test, wrapped_test)
 
+            # Use type information to convert "infer" arguments into appropriate
+            # strategies.
             if infer in generator_kwargs.values():
                 hints = get_type_hints(test)
             for name in [
@@ -858,7 +869,6 @@ def given(
                 wrapped_test,
                 arguments,
                 kwargs,
-                generator_arguments,
                 generator_kwargs,
                 argspec,
                 test,
@@ -895,6 +905,9 @@ def given(
 
             reproduce_failure = wrapped_test._hypothesis_internal_use_reproduce_failure
 
+            # If there was a @reproduce_failure decorator, use it to reproduce
+            # the error (or complain that we couldn't). Either way, this will
+            # always raise some kind of error.
             if reproduce_failure is not None:
                 expected_version, failure = reproduce_failure
                 if expected_version != __version__:
@@ -930,9 +943,16 @@ def given(
                         "generated?"
                     )
 
+            # There was no @reproduce_failure, so start by running any explicit
+            # examples from @example decorators.
+
             execute_explicit_examples(
                 test_runner, test, wrapped_test, settings, arguments, kwargs
             )
+
+            # If there were any explicit examples, they all ran successfully.
+            # The next step is to use the Conjecture engine to run the test on
+            # many different inputs.
 
             if settings.max_examples <= 0:
                 return
@@ -953,6 +973,10 @@ def given(
                 else:
                     state.run()
             except BaseException as e:
+                # The exception caught here should either be an actual test
+                # failure (or MultipleFailures), or some kind of fatal error
+                # that caused the engine to stop.
+
                 generated_seed = wrapped_test._hypothesis_internal_use_generated_seed
                 with local_settings(settings):
                     if not (state.failed_normally or generated_seed is None):
@@ -989,6 +1013,9 @@ def given(
                         get_trimmed_traceback()
                     )
                     raise the_error_hypothesis_found
+
+        # After having created the decorated test function, we need to copy
+        # over some attributes to make the switch as seamless as possible.
 
         for attrib in dir(test):
             if not (attrib.startswith("_") or hasattr(wrapped_test, attrib)):
