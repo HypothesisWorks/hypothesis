@@ -17,6 +17,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+import sys
+
 import attr
 
 from hypothesis.errors import Flaky, HypothesisException
@@ -352,7 +354,8 @@ class TreeRecordingObserver(DataObserver):
     def conclude_test(self, status, interesting_origin):
         """Says that ``status`` occurred at node ``node``. This updates the
         node if necessary and checks for consistency."""
-        if status == Status.OVERRUN:
+        if (status == Status.OVERRUN
+                or isinstance(sys.exc_info()[1], KeyboardInterrupt)):
             return
         i = self.__index_in_current_node
         node = self.__current_node
