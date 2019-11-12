@@ -46,7 +46,3 @@ def test_no_falsifying_example_if_unittest_skip(skip_exception):
         unittest.TextTestRunner().run(suite)
 
     assert "Falsifying example" not in o.getvalue()
-
-
-def test_skipping_is_cached():
-    assert skip_exceptions_to_reraise() is skip_exceptions_to_reraise()

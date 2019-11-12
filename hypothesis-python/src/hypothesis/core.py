@@ -25,6 +25,7 @@ import contextlib
 import datetime
 import inspect
 import random as rnd_module
+import sys
 import traceback
 import warnings
 import zlib
@@ -398,59 +399,29 @@ def process_arguments_to_given(
     return arguments, kwargs, test_runner, search_strategy
 
 
-def run_once(fn):
-    """Wraps a no-args function so that its outcome is cached.
-    We use this for calculating various lists of exceptions
-    the first time we use them."""
-    result = [None]
-
-    def run():
-        if result[0] is None:
-            result[0] = fn()
-            assert result[0] is not None
-        return result[0]
-
-    run.__name__ = fn.__name__
-    return run
-
-
-@run_once
 def skip_exceptions_to_reraise():
     """Return a tuple of exceptions meaning 'skip this test', to re-raise.
 
     This is intended to cover most common test runners; if you would
     like another to be added please open an issue or pull request.
     """
-    import unittest
-
     # This is a set because nose may simply re-export unittest.SkipTest
-    exceptions = {unittest.SkipTest}
-
-    try:  # pragma: no cover
-        from unittest2 import SkipTest
-
-        exceptions.add(SkipTest)
-    except ImportError:
-        pass
-
-    try:  # pragma: no cover
-        from pytest.runner import Skipped
-
-        exceptions.add(Skipped)
-    except ImportError:
-        pass
-
-    try:  # pragma: no cover
-        from nose import SkipTest as NoseSkipTest
-
-        exceptions.add(NoseSkipTest)
-    except ImportError:
-        pass
-
+    exceptions = set()
+    # We use this sys.modules trick to avoid importing libraries -
+    # you can't be an instance of a type from an unimported module!
+    # This is fast enough that we don't need to cache the result,
+    # and more importantly it avoids possible side-effects :-)
+    if "unittest" in sys.modules:
+        exceptions.add(sys.modules["unittest"].SkipTest)
+    if "unittest2" in sys.modules:  # pragma: no cover
+        exceptions.add(sys.modules["unittest2"].SkipTest)
+    if "nose" in sys.modules:  # pragma: no cover
+        exceptions.add(sys.modules["nose"].SkipTest)
+    if "_pytest" in sys.modules:  # pragma: no branch
+        exceptions.add(sys.modules["_pytest"].outcomes.Skipped)
     return tuple(sorted(exceptions, key=str))
 
 
-@run_once
 def failure_exceptions_to_catch():
     """Return a tuple of exceptions meaning 'this test has failed', to catch.
 
@@ -458,12 +429,8 @@ def failure_exceptions_to_catch():
     like another to be added please open an issue or pull request.
     """
     exceptions = [Exception]
-    try:  # pragma: no cover
-        from _pytest.outcomes import Failed
-
-        exceptions.append(Failed)
-    except ImportError:
-        pass
+    if "_pytest" in sys.modules:  # pragma: no branch
+        exceptions.append(sys.modules["_pytest"].outcomes.Failed)
     return tuple(exceptions)
 
 
