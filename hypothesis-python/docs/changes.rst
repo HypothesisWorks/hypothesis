@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.44.2:
+
+-------------------
+4.44.2 - 2019-11-12
+-------------------
+
+This release fixes :func:`@given <hypothesis.given>` to only complain about
+missing keyword-only arguments if the associated test function is actually
+called.
+
+This matches the behaviour of other ``InvalidArgument`` errors produced by
+``@given``.
+
 .. _v4.44.1:
 
 -------------------
