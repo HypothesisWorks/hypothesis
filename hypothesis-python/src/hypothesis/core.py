@@ -508,6 +508,16 @@ class StateForActualGivenExecution(object):
     def execute_once(
         self, data, print_example=False, is_final=False, expected_failure=None
     ):
+        """Run the test function once, using ``data`` as input.
+
+        If the test raises an exception, it will propagate through to the
+        caller of this method. Depending on its type, this could represent
+        an ordinary test failure, or a fatal error, or a control exception.
+
+        If this method returns normally, the test might have passed, or
+        it might have placed ``data`` in an unsuccessful state and then
+        swallowed the corresponding control exception.
+        """
         text_repr = [None]
         if self.settings.deadline is None:
             test = self.test
@@ -533,9 +543,12 @@ class StateForActualGivenExecution(object):
                 return result
 
         def run(data):
+            # Set up dynamic context needed by a single test run.
             with local_settings(self.settings):
                 with deterministic_PRNG():
                     with BuildContext(data, is_final=is_final):
+
+                        # Generate all arguments to the test function.
                         args, kwargs = data.draw(self.search_strategy)
                         if expected_failure is not None:
                             text_repr[0] = arg_string(test, args, kwargs)
@@ -553,7 +566,12 @@ class StateForActualGivenExecution(object):
                             )
                         return test(*args, **kwargs)
 
+        # Run the test function once, via the executor hook.
+        # In most cases this will delegate straight to `run(data)`.
         result = self.test_runner(data, run)
+
+        # If a failure was expected, it should have been raised already, so
+        # instead raise an appropriate diagnostic error.
         if expected_failure is not None:
             exception, traceback = expected_failure
             if (
@@ -587,6 +605,13 @@ class StateForActualGivenExecution(object):
         return result
 
     def _execute_once_for_engine(self, data):
+        """Wrapper around ``execute_once`` that intercepts test failure
+        exceptions and single-test control exceptions, and turns them into
+        appropriate method calls to `data` instead.
+
+        This allows the engine to assume that any exception other than
+        ``StopTest`` must be a fatal error, and should stop the entire engine.
+        """
         try:
             result = self.execute_once(data)
             if result is not None:
@@ -600,21 +625,35 @@ class StateForActualGivenExecution(object):
                     HealthCheck.return_value,
                 )
         except UnsatisfiedAssumption:
+            # An "assume" check failed, so instead we inform the engine that
+            # this test run was invalid.
             data.mark_invalid()
+        except StopTest:
+            # The engine knows how to handle this control exception, so it's
+            # OK to re-raise it.
+            raise
         except (
             HypothesisDeprecationWarning,
             FailedHealthCheck,
-            StopTest,
         ) + skip_exceptions_to_reraise():
+            # These are fatal errors or control exceptions that should stop the
+            # engine, so we re-raise them.
             raise
         except failure_exceptions_to_catch() as e:
+            # If the error was raised by Hypothesis-internal code, re-raise it
+            # as a fatal error instead of treating it as a test failure.
             escalate_hypothesis_internal_error()
+
             if data.frozen:
                 # This can happen if an error occurred in a finally
                 # block somewhere, suppressing our original StopTest.
                 # We raise a new one here to resume normal operation.
                 raise StopTest(data.testcounter)
             else:
+                # The test failed by raising an exception, so we inform the
+                # engine that this test run was interesting. This is the normal
+                # path for test runs that fail.
+
                 tb = get_trimmed_traceback()
                 info = data.extra_information
                 info.__expected_traceback = "".join(
@@ -629,6 +668,9 @@ class StateForActualGivenExecution(object):
                 data.mark_interesting((type(e), filename, lineno))
 
     def run_engine(self):
+        """Run the test function many times, on database input and generated
+        input, using the Conjecture engine.
+        """
         # Tell pytest to omit the body of this function from tracebacks
         __tracebackhide__ = True
         if global_force_seed is None:
@@ -642,6 +684,8 @@ class StateForActualGivenExecution(object):
             database_key=database_key,
         )
         try:
+            # Use the Conjecture engine to run the test function many times
+            # on different inputs.
             runner.run()
         finally:
             self.used_examples_from_database = runner.used_examples_from_database
@@ -667,7 +711,11 @@ class StateForActualGivenExecution(object):
         if not self.falsifying_examples:
             return
         elif not self.settings.report_multiple_bugs:
+            # Pretend that we only found one failure, by discarding the others.
             del self.falsifying_examples[:-1]
+
+        # The engine found one or more failures, so we need to reproduce and
+        # report them.
 
         self.failed_normally = True
 
@@ -697,9 +745,15 @@ class StateForActualGivenExecution(object):
                 )
             except BaseException as e:
                 if len(self.falsifying_examples) <= 1:
+                    # There is only one failure, so we can report it by raising
+                    # it directly.
                     raise
+
+                # We are reporting multiple failures, so we need to manually
+                # print each exception's stack trace and information.
                 tb = get_trimmed_traceback()
                 report("".join(traceback.format_exception(type(e), e, tb)))
+
             finally:  # pragma: no cover
                 # This section is in fact entirely covered by the tests in
                 # test_reproduce_failure, but it seems to trigger a lovely set
