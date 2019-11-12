@@ -19,26 +19,24 @@ from __future__ import absolute_import, division, print_function
 
 import contextlib
 import random
+import sys
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import integer_types
 
 RANDOMS_TO_MANAGE = [random]  # type: list
 
-try:
-    import numpy.random as npr
-except ImportError:
-    pass
-else:
 
-    class NumpyRandomWrapper(object):
-        """A shim to remove those darn underscores."""
+class NumpyRandomWrapper(object):
+    def __init__(self):
+        assert "numpy" in sys.modules
+        # This class provides a shim that matches the numpy to stdlib random,
+        # and lets us avoid importing Numpy until it's already in use.
+        import numpy.random
 
-        seed = npr.seed
-        getstate = npr.get_state
-        setstate = npr.set_state
-
-    RANDOMS_TO_MANAGE.append(NumpyRandomWrapper)
+        self.seed = numpy.random.seed
+        self.getstate = numpy.random.get_state
+        self.setstate = numpy.random.set_state
 
 
 def register_random(r):
@@ -73,6 +71,11 @@ def get_seeder_and_restorer(seed=0):
     """
     assert isinstance(seed, integer_types) and 0 <= seed < 2 ** 32
     states = []  # type: list
+
+    if "numpy" in sys.modules and not any(
+        isinstance(x, NumpyRandomWrapper) for x in RANDOMS_TO_MANAGE
+    ):
+        RANDOMS_TO_MANAGE.append(NumpyRandomWrapper())
 
     def seed_all():
         assert not states
