@@ -403,7 +403,8 @@ def skip_exceptions_to_reraise():
     """Return a tuple of exceptions meaning 'skip this test', to re-raise.
 
     This is intended to cover most common test runners; if you would
-    like another to be added please open an issue or pull request.
+    like another to be added please open an issue or pull request adding
+    it to this function and to tests/cover/test_lazy_import.py
     """
     # This is a set because nose may simply re-export unittest.SkipTest
     exceptions = set()
