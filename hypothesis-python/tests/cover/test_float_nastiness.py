@@ -294,16 +294,23 @@ def test_exclude_entire_interval(lo, hi, bound):
         st.floats(bound, bound, exclude_min=lo, exclude_max=hi).validate()
 
 
-def test_exclude_zero_interval():
+def test_zero_intervals_are_OK():
+    st.floats(0.0, 0.0).validate()
     st.floats(-0.0, 0.0).validate()
-    st.floats(-0.0, 0.0, exclude_min=True).validate()
-    st.floats(-0.0, 0.0, exclude_max=True).validate()
+    st.floats(-0.0, -0.0).validate()
 
 
 @checks_deprecated_behaviour
 def test_inverse_zero_interval_is_deprecated():
     st.floats(0.0, -0.0).validate()
-    st.floats(-0.0, 0.0, exclude_min=True, exclude_max=True).validate()
+
+
+@pytest.mark.parametrize("lo", [0.0, -0.0])
+@pytest.mark.parametrize("hi", [0.0, -0.0])
+@pytest.mark.parametrize("exmin,exmax", [(True, False), (False, True), (True, True)])
+def test_cannot_exclude_endpoint_with_zero_interval(lo, hi, exmin, exmax):
+    with pytest.raises(InvalidArgument):
+        st.floats(lo, hi, exclude_min=exmin, exclude_max=exmax).validate()
 
 
 WIDTHS = (64, 32)

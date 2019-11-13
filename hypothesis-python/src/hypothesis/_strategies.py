@@ -435,8 +435,10 @@ def floats(
     # type: (...) -> SearchStrategy[float]
     """Returns a strategy which generates floats.
 
-    - If min_value is not None, all values will be >= min_value.
-    - If max_value is not None, all values will be <= max_value.
+    - If min_value is not None, all values will be ``>= min_value``
+      (or ``> min_value`` if ``exclude_min``).
+    - If max_value is not None, all values will be ``<= max_value``
+      (or ``< max_value`` if ``exclude_max``).
     - If min_value or max_value is not None, it is an error to enable
       allow_nan.
     - If both min_value and max_value are not None, it is an error to enable
@@ -454,6 +456,7 @@ def floats(
 
     The exclude_min and exclude_max argument can be used to generate numbers
     from open or half-open intervals, by excluding the respective endpoints.
+    Excluding either signed zero will also exclude the other.
     Attempting to exclude an endpoint which is None will raise an error;
     use ``allow_infinity=False`` to generate finite floats.  You can however
     use e.g. ``min_value=float("-inf"), exclude_min=True`` to exclude only
@@ -520,12 +523,20 @@ def floats(
         exclude_min or (min_arg is not None and min_value < min_arg)
     ):
         min_value = next_up(min_value, width)
-        assert min_value > min_arg or min_value == min_arg == 0  # type: ignore
+        if min_value == min_arg:
+            assert min_value == min_arg == 0
+            assert is_negative(min_arg) and not is_negative(min_value)
+            min_value = next_up(min_value, width)
+        assert min_value > min_arg  # type: ignore
     if max_value is not None and (
         exclude_max or (max_arg is not None and max_value > max_arg)
     ):
         max_value = next_down(max_value, width)
-        assert max_value < max_arg or max_value == max_arg == 0  # type: ignore
+        if max_value == max_arg:
+            assert max_value == max_arg == 0
+            assert is_negative(max_value) and not is_negative(max_arg)
+            max_value = next_down(max_value, width)
+        assert max_value < max_arg  # type: ignore
 
     if min_value == float(u"-inf"):
         min_value = None
