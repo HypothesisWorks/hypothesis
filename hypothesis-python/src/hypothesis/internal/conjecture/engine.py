@@ -138,14 +138,19 @@ class ConjectureRunner(object):
         assert isinstance(data.observer, TreeRecordingObserver)
         self.call_count += 1
 
+        interrupted = False
         try:
             self.__stoppable_test_function(data)
+        except KeyboardInterrupt:
+            interrupted = True
+            raise
         except BaseException:
             self.save_buffer(data.buffer)
             raise
         finally:
-            data.freeze()
-            self.note_details(data)
+            if not interrupted:
+                data.freeze()
+                self.note_details(data)
 
         self.debug_data(data)
 

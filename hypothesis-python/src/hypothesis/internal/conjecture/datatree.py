@@ -354,8 +354,7 @@ class TreeRecordingObserver(DataObserver):
     def conclude_test(self, status, interesting_origin):
         """Says that ``status`` occurred at node ``node``. This updates the
         node if necessary and checks for consistency."""
-        if (status == Status.OVERRUN
-                or isinstance(sys.exc_info()[1], KeyboardInterrupt)):
+        if status == Status.OVERRUN:
             return
         i = self.__index_in_current_node
         node = self.__current_node
