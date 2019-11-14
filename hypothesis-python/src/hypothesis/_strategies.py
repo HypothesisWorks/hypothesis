@@ -1369,6 +1369,20 @@ def from_type(thing):
     This is useful when writing tests which check that invalid input is
     rejected in a certain way.
     """
+    if (
+        hasattr(typing, "_TypedDictMeta")
+        and type(thing) is typing._TypedDictMeta  # type: ignore
+    ):  # pragma: no cover
+        # "helpfully", TypedDict raises an error on instance and subclass checks
+        # (at least in Python 3.8.0), so we have to check whether the type of its
+        # type is the expected metaclass.
+        # Then, we currently have no way to tell whether particular keys were
+        # defined on this or a parent class - nor what the parent classes were! -
+        # so we have to assume that nothing is optional.  Sorry.
+        return fixed_dictionaries(  # type: ignore
+            {k: from_type(v) for k, v in thing.__annotations__.items()}
+        )
+
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.searchstrategy import types
