@@ -148,7 +148,9 @@ class ConjectureRunner(object):
             self.save_buffer(data.buffer)
             raise
         finally:
-            if not interrupted:
+            # No branch, because if we're interrupted we always raise
+            # the KeyboardInterrupt, never continue to the code below.
+            if not interrupted:  # pragma: no branch
                 data.freeze()
                 self.note_details(data)
 
