@@ -17,8 +17,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-import sys
-
 import attr
 
 from hypothesis.errors import Flaky, HypothesisException
