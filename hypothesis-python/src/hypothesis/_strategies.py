@@ -1373,14 +1373,14 @@ def from_type(thing):
         hasattr(typing, "_TypedDictMeta")
         and type(thing) is typing._TypedDictMeta  # type: ignore
     ):  # pragma: no cover
-        # "helpfully", TypedDict raises an error on instance and subclass checks
-        # (at least in Python 3.8.0), so we have to check whether the type of its
-        # type is the expected metaclass.
-        # Then, we currently have no way to tell whether particular keys were
-        # defined on this or a parent class - nor what the parent classes were! -
-        # so we have to assume that nothing is optional.  Sorry.
+        # The __optional_keys__ attribute may or may not be present, but if there's no
+        # way to tell and we just have to assume that everything is required.
+        # See https://github.com/python/cpython/pull/17214 for details.
+        optional = getattr(thing, "__optional_keys__", ())
+        anns = {k: from_type(v) for k, v in thing.__annotations__.items()}
         return fixed_dictionaries(  # type: ignore
-            {k: from_type(v) for k, v in thing.__annotations__.items()}
+            mapping={k: v for k, v in anns.items() if k not in optional},
+            optional={k: v for k, v in anns.items() if k in optional},
         )
 
     # TODO: We would like to move this to the top level, but pending some major

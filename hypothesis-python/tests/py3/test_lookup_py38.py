@@ -23,10 +23,8 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given
-from hypothesis.errors import Unsatisfiable
 from hypothesis.strategies import from_type
 from tests.common.debug import find_any
-from tests.common.utils import fails_with
 
 
 @given(st.data())
@@ -80,10 +78,10 @@ def test_typeddict_with_optional(value):
         assert isinstance(value["b"], bool)
 
 
-@fails_with(Unsatisfiable)
+@pytest.mark.xfail
 def test_simple_optional_key_is_optional():
     # Optional keys are not currently supported, as PEP-589 leaves no traces
-    # at runtime... there are ongoing discussions upstream.
+    # at runtime.  See https://github.com/python/cpython/pull/17214
     find_any(from_type(B), lambda d: "b" not in d)
 
 
@@ -102,6 +100,8 @@ def test_typeddict_with_optional_then_required_again(value):
     assert isinstance(value["c"], str)
 
 
-@fails_with(Unsatisfiable)
+@pytest.mark.xfail
 def test_layered_optional_key_is_optional():
+    # Optional keys are not currently supported, as PEP-589 leaves no traces
+    # at runtime.  See https://github.com/python/cpython/pull/17214
     find_any(from_type(C), lambda d: "b" not in d)
