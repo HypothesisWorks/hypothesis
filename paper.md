@@ -49,7 +49,7 @@ Any researcher who tests their software in Python can benefit from these facilit
 but it is particularly useful for improving the correctness foundational libraries on which the scientific software ecosystem is built.
 For example, it has found bugs in astropy [@astropy:2018]^[e.g. https://github.com/astropy/astropy/pull/9328, https://github.com/astropy/astropy/pull/9532] and numpy [@DBLP:journals/cse/WaltCV11]^[e.g. https://github.com/numpy/numpy/issues/10930, https://github.com/numpy/numpy/issues/13089, https://github.com/numpy/numpy/issues/14239].
 
-Additionally, Hypothesis is easily extensible, and has a number of user-provided exceptions for specific research applications.
+Additionally, Hypothesis is easily extensible, and has a number of third-party extensions for specific research applications.
 For example, hypothesis-networkx^[https://pypi.org/project/hypothesis-networkx/] generates graph data structures,
 and hypothesis-bio^[https://pypi.org/project/hypothesis-bio/] generates formats suitable for bioinformatics.
 As it is used by more researchers, the number of research applications will only increase.
@@ -63,15 +63,15 @@ This is true both because of the much wider array of software that can now easil
 and because it has a novel implementation that lifts a major difficulty that prior research on software testing faces.
 
 Much of software testing research boils down to variants on the following problem:
-Given some interestingness test (e.g. that it triggers a bug in some software),
-how do we generate a "good" test case that passes that interestingness test?
+Given some interestingness condition (e.g. that it triggers a bug in some software),
+how do we generate a "good" test case which satisfies that condition?
 
 Particular sub-problems of this are:
 
-1. How do we generate test cases that satisfy difficult interestingness tests?
+1. How do we generate test cases that satisfy difficult interestingness conditions?
 2. How do we ensure we generate only valid test cases? (the *test-case validity problem* - see @DBLP:conf/pldi/RegehrCCEEY12)
 3. How do we generate human readable test cases?
- 
+
 Traditionally property-based testing has adopted random test-case generation to find interesting test cases,
 followed by test-case reduction (see @DBLP:conf/pldi/RegehrCCEEY12, @DBLP:journals/tse/ZellerH02) to turn them into more human readable ones,
 requiring the users to manually specify a *validity oracle* (a predicate that identifies if an arbitrary test case is valid) to avoid invalid test cases.
