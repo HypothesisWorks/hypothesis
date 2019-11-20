@@ -59,8 +59,9 @@ and has the potential to significantly improve the quality of the associated sci
 
 # Hypothesis for Software Testing Research
 
-This is true both because of the much wider array of software that can now easily be tested with property-based testing,
-and because it has a novel implementation that lifts a major difficulty that prior research on software testing faces.
+Hypothesis is a powerful platform for software testing research,
+both because of the wide array of software that can be easily tested with it,
+and because it has a novel implementation that solves a major difficulty faced by prior software testing research.
 
 Much of software testing research boils down to variants on the following problem:
 Given some interestingness condition (e.g., that it triggers a bug in some software),
