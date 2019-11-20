@@ -355,7 +355,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs):
             def report_buffered():
                 for f in fragments_reported:
                     report(f)
-                fragments_reported.clear()
+                del fragments_reported[:]
 
             try:
                 with with_reporter(fragments_reported.append):
