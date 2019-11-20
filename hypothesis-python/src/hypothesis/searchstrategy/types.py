@@ -125,6 +125,10 @@ def from_typing_type(thing):
         elif len(elem_types) == 1 and elem_types[0] == ():
             return st.tuples()  # Empty tuple; see issue #1583
         return st.tuples(*map(st.from_type, elem_types))
+    if (
+        hasattr(typing, "Final") and getattr(thing, "__origin__", None) == typing.Final
+    ):  # pragma: no cover  # new in Python 3.8
+        return st.one_of([st.from_type(t) for t in thing.__args__])
     if is_typing_literal(thing):  # pragma: no cover  # new in Python 3.8
         args_dfs_stack = list(thing.__args__)
         literals = []

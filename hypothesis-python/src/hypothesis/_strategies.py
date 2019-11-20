@@ -1364,6 +1364,20 @@ def from_type(thing):
     This is useful when writing tests which check that invalid input is
     rejected in a certain way.
     """
+    if (
+        hasattr(typing, "_TypedDictMeta")
+        and type(thing) is typing._TypedDictMeta  # type: ignore
+    ):  # pragma: no cover
+        # The __optional_keys__ attribute may or may not be present, but if there's no
+        # way to tell and we just have to assume that everything is required.
+        # See https://github.com/python/cpython/pull/17214 for details.
+        optional = getattr(thing, "__optional_keys__", ())
+        anns = {k: from_type(v) for k, v in thing.__annotations__.items()}
+        return fixed_dictionaries(  # type: ignore
+            mapping={k: v for k, v in anns.items() if k not in optional},
+            optional={k: v for k, v in anns.items() if k in optional},
+        )
+
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.searchstrategy import types
