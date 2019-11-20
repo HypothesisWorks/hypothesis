@@ -315,6 +315,7 @@ class ArtificialDataForExample(object):
         self.__draws = 0
         self.__kwargs = kwargs
         self.draw_times = []
+        self.depth = 0
 
     def draw(self, strategy):
         assert self.__draws == 0
