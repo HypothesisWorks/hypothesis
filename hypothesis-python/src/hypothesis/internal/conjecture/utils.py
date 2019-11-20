@@ -20,6 +20,7 @@ from __future__ import absolute_import, division, print_function
 import enum
 import hashlib
 import heapq
+import sys
 from collections import OrderedDict
 from fractions import Fraction
 
@@ -114,14 +115,8 @@ def integer_range(data, lower, upper, center=None):
     return int(result)
 
 
-try:
-    from numpy import ndarray
-except ImportError:  # pragma: no cover
-    ndarray = ()
-
-
 def check_sample(values, strategy_name):
-    if isinstance(values, ndarray):
+    if "numpy" in sys.modules and isinstance(values, sys.modules["numpy"].ndarray):
         if values.ndim != 1:
             raise InvalidArgument(
                 (
