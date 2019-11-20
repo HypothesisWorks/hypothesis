@@ -322,10 +322,8 @@ class ArtificialDataForExample(object):
         return (), self.__kwargs
 
 
-def execute_explicit_examples(
-    state, test_runner, test, wrapped_test, settings, arguments, kwargs
-):
-    original_argspec = getfullargspec(test)
+def execute_explicit_examples(state, wrapped_test, arguments, kwargs):
+    original_argspec = getfullargspec(state.test)
 
     for example in reversed(getattr(wrapped_test, "hypothesis_explicit_examples", ())):
         example_kwargs = dict(original_argspec.kwonlydefaults or {})
@@ -341,11 +339,11 @@ def execute_explicit_examples(
             )
         else:
             example_kwargs.update(example.kwargs)
-        if Phase.explicit not in settings.phases:
+        if Phase.explicit not in state.settings.phases:
             continue
         example_kwargs.update(kwargs)
 
-        with local_settings(settings):
+        with local_settings(state.settings):
             fragments_reported = []
 
             def report_buffered():
@@ -985,9 +983,7 @@ def given(
             # There was no @reproduce_failure, so start by running any explicit
             # examples from @example decorators.
 
-            execute_explicit_examples(
-                state, test_runner, test, wrapped_test, settings, arguments, kwargs
-            )
+            execute_explicit_examples(state, wrapped_test, arguments, kwargs)
 
             # If there were any explicit examples, they all ran successfully.
             # The next step is to use the Conjecture engine to run the test on
