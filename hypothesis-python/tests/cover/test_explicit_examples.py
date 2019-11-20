@@ -17,14 +17,15 @@
 
 from __future__ import absolute_import, division, print_function
 
+import time
 from unittest import TestCase
 
 import pytest
 
 from hypothesis import Phase, Verbosity, example, given, note, reporting, settings
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import DeadlineExceeded, InvalidArgument
 from hypothesis.internal.compat import integer_types, print_unicode
-from hypothesis.strategies import integers, text
+from hypothesis.strategies import integers, nothing, text
 from tests.common.utils import capture_out
 
 
@@ -230,4 +231,15 @@ def test_must_agree_with_number_of_arguments():
         pass
 
     with pytest.raises(InvalidArgument):
+        test()
+
+
+def test_runs_deadline_for_examples():
+    @example(10)
+    @settings(phases=[Phase.explicit])
+    @given(nothing())
+    def test(x):
+        time.sleep(10)
+
+    with pytest.raises(DeadlineExceeded):
         test()
