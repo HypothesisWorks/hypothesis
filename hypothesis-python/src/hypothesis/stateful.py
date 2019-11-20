@@ -432,6 +432,8 @@ def rule(targets=(), target=None, **kwargs):
     provided.
     """
     converted_targets = _convert_targets(targets, target)
+    for k, v in kwargs.items():
+        check_type(SearchStrategy, v, k)
 
     def accept(f):
         existing_rule = getattr(f, RULE_MARKER, None)
@@ -467,6 +469,8 @@ def initialize(targets=(), target=None, **kwargs):
     arbitrary order.
     """
     converted_targets = _convert_targets(targets, target)
+    for k, v in kwargs.items():
+        check_type(SearchStrategy, v, k)
 
     def accept(f):
         existing_rule = getattr(f, RULE_MARKER, None)
