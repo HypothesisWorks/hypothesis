@@ -303,7 +303,7 @@ def is_invalid_test(name, original_argspec, given_arguments, given_kwargs):
         )
 
 
-class ArtificialDataForExample(object):
+class ArtificialDataForExample(ConjectureData):
     """Dummy object that pretends to be a ConjectureData object for the purposes of
     drawing arguments for @example. Provides just enough of the ConjectureData API
     to allow the test to run. Does not support any sort of interactive drawing,
@@ -314,8 +314,13 @@ class ArtificialDataForExample(object):
     def __init__(self, kwargs):
         self.__draws = 0
         self.__kwargs = kwargs
-        self.draw_times = []
-        self.depth = 0
+
+        def draw_bytes(data, n):
+            raise NotImplementedError()  # pragma: no cover
+
+        super(ArtificialDataForExample, self).__init__(
+            max_length=0, draw_bytes=draw_bytes
+        )
 
     def draw(self, strategy):
         assert self.__draws == 0
