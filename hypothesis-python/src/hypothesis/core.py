@@ -228,6 +228,14 @@ class WithRunner(MappedSearchStrategy):
 
 
 def is_invalid_test(name, original_argspec, generator_arguments, generator_kwargs):
+    """Check the arguments to ``@given`` for basic usage constraints.
+
+    Most errors are not raised immediately; instead we return a dummy test
+    function that will raise the appropriate error if it is actually called.
+    When the user runs a subset of tests (e.g via ``pytest -k``), errors will
+    only be reported for tests that actually ran.
+    """
+
     def invalid(message):
         def wrapped_test(*arguments, **kwargs):
             raise InvalidArgument(message)
@@ -350,14 +358,7 @@ def get_random_for_wrapped_test(test, wrapped_test):
 
 
 def process_arguments_to_given(
-    wrapped_test,
-    arguments,
-    kwargs,
-    generator_arguments,
-    generator_kwargs,
-    argspec,
-    test,
-    settings,
+    wrapped_test, arguments, kwargs, generator_kwargs, argspec, test, settings,
 ):
     selfy = None
     arguments, kwargs = convert_positional_arguments(wrapped_test, arguments, kwargs)
@@ -470,9 +471,19 @@ class StateForActualGivenExecution(object):
         self.files_to_propagate = set()
         self.failed_normally = False
 
-        self.used_examples_from_database = False
+    def execute_once(
+        self, data, print_example=False, is_final=False, expected_failure=None
+    ):
+        """Run the test function once, using ``data`` as input.
 
-    def execute(self, data, print_example=False, is_final=False, expected_failure=None):
+        If the test raises an exception, it will propagate through to the
+        caller of this method. Depending on its type, this could represent
+        an ordinary test failure, or a fatal error, or a control exception.
+
+        If this method returns normally, the test might have passed, or
+        it might have placed ``data`` in an unsuccessful state and then
+        swallowed the corresponding control exception.
+        """
         text_repr = [None]
         if self.settings.deadline is None:
             test = self.test
@@ -498,9 +509,12 @@ class StateForActualGivenExecution(object):
                 return result
 
         def run(data):
+            # Set up dynamic context needed by a single test run.
             with local_settings(self.settings):
                 with deterministic_PRNG():
                     with BuildContext(data, is_final=is_final):
+
+                        # Generate all arguments to the test function.
                         args, kwargs = data.draw(self.search_strategy)
                         if expected_failure is not None:
                             text_repr[0] = arg_string(test, args, kwargs)
@@ -518,7 +532,12 @@ class StateForActualGivenExecution(object):
                             )
                         return test(*args, **kwargs)
 
+        # Run the test function once, via the executor hook.
+        # In most cases this will delegate straight to `run(data)`.
         result = self.test_runner(data, run)
+
+        # If a failure was expected, it should have been raised already, so
+        # instead raise an appropriate diagnostic error.
         if expected_failure is not None:
             exception, traceback = expected_failure
             if (
@@ -551,9 +570,16 @@ class StateForActualGivenExecution(object):
             )
         return result
 
-    def evaluate_test_data(self, data):
+    def _execute_once_for_engine(self, data):
+        """Wrapper around ``execute_once`` that intercepts test failure
+        exceptions and single-test control exceptions, and turns them into
+        appropriate method calls to `data` instead.
+
+        This allows the engine to assume that any exception other than
+        ``StopTest`` must be a fatal error, and should stop the entire engine.
+        """
         try:
-            result = self.execute(data)
+            result = self.execute_once(data)
             if result is not None:
                 fail_health_check(
                     self.settings,
@@ -565,21 +591,35 @@ class StateForActualGivenExecution(object):
                     HealthCheck.return_value,
                 )
         except UnsatisfiedAssumption:
+            # An "assume" check failed, so instead we inform the engine that
+            # this test run was invalid.
             data.mark_invalid()
+        except StopTest:
+            # The engine knows how to handle this control exception, so it's
+            # OK to re-raise it.
+            raise
         except (
             HypothesisDeprecationWarning,
             FailedHealthCheck,
-            StopTest,
         ) + skip_exceptions_to_reraise():
+            # These are fatal errors or control exceptions that should stop the
+            # engine, so we re-raise them.
             raise
         except failure_exceptions_to_catch() as e:
+            # If the error was raised by Hypothesis-internal code, re-raise it
+            # as a fatal error instead of treating it as a test failure.
             escalate_hypothesis_internal_error()
+
             if data.frozen:
                 # This can happen if an error occurred in a finally
                 # block somewhere, suppressing our original StopTest.
                 # We raise a new one here to resume normal operation.
                 raise StopTest(data.testcounter)
             else:
+                # The test failed by raising an exception, so we inform the
+                # engine that this test run was interesting. This is the normal
+                # path for test runs that fail.
+
                 tb = get_trimmed_traceback()
                 info = data.extra_information
                 info.__expected_traceback = "".join(
@@ -593,7 +633,10 @@ class StateForActualGivenExecution(object):
                 lineno = origin[1]
                 data.mark_interesting((type(e), filename, lineno))
 
-    def run(self):
+    def run_engine(self):
+        """Run the test function many times, on database input and generated
+        input, using the Conjecture engine.
+        """
         # Tell pytest to omit the body of this function from tracebacks
         __tracebackhide__ = True
         if global_force_seed is None:
@@ -601,18 +644,15 @@ class StateForActualGivenExecution(object):
         else:
             database_key = None
         runner = ConjectureRunner(
-            self.evaluate_test_data,
+            self._execute_once_for_engine,
             settings=self.settings,
             random=self.random,
             database_key=database_key,
         )
-        try:
-            runner.run()
-        finally:
-            self.used_examples_from_database = runner.used_examples_from_database
+        # Use the Conjecture engine to run the test function many times
+        # on different inputs.
+        runner.run()
         note_engine_for_statistics(runner)
-
-        self.used_examples_from_database = runner.used_examples_from_database
 
         if runner.call_count == 0:
             return
@@ -632,7 +672,11 @@ class StateForActualGivenExecution(object):
         if not self.falsifying_examples:
             return
         elif not self.settings.report_multiple_bugs:
+            # Pretend that we only found one failure, by discarding the others.
             del self.falsifying_examples[:-1]
+
+        # The engine found one or more failures, so we need to reproduce and
+        # report them.
 
         self.failed_normally = True
 
@@ -645,7 +689,7 @@ class StateForActualGivenExecution(object):
             self.__was_flaky = False
             assert info.__expected_exception is not None
             try:
-                self.execute(
+                self.execute_once(
                     ran_example,
                     print_example=True,
                     is_final=True,
@@ -662,9 +706,15 @@ class StateForActualGivenExecution(object):
                 )
             except BaseException as e:
                 if len(self.falsifying_examples) <= 1:
+                    # There is only one failure, so we can report it by raising
+                    # it directly.
                     raise
+
+                # We are reporting multiple failures, so we need to manually
+                # print each exception's stack trace and information.
                 tb = get_trimmed_traceback()
                 report("".join(traceback.format_exception(type(e), e, tb)))
+
             finally:  # pragma: no cover
                 # This section is in fact entirely covered by the tests in
                 # test_reproduce_failure, but it seems to trigger a lovely set
@@ -775,13 +825,21 @@ def given(
             test.__name__, original_argspec, generator_arguments, generator_kwargs
         )
 
+        # If the argument check found problems, return a dummy test function
+        # that will raise an error if it is actually called.
         if check_invalid is not None:
             return check_invalid
 
-        for name, strategy in zip(
-            reversed(original_argspec.args), reversed(generator_arguments)
-        ):
-            generator_kwargs[name] = strategy
+        # Because the argument check succeeded, we can convert @given's
+        # positional arguments into keyword arguments for simplicity.
+        if generator_arguments:
+            assert not generator_kwargs
+            for name, strategy in zip(
+                reversed(original_argspec.args), reversed(generator_arguments)
+            ):
+                generator_kwargs[name] = strategy
+        # These have been converted, so delete them to prevent accidental use.
+        del generator_arguments
 
         argspec = new_given_argspec(original_argspec, generator_kwargs)
 
@@ -810,6 +868,8 @@ def given(
 
             random = get_random_for_wrapped_test(test, wrapped_test)
 
+            # Use type information to convert "infer" arguments into appropriate
+            # strategies.
             if infer in generator_kwargs.values():
                 hints = get_type_hints(test)
             for name in [
@@ -826,7 +886,6 @@ def given(
                 wrapped_test,
                 arguments,
                 kwargs,
-                generator_arguments,
                 generator_kwargs,
                 argspec,
                 test,
@@ -863,6 +922,9 @@ def given(
 
             reproduce_failure = wrapped_test._hypothesis_internal_use_reproduce_failure
 
+            # If there was a @reproduce_failure decorator, use it to reproduce
+            # the error (or complain that we couldn't). Either way, this will
+            # always raise some kind of error.
             if reproduce_failure is not None:
                 expected_version, failure = reproduce_failure
                 if expected_version != __version__:
@@ -876,7 +938,7 @@ def given(
                         % (expected_version, __version__)
                     )
                 try:
-                    state.execute(
+                    state.execute_once(
                         ConjectureData.for_buffer(decode_failure(failure)),
                         print_example=True,
                         is_final=True,
@@ -898,9 +960,16 @@ def given(
                         "generated?"
                     )
 
+            # There was no @reproduce_failure, so start by running any explicit
+            # examples from @example decorators.
+
             execute_explicit_examples(
                 test_runner, test, wrapped_test, settings, arguments, kwargs
             )
+
+            # If there were any explicit examples, they all ran successfully.
+            # The next step is to use the Conjecture engine to run the test on
+            # many different inputs.
 
             if settings.max_examples <= 0:
                 return
@@ -915,12 +984,16 @@ def given(
                     subTest = runner.subTest
                     try:
                         runner.subTest = fake_subTest
-                        state.run()
+                        state.run_engine()
                     finally:
                         runner.subTest = subTest
                 else:
-                    state.run()
+                    state.run_engine()
             except BaseException as e:
+                # The exception caught here should either be an actual test
+                # failure (or MultipleFailures), or some kind of fatal error
+                # that caused the engine to stop.
+
                 generated_seed = wrapped_test._hypothesis_internal_use_generated_seed
                 with local_settings(settings):
                     if not (state.failed_normally or generated_seed is None):
@@ -957,6 +1030,9 @@ def given(
                         get_trimmed_traceback()
                     )
                     raise the_error_hypothesis_found
+
+        # After having created the decorated test function, we need to copy
+        # over some attributes to make the switch as seamless as possible.
 
         for attrib in dir(test):
             if not (attrib.startswith("_") or hasattr(wrapped_test, attrib)):
