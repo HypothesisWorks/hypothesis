@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.45.0:
+
+-------------------
+4.45.0 - 2019-11-20
+-------------------
+
+This release supports :obj:`python:typing.Final` and :obj:`python:typing.TypedDict`
+in :func:`~hypothesis.strategies.from_type`.
+
 .. _v4.44.5:
 
 -------------------
