@@ -719,7 +719,7 @@ def test_invariant_precondition():
 
 
 def test_invalid_rule_argument():
-    """Rule kwargs that are not a Strategy are expected to raise an InvalidArgument Error"""
+    """Rule kwargs that are not a Strategy are expected to raise an InvalidArgument error."""
 
     with pytest.raises(InvalidArgument):
 
@@ -733,9 +733,10 @@ def test_invalid_rule_argument():
 
 
 def test_invalid_initialize_argument():
-    """Initialize kwargs that are not a Strategy are expected to raise an InvalidArgument Error"""
+    """Initialize kwargs that are not a Strategy are expected to raise an InvalidArgument error."""
 
     with pytest.raises(InvalidArgument):
+
         class InvalidInitialize(RuleBasedStateMachine):
             def __init__(self):
                 super(InvalidInitialize, self).__init__()
