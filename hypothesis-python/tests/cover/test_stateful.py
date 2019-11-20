@@ -718,6 +718,37 @@ def test_invariant_precondition():
     run_state_machine_as_test(Invariant)
 
 
+def test_invalid_rule_argument():
+    """Rule kwargs that are not a Strategy are expected to raise an InvalidArgument Error"""
+
+    with pytest.raises(InvalidArgument):
+
+        class InvalidRuleMachine(RuleBasedStateMachine):
+            def __init__(self):
+                super(InvalidRuleMachine, self).__init__()
+
+            @rule(strategy=object())
+            def do_stuff(self):
+                pass
+
+
+def test_invalid_initialize_argument():
+    """Initialize kwargs that are not a Strategy are expected to raise an InvalidArgument Error"""
+
+    with pytest.raises(InvalidArgument):
+        class InvalidInitialize(RuleBasedStateMachine):
+            def __init__(self):
+                super(InvalidInitialize, self).__init__()
+
+            @initialize(strategy=object())
+            def initialize(self):
+                pass
+
+            @rule()
+            def do_stuff(self):
+                pass
+
+
 def test_multiple_invariants():
     """If multiple invariants are present, they all get run."""
 

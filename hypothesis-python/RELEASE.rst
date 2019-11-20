@@ -1,6 +1,7 @@
-RELEASE_TYPE: minor
+RELEASE_TYPE: patch
 
-This Resolves a bug detailed (:issue:`2149`) where kwargs passed to Rule
-were not being validated and consequently InvalidArgument errors were not being caught.
+This patch improves the error message when invalid arguments are passed
+to :func:`~hypothesis.stateful.rule` or :func:`~hypothesis.stateful.invariant`
+(:issue:`2149`).
 
-Thanks to Benjamin Palmer for this bugfix
+Thanks to Benjamin Palmer for this bugfix!
