@@ -503,8 +503,6 @@ class StateForActualGivenExecution(object):
         self.files_to_propagate = set()
         self.failed_normally = False
 
-        self.used_examples_from_database = False
-
     def execute_once(
         self, data, print_example=False, is_final=False, expected_failure=None
     ):
@@ -683,15 +681,10 @@ class StateForActualGivenExecution(object):
             random=self.random,
             database_key=database_key,
         )
-        try:
-            # Use the Conjecture engine to run the test function many times
-            # on different inputs.
-            runner.run()
-        finally:
-            self.used_examples_from_database = runner.used_examples_from_database
+        # Use the Conjecture engine to run the test function many times
+        # on different inputs.
+        runner.run()
         note_engine_for_statistics(runner)
-
-        self.used_examples_from_database = runner.used_examples_from_database
 
         if runner.call_count == 0:
             return

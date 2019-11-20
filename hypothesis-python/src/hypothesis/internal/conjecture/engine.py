@@ -103,7 +103,6 @@ class ConjectureRunner(object):
 
         self.health_check_state = None
 
-        self.used_examples_from_database = False
         self.tree = DataTree()
 
         self.best_observed_targets = defaultdict(lambda: NO_SCORE)
@@ -429,8 +428,6 @@ class ConjectureRunner(object):
                         extra = self.random.sample(extra_corpus, shortfall)
                     extra.sort(key=sort_key)
                     corpus.extend(extra)
-
-            self.used_examples_from_database = len(corpus) > 0
 
             for existing in corpus:
                 last_data = ConjectureData.for_buffer(
