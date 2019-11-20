@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.45.1:
+
+-------------------
+4.45.1 - 2019-11-20
+-------------------
+
+This patch improves the error message when invalid arguments are passed
+to :func:`~hypothesis.stateful.rule` or :func:`~hypothesis.stateful.invariant`
+(:issue:`2149`).
+
+Thanks to Benjamin Palmer for this bugfix!
+
 .. _v4.45.0:
 
 -------------------
