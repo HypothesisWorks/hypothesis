@@ -88,7 +88,12 @@ from hypothesis.internal.reflection import (
     nicerepr,
     proxies,
 )
-from hypothesis.reporting import current_verbosity, report, verbose_report
+from hypothesis.reporting import (
+    current_verbosity,
+    report,
+    verbose_report,
+    with_reporter,
+)
 from hypothesis.searchstrategy.collections import TupleStrategy
 from hypothesis.searchstrategy.strategies import MappedSearchStrategy, SearchStrategy
 from hypothesis.statistics import note_engine_for_statistics
@@ -298,8 +303,27 @@ def is_invalid_test(name, original_argspec, given_arguments, given_kwargs):
         )
 
 
+class ArtificialDataForExample(object):
+    """Dummy object that pretends to be a ConjectureData object for the purposes of
+    drawing arguments for @example. Provides just enough of the ConjectureData API
+    to allow the test to run. Does not support any sort of interactive drawing,
+    but that's fine because you can't access that when all of your arguments are
+    provided by @example.
+    """
+
+    def __init__(self, kwargs):
+        self.__draws = 0
+        self.__kwargs = kwargs
+        self.draw_times = []
+
+    def draw(self, strategy):
+        assert self.__draws == 0
+        self.__draws += 1
+        return (), self.__kwargs
+
+
 def execute_explicit_examples(
-    test_runner, test, wrapped_test, settings, arguments, kwargs
+    state, test_runner, test, wrapped_test, settings, arguments, kwargs
 ):
     original_argspec = getfullargspec(test)
 
@@ -320,23 +344,33 @@ def execute_explicit_examples(
         if Phase.explicit not in settings.phases:
             continue
         example_kwargs.update(kwargs)
-        # Note: Test may mutate arguments and we can't rerun explicit
-        # examples, so we have to calculate the failure message at this
-        # point rather than than later.
-        example_string = "%s(%s)" % (
-            test.__name__,
-            arg_string(test, arguments, example_kwargs),
-        )
+
         with local_settings(settings):
+            fragments_reported = []
+
+            def report_buffered():
+                for f in fragments_reported:
+                    report(f)
+                fragments_reported.clear()
+
             try:
-                with BuildContext(None) as b:
-                    verbose_report("Trying example: " + example_string)
-                    test_runner(None, lambda data: test(*arguments, **example_kwargs))
+                with with_reporter(fragments_reported.append):
+                    state.execute_once(
+                        ArtificialDataForExample(example_kwargs),
+                        is_final=True,
+                        print_example=True,
+                    )
             except BaseException:
-                report("Falsifying example: " + example_string)
-                for n in b.notes:
-                    report(n)
+                report_buffered()
                 raise
+
+            if current_verbosity() >= Verbosity.verbose:
+                prefix = "Falsifying example"
+                assert fragments_reported[0].startswith(prefix)
+                fragments_reported[0] = (
+                    "Trying example" + fragments_reported[0][len(prefix) :]
+                )
+                report_buffered()
 
 
 def get_random_for_wrapped_test(test, wrapped_test):
@@ -952,7 +986,7 @@ def given(
             # examples from @example decorators.
 
             execute_explicit_examples(
-                test_runner, test, wrapped_test, settings, arguments, kwargs
+                state, test_runner, test, wrapped_test, settings, arguments, kwargs
             )
 
             # If there were any explicit examples, they all ran successfully.
