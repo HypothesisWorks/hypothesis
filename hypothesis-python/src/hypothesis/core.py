@@ -325,6 +325,10 @@ class ArtificialDataForExample(ConjectureData):
     def draw(self, strategy):
         assert self.__draws == 0
         self.__draws += 1
+        # The main strategy for given is always a tuples strategy that returns
+        # first positional arguments then keyword arguments. When building this
+        # object already converted all positional arguments to keyword arguments,
+        # so this is the correct format to return.
         return (), self.__kwargs
 
 
