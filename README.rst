@@ -2,7 +2,7 @@
 Hypothesis
 ==========
 
-Hypothesis is family of testing libraries which let you write tests parametrized
+Hypothesis is a family of testing libraries which let you write tests parametrized
 by a source of examples. A Hypothesis implementation then generates simple and
 comprehensible examples that make your tests fail.
 This simplifies writing your tests and makes them more powerful at the same time,
