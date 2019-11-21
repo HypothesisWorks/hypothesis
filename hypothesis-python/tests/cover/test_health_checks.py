@@ -18,15 +18,18 @@
 from __future__ import absolute_import, division, print_function
 
 import time
+from random import Random
 
 import pytest
 from pytest import raises
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.control import assume
 from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
+from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.searchstrategy.lazy import LazyStrategy
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from tests.common.utils import checks_deprecated_behaviour, no_shrink
@@ -220,3 +223,49 @@ def test_lazy_slow_initialization_issue_2108_regression(data):
     # should be attributed to drawing from the strategy (not the test function).
     # Specificially, this used to fail with a DeadlineExceeded error.
     data.draw(LazyStrategy(slow_init_integers, (), {}))
+
+
+def test_does_not_trigger_health_check_on_simple_strategies(monkeypatch):
+    prng = Random(0)
+    existing_draw_bits = ConjectureData.draw_bits
+
+    # We need to make drawing data artificially slow in order to trigger this
+    # effect. This isn't actually slow because time is fake in our CI, but
+    # we need it to pretend to be.
+    def draw_bits(self, n, forced=None):
+        time.sleep(0.001)
+        return existing_draw_bits(self, n, forced)
+
+    monkeypatch.setattr(ConjectureData, "draw_bits", draw_bits)
+
+    for _ in range(100):
+        with deterministic_PRNG(prng.getrandbits(32)):
+            # Setting max_examples=11 ensures we have enough examples for the
+            # health checks to finish running, but cuts the generation short
+            # after that point to allow this test to run in reasonable time.
+            @settings(database=None, max_examples=11, phases=[Phase.generate])
+            @given(st.binary())
+            def test(b):
+                pass
+
+            test()
+
+
+def test_does_not_trigger_health_check_when_most_examples_are_small(monkeypatch):
+    prng = Random(0)
+
+    for _ in range(100):
+        with deterministic_PRNG(prng.getrandbits(32)):
+            # Setting max_examples=11 ensures we have enough examples for the
+            # health checks to finish running, but cuts the generation short
+            # after that point to allow this test to run in reasonable time.
+            @settings(database=None, max_examples=11, phases=[Phase.generate])
+            @given(
+                st.integers(0, 100).flatmap(
+                    lambda n: st.binary(min_size=n * 100, max_size=n * 100)
+                )
+            )
+            def test(b):
+                pass
+
+            test()
