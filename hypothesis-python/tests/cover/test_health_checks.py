@@ -34,8 +34,11 @@ from hypothesis.searchstrategy.lazy import LazyStrategy
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from tests.common.utils import checks_deprecated_behaviour, no_shrink
 
+HEALTH_CHECK_SETTINGS = settings(max_examples=11, database=None)
+
 
 def test_slow_generation_fails_a_health_check():
+    @HEALTH_CHECK_SETTINGS
     @given(st.integers().map(lambda x: time.sleep(0.2)))
     def test(x):
         pass
@@ -45,7 +48,7 @@ def test_slow_generation_fails_a_health_check():
 
 
 def test_slow_generation_inline_fails_a_health_check():
-    @settings(deadline=None)
+    @settings(HEALTH_CHECK_SETTINGS, deadline=None)
     @given(st.data())
     def test(data):
         data.draw(st.integers().map(lambda x: time.sleep(0.2)))
@@ -57,7 +60,7 @@ def test_slow_generation_inline_fails_a_health_check():
 def test_default_health_check_can_weaken_specific():
     import random
 
-    @settings(suppress_health_check=HealthCheck.all())
+    @settings(HEALTH_CHECK_SETTINGS, suppress_health_check=HealthCheck.all())
     @given(st.lists(st.integers(), min_size=1))
     def test(x):
         random.choice(x)
@@ -73,6 +76,7 @@ def test_suppressing_filtering_health_check():
             forbidden.add(x)
         return x not in forbidden
 
+    @HEALTH_CHECK_SETTINGS
     @given(st.integers().filter(unhealthy_filter))
     def test1(x):
         raise ValueError()
@@ -121,7 +125,7 @@ def test_filtering_most_things_fails_a_health_check():
 
 
 def test_large_data_will_fail_a_health_check():
-    @given(st.none() | st.binary(min_size=10 ** 5))
+    @given(st.none() | st.binary(min_size=10 ** 5, max_size=10 ** 5))
     @settings(database=None)
     def test(x):
         pass
