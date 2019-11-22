@@ -20,26 +20,66 @@ from __future__ import absolute_import, division, print_function
 import pytest
 
 from hypothesis import given
+from hypothesis.errors import Flaky
 from hypothesis.strategies import composite, integers
 
 
-def test_keyboardinterrupt_no_rerun():
+@pytest.mark.parametrize(
+    "e", [KeyboardInterrupt, SystemExit, GeneratorExit, ValueError]
+)
+def test_exception_propagates_fine(e):
+    @given(integers())
+    def test_raise(x):
+        raise e
+
+    with pytest.raises(e):
+        test_raise()
+
+
+@pytest.mark.parametrize(
+    "e", [KeyboardInterrupt, SystemExit, GeneratorExit, ValueError]
+)
+def test_exception_propagates_fine_from_strategy(e):
+    @composite
+    def interrupt_eventually(draw):
+        raise e
+
+    @given(interrupt_eventually())
+    def test_do_nothing(x):
+        pass
+
+    with pytest.raises(e):
+        test_do_nothing()
+
+
+@pytest.mark.parametrize(
+    "e", [KeyboardInterrupt, SystemExit, GeneratorExit, ValueError]
+)
+def test_baseexception_no_rerun_no_flaky(e):
     runs = [0]
     interrupt = 3
 
     @given(integers())
-    def test_raise_keyboardinterrupt(x):
+    def test_raise_baseexception(x):
         runs[0] += 1
         if runs[0] == interrupt:
-            raise KeyboardInterrupt
+            raise e
 
-    with pytest.raises(KeyboardInterrupt):
-        test_raise_keyboardinterrupt()
+    if issubclass(e, (KeyboardInterrupt, SystemExit, GeneratorExit)):
+        # Here SystemExit and GeneratorExit are passed through
+        with pytest.raises(e):
+            test_raise_baseexception()
 
-    assert runs[0] == interrupt
+        assert runs[0] == interrupt
+    else:
+        with pytest.raises(Flaky):
+            test_raise_baseexception()
 
 
-def test_keyboardinterrupt_in_strategy_no_rerun():
+@pytest.mark.parametrize(
+    "e", [KeyboardInterrupt, SystemExit, GeneratorExit, ValueError]
+)
+def test_baseexception_in_strategy_no_rerun_no_flaky(e):
     runs = [0]
     interrupt = 3
 
@@ -47,31 +87,20 @@ def test_keyboardinterrupt_in_strategy_no_rerun():
     def interrupt_eventually(draw):
         runs[0] += 1
         if runs[0] == interrupt:
-            # import pdb; pdb.set_trace()
-            raise KeyboardInterrupt
+            raise e
         return draw(integers())
 
     @given(interrupt_eventually())
     def test_do_nothing(x):
         pass
 
-    with pytest.raises(KeyboardInterrupt):
-        test_do_nothing()
+    if issubclass(e, KeyboardInterrupt):
+        with pytest.raises(e):
+            test_do_nothing()
 
-    assert runs[0] == interrupt
+        assert runs[0] == interrupt
 
-
-def test_systemexit_no_rerun():
-    runs = [0]
-    interrupt = 3
-
-    @given(integers())
-    def test_raise_systemexit(x):
-        runs[0] += 1
-        if runs[0] == interrupt:
-            raise SystemExit
-
-    with pytest.raises(SystemExit):
-        test_raise_systemexit()
-
-    assert runs[0] == interrupt
+    else:
+        # Now SystemExit and GeneratorExit are caught like other exceptions
+        with pytest.raises(Flaky):
+            test_do_nothing()
