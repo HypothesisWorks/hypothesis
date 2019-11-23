@@ -353,6 +353,12 @@ def test_array_values_are_unique_high_collision(arr):
     assert (arr == 0.0).sum() <= 1
 
 
+@given(nps.arrays(dtype="int8", shape=(4,), elements=st.integers(0, 3), unique=True))
+def test_generates_all_values_for_unique_array(arr):
+    # Ensures that the "reject already-seen element" branch is covered
+    assert len(set(arr)) == len(arr)
+
+
 def test_may_fill_with_nan_when_unique_is_set():
     find_any(
         nps.arrays(
