@@ -368,7 +368,7 @@ def test_one_dead_branch():
                 data.mark_interesting()
 
 
-def test_saves_on_interrupt():
+def test_does_not_save_on_interrupt():
     def interrupts(data):
         raise KeyboardInterrupt()
 
@@ -380,7 +380,7 @@ def test_saves_on_interrupt():
 
     with pytest.raises(KeyboardInterrupt):
         runner.run()
-    assert db.data
+    assert not db.data
 
 
 def test_returns_written():
