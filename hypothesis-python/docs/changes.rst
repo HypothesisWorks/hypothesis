@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.46.1:
+
+-------------------
+4.46.1 - 2019-11-23
+-------------------
+
+This patch ensures that a KeyboardInterrupt received during example generation
+is not treated as a mystery test failure but instead propagates to the top
+level, not recording the interrupted generation in the conjecture data tree.
+Thanks to Anne Archibald for identifying and fixing the problem.
+
 .. _v4.46.0:
 
 -------------------
