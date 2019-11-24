@@ -22,7 +22,7 @@ RSpec.describe "removing an element from a list" do
   it "results in the element no longer being in the list" do
     hypothesis do
       # Or lists(of: integers, min_size: 1), but this lets us
-      # demonstrate assume.
+      # demonstrate assumption.
       values = any array(of: integers)
 
       # If this is not true then the test will stop here.
