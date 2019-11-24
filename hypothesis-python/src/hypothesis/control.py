@@ -23,6 +23,7 @@ import traceback
 from hypothesis import Verbosity, settings
 from hypothesis.errors import CleanupFailed, InvalidArgument, UnsatisfiedAssumption
 from hypothesis.internal.compat import string_types
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import report, verbose_report
 from hypothesis.utils.dynamicvariables import DynamicVariable
@@ -60,6 +61,7 @@ def current_build_context():
 
 class BuildContext(object):
     def __init__(self, data, is_final=False, close_on_capture=True):
+        assert isinstance(data, ConjectureData)
         self.data = data
         self.tasks = []
         self.is_final = is_final
@@ -126,8 +128,7 @@ def event(value):
     if context is None:
         raise InvalidArgument("Cannot make record events outside of a test")
 
-    if context.data is not None:
-        context.data.note_event(value)
+    context.data.note_event(value)
 
 
 def target(observation, label=""):
@@ -176,11 +177,10 @@ def target(observation, label=""):
         raise InvalidArgument("Calling target() outside of a test is invalid.")
     verbose_report("Saw target(observation=%r, label=%r)" % (observation, label))
 
-    if context.data is not None:
-        if label in context.data.target_observations:
-            raise InvalidArgument(
-                "Calling target(%r, label=%r) would overwrite target(%r, label=%r)"
-                % (observation, label, context.data.target_observations[label], label)
-            )
-        else:
-            context.data.target_observations[label] = observation
+    if label in context.data.target_observations:
+        raise InvalidArgument(
+            "Calling target(%r, label=%r) would overwrite target(%r, label=%r)"
+            % (observation, label, context.data.target_observations[label], label)
+        )
+    else:
+        context.data.target_observations[label] = observation

@@ -88,7 +88,12 @@ from hypothesis.internal.reflection import (
     nicerepr,
     proxies,
 )
-from hypothesis.reporting import current_verbosity, report, verbose_report
+from hypothesis.reporting import (
+    current_verbosity,
+    report,
+    verbose_report,
+    with_reporter,
+)
 from hypothesis.searchstrategy.collections import TupleStrategy
 from hypothesis.searchstrategy.strategies import MappedSearchStrategy, SearchStrategy
 from hypothesis.statistics import note_engine_for_statistics
@@ -227,7 +232,7 @@ class WithRunner(MappedSearchStrategy):
         return "WithRunner(%r, runner=%r)" % (self.mapped_strategy, self.runner)
 
 
-def is_invalid_test(name, original_argspec, generator_arguments, generator_kwargs):
+def is_invalid_test(name, original_argspec, given_arguments, given_kwargs):
     """Check the arguments to ``@given`` for basic usage constraints.
 
     Most errors are not raised immediately; instead we return a dummy test
@@ -243,10 +248,10 @@ def is_invalid_test(name, original_argspec, generator_arguments, generator_kwarg
         wrapped_test.is_hypothesis_test = True
         return wrapped_test
 
-    if not (generator_arguments or generator_kwargs):
+    if not (given_arguments or given_kwargs):
         return invalid("given must be called with at least one argument")
 
-    if generator_arguments and any(
+    if given_arguments and any(
         [original_argspec.varargs, original_argspec.varkw, original_argspec.kwonlyargs]
     ):
         return invalid(
@@ -254,32 +259,32 @@ def is_invalid_test(name, original_argspec, generator_arguments, generator_kwarg
             "varkeywords, or keyword-only arguments"
         )
 
-    if len(generator_arguments) > len(original_argspec.args):
-        args = tuple(generator_arguments)
+    if len(given_arguments) > len(original_argspec.args):
+        args = tuple(given_arguments)
         return invalid(
             "Too many positional arguments for %s() were passed to @given "
             "- expected at most %d arguments, but got %d %r"
             % (name, len(original_argspec.args), len(args), args)
         )
 
-    if infer in generator_arguments:
+    if infer in given_arguments:
         return invalid(
             "infer was passed as a positional argument to @given, "
             "but may only be passed as a keyword argument"
         )
 
-    if generator_arguments and generator_kwargs:
+    if given_arguments and given_kwargs:
         return invalid("cannot mix positional and keyword arguments to @given")
     extra_kwargs = [
         k
-        for k in generator_kwargs
+        for k in given_kwargs
         if k not in original_argspec.args + original_argspec.kwonlyargs
     ]
     if extra_kwargs and not original_argspec.varkw:
         arg = extra_kwargs[0]
         return invalid(
             "%s() got an unexpected keyword argument %r, from `%s=%r` in @given"
-            % (name, arg, arg, generator_kwargs[arg])
+            % (name, arg, arg, given_kwargs[arg])
         )
     for a in original_argspec.args:
         if isinstance(a, list):  # pragma: no cover
@@ -289,9 +294,7 @@ def is_invalid_test(name, original_argspec, generator_arguments, generator_kwarg
             )
     if original_argspec.defaults or original_argspec.kwonlydefaults:
         return invalid("Cannot apply @given to a function with defaults.")
-    missing = [
-        repr(kw) for kw in original_argspec.kwonlyargs if kw not in generator_kwargs
-    ]
+    missing = [repr(kw) for kw in original_argspec.kwonlyargs if kw not in given_kwargs]
     if missing:
         return invalid(
             "Missing required kwarg{}: {}".format(
@@ -300,10 +303,37 @@ def is_invalid_test(name, original_argspec, generator_arguments, generator_kwarg
         )
 
 
-def execute_explicit_examples(
-    test_runner, test, wrapped_test, settings, arguments, kwargs
-):
-    original_argspec = getfullargspec(test)
+class ArtificialDataForExample(ConjectureData):
+    """Dummy object that pretends to be a ConjectureData object for the purposes of
+    drawing arguments for @example. Provides just enough of the ConjectureData API
+    to allow the test to run. Does not support any sort of interactive drawing,
+    but that's fine because you can't access that when all of your arguments are
+    provided by @example.
+    """
+
+    def __init__(self, kwargs):
+        self.__draws = 0
+        self.__kwargs = kwargs
+
+        def draw_bytes(data, n):
+            raise NotImplementedError()  # pragma: no cover
+
+        super(ArtificialDataForExample, self).__init__(
+            max_length=0, draw_bytes=draw_bytes
+        )
+
+    def draw(self, strategy):
+        assert self.__draws == 0
+        self.__draws += 1
+        # The main strategy for given is always a tuples strategy that returns
+        # first positional arguments then keyword arguments. When building this
+        # object already converted all positional arguments to keyword arguments,
+        # so this is the correct format to return.
+        return (), self.__kwargs
+
+
+def execute_explicit_examples(state, wrapped_test, arguments, kwargs):
+    original_argspec = getfullargspec(state.test)
 
     for example in reversed(getattr(wrapped_test, "hypothesis_explicit_examples", ())):
         example_kwargs = dict(original_argspec.kwonlydefaults or {})
@@ -319,26 +349,36 @@ def execute_explicit_examples(
             )
         else:
             example_kwargs.update(example.kwargs)
-        if Phase.explicit not in settings.phases:
+        if Phase.explicit not in state.settings.phases:
             continue
         example_kwargs.update(kwargs)
-        # Note: Test may mutate arguments and we can't rerun explicit
-        # examples, so we have to calculate the failure message at this
-        # point rather than than later.
-        example_string = "%s(%s)" % (
-            test.__name__,
-            arg_string(test, arguments, example_kwargs),
-        )
-        with local_settings(settings):
+
+        with local_settings(state.settings):
+            fragments_reported = []
+
+            def report_buffered():
+                for f in fragments_reported:
+                    report(f)
+                del fragments_reported[:]
+
             try:
-                with BuildContext(None) as b:
-                    verbose_report("Trying example: " + example_string)
-                    test_runner(None, lambda data: test(*arguments, **example_kwargs))
+                with with_reporter(fragments_reported.append):
+                    state.execute_once(
+                        ArtificialDataForExample(example_kwargs),
+                        is_final=True,
+                        print_example=True,
+                    )
             except BaseException:
-                report("Falsifying example: " + example_string)
-                for n in b.notes:
-                    report(n)
+                report_buffered()
                 raise
+
+            if current_verbosity() >= Verbosity.verbose:
+                prefix = "Falsifying example"
+                assert fragments_reported[0].startswith(prefix)
+                fragments_reported[0] = (
+                    "Trying example" + fragments_reported[0][len(prefix) :]
+                )
+                report_buffered()
 
 
 def get_random_for_wrapped_test(test, wrapped_test):
@@ -358,7 +398,7 @@ def get_random_for_wrapped_test(test, wrapped_test):
 
 
 def process_arguments_to_given(
-    wrapped_test, arguments, kwargs, generator_kwargs, argspec, test, settings,
+    wrapped_test, arguments, kwargs, given_kwargs, argspec, test, settings,
 ):
     selfy = None
     arguments, kwargs = convert_positional_arguments(wrapped_test, arguments, kwargs)
@@ -386,9 +426,7 @@ def process_arguments_to_given(
     search_strategy = TupleStrategy(
         (
             st.just(arguments),
-            st.fixed_dictionaries(generator_kwargs).map(
-                lambda args: dict(args, **kwargs)
-            ),
+            st.fixed_dictionaries(given_kwargs).map(lambda args: dict(args, **kwargs)),
         )
     )
 
@@ -436,12 +474,10 @@ def failure_exceptions_to_catch():
     return tuple(exceptions)
 
 
-def new_given_argspec(original_argspec, generator_kwargs):
+def new_given_argspec(original_argspec, given_kwargs):
     """Make an updated argspec for the wrapped test."""
-    new_args = [a for a in original_argspec.args if a not in generator_kwargs]
-    new_kwonlyargs = [
-        a for a in original_argspec.kwonlyargs if a not in generator_kwargs
-    ]
+    new_args = [a for a in original_argspec.args if a not in given_kwargs]
+    new_kwonlyargs = [a for a in original_argspec.kwonlyargs if a not in given_kwargs]
     annots = {
         k: v
         for k, v in original_argspec.annotations.items()
@@ -801,8 +837,8 @@ class HypothesisHandle(object):
 
 
 def given(
-    *given_arguments,  # type: Union[SearchStrategy, InferType]
-    **given_kwargs  # type: Union[SearchStrategy, InferType]
+    *_given_arguments,  # type: Union[SearchStrategy, InferType]
+    **_given_kwargs  # type: Union[SearchStrategy, InferType]
 ):
     # type: (...) -> Callable[[Callable[..., None]], Callable[..., None]]
     """A decorator for turning a test function that accepts arguments into a
@@ -811,18 +847,18 @@ def given(
     This is the main entry point to Hypothesis.
     """
 
-    def run_test_with_generator(test):
+    def run_test_as_given(test):
         if inspect.isclass(test):
             # Provide a meaningful error to users, instead of exceptions from
             # internals that assume we're dealing with a function.
             raise InvalidArgument("@given cannot be applied to a class.")
-        generator_arguments = tuple(given_arguments)
-        generator_kwargs = dict(given_kwargs)
+        given_arguments = tuple(_given_arguments)
+        given_kwargs = dict(_given_kwargs)
 
         original_argspec = getfullargspec(test)
 
         check_invalid = is_invalid_test(
-            test.__name__, original_argspec, generator_arguments, generator_kwargs
+            test.__name__, original_argspec, given_arguments, given_kwargs
         )
 
         # If the argument check found problems, return a dummy test function
@@ -832,16 +868,16 @@ def given(
 
         # Because the argument check succeeded, we can convert @given's
         # positional arguments into keyword arguments for simplicity.
-        if generator_arguments:
-            assert not generator_kwargs
+        if given_arguments:
+            assert not given_kwargs
             for name, strategy in zip(
-                reversed(original_argspec.args), reversed(generator_arguments)
+                reversed(original_argspec.args), reversed(given_arguments)
             ):
-                generator_kwargs[name] = strategy
+                given_kwargs[name] = strategy
         # These have been converted, so delete them to prevent accidental use.
-        del generator_arguments
+        del given_arguments
 
-        argspec = new_given_argspec(original_argspec, generator_kwargs)
+        argspec = new_given_argspec(original_argspec, given_kwargs)
 
         @impersonate(test)
         @define_function_signature(test.__name__, test.__doc__, argspec)
@@ -870,26 +906,20 @@ def given(
 
             # Use type information to convert "infer" arguments into appropriate
             # strategies.
-            if infer in generator_kwargs.values():
+            if infer in given_kwargs.values():
                 hints = get_type_hints(test)
             for name in [
-                name for name, value in generator_kwargs.items() if value is infer
+                name for name, value in given_kwargs.items() if value is infer
             ]:
                 if name not in hints:
                     raise InvalidArgument(
                         "passed %s=infer for %s, but %s has no type annotation"
                         % (name, test.__name__, name)
                     )
-                generator_kwargs[name] = st.from_type(hints[name])
+                given_kwargs[name] = st.from_type(hints[name])
 
             processed_args = process_arguments_to_given(
-                wrapped_test,
-                arguments,
-                kwargs,
-                generator_kwargs,
-                argspec,
-                test,
-                settings,
+                wrapped_test, arguments, kwargs, given_kwargs, argspec, test, settings,
             )
             arguments, kwargs, test_runner, search_strategy = processed_args
 
@@ -963,9 +993,7 @@ def given(
             # There was no @reproduce_failure, so start by running any explicit
             # examples from @example decorators.
 
-            execute_explicit_examples(
-                test_runner, test, wrapped_test, settings, arguments, kwargs
-            )
+            execute_explicit_examples(state, wrapped_test, arguments, kwargs)
 
             # If there were any explicit examples, they all ran successfully.
             # The next step is to use the Conjecture engine to run the test on
@@ -1053,7 +1081,7 @@ def given(
         wrapped_test.hypothesis = HypothesisHandle(test)
         return wrapped_test
 
-    return run_test_with_generator
+    return run_test_as_given
 
 
 def find(
@@ -1126,6 +1154,7 @@ def find(
     runner = ConjectureRunner(
         template_condition, settings=settings, random=random, database_key=database_key
     )
+
     runner.run()
     note_engine_for_statistics(runner)
     if runner.interesting_examples:
