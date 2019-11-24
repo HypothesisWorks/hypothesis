@@ -850,20 +850,3 @@ def draw_bytes_with(prefix, parameter):
         return parameter.draw_bytes(n)
 
     return draw_bytes
-
-
-class DataClassification(Enum):
-    """When we generate some data and decide what we want to do about that it
-    can have one of three outcomes, and we want to make different decisions
-    based on that."""
-
-    # This data was actively bad in some way and we want to avoid generating
-    # things like it.
-    BAD = 1
-    # This data is basically fine. We don't really care about it one way or
-    # another.
-    NEUTRAL = 2
-
-    # This data exhibited some good behaviour that we would like to try to do
-    # more of.
-    GOOD = 3
