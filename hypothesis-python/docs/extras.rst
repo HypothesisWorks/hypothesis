@@ -27,6 +27,10 @@ There are separate pages for :doc:`django` and :doc:`numpy`.
 .. automodule:: hypothesis.extra.lark
    :members:
 
+Example grammars, which may provide a useful starting point for your tests, can be found
+`in the Lark repository <https://github.com/lark-parser/lark/tree/master/examples>`__
+and in `this third-party collection <https://github.com/ligurio/grammars>`__.
+
 .. automodule:: hypothesis.extra.pytz
    :members:
 
