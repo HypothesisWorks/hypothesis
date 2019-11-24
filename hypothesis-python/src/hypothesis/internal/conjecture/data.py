@@ -179,7 +179,7 @@ class Example(object):
 
 class ExampleProperty(object):
     """There are many properties of examples that we calculate by
-    essentially rerunning that test case multiple times based on the
+    essentially rerunning the test case multiple times based on the
     calls which we record in ExampleRecord.
 
     This class defines a visitor, subclasses of which can be used
