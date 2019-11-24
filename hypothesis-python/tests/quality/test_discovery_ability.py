@@ -35,9 +35,7 @@ import re
 import hypothesis.internal.reflection as reflection
 from hypothesis import settings as Settings
 from hypothesis.errors import UnsatisfiedAssumption
-from hypothesis.internal.conjecture.engine import (
-    ConjectureRunner as ConConjectureRunner,
-)
+from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.strategies import (
     booleans,
     floats,
@@ -94,7 +92,7 @@ def define_test(specifier, predicate, condition=None, p=0.5):
 
         successes = 0
         for _ in range(RUNS):
-            runner = ConConjectureRunner(
+            runner = ConjectureRunner(
                 test_function, settings=Settings(max_examples=100, phases=no_shrink)
             )
             runner.run()
