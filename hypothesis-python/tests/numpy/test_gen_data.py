@@ -27,7 +27,7 @@ import six
 import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, assume, given, note, settings
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.internal.compat import PY2, binary_type, text_type
 from hypothesis.searchstrategy import SearchStrategy
 from tests.common.debug import find_any, minimal
@@ -338,6 +338,12 @@ def test_byte_string_dtypes_generate_unicode_strings(data):
 @given(nps.arrays(dtype="int8", shape=st.integers(0, 20), unique=True))
 def test_array_values_are_unique(arr):
     assert len(set(arr)) == len(arr)
+
+
+def test_cannot_generate_unique_array_of_too_many_elements():
+    strat = nps.arrays(dtype=int, elements=st.integers(0, 5), shape=10, unique=True)
+    with pytest.raises(Unsatisfiable):
+        strat.example()
 
 
 @given(
