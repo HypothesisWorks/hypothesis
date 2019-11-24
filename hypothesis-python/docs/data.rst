@@ -30,6 +30,7 @@ Provisional Strategies
 
 .. automodule:: hypothesis.provisional
   :members:
+  :exclude-members: DomainNameStrategy
 
 .. _shrinking:
 
