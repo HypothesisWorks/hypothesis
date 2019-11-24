@@ -7,6 +7,20 @@ possibly need it to be compatible with. Generally you should just try it and
 expect it to work. If it doesn't, you can be surprised and check this document
 for the details.
 
+-------------------
+Hypothesis versions
+-------------------
+
+Backwards compatibility is better than backporting fixes, so we use
+:ref:`semantic versioning <release-policy>` and only support the most recent
+version of Hypothesis.  See :doc:`support` for more information.
+
+Documented APIs will not break except between major version bumps.
+All APIs mentioned in this documentation are public unless explicitly
+noted as provisional, in which case they may be changed in minor releases.
+Undocumented attributes, modules, and behaviour may include breaking
+changes in patch releases.
+
 ---------------
 Python versions
 ---------------
@@ -92,11 +106,3 @@ with `Travis <https://travis-ci.org/HypothesisWorks/hypothesis>`__, and
 `Azure Pipelines <https://dev.azure.com/HypothesisWorks/Hypothesis/>`__.
 Our continuous delivery pipeline runs all of these checks before publishing
 each release, so when we say they're supported we really mean it.
-
--------------------
-Hypothesis versions
--------------------
-
-Backwards compatibility is better than backporting fixes, so we use
-:ref:`semantic versioning <release-policy>` and only support the most recent
-version of Hypothesis.  See :doc:`support` for more information.
