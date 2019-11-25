@@ -77,7 +77,7 @@ def test_settings_are_default_in_given(x):
 def test_given_shrinks_pytest_helper_errors():
     final_value = [None]
 
-    @settings(derandomize=True)
+    @settings(derandomize=True, max_examples=100)
     @given(s.integers())
     def inner(x):
         final_value[0] = x
@@ -92,7 +92,7 @@ def test_given_shrinks_pytest_helper_errors():
 def test_pytest_skip_skips_shrinking():
     values = []
 
-    @settings(derandomize=True)
+    @settings(derandomize=True, max_examples=100)
     @given(s.integers())
     def inner(x):
         values.append(x)
@@ -106,7 +106,7 @@ def test_pytest_skip_skips_shrinking():
 
 @checks_deprecated_behaviour
 def test_can_find_with_db_eq_none():
-    find(s.integers(), bool, settings(database=None))
+    find(s.integers(), bool, settings(database=None, max_examples=100))
 
 
 @checks_deprecated_behaviour

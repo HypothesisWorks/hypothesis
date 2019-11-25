@@ -30,7 +30,7 @@ from tests.common.utils import capture_out, non_covering_examples
 def test_raises_multiple_failures_with_varying_type():
     target = [None]
 
-    @settings(database=None)
+    @settings(database=None, max_examples=100)
     @given(st.integers())
     def test(i):
         if abs(i) < 1000:
@@ -54,6 +54,7 @@ def test_raises_multiple_failures_with_varying_type():
 def test_raises_multiple_failures_when_position_varies():
     target = [None]
 
+    @settings(max_examples=100)
     @given(st.integers())
     def test(i):
         if abs(i) < 1000:
@@ -75,7 +76,7 @@ def test_raises_multiple_failures_when_position_varies():
 def test_replays_both_failing_values():
     target = [None]
 
-    @settings(database=InMemoryExampleDatabase())
+    @settings(database=InMemoryExampleDatabase(), max_examples=500)
     @given(st.integers())
     def test(i):
         if abs(i) < 1000:
@@ -97,7 +98,7 @@ def test_replays_slipped_examples_once_initial_bug_is_fixed(fix):
     target = []
     bug_fixed = False
 
-    @settings(database=InMemoryExampleDatabase())
+    @settings(database=InMemoryExampleDatabase(), max_examples=500)
     @given(st.integers())
     def test(i):
         if abs(i) < 1000:
@@ -130,7 +131,7 @@ def test_garbage_collects_the_secondary_key():
 
     db = InMemoryExampleDatabase()
 
-    @settings(database=db)
+    @settings(database=db, max_examples=500)
     @given(st.integers())
     def test(i):
         if bug_fixed:
@@ -198,7 +199,7 @@ def test_handles_flaky_tests_where_only_one_is_flaky():
     target = []
     flaky_failed_once = [False]
 
-    @settings(database=InMemoryExampleDatabase())
+    @settings(database=InMemoryExampleDatabase(), max_examples=1000)
     @given(st.integers())
     def test(i):
         if abs(i) < 1000:

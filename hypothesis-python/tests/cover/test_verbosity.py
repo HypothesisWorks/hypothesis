@@ -86,7 +86,11 @@ def test_prints_initial_attempts_on_find():
                     return False
                 return x not in seen
 
-            find(integers(), not_first, settings=settings(verbosity=Verbosity.verbose))
+            find(
+                integers(),
+                not_first,
+                settings=settings(verbosity=Verbosity.verbose, max_examples=1000),
+            )
 
         foo()
 
@@ -97,7 +101,12 @@ def test_includes_intermediate_results_in_verbose_mode():
     with capture_verbosity() as o:
 
         @fails
-        @settings(verbosity=Verbosity.verbose, database=None, derandomize=True)
+        @settings(
+            verbosity=Verbosity.verbose,
+            database=None,
+            derandomize=True,
+            max_examples=100,
+        )
         @given(lists(integers(), min_size=1))
         def test_foo(x):
             assert sum(x) < 10000

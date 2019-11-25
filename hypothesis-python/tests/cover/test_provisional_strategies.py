@@ -26,6 +26,7 @@ import pytest
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.provisional import domains, ip4_addr_strings, ip6_addr_strings, urls
+from tests.common.debug import find_any
 
 
 @given(urls())
@@ -69,3 +70,10 @@ def test_invalid_domain_arguments(max_length, max_element_length):
 @pytest.mark.parametrize("max_element_length", [None, 1, 2, 4, 8, 63])
 def test_valid_domains_arguments(max_length, max_element_length):
     domains(max_length=max_length, max_element_length=max_element_length).example()
+
+
+@pytest.mark.parametrize(
+    "strategy", [domains(), ip4_addr_strings(), ip6_addr_strings(), urls()]
+)
+def test_find_any_non_empty(strategy):
+    find_any(strategy, lambda s: len(s) > 0)

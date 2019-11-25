@@ -181,6 +181,7 @@ def test_draw_time_percentage(draw_delay, test_delay):
 
 
 def test_has_lambdas_in_output():
+    @settings(max_examples=100, database=None)
     @given(st.integers().filter(lambda x: x % 2 == 0))
     def test(i):
         pass

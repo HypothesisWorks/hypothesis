@@ -556,7 +556,9 @@ class RequiresInit(GenericStateMachine):
 @checks_deprecated_behaviour
 def test_can_use_factory_for_tests():
     with raises(ValueError):
-        run_state_machine_as_test(lambda: RequiresInit(42))
+        run_state_machine_as_test(
+            lambda: RequiresInit(42), settings=Settings(max_examples=100)
+        )
 
 
 @Settings(stateful_step_count=5)
