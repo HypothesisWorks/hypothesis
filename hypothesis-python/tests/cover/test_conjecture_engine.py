@@ -1439,3 +1439,19 @@ def test_number_of_examples_in_integer_range_is_bounded(n):
 
         runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
         runner.run()
+
+
+def test_prefix_cannot_exceed_buffer_size(monkeypatch):
+    buffer_size = 10
+    monkeypatch.setattr(engine_module, "BUFFER_SIZE", buffer_size)
+
+    with deterministic_PRNG():
+
+        def test(data):
+            while data.draw_bits(1):
+                assert len(data.buffer) <= buffer_size
+            assert len(data.buffer) <= buffer_size
+
+        runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
+        runner.run()
+        assert runner.valid_examples == buffer_size
