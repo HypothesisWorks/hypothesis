@@ -155,6 +155,8 @@ class ConjectureRunner(object):
 
         self.debug_data(data)
 
+        assert len(data.buffer) <= BUFFER_SIZE
+
         if data.status >= Status.VALID:
             for k, v in data.target_observations.items():
                 self.best_observed_targets[k] = max(self.best_observed_targets[k], v)
@@ -664,7 +666,7 @@ class ConjectureRunner(object):
         Otherwise we call through to ``test_function``, and return a
         fresh result.
         """
-        buffer = hbytes(buffer)
+        buffer = hbytes(buffer)[:BUFFER_SIZE]
 
         def check_result(result):
             assert result is Overrun or (
