@@ -124,7 +124,7 @@ def test_errors_with_did_not_reproduce_if_rejected():
 def test_prints_reproduction_if_requested():
     failing_example = [None]
 
-    @settings(print_blob=True, database=None)
+    @settings(print_blob=True, database=None, max_examples=100)
     @given(st.integers())
     def test(i):
         if failing_example[0] is None and i != 0:

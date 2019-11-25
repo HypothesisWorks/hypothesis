@@ -63,6 +63,7 @@ def test_intervals_match_indexes(intervals):
         assert ls.index(v) == intervals.index(v)
 
 
+@example(intervals=IntervalSet(((1, 1),)), v=0)
 @example(intervals=IntervalSet(()), v=0)
 @given(Intervals, st.integers())
 def test_error_for_index_of_not_present_value(intervals, v):

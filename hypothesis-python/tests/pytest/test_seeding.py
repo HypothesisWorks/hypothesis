@@ -36,7 +36,7 @@ first = None
 @settings(database=None)
 @given(st.integers())
 def test_fails_once(some_int):
-    assume(abs(some_int) > 10000)
+    assume(abs(some_int) > 1000)
     global first
     if first is None:
         first = some_int
