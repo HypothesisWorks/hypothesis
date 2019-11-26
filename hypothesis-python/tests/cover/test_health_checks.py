@@ -18,7 +18,6 @@
 from __future__ import absolute_import, division, print_function
 
 import time
-from random import Random
 
 import pytest
 from pytest import raises
@@ -230,7 +229,6 @@ def test_lazy_slow_initialization_issue_2108_regression(data):
 
 
 def test_does_not_trigger_health_check_on_simple_strategies(monkeypatch):
-    prng = Random(0)
     existing_draw_bits = ConjectureData.draw_bits
 
     # We need to make drawing data artificially slow in order to trigger this
@@ -242,8 +240,8 @@ def test_does_not_trigger_health_check_on_simple_strategies(monkeypatch):
 
     monkeypatch.setattr(ConjectureData, "draw_bits", draw_bits)
 
-    for _ in range(100):
-        with deterministic_PRNG(prng.getrandbits(32)):
+    with deterministic_PRNG():
+        for _ in range(100):
             # Setting max_examples=11 ensures we have enough examples for the
             # health checks to finish running, but cuts the generation short
             # after that point to allow this test to run in reasonable time.
@@ -256,10 +254,8 @@ def test_does_not_trigger_health_check_on_simple_strategies(monkeypatch):
 
 
 def test_does_not_trigger_health_check_when_most_examples_are_small(monkeypatch):
-    prng = Random(0)
-
-    for _ in range(100):
-        with deterministic_PRNG(prng.getrandbits(32)):
+    with deterministic_PRNG():
+        for _ in range(100):
             # Setting max_examples=11 ensures we have enough examples for the
             # health checks to finish running, but cuts the generation short
             # after that point to allow this test to run in reasonable time.
