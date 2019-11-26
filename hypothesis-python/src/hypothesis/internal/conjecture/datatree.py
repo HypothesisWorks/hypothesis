@@ -315,6 +315,7 @@ class DataTree(object):
                         raise PreviouslyUnseenBehaviour()
                 else:
                     assert isinstance(node.transition, Killed)
+                    data.observer.kill_branch()
                     node = node.transition.next_node
         except StopTest:
             pass
