@@ -79,16 +79,6 @@ def lint():
         "--config",
         os.path.join(tools.ROOT, ".flake8"),
     )
-    # Check for redefined test functions, where e.g. a copy-pasted definition
-    # will shadow the earlier test and Pytest never sees or executes it.
-    pip_tool(
-        "pylint",
-        "--score=n",
-        "--jobs=0",
-        "--disable=all",
-        "--enable=function-redefined",
-        "hypothesis-python/tests/",
-    )
 
 
 HEAD = tools.hash_for_name("HEAD")
