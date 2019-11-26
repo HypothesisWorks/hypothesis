@@ -803,7 +803,7 @@ def fake_subTest(self, msg=None, **__):
     """Monkeypatch for `unittest.TestCase.subTest` during `@given`.
 
     If we don't patch this out, each failing example is reported as a
-    seperate failing test by the unittest test runner, which is
+    separate failing test by the unittest test runner, which is
     obviously incorrect. We therefore replace it for the duration with
     this version.
     """
@@ -1052,7 +1052,7 @@ def given(
                         raise
                     # On Python 3, we swap out the real traceback for our
                     # trimmed version.  Using a variable ensures that the line
-                    # which will actually appear in trackbacks is as clear as
+                    # which will actually appear in tracebacks is as clear as
                     # possible - "raise the_error_hypothesis_found".
                     the_error_hypothesis_found = e.with_traceback(
                         get_trimmed_traceback()

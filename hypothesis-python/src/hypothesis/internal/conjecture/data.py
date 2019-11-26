@@ -179,7 +179,7 @@ class Example(object):
 
 class ExampleProperty(object):
     """There are many properties of examples that we calculate by
-    essentially rerunning thet test case multiple times based on the
+    essentially rerunning the test case multiple times based on the
     calls which we record in ExampleRecord.
 
     This class defines a visitor, subclasses of which can be used
@@ -238,7 +238,7 @@ class ExampleProperty(object):
 
     def block(self, i):
         """Called with each ``draw_bits`` call, with ``i`` the index of the
-        corresonding block in ``self.examples.blocks``"""
+        corresponding block in ``self.examples.blocks``"""
 
     def stop_example(self, i, discarded):
         """Called at the end of each example, with ``i`` the

@@ -65,7 +65,7 @@ ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
 def integer_range(data, lower, upper, center=None):
     assert lower <= upper
     if lower == upper:
-        # Write a value even when this is trival so that when a bound depends
+        # Write a value even when this is trivial so that when a bound depends
         # on other values we don't suddenly disappear when the gap shrinks to
         # zero - if that happens then often the data stream becomes misaligned
         # and we fail to shrink in cases where we really should be able to.

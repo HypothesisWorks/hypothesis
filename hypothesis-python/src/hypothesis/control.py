@@ -158,7 +158,7 @@ def target(observation, label=""):
         **The more examples you run, the better this technique works.**
 
         As a rule of thumb, the targeting effect is noticeable above
-        :obj:`max_exmples=1000 <hypothesis.settings.max_examples>`,
+        :obj:`max_examples=1000 <hypothesis.settings.max_examples>`,
         and immediately obvious by around ten thousand examples
         *per label* used by your test.
 

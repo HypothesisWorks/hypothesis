@@ -305,7 +305,7 @@ def one_of(*args):
 
 
 def one_of(*args):
-    # Mypy workaround alert:  Any is too loose above; the return paramater
+    # Mypy workaround alert:  Any is too loose above; the return parameter
     # should be the union of the input parameters.  Unfortunately, Mypy <=0.600
     # raises errors due to incompatible inputs instead.  See #1270 for links.
     # v0.610 doesn't error; it gets inference wrong for 2+ arguments instead.
@@ -970,8 +970,8 @@ def characters(
     """Generates unicode text type (unicode on python 2, str on python 3)
     characters following specified filtering rules.
 
-    - When no filtering rules are specifed, any character can be produced.
-    - If ``min_codepoint`` or ``max_codepoint`` is specifed, then only
+    - When no filtering rules are specified, any character can be produced.
+    - If ``min_codepoint`` or ``max_codepoint`` is specified, then only
       characters having a codepoint in that range will be produced.
     - If ``whitelist_categories`` is specified, then only characters from those
       Unicode categories will be produced. This is a further restriction,
@@ -1826,7 +1826,7 @@ def datetimes(
     there.
 
     Alternatively, you can create a list of the timezones you wish to allow
-    (e.g. from the standard library, ``datetutil``, or ``pytz``) and use
+    (e.g. from the standard library, :pypi:`dateutil`, or :pypi:`pytz`) and use
     :py:func:`sampled_from`.  Ensure that simple values such as None or UTC
     are at the beginning of the list for proper minimisation.
 
@@ -1834,7 +1834,7 @@ def datetimes(
     """
     # Why must bounds be naive?  In principle, we could also write a strategy
     # that took aware bounds, but the API and validation is much harder.
-    # If you want to generate datetimes between two particular momements in
+    # If you want to generate datetimes between two particular moments in
     # time I suggest (a) just filtering out-of-bounds values; (b) if bounds
     # are very close, draw a value and subtract its UTC offset, handling
     # overflows and nonexistent times; or (c) do something customised to

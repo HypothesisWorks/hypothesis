@@ -41,7 +41,7 @@ def fulfill(contract_func):
     and retry them with different arguments.
 
     This is a convenience function for testing internal code that uses
-    :pypi:dpcontracts`, to automatically filter out arguments that would be
+    :pypi:`dpcontracts`, to automatically filter out arguments that would be
     rejected by the public interface before triggering a contract error.
 
     This can be used as ``builds(fulfill(func), ...)`` or in the body of the

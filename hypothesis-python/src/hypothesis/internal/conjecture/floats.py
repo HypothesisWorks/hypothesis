@@ -42,7 +42,7 @@ float (there is some redundancy here, as 7 * 8 = 56, which is larger than the
 largest integer that floating point numbers can represent exactly, so multiple
 encodings may map to the same float).
 
-If the tag bit is 1, we instead use somemthing that is closer to the normal
+If the tag bit is 1, we instead use something that is closer to the normal
 representation of floats (and can represent every non-negative float exactly)
 but has a better ordering:
 

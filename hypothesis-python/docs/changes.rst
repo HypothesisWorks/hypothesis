@@ -172,7 +172,7 @@ a ``__file__``, such as a :mod:`python:zipapp` (:issue:`2196`).
 4.44.0 - 2019-11-11
 -------------------
 
-This release adds a ``gufunc`` argument to
+This release adds a ``signature`` argument to
 :func:`~hypothesis.extra.numpy.mutually_broadcastable_shapes` (:issue:`2174`),
 which allows us to generate shapes which are valid for functions like
 :obj:`numpy:numpy.matmul` that require shapes which are not simply broadcastable.
