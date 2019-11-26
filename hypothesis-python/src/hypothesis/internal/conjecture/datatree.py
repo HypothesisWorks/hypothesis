@@ -417,7 +417,7 @@ class TreeRecordingObserver(DataObserver):
             # As an, I'm afraid, horrible bodge, we deliberately ignore flakiness
             # where tests go from interesting to valid, because it's much easier
             # to produce good error messages for these further up the stack.
-            if (
+            if isinstance(node.transition, Conclusion) and (
                 node.transition.status != Status.INTERESTING
                 or new_transition.status != Status.VALID
             ):
