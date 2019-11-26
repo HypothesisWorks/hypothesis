@@ -207,3 +207,9 @@ class LazySequenceCopy(object):
             i += n
         assert 0 <= i < n
         return i
+
+
+def clamp(lower, value, upper):
+    """Given a value and lower/upper bounds, 'clamp' the value so that
+    it satisfies lower <= value <= upper."""
+    return max(lower, min(value, upper))

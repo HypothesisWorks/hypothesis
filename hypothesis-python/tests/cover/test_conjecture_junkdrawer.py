@@ -19,7 +19,8 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
+from hypothesis import example, given, strategies as st
+from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, clamp
 
 
 def test_out_of_range():
@@ -54,3 +55,23 @@ def test_pop():
 
     with pytest.raises(IndexError):
         x.pop()
+
+
+@example(1, 5, 10)
+@example(1, 10, 5)
+@example(5, 10, 5)
+@example(5, 1, 10)
+@given(st.integers(), st.integers(), st.integers())
+def test_clamp(lower, value, upper):
+    lower, upper = sorted((lower, upper))
+
+    clamped = clamp(lower, value, upper)
+
+    assert lower <= clamped <= upper
+
+    if lower <= value <= upper:
+        assert value == clamped
+    if lower > value:
+        assert clamped == lower
+    if value > upper:
+        assert clamped == upper
