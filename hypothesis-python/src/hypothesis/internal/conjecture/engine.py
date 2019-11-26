@@ -596,11 +596,11 @@ class ConjectureRunner(object):
 
         while len(self.shrunk_examples) < len(self.interesting_examples):
             target, example = min(
-                [
+                (
                     (k, v)
                     for k, v in self.interesting_examples.items()
                     if k not in self.shrunk_examples
-                ],
+                ),
                 key=lambda kv: (sort_key(kv[1].buffer), sort_key(repr(kv[0]))),
             )
             self.debug("Shrinking %r" % (target,))

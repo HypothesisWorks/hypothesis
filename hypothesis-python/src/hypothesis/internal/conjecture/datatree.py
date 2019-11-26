@@ -269,7 +269,7 @@ class DataTree(object):
                     assert (  # pragma: no cover
                         check_counter != 1000
                         or len(branch.children) < (2 ** n_bits)
-                        or any([not v.is_exhausted for v in branch.children.values()])
+                        or any(not v.is_exhausted for v in branch.children.values())
                     )
 
     def rewrite(self, buffer):
