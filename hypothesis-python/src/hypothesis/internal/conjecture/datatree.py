@@ -329,7 +329,7 @@ class TreeRecordingObserver(DataObserver):
         self.__current_node = tree.root
         self.__index_in_current_node = 0
         self.__trail = [self.__current_node]
-        self.__killed = False
+        self.killed = False
 
     def draw_bits(self, n_bits, forced, value):
         i = self.__index_in_current_node
@@ -381,10 +381,10 @@ class TreeRecordingObserver(DataObserver):
 
     def kill_branch(self):
         """Mark this part of the tree as not worth re-exploring."""
-        if self.__killed:
+        if self.killed:
             return
 
-        self.__killed = True
+        self.killed = True
 
         if self.__index_in_current_node < len(self.__current_node.values) or (
             self.__current_node.transition is not None
@@ -432,7 +432,7 @@ class TreeRecordingObserver(DataObserver):
         node.check_exhausted()
         assert len(node.values) > 0 or node.check_exhausted()
 
-        if not self.__killed:
+        if not self.killed:
             self.__update_exhausted()
 
     def __update_exhausted(self):
