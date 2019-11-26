@@ -18,7 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
@@ -28,7 +28,7 @@ import attr
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.internal.compat import Counter, ceil, hbytes, hrange, int_from_bytes
+from hypothesis.internal.compat import ceil, hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,

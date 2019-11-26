@@ -30,12 +30,6 @@ from base64 import b64encode
 from collections import namedtuple
 
 try:
-    from collections import OrderedDict, Counter
-except ImportError:
-    from ordereddict import OrderedDict  # type: ignore
-    from counter import Counter  # type: ignore
-
-try:
     from collections import abc
 except ImportError:
     import collections as abc  # type: ignore

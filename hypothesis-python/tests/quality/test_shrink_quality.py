@@ -17,14 +17,14 @@
 
 from __future__ import absolute_import, division, print_function
 
-from collections import namedtuple
+from collections import OrderedDict, namedtuple
 from fractions import Fraction
 from functools import reduce
 
 import pytest
 
 from hypothesis import assume, settings
-from hypothesis.internal.compat import OrderedDict, hrange
+from hypothesis.internal.compat import hrange
 from hypothesis.strategies import (
     booleans,
     builds,

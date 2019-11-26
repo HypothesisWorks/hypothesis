@@ -17,9 +17,10 @@
 
 from __future__ import absolute_import, division, print_function
 
+from collections import OrderedDict
+
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import OrderedDict
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 from hypothesis.internal.conjecture.utils import combine_labels
 from hypothesis.searchstrategy.strategies import (
