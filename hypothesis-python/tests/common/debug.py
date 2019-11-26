@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, Verbosity, given, settings as Settings
-from hypothesis.errors import NoSuchExample, Unsatisfiable
+from hypothesis.errors import Found, NoSuchExample, Unsatisfiable
 from hypothesis.internal.conjecture.data import ConjectureData, StopTest
 from hypothesis.internal.reflection import get_pretty_function_description
 from tests.common.utils import no_shrink
@@ -32,9 +32,6 @@ class Timeout(BaseException):
 
 
 def minimal(definition, condition=lambda x: True, settings=None, timeout_after=10):
-    class Found(Exception):
-        """Signal that the example matches condition."""
-
     def wrapped_condition(x):
         if timeout_after is not None:
             if runtime:

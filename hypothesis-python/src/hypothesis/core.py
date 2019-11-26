@@ -49,6 +49,7 @@ from hypothesis.errors import (
     DidNotReproduce,
     FailedHealthCheck,
     Flaky,
+    Found,
     HypothesisDeprecationWarning,
     HypothesisWarning,
     InvalidArgument,
@@ -70,7 +71,7 @@ from hypothesis.internal.compat import (
     qualname,
 )
 from hypothesis.internal.conjecture.data import ConjectureData, StopTest
-from hypothesis.internal.conjecture.engine import ConjectureRunner, ExitReason, sort_key
+from hypothesis.internal.conjecture.engine import ConjectureRunner, sort_key
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import (
     escalate_hypothesis_internal_error,
@@ -490,7 +491,9 @@ def new_given_argspec(original_argspec, given_kwargs):
 
 
 class StateForActualGivenExecution(object):
-    def __init__(self, test_runner, search_strategy, test, settings, random, had_seed):
+    def __init__(
+        self, test_runner, search_strategy, test, settings, random, had_seed, is_find
+    ):
         self.test_runner = test_runner
         self.search_strategy = search_strategy
         self.settings = settings
@@ -501,6 +504,7 @@ class StateForActualGivenExecution(object):
         self.__warned_deadline = False
         self.__test_runtime = None
         self.__had_seed = had_seed
+        self.is_find = is_find
 
         self.test = test
 
@@ -520,6 +524,9 @@ class StateForActualGivenExecution(object):
         it might have placed ``data`` in an unsuccessful state and then
         swallowed the corresponding control exception.
         """
+
+        data.is_find = self.is_find
+
         text_repr = [None]
         if self.settings.deadline is None:
             test = self.test
@@ -948,6 +955,7 @@ def given(
                 settings,
                 random,
                 had_seed=wrapped_test._hypothesis_internal_use_seed,
+                is_find=getattr(wrapped_test, "_hypothesis_internal_is_find", False),
             )
 
             reproduce_failure = wrapped_test._hypothesis_internal_use_reproduce_failure
@@ -1113,61 +1121,25 @@ def find(
         )
     specifier.validate()
 
-    search = specifier
-
     random = random or new_random()
-    successful_examples = [0]
-    last_data = [None]
-    last_repr = [None]
 
-    def template_condition(data):
-        with deterministic_PRNG():
-            with BuildContext(data):
-                try:
-                    data.is_find = True
-                    result = data.draw(search)
-                    data.note(result)
-                    success = condition(result)
-                except UnsatisfiedAssumption:
-                    data.mark_invalid()
+    last = [None]
 
-        if success:
-            successful_examples[0] += 1
+    @settings
+    @given(specifier)
+    def test(v):
+        if condition(v):
+            last[0] = v
+            raise Found()
 
-        if settings.verbosity >= Verbosity.verbose:
-            if not successful_examples[0]:
-                report(u"Tried non-satisfying example %s" % (nicerepr(result),))
-            elif success:
-                if successful_examples[0] == 1:
-                    last_repr[0] = nicerepr(result)
-                    report(u"Found satisfying example %s" % (last_repr[0],))
-                    last_data[0] = data
-                elif (
-                    sort_key(hbytes(data.buffer)) < sort_key(last_data[0].buffer)
-                ) and nicerepr(result) != last_repr[0]:
-                    last_repr[0] = nicerepr(result)
-                    report(u"Shrunk example to %s" % (last_repr[0],))
-                    last_data[0] = data
-        if success and not data.frozen:
-            data.mark_interesting()
+    if random is not None:
+        test = seed(random.getrandbits(64))(test)
 
-    runner = ConjectureRunner(
-        template_condition, settings=settings, random=random, database_key=database_key
-    )
+    test._hypothesis_internal_is_find = True
 
-    runner.run()
-    note_engine_for_statistics(runner)
-    if runner.interesting_examples:
-        data = ConjectureData.for_buffer(
-            list(runner.interesting_examples.values())[0].buffer
-        )
-        with deterministic_PRNG():
-            with BuildContext(data):
-                return data.draw(search)
-    if runner.valid_examples == 0 and (runner.exit_reason != ExitReason.finished):
-        raise Unsatisfiable(
-            "Unable to satisfy assumptions of %s."
-            % (get_pretty_function_description(condition),)
-        )
+    try:
+        test()
+    except Found:
+        return last[0]
 
     raise NoSuchExample(get_pretty_function_description(condition))
