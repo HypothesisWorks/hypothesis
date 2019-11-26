@@ -92,8 +92,11 @@ def define_test(specifier, predicate, condition=None, p=0.5):
 
         successes = 0
         for _ in range(RUNS):
+            # We choose the max_examples a bit larger than default so that we
+            # run at least 100 examples outside of the small example generation
+            # part of the generation phase.
             runner = ConjectureRunner(
-                test_function, settings=Settings(max_examples=100, phases=no_shrink)
+                test_function, settings=Settings(max_examples=150, phases=no_shrink)
             )
             runner.run()
             if runner.interesting_examples:
