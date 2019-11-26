@@ -22,7 +22,7 @@ from distutils.version import LooseVersion
 import pytest
 
 from hypothesis import Verbosity, core, settings
-from hypothesis._settings import Verbosity, note_deprecation
+from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import text_type
 from hypothesis.internal.detection import is_hypothesis_test

@@ -23,7 +23,6 @@ from random import Random
 import pytest
 
 from hypothesis import given, settings
-from hypothesis.internal.compat import OrderedDict
 from hypothesis.strategies import (
     booleans,
     dictionaries,

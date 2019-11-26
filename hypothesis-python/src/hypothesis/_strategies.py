@@ -298,13 +298,13 @@ def one_of(args):
     pass  # pragma: no cover
 
 
-@overload
+@overload  # noqa: F811
 def one_of(*args):
     # type: (SearchStrategy[Any]) -> SearchStrategy[Any]
     pass  # pragma: no cover
 
 
-def one_of(*args):
+def one_of(*args):  # noqa: F811
     # Mypy workaround alert:  Any is too loose above; the return parameter
     # should be the union of the input parameters.  Unfortunately, Mypy <=0.600
     # raises errors due to incompatible inputs instead.  See #1270 for links.
@@ -669,14 +669,14 @@ def sampled_from(elements):
     pass  # pragma: no cover
 
 
-@overload
+@overload  # noqa: F811
 def sampled_from(elements):
     # type: (Type[enum.Enum]) -> SearchStrategy[Any]
     # `SearchStrategy[Enum]` is unreliable due to metaclass issues.
     pass  # pragma: no cover
 
 
-@defines_strategy
+@defines_strategy  # noqa: F811
 def sampled_from(elements):
     """Returns a strategy which generates any value present in ``elements``.
 
