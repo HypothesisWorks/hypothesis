@@ -368,7 +368,7 @@ class TreeRecordingObserver(DataObserver):
                 # stopped
                 inconsistent_generation()
             else:
-                assert isinstance(trans, Branch)
+                assert isinstance(trans, Branch), trans
                 if n_bits != trans.bit_length:
                     inconsistent_generation()
                 try:
