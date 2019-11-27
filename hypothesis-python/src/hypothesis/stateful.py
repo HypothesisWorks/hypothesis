@@ -643,6 +643,12 @@ class RuleStrategy(SearchStrategy):
 
         feature_flags = data.draw(self.enabled_rules_strategy)
 
+        # Note: The order of the filters here is actually quite important,
+        # because checking is_enabled makes choices, so increases the size of
+        # the choice sequence. This means that if we are in a case where many
+        # rules are invalid we will make a lot more choices if we ask if they
+        # are enabled before we ask if they are valid, so our test cases will
+        # be artificially large.
         rule = data.draw(
             st.sampled_from(self.rules)
             .filter(self.is_valid)
