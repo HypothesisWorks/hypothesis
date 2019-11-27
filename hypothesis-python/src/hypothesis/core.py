@@ -740,7 +740,7 @@ class StateForActualGivenExecution(object):
             try:
                 self.execute_once(
                     ran_example,
-                    print_example=True,
+                    print_example=not self.is_find,
                     is_final=True,
                     expected_failure=(
                         info.__expected_exception,
