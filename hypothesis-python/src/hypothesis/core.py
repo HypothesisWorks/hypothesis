@@ -1121,8 +1121,6 @@ def find(
         )
     specifier.validate()
 
-    random = random or new_random()
-
     last = [None]
 
     @settings
