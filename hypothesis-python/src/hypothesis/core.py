@@ -492,7 +492,7 @@ def new_given_argspec(original_argspec, given_kwargs):
 
 class StateForActualGivenExecution(object):
     def __init__(
-        self, test_runner, search_strategy, test, settings, random, had_seed, is_find
+        self, test_runner, search_strategy, test, settings, random, wrapped_test,
     ):
         self.test_runner = test_runner
         self.search_strategy = search_strategy
@@ -503,8 +503,10 @@ class StateForActualGivenExecution(object):
         self.random = random
         self.__warned_deadline = False
         self.__test_runtime = None
-        self.__had_seed = had_seed
-        self.is_find = is_find
+
+        self.__had_seed = wrapped_test._hypothesis_internal_use_seed
+        self.is_find = getattr(wrapped_test, "_hypothesis_internal_is_find", False)
+        self.wrapped_test = wrapped_test
 
         self.test = test
 
@@ -682,10 +684,14 @@ class StateForActualGivenExecution(object):
         """
         # Tell pytest to omit the body of this function from tracebacks
         __tracebackhide__ = True
-        if global_force_seed is None:
-            database_key = function_digest(self.test)
-        else:
-            database_key = None
+        try:
+            database_key = self.wrapped_test._hypothesis_internal_database_key
+        except AttributeError:
+            if global_force_seed is None:
+                database_key = function_digest(self.test)
+            else:
+                database_key = None
+
         runner = ConjectureRunner(
             self._execute_once_for_engine,
             settings=self.settings,
@@ -954,8 +960,7 @@ def given(
                 test,
                 settings,
                 random,
-                had_seed=wrapped_test._hypothesis_internal_use_seed,
-                is_find=getattr(wrapped_test, "_hypothesis_internal_is_find", False),
+                wrapped_test,
             )
 
             reproduce_failure = wrapped_test._hypothesis_internal_use_reproduce_failure
@@ -1134,6 +1139,7 @@ def find(
         test = seed(random.getrandbits(64))(test)
 
     test._hypothesis_internal_is_find = True
+    test._hypothesis_internal_database_key = database_key
 
     try:
         test()
