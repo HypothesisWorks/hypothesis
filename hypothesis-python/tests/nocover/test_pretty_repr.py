@@ -52,11 +52,10 @@ def builds_ignoring_invalid(target, *args, **kwargs):
     return st.tuples(st.tuples(*args), st.fixed_dictionaries(kwargs)).map(splat)
 
 
-size_strategies = dict(
-    min_size=st.integers(min_value=0, max_value=100),
-    max_size=st.integers(min_value=0, max_value=100) | st.none(),
-)
-
+size_strategies = {
+    "min_size": st.integers(min_value=0, max_value=100),
+    "max_size": st.integers(min_value=0, max_value=100) | st.none(),
+}
 
 values = st.integers() | st.text()
 

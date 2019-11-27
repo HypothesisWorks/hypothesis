@@ -152,7 +152,10 @@ def test_can_find_unique_lists_of_non_set_order():
     # a consistent value. This could be 0, or it could be the PYTHONHASHSEED
     # value listed in a failure log from CI.
 
-    ls = minimal(lists(text(), unique=True), lambda x: list(set(reversed(x))) != x)
+    ls = minimal(
+        lists(text(), unique=True),
+        lambda x: list(set(reversed(x))) != x,  # noqa: C414  # yes, reverse inside set
+    )
     assert len(set(ls)) == len(ls)
     assert len(ls) == 2
 

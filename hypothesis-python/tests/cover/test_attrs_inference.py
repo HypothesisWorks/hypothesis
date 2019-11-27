@@ -70,7 +70,7 @@ class Inferrables(object):
     has_default = attr.ib(default=0)
     has_default_factory = attr.ib(default=attr.Factory(list))
     has_default_factory_takes_self = attr.ib(  # uninferrable but has default
-        default=attr.Factory(lambda _: list(), takes_self=True)
+        default=attr.Factory(lambda _: [], takes_self=True)
     )
 
 

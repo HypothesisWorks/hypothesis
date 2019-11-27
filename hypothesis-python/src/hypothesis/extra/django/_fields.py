@@ -136,11 +136,11 @@ def _for_slug(field):
 
 @register_for(dm.GenericIPAddressField)
 def _for_model_ip(field):
-    return dict(
-        ipv4=ip4_addr_strings(),
-        ipv6=ip6_addr_strings(),
-        both=ip4_addr_strings() | ip6_addr_strings(),
-    )[field.protocol.lower()]
+    return {
+        "ipv4": ip4_addr_strings(),
+        "ipv6": ip6_addr_strings(),
+        "both": ip4_addr_strings() | ip6_addr_strings(),
+    }[field.protocol.lower()]
 
 
 @register_for(df.GenericIPAddressField)

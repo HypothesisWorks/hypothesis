@@ -63,7 +63,7 @@ def timezones():
     information.
     """
     all_timezones = sorted(
-        [tz.gettz(t) for t in zoneinfo.get_zonefile_instance().zones],
+        (tz.gettz(t) for t in zoneinfo.get_zonefile_instance().zones),
         key=__zone_sort_key,
     )
     all_timezones.insert(0, tz.UTC)

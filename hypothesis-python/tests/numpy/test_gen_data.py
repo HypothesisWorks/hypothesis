@@ -192,7 +192,7 @@ def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
 
 
 @pytest.mark.parametrize(
-    "kwargs", [dict(min_side=100), dict(min_dims=15), dict(min_dims=32)]
+    "kwargs", [{"min_side": 100}, {"min_dims": 15}, {"min_dims": 32}]
 )
 def test_interesting_array_shapes_argument(kwargs):
     nps.array_shapes(**kwargs).example()
@@ -453,9 +453,9 @@ def test_all_inferred_scalar_strategies_roundtrip(data, dtype):
 @checks_deprecated_behaviour
 @given(st.data())
 def test_overflowing_integers_are_deprecated(fill, data):
-    kw = dict(elements=st.just(300))
+    kw = {"elements": st.just(300)}
     if fill:
-        kw = dict(elements=st.nothing(), fill=kw["elements"])
+        kw = {"elements": st.nothing(), "fill": kw["elements"]}
     arr = data.draw(nps.arrays(dtype="int8", shape=(1,), **kw))
     assert arr[0] == (300 % 256)
 
@@ -475,9 +475,9 @@ def test_overflowing_integers_are_deprecated(fill, data):
 @given(data=st.data())
 def test_unrepresentable_elements_are_deprecated(fill, dtype, strat, data):
     if fill:
-        kw = dict(elements=st.nothing(), fill=strat)
+        kw = {"elements": st.nothing(), "fill": strat}
     else:
-        kw = dict(elements=strat)
+        kw = {"elements": strat}
     arr = data.draw(nps.arrays(dtype=dtype, shape=(1,), **kw))
     try:
         # This is a float or complex number, and has overflowed to infinity,
@@ -992,7 +992,7 @@ def test_mutually_broadcastable_shapes_only_singleton_is_valid(
     assert len(input_shapes) == num_shapes
     assert result == _broadcast_shapes(base_shape, *input_shapes)
     for shape in input_shapes:
-        assert all([i == 1 for i in shape[-len(base_shape) :]])
+        assert all(i == 1 for i in shape[-len(base_shape) :])
 
 
 @settings(deadline=None)
@@ -1007,11 +1007,10 @@ def test_broadcastable_shape_can_generate_arbitrary_ndims(shape, max_dims, data)
     min_dims = data.draw(
         st.one_of(st.none(), st.integers(0, desired_ndim)), label="min_dims"
     )
-    args = (
-        dict(min_dims=min_dims) if min_dims is not None else {}
-    )  # check default arg behavior too
+    # check default arg behavior too
+    kwargs = {"min_dims": min_dims} if min_dims is not None else {}
     find_any(
-        nps.broadcastable_shapes(shape, min_side=0, max_dims=max_dims, **args),
+        nps.broadcastable_shapes(shape, min_side=0, max_dims=max_dims, **kwargs),
         lambda x: len(x) == desired_ndim,
         settings(max_examples=10 ** 6),
     )
@@ -1035,16 +1034,15 @@ def test_mutually_broadcastable_shapes_can_generate_arbitrary_ndims(
     min_dims = data.draw(
         st.one_of(st.none(), st.integers(0, min(desired_ndims))), label="min_dims"
     )
-    args = (
-        dict(min_dims=min_dims) if min_dims is not None else {}
-    )  # check default arg behavior too
+    # check default arg behavior too
+    kwargs = {"min_dims": min_dims} if min_dims is not None else {}
     find_any(
         nps.mutually_broadcastable_shapes(
             num_shapes=num_shapes,
             base_shape=base_shape,
             min_side=0,
             max_dims=max_dims,
-            **args
+            **kwargs
         ),
         lambda x: {len(s) for s in x.input_shapes} == set(desired_ndims),
         settings(max_examples=10 ** 6),

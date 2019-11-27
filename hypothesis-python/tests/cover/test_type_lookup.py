@@ -222,7 +222,7 @@ def test_uninspectable_from_type():
 
 
 @pytest.mark.parametrize(
-    "typ", sorted([x for x in _global_type_lookup if x.__module__ != "typing"], key=str)
+    "typ", sorted((x for x in _global_type_lookup if x.__module__ != "typing"), key=str)
 )
 @given(data=st.data())
 def test_can_generate_from_all_registered_types(data, typ):

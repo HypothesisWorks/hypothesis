@@ -46,7 +46,7 @@ class DatetimeStrategy(SearchStrategy):
         self.tz_strat = timezones_strat
 
     def do_draw(self, data):
-        result = dict()
+        result = {}
         cap_low, cap_high = True, True
         for name in ("year", "month", "day", "hour", "minute", "second", "microsecond"):
             low = getattr(self.min_dt if cap_low else dt.datetime.min, name)
@@ -96,7 +96,7 @@ class TimedeltaStrategy(SearchStrategy):
         self.max_value = max_value
 
     def do_draw(self, data):
-        result = dict()
+        result = {}
         low_bound = True
         high_bound = True
         for name in ("days", "seconds", "microseconds"):

@@ -102,9 +102,9 @@ def charmap():
         # and that both elements of that tuple are integers.
         for vs in _charmap.values():
             ints = list(sum(vs, ()))
-            assert all([isinstance(x, int) for x in ints])
+            assert all(isinstance(x, int) for x in ints)
             assert ints == sorted(ints)
-            assert all([len(tup) == 2 for tup in vs])
+            assert all(len(tup) == 2 for tup in vs)
 
     assert _charmap is not None
     return _charmap

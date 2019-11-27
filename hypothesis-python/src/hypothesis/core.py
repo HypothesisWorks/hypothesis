@@ -700,7 +700,7 @@ class StateForActualGivenExecution(object):
             return
         if runner.interesting_examples:
             self.falsifying_examples = sorted(
-                [d for d in runner.interesting_examples.values()],
+                runner.interesting_examples.values(),
                 key=lambda d: sort_key(d.buffer),
                 reverse=True,
             )
