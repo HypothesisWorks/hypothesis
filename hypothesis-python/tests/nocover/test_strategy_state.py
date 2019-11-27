@@ -116,7 +116,7 @@ class HypothesisSpec(RuleBasedStateMachine):
         def is_good(x):
             return bool(
                 Random(
-                    hashlib.md5((mixer + repr(x)).encode(u"utf-8")).digest()
+                    hashlib.sha384((mixer + repr(x)).encode(u"utf-8")).digest()
                 ).randint(0, level)
             )
 
@@ -162,7 +162,7 @@ class HypothesisSpec(RuleBasedStateMachine):
 
         def do_map(value):
             rep = repr(value)
-            random = Random(hashlib.md5((mixer + rep).encode(u"utf-8")).digest())
+            random = Random(hashlib.sha384((mixer + rep).encode(u"utf-8")).digest())
             if random.random() <= p:
                 return result1
             else:
