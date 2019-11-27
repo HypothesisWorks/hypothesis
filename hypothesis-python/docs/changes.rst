@@ -21,6 +21,14 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+.. _v4.47.4:
+
+-------------------
+4.47.4 - 2019-11-27
+-------------------
+
+This patch removes an internal compatibility shim that we no longer need.
+
 .. _v4.47.3:
 
 -------------------
