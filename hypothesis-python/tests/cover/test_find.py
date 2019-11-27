@@ -42,7 +42,7 @@ def test_find_uses_provided_random():
             st.text(),
             test,
             random=Random(13),
-            settings=settings(phases=[Phase.generate]),
+            settings=settings(phases=[Phase.generate], max_examples=1000),
         )
         if prev is None:
             prev = result
