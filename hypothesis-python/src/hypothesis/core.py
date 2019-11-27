@@ -955,12 +955,7 @@ def given(
                 )
 
             state = StateForActualGivenExecution(
-                test_runner,
-                search_strategy,
-                test,
-                settings,
-                random,
-                wrapped_test,
+                test_runner, search_strategy, test, settings, random, wrapped_test,
             )
 
             reproduce_failure = wrapped_test._hypothesis_internal_use_reproduce_failure
@@ -1114,7 +1109,9 @@ def find(
     )
     if settings is None:
         settings = Settings(max_examples=2000)
-    settings = Settings(settings, suppress_health_check=HealthCheck.all(), report_multiple_bugs=False)
+    settings = Settings(
+        settings, suppress_health_check=HealthCheck.all(), report_multiple_bugs=False
+    )
 
     if database_key is None and settings.database is not None:
         database_key = function_digest(condition)
