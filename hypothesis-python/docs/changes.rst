@@ -4,22 +4,11 @@ Changelog
 
 This is a record of all past Hypothesis releases and what went into them,
 in reverse chronological order. All previous releases should still be available
-on pip.
+on `PyPI <https://pypi.org/project/hypothesis/>`__.
 
-Hypothesis APIs come in three flavours:
 
-* Public: Hypothesis releases since 1.0 are `semantically versioned <https://semver.org/>`_
-  with respect to these parts of the API. These will not break except between
-  major version bumps. All APIs mentioned in this documentation are public unless
-  explicitly noted otherwise.
-* Semi-public: These are APIs that are considered ready to use but are not wholly
-  nailed down yet. They will not break in patch releases and will *usually* not break
-  in minor releases, but when necessary  minor releases may break semi-public APIs.
-* Internal: These may break at any time and you really should not use them at
-  all.
-
-You should generally assume that an API is internal unless you have specific
-information to the contrary.
+Hypothesis 4.x
+==============
 
 .. _v4.47.4:
 
@@ -155,9 +144,9 @@ implementation. There is no user-visible change.
 4.44.3 - 2019-11-20
 -------------------
 
-This patch avoids importing test runners such as :pypi`pytest`, :pypi`unittest2`,
-or :pypi`nose` solely to access their special "skip test" exception types -
-if the module is not in ``sys.modules``, the exception can't be raised anyway.
+This patch avoids importing test runners such as :pypi:`pytest`, :pypi:`unittest2`,
+or :pypi:`nose` solely to access their special "skip test" exception types -
+if the module is not in :obj:`sys.modules`, the exception can't be raised anyway.
 
 This fixes a problem where importing an otherwise unused module could cause
 spurious errors due to import-time side effects (and possibly ``-Werror``).
@@ -2120,6 +2109,10 @@ Miscellaneous
 - Unused exception types have been removed from ``hypothesis.errors``;
   namely ``AbnormalExit``, ``BadData``, ``BadTemplateDraw``,
   ``DefinitelyNoSuchExample``, ``Timeout``, and ``WrongFormat``.
+
+
+Hypothesis 3.x
+==============
 
 .. _v3.88.3:
 
@@ -6667,6 +6660,10 @@ simultaneous shrinking of separate examples within a single test (previously it
 was only able to do this for elements of a single collection). In some cases
 performance will have improved, in some cases it will have got worse but generally
 shouldn't have by much.
+
+
+Older versions
+==============
 
 .. _v2.0.0:
 

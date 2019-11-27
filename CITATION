@@ -1,20 +1,34 @@
-Please use one of the following samples to cite the hypothesis version
-(change x.y to the version you are using) from this installation.
-You may wish to include the DOI, https://doi.org/10.5281/zenodo.1412597
+If you use Hypothesis as part of a published research project,
+please cite our paper in the Journal of Open Source Software:
 
 Text:
 
-[Hypothesis]  Hypothesis x.y, 2018
-David R. MacIver, https://github.com/HypothesisWorks/hypothesis
+MacIver et al., (2019). Hypothesis: A new approach to property-based testing.
+Journal of Open Source Software, 4(43), 1891, https://doi.org/10.21105/joss.01891
 
 BibTeX:
 
-@misc{Hypothesisx.y,
-  title = {{H}ypothesis x.y},
-  author = {David R. MacIver},
-  year = {2018},
-  howpublished = {\href{https://github.com/HypothesisWorks/hypothesis}{\texttt{https://github.com/HypothesisWorks/hypothesis}}},
+@article{MacIver2019Hypothesis,
+  journal = {Journal of Open Source Software},
+  doi = {10.21105/joss.01891},
+  issn = {2475-9066},
+  number = {43},
+  publisher = {The Open Journal},
+  title = {Hypothesis: A new approach to property-based testing},
+  url = {http://dx.doi.org/10.21105/joss.01891},
+  volume = {4},
+  author = {MacIver, David and Hatfield-Dodds, Zac and Contributors, Many},
+  pages = {1891},
+  date = {2019-11-21},
+  year = {2019},
+  month = {11},
+  day = {21},
 }
+
+
+To reference a particular version of Hypothesis as a software artifact,
+you can use the version-specific DOIs we create for each release under
+https://doi.org/10.5281/zenodo.1412597
 
 If you are unsure about which version of Hypothesis you are using run:
 `pip show hypothesis` for the Python version.

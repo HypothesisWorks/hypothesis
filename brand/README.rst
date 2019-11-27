@@ -3,6 +3,8 @@ Logos and other pretty things
 
 Hypothesis has a beautiful logo, thanks to the generous work of Libby Berrie
 in `issue #1519 <https://github.com/HypothesisWorks/hypothesis/issues/1519>`__.
+The `CogWorks class of 2019 <https://github.com/CogWorksBWSI>`__ named the
+dragonfly "Scout", as a job description and after *To Kill a Mockingbird*.
 
 General guidelines:
 
