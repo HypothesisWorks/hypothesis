@@ -223,12 +223,42 @@ class PopulateMultipleTargets(RuleBasedStateMachine):
         assert False
 
 
+class CanSwarm(RuleBasedStateMachine):
+    """This test will essentially never pass if you choose rules uniformly at
+    random, because every time the snake rule fires we return to the beginning,
+    so we will tend to undo progress well before we make neough progress for
+    the test to fail.
+
+    This tests our swarm testing functionality in stateful testing by ensuring
+    that we can sometimes generate long runs of steps which exclude a
+    particular rule.
+    """
+
+    def __init__(self):
+        super(CanSwarm, self).__init__()
+        self.seen = set()
+
+    # The reason this rule takes a parameter is that it ensures that we do not
+    # achieve "swarming" by by just restricting the alphabet for single byte
+    # decisions, which is a thing the underlying conjecture engine  will
+    # happily do on its own without knowledge of the rule structure.
+    @rule(move=integers(0, 255))
+    def ladder(self, move):
+        self.seen.add(move)
+        assert len(self.seen) <= 15
+
+    @rule()
+    def snake(self):
+        self.seen.clear()
+
+
 bad_machines = (
     BalancedTrees,
     DepthMachine,
     RoseTreeStateMachine,
     NotTheLastMachine,
     PopulateMultipleTargets,
+    CanSwarm,
 )
 
 for m in bad_machines:
