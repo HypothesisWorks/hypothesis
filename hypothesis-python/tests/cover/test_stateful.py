@@ -226,7 +226,7 @@ class PopulateMultipleTargets(RuleBasedStateMachine):
 class CanSwarm(RuleBasedStateMachine):
     """This test will essentially never pass if you choose rules uniformly at
     random, because every time the snake rule fires we return to the beginning,
-    so we will tend to undo progress well before we make neough progress for
+    so we will tend to undo progress well before we make enough progress for
     the test to fail.
 
     This tests our swarm testing functionality in stateful testing by ensuring
