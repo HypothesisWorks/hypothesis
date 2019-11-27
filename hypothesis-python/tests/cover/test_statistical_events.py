@@ -234,4 +234,4 @@ class DemoStateMachine(stateful.RuleBasedStateMachine):
 
 def test_stateful_states_are_deduped():
     stats = call_for_statistics(DemoStateMachine.TestCase().runTest)
-    assert len(stats.events) == 1
+    assert len(stats.events) <= 2
