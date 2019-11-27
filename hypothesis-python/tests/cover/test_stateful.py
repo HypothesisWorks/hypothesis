@@ -1194,7 +1194,7 @@ def test_uses_seed(capsys):
 
 
 def test_reproduce_failure_works():
-    @reproduce_failure(__version__, base64.b64encode(b"\0\0\0"))
+    @reproduce_failure(__version__, base64.b64encode(b"\0\0\0\0\0"))
     class TrivialMachine(RuleBasedStateMachine):
         @rule()
         def oops(self):
@@ -1205,7 +1205,7 @@ def test_reproduce_failure_works():
 
 
 def test_reproduce_failure_fails_if_no_error():
-    @reproduce_failure(__version__, base64.b64encode(b"\0\0\0"))
+    @reproduce_failure(__version__, base64.b64encode(b"\0\0\0\0\0"))
     class TrivialMachine(RuleBasedStateMachine):
         @rule()
         def ok(self):
