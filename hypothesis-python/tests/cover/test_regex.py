@@ -230,7 +230,7 @@ def test_groups(pattern, is_unicode, invert):
         pattern = pattern.swapcase()
         _p = group_pred
 
-        def group_pred(s):  # pylint:disable=function-redefined
+        def group_pred(s):
             return not _p(s)
 
     pattern = u"^%s\\Z" % (pattern,)

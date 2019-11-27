@@ -17,6 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+from collections import OrderedDict
 from copy import copy
 
 import attr
@@ -28,7 +29,7 @@ import hypothesis.extra.numpy as npst
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import OrderedDict, abc, hrange
+from hypothesis.internal.compat import abc, hrange
 from hypothesis.internal.coverage import check, check_function
 from hypothesis.internal.validation import (
     check_type,

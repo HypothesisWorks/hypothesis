@@ -59,11 +59,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from __future__ import absolute_import, division, print_function
 
 import re
-from collections import defaultdict, deque
+from collections import Counter, OrderedDict, defaultdict, deque
 
 import pytest
 
-from hypothesis.internal.compat import PY3, PYPY, Counter, OrderedDict, a_good_encoding
+from hypothesis.internal.compat import PY3, PYPY, a_good_encoding
 from hypothesis.vendor import pretty
 from tests.common.utils import capture_out
 

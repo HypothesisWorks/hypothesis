@@ -22,7 +22,7 @@ import itertools
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, strategies as st
+from hypothesis import given
 from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.conjecture.data import (

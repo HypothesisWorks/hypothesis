@@ -15,8 +15,6 @@
 #
 # END HEADER
 
-# pylint: skip-file
-
 from __future__ import absolute_import, division, print_function
 
 import array
@@ -30,12 +28,6 @@ import sys
 import time
 from base64 import b64encode
 from collections import namedtuple
-
-try:
-    from collections import OrderedDict, Counter
-except ImportError:
-    from ordereddict import OrderedDict  # type: ignore
-    from counter import Counter  # type: ignore
 
 try:
     from collections import abc

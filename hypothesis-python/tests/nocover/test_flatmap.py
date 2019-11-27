@@ -17,11 +17,12 @@
 
 from __future__ import absolute_import, division, print_function
 
+from collections import Counter
+
 import pytest
 
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.database import ExampleDatabase
-from hypothesis.internal.compat import Counter
 from hypothesis.strategies import (
     booleans,
     builds,

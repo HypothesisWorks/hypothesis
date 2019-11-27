@@ -16,7 +16,6 @@ lark-parser
 mypy
 numpy
 pip-tools
-pylint
 pytest
 python-dateutil
 pyupgrade

@@ -51,7 +51,7 @@ if not CAN_PACK_HALF_FLOAT:  # pragma: no cover
         pass
     else:
 
-        def reinterpret_bits(x, from_, to):  # pylint: disable=function-redefined
+        def reinterpret_bits(x, from_, to):  # noqa: F811
             if from_ == b"!e":
                 arr = numpy.array([x], dtype=">f2")
                 if numpy.isfinite(x) and not numpy.isfinite(arr[0]):

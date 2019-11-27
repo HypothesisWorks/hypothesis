@@ -17,11 +17,12 @@
 
 from __future__ import absolute_import, division, print_function
 
+from collections import OrderedDict
+
 import hypothesis.strategies as st
 from hypothesis import given, settings
 from hypothesis.control import reject
 from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
-from hypothesis.internal.compat import OrderedDict
 
 
 def foo(x):

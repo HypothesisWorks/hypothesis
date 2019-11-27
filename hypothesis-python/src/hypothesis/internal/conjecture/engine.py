@@ -18,7 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
@@ -28,7 +28,7 @@ import attr
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.internal.compat import Counter, ceil, hbytes, hrange, int_from_bytes
+from hypothesis.internal.compat import ceil, hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
@@ -596,11 +596,11 @@ class ConjectureRunner(object):
 
         while len(self.shrunk_examples) < len(self.interesting_examples):
             target, example = min(
-                [
+                (
                     (k, v)
                     for k, v in self.interesting_examples.items()
                     if k not in self.shrunk_examples
-                ],
+                ),
                 key=lambda kv: (sort_key(kv[1].buffer), sort_key(repr(kv[0]))),
             )
             self.debug("Shrinking %r" % (target,))
