@@ -66,7 +66,6 @@ from hypothesis.internal.compat import (
     binary_type,
     get_type_hints,
     getfullargspec,
-    hbytes,
     int_from_bytes,
     qualname,
 )
@@ -86,7 +85,6 @@ from hypothesis.internal.reflection import (
     get_pretty_function_description,
     impersonate,
     is_mock,
-    nicerepr,
     proxies,
 )
 from hypothesis.reporting import (
@@ -110,10 +108,6 @@ if False:
 
 running_under_pytest = False
 global_force_seed = None
-
-
-def new_random():
-    return rnd_module.Random(rnd_module.getrandbits(128))
 
 
 @attr.s()
