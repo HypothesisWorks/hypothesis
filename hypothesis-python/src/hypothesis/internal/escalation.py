@@ -77,7 +77,12 @@ def mark_for_escalation(e):
 def escalate_hypothesis_internal_error():
     if PREVENT_ESCALATION:
         return
+
     error_type, e, tb = sys.exc_info()
+
+    if getattr(e, "hypothesis_internal_never_escalate", False):
+        return
+
     if getattr(e, "hypothesis_internal_always_escalate", False):
         raise
     filepath = traceback.extract_tb(tb)[-1][0]

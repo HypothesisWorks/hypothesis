@@ -168,3 +168,5 @@ class DidNotReproduce(HypothesisException):
 
 class Found(Exception):
     """Signal that the example matches condition. Internal use only."""
+
+    hypothesis_internal_never_escalate = True
