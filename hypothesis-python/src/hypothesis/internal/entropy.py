@@ -93,7 +93,7 @@ def get_seeder_and_restorer(seed=0):
 
 
 @contextlib.contextmanager
-def deterministic_PRNG():
+def deterministic_PRNG(seed=0):
     """Context manager that handles random.seed without polluting global state.
 
     See issue #1255 and PR #1295 for details and motivation - in short,
@@ -101,7 +101,7 @@ def deterministic_PRNG():
     bad idea in principle, and breaks all kinds of independence assumptions
     in practice.
     """
-    seed_all, restore_all = get_seeder_and_restorer()
+    seed_all, restore_all = get_seeder_and_restorer(seed)
     seed_all()
     try:
         yield

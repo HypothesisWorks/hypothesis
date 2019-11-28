@@ -315,6 +315,7 @@ class DataTree(object):
                         raise PreviouslyUnseenBehaviour()
                 else:
                     assert isinstance(node.transition, Killed)
+                    data.observer.kill_branch()
                     node = node.transition.next_node
         except StopTest:
             pass
@@ -328,7 +329,7 @@ class TreeRecordingObserver(DataObserver):
         self.__current_node = tree.root
         self.__index_in_current_node = 0
         self.__trail = [self.__current_node]
-        self.__killed = False
+        self.killed = False
 
     def draw_bits(self, n_bits, forced, value):
         i = self.__index_in_current_node
@@ -367,7 +368,7 @@ class TreeRecordingObserver(DataObserver):
                 # stopped
                 inconsistent_generation()
             else:
-                assert isinstance(trans, Branch)
+                assert isinstance(trans, Branch), trans
                 if n_bits != trans.bit_length:
                     inconsistent_generation()
                 try:
@@ -380,10 +381,10 @@ class TreeRecordingObserver(DataObserver):
 
     def kill_branch(self):
         """Mark this part of the tree as not worth re-exploring."""
-        if self.__killed:
+        if self.killed:
             return
 
-        self.__killed = True
+        self.killed = True
 
         if self.__index_in_current_node < len(self.__current_node.values) or (
             self.__current_node.transition is not None
@@ -416,7 +417,7 @@ class TreeRecordingObserver(DataObserver):
             # As an, I'm afraid, horrible bodge, we deliberately ignore flakiness
             # where tests go from interesting to valid, because it's much easier
             # to produce good error messages for these further up the stack.
-            if (
+            if isinstance(node.transition, Conclusion) and (
                 node.transition.status != Status.INTERESTING
                 or new_transition.status != Status.VALID
             ):
@@ -431,7 +432,7 @@ class TreeRecordingObserver(DataObserver):
         node.check_exhausted()
         assert len(node.values) > 0 or node.check_exhausted()
 
-        if not self.__killed:
+        if not self.killed:
             self.__update_exhausted()
 
     def __update_exhausted(self):

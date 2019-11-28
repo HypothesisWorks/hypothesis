@@ -23,16 +23,21 @@ import pytest
 from pytest import raises
 
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, Phase, given, settings
 from hypothesis.control import assume
 from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
+from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.searchstrategy.lazy import LazyStrategy
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from tests.common.utils import checks_deprecated_behaviour, no_shrink
 
+HEALTH_CHECK_SETTINGS = settings(max_examples=11, database=None)
+
 
 def test_slow_generation_fails_a_health_check():
+    @HEALTH_CHECK_SETTINGS
     @given(st.integers().map(lambda x: time.sleep(0.2)))
     def test(x):
         pass
@@ -42,7 +47,7 @@ def test_slow_generation_fails_a_health_check():
 
 
 def test_slow_generation_inline_fails_a_health_check():
-    @settings(deadline=None)
+    @settings(HEALTH_CHECK_SETTINGS, deadline=None)
     @given(st.data())
     def test(data):
         data.draw(st.integers().map(lambda x: time.sleep(0.2)))
@@ -54,7 +59,7 @@ def test_slow_generation_inline_fails_a_health_check():
 def test_default_health_check_can_weaken_specific():
     import random
 
-    @settings(suppress_health_check=HealthCheck.all())
+    @settings(HEALTH_CHECK_SETTINGS, suppress_health_check=HealthCheck.all())
     @given(st.lists(st.integers(), min_size=1))
     def test(x):
         random.choice(x)
@@ -70,6 +75,7 @@ def test_suppressing_filtering_health_check():
             forbidden.add(x)
         return x not in forbidden
 
+    @HEALTH_CHECK_SETTINGS
     @given(st.integers().filter(unhealthy_filter))
     def test1(x):
         raise ValueError()
@@ -118,7 +124,7 @@ def test_filtering_most_things_fails_a_health_check():
 
 
 def test_large_data_will_fail_a_health_check():
-    @given(st.none() | st.binary(min_size=10 ** 5))
+    @given(st.none() | st.binary(min_size=10 ** 5, max_size=10 ** 5))
     @settings(database=None)
     def test(x):
         pass
@@ -220,3 +226,46 @@ def test_lazy_slow_initialization_issue_2108_regression(data):
     # should be attributed to drawing from the strategy (not the test function).
     # Specificially, this used to fail with a DeadlineExceeded error.
     data.draw(LazyStrategy(slow_init_integers, (), {}))
+
+
+def test_does_not_trigger_health_check_on_simple_strategies(monkeypatch):
+    existing_draw_bits = ConjectureData.draw_bits
+
+    # We need to make drawing data artificially slow in order to trigger this
+    # effect. This isn't actually slow because time is fake in our CI, but
+    # we need it to pretend to be.
+    def draw_bits(self, n, forced=None):
+        time.sleep(0.001)
+        return existing_draw_bits(self, n, forced)
+
+    monkeypatch.setattr(ConjectureData, "draw_bits", draw_bits)
+
+    with deterministic_PRNG():
+        for _ in range(100):
+            # Setting max_examples=11 ensures we have enough examples for the
+            # health checks to finish running, but cuts the generation short
+            # after that point to allow this test to run in reasonable time.
+            @settings(database=None, max_examples=11, phases=[Phase.generate])
+            @given(st.binary())
+            def test(b):
+                pass
+
+            test()
+
+
+def test_does_not_trigger_health_check_when_most_examples_are_small(monkeypatch):
+    with deterministic_PRNG():
+        for _ in range(100):
+            # Setting max_examples=11 ensures we have enough examples for the
+            # health checks to finish running, but cuts the generation short
+            # after that point to allow this test to run in reasonable time.
+            @settings(database=None, max_examples=11, phases=[Phase.generate])
+            @given(
+                st.integers(0, 100).flatmap(
+                    lambda n: st.binary(min_size=n * 100, max_size=n * 100)
+                )
+            )
+            def test(b):
+                pass
+
+            test()

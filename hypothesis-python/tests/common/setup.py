@@ -88,7 +88,7 @@ def run():
             )
 
     settings.register_profile(
-        "default", settings(max_examples=10 if IN_COVERAGE_TESTS else not_set)
+        "default", settings(max_examples=20 if IN_COVERAGE_TESTS else not_set)
     )
 
     settings.register_profile("speedy", settings(max_examples=5))

@@ -36,8 +36,12 @@ from hypothesis.internal.conjecture.data import (
     Status,
     StopTest,
 )
-from hypothesis.internal.conjecture.datatree import DataTree, TreeRecordingObserver
-from hypothesis.internal.conjecture.junkdrawer import uniform
+from hypothesis.internal.conjecture.datatree import (
+    DataTree,
+    PreviouslyUnseenBehaviour,
+    TreeRecordingObserver,
+)
+from hypothesis.internal.conjecture.junkdrawer import clamp, uniform
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import base_report
@@ -534,10 +538,101 @@ class ConjectureRunner(object):
         parameter = GenerationParameters(self.random)
         count = 0
 
+        # We attempt to use the size of the minimal generated test case starting
+        # from a given novel prefix as a guideline to generate smaller test
+        # cases for an initial period, by restriscting ourselves to test cases
+        # that are not much larger than it.
+        #
+        # Calculating the actual minimal generated test case is hard, so we
+        # take a best guess that zero extending a prefix produces the minimal
+        # test case starting with that prefix (this is true for our built in
+        # strategies). This is only a reasonable thing to do if the resulting
+        # test case is valid. If we regularly run into situations where it is
+        # not valid then this strategy is a waste of time, so we want to
+        # abandon it early. In order to do this we track how many times in a
+        # row it has failed to work, and abort small test case generation when
+        # it has failed too many times in a row.
+        consecutive_zero_extend_is_invalid = 0
+
         while should_generate_more():
             prefix = self.generate_novel_prefix()
+            assert len(prefix) <= BUFFER_SIZE
 
-            data = self.new_conjecture_data(draw_bytes_with(prefix, parameter))
+            # We control growth during initial example generation, for two
+            # reasons:
+            #
+            # * It gives us an opportunity to find small examples early, which
+            #   gives us a fast path for easy to find bugs.
+            # * It avoids low probability events where we might end up
+            #   generating very large examples during health checks, which
+            #   on slower machines can trigger HealthCheck.too_slow.
+            #
+            # The heuristic we use is that we attempt to estimate the smallest
+            # extension of this prefix, and limit the size to no more than
+            # an order of magnitude larger than that. If we fail to estimate
+            # the size accurately, we skip over this prefix and try again.
+            #
+            # We need to tune the example size based on the initial prefix,
+            # because any fixed size might be too small, and any size based
+            # on the strategy in general can fall afoul of strategies that
+            # have very different sizes for different prefixes.
+            small_example_cap = clamp(10, self.settings.max_examples // 10, 50)
+
+            if (
+                self.valid_examples <= small_example_cap
+                and self.call_count <= 5 * small_example_cap
+                and not self.interesting_examples
+                and consecutive_zero_extend_is_invalid < 5
+            ):
+                minimal_example = self.cached_test_function(
+                    prefix + hbytes(BUFFER_SIZE - len(prefix))
+                )
+
+                if minimal_example.status < Status.VALID:
+                    consecutive_zero_extend_is_invalid += 1
+                    continue
+
+                consecutive_zero_extend_is_invalid = 0
+
+                minimal_extension = len(minimal_example.buffer) - len(prefix)
+
+                max_length = min(len(prefix) + minimal_extension * 10, BUFFER_SIZE)
+
+                # We could end up in a situation where even though the prefix was
+                # novel when we generated it, because we've now tried zero extending
+                # it not all possible continuations of it will be novel. In order to
+                # avoid making redundant test calls, we rerun it in simulation mode
+                # first. If this has a predictable result, then we don't bother
+                # running the test function for real here. If however we encounter
+                # some novel behaviour, we try again with the real test function,
+                # starting from the new novel prefix that has discovered.
+                try:
+                    trial_data = self.new_conjecture_data(
+                        draw_bytes_with(prefix, parameter), max_length=max_length
+                    )
+                    self.tree.simulate_test_function(trial_data)
+                    continue
+                except PreviouslyUnseenBehaviour:
+                    pass
+
+                # If the simulation entered part of the tree that has been killed,
+                # we don't want to run this.
+                if trial_data.observer.killed:
+                    continue
+
+                # We might have hit the cap on number of examples we should
+                # run when calculating the minimal example.
+                if not should_generate_more():
+                    break
+
+                prefix = trial_data.buffer
+            else:
+                max_length = BUFFER_SIZE
+
+            data = self.new_conjecture_data(
+                draw_bytes_with(prefix, parameter), max_length=max_length
+            )
+
             self.test_function(data)
 
             self.optimise_all(data)
@@ -564,10 +659,10 @@ class ConjectureRunner(object):
         self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 
-    def new_conjecture_data(self, draw_bytes):
+    def new_conjecture_data(self, draw_bytes, max_length=BUFFER_SIZE):
         return ConjectureData(
             draw_bytes=draw_bytes,
-            max_length=BUFFER_SIZE,
+            max_length=max_length,
             observer=self.tree.new_observer(),
         )
 
