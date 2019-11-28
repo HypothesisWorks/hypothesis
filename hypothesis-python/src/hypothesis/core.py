@@ -576,7 +576,7 @@ class StateForActualGivenExecution(object):
                                 printer.text(test.__name__)
                                 with printer.group(indent=4, open="(", close=""):
                                     printer.break_()
-                                    for i, v in enumerate(args):
+                                    for v in args:
                                         printer.pretty(v)
                                         # We add a comma unconditionally because
                                         # generated arguments will always be
