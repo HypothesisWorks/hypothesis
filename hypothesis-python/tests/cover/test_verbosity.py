@@ -94,7 +94,7 @@ def test_prints_initial_attempts_on_find():
 
         foo()
 
-    assert u"Tried non-satisfying example" in o.getvalue()
+    assert u"Trying example" in o.getvalue()
 
 
 def test_includes_intermediate_results_in_verbose_mode():

@@ -450,6 +450,7 @@ class ConjectureRunner(object):
                         self.settings.database.delete(self.secondary_key, existing)
 
     def exit_with(self, reason):
+        self.debug("exit_with(%s)" % (reason.name,))
         self.exit_reason = reason
         raise RunIsComplete()
 
@@ -582,6 +583,8 @@ class ConjectureRunner(object):
         """
         if Phase.shrink not in self.settings.phases or not self.interesting_examples:
             return
+
+        self.debug("Shrinking interesting examples")
 
         for prev_data in sorted(
             self.interesting_examples.values(), key=lambda d: sort_key(d.buffer)

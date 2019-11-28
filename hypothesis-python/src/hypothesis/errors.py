@@ -164,3 +164,9 @@ class StopTest(BaseException):
 
 class DidNotReproduce(HypothesisException):
     pass
+
+
+class Found(Exception):
+    """Signal that the example matches condition. Internal use only."""
+
+    hypothesis_internal_never_escalate = True
