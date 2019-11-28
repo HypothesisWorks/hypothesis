@@ -96,6 +96,7 @@ from hypothesis.searchstrategy.collections import TupleStrategy
 from hypothesis.searchstrategy.strategies import MappedSearchStrategy, SearchStrategy
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.utils.conventions import infer
+from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 from hypothesis.version import __version__
 
 if False:
@@ -503,6 +504,10 @@ class StateForActualGivenExecution(object):
 
         self.test = test
 
+        self.print_given_args = getattr(
+            wrapped_test, "_hypothesis_internal_print_given_args", True
+        )
+
         self.files_to_propagate = set()
         self.failed_normally = False
 
@@ -557,17 +562,36 @@ class StateForActualGivenExecution(object):
                         if expected_failure is not None:
                             text_repr[0] = arg_string(test, args, kwargs)
 
-                        if print_example:
-                            example = "%s(%s)" % (
-                                test.__name__,
-                                arg_string(test, args, kwargs),
-                            )
-                            report("Falsifying example: %s" % (example,))
-                        elif current_verbosity() >= Verbosity.verbose:
-                            report(
-                                lambda: "Trying example: %s(%s)"
-                                % (test.__name__, arg_string(test, args, kwargs))
-                            )
+                        if print_example or current_verbosity() >= Verbosity.verbose:
+                            output = CUnicodeIO()
+
+                            printer = RepresentationPrinter(output)
+                            if print_example:
+                                printer.text("Falsifying example:")
+                            else:
+                                printer.text("Trying example:")
+
+                            if self.print_given_args:
+                                printer.text(" ")
+                                printer.text(test.__name__)
+                                with printer.group(indent=4, open="(", close=""):
+                                    printer.break_()
+                                    for i, v in enumerate(args):
+                                        printer.pretty(v)
+                                        printer.text(",")
+                                        if (i + 1 < len(args)) or kwargs:
+                                            printer.breakable()
+                                    for i, (k, v) in enumerate(kwargs.items()):
+                                        printer.text(k)
+                                        printer.text("=")
+                                        printer.pretty(v)
+                                        printer.text(",")
+                                        if i + 1 < len(kwargs):
+                                            printer.breakable()
+                                printer.break_()
+                                printer.text(")")
+                            printer.flush()
+                            report(output.getvalue())
                         return test(*args, **kwargs)
 
         # Run the test function once, via the executor hook.
