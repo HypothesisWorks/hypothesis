@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.48.0:
+
+-------------------
+4.48.0 - 2019-11-28
+-------------------
+
+This release revokes the deprecation of ``find``, as we've now rebuilt it on top of
+``@given``, which means it has minimal maintenance burden and we're happy to support it.
+
 .. _v4.47.5:
 
 -------------------
