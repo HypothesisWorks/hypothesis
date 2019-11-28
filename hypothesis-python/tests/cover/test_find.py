@@ -20,10 +20,8 @@ from __future__ import absolute_import, division, print_function
 from random import Random
 
 from hypothesis import Phase, find, settings, strategies as st
-from tests.common.utils import checks_deprecated_behaviour
 
 
-@checks_deprecated_behaviour
 def test_find_uses_provided_random():
     prev = None
 
