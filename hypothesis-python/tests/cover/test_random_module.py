@@ -26,7 +26,7 @@ from hypothesis import find, given, register_random, reporting
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import entropy
 from hypothesis.internal.entropy import deterministic_PRNG
-from tests.common.utils import capture_out, checks_deprecated_behaviour
+from tests.common.utils import capture_out
 
 
 def test_can_seed_random():
@@ -131,7 +131,6 @@ def test_given_does_not_pollute_state():
         assert state_a != state_b
 
 
-@checks_deprecated_behaviour
 def test_find_does_not_pollute_state():
     with deterministic_PRNG():
 

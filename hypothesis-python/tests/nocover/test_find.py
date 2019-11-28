@@ -25,7 +25,6 @@ from hypothesis import find, settings as Settings
 from hypothesis.errors import NoSuchExample
 from hypothesis.strategies import booleans, dictionaries, floats, integers, lists
 from tests.common.debug import minimal
-from tests.common.utils import checks_deprecated_behaviour
 
 
 def test_can_find_an_int():
@@ -50,7 +49,6 @@ def test_can_find_nans():
         assert 2 <= len(x) <= 3
 
 
-@checks_deprecated_behaviour
 def test_condition_is_name():
     settings = Settings(max_examples=20)
     with pytest.raises(NoSuchExample) as e:

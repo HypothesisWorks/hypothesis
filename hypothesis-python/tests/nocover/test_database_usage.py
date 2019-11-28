@@ -24,18 +24,13 @@ from hypothesis import assume, core, find, given, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.compat import hbytes
-from tests.common.utils import (
-    all_values,
-    checks_deprecated_behaviour,
-    non_covering_examples,
-)
+from tests.common.utils import all_values, non_covering_examples
 
 
 def has_a_non_zero_byte(x):
     return any(hbytes(x))
 
 
-@checks_deprecated_behaviour
 def test_saves_incremental_steps_in_database():
     key = b"a database key"
     database = InMemoryExampleDatabase()
@@ -48,7 +43,6 @@ def test_saves_incremental_steps_in_database():
     assert len(all_values(database)) > 1
 
 
-@checks_deprecated_behaviour
 def test_clears_out_database_as_things_get_boring():
     key = b"a database key"
     database = InMemoryExampleDatabase()
@@ -81,7 +75,6 @@ def test_clears_out_database_as_things_get_boring():
         assert False
 
 
-@checks_deprecated_behaviour
 def test_trashes_invalid_examples():
     key = b"a database key"
     database = InMemoryExampleDatabase()
@@ -106,7 +99,6 @@ def test_trashes_invalid_examples():
     assert len(all_values(database)) < original
 
 
-@checks_deprecated_behaviour
 def test_respects_max_examples_in_database_usage():
     key = b"a database key"
     database = InMemoryExampleDatabase()

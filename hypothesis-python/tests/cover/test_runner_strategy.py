@@ -24,7 +24,6 @@ import pytest
 from hypothesis import find, given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.stateful import RuleBasedStateMachine, rule
-from tests.common.utils import checks_deprecated_behaviour
 
 
 def test_cannot_use_without_a_runner():
@@ -36,13 +35,11 @@ def test_cannot_use_without_a_runner():
         f()
 
 
-@checks_deprecated_behaviour
 def test_cannot_use_in_find_without_default():
     with pytest.raises(InvalidArgument):
         find(st.runner(), lambda x: True)
 
 
-@checks_deprecated_behaviour
 def test_is_default_in_find():
     t = object()
     assert find(st.runner(t), lambda x: True) == t

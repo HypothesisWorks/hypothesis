@@ -21,7 +21,7 @@ import pytest
 
 from hypothesis import find, given, reporting, strategies as st
 from hypothesis.errors import InvalidArgument
-from tests.common.utils import capture_out, checks_deprecated_behaviour, raises
+from tests.common.utils import capture_out, raises
 
 
 @given(st.integers(), st.data())
@@ -82,7 +82,6 @@ def test_given_twice_is_same():
     assert "Draw 2: 0" in result
 
 
-@checks_deprecated_behaviour
 def test_errors_when_used_in_find():
     with raises(InvalidArgument):
         find(st.data(), lambda x: x.draw(st.booleans()))
