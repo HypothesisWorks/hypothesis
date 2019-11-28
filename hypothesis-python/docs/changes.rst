@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.47.5:
+
+-------------------
+4.47.5 - 2019-11-28
+-------------------
+
+This release rebuilds ``find()`` on top of ``@given`` in order to have more code in common.
+It should have minimal user visible effect.
+
 .. _v4.47.4:
 
 -------------------
