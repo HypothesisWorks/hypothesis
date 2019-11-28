@@ -963,8 +963,7 @@ def test_initialize_rule_populate_bundle():
     assert (
         result
         == """\
-Falsifying example: run_state_machine(\
-factory=WithInitializeBundleRules, data=data(...))
+Falsifying example:
 state = WithInitializeBundleRules()
 v1 = state.initialize_a(dep='dep')
 state.fail_fast(param=v1)
@@ -1073,7 +1072,7 @@ def test_can_manually_call_initialize_rule():
     assert (
         result
         == """\
-Falsifying example: run_state_machine(factory=StateMachine, data=data(...))
+Falsifying example:
 state = StateMachine()
 state.initialize()
 state.fail_eventually()
@@ -1105,7 +1104,7 @@ def test_steps_printed_despite_pytest_fail(capsys):
     out, _ = capsys.readouterr()
     assert (
         """\
-Falsifying example: run_state_machine(factory=RaisesProblem, data=data(...))
+Falsifying example:
 state = RaisesProblem()
 state.oops()
 state.teardown()
