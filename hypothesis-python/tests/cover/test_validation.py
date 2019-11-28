@@ -225,7 +225,6 @@ def test_given_warns_when_mixing_positional_with_keyword():
         test()
 
 
-@checks_deprecated_behaviour
 def test_cannot_find_non_strategies():
     with pytest.raises(InvalidArgument):
         find(bool, bool)

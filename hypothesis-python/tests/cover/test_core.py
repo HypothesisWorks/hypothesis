@@ -23,10 +23,8 @@ from _pytest.outcomes import Failed, Skipped
 import hypothesis.strategies as s
 from hypothesis import find, given, reject, settings
 from hypothesis.errors import InvalidArgument, NoSuchExample, Unsatisfiable
-from tests.common.utils import checks_deprecated_behaviour
 
 
-@checks_deprecated_behaviour
 def test_stops_after_max_examples_if_satisfying():
     tracker = []
 
@@ -42,7 +40,6 @@ def test_stops_after_max_examples_if_satisfying():
     assert len(tracker) == max_examples
 
 
-@checks_deprecated_behaviour
 def test_stops_after_ten_times_max_examples_if_not_satisfying():
     count = [0]
 
@@ -104,12 +101,10 @@ def test_pytest_skip_skips_shrinking():
     assert len([x for x in values if x > 100]) == 1
 
 
-@checks_deprecated_behaviour
 def test_can_find_with_db_eq_none():
     find(s.integers(), bool, settings(database=None, max_examples=100))
 
 
-@checks_deprecated_behaviour
 def test_no_such_example():
     with pytest.raises(NoSuchExample):
         find(s.none(), bool, database_key=b"no such example")

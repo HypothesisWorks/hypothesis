@@ -23,7 +23,6 @@ import hypothesis.strategies as st
 from hypothesis import find, given
 from hypothesis._strategies import defines_strategy
 from hypothesis.errors import InvalidArgument
-from tests.common.utils import checks_deprecated_behaviour
 
 
 def test_does_not_error_on_initial_calculation():
@@ -50,7 +49,6 @@ def test_errors_on_test_invocation():
         test()
 
 
-@checks_deprecated_behaviour
 def test_errors_on_find():
     s = st.lists(st.integers(), min_size=5, max_size=2)
     with pytest.raises(InvalidArgument):

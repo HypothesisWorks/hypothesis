@@ -23,10 +23,9 @@ from pytest import raises
 
 import hypothesis.strategies as st
 from hypothesis import Verbosity, find, given, settings
-from tests.common.utils import checks_deprecated_behaviour, no_shrink
+from tests.common.utils import no_shrink
 
 
-@checks_deprecated_behaviour
 def test_seeds_off_random():
     s = settings(phases=no_shrink, database=None)
     r = random.getstate()

@@ -40,7 +40,6 @@ from hypothesis._settings import (
     Phase,
     Verbosity,
     local_settings,
-    note_deprecation,
     settings as Settings,
 )
 from hypothesis.control import BuildContext
@@ -1094,11 +1093,6 @@ def find(
     # type: (...) -> Any
     """Returns the minimal example from the given strategy ``specifier`` that
     matches the predicate function ``condition``."""
-    note_deprecation(
-        "`find(s, f)` is deprecated, because it is rarely used but takes "
-        "ongoing work to maintain as we upgrade other parts of Hypothesis.",
-        since="2019-07-11",
-    )
     if settings is None:
         settings = Settings(max_examples=2000)
     settings = Settings(settings, suppress_health_check=HealthCheck.all())
