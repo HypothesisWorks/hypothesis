@@ -10,6 +10,17 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.50.0:
+
+-------------------
+4.50.0 - 2019-11-28
+-------------------
+
+This release fixes some cases where we might previously have failed to run the
+validation logic for some strategies. As a result tests which would previously
+have been silently testing significantly less than they should may now start
+to raise ``InvalidArgument`` now that these errors are caught.
+
 .. _v4.49.0:
 
 -------------------
