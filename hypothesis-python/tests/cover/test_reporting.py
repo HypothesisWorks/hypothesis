@@ -103,3 +103,10 @@ def test_can_report_when_system_locale_is_ascii(monkeypatch):
         with io.open(write, "w", encoding="ascii") as write:
             monkeypatch.setattr(sys, "stdout", write)
             reporting.default(u"☃")
+
+
+def test_can_report_functions():
+    with capture_out() as out:
+        report(lambda: "foo")
+
+    assert out.getvalue().strip() == "foo"

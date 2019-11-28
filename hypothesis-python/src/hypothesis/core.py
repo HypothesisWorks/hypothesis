@@ -578,9 +578,12 @@ class StateForActualGivenExecution(object):
                                     printer.break_()
                                     for i, v in enumerate(args):
                                         printer.pretty(v)
+                                        # We add a comma unconditionally because
+                                        # generated arguments will always be
+                                        # kwargs, so there will always be more
+                                        # to come.
                                         printer.text(",")
-                                        if (i + 1 < len(args)) or kwargs:
-                                            printer.breakable()
+                                        printer.breakable()
 
                                     # We need to make sure to print these in the argument order for
                                     # Python 2 and older versionf of Python 3.5. In modern versions
