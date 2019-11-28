@@ -154,6 +154,14 @@ def counts_calls(func):
     return _inner
 
 
+def assert_output_contains_failure(output, test, *args, **kwargs):
+    assert test.__name__ + "(" in output
+    for a in args:
+        assert repr(a) in output
+    for k, v in kwargs.items():
+        assert ("%s=%r" % (k, v)) in output
+
+
 def assert_falsifying_output(
     test, *args, example_type="Falsifying", expected_exception=AssertionError, **kwargs
 ):
@@ -161,10 +169,5 @@ def assert_falsifying_output(
         with raises(expected_exception):
             test()
 
-    captured = out.getvalue()
-
-    assert "%s example: %s" % (example_type, test.__name__,) in captured
-    for a in args:
-        assert repr(a) in captured
-    for k, v in kwargs.items():
-        assert ("%s=%r" % (k, v)) in captured
+    assert "%s example:" % (example_type,)
+    assert_output_contains_failure(out.getvalue(), test, *args, **kwargs)
