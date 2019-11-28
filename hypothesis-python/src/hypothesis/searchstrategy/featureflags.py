@@ -40,9 +40,15 @@ class FeatureFlags(object):
     required disabled features.
     """
 
-    def __init__(self, data):
+    def __init__(self, data=None, enabled=(), disabled=()):
         self.__data = data
         self.__decisions = {}
+
+        for f in enabled:
+            self.__decisions[f] = 0
+
+        for f in disabled:
+            self.__decisions[f] = 255
 
         # In the original swarm testing paper they turn features on or off
         # uniformly at random. Instead we decide the probability with which to
@@ -54,12 +60,17 @@ class FeatureFlags(object):
         # score >= that value. In particular when self.__baseline is 0, all
         # features will be enabled. This is so that we shrink in the direction
         # of more features being enabled.
-        self.__baseline = data.draw_bits(8)
+        if self.__data is not None:
+            self.__baseline = data.draw_bits(8)
+        else:
+            # If data is None we're in example mode so all that matters is the
+            # enabled/disabled lists above. We set this up so that
+            self.__baseline = 1
 
     def is_enabled(self, name):
         """Tests whether the feature named ``name`` should be enabled on this
         test run."""
-        if self.__data.frozen:
+        if self.__data is None or self.__data.frozen:
             # Feature set objects might hang around after data generation has
             # finished. If this happens then we just report all new features as
             # enabled, because that's our shrinking direction and they have no

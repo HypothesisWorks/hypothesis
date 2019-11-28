@@ -17,8 +17,9 @@
 
 from __future__ import absolute_import, division, print_function
 
+from hypothesis import given, strategies as st
 from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy.featureflags import FeatureStrategy
+from hypothesis.searchstrategy.featureflags import FeatureFlags, FeatureStrategy
 from tests.common.debug import find_any, minimal
 
 STRAT = FeatureStrategy()
@@ -55,3 +56,29 @@ def test_marks_unknown_features_as_enabled():
     x = find_any(STRAT, lambda v: True)
 
     assert x.is_enabled("fish")
+
+
+def test_by_default_all_enabled():
+    f = FeatureFlags()
+
+    assert f.is_enabled("foo")
+
+
+@given(st.data())
+def test_repr_can_be_evalled(data):
+    flags = data.draw(STRAT)
+
+    features = data.draw(st.lists(st.text(), unique=True))
+
+    for f in features:
+        flags.is_enabled(f)
+
+    flags2 = eval(repr(flags))
+
+    for f in features:
+        assert flags2.is_enabled(f) == flags.is_enabled(f)
+
+    more_features = data.draw(st.lists(st.text().filter(lambda s: s not in features)))
+
+    for f in more_features:
+        assert flags2.is_enabled(f)
