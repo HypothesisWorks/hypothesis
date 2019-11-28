@@ -1,6 +1,5 @@
 attrs
 autoflake
-bandit
 black
 blacken-docs
 coverage
@@ -8,7 +7,9 @@ django
 dpcontracts
 flake8
 flake8-alfred
+flake8-bandit
 flake8-bugbear
+flake8-comprehensions
 flake8-docstrings
 ipython
 isort

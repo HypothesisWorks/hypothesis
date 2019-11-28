@@ -437,9 +437,9 @@ class AnnotatedTarget(object):
         ((), {}),
         ((1,), {}),
         ((1, 2), {}),
-        ((), dict(a=1)),
-        ((), dict(b=2)),
-        ((), dict(a=1, b=2)),
+        ((), {"a": 1}),
+        ((), {"b": 2}),
+        ((), {"a": 1, "b": 2}),
     ],
 )
 def test_required_args(target, args, kwargs):

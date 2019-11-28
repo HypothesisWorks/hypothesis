@@ -87,8 +87,8 @@ def test_converter_handles_kwonly_args():
     def f(*, a, b=2):
         pass
 
-    out = convert_positional_arguments(f, (), dict(a=1))
-    assert out == ((), dict(a=1, b=2))
+    out = convert_positional_arguments(f, (), {"a": 1})
+    assert out == ((), {"a": 1, "b": 2})
 
 
 def test_converter_notices_missing_kwonly_args():
@@ -96,7 +96,7 @@ def test_converter_notices_missing_kwonly_args():
         pass
 
     with pytest.raises(TypeError):
-        assert convert_positional_arguments(f, (), dict())
+        assert convert_positional_arguments(f, (), {})
 
 
 def pointless_composite(draw: None, strat: bool, nothing: list) -> int:

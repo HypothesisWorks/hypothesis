@@ -211,14 +211,14 @@ def test_float16_can_exclude_infinity(x):
 @pytest.mark.parametrize(
     "kwargs",
     [
-        dict(min_value=10 ** 5, width=16),
-        dict(max_value=10 ** 5, width=16),
-        dict(min_value=10 ** 40, width=32),
-        dict(max_value=10 ** 40, width=32),
-        dict(min_value=10 ** 400, width=64),
-        dict(max_value=10 ** 400, width=64),
-        dict(min_value=10 ** 400),
-        dict(max_value=10 ** 400),
+        {"min_value": 10 ** 5, "width": 16},
+        {"max_value": 10 ** 5, "width": 16},
+        {"min_value": 10 ** 40, "width": 32},
+        {"max_value": 10 ** 40, "width": 32},
+        {"min_value": 10 ** 400, "width": 64},
+        {"max_value": 10 ** 400, "width": 64},
+        {"min_value": 10 ** 400},
+        {"max_value": 10 ** 400},
     ],
 )
 def test_out_of_range(kwargs):

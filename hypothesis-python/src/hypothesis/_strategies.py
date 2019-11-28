@@ -1017,7 +1017,7 @@ def characters(
             "Nothing is excluded by other arguments, so passing only "
             "whitelist_characters=%(chars)r would have no effect.  Also pass "
             "whitelist_categories=(), or use sampled_from(%(chars)r) instead."
-            % dict(chars=whitelist_characters)
+            % {"chars": whitelist_characters}
         )
     blacklist_characters = blacklist_characters or ""
     whitelist_characters = whitelist_characters or ""
@@ -2017,7 +2017,7 @@ def complex_numbers(
             "Cannot have allow_nan=%r, min_magnitude=%r max_magnitude=%r"
             % (allow_nan, min_magnitude, max_magnitude)
         )
-    allow_kw = dict(allow_nan=allow_nan, allow_infinity=allow_infinity)
+    allow_kw = {"allow_nan": allow_nan, "allow_infinity": allow_infinity}
 
     if min_magnitude is None and max_magnitude is None:
         # In this simple but common case, there are no constraints on the

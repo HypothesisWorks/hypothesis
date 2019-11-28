@@ -45,7 +45,7 @@ def test_minimizes_individual_features_to_open():
     features = list(hrange(10))
 
     flags = minimal(
-        STRAT, lambda x: sum([x.is_enabled(i) for i in features]) < len(features)
+        STRAT, lambda x: sum(x.is_enabled(i) for i in features) < len(features)
     )
 
     assert all(flags.is_enabled(i) for i in features[:-1])
@@ -62,6 +62,15 @@ def test_by_default_all_enabled():
     f = FeatureFlags()
 
     assert f.is_enabled("foo")
+
+
+def test_eval_featureflags_repr():
+    flags = FeatureFlags(enabled=["on"], disabled=["off"])
+    assert flags.is_enabled("on")
+    assert not flags.is_enabled("off")
+    flags2 = eval(repr(flags))
+    assert flags2.is_enabled("on")
+    assert not flags2.is_enabled("off")
 
 
 @given(st.data())

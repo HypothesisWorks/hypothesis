@@ -466,11 +466,11 @@ def test_derandomise_with_explicit_database_is_invalid():
 @pytest.mark.parametrize(
     "kwargs",
     [
-        dict(max_examples=-1),
-        dict(buffer_size=-1),
-        dict(stateful_step_count=-1),
-        dict(deadline=-1),
-        dict(deadline=0),
+        {"max_examples": -1},
+        {"buffer_size": -1},
+        {"stateful_step_count": -1},
+        {"deadline": -1},
+        {"deadline": 0},
     ],
 )
 def test_invalid_settings_are_errors(kwargs):

@@ -201,11 +201,11 @@ def upload_distribution():
     # https://developer.github.com/v3/repos/releases/#create-a-release
     requests.post(
         "https://api.github.com/repos/HypothesisWorks/hypothesis/releases",
-        json=dict(
-            tag_name=tag_name(),
-            name="Hypothesis for Python - version " + current_version(),
-            body=changelog_body,
-        ),
+        json={
+            "tag_name": tag_name(),
+            "name": "Hypothesis for Python - version " + current_version(),
+            "body": changelog_body,
+        },
         timeout=120,  # seconds
         # Scoped personal access token, stored in Travis environ variable
         auth=("Zac-HD", os.environ["Zac_release_token"]),
