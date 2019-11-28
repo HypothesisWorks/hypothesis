@@ -758,6 +758,12 @@ class StateForActualGivenExecution(object):
                 report("".join(traceback.format_exception(type(e), e, tb)))
 
             finally:  # pragma: no cover
+                # Mostly useful for ``find`` and ensuring that objects that
+                # hold on to a reference to ``data`` know that it's now been
+                # finished and they shouldn't attempt to draw more data from
+                # it.
+                ran_example.freeze()
+
                 # This section is in fact entirely covered by the tests in
                 # test_reproduce_failure, but it seems to trigger a lovely set
                 # of coverage bugs: The branches show up as uncovered (despite

@@ -47,6 +47,7 @@ from hypothesis.internal.compat import hrange, quiet_raise, string_types
 from hypothesis.internal.reflection import function_digest, nicerepr, proxies, qualname
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
+from hypothesis.searchstrategy.featureflags import FeatureStrategy
 from hypothesis.searchstrategy.strategies import OneOfStrategy, SearchStrategy
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 
@@ -610,6 +611,10 @@ class RuleStrategy(SearchStrategy):
         self.machine = machine
         self.rules = list(machine.rules())
 
+        self.enabled_rules_strategy = st.shared(
+            FeatureStrategy(), key=("enabled rules", machine),
+        )
+
         # The order is a bit arbitrary. Primarily we're trying to group rules
         # that write to the same location together, and to put rules with no
         # target first as they have less effect on the structure. We order from
@@ -635,12 +640,27 @@ class RuleStrategy(SearchStrategy):
         if not any(self.is_valid(rule) for rule in self.rules):
             msg = u"No progress can be made from state %r" % (self.machine,)
             quiet_raise(InvalidDefinition(msg))
-        rule = data.draw(st.sampled_from(self.rules).filter(self.is_valid))
+
+        feature_flags = data.draw(self.enabled_rules_strategy)
+
+        # Note: The order of the filters here is actually quite important,
+        # because checking is_enabled makes choices, so increases the size of
+        # the choice sequence. This means that if we are in a case where many
+        # rules are invalid we will make a lot more choices if we ask if they
+        # are enabled before we ask if they are valid, so our test cases will
+        # be artificially large.
+        rule = data.draw(
+            st.sampled_from(self.rules)
+            .filter(self.is_valid)
+            .filter(lambda r: feature_flags.is_enabled(r.function.__name__))
+        )
+
         return (rule, data.draw(rule.arguments_strategy))
 
     def is_valid(self, rule):
         if rule.precondition and not rule.precondition(self.machine):
             return False
+
         for b in rule.bundles:
             bundle = self.machine.bundle(b.name)
             if not bundle:
