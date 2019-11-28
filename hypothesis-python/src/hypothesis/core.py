@@ -581,7 +581,25 @@ class StateForActualGivenExecution(object):
                                         printer.text(",")
                                         if (i + 1 < len(args)) or kwargs:
                                             printer.breakable()
-                                    for i, (k, v) in enumerate(kwargs.items()):
+
+                                    # We need to make sure to print these in the argument order for
+                                    # Python 2 and older versionf of Python 3.5. In modern versions
+                                    # this isn't an issue because kwargs is ordered.
+                                    arg_order = {
+                                        v: i
+                                        for i, v in enumerate(
+                                            getfullargspec(self.test).args
+                                        )
+                                    }
+                                    for i, (k, v) in enumerate(
+                                        sorted(
+                                            kwargs.items(),
+                                            key=lambda t: (
+                                                arg_order.get(t[0], float("inf")),
+                                                t[0],
+                                            ),
+                                        )
+                                    ):
                                         printer.text(k)
                                         printer.text("=")
                                         printer.pretty(v)
