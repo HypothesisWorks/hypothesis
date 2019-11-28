@@ -37,7 +37,7 @@ Falsifying example: test(
 """
 
 
-@pytest.mark.parametrize("line_break,input", [(False, "0" * 10), (True, "0" * 100),])
+@pytest.mark.parametrize("line_break,input", [(False, "0" * 10), (True, "0" * 100)])
 def test_inserts_line_breaks_only_at_appropriate_lengths(line_break, input):
     @example(input, input)
     @given(st.text(), st.text())
