@@ -64,6 +64,15 @@ def test_by_default_all_enabled():
     assert f.is_enabled("foo")
 
 
+def test_eval_featureflags_repr():
+    flags = FeatureFlags(enabled=["on"], disabled=["off"])
+    assert flags.is_enabled("on")
+    assert not flags.is_enabled("off")
+    flags2 = eval(repr(flags))
+    assert flags2.is_enabled("on")
+    assert not flags2.is_enabled("off")
+
+
 @given(st.data())
 def test_repr_can_be_evalled(data):
     flags = data.draw(STRAT)
