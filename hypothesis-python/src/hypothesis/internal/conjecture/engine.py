@@ -596,7 +596,7 @@ class ConjectureRunner(object):
 
                 minimal_extension = len(minimal_example.buffer) - len(prefix)
 
-                max_length = min(len(prefix) + minimal_extension * 10, BUFFER_SIZE,)
+                max_length = min(len(prefix) + minimal_extension * 10, BUFFER_SIZE)
 
                 # We could end up in a situation where even though the prefix was
                 # novel when we generated it, because we've now tried zero extending
