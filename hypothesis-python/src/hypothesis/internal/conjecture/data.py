@@ -838,6 +838,8 @@ class ConjectureData(object):
             # See https://github.com/HypothesisWorks/hypothesis/issues/2108
             start_time = benchmark_time()
 
+        strategy.validate()
+
         if strategy.is_empty:
             self.mark_invalid()
 

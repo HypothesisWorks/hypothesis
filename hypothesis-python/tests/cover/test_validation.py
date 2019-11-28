@@ -27,11 +27,13 @@ from hypothesis.internal.validation import check_type
 from hypothesis.strategies import (
     binary,
     booleans,
+    data,
     dictionaries,
     floats,
     frozensets,
     integers,
     lists,
+    nothing,
     recursive,
     sets,
     text,
@@ -259,3 +261,12 @@ def test_check_type_with_tuple_of_length_two():
     type_checker("1")
     with pytest.raises(InvalidArgument, match="Expected one of int, str but got "):
         type_checker(1.0)
+
+
+def test_validation_happens_on_draw():
+    @given(data())
+    def test(data):
+        data.draw(integers().flatmap(lambda _: lists(nothing(), min_size=1)))
+
+    with pytest.raises(InvalidArgument, match="has no values"):
+        test()
