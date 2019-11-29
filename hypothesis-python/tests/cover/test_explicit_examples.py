@@ -26,7 +26,7 @@ from hypothesis import Phase, Verbosity, example, given, note, reporting, settin
 from hypothesis.errors import DeadlineExceeded, InvalidArgument
 from hypothesis.internal.compat import integer_types, print_unicode
 from hypothesis.strategies import integers, nothing, text
-from tests.common.utils import capture_out
+from tests.common.utils import assert_falsifying_output, capture_out
 
 
 class TestInstanceMethods(TestCase):
@@ -153,12 +153,7 @@ def test_prints_output_for_explicit_examples():
     def test_positive(x):
         assert x > 0
 
-    with reporting.with_reporter(reporting.default):
-        with pytest.raises(AssertionError):
-            with capture_out() as out:
-                test_positive()
-    out = out.getvalue()
-    assert u"Falsifying example: test_positive(x=-1)" in out
+    assert_falsifying_output(test_positive, x=-1)
 
 
 def test_prints_verbose_output_for_explicit_examples():
@@ -168,11 +163,9 @@ def test_prints_verbose_output_for_explicit_examples():
     def test_always_passes(x):
         pass
 
-    with reporting.with_reporter(reporting.default):
-        with capture_out() as out:
-            test_always_passes()
-    out = out.getvalue()
-    assert u"Trying example: test_always_passes(x='NOT AN INTEGER')" in out
+    assert_falsifying_output(
+        test_always_passes, x="NOT AN INTEGER", example_type="Trying",
+    )
 
 
 def test_captures_original_repr_of_example():
@@ -182,12 +175,9 @@ def test_captures_original_repr_of_example():
         x.append(1)
         assert not x
 
-    with reporting.with_reporter(reporting.default):
-        with pytest.raises(AssertionError):
-            with capture_out() as out:
-                test_mutation()
-    out = out.getvalue()
-    assert u"Falsifying example: test_mutation(x=[])" in out
+    assert_falsifying_output(
+        test_mutation, x=[],
+    )
 
 
 def test_examples_are_tried_in_order():

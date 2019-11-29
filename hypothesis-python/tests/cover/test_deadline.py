@@ -24,7 +24,7 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import given, settings
 from hypothesis.errors import DeadlineExceeded, Flaky, InvalidArgument
-from tests.common.utils import capture_out, fails_with
+from tests.common.utils import assert_falsifying_output, capture_out, fails_with
 
 
 def test_raises_deadline_on_slow_test():
@@ -75,10 +75,9 @@ def test_deadlines_participate_in_shrinking():
         if i >= 1000:
             time.sleep(1)
 
-    with capture_out() as o:
-        with pytest.raises(DeadlineExceeded):
-            slow_if_large()
-    assert "slow_if_large(i=1000)" in o.getvalue()
+    assert_falsifying_output(
+        slow_if_large, expected_exception=DeadlineExceeded, i=1000,
+    )
 
 
 def test_keeps_you_well_above_the_deadline():

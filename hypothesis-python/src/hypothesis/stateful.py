@@ -145,6 +145,7 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
     run_state_machine._hypothesis_internal_use_reproduce_failure = getattr(
         state_machine_factory, "_hypothesis_internal_use_reproduce_failure", None
     )
+    run_state_machine._hypothesis_internal_print_given_args = False
 
     run_state_machine(state_machine_factory)
 

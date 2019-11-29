@@ -39,7 +39,14 @@ from hypothesis.strategies import (
     sets,
     text,
 )
-from tests.common.utils import capture_out, fails, fails_with, no_shrink, raises
+from tests.common.utils import (
+    assert_falsifying_output,
+    capture_out,
+    fails,
+    fails_with,
+    no_shrink,
+    raises,
+)
 
 
 @given(integers(), integers())
@@ -228,13 +235,7 @@ def test_prints_on_failure_by_default():
         assume(evans >= 0)
         assert balthazar <= evans
 
-    with raises(AssertionError):
-        with capture_out() as out:
-            with reporting.with_reporter(reporting.default):
-                test_ints_are_sorted()
-    out = out.getvalue()
-    lines = [l.strip() for l in out.split("\n")]
-    assert "Falsifying example: test_ints_are_sorted(balthazar=1, evans=0)" in lines
+    assert_falsifying_output(test_ints_are_sorted, balthazar=1, evans=0)
 
 
 def test_does_not_print_on_success():

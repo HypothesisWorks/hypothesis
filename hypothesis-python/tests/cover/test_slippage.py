@@ -24,7 +24,11 @@ from hypothesis import Phase, assume, given, settings
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import Flaky, MultipleFailures
 from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
-from tests.common.utils import capture_out, non_covering_examples
+from tests.common.utils import (
+    assert_output_contains_failure,
+    capture_out,
+    non_covering_examples,
+)
 
 
 def test_raises_multiple_failures_with_varying_type():
@@ -189,8 +193,15 @@ def test_shrinks_both_failures():
         with pytest.raises(MultipleFailures):
             test()
 
-    assert "test(i=10000)" in o.getvalue()
-    assert "test(i=%d)" % (second_target[0],) in o.getvalue()
+    output = o.getvalue()
+
+    assert_output_contains_failure(
+        output, test, i=10000,
+    )
+
+    assert_output_contains_failure(
+        output, test, i=second_target[0],
+    )
 
 
 def test_handles_flaky_tests_where_only_one_is_flaky():
