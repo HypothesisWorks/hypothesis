@@ -722,10 +722,17 @@ class ConjectureData(object):
     @classmethod
     def for_buffer(self, buffer, observer=None):
         buffer = hbytes(buffer)
+        bytes_drawn = [0]
+
+        def draw_bytes(data, n):
+            i = bytes_drawn[0]
+            result = buffer[i : i + n]
+            bytes_drawn[0] += n
+            assert len(result) == n
+            return result
+
         return ConjectureData(
-            max_length=len(buffer),
-            draw_bytes=lambda data, n: hbytes(buffer[data.index : data.index + n]),
-            observer=observer,
+            max_length=len(buffer), draw_bytes=draw_bytes, observer=observer,
         )
 
     def __init__(self, max_length, draw_bytes, observer=None):
@@ -975,10 +982,12 @@ class ConjectureData(object):
         n_bytes = bits_to_bytes(n)
         self.__check_capacity(n_bytes)
 
+        # We unconditionally draw from the underlying source of entropy so that
+        # writes are visible to it.
+        buf = bytearray(self._draw_bytes(self, n_bytes))
+
         if forced is not None:
             buf = bytearray(int_to_bytes(forced, n_bytes))
-        else:
-            buf = bytearray(self._draw_bytes(self, n_bytes))
         assert len(buf) == n_bytes
 
         # If we have a number of bits that is not a multiple of 8
