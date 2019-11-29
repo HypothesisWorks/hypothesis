@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.50.1:
+
+-------------------
+4.50.1 - 2019-11-29
+-------------------
+
+This patch adds :pypi:`flake8-comprehensions` to our linter suite.  There is no
+user-visible change - expect perhaps via some strange microbenchmarks - but
+certain parts of the code now have a clear and more consistent style.
+
 .. _v4.50.0:
 
 -------------------
