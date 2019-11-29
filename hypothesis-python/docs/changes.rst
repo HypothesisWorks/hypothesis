@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.50.2:
+
+-------------------
+4.50.2 - 2019-11-29
+-------------------
+
+This release improves Hypothesis's "Falsifying example" output, by breaking
+output across multiple lines where necessary, and by removing irrelevant
+information from the stateful testing output.
+
 .. _v4.50.1:
 
 -------------------
