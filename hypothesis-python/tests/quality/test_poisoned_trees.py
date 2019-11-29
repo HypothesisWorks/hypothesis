@@ -24,11 +24,7 @@ import pytest
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis import HealthCheck, settings
 from hypothesis.internal.compat import hbytes, hrange
-from hypothesis.internal.conjecture.engine import (
-    ConjectureData,
-    ConjectureRunner,
-    uniform,
-)
+from hypothesis.internal.conjecture.engine import ConjectureData, ConjectureRunner
 from hypothesis.searchstrategy import SearchStrategy
 
 POISON = "POISON"
@@ -96,11 +92,7 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
 
     runner = ConjectureRunner(test_function, random=random, settings=TEST_SETTINGS)
 
-    while not runner.interesting_examples:
-        runner.test_function(
-            runner.new_conjecture_data(lambda data, n: uniform(random, n))
-        )
-
+    runner.generate_new_examples()
     runner.shrink_interesting_examples()
 
     (data,) = runner.interesting_examples.values()

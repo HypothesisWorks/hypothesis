@@ -722,31 +722,25 @@ BYTE_MASKS[0] = 255
 class ConjectureData(object):
     @classmethod
     def for_buffer(self, buffer, observer=None):
-        buffer = hbytes(buffer)
-        bytes_drawn = [0]
-
-        def draw_bytes(data, n):
-            i = bytes_drawn[0]
-            result = buffer[i : i + n]
-            bytes_drawn[0] += n
-            assert len(result) == n
-            return result
-
         return ConjectureData(
-            max_length=len(buffer), draw_bytes=draw_bytes, observer=observer,
+            prefix=buffer, max_length=len(buffer), parameter=None, observer=observer,
         )
 
-    def __init__(self, max_length, draw_bytes, observer=None):
+    def __init__(self, max_length, prefix, parameter, observer=None):
         if observer is None:
             observer = DataObserver()
         assert isinstance(observer, DataObserver)
+        self.__bytes_drawn = 0
         self.observer = observer
         self.max_length = max_length
         self.is_find = False
-        self._draw_bytes = draw_bytes
         self.overdraw = 0
         self.__block_starts = defaultdict(list)
         self.__block_starts_calculated_to = 0
+        self.__prefix = prefix
+        self.__parameter = parameter
+
+        assert parameter is not None or max_length <= len(prefix)
 
         self.blocks = Blocks(self)
         self.buffer = bytearray()
@@ -968,7 +962,6 @@ class ConjectureData(object):
 
         self.buffer = hbytes(self.buffer)
         self.events = frozenset(self.events)
-        del self._draw_bytes
         self.observer.conclude_test(self.status, self.interesting_origin)
 
     def draw_bits(self, n, forced=None):
@@ -983,12 +976,18 @@ class ConjectureData(object):
         n_bytes = bits_to_bytes(n)
         self.__check_capacity(n_bytes)
 
-        # We unconditionally draw from the underlying source of entropy so that
-        # writes are visible to it.
-        buf = bytearray(self._draw_bytes(self, n_bytes))
-
         if forced is not None:
-            buf = bytearray(int_to_bytes(forced, n_bytes))
+            buf = int_to_bytes(forced, n_bytes)
+        elif self.__bytes_drawn < len(self.__prefix):
+            index = self.__bytes_drawn
+            buf = self.__prefix[index : index + n_bytes]
+            # We always draw prefixes as a whole number of blocks
+            assert len(buf) == n_bytes
+        else:
+            buf = self.__parameter.draw_bytes(n_bytes)
+        buf = bytearray(buf)
+        self.__bytes_drawn += n_bytes
+
         assert len(buf) == n_bytes
 
         # If we have a number of bits that is not a multiple of 8
@@ -1174,14 +1173,3 @@ class GenerationParameters(object):
         if self.__pure_chance is None:
             self.__pure_chance = self.__random.random()
         return self.__pure_chance
-
-
-def draw_bytes_with(prefix, parameter):
-    def draw_bytes(data, n):
-        if data.index < len(prefix):
-            result = prefix[data.index : data.index + n]
-            # We always draw prefixes as a whole number of blocks
-            return result
-        return parameter.draw_bytes(n)
-
-    return draw_bytes

@@ -35,7 +35,6 @@ from hypothesis.internal.conjecture.data import (
     Overrun,
     Status,
     StopTest,
-    draw_bytes_with,
 )
 from hypothesis.internal.conjecture.datatree import (
     DataTree,
@@ -609,7 +608,7 @@ class ConjectureRunner(object):
                 # starting from the new novel prefix that has discovered.
                 try:
                     trial_data = self.new_conjecture_data(
-                        draw_bytes_with(prefix, parameter), max_length=max_length
+                        prefix=prefix, parameter=parameter, max_length=max_length
                     )
                     self.tree.simulate_test_function(trial_data)
                     continue
@@ -631,7 +630,7 @@ class ConjectureRunner(object):
                 max_length = BUFFER_SIZE
 
             data = self.new_conjecture_data(
-                draw_bytes_with(prefix, parameter), max_length=max_length
+                prefix=prefix, parameter=parameter, max_length=max_length
             )
 
             self.test_function(data)
@@ -660,9 +659,10 @@ class ConjectureRunner(object):
         self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 
-    def new_conjecture_data(self, draw_bytes, max_length=BUFFER_SIZE):
+    def new_conjecture_data(self, prefix, parameter, max_length=BUFFER_SIZE):
         return ConjectureData(
-            draw_bytes=draw_bytes,
+            prefix=prefix,
+            parameter=parameter,
             max_length=max_length,
             observer=self.tree.new_observer(),
         )

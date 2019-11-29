@@ -65,6 +65,7 @@ from hypothesis.internal.compat import (
     binary_type,
     get_type_hints,
     getfullargspec,
+    hbytes,
     int_from_bytes,
     qualname,
 )
@@ -310,12 +311,12 @@ class ArtificialDataForExample(ConjectureData):
         self.__draws = 0
         self.__kwargs = kwargs
 
-        def draw_bytes(data, n):
-            raise NotImplementedError()  # pragma: no cover
-
         super(ArtificialDataForExample, self).__init__(
-            max_length=0, draw_bytes=draw_bytes
+            max_length=0, prefix=hbytes(), parameter=None,
         )
+
+    def draw_bits(self, n):
+        raise NotImplementedError()  # pragma: no cover
 
     def draw(self, strategy):
         assert self.__draws == 0
