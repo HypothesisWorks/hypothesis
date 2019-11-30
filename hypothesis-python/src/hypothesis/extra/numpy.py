@@ -177,14 +177,23 @@ class ArrayStrategy(SearchStrategy):
         if 0 in self.shape:
             return np.zeros(dtype=self.dtype, shape=self.shape)
 
+        # Because Numpy allocates memory for strings at array creation, if we have
+        # an unsized string dtype we'll fill an object array and then cast it back.
+        unsized_string_dtype = (
+            self.dtype.kind in (u"S", u"a", u"U") and self.dtype.itemsize == 0
+        )
+
         # Reset this flag for each test case to emit warnings from set_element
         # Skip the check for object or void (multi-element) dtypes
-        self._report_overflow = self.dtype.kind not in ("O", "V")
+        self._report_overflow = self.dtype.kind not in "OV" and not unsized_string_dtype
 
         # This could legitimately be a np.empty, but the performance gains for
         # that would be so marginal that there's really not much point risking
         # undefined behaviour shenanigans.
-        result = np.zeros(shape=self.array_size, dtype=self.dtype)
+        result = np.zeros(
+            shape=self.array_size, dtype=object if unsized_string_dtype else self.dtype
+        )
+        print(self.dtype, result.dtype)
 
         if self.fill.is_empty:
             # We have no fill value (either because the user explicitly
@@ -261,8 +270,12 @@ class ArrayStrategy(SearchStrategy):
                 # single element, we both get an array with the right value in
                 # it and putmask will do the right thing by repeating the
                 # values of the array across the mask.
-                one_element = np.zeros(shape=1, dtype=self.dtype)
+                one_element = np.zeros(
+                    shape=1, dtype=object if unsized_string_dtype else self.dtype
+                )
                 self.set_element(data, one_element, 0, self.fill)
+                if unsized_string_dtype:
+                    one_element = one_element.astype(self.dtype)
                 fill_value = one_element[0]
                 if self.unique:
                     try:
@@ -277,6 +290,19 @@ class ArrayStrategy(SearchStrategy):
                         )
 
                 np.putmask(result, needs_fill, one_element)
+
+        if unsized_string_dtype:
+            out = result.astype(self.dtype)
+            mismatch = out != result
+            if mismatch.any():
+                note_deprecation(
+                    "Array elements %r cannot be represented as dtype %r - instead "
+                    "they becomes %r.  Use a more precise strategy, e.g. without "
+                    "trailing null bytes, as this will be an error future versions."
+                    % (result[mismatch], self.dtype, out[mismatch]),
+                    since="2019-07-28",
+                )
+            result = out
 
         return result.reshape(self.shape)
 

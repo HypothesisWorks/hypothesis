@@ -338,6 +338,12 @@ def test_byte_string_dtypes_generate_unicode_strings(data):
     assert isinstance(result, binary_type)
 
 
+@pytest.mark.parametrize("dtype", ["U", "S", "a"])
+def test_unsized_strings_length_gt_one(dtype):
+    # See https://github.com/HypothesisWorks/hypothesis/issues/2229
+    find_any(nps.arrays(dtype=dtype, shape=1), lambda arr: len(arr[0]) >= 2)
+
+
 @given(nps.arrays(dtype="int8", shape=st.integers(0, 20), unique=True))
 def test_array_values_are_unique(arr):
     assert len(set(arr)) == len(arr)

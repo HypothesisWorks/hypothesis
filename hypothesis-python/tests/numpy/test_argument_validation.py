@@ -306,6 +306,12 @@ def test_unicode_string_dtype_len_0(data):
     assert data.draw(s).itemsize == 4
 
 
+@checks_deprecated_behaviour
+@given(nps.arrays(dtype="U", shape=1, elements=st.just("abc\0\0")))
+def test_unicode_string_dtype_not_trimmed(arr):
+    assert arr[0] == u"abc"
+
+
 def test_test_basic_indices_kwonly_emulation():
     with pytest.raises(TypeError):
         nps.basic_indices((), 0, 1).validate()
