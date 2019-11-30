@@ -108,9 +108,9 @@ def from_dtype(dtype):
         result = st.integers(min_value=-overflow, max_value=overflow - 1)
     elif dtype.kind == u"U":
         # Encoded in UTF-32 (four bytes/codepoint) and null-terminated
-        result = st.text(max_size=(dtype.itemsize or 0) // 4 or None).filter(
-            lambda b: b[-1:] != u"\0"
-        )
+        result = st.text(
+            alphabet=st.characters(), max_size=(dtype.itemsize or 0) // 4 or None
+        ).filter(lambda s: not s.endswith(u"\0"))
     elif dtype.kind in (u"m", u"M"):
         if "[" in dtype.str:
             res = st.just(dtype.str.split("[")[-1][:-1])
