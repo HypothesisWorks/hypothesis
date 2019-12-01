@@ -24,6 +24,7 @@ from hypothesis import assume, core, find, given, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.compat import hbytes
+from hypothesis.internal.entropy import deterministic_PRNG
 from tests.common.utils import all_values, non_covering_examples
 
 
@@ -120,7 +121,8 @@ def test_respects_max_examples_in_database_usage():
         except NoSuchExample:
             pass
 
-    stuff()
+    with deterministic_PRNG():
+        stuff()
     assert len(all_values(database)) > 10
     do_we_care = False
     counter[0] = 0
