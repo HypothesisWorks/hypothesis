@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.50.3:
+
+-------------------
+4.50.3 - 2019-12-01
+-------------------
+
+This release improves the error message when
+:func:`@settings <hypothesis.settings>` tries to inherit settings from a
+``parent`` argument that isn't a ``settings`` instance.
+
 .. _v4.50.2:
 
 -------------------
