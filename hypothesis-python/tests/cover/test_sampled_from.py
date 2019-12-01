@@ -92,3 +92,8 @@ def test_does_not_include_duplicates_even_when_duplicated_in_collection(ls):
 @given(st.lists(st.sampled_from(hrange(100)), max_size=3, unique=True))
 def test_max_size_is_respected_with_unique_sampled_from(ls):
     assert len(ls) <= 3
+
+
+@given(st.lists(st.sampled_from([0, 0.0]), unique=True, min_size=1))
+def test_issue_2247_regression(ls):
+    assert len(ls) == 1
