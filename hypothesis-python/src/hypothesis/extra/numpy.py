@@ -193,7 +193,6 @@ class ArrayStrategy(SearchStrategy):
         result = np.zeros(
             shape=self.array_size, dtype=object if unsized_string_dtype else self.dtype
         )
-        print(self.dtype, result.dtype)
 
         if self.fill.is_empty:
             # We have no fill value (either because the user explicitly
@@ -476,20 +475,7 @@ def defines_dtype_strategy(strat):
     @st.defines_strategy
     @proxies(strat)
     def inner(*args, **kwargs):
-        strategy = strat(*args, **kwargs)
-
-        def convert_to_dtype(x):
-            """Helper to debug issue #1798."""
-            try:
-                return np.dtype(x)
-            except ValueError:
-                print(
-                    "Got invalid dtype value=%r from strategy=%r, function=%r"
-                    % (x, strategy, strat)
-                )
-                raise
-
-        return strategy.map(convert_to_dtype)
+        return strat(*args, **kwargs).map(np.dtype)
 
     return inner
 
