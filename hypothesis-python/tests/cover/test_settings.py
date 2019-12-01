@@ -518,3 +518,16 @@ def test_max_example_eq_0_warns_and_disables_generation():
     calls = [0]
     inner()
     assert calls[0] == 1
+
+
+def test_invalid_parent():
+    class NotSettings(object):
+        def __repr__(self):
+            return "(not settings repr)"
+
+    not_settings = NotSettings()
+
+    with pytest.raises(InvalidArgument) as excinfo:
+        settings(not_settings)
+
+    assert "parent=(not settings repr)" in str(excinfo.value)

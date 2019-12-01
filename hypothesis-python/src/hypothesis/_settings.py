@@ -159,6 +159,10 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
 
     def __init__(self, parent=None, **kwargs):
         # type: (settings, **Any) -> None
+        if parent is not None and not isinstance(parent, settings):
+            raise InvalidArgument(
+                "Invalid argument: parent=%r is not a settings instance" % (parent,)
+            )
         if kwargs.get("derandomize"):
             if kwargs.get("database") is not None:
                 raise InvalidArgument(
