@@ -188,7 +188,7 @@ class UniqueSampledListStrategy(ListStrategy):
 
         remaining = LazySequenceCopy(self.element_strategy.elements)
 
-        while should_draw.more():
+        while remaining and should_draw.more():
             i = len(remaining) - 1
             j = cu.integer_range(data, 0, i)
             if j != i:
