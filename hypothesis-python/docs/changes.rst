@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.50.4:
+
+-------------------
+4.50.4 - 2019-12-01
+-------------------
+
+This patch fixes a rare internal error in strategies for a list of
+unique items sampled from a short non-unique sequence (:issue:`2247`).
+The bug was discovered via :pypi:`hypothesis-jsonschema`.
+
 .. _v4.50.3:
 
 -------------------
