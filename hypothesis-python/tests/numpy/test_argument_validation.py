@@ -276,22 +276,6 @@ def test_raise_invalid_argument(function, kwargs):
         function(**kwargs).example()
 
 
-@nps.defines_dtype_strategy
-def bad_dtype_strategy():
-    return st.just([("f1", "int32"), ("f1", "int32")])
-
-
-@given(st.data())
-def test_bad_dtype_strategy(capsys, data):
-    s = bad_dtype_strategy()
-    with pytest.raises(ValueError):
-        data.draw(s)
-    val = s.wrapped_strategy.mapped_strategy.value
-    assert capsys.readouterr().out.startswith(
-        "Got invalid dtype value=%r from strategy=just(%r), function=" % (val, val)
-    )
-
-
 @checks_deprecated_behaviour
 @given(st.data())
 def test_byte_string_dtype_len_0(data):
