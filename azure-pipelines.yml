@@ -135,12 +135,10 @@ jobs:
           TASK: check-nose
         check-pytest43:
           TASK: check-pytest43
+        check-django30:
+          TASK: check-django30
         check-django22:
           TASK: check-django22
-        check-django21:
-          TASK: check-django21
-        check-django20:
-          TASK: check-django20
         check-django111:
           TASK: check-django111
         check-pandas19:
