@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.50.6:
+
+-------------------
+4.50.6 - 2019-12-02
+-------------------
+
+This patch removes some old debugging helpers in our Numpy extra which have
+not been needed since :issue:`1963` and :issue:`2245`.
+
 .. _v4.50.5:
 
 -------------------
