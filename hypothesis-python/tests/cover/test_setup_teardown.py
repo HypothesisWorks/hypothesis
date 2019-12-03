@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 import pytest
 
-from hypothesis import assume, given, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import integers, text
 
 
@@ -54,6 +54,7 @@ class SomeGivens(object):
         pass
 
     @given(integers())
+    @settings(suppress_health_check=[HealthCheck.filter_too_much])
     def assume_some_stuff(self, x):
         assume(x > 0)
 
