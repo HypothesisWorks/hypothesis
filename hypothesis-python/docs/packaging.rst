@@ -49,11 +49,11 @@ Hypothesis has *mandatory* dependencies on the following libraries:
 
 Hypothesis has *optional* dependencies on the following libraries:
 
-* :pypi:`pytz` (almost any version should work)
-* `Django <https://www.djangoproject.com>`_, all supported versions
-* :pypi:`numpy`, 1.10 or later (earlier versions will probably work fine)
-* :pypi:`pandas`, 1.19 or later
-* :pypi:`pytest` (3.0 or greater). This is a mandatory dependency for testing Hypothesis itself but optional for users.
+.. literalinclude:: ../setup.py
+   :prepend: extras_require = {
+   :start-after: extras = {
+   :end-before: }
+   :append: }
 
 The way this works when installing Hypothesis normally is that these features become available if the relevant
 library is installed.
