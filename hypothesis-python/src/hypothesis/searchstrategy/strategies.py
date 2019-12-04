@@ -467,6 +467,9 @@ class SampledFromStrategy(SearchStrategy):
         self.elements = cu.check_sample(elements, "sampled_from")
         assert self.elements
 
+    def __repr__(self):
+        return "sampled_from(%s)" % ", ".join(map(repr, self.elements))
+
     def calc_has_reusable_values(self, recur):
         return True
 
