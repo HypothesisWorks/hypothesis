@@ -55,6 +55,13 @@ def type_sorting_key(t):
 
 
 def try_issubclass(thing, superclass):
+    if getattr(superclass, "__origin__", None) is collections.abc.Sequence and getattr(
+        superclass, "__args__", ()
+    ):
+        # typing.ByteString -> collections.abc.ByteString which is a subclass
+        # of collections.abc.Sequence; but `bytes` is not a subclass of a
+        # Sequence[X] for any X.
+        return False
     thing = getattr(thing, "__origin__", None) or thing
     superclass = getattr(superclass, "__origin__", None) or superclass
     try:
