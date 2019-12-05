@@ -220,18 +220,39 @@ def test_weird_drawtime_issues(drawtime, runtime):
     assert stats.draw_time_percentage == "NaN"
 
 
-class DemoStateMachine(stateful.RuleBasedStateMachine):
-    Stuff = stateful.Bundle("stuff")
-
-    @stateful.rule(target=Stuff, name=st.text())
-    def create_stuff(self, name):
-        return name
-
-    @stateful.rule(item=Stuff)
-    def do(self, item):
-        return
-
-
 def test_stateful_states_are_deduped():
+    class DemoStateMachine(stateful.RuleBasedStateMachine):
+        Stuff = stateful.Bundle("stuff")
+
+        @stateful.rule(target=Stuff, name=st.text())
+        def create_stuff(self, name):
+            return name
+
+        @stateful.rule(item=Stuff)
+        def do(self, item):
+            return
+
     stats = call_for_statistics(DemoStateMachine.TestCase().runTest)
     assert len(stats.events) <= 2
+
+
+def test_stateful_with_one_of_bundles_states_are_deduped():
+    class DemoStateMachine(stateful.RuleBasedStateMachine):
+        Things = stateful.Bundle("things")
+        Stuff = stateful.Bundle("stuff")
+        StuffAndThings = Things | Stuff
+
+        @stateful.rule(target=Things, name=st.text())
+        def create_thing(self, name):
+            return name
+
+        @stateful.rule(target=Stuff, name=st.text())
+        def create_stuff(self, name):
+            return name
+
+        @stateful.rule(item=StuffAndThings)
+        def do(self, item):
+            return
+
+    stats = call_for_statistics(DemoStateMachine.TestCase().runTest)
+    assert len(stats.events) <= 4
