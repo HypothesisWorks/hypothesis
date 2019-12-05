@@ -33,7 +33,7 @@ import math
 import re
 
 import hypothesis.internal.reflection as reflection
-from hypothesis import settings as Settings
+from hypothesis import HealthCheck, settings as Settings
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.strategies import (
@@ -64,7 +64,9 @@ class HypothesisFalsified(AssertionError):
     pass
 
 
-def define_test(specifier, predicate, condition=None, p=0.5):
+def define_test(
+    specifier, predicate, condition=None, p=0.5, suppress_health_check=(),
+):
     required_runs = int(RUNS * p)
 
     def run_test():
@@ -96,7 +98,12 @@ def define_test(specifier, predicate, condition=None, p=0.5):
             # run at least 100 examples outside of the small example generation
             # part of the generation phase.
             runner = ConjectureRunner(
-                test_function, settings=Settings(max_examples=150, phases=no_shrink)
+                test_function,
+                settings=Settings(
+                    max_examples=150,
+                    phases=no_shrink,
+                    suppress_health_check=suppress_health_check,
+                ),
             )
             runner.run()
             if runner.interesting_examples:
@@ -214,6 +221,7 @@ test_mixing_is_sometimes_distorted = define_test(
     lists(booleans() | tuples()),
     distorted,
     condition=lambda x: len(set(map(type, x))) == 2,
+    suppress_health_check=[HealthCheck.filter_too_much],
 )
 
 test_mixes_2_reasonably_often = define_test(
