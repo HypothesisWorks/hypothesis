@@ -17,7 +17,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-import math
 from collections import Counter, defaultdict
 from enum import Enum
 from random import Random, getrandbits
@@ -28,10 +27,11 @@ import attr
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.internal.compat import ceil, hbytes, hrange, int_from_bytes
+from hypothesis.internal.compat import ceil, hbytes, int_from_bytes
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
+    GenerationParameters,
     Overrun,
     Status,
     StopTest,
@@ -41,7 +41,7 @@ from hypothesis.internal.conjecture.datatree import (
     PreviouslyUnseenBehaviour,
     TreeRecordingObserver,
 )
-from hypothesis.internal.conjecture.junkdrawer import clamp, uniform
+from hypothesis.internal.conjecture.junkdrawer import clamp
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import base_report
@@ -608,7 +608,7 @@ class ConjectureRunner(object):
                 # starting from the new novel prefix that has discovered.
                 try:
                     trial_data = self.new_conjecture_data(
-                        draw_bytes_with(prefix, parameter), max_length=max_length
+                        prefix=prefix, parameter=parameter, max_length=max_length
                     )
                     self.tree.simulate_test_function(trial_data)
                     continue
@@ -630,7 +630,7 @@ class ConjectureRunner(object):
                 max_length = BUFFER_SIZE
 
             data = self.new_conjecture_data(
-                draw_bytes_with(prefix, parameter), max_length=max_length
+                prefix=prefix, parameter=parameter, max_length=max_length
             )
 
             self.test_function(data)
@@ -659,9 +659,10 @@ class ConjectureRunner(object):
         self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 
-    def new_conjecture_data(self, draw_bytes, max_length=BUFFER_SIZE):
+    def new_conjecture_data(self, prefix, parameter, max_length=BUFFER_SIZE):
         return ConjectureData(
-            draw_bytes=draw_bytes,
+            prefix=prefix,
+            parameter=parameter,
             max_length=max_length,
             observer=self.tree.new_observer(),
         )
@@ -818,135 +819,3 @@ class ConjectureRunner(object):
         result = str(event)
         self.events_to_strings[event] = result
         return result
-
-
-generation_parameters_count = 0
-
-
-class GenerationParameters(object):
-    """Parameters to control generation of examples."""
-
-    AVERAGE_ALPHABET_SIZE = 3
-
-    ALPHABET_FACTOR = math.log(1.0 - 1.0 / AVERAGE_ALPHABET_SIZE)
-
-    def __init__(self, random):
-        self.__random = random
-        self.__zero_chance = None
-        self.__max_chance = None
-        self.__pure_chance = None
-        self.__alphabet = {}
-
-        global generation_parameters_count
-        generation_parameters_count += 1
-
-        self.__id = generation_parameters_count
-
-    def __repr__(self):
-        return "GenerationParameters(%d)" % (self.__id,)
-
-    def draw_bytes(self, n):
-        """Draw an n-byte block from the distribution defined by this instance
-        of generation parameters."""
-        alphabet = self.alphabet(n)
-
-        if alphabet is None:
-            return self.__draw_without_alphabet(n)
-
-        return self.__random.choice(alphabet)
-
-    def __draw_without_alphabet(self, n):
-        if self.__random.random() <= self.zero_chance:
-            return hbytes(n)
-
-        if self.__random.random() <= self.max_chance:
-            return hbytes([255]) * n
-
-        return uniform(self.__random, n)
-
-    def alphabet(self, n_bytes):
-        """Returns an alphabet - a list of values to use for all blocks with
-        this number of bytes - or None if this value should be generated
-        without an alphabet.
-
-        This is designed to promote duplication in the test case that would
-        otherwise happen with very low probability.
-        """
-        try:
-            return self.__alphabet[n_bytes]
-        except KeyError:
-            pass
-
-        if self.__random.random() <= self.pure_chance:
-            # Sometiems we don't want to use an alphabet (e.g. for generating
-            # sets of integers having a small alphabet is disastrous), so with
-            # some probability we want to generate choices that do not use the
-            # alphabet. As with other factors we set this probability globally
-            # across the whole choice of distribution so we have various levels
-            # of mixing.
-            result = None
-        else:
-            # We draw the size as a geometric distribution with average size
-            # GenerationParameters.AVERAGE_ALPHABET_SIZE.
-            size = (
-                int(
-                    math.log(self.__random.random())
-                    / GenerationParameters.ALPHABET_FACTOR
-                )
-                + 1
-            )
-            assert size > 0
-
-            size = self.__random.randint(1, 10)
-            result = [self.__draw_without_alphabet(n_bytes) for _ in hrange(size)]
-
-        self.__alphabet[n_bytes] = result
-        return result
-
-    @property
-    def max_chance(self):
-        """Returns a probability with which any given draw_bytes call should
-        be forced to be all 255 bytes. This is an important value because it
-        can make it more likely to push us into rare corners of the search
-        space, especially when biased_coin is being used."""
-        if self.__max_chance is None:
-            # We want to generate pure random examples every now and then. This
-            # is partly to offset too strong a bias to zero and partly because
-            # some user defined strategies may not play well with zero biasing.
-            self.__max_chance = self.__random.random() * 0.01
-        return self.__max_chance
-
-    @property
-    def zero_chance(self):
-        """Returns a probability with which any given draw_bytes call should
-        be forced to be all zero. This is an important value especially because
-        it will tend to force the test case to be smaller than it otherwise
-        would be."""
-        if self.__zero_chance is None:
-            # We want to generate pure random examples every now and then. This
-            # is partly to offset too strong a bias to zero and partly because
-            # some user defined strategies may not play well with zero biasing.
-            if self.__random.randrange(0, 10) == 0:
-                self.__zero_chance = 0.0
-            else:
-                self.__zero_chance = self.__random.random() * 0.5
-        return self.__zero_chance
-
-    @property
-    def pure_chance(self):
-        """Returns a probability with which any given draw_bytes call should
-        be forced to be all pure."""
-        if self.__pure_chance is None:
-            self.__pure_chance = self.__random.random()
-        return self.__pure_chance
-
-
-def draw_bytes_with(prefix, parameter):
-    def draw_bytes(data, n):
-        if data.index < len(prefix):
-            result = prefix[data.index : data.index + n]
-            # We always draw prefixes as a whole number of blocks
-            return result
-        return parameter.draw_bytes(n)
-
-    return draw_bytes

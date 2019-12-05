@@ -23,7 +23,6 @@ from hypothesis.internal.conjecture.engine import (
     BUFFER_SIZE,
     NO_SCORE,
     GenerationParameters,
-    draw_bytes_with,
 )
 
 
@@ -176,7 +175,7 @@ class Optimiser(object):
         prefix = data.buffer[:prefix_size]
 
         dummy = ConjectureData(
-            draw_bytes=draw_bytes_with(prefix, parameter), max_length=BUFFER_SIZE
+            prefix=prefix, parameter=parameter, max_length=BUFFER_SIZE,
         )
         try:
             self.engine.tree.simulate_test_function(dummy)
@@ -188,7 +187,7 @@ class Optimiser(object):
             pass
 
         attempt = self.engine.new_conjecture_data(
-            draw_bytes_with(dummy.buffer, parameter)
+            prefix=dummy.buffer, parameter=parameter
         )
         self.engine.test_function(attempt)
         if self.consider_new_test_data(attempt):

@@ -25,11 +25,7 @@ import hypothesis.internal.conjecture.utils as cu
 import hypothesis.strategies as st
 from hypothesis import settings
 from hypothesis.internal.compat import ceil, hrange
-from hypothesis.internal.conjecture.engine import (
-    ConjectureData,
-    ConjectureRunner,
-    uniform,
-)
+from hypothesis.internal.conjecture.engine import ConjectureData, ConjectureRunner
 from hypothesis.searchstrategy import SearchStrategy
 
 POISON = "POISON"
@@ -71,15 +67,6 @@ class Matrices(SearchStrategy):
         return [data.draw(self.__elements) for _ in hrange(n * m)]
 
 
-class TrialRunner(ConjectureRunner):
-    def generate_new_examples(self):
-        def draw_bytes(data, n):
-            return uniform(self.random, n)
-
-        while not self.interesting_examples:
-            self.test_function(self.new_conjecture_data(draw_bytes))
-
-
 LOTS = 10 ** 6
 
 TRIAL_SETTINGS = settings(max_examples=LOTS, database=None)
@@ -101,7 +88,9 @@ def test_minimal_poisoned_containers(seed, size, p, strategy_class, monkeypatch)
         if POISON in v:
             data.mark_interesting()
 
-    runner = TrialRunner(test_function, random=Random(seed), settings=TRIAL_SETTINGS)
+    runner = ConjectureRunner(
+        test_function, random=Random(seed), settings=TRIAL_SETTINGS
+    )
     runner.run()
     (v,) = runner.interesting_examples.values()
     result = ConjectureData.for_buffer(v.buffer).draw(strategy)

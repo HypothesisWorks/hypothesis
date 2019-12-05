@@ -146,10 +146,7 @@ def test_terminates_shrinks(n, monkeypatch):
     db = InMemoryExampleDatabase()
 
     def generate_new_examples(self):
-        def draw_bytes(data, n):
-            return hbytes([255] * n)
-
-        self.test_function(self.new_conjecture_data(draw_bytes))
+        self.cached_test_function([255] * 1000)
 
     monkeypatch.setattr(
         ConjectureRunner, "generate_new_examples", generate_new_examples
