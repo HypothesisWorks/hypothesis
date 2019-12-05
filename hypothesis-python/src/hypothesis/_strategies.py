@@ -98,7 +98,7 @@ from hypothesis.searchstrategy.datetime import (
 from hypothesis.searchstrategy.deferred import DeferredStrategy
 from hypothesis.searchstrategy.functions import FunctionStrategy
 from hypothesis.searchstrategy.lazy import LazyStrategy
-from hypothesis.searchstrategy.misc import JustStrategy, SampledFromStrategy
+from hypothesis.searchstrategy.misc import JustStrategy
 from hypothesis.searchstrategy.numbers import (
     BoundedIntStrategy,
     FixedBoundedFloatStrategy,
@@ -107,7 +107,7 @@ from hypothesis.searchstrategy.numbers import (
 )
 from hypothesis.searchstrategy.recursive import RecursiveStrategy
 from hypothesis.searchstrategy.shared import SharedStrategy
-from hypothesis.searchstrategy.strategies import OneOfStrategy
+from hypothesis.searchstrategy.strategies import OneOfStrategy, SampledFromStrategy
 from hypothesis.searchstrategy.strings import (
     BinaryStringStrategy,
     FixedSizeBytes,

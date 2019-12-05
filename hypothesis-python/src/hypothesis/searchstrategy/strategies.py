@@ -39,7 +39,6 @@ from hypothesis.errors import (
 )
 from hypothesis.internal.compat import bit_length, hrange
 from hypothesis.internal.conjecture.utils import (
-    LABEL_MASK,
     calc_label_from_cls,
     calc_label_from_name,
     combine_labels,
@@ -231,6 +230,18 @@ class SearchStrategy(Generic[Ex]):
     supports_find = True
     validate_called = False
     __label = None
+
+    def available(self, data):
+        """Returns whether this strategy can *currently* draw any
+        values. This typically useful for stateful testing where ``Bundle``
+        grows over time a list of value to choose from.
+
+        Unlike ``empty`` property, this method's return value may change
+        over time.
+        Note: ``data`` parameter will only be used for introspection and no
+        value drawn from it.
+        """
+        return not self.is_empty
 
     # Returns True if this strategy can never draw a value and will always
     # result in the data being marked invalid.
@@ -433,6 +444,109 @@ class SearchStrategy(Generic[Ex]):
         pass
 
 
+def is_simple_data(value):
+    try:
+        hash(value)
+        return True
+    except TypeError:
+        return False
+
+
+class SampledFromStrategy(SearchStrategy):
+    """A strategy which samples from a set of elements. This is essentially
+    equivalent to using a OneOfStrategy over Just strategies but may be more
+    efficient and convenient.
+
+    The conditional distribution chooses uniformly at random from some
+    non-empty subset of the elements.
+    """
+
+    def __init__(self, elements):
+        SearchStrategy.__init__(self)
+        self.elements = cu.check_sample(elements, "sampled_from")
+        assert self.elements
+
+    def __repr__(self):
+        return "sampled_from(%s)" % ", ".join(map(repr, self.elements))
+
+    def calc_has_reusable_values(self, recur):
+        return True
+
+    def calc_is_cacheable(self, recur):
+        return is_simple_data(self.elements)
+
+    def do_draw(self, data):
+        return cu.choice(data, self.elements)
+
+    def do_filtered_draw(self, data, filter_strategy):
+        # Set of indices that have been tried so far, so that we never test
+        # the same element twice during a draw.
+        known_bad_indices = set()
+
+        def check_index(i):
+            """Return ``True`` if the element at ``i`` satisfies the filter
+            condition.
+            """
+            if i in known_bad_indices:
+                return False
+            ok = filter_strategy.condition(self.elements[i])
+            if not ok:
+                if not known_bad_indices:
+                    filter_strategy.note_retried(data)
+                known_bad_indices.add(i)
+            return ok
+
+        # Start with ordinary rejection sampling. It's fast if it works, and
+        # if it doesn't work then it was only a small amount of overhead.
+        for _ in hrange(3):
+            i = cu.integer_range(data, 0, len(self.elements) - 1)
+            if check_index(i):
+                return self.elements[i]
+
+        # If we've tried all the possible elements, give up now.
+        max_good_indices = len(self.elements) - len(known_bad_indices)
+        if not max_good_indices:
+            return filter_not_satisfied
+
+        # Figure out the bit-length of the index that we will write back after
+        # choosing an allowed element.
+        write_length = bit_length(len(self.elements))
+
+        # Impose an arbitrary cutoff to prevent us from wasting too much time
+        # on very large element lists.
+        cutoff = 10000
+        max_good_indices = min(max_good_indices, cutoff)
+
+        # Before building the list of allowed indices, speculatively choose
+        # one of them. We don't yet know how many allowed indices there will be,
+        # so this choice might be out-of-bounds, but that's OK.
+        speculative_index = cu.integer_range(data, 0, max_good_indices - 1)
+
+        # Calculate the indices of allowed values, so that we can choose one
+        # of them at random. But if we encounter the speculatively-chosen one,
+        # just use that and return immediately.
+        allowed_indices = []
+        for i in hrange(min(len(self.elements), cutoff)):
+            if check_index(i):
+                allowed_indices.append(i)
+                if len(allowed_indices) > speculative_index:
+                    # Early-exit case: We reached the speculative index, so
+                    # we just return the corresponding element.
+                    data.draw_bits(write_length, forced=i)
+                    return self.elements[i]
+
+        # The speculative index didn't work out, but at this point we've built
+        # the complete list of allowed indices, so we can just choose one of
+        # them.
+        if allowed_indices:
+            i = cu.choice(data, allowed_indices)
+            data.draw_bits(write_length, forced=i)
+            return self.elements[i]
+        # If there are no allowed indices, the filter couldn't be satisfied.
+
+        return filter_not_satisfied
+
+
 class OneOfStrategy(SearchStrategy):
     """Implements a union of strategies. Given a number of strategies this
     generates values which could have come from any of them.
@@ -475,21 +589,8 @@ class OneOfStrategy(SearchStrategy):
                     continue
                 seen.add(s)
                 pruned.append(s)
-            branch_labels = []
-            shift = bit_length(len(pruned))
-            for i, p in enumerate(pruned):
-                branch_labels.append(
-                    (((self.label ^ p.label) << shift) + i) & LABEL_MASK
-                )
             self.__element_strategies = pruned
-            self.__branch_labels = tuple(branch_labels)
         return self.__element_strategies
-
-    @property
-    def branch_labels(self):
-        self.element_strategies
-        assert len(self.__branch_labels) == len(self.element_strategies)
-        return self.__branch_labels
 
     def calc_label(self):
         return combine_labels(
@@ -498,14 +599,12 @@ class OneOfStrategy(SearchStrategy):
 
     def do_draw(self, data):
         # type: (ConjectureData) -> Ex
-        n = len(self.element_strategies)
-        assert n > 0
-        if n == 1:
-            return data.draw(self.element_strategies[0])
-
-        i = cu.integer_range(data, 0, n - 1)
-
-        return data.draw(self.element_strategies[i], label=self.branch_labels[i])
+        strategy = data.draw(
+            SampledFromStrategy(self.element_strategies).filter(
+                lambda s: s.available(data)
+            )
+        )
+        return data.draw(strategy)
 
     def __repr__(self):
         return "one_of(%s)" % ", ".join(map(repr, self.original_strategies))
