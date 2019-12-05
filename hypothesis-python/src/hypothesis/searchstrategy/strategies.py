@@ -39,7 +39,6 @@ from hypothesis.errors import (
 )
 from hypothesis.internal.compat import bit_length, hrange
 from hypothesis.internal.conjecture.utils import (
-    LABEL_MASK,
     calc_label_from_cls,
     calc_label_from_name,
     combine_labels,
@@ -590,24 +589,8 @@ class OneOfStrategy(SearchStrategy):
                     continue
                 seen.add(s)
                 pruned.append(s)
-            branch_labels = []
-            shift = bit_length(len(pruned))
-            for i, p in enumerate(pruned):
-                branch_labels.append(
-                    (((self.label ^ p.label) << shift) + i) & LABEL_MASK
-                )
             self.__element_strategies = pruned
-            self.__branch_labels = tuple(branch_labels)
-            import pdb; pdb.set_trace()
-            print('removed strategies: ', [s for s in self.original_strategies if s not in self.__element_strategies])
-            print('remaining strategies: ', [s for s in self.original_strategies if s in self.__element_strategies])
         return self.__element_strategies
-
-    @property
-    def branch_labels(self):
-        self.element_strategies
-        assert len(self.__branch_labels) == len(self.element_strategies)
-        return self.__branch_labels
 
     def calc_label(self):
         return combine_labels(
