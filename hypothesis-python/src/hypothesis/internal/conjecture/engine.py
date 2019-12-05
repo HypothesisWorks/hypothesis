@@ -31,6 +31,7 @@ from hypothesis.internal.compat import ceil, hbytes, int_from_bytes
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
+    DataObserver,
     GenerationParameters,
     Overrun,
     Status,
@@ -822,7 +823,7 @@ class ConjectureRunner(object):
 
         return Optimiser(self, example, target)
 
-    def cached_test_function(self, buffer):
+    def cached_test_function(self, buffer, error_on_discard=False):
         """Checks the tree to see if we've tested this buffer, and returns the
         previous result if we have.
 
@@ -851,7 +852,26 @@ class ConjectureRunner(object):
         else:
             assert result.status != Status.OVERRUN or result is Overrun
             self.__data_cache[buffer] = result
+            if (
+                result.status > Status.OVERRUN
+                and error_on_discard
+                and result.has_discards
+            ):
+                raise ContainsDiscard()
             return result
+
+        if error_on_discard:
+
+            class DiscardObserver(DataObserver):
+                def kill_branch(self):
+                    raise ContainsDiscard()
+
+            try:
+                self.tree.simulate_test_function(
+                    ConjectureData.for_buffer(rewritten, observer=DiscardObserver())
+                )
+            except PreviouslyUnseenBehaviour:
+                pass
 
         # We didn't find a match in the tree, so we need to run the test
         # function normally. Note that test_function will automatically
@@ -883,3 +903,7 @@ class ConjectureRunner(object):
         result = str(event)
         self.events_to_strings[event] = result
         return result
+
+
+class ContainsDiscard(Exception):
+    pass

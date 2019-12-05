@@ -370,3 +370,8 @@ for i in range(4):
     )"""
         % (i, i)
     )
+
+
+test_long_duplicates_strings = define_test(
+    tuples(text(), text()), lambda s: len(s[0]) >= 5 and s[0] == s[1],
+)

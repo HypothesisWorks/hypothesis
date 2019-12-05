@@ -223,6 +223,19 @@ def test_containment(n, seed):
     assert iv == ([n], n)
 
 
+@pytest.mark.parametrize("n", [0, 1, 2])
+def test_text_containment(n):
+    iv = minimal(
+        tuples(lists(text()), text()),
+        lambda x: x[1] in x[0] and len(x[1]) >= n,
+        timeout_after=60,
+    )
+
+    value = "0" * n
+
+    assert iv == ([value], value)
+
+
 def test_duplicate_containment():
     ls, i = minimal(
         tuples(lists(integers()), integers()),
