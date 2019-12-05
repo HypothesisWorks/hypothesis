@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.50.7:
+
+-------------------
+4.50.7 - 2019-12-05
+-------------------
+
+This release refactors some of Hypothesis's internal interfaces for representing
+data generation. It should have no user visible effect.
+
 .. _v4.50.6:
 
 -------------------
