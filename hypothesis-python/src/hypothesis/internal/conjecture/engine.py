@@ -829,6 +829,13 @@ class ConjectureRunner(object):
 
         Otherwise we call through to ``test_function``, and return a
         fresh result.
+
+        If ``error_on_discard`` is set to True this will raise ``ContainsDiscard``
+        in preference to running the actual test function. This is to allow us
+        to skip test cases we expect to be redundant in some cases. Note that
+        it may be the case that we don't raise ``ContainsDiscard`` even if the
+        result has discards if we cannot determine from previous runs whether
+        it will have a discard.
         """
         buffer = hbytes(buffer)[:BUFFER_SIZE]
 
