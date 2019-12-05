@@ -10,6 +10,14 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.50.8:
+
+-------------------
+4.50.8 - 2019-12-05
+-------------------
+
+This patch makes certain uses of Bundles more efficient in stateful testing (:issue:`2078`).
+
 .. _v4.50.7:
 
 -------------------
