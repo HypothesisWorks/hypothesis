@@ -136,7 +136,7 @@ test_can_produce_large_negative_integers = define_test(integers(), lambda x: x <
 
 
 def long_list(xs):
-    return len(xs) >= 20
+    return len(xs) >= 10
 
 
 test_can_produce_unstripped_strings = define_test(text(), lambda x: x != x.strip())
