@@ -166,6 +166,11 @@ def target(observation, label=""):
         ``hypothesis.target`` is considered experimental, and may be radically
         changed or even removed in a future version.  If you find it useful,
         please let us know so we can share and build on that success!
+
+    :ref:`statistics` include the best score seen for each label,
+    which can help avoid `the threshold problem
+    <https://hypothesis.works/articles/threshold-problem/>`__ when the minimal
+    example shrinks right down to the threshold of failure (:issue:`2180`).
     """
     check_type(float, observation, "observation")
     if math.isinf(observation) or math.isnan(observation):

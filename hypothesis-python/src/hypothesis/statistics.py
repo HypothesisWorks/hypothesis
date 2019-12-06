@@ -34,6 +34,7 @@ class Statistics(object):
             + engine.status_runtimes.get(Status.OVERRUN, [])
         )
         self.failing_examples = len(engine.status_runtimes.get(Status.INTERESTING, ()))
+        self.targets = dict(engine.best_observed_targets)
 
         runtimes = sorted(
             engine.status_runtimes.get(Status.VALID, [])
@@ -108,6 +109,10 @@ class Statistics(object):
             % (self.draw_time_percentage,),
             "  - Stopped because %s" % (self.exit_reason,),
         ]
+        if self.targets:
+            lines.append("  - Highest target scores:")
+            for label, score in sorted(self.targets.items(), key=lambda x: x[::-1]):
+                lines.append("{:>20g}  ({})".format(score, repr(label)))
         if self.events:
             lines.append("  - Events:")
             lines += ["    * %s" % (event,) for event in self.events]
