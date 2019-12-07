@@ -75,11 +75,18 @@ def test_reproduces_the_failure():
 
     @reproduce_failure(__version__, encode_failure(b))
     @given(st.binary(min_size=n, max_size=n))
-    def test(x):
+    def test_outer(x):
+        assert x != b
+
+    @given(st.binary(min_size=n, max_size=n))
+    @reproduce_failure(__version__, encode_failure(b))
+    def test_inner(x):
         assert x != b
 
     with pytest.raises(AssertionError):
-        test()
+        test_outer()
+    with pytest.raises(AssertionError):
+        test_inner()
 
 
 def test_errors_if_provided_example_does_not_reproduce_failure():

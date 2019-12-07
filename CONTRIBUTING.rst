@@ -256,6 +256,7 @@ their individual contributions.
 * `Maxim Kulkin <https://www.github.com/maximkulkin>`_ (maxim.kulkin@gmail.com)
 * `mulkieran <https://www.github.com/mulkieran>`_
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
+* `Nick Anyos <https://www.github.com/NickAnyos>`_
 * `Paul Ganssle <https://ganssle.io>`_ (paul@ganssle.io)
 * `Paul Kehrer <https://github.com/reaperhulk>`_
 * `Paul Lorett Amazona <https://github.com/whatevergeek>`_

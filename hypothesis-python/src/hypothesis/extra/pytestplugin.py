@@ -132,10 +132,24 @@ else:
         elif not is_hypothesis_test(item.obj):
             # If @given was not applied, check whether other hypothesis
             # decorators were applied, and raise an error if they were.
+            message = "Using `@%s` on a test without `@given` is completely pointless."
             if getattr(item.obj, "_hypothesis_internal_settings_applied", False):
-                raise InvalidArgument(
-                    "Using `@settings` on a test without `@given` is completely pointless."
+                raise InvalidArgument(message % ("settings",))
+            if getattr(item.obj, "is_hypothesis_strategy_function", False):
+                note_deprecation(
+                    "%s is a function that returns a Hypothesis strategy, but pytest "
+                    "has collected it as a test function.  This is useless as the "
+                    "function body will never be executed.  To define a test "
+                    "function, use @given instead of @composite." % (item.nodeid,),
+                    since="2018-11-02",
                 )
+            for name, attribute in [
+                ("example", "hypothesis_explicit_examples"),
+                ("seed", "_hypothesis_internal_use_seed"),
+                ("reproduce_example", "_hypothesis_internal_use_reproduce_failure"),
+            ]:
+                if hasattr(item.obj, attribute):
+                    note_deprecation(message % (name,), since="RELEASEDAY")
             yield
         else:
             if item.get_closest_marker("parametrize") is not None:
@@ -181,23 +195,8 @@ else:
 
     def pytest_collection_modifyitems(items):
         for item in items:
-            if not isinstance(item, pytest.Function):
-                continue
-            if is_hypothesis_test(item.obj):
+            if isinstance(item, pytest.Function) and is_hypothesis_test(item.obj):
                 item.add_marker("hypothesis")
-            if getattr(item.obj, "is_hypothesis_strategy_function", False):
-
-                def note_strategy_is_not_test(*args, **kwargs):
-                    note_deprecation(
-                        "%s is a function that returns a Hypothesis strategy, "
-                        "but pytest has collected it as a test function.  This "
-                        "is useless as the function body will never be executed.  "
-                        "To define a test function, use @given instead of "
-                        "@composite." % (item.nodeid,),
-                        since="2018-11-02",
-                    )
-
-                item.obj = note_strategy_is_not_test
 
 
 def load():
