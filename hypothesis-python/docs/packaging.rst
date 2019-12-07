@@ -17,7 +17,7 @@ Release tarballs
 ----------------
 
 These are available from :gh-link:`the GitHub releases page <releases>`. The
-tarballs on PyPI are intended for installation from a Python tool such as pip and should not
+tarballs on PyPI are intended for installation from a Python tool such as :pypi:`pip` and should not
 be considered complete releases. Requests to include additional files in them will not be granted. Their absence
 is not a bug.
 
@@ -49,14 +49,19 @@ Hypothesis has *mandatory* dependencies on the following libraries:
 
 Hypothesis has *optional* dependencies on the following libraries:
 
-* :pypi:`pytz` (almost any version should work)
-* `Django <https://www.djangoproject.com>`_, all supported versions
-* :pypi:`numpy`, 1.10 or later (earlier versions will probably work fine)
-* :pypi:`pandas`, 1.19 or later
-* :pypi:`pytest` (3.0 or greater). This is a mandatory dependency for testing Hypothesis itself but optional for users.
+.. literalinclude:: ../setup.py
+   :prepend: extras_require = {
+   :start-after: extras = {
+   :end-before: }
+   :append: }
 
 The way this works when installing Hypothesis normally is that these features become available if the relevant
 library is installed.
+
+Specifically for :pypi:`pytest`, our plugin supports versions of pytest which
+have been out of upstream support for some time.  Hypothesis tests can still
+be executed by even older versions of pytest - you just won't have the plugin
+to provide automatic marks, helpful usage warnings, and per-test statistics.
 
 ------------------
 Testing Hypothesis
@@ -66,7 +71,7 @@ If you want to test Hypothesis as part of your packaging you will probably not w
 Hypothesis itself uses for running its tests, because it has a lot of logic for installing and testing against
 different versions of Python.
 
-The tests must be run with pytest >= 3.0; check the :gh-file:`requirements/`
+The tests must be run with fairly recent tooling; check the :gh-file:`requirements/`
 directory for details.
 
 The organisation of the tests is described in the :gh-file:`hypothesis-python/tests/README.rst`.
