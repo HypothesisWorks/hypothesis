@@ -149,7 +149,7 @@ else:
                 ("reproduce_example", "_hypothesis_internal_use_reproduce_failure"),
             ]:
                 if hasattr(item.obj, attribute):
-                    note_deprecation(message % (name,), since="RELEASEDAY")
+                    note_deprecation(message % (name,), since="2019-12-07")
             yield
         else:
             if item.get_closest_marker("parametrize") is not None:

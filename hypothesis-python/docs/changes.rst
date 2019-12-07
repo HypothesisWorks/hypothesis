@@ -10,6 +10,18 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.51.0:
+
+-------------------
+4.51.0 - 2019-12-07
+-------------------
+
+This release deprecates use of :func:`@example <hypothesis.example>`,
+:func:`@seed <hypothesis.seed>`, or :func:`@reproduce_failure <hypothesis.reproduce_failure>`
+without :func:`@given <hypothesis.given>`.
+
+Thanks to Nick Anyos for the patch!
+
 .. _v4.50.8:
 
 -------------------
