@@ -598,7 +598,9 @@ settings._define_setting(
 settings._define_setting(
     name="stateful_step_count",
     default=50,
-    validator=lambda x: _ensure_positive_int(x, "stateful_step_count", "2019-03-06"),
+    validator=lambda x: _ensure_positive_int(
+        x, "stateful_step_count", "2019-03-06", min_value=1
+    ),
     description="""
 Number of steps to run a stateful program for before giving up on it breaking.
 """,
