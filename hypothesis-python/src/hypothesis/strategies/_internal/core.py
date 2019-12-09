@@ -107,7 +107,10 @@ from hypothesis.strategies._internal.numbers import (
 )
 from hypothesis.strategies._internal.recursive import RecursiveStrategy
 from hypothesis.strategies._internal.shared import SharedStrategy
-from hypothesis.strategies._internal.strategies import OneOfStrategy, SampledFromStrategy
+from hypothesis.strategies._internal.strategies import (
+    OneOfStrategy,
+    SampledFromStrategy,
+)
 from hypothesis.strategies._internal.strings import (
     BinaryStringStrategy,
     FixedSizeBytes,
