@@ -62,7 +62,7 @@ def get_mypy_analysed_type(fname, val):
         ("booleans().filter(bool)", "bool"),
         ("lists(none())", "list[None]"),
         ("dictionaries(integers(), datetimes())", "dict[int, datetime.datetime]"),
-        ("data()", "hypothesis._strategies.DataObject"),
+        ("data()", "hypothesis.strategies._internal.core.DataObject"),
         # Ex`-1 stands for recursion in the whole type, i.e. Ex`0 == Union[...]
         ("recursive(integers(), lists)", "Union[list[Ex`-1], int]"),
         # See https://github.com/python/mypy/issues/5269 - fix the hints on
@@ -79,7 +79,9 @@ def test_revealed_types(tmpdir, val, expect):
         "reveal_type(s)\n".format(val)
     )
     typ = get_mypy_analysed_type(str(f.realpath()), val)
-    assert typ == "hypothesis.searchstrategy.strategies.SearchStrategy[%s]" % expect
+    assert (
+        typ == "hypothesis.strategies._internal.strategies.SearchStrategy[%s]" % expect
+    )
 
 
 def test_data_object_type_tracing(tmpdir):
