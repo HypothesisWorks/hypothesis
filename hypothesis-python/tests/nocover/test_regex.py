@@ -23,7 +23,7 @@ from functools import reduce
 
 import hypothesis.strategies as st
 from hypothesis import assume, given, reject
-from hypothesis.searchstrategy.regex import base_regex_strategy
+from hypothesis.strategies.internal.regex import base_regex_strategy
 
 
 @st.composite

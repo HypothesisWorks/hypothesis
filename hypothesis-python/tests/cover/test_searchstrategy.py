@@ -24,7 +24,7 @@ import pytest
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import text_type
-from hypothesis.searchstrategy.strategies import one_of_strategies
+from hypothesis.strategies.internal.strategies import one_of_strategies
 from hypothesis.strategies import booleans, integers, just, randoms, tuples
 from hypothesis.types import RandomWithSeed
 from tests.common.debug import assert_no_examples

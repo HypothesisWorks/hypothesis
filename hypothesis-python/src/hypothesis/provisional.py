@@ -33,11 +33,11 @@ import string
 import hypothesis.internal.conjecture.utils as cu
 import hypothesis.strategies.internal.core as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.strategies.internal.strategies import SearchStrategy
 
 if False:
     from typing import Text  # noqa
-    from hypothesis.searchstrategy.strategies import SearchStrategy, Ex  # noqa
+    from hypothesis.strategies.internal.strategies import SearchStrategy, Ex  # noqa
 
 
 URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'(),")

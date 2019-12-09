@@ -50,7 +50,7 @@ except ImportError:  # pragma: no cover
 
 if False:
     from typing import Any, List, Union, Sequence, Set  # noqa
-    from hypothesis.searchstrategy.strategies import Ex  # noqa
+    from hypothesis.strategies.internal.strategies import Ex  # noqa
 
 
 def dtype_for_elements_strategy(s):

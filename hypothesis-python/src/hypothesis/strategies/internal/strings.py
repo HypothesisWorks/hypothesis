@@ -22,7 +22,7 @@ from hypothesis.internal import charmap
 from hypothesis.internal.compat import binary_type, hunichr
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.searchstrategy.strategies import MappedSearchStrategy, SearchStrategy
+from hypothesis.strategies.internal.strategies import MappedSearchStrategy, SearchStrategy
 
 
 class OneCharStringStrategy(SearchStrategy):

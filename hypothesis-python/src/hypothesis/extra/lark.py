@@ -47,7 +47,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import getfullargspec, string_types
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.validation import check_type
-from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.strategies.internal import SearchStrategy
 
 if False:
     from typing import Dict, Text  # noqa
