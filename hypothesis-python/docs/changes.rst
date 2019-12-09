@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.53.0:
+
+-------------------
+4.53.0 - 2019-12-09
+-------------------
+
+:ref:`statistics` now include the best score seen for each label, which can help avoid
+`the threshold problem <https://hypothesis.works/articles/threshold-problem/>`__  when
+the minimal example shrinks right down to the threshold of failure (:issue:`2180`).
+
 .. _v4.52.0:
 
 -------------------
