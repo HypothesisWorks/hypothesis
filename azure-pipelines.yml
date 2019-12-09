@@ -94,7 +94,7 @@ jobs:
       displayName: Install dependencies
     - script: |
         cd hypothesis-python
-        pytest
+        pytest tests\cover  tests/datetime tests\numpy  tests\pandas tests\py3  tests\pytest
       displayName: Run tests
 
   - job: osx
