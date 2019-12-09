@@ -32,6 +32,7 @@ from hypothesis import (
     settings,
     stateful,
     strategies as st,
+    target,
 )
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, ExitReason
@@ -256,3 +257,17 @@ def test_stateful_with_one_of_bundles_states_are_deduped():
 
     stats = call_for_statistics(DemoStateMachine.TestCase().runTest)
     assert len(stats.events) <= 4
+
+
+def test_statistics_for_threshold_problem():
+    @given(st.floats(min_value=0, allow_infinity=False))
+    def threshold(error):
+        target(error, label="error")
+        assert error <= 10
+        target(0.0, label="never in failing example")
+
+    stats = call_for_statistics(threshold)
+    assert "  - Highest target scores:" in stats.get_description()
+    assert "never in failing example" in stats.targets
+    # Check that we report far-from-threshold failing examples
+    assert stats.targets["error"] > 1
