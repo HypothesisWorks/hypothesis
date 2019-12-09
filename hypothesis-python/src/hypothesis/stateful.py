@@ -52,6 +52,7 @@ from hypothesis.searchstrategy.strategies import OneOfStrategy, SearchStrategy
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 
 STATE_MACHINE_RUN_LABEL = cu.calc_label_from_name("another state machine step")
+SHOULD_CONTINUE_LABEL = cu.calc_label_from_name("should we continue drawing")
 
 if False:
     from typing import Any, Dict, List, Text  # noqa
@@ -103,11 +104,6 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
             check_type(RuleBasedStateMachine, machine, "state_machine_factory()")
         data.conjecture_data.hypothesis_runner = machine
 
-        n_steps = settings.stateful_step_count
-        should_continue = cu.many(
-            data.conjecture_data, min_size=1, max_size=n_steps, average_size=n_steps
-        )
-
         print_steps = (
             current_build_context().is_final or current_verbosity() >= Verbosity.debug
         )
@@ -115,8 +111,39 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
             if print_steps:
                 machine.print_start()
             machine.check_invariants()
+            max_steps = settings.stateful_step_count
+            steps_run = 0
 
-            while should_continue.more():
+            cd = data.conjecture_data
+
+            while True:
+                # We basically always want to run the maximum number of steps,
+                # but need to leave a small probability of terminating early
+                # in order to allow for reducing the number of steps once we
+                # find a failing test case, so we stop with probability of
+                # 2 ** -16 during normal operation but force a stop when we've
+                # generated enough steps.
+                cd.start_example(STATE_MACHINE_RUN_LABEL)
+                if steps_run == 0:
+                    cd.draw_bits(16, forced=1)
+                elif steps_run >= max_steps:
+                    cd.draw_bits(16, forced=0)
+                    break
+                else:
+                    # All we really care about is whether this value is zero
+                    # or non-zero, so if it's > 1 we discard it and insert a
+                    # replacement value after
+                    cd.start_example(SHOULD_CONTINUE_LABEL)
+                    should_continue_value = cd.draw_bits(16)
+                    if should_continue_value > 1:
+                        cd.stop_example(discard=True)
+                        cd.draw_bits(16, forced=int(bool(should_continue_value)))
+                    else:
+                        cd.stop_example()
+                        if should_continue_value == 0:
+                            break
+                steps_run += 1
+
                 value = data.conjecture_data.draw(machine.steps())
                 # Assign 'result' here in case 'execute_step' fails below
                 result = multiple()
@@ -129,6 +156,7 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
                         # then 'print_step' prints a multi-variable assignment.
                         machine.print_step(value, result)
                 machine.check_invariants()
+                data.conjecture_data.stop_example()
         finally:
             if print_steps:
                 machine.print_end()

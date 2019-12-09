@@ -865,7 +865,7 @@ def test_removes_needless_steps():
     but will still fail with very high probability.
     """
 
-    @Settings(derandomize=True, max_examples=1000)
+    @Settings(derandomize=True, max_examples=1000, deadline=None)
     class IncorrectDeletion(RuleBasedStateMachine):
         def __init__(self):
             super(IncorrectDeletion, self).__init__()
@@ -1193,25 +1193,25 @@ def test_uses_seed(capsys):
 
 
 def test_reproduce_failure_works():
-    @reproduce_failure(__version__, base64.b64encode(b"\0\0\0\0\0"))
+    @reproduce_failure(__version__, base64.b64encode(b"\x00\x00\x01\x00\x00\x00"))
     class TrivialMachine(RuleBasedStateMachine):
         @rule()
         def oops(self):
             assert False
 
     with pytest.raises(AssertionError):
-        run_state_machine_as_test(TrivialMachine)
+        run_state_machine_as_test(TrivialMachine, settings=Settings(print_blob=True))
 
 
 def test_reproduce_failure_fails_if_no_error():
-    @reproduce_failure(__version__, base64.b64encode(b"\0\0\0\0\0"))
+    @reproduce_failure(__version__, base64.b64encode(b"\x00\x00\x01\x00\x00\x00"))
     class TrivialMachine(RuleBasedStateMachine):
         @rule()
         def ok(self):
             assert True
 
     with pytest.raises(DidNotReproduce):
-        run_state_machine_as_test(TrivialMachine)
+        run_state_machine_as_test(TrivialMachine, settings=Settings(print_blob=True))
 
 
 def test_cannot_have_zero_steps():
