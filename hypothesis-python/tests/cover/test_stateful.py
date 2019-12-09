@@ -1212,3 +1212,8 @@ def test_reproduce_failure_fails_if_no_error():
 
     with pytest.raises(DidNotReproduce):
         run_state_machine_as_test(TrivialMachine)
+
+
+def test_cannot_have_zero_steps():
+    with pytest.raises(InvalidArgument):
+        Settings(stateful_step_count=0)
