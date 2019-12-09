@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.51.1:
+
+-------------------
+4.51.1 - 2019-12-09
+-------------------
+
+This release makes a small internal change to the distribution of test cases.
+It is unlikely to have much user visible impact.
+
 .. _v4.51.0:
 
 -------------------
