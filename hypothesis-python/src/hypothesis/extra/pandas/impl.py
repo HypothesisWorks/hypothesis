@@ -24,9 +24,9 @@ import attr
 import numpy as np
 import pandas
 
-import hypothesis._strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis.internal.conjecture.utils as cu
+import hypothesis.strategies.internal.core as st
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import abc, hrange

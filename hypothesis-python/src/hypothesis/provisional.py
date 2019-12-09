@@ -30,8 +30,8 @@ from __future__ import absolute_import, division, print_function
 import os.path
 import string
 
-import hypothesis._strategies as st
 import hypothesis.internal.conjecture.utils as cu
+import hypothesis.strategies.internal.core as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.searchstrategy.strategies import SearchStrategy
 

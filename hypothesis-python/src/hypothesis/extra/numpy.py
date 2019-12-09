@@ -23,8 +23,8 @@ from collections import namedtuple
 
 import numpy as np
 
-import hypothesis._strategies as st
 import hypothesis.internal.conjecture.utils as cu
+import hypothesis.strategies.internal.core as st
 from hypothesis import Verbosity, assume
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
