@@ -32,7 +32,6 @@ from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
     DataObserver,
-    GenerationParameters,
     Overrun,
     Status,
     StopTest,
@@ -579,24 +578,6 @@ class ConjectureRunner(object):
                 self.first_bug_found_at + 1000, self.last_bug_found_at * 2
             )
 
-        # GenerationParameters are a set of decisions we make that are global
-        # to the whole test case, used to bias the data generation in various
-        # ways. This is an approach very very loosely inspired by the paper
-        # "Swarm testing." by Groce et al. in that it induces deliberate
-        # correlation between otherwise independent decisions made during the
-        # generation process.
-        #
-        # More importantly the generation is designed to make certain scenarios
-        # more likely (e.g. small examples, duplicated values), which can help
-        # or hurt in terms of finding interesting things. Whenever the result
-        # of our generation is a bad test case, for whatever definition of
-        # "bad" we like (currently, invalid or too large), we ditch the
-        # parameter early. This allows us to potentially generate good test
-        # cases significantly more often than we otherwise would, by selecting
-        # for parameters that make them more likely.
-        parameter = GenerationParameters(self.random)
-        count = 0
-
         # We attempt to use the size of the minimal generated test case starting
         # from a given novel prefix as a guideline to generate smaller test
         # cases for an initial period, by restriscting ourselves to test cases
@@ -667,7 +648,7 @@ class ConjectureRunner(object):
                 # starting from the new novel prefix that has discovered.
                 try:
                     trial_data = self.new_conjecture_data(
-                        prefix=prefix, parameter=parameter, max_length=max_length
+                        prefix=prefix, max_length=max_length
                     )
                     self.tree.simulate_test_function(trial_data)
                     continue
@@ -688,9 +669,7 @@ class ConjectureRunner(object):
             else:
                 max_length = BUFFER_SIZE
 
-            data = self.new_conjecture_data(
-                prefix=prefix, parameter=parameter, max_length=max_length
-            )
+            data = self.new_conjecture_data(prefix=prefix, max_length=max_length)
 
             self.test_function(data)
 
@@ -701,7 +680,97 @@ class ConjectureRunner(object):
                 or count > 5
             ):
                 count = 0
-                parameter = GenerationParameters(self.random)
+                GenerationParameters(self.random)
+
+            # A thing that is often useful but rarely happens by accident is
+            # to generate the same value at multiple different points in the
+            # test case.
+            #
+            # Rather than make this the responsibility of individual strategies
+            # we implement a small mutator that just takes parts of the test
+            # case with the same label and tries replacing one of them with a
+            # copy of the other and tries running it. If we've made a good
+            # guess about what to put where, this will run a similar generated
+            # test case with more duplication.
+            if (
+                # An OVERRUN doesn't have enough information about the test
+                # case to mutate, so we just skip those.
+                data.status >= Status.INVALID
+                # This has a tendency to trigger some weird edge cases during
+                # generation so we don't let it run until we're done with the
+                # health checks.
+                and self.health_check_state is None
+            ):
+                initial_calls = self.call_count
+                failed_mutations = 0
+                while (
+                    should_generate_more()
+                    # We implement fairly conservative checks for how long we
+                    # we should run mutation for, as it's generally not obvious
+                    # how helpful it is for any given test case.
+                    and self.call_count <= initial_calls + 5
+                    and failed_mutations <= 5
+                ):
+                    groups = defaultdict(list)
+                    for ex in data.examples:
+                        groups[ex.label, ex.depth].append(ex)
+
+                    groups = [v for v in groups.values() if len(v) > 1]
+
+                    if not groups:
+                        break
+
+                    group = self.random.choice(groups)
+
+                    ex1, ex2 = sorted(
+                        self.random.sample(group, 2), key=lambda i: i.index
+                    )
+                    assert ex1.end <= ex2.start
+
+                    replacements = [data.buffer[e.start : e.end] for e in [ex1, ex2]]
+
+                    replacement = self.random.choice(replacements)
+
+                    try:
+                        # We attempt to replace both the the examples with
+                        # whichever choice we made. Note that this might end
+                        # up messing up and getting the example boundaries
+                        # wrong - labels matching are only a best guess as to
+                        # whether the two are equivalent - but it doesn't
+                        # really matter. It may not achieve the desired result
+                        # but it's still a perfectly acceptable choice sequence.
+                        # to try.
+                        new_data = self.cached_test_function(
+                            data.buffer[: ex1.start]
+                            + replacement
+                            + data.buffer[ex1.end : ex2.start]
+                            + replacement
+                            + data.buffer[ex2.end :],
+                            # We set error_on_discard so that we don't end up
+                            # entering parts of the tree we consider redundant
+                            # and not worth exploring.
+                            error_on_discard=True,
+                            extend=BUFFER_SIZE,
+                        )
+                    except ContainsDiscard:
+                        failed_mutations += 1
+                        continue
+
+                    if (
+                        new_data.status >= data.status
+                        and data.buffer != new_data.buffer
+                        and all(
+                            k in new_data.target_observations
+                            and new_data.target_observations[k] >= v
+                            for k, v in data.target_observations.items()
+                        )
+                    ):
+                        data = new_data
+                        failed_mutations = 0
+                    else:
+                        failed_mutations += 1
+
+            self.optimise_all(data)
 
     def optimise_targets(self):
         """If any target observations have been made, attempt to optimise them
@@ -724,12 +793,12 @@ class ConjectureRunner(object):
         self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 
-    def new_conjecture_data(self, prefix, parameter, max_length=BUFFER_SIZE):
+    def new_conjecture_data(self, prefix, max_length=BUFFER_SIZE, observer=None):
         return ConjectureData(
             prefix=prefix,
-            parameter=parameter,
             max_length=max_length,
-            observer=self.tree.new_observer(),
+            random=self.random,
+            observer=observer or self.tree.new_observer(),
         )
 
     def new_conjecture_data_for_buffer(self, buffer):
@@ -823,7 +892,7 @@ class ConjectureRunner(object):
 
         return Optimiser(self, example, target)
 
-    def cached_test_function(self, buffer, error_on_discard=False):
+    def cached_test_function(self, buffer, error_on_discard=False, extend=0):
         """Checks the tree to see if we've tested this buffer, and returns the
         previous result if we have.
 
@@ -839,6 +908,8 @@ class ConjectureRunner(object):
         """
         buffer = hbytes(buffer)[:BUFFER_SIZE]
 
+        max_length = min(BUFFER_SIZE, len(buffer) + extend)
+
         def check_result(result):
             assert result is Overrun or (
                 isinstance(result, ConjectureResult) and result.status != Status.OVERRUN
@@ -850,35 +921,34 @@ class ConjectureRunner(object):
         except KeyError:
             pass
 
-        rewritten, status = self.tree.rewrite(buffer)
-
-        try:
-            result = check_result(self.__data_cache[rewritten])
-        except KeyError:
-            pass
-        else:
-            assert result.status != Status.OVERRUN or result is Overrun
-            self.__data_cache[buffer] = result
-            if (
-                result.status > Status.OVERRUN
-                and error_on_discard
-                and result.has_discards
-            ):
-                raise ContainsDiscard()
-            return result
-
         if error_on_discard:
 
             class DiscardObserver(DataObserver):
                 def kill_branch(self):
                     raise ContainsDiscard()
 
-            try:
-                self.tree.simulate_test_function(
-                    ConjectureData.for_buffer(rewritten, observer=DiscardObserver())
-                )
-            except PreviouslyUnseenBehaviour:
-                pass
+            observer = DiscardObserver()
+        else:
+            observer = DataObserver()
+
+        dummy_data = self.new_conjecture_data(
+            prefix=buffer, max_length=max_length, observer=observer
+        )
+
+        try:
+            self.tree.simulate_test_function(dummy_data)
+        except PreviouslyUnseenBehaviour:
+            pass
+        else:
+            if dummy_data.status > Status.OVERRUN:
+                dummy_data.freeze()
+                try:
+                    return self.__data_cache[dummy_data.buffer]
+                except KeyError:
+                    pass
+            else:
+                self.__data_cache[buffer] = Overrun
+                return Overrun
 
         # We didn't find a match in the tree, so we need to run the test
         # function normally. Note that test_function will automatically
@@ -886,17 +956,11 @@ class ConjectureRunner(object):
 
         result = None
 
-        if status != Status.OVERRUN:
-            data = self.new_conjecture_data_for_buffer(buffer)
-            self.test_function(data)
-            result = check_result(data.as_result())
-            assert status is None or result.status == status, (status, result.status)
-            status = result.status
-        if status == Status.OVERRUN:
-            result = Overrun
-
-        assert result is not None
-
+        data = self.new_conjecture_data(
+            prefix=max((buffer, dummy_data.buffer), key=len), max_length=max_length,
+        )
+        self.test_function(data)
+        result = check_result(data.as_result())
         self.__data_cache[buffer] = result
         return result
 
