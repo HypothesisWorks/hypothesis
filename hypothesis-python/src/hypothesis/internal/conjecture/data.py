@@ -987,7 +987,7 @@ class ConjectureData(object):
             index = self.__bytes_drawn
             buf = self.__prefix[index : index + n_bytes]
             if len(buf) < n_bytes:
-                buf += uniform(self.__parameter.random, n_bytes - len(buf))
+                buf += uniform(self.__random, n_bytes - len(buf))
         else:
             buf = self.__parameter.draw_bytes(n_bytes)
         buf = bytearray(buf)

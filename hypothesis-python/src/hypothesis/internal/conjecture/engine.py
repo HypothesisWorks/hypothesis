@@ -673,15 +673,6 @@ class ConjectureRunner(object):
 
             self.test_function(data)
 
-            count += 1
-            if (
-                data.status < Status.VALID
-                or len(data.buffer) * 2 >= BUFFER_SIZE
-                or count > 5
-            ):
-                count = 0
-                GenerationParameters(self.random)
-
             # A thing that is often useful but rarely happens by accident is
             # to generate the same value at multiple different points in the
             # test case.
@@ -769,8 +760,6 @@ class ConjectureRunner(object):
                         failed_mutations = 0
                     else:
                         failed_mutations += 1
-
-            self.optimise_all(data)
 
     def optimise_targets(self):
         """If any target observations have been made, attempt to optimise them
