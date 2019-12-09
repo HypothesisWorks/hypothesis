@@ -21,7 +21,7 @@ from operator import itemgetter
 
 import pytest
 
-from hypothesis import Phase, example, given, settings, strategies as st, target
+from hypothesis import Phase, example, given, seed, settings, strategies as st, target
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import string_types
 
@@ -131,7 +131,7 @@ def test_targeting_with_many_empty(_):
 def test_targeting_increases_max_length():
     strat = st.lists(st.booleans())
 
-    @settings(database=None, max_examples=200, phases=[Phase.generate])
+    @settings(database=None, max_examples=200, phases=[Phase.generate, Phase.target])
     @given(strat)
     def test_with_targeting(ls):
         target(float(len(ls)))
@@ -139,3 +139,26 @@ def test_targeting_increases_max_length():
 
     with pytest.raises(AssertionError):
         test_with_targeting()
+
+
+def test_targeting_can_be_disabled():
+    strat = st.lists(st.integers(0, 255))
+
+    def score(enabled):
+        result = [0]
+        phases = [Phase.generate]
+        if enabled:
+            phases.append(Phase.target)
+
+        @seed(0)
+        @settings(database=None, max_examples=200, phases=phases)
+        @given(strat)
+        def test(ls):
+            score = float(sum(ls))
+            result[0] = max(result[0], score)
+            target(score)
+
+        test()
+        return result[0]
+
+    assert score(enabled=True) > score(enabled=False)
