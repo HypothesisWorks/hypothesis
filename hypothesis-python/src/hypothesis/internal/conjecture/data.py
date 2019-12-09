@@ -1067,7 +1067,6 @@ class GenerationParameters(object):
     def __init__(self, random):
         self.__random = random
         self.__zero_chance = None
-        self.__max_chance = None
         self.__pure_chance = None
         self.__alphabet = {}
 
@@ -1092,9 +1091,6 @@ class GenerationParameters(object):
     def __draw_without_alphabet(self, n):
         if self.__random.random() <= self.zero_chance:
             return hbytes(n)
-
-        if self.__random.random() <= self.max_chance:
-            return hbytes([255]) * n
 
         return uniform(self.__random, n)
 
@@ -1136,19 +1132,6 @@ class GenerationParameters(object):
 
         self.__alphabet[n_bytes] = result
         return result
-
-    @property
-    def max_chance(self):
-        """Returns a probability with which any given draw_bytes call should
-        be forced to be all 255 bytes. This is an important value because it
-        can make it more likely to push us into rare corners of the search
-        space, especially when biased_coin is being used."""
-        if self.__max_chance is None:
-            # We want to generate pure random examples every now and then. This
-            # is partly to offset too strong a bias to zero and partly because
-            # some user defined strategies may not play well with zero biasing.
-            self.__max_chance = self.__random.random() * 0.01
-        return self.__max_chance
 
     @property
     def zero_chance(self):
