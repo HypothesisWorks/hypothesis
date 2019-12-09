@@ -1066,7 +1066,6 @@ class GenerationParameters(object):
 
     def __init__(self, random):
         self.__random = random
-        self.__zero_chance = None
         self.__pure_chance = None
         self.__alphabet = {}
 
@@ -1089,9 +1088,6 @@ class GenerationParameters(object):
         return self.__random.choice(alphabet)
 
     def __draw_without_alphabet(self, n):
-        if self.__random.random() <= self.zero_chance:
-            return hbytes(n)
-
         return uniform(self.__random, n)
 
     def alphabet(self, n_bytes):
@@ -1132,22 +1128,6 @@ class GenerationParameters(object):
 
         self.__alphabet[n_bytes] = result
         return result
-
-    @property
-    def zero_chance(self):
-        """Returns a probability with which any given draw_bytes call should
-        be forced to be all zero. This is an important value especially because
-        it will tend to force the test case to be smaller than it otherwise
-        would be."""
-        if self.__zero_chance is None:
-            # We want to generate pure random examples every now and then. This
-            # is partly to offset too strong a bias to zero and partly because
-            # some user defined strategies may not play well with zero biasing.
-            if self.__random.randrange(0, 10) == 0:
-                self.__zero_chance = 0.0
-            else:
-                self.__zero_chance = self.__random.random() * 0.5
-        return self.__zero_chance
 
     @property
     def pure_chance(self):
