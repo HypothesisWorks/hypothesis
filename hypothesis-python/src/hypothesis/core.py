@@ -94,8 +94,8 @@ from hypothesis.reporting import (
     with_reporter,
 )
 from hypothesis.statistics import note_engine_for_statistics
-from hypothesis.strategies.internal.collections import TupleStrategy
-from hypothesis.strategies.internal.strategies import (
+from hypothesis.strategies._internal.collections import TupleStrategy
+from hypothesis.strategies._internal.strategies import (
     MappedSearchStrategy,
     SearchStrategy,
 )

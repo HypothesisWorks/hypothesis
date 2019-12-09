@@ -26,7 +26,7 @@ import pandas
 
 import hypothesis.extra.numpy as npst
 import hypothesis.internal.conjecture.utils as cu
-import hypothesis.strategies.internal.core as st
+import hypothesis.strategies._internal.core as st
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import abc, hrange
@@ -50,7 +50,7 @@ except ImportError:  # pragma: no cover
 
 if False:
     from typing import Any, List, Union, Sequence, Set  # noqa
-    from hypothesis.strategies.internal.strategies import Ex  # noqa
+    from hypothesis.strategies._internal.strategies import Ex  # noqa
 
 
 def dtype_for_elements_strategy(s):

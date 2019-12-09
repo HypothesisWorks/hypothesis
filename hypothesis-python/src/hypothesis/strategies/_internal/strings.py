@@ -22,7 +22,7 @@ from hypothesis.internal import charmap
 from hypothesis.internal.compat import binary_type, hunichr
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.strategies.internal.strategies import (
+from hypothesis.strategies._internal.strategies import (
     MappedSearchStrategy,
     SearchStrategy,
 )

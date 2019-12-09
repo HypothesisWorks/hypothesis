@@ -29,9 +29,9 @@ from hypothesis.errors import (
     ResolutionFailed,
 )
 from hypothesis.internal.compat import PY2, integer_types
-from hypothesis.strategies.internal import types
-from hypothesis.strategies.internal.core import _strategies
-from hypothesis.strategies.internal.types import _global_type_lookup
+from hypothesis.strategies._internal import types
+from hypothesis.strategies._internal.core import _strategies
+from hypothesis.strategies._internal.types import _global_type_lookup
 from tests.common.utils import checks_deprecated_behaviour
 
 # Build a set of all types output by core strategies

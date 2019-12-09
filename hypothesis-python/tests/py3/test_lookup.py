@@ -36,7 +36,7 @@ from hypothesis.internal.compat import (
     typing_root_type,
 )
 from hypothesis.strategies import from_type
-from hypothesis.strategies.internal import types
+from hypothesis.strategies._internal import types
 from tests.common.debug import find_any, minimal
 from tests.common.utils import fails_with
 

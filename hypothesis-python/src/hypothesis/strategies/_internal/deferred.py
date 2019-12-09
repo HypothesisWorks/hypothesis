@@ -21,7 +21,7 @@ import inspect
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.strategies.internal.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import SearchStrategy
 
 
 class DeferredStrategy(SearchStrategy):

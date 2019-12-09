@@ -17,7 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis.strategies.internal.strategies import (
+from hypothesis.strategies._internal.strategies import (
     SampledFromStrategy,
     is_simple_data,
 )
