@@ -17,6 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+from hypothesis.strategies import internal
 from hypothesis.strategies.internal import SearchStrategy
 from hypothesis.strategies.internal.core import (
     DataObject,
@@ -117,8 +118,11 @@ __all__ = [
     "SearchStrategy",
 ]
 
-assert _strategies.issubset(set(__all__)), _strategies - set(__all__)
-del impl, absolute_import, division, print_function
+assert _strategies.issubset(set(__all__)), (
+    _strategies - set(__all__),
+    set(__all__) - _strategies,
+)
+del internal, absolute_import, division, print_function
 _public = {n for n in dir() if n[0] not in "_@"}
-assert set(__all__) == _public, set(__all__) - _public
+assert set(__all__) == _public, (set(__all__) - _public, _public - set(__all__))
 del _public
