@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.53.1:
+
+-------------------
+4.53.1 - 2019-12-09
+-------------------
+
+This release changes the size distribution of the number of steps run in
+stateful testing: It will now almost always run the maximum number of steps
+permitted.
+
 .. _v4.53.0:
 
 -------------------
