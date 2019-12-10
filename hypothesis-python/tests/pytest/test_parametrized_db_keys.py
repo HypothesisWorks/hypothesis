@@ -35,7 +35,7 @@ def test_dummy_for_parametrized_db_keys(hi, i):
 
 
 def test_DB_keys_for_parametrized_test():
-    assert len(DB.data) == 3
+    assert len(DB.data) == 6
 """
 
 
