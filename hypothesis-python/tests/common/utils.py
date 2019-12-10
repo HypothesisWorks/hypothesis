@@ -135,7 +135,7 @@ def all_values(db):
 
 def non_covering_examples(database):
     return {
-        v for k, vs in database.data.items() if not k.endswith(b".coverage") for v in vs
+        v for k, vs in database.data.items() if not k.endswith(b".pareto") for v in vs
     }
 
 
