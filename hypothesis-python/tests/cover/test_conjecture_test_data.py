@@ -33,7 +33,7 @@ from hypothesis.internal.conjecture.data import (
     Status,
     StopTest,
 )
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import SearchStrategy
 
 
 @given(st.binary())

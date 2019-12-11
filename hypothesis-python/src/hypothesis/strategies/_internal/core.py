@@ -81,8 +81,8 @@ from hypothesis.internal.validation import (
     check_valid_sizes,
     try_convert,
 )
-from hypothesis.searchstrategy import SearchStrategy, check_strategy
-from hypothesis.searchstrategy.collections import (
+from hypothesis.strategies._internal import SearchStrategy, check_strategy
+from hypothesis.strategies._internal.collections import (
     FixedAndOptionalKeysDictStrategy,
     FixedKeysDictStrategy,
     ListStrategy,
@@ -90,25 +90,28 @@ from hypothesis.searchstrategy.collections import (
     UniqueListStrategy,
     UniqueSampledListStrategy,
 )
-from hypothesis.searchstrategy.datetime import (
+from hypothesis.strategies._internal.datetime import (
     DateStrategy,
     DatetimeStrategy,
     TimedeltaStrategy,
 )
-from hypothesis.searchstrategy.deferred import DeferredStrategy
-from hypothesis.searchstrategy.functions import FunctionStrategy
-from hypothesis.searchstrategy.lazy import LazyStrategy
-from hypothesis.searchstrategy.misc import JustStrategy
-from hypothesis.searchstrategy.numbers import (
+from hypothesis.strategies._internal.deferred import DeferredStrategy
+from hypothesis.strategies._internal.functions import FunctionStrategy
+from hypothesis.strategies._internal.lazy import LazyStrategy
+from hypothesis.strategies._internal.misc import JustStrategy
+from hypothesis.strategies._internal.numbers import (
     BoundedIntStrategy,
     FixedBoundedFloatStrategy,
     FloatStrategy,
     WideRangeIntStrategy,
 )
-from hypothesis.searchstrategy.recursive import RecursiveStrategy
-from hypothesis.searchstrategy.shared import SharedStrategy
-from hypothesis.searchstrategy.strategies import OneOfStrategy, SampledFromStrategy
-from hypothesis.searchstrategy.strings import (
+from hypothesis.strategies._internal.recursive import RecursiveStrategy
+from hypothesis.strategies._internal.shared import SharedStrategy
+from hypothesis.strategies._internal.strategies import (
+    OneOfStrategy,
+    SampledFromStrategy,
+)
+from hypothesis.strategies._internal.strings import (
     BinaryStringStrategy,
     FixedSizeBytes,
     OneCharStringStrategy,
@@ -134,7 +137,7 @@ if False:
     from typing import Type, Text, AnyStr, Optional  # noqa
 
     from hypothesis.utils.conventions import InferType  # noqa
-    from hypothesis.searchstrategy.strategies import T, Ex  # noqa
+    from hypothesis.strategies._internal.strategies import T, Ex  # noqa
 
     K, V = TypeVar["K"], TypeVar["V"]
     # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
@@ -1157,7 +1160,7 @@ def from_regex(regex, fullmatch=False):
     check_type(bool, fullmatch, "fullmatch")
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
-    from hypothesis.searchstrategy.regex import regex_strategy
+    from hypothesis.strategies._internal.regex import regex_strategy
 
     return regex_strategy(regex, fullmatch)
 
@@ -1284,7 +1287,7 @@ def builds(
     if required or to_infer:
         if isclass(target) and attr.has(target):
             # Use our custom introspection for attrs classes
-            from hypothesis.searchstrategy.attrs import from_attrs
+            from hypothesis.strategies._internal.attrs import from_attrs
 
             return from_attrs(target, args, kwargs, required | to_infer)
         # Otherwise, try using type hints
@@ -1391,7 +1394,7 @@ def from_type(thing):
 
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
-    from hypothesis.searchstrategy import types
+    from hypothesis.strategies._internal import types
 
     def as_strategy(strat_or_callable, thing):
         # User-provided strategies need some validation, and callables even more
@@ -2229,7 +2232,7 @@ def register_type_strategy(
     """
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
-    from hypothesis.searchstrategy import types
+    from hypothesis.strategies._internal import types
 
     if not types.is_a_type(custom_type):
         raise InvalidArgument("custom_type=%r must be a type")

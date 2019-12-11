@@ -26,7 +26,7 @@ import django.test as dt
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
-import hypothesis._strategies as st
+import hypothesis.strategies._internal.core as st
 from hypothesis import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django._fields import from_field

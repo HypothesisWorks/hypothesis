@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 import hypothesis.strategies as st
 from hypothesis import given
-from hypothesis.searchstrategy.types import _global_type_lookup
+from hypothesis.strategies._internal.types import _global_type_lookup
 
 TYPES = sorted((x for x in _global_type_lookup if x.__module__ != "typing"), key=str)
 

@@ -24,7 +24,7 @@ import hypothesis.internal.conjecture.utils as d
 from hypothesis.control import assume, reject
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.floats import float_of
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import SearchStrategy
 
 
 class WideRangeIntStrategy(SearchStrategy):

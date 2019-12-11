@@ -17,7 +17,8 @@
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis._strategies import (
+from hypothesis.strategies._internal import SearchStrategy
+from hypothesis.strategies._internal.core import (
     DataObject,
     _strategies,
     binary,
@@ -63,7 +64,6 @@ from hypothesis._strategies import (
     tuples,
     uuids,
 )
-from hypothesis.searchstrategy import SearchStrategy
 
 # The implementation of all of these lives in `_strategies.py`, but we
 # re-export them via this module to avoid exposing implementation details
@@ -117,8 +117,11 @@ __all__ = [
     "SearchStrategy",
 ]
 
-assert _strategies.issubset(set(__all__)), _strategies - set(__all__)
-del _strategies, absolute_import, division, print_function
+assert _strategies.issubset(set(__all__)), (
+    _strategies - set(__all__),
+    set(__all__) - _strategies,
+)
+del absolute_import, division, print_function
 _public = {n for n in dir() if n[0] not in "_@"}
-assert set(__all__) == _public, set(__all__) - _public
+assert set(__all__) == _public, (set(__all__) - _public, _public - set(__all__))
 del _public

@@ -23,7 +23,7 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 from hypothesis.internal.conjecture.utils import combine_labels
-from hypothesis.searchstrategy.strategies import (
+from hypothesis.strategies._internal.strategies import (
     MappedSearchStrategy,
     SearchStrategy,
     filter_not_satisfied,

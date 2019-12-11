@@ -17,7 +17,10 @@
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis.searchstrategy.strategies import SampledFromStrategy, is_simple_data
+from hypothesis.strategies._internal.strategies import (
+    SampledFromStrategy,
+    is_simple_data,
+)
 
 
 class JustStrategy(SampledFromStrategy):

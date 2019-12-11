@@ -25,7 +25,7 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis import HealthCheck, settings
 from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.conjecture.engine import ConjectureData, ConjectureRunner
-from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.strategies._internal import SearchStrategy
 
 POISON = "POISON"
 

@@ -22,7 +22,7 @@ from contextlib import contextmanager
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.searchstrategy.strategies import OneOfStrategy, SearchStrategy
+from hypothesis.strategies._internal.strategies import OneOfStrategy, SearchStrategy
 
 
 class LimitReached(BaseException):

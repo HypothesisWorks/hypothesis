@@ -18,7 +18,7 @@
 from __future__ import absolute_import, division, print_function
 
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import SearchStrategy
 
 FEATURE_LABEL = cu.calc_label_from_name("feature flag")
 

@@ -30,14 +30,14 @@ from __future__ import absolute_import, division, print_function
 import os.path
 import string
 
-import hypothesis._strategies as st
 import hypothesis.internal.conjecture.utils as cu
+import hypothesis.strategies._internal.core as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import SearchStrategy
 
 if False:
     from typing import Text  # noqa
-    from hypothesis.searchstrategy.strategies import SearchStrategy, Ex  # noqa
+    from hypothesis.strategies._internal.strategies import SearchStrategy, Ex  # noqa
 
 
 URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'(),")

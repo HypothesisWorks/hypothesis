@@ -355,7 +355,7 @@ class SearchStrategy(Generic[Ex]):
 
         This method is part of the public API.
         """
-        from hypothesis.searchstrategy.flatmapped import FlatMapStrategy
+        from hypothesis.strategies._internal.flatmapped import FlatMapStrategy
 
         return FlatMapStrategy(expand=expand, strategy=self)
 

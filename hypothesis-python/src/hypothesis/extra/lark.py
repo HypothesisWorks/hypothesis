@@ -42,12 +42,12 @@ import attr
 import lark
 from lark.grammar import NonTerminal, Terminal
 
-import hypothesis._strategies as st
+import hypothesis.strategies._internal.core as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import getfullargspec, string_types
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.validation import check_type
-from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.strategies._internal import SearchStrategy
 
 if False:
     from typing import Dict, Text  # noqa

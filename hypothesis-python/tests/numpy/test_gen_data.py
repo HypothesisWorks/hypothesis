@@ -29,7 +29,7 @@ import hypothesis.strategies as st
 from hypothesis import HealthCheck, assume, given, note, settings
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.internal.compat import PY2, binary_type, text_type
-from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.strategies._internal import SearchStrategy
 from tests.common.debug import find_any, minimal
 from tests.common.utils import checks_deprecated_behaviour, fails_with, flaky
 

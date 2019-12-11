@@ -21,7 +21,7 @@ import datetime as dt
 from calendar import monthrange
 
 from hypothesis.internal.conjecture import utils
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import SearchStrategy
 
 __all__ = ["DateStrategy", "DatetimeStrategy", "TimedeltaStrategy"]
 

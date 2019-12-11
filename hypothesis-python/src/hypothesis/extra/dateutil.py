@@ -33,7 +33,7 @@ import datetime as dt
 
 from dateutil import tz, zoneinfo  # type: ignore
 
-import hypothesis._strategies as st
+import hypothesis.strategies._internal.core as st
 
 __all__ = ["timezones"]
 

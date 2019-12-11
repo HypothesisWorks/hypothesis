@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 from hypothesis import given, strategies as st
 from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy.featureflags import FeatureFlags, FeatureStrategy
+from hypothesis.strategies._internal.featureflags import FeatureFlags, FeatureStrategy
 from tests.common.debug import find_any, minimal
 
 STRAT = FeatureStrategy()

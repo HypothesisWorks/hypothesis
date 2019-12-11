@@ -25,7 +25,7 @@ import attr
 import hypothesis.strategies as st
 from hypothesis.errors import ResolutionFailed
 from hypothesis.internal.compat import get_type_hints, string_types
-from hypothesis.searchstrategy.types import is_a_type, type_sorting_key
+from hypothesis.strategies._internal.types import is_a_type, type_sorting_key
 from hypothesis.utils.conventions import infer
 
 

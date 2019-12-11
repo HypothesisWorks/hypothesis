@@ -93,9 +93,12 @@ from hypothesis.reporting import (
     verbose_report,
     with_reporter,
 )
-from hypothesis.searchstrategy.collections import TupleStrategy
-from hypothesis.searchstrategy.strategies import MappedSearchStrategy, SearchStrategy
 from hypothesis.statistics import note_engine_for_statistics
+from hypothesis.strategies._internal.collections import TupleStrategy
+from hypothesis.strategies._internal.strategies import (
+    MappedSearchStrategy,
+    SearchStrategy,
+)
 from hypothesis.utils.conventions import infer
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 from hypothesis.version import __version__

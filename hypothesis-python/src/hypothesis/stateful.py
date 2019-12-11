@@ -47,8 +47,8 @@ from hypothesis.internal.compat import hrange, quiet_raise, string_types
 from hypothesis.internal.reflection import function_digest, nicerepr, proxies, qualname
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
-from hypothesis.searchstrategy.featureflags import FeatureStrategy
-from hypothesis.searchstrategy.strategies import OneOfStrategy, SearchStrategy
+from hypothesis.strategies._internal.featureflags import FeatureStrategy
+from hypothesis.strategies._internal.strategies import OneOfStrategy, SearchStrategy
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 
 STATE_MACHINE_RUN_LABEL = cu.calc_label_from_name("another state machine step")

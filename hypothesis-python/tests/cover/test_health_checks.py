@@ -29,8 +29,8 @@ from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.entropy import deterministic_PRNG
-from hypothesis.searchstrategy.lazy import LazyStrategy
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.strategies._internal.lazy import LazyStrategy
+from hypothesis.strategies._internal.strategies import SearchStrategy
 from tests.common.utils import checks_deprecated_behaviour, no_shrink
 
 HEALTH_CHECK_SETTINGS = settings(max_examples=11, database=None)

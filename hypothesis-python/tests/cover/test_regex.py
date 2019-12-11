@@ -27,7 +27,7 @@ import hypothesis.strategies as st
 from hypothesis import assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import PY2, PY3, PYPY, hrange, hunichr
-from hypothesis.searchstrategy.regex import (
+from hypothesis.strategies._internal.regex import (
     SPACE_CHARS,
     UNICODE_DIGIT_CATEGORIES,
     UNICODE_SPACE_CATEGORIES,

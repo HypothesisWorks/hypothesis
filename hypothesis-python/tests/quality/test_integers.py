@@ -33,7 +33,7 @@ from hypothesis import (
 from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.searchstrategy.numbers import WideRangeIntStrategy
+from hypothesis.strategies._internal.numbers import WideRangeIntStrategy
 
 
 @st.composite

@@ -20,7 +20,7 @@ from __future__ import absolute_import, division, print_function
 import django.db.models as dm
 from django.db import IntegrityError
 
-import hypothesis._strategies as st
+import hypothesis.strategies._internal.core as st
 from hypothesis import reject
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument

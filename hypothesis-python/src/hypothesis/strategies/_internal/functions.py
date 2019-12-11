@@ -20,7 +20,7 @@ from __future__ import absolute_import, division, print_function
 from hypothesis.control import note
 from hypothesis.errors import InvalidState
 from hypothesis.internal.reflection import arg_string, nicerepr, proxies
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import SearchStrategy
 
 
 class FunctionStrategy(SearchStrategy):

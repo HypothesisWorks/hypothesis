@@ -20,7 +20,7 @@ from __future__ import absolute_import, division, print_function
 import time
 
 from hypothesis.internal.compat import hbytes, hrange
-from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.strategies._internal import SearchStrategy
 
 
 class _Slow(SearchStrategy):

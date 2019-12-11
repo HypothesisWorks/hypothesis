@@ -38,8 +38,8 @@ from hypothesis.internal.compat import (
     text_type,
     typing_root_type,
 )
-from hypothesis.searchstrategy.lazy import unwrap_strategies
-from hypothesis.searchstrategy.strategies import OneOfStrategy
+from hypothesis.strategies._internal.lazy import unwrap_strategies
+from hypothesis.strategies._internal.strategies import OneOfStrategy
 
 
 def type_sorting_key(t):

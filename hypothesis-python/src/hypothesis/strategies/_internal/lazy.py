@@ -23,7 +23,7 @@ from hypothesis.internal.reflection import (
     convert_keyword_arguments,
     convert_positional_arguments,
 )
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import SearchStrategy
 
 if False:
     from typing import Dict  # noqa

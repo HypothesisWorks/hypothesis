@@ -21,8 +21,8 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import find, given
-from hypothesis._strategies import defines_strategy
 from hypothesis.errors import InvalidArgument
+from hypothesis.strategies._internal.core import defines_strategy
 
 
 def test_does_not_error_on_initial_calculation():

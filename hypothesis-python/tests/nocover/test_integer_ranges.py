@@ -21,8 +21,8 @@ import pytest
 
 from hypothesis import given
 from hypothesis.internal.conjecture.utils import integer_range
-from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.strategies import integers
+from hypothesis.strategies._internal.strategies import SearchStrategy
 from tests.common.debug import minimal
 
 

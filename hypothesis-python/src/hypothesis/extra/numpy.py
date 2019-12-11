@@ -23,8 +23,8 @@ from collections import namedtuple
 
 import numpy as np
 
-import hypothesis._strategies as st
 import hypothesis.internal.conjecture.utils as cu
+import hypothesis.strategies._internal.core as st
 from hypothesis import Verbosity, assume
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
@@ -39,7 +39,7 @@ from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies, reserved_means_kwonly_star
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.reporting import current_verbosity
-from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.strategies._internal import SearchStrategy
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
 if PY2:
@@ -57,7 +57,7 @@ else:
 
 if False:
     from typing import Any, Union, Sequence, Tuple  # noqa
-    from hypothesis.searchstrategy.strategies import T  # noqa
+    from hypothesis.strategies._internal.strategies import T  # noqa
 
     BasicIndex = Tuple[Union[int, slice, ellipsis, np.newaxis], ...]  # noqa
 
