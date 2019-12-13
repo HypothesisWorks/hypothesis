@@ -92,6 +92,17 @@ def is_typing_literal(thing):
     )
 
 
+def is_abc_interface_alias(thing):
+    # return true a generic is just an alias one of the abc interfaces which
+    # cannot be further parameterized via class.__getitem__.
+    return getattr(thing, "__origin__", None) in (collections.abc.Hashable, collections.abc.Sized)
+
+def from_origin_type(generic):
+    # return a strategy the type strategy of the underlying origin type
+    # for the given generic with no addtional args or parameterization.
+    return st.from_type(generic.__origin__)
+
+
 def from_typing_type(thing):
     # We start with special-case support for Union and Tuple - the latter
     # isn't actually a generic type. Then we handle Literal since it doesn't
@@ -161,6 +172,12 @@ def from_typing_type(thing):
     # Now, confirm that we're dealing with a generic type as we expected
     if not isinstance(thing, typing_root_type):  # pragma: no cover
         raise ResolutionFailed("Cannot resolve %s to a strategy" % (thing,))
+
+    # if thing is simply an alias around a collections abc interface ie Hashable or Sized
+    # just return the strategy of that alias.
+    if is_abc_interface_alias(thing):
+        return from_origin_type(thing)
+
     # Parametrised generic types have their __origin__ attribute set to the
     # un-parametrised version, which we need to use in the subclass checks.
     # e.g.:     typing.List[int].__origin__ == typing.List
