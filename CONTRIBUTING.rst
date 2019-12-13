@@ -241,6 +241,7 @@ their individual contributions.
 * `Kristian Glass <https://www.github.com/doismellburning>`_
 * `Kyle Reeve <https://www.github.com/kreeve>`_ (krzw92@gmail.com)
 * `Lampros Mountrakis <https://www.github.com/lmount>`_
+* `Lea Provenzano <https://github.com/leaprovenzano>`_
 * `Lee Begg <https://www.github.com/llnz2>`_
 * `Lisa Goeller <https://www.github.com/lgoeller>`_
 * `Louis Taylor <https://github.com/kragniz>`_
