@@ -563,3 +563,17 @@ class AbstractBar(abc.ABC):
 @given(st.from_type(AbstractBar))
 def test_cannot_resolve_abstract_class_with_no_concrete_subclass(instance):
     assert False, "test body unreachable as strategy cannot resolve"
+
+
+@pytest.mark.parametrize('typ', [typing.Hashable, typing.Sized])
+def test_inference_on_special_abc_generics(typ):
+    # regression test for inference bug on types from the special types
+    # from the typing module such as Hashable and Sized
+    # see https://github.com/HypothesisWorks/hypothesis/issues/2272
+
+    @given(inp=infer)
+    def test_inference_special_abc_generics_inner(inp: typ):
+        assert isinstance(inp, typ)
+
+    test_inference_special_abc_generics_inner()
+
