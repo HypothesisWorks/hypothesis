@@ -577,4 +577,3 @@ def test_inference_on_generic_collections_abc_aliases(typ):
         assert isinstance(inp, typ)
 
     inner()
-
