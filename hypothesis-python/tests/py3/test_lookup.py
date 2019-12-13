@@ -575,7 +575,6 @@ def test_inference_on_generic_collections_abc_aliases(typ):
     @given(inp=infer)
     def inner(inp: typ):
         assert isinstance(inp, typ)
-        assert isinstance(inp, typ.__origin__)
 
     inner()
 
