@@ -566,14 +566,16 @@ def test_cannot_resolve_abstract_class_with_no_concrete_subclass(instance):
 
 
 @pytest.mark.parametrize('typ', [typing.Hashable, typing.Sized])
-def test_inference_on_special_abc_generics(typ):
-    # regression test for inference bug on types from the special types
-    # from the typing module such as Hashable and Sized
+def test_inference_on_generic_collections_abc_aliases(typ):
+    # regression test for inference bug on types that are just aliases
+    # types for simple interfaces in collections abc and take no args
+    # the typing module such as Hashable and Sized
     # see https://github.com/HypothesisWorks/hypothesis/issues/2272
 
     @given(inp=infer)
-    def test_inference_special_abc_generics_inner(inp: typ):
+    def inner(inp: typ):
         assert isinstance(inp, typ)
+        assert isinstance(inp, typ.__origin__)
 
-    test_inference_special_abc_generics_inner()
+    inner()
 
