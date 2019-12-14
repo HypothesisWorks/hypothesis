@@ -131,20 +131,47 @@ class ParetoFront(object):
         try:
             self.__pending = data
 
-            best = data
+            # We maintain a set of the current exact pareto front of the
+            # values we've sampled so far. When we sample a new element we
+            # either add it to this exact pareto front or remove it from the
+            # collection entirely.
+            dominators = [data]
 
+            # We now iteratively sample up to 10 elements from the approximate
+            # pareto front to check whether they should be retained.
             i = len(self.__front) - 1
             stopping = max(0, len(self.__front) - 10)
             while i >= stopping:
                 self.__swap(i, self.__random.randint(0, i))
 
                 existing = self.__front[i]
-                dom = dominance(existing, best)
-                if dom == DominanceRelation.LEFT_DOMINATES:
-                    self.__remove(best)
-                    best = existing
-                elif dom == DominanceRelation.RIGHT_DOMINATES:
-                    self.__remove(existing)
+
+                already_replaced = False
+                j = 0
+                while j < len(dominators):
+                    v = dominators[j]
+                    dom = dominance(existing, v)
+                    if dom == DominanceRelation.LEFT_DOMINATES:
+                        if not already_replaced:
+                            already_replaced = True
+                            dominators[j] = existing
+                            j += 1
+                        else:
+                            dominators[j], dominators[-1] = (
+                                dominators[-1],
+                                dominators[j],
+                            )
+                            dominators.pop()
+                        self.__remove(v)
+                    elif dom == DominanceRelation.RIGHT_DOMINATES:
+                        self.__remove(existing)
+                        break
+                    elif dom == DominanceRelation.EQUAL:
+                        break
+                    else:
+                        j += 1
+                else:
+                    dominators.append(existing)
                 i -= 1
             return data.buffer in self.__contained
         finally:
@@ -173,7 +200,10 @@ class ParetoFront(object):
         self.__contained[data.buffer] = i
 
     def __remove(self, data):
-        i = self.__contained[data.buffer]
+        try:
+            i = self.__contained[data.buffer]
+        except KeyError:
+            return
         self.__swap(i, len(self.__front) - 1)
         self.__front.pop()
         self.__contained.pop(data.buffer)

@@ -1200,3 +1200,22 @@ def test_clears_defunct_pareto_front():
         runner.run()
 
         assert len(list(db.fetch(runner.pareto_key))) == 1
+
+
+def test_replaces_all_dominated():
+    def test(data):
+        data.target_observations["m"] = 3 - data.draw_bits(2)
+        data.target_observations["n"] = 3 - data.draw_bits(2)
+
+    runner = ConjectureRunner(
+        test,
+        settings=settings(TEST_SETTINGS, database=InMemoryExampleDatabase()),
+        database_key=b"stuff",
+    )
+
+    runner.cached_test_function([0, 1])
+    runner.cached_test_function([1, 0])
+
+    assert len(runner.pareto_front) == 2
+    runner.cached_test_function([0, 0])
+    assert len(runner.pareto_front) == 1
