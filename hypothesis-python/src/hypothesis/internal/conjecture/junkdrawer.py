@@ -213,3 +213,10 @@ def clamp(lower, value, upper):
     """Given a value and lower/upper bounds, 'clamp' the value so that
     it satisfies lower <= value <= upper."""
     return max(lower, min(value, upper))
+
+
+def swap(ls, i, j):
+    """Swap the elements ls[i], ls[j]."""
+    if i == j:
+        return
+    ls[i], ls[j] = ls[j], ls[i]

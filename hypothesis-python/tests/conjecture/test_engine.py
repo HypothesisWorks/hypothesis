@@ -1213,9 +1213,39 @@ def test_replaces_all_dominated():
         database_key=b"stuff",
     )
 
-    runner.cached_test_function([0, 1])
-    runner.cached_test_function([1, 0])
+    d1 = runner.cached_test_function([0, 1]).as_result()
+    d2 = runner.cached_test_function([1, 0]).as_result()
 
     assert len(runner.pareto_front) == 2
-    runner.cached_test_function([0, 0])
+
+    assert runner.pareto_front[0] == d1
+    assert runner.pareto_front[1] == d2
+
+    d3 = runner.cached_test_function([0, 0]).as_result()
+    assert len(runner.pareto_front) == 1
+
+    assert runner.pareto_front[0] == d3
+
+
+def test_does_not_duplicate_elements():
+    def test(data):
+        data.target_observations["m"] = data.draw_bits(8)
+
+    runner = ConjectureRunner(
+        test,
+        settings=settings(TEST_SETTINGS, database=InMemoryExampleDatabase()),
+        database_key=b"stuff",
+    )
+
+    d1 = runner.cached_test_function([1]).as_result()
+
+    assert len(runner.pareto_front) == 1
+
+    # This can happen in practice if we e.g. reexecute a test because it has
+    # expired from the cache. It's easier just to test it directly though
+    # rather than simulate the failure mode.
+    is_pareto = runner.pareto_front.add(d1)
+
+    assert is_pareto
+
     assert len(runner.pareto_front) == 1

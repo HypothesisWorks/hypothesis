@@ -68,7 +68,7 @@ extras = {
 extras["all"] = sorted(sum(extras.values(), []))
 
 
-install_requires = ["attrs>=19.2.0"]
+install_requires = ["attrs>=19.2.0", "sortedcontainers>=2.1.0,<3.0.0"]
 # Using an environment marker on enum34 makes the dependency condition
 # independent of the build environemnt, which is important for wheels.
 # https://www.python.org/dev/peps/pep-0345/#environment-markers

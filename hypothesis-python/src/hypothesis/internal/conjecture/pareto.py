@@ -19,7 +19,10 @@ from __future__ import absolute_import, division, print_function
 
 from enum import Enum
 
+from sortedcontainers import SortedList
+
 from hypothesis.internal.conjecture.data import ConjectureData, ConjectureResult, Status
+from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, swap
 from hypothesis.internal.conjecture.shrinker import sort_key
 
 
@@ -128,29 +131,29 @@ class ParetoFront(object):
         self.__random = random
         self.__eviction_listeners = []
 
-        self.__front = []
-        self.__contained = {}
+        self.__front = SortedList(key=lambda d: sort_key(d.buffer))
         self.__pending = None
 
     def add(self, data):
-        """Attempts to add ``data`` to the pareto front. Returns True if this
-        resulted ``data`` being added, otherwise returns False (including if
-        data is already in the collection)."""
+        """Attempts to add ``data`` to the pareto front. Returns True if
+        ``data`` is now in the front, including if data is already in the
+        collection, and False otherwise"""
+        data = data.as_result()
         if data.status < Status.VALID:
             return False
 
         if not self.__front:
-            self.__add(data)
+            self.__front.add(data)
             return True
 
-        if data.buffer in self.__contained:
-            return False
+        if data in self.__front:
+            return True
 
         # We add data to the pareto front by adding it unconditionally and then
         # doing a certain amount of randomized "clear down" - testing a random
         # set of elements (currently 10) to see if they are dominated by
         # something else in the collection. If they are, we remove them.
-        self.__add(data)
+        self.__front.add(data)
         assert self.__pending is None
         try:
             self.__pending = data
@@ -159,28 +162,59 @@ class ParetoFront(object):
             # values we've sampled so far. When we sample a new element we
             # either add it to this exact pareto front or remove it from the
             # collection entirely.
-            dominators = [data]
+            front = LazySequenceCopy(self.__front)
+
+            # We track which values we are going to remove and remove them all
+            # at the end so the shape of the front doesn't change while we're
+            # using it.
+            to_remove = []
 
             # We now iteratively sample elements from the approximate pareto
             # front to check whether they should be retained. When the set of
             # dominators gets too large we have sampled at least 10 elements
             # and it gets too expensive to continue, so we consider that enough
             # due diligence.
-            i = len(self.__front) - 1
-            while i >= 0 and len(dominators) < 10:
-                self.__swap(i, self.__random.randint(0, i))
+            i = self.__front.index(data)
 
-                existing = self.__front[i]
+            # First we attempt to look for values that must be removed by the
+            # addition of the data. These are necessarily to the right of it
+            # in the list.
+
+            failures = 0
+            while i + 1 < len(front) and failures < 10:
+                j = self.__random.randrange(i + 1, len(front))
+                swap(front, j, len(front) - 1)
+                candidate = front.pop()
+                dom = dominance(data, candidate)
+                assert dom != DominanceRelation.RIGHT_DOMINATES
+                if dom == DominanceRelation.LEFT_DOMINATES:
+                    to_remove.append(candidate)
+                    failures = 0
+                else:
+                    failures += 1
+
+            # Now we look at the points up to where we put data in to see if
+            # it is dominated. While we're here we spend some time looking for
+            # anything else that might be dominated too, compacting down parts
+            # of the list.
+
+            dominators = [data]
+
+            while i >= 0 and len(dominators) < 10:
+                swap(front, i, self.__random.randint(0, i))
+
+                candidate = front[i]
 
                 already_replaced = False
                 j = 0
                 while j < len(dominators):
                     v = dominators[j]
-                    dom = dominance(existing, v)
+
+                    dom = dominance(candidate, v)
                     if dom == DominanceRelation.LEFT_DOMINATES:
                         if not already_replaced:
                             already_replaced = True
-                            dominators[j] = existing
+                            dominators[j] = candidate
                             j += 1
                         else:
                             dominators[j], dominators[-1] = (
@@ -188,18 +222,21 @@ class ParetoFront(object):
                                 dominators[j],
                             )
                             dominators.pop()
-                        self.__remove(v)
+                        to_remove.append(v)
                     elif dom == DominanceRelation.RIGHT_DOMINATES:
-                        self.__remove(existing)
+                        to_remove.append(candidate)
                         break
                     elif dom == DominanceRelation.EQUAL:
                         break
                     else:
                         j += 1
                 else:
-                    dominators.append(existing)
+                    dominators.append(candidate)
                 i -= 1
-            return data.buffer in self.__contained
+
+            for v in to_remove:
+                self.__remove(v)
+            return data in self.__front
         finally:
             self.__pending = None
 
@@ -210,36 +247,23 @@ class ParetoFront(object):
 
     def __contains__(self, data):
         return isinstance(data, (ConjectureData, ConjectureResult)) and (
-            data.buffer in self.__contained
+            data.as_result() in self.__front
         )
 
     def __iter__(self):
         return iter(self.__front)
 
+    def __getitem__(self, i):
+        return self.__front[i]
+
     def __len__(self):
         return len(self.__front)
 
-    def __add(self, data):
-        assert data.buffer not in self.__contained
-        i = len(self.__front)
-        self.__front.append(data)
-        self.__contained[data.buffer] = i
-
     def __remove(self, data):
         try:
-            i = self.__contained[data.buffer]
-        except KeyError:
+            self.__front.remove(data)
+        except ValueError:
             return
-        self.__swap(i, len(self.__front) - 1)
-        self.__front.pop()
-        self.__contained.pop(data.buffer)
         if data is not self.__pending:
             for f in self.__eviction_listeners:
                 f(data)
-
-    def __swap(self, i, j):
-        if i == j:
-            return
-        self.__front[i], self.__front[j] = self.__front[j], self.__front[i]
-        for k in (i, j):
-            self.__contained[self.__front[k].buffer] = k

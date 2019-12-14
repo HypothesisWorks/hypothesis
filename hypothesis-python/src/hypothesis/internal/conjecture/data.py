@@ -655,6 +655,9 @@ class _Overrun(object):
     def __repr__(self):
         return "Overrun"
 
+    def as_result(self):
+        return self
+
 
 Overrun = _Overrun()
 
@@ -711,6 +714,9 @@ class ConjectureResult(object):
     def __attrs_post_init__(self):
         self.index = len(self.buffer)
         self.forced_indices = frozenset(self.forced_indices)
+
+    def as_result(self):
+        return self
 
 
 # Masks for masking off the first byte of an n-bit buffer.
