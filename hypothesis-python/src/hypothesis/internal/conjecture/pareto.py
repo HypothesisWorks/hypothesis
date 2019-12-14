@@ -98,6 +98,30 @@ class ParetoFront(object):
 
     Only valid test cases are considered to belong to the pareto front - any
     test case with a status less than valid is discarded.
+
+    Note that the pareto front is potentially quite large, and currently this
+    will store the entire front in memory. This is bounded by the number of
+    valid examples we run, which is max_examples in normal execution, and
+    currently we do not support workflows with large max_examples which have
+    large values of max_examples very well anyway, so this isn't a major issue.
+    In future we may weish to implement some sort of paging out to disk so that
+    we can work with larger fronts.
+
+    Additionally, because this is only an approximate pareto front, there are
+    scenarios where it can be much larger than the actual pareto front. There
+    isn't a huge amount we can do about this - checking an exact pareto front
+    is intrinsically quadratic.
+
+    "Most" of the time we should be relatively close to the true pareto front,
+    say within an order of magnitude, but it's not hard to construct scenarios
+    where this is not the case. e.g. suppose we enumerate all valid test cases
+    in increasing shortlex order as s_1, ..., s_n, ... and have scores f and
+    g such that f(s_i) = min(i, N) and g(s_i) = 1 if i >= N, then the pareto
+    front is the set {s_1, ..., S_N}, but the only element of the front that
+    will dominate s_i when i > N is S_N, which we select with probability
+    1 / N. A better data structure could solve this, but at the cost of more
+    expensive operations and higher per element memory use, so we'll wait to
+    see how much of a problem this is in practice before we try that.
     """
 
     def __init__(self, random):
