@@ -92,14 +92,6 @@ def is_typing_literal(thing):
     )
 
 
-def is_abc_interface_alias(thing):
-    # return true a generic is just an alias one of the abc interfaces which
-    # cannot be further parameterized via class.__getitem__.
-    # in 3.6 there is no origin and they are the same objects as collections.abc classes.
-    # in 3.7 they are proper generics which inherit from _GenericAlias
-    return getattr(thing, "__origin__", thing) in (collections.abc.Hashable, collections.abc.Sized)
-
-
 def from_typing_type(thing):
     # We start with special-case support for Union and Tuple - the latter
     # isn't actually a generic type. Then we handle Literal since it doesn't
@@ -170,10 +162,16 @@ def from_typing_type(thing):
     if not isinstance(thing, typing_root_type):  # pragma: no cover
         raise ResolutionFailed("Cannot resolve %s to a strategy" % (thing,))
 
-    # if thing is simply an alias around a collections abc interface ie Hashable or Sized
-    # just return the strategy of that alias.
-    if is_abc_interface_alias(thing):
-        return st.from_type(getattr(thing, "__origin__", thing))
+    # Some "generic" classes are not generic *in* anything - for example both
+    # Hashable and Sized have `__args__ == ()` on Python 3.7 or later.
+    # (In 3.6 they're just aliases for the collections.abc classes)
+    origin = getattr(thing, "__origin__", thing)
+    if (
+        typing.Hashable is not abc.Hashable
+        and origin in vars(abc).values()
+        and len(getattr(thing, "__args__", None) or []) == 0
+    ):  # pragma: no cover  # impossible on 3.6 where we measure coverage.
+        return st.from_type(origin)
 
     # Parametrised generic types have their __origin__ attribute set to the
     # un-parametrised version, which we need to use in the subclass checks.
@@ -224,6 +222,7 @@ _global_type_lookup = {
     tuple: st.builds(tuple),
     list: st.builds(list),
     set: st.builds(set),
+    abc.MutableSet: st.builds(set),
     frozenset: st.builds(frozenset),
     dict: st.builds(dict),
     type(lambda: None): st.functions(),
@@ -308,7 +307,9 @@ else:
     _global_type_lookup.update(
         {
             typing.ByteString: st.binary(),
-            typing.Reversible: st.lists(st.integers()),
+            # Reversible is somehow a subclass of Hashable, so we tuplize it.
+            # See also the discussion at https://bugs.python.org/issue39046
+            typing.Reversible: st.lists(st.integers()).map(tuple),  # type: ignore
             typing.SupportsAbs: st.complex_numbers(),
             typing.SupportsComplex: st.complex_numbers(),
             typing.SupportsFloat: st.floats(),
