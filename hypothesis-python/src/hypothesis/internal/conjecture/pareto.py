@@ -161,11 +161,13 @@ class ParetoFront(object):
             # collection entirely.
             dominators = [data]
 
-            # We now iteratively sample up to 10 elements from the approximate
-            # pareto front to check whether they should be retained.
+            # We now iteratively sample elements from the approximate pareto
+            # front to check whether they should be retained. When the set of
+            # dominators gets too large we have sampled at least 10 elements
+            # and it gets too expensive to continue, so we consider that enough
+            # due diligence.
             i = len(self.__front) - 1
-            stopping = max(0, len(self.__front) - 10)
-            while i >= stopping:
+            while i >= 0 and len(dominators) < 10:
                 self.__swap(i, self.__random.randint(0, i))
 
                 existing = self.__front[i]
