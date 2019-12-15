@@ -1050,22 +1050,3 @@ def test_does_not_shrink_multiple_bugs_when_told_not_to():
         results = {d.buffer for d in runner.interesting_examples.values()}
 
     assert len(results.intersection({hbytes([0, 1]), hbytes([1, 0])})) == 1
-
-
-def test_does_not_keep_generating_when_multiple_bugs():
-    def test(data):
-        if data.draw_bits(64) > 0:
-            data.draw_bits(64)
-            data.mark_interesting()
-
-    with deterministic_PRNG():
-        runner = ConjectureRunner(
-            test,
-            settings=settings(
-                TEST_SETTINGS, report_multiple_bugs=False, phases=[Phase.generate]
-            ),
-        )
-
-        runner.run()
-
-    assert runner.call_count == 2
