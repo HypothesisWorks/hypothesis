@@ -9,6 +9,8 @@ dragonfly "Scout", as a job description and after *To Kill a Mockingbird*.
 General guidelines:
 
 - Prefer vector (``.svg``) formats to raster formats (``.png``) wherever possible.
+  However, some viewers don't handle the layers well - e.g. the left eye might be
+  drawn in front of the head - in which case you might prefer ``.png``.
 - We consider the rainbow version to be canonical.  The blue variant is provided
   for cases such as monochome versions or printing with a limited palette.
 
@@ -17,7 +19,7 @@ and if you're not sure whether a specific use is OK, please get in touch and ask
 
 For example, we often bring Hypothesis stickers to conferences but can't make
 it to everything.  If you want to print your own Hypothesis stickers, upload
-the image to `StickerMule <https://www.stickermule.com/custom-stickers>`__
+``sticker.png`` to `StickerMule <https://www.stickermule.com/custom-stickers>`__
 and pick one of the die-cut vinyl options - that's how we get ours!
 
 .. image:: ./stickers.jpg
