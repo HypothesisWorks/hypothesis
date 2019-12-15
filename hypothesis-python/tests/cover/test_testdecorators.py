@@ -23,7 +23,6 @@ from collections import namedtuple
 
 import hypothesis.reporting as reporting
 from hypothesis import HealthCheck, Verbosity, assume, given, note, settings
-from hypothesis.internal.conjecture.engine import MIN_TEST_CALLS
 from hypothesis.strategies import (
     binary,
     booleans,
@@ -406,20 +405,26 @@ def test_mixed_text(x):
 
 
 def test_when_set_to_no_simplifies_runs_failing_example_twice():
-    failing = [0]
+    failing = []
 
     @given(integers())
-    @settings(phases=no_shrink, max_examples=100, verbosity=Verbosity.normal)
+    @settings(
+        phases=no_shrink,
+        max_examples=100,
+        verbosity=Verbosity.normal,
+        report_multiple_bugs=False,
+    )
     def foo(x):
         if x > 11:
             note("Lo")
-            failing[0] += 1
+            failing.append(x)
             assert False
 
     with raises(AssertionError):
         with capture_out() as out:
             foo()
-    assert failing[0] <= MIN_TEST_CALLS + 2
+    assert len(failing) == 2
+    assert len(set(failing)) == 1
     assert "Falsifying example" in out.getvalue()
     assert "Lo" in out.getvalue()
 
