@@ -1118,3 +1118,25 @@ def test_zig_zags_quickly():
     shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
     assert shrinker.engine.valid_examples <= 100
     assert list(shrinker.shrink_target.buffer) == [0, 1, 0, 1]
+
+
+def test_does_not_shrink_multiple_bugs_when_told_not_to():
+    def test(data):
+        m = data.draw_bits(8)
+        n = data.draw_bits(8)
+
+        if m > 0:
+            data.mark_interesting(1)
+        if n > 5:
+            data.mark_interesting(2)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(
+            test, settings=settings(TEST_SETTINGS, report_multiple_bugs=False)
+        )
+        runner.cached_test_function([255, 255])
+        runner.shrink_interesting_examples()
+
+        results = {d.buffer for d in runner.interesting_examples.values()}
+
+    assert len(results.intersection({hbytes([0, 1]), hbytes([1, 0])})) == 1
