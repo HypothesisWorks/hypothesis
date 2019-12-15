@@ -33,6 +33,7 @@ from hypothesis.internal.conjecture.engine import (
     ConjectureRunner,
     ExitReason,
 )
+from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -1249,3 +1250,36 @@ def test_does_not_duplicate_elements():
     assert is_pareto
 
     assert len(runner.pareto_front) == 1
+
+
+def test_includes_right_hand_side_targets_in_dominance():
+    def test(data):
+        if data.draw_bits(8):
+            data.target_observations[""] = 10
+
+    runner = ConjectureRunner(
+        test,
+        settings=settings(TEST_SETTINGS, database=InMemoryExampleDatabase()),
+        database_key=b"stuff",
+    )
+
+    d1 = runner.cached_test_function([0]).as_result()
+    d2 = runner.cached_test_function([1]).as_result()
+
+    assert dominance(d1, d2) == DominanceRelation.NO_DOMINANCE
+
+
+def test_smaller_interesting_dominates_larger_valid():
+    def test(data):
+        if data.draw_bits(8) == 0:
+            data.mark_interesting()
+
+    runner = ConjectureRunner(
+        test,
+        settings=settings(TEST_SETTINGS, database=InMemoryExampleDatabase()),
+        database_key=b"stuff",
+    )
+
+    d1 = runner.cached_test_function([0]).as_result()
+    d2 = runner.cached_test_function([1]).as_result()
+    assert dominance(d1, d2) == DominanceRelation.LEFT_DOMINATES

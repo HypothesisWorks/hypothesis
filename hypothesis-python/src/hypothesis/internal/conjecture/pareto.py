@@ -25,6 +25,8 @@ from hypothesis.internal.conjecture.data import ConjectureData, ConjectureResult
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, swap
 from hypothesis.internal.conjecture.shrinker import sort_key
 
+NO_SCORE = float("-inf")
+
 
 class DominanceRelation(Enum):
     NO_DOMINANCE = 0
@@ -35,8 +37,8 @@ class DominanceRelation(Enum):
 
 def dominance(left, right):
     """Returns the dominance relation between ``left`` and ``right``, according
-    to the rules that something dominates if and only if it is better in every
-    way.
+    to the rules that one ConjectureResult dominates another if and only if it
+    is better in every way.
 
     The things we currently consider to be "better" are:
 
@@ -81,11 +83,10 @@ def dominance(left, right):
     ):
         return DominanceRelation.NO_DOMINANCE
 
-    for target, score in left.target_observations.items():
-        if (
-            target in right.target_observations
-            and right.target_observations[target] > score
-        ):
+    for target in set(left.target_observations) | set(right.target_observations):
+        left_score = left.target_observations.get(target, NO_SCORE)
+        right_score = right.target_observations.get(target, NO_SCORE)
+        if right_score > left_score:
             return DominanceRelation.NO_DOMINANCE
 
     return DominanceRelation.LEFT_DOMINATES
