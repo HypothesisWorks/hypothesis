@@ -23,6 +23,7 @@ pyupgrade
 pyupio
 requests
 restructuredtext-lint
+sortedcontainers
 sphinx
 sphinx-rtd-theme
 toml
