@@ -92,7 +92,7 @@ def test_pop_without_mask():
     assert y == [1, 2, 3]
 
 
-def test_pop_without_mask():
+def test_pop_with_mask():
     y = [1, 2, 3]
     x = LazySequenceCopy(y)
     x[-1] = 5
@@ -148,7 +148,7 @@ def test_int_list_extend():
     assert list(x) == [0, 0, 0, n]
 
 
-@pytest.mark.parametrize("n", [0, 1, 30, 70,])
+@pytest.mark.parametrize("n", [0, 1, 30, 70])
 def test_binary_search(n):
     i = binary_search(0, 100, lambda i: i <= n)
     assert i == n

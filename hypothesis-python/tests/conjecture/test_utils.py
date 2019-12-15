@@ -24,7 +24,6 @@ import numpy as np
 import pytest
 
 import hypothesis.internal.conjecture.utils as cu
-import hypothesis.strategies as st
 from hypothesis import (
     HealthCheck,
     Phase,
@@ -183,7 +182,7 @@ def test_integer_range_lower_equals_upper():
     assert len(data.buffer) == 1
 
 
-def test_integer_range_center_lower():
+def test_integer_range_center_default():
     assert (
         cu.integer_range(ConjectureData.for_buffer([0]), lower=0, upper=10, center=None)
         == 0

@@ -32,7 +32,6 @@ from hypothesis.internal.conjecture.engine import (
     MIN_TEST_CALLS,
     ConjectureRunner,
     ExitReason,
-    RunIsComplete,
 )
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.utils import integer_range
