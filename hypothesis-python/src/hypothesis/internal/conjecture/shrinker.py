@@ -271,7 +271,7 @@ class Shrinker(object):
         Note that initial is a ConjectureData object, and predicate
         takes ConjectureData objects.
         """
-        self.__engine = engine
+        self.engine = engine
         self.__predicate = predicate
         self.__derived_values = {}
         self.__pending_shrink_explanation = None
@@ -284,7 +284,7 @@ class Shrinker(object):
         self.update_shrink_target(initial)
         self.shrinks = 0
 
-        self.initial_calls = self.__engine.call_count
+        self.initial_calls = self.engine.call_count
 
         self.passes_by_name = {}
         self.passes = []
@@ -335,7 +335,7 @@ class Shrinker(object):
     def calls(self):
         """Return the number of calls that have been made to the underlying
         test function."""
-        return self.__engine.call_count
+        return self.engine.call_count
 
     def consider_new_buffer(self, buffer):
         """Returns True if after running this buffer the result would be
@@ -389,16 +389,16 @@ class Shrinker(object):
             self.__pending_shrink_explanation = None
 
         buffer = hbytes(buffer)
-        result = self.__engine.cached_test_function(buffer)
+        result = self.engine.cached_test_function(buffer)
         self.incorporate_test_data(result)
         return result
 
     def debug(self, msg):
-        self.__engine.debug(msg)
+        self.engine.debug(msg)
 
     @property
     def random(self):
-        return self.__engine.random
+        return self.engine.random
 
     def shrink(self):
         """Run the full set of shrinks and update shrink_target.
@@ -422,7 +422,7 @@ class Shrinker(object):
         try:
             self.greedy_shrink()
         finally:
-            if self.__engine.report_debug_info:
+            if self.engine.report_debug_info:
 
                 def s(n):
                     return "s" if n != 1 else ""
@@ -433,7 +433,7 @@ class Shrinker(object):
                 self.debug("Shrink pass profiling")
                 self.debug("---------------------")
                 self.debug("")
-                calls = self.__engine.call_count - self.initial_calls
+                calls = self.engine.call_count - self.initial_calls
                 self.debug(
                     (
                         "Shrinking made a total of %d call%s "
