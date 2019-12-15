@@ -1396,12 +1396,21 @@ def from_type(thing):
     # refactoring it's hard to do without creating circular imports.
     from hypothesis.strategies._internal import types
 
-    def as_strategy(strat_or_callable, thing):
+    def as_strategy(strat_or_callable, thing, final=True):
         # User-provided strategies need some validation, and callables even more
         # of it.  We do this in three places, hence the helper function
         if not isinstance(strat_or_callable, SearchStrategy):
             assert callable(strat_or_callable)  # Validated in register_type_strategy
-            strategy = strat_or_callable(thing)
+            try:
+                # On Python 3.6, typing.Hashable is just an alias for abc.Hashable,
+                # and the resolver function for Type throws an AttributeError because
+                # Hashable has no __args__.  We discard such errors when attempting
+                # to resolve subclasses, because the function was passed a weird arg.
+                strategy = strat_or_callable(thing)
+            except Exception:  # pragma: no cover
+                if not final:
+                    return NOTHING
+                raise
         else:
             strategy = strat_or_callable
         if not isinstance(strategy, SearchStrategy):
@@ -1455,13 +1464,13 @@ def from_type(thing):
     # type.  For example, `Number -> integers() | floats()`, but bools() is
     # not included because bool is a subclass of int as well as Number.
     strategies = [
-        as_strategy(v, thing)
+        as_strategy(v, thing, final=False)
         for k, v in sorted(types._global_type_lookup.items(), key=repr)
         if isinstance(k, type)
         and issubclass(k, thing)
         and sum(types.try_issubclass(k, typ) for typ in types._global_type_lookup) == 1
     ]
-    if strategies:
+    if any(not s.is_empty for s in strategies):
         return one_of(strategies)
     # If we don't have a strategy registered for this type or any subtype, we
     # may be able to fall back on type annotations.
