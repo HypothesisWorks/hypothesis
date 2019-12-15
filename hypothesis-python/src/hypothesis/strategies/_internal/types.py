@@ -189,6 +189,28 @@ def from_typing_type(thing):
         # such as Container
         for t in (typing.KeysView, typing.ValuesView, typing.ItemsView):
             mapping.pop(t, None)
+    if len(mapping) > 1:
+        # issubclass treats bytestring as a kind of sequence, which it is,
+        # but treating it as such breaks everything else when it is presumed
+        # to be a generic sequence or container that could hold any item.
+        # Except for sequences of integers, or unions which include integer!
+        # See https://github.com/HypothesisWorks/hypothesis/issues/2257
+        #
+        # This block drops ByteString from the types that can be generated
+        # if there is more than one allowed type, and the element type is
+        # not either `int` or a Union with `int` as one of its elements.
+        elem_type = (getattr(thing, "__args__", None) or ["not int"])[0]
+        if getattr(elem_type, "__origin__", None) is typing.Union:
+            union_elems = elem_type.__args__
+        elif hasattr(elem_type, "__union_params__"):  # pragma: no cover
+            union_elems = elem_type.__union_params__  # python 3.5 only
+        else:
+            union_elems = ()
+        if PY2 or not any(
+            isinstance(T, type) and issubclass(int, T)
+            for T in list(union_elems) + [elem_type]
+        ):
+            mapping.pop(typing.ByteString, None)
     strategies = [
         v if isinstance(v, st.SearchStrategy) else v(thing)
         for k, v in mapping.items()
@@ -306,7 +328,7 @@ except ImportError:  # pragma: no cover
 else:
     _global_type_lookup.update(
         {
-            typing.ByteString: st.binary(),
+            typing.ByteString: st.binary() | st.binary().map(bytearray),
             # Reversible is somehow a subclass of Hashable, so we tuplize it.
             # See also the discussion at https://bugs.python.org/issue39046
             typing.Reversible: st.lists(st.integers()).map(tuple),  # type: ignore
