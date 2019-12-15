@@ -16,6 +16,8 @@ jobs:
           TASK: check-format
         check-coverage:
           TASK: check-coverage
+        check-conjecture-coverage:
+          TASK: check-conjecture-coverage
         check-pypy:
           TASK: check-pypy
         check-pypy35:
