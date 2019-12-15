@@ -34,6 +34,7 @@ from hypothesis.internal.conjecture.engine import (
     MIN_TEST_CALLS,
     ConjectureRunner,
     ExitReason,
+    RunIsComplete,
 )
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.shrinking import Float
@@ -1467,7 +1468,13 @@ def test_optimises_multiple_targets():
             data.target_observations["m + n"] = m + n
 
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
-        runner.run()
+        runner.cached_test_function([200, 0])
+        runner.cached_test_function([0, 200])
+
+        try:
+            runner.optimise_targets()
+        except RunIsComplete:
+            pass
 
         assert runner.best_observed_targets["m"] == 255
         assert runner.best_observed_targets["n"] == 255
