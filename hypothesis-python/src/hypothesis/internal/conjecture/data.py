@@ -728,10 +728,10 @@ class ConjectureData(object):
     @classmethod
     def for_buffer(self, buffer, observer=None):
         return ConjectureData(
-            prefix=buffer, max_length=len(buffer), parameter=None, observer=observer,
+            prefix=buffer, max_length=len(buffer), random=None, observer=observer,
         )
 
-    def __init__(self, max_length, prefix, parameter, observer=None):
+    def __init__(self, max_length, prefix, random, observer=None):
         if observer is None:
             observer = DataObserver()
         assert isinstance(observer, DataObserver)
@@ -743,9 +743,9 @@ class ConjectureData(object):
         self.__block_starts = defaultdict(list)
         self.__block_starts_calculated_to = 0
         self.__prefix = prefix
-        self.__parameter = parameter
+        self.__random = random
 
-        assert parameter is not None or max_length <= len(prefix)
+        assert random is not None or max_length <= len(prefix)
 
         self.blocks = Blocks(self)
         self.buffer = bytearray()
@@ -989,7 +989,7 @@ class ConjectureData(object):
             if len(buf) < n_bytes:
                 buf += uniform(self.__random, n_bytes - len(buf))
         else:
-            buf = self.__parameter.draw_bytes(n_bytes)
+            buf = uniform(self.__random, n_bytes)
         buf = bytearray(buf)
         self.__bytes_drawn += n_bytes
 
@@ -1057,27 +1057,3 @@ def bits_to_bytes(n):
     Equivalent to (n + 7) // 8, but slightly faster. This really is
     called enough times that that matters."""
     return (n + 7) >> 3
-
-
-generation_parameters_count = 0
-
-
-class GenerationParameters(object):
-    """Parameters to control generation of examples."""
-
-    def __init__(self, random):
-        self.random = random
-        self.__pure_chance = None
-
-        global generation_parameters_count
-        generation_parameters_count += 1
-
-        self.__id = generation_parameters_count
-
-    def __repr__(self):
-        return "GenerationParameters(%d)" % (self.__id,)
-
-    def draw_bytes(self, n):
-        """Draw an n-byte block from the distribution defined by this instance
-        of generation parameters."""
-        return uniform(self.__random, n)

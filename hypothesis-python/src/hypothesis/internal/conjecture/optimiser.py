@@ -144,7 +144,6 @@ class Optimiser(object):
                 # current choice of parameter is not a good one for generating
                 # the extensions. We reset both of them in the hope of making
                 # more progress next time around.
-                GenerationParameters(self.random)
                 upwards = not upwards
                 consecutive_failures += 1
 
