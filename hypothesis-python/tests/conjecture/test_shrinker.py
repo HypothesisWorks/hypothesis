@@ -380,3 +380,66 @@ def test_zero_examples_is_adaptive():
 
     assert shrinker.shrink_target.buffer == hbytes(1000) + hbytes([1])
     assert shrinker.calls <= 60
+
+
+def test_zero_examples_with_variable_min_size():
+    @shrinking_from(hbytes([255]) * 100)
+    def shrinker(data):
+        any_nonzero = False
+        for i in range(1, 10):
+            any_nonzero |= data.draw_bits(i * 8) > 0
+        if not any_nonzero:
+            data.mark_invalid()
+        data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["zero_examples"])
+    assert len([d for d in shrinker.shrink_target.blocks if not d.all_zero]) == 1
+
+
+def test_zero_contained_examples():
+    @shrinking_from(hbytes([1]) * 8)
+    def shrinker(data):
+        for _ in range(4):
+            data.start_example(1)
+            if data.draw_bits(8) == 0:
+                data.mark_invalid()
+            data.start_example(1)
+            data.draw_bits(8)
+            data.stop_example()
+            data.stop_example()
+        data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["zero_examples"])
+    assert list(shrinker.shrink_target.buffer) == [1, 0] * 4
+
+
+def test_adaptive_example_deletion_deletes_nothing():
+    @shrinking_from(hbytes([1]) * 8 + hbytes(1))
+    def shrinker(data):
+        n = 0
+        while data.draw_bits(8):
+            n += 1
+        if n >= 8:
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["adaptive_example_deletion"])
+    assert list(shrinker.shrink_target.buffer) == [1] * 8 + [0]
+
+
+def test_zig_zags_quickly():
+    @shrinking_from(hbytes([255]) * 4)
+    def shrinker(data):
+        m = data.draw_bits(16)
+        n = data.draw_bits(16)
+        if m == 0 or n == 0:
+            data.mark_invalid()
+        if abs(m - n) <= 1:
+            data.mark_interesting(0)
+        # Two different interesting origins for avoiding slipping in the
+        # shrinker.
+        if abs(m - n) <= 10:
+            data.mark_interesting(1)
+
+    shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
+    assert shrinker.engine.valid_examples <= 100
+    assert list(shrinker.shrink_target.buffer) == [0, 1, 0, 1]
