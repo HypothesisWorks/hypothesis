@@ -17,35 +17,15 @@
 
 from __future__ import absolute_import, division, print_function
 
-import re
-from contextlib import contextmanager
-from random import Random
-
 import pytest
 
-import hypothesis.internal.conjecture.engine as engine_module
 import hypothesis.internal.conjecture.floats as flt
-from hypothesis import HealthCheck, Phase, Verbosity, settings
-from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
-from hypothesis.errors import FailedHealthCheck, Flaky
-from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status
-from hypothesis.internal.conjecture.engine import (
-    MIN_TEST_CALLS,
-    ConjectureRunner,
-    ExitReason,
-)
+from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
+from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.shrinking import Float
-from hypothesis.internal.conjecture.utils import (
-    Sampler,
-    calc_label_from_name,
-    integer_range,
-)
-from hypothesis.internal.entropy import deterministic_PRNG
-from tests.common.strategies import SLOW, HardToShrink
-from tests.common.utils import no_shrink
-from tests.conjecture.common import SOME_LABEL, TEST_SETTINGS, run_to_data, run_to_buffer, buffer_size_limit, shrinking_from
+from hypothesis.internal.conjecture.utils import Sampler
+from tests.conjecture.common import SOME_LABEL, run_to_buffer, shrinking_from
 
 
 @pytest.mark.parametrize("n", [1, 5, 8, 15])
@@ -81,6 +61,7 @@ def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
         data.mark_interesting()
 
     assert x == hbytes(10)
+
 
 def test_duplicate_blocks_that_go_away():
     @shrinking_from([1, 1, 1, 2] * 2 + [5] * 2)
@@ -399,5 +380,3 @@ def test_zero_examples_is_adaptive():
 
     assert shrinker.shrink_target.buffer == hbytes(1000) + hbytes([1])
     assert shrinker.calls <= 60
-
-

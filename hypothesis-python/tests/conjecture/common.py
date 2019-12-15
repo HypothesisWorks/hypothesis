@@ -23,16 +23,8 @@ import hypothesis.internal.conjecture.engine as engine_module
 from hypothesis import HealthCheck, settings
 from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.data import Status
-from hypothesis.internal.conjecture.engine import (
-    MIN_TEST_CALLS,
-    ConjectureRunner,
-    ExitReason,
-)
-from hypothesis.internal.conjecture.utils import (
-    Sampler,
-    calc_label_from_name,
-    integer_range,
-)
+from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.entropy import deterministic_PRNG
 
 SOME_LABEL = calc_label_from_name("some label")

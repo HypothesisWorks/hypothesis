@@ -18,17 +18,15 @@
 from __future__ import absolute_import, division, print_function
 
 import re
-from contextlib import contextmanager
 from random import Random
 
 import pytest
 
 import hypothesis.internal.conjecture.engine as engine_module
-import hypothesis.internal.conjecture.floats as flt
 from hypothesis import HealthCheck, Phase, Verbosity, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck, Flaky
-from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, int_to_bytes
+from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status
 from hypothesis.internal.conjecture.engine import (
     MIN_TEST_CALLS,
@@ -37,16 +35,18 @@ from hypothesis.internal.conjecture.engine import (
     RunIsComplete,
 )
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
-from hypothesis.internal.conjecture.shrinking import Float
-from hypothesis.internal.conjecture.utils import (
-    Sampler,
-    calc_label_from_name,
-    integer_range,
-)
+from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.internal.entropy import deterministic_PRNG
 from tests.common.strategies import SLOW, HardToShrink
 from tests.common.utils import no_shrink
-from tests.conjecture.common import SOME_LABEL, TEST_SETTINGS, run_to_data, run_to_buffer, buffer_size_limit, shrinking_from
+from tests.conjecture.common import (
+    SOME_LABEL,
+    TEST_SETTINGS,
+    buffer_size_limit,
+    run_to_buffer,
+    run_to_data,
+    shrinking_from,
+)
 
 
 def test_can_index_results():
