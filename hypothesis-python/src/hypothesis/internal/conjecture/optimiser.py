@@ -181,10 +181,11 @@ class Optimiser(object):
         # it will take too long to complete.
         if self.random.randint(0, 1):
             if upwards:
-                replacement_range = (existing_as_int + 1, max_int_value)
+                replacement_as_int = self.random.randint(
+                    existing_as_int + 1, max_int_value
+                )
             else:
-                replacement_range = (0, existing_as_int - 1)
-            replacement_as_int = self.random.randint(*replacement_range)
+                replacement_as_int = self.random.randint(0, existing_as_int - 1)
         elif upwards:
             replacement_as_int = existing_as_int + 1
         else:
@@ -192,9 +193,9 @@ class Optimiser(object):
 
         replacement = int_to_bytes(replacement_as_int, len(existing))
 
-        prefix + replacement + suffix
-
-        attempt = self.engine.cached_test_function(prefix, extend=BUFFER_SIZE,)
+        attempt = self.engine.cached_test_function(
+            prefix + replacement + suffix, extend=BUFFER_SIZE,
+        )
 
         if self.consider_new_test_data(attempt):
             return True
