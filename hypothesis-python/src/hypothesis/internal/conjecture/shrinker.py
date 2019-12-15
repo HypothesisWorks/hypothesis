@@ -816,9 +816,9 @@ class Shrinker(object):
 
         initial_data = self.cached_test_function(initial_attempt)
 
-        if initial_data.status == Status.INTERESTING:
+        if initial_data is self.shrink_target:
             self.lower_common_block_offset()
-            return initial_data is self.shrink_target
+            return True
 
         # If this produced something completely invalid we ditch it
         # here rather than trying to persevere.
