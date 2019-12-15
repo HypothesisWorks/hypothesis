@@ -20,11 +20,23 @@ from __future__ import absolute_import, division, print_function
 from collections import Counter
 from fractions import Fraction
 
+import numpy as np
+import pytest
+
 import hypothesis.internal.conjecture.utils as cu
 import hypothesis.strategies as st
-from hypothesis import HealthCheck, Phase, assume, example, given, settings
+from hypothesis import (
+    HealthCheck,
+    Phase,
+    assume,
+    example,
+    given,
+    settings,
+    strategies as st,
+)
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange
-from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 
@@ -115,6 +127,7 @@ def test_drawing_an_exact_fraction_coin():
 @example([Fraction(1, 2), Fraction(4, 10)])
 @example([Fraction(1, 1), Fraction(3, 5), Fraction(1, 1)])
 @example([Fraction(2, 257), Fraction(2, 5), Fraction(1, 11)])
+@example([0, 2, 47])
 @settings(
     deadline=None,
     suppress_health_check=HealthCheck.all(),
@@ -135,4 +148,158 @@ def test_sampler_distribution(weights):
     for base, alternate, p_alternate in sampler.table:
         calculated[base] += (1 - p_alternate) / n
         calculated[alternate] += p_alternate / n
-    assert probabilities == calculated
+
+    for expected, actual in zip(probabilities, calculated):
+        if isinstance(actual, Fraction):
+            assert expected == actual
+        else:
+            assert abs(expected - actual) < 0.001
+
+
+def test_sampler_does_not_draw_minimum_if_zero():
+    sampler = cu.Sampler([0, 2, 47])
+    assert sampler.sample(ConjectureData.for_buffer([0, 0])) != 0
+
+
+def test_integer_range_center_upper():
+    assert (
+        cu.integer_range(ConjectureData.for_buffer([0]), lower=0, upper=10, center=10)
+        == 10
+    )
+
+
+def test_integer_range_center_lower():
+    assert (
+        cu.integer_range(ConjectureData.for_buffer([0]), lower=0, upper=10, center=0)
+        == 0
+    )
+
+
+def test_integer_range_lower_equals_upper():
+    data = ConjectureData.for_buffer([0])
+
+    assert cu.integer_range(data, lower=0, upper=0, center=0) == 0
+
+    assert len(data.buffer) == 1
+
+
+def test_integer_range_center_lower():
+    assert (
+        cu.integer_range(ConjectureData.for_buffer([0]), lower=0, upper=10, center=None)
+        == 0
+    )
+
+
+def test_center_in_middle_below():
+    assert (
+        cu.integer_range(ConjectureData.for_buffer([0, 0]), lower=0, upper=10, center=5)
+        == 5
+    )
+
+
+def test_center_in_middle_above():
+    assert (
+        cu.integer_range(ConjectureData.for_buffer([1, 0]), lower=0, upper=10, center=5)
+        == 5
+    )
+
+
+def test_restricted_bits():
+    assert (
+        cu.integer_range(
+            ConjectureData.for_buffer([1, 0, 0, 0, 0]), lower=0, upper=2 ** 64 - 1,
+        )
+        == 0
+    )
+
+
+def test_sampler_shrinks():
+    sampler = cu.Sampler([4.0, 8.0, 1.0, 1.0, 0.5])
+    assert sampler.sample(ConjectureData.for_buffer([0] * 3)) == 0
+
+
+def test_combine_labels_is_distinct():
+    x = 10
+    y = 100
+    assert cu.combine_labels(x, y) not in (x, y)
+
+
+def test_invalid_numpy_sample():
+    with pytest.raises(InvalidArgument):
+        cu.check_sample(np.array([[1, 1], [1, 1]]), "array")
+
+
+def test_valid_numpy_sample():
+    cu.check_sample(np.array([1, 2, 3]), "array")
+
+
+def test_invalid_set_sample():
+    with pytest.raises(InvalidArgument):
+        cu.check_sample({1, 2, 3}, "array")
+
+
+def test_valid_list_sample():
+    cu.check_sample([1, 2, 3], "array")
+
+
+def test_choice():
+    assert cu.choice(ConjectureData.for_buffer([1]), [1, 2, 3]) == 2
+
+
+def test_fractional_float():
+    assert cu.fractional_float(ConjectureData.for_buffer([0] * 8),) == 0.0
+
+
+def test_fixed_size_draw_many():
+    many = cu.many(
+        ConjectureData.for_buffer([]), min_size=3, max_size=3, average_size=3
+    )
+    assert many.more()
+    assert many.more()
+    assert many.more()
+    assert not many.more()
+
+
+def test_rejection_eventually_terminates_many():
+    many = cu.many(
+        ConjectureData.for_buffer([1] * 1000),
+        min_size=0,
+        max_size=1000,
+        average_size=100,
+    )
+    count = 0
+
+    while many.more():
+        count += 1
+        many.reject()
+
+    assert count <= 100
+
+
+def test_rejection_eventually_terminates_many_invalid_for_min_size():
+    data = ConjectureData.for_buffer([1] * 1000)
+    many = cu.many(data, min_size=1, max_size=1000, average_size=100)
+
+    with pytest.raises(StopTest):
+        while many.more():
+            many.reject()
+
+    assert data.status == Status.INVALID
+
+
+def test_many_with_min_size():
+    many = cu.many(
+        ConjectureData.for_buffer([0] * 10), min_size=2, average_size=10, max_size=1000
+    )
+    assert many.more()
+    assert many.more()
+    assert not many.more()
+
+
+def test_many_with_max_size():
+    many = cu.many(
+        ConjectureData.for_buffer([1] * 10), min_size=0, average_size=1, max_size=2
+    )
+    assert many.more()
+    assert many.more()
+    assert not many.more()
