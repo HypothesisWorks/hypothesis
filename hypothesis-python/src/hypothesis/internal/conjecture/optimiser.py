@@ -227,6 +227,9 @@ class Optimiser(object):
         if self.consider_new_test_data(attempt):
             return True
 
+        if attempt.status < Status.VALID:
+            return False
+
         ex_attempt = attempt.examples[example_index]
 
         replacement = attempt.buffer[ex_attempt.start : ex_attempt.end]
