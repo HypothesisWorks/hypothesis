@@ -975,9 +975,7 @@ class Shrinker(object):
             )
 
         to_right = find_integer(lambda n: delete_region(j, j + n))
-
-        if to_right > 0:
-            find_integer(lambda n: delete_region(j - n, j + to_right))
+        find_integer(lambda n: delete_region(j - n, j + to_right))
 
     def try_zero_example(self, ex):
         u = ex.start
