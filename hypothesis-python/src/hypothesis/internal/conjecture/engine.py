@@ -110,12 +110,17 @@ class ConjectureRunner(object):
         self.tree = DataTree()
 
         self.best_observed_targets = defaultdict(lambda: NO_SCORE)
+        self.best_examples_of_observed_targets = {}
 
         # We want to be able to get the ConjectureData object that results
         # from running a buffer without recalculating, especially during
         # shrinking where we need to know about the structure of the
         # executed test case.
         self.__data_cache = LRUReusedCache(CACHE_SIZE)
+
+    @property
+    def should_optimise(self):
+        return Phase.target in self.settings.phases
 
     def __tree_is_exhausted(self):
         return self.tree.is_exhausted
@@ -164,6 +169,21 @@ class ConjectureRunner(object):
         if data.status >= Status.VALID:
             for k, v in data.target_observations.items():
                 self.best_observed_targets[k] = max(self.best_observed_targets[k], v)
+
+                if k not in self.best_examples_of_observed_targets:
+                    self.best_examples_of_observed_targets[k] = data.as_result()
+                    continue
+
+                existing_example = self.best_examples_of_observed_targets[k]
+                existing_score = existing_example.target_observations[k]
+
+                if v < existing_score:
+                    continue
+
+                if v > existing_score or sort_key(data.buffer) < sort_key(
+                    existing_example.buffer
+                ):
+                    self.best_examples_of_observed_targets[k] = data.as_result()
 
         if data.status == Status.VALID:
             self.valid_examples += 1
@@ -471,8 +491,6 @@ class ConjectureRunner(object):
         if zero_data.status > Status.OVERRUN:
             self.__data_cache.pin(zero_data.buffer)
 
-        self.optimise_all(zero_data)
-
         if zero_data.status == Status.OVERRUN or (
             zero_data.status == Status.VALID and len(zero_data.buffer) * 2 > BUFFER_SIZE
         ):
@@ -494,14 +512,6 @@ class ConjectureRunner(object):
         self.health_check_state = HealthCheckState()
 
         def should_generate_more():
-            # If we haven't found a bug, keep looking.  We check this before
-            # doing anything else as it's by far the most common case.
-            if not self.interesting_examples:
-                return True
-            # If we've found a bug and won't report more than one, stop looking.
-            elif not self.settings.report_multiple_bugs:
-                return False
-            assert self.first_bug_found_at <= self.last_bug_found_at <= self.call_count
             # End the generation phase where we would have ended it if no bugs had
             # been found.  This reproduces the exit logic in `self.test_function`,
             # but with the important distinction that this clause will move on to
@@ -510,8 +520,23 @@ class ConjectureRunner(object):
             if (
                 self.valid_examples >= self.settings.max_examples
                 or self.call_count >= max(self.settings.max_examples * 10, 1000)
+                or (
+                    self.best_examples_of_observed_targets
+                    and self.valid_examples * 2 >= self.settings.max_examples
+                    and self.should_optimise
+                )
             ):  # pragma: no cover
                 return False
+
+            # If we haven't found a bug, keep looking - if we hit any limits on
+            # the number of tests to run that will raise an exception and stop
+            # the run.
+            if not self.interesting_examples:
+                return True
+            # If we've found a bug and won't report more than one, stop looking.
+            elif not self.settings.report_multiple_bugs:
+                return False
+            assert self.first_bug_found_at <= self.last_bug_found_at <= self.call_count
             # Otherwise, keep searching for between ten and 'a heuristic' calls.
             # We cap 'calls after first bug' so errors are reported reasonably
             # soon even for tests that are allowed to run for a very long time,
@@ -635,8 +660,6 @@ class ConjectureRunner(object):
 
             self.test_function(data)
 
-            self.optimise_all(data)
-
             count += 1
             if (
                 data.status < Status.VALID
@@ -646,16 +669,24 @@ class ConjectureRunner(object):
                 count = 0
                 parameter = GenerationParameters(self.random)
 
-    def optimise_all(self, data):
-        """If the data or result object is suitable for hill climbing, run hill
-        climbing on all of its target observations."""
-        if data.status == Status.VALID:
-            for target in data.target_observations:
+    def optimise_targets(self):
+        """If any target observations have been made, attempt to optimise them
+        all."""
+        if not self.should_optimise:
+            return
+        while True:
+            prev_calls = self.call_count
+            for target, data in list(self.best_examples_of_observed_targets.items()):
                 self.new_optimiser(data, target).run()
+            # This shows up as a missing branch for some reason but is definitely
+            # covered if you add an assertion to check.
+            if self.interesting_examples or (prev_calls == self.call_count):
+                break
 
     def _run(self):
         self.reuse_existing_examples()
         self.generate_new_examples()
+        self.optimise_targets()
         self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 

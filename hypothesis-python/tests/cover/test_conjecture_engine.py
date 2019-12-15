@@ -34,6 +34,7 @@ from hypothesis.internal.conjecture.engine import (
     MIN_TEST_CALLS,
     ConjectureRunner,
     ExitReason,
+    RunIsComplete,
 )
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.shrinking import Float
@@ -1452,3 +1453,29 @@ def test_prefix_cannot_exceed_buffer_size(monkeypatch):
         runner = ConjectureRunner(test, settings=SMALL_COUNT_SETTINGS)
         runner.run()
         assert runner.valid_examples == buffer_size
+
+
+def test_optimises_multiple_targets():
+    with deterministic_PRNG():
+
+        def test(data):
+            n = data.draw_bits(8)
+            m = data.draw_bits(8)
+            if n + m > 256:
+                data.mark_invalid()
+            data.target_observations["m"] = m
+            data.target_observations["n"] = n
+            data.target_observations["m + n"] = m + n
+
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        runner.cached_test_function([200, 0])
+        runner.cached_test_function([0, 200])
+
+        try:
+            runner.optimise_targets()
+        except RunIsComplete:
+            pass
+
+        assert runner.best_observed_targets["m"] == 255
+        assert runner.best_observed_targets["n"] == 255
+        assert runner.best_observed_targets["m + n"] == 256

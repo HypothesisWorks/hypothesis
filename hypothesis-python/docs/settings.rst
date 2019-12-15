@@ -57,8 +57,9 @@ Hypothesis divides tests into four logically distinct phases:
 1. Running explicit examples :ref:`provided with the @example decorator <providing-explicit-examples>`.
 2. Rerunning a selection of previously failing examples to reproduce a previously seen error
 3. Generating new examples.
-4. Attempting to shrink an example found in phases 2 or 3 to a more manageable
-   one (explicit examples cannot be shrunk).
+4. Mutating examples for :ref:`targeted property-based testing <targeted-search>`.
+5. Attempting to shrink an example found in previous phases (other than phase 1 - explicit examples cannot be shrunk).
+   This turns potentially large and complicated examples which may be hard to read into smaller and simpler ones.
 
 The phases setting provides you with fine grained control over which of these run,
 with each phase corresponding to a value on the :class:`~hypothesis.Phase` enum:
@@ -68,7 +69,9 @@ with each phase corresponding to a value on the :class:`~hypothesis.Phase` enum:
 1. ``Phase.explicit`` controls whether explicit examples are run.
 2. ``Phase.reuse`` controls whether previous examples will be reused.
 3. ``Phase.generate`` controls whether new examples will be generated.
-4. ``Phase.shrink`` controls whether examples will be shrunk.
+4. ``Phase.target`` controls whether examples will be mutated for targeting.
+5. ``Phase.shrink`` controls whether examples will be shrunk.
+
 
 The phases argument accepts a collection with any subset of these. e.g.
 ``settings(phases=[Phase.generate, Phase.shrink])`` will generate new examples

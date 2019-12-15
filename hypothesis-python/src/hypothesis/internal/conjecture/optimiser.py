@@ -59,10 +59,6 @@ class Optimiser(object):
         return self.score_function(self.current_data)
 
     @property
-    def best_score(self):
-        return self.engine.best_observed_targets[self.target]
-
-    @property
     def random(self):
         return self.engine.random
 
@@ -126,9 +122,8 @@ class Optimiser(object):
 
         # We keep running our hill climbing until we've got (fairly weak)
         # evidence that we're at a local maximum.
-        max_failures = 5
+        max_failures = 10
         consecutive_failures = 0
-        improved = False
         while (
             consecutive_failures < max_failures
             # Once we've hit and interesting target it's time to stop hill
@@ -136,13 +131,6 @@ class Optimiser(object):
             # further.
             and self.current_data.status <= Status.VALID
         ):
-            at_best = self.current_score == self.best_score
-
-            if improved and at_best:
-                max_failures = 10
-            elif improved or at_best:
-                max_failures = 5
-
             if self.attempt_to_improve(
                 parameter=parameter, example_index=select_example(self.current_data)
             ):
@@ -150,7 +138,6 @@ class Optimiser(object):
                 # any evidence that we're at a local maximum so we reset the
                 # count.
                 consecutive_failures = 0
-                improved = True
             else:
                 # If we've failed in our hill climbing attempt, this could be
                 # for two reasons: We've not picked enough of the test case to
