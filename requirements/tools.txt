@@ -86,6 +86,7 @@ safety==1.8.5             # via pyupio
 six==1.12.0               # via bandit, bleach, dparse, packaging, pip-tools, prompt-toolkit, pygithub, python-dateutil, python-gitlab, pyupio, readme-renderer, stevedore, tox, traitlets
 smmap2==2.0.5             # via gitdb2
 snowballstemmer==2.0.0    # via pydocstyle, sphinx
+sortedcontainers==2.1.0
 sphinx-rtd-theme==0.4.3
 sphinx==2.2.1
 sphinxcontrib-applehelp==1.0.1  # via sphinx
@@ -112,4 +113,4 @@ wrapt==1.11.2             # via deprecated
 zipp==0.6.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==41.6.0        # via ipython, safety, sphinx, twine
+# setuptools==42.0.2        # via ipython, safety, sphinx, twine

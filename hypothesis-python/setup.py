@@ -68,7 +68,7 @@ extras = {
 extras["all"] = sorted(sum(extras.values(), []))
 
 
-install_requires = ["attrs>=19.2.0"]
+install_requires = ["attrs>=19.2.0", "sortedcontainers>=2.1.0,<3.0.0"]
 # Using an environment marker on enum34 makes the dependency condition
 # independent of the build environemnt, which is important for wheels.
 # https://www.python.org/dev/peps/pep-0345/#environment-markers
@@ -94,7 +94,7 @@ setuptools.setup(
         "Issues": "https://github.com/HypothesisWorks/hypothesis/issues",
     },
     license="MPL v2",
-    description="A library for property based testing",
+    description="A library for property-based testing",
     zip_safe=False,
     extras_require=extras,
     install_requires=install_requires,

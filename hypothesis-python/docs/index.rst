@@ -22,7 +22,7 @@ Hypothesis lets you write tests which instead look like this:
 2. Perform some operations on the data.
 3. Assert something about the result.
 
-This is often called property based testing, and was popularised by the
+This is often called property-based testing, and was popularised by the
 Haskell library `Quickcheck <https://hackage.haskell.org/package/QuickCheck>`_.
 
 It works by generating arbitrary data matching your specification and checking

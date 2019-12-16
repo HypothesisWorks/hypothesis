@@ -101,7 +101,7 @@ def test_will_save_when_reuse_not_in_phases():
     with pytest.raises(ValueError):
         test_usage()
 
-    (saved,) = [v for k, v in database.data.items() if b"coverage" not in k]
+    (saved,) = [v for k, v in database.data.items() if b"pareto" not in k]
     assert len(saved) == 1
 
 

@@ -33,6 +33,7 @@ from hypothesis.internal.conjecture.engine import (
     ConjectureRunner,
     ExitReason,
 )
+from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -1069,3 +1070,216 @@ def test_does_not_keep_generating_when_multiple_bugs():
         runner.run()
 
     assert runner.call_count == 2
+
+
+def test_populates_the_pareto_front():
+    with deterministic_PRNG():
+
+        def test(data):
+            data.target_observations[""] = data.draw_bits(4)
+
+        runner = ConjectureRunner(
+            test,
+            settings=settings(
+                max_examples=5000,
+                database=InMemoryExampleDatabase(),
+                suppress_health_check=HealthCheck.all(),
+            ),
+            database_key=b"stuff",
+        )
+
+        runner.run()
+
+        assert len(runner.pareto_front) == 2 ** 4
+
+
+def test_pareto_front_contains_smallest_valid_when_not_targeting():
+    with deterministic_PRNG():
+
+        def test(data):
+            data.draw_bits(4)
+
+        runner = ConjectureRunner(
+            test,
+            settings=settings(
+                max_examples=5000,
+                database=InMemoryExampleDatabase(),
+                suppress_health_check=HealthCheck.all(),
+            ),
+            database_key=b"stuff",
+        )
+
+        runner.run()
+
+        assert len(runner.pareto_front) == 1
+
+
+def test_pareto_front_contains_different_interesting_reasons():
+    with deterministic_PRNG():
+
+        def test(data):
+            data.mark_interesting(data.draw_bits(4))
+
+        runner = ConjectureRunner(
+            test,
+            settings=settings(
+                max_examples=5000,
+                database=InMemoryExampleDatabase(),
+                suppress_health_check=HealthCheck.all(),
+            ),
+            database_key=b"stuff",
+        )
+
+        runner.run()
+
+        assert len(runner.pareto_front) == 2 ** 4
+
+
+def test_database_contains_only_pareto_front():
+    with deterministic_PRNG():
+
+        def test(data):
+            data.target_observations["1"] = data.draw_bits(4)
+            data.draw_bits(64)
+            data.target_observations["2"] = data.draw_bits(8)
+
+        db = InMemoryExampleDatabase()
+
+        runner = ConjectureRunner(
+            test,
+            settings=settings(
+                max_examples=500, database=db, suppress_health_check=HealthCheck.all(),
+            ),
+            database_key=b"stuff",
+        )
+
+        runner.run()
+
+        assert len(runner.pareto_front) <= 500
+
+        for v in runner.pareto_front:
+            assert v.status >= Status.VALID
+
+        assert len(db.data) == 1
+
+        (values,) = db.data.values()
+        values = set(values)
+
+        assert len(values) == len(runner.pareto_front)
+
+        for data in runner.pareto_front:
+            assert data.buffer in values
+            assert data in runner.pareto_front
+
+        for k in values:
+            assert runner.cached_test_function(k) in runner.pareto_front
+
+
+def test_clears_defunct_pareto_front():
+    with deterministic_PRNG():
+
+        def test(data):
+            data.draw_bits(8)
+            data.draw_bits(8)
+
+        db = InMemoryExampleDatabase()
+
+        runner = ConjectureRunner(
+            test,
+            settings=settings(
+                max_examples=10000,
+                database=db,
+                suppress_health_check=HealthCheck.all(),
+                phases=[Phase.reuse],
+            ),
+            database_key=b"stuff",
+        )
+
+        for i in hrange(256):
+            db.save(runner.pareto_key, hbytes([i, 0]))
+
+        runner.run()
+
+        assert len(list(db.fetch(runner.pareto_key))) == 1
+
+
+def test_replaces_all_dominated():
+    def test(data):
+        data.target_observations["m"] = 3 - data.draw_bits(2)
+        data.target_observations["n"] = 3 - data.draw_bits(2)
+
+    runner = ConjectureRunner(
+        test,
+        settings=settings(TEST_SETTINGS, database=InMemoryExampleDatabase()),
+        database_key=b"stuff",
+    )
+
+    d1 = runner.cached_test_function([0, 1]).as_result()
+    d2 = runner.cached_test_function([1, 0]).as_result()
+
+    assert len(runner.pareto_front) == 2
+
+    assert runner.pareto_front[0] == d1
+    assert runner.pareto_front[1] == d2
+
+    d3 = runner.cached_test_function([0, 0]).as_result()
+    assert len(runner.pareto_front) == 1
+
+    assert runner.pareto_front[0] == d3
+
+
+def test_does_not_duplicate_elements():
+    def test(data):
+        data.target_observations["m"] = data.draw_bits(8)
+
+    runner = ConjectureRunner(
+        test,
+        settings=settings(TEST_SETTINGS, database=InMemoryExampleDatabase()),
+        database_key=b"stuff",
+    )
+
+    d1 = runner.cached_test_function([1]).as_result()
+
+    assert len(runner.pareto_front) == 1
+
+    # This can happen in practice if we e.g. reexecute a test because it has
+    # expired from the cache. It's easier just to test it directly though
+    # rather than simulate the failure mode.
+    is_pareto = runner.pareto_front.add(d1)
+
+    assert is_pareto
+
+    assert len(runner.pareto_front) == 1
+
+
+def test_includes_right_hand_side_targets_in_dominance():
+    def test(data):
+        if data.draw_bits(8):
+            data.target_observations[""] = 10
+
+    runner = ConjectureRunner(
+        test,
+        settings=settings(TEST_SETTINGS, database=InMemoryExampleDatabase()),
+        database_key=b"stuff",
+    )
+
+    d1 = runner.cached_test_function([0]).as_result()
+    d2 = runner.cached_test_function([1]).as_result()
+
+    assert dominance(d1, d2) == DominanceRelation.NO_DOMINANCE
+
+
+def test_smaller_interesting_dominates_larger_valid():
+    def test(data):
+        if data.draw_bits(8) == 0:
+            data.mark_interesting()
+
+    runner = ConjectureRunner(
+        test,
+        settings=settings(TEST_SETTINGS, database=InMemoryExampleDatabase()),
+        database_key=b"stuff",
+    )
+
+    d1 = runner.cached_test_function([0]).as_result()
+    d2 = runner.cached_test_function([1]).as_result()
+    assert dominance(d1, d2) == DominanceRelation.LEFT_DOMINATES

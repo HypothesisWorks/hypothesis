@@ -42,6 +42,7 @@ from hypothesis.internal.conjecture.datatree import (
     TreeRecordingObserver,
 )
 from hypothesis.internal.conjecture.junkdrawer import clamp
+from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import base_report
@@ -49,9 +50,6 @@ from hypothesis.reporting import base_report
 # Tell pytest to omit the body of this module from tracebacks
 # https://docs.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
 __tracebackhide__ = True
-
-
-NO_SCORE = float("-inf")
 
 
 MAX_SHRINKS = 500
@@ -112,6 +110,16 @@ class ConjectureRunner(object):
         self.best_observed_targets = defaultdict(lambda: NO_SCORE)
         self.best_examples_of_observed_targets = {}
 
+        # We keep the pareto front in the example database if we have one. This
+        # is only marginally useful at present, but speeds up local development
+        # because it means that large targets will be quickly surfaced in your
+        # testing.
+        if self.database_key is not None and self.settings.database is not None:
+            self.pareto_front = ParetoFront(self.random)
+            self.pareto_front.on_evict(self.on_pareto_evict)
+        else:
+            self.pareto_front = None
+
         # We want to be able to get the ConjectureData object that results
         # from running a buffer without recalculating, especially during
         # shrinking where we need to know about the structure of the
@@ -163,6 +171,9 @@ class ConjectureRunner(object):
                 self.note_details(data)
 
         self.debug_data(data)
+
+        if self.pareto_front is not None and self.pareto_front.add(data.as_result()):
+            self.save_buffer(data.buffer, sub_key=b"pareto")
 
         assert len(data.buffer) <= BUFFER_SIZE
 
@@ -233,6 +244,9 @@ class ConjectureRunner(object):
             self.exit_with(ExitReason.finished)
 
         self.record_for_health_check(data)
+
+    def on_pareto_evict(self, data):
+        self.settings.database.delete(self.pareto_key, data.buffer)
 
     def generate_novel_prefix(self):
         """Uses the tree to proactively generate a starting sequence of bytes
@@ -326,9 +340,9 @@ class ConjectureRunner(object):
                 HealthCheck.too_slow,
             )
 
-    def save_buffer(self, buffer):
+    def save_buffer(self, buffer, sub_key=None):
         if self.settings.database is not None:
-            key = self.database_key
+            key = self.sub_key(sub_key)
             if key is None:
                 return
             self.settings.database.save(key, hbytes(buffer))
@@ -337,13 +351,20 @@ class ConjectureRunner(object):
         if self.settings.database is not None and self.database_key is not None:
             self.settings.database.move(self.database_key, self.secondary_key, buffer)
 
-    @property
-    def secondary_key(self):
-        return b".".join((self.database_key, b"secondary"))
+    def sub_key(self, sub_key):
+        if self.database_key is None:
+            return None
+        if sub_key is None:
+            return self.database_key
+        return b".".join((self.database_key, sub_key))
 
     @property
-    def covering_key(self):
-        return b".".join((self.database_key, b"coverage"))
+    def secondary_key(self):
+        return self.sub_key(b"secondary")
+
+    @property
+    def pareto_key(self):
+        return self.sub_key(b"pareto")
 
     def note_details(self, data):
         self.__data_cache[data.buffer] = data.as_result()
@@ -449,29 +470,39 @@ class ConjectureRunner(object):
             )
             desired_size = max(2, ceil(0.1 * self.settings.max_examples))
 
-            for extra_key in [self.secondary_key, self.covering_key]:
-                if len(corpus) < desired_size:
-                    extra_corpus = list(self.settings.database.fetch(extra_key))
+            if len(corpus) < desired_size:
+                extra_corpus = list(self.settings.database.fetch(self.secondary_key))
 
-                    shortfall = desired_size - len(corpus)
+                shortfall = desired_size - len(corpus)
 
-                    if len(extra_corpus) <= shortfall:
-                        extra = extra_corpus
-                    else:
-                        extra = self.random.sample(extra_corpus, shortfall)
-                    extra.sort(key=sort_key)
-                    corpus.extend(extra)
+                if len(extra_corpus) <= shortfall:
+                    extra = extra_corpus
+                else:
+                    extra = self.random.sample(extra_corpus, shortfall)
+                extra.sort(key=sort_key)
+                corpus.extend(extra)
 
             for existing in corpus:
-                last_data = ConjectureData.for_buffer(
-                    existing, observer=self.tree.new_observer()
-                )
-                try:
-                    self.test_function(last_data)
-                finally:
-                    if last_data.status != Status.INTERESTING:
-                        self.settings.database.delete(self.database_key, existing)
-                        self.settings.database.delete(self.secondary_key, existing)
+                data = self.cached_test_function(existing)
+                if data.status != Status.INTERESTING:
+                    self.settings.database.delete(self.database_key, existing)
+                    self.settings.database.delete(self.secondary_key, existing)
+
+            # If we've not found any interesting examples so far we try some of
+            # the pareto front from the last run.
+            if len(corpus) < desired_size and not self.interesting_examples:
+                desired_extra = desired_size - len(corpus)
+                pareto_corpus = list(self.settings.database.fetch(self.pareto_key))
+                if len(pareto_corpus) > desired_extra:
+                    pareto_corpus = self.random.sample(pareto_corpus, desired_extra)
+                pareto_corpus.sort(key=sort_key)
+
+                for existing in pareto_corpus:
+                    data = self.cached_test_function(existing)
+                    if data not in self.pareto_front:
+                        self.settings.database.delete(self.pareto_key, existing)
+                    if data.status == Status.INTERESTING:
+                        break
 
     def exit_with(self, reason):
         self.debug("exit_with(%s)" % (reason.name,))
@@ -486,6 +517,8 @@ class ConjectureRunner(object):
             # so we'd rather report that they're still failing ASAP than take
             # the time to look for additional failures.
             return
+
+        self.debug("Generating new examples")
 
         zero_data = self.cached_test_function(hbytes(BUFFER_SIZE))
         if zero_data.status > Status.OVERRUN:

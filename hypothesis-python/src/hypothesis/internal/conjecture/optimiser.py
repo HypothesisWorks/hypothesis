@@ -29,7 +29,7 @@ from hypothesis.internal.conjecture.engine import (
 
 class Optimiser(object):
     """A fairly basic optimiser designed to increase the value of scores for
-    targeted property based testing.
+    targeted property-based testing.
 
     This implements a fairly naive hill climbing algorithm based on randomly
     regenerating parts of the test case to attempt to improve the result. It is

@@ -49,7 +49,10 @@ generics = sorted(
 
 @pytest.mark.parametrize("typ", generics)
 def test_resolve_typing_module(typ):
-    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much])
+    @settings(
+        suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much],
+        database=None,
+    )
     @given(from_type(typ))
     def inner(ex):
         if typ in (typing.BinaryIO, typing.TextIO):
