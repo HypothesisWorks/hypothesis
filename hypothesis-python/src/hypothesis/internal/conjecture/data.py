@@ -981,7 +981,6 @@ class ConjectureData(object):
         elif self.__bytes_drawn < len(self.__prefix):
             index = self.__bytes_drawn
             buf = self.__prefix[index : index + n_bytes]
-            # We always draw prefixes as a whole number of blocks
             if len(buf) < n_bytes:
                 buf += uniform(self.__parameter.random, n_bytes - len(buf))
         else:
