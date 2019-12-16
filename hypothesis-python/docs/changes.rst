@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.55.1:
+
+-------------------
+4.55.1 - 2019-12-16
+-------------------
+
+This patch fixes :issue:`2257`, where :func:`~hypothesis.strategies.from_type`
+could incorrectly generate bytestrings when passed a generic
+:class:`python:typing.Sequence` such as ``Sequence[set]``.
+
 .. _v4.55.0:
 
 -------------------
