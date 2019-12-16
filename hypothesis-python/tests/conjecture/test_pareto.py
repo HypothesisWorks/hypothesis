@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 from hypothesis import HealthCheck, Phase, settings
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.internal.compat import hbytes, hrange
+from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -112,3 +112,60 @@ def test_clears_defunct_pareto_front():
         runner.run()
 
         assert len(list(db.fetch(runner.pareto_key))) == 1
+
+
+def test_down_samples_the_pareto_front():
+    with deterministic_PRNG():
+
+        def test(data):
+            data.draw_bits(8)
+            data.draw_bits(8)
+
+        db = InMemoryExampleDatabase()
+
+        runner = ConjectureRunner(
+            test,
+            settings=settings(
+                max_examples=1000,
+                database=db,
+                suppress_health_check=HealthCheck.all(),
+                phases=[Phase.reuse],
+            ),
+            database_key=b"stuff",
+        )
+
+        for i in hrange(10000):
+            db.save(runner.pareto_key, int_to_bytes(i, 2))
+
+        runner.reuse_existing_examples()
+
+        assert 0 < runner.valid_examples <= 100
+
+
+def test_stops_loading_pareto_front_if_interesting():
+    with deterministic_PRNG():
+
+        def test(data):
+            data.draw_bits(8)
+            data.draw_bits(8)
+            data.mark_interesting()
+
+        db = InMemoryExampleDatabase()
+
+        runner = ConjectureRunner(
+            test,
+            settings=settings(
+                max_examples=1000,
+                database=db,
+                suppress_health_check=HealthCheck.all(),
+                phases=[Phase.reuse],
+            ),
+            database_key=b"stuff",
+        )
+
+        for i in hrange(10000):
+            db.save(runner.pareto_key, int_to_bytes(i, 2))
+
+        runner.reuse_existing_examples()
+
+        assert runner.call_count == 1
