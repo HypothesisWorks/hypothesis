@@ -24,7 +24,7 @@ from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from tests.common.utils import counts_calls, non_covering_examples
-from tests.cover.test_conjecture_engine import run_to_buffer, shrinking_from
+from tests.conjecture.common import run_to_buffer, shrinking_from
 
 
 def test_lot_of_dead_nodes():

@@ -20,7 +20,14 @@ from __future__ import absolute_import, division, print_function
 import pytest
 
 from hypothesis import example, given, strategies as st
-from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, clamp
+from hypothesis.internal.compat import hbytes
+from hypothesis.internal.conjecture.junkdrawer import (
+    IntList,
+    LazySequenceCopy,
+    binary_search,
+    clamp,
+    replace_all,
+)
 
 
 def test_out_of_range():
@@ -75,3 +82,73 @@ def test_clamp(lower, value, upper):
         assert clamped == lower
     if value > upper:
         assert clamped == upper
+
+
+def test_pop_without_mask():
+    y = [1, 2, 3]
+    x = LazySequenceCopy(y)
+    x.pop()
+    assert list(x) == [1, 2]
+    assert y == [1, 2, 3]
+
+
+def test_pop_with_mask():
+    y = [1, 2, 3]
+    x = LazySequenceCopy(y)
+    x[-1] = 5
+    t = x.pop()
+    assert t == 5
+    assert list(x) == [1, 2]
+    assert y == [1, 2, 3]
+
+
+def test_assignment():
+    y = [1, 2, 3]
+    x = LazySequenceCopy(y)
+    x[-1] = 5
+    assert list(x) == [1, 2, 5]
+    x[-1] = 7
+    assert list(x) == [1, 2, 7]
+
+
+def test_replacement():
+    replace_all(hbytes([1, 1, 1]), [(1, 3, hbytes([3, 4]))]) == hbytes([1, 3, 4, 1])
+
+
+def test_int_list_cannot_contain_negative():
+    with pytest.raises(ValueError):
+        IntList([-1])
+
+
+def test_int_list_can_contain_arbitrary_size():
+    n = 2 ** 65
+    assert list(IntList([n])) == [n]
+
+
+def test_int_list_of_length():
+    assert list(IntList.of_length(10)) == [0] * 10
+
+
+def test_int_list_equality():
+    ls = [1, 2, 3]
+    x = IntList(ls)
+    y = IntList(ls)
+
+    assert ls != x
+    assert x != ls
+    assert not (x == ls)
+    assert x == x
+    assert x == y
+
+
+def test_int_list_extend():
+    x = IntList.of_length(3)
+    n = 2 ** 64 - 1
+    x.extend([n])
+    assert list(x) == [0, 0, 0, n]
+
+
+@pytest.mark.parametrize("n", [0, 1, 30, 70])
+def test_binary_search(n):
+    i = binary_search(0, 100, lambda i: i <= n)
+    assert i == n

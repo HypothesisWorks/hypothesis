@@ -400,7 +400,9 @@ class many(object):
         self.count -= 1
         self.rejections += 1
         self.rejected = True
-        if self.rejections > 2 * self.count:
+        # We set a minimum number of rejections before we give up to avoid
+        # failing too fast when we reject the first draw.
+        if self.rejections > max(3, 2 * self.count):
             if self.count < self.min_size:
                 self.data.mark_invalid()
             else:
