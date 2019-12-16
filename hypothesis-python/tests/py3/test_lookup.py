@@ -23,6 +23,8 @@ import enum
 import io
 import string
 import sys
+import typing
+from numbers import Real
 
 import pytest
 
@@ -40,7 +42,6 @@ from hypothesis.strategies._internal import types
 from tests.common.debug import find_any, minimal
 from tests.common.utils import fails_with
 
-typing = pytest.importorskip("typing")
 sentinel = object()
 generics = sorted(
     (t for t in types._global_type_lookup if isinstance(t, typing_root_type)), key=str
@@ -577,3 +578,23 @@ def test_inference_on_generic_collections_abc_aliases(typ, data):
     # see https://github.com/HypothesisWorks/hypothesis/issues/2272
     value = data.draw(st.from_type(typ))
     assert isinstance(value, typ)
+
+
+@given(st.from_type(typing.Sequence[set]))
+def test_bytestring_not_treated_as_generic_sequence(val):
+    # Check that we don't fall into the specific problem from
+    # https://github.com/HypothesisWorks/hypothesis/issues/2257
+    assert not isinstance(val, typing.ByteString)
+    # Check it hasn't happened again from some other non-generic sequence type.
+    for x in val:
+        assert isinstance(x, set)
+
+
+@pytest.mark.parametrize(
+    "type_", [int, Real, object, typing.Union[int, str], typing.Union[Real, str]]
+)
+def test_bytestring_is_valid_sequence_of_int_and_parent_classes(type_):
+    find_any(
+        st.from_type(typing.Sequence[type_]),
+        lambda val: isinstance(val, typing.ByteString),
+    )
