@@ -37,7 +37,6 @@ jobs:
     - env: TASK=check-py36
       sudo: required
       dist: xenial
-    - env: TASK=check-rust-tests
     - stage: deploy
       env: TASK=deploy
 
