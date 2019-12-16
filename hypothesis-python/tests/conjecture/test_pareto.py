@@ -21,9 +21,7 @@ from hypothesis import HealthCheck, Phase, settings
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.conjecture.data import Status
-from hypothesis.internal.conjecture.engine import (
-    ConjectureRunner,
-)
+from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.entropy import deterministic_PRNG
 
 
