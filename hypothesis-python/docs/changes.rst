@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.54.2:
+
+-------------------
+4.54.2 - 2019-12-16
+-------------------
+
+This release improves the optimisation algorithm for :ref:`targeted property-based testing <targeted-search>`,
+so that it will find higher quality results more reliably. Specifically, in cases where it would previously have got near a local optimum,
+it will now tend to achieve the locally optimal value.
+
 .. _v4.54.1:
 
 -------------------
