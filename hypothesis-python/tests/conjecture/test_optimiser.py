@@ -17,6 +17,10 @@
 
 from __future__ import absolute_import, division, print_function
 
+import pytest
+
+from hypothesis import settings
+from hypothesis.internal.compat import hbytes, int_to_bytes
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from hypothesis.internal.entropy import deterministic_PRNG
 from tests.conjecture.common import TEST_SETTINGS
@@ -65,3 +69,51 @@ def test_optimises_when_last_element_is_empty():
             pass
 
         assert runner.best_observed_targets["n"] == 255
+
+
+def test_can_optimise_last_with_following_empty():
+    with deterministic_PRNG():
+
+        def test(data):
+            for _ in range(100):
+                data.draw_bits(2)
+            data.target_observations[""] = data.draw_bits(8)
+            data.start_example(1)
+            data.stop_example()
+
+        runner = ConjectureRunner(
+            test, settings=settings(TEST_SETTINGS, max_examples=100)
+        )
+        runner.cached_test_function(hbytes(101))
+
+        with pytest.raises(RunIsComplete):
+            runner.optimise_targets()
+        assert runner.best_observed_targets[""] == 255
+
+
+@pytest.mark.parametrize("lower, upper", [(0, 1000), (13, 100), (1000, 2 ** 16 - 1)])
+@pytest.mark.parametrize("score_up", [False, True])
+def test_can_find_endpoints_of_a_range(lower, upper, score_up):
+    with deterministic_PRNG():
+
+        def test(data):
+            n = data.draw_bits(16)
+            if n < lower or n > upper:
+                data.mark_invalid()
+            if not score_up:
+                n = -n
+            data.target_observations["n"] = n
+
+        runner = ConjectureRunner(
+            test, settings=settings(TEST_SETTINGS, max_examples=1000)
+        )
+        runner.cached_test_function(int_to_bytes((lower + upper) // 2, 2))
+
+        try:
+            runner.optimise_targets()
+        except RunIsComplete:
+            pass
+        if score_up:
+            assert runner.best_observed_targets["n"] == upper
+        else:
+            assert runner.best_observed_targets["n"] == -lower

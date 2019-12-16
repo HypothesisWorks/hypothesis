@@ -981,8 +981,8 @@ class ConjectureData(object):
         elif self.__bytes_drawn < len(self.__prefix):
             index = self.__bytes_drawn
             buf = self.__prefix[index : index + n_bytes]
-            # We always draw prefixes as a whole number of blocks
-            assert len(buf) == n_bytes
+            if len(buf) < n_bytes:
+                buf += uniform(self.__parameter.random, n_bytes - len(buf))
         else:
             buf = self.__parameter.draw_bytes(n_bytes)
         buf = bytearray(buf)
@@ -1065,7 +1065,7 @@ class GenerationParameters(object):
     ALPHABET_FACTOR = math.log(1.0 - 1.0 / AVERAGE_ALPHABET_SIZE)
 
     def __init__(self, random):
-        self.__random = random
+        self.random = random
         self.__pure_chance = None
         self.__alphabet = {}
 
@@ -1085,10 +1085,10 @@ class GenerationParameters(object):
         if alphabet is None:
             return self.__draw_without_alphabet(n)
 
-        return self.__random.choice(alphabet)
+        return self.random.choice(alphabet)
 
     def __draw_without_alphabet(self, n):
-        return uniform(self.__random, n)
+        return uniform(self.random, n)
 
     def alphabet(self, n_bytes):
         """Returns an alphabet - a list of values to use for all blocks with
@@ -1103,7 +1103,7 @@ class GenerationParameters(object):
         except KeyError:
             pass
 
-        if self.__random.random() <= self.pure_chance:
+        if self.random.random() <= self.pure_chance:
             # Sometiems we don't want to use an alphabet (e.g. for generating
             # sets of integers having a small alphabet is disastrous), so with
             # some probability we want to generate choices that do not use the
@@ -1116,14 +1116,14 @@ class GenerationParameters(object):
             # GenerationParameters.AVERAGE_ALPHABET_SIZE.
             size = (
                 int(
-                    math.log(self.__random.random())
+                    math.log(self.random.random())
                     / GenerationParameters.ALPHABET_FACTOR
                 )
                 + 1
             )
             assert size > 0
 
-            size = self.__random.randint(1, 10)
+            size = self.random.randint(1, 10)
             result = [self.__draw_without_alphabet(n_bytes) for _ in hrange(size)]
 
         self.__alphabet[n_bytes] = result
@@ -1134,5 +1134,5 @@ class GenerationParameters(object):
         """Returns a probability with which any given draw_bytes call should
         be forced to be all pure."""
         if self.__pure_chance is None:
-            self.__pure_chance = self.__random.random()
+            self.__pure_chance = self.random.random()
         return self.__pure_chance

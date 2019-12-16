@@ -17,6 +17,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.datatree import PreviouslyUnseenBehaviour
 from hypothesis.internal.conjecture.engine import (
@@ -109,15 +110,24 @@ class Optimiser(object):
         a data object and returns an index to an example where we should focus
         our efforts."""
 
-        # The basic design of this is that we assume that there is some
-        # "important prefix" that starts off the test case and that we might
-        # benefit from redrawing everything after that point. This is an
-        # especially good assumption for stateful testing, but it's not an
-        # unreasonable assumption for everything else too.
+        # The idea of this code is that we expect (possibly incorrectly, but
+        # the correctness of this code is not dependent on this assumption,
+        # only how useful it is) that the score will be either increasing or
+        # decreasing when measured as a function of any given example in the
+        # shortlex order. This is likely true in some "local" sense even if it
+        # is not true globally.
         #
-        # This means that the basic neighbourhoods we consider are to pick some
-        # prefix of the current point, keep that fixed, and regenerate the
-        # remaining test case according to some parameter.
+        # If we were to generate a replacement uniformly at random then we
+        # would lose out when the current value of the example is very near to
+        # its maximum or minimum value, so instead we either draw a larger or
+        # smaller value. When this fails to work we switch directions, so we
+        # still get a reasonable spread, but this allows us to more reliably
+        # move in the right direction.
+        upwards = True
+
+        # Often when regenerating we will "run off the end", requiring more
+        # random data than we started with. When that happens we use this
+        # parameter to regenerate it.
         parameter = GenerationParameters(self.random)
 
         # We keep running our hill climbing until we've got (fairly weak)
@@ -132,7 +142,9 @@ class Optimiser(object):
             and self.current_data.status <= Status.VALID
         ):
             if self.attempt_to_improve(
-                parameter=parameter, example_index=select_example(self.current_data)
+                parameter=parameter,
+                example_index=select_example(self.current_data),
+                upwards=upwards,
             ):
                 # If we succeeed at improving the score then we no longer have
                 # any evidence that we're at a local maximum so we reset the
@@ -140,15 +152,15 @@ class Optimiser(object):
                 consecutive_failures = 0
             else:
                 # If we've failed in our hill climbing attempt, this could be
-                # for two reasons: We've not picked enough of the test case to
-                # capture what is interesting about this, or our parameter is
-                # not a good one for generating the extensions we want. We
-                # reset both of them in the hope of making more progress next
-                # time around.
+                # for two reasons: We're moving in the wrong direction, or our
+                # current choice of parameter is not a good one for generating
+                # the extensions. We reset both of them in the hope of making
+                # more progress next time around.
                 parameter = GenerationParameters(self.random)
+                upwards = not upwards
                 consecutive_failures += 1
 
-    def attempt_to_improve(self, example_index, parameter):
+    def attempt_to_improve(self, example_index, parameter, upwards):
         """Part of our hill climbing implementation. Attempts to improve a
         given score by regenerating an example in the data based on a new
         parameter."""
@@ -158,11 +170,46 @@ class Optimiser(object):
 
         ex = data.examples[example_index]
         assert ex.length > 0
-        prefix_size = ex.start
-        prefix = data.buffer[:prefix_size]
+        prefix = data.buffer[: ex.start]
+        suffix = data.buffer[ex.end :]
+
+        existing = data.buffer[ex.start : ex.end]
+
+        existing_as_int = int_from_bytes(existing)
+        max_int_value = (256 ** len(existing)) - 1
+
+        if existing_as_int == max_int_value and upwards:
+            return False
+
+        if existing_as_int == 0 and not upwards:
+            return False
+
+        # We make a mix of small and large jumps. Neither are guaranteeed to
+        # work, but each will work in circumstances the other might not. Small
+        # jumps are especially important for the last steps towards a local
+        # maximum - often large jumps will break some important property of the
+        # test case while small, more careful, jumps will not. On the flip side
+        # we sometimes end up in circumstances where small jumps don't work
+        # but a random draw will produce a good result with reasonable
+        # probability, and we don't want to be too timid in our optimisation as
+        # it will take too long to complete.
+        if self.random.randint(0, 1):
+            if upwards:
+                replacement_range = (existing_as_int + 1, max_int_value)
+            else:
+                replacement_range = (0, existing_as_int - 1)
+            replacement_as_int = self.random.randint(*replacement_range)
+        elif upwards:
+            replacement_as_int = existing_as_int + 1
+        else:
+            replacement_as_int = existing_as_int - 1
+
+        replacement = int_to_bytes(replacement_as_int, len(existing))
+
+        new_buffer = prefix + replacement + suffix
 
         dummy = ConjectureData(
-            prefix=prefix, parameter=parameter, max_length=BUFFER_SIZE,
+            prefix=new_buffer, parameter=parameter, max_length=BUFFER_SIZE,
         )
         try:
             self.engine.tree.simulate_test_function(dummy)
@@ -174,14 +221,17 @@ class Optimiser(object):
             pass
 
         attempt = self.engine.new_conjecture_data(
-            prefix=dummy.buffer, parameter=parameter
+            prefix=max(dummy.buffer, new_buffer, key=len), parameter=parameter
         )
         self.engine.test_function(attempt)
         if self.consider_new_test_data(attempt):
             return True
 
+        if attempt.status < Status.VALID:
+            return False
+
         ex_attempt = attempt.examples[example_index]
 
         replacement = attempt.buffer[ex_attempt.start : ex_attempt.end]
 
-        return self.consider_new_buffer(prefix + replacement + data.buffer[ex.end :])
+        return self.consider_new_buffer(prefix + replacement + suffix)
