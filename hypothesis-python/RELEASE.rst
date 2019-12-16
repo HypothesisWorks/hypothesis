@@ -6,4 +6,8 @@ This is mostly laying groundwork for future features in this area, but
 will also make targeted property-based tests more useful during development,
 where the same tests tend to get run over and over again.
 
+If :obj:`~hypothesis.settings.max_examples` is large, this may increase memory
+usage significantly under some circumstances, but these should be relatively
+rare.
+
 This release also adds a dependency on the :pypi:`sortedcontainers` package.
