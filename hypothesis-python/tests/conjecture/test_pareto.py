@@ -169,3 +169,23 @@ def test_stops_loading_pareto_front_if_interesting():
         runner.reuse_existing_examples()
 
         assert runner.call_count == 1
+
+
+def test_uses_tags_in_calculating_pareto_front():
+    with deterministic_PRNG():
+
+        def test(data):
+            if data.draw_bits(1):
+                data.start_example(11)
+                data.draw_bits(8)
+                data.stop_example()
+
+        runner = ConjectureRunner(
+            test,
+            settings=settings(max_examples=10, database=InMemoryExampleDatabase(),),
+            database_key=b"stuff",
+        )
+
+        runner.run()
+
+        assert len(runner.pareto_front) == 2
