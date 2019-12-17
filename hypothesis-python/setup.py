@@ -62,10 +62,10 @@ extras = {
     "dpcontracts": ["dpcontracts>=0.4"],
     # We only support Django versions with upstream support - see
     # https://www.djangoproject.com/download/#supported-versions
-    "django": ["pytz", "django>=1.11"],
+    "django": ["pytz>=2014.1", "django>=1.11"],
 }
 
-extras["all"] = sorted(sum(extras.values(), []))
+extras["all"] = sorted(set(sum(extras.values(), [])))
 
 
 install_requires = ["attrs>=19.2.0", "sortedcontainers>=2.1.0,<3.0.0"]
