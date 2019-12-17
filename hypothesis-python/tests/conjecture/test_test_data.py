@@ -33,6 +33,7 @@ from hypothesis.internal.conjecture.data import (
     Overrun,
     Status,
     StopTest,
+    structural_coverage,
 )
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
@@ -493,3 +494,34 @@ def test_partial_buffer(n, rnd):
     )
 
     assert data.draw_bytes(2)[0] == n
+
+
+def test_structural_coverage_is_cached():
+    assert structural_coverage(50) is structural_coverage(50)
+
+
+def test_examples_create_structural_coverage():
+    data = ConjectureData.for_buffer(hbytes(0))
+    data.start_example(42)
+    data.stop_example()
+    data.freeze()
+    assert structural_coverage(42) in data.tags
+
+
+def test_discarded_examples_do_not_create_structural_coverage():
+    data = ConjectureData.for_buffer(hbytes(0))
+    data.start_example(42)
+    data.stop_example(discard=True)
+    data.freeze()
+    assert structural_coverage(42) not in data.tags
+
+
+def test_children_of_discarded_examples_do_not_create_structural_coverage():
+    data = ConjectureData.for_buffer(hbytes(0))
+    data.start_example(10)
+    data.start_example(42)
+    data.stop_example()
+    data.stop_example(discard=True)
+    data.freeze()
+    assert structural_coverage(42) not in data.tags
+    assert structural_coverage(10) not in data.tags
