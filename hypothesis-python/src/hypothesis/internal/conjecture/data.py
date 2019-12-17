@@ -65,6 +65,21 @@ class Status(IntEnum):
         return "Status.%s" % (self.name,)
 
 
+@attr.s(frozen=True, slots=True)
+class StructuralCoverageTag(object):
+    label = attr.ib()
+
+
+STRUCTURAL_COVERAGE_CACHE = {}
+
+
+def structural_coverage(label):
+    try:
+        return STRUCTURAL_COVERAGE_CACHE[label]
+    except KeyError:
+        return STRUCTURAL_COVERAGE_CACHE.setdefault(label, StructuralCoverageTag(label))
+
+
 class Example(object):
     """Examples track the hierarchical structure of draws from the byte stream,
     within a single test run.
@@ -706,6 +721,7 @@ class ConjectureResult(object):
     extra_information = attr.ib()
     has_discards = attr.ib()
     target_observations = attr.ib()
+    tags = attr.ib()
     forced_indices = attr.ib(repr=False)
     examples = attr.ib(repr=False)
 
@@ -772,6 +788,11 @@ class ConjectureData(object):
         # ConjectureRunner.generate_new_examples and fed to TargetSelector.
         self.target_observations = {}
 
+        # Tags which indicate something about which part of the search space
+        # this example is in. These are used to guide generation.
+        self.tags = set()
+        self.labels_for_structure_stack = []
+
         # Normally unpopulated but we need this in the niche case
         # that self.as_result() is Overrun but we still want the
         # examples for reporting purposes.
@@ -813,6 +834,7 @@ class ConjectureData(object):
                 else None,
                 has_discards=self.has_discards,
                 target_observations=self.target_observations,
+                tags=frozenset(self.tags),
                 forced_indices=self.forced_indices,
             )
             self.blocks.transfer_ownership(self.__result)
@@ -886,6 +908,7 @@ class ConjectureData(object):
             self.max_depth = self.depth
         self.__example_record.start_example(label)
         self.consecutive_discard_counts.append(0)
+        self.labels_for_structure_stack.append({label})
 
     def stop_example(self, discard=False):
         if self.frozen:
@@ -896,6 +919,15 @@ class ConjectureData(object):
         self.depth -= 1
         assert self.depth >= -1
         self.__example_record.stop_example(discard)
+
+        labels_for_structure = self.labels_for_structure_stack.pop()
+
+        if not discard:
+            if self.labels_for_structure_stack:
+                self.labels_for_structure_stack[-1].update(labels_for_structure)
+            else:
+                self.tags.update([structural_coverage(l) for l in labels_for_structure])
+
         if self.consecutive_discard_counts:
             # We block long sequences of discards. This helps us avoid performance
             # problems where there is rejection sampling. In particular tests which
