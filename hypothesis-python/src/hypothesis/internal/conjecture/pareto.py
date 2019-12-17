@@ -135,7 +135,7 @@ class ParetoFront(object):
         self.__random = random
         self.__eviction_listeners = []
 
-        self.__front = SortedList(key=lambda d: sort_key(d.buffer))
+        self.front = SortedList(key=lambda d: sort_key(d.buffer))
         self.__pending = None
 
     def add(self, data):
@@ -146,18 +146,18 @@ class ParetoFront(object):
         if data.status < Status.VALID:
             return False
 
-        if not self.__front:
-            self.__front.add(data)
+        if not self.front:
+            self.front.add(data)
             return True
 
-        if data in self.__front:
+        if data in self.front:
             return True
 
         # We add data to the pareto front by adding it unconditionally and then
         # doing a certain amount of randomized "clear down" - testing a random
         # set of elements (currently 10) to see if they are dominated by
         # something else in the collection. If they are, we remove them.
-        self.__front.add(data)
+        self.front.add(data)
         assert self.__pending is None
         try:
             self.__pending = data
@@ -166,7 +166,7 @@ class ParetoFront(object):
             # values we've sampled so far. When we sample a new element we
             # either add it to this exact pareto front or remove it from the
             # collection entirely.
-            front = LazySequenceCopy(self.__front)
+            front = LazySequenceCopy(self.front)
 
             # We track which values we are going to remove and remove them all
             # at the end so the shape of the front doesn't change while we're
@@ -178,7 +178,7 @@ class ParetoFront(object):
             # dominators gets too large we have sampled at least 10 elements
             # and it gets too expensive to continue, so we consider that enough
             # due diligence.
-            i = self.__front.index(data)
+            i = self.front.index(data)
 
             # First we attempt to look for values that must be removed by the
             # addition of the data. These are necessarily to the right of it
@@ -240,7 +240,7 @@ class ParetoFront(object):
 
             for v in to_remove:
                 self.__remove(v)
-            return data in self.__front
+            return data in self.front
         finally:
             self.__pending = None
 
@@ -251,23 +251,85 @@ class ParetoFront(object):
 
     def __contains__(self, data):
         return isinstance(data, (ConjectureData, ConjectureResult)) and (
-            data.as_result() in self.__front
+            data.as_result() in self.front
         )
 
     def __iter__(self):
-        return iter(self.__front)
+        return iter(self.front)
 
     def __getitem__(self, i):
-        return self.__front[i]
+        return self.front[i]
 
     def __len__(self):
-        return len(self.__front)
+        return len(self.front)
 
     def __remove(self, data):
         try:
-            self.__front.remove(data)
+            self.front.remove(data)
         except ValueError:
             return
         if data is not self.__pending:
             for f in self.__eviction_listeners:
                 f(data)
+
+
+class ParetoOptimiser(object):
+    """Class for managing optimisation of the pareto front. That is, given the
+    current best known pareto front, this class runs an optimisation process
+    that attempts to bring it closer to the actual pareto front.
+
+    Currently this is fairly basic and only handles pareto optimisation that
+    works by reducing the test case in the shortlex order. We expect it will
+    grow more powerful over time.
+    """
+
+    def __init__(self, engine):
+        self.__engine = engine
+        self.front = self.__engine.pareto_front
+
+    def run(self):
+        seen = set()
+
+        # We iterate backwards through the pareto front, using the shrinker to
+        # (hopefully) replace each example with a smaller one. Note that it's
+        # important that we start from the end for two reasons: Firstly, by
+        # doing it this way we ensure that any new front members we discover
+        # during optimisation will also get optimised (because they will be
+        # inserted into the part of the front that we haven't visited yet),
+        # and secondly we generally expect that we will not finish this process
+        # in a single run, because it's relatively expensive in terms of our
+        # example budget, and by starting from the end we ensure that each time
+        # we run the tests we improve the pareto front because we work on the
+        # bits that we haven't covered yet.
+        i = len(self.front) - 1
+        while i >= 0:
+            assert self.front
+            i = min(i, len(self.front) - 1)
+            target = self.front[i]
+            if target.buffer in seen:
+                i -= 1
+                continue
+
+            # Note that during shrinking we may discover other smaller examples
+            # that will get added to the front. It's OK to slip and and out of
+            # these - in particular we may move to new shrink targets that are
+            # not dominating the current target. This is fine, because they
+            # will be added to the front and processed on later iterations of
+            # this loop.
+            shrunk = self.__engine.shrink(
+                target,
+                lambda data: data.status >= Status.VALID
+                and dominance(data, target)
+                in (DominanceRelation.EQUAL, DominanceRelation.LEFT_DOMINATES),
+            )
+            seen.add(shrunk.buffer)
+
+            # Note that the front may have changed shape arbitrarily when
+            # we ran the shrinker. If it didn't change shape then this is
+            # i - 1. If it did change shape then this is the largest value
+            # in the front which is smaller than the previous target, so
+            # is the correct place to resume from. In particular note that the
+            # size of the front might have grown because of slippage during the
+            # shrink, but all of the newly introduced elements will be smaller
+            # than `target`, so will be covered by this iteration.
+            i = self.front.front.bisect_left(target)

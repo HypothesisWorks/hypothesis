@@ -42,7 +42,7 @@ from hypothesis.internal.conjecture.datatree import (
     TreeRecordingObserver,
 )
 from hypothesis.internal.conjecture.junkdrawer import clamp
-from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront
+from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront, ParetoOptimiser
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import base_report
@@ -554,8 +554,7 @@ class ConjectureRunner(object):
                 self.valid_examples >= self.settings.max_examples
                 or self.call_count >= max(self.settings.max_examples * 10, 1000)
                 or (
-                    self.best_examples_of_observed_targets
-                    and self.valid_examples * 2 >= self.settings.max_examples
+                    self.valid_examples * 2 >= self.settings.max_examples
                     and self.should_optimise
                 )
             ):  # pragma: no cover
@@ -711,10 +710,20 @@ class ConjectureRunner(object):
             prev_calls = self.call_count
             for target, data in list(self.best_examples_of_observed_targets.items()):
                 self.new_optimiser(data, target).run()
+
             # This shows up as a missing branch for some reason but is definitely
             # covered if you add an assertion to check.
-            if self.interesting_examples or (prev_calls == self.call_count):
+            if self.interesting_examples:
                 break
+
+            self.pareto_optimise()
+
+            if prev_calls == self.call_count:
+                break
+
+    def pareto_optimise(self):
+        if self.pareto_front is not None:
+            ParetoOptimiser(self).run()
 
     def _run(self):
         self.reuse_existing_examples()
