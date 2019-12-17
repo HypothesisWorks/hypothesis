@@ -553,10 +553,6 @@ class ConjectureRunner(object):
             if (
                 self.valid_examples >= self.settings.max_examples
                 or self.call_count >= max(self.settings.max_examples * 10, 1000)
-                or (
-                    self.valid_examples * 2 >= self.settings.max_examples
-                    and self.should_optimise
-                )
             ):  # pragma: no cover
                 return False
 
@@ -610,6 +606,9 @@ class ConjectureRunner(object):
         # row it has failed to work, and abort small test case generation when
         # it has failed too many times in a row.
         consecutive_zero_extend_is_invalid = 0
+
+        optimise_at = self.settings.max_examples // 2
+        ran_optimisations = False
 
         while should_generate_more():
             prefix = self.generate_novel_prefix()
@@ -701,6 +700,19 @@ class ConjectureRunner(object):
                 count = 0
                 parameter = GenerationParameters(self.random)
 
+            # Although the optimisations are logically a distinct phase, we
+            # actually normally run them as part of example generation. The
+            # reason for this is that we cannot guarantee that optimisation
+            # actually exhausts our budget: It might finish running and we
+            # discover that actually we still could run a bunch more test cases
+            # if we want.
+            if (
+                self.valid_examples >= max(small_example_cap, optimise_at)
+                and not ran_optimisations
+            ):
+                ran_optimisations = True
+                self.optimise_targets()
+
     def optimise_targets(self):
         """If any target observations have been made, attempt to optimise them
         all."""
@@ -711,8 +723,6 @@ class ConjectureRunner(object):
             for target, data in list(self.best_examples_of_observed_targets.items()):
                 self.new_optimiser(data, target).run()
 
-            # This shows up as a missing branch for some reason but is definitely
-            # covered if you add an assertion to check.
             if self.interesting_examples:
                 break
 
@@ -728,7 +738,12 @@ class ConjectureRunner(object):
     def _run(self):
         self.reuse_existing_examples()
         self.generate_new_examples()
-        self.optimise_targets()
+
+        # We normally run the targeting phase mixed in with the generate phase,
+        # but if we've been asked to run it but not generation then we have to
+        # run it explciitly on its own here.
+        if Phase.generate not in self.settings.phases:
+            self.optimise_targets()
         self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 
