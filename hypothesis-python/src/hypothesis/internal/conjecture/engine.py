@@ -607,33 +607,32 @@ class ConjectureRunner(object):
         # it has failed too many times in a row.
         consecutive_zero_extend_is_invalid = 0
 
-        optimise_at = self.settings.max_examples // 2
+        # We control growth during initial example generation, for two
+        # reasons:
+        #
+        # * It gives us an opportunity to find small examples early, which
+        #   gives us a fast path for easy to find bugs.
+        # * It avoids low probability events where we might end up
+        #   generating very large examples during health checks, which
+        #   on slower machines can trigger HealthCheck.too_slow.
+        #
+        # The heuristic we use is that we attempt to estimate the smallest
+        # extension of this prefix, and limit the size to no more than
+        # an order of magnitude larger than that. If we fail to estimate
+        # the size accurately, we skip over this prefix and try again.
+        #
+        # We need to tune the example size based on the initial prefix,
+        # because any fixed size might be too small, and any size based
+        # on the strategy in general can fall afoul of strategies that
+        # have very different sizes for different prefixes.
+        small_example_cap = clamp(10, self.settings.max_examples // 10, 50)
+
+        optimise_at = max(self.settings.max_examples // 2, small_example_cap + 1)
         ran_optimisations = False
 
         while should_generate_more():
             prefix = self.generate_novel_prefix()
             assert len(prefix) <= BUFFER_SIZE
-
-            # We control growth during initial example generation, for two
-            # reasons:
-            #
-            # * It gives us an opportunity to find small examples early, which
-            #   gives us a fast path for easy to find bugs.
-            # * It avoids low probability events where we might end up
-            #   generating very large examples during health checks, which
-            #   on slower machines can trigger HealthCheck.too_slow.
-            #
-            # The heuristic we use is that we attempt to estimate the smallest
-            # extension of this prefix, and limit the size to no more than
-            # an order of magnitude larger than that. If we fail to estimate
-            # the size accurately, we skip over this prefix and try again.
-            #
-            # We need to tune the example size based on the initial prefix,
-            # because any fixed size might be too small, and any size based
-            # on the strategy in general can fall afoul of strategies that
-            # have very different sizes for different prefixes.
-            small_example_cap = clamp(10, self.settings.max_examples // 10, 50)
-
             if (
                 self.valid_examples <= small_example_cap
                 and self.call_count <= 5 * small_example_cap

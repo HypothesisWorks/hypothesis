@@ -19,9 +19,9 @@ from __future__ import absolute_import, division, print_function
 
 import re
 from random import Random
+from unittest.mock import Mock
 
 import pytest
-from unittest.mock import Mock
 
 import hypothesis.internal.conjecture.engine as engine_module
 from hypothesis import HealthCheck, Phase, Verbosity, settings
@@ -1332,3 +1332,20 @@ def test_runs_optimisation_once_when_generating():
         except RunIsComplete:
             pass
         assert runner.optimise_targets.call_count == 1
+
+
+def test_does_not_run_optimisation_when_max_examples_is_small():
+    def test(data):
+        data.target_observations["n"] = data.draw_bits(16)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(
+            test, settings=settings(TEST_SETTINGS, max_examples=10)
+        )
+
+        runner.optimise_targets = Mock(name="optimise_targets")
+        try:
+            runner.generate_new_examples()
+        except RunIsComplete:
+            pass
+        assert runner.optimise_targets.call_count == 0
