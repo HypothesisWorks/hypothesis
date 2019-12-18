@@ -128,19 +128,6 @@ def test_targeting_with_many_empty(_):
     target(1.0)
 
 
-def test_targeting_increases_max_length():
-    strat = st.lists(st.booleans())
-
-    @settings(database=None, max_examples=200, phases=[Phase.generate, Phase.target])
-    @given(strat)
-    def test_with_targeting(ls):
-        target(float(len(ls)))
-        assert len(ls) <= 80
-
-    with pytest.raises(AssertionError):
-        test_with_targeting()
-
-
 def test_targeting_can_be_disabled():
     strat = st.lists(st.integers(0, 255))
 
