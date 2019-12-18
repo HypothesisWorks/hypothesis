@@ -10,6 +10,18 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.55.4:
+
+-------------------
+4.55.4 - 2019-12-18
+-------------------
+
+This release improves Hypothesis's management of the set of test cases it
+tracks between runs. It will only do anything if you have ``Phase.target``
+enabled and an example database set.
+In those circumstances it should result in a more thorough and faster set of examples
+that are tried on each run.
+
 .. _v4.55.3:
 
 -------------------
