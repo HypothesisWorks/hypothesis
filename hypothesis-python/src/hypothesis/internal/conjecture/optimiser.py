@@ -135,11 +135,10 @@ class Optimiser(object):
                     if self.consider_new_test_data(attempt):
                         return True
 
-                    if len(attempt.buffer) == len(self.current_data.buffer):
+                    if attempt.status < Status.INVALID or len(attempt.buffer) == len(
+                        self.current_data.buffer
+                    ):
                         return False
-
-                    if attempt.status < Status.INVALID:
-                        continue
 
                     for i, ex in enumerate(self.current_data.examples):
                         if ex.start >= block.end:

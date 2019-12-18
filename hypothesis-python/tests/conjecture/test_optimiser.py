@@ -24,7 +24,7 @@ from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from hypothesis.internal.entropy import deterministic_PRNG
-from tests.conjecture.common import TEST_SETTINGS
+from tests.conjecture.common import TEST_SETTINGS, buffer_size_limit
 
 
 def test_optimises_to_maximum():
@@ -202,3 +202,25 @@ def test_can_patch_up_examples():
             pass
 
         assert runner.best_observed_targets["m"] == 63
+
+
+def test_optimiser_when_test_grows_buffer_to_invalid():
+    with deterministic_PRNG():
+        with buffer_size_limit(2):
+
+            def test(data):
+                m = data.draw_bits(8)
+                data.target_observations["m"] = m
+                if m > 100:
+                    data.draw_bits(64)
+                    data.mark_invalid()
+
+            runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+            runner.cached_test_function(hbytes(10))
+
+            try:
+                runner.optimise_targets()
+            except RunIsComplete:
+                pass
+
+            assert runner.best_observed_targets["m"] == 100
