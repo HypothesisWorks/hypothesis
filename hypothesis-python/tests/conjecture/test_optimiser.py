@@ -204,7 +204,7 @@ def test_can_patch_up_examples():
         assert runner.best_observed_targets["m"] == 63
 
 
-def test_optimiser_when_test_grows_buffer_to_invalid():
+def test_optimiser_when_test_grows_buffer_to_overflow():
     with deterministic_PRNG():
         with buffer_size_limit(2):
 
