@@ -290,6 +290,7 @@ st.register_type_strategy(Baz, st.builds(Baz, st.integers()))
         (typing.TypeVar("V", int, str), (int, str)),
     ],
 )
+@settings(suppress_health_check=[HealthCheck.too_slow])
 @given(data=st.data())
 def test_typevar_type_is_consistent(data, var, expected):
     strat = st.from_type(var)
