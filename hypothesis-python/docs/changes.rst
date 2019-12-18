@@ -10,6 +10,17 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.55.3:
+
+-------------------
+4.55.3 - 2019-12-18
+-------------------
+
+This release makes Hypothesis better at generating test cases where generated
+values are duplicated in different parts of the test case. This will be
+especially noticeable with reasonably complex values, as it was already able
+to do this for simpler ones such as integers or floats.
+
 .. _v4.55.2:
 
 -------------------
