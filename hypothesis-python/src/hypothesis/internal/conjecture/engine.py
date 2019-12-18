@@ -776,13 +776,34 @@ class ConjectureRunner(object):
         all."""
         if not self.should_optimise:
             return
+        from hypothesis.internal.conjecture.optimiser import Optimiser
+
+        # We want to avoid running the optimiser for too long in case we hit
+        # an unbounded target score. We start this off fairly conservatively
+        # in case interesting examples are easy to find and then ramp it up
+        # on an exponential schedule so we don't hamper the optimiser too much
+        # if it needs a long time to find good enough improvements.
+        max_improvements = 10
         while True:
             prev_calls = self.call_count
+
+            any_improvements = False
+
             for target, data in list(self.best_examples_of_observed_targets.items()):
-                self.new_optimiser(data, target).run()
+                optimiser = Optimiser(
+                    self, data, target, max_improvements=max_improvements
+                )
+                optimiser.run()
+                if optimiser.improvements > 0:
+                    any_improvements = True
 
             if self.interesting_examples:
                 break
+
+            max_improvements *= 2
+
+            if any_improvements:
+                continue
 
             self.pareto_optimise()
 
@@ -898,11 +919,6 @@ class ConjectureRunner(object):
 
     def new_shrinker(self, example, predicate):
         return Shrinker(self, example, predicate)
-
-    def new_optimiser(self, example, target):
-        from hypothesis.internal.conjecture.optimiser import Optimiser
-
-        return Optimiser(self, example, target)
 
     def cached_test_function(self, buffer, error_on_discard=False, extend=0):
         """Checks the tree to see if we've tested this buffer, and returns the
