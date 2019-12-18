@@ -18,13 +18,8 @@
 from __future__ import absolute_import, division, print_function
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.data import ConjectureData, Status
-from hypothesis.internal.conjecture.datatree import PreviouslyUnseenBehaviour
-from hypothesis.internal.conjecture.engine import (
-    BUFFER_SIZE,
-    NO_SCORE,
-    GenerationParameters,
-)
+from hypothesis.internal.conjecture.data import Status
+from hypothesis.internal.conjecture.engine import BUFFER_SIZE, NO_SCORE
 
 
 class Optimiser(object):
@@ -125,11 +120,6 @@ class Optimiser(object):
         # move in the right direction.
         upwards = True
 
-        # Often when regenerating we will "run off the end", requiring more
-        # random data than we started with. When that happens we use this
-        # parameter to regenerate it.
-        parameter = GenerationParameters(self.random)
-
         # We keep running our hill climbing until we've got (fairly weak)
         # evidence that we're at a local maximum.
         max_failures = 10
@@ -142,9 +132,7 @@ class Optimiser(object):
             and self.current_data.status <= Status.VALID
         ):
             if self.attempt_to_improve(
-                parameter=parameter,
-                example_index=select_example(self.current_data),
-                upwards=upwards,
+                example_index=select_example(self.current_data), upwards=upwards,
             ):
                 # If we succeeed at improving the score then we no longer have
                 # any evidence that we're at a local maximum so we reset the
@@ -156,14 +144,12 @@ class Optimiser(object):
                 # current choice of parameter is not a good one for generating
                 # the extensions. We reset both of them in the hope of making
                 # more progress next time around.
-                parameter = GenerationParameters(self.random)
                 upwards = not upwards
                 consecutive_failures += 1
 
-    def attempt_to_improve(self, example_index, parameter, upwards):
+    def attempt_to_improve(self, example_index, upwards):
         """Part of our hill climbing implementation. Attempts to improve a
-        given score by regenerating an example in the data based on a new
-        parameter."""
+        given score by regenerating an example."""
 
         data = self.current_data
         self.current_score
@@ -195,10 +181,11 @@ class Optimiser(object):
         # it will take too long to complete.
         if self.random.randint(0, 1):
             if upwards:
-                replacement_range = (existing_as_int + 1, max_int_value)
+                replacement_as_int = self.random.randint(
+                    existing_as_int + 1, max_int_value
+                )
             else:
-                replacement_range = (0, existing_as_int - 1)
-            replacement_as_int = self.random.randint(*replacement_range)
+                replacement_as_int = self.random.randint(0, existing_as_int - 1)
         elif upwards:
             replacement_as_int = existing_as_int + 1
         else:
@@ -206,24 +193,10 @@ class Optimiser(object):
 
         replacement = int_to_bytes(replacement_as_int, len(existing))
 
-        new_buffer = prefix + replacement + suffix
-
-        dummy = ConjectureData(
-            prefix=new_buffer, parameter=parameter, max_length=BUFFER_SIZE,
+        attempt = self.engine.cached_test_function(
+            prefix + replacement + suffix, extend=BUFFER_SIZE,
         )
-        try:
-            self.engine.tree.simulate_test_function(dummy)
-            # If this didn't throw an exception then we've already seen this
-            # behaviour before and are trying something too similar to what
-            # we already have.
-            return False
-        except PreviouslyUnseenBehaviour:
-            pass
 
-        attempt = self.engine.new_conjecture_data(
-            prefix=max(dummy.buffer, new_buffer, key=len), parameter=parameter
-        )
-        self.engine.test_function(attempt)
         if self.consider_new_test_data(attempt):
             return True
 

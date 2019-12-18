@@ -29,10 +29,6 @@ def test_can_all_be_enabled():
     find_any(STRAT, lambda x: all(x.is_enabled(i) for i in hrange(100)))
 
 
-def test_can_all_be_disabled():
-    find_any(STRAT, lambda x: all(not x.is_enabled(i) for i in hrange(100)))
-
-
 def test_minimizes_open():
     features = hrange(10)
 

@@ -315,7 +315,7 @@ class ArtificialDataForExample(ConjectureData):
         self.__kwargs = kwargs
 
         super(ArtificialDataForExample, self).__init__(
-            max_length=0, prefix=hbytes(), parameter=None,
+            max_length=0, prefix=hbytes(), random=None,
         )
 
     def draw_bits(self, n):

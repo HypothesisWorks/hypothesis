@@ -135,7 +135,7 @@ def test_targeting_increases_max_length():
     @given(strat)
     def test_with_targeting(ls):
         target(float(len(ls)))
-        assert len(ls) <= 100
+        assert len(ls) <= 80
 
     with pytest.raises(AssertionError):
         test_with_targeting()

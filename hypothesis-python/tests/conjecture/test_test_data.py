@@ -29,7 +29,6 @@ from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
     ConjectureData,
     DataObserver,
-    GenerationParameters,
     Overrun,
     Status,
     StopTest,
@@ -489,9 +488,7 @@ def test_discarded_data_is_eventually_terminated():
 
 @given(st.integers(0, 255), st.randoms())
 def test_partial_buffer(n, rnd):
-    data = ConjectureData(
-        prefix=[n], parameter=GenerationParameters(rnd), max_length=2,
-    )
+    data = ConjectureData(prefix=[n], random=rnd, max_length=2,)
 
     assert data.draw_bytes(2)[0] == n
 

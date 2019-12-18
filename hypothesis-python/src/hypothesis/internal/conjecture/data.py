@@ -17,7 +17,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-import math
 from collections import defaultdict
 from enum import IntEnum
 
@@ -745,10 +744,10 @@ class ConjectureData(object):
     @classmethod
     def for_buffer(self, buffer, observer=None):
         return ConjectureData(
-            prefix=buffer, max_length=len(buffer), parameter=None, observer=observer,
+            prefix=buffer, max_length=len(buffer), random=None, observer=observer,
         )
 
-    def __init__(self, max_length, prefix, parameter, observer=None):
+    def __init__(self, max_length, prefix, random, observer=None):
         if observer is None:
             observer = DataObserver()
         assert isinstance(observer, DataObserver)
@@ -760,9 +759,9 @@ class ConjectureData(object):
         self.__block_starts = defaultdict(list)
         self.__block_starts_calculated_to = 0
         self.__prefix = prefix
-        self.__parameter = parameter
+        self.__random = random
 
-        assert parameter is not None or max_length <= len(prefix)
+        assert random is not None or max_length <= len(prefix)
 
         self.blocks = Blocks(self)
         self.buffer = bytearray()
@@ -1020,9 +1019,9 @@ class ConjectureData(object):
             index = self.__bytes_drawn
             buf = self.__prefix[index : index + n_bytes]
             if len(buf) < n_bytes:
-                buf += uniform(self.__parameter.random, n_bytes - len(buf))
+                buf += uniform(self.__random, n_bytes - len(buf))
         else:
-            buf = self.__parameter.draw_bytes(n_bytes)
+            buf = uniform(self.__random, n_bytes)
         buf = bytearray(buf)
         self.__bytes_drawn += n_bytes
 
@@ -1090,87 +1089,3 @@ def bits_to_bytes(n):
     Equivalent to (n + 7) // 8, but slightly faster. This really is
     called enough times that that matters."""
     return (n + 7) >> 3
-
-
-generation_parameters_count = 0
-
-
-class GenerationParameters(object):
-    """Parameters to control generation of examples."""
-
-    AVERAGE_ALPHABET_SIZE = 3
-
-    ALPHABET_FACTOR = math.log(1.0 - 1.0 / AVERAGE_ALPHABET_SIZE)
-
-    def __init__(self, random):
-        self.random = random
-        self.__pure_chance = None
-        self.__alphabet = {}
-
-        global generation_parameters_count
-        generation_parameters_count += 1
-
-        self.__id = generation_parameters_count
-
-    def __repr__(self):
-        return "GenerationParameters(%d)" % (self.__id,)
-
-    def draw_bytes(self, n):
-        """Draw an n-byte block from the distribution defined by this instance
-        of generation parameters."""
-        alphabet = self.alphabet(n)
-
-        if alphabet is None:
-            return self.__draw_without_alphabet(n)
-
-        return self.random.choice(alphabet)
-
-    def __draw_without_alphabet(self, n):
-        return uniform(self.random, n)
-
-    def alphabet(self, n_bytes):
-        """Returns an alphabet - a list of values to use for all blocks with
-        this number of bytes - or None if this value should be generated
-        without an alphabet.
-
-        This is designed to promote duplication in the test case that would
-        otherwise happen with very low probability.
-        """
-        try:
-            return self.__alphabet[n_bytes]
-        except KeyError:
-            pass
-
-        if self.random.random() <= self.pure_chance:
-            # Sometiems we don't want to use an alphabet (e.g. for generating
-            # sets of integers having a small alphabet is disastrous), so with
-            # some probability we want to generate choices that do not use the
-            # alphabet. As with other factors we set this probability globally
-            # across the whole choice of distribution so we have various levels
-            # of mixing.
-            result = None
-        else:
-            # We draw the size as a geometric distribution with average size
-            # GenerationParameters.AVERAGE_ALPHABET_SIZE.
-            size = (
-                int(
-                    math.log(self.random.random())
-                    / GenerationParameters.ALPHABET_FACTOR
-                )
-                + 1
-            )
-            assert size > 0
-
-            size = self.random.randint(1, 10)
-            result = [self.__draw_without_alphabet(n_bytes) for _ in hrange(size)]
-
-        self.__alphabet[n_bytes] = result
-        return result
-
-    @property
-    def pure_chance(self):
-        """Returns a probability with which any given draw_bytes call should
-        be forced to be all pure."""
-        if self.__pure_chance is None:
-            self.__pure_chance = self.random.random()
-        return self.__pure_chance
