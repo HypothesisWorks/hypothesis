@@ -229,12 +229,6 @@ def test_cannot_assign_default():
     assert settings().max_examples != 3
 
 
-def test_does_not_warn_if_quiet():
-    with pytest.warns(None) as rec:
-        note_deprecation("This is bad", since="RELEASEDAY", verbosity=Verbosity.quiet)
-    assert len(rec) == 0
-
-
 @settings(max_examples=7)
 @given(st.builds(lambda: settings.default))
 def test_settings_in_strategies_are_from_test_scope(s):
@@ -531,3 +525,11 @@ def test_invalid_parent():
         settings(not_settings)
 
     assert "parent=(not settings repr)" in str(excinfo.value)
+
+
+def test_note_deprecation_checks_date():
+    with pytest.warns(None) as rec:
+        note_deprecation("This is bad", since="RELEASEDAY")
+    assert len(rec) == 1
+    with pytest.raises(AssertionError):
+        note_deprecation("This is way too old", since="1999-12-31")

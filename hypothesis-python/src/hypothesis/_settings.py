@@ -192,11 +192,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         self._construction_complete = True
 
         for d in deprecations:
-            note_deprecation(
-                d.deprecation_message,
-                since=d.deprecated_since,
-                verbosity=self.verbosity,
-            )
+            note_deprecation(d.deprecation_message, since=d.deprecated_since)
 
     def __call__(self, test):
         """Make the settings object (self) an attribute of the test.
@@ -750,17 +746,12 @@ If set to True, Hypothesis will print code for failing examples that can be used
 settings.lock_further_definitions()
 
 
-def note_deprecation(message, since, verbosity=None):
-    # type: (str, str, Verbosity) -> None
-    if verbosity is None:
-        verbosity = settings.default.verbosity
-    assert verbosity is not None
+def note_deprecation(message, since):
+    # type: (str, str) -> None
     if since != "RELEASEDAY":
         date = datetime.datetime.strptime(since, "%Y-%m-%d").date()
         assert datetime.date(2016, 1, 1) <= date
-    warning = HypothesisDeprecationWarning(message)
-    if verbosity > Verbosity.quiet:
-        warnings.warn(warning, stacklevel=2)
+    warnings.warn(HypothesisDeprecationWarning(message), stacklevel=2)
 
 
 settings.register_profile("default", settings())
