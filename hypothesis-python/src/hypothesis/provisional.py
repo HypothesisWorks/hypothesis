@@ -27,7 +27,7 @@ definitions it links to.  If not, report the bug!
 
 from __future__ import absolute_import, division, print_function
 
-import os.path
+import pkgutil
 import string
 
 import hypothesis.internal.conjecture.utils as cu
@@ -45,16 +45,10 @@ URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'
 
 # This file is sourced from http://data.iana.org/TLD/tlds-alpha-by-domain.txt
 # The file contains additional information about the date that it was last updated.
-try:
-    from importlib.resources import read_text  # type: ignore
-except ImportError:
-    # If we don't have importlib.resources (Python 3.7+) or the importlib_resources
-    # backport available, fall back to __file__ and hope we're on a filesystem.
-    f = os.path.join(os.path.dirname(__file__), "vendor", "tlds-alpha-by-domain.txt")
-    with open(f) as tld_file:
-        _tlds = tld_file.read().splitlines()
-else:  # pragma: no cover  # new in Python 3.7
-    _tlds = read_text("hypothesis.vendor", "tlds-alpha-by-domain.txt").splitlines()
+_tlds_data = pkgutil.get_data("hypothesis.vendor", "tlds-alpha-by-domain.txt")
+assert _tlds_data
+_tlds_str = _tlds_data if isinstance(_tlds_data, str) else _tlds_data.decode("ASCII")
+_tlds = _tlds_str.splitlines()
 assert _tlds[0].startswith("#")
 TOP_LEVEL_DOMAINS = ["COM"] + sorted(_tlds[1:], key=len)
 
