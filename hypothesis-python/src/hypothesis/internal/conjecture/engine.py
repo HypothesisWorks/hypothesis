@@ -42,7 +42,7 @@ from hypothesis.internal.conjecture.datatree import (
     TreeRecordingObserver,
 )
 from hypothesis.internal.conjecture.junkdrawer import clamp
-from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront
+from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront, ParetoOptimiser
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.reporting import base_report
@@ -553,11 +553,6 @@ class ConjectureRunner(object):
             if (
                 self.valid_examples >= self.settings.max_examples
                 or self.call_count >= max(self.settings.max_examples * 10, 1000)
-                or (
-                    self.best_examples_of_observed_targets
-                    and self.valid_examples * 2 >= self.settings.max_examples
-                    and self.should_optimise
-                )
             ):  # pragma: no cover
                 return False
 
@@ -594,30 +589,32 @@ class ConjectureRunner(object):
         # it has failed too many times in a row.
         consecutive_zero_extend_is_invalid = 0
 
+        # We control growth during initial example generation, for two
+        # reasons:
+        #
+        # * It gives us an opportunity to find small examples early, which
+        #   gives us a fast path for easy to find bugs.
+        # * It avoids low probability events where we might end up
+        #   generating very large examples during health checks, which
+        #   on slower machines can trigger HealthCheck.too_slow.
+        #
+        # The heuristic we use is that we attempt to estimate the smallest
+        # extension of this prefix, and limit the size to no more than
+        # an order of magnitude larger than that. If we fail to estimate
+        # the size accurately, we skip over this prefix and try again.
+        #
+        # We need to tune the example size based on the initial prefix,
+        # because any fixed size might be too small, and any size based
+        # on the strategy in general can fall afoul of strategies that
+        # have very different sizes for different prefixes.
+        small_example_cap = clamp(10, self.settings.max_examples // 10, 50)
+
+        optimise_at = max(self.settings.max_examples // 2, small_example_cap + 1)
+        ran_optimisations = False
+
         while should_generate_more():
             prefix = self.generate_novel_prefix()
             assert len(prefix) <= BUFFER_SIZE
-
-            # We control growth during initial example generation, for two
-            # reasons:
-            #
-            # * It gives us an opportunity to find small examples early, which
-            #   gives us a fast path for easy to find bugs.
-            # * It avoids low probability events where we might end up
-            #   generating very large examples during health checks, which
-            #   on slower machines can trigger HealthCheck.too_slow.
-            #
-            # The heuristic we use is that we attempt to estimate the smallest
-            # extension of this prefix, and limit the size to no more than
-            # an order of magnitude larger than that. If we fail to estimate
-            # the size accurately, we skip over this prefix and try again.
-            #
-            # We need to tune the example size based on the initial prefix,
-            # because any fixed size might be too small, and any size based
-            # on the strategy in general can fall afoul of strategies that
-            # have very different sizes for different prefixes.
-            small_example_cap = clamp(10, self.settings.max_examples // 10, 50)
-
             if (
                 self.valid_examples <= small_example_cap
                 and self.call_count <= 5 * small_example_cap
@@ -761,6 +758,19 @@ class ConjectureRunner(object):
                     else:
                         failed_mutations += 1
 
+            # Although the optimisations are logically a distinct phase, we
+            # actually normally run them as part of example generation. The
+            # reason for this is that we cannot guarantee that optimisation
+            # actually exhausts our budget: It might finish running and we
+            # discover that actually we still could run a bunch more test cases
+            # if we want.
+            if (
+                self.valid_examples >= max(small_example_cap, optimise_at)
+                and not ran_optimisations
+            ):
+                ran_optimisations = True
+                self.optimise_targets()
+
     def optimise_targets(self):
         """If any target observations have been made, attempt to optimise them
         all."""
@@ -770,15 +780,28 @@ class ConjectureRunner(object):
             prev_calls = self.call_count
             for target, data in list(self.best_examples_of_observed_targets.items()):
                 self.new_optimiser(data, target).run()
-            # This shows up as a missing branch for some reason but is definitely
-            # covered if you add an assertion to check.
-            if self.interesting_examples or (prev_calls == self.call_count):
+
+            if self.interesting_examples:
                 break
+
+            self.pareto_optimise()
+
+            if prev_calls == self.call_count:
+                break
+
+    def pareto_optimise(self):
+        if self.pareto_front is not None:
+            ParetoOptimiser(self).run()
 
     def _run(self):
         self.reuse_existing_examples()
         self.generate_new_examples()
-        self.optimise_targets()
+
+        # We normally run the targeting phase mixed in with the generate phase,
+        # but if we've been asked to run it but not generation then we have to
+        # run it explciitly on its own here.
+        if Phase.generate not in self.settings.phases:
+            self.optimise_targets()
         self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 

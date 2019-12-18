@@ -19,6 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 import re
 from random import Random
+from unittest.mock import Mock
 
 import pytest
 
@@ -32,6 +33,7 @@ from hypothesis.internal.conjecture.engine import (
     MIN_TEST_CALLS,
     ConjectureRunner,
     ExitReason,
+    RunIsComplete,
 )
 from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
@@ -1283,3 +1285,67 @@ def test_smaller_interesting_dominates_larger_valid():
     d1 = runner.cached_test_function([0]).as_result()
     d2 = runner.cached_test_function([1]).as_result()
     assert dominance(d1, d2) == DominanceRelation.LEFT_DOMINATES
+
+
+def test_runs_full_set_of_examples():
+    def test(data):
+        data.draw_bits(64)
+
+    runner = ConjectureRunner(
+        test,
+        settings=settings(TEST_SETTINGS, database=InMemoryExampleDatabase()),
+        database_key=b"stuff",
+    )
+
+    runner.run()
+    assert runner.valid_examples == TEST_SETTINGS.max_examples
+
+
+def test_runs_optimisation_even_if_not_generating():
+    def test(data):
+        data.target_observations["n"] = data.draw_bits(16)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(
+            test, settings=settings(TEST_SETTINGS, phases=[Phase.target])
+        )
+
+        runner.cached_test_function(hbytes(2))
+
+        runner.run()
+
+        assert runner.best_observed_targets["n"] == (2 ** 16) - 1
+
+
+def test_runs_optimisation_once_when_generating():
+    def test(data):
+        data.target_observations["n"] = data.draw_bits(16)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(
+            test, settings=settings(TEST_SETTINGS, max_examples=100)
+        )
+
+        runner.optimise_targets = Mock(name="optimise_targets")
+        try:
+            runner.generate_new_examples()
+        except RunIsComplete:
+            pass
+        assert runner.optimise_targets.call_count == 1
+
+
+def test_does_not_run_optimisation_when_max_examples_is_small():
+    def test(data):
+        data.target_observations["n"] = data.draw_bits(16)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(
+            test, settings=settings(TEST_SETTINGS, max_examples=10)
+        )
+
+        runner.optimise_targets = Mock(name="optimise_targets")
+        try:
+            runner.generate_new_examples()
+        except RunIsComplete:
+            pass
+        assert runner.optimise_targets.call_count == 0

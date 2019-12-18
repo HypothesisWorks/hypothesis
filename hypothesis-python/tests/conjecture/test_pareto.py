@@ -189,3 +189,48 @@ def test_uses_tags_in_calculating_pareto_front():
         runner.run()
 
         assert len(runner.pareto_front) == 2
+
+
+def test_optimises_the_pareto_front():
+    def test(data):
+        count = 0
+        while data.draw_bits(8):
+            count += 1
+
+        data.target_observations[""] = min(count, 5)
+
+    runner = ConjectureRunner(
+        test,
+        settings=settings(max_examples=10000, database=InMemoryExampleDatabase(),),
+        database_key=b"stuff",
+    )
+
+    runner.cached_test_function([255] * 20 + [0])
+
+    runner.pareto_optimise()
+
+    assert len(runner.pareto_front) == 6
+    for i, data in enumerate(runner.pareto_front):
+        assert list(data.buffer) == [1] * i + [0]
+
+
+def test_does_not_optimise_the_pareto_front_if_interesting():
+    def test(data):
+        n = data.draw_bits(8)
+        data.target_observations[""] = n
+        if n == 255:
+            data.mark_interesting()
+
+    runner = ConjectureRunner(
+        test,
+        settings=settings(max_examples=10000, database=InMemoryExampleDatabase(),),
+        database_key=b"stuff",
+    )
+
+    runner.cached_test_function([0])
+
+    runner.pareto_optimise = None
+
+    runner.optimise_targets()
+
+    assert runner.interesting_examples
