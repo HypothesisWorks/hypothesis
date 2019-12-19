@@ -20,6 +20,7 @@ from __future__ import absolute_import, division, print_function
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, NO_SCORE
+from hypothesis.internal.conjecture.shrinking.common import find_integer
 
 
 class Optimiser(object):
@@ -38,11 +39,16 @@ class Optimiser(object):
     Software Testing and Analysis. ACM, 2017.
     """
 
-    def __init__(self, engine, data, target):
+    def __init__(self, engine, data, target, max_improvements=100):
+        """Optimise ``target`` starting from ``data``. Will stop either when
+        we seem to have found a local maximum or when the target score has
+        been improved ``max_improvements`` times. This limit is in place to
+        deal with the fact that the target score may not be bounded above."""
         self.engine = engine
         self.current_data = data
         self.target = target
-        self.improved = False
+        self.max_improvements = max_improvements
+        self.improvements = 0
 
     def run(self):
         self.hill_climb()
@@ -54,10 +60,6 @@ class Optimiser(object):
     def current_score(self):
         return self.score_function(self.current_data)
 
-    @property
-    def random(self):
-        return self.engine.random
-
     def consider_new_test_data(self, data):
         """Consider a new data object as a candidate target. If it is better
         than the current one, return True."""
@@ -67,144 +69,106 @@ class Optimiser(object):
         if score < self.current_score:
             return False
         if score > self.current_score:
-            self.improved = True
+            self.improvements += 1
+            self.current_data = data
+            return True
+        assert score == self.current_score
+        # We allow transitions that leave the score unchanged as long as they
+        # don't increase the buffer size. This gives us a certain amount of
+        # freedom for lateral moves that will take us out of local maxima.
+        if len(data.buffer) <= len(self.current_data.buffer):
             self.current_data = data
             return True
         return False
 
-    def consider_new_buffer(self, buffer):
-        return self.consider_new_test_data(self.engine.cached_test_function(buffer))
-
     def hill_climb(self):
-        """Run hill climbing. Our hill climbing algorithm relies on selecting
-        an example to improve. We try multiple example selection strategies to
-        try to find one that works well."""
-
-        def last_example(d):
-            """Select the last non-empty example. This is particularly good for
-            lists and other things which implement a logic of continuing until
-            some condition is made."""
-            i = len(d.examples) - 1
-            while d.examples[i].length == 0:
-                i -= 1
-            return i
-
-        def random_non_empty(d):
-            """Select any non-empty example, uniformly at random."""
-            while True:
-                i = self.random.randrange(0, len(d.examples))
-                if d.examples[i].length > 0:  # pragma: no branch  # flaky coverage :/
-                    return i
-
-        self.do_hill_climbing(last_example)
-        self.do_hill_climbing(random_non_empty)
-
-    def do_hill_climbing(self, select_example):
         """The main hill climbing loop where we actually do the work: Take
         data, and attempt to improve its score for target. select_example takes
         a data object and returns an index to an example where we should focus
         our efforts."""
 
-        # The idea of this code is that we expect (possibly incorrectly, but
-        # the correctness of this code is not dependent on this assumption,
-        # only how useful it is) that the score will be either increasing or
-        # decreasing when measured as a function of any given example in the
-        # shortlex order. This is likely true in some "local" sense even if it
-        # is not true globally.
-        #
-        # If we were to generate a replacement uniformly at random then we
-        # would lose out when the current value of the example is very near to
-        # its maximum or minimum value, so instead we either draw a larger or
-        # smaller value. When this fails to work we switch directions, so we
-        # still get a reasonable spread, but this allows us to more reliably
-        # move in the right direction.
-        upwards = True
+        blocks_examined = set()
 
-        # We keep running our hill climbing until we've got (fairly weak)
-        # evidence that we're at a local maximum.
-        max_failures = 10
-        consecutive_failures = 0
-        while (
-            consecutive_failures < max_failures
-            # Once we've hit and interesting target it's time to stop hill
-            # climbing because we don't really care about maximizing the score
-            # further.
-            and self.current_data.status <= Status.VALID
-        ):
-            if self.attempt_to_improve(
-                example_index=select_example(self.current_data), upwards=upwards,
-            ):
-                # If we succeeed at improving the score then we no longer have
-                # any evidence that we're at a local maximum so we reset the
-                # count.
-                consecutive_failures = 0
-            else:
-                # If we've failed in our hill climbing attempt, this could be
-                # for two reasons: We're moving in the wrong direction, or our
-                # current choice of parameter is not a good one for generating
-                # the extensions. We reset both of them in the hope of making
-                # more progress next time around.
-                upwards = not upwards
-                consecutive_failures += 1
+        prev = None
+        i = len(self.current_data.blocks) - 1
+        while i >= 0 and self.improvements <= self.max_improvements:
+            if prev is not self.current_data:
+                i = len(self.current_data.blocks) - 1
+                prev = self.current_data
 
-    def attempt_to_improve(self, example_index, upwards):
-        """Part of our hill climbing implementation. Attempts to improve a
-        given score by regenerating an example."""
+            if i in blocks_examined:
+                i -= 1
+                continue
 
-        data = self.current_data
-        self.current_score
+            blocks_examined.add(i)
+            data = self.current_data
+            block = data.blocks[i]
+            prefix = data.buffer[: block.start]
 
-        ex = data.examples[example_index]
-        assert ex.length > 0
-        prefix = data.buffer[: ex.start]
-        suffix = data.buffer[ex.end :]
+            existing = data.buffer[block.start : block.end]
+            existing_as_int = int_from_bytes(existing)
+            max_int_value = (256 ** len(existing)) - 1
 
-        existing = data.buffer[ex.start : ex.end]
+            if existing_as_int == max_int_value:
+                continue
 
-        existing_as_int = int_from_bytes(existing)
-        max_int_value = (256 ** len(existing)) - 1
+            def attempt_replace(v):
+                """Try replacing the current block in the current best test case
+                 with an integer of value i. Note that we use the *current*
+                best and not the one we started with. This helps ensure that
+                if we luck into a good draw when making random choices we get
+                to keep the good bits."""
+                if v < 0 or v > max_int_value:
+                    return False
+                v_as_bytes = int_to_bytes(v, len(existing))
 
-        if existing_as_int == max_int_value and upwards:
-            return False
+                # We make a couple attempts at replacement. This only matters
+                # if we end up growing the buffer - otherwise we exit the loop
+                # early - but in the event that there *is* some randomized
+                # component we want to give it a couple of tries to succeed.
+                for _ in range(3):
+                    attempt = self.engine.cached_test_function(
+                        prefix + v_as_bytes + self.current_data.buffer[block.end :],
+                        extend=BUFFER_SIZE,
+                    )
 
-        if existing_as_int == 0 and not upwards:
-            return False
+                    if self.consider_new_test_data(attempt):
+                        return True
 
-        # We make a mix of small and large jumps. Neither are guaranteeed to
-        # work, but each will work in circumstances the other might not. Small
-        # jumps are especially important for the last steps towards a local
-        # maximum - often large jumps will break some important property of the
-        # test case while small, more careful, jumps will not. On the flip side
-        # we sometimes end up in circumstances where small jumps don't work
-        # but a random draw will produce a good result with reasonable
-        # probability, and we don't want to be too timid in our optimisation as
-        # it will take too long to complete.
-        if self.random.randint(0, 1):
-            if upwards:
-                replacement_as_int = self.random.randint(
-                    existing_as_int + 1, max_int_value
-                )
-            else:
-                replacement_as_int = self.random.randint(0, existing_as_int - 1)
-        elif upwards:
-            replacement_as_int = existing_as_int + 1
-        else:
-            replacement_as_int = existing_as_int - 1
+                    if attempt.status < Status.INVALID or len(attempt.buffer) == len(
+                        self.current_data.buffer
+                    ):
+                        return False
 
-        replacement = int_to_bytes(replacement_as_int, len(existing))
+                    for i, ex in enumerate(self.current_data.examples):
+                        if ex.start >= block.end:
+                            break
+                        if ex.end <= block.start:
+                            continue
+                        ex_attempt = attempt.examples[i]
+                        if ex.length == ex_attempt.length:
+                            continue
+                        replacement = attempt.buffer[ex_attempt.start : ex_attempt.end]
+                        if self.consider_new_test_data(
+                            self.engine.cached_test_function(
+                                prefix
+                                + replacement
+                                + self.current_data.buffer[ex.end :]
+                            )
+                        ):
+                            return True
+                return False
 
-        attempt = self.engine.cached_test_function(
-            prefix + replacement + suffix, extend=BUFFER_SIZE,
-        )
+            # We unconditionally scan both upwards and downwards. The reason
+            # for this is that we allow "lateral" moves that don't increase the
+            # score but instead leave it constant. All else being equal we'd
+            # like to leave the test case closer to shrunk, so afterwards we
+            # try lowering the value towards zero even if we've just raised it.
 
-        if self.consider_new_test_data(attempt):
-            return True
+            if not attempt_replace(max_int_value):
+                find_integer(lambda k: attempt_replace(k + existing_as_int))
 
-        if attempt.status < Status.VALID:
-            return False
-
-        ex_attempt = attempt.examples[example_index]
-
-        replacement = attempt.buffer[ex_attempt.start : ex_attempt.end]
-
-        return self.consider_new_buffer(prefix + replacement + suffix)
+            existing = self.current_data.buffer[block.start : block.end]
+            existing_as_int = int_from_bytes(existing)
+            if not attempt_replace(0):
+                find_integer(lambda k: attempt_replace(existing_as_int - k))

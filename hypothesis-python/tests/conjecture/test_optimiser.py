@@ -20,10 +20,28 @@ from __future__ import absolute_import, division, print_function
 import pytest
 
 from hypothesis import settings
-from hypothesis.internal.compat import hbytes, int_to_bytes
+from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
+from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from hypothesis.internal.entropy import deterministic_PRNG
-from tests.conjecture.common import TEST_SETTINGS
+from tests.conjecture.common import TEST_SETTINGS, buffer_size_limit
+
+
+def test_optimises_to_maximum():
+    with deterministic_PRNG():
+
+        def test(data):
+            data.target_observations["m"] = data.draw_bits(8)
+
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        runner.cached_test_function([0])
+
+        try:
+            runner.optimise_targets()
+        except RunIsComplete:
+            pass
+
+        assert runner.best_observed_targets["m"] == 255
 
 
 def test_optimises_multiple_targets():
@@ -117,3 +135,92 @@ def test_can_find_endpoints_of_a_range(lower, upper, score_up):
             assert runner.best_observed_targets["n"] == upper
         else:
             assert runner.best_observed_targets["n"] == -lower
+
+
+def test_targeting_can_drive_length_very_high():
+    with deterministic_PRNG():
+
+        def test(data):
+            count = 0
+            while data.draw_bits(2) == 3:
+                count += 1
+            data.target_observations[""] = min(count, 100)
+
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        runner.cached_test_function(hbytes(10))
+
+        try:
+            runner.optimise_targets()
+        except RunIsComplete:
+            pass
+
+        assert runner.best_observed_targets[""] == 100
+
+
+def test_optimiser_when_test_grows_buffer_to_invalid():
+    with deterministic_PRNG():
+
+        def test(data):
+            m = data.draw_bits(8)
+            data.target_observations["m"] = m
+            if m > 100:
+                data.draw_bits(16)
+                data.mark_invalid()
+
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        runner.cached_test_function(hbytes(10))
+
+        try:
+            runner.optimise_targets()
+        except RunIsComplete:
+            pass
+
+        assert runner.best_observed_targets["m"] == 100
+
+
+def test_can_patch_up_examples():
+    with deterministic_PRNG():
+
+        def test(data):
+            data.start_example(42)
+            m = data.draw_bits(6)
+            data.target_observations["m"] = m
+            for _ in hrange(m):
+                data.draw_bits(1)
+            data.stop_example()
+            for i in hrange(4):
+                if i != data.draw_bits(8):
+                    data.mark_invalid()
+
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+        d = runner.cached_test_function([0, 0, 1, 2, 3, 4])
+        assert d.status == Status.VALID
+
+        try:
+            runner.optimise_targets()
+        except RunIsComplete:
+            pass
+
+        assert runner.best_observed_targets["m"] == 63
+
+
+def test_optimiser_when_test_grows_buffer_to_overflow():
+    with deterministic_PRNG():
+        with buffer_size_limit(2):
+
+            def test(data):
+                m = data.draw_bits(8)
+                data.target_observations["m"] = m
+                if m > 100:
+                    data.draw_bits(64)
+                    data.mark_invalid()
+
+            runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+            runner.cached_test_function(hbytes(10))
+
+            try:
+                runner.optimise_targets()
+            except RunIsComplete:
+                pass
+
+            assert runner.best_observed_targets["m"] == 100
