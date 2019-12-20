@@ -473,19 +473,6 @@ def test_example_equality():
         assert ex != "hello"
 
 
-def test_discarded_data_is_eventually_terminated():
-
-    data = ConjectureData.for_buffer(hbytes(100))
-
-    with pytest.raises(StopTest):
-        for _ in hrange(100):
-            data.start_example(1)
-            data.draw_bits(1)
-            data.stop_example(discard=True)
-
-    assert data.status == Status.INVALID
-
-
 @given(st.integers(0, 255), st.randoms())
 def test_partial_buffer(n, rnd):
     data = ConjectureData(prefix=[n], random=rnd, max_length=2,)
