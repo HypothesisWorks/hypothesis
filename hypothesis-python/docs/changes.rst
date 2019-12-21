@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.56.2:
+
+-------------------
+4.56.2 - 2019-12-21
+-------------------
+
+This release removes an internal heuristic that was no longer providing much
+benefit. It is unlikely that there will be any user visible effect.
+
 .. _v4.56.1:
 
 -------------------
