@@ -636,6 +636,9 @@ class Shrinker(object):
 
         ancestor = ls[i]
 
+        if i + 1 == len(ls) or ls[i + 1].start >= ancestor.end:
+            return
+
         @self.cached(label, i)
         def descendants():
             lo = i + 1
@@ -646,9 +649,13 @@ class Shrinker(object):
                     hi = mid
                 else:
                     lo = mid
-            return ls[i + 1 : hi]
+            return [t for t in ls[i + 1 : hi] if t.length < ancestor.length]
 
         descendant = chooser.choose(descendants, lambda ex: ex.length > 0)
+
+        assert ancestor.start <= descendant.start
+        assert ancestor.end >= descendant.end
+        assert descendant.length < ancestor.length
 
         self.incorporate_new_buffer(
             self.buffer[: ancestor.start]
