@@ -779,7 +779,6 @@ class ConjectureData(object):
         self.draw_times = []
         self.max_depth = 0
         self.has_discards = False
-        self.consecutive_discard_counts = []
 
         self.__result = None
 
@@ -906,13 +905,11 @@ class ConjectureData(object):
         if self.depth > self.max_depth:
             self.max_depth = self.depth
         self.__example_record.start_example(label)
-        self.consecutive_discard_counts.append(0)
         self.labels_for_structure_stack.append({label})
 
     def stop_example(self, discard=False):
         if self.frozen:
             return
-        self.consecutive_discard_counts.pop()
         if discard:
             self.has_discards = True
         self.depth -= 1
@@ -927,23 +924,6 @@ class ConjectureData(object):
             else:
                 self.tags.update([structural_coverage(l) for l in labels_for_structure])
 
-        if self.consecutive_discard_counts:
-            # We block long sequences of discards. This helps us avoid performance
-            # problems where there is rejection sampling. In particular tests which
-            # have a very small actual state space but use rejection sampling will
-            # play badly with generate_novel_prefix() in DataTree, and will end up
-            # generating very long tests with long runs of the rejection sample.
-            if discard:
-                self.consecutive_discard_counts[-1] += 1
-                # 20 is a fairly arbitrary limit chosen mostly so that all of the
-                # existing tests passed under it. Essentially no reasonable
-                # generation should hit this limit when running in purely random
-                # mode, but unreasonable generation is fairly widespread, and our
-                # manipulation of the bitstream can make it more likely.
-                if self.consecutive_discard_counts[-1] > 20:
-                    self.mark_invalid()
-            else:
-                self.consecutive_discard_counts[-1] = 0
         if discard:
             # Once we've discarded an example, every test case starting with
             # this prefix contains discards. We prune the tree at that point so
