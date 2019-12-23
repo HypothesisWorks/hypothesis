@@ -24,26 +24,46 @@ from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
 
+def requires_args(func):
+    """return True if the provided function requires args.
+    """
+    try:
+        inspect.signature(func).bind()
+    # if we cant bind to the signature with no args inspect will raise a type error.
+    except TypeError:
+        return True
+    return False
+
+
+
 class DeferredStrategy(SearchStrategy):
     """A strategy which may be used before it is fully defined."""
 
     def __init__(self, definition):
         SearchStrategy.__init__(self)
+        self._validate_definition(definition)
         self.__wrapped_strategy = None
         self.__in_repr = False
         self.__definition = definition
 
+    def _validate_definition(self, definition):
+        if not inspect.isfunction(definition):
+
+            raise InvalidArgument(
+                (
+                    "Excepted a definition to be a function but got %r of type"
+                    " %s instead."
+                )
+                % (definition, type(definition).__name__)
+            )
+        if requires_args(definition):
+            raise InvalidArgument("Functions passed to deferred strategies must"
+                                  " not require any arguments. ",
+                                   )
+
     @property
     def wrapped_strategy(self):
         if self.__wrapped_strategy is None:
-            if not inspect.isfunction(self.__definition):
-                raise InvalidArgument(
-                    (
-                        "Excepted a definition to be a function but got %r of type"
-                        " %s instead."
-                    )
-                    % (self.__definition, type(self.__definition).__name__)
-                )
             result = self.__definition()
             if result is self:
                 raise InvalidArgument("Cannot define a deferred strategy to be itself")
