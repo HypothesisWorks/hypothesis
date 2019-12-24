@@ -611,4 +611,11 @@ def test_SupportsOp_types_are_instances_of_type(typ, data):
     # test values drawn from SupportsOp types are indeed considered instances
     # of that type.
     value = data.draw(st.from_type(typ))
-    assert isinstance(value, typ)
+    try:
+        # in python 3.8 this works
+        assert isinstance(value, typ)
+    except TypeError:
+        # in python < 3.8 Protocols cannot be used with isinstance
+        # so we do this which is less nice...
+        assert issubclass(type(value), typ)
+
