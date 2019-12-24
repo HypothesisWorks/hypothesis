@@ -632,7 +632,8 @@ def test_supportsop_types_support_protocol(protocol, data):
 
 @pytest.mark.parametrize("protocol, typ", [(typing.SupportsFloat, float),
                                            (typing.SupportsInt, int),
-                                           (typing.SupportsBytes, bytes)
+                                           (typing.SupportsBytes, bytes),
+                                           (typing.SupportsComplex, complex)
                                            ])
 @given(data=st.data())
 def test_supportscast_types_support_protocol_or_are_castable(protocol, typ, data):
