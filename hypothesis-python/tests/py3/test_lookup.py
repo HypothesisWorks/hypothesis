@@ -599,3 +599,16 @@ def test_bytestring_is_valid_sequence_of_int_and_parent_classes(type_):
         st.from_type(typing.Sequence[type_]),
         lambda val: isinstance(val, typing.ByteString),
     )
+
+
+@pytest.mark.parametrize("typ", [typing.SupportsAbs,
+                                 typing.SupportsBytes,
+                                 typing.SupportsFloat,
+                                 typing.SupportsInt,
+                                 typing.SupportsRound])
+@given(data=st.data())
+def test_SupportsOp_types_are_instances_of_type(typ, data):
+    # test values drawn from SupportsOp types are indeed considered instances
+    # of that type.
+    value = data.draw(st.from_type(typ))
+    assert isinstance(value, typ)
