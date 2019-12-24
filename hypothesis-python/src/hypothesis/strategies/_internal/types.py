@@ -349,7 +349,13 @@ else:
             typing.SupportsAbs: st.complex_numbers(),
             typing.SupportsComplex: st.complex_numbers(),
             typing.SupportsFloat: st.floats(),
-            typing.SupportsInt: st.floats(),
+            typing.SupportsInt: (st.booleans() | 
+                                st.integers() | 
+                                st.floats(allow_infinity=False, allow_nan=False) |
+                                st.uuids() |
+                                st.decimals(allow_infinity=False, allow_nan=False) |
+                                st.from_regex(r'^-?([1-9]\d*)|0$', fullmatch=True)
+                                ),
             # xIO are only available in .io on Python 3.5, but available directly
             # as typing.*IO from 3.6 onwards and mypy 0.730 errors on the compat form.
             typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),  # type: ignore
