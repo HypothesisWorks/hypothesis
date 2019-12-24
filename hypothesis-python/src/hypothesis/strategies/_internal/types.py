@@ -236,7 +236,7 @@ def byteable_strategy():
     byte_arrays = st.lists(byterange_ints).map(tuple)
     # strings while super common won't support without an enoding arg,
     # so we tenatively will not include...
-    return st.booleans() | byterange_ints | byte_arrays
+    return st.booleans() | st.bytes() | byterange_ints | byte_arrays
 
 
 _global_type_lookup = {
