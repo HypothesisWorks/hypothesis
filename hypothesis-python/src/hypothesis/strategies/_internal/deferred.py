@@ -44,16 +44,15 @@ def validate_definition(definition):
     """
     if not inspect.isfunction(definition):
         raise InvalidArgument(
-            (
-                "Excepted a definition to be a function but got %r of type"
-                " %s instead."
-            )
+            ("Excepted a definition to be a function but got %r of type" " %s instead.")
             % (definition, type(definition).__name__)
         )
     if requires_args(definition):
-        raise InvalidArgument("Functions passed to deferred strategies must"
-                              " not require any arguments. ",
-                              )
+        raise InvalidArgument(
+            "Functions passed to deferred strategies must"
+            " not require any arguments. ",
+        )
+
 
 class DeferredStrategy(SearchStrategy):
     """A strategy which may be used before it is fully defined."""
