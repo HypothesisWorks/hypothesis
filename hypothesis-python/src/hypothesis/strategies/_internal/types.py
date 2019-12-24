@@ -370,10 +370,9 @@ else:
                 | st.floats()
                 | st.decimals()
                 | st.fractions()
-                |
                 # with floats its far more annoying to capture all
                 # the magic in a regex. so we just stringify some floats
-                st.floats().map(str)
+                |st.floats().map(str)
             ),
             typing.SupportsInt: (
                 st.booleans()
@@ -381,9 +380,8 @@ else:
                 | st.floats()
                 | st.uuids()
                 | st.decimals()
-                |
                 # this generates strings that should able to be parsed into integers
-                st.from_regex(r"^-?([1-9]\d*)|0$", fullmatch=True)
+                | st.from_regex(r"^-?([1-9]\d*)|0$", fullmatch=True)
             ),
             # xIO are only available in .io on Python 3.5, but available directly
             # as typing.*IO from 3.6 onwards and mypy 0.730 errors on the compat form.
