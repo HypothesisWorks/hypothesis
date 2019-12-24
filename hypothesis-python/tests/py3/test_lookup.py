@@ -602,7 +602,6 @@ def test_bytestring_is_valid_sequence_of_int_and_parent_classes(type_):
 
 
 @pytest.mark.parametrize("typ", [typing.SupportsAbs,
-                                 typing.SupportsBytes,
                                  typing.SupportsFloat,
                                  typing.SupportsInt,
                                  typing.SupportsRound])
@@ -619,3 +618,9 @@ def test_SupportsOp_types_are_instances_of_type(typ, data):
         # so we do this which is less nice...
         assert issubclass(type(value), typ)
 
+
+@given(inp=from_type(typing.SupportsBytes))
+def test_bytes_can_be_called_on_SupportsBytes(inp):
+    # this is a special test for SupportsBytes since nothing seems to
+    # implements __bytes__ interface
+    bytes(inp)
