@@ -25,8 +25,7 @@ from hypothesis.strategies._internal.strategies import SearchStrategy
 
 
 def requires_args(func):
-    """return True if the provided function requires args.
-    """
+    """Return True if the provided function requires args."""
     try:
         inspect.signature(func).bind()
     # if we cant bind to the signature with no args inspect will raise a type error.
@@ -36,7 +35,7 @@ def requires_args(func):
 
 
 def validate_definition(definition):
-    """helper for validating functions passed to deferred strategies.
+    """Helper for validating functions passed to deferred strategies.
 
     validates the following conditions raising InvalidArgument on violation:
         - definition must be a function
