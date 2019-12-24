@@ -601,26 +601,43 @@ def test_bytestring_is_valid_sequence_of_int_and_parent_classes(type_):
     )
 
 
-@pytest.mark.parametrize("typ", [typing.SupportsAbs,
-                                 typing.SupportsFloat,
-                                 typing.SupportsInt,
-                                 typing.SupportsRound])
-@given(data=st.data())
-def test_SupportsOp_types_are_instances_of_type(typ, data):
-    # test values drawn from SupportsOp types are indeed considered instances
-    # of that type.
-    value = data.draw(st.from_type(typ))
+def supports_protocol(protocol, inst):
     try:
         # in python 3.8 this works
-        assert isinstance(value, typ)
+        return isinstance(inst, protocol)
     except TypeError:
         # in python < 3.8 Protocols cannot be used with isinstance
         # so we do this which is less nice...
-        assert issubclass(type(value), typ)
+        return issubclass(type(inst), protocol)
+
+def supports_casting(typ, thing):
+    try:
+        typ(thing)
+        return True
+    except TypeError:
+        return False
 
 
-@given(inp=from_type(typing.SupportsBytes))
-def test_bytes_can_be_called_on_SupportsBytes(inp):
-    # this is a special test for SupportsBytes since nothing seems to
-    # implements __bytes__ interface
-    bytes(inp)
+@pytest.mark.parametrize("protocol", [typing.SupportsAbs,
+                                 typing.SupportsRound])
+@given(data=st.data())
+def test_supportsop_types_support_protocol(protocol, data):
+    # test values drawn from SupportsOp types are indeed considered instances
+    # of that type.
+    value = data.draw(st.from_type(protocol))
+    assert supports_protocol(protocol, value)
+
+
+@pytest.mark.parametrize("protocol, typ", [(typing.SupportsFloat, float),
+                                 (typing.SupportsInt, int),
+                                 (typing.SupportsBytes, bytes)
+                                ])
+@given(data=st.data())
+def test_supportscast_types_support_protocol_or_are_castable(protocol, typ, data):
+    # test values drawn from SupportsOp types are indeed considered instances
+    # of that type.
+    value = data.draw(st.from_type(protocol))
+    try:
+        assert supports_protocol(protocol, value)
+    except AssertionError:
+        assert supports_casting(typ, value)
