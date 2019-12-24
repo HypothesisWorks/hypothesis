@@ -372,7 +372,7 @@ else:
                 | st.fractions()
                 # with floats its far more annoying to capture all
                 # the magic in a regex. so we just stringify some floats
-                |st.floats().map(str)
+                | st.floats().map(str)
             ),
             typing.SupportsInt: (
                 st.booleans()
