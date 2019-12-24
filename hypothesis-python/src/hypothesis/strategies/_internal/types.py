@@ -363,7 +363,8 @@ else:
                                  st.floats() |
                                  st.uuids() |
                                  st.decimals() |
-                                 st.from_regex(r'^-?([1-9]\d*)|0$', fullmatch=True)
+                                 # this generates strings that should able to be parsed into integers
+                                 st.from_regex(r'^-?([1-9]\d*)|0$', fullmatch=True) 
                                  ),
             # xIO are only available in .io on Python 3.5, but available directly
             # as typing.*IO from 3.6 onwards and mypy 0.730 errors on the compat form.
