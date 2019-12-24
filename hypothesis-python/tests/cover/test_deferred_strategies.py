@@ -42,10 +42,9 @@ def test_mutual_recursion():
 
 
 def test_errors_on_non_function_define():
-    x = st.deferred(1)
+    # if argument is not a function we should raise an error when building the strategy.
     with pytest.raises(InvalidArgument):
-        x.example()
-
+        st.deferred(1)
 
 def test_errors_if_define_does_not_return_search_strategy():
     x = st.deferred(lambda: 1)
