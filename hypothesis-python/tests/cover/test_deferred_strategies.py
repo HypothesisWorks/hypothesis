@@ -46,6 +46,11 @@ def test_errors_on_non_function_define():
     with pytest.raises(InvalidArgument):
         st.deferred(1)
 
+def test_errors_on_non_zero_argument_function():
+    # if the function passed requires args we should throw an error when building the strategy.
+    with pytest.raises(InvalidArgument):
+        st.deferred(lambda x: x)
+
 def test_errors_if_define_does_not_return_search_strategy():
     x = st.deferred(lambda: 1)
     with pytest.raises(InvalidArgument):
