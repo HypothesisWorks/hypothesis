@@ -610,6 +610,7 @@ def supports_protocol(protocol, inst):
         # so we do this which is less nice...
         return issubclass(type(inst), protocol)
 
+
 def supports_casting(typ, thing):
     try:
         typ(thing)
@@ -620,7 +621,7 @@ def supports_casting(typ, thing):
 
 
 @pytest.mark.parametrize("protocol", [typing.SupportsAbs,
-                                 typing.SupportsRound])
+                                      typing.SupportsRound])
 @given(data=st.data())
 def test_supportsop_types_support_protocol(protocol, data):
     # test values drawn from SupportsOp types are indeed considered instances
@@ -630,9 +631,9 @@ def test_supportsop_types_support_protocol(protocol, data):
 
 
 @pytest.mark.parametrize("protocol, typ", [(typing.SupportsFloat, float),
-                                 (typing.SupportsInt, int),
-                                 (typing.SupportsBytes, bytes)
-                                ])
+                                           (typing.SupportsInt, int),
+                                           (typing.SupportsBytes, bytes)
+                                           ])
 @given(data=st.data())
 def test_supportscast_types_support_protocol_or_are_castable(protocol, typ, data):
     # test values drawn from SupportsOp types are indeed considered instances
