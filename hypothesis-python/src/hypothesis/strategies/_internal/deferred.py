@@ -35,31 +35,35 @@ def requires_args(func):
     return False
 
 
+def validate_definition(definition):
+    """helper for validating functions passed to deferred strategies.
+
+    validates the following conditions raising InvalidArgument on violation:
+        - definition must be a function
+        - definition must be be callable with zero arguments
+    """
+    if not inspect.isfunction(definition):
+        raise InvalidArgument(
+            (
+                "Excepted a definition to be a function but got %r of type"
+                " %s instead."
+            )
+            % (definition, type(definition).__name__)
+        )
+    if requires_args(definition):
+        raise InvalidArgument("Functions passed to deferred strategies must"
+                              " not require any arguments. ",
+                              )
 
 class DeferredStrategy(SearchStrategy):
     """A strategy which may be used before it is fully defined."""
 
     def __init__(self, definition):
+        validate_definition(definition)
         SearchStrategy.__init__(self)
-        self._validate_definition(definition)
         self.__wrapped_strategy = None
         self.__in_repr = False
         self.__definition = definition
-
-    def _validate_definition(self, definition):
-        if not inspect.isfunction(definition):
-
-            raise InvalidArgument(
-                (
-                    "Excepted a definition to be a function but got %r of type"
-                    " %s instead."
-                )
-                % (definition, type(definition).__name__)
-            )
-        if requires_args(definition):
-            raise InvalidArgument("Functions passed to deferred strategies must"
-                                  " not require any arguments. ",
-                                   )
 
     @property
     def wrapped_strategy(self):
