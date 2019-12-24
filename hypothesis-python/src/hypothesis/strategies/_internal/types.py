@@ -346,7 +346,7 @@ else:
     try:
         # These aren't present in the typing module backport.
         _global_type_lookup[typing.SupportsBytes] = st.binary()
-        _global_type_lookup[typing.SupportsRound] = st.complex_numbers()
+        _global_type_lookup[typing.SupportsRound] = (st.booleans() | st.integers() | st.floats() | st.decimals() | st.fractions())
     except AttributeError:  # pragma: no cover
         pass
     try:
