@@ -614,7 +614,8 @@ def supports_casting(typ, thing):
     try:
         typ(thing)
         return True
-    except TypeError:
+    # if anything bad happened here return False
+    except Exception:
         return False
 
 
