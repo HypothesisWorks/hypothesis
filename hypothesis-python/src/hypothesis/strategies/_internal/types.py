@@ -356,7 +356,12 @@ else:
                 st.decimals() |
                 st.timedeltas()
             ),
-            typing.SupportsComplex: st.complex_numbers(),
+            typing.SupportsComplex: (st.booleans() |
+                                     st.integers() |
+                                     st.floats() |
+                                     st.complex_numbers() |
+                                     st.decimals() |
+                                     st.fractions()),
             typing.SupportsFloat: (
                 st.booleans() |
                 st.integers() |
