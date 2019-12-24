@@ -626,6 +626,8 @@ def test_supportsop_types_support_protocol(protocol, data):
     # test values drawn from SupportsOp types are indeed considered instances
     # of that type.
     value = data.draw(st.from_type(protocol))
+    # check that we aren't somehow generating instances of the protocol itself
+    assert value.__class__ != protocol
     assert supports_protocol(protocol, value)
 
 
@@ -640,10 +642,12 @@ def test_supportsop_types_support_protocol(protocol, data):
 )
 @given(data=st.data())
 def test_supportscast_types_support_protocol_or_are_castable(protocol, typ, data):
-    # test values drawn from SupportsOp types are indeed considered instances
-    # of that type.
+
     value = data.draw(st.from_type(protocol))
+    # check that we aren't somehow generating instances of the protocol itself
+    assert value.__class__ != protocol
     try:
+        # test values drawn from the protocol types are
         assert supports_protocol(protocol, value)
     except AssertionError:
         assert supports_casting(typ, value)
