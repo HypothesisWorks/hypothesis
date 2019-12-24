@@ -232,10 +232,11 @@ def byteable_strategy():
     since a call to `bytes` would require the encoding arg.
     """
     byterange_ints = st.integers(0, 255)
-    byte_arrays = st.lists(byterange_ints)
+    # SupportsBytes is a subclass of Hashable... so we tuplize it.
+    byte_arrays = st.lists(byterange_ints).map(tuple)
     # strings while super common won't support without an enoding arg,
     # so we tenatively will not include...
-    return st.booleans()| byterange_ints | byte_arrays
+    return st.booleans() | byterange_ints | byte_arrays
 
 
 _global_type_lookup = {
