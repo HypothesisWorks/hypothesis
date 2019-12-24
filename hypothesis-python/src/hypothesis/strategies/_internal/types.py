@@ -224,6 +224,19 @@ def from_typing_type(thing):
         )
     return st.one_of(strategies)
 
+def byteable_strategy():
+    """Since almost nothing actually has a __bytes__ method we combine known strategies
+    that you can call `bytes` on.
+    
+    we currently do not include text even though this is a fairly common use case
+    since a call to `bytes` would require the encoding arg.
+    """
+    byterange_ints = st.integers(0, 255)
+    byte_arrays = st.lists(byterange_ints)
+    # strings while super common won't support without an enoding arg,
+    # so we tenatively will not include...
+    return st.booleans()| byterange_ints | byte_arrays
+
 
 _global_type_lookup = {
     # Types with core Hypothesis strategies
@@ -345,7 +358,7 @@ else:
 
     try:
         # These aren't present in the typing module backport.
-        _global_type_lookup[typing.SupportsBytes] = st.binary()
+        _global_type_lookup[typing.SupportsBytes] = byteable_strategy()
         _global_type_lookup[typing.SupportsRound] = (st.booleans() | st.integers() | st.floats() | st.decimals() | st.fractions())
     except AttributeError:  # pragma: no cover
         pass
