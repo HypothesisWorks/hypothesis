@@ -348,38 +348,43 @@ else:
             # See also the discussion at https://bugs.python.org/issue39046
             typing.Reversible: st.lists(st.integers()).map(tuple),  # type: ignore
             typing.SupportsAbs: (
-                st.booleans() |
-                st.integers() |
-                st.floats() |
-                st.complex_numbers() |
-                st.fractions() |
-                st.decimals() |
-                st.timedeltas()
+                st.booleans()
+                | st.integers()
+                | st.floats()
+                | st.complex_numbers()
+                | st.fractions()
+                | st.decimals()
+                | st.timedeltas()
             ),
-            typing.SupportsComplex: (st.booleans() |
-                                     st.integers() |
-                                     st.floats() |
-                                     st.complex_numbers() |
-                                     st.decimals() |
-                                     st.fractions()),
+            typing.SupportsComplex: (
+                st.booleans()
+                | st.integers()
+                | st.floats()
+                | st.complex_numbers()
+                | st.decimals()
+                | st.fractions()
+            ),
             typing.SupportsFloat: (
-                st.booleans() |
-                st.integers() |
-                st.floats() |
-                st.decimals() |
-                st.fractions() |
+                st.booleans()
+                | st.integers()
+                | st.floats()
+                | st.decimals()
+                | st.fractions()
+                |
                 # with floats its far more annoying to capture all
                 # the magic in a regex. so we just stringify some floats
                 st.floats().map(str)
             ),
-            typing.SupportsInt: (st.booleans() |
-                                 st.integers() |
-                                 st.floats() |
-                                 st.uuids() |
-                                 st.decimals() |
-                                 # this generates strings that should able to be parsed into integers
-                                 st.from_regex(r'^-?([1-9]\d*)|0$', fullmatch=True)
-                                 ),
+            typing.SupportsInt: (
+                st.booleans()
+                | st.integers()
+                | st.floats()
+                | st.uuids()
+                | st.decimals()
+                |
+                # this generates strings that should able to be parsed into integers
+                st.from_regex(r"^-?([1-9]\d*)|0$", fullmatch=True)
+            ),
             # xIO are only available in .io on Python 3.5, but available directly
             # as typing.*IO from 3.6 onwards and mypy 0.730 errors on the compat form.
             typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),  # type: ignore
@@ -391,7 +396,8 @@ else:
         # These aren't present in the typing module backport.
         _global_type_lookup[typing.SupportsBytes] = byteable_strategy()
         _global_type_lookup[typing.SupportsRound] = (
-            st.booleans() | st.integers() | st.floats() | st.decimals() | st.fractions())
+            st.booleans() | st.integers() | st.floats() | st.decimals() | st.fractions()
+        )
     except AttributeError:  # pragma: no cover
         pass
     try:

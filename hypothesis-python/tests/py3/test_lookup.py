@@ -620,8 +620,7 @@ def supports_casting(typ, thing):
         return False
 
 
-@pytest.mark.parametrize("protocol", [typing.SupportsAbs,
-                                      typing.SupportsRound])
+@pytest.mark.parametrize("protocol", [typing.SupportsAbs, typing.SupportsRound])
 @given(data=st.data())
 def test_supportsop_types_support_protocol(protocol, data):
     # test values drawn from SupportsOp types are indeed considered instances
@@ -630,11 +629,15 @@ def test_supportsop_types_support_protocol(protocol, data):
     assert supports_protocol(protocol, value)
 
 
-@pytest.mark.parametrize("protocol, typ", [(typing.SupportsFloat, float),
-                                           (typing.SupportsInt, int),
-                                           (typing.SupportsBytes, bytes),
-                                           (typing.SupportsComplex, complex)
-                                           ])
+@pytest.mark.parametrize(
+    "protocol, typ",
+    [
+        (typing.SupportsFloat, float),
+        (typing.SupportsInt, int),
+        (typing.SupportsBytes, bytes),
+        (typing.SupportsComplex, complex),
+    ],
+)
 @given(data=st.data())
 def test_supportscast_types_support_protocol_or_are_castable(protocol, typ, data):
     # test values drawn from SupportsOp types are indeed considered instances
