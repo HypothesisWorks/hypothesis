@@ -224,10 +224,11 @@ def from_typing_type(thing):
         )
     return st.one_of(strategies)
 
+
 def byteable_strategy():
     """Since almost nothing actually has a __bytes__ method we combine known strategies
     that you can call `bytes` on.
-    
+
     we currently do not include text even though this is a fairly common use case
     since a call to `bytes` would require the encoding arg.
     """
@@ -346,16 +347,24 @@ else:
             # Reversible is somehow a subclass of Hashable, so we tuplize it.
             # See also the discussion at https://bugs.python.org/issue39046
             typing.Reversible: st.lists(st.integers()).map(tuple),  # type: ignore
-            typing.SupportsAbs: st.complex_numbers(),
+            typing.SupportsAbs: (
+                st.booleans() |
+                st.integers() |
+                st.floats() |
+                st.complex_numbers() |
+                st.fractions() |
+                st.decimals() |
+                st.timedeltas()
+            ),
             typing.SupportsComplex: st.complex_numbers(),
             typing.SupportsFloat: st.floats(),
-            typing.SupportsInt: (st.booleans() | 
-                                st.integers() | 
-                                st.floats() |
-                                st.uuids() |
-                                st.decimals() |
-                                st.from_regex(r'^-?([1-9]\d*)|0$', fullmatch=True)
-                                ),
+            typing.SupportsInt: (st.booleans() |
+                                 st.integers() |
+                                 st.floats() |
+                                 st.uuids() |
+                                 st.decimals() |
+                                 st.from_regex(r'^-?([1-9]\d*)|0$', fullmatch=True)
+                                 ),
             # xIO are only available in .io on Python 3.5, but available directly
             # as typing.*IO from 3.6 onwards and mypy 0.730 errors on the compat form.
             typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),  # type: ignore
@@ -366,7 +375,8 @@ else:
     try:
         # These aren't present in the typing module backport.
         _global_type_lookup[typing.SupportsBytes] = byteable_strategy()
-        _global_type_lookup[typing.SupportsRound] = (st.booleans() | st.integers() | st.floats() | st.decimals() | st.fractions())
+        _global_type_lookup[typing.SupportsRound] = (
+            st.booleans() | st.integers() | st.floats() | st.decimals() | st.fractions())
     except AttributeError:  # pragma: no cover
         pass
     try:
