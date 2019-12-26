@@ -602,13 +602,9 @@ def test_bytestring_is_valid_sequence_of_int_and_parent_classes(type_):
 
 
 def supports_protocol(protocol, inst):
-    try:
-        # in python 3.8 this works
-        return isinstance(inst, protocol)
-    except TypeError:
-        # in python < 3.8 Protocols cannot be used with isinstance
-        # so we do this which is less nice...
-        return issubclass(type(inst), protocol)
+    # in python < 3.8 Protocols cannot be used with isinstance
+    # this check should work for all versions.
+    return issubclass(type(inst), protocol)
 
 
 def supports_casting(typ, thing):
