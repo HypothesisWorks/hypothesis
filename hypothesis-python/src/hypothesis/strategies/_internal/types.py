@@ -240,6 +240,15 @@ def byteable_strategy():
     return st.one_of([st.booleans(), st.binary(), byterange_ints, byte_arrays])
 
 
+def can_cast(type, value):
+    """Determine if value can be cast to type."""
+    try:
+        type(value)
+        return True
+    except TypeError:
+        return False
+
+
 _global_type_lookup = {
     # Types with core Hypothesis strategies
     type(None): st.none(),
@@ -378,7 +387,8 @@ else:
                                            st.uuids(),
                                            st.decimals(),
                                            # this generates strings that should able to be parsed into integers
-                                           st.from_regex(r"^-?([1-9]\d*)|0$", fullmatch=True)
+                                           st.from_regex(
+                                               r"-?\d+", fullmatch=True).filter(lambda value: can_cast(int, value))
                                            ]),
             # xIO are only available in .io on Python 3.5, but available directly
             # as typing.*IO from 3.6 onwards and mypy 0.730 errors on the compat form.
