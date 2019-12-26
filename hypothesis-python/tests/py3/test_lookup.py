@@ -645,8 +645,6 @@ def test_supportscast_types_support_protocol_or_are_castable(protocol, typ, data
     value = data.draw(st.from_type(protocol))
     # check that we aren't somehow generating instances of the protocol itself
     assert value.__class__ != protocol
-    try:
-        # test values drawn from the protocol types are
-        assert supports_protocol(protocol, value)
-    except AssertionError:
-        assert supports_casting(typ, value)
+    # test values drawn from the protocol types either support the protocol
+    # or can be cast to typ
+    assert supports_protocol(protocol, value) or supports_casting(typ, value)
