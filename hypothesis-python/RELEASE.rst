@@ -2,7 +2,7 @@ RELEASE_TYPE: minor
 
 This release improves support for the SupportsOp protocols from the :mod:`python:typing` 
 module when using on :func:`~hypothesis.strategies.from_type` as outlined in :issue:`2292`.
-The following types now generate more wide ranging and correct strategies when called 
+The following types now generate much more varied strategies when called 
 with :func:`~hypothesis.strategies.from_type`:
 
 - :class:`python:typing.SupportsAbs`
