@@ -225,27 +225,12 @@ def from_typing_type(thing):
     return st.one_of(strategies)
 
 
-def byteable_strategy():
-    """Since almost nothing actually has a __bytes__ method we combine known strategies
-    that you can call `bytes` on.
-
-    we currently do not include text even though this is a fairly common use case
-    since a call to `bytes` would require the encoding arg.
-    """
-    byterange_ints = st.integers(0, 255)
-    # SupportsBytes is a subclass of Hashable... so we tuplize it.
-    byte_arrays = st.lists(byterange_ints).map(tuple)
-    # strings while super common won't support without an enoding arg,
-    # so we tenatively will not include...
-    return st.one_of(st.booleans(), st.binary(), byterange_ints, byte_arrays)
-
-
 def can_cast(type, value):
     """Determine if value can be cast to type."""
     try:
         type(value)
         return True
-    except TypeError:
+    except Exception:
         return False
 
 
@@ -403,7 +388,13 @@ else:
 
     try:
         # These aren't present in the typing module backport.
-        _global_type_lookup[typing.SupportsBytes] = byteable_strategy()
+        _global_type_lookup[typing.SupportsBytes] = st.one_of(
+            st.booleans(),
+            st.binary(),
+            st.integers(0, 255),
+            # As with Reversible, we tuplize this for compatibility with Hashable.
+            st.lists(st.integers(0, 255)).map(tuple),  # type: ignore
+        )
         _global_type_lookup[typing.SupportsRound] = st.one_of(
             st.booleans(), st.integers(), st.floats(), st.decimals(), st.fractions()
         )
