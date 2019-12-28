@@ -599,3 +599,38 @@ def test_bytestring_is_valid_sequence_of_int_and_parent_classes(type_):
         st.from_type(typing.Sequence[type_]),
         lambda val: isinstance(val, typing.ByteString),
     )
+
+
+@pytest.mark.parametrize("protocol", [typing.SupportsAbs, typing.SupportsRound])
+@given(data=st.data())
+def test_supportsop_types_support_protocol(protocol, data):
+    # test values drawn from SupportsOp types are indeed considered instances
+    # of that type.
+    value = data.draw(st.from_type(protocol))
+    # check that we aren't somehow generating instances of the protocol itself
+    assert value.__class__ != protocol
+    assert issubclass(type(value), protocol)
+
+
+@pytest.mark.parametrize(
+    "protocol, typ",
+    [
+        (typing.SupportsFloat, float),
+        (typing.SupportsInt, int),
+        (typing.SupportsBytes, bytes),  # noqa: B1
+        (typing.SupportsComplex, complex),
+    ],
+)
+@given(data=st.data())
+def test_supportscast_types_support_protocol_or_are_castable(protocol, typ, data):
+    value = data.draw(st.from_type(protocol))
+    # check that we aren't somehow generating instances of the protocol itself
+    assert value.__class__ != protocol
+    # test values drawn from the protocol types either support the protocol
+    # or can be cast to typ
+    assert issubclass(type(value), protocol) or types.can_cast(typ, value)
+
+
+def test_can_cast():
+    assert types.can_cast(int, "0")
+    assert not types.can_cast(int, "abc")

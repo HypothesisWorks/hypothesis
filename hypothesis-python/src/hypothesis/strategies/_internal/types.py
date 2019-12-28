@@ -225,6 +225,15 @@ def from_typing_type(thing):
     return st.one_of(strategies)
 
 
+def can_cast(type, value):
+    """Determine if value can be cast to type."""
+    try:
+        type(value)
+        return True
+    except Exception:
+        return False
+
+
 _global_type_lookup = {
     # Types with core Hypothesis strategies
     type(None): st.none(),
@@ -332,10 +341,44 @@ else:
             # Reversible is somehow a subclass of Hashable, so we tuplize it.
             # See also the discussion at https://bugs.python.org/issue39046
             typing.Reversible: st.lists(st.integers()).map(tuple),  # type: ignore
-            typing.SupportsAbs: st.complex_numbers(),
-            typing.SupportsComplex: st.complex_numbers(),
-            typing.SupportsFloat: st.floats(),
-            typing.SupportsInt: st.floats(),
+            typing.SupportsAbs: st.one_of(
+                st.booleans(),
+                st.integers(),
+                st.floats(),
+                st.complex_numbers(),
+                st.fractions(),
+                st.decimals(),
+                st.timedeltas(),
+            ),
+            typing.SupportsComplex: st.one_of(
+                st.booleans(),
+                st.integers(),
+                st.floats(),
+                st.complex_numbers(),
+                st.decimals(),
+                st.fractions(),
+            ),
+            typing.SupportsFloat: st.one_of(
+                st.booleans(),
+                st.integers(),
+                st.floats(),
+                st.decimals(),
+                st.fractions(),
+                # with floats its far more annoying to capture all
+                # the magic in a regex. so we just stringify some floats
+                st.floats().map(str),
+            ),
+            typing.SupportsInt: st.one_of(
+                st.booleans(),
+                st.integers(),
+                st.floats(),
+                st.uuids(),
+                st.decimals(),
+                # this generates strings that should able to be parsed into integers
+                st.from_regex(r"-?\d+", fullmatch=True).filter(
+                    lambda value: can_cast(int, value)
+                ),
+            ),
             # xIO are only available in .io on Python 3.5, but available directly
             # as typing.*IO from 3.6 onwards and mypy 0.730 errors on the compat form.
             typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),  # type: ignore
@@ -345,8 +388,16 @@ else:
 
     try:
         # These aren't present in the typing module backport.
-        _global_type_lookup[typing.SupportsBytes] = st.binary()
-        _global_type_lookup[typing.SupportsRound] = st.complex_numbers()
+        _global_type_lookup[typing.SupportsBytes] = st.one_of(
+            st.booleans(),
+            st.binary(),
+            st.integers(0, 255),
+            # As with Reversible, we tuplize this for compatibility with Hashable.
+            st.lists(st.integers(0, 255)).map(tuple),  # type: ignore
+        )
+        _global_type_lookup[typing.SupportsRound] = st.one_of(
+            st.booleans(), st.integers(), st.floats(), st.decimals(), st.fractions()
+        )
     except AttributeError:  # pragma: no cover
         pass
     try:
