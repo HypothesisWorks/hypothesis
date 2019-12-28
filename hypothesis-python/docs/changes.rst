@@ -10,6 +10,31 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.57.0:
+
+-------------------
+4.57.0 - 2019-12-28
+-------------------
+
+This release improves support for the SupportsOp protocols from the :mod:`python:typing`
+module when using on :func:`~hypothesis.strategies.from_type` as outlined in :issue:`2292`.
+The following types now generate much more varied strategies when called
+with :func:`~hypothesis.strategies.from_type`:
+
+- :class:`python:typing.SupportsAbs`
+- :class:`python:typing.SupportsBytes`
+- :class:`python:typing.SupportsComplex`
+- :class:`python:typing.SupportsInt`
+- :class:`python:typing.SupportsFloat`
+- :class:`python:typing.SupportsRound`
+
+Note that using :func:`~hypothesis.strategies.from_type` with one of the above strategies will not
+ensure that the the specified function will execute successfully (ie : the strategy returned for
+``from_type(typing.SupportsAbs)`` may include NaNs or things this will cause the :func:`python:abs`
+function to error. )
+
+Thanks to Lea Provenzano for this patch.
+
 .. _v4.56.3:
 
 -------------------
