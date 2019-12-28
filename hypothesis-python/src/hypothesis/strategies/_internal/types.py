@@ -237,7 +237,7 @@ def byteable_strategy():
     byte_arrays = st.lists(byterange_ints).map(tuple)
     # strings while super common won't support without an enoding arg,
     # so we tenatively will not include...
-    return st.one_of([st.booleans(), st.binary(), byterange_ints, byte_arrays])
+    return st.one_of(st.booleans(), st.binary(), byterange_ints, byte_arrays)
 
 
 def can_cast(type, value):
@@ -356,23 +356,23 @@ else:
             # Reversible is somehow a subclass of Hashable, so we tuplize it.
             # See also the discussion at https://bugs.python.org/issue39046
             typing.Reversible: st.lists(st.integers()).map(tuple),  # type: ignore
-            typing.SupportsAbs: st.one_of([st.booleans(),
+            typing.SupportsAbs: st.one_of(st.booleans(),
                                            st.integers(),
                                            st.floats(),
                                            st.complex_numbers(),
                                            st.fractions(),
                                            st.decimals(),
                                            st.timedeltas()
-                                           ]),
+                                           ),
 
-            typing.SupportsComplex: st.one_of([st.booleans(),
+            typing.SupportsComplex: st.one_of(st.booleans(),
                                                st.integers(),
                                                st.floats(),
                                                st.complex_numbers(),
                                                st.decimals(),
                                                st.fractions()
-                                               ]),
-            typing.SupportsFloat: st.one_of([st.booleans(),
+                                               ),
+            typing.SupportsFloat: st.one_of(st.booleans(),
                                              st.integers(),
                                              st.floats(),
                                              st.decimals(),
@@ -380,8 +380,8 @@ else:
                                              # with floats its far more annoying to capture all
                                              # the magic in a regex. so we just stringify some floats
                                              st.floats().map(str)
-                                             ]),
-            typing.SupportsInt: st.one_of([st.booleans(),
+                                             ),
+            typing.SupportsInt: st.one_of(st.booleans(),
                                            st.integers(),
                                            st.floats(),
                                            st.uuids(),
@@ -389,7 +389,7 @@ else:
                                            # this generates strings that should able to be parsed into integers
                                            st.from_regex(
                                                r"-?\d+", fullmatch=True).filter(lambda value: can_cast(int, value))
-                                           ]),
+                                           ),
             # xIO are only available in .io on Python 3.5, but available directly
             # as typing.*IO from 3.6 onwards and mypy 0.730 errors on the compat form.
             typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),  # type: ignore
@@ -400,12 +400,12 @@ else:
     try:
         # These aren't present in the typing module backport.
         _global_type_lookup[typing.SupportsBytes] = byteable_strategy()
-        _global_type_lookup[typing.SupportsRound] = st.one_of([st.booleans(),
+        _global_type_lookup[typing.SupportsRound] = st.one_of(st.booleans(),
                                                                st.integers(),
                                                                st.floats(),
                                                                st.decimals(),
                                                                st.fractions()
-                                                               ])
+                                                               )
     except AttributeError:  # pragma: no cover
         pass
     try:
