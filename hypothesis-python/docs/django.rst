@@ -110,6 +110,8 @@ Note that this mapping is on exact type. Subtypes will not inherit it.
 
 .. autofunction:: hypothesis.extra.django.register_field_strategy
 
+.. autofunction:: hypothesis.extra.django.from_field
+
 
 Generating child models
 =======================
