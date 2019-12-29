@@ -323,9 +323,8 @@ def test_fraction_lt_negative(x):
     assert x <= fractions.Fraction(-1, 2)
 
 
-@given(ds.decimals(min_value=-1.5, max_value=1.5, allow_nan=False))
+@given(ds.decimals(min_value=-1.5, max_value=1.5))
 def test_decimal_is_in_bounds(x):
-    # decimal.Decimal("-1.5") == -1.5 (not explicitly testable in py2.6)
     assert decimal.Decimal("-1.5") <= x <= decimal.Decimal("1.5")
 
 
