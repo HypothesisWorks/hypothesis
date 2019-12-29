@@ -40,7 +40,11 @@ from hypothesis.strategies import emails
 
 if False:
     from datetime import tzinfo  # noqa
-    from typing import Any, Dict, Type, Optional, List, Text, Callable, Union  # noqa
+    from typing import Any, Callable, Dict, List, Optional  # noqa
+    from typing import Text, Type, TypeVar, Union  # noqa
+
+    AnyField = Union[dm.Field, df.Field]
+    F = TypeVar("F", bound=AnyField)
 
 
 # Mapping of field types, to strategy objects or functions of (type) -> strategy
@@ -66,7 +70,7 @@ _global_field_lookup = {
     df.NullBooleanField: st.one_of(st.none(), st.booleans()),
     df.URLField: urls(),
     df.UUIDField: st.uuids(),
-}  # type: Dict[Any, Union[st.SearchStrategy, Callable[[Any], st.SearchStrategy]]]
+}  # type: Dict[Type[AnyField], Union[st.SearchStrategy, Callable[[Any], st.SearchStrategy]]]
 
 
 def register_for(field_type):
@@ -210,11 +214,13 @@ def _for_form_boolean(field):
 
 
 def register_field_strategy(field_type, strategy):
-    # type: (Type[dm.Field], st.SearchStrategy) -> None
-    """Add an entry to the global field-to-strategy lookup used by from_field.
+    # type: (Type[AnyField], st.SearchStrategy) -> None
+    """Add an entry to the global field-to-strategy lookup used by
+    :func:`~hypothesis.extra.django.from_field`.
 
-    ``field_type`` must be a subtype of django.db.models.Field, which must not
-    already be registered.  ``strategy`` must be a SearchStrategy.
+    ``field_type`` must be a subtype of :class:`django.db.models.Field` or
+    :class:`django.forms.Field`, which must not already be registered.
+    ``strategy`` must be a :class:`~hypothesis.strategies.SearchStrategy`.
     """
     if not issubclass(field_type, (dm.Field, df.Field)):
         raise InvalidArgument(
@@ -232,13 +238,17 @@ def register_field_strategy(field_type, strategy):
 
 
 def from_field(field):
-    # type: (Type[dm.Field]) -> st.SearchStrategy[dm.Field]
+    # type: (F) -> st.SearchStrategy[Union[F, None]]
     """Return a strategy for values that fit the given field.
 
-    This is pretty similar to the core `from_type` function, with a subtle
-    but important difference: `from_field` takes a Field *instance*, rather
-    than a Field *subtype*, so that it has access to instance attributes
-    such as string length and validators.
+    This function is used by :func:`~hypothesis.extra.django.from_form` and
+    :func:`~hypothesis.extra.django.from_model` for any fields that require
+    a value, or for which you passed :obj:`hypothesis.infer`.
+
+    It's pretty similar to the core :func:`~hypothesis.strategies.from_type`
+    function, with a subtle but important difference: ``from_field`` takes a
+    Field *instance*, rather than a Field *subtype*, so that it has access to
+    instance attributes such as string length and validators.
     """
     check_type((dm.Field, df.Field), field, "field")
     if getattr(field, "choices", False):
