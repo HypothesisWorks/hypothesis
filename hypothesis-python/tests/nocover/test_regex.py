@@ -84,7 +84,8 @@ def test_fuzz_stuff(data):
 
     try:
         regex = re.compile(pattern, flags=flags)
-    except re.error:
+    except (re.error, FutureWarning):
+        # Possible nested sets, e.g. "[[", trigger a FutureWarning
         reject()
 
     ex = data.draw(st.from_regex(regex))
