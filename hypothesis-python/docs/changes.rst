@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 4.x
 ==============
 
+.. _v4.57.1:
+
+-------------------
+4.57.1 - 2019-12-29
+-------------------
+
+This patch improves the type hints and documentation for the
+:doc:`django extra. <django>`  There is no runtime change.
+
 .. _v4.57.0:
 
 -------------------
