@@ -31,7 +31,7 @@ from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.internal.compat import PY2, binary_type, text_type
 from hypothesis.strategies._internal import SearchStrategy
 from tests.common.debug import find_any, minimal
-from tests.common.utils import checks_deprecated_behaviour, fails_with, flaky
+from tests.common.utils import fails_with, flaky
 
 if PY2:
     from itertools import izip_longest as zip_longest
@@ -456,7 +456,7 @@ def test_all_inferred_scalar_strategies_roundtrip(data, dtype):
 
 
 @pytest.mark.parametrize("fill", [False, True])
-@checks_deprecated_behaviour
+@fails_with(InvalidArgument)
 @given(st.data())
 def test_overflowing_integers_are_deprecated(fill, data):
     kw = {"elements": st.just(300)}
@@ -477,7 +477,7 @@ def test_overflowing_integers_are_deprecated(fill, data):
         ("S1", st.binary(min_size=2, max_size=2)),
     ],
 )
-@checks_deprecated_behaviour
+@fails_with(InvalidArgument)
 @given(data=st.data())
 def test_unrepresentable_elements_are_deprecated(fill, dtype, strat, data):
     if fill:

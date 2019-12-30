@@ -32,7 +32,6 @@ from hypothesis.internal.compat import PY2, integer_types
 from hypothesis.strategies._internal import types
 from hypothesis.strategies._internal.core import _strategies
 from hypothesis.strategies._internal.types import _global_type_lookup
-from tests.common.utils import checks_deprecated_behaviour
 
 # Build a set of all types output by core strategies
 blacklist = [
@@ -202,9 +201,9 @@ class EmptyEnum(enum.Enum):
     pass
 
 
-@checks_deprecated_behaviour
 def test_error_if_enum_is_empty():
-    assert st.from_type(EmptyEnum).is_empty
+    with pytest.raises(InvalidArgument):
+        assert st.from_type(EmptyEnum).is_empty
 
 
 class BrokenClass(object):

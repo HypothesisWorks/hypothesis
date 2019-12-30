@@ -25,7 +25,6 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import (
-    PrintSettings,
     Verbosity,
     __version__,
     example,
@@ -37,7 +36,7 @@ from hypothesis import (
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument, UnsatisfiedAssumption
 from hypothesis.internal.compat import hbytes
-from tests.common.utils import capture_out, checks_deprecated_behaviour, no_shrink
+from tests.common.utils import capture_out, no_shrink
 
 
 @example(hbytes(20))  # shorter compressed
@@ -231,16 +230,3 @@ def test_does_not_print_reproduction_if_verbosity_set_to_quiet():
             test_always_fails()
 
     assert "@reproduce_failure" not in out.getvalue()
-
-
-@pytest.mark.parametrize(
-    "ps,b",
-    [
-        (PrintSettings.NEVER, False),
-        (PrintSettings.INFER, True),
-        (PrintSettings.ALWAYS, True),
-    ],
-)
-@checks_deprecated_behaviour
-def test_converts_print_settings_to_boolean(ps, b):
-    assert settings(print_blob=ps).print_blob is b

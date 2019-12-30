@@ -1055,9 +1055,6 @@ def given(
             # The next step is to use the Conjecture engine to run the test on
             # many different inputs.
 
-            if settings.max_examples <= 0:
-                return
-
             if not (
                 Phase.reuse in settings.phases or Phase.generate in settings.phases
             ):

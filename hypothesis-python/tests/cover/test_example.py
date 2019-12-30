@@ -21,7 +21,6 @@ import os
 import sys
 import warnings
 from decimal import Decimal
-from random import Random
 
 import pexpect
 import pytest
@@ -34,12 +33,7 @@ from hypothesis.errors import (
     Unsatisfiable,
 )
 from hypothesis.internal.compat import WINDOWS
-from tests.common.utils import checks_deprecated_behaviour, fails_with
-
-
-@checks_deprecated_behaviour
-def test_deterministic_examples_are_deprecated():
-    st.integers().example(Random())
+from tests.common.utils import fails_with
 
 
 def test_example_of_none_is_none():

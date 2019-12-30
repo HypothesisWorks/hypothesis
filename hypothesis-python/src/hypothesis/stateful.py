@@ -43,7 +43,7 @@ from hypothesis._settings import (
 from hypothesis.control import current_build_context
 from hypothesis.core import given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
-from hypothesis.internal.compat import hrange, quiet_raise, string_types
+from hypothesis.internal.compat import hrange, quiet_raise
 from hypothesis.internal.reflection import function_digest, nicerepr, proxies, qualname
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
@@ -76,7 +76,7 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
     or printing a minimal breaking program and raising an exception.
 
     state_machine_factory is anything which returns an instance of
-    GenericStateMachine when called with no arguments - it can be a class or a
+    RuleBasedStateMachine when called with no arguments - it can be a class or a
     function. settings will be used to control the execution of the test.
     """
     if settings is None:
@@ -409,28 +409,16 @@ def _convert_targets(targets, target):
     """Single validator and convertor for target arguments."""
     if target is not None:
         if targets:
-            note_deprecation(
-                "Passing both targets=%r and target=%r is redundant, and "
-                "will become an error in a future version of Hypothesis.  "
-                "Pass targets=%r instead."
-                % (targets, target, tuple(targets) + (target,)),
-                since="2018-08-18",
+            raise InvalidArgument(
+                "Passing both targets=%r and target=%r is redundant - pass "
+                "targets=%r instead." % (targets, target, tuple(targets) + (target,))
             )
-        targets = tuple(targets) + (target,)
+        targets = (target,)
 
     converted_targets = []
     for t in targets:
-        if isinstance(t, string_types):
-            note_deprecation(
-                "Got %r as a target, but passing the name of a Bundle is "
-                "deprecated - please pass the Bundle directly." % (t,),
-                since="2018-08-18",
-            )
-        elif not isinstance(t, Bundle):
-            msg = (
-                "Got invalid target %r of type %r, but all targets must "
-                "be either a Bundle or the name of a Bundle."
-            )
+        if not isinstance(t, Bundle):
+            msg = "Got invalid target %r of type %r, but all targets must be Bundles."
             if isinstance(t, OneOfStrategy):
                 msg += (
                     "\nIt looks like you passed `one_of(a, b)` or `a | b` as "

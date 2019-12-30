@@ -1155,16 +1155,16 @@ def test_steps_not_printed_with_pytest_skip(capsys):
     assert "state" not in out
 
 
-@checks_deprecated_behaviour
 def test_rule_deprecation_targets_and_target():
     k, v = Bundle("k"), Bundle("v")
-    rule(targets=(k,), target=v)
+    with pytest.raises(InvalidArgument):
+        rule(targets=(k,), target=v)
 
 
-@checks_deprecated_behaviour
 def test_rule_deprecation_bundle_by_name():
     Bundle("k")
-    rule(target="k")
+    with pytest.raises(InvalidArgument):
+        rule(target="k")
 
 
 def test_rule_non_bundle_target():

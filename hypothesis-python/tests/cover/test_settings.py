@@ -25,7 +25,7 @@ from unittest import TestCase
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import example, given, unlimited
+from hypothesis import example, given
 from hypothesis._settings import (
     Phase,
     Verbosity,
@@ -38,7 +38,7 @@ from hypothesis.database import ExampleDatabase
 from hypothesis.errors import InvalidArgument, InvalidState
 from hypothesis.stateful import GenericStateMachine, RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
-from tests.common.utils import checks_deprecated_behaviour, counts_calls, fails_with
+from tests.common.utils import counts_calls, fails_with
 
 
 def test_has_docstrings():
@@ -188,11 +188,6 @@ def test_cannot_delete_a_setting():
     x = settings()
     with pytest.raises(AttributeError):
         del x.foo
-
-
-@checks_deprecated_behaviour
-def test_setting_to_unlimited_is_not_error_yet():
-    settings(timeout=unlimited)
 
 
 def test_cannot_set_settings():
@@ -461,57 +456,19 @@ def test_derandomise_with_explicit_database_is_invalid():
     "kwargs",
     [
         {"max_examples": -1},
+        {"max_examples": 2.5},
         {"buffer_size": -1},
         {"stateful_step_count": -1},
+        {"stateful_step_count": 2.5},
         {"deadline": -1},
         {"deadline": 0},
+        {"deadline": True},
+        {"deadline": False},
     ],
 )
 def test_invalid_settings_are_errors(kwargs):
     with pytest.raises(InvalidArgument):
         settings(**kwargs)
-
-
-@checks_deprecated_behaviour
-def test_boolean_deadlines():
-    settings(deadline=True)
-    with pytest.raises(InvalidArgument):
-        settings(deadline=False)
-
-
-@checks_deprecated_behaviour
-def test_non_boolean_derandomize():
-    assert settings(derandomize=1).derandomize is True
-    assert settings(derandomize=0).derandomize is False
-
-
-@pytest.mark.parametrize("name", ["max_examples", "buffer_size", "stateful_step_count"])
-@checks_deprecated_behaviour
-def test_dubious_settings_deprecations(name):
-    settings(**{name: 2.5})
-    with pytest.raises(InvalidArgument):
-        settings(**{name: "2.5"})  # deprecation warning, then type cast error.
-
-
-@checks_deprecated_behaviour
-def test_buffer_size_deprecated():
-    assert settings(buffer_size=100).buffer_size == 100
-
-
-@checks_deprecated_behaviour
-def test_max_example_eq_0_warns_and_disables_generation():
-    # Terrible way to disable generation, but did predate the phases setting
-    # and existed in our test suite so it's not an error *just* yet.
-    @example(None)
-    @given(st.integers())
-    @settings(max_examples=0)
-    def inner(x):
-        calls[0] += 1
-        assert x is None
-
-    calls = [0]
-    inner()
-    assert calls[0] == 1
 
 
 def test_invalid_parent():

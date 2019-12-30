@@ -25,7 +25,7 @@ from hypothesis import given
 from hypothesis.errors import FailedHealthCheck, InvalidArgument, Unsatisfiable
 from hypothesis.internal.compat import hrange
 from hypothesis.strategies import sampled_from
-from tests.common.utils import checks_deprecated_behaviour, fails_with
+from tests.common.utils import fails_with
 
 an_enum = enum.Enum("A", "a b c")
 
@@ -48,11 +48,6 @@ def test_can_sample_ordereddict_without_warning():
 @given(sampled_from(an_enum))
 def test_can_sample_enums(member):
     assert isinstance(member, an_enum)
-
-
-@checks_deprecated_behaviour
-def test_sampling_empty_is_deprecated():
-    assert sampled_from([]).is_empty
 
 
 @fails_with(FailedHealthCheck)

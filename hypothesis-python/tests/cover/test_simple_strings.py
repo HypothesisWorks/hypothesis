@@ -20,7 +20,7 @@ from __future__ import absolute_import, division, print_function
 from hypothesis import given
 from hypothesis.strategies import binary, characters, text, tuples
 from tests.common.debug import minimal
-from tests.common.utils import checks_deprecated_behaviour, fails_with
+from tests.common.utils import fails_with
 
 
 def test_can_minimize_up_to_zero():
@@ -124,8 +124,3 @@ def test_fixed_size_bytes_just_draw_bytes():
 @given(text(max_size=10 ** 6))
 def test_can_set_max_size_large(s):
     pass
-
-
-@checks_deprecated_behaviour
-def test_explicit_alphabet_None_is_deprecated():
-    text(alphabet=None).example()

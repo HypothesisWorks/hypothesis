@@ -20,7 +20,6 @@ from __future__ import absolute_import, division, print_function
 import math
 import sys
 import warnings
-from decimal import Decimal
 
 import pytest
 
@@ -37,7 +36,6 @@ from hypothesis.internal.floats import (
     next_up,
 )
 from tests.common.debug import find_any, minimal
-from tests.common.utils import checks_deprecated_behaviour
 
 try:
     import numpy
@@ -175,28 +173,6 @@ def test_updown_roundtrip(val):
     assert val == next_down(next_up(val))
 
 
-@checks_deprecated_behaviour
-@pytest.mark.parametrize("xhi", [True, False])
-@pytest.mark.parametrize("xlo", [True, False])
-@given(st.data(), st.floats(allow_nan=False, allow_infinity=False).filter(bool))
-def test_floats_in_tiny_interval_within_bounds(xlo, xhi, data, center):
-    assume(not (math.isinf(next_down(center)) or math.isinf(next_up(center))))
-    lo = Decimal.from_float(next_down(center)).next_plus()
-    hi = Decimal.from_float(next_up(center)).next_minus()
-    assert float(lo) < lo < center < hi < float(hi)
-    val = data.draw(st.floats(lo, hi, exclude_min=xlo, exclude_max=xhi))
-    assert lo < val < hi
-
-
-@checks_deprecated_behaviour
-def test_float_free_interval_is_invalid():
-    lo = (2 ** 54) + 1
-    hi = lo + 2
-    assert float(lo) < lo < hi < float(hi), "There are no floats in [lo .. hi]"
-    with pytest.raises(InvalidArgument):
-        st.floats(lo, hi).example()
-
-
 @given(st.floats(width=32, allow_infinity=False))
 def test_float32_can_exclude_infinity(x):
     assert not math.isinf(x)
@@ -298,11 +274,6 @@ def test_zero_intervals_are_OK():
     st.floats(0.0, 0.0).validate()
     st.floats(-0.0, 0.0).validate()
     st.floats(-0.0, -0.0).validate()
-
-
-@checks_deprecated_behaviour
-def test_inverse_zero_interval_is_deprecated():
-    st.floats(0.0, -0.0).validate()
 
 
 @pytest.mark.parametrize("lo", [0.0, -0.0])
