@@ -2888,7 +2888,7 @@ it within the function.  Passing ``None`` is therefore deprecated.
 3.81.0 - 2018-10-27
 -------------------
 
-:class:`~hypothesis.stateful.GenericStateMachine` and
+``GenericStateMachine`` and
 :class:`~hypothesis.stateful.RuleBasedStateMachine` now raise an explicit error
 when instances of :obj:`~hypothesis.settings` are assigned to the classes'
 settings attribute, which is a no-op (:issue:`1643`). Instead assign to
@@ -3005,7 +3005,7 @@ Thanks to Felix Grünewald for this patch during Hacktoberfest 2018.
 
 This minor release adds functionality to :obj:`~hypothesis.settings` allowing
 it to be used as a decorator on :obj:`~hypothesis.stateful.RuleBasedStateMachine`
-and :obj:`~hypothesis.stateful.GenericStateMachine`.
+and ``GenericStateMachine``.
 
 Thanks to Tyler Nickerson for this feature in #hacktoberfest!
 

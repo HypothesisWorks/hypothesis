@@ -188,9 +188,9 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
                 "but decorated test=%r is not callable." % (test,)
             )
         if inspect.isclass(test):
-            from hypothesis.stateful import GenericStateMachine
+            from hypothesis.stateful import RuleBasedStateMachine
 
-            if issubclass(test, GenericStateMachine):
+            if issubclass(test, RuleBasedStateMachine):
                 attr_name = "_hypothesis_internal_settings_applied"
                 if getattr(test, attr_name, False):
                     raise InvalidArgument(
@@ -204,7 +204,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
             else:
                 raise InvalidArgument(
                     "@settings(...) can only be used as a decorator on "
-                    "functions, or on subclasses of GenericStateMachine."
+                    "functions, or on subclasses of RuleBasedStateMachine."
                 )
         if hasattr(test, "_hypothesis_internal_settings_applied"):
             # Can't use _hypothesis_internal_use_settings as an indicator that

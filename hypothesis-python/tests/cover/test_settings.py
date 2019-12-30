@@ -36,7 +36,7 @@ from hypothesis._settings import (
 )
 from hypothesis.database import ExampleDatabase
 from hypothesis.errors import InvalidArgument, InvalidState
-from hypothesis.stateful import GenericStateMachine, RuleBasedStateMachine, rule
+from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.utils.conventions import not_set
 from tests.common.utils import counts_calls, fails_with
 
@@ -433,8 +433,10 @@ def test_settings_decorator_applied_to_non_state_machine_class_raises_error():
 def test_assigning_to_settings_attribute_on_state_machine_raises_error():
     with pytest.raises(AttributeError):
 
-        class StateMachine(GenericStateMachine):
-            pass
+        class StateMachine(RuleBasedStateMachine):
+            @rule(x=st.none())
+            def a_rule(x):
+                assert x is None
 
         StateMachine.settings = settings()
 
