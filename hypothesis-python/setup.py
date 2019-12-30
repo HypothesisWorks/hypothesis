@@ -23,6 +23,14 @@ import warnings
 
 import setuptools
 
+if sys.version_info[:2] < (3, 5):
+    raise Exception(
+        "This version of Python is too old to install new versions of Hypothesis.  "
+        "Update `pip` and `setuptools`, try again, and you will automatically "
+        "get the latest compatible version of Hypothesis instead.  "
+        "See also https://python3statement.org/practicalities/"
+    )
+
 
 def local_file(name):
     return os.path.relpath(os.path.join(os.path.dirname(__file__), name))
@@ -68,17 +76,6 @@ extras = {
 extras["all"] = sorted(set(sum(extras.values(), [])))
 
 
-install_requires = ["attrs>=19.2.0", "sortedcontainers>=2.1.0,<3.0.0"]
-# Using an environment marker on enum34 makes the dependency condition
-# independent of the build environemnt, which is important for wheels.
-# https://www.python.org/dev/peps/pep-0345/#environment-markers
-if sys.version_info[0] < 3 and setuptools_version < (8, 0):
-    # Except really old systems, where we give up and install unconditionally
-    install_requires.append("enum34")
-else:
-    install_requires.append('enum34; python_version=="2.7"')
-
-
 setuptools.setup(
     name="hypothesis",
     version=__version__,
@@ -97,8 +94,8 @@ setuptools.setup(
     description="A library for property-based testing",
     zip_safe=False,
     extras_require=extras,
-    install_requires=install_requires,
-    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
+    install_requires=["attrs>=19.2.0", "sortedcontainers>=2.1.0,<3.0.0"],
+    python_requires=">=3.5",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Framework :: Hypothesis",
@@ -109,8 +106,8 @@ setuptools.setup(
         "Operating System :: POSIX",
         "Operating System :: Microsoft :: Windows",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
