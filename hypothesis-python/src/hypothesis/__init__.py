@@ -24,6 +24,7 @@ failing examples it finds.
 
 from __future__ import absolute_import, division, print_function
 
+import hypothesis._error_if_old  # noqa  # imported for side-effect of nice error
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import assume, event, note, reject, target
 from hypothesis.core import example, find, given, reproduce_failure, seed

@@ -62,9 +62,6 @@ CAN_PACK_HALF_FLOAT = sys.version_info[:2] >= (3, 6)
 
 WINDOWS = platform.system() == "Windows"
 
-if sys.version_info[:2] <= (2, 6):
-    raise ImportError("Hypothesis is not supported on Python versions before 2.7")
-
 
 def bit_length(n):
     return n.bit_length()
