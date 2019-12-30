@@ -177,6 +177,7 @@ def build_distribution():
 
 def upload_distribution():
     tools.assert_can_release()
+
     subprocess.check_call(
         [
             sys.executable,
