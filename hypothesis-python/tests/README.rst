@@ -102,10 +102,6 @@ Still here?  Here's a note on what to expect in each directory.
 ``pandas/``
     Tests for the Pandas extra.
 
-``py2/``
-    Tests that require Python 2.  This is a small group, because almost all
-    of our code and tests are also compatible with Python 3.
-
 ``py3/``
     Tests that require Python 3.  Includes checking that unicode identifiers
     and function annotations don't break anything, asyncio tests, and tests
