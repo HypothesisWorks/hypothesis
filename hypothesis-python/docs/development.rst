@@ -42,10 +42,6 @@ passing our extensive test suite.
 Project Roadmap
 ===============
 
-Hypothesis does not have a long-term release plan.  However some visibility
-into our plans for future :doc:`compatibility <supported>` may be useful:
-
-- We value compatibility, and maintain it as far as practical.  This generally
-  excludes things which are end-of-life upstream, or have an unstable API.
-- We would like to drop Python 2 support when it reaches end of life in
-  2020.  Ongoing support is likely to depend on commercial funding.
+Hypothesis does not have a long-term release plan.  We respond to bug reports
+as they are made; new features are released as and when someone volunteers to
+write and maintain them.

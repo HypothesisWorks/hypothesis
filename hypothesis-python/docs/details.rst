@@ -592,14 +592,11 @@ fill in an argument from its type annotation.
 Limitations
 ~~~~~~~~~~~
 
-:pep:`3107` type annotations are not supported on Python 2, and Hypothesis
-does not inspect :pep:`484` type comments at runtime.  While
+Hypothesis does not inspect :pep:`484` type comments at runtime.  While
 :func:`~hypothesis.strategies.from_type` will work as usual, inference in
 :func:`~hypothesis.strategies.builds` and :func:`@given <hypothesis.given>`
 will only work if you manually create the ``__annotations__`` attribute
 (e.g. by using ``@annotations(...)`` and ``@returns(...)`` decorators).
-The :mod:`python:typing` module is fully supported on Python 2 if you have
-the backport installed.
 
 The :mod:`python:typing` module is provisional and has a number of internal
 changes between Python 3.5.0 and 3.6.1, including at minor versions.  These

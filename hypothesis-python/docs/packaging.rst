@@ -30,13 +30,9 @@ Dependencies
 Python versions
 ~~~~~~~~~~~~~~~
 
-Hypothesis is designed to work with a range of Python versions.  We always support
-`all versisions of CPython with upstream support <https://devguide.python.org/#status-of-python-branches>`_,
-and plan to drop Python 2 at EOL in 2020.  We also support the latest versions of PyPy
-for Python 3, and for Python 2 until the CPython 2 EOL.
-
-If you feel the need to have separate Python 3 and Python 2 packages you can, but Hypothesis works unmodified
-on either.
+Hypothesis is designed to work with a range of Python versions - we support
+`all versions of CPython with upstream support <https://devguide.python.org/#status-of-python-branches>`_.
+We also support the latest versions of PyPy for Python 3.
 
 ~~~~~~~~~~~~~~~~~~~~~~
 Other Python libraries
@@ -46,7 +42,6 @@ Hypothesis has *mandatory* dependencies on the following libraries:
 
 * :pypi:`attrs`
 * :pypi:`sortedcontainers`
-* :pypi:`enum34` is required on Python 2.7
 
 Hypothesis has *optional* dependencies on the following libraries:
 

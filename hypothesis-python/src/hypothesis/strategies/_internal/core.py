@@ -1045,9 +1045,8 @@ def text(
     max_size=None,  # type: int
 ):
     # type: (...) -> SearchStrategy[Text]
-    """Generates values of a unicode text type (unicode on python 2, str on
-    python 3) with values drawn from ``alphabet``, which should be an iterable of
-    length one strings or a strategy generating such strings.
+    """Generates strings with characters drawn from ``alphabet``, which should
+    be a collection of length one strings or a strategy generating such strings.
 
     The default alphabet strategy can generate the full unicode range but
     excludes surrogate characters because they are invalid in the UTF-8
@@ -1134,8 +1133,7 @@ def from_regex(regex, fullmatch=False):
 @defines_strategy_with_reusable_values
 def binary(min_size=0, max_size=None):
     # type: (int, int) -> SearchStrategy[bytes]
-    """Generates the appropriate binary type (str in python 2, bytes in python
-    3).
+    """Generates :class:`python:bytes`.
 
     min_size and max_size have the usual interpretations.
 
