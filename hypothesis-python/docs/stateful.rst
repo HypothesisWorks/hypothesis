@@ -24,16 +24,6 @@ try to find sequences of those actions that result in a failure.
   Regardless of what you call it, it is a powerful form of testing which is useful
   for most non-trivial APIs.
 
-Hypothesis has two stateful testing APIs: A high level one, providing what
-we call *rule based state machines*, and a low level one, providing what we call
-*generic state machines*.
-
-You probably want to use the rule based state machines - they provide a high
-level API for describing the sort of actions you want to perform, based on a
-structured representation of actions. However the generic state machines are
-more flexible, and are particularly useful if you want the set of currently
-possible actions to depend primarily on external state.
-
 
 .. _data-as-state-machine:
 
@@ -57,10 +47,6 @@ though, where a higher level API comes into it's own, keep reading!
 -------------------------
 Rule based state machines
 -------------------------
-
-Rule based state machines are the ones you're most likely to want to use.
-They're significantly more user friendly and should be good enough for most
-things you'd want to do.
 
 .. autoclass:: hypothesis.stateful.RuleBasedStateMachine
 
@@ -334,15 +320,6 @@ they will only be run if the precondition function returns true.
 
 Note that currently invariants can't access bundles; if you need to use
 invariants, you should store relevant data on the instance instead.
-
-----------------------
-Generic state machines
-----------------------
-
-.. warning::
-    ``GenericStateMachine`` is deprecated and will be removed in a future version.
-
-.. autoclass:: hypothesis.stateful.GenericStateMachine
 
 -------------------------
 More fine grained control

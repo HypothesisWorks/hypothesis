@@ -31,8 +31,8 @@ from tests.common.setup import run
 run()
 
 # Skip collection of tests which require the Django test runner,
-# or that don't work on the current major version of Python.
-collect_ignore_glob = ["django/*", "py3/*" if sys.version_info[0] == 2 else "py2/*"]
+# or that don't work on the current version of Python.
+collect_ignore_glob = ["django/*"]
 if sys.version_info < (3, 8):
     collect_ignore_glob.append("py3/*py38*")
 

@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function
 
 from hypothesis import given
 from hypothesis.internal.detection import is_hypothesis_test
-from hypothesis.stateful import GenericStateMachine
+from hypothesis.stateful import RuleBasedStateMachine, rule
 from hypothesis.strategies import integers
 
 
@@ -56,11 +56,9 @@ def test_detection_of_methods():
 
 
 def test_detection_of_stateful_tests():
-    class Stuff(GenericStateMachine):
-        def steps(self):
-            return integers()
-
-        def execute_step(self, step):
+    class Stuff(RuleBasedStateMachine):
+        @rule(x=integers())
+        def a_rule(self, x):
             pass
 
     assert is_hypothesis_test(Stuff.TestCase().runTest)

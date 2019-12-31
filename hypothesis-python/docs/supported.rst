@@ -25,14 +25,11 @@ changes in patch releases.
 Python versions
 ---------------
 
-Hypothesis is supported and tested on CPython 2.7 and CPython 3.5+, i.e.
+Hypothesis is supported and tested on CPython 3.5+, i.e.
 `all versions of CPython with upstream support <https://devguide.python.org/#status-of-python-branches>`_,
 
-Hypothesis also supports the latest PyPy for both Python 2 (until 2020) and Python 3.
-Hypothesis does not currently work on Jython,
-though it probably could (:issue:`174`). IronPython might work but hasn't been
-tested.  32-bit and narrow builds should work, though this is currently only
-tested on Windows.
+Hypothesis also supports the latest PyPy for Python 3.5 and 3.6.
+32-bit builds of CPython also work, though they are currently only tested on Windows.
 
 In general Hypothesis does not officially support anything except the latest
 patch release of any version of Python it supports. Earlier releases should work

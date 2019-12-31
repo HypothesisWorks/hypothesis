@@ -30,8 +30,8 @@ from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDe
 from hypothesis.internal.compat import print_unicode
 from hypothesis.stateful import (
     Bundle,
-    GenericStateMachine,
     RuleBasedStateMachine,
+    _GenericStateMachine,
     consumes,
     initialize,
     invariant,
@@ -50,12 +50,12 @@ from hypothesis.strategies import (
     sampled_from,
     tuples,
 )
-from tests.common.utils import capture_out, checks_deprecated_behaviour, raises
+from tests.common.utils import capture_out, raises
 
 NO_BLOB_SETTINGS = Settings(print_blob=False)
 
 
-class SetStateMachine(GenericStateMachine):
+class SetStateMachine(_GenericStateMachine):
     def __init__(self):
         self.elements = []
 
@@ -74,7 +74,7 @@ class SetStateMachine(GenericStateMachine):
             self.elements.append(value)
 
 
-class OrderedStateMachine(GenericStateMachine):
+class OrderedStateMachine(_GenericStateMachine):
     def __init__(self):
         self.counter = 0
 
@@ -306,7 +306,7 @@ def test_can_get_test_case_off_machine_instance():
     assert SetStateMachine().TestCase is not None
 
 
-class FlakyDrawLessMachine(GenericStateMachine):
+class FlakyDrawLessMachine(_GenericStateMachine):
     def steps(self):
         cb = current_build_context()
         if cb.is_final:
@@ -320,13 +320,12 @@ class FlakyDrawLessMachine(GenericStateMachine):
             assert 0 not in bytearray(step)
 
 
-@checks_deprecated_behaviour
 def test_flaky_draw_less_raises_flaky():
     with raises(Flaky):
         FlakyDrawLessMachine.TestCase().runTest()
 
 
-class FlakyStateMachine(GenericStateMachine):
+class FlakyStateMachine(_GenericStateMachine):
     def steps(self):
         return just(())
 
@@ -334,13 +333,12 @@ class FlakyStateMachine(GenericStateMachine):
         assert current_build_context().is_final
 
 
-@checks_deprecated_behaviour
 def test_flaky_raises_flaky():
     with raises(Flaky):
         FlakyStateMachine.TestCase().runTest()
 
 
-class FlakyRatchettingMachine(GenericStateMachine):
+class FlakyRatchettingMachine(_GenericStateMachine):
     ratchet = 0
 
     def steps(self):
@@ -477,7 +475,6 @@ def test_consumes_typecheck():
         consumes(integers())
 
 
-@checks_deprecated_behaviour
 def test_ratchetting_raises_flaky():
     with raises(Flaky):
         FlakyRatchettingMachine.TestCase().runTest()
@@ -548,11 +545,10 @@ def test_new_rules_are_picked_up_before_and_after_rules_call():
     assert len(Foo.rules()) == 2
 
 
-@checks_deprecated_behaviour
 def test_minimizes_errors_in_teardown():
     counter = [0]
 
-    class Foo(GenericStateMachine):
+    class Foo(_GenericStateMachine):
         def __init__(self):
             counter[0] = 0
 
@@ -570,7 +566,7 @@ def test_minimizes_errors_in_teardown():
     assert counter[0] == 1
 
 
-class RequiresInit(GenericStateMachine):
+class RequiresInit(_GenericStateMachine):
     def __init__(self, threshold):
         super(RequiresInit, self).__init__()
         self.threshold = threshold
@@ -583,7 +579,6 @@ class RequiresInit(GenericStateMachine):
             raise ValueError(u"%d is too high" % (value,))
 
 
-@checks_deprecated_behaviour
 def test_can_use_factory_for_tests():
     with raises(ValueError):
         run_state_machine_as_test(
@@ -591,8 +586,7 @@ def test_can_use_factory_for_tests():
         )
 
 
-@Settings(stateful_step_count=5)
-class FailsEventually(GenericStateMachine):
+class FailsEventually(_GenericStateMachine):
     def __init__(self):
         super(FailsEventually, self).__init__()
         self.counter = 0
@@ -605,7 +599,9 @@ class FailsEventually(GenericStateMachine):
         assert self.counter < 10
 
 
-@checks_deprecated_behaviour
+FailsEventually.TestCase.settings = Settings(stateful_step_count=5)
+
+
 def test_can_explicitly_pass_settings():
     run_state_machine_as_test(FailsEventually)
     try:
@@ -641,7 +637,6 @@ def test_settings_attribute_is_validated():
         FailsEventually.TestCase.settings = real_settings
 
 
-@checks_deprecated_behaviour
 def test_saves_failing_example_in_database():
     db = ExampleDatabase(":memory:")
     with raises(AssertionError):
@@ -651,7 +646,6 @@ def test_saves_failing_example_in_database():
     assert any(list(db.data.values()))
 
 
-@checks_deprecated_behaviour
 def test_can_run_with_no_db():
     with raises(AssertionError):
         run_state_machine_as_test(SetStateMachine, Settings(database=None))
@@ -1155,16 +1149,16 @@ def test_steps_not_printed_with_pytest_skip(capsys):
     assert "state" not in out
 
 
-@checks_deprecated_behaviour
 def test_rule_deprecation_targets_and_target():
     k, v = Bundle("k"), Bundle("v")
-    rule(targets=(k,), target=v)
+    with pytest.raises(InvalidArgument):
+        rule(targets=(k,), target=v)
 
 
-@checks_deprecated_behaviour
 def test_rule_deprecation_bundle_by_name():
     Bundle("k")
-    rule(target="k")
+    with pytest.raises(InvalidArgument):
+        rule(target="k")
 
 
 def test_rule_non_bundle_target():

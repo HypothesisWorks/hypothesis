@@ -25,8 +25,7 @@ import numpy as np
 
 import hypothesis.internal.conjecture.utils as cu
 import hypothesis.strategies._internal.core as st
-from hypothesis import Verbosity, assume
-from hypothesis._settings import note_deprecation
+from hypothesis import assume
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import (
     PY2,
@@ -38,7 +37,6 @@ from hypothesis.internal.compat import (
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies, reserved_means_kwonly_star
 from hypothesis.internal.validation import check_type, check_valid_interval
-from hypothesis.reporting import current_verbosity
 from hypothesis.strategies._internal import SearchStrategy
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
@@ -154,24 +152,20 @@ class ArrayStrategy(SearchStrategy):
         self.dtype = dtype
         self.element_strategy = element_strategy
         self.unique = unique
+        self._check_elements = dtype.kind not in ("O", "V")
 
     def set_element(self, data, result, idx, strategy=None):
         strategy = strategy or self.element_strategy
         val = data.draw(strategy)
         result[idx] = val
-        if self._report_overflow and val != result[idx] and val == val:
-            note_deprecation(
+        if self._check_elements and val != result[idx] and val == val:
+            raise InvalidArgument(
                 "Generated array element %r from %r cannot be represented as "
                 "dtype %r - instead it becomes %r (type %r).  Consider using a more "
                 "precise strategy, for example passing the `width` argument to "
-                "`floats()`, as this will be an error in a future version."
-                % (val, strategy, self.dtype, result[idx], type(result[idx])),
-                since="2019-07-28",
+                "`floats()`."
+                % (val, strategy, self.dtype, result[idx], type(result[idx]))
             )
-            # Because the message includes the value of the generated element,
-            # it would be easy to spam users with thousands of warnings.
-            # We therefore only warn once per draw, unless in verbose mode.
-            self._report_overflow = current_verbosity() >= Verbosity.verbose
 
     def do_draw(self, data):
         if 0 in self.shape:
@@ -182,10 +176,6 @@ class ArrayStrategy(SearchStrategy):
         unsized_string_dtype = (
             self.dtype.kind in (u"S", u"a", u"U") and self.dtype.itemsize == 0
         )
-
-        # Reset this flag for each test case to emit warnings from set_element
-        # Skip the check for object or void (multi-element) dtypes
-        self._report_overflow = self.dtype.kind not in "OV" and not unsized_string_dtype
 
         # This could legitimately be a np.empty, but the performance gains for
         # that would be so marginal that there's really not much point risking
@@ -294,12 +284,11 @@ class ArrayStrategy(SearchStrategy):
             out = result.astype(self.dtype)
             mismatch = out != result
             if mismatch.any():
-                note_deprecation(
+                raise InvalidArgument(
                     "Array elements %r cannot be represented as dtype %r - instead "
                     "they becomes %r.  Use a more precise strategy, e.g. without "
                     "trailing null bytes, as this will be an error future versions."
-                    % (result[mismatch], self.dtype, out[mismatch]),
-                    since="2019-07-28",
+                    % (result[mismatch], self.dtype, out[mismatch])
                 )
             result = out
 
@@ -630,21 +619,6 @@ def byte_string_dtypes(endianness="?", min_len=1, max_len=16):
     dtypes with length 0 indicate that size is still to be determined, so
     the minimum length for string dtypes is 1.
     """
-    if min_len == 0:
-        note_deprecation(
-            "generating byte string dtypes for unspecified length ('S0') "
-            "is deprecated. min_len will be 1 instead.",
-            since="2019-09-09",
-        )
-        min_len = 1
-    if max_len == 0:
-        note_deprecation(
-            "generating byte string dtypes for unspecified length ('S0') "
-            "is deprecated. max_len will be 1 instead.",
-            since="2019-09-09",
-        )
-        max_len = 1
-
     order_check("len", 1, min_len, max_len)
     return dtype_factory("S", list(range(min_len, max_len + 1)), None, endianness)
 
@@ -659,21 +633,6 @@ def unicode_string_dtypes(endianness="?", min_len=1, max_len=16):
     dtypes with length 0 indicate that size is still to be determined, so
     the minimum length for string dtypes is 1.
     """
-    if min_len == 0:
-        note_deprecation(
-            "generating unicode string dtypes for unspecified length ('U0') "
-            "is deprecated. min_len will be 1 instead.",
-            since="2019-09-09",
-        )
-        min_len = 1
-    if max_len == 0:
-        note_deprecation(
-            "generating unicode string dtypes for unspecified length ('U0') "
-            "is deprecated. max_len will be 1 instead.",
-            since="2019-09-09",
-        )
-        max_len = 1
-
     order_check("len", 1, min_len, max_len)
     return dtype_factory("U", list(range(min_len, max_len + 1)), None, endianness)
 

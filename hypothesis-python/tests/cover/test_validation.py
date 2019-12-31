@@ -38,24 +38,7 @@ from hypothesis.strategies import (
     sets,
     text,
 )
-from tests.common.utils import checks_deprecated_behaviour, fails_with
-
-
-@checks_deprecated_behaviour
-def test_min_size_none_behavior():
-    lists(integers(), min_size=None).example()
-
-
-@checks_deprecated_behaviour
-@given(lists(integers(), min_size=5.0))
-def test_min_size_float_behaviour(arr):
-    assert len(arr) >= 5
-
-
-@checks_deprecated_behaviour
-@given(lists(integers(), max_size=5.0))
-def test_max_size_float_behaviour(arr):
-    assert len(arr) <= 5
+from tests.common.utils import fails_with
 
 
 def test_errors_when_given_varargs():

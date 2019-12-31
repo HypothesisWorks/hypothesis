@@ -24,14 +24,8 @@ failing examples it finds.
 
 from __future__ import absolute_import, division, print_function
 
-from hypothesis._settings import (
-    HealthCheck,
-    Phase,
-    PrintSettings,
-    Verbosity,
-    settings,
-    unlimited,
-)
+import hypothesis._error_if_old  # noqa  # imported for side-effect of nice error
+from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import assume, event, note, reject, target
 from hypothesis.core import example, find, given, reproduce_failure, seed
 from hypothesis.internal.entropy import register_random
@@ -43,12 +37,10 @@ __all__ = [
     "Verbosity",
     "HealthCheck",
     "Phase",
-    "PrintSettings",
     "assume",
     "reject",
     "seed",
     "given",
-    "unlimited",
     "reproduce_failure",
     "find",
     "example",

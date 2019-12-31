@@ -22,9 +22,7 @@ import pytest
 
 import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
-from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from tests.common.utils import checks_deprecated_behaviour
 
 
 def e(a, **kwargs):
@@ -50,8 +48,10 @@ def e(a, **kwargs):
         e(nps.arrays, dtype=float, shape=(0.5,)),
         e(nps.arrays, dtype=object, shape=1),
         e(nps.arrays, dtype=float, shape=1, fill=3),
+        e(nps.arrays, dtype="U", shape=1, elements=st.just("abc\0\0")),
         e(nps.byte_string_dtypes, min_len=-1),
         e(nps.byte_string_dtypes, min_len=2, max_len=1),
+        e(nps.byte_string_dtypes, min_len=0, max_len=0),
         e(nps.datetime64_dtypes, max_period=11),
         e(nps.datetime64_dtypes, min_period=11),
         e(nps.datetime64_dtypes, min_period="Y", max_period="M"),
@@ -60,6 +60,7 @@ def e(a, **kwargs):
         e(nps.timedelta64_dtypes, min_period="Y", max_period="M"),
         e(nps.unicode_string_dtypes, min_len=-1),
         e(nps.unicode_string_dtypes, min_len=2, max_len=1),
+        e(nps.unicode_string_dtypes, min_len=0, max_len=0),
         e(nps.unsigned_integer_dtypes, endianness=3),
         e(nps.unsigned_integer_dtypes, sizes=()),
         e(nps.unsigned_integer_dtypes, sizes=(3,)),
@@ -274,26 +275,6 @@ def e(a, **kwargs):
 def test_raise_invalid_argument(function, kwargs):
     with pytest.raises(InvalidArgument):
         function(**kwargs).example()
-
-
-@checks_deprecated_behaviour
-@given(st.data())
-def test_byte_string_dtype_len_0(data):
-    s = nps.byte_string_dtypes(min_len=0, max_len=0)
-    assert data.draw(s).itemsize == 1
-
-
-@checks_deprecated_behaviour
-@given(st.data())
-def test_unicode_string_dtype_len_0(data):
-    s = nps.unicode_string_dtypes(min_len=0, max_len=0)
-    assert data.draw(s).itemsize == 4
-
-
-@checks_deprecated_behaviour
-@given(nps.arrays(dtype="U", shape=1, elements=st.just("abc\0\0")))
-def test_unicode_string_dtype_not_trimmed(arr):
-    assert arr[0] == u"abc"
 
 
 def test_test_basic_indices_kwonly_emulation():

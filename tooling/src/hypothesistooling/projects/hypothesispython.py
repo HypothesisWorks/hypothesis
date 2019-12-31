@@ -117,6 +117,12 @@ def update_changelog_and_version():
     __version_info__ = new_version_info
     __version__ = new_version_string
 
+    if release_type == "major":
+        major, _, _ = __version_info__
+        old = f"Hypothesis {major - 1}.x"
+        beginning = beginning.replace(old, f"Hypothesis {major}.x")
+        rest = "\n".join([old, len(old) * "=", "", rest])
+
     rm.replace_assignment(VERSION_FILE, "__version_info__", repr(new_version_info))
 
     heading_for_new_version = " - ".join((new_version_string, rm.release_date_string()))
@@ -171,6 +177,7 @@ def build_distribution():
 
 def upload_distribution():
     tools.assert_can_release()
+
     subprocess.check_call(
         [
             sys.executable,

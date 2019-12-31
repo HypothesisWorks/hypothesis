@@ -17,23 +17,16 @@
 
 from __future__ import absolute_import, division, print_function
 
-import hypothesis.strategies as st
-from hypothesis import given
+import sys
 
+from hypothesis.version import __version__
 
-@given(st.from_type(int))
-def test_from_int_is_int(x):
-    assert isinstance(x, int)
+message = """
+Hypothesis {} requires Python 3.5 or later.
 
+This can only happen if your packaging toolchain is older than python_requires.
+See https://packaging.python.org/guides/distributing-packages-using-setuptools/
+"""
 
-@given(st.from_type(long))
-def test_from_long_is_long(x):
-    assert isinstance(x, long)
-
-
-class OldStyleInitlessClass:
-    pass
-
-
-def test_builds_old_style_initless_class():
-    st.builds(OldStyleInitlessClass).example()
+if sys.version_info < (3, 5):  # pragma: no cover
+    raise Exception(message.format(__version__))

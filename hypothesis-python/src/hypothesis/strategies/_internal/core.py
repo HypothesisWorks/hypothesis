@@ -31,7 +31,6 @@ from uuid import UUID
 
 import attr
 
-from hypothesis._settings import note_deprecation
 from hypothesis.control import cleanup, note, reject
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cache import LRUReusedCache
@@ -342,8 +341,7 @@ def one_of(*args):  # noqa: F811
 @defines_strategy_with_reusable_values
 def integers(min_value=None, max_value=None):
     # type: (int, int) -> SearchStrategy[int]
-    """Returns a strategy which generates integers; in Python 2 these may be
-    ints or longs.
+    """Returns a strategy which generates integers.
 
     If min_value is not None then all values will be >= min_value. If
     max_value is not None then all values will be <= max_value
@@ -356,59 +354,44 @@ def integers(min_value=None, max_value=None):
     check_valid_bound(max_value, "max_value")
     check_valid_interval(min_value, max_value, "min_value", "max_value")
 
-    min_int_value = None if min_value is None else ceil(min_value)
-    max_int_value = None if max_value is None else floor(max_value)
+    if min_value is not None:
+        if min_value != int(min_value):
+            raise InvalidArgument(
+                "min_value=%r of type %r cannot be exactly represented as an integer."
+                % (min_value, type(min_value))
+            )
+        min_value = int(min_value)
+    if max_value is not None:
+        if max_value != int(max_value):
+            raise InvalidArgument(
+                "max_value=%r of type %r cannot be exactly represented as an integer."
+                % (max_value, type(max_value))
+            )
+        max_value = int(max_value)
 
-    if min_value != min_int_value:
-        note_deprecation(
-            "min_value=%r of type %r cannot be exactly represented as an "
-            "integer, which will be an error in a future version.  "
-            "Use %r instead." % (min_value, type(min_value), min_int_value),
-            since="2018-10-10",
-        )
-    if max_value != max_int_value:
-        note_deprecation(
-            "max_value=%r of type %r cannot be exactly represented as an "
-            "integer, which will be an error in a future version.  "
-            "Use %r instead." % (max_value, type(max_value), max_int_value),
-            since="2018-10-10",
-        )
-
-    if (
-        min_int_value is not None
-        and max_int_value is not None
-        and min_int_value > max_int_value
-    ):
-        raise InvalidArgument(
-            "No integers between min_value=%r and "
-            "max_value=%r" % (min_value, max_value)
-        )
-
-    if min_int_value is None:
-        if max_int_value is None:
+    if min_value is None:
+        if max_value is None:
             return WideRangeIntStrategy()
         else:
-            if max_int_value > 0:
-                return WideRangeIntStrategy().filter(lambda x: x <= max_int_value)
-            return WideRangeIntStrategy().map(lambda x: max_int_value - abs(x))
+            if max_value > 0:
+                return WideRangeIntStrategy().filter(lambda x: x <= max_value)
+            return WideRangeIntStrategy().map(lambda x: max_value - abs(x))
     else:
-        if max_int_value is None:
-            if min_int_value < 0:
-                return WideRangeIntStrategy().filter(lambda x: x >= min_int_value)
-            return WideRangeIntStrategy().map(lambda x: min_int_value + abs(x))
+        if max_value is None:
+            if min_value < 0:
+                return WideRangeIntStrategy().filter(lambda x: x >= min_value)
+            return WideRangeIntStrategy().map(lambda x: min_value + abs(x))
         else:
-            assert min_int_value <= max_int_value
-            if min_int_value == max_int_value:
-                return just(min_int_value)
-            elif min_int_value >= 0:
-                return BoundedIntStrategy(min_int_value, max_int_value)
-            elif max_int_value <= 0:
-                return BoundedIntStrategy(-max_int_value, -min_int_value).map(
-                    lambda t: -t
-                )
+            assert min_value <= max_value
+            if min_value == max_value:
+                return just(min_value)
+            elif min_value >= 0:
+                return BoundedIntStrategy(min_value, max_value)
+            elif max_value <= 0:
+                return BoundedIntStrategy(-max_value, -min_value).map(lambda t: -t)
             else:
-                return integers(min_value=0, max_value=max_int_value) | integers(
-                    min_value=min_int_value, max_value=0
+                return integers(min_value=0, max_value=max_value) | integers(
+                    min_value=min_value, max_value=0
                 )
 
 
@@ -503,18 +486,14 @@ def floats(
         assert isinstance(max_value, float)
 
     if min_value != min_arg:
-        note_deprecation(
+        raise InvalidArgument(
             "min_value=%r cannot be exactly represented as a float of width "
-            "%d, which will be an error in a future version. Use min_value=%r "
-            "instead." % (min_arg, width, min_value),
-            since="2018-10-10",
+            "%d - use min_value=%r instead." % (min_arg, width, min_value)
         )
     if max_value != max_arg:
-        note_deprecation(
+        raise InvalidArgument(
             "max_value=%r cannot be exactly represented as a float of width "
-            "%d, which will be an error in a future version. Use max_value=%r "
-            "instead" % (max_arg, width, max_value),
-            since="2018-10-10",
+            "%d - use max_value=%r instead" % (max_arg, width, max_value)
         )
 
     if exclude_min and (min_value is None or min_value == float("inf")):
@@ -564,10 +543,7 @@ def floats(
         )
         if exclude_min or exclude_max:
             msg += ", exclude_min=%r and exclude_max=%r" % (exclude_min, exclude_max)
-        if bad_zero_bounds:
-            note_deprecation(msg, since="2019-03-19")
-        else:
-            raise InvalidArgument(msg)
+        raise InvalidArgument(msg)
 
     if allow_infinity is None:
         allow_infinity = bool(min_value is None or max_value is None)
@@ -697,13 +673,7 @@ def sampled_from(elements):
     """
     values = check_sample(elements, "sampled_from")
     if not values:
-        note_deprecation(
-            "sampled_from() with nothing to sample is deprecated and will be an "
-            "error in a future version.  It currently returns `st.nothing()`, "
-            "which if unexpected can make parts of a strategy silently vanish.",
-            since="2019-03-12",
-        )
-        return nothing()
+        raise InvalidArgument("Cannot sample from a length-zero sequence.")
     if len(values) == 1:
         return just(values[0])
     if hasattr(enum, "Flag") and isclass(elements) and issubclass(elements, enum.Flag):
@@ -970,8 +940,8 @@ def characters(
     whitelist_characters=None,  # type: Sequence[Text]
 ):
     # type: (...) -> SearchStrategy[Text]
-    """Generates unicode text type (unicode on python 2, str on python 3)
-    characters following specified filtering rules.
+    r"""Generates characters, length-one :class:`python:str`\ ings,
+    following specified filtering rules.
 
     - When no filtering rules are specified, any character can be produced.
     - If ``min_codepoint`` or ``max_codepoint`` is specified, then only
@@ -1075,9 +1045,8 @@ def text(
     max_size=None,  # type: int
 ):
     # type: (...) -> SearchStrategy[Text]
-    """Generates values of a unicode text type (unicode on python 2, str on
-    python 3) with values drawn from ``alphabet``, which should be an iterable of
-    length one strings or a strategy generating such strings.
+    """Generates strings with characters drawn from ``alphabet``, which should
+    be a collection of length one strings or a strategy generating such strings.
 
     The default alphabet strategy can generate the full unicode range but
     excludes surrogate characters because they are invalid in the UTF-8
@@ -1095,12 +1064,7 @@ def text(
     so generated strings may be in any or none of the 'normal forms'.
     """
     check_valid_sizes(min_size, max_size)
-    if alphabet is None:
-        note_deprecation(
-            "alphabet=None is deprecated; just omit the argument", since="2018-10-05"
-        )
-        char_strategy = characters(blacklist_categories=("Cs",))
-    elif isinstance(alphabet, SearchStrategy):
+    if isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:
         non_string = [c for c in alphabet if not isinstance(c, string_types)]
@@ -1169,8 +1133,7 @@ def from_regex(regex, fullmatch=False):
 @defines_strategy_with_reusable_values
 def binary(min_size=0, max_size=None):
     # type: (int, int) -> SearchStrategy[bytes]
-    """Generates the appropriate binary type (str in python 2, bytes in python
-    3).
+    """Generates :class:`python:bytes`.
 
     min_size and max_size have the usual interpretations.
 
@@ -1536,55 +1499,15 @@ def fractions(
     if max_denominator is not None:
         if max_denominator < 1:
             raise InvalidArgument("max_denominator=%r must be >= 1" % max_denominator)
-
-        def fraction_bounds(value):
-            # type: (Fraction) -> Tuple[Fraction, Fraction]
-            """Find the best lower and upper approximation for value."""
-            # Adapted from CPython's Fraction.limit_denominator here:
-            # https://github.com/python/cpython/blob/3.6/Lib/fractions.py#L219
-            assert max_denominator is not None
-            if value is None or value.denominator <= max_denominator:
-                return value, value
-
-            p0, q0, p1, q1 = 0, 1, 1, 0
-            n, d = value.numerator, value.denominator
-            while True:
-                a = n // d
-                q2 = q0 + a * q1
-                if q2 > max_denominator:
-                    break
-                p0, q0, p1, q1 = p1, q1, p0 + a * p1, q2
-                n, d = d, n - a * d
-            k = (max_denominator - q0) // q1
-            low, high = Fraction(p1, q1), Fraction(p0 + k * p1, q0 + k * q1)
-            assert low < value < high
-            return low, high
-
-        # Take the high approximation for min_value and low for max_value
-        bounds = (max_denominator, min_value, max_value)
-        if min_value is not None:
-            if min_value.denominator > max_denominator:
-                note_deprecation(
-                    "The min_value=%r has a denominator greater than the "
-                    "max_denominator=%r, which will be an error in a future "
-                    "version." % (min_value, max_denominator),
-                    since="2018-10-12",
-                )
-            _, min_value = fraction_bounds(min_value)
-        if max_value is not None:
-            if max_value.denominator > max_denominator:
-                note_deprecation(
-                    "The max_value=%r has a denominator greater than the "
-                    "max_denominator=%r, which will be an error in a future "
-                    "version." % (max_value, max_denominator),
-                    since="2018-10-12",
-                )
-            max_value, _ = fraction_bounds(max_value)
-
-        if min_value is not None and max_value is not None and min_value > max_value:
+        if min_value is not None and min_value.denominator > max_denominator:
             raise InvalidArgument(
-                "There are no fractions with a denominator <= %r between "
-                "min_value=%r and max_value=%r" % bounds
+                "The min_value=%r has a denominator greater than the "
+                "max_denominator=%r" % (min_value, max_denominator)
+            )
+        if max_value is not None and max_value.denominator > max_denominator:
+            raise InvalidArgument(
+                "The max_value=%r has a denominator greater than the "
+                "max_denominator=%r" % (max_value, max_denominator)
             )
 
     if min_value is not None and min_value == max_value:

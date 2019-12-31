@@ -42,5 +42,4 @@ def test_repro_without_given_fails():
 
 def test_decorators_without_given_should_fail(testdir):
     script = testdir.makepyfile(TEST_DECORATORS_ALONE)
-    testdir.runpytest(script).assert_outcomes(passed=4)
-    testdir.runpytest(script, "-Werror").assert_outcomes(failed=4)
+    testdir.runpytest(script).assert_outcomes(failed=4)

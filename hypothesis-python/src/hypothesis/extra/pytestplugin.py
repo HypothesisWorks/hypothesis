@@ -22,7 +22,6 @@ from distutils.version import LooseVersion
 import pytest
 
 from hypothesis import Verbosity, core, settings
-from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import text_type
 from hypothesis.internal.detection import is_hypothesis_test
@@ -132,24 +131,22 @@ else:
         elif not is_hypothesis_test(item.obj):
             # If @given was not applied, check whether other hypothesis
             # decorators were applied, and raise an error if they were.
-            message = "Using `@%s` on a test without `@given` is completely pointless."
-            if getattr(item.obj, "_hypothesis_internal_settings_applied", False):
-                raise InvalidArgument(message % ("settings",))
             if getattr(item.obj, "is_hypothesis_strategy_function", False):
-                note_deprecation(
+                raise InvalidArgument(
                     "%s is a function that returns a Hypothesis strategy, but pytest "
                     "has collected it as a test function.  This is useless as the "
                     "function body will never be executed.  To define a test "
-                    "function, use @given instead of @composite." % (item.nodeid,),
-                    since="2018-11-02",
+                    "function, use @given instead of @composite." % (item.nodeid,)
                 )
+            message = "Using `@%s` on a test without `@given` is completely pointless."
             for name, attribute in [
                 ("example", "hypothesis_explicit_examples"),
                 ("seed", "_hypothesis_internal_use_seed"),
+                ("settings", "_hypothesis_internal_settings_applied"),
                 ("reproduce_example", "_hypothesis_internal_use_reproduce_failure"),
             ]:
                 if hasattr(item.obj, attribute):
-                    note_deprecation(message % (name,), since="2019-12-07")
+                    raise InvalidArgument(message % (name,))
             yield
         else:
             if item.get_closest_marker("parametrize") is not None:

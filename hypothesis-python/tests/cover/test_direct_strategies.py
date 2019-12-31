@@ -30,7 +30,6 @@ from hypothesis import given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.vendor.pretty import pretty
 from tests.common.debug import minimal
-from tests.common.utils import checks_deprecated_behaviour
 
 # Use `pretty` instead of `repr` for building test names, so that set and dict
 # parameters print consistently across multiple worker processes with different
@@ -63,6 +62,10 @@ def fn_ktest(*fnkwargs):
     (ds.integers, {"min_value": 2, "max_value": 1}),
     (ds.integers, {"min_value": float("nan")}),
     (ds.integers, {"max_value": float("nan")}),
+    (ds.integers, {"min_value": decimal.Decimal("1.5")}),
+    (ds.integers, {"max_value": decimal.Decimal("1.5")}),
+    (ds.integers, {"min_value": -1.5, "max_value": -0.5}),
+    (ds.integers, {"min_value": 0.1, "max_value": 0.2}),
     (ds.dates, {"min_value": "fish"}),
     (ds.dates, {"max_value": "fish"}),
     (ds.dates, {"min_value": date(2017, 8, 22), "max_value": date(2017, 8, 21)}),
@@ -100,12 +103,17 @@ def fn_ktest(*fnkwargs):
     (ds.floats, {"exclude_max": None}),
     (ds.floats, {"exclude_min": True}),  # because min_value=None
     (ds.floats, {"exclude_max": True}),  # because max_value=None
+    (ds.floats, {"min_value": 1.8, "width": 32}),
+    (ds.floats, {"max_value": 1.8, "width": 32}),
     (ds.fractions, {"min_value": 2, "max_value": 1}),
     (ds.fractions, {"min_value": float("nan")}),
     (ds.fractions, {"max_value": float("nan")}),
     (ds.fractions, {"max_denominator": 0}),
     (ds.fractions, {"max_denominator": 1.5}),
     (ds.fractions, {"min_value": complex(1, 2)}),
+    (ds.fractions, {"min_value": "1/3", "max_value": "1/2", "max_denominator": 2}),
+    (ds.fractions, {"min_value": "0", "max_value": "1/3", "max_denominator": 2}),
+    (ds.fractions, {"min_value": "1/3", "max_value": "1/3", "max_denominator": 2}),
     (ds.lists, {"elements": ds.integers(), "min_size": 10, "max_size": 9}),
     (ds.lists, {"elements": ds.integers(), "min_size": -10, "max_size": -9}),
     (ds.lists, {"elements": ds.integers(), "max_size": -9}),
@@ -124,6 +132,8 @@ def fn_ktest(*fnkwargs):
     (ds.floats, {"min_value": float("nan")}),
     (ds.floats, {"min_value": "0"}),
     (ds.floats, {"max_value": "0"}),
+    (ds.floats, {"min_value": 0.0, "max_value": -0.0}),
+    (ds.floats, {"min_value": 0.0, "max_value": 1.0, "allow_infinity": True}),
     (ds.floats, {"max_value": 0.0, "min_value": 1.0}),
     (ds.floats, {"min_value": 0.0, "allow_nan": True}),
     (ds.floats, {"max_value": 0.0, "allow_nan": True}),
@@ -168,6 +178,7 @@ def fn_ktest(*fnkwargs):
     (ds.slices, {"size": "chips"}),
     (ds.slices, {"size": -1}),
     (ds.slices, {"size": 2.3}),
+    (ds.sampled_from, {"elements": ()}),
 )
 def test_validates_keyword_arguments(fn, kwargs):
     with pytest.raises(InvalidArgument):
@@ -395,42 +406,6 @@ def test_iterables_are_exhaustible(it):
 
 def test_minimal_iterable():
     assert list(minimal(ds.iterables(ds.integers()), lambda x: True)) == []
-
-
-@checks_deprecated_behaviour
-@pytest.mark.parametrize(
-    "fn,kwargs",
-    [
-        (ds.integers, {"min_value": decimal.Decimal("1.5")}),
-        (ds.integers, {"max_value": decimal.Decimal("1.5")}),
-        (ds.integers, {"min_value": -1.5, "max_value": -0.5}),
-        (ds.floats, {"min_value": 1.8, "width": 32}),
-        (ds.floats, {"max_value": 1.8, "width": 32}),
-        (ds.fractions, {"min_value": "1/3", "max_value": "1/2", "max_denominator": 2}),
-        (ds.fractions, {"min_value": "0", "max_value": "1/3", "max_denominator": 2}),
-    ],
-)
-def test_disallowed_bounds_are_deprecated(fn, kwargs):
-    fn(**kwargs).example()
-
-
-@checks_deprecated_behaviour
-@pytest.mark.parametrize(
-    "fn,kwargs", [(ds.integers, {"min_value": 0.1, "max_value": 0.2})]
-)
-def test_no_integers_in_bounds(fn, kwargs):
-    with pytest.raises(InvalidArgument):
-        fn(**kwargs).example()
-
-
-@checks_deprecated_behaviour
-@pytest.mark.parametrize(
-    "fn,kwargs",
-    [(ds.fractions, {"min_value": "1/3", "max_value": "1/3", "max_denominator": 2})],
-)
-def test_no_fractions_in_bounds(fn, kwargs):
-    with pytest.raises(InvalidArgument):
-        fn(**kwargs).example()
 
 
 @pytest.mark.parametrize("parameter_name", ["min_value", "max_value"])

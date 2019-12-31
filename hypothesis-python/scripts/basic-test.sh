@@ -16,11 +16,7 @@ pip install .
 PYTEST="python -m pytest -n2"
 
 # Run all the no-extra-dependency tests for this version (except slow nocover tests)
-if [ "$(python -c 'import sys; print(sys.version_info[0] == 2)')" = "True" ] ; then
-  $PYTEST tests/cover tests/pytest tests/py2
-else
-  $PYTEST tests/cover tests/pytest tests/py3
-fi
+$PYTEST tests/cover tests/pytest tests/py3
 
 # Run tests for each extra module while the requirements are installed
 pip install ".[pytz, dateutil]"
@@ -37,7 +33,7 @@ pip install lark-parser==0.7.1
 $PYTEST tests/lark/
 pip uninstall -y lark-parser
 
-if [ "$(python -c 'import sys; print(sys.version_info[:2] in ((2, 7), (3, 6)))')" = "False" ] ; then
+if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 6))')" = "False" ] ; then
   exit 0
 fi
 

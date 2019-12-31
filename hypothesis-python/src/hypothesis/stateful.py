@@ -34,16 +34,11 @@ import attr
 
 import hypothesis.internal.conjecture.utils as cu
 import hypothesis.strategies as st
-from hypothesis._settings import (
-    HealthCheck,
-    Verbosity,
-    note_deprecation,
-    settings as Settings,
-)
+from hypothesis._settings import HealthCheck, Verbosity, settings as Settings
 from hypothesis.control import current_build_context
 from hypothesis.core import given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
-from hypothesis.internal.compat import hrange, quiet_raise, string_types
+from hypothesis.internal.compat import hrange, quiet_raise
 from hypothesis.internal.reflection import function_digest, nicerepr, proxies, qualname
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
@@ -76,7 +71,7 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
     or printing a minimal breaking program and raising an exception.
 
     state_machine_factory is anything which returns an instance of
-    GenericStateMachine when called with no arguments - it can be a class or a
+    RuleBasedStateMachine when called with no arguments - it can be a class or a
     function. settings will be used to control the execution of the test.
     """
     if settings is None:
@@ -91,17 +86,11 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
     @given(st.data())
     def run_state_machine(factory, data):
         machine = factory()
-        if isinstance(machine, GenericStateMachine) and not isinstance(
-            machine, RuleBasedStateMachine
-        ):
-            note_deprecation(
-                "%s inherits from GenericStateMachine, which is deprecated.  Use a "
-                "RuleBasedStateMachine, or a test function with st.data(), instead."
-                % (type(machine).__name__,),
-                since="2019-05-29",
+        if not isinstance(machine, _GenericStateMachine):
+            raise InvalidArgument(
+                "Expected RuleBasedStateMachine but state_machine_factory() "
+                "returned %r (type=%s)" % (machine, type(machine).__name__)
             )
-        else:
-            check_type(RuleBasedStateMachine, machine, "state_machine_factory()")
         data.conjecture_data.hypothesis_runner = machine
 
         print_steps = (
@@ -194,32 +183,10 @@ class GenericStateMachineMeta(type):
         return type.__setattr__(self, name, value)
 
 
-class GenericStateMachine(
-    GenericStateMachineMeta("GenericStateMachine", (object,), {})  # type: ignore
+class _GenericStateMachine(
+    GenericStateMachineMeta("_GenericStateMachine", (object,), {})  # type: ignore
 ):
-    """A GenericStateMachine is a deprecated approach to stateful testing.
-
-    In earlier versions of Hypothesis, you would define ``steps``,
-    ``execute_step``, ``teardown``, and ``check_invariants`` methods;
-    and the engine would then run something like the following::
-
-        @given(st.data())
-        def test_the_stateful_thing(data):
-            x = MyStatemachineSubclass()
-            x.check_invariants()
-            try:
-                for _ in range(50):
-                    step = data.draw(x.steps())
-                    x.execute_step(step)
-                    x.check_invariants()
-            finally:
-                x.teardown()
-
-    We now recommend using rule-based stateful testing instead wherever
-    possible.  If your test is better expressed in the above format than
-    as a rule-based state machine, we suggest "unrolling" your method
-    definitions into a simple test function with the above control flow.
-    """
+    # TODO: this is now internal-only and we can refactor RuleBasedStateMachine
 
     def steps(self):
         """Return a SearchStrategy instance the defines the available next
@@ -409,28 +376,16 @@ def _convert_targets(targets, target):
     """Single validator and convertor for target arguments."""
     if target is not None:
         if targets:
-            note_deprecation(
-                "Passing both targets=%r and target=%r is redundant, and "
-                "will become an error in a future version of Hypothesis.  "
-                "Pass targets=%r instead."
-                % (targets, target, tuple(targets) + (target,)),
-                since="2018-08-18",
+            raise InvalidArgument(
+                "Passing both targets=%r and target=%r is redundant - pass "
+                "targets=%r instead." % (targets, target, tuple(targets) + (target,))
             )
-        targets = tuple(targets) + (target,)
+        targets = (target,)
 
     converted_targets = []
     for t in targets:
-        if isinstance(t, string_types):
-            note_deprecation(
-                "Got %r as a target, but passing the name of a Bundle is "
-                "deprecated - please pass the Bundle directly." % (t,),
-                since="2018-08-18",
-            )
-        elif not isinstance(t, Bundle):
-            msg = (
-                "Got invalid target %r of type %r, but all targets must "
-                "be either a Bundle or the name of a Bundle."
-            )
+        if not isinstance(t, Bundle):
+            msg = "Got invalid target %r of type %r, but all targets must be Bundles."
             if isinstance(t, OneOfStrategy):
                 msg += (
                     "\nIt looks like you passed `one_of(a, b)` or `a | b` as "
@@ -708,9 +663,8 @@ class RuleStrategy(SearchStrategy):
         return True
 
 
-class RuleBasedStateMachine(GenericStateMachine):
-    """A RuleBasedStateMachine gives you a more structured way to define state
-    machines.
+class RuleBasedStateMachine(_GenericStateMachine):
+    """A RuleBasedStateMachine gives you a structured way to define state machines.
 
     The idea is that a state machine carries a bunch of types of data
     divided into Bundles, and has a set of rules which may read data

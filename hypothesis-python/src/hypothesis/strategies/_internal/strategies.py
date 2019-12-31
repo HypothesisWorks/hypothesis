@@ -23,14 +23,7 @@ from collections import defaultdict
 from random import choice as random_choice
 
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis._settings import (
-    HealthCheck,
-    Phase,
-    Verbosity,
-    not_set,
-    note_deprecation,
-    settings,
-)
+from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, assume
 from hypothesis.errors import (
     HypothesisException,
@@ -55,7 +48,6 @@ try:
     Ex = TypeVar("Ex", covariant=True)
     T = TypeVar("T")
 
-    from hypothesis._settings import UniqueIdentifier  # noqa
     from hypothesis.internal.conjecture.data import ConjectureData  # noqa
 
 except ImportError:  # pragma: no cover
@@ -272,8 +264,8 @@ class SearchStrategy(Generic[Ex]):
     def calc_has_reusable_values(self, recur):
         return False
 
-    def example(self, random=not_set):
-        # type: (UniqueIdentifier) -> Ex
+    def example(self):
+        # type: () -> Ex
         """Provide an example of the sort of value that this strategy
         generates. This is biased to be slightly simpler than is typical for
         values from this strategy, for clarity purposes.
@@ -283,9 +275,6 @@ class SearchStrategy(Generic[Ex]):
 
         This method is part of the public API.
         """
-        if random is not not_set:
-            note_deprecation("The random argument does nothing", since="2019-07-08")
-
         if getattr(sys, "ps1", None) is None:  # pragma: no branch
             # The other branch *is* covered in cover/test_examples.py; but as that
             # uses `pexpect` for an interactive session `coverage` doesn't see it.

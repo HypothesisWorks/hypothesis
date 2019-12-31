@@ -98,31 +98,13 @@ def try_convert(typ, value, name):
 @check_function
 def check_valid_size(value, name):
     """Checks that value is either unspecified, or a valid non-negative size
-    expressed as an integer/float.
+    expressed as an integer.
 
     Otherwise raises InvalidArgument.
     """
-    if value is None:
-        if name == "min_size":
-            from hypothesis._settings import note_deprecation
-
-            note_deprecation(
-                "min_size=None is deprecated; use min_size=0 instead.",
-                since="2018-10-06",
-            )
+    if value is None and name != "min_size":
         return
-    if isinstance(value, float):
-        if math.isnan(value):
-            raise InvalidArgument(u"Invalid size %s=%r" % (name, value))
-        from hypothesis._settings import note_deprecation
-
-        note_deprecation(
-            "Float size are deprecated: "
-            "%s should be an integer, got %r" % (name, value),
-            since="2018-10-11",
-        )
-    else:
-        check_type(integer_types, value, name)
+    check_type(integer_types, value, name)
     if value < 0:
         raise InvalidArgument(u"Invalid size %s=%r < 0" % (name, value))
 

@@ -40,17 +40,13 @@ from hypothesis.errors import (
 from hypothesis.internal.compat import integer_types, quiet_raise, string_types
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type, try_convert
-from hypothesis.utils.conventions import UniqueIdentifier, not_set
+from hypothesis.utils.conventions import not_set
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 if False:
     from typing import Any, Dict, List  # noqa
 
 __all__ = ["settings"]
-
-
-unlimited = UniqueIdentifier("unlimited")
-
 
 all_settings = {}  # type: Dict[str, Setting]
 
@@ -86,19 +82,12 @@ class settingsProperty(object):
     @property
     def __doc__(self):
         description = all_settings[self.name].description
-        deprecation_message = all_settings[self.name].deprecation_message
         default = (
             repr(getattr(settings.default, self.name))
             if self.show_default
             else "(dynamically calculated)"
         )
-        return "\n\n".join(
-            [
-                description,
-                "default value: ``%s``" % (default,),
-                (deprecation_message or "").strip(),
-            ]
-        ).strip()
+        return "%s\n\ndefault value: ``%s``" % (description, default)
 
 
 default_variable = DynamicVariable(None)
@@ -171,7 +160,6 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
                 )
             kwargs["database"] = None
         self._construction_complete = False
-        deprecations = []
         defaults = parent or settings.default
         if defaults is not None:
             for setting in all_settings.values():
@@ -180,8 +168,6 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
                 else:
                     if setting.validator:
                         kwargs[setting.name] = setting.validator(kwargs[setting.name])
-                    if setting.deprecation_message is not None:
-                        deprecations.append(setting)
         for name, value in kwargs.items():
             if name not in all_settings:
                 raise InvalidArgument(
@@ -190,9 +176,6 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
             setattr(self, name, value)
         self.storage = threading.local()
         self._construction_complete = True
-
-        for d in deprecations:
-            note_deprecation(d.deprecation_message, since=d.deprecated_since)
 
     def __call__(self, test):
         """Make the settings object (self) an attribute of the test.
@@ -205,9 +188,9 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
                 "but decorated test=%r is not callable." % (test,)
             )
         if inspect.isclass(test):
-            from hypothesis.stateful import GenericStateMachine
+            from hypothesis.stateful import RuleBasedStateMachine
 
-            if issubclass(test, GenericStateMachine):
+            if issubclass(test, RuleBasedStateMachine):
                 attr_name = "_hypothesis_internal_settings_applied"
                 if getattr(test, attr_name, False):
                     raise InvalidArgument(
@@ -221,7 +204,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
             else:
                 raise InvalidArgument(
                     "@settings(...) can only be used as a decorator on "
-                    "functions, or on subclasses of GenericStateMachine."
+                    "functions, or on subclasses of RuleBasedStateMachine."
                 )
         if hasattr(test, "_hypothesis_internal_settings_applied"):
             # Can't use _hypothesis_internal_use_settings as an indicator that
@@ -249,8 +232,6 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         options=None,
         validator=None,
         show_default=True,
-        deprecation_message=None,
-        deprecated_since=None,
     ):
         """Add a new setting.
 
@@ -277,8 +258,6 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
             default=default,
             options=options,
             validator=validator,
-            deprecation_message=deprecation_message,
-            deprecated_since=deprecated_since,
         )
         setattr(settings, name, settingsProperty(name, show_default))
 
@@ -307,13 +286,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
             raise AttributeError("No such setting %s" % (name,))
 
     def __repr__(self):
-        bits = []
-        for name, setting in all_settings.items():
-            value = getattr(self, name)
-            # The only settings that are not shown are those that are
-            # deprecated and left at their default values.
-            if value != setting.default or not setting.deprecation_message:
-                bits.append("%s=%r" % (name, value))
+        bits = ("%s=%r" % (name, getattr(self, name)) for name in all_settings)
         return "settings(%s)" % ", ".join(sorted(bits))
 
     def show_changed(self):
@@ -380,28 +353,14 @@ class Setting(object):
     default = attr.ib()
     options = attr.ib()
     validator = attr.ib()
-    deprecation_message = attr.ib()
-    deprecated_since = attr.ib()
-
-
-def _ensure_positive_int(x, name, since, min_value=0):
-    if not isinstance(x, integer_types):
-        note_deprecation(
-            "Passing non-integer %s=%r is deprecated" % (name, x), since=since
-        )
-    x = try_convert(int, x, name)
-    if x < min_value:
-        raise InvalidArgument("%s=%r must be at least %r." % (name, x, min_value))
-    return x
 
 
 def _max_examples_validator(x):
-    x = _ensure_positive_int(x, "max_examples", since="2019-03-06", min_value=0)
-    if x == 0:
-        note_deprecation(
+    check_type(int, x, name="max_examples")
+    if x < 1:
+        raise InvalidArgument(
             "max_examples=%r should be at least one. You can disable example "
-            "generation with the `phases` setting instead." % (x,),
-            since="2019-03-06",
+            "generation with the `phases` setting instead." % (x,)
         )
     return x
 
@@ -425,36 +384,11 @@ For very complex code, we have observed Hypothesis finding novel bugs after
 """,
 )
 
-settings._define_setting(
-    "buffer_size",
-    default=not_set,
-    validator=lambda x: _ensure_positive_int(x, "buffer_size", since="2019-03-06"),
-    description="The buffer_size setting has been deprecated and no longer does anything.",
-    deprecation_message="The buffer_size setting can safely be removed with no effect.",
-    deprecated_since="2019-07-03",
-)
-
-
-settings._define_setting(
-    "timeout",
-    default=not_set,
-    description="The timeout setting has been deprecated and no longer does anything.",
-    deprecation_message="The timeout setting can safely be removed with no effect.",
-    deprecated_since="2017-11-02",
-    options=(not_set, unlimited),
-)
-
-
-def _derandomize_validator(x):
-    if not isinstance(x, bool):
-        note_deprecation("derandomize=%r should be a bool." % (x,), since="2019-03-06")
-    return bool(x)
-
 
 settings._define_setting(
     "derandomize",
     default=False,
-    validator=_derandomize_validator,
+    options=(True, False),
     description="""
 If this is True then hypothesis will run in deterministic mode
 where each falsification uses a random number generator that is seeded
@@ -519,8 +453,7 @@ class HealthCheck(Enum):
     @classmethod
     def all(cls):
         # type: () -> List[HealthCheck]
-        deprecated = [HealthCheck.hung_test]
-        return [x for x in list(HealthCheck) if x not in deprecated]
+        return list(HealthCheck)
 
     data_too_large = 1
     """Check for when the typical size of the examples you are generating
@@ -538,11 +471,6 @@ class HealthCheck(Enum):
     return_value = 5
     """Checks if your tests return a non-None value (which will be ignored and
     is unlikely to do what you want)."""
-
-    hung_test = 6
-    """This health check is deprecated and no longer has any effect.
-    You can use the ``max_examples`` and ``deadline`` settings together to cap
-    the total runtime of your tests, rather than the previous fixed limit."""
 
     large_base_example = 7
     """Checks if the natural example to shrink towards is very large."""
@@ -572,9 +500,6 @@ settings._define_setting(
 
 
 def _validate_phases(phases):
-    if phases is None:
-        phases = tuple(Phase)
-        note_deprecation("Use phases=%r, not None." % (phases,), since="2019-08-05")
     phases = tuple(phases)
     for a in phases:
         if not isinstance(a, Phase):
@@ -592,12 +517,18 @@ settings._define_setting(
     validator=_validate_phases,
 )
 
+
+def _validate_stateful_step_count(x):
+    check_type(int, x, name="stateful_step_count")
+    if x < 1:
+        raise InvalidArgument("stateful_step_count=%r must be at least one." % (x,))
+    return x
+
+
 settings._define_setting(
     name="stateful_step_count",
     default=50,
-    validator=lambda x: _ensure_positive_int(
-        x, "stateful_step_count", "2019-03-06", min_value=1
-    ),
+    validator=_validate_stateful_step_count,
     description="""
 Number of steps to run a stateful program for before giving up on it breaking.
 """,
@@ -624,12 +555,6 @@ def validate_health_check_suppressions(suppressions):
                 "Non-HealthCheck value %r of type %s is invalid in suppress_health_check."
                 % (s, type(s).__name__)
             )
-        if s is HealthCheck.hung_test:
-            note_deprecation(
-                "HealthCheck.hung_test is deprecated and has no "
-                "effect, as we no longer run this health check.",
-                since="2019-01-24",
-            )
     return suppressions
 
 
@@ -650,15 +575,16 @@ class duration(datetime.timedelta):
 
 
 def _validate_deadline(x):
-    if isinstance(x, bool):
-        note_deprecation(
-            "The deadline=%r must be a duration in milliseconds, or None to disable."
-            "  Boolean deadlines are treated as ints, and deprecated." % (x,),
-            since="2019-03-06",
-        )
     if x is None:
         return x
+    invalid_deadline_error = InvalidArgument(
+        "deadline=%r (type %s) must be a timedelta object, an integer or float "
+        "number of milliseconds, or None to disable the per-test-case deadline."
+        % (x, type(x).__name__)
+    )
     if isinstance(x, integer_types + (float,)):
+        if isinstance(x, bool):
+            raise invalid_deadline_error
         try:
             x = duration(milliseconds=x)
         except OverflowError:
@@ -675,10 +601,7 @@ def _validate_deadline(x):
                 "deadline <= 0. Use deadline=None to disable deadlines." % (x,)
             )
         return duration(seconds=x.total_seconds())
-    raise InvalidArgument(
-        "deadline=%r (type %s) must be a timedelta object, an integer or float number of milliseconds, "
-        "or None to disable the per-test-case deadline." % (x, type(x).__name__)
-    )
+    raise invalid_deadline_error
 
 
 settings._define_setting(
@@ -698,49 +621,14 @@ Set this to None to disable this behaviour entirely.
 )
 
 
-class PrintSettings(Enum):
-    """Flags to determine whether or not to print a detailed example blob to
-    use with :func:`~hypothesis.reproduce_failure` for failing test cases."""
-
-    NEVER = 0
-    """Never print a blob."""
-
-    INFER = 1
-    """This option is deprecated and will be treated as equivalent to
-    ALWAYS."""
-
-    ALWAYS = 2
-    """Always print a blob on failure."""
-
-    def __repr__(self):
-        return "PrintSettings.%s" % (self.name,)
-
-
-def _validate_print_blob(value):
-    if isinstance(value, PrintSettings):
-        replacement = value != PrintSettings.NEVER
-
-        note_deprecation(
-            "Setting print_blob=%r is deprecated and will become an error "
-            "in a future version of Hypothesis. Use print_blob=%r instead."
-            % (value, replacement),
-            since="2018-09-30",
-        )
-        return replacement
-
-    check_type(bool, value, "print_blob")
-
-    return value
-
-
 settings._define_setting(
     "print_blob",
     default=False,
+    options=(True, False),
     description="""
 If set to True, Hypothesis will print code for failing examples that can be used with
 :func:`@reproduce_failure <hypothesis.reproduce_failure>` to reproduce the failing example.
 """,
-    validator=_validate_print_blob,
 )
 
 settings.lock_further_definitions()

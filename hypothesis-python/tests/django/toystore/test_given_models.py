@@ -32,15 +32,9 @@ from hypothesis.extra.django import (
     from_model,
     register_field_strategy,
 )
-from hypothesis.extra.django.models import (
-    add_default_field_mapping,
-    default_value,
-    models,
-)
 from hypothesis.internal.compat import text_type
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies import binary, just, lists
-from tests.common.utils import checks_deprecated_behaviour
 from tests.django.toystore.models import (
     Company,
     CompanyExtension,
@@ -62,16 +56,6 @@ register_field_strategy(CustomishField, just(u"a"))
 
 
 class TestGetsBasicModels(TestCase):
-    @checks_deprecated_behaviour
-    def test_add_default_field_mapping_is_deprecated(self):
-        class UnregisteredCustomishField(CustomishField):
-            """Just to get deprecation warning when registered."""
-
-        add_default_field_mapping(UnregisteredCustomishField, just(u"a"))
-        with self.assertRaises(InvalidArgument):
-            # Double-registering is an error, and registry is shared.
-            register_field_strategy(UnregisteredCustomishField, just(u"a"))
-
     @given(from_model(Company))
     def test_is_company(self, company):
         self.assertIsInstance(company, Company)
@@ -126,32 +110,13 @@ class TestGetsBasicModels(TestCase):
     def test_mandatory_fields_are_mandatory(self):
         self.assertRaises(InvalidArgument, from_model(Store).example)
 
-    @checks_deprecated_behaviour
-    def test_mandatory_fields_are_mandatory_old(self):
-        self.assertRaises(InvalidArgument, models(Store).example)
-
     def test_mandatory_computed_fields_are_mandatory(self):
         with self.assertRaises(InvalidArgument):
             from_model(MandatoryComputed).example()
 
-    @checks_deprecated_behaviour
-    def test_mandatory_computed_fields_are_mandatory_old(self):
-        with self.assertRaises(InvalidArgument):
-            models(MandatoryComputed).example()
-
     def test_mandatory_computed_fields_may_not_be_provided(self):
         mc = from_model(MandatoryComputed, company=from_model(Company))
         self.assertRaises(RuntimeError, mc.example)
-
-    @checks_deprecated_behaviour
-    def test_mandatory_computed_fields_may_not_be_provided_old(self):
-        mc = models(MandatoryComputed, company=models(Company))
-        self.assertRaises(RuntimeError, mc.example)
-
-    @checks_deprecated_behaviour
-    @given(models(MandatoryComputed, company=default_value))
-    def test_mandatory_computed_field_default(self, x):
-        assert x.company.name == x.name + u"_company"
 
     @given(from_model(CustomishDefault, customish=infer))
     def test_customish_default_overridden_by_infer(self, x):
@@ -160,11 +125,6 @@ class TestGetsBasicModels(TestCase):
     @given(from_model(CustomishDefault, customish=infer))
     def test_customish_infer_uses_registered_instead_of_default(self, x):
         assert x.customish == u"a"
-
-    @checks_deprecated_behaviour
-    @given(models(CustomishDefault, customish=default_value))
-    def test_customish_default_generated(self, x):
-        assert x.customish == u"b"
 
     @given(from_model(OddFields))
     def test_odd_fields(self, x):

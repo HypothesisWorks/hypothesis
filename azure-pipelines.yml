@@ -18,16 +18,12 @@ jobs:
           TASK: check-coverage
         check-conjecture-coverage:
           TASK: check-conjecture-coverage
-        check-pypy:
-          TASK: check-pypy
         check-pypy35:
           TASK: check-pypy35
         check-pypy36:
           TASK: check-pypy36
         check-py36:
           TASK: check-py36
-        check-py27:
-          TASK: check-py27
         check-py35:
           TASK: check-py35
         check-py37:
@@ -73,39 +69,11 @@ jobs:
         pytest
       displayName: Run tests
 
-  - job: windows_py2
-    pool:
-      vmImage: 'windows-2019'
-    strategy:
-      matrix:
-        check-py27-x64:
-          python.version: '2.7'
-          python.architecture: 'x64'
-        check-py27-x86:
-          python.version: '2.7'
-          python.architecture: 'x86'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '$(python.version)'
-        architecture: '$(python.architecture)'
-    - script: |
-        pip install --upgrade setuptools pip wheel
-        pip install setuptools -r requirements/py2.txt
-        pip install hypothesis-python/[all]
-      displayName: Install dependencies
-    - script: |
-        cd hypothesis-python
-        pytest tests\cover  tests/datetime tests\numpy  tests\pandas tests\py3  tests\pytest
-      displayName: Run tests
-
   - job: osx
     pool:
       vmImage: 'macOS-10.13'
     strategy:
       matrix:
-        check-py27:
-          TASK: check-py27
         check-py36:
           TASK: check-py36
     steps:
@@ -127,10 +95,6 @@ jobs:
       vmImage: 'Ubuntu 16.04'
     strategy:
       matrix:
-        check-unicode:
-          TASK: check-unicode
-        check-py27-typing:
-          TASK: check-py27-typing
         check-nose:
           TASK: check-nose
         check-pytest43:

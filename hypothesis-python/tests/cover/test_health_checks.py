@@ -31,7 +31,7 @@ from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.strategies._internal.lazy import LazyStrategy
 from hypothesis.strategies._internal.strategies import SearchStrategy
-from tests.common.utils import checks_deprecated_behaviour, no_shrink
+from tests.common.utils import no_shrink
 
 HEALTH_CHECK_SETTINGS = settings(max_examples=11, database=None)
 
@@ -195,11 +195,6 @@ def test_example_that_shrinks_to_overrun_fails_health_check():
 def test_it_is_an_error_to_suppress_non_iterables():
     with raises(InvalidArgument):
         settings(suppress_health_check=1)
-
-
-@checks_deprecated_behaviour
-def test_hung_test_is_deprecated():
-    settings(suppress_health_check=[HealthCheck.hung_test])
 
 
 def test_it_is_an_error_to_suppress_non_healthchecks():

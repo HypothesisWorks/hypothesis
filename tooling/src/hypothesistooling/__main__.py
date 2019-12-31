@@ -21,7 +21,8 @@ import os
 import shlex
 import subprocess
 import sys
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 from glob import glob
 
 import hypothesistooling as tools
@@ -91,6 +92,17 @@ def do_release(package):
         return
 
     os.chdir(package.BASE_DIR)
+
+    # If we're making a release late on New Year's Eve, hold the release
+    # for a few minutes and ship it at midnight.  For timeout details, see:
+    # https://docs.travis-ci.com/user/customizing-the-build/#build-timeouts
+    max_timeout = timedelta(minutes=40)
+    while True:
+        now = datetime.utcnow()
+        if now.year == (now + max_timeout).year:
+            break
+        print("Waiting for the midnight release...")
+        time.sleep(10)
 
     print("Updating changelog and version")
     package.update_changelog_and_version()
@@ -368,25 +380,23 @@ def run_tox(task, version):
 
 
 # Via https://github.com/pyenv/pyenv/tree/master/plugins/python-build/share/python-build
-PY27 = "2.7.16"
 PY35 = "3.5.7"
 PY36 = "3.6.9"
 PY37 = "3.7.4"
 PY38 = "3.8.0"
-PYPY2 = "pypy2.7-5.10.0"
 PYPY35 = "pypy3.5-7.0.0"
 PYPY36 = "pypy3.6-7.1.1"
 
 
 @task()
 def install_core():
-    install.python_executable(PY27)
     install.python_executable(PY36)
 
 
-ALIASES = {PYPY2: "pypy", PYPY35: "pypy3", PYPY36: "pypy3"}
+# ALIASES are the executable names for each Python version
+ALIASES = {PYPY35: "pypy3", PYPY36: "pypy3"}
 
-for n in [PY27, PY35, PY36, PY37, PY38]:
+for n in [PY35, PY36, PY37, PY38]:
     major, minor, patch = n.split(".")
     ALIASES[n] = "python%s.%s" % (major, minor)
 
@@ -398,11 +408,6 @@ python_tests = task(
         os.path.join(hp.HYPOTHESIS_PYTHON, "scripts"),
     )
 )
-
-
-@python_tests
-def check_py27():
-    run_tox("py27-full", PY27)
 
 
 @python_tests
@@ -426,11 +431,6 @@ def check_py38():
 
 
 @python_tests
-def check_pypy():
-    run_tox("pypy-full", PYPY2)
-
-
-@python_tests
 def check_pypy35():
     run_tox("pypy3-full", PYPY35)
 
@@ -438,16 +438,6 @@ def check_pypy35():
 @python_tests
 def check_pypy36():
     run_tox("pypy3-full", PYPY36)
-
-
-@python_tests
-def check_py27_typing():
-    run_tox("py27typing", PY27)
-
-
-@python_tests
-def check_pypy_with_tracer():
-    run_tox("pypy-with-tracer", PYPY2)
 
 
 def standard_tox_task(name):
@@ -477,18 +467,8 @@ examples_task = task(
 
 
 @examples_task
-def check_examples2():
-    run_tox("examples2", PY27)
-
-
-@examples_task
 def check_examples3():
     run_tox("examples3", PY36)
-
-
-@python_tests
-def check_unicode():
-    run_tox("unicode", PY27)
 
 
 @task()
