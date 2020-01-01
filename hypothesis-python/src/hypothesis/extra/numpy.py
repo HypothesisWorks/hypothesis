@@ -16,8 +16,7 @@
 import math
 import re
 from collections import namedtuple
-from typing import Any, NamedTuple, Sequence, Tuple, Union
-
+from typing import NamedTuple, Tuple
 import numpy as np
 
 import hypothesis.internal.conjecture.utils as cu
@@ -29,7 +28,6 @@ from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal import SearchStrategy
-from hypothesis.strategies._internal.strategies import T
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
 Shape = Tuple[int, ...]
@@ -39,7 +37,11 @@ BroadcastableShapes = NamedTuple(
 )
 
 
-BasicIndex = Tuple[Union[int, slice, Ellipsis, np.newaxis], ...]
+if False:
+    from typing import Any, Union, Sequence, Tuple  # noqa
+    from hypothesis.strategies._internal.strategies import T  # noqa
+
+    BasicIndex = Tuple[Union[int, slice, ellipsis, np.newaxis], ...]  # noqa
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
 
