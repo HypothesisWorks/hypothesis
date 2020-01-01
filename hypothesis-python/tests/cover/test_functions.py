@@ -103,3 +103,15 @@ def test_can_call_default_like_arg():
     like, returns = getfullargspec(functions).defaults
     assert like() is None
     assert returns.example() is None
+
+
+def func(arg, *, kwonly_arg):
+    pass
+
+
+@given(functions(func))
+def test_functions_strategy_with_kwonly_args(f):
+    with pytest.raises(TypeError):
+        f(1, 2)
+    f(1, kwonly_arg=2)
+    f(kwonly_arg=2, arg=1)

@@ -142,10 +142,6 @@ The top level structure of the tests in Hypothesis looks as follows:
   to achieve coverage.
 * ``quality`` is for expensive tests about the distribution or shrinking of
   examples. These will only be run on one Python version.
-* ``py2`` and ``py3`` are for tests which only run on one major version of
-  Python. You can also write these in other directories using
-  ``pytest.mark.skipif``, but these directories are useful for things that
-  require a version-specific syntax.
 * The remaining test directories are for testing specific extras modules and
   should have the same name.
 

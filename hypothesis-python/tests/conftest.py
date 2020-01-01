@@ -34,7 +34,7 @@ run()
 # or that don't work on the current version of Python.
 collect_ignore_glob = ["django/*"]
 if sys.version_info < (3, 8):
-    collect_ignore_glob.append("py3/*py38*")
+    collect_ignore_glob.append("cover/*py38*")
 
 
 def pytest_configure(config):

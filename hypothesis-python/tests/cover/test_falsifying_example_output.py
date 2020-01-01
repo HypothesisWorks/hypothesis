@@ -55,3 +55,15 @@ def test_inserts_line_breaks_only_at_appropriate_lengths(line_break, input):
     actual_output = cap.getvalue()
 
     assert desired_output.strip() == actual_output.strip()
+
+
+def test_vararg_output():
+    @given(foo=st.text())
+    def test(*args, foo):
+        assert False
+
+    with capture_out() as cap:
+        with pytest.raises(AssertionError):
+            test(1, 2, 3)
+
+    assert "1, 2, 3" in cap.getvalue()
