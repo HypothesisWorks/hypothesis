@@ -153,8 +153,6 @@ CURRENT_YEAR = datetime.utcnow().year
 
 
 HEADER = """
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
@@ -239,12 +237,12 @@ def format():
         "--remove-unused-variables",
         *files_to_format,
     )
-    pip_tool("pyupgrade", "--keep-percent-format", *files_to_format)
+    pip_tool("pyupgrade", "--keep-percent-format", "--py3-plus", *files_to_format)
     pip_tool("isort", *files_to_format)
-    pip_tool("black", *files_to_format)
+    pip_tool("black", "--target-version=py35", *files_to_format)
 
 
-VALID_STARTS = ("# coding=utf-8", "#!/usr/bin/env python")
+VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
 
 
 @task()
