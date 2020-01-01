@@ -22,6 +22,7 @@ import inspect
 import re
 import types
 from functools import wraps
+from tokenize import detect_encoding
 from types import ModuleType
 
 from hypothesis.internal.compat import (
@@ -31,11 +32,6 @@ from hypothesis.internal.compat import (
     update_code_location,
 )
 from hypothesis.vendor.pretty import pretty
-
-try:
-    from tokenize import detect_encoding
-except ImportError:  # pragma: no cover
-    detect_encoding = None
 
 if False:
     from typing import TypeVar  # noqa
@@ -266,17 +262,9 @@ def extract_lambda_source(f):
     """
     argspec = inspect.getfullargspec(f)
     arg_strings = []
-    # In Python 2 you can have destructuring arguments to functions. This
-    # results in an argspec with non-string values. I'm not very interested in
-    # handling these properly, but it's important to not crash on them.
-    bad_lambda = False
     for a in argspec.args:
-        if isinstance(a, (tuple, list)):  # pragma: no cover
-            arg_strings.append("(%s)" % (", ".join(a),))
-            bad_lambda = True
-        else:
-            assert isinstance(a, str)
-            arg_strings.append(a)
+        assert isinstance(a, str)
+        arg_strings.append(a)
     if argspec.varargs:
         arg_strings.append("*" + argspec.varargs)
     elif argspec.kwonlyargs:
@@ -292,8 +280,6 @@ def extract_lambda_source(f):
         if_confused = "lambda %s: <unknown>" % (", ".join(arg_strings),)
     else:
         if_confused = "lambda: <unknown>"
-    if bad_lambda:  # pragma: no cover
-        return if_confused
     try:
         source = inspect.getsource(f)
     except OSError:
@@ -363,13 +349,6 @@ def extract_lambda_source(f):
     # an OSError.  Or if `f` is a built-in function, in which case we get a
     # TypeError.  In both cases, fall back to splitting the Unicode string.
     # It's not perfect, but it's the best we can do.
-    #
-    # Note 2: You can only detect the encoding with `tokenize.detect_encoding`
-    # in Python 3.2 or later.  But that's okay, because the only version that
-    # affects for us is Python 2.7, and 2.7 doesn't support non-ASCII identifiers:
-    # https://www.python.org/dev/peps/pep-3131/. In this case we'll get an
-    # TypeError again because we set detect_encoding to None above.
-    #
     try:
         with open(inspect.getsourcefile(f), "rb") as src_f:
             encoding, _ = detect_encoding(src_f.readline)
@@ -612,35 +591,3 @@ def proxies(target):
         )
 
     return accept
-
-
-def reserved_means_kwonly_star(func):
-    # type: (C) -> C
-    """A decorator to implement Python-2-compatible kwonly args.
-
-    The following functions behave identically:
-        def f(a, __reserved=not_set, b=None): ...
-        def f(a, *, b=None): ...
-
-    Obviously this doesn't allow required kwonly args, but it's a nice way
-    of defining forward-compatible APIs given our plans to turn all args
-    with default values into kwonly args.
-    """
-    signature = inspect.signature(func)
-    seen = False
-    parameters = []
-    for param in signature.parameters.values():
-        assert param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
-        if param.name == "__reserved":
-            seen = True
-        elif not seen:
-            parameters.append(param)
-        else:
-            parameters.append(param.replace(kind=inspect.Parameter.KEYWORD_ONLY))
-    assert seen, "function does not have `__reserved` argument"
-
-    func.__signature__ = signature.replace(parameters=parameters)
-    newsig = define_function_signature(
-        func.__name__, func.__doc__, inspect.getfullargspec(func)
-    )
-    return impersonate(func)(wraps(func)(newsig(func)))

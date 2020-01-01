@@ -42,35 +42,31 @@ def test_cathetus_huge_no_overflow():
     h = sys.float_info.max
     a = h / math.sqrt(2)
     b = cathetus(h, a)
-    assert not (
-        math.isinf(b) or math.isnan(b)
-    ), "expecting finite cathetus(%g, %g), got %g" % (h, a, b)
+    assert math.isfinite(b), "expecting finite cathetus(%g, %g), got %g" % (h, a, b)
 
 
 def test_cathetus_large_no_overflow():
     h = sys.float_info.max / 3
     a = h / math.sqrt(2)
     b = cathetus(h, a)
-    assert not (
-        math.isinf(b) or math.isnan(b)
-    ), "expecting finite cathetus(%g, %g), got %g" % (h, a, b)
+    assert math.isfinite(b), "expecting finite cathetus(%g, %g), got %g" % (h, a, b)
 
 
 @pytest.mark.parametrize(
     "h,a",
     [
         # NaN hypot
-        (float("nan"), 3),
-        (float("nan"), 0),
-        (float("nan"), float("inf")),
-        (float("nan"), float("nan")),
+        (math.nan, 3),
+        (math.nan, 0),
+        (math.nan, math.inf),
+        (math.nan, math.nan),
         # Infeasible
         (2, 3),
         (2, -3),
-        (2, float("inf")),
-        (2, float("nan")),
+        (2, math.inf),
+        (2, math.nan),
         # Surprisingly consistent with c99 hypot()
-        (float("inf"), float("inf")),
+        (math.inf, math.inf),
     ],
 )
 def test_cathetus_nan(h, a):
@@ -78,13 +74,7 @@ def test_cathetus_nan(h, a):
 
 
 @pytest.mark.parametrize(
-    "h,a",
-    [
-        (float("inf"), 3),
-        (float("inf"), -3),
-        (float("inf"), 0),
-        (float("inf"), float("nan")),
-    ],
+    "h,a", [(math.inf, 3), (math.inf, -3), (math.inf, 0), (math.inf, math.nan)],
 )
 def test_cathetus_infinite(h, a):
     assert math.isinf(cathetus(h, a))

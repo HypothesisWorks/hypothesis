@@ -78,7 +78,7 @@ NASTY_FLOATS = sorted(
         1.192092896e-07,
         2.2204460492503131e-016,
     ]
-    + [float("inf"), float("nan")] * 5,
+    + [math.inf, math.nan] * 5,
     key=flt.float_to_lex,
 )
 NASTY_FLOATS = list(map(float, NASTY_FLOATS))

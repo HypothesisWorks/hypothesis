@@ -54,10 +54,10 @@ def fn_ktest(*fnkwargs):
 
 
 @fn_ktest(
-    (ds.integers, {"min_value": float("nan")}),
+    (ds.integers, {"min_value": math.nan}),
     (ds.integers, {"min_value": 2, "max_value": 1}),
-    (ds.integers, {"min_value": float("nan")}),
-    (ds.integers, {"max_value": float("nan")}),
+    (ds.integers, {"min_value": math.nan}),
+    (ds.integers, {"max_value": math.nan}),
     (ds.integers, {"min_value": decimal.Decimal("1.5")}),
     (ds.integers, {"max_value": decimal.Decimal("1.5")}),
     (ds.integers, {"min_value": -1.5, "max_value": -0.5}),
@@ -71,8 +71,8 @@ def fn_ktest(*fnkwargs):
         ds.datetimes,
         {"min_value": datetime(2017, 8, 22), "max_value": datetime(2017, 8, 21)},
     ),
-    (ds.decimals, {"min_value": float("nan")}),
-    (ds.decimals, {"max_value": float("nan")}),
+    (ds.decimals, {"min_value": math.nan}),
+    (ds.decimals, {"max_value": math.nan}),
     (ds.decimals, {"min_value": 2, "max_value": 1}),
     (ds.decimals, {"max_value": "-snan"}),
     (ds.decimals, {"max_value": complex(1, 2)}),
@@ -91,8 +91,8 @@ def fn_ktest(*fnkwargs):
         ds.dictionaries,
         {"keys": ds.booleans(), "values": ds.booleans(), "min_size": 10, "max_size": 1},
     ),
-    (ds.floats, {"min_value": float("nan")}),
-    (ds.floats, {"max_value": float("nan")}),
+    (ds.floats, {"min_value": math.nan}),
+    (ds.floats, {"max_value": math.nan}),
     (ds.floats, {"min_value": complex(1, 2)}),
     (ds.floats, {"max_value": complex(1, 2)}),
     (ds.floats, {"exclude_min": None}),
@@ -102,8 +102,8 @@ def fn_ktest(*fnkwargs):
     (ds.floats, {"min_value": 1.8, "width": 32}),
     (ds.floats, {"max_value": 1.8, "width": 32}),
     (ds.fractions, {"min_value": 2, "max_value": 1}),
-    (ds.fractions, {"min_value": float("nan")}),
-    (ds.fractions, {"max_value": float("nan")}),
+    (ds.fractions, {"min_value": math.nan}),
+    (ds.fractions, {"max_value": math.nan}),
     (ds.fractions, {"max_denominator": 0}),
     (ds.fractions, {"max_denominator": 1.5}),
     (ds.fractions, {"min_value": complex(1, 2)}),
@@ -114,7 +114,7 @@ def fn_ktest(*fnkwargs):
     (ds.lists, {"elements": ds.integers(), "min_size": -10, "max_size": -9}),
     (ds.lists, {"elements": ds.integers(), "max_size": -9}),
     (ds.lists, {"elements": ds.integers(), "min_size": -10}),
-    (ds.lists, {"elements": ds.integers(), "min_size": float("nan")}),
+    (ds.lists, {"elements": ds.integers(), "min_size": math.nan}),
     (ds.lists, {"elements": ds.nothing(), "max_size": 1}),
     (ds.lists, {"elements": "hi"}),
     (ds.lists, {"elements": ds.integers(), "unique_by": 1}),
@@ -125,7 +125,7 @@ def fn_ktest(*fnkwargs):
     (ds.text, {"alphabet": [1]}),
     (ds.text, {"alphabet": ["abc"]}),
     (ds.binary, {"min_size": 10, "max_size": 9}),
-    (ds.floats, {"min_value": float("nan")}),
+    (ds.floats, {"min_value": math.nan}),
     (ds.floats, {"min_value": "0"}),
     (ds.floats, {"max_value": "0"}),
     (ds.floats, {"min_value": 0.0, "max_value": -0.0}),
@@ -134,10 +134,10 @@ def fn_ktest(*fnkwargs):
     (ds.floats, {"min_value": 0.0, "allow_nan": True}),
     (ds.floats, {"max_value": 0.0, "allow_nan": True}),
     (ds.floats, {"min_value": 0.0, "max_value": 1.0, "allow_infinity": True}),
-    (ds.floats, {"min_value": float("inf"), "allow_infinity": False}),
-    (ds.floats, {"max_value": float("-inf"), "allow_infinity": False}),
-    (ds.complex_numbers, {"min_magnitude": float("nan")}),
-    (ds.complex_numbers, {"max_magnitude": float("nan")}),
+    (ds.floats, {"min_value": math.inf, "allow_infinity": False}),
+    (ds.floats, {"max_value": -math.inf, "allow_infinity": False}),
+    (ds.complex_numbers, {"min_magnitude": math.nan}),
+    (ds.complex_numbers, {"max_magnitude": math.nan}),
     (ds.complex_numbers, {"max_magnitude": complex(1, 2)}),
     (ds.complex_numbers, {"min_magnitude": -1}),
     (ds.complex_numbers, {"max_magnitude": -1}),
@@ -216,8 +216,8 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.floats, {}),
     (ds.floats, {"min_value": 1.0}),
     (ds.floats, {"max_value": 1.0}),
-    (ds.floats, {"min_value": float("inf")}),
-    (ds.floats, {"max_value": float("-inf")}),
+    (ds.floats, {"min_value": math.inf}),
+    (ds.floats, {"max_value": -math.inf}),
     (ds.floats, {"max_value": 1.0, "min_value": -1.0}),
     (ds.floats, {"max_value": 1.0, "min_value": -1.0, "allow_infinity": False}),
     (ds.floats, {"min_value": 1.0, "allow_nan": False}),
@@ -232,7 +232,7 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.complex_numbers, {"allow_nan": False}),
     (ds.complex_numbers, {"allow_nan": False, "allow_infinity": True}),
     (ds.complex_numbers, {"allow_nan": False, "allow_infinity": False}),
-    (ds.complex_numbers, {"max_magnitude": float("inf"), "allow_infinity": True}),
+    (ds.complex_numbers, {"max_magnitude": math.inf, "allow_infinity": True}),
     (ds.sampled_from, {"elements": [1]}),
     (ds.sampled_from, {"elements": [1, 2, 3]}),
     (ds.fixed_dictionaries, {"mapping": {1: ds.integers()}}),
@@ -336,15 +336,15 @@ def test_decimal_is_in_bounds(x):
 
 
 def test_float_can_find_max_value_inf():
-    assert minimal(ds.floats(max_value=float("inf")), lambda x: math.isinf(x)) == float(
+    assert minimal(ds.floats(max_value=math.inf), lambda x: math.isinf(x)) == float(
         "inf"
     )
-    assert minimal(ds.floats(min_value=0.0), lambda x: math.isinf(x)) == float("inf")
+    assert minimal(ds.floats(min_value=0.0), lambda x: math.isinf(x)) == math.inf
 
 
 def test_float_can_find_min_value_inf():
     minimal(ds.floats(), lambda x: x < 0 and math.isinf(x))
-    minimal(ds.floats(min_value=float("-inf"), max_value=0.0), lambda x: math.isinf(x))
+    minimal(ds.floats(min_value=-math.inf, max_value=0.0), lambda x: math.isinf(x))
 
 
 def test_can_find_none_list():

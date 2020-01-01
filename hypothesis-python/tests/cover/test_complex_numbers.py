@@ -98,5 +98,3 @@ def test_minmax_magnitude_equal(data, mag):
         assert math.isclose(abs(val), mag)
     except OverflowError:
         reject()
-    except AttributeError:
-        pass  # Python 2.7.3 does not have math.isclose

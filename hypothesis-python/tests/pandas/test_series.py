@@ -40,9 +40,7 @@ def test_series_respects_size_bounds(s):
 
 
 def test_can_fill_series():
-    nan_backed = pdst.series(
-        elements=st.floats(allow_nan=False), fill=st.just(float("nan"))
-    )
+    nan_backed = pdst.series(elements=st.floats(allow_nan=False), fill=st.just(np.nan))
     find_any(nan_backed, lambda x: np.isnan(x).any())
 
 

@@ -22,4 +22,3 @@ exclude_lines =
     __deepcopy__
     except ImportError:
     assert all\(.+\)
-    if __reserved is not not_set:

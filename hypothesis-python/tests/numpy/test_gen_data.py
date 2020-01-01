@@ -338,7 +338,7 @@ def test_cannot_generate_unique_array_of_too_many_elements():
     nps.arrays(
         elements=st.just(0.0),
         dtype=float,
-        fill=st.just(float("nan")),
+        fill=st.just(np.nan),
         shape=st.integers(0, 20),
         unique=True,
     )
@@ -360,7 +360,7 @@ def test_may_fill_with_nan_when_unique_is_set():
             elements=st.floats(allow_nan=False),
             shape=10,
             unique=True,
-            fill=st.just(float("nan")),
+            fill=st.just(np.nan),
         ),
         lambda x: np.isnan(x).any(),
     )
@@ -372,7 +372,7 @@ def test_may_fill_with_nan_when_unique_is_set():
         elements=st.floats(allow_nan=False),
         shape=10,
         unique=True,
-        fill=st.just(float("nan")),
+        fill=st.just(np.nan),
     )
 )
 def test_is_still_unique_with_nan_fill(xs):

@@ -81,7 +81,7 @@ def test_is_not_negative_infinite(x):
 @given(floats())
 @TRY_HARDER
 def test_is_int(x):
-    assume(not (math.isinf(x) or math.isnan(x)))
+    assume(math.isfinite(x))
     assert x == int(x)
 
 
@@ -89,7 +89,7 @@ def test_is_int(x):
 @given(floats())
 @TRY_HARDER
 def test_is_not_int(x):
-    assume(not (math.isinf(x) or math.isnan(x)))
+    assume(math.isfinite(x))
     assert x != int(x)
 
 
@@ -97,7 +97,7 @@ def test_is_not_int(x):
 @given(floats())
 @TRY_HARDER
 def test_is_in_exact_int_range(x):
-    assume(not (math.isinf(x) or math.isnan(x)))
+    assume(math.isfinite(x))
     assert x + 1 != x
 
 

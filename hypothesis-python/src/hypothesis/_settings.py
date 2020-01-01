@@ -627,7 +627,7 @@ If set to True, Hypothesis will print code for failing examples that can be used
 settings.lock_further_definitions()
 
 
-def note_deprecation(message, since):
+def note_deprecation(message, *, since):
     # type: (str, str) -> None
     if since != "RELEASEDAY":
         date = datetime.datetime.strptime(since, "%Y-%m-%d").date()

@@ -177,10 +177,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         mkdir_p(self._key_path(key))
         path = self._value_path(key, value)
         if not os.path.exists(path):
-            suffix = binascii.hexlify(os.urandom(16))
-            if not isinstance(suffix, str):  # pragma: no branch
-                # On Python 3, binascii.hexlify returns bytes
-                suffix = suffix.decode("ascii")
+            suffix = binascii.hexlify(os.urandom(16)).decode("ascii")
             tmpname = path + "." + suffix
             with open(tmpname, "wb") as o:
                 o.write(value)

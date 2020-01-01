@@ -25,7 +25,7 @@ import hypothesis.strategies._internal.core as st
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.coverage import check_function
-from hypothesis.internal.reflection import proxies, reserved_means_kwonly_star
+from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal import SearchStrategy
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
@@ -1023,16 +1023,15 @@ def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
 
 
 @st.defines_strategy
-@reserved_means_kwonly_star
 def mutually_broadcastable_shapes(
-    __reserved=not_set,  # type: Any
+    *,
     num_shapes=not_set,  # type: Union[UniqueIdentifier, int]
     signature=not_set,  # type: Union[UniqueIdentifier, str]
     base_shape=(),  # type: Shape
     min_dims=0,  # type: int
     max_dims=None,  # type: int
     min_side=1,  # type: int
-    max_side=None,  # type: int
+    max_side=None  # type: int
 ):
     # type: (...) -> st.SearchStrategy[BroadcastableShapes]
     """Return a strategy for generating a specified number of shapes, N, that are
@@ -1108,9 +1107,6 @@ def mutually_broadcastable_shapes(
         BroadcastableShapes(input_shapes=((3, 4, 2), (1, 2)), result_shape=(3, 4))
         BroadcastableShapes(input_shapes=((4, 2), (1, 2, 3)), result_shape=(4, 3))
     """
-    if __reserved is not not_set:
-        raise InvalidArgument("Do not pass the __reserved argument.")
-
     arg_msg = "Pass either the `num_shapes` or the `signature` argument, but not both."
     if num_shapes is not not_set:
         check_argument(signature is not_set, arg_msg)
@@ -1251,16 +1247,10 @@ class BasicIndexStrategy(SearchStrategy):
 
 
 @st.defines_strategy
-@reserved_means_kwonly_star
 def basic_indices(
-    shape,
-    __reserved=not_set,
-    min_dims=0,
-    max_dims=None,
-    allow_newaxis=False,
-    allow_ellipsis=True,
+    shape, *, min_dims=0, max_dims=None, allow_newaxis=False, allow_ellipsis=True
 ):
-    # type: (Shape, Any, int, int, bool, bool) -> st.SearchStrategy[BasicIndex]
+    # type: (Shape, int, int, bool, bool) -> st.SearchStrategy[BasicIndex]
     """
     The ``basic_indices`` strategy generates `basic indexes
     <https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html>`__  for
@@ -1288,10 +1278,8 @@ def basic_indices(
     # Arguments to exclude scalars, zero-dim arrays, and dims of size zero were
     # all considered and rejected.  We want users to explicitly consider those
     # cases if they're dealing in general indexers, and while it's fiddly we can
-    # back-compatibly add them later (hence using __reserved to sim kwonlyargs).
+    # back-compatibly add them later (hence using kwonlyargs).
     check_type(tuple, shape, "shape")
-    if __reserved is not not_set:
-        raise InvalidArgument("Do not pass the __reserved argument.")
     check_type(bool, allow_ellipsis, "allow_ellipsis")
     check_type(bool, allow_newaxis, "allow_newaxis")
     check_type(int, min_dims, "min_dims")

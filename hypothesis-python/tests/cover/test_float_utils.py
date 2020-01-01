@@ -27,11 +27,11 @@ def test_can_handle_straddling_zero():
 @pytest.mark.parametrize(
     "func,val",
     [
-        (next_up, float("nan")),
-        (next_up, float("inf")),
+        (next_up, math.nan),
+        (next_up, math.inf),
         (next_up, -0.0),
-        (next_down, float("nan")),
-        (next_down, float("-inf")),
+        (next_down, math.nan),
+        (next_down, -math.inf),
         (next_down, 0.0),
     ],
 )

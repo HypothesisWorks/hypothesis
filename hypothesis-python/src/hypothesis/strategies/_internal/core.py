@@ -54,7 +54,6 @@ from hypothesis.internal.reflection import (
     nicerepr,
     proxies,
     required_args,
-    reserved_means_kwonly_star,
 )
 from hypothesis.internal.validation import (
     check_type,
@@ -430,7 +429,7 @@ def floats(
     Excluding either signed zero will also exclude the other.
     Attempting to exclude an endpoint which is None will raise an error;
     use ``allow_infinity=False`` to generate finite floats.  You can however
-    use e.g. ``min_value=float("-inf"), exclude_min=True`` to exclude only
+    use e.g. ``min_value=-math.inf, exclude_min=True`` to exclude only
     one infinite endpoint.
 
     Examples from this strategy have a complicated and hard to explain
@@ -481,9 +480,9 @@ def floats(
             "%d - use max_value=%r instead" % (max_arg, width, max_value)
         )
 
-    if exclude_min and (min_value is None or min_value == float("inf")):
+    if exclude_min and (min_value is None or min_value == math.inf):
         raise InvalidArgument("Cannot exclude min_value=%r" % (min_value,))
-    if exclude_max and (max_value is None or max_value == float("-inf")):
+    if exclude_max and (max_value is None or max_value == -math.inf):
         raise InvalidArgument("Cannot exclude max_value=%r" % (max_value,))
 
     if min_value is not None and (
@@ -505,9 +504,9 @@ def floats(
             max_value = next_down(max_value, width)
         assert max_value < max_arg  # type: ignore
 
-    if min_value == float("-inf"):
+    if min_value == -math.inf:
         min_value = None
-    if max_value == float("inf"):
+    if max_value == math.inf:
         max_value = None
 
     bad_zero_bounds = (
@@ -538,9 +537,9 @@ def floats(
                 "Cannot have allow_infinity=%r, with both min_value and "
                 "max_value" % (allow_infinity)
             )
-    elif min_value == float("inf"):
+    elif min_value == math.inf:
         raise InvalidArgument("allow_infinity=False excludes min_value=inf")
-    elif max_value == float("-inf"):
+    elif max_value == -math.inf:
         raise InvalidArgument("allow_infinity=False excludes max_value=-inf")
 
     unbounded_floats = FloatStrategy(
@@ -837,11 +836,10 @@ def iterables(
 
 
 @defines_strategy
-@reserved_means_kwonly_star
 def fixed_dictionaries(
     mapping,  # type: Dict[T, SearchStrategy[Ex]]
-    __reserved=not_set,  # type: Any
-    optional=None,  # type: Dict[T, SearchStrategy[Ex]]
+    *,
+    optional=None  # type: Dict[T, SearchStrategy[Ex]]
 ):
     # type: (...) -> SearchStrategy[Dict[T, Ex]]
     """Generates a dictionary of the same type as mapping with a fixed set of
@@ -858,8 +856,6 @@ def fixed_dictionaries(
     check_type(dict, mapping, "mapping")
     for k, v in mapping.items():
         check_strategy(v, "mapping[%r]" % (k,))
-    if __reserved is not not_set:
-        raise InvalidArgument("Do not pass __reserved; got %r" % (__reserved,))
     if optional is not None:
         check_type(dict, optional, "optional")
         for k, v in optional.items():
@@ -1915,7 +1911,7 @@ def complex_numbers(
     check_valid_magnitude(min_magnitude, "min_magnitude")
     check_valid_magnitude(max_magnitude, "max_magnitude")
     check_valid_interval(min_magnitude, max_magnitude, "min_magnitude", "max_magnitude")
-    if max_magnitude == float("inf"):
+    if max_magnitude == math.inf:
         max_magnitude = None
     if min_magnitude == 0:
         min_magnitude = None

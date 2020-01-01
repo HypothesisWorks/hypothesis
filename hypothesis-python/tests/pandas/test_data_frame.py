@@ -108,7 +108,7 @@ def test_can_specify_both_rows_and_columns_dict(d):
         [
             pdst.column(
                 "A",
-                fill=st.just(float("nan")),
+                fill=st.just(np.nan),
                 dtype=float,
                 elements=st.floats(allow_nan=False),
             )
@@ -149,7 +149,7 @@ def test_data_frames_with_timestamp_columns(df):
 
 @given(
     pdst.data_frames(
-        pdst.columns(["A"], dtype=float, fill=st.just(float("nan")), unique=True)
+        pdst.columns(["A"], dtype=float, fill=st.just(np.nan), unique=True)
     )
 )
 def test_unique_column_with_fill(df):
@@ -162,7 +162,7 @@ def test_arbitrary_data_frames(data):
     columns = data.draw(
         st.lists(
             column_strategy(),
-            unique_by=lambda c: c.name if c.name is not None else float("nan"),
+            unique_by=lambda c: c.name if c.name is not None else np.nan,
         )
     )
 

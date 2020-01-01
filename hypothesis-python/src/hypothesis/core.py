@@ -276,12 +276,6 @@ def is_invalid_test(name, original_argspec, given_arguments, given_kwargs):
             "%s() got an unexpected keyword argument %r, from `%s=%r` in @given"
             % (name, arg, arg, given_kwargs[arg])
         )
-    for a in original_argspec.args:
-        if isinstance(a, list):  # pragma: no cover
-            return invalid(
-                "Cannot decorate function %s() because it has destructuring arguments"
-                % (name,)
-            )
     if original_argspec.defaults or original_argspec.kwonlydefaults:
         return invalid("Cannot apply @given to a function with defaults.")
     missing = [repr(kw) for kw in original_argspec.kwonlyargs if kw not in given_kwargs]

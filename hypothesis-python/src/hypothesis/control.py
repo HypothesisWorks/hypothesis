@@ -168,7 +168,7 @@ def target(observation, label=""):
     example shrinks right down to the threshold of failure (:issue:`2180`).
     """
     check_type(float, observation, "observation")
-    if math.isinf(observation) or math.isnan(observation):
+    if not math.isfinite(observation):
         raise InvalidArgument("observation=%r must be a finite float." % observation)
     check_type(str, label, "label")
 

@@ -1,7 +1,6 @@
 [flake8]
 
 exclude =
-    hypothesis-python/src/hypothesis/vendor/*,
     test_reflection.py,
     test_imports.py,
     test_lambda_formatting.py

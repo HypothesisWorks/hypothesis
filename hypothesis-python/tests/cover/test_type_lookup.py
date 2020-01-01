@@ -96,13 +96,6 @@ class ParentUnknownType:
     pass
 
 
-def test_can_resolve_trivial_types():
-    # Under Python 2, this inherits a special wrapper_descriptor slots
-    # thing from object.__init__, which chokes inspect.getargspec.
-    # from_type should and does work anyway; see issues #1655 and #1656.
-    st.from_type(ParentUnknownType).example()
-
-
 class UnknownType(ParentUnknownType):
     def __init__(self, arg):
         pass
@@ -180,7 +173,7 @@ def test_pulic_interface_works():
         fails.example()
 
 
-def test_given_can_infer_on_py2():
+def test_given_can_infer_from_manual_annotations():
     # Editing annotations before decorating is hilariously awkward, but works!
     def inner(a):
         pass

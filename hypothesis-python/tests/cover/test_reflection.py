@@ -17,6 +17,7 @@ import sys
 from copy import deepcopy
 from functools import partial
 from inspect import FullArgSpec, getfullargspec
+from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
 import pytest
 
@@ -36,11 +37,6 @@ from hypothesis.internal.reflection import (
     unbind_method,
 )
 from tests.common.utils import raises
-
-try:
-    from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
-except ImportError:
-    from mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
 
 def do_conversion_test(f, args, kwargs):

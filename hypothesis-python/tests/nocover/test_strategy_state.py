@@ -136,9 +136,7 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(target=strategies, left=varied_floats, right=varied_floats)
     def float_range(self, left, right):
-        for f in (math.isnan, math.isinf):
-            for x in (left, right):
-                assume(not f(x))
+        assume(math.isfinite(left) and math.isfinite(right))
         left, right = sorted((left, right))
         assert left <= right
         # exclude deprecated case where left = 0.0 and right = -0.0
