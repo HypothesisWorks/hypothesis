@@ -486,7 +486,7 @@ def dtype_factory(kind, sizes, valid_sizes, endianness):
         check_argument(sizes, "Dtype must have at least one possible size.")
         check_argument(
             all(s in valid_sizes for s in sizes),
-            "Invalid sizes: was {} must be an item or sequence " "in {}",
+            "Invalid sizes: was {} must be an item or sequence in {}",
             sizes,
             valid_sizes,
         )
@@ -571,7 +571,7 @@ def validate_time_slice(max_period, min_period):
     end = TIME_RESOLUTIONS.index(min_period) + 1
     check_argument(
         start < end,
-        "max_period {} must be earlier in sequence {} than " "min_period {}",
+        "max_period {} must be earlier in sequence {} than min_period {}",
         max_period,
         TIME_RESOLUTIONS,
         min_period,

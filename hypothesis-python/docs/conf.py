@@ -103,7 +103,7 @@ html_favicon = "../../brand/favicon.ico"
 latex_elements = {}
 
 latex_documents = [
-    (master_doc, "Hypothesis.tex", "Hypothesis Documentation", author, "manual",)
+    (master_doc, "Hypothesis.tex", "Hypothesis Documentation", author, "manual")
 ]
 
 man_pages = [(master_doc, "hypothesis", "Hypothesis Documentation", [author], 1)]

@@ -20,6 +20,7 @@ from hypothesis.version import __version__
 
 pytest_plugins = "pytester"
 
+
 CONFTEST = """
 from hypothesis._settings import settings
 settings.register_profile("test", settings(max_examples=1))

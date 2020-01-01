@@ -18,7 +18,6 @@ from functools import reduce
 
 import numpy as np
 import pytest
-import six
 
 import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st

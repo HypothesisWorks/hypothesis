@@ -92,8 +92,6 @@ def test_does_print_verbose_in_debug():
 
 @pytest.mark.skipif(PY2, reason="Output streams don't have encodings in python 2")
 def test_can_report_when_system_locale_is_ascii(monkeypatch):
-    import io
-
     read, write = os.pipe()
     with open(read, "r", encoding="ascii") as read:
         with open(write, "w", encoding="ascii") as write:

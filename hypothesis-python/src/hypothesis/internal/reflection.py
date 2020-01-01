@@ -80,7 +80,6 @@ def function_digest(function):
     hasher = hashlib.sha384()
     try:
         hasher.update(to_unicode(inspect.getsource(function)).encode("utf-8"))
-    # Different errors on different versions of python. What fun.
     except (OSError, TypeError):
         pass
     try:
