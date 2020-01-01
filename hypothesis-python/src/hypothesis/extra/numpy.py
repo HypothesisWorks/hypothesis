@@ -16,6 +16,7 @@
 import math
 import re
 from collections import namedtuple
+from typing import Any, NamedTuple, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -23,37 +24,22 @@ import hypothesis.internal.conjecture.utils as cu
 import hypothesis.strategies._internal.core as st
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import (
-    PY2,
-    hrange,
-    integer_types,
-    quiet_raise,
-    string_types,
-)
+from hypothesis.internal.compat import hrange, integer_types, quiet_raise, string_types
 from hypothesis.internal.coverage import check_function
-from hypothesis.internal.reflection import proxies, reserved_means_kwonly_star
+from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal import SearchStrategy
+from hypothesis.strategies._internal.strategies import T
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
-if PY2:
-    BroadcastableShapes = namedtuple(
-        "BroadcastableShapes", ["input_shapes", "result_shape"]
-    )
-else:
-    from typing import NamedTuple, Tuple
+Shape = Tuple[int, ...]
+BroadcastableShapes = NamedTuple(
+    "BroadcastableShapes",
+    [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
+)
 
-    Shape = Tuple[int, ...]  # noqa
-    BroadcastableShapes = NamedTuple(
-        "BroadcastableShapes",
-        [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
-    )
 
-if False:
-    from typing import Any, Union, Sequence, Tuple  # noqa
-    from hypothesis.strategies._internal.strategies import T  # noqa
-
-    BasicIndex = Tuple[Union[int, slice, ellipsis, np.newaxis], ...]  # noqa
+BasicIndex = Tuple[Union[int, slice, Ellipsis, np.newaxis], ...]
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
 
@@ -645,10 +631,7 @@ def array_dtypes(
     drawn from the given subtype strategy."""
     order_check("size", 0, min_size, max_size)
     # Field names must be native strings and the empty string is weird; see #1963.
-    if PY2:
-        field_names = st.binary(min_size=1)
-    else:
-        field_names = st.text(min_size=1)
+    field_names = st.text(min_size=1)
     elements = st.tuples(field_names, subtype_strategy)
     if allow_subarrays:
         elements |= st.tuples(
@@ -1037,9 +1020,8 @@ def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
 
 
 @st.defines_strategy
-@reserved_means_kwonly_star
 def mutually_broadcastable_shapes(
-    __reserved=not_set,  # type: Any
+    *,
     num_shapes=not_set,  # type: Union[UniqueIdentifier, int]
     signature=not_set,  # type: Union[UniqueIdentifier, str]
     base_shape=(),  # type: Shape
@@ -1122,9 +1104,6 @@ def mutually_broadcastable_shapes(
         BroadcastableShapes(input_shapes=((3, 4, 2), (1, 2)), result_shape=(3, 4))
         BroadcastableShapes(input_shapes=((4, 2), (1, 2, 3)), result_shape=(4, 3))
     """
-    if __reserved is not not_set:
-        raise InvalidArgument("Do not pass the __reserved argument.")
-
     arg_msg = "Pass either the `num_shapes` or the `signature` argument, but not both."
     if num_shapes is not not_set:
         check_argument(signature is not_set, arg_msg)
@@ -1265,14 +1244,8 @@ class BasicIndexStrategy(SearchStrategy):
 
 
 @st.defines_strategy
-@reserved_means_kwonly_star
 def basic_indices(
-    shape,
-    __reserved=not_set,
-    min_dims=0,
-    max_dims=None,
-    allow_newaxis=False,
-    allow_ellipsis=True,
+    shape, *, min_dims=0, max_dims=None, allow_newaxis=False, allow_ellipsis=True
 ):
     # type: (Shape, Any, int, int, bool, bool) -> st.SearchStrategy[BasicIndex]
     """
@@ -1304,8 +1277,6 @@ def basic_indices(
     # cases if they're dealing in general indexers, and while it's fiddly we can
     # back-compatibly add them later (hence using __reserved to sim kwonlyargs).
     check_type(tuple, shape, "shape")
-    if __reserved is not not_set:
-        raise InvalidArgument("Do not pass the __reserved argument.")
     check_type(bool, allow_ellipsis, "allow_ellipsis")
     check_type(bool, allow_newaxis, "allow_newaxis")
     check_type(integer_types, min_dims, "min_dims")

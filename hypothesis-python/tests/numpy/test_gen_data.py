@@ -23,15 +23,12 @@ import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, assume, given, note, settings
 from hypothesis.errors import InvalidArgument, Unsatisfiable
-from hypothesis.internal.compat import PY2, binary_type, text_type
+from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.strategies._internal import SearchStrategy
 from tests.common.debug import find_any, minimal
 from tests.common.utils import fails_with, flaky
 
-if PY2:
-    from itertools import izip_longest as zip_longest
-else:
-    from itertools import zip_longest
+from itertools import zip_longest
 
 
 ANY_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=0, max_side=32)
