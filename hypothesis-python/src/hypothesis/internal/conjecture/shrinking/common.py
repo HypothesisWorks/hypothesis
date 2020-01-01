@@ -100,7 +100,7 @@ class Shrinker:
             other_class,
             convert_to(self.current),
             lambda v: self.consider(convert_from(v)),
-            **kwargs
+            **kwargs,
         )
 
     def call_shrinker(self, other_class, initial, predicate, **kwargs):

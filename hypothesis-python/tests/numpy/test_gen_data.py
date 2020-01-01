@@ -1044,7 +1044,7 @@ def test_mutually_broadcastable_shapes_can_generate_arbitrary_ndims(
             base_shape=base_shape,
             min_side=0,
             max_dims=max_dims,
-            **kwargs
+            **kwargs,
         ),
         lambda x: {len(s) for s in x.input_shapes} == set(desired_ndims),
         settings(max_examples=10 ** 6),

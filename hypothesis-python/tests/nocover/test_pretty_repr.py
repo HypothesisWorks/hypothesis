@@ -83,7 +83,7 @@ Strategies = st.recursive(
             x,
             x,
             dict_class=st.sampled_from([dict, OrderedDict]),
-            **size_strategies
+            **size_strategies,
         ),
         st.builds(lambda s, f: s.map(f), x, st.sampled_from(fns)),
     ),

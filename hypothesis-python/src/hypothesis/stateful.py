@@ -676,9 +676,7 @@ class RuleBasedStateMachine(_GenericStateMachine):
 
     def __init__(self):
         if not self.rules():
-            raise InvalidDefinition(
-                "Type %s defines no rules" % (type(self).__name__,)
-            )
+            raise InvalidDefinition("Type %s defines no rules" % (type(self).__name__,))
         self.bundles = {}  # type: Dict[Text, list]
         self.name_counter = 1
         self.names_to_values = {}  # type: Dict[Text, Any]

@@ -199,17 +199,7 @@ def test_any_with_dotall_generate_newline_binary(pattern):
 
 @pytest.mark.parametrize(
     "pattern",
-    [
-        "\\d",
-        "[\\d]",
-        "[^\\D]",
-        "\\w",
-        "[\\w]",
-        "[^\\W]",
-        "\\s",
-        "[\\s]",
-        "[^\\S]",
-    ],
+    ["\\d", "[\\d]", "[^\\D]", "\\w", "[\\w]", "[^\\W]", "\\s", "[\\s]", "[^\\S]",],
 )
 @pytest.mark.parametrize("is_unicode", [False, True])
 @pytest.mark.parametrize("invert", [False, True])
@@ -260,8 +250,7 @@ def test_end():
 
 def test_groupref_exists():
     assert_all_examples(
-        st.from_regex("^(<)?a(?(1)>)$"),
-        lambda s: s in ("a", "a\n", "<a>", "<a>\n"),
+        st.from_regex("^(<)?a(?(1)>)$"), lambda s: s in ("a", "a\n", "<a>", "<a>\n"),
     )
     assert_all_examples(
         st.from_regex("^(a)?(?(1)b|c)$"), lambda s: s in ("ab", "ab\n", "c", "c\n")
@@ -456,10 +445,7 @@ def test_fullmatch_generates_example(pattern, matching_str):
         ("[ab]*", "\\A[ab]*\\Z"),
         (b"[Aa]", br"\A[Aa]\Z"),
         (b"[ab]*", br"\A[ab]*\Z"),
-        (
-            re.compile("[ab]*", re.IGNORECASE),
-            re.compile("\\A[ab]*\\Z", re.IGNORECASE),
-        ),
+        (re.compile("[ab]*", re.IGNORECASE), re.compile("\\A[ab]*\\Z", re.IGNORECASE),),
         (re.compile(br"[ab]", re.IGNORECASE), re.compile(br"\A[ab]\Z", re.IGNORECASE)),
     ],
 )

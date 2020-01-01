@@ -154,9 +154,7 @@ test_can_produce_short_strings_with_some_non_ascii = define_test(
 
 test_can_produce_positive_infinity = define_test(floats(), lambda x: x == float("inf"))
 
-test_can_produce_negative_infinity = define_test(
-    floats(), lambda x: x == float("-inf")
-)
+test_can_produce_negative_infinity = define_test(floats(), lambda x: x == float("-inf"))
 
 test_can_produce_nan = define_test(floats(), math.isnan)
 
