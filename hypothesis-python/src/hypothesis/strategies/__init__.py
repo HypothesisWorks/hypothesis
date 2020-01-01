@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 from hypothesis.strategies._internal import SearchStrategy
 from hypothesis.strategies._internal.core import (
@@ -121,7 +117,6 @@ assert _strategies.issubset(set(__all__)), (
     _strategies - set(__all__),
     set(__all__) - _strategies,
 )
-del absolute_import, division, print_function
 _public = {n for n in dir() if n[0] not in "_@"}
 assert set(__all__) == _public, (set(__all__) - _public, _public - set(__all__))
 del _public

@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import decimal
 import math
@@ -65,7 +61,7 @@ def check_valid_bound(value, name):
     if not isinstance(value, (Real, decimal.Decimal)):
         raise InvalidArgument("%s=%r must be a real number." % (name, value))
     if math.isnan(value):
-        raise InvalidArgument(u"Invalid end point %s=%r" % (name, value))
+        raise InvalidArgument("Invalid end point %s=%r" % (name, value))
 
 
 @check_function
@@ -106,7 +102,7 @@ def check_valid_size(value, name):
         return
     check_type(integer_types, value, name)
     if value < 0:
-        raise InvalidArgument(u"Invalid size %s=%r < 0" % (name, value))
+        raise InvalidArgument("Invalid size %s=%r < 0" % (name, value))
 
 
 @check_function

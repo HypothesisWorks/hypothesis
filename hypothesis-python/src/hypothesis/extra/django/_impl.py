@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import unittest
 from functools import partial
@@ -38,7 +34,7 @@ if False:
     from hypothesis.utils.conventions import InferType  # noqa
 
 
-class HypothesisTestCase(object):
+class HypothesisTestCase:
     def setup_example(self):
         self._pre_setup()
 
@@ -47,7 +43,7 @@ class HypothesisTestCase(object):
 
     def __call__(self, result=None):
         testMethod = getattr(self, self._testMethodName)
-        if getattr(testMethod, u"is_hypothesis_test", False):
+        if getattr(testMethod, "is_hypothesis_test", False):
             return unittest.TestCase.__call__(self, result)
         else:
             return dt.SimpleTestCase.__call__(self, result)

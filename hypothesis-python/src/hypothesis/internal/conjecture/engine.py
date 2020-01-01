@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 from collections import Counter, defaultdict
 from enum import Enum
@@ -60,7 +56,7 @@ BUFFER_SIZE = 8 * 1024
 
 
 @attr.s
-class HealthCheckState(object):
+class HealthCheckState:
     valid_examples = attr.ib(default=0)
     invalid_examples = attr.ib(default=0)
     overrun_examples = attr.ib(default=0)
@@ -79,7 +75,7 @@ class RunIsComplete(Exception):
     pass
 
 
-class ConjectureRunner(object):
+class ConjectureRunner:
     def __init__(self, test_function, settings=None, random=None, database_key=None):
         self._test_function = test_function
         self.settings = settings or Settings()
@@ -427,7 +423,7 @@ class ConjectureRunner(object):
             for v in self.interesting_examples.values():
                 self.debug_data(v)
             self.debug(
-                u"Run complete after %d examples (%d valid) and %d shrinks"
+                "Run complete after %d examples (%d valid) and %d shrinks"
                 % (self.call_count, self.valid_examples, self.shrinks)
             )
 

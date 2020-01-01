@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -21,8 +19,6 @@ some source of data.
 It verifies your code against a wide range of input and minimizes any
 failing examples it finds.
 """
-
-from __future__ import absolute_import, division, print_function
 
 import hypothesis._error_if_old  # noqa  # imported for side-effect of nice error
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings

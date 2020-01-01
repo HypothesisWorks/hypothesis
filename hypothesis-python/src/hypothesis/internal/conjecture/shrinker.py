@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict
 
@@ -67,7 +63,7 @@ SHRINK_PASS_DEFINITIONS = {}  # type: Dict[str, ShrinkPassDefinition]
 
 
 @attr.s()
-class ShrinkPassDefinition(object):
+class ShrinkPassDefinition:
     """A shrink pass bundles together a large number of local changes to
     the current shrink target.
 
@@ -109,7 +105,7 @@ def defines_shrink_pass():
     return accept
 
 
-class Shrinker(object):
+class Shrinker:
     """A shrinker is a child object of a ConjectureRunner which is designed to
     manage the associated state of a particular shrink problem. That is, we
     have some initial ConjectureData object and some property of interest
@@ -1449,7 +1445,7 @@ def block_program(description):
 
 
 @attr.s(slots=True, eq=False)
-class ShrinkPass(object):
+class ShrinkPass:
     run_with_chooser = attr.ib()
     index = attr.ib()
     shrinker = attr.ib()

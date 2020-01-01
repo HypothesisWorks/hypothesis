@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 from django import forms
 from django.forms import widgets
@@ -72,7 +68,7 @@ class OddFieldsForm(ReprModelForm):
 
 class DynamicForm(ReprForm):
     def __init__(self, field_count=5, **kwargs):
-        super(DynamicForm, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         for i in range(field_count):
             field_name = "field-%d" % (i,)
             self.fields[field_name] = forms.CharField(required=False)
@@ -121,7 +117,7 @@ class URLFieldForm(ReprForm):
 
 
 class RegexFieldForm(ReprForm):
-    _regex = forms.RegexField(regex=u"[A-Z]{3}\\.[a-z]{4}")
+    _regex = forms.RegexField(regex="[A-Z]{3}\\.[a-z]{4}")
 
 
 class UUIDFieldForm(ReprForm):
@@ -163,7 +159,7 @@ class BroadBooleanInput(widgets.CheckboxInput):
             return False
         value = data.get(name)
         # Translate true and false strings to boolean values.
-        values = {u"true": True, u"false": False, u"0": False, u"1": True}
+        values = {"true": True, "false": False, "0": False, "1": True}
         if isinstance(value, str):
             value = values.get(value.lower(), value)
         return bool(value)
@@ -172,12 +168,12 @@ class BroadBooleanInput(widgets.CheckboxInput):
 class MultiCheckboxWidget(widgets.MultiWidget):
     def __init__(self, subfield_count=12, **kwargs):
         _widgets = [BroadBooleanInput()] * subfield_count
-        super(MultiCheckboxWidget, self).__init__(_widgets, **kwargs)
+        super().__init__(_widgets, **kwargs)
 
     def decompress(self, value):
         values = []
-        for _value in value.split(u"::"):
-            if _value in (u"0", u"", u"False", 0, None, False):
+        for _value in value.split("::"):
+            if _value in ("0", "", "False", 0, None, False):
                 values.append(False)
             else:
                 values.append(True)
@@ -192,15 +188,15 @@ class MultiBooleanField(forms.MultiValueField):
     def __init__(self, subfield_count=12, **kwargs):
         subfields = [BroadBooleanField()] * subfield_count
         widget = MultiCheckboxWidget(subfield_count=subfield_count)
-        super(MultiBooleanField, self).__init__(fields=subfields, widget=widget)
+        super().__init__(fields=subfields, widget=widget)
 
     def compress(self, values):
-        return u"::".join([str(x) for x in values])
+        return "::".join([str(x) for x in values])
 
 
 class ManyMultiValueForm(ReprForm):
     def __init__(self, subfield_count=12, **kwargs):
-        super(ManyMultiValueForm, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.fields["mv_field"] = MultiBooleanField(subfield_count=subfield_count)
 
 

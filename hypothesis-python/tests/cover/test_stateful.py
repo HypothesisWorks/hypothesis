@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import base64
 from collections import defaultdict, namedtuple
@@ -86,12 +82,12 @@ class OrderedStateMachine(_GenericStateMachine):
         self.counter = step
 
 
-Leaf = namedtuple(u"Leaf", (u"label",))
-Split = namedtuple(u"Split", (u"left", u"right"))
+Leaf = namedtuple("Leaf", ("label",))
+Split = namedtuple("Split", ("left", "right"))
 
 
 class BalancedTrees(RuleBasedStateMachine):
-    trees = Bundle(u"BinaryTree")
+    trees = Bundle("BinaryTree")
 
     @rule(target=trees, x=booleans())
     def leaf(self, x):
@@ -117,7 +113,7 @@ class BalancedTrees(RuleBasedStateMachine):
             return 1 + self.size(tree.left) + self.size(tree.right)
 
 
-class DepthCharge(object):
+class DepthCharge:
     def __init__(self, value):
         if value is None:
             self.depth = 0
@@ -126,7 +122,7 @@ class DepthCharge(object):
 
 
 class DepthMachine(RuleBasedStateMachine):
-    charges = Bundle(u"charges")
+    charges = Bundle("charges")
 
     @rule(targets=(charges,), child=charges)
     def charge(self, child):
@@ -145,8 +141,8 @@ class MultipleRulesSameFuncMachine(RuleBasedStateMachine):
     def myfunc(self, data):
         print_unicode(data)
 
-    rule1 = rule(data=just(u"rule1data"))(myfunc)
-    rule2 = rule(data=just(u"rule2data"))(myfunc)
+    rule1 = rule(data=just("rule1data"))(myfunc)
+    rule2 = rule(data=just("rule2data"))(myfunc)
 
 
 class PreconditionMachine(RuleBasedStateMachine):
@@ -193,7 +189,7 @@ class NotTheLastMachine(RuleBasedStateMachine):
     stuff = Bundle("stuff")
 
     def __init__(self):
-        super(NotTheLastMachine, self).__init__()
+        super().__init__()
         self.last = None
         self.bye_called = False
 
@@ -235,7 +231,7 @@ class CanSwarm(RuleBasedStateMachine):
     """
 
     def __init__(self):
-        super(CanSwarm, self).__init__()
+        super().__init__()
         self.seen = set()
 
     # The reason this rule takes a parameter is that it ensures that we do not
@@ -270,12 +266,12 @@ cheap_bad_machines.remove(BalancedTrees)
 
 
 with_cheap_bad_machines = pytest.mark.parametrize(
-    u"machine", cheap_bad_machines, ids=[t.__name__ for t in cheap_bad_machines]
+    "machine", cheap_bad_machines, ids=[t.__name__ for t in cheap_bad_machines]
 )
 
 
 @pytest.mark.parametrize(
-    u"machine", bad_machines, ids=[t.__name__ for t in bad_machines]
+    "machine", bad_machines, ids=[t.__name__ for t in bad_machines]
 )
 def test_bad_machines_fail(machine):
     test_class = machine.TestCase
@@ -357,7 +353,7 @@ class MachineWithConsumingRule(RuleBasedStateMachine):
     def __init__(self):
         self.created_counter = 0
         self.consumed_counter = 0
-        super(MachineWithConsumingRule, self).__init__()
+        super().__init__()
 
     @invariant()
     def bundle_length(self):
@@ -397,7 +393,7 @@ class MachineUsingMultiple(RuleBasedStateMachine):
 
     def __init__(self):
         self.expected_bundle_length = 0
-        super(MachineUsingMultiple, self).__init__()
+        super().__init__()
 
     @invariant()
     def bundle_length(self):
@@ -490,7 +486,7 @@ def test_empty_machine_is_invalid():
 
 def test_machine_with_no_terminals_is_invalid():
     class NonTerminalMachine(RuleBasedStateMachine):
-        @rule(value=Bundle(u"hi"))
+        @rule(value=Bundle("hi"))
         def bye(self, hi):
             pass
 
@@ -499,7 +495,7 @@ def test_machine_with_no_terminals_is_invalid():
 
 
 class DynamicMachine(RuleBasedStateMachine):
-    @rule(value=Bundle(u"hi"))
+    @rule(value=Bundle("hi"))
     def test_stuff(x):
         pass
 
@@ -512,13 +508,13 @@ class IntAdder(RuleBasedStateMachine):
 
 
 IntAdder.define_rule(
-    targets=(u"ints",), function=lambda self, x: x, arguments={u"x": integers()}
+    targets=("ints",), function=lambda self, x: x, arguments={"x": integers()}
 )
 
 IntAdder.define_rule(
-    targets=(u"ints",),
+    targets=("ints",),
     function=lambda self, x, y: x,
-    arguments={u"x": integers(), u"y": Bundle(u"ints")},
+    arguments={"x": integers(), "y": Bundle("ints")},
 )
 
 
@@ -568,7 +564,7 @@ def test_minimizes_errors_in_teardown():
 
 class RequiresInit(_GenericStateMachine):
     def __init__(self, threshold):
-        super(RequiresInit, self).__init__()
+        super().__init__()
         self.threshold = threshold
 
     def steps(self):
@@ -576,7 +572,7 @@ class RequiresInit(_GenericStateMachine):
 
     def execute_step(self, value):
         if value > self.threshold:
-            raise ValueError(u"%d is too high" % (value,))
+            raise ValueError("%d is too high" % (value,))
 
 
 def test_can_use_factory_for_tests():
@@ -588,7 +584,7 @@ def test_can_use_factory_for_tests():
 
 class FailsEventually(_GenericStateMachine):
     def __init__(self):
-        super(FailsEventually, self).__init__()
+        super().__init__()
         self.counter = 0
 
     def steps(self):
@@ -664,7 +660,7 @@ def test_stateful_double_rule_is_forbidden(recwarn):
 def test_can_explicitly_call_functions_when_precondition_not_satisfied():
     class BadPrecondition(RuleBasedStateMachine):
         def __init__(self):
-            super(BadPrecondition, self).__init__()
+            super().__init__()
 
         @precondition(lambda self: False)
         @rule()
@@ -684,7 +680,7 @@ def test_invariant():
 
     class Invariant(RuleBasedStateMachine):
         def __init__(self):
-            super(Invariant, self).__init__()
+            super().__init__()
 
         @invariant()
         def test_blah(self):
@@ -705,7 +701,7 @@ def test_no_double_invariant():
 
         class Invariant(RuleBasedStateMachine):
             def __init__(self):
-                super(Invariant, self).__init__()
+                super().__init__()
 
             @invariant()
             @invariant()
@@ -725,7 +721,7 @@ def test_invariant_precondition():
 
     class Invariant(RuleBasedStateMachine):
         def __init__(self):
-            super(Invariant, self).__init__()
+            super().__init__()
 
         @invariant()
         @precondition(lambda _: False)
@@ -769,7 +765,7 @@ def test_multiple_invariants():
 
     class Invariant(RuleBasedStateMachine):
         def __init__(self):
-            super(Invariant, self).__init__()
+            super().__init__()
             self.first_invariant_ran = False
 
         @invariant()
@@ -795,7 +791,7 @@ def test_explicit_invariant_call_with_precondition():
 
     class BadPrecondition(RuleBasedStateMachine):
         def __init__(self):
-            super(BadPrecondition, self).__init__()
+            super().__init__()
 
         @precondition(lambda self: False)
         @invariant()
@@ -815,7 +811,7 @@ def test_invariant_checks_initial_state():
 
     class BadPrecondition(RuleBasedStateMachine):
         def __init__(self):
-            super(BadPrecondition, self).__init__()
+            super().__init__()
             self.num = 0
 
         @invariant()
@@ -834,7 +830,7 @@ def test_invariant_checks_initial_state():
 def test_always_runs_at_least_one_step():
     class CountSteps(RuleBasedStateMachine):
         def __init__(self):
-            super(CountSteps, self).__init__()
+            super().__init__()
             self.count = 0
 
         @rule()
@@ -862,7 +858,7 @@ def test_removes_needless_steps():
     @Settings(derandomize=True, max_examples=1000, deadline=None)
     class IncorrectDeletion(RuleBasedStateMachine):
         def __init__(self):
-            super(IncorrectDeletion, self).__init__()
+            super().__init__()
             self.__saved = defaultdict(set)
             self.__deleted = defaultdict(set)
 

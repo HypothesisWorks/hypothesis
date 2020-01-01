@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -15,13 +13,11 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 import attr
 
 
 @attr.s(slots=True)
-class Entry(object):
+class Entry:
     key = attr.ib()
     value = attr.ib()
     score = attr.ib()
@@ -38,7 +34,7 @@ class Entry(object):
             return (1,)
 
 
-class GenericCache(object):
+class GenericCache:
     """Generic supertype for cache implementations.
 
     Defines a dict-like mapping with a maximum size, where as well as mapping
@@ -255,7 +251,7 @@ class LRUReusedCache(GenericCache):
     __slots__ = ("__tick",)
 
     def __init__(self, max_size):
-        super(LRUReusedCache, self).__init__(max_size)
+        super().__init__(max_size)
         self.__tick = 0
 
     def tick(self):

@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -18,9 +16,6 @@
 """A module for miscellaneous useful bits and bobs that don't
 obviously belong anywhere else. If you spot a better home for
 anything that lives here, please move it."""
-
-
-from __future__ import absolute_import, division, print_function
 
 from hypothesis.internal.compat import (
     array_or_list,
@@ -53,7 +48,7 @@ ARRAY_CODES = ["B", "H", "I", "L", "Q", "O"]
 NEXT_ARRAY_CODE = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
 
 
-class IntList(object):
+class IntList:
     """Class for storing a list of non-negative integers compactly.
 
     We store them as the smallest size integer array we can get
@@ -161,7 +156,7 @@ def uniform(random, n):
     return int_to_bytes(random.getrandbits(n * 8), n)
 
 
-class LazySequenceCopy(object):
+class LazySequenceCopy:
     """A "copy" of a sequence that works by inserting a mask in front
     of the underlying sequence, so that you can mutate it without changing
     the underlying sequence. Effectively behaves as if you could do list(x)

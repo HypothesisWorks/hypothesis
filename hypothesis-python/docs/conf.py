@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,10 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import, division, print_function
 
 import datetime
 import os
@@ -43,9 +37,9 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = u"Hypothesis"
-copyright = u"2013-%s, David R. MacIver" % datetime.datetime.utcnow().year
-author = u"David R. MacIver"
+project = "Hypothesis"
+copyright = "2013-%s, David R. MacIver" % datetime.datetime.utcnow().year
+author = "David R. MacIver"
 
 _d = {}
 with open(
@@ -109,16 +103,16 @@ html_favicon = "../../brand/favicon.ico"
 latex_elements = {}
 
 latex_documents = [
-    (master_doc, "Hypothesis.tex", u"Hypothesis Documentation", author, "manual",)
+    (master_doc, "Hypothesis.tex", "Hypothesis Documentation", author, "manual")
 ]
 
-man_pages = [(master_doc, "hypothesis", u"Hypothesis Documentation", [author], 1)]
+man_pages = [(master_doc, "hypothesis", "Hypothesis Documentation", [author], 1)]
 
 texinfo_documents = [
     (
         master_doc,
         "Hypothesis",
-        u"Hypothesis Documentation",
+        "Hypothesis Documentation",
         author,
         "Hypothesis",
         "Advanced property-based testing for Python.",

@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -15,15 +13,13 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 import os
 import sys
 
 from hypothesis import HealthCheck, settings
 from tests.common.setup import run
 
-if __name__ == u"__main__":
+if __name__ == "__main__":
     run()
 
     settings.register_profile(
@@ -32,7 +28,7 @@ if __name__ == u"__main__":
 
     settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))
 
-    os.environ.setdefault(u"DJANGO_SETTINGS_MODULE", u"tests.django.toys.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tests.django.toys.settings")
 
     from django.core.management import execute_from_command_line
 

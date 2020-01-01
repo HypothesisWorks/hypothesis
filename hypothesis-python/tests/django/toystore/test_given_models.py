@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import datetime as dt
 from uuid import UUID
@@ -52,7 +48,7 @@ from tests.django.toystore.models import (
     Store,
 )
 
-register_field_strategy(CustomishField, just(u"a"))
+register_field_strategy(CustomishField, just("a"))
 
 
 class TestGetsBasicModels(TestCase):
@@ -105,7 +101,7 @@ class TestGetsBasicModels(TestCase):
 
     @given(from_model(Customish))
     def test_custom_field(self, x):
-        assert x.customish == u"a"
+        assert x.customish == "a"
 
     def test_mandatory_fields_are_mandatory(self):
         self.assertRaises(InvalidArgument, from_model(Store).example)
@@ -120,22 +116,22 @@ class TestGetsBasicModels(TestCase):
 
     @given(from_model(CustomishDefault, customish=infer))
     def test_customish_default_overridden_by_infer(self, x):
-        assert x.customish == u"a"
+        assert x.customish == "a"
 
     @given(from_model(CustomishDefault, customish=infer))
     def test_customish_infer_uses_registered_instead_of_default(self, x):
-        assert x.customish == u"a"
+        assert x.customish == "a"
 
     @given(from_model(OddFields))
     def test_odd_fields(self, x):
         assert isinstance(x.uuid, UUID)
         assert isinstance(x.slug, text_type)
-        assert u" " not in x.slug
+        assert " " not in x.slug
         assert isinstance(x.ipv4, text_type)
         assert len(x.ipv4.split(".")) == 4
         assert all(int(i) in range(256) for i in x.ipv4.split("."))
         assert isinstance(x.ipv6, text_type)
-        assert set(x.ipv6).issubset(set(u"0123456789abcdefABCDEF:."))
+        assert set(x.ipv6).issubset(set("0123456789abcdefABCDEF:."))
 
     @given(from_model(ManyTimes))
     def test_time_fields(self, x):
@@ -146,7 +142,7 @@ class TestGetsBasicModels(TestCase):
     @given(from_model(Company))
     def test_no_null_in_charfield(self, x):
         # regression test for #1045.  Company just has a convenient CharField.
-        assert u"\x00" not in x.name
+        assert "\x00" not in x.name
 
     @given(binary(min_size=10))
     def test_foreign_key_primary(self, buf):

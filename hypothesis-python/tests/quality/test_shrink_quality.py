@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 from collections import OrderedDict, namedtuple
 from fractions import Fraction
@@ -62,25 +58,25 @@ def test_minimal_fractions_3():
 
 
 def test_minimize_string_to_empty():
-    assert minimal(text()) == u""
+    assert minimal(text()) == ""
 
 
 def test_minimize_one_of():
     for _ in hrange(100):
-        assert minimal(integers() | text() | booleans()) in (0, u"", False)
+        assert minimal(integers() | text() | booleans()) in (0, "", False)
 
 
 def test_minimize_mixed_list():
     mixed = minimal(lists(integers() | text()), lambda x: len(x) >= 10)
-    assert set(mixed).issubset({0, u""})
+    assert set(mixed).issubset({0, ""})
 
 
 def test_minimize_longer_string():
-    assert minimal(text(), lambda x: len(x) >= 10) == u"0" * 10
+    assert minimal(text(), lambda x: len(x) >= 10) == "0" * 10
 
 
 def test_minimize_longer_list_of_strings():
-    assert minimal(lists(text()), lambda x: len(x) >= 10) == [u""] * 10
+    assert minimal(lists(text()), lambda x: len(x) >= 10) == [""] * 10
 
 
 def test_minimize_3_set():
@@ -159,7 +155,7 @@ def test_dictionary(dict_class):
         lambda t: len(t) >= 3,
     )
     assert isinstance(x, dict_class)
-    assert set(x.values()) == {u""}
+    assert set(x.values()) == {""}
     for k in x:
         if k < 0:
             assert k + 1 in x
@@ -290,17 +286,17 @@ def test_list_with_wide_gap():
 
 
 def test_minimize_namedtuple():
-    T = namedtuple(u"T", (u"a", u"b"))
+    T = namedtuple("T", ("a", "b"))
     tab = minimal(builds(T, integers(), integers()), lambda x: x.a < x.b)
     assert tab.b == tab.a + 1
 
 
 def test_minimize_dict():
     tab = minimal(
-        fixed_dictionaries({u"a": booleans(), u"b": booleans()}),
-        lambda x: x[u"a"] or x[u"b"],
+        fixed_dictionaries({"a": booleans(), "b": booleans()}),
+        lambda x: x["a"] or x["b"],
     )
-    assert not (tab[u"a"] and tab[u"b"])
+    assert not (tab["a"] and tab["b"])
 
 
 def test_minimize_list_of_sets():
@@ -344,7 +340,7 @@ def test_can_find_sets_unique_by_incomplete_data():
         assert u <= 0
 
 
-@pytest.mark.parametrize(u"n", range(10))
+@pytest.mark.parametrize("n", range(10))
 def test_lists_forced_near_top(n):
     assert minimal(
         lists(integers(), min_size=n, max_size=n + 2), lambda t: len(t) == n + 2

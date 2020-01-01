@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -17,9 +15,6 @@
 
 """This file can approximately be considered the collection of hypothesis going
 to really unreasonable lengths to produce pretty output."""
-
-
-from __future__ import absolute_import, division, print_function
 
 import ast
 import hashlib
@@ -85,8 +80,7 @@ def function_digest(function):
     hasher = hashlib.sha384()
     try:
         hasher.update(to_unicode(inspect.getsource(function)).encode("utf-8"))
-    # Different errors on different versions of python. What fun.
-    except (OSError, IOError, TypeError):
+    except (OSError, TypeError):
         pass
     try:
         hasher.update(str_to_bytes(function.__name__))
@@ -308,7 +302,7 @@ def extract_lambda_source(f):
         return if_confused
     try:
         source = inspect.getsource(f)
-    except IOError:
+    except OSError:
         return if_confused
 
     source = LINE_CONTINUATION.sub(" ", source)

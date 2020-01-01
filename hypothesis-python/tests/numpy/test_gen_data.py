@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -15,14 +13,11 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 import sys
 from functools import reduce
 
 import numpy as np
 import pytest
-import six
 
 import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
@@ -45,22 +40,22 @@ STANDARD_TYPES = list(
     map(
         np.dtype,
         [
-            u"int8",
-            u"int16",
-            u"int32",
-            u"int64",
-            u"uint8",
-            u"uint16",
-            u"uint32",
-            u"uint64",
-            u"float",
-            u"float16",
-            u"float32",
-            u"float64",
-            u"complex64",
-            u"complex128",
-            u"datetime64",
-            u"timedelta64",
+            "int8",
+            "int16",
+            "int32",
+            "int64",
+            "uint8",
+            "uint16",
+            "uint32",
+            "uint64",
+            "float",
+            "float16",
+            "float32",
+            "float64",
+            "complex64",
+            "complex128",
+            "datetime64",
+            "timedelta64",
             bool,
             text_type,
             binary_type,
@@ -74,7 +69,7 @@ def test_strategies_for_standard_dtypes_have_reusable_values(dtype):
     assert nps.from_dtype(dtype).has_reusable_values
 
 
-@pytest.mark.parametrize(u"t", STANDARD_TYPES)
+@pytest.mark.parametrize("t", STANDARD_TYPES)
 def test_produces_instances(t):
     @given(nps.from_dtype(t))
     def test_is_t(x):
@@ -87,7 +82,7 @@ def test_produces_instances(t):
 @given(nps.arrays(float, ()))
 def test_empty_dimensions_are_arrays(x):
     assert isinstance(x, np.ndarray)
-    assert x.dtype.kind == u"f"
+    assert x.dtype.kind == "f"
 
 
 @given(nps.arrays(float, (1, 0, 1)))
@@ -95,7 +90,7 @@ def test_can_handle_zero_dimensions(x):
     assert x.shape == (1, 0, 1)
 
 
-@given(nps.arrays(u"uint32", (5, 5)))
+@given(nps.arrays("uint32", (5, 5)))
 def test_generates_unsigned_ints(x):
     assert (x >= 0).all()
 
@@ -103,7 +98,7 @@ def test_generates_unsigned_ints(x):
 @given(st.data())
 def test_can_handle_long_shapes(data):
     """We can eliminate this test once we drop Py2 support."""
-    for tt in six.integer_types:
+    for tt in (int,):
         X = data.draw(nps.arrays(float, (tt(5),)))
         assert X.shape == (5,)
         X = data.draw(nps.arrays(float, (tt(5), tt(5))))
@@ -121,7 +116,7 @@ def test_generates_and_minimizes():
 
 def test_can_minimize_large_arrays():
     x = minimal(
-        nps.arrays(u"uint32", 100),
+        nps.arrays("uint32", 100),
         lambda x: np.any(x) and not np.all(x),
         timeout_after=60,
     )
@@ -135,7 +130,7 @@ def test_can_minimize_float_arrays():
     assert x.sum() in (1, 50)
 
 
-class Foo(object):
+class Foo:
     pass
 
 
@@ -246,11 +241,11 @@ def test_np_dtype_is_idempotent(dtype):
 
 
 def test_minimise_scalar_dtypes():
-    assert minimal(nps.scalar_dtypes()) == np.dtype(u"bool")
+    assert minimal(nps.scalar_dtypes()) == np.dtype("bool")
 
 
 def test_minimise_nested_types():
-    assert minimal(nps.nested_dtypes()) == np.dtype(u"bool")
+    assert minimal(nps.nested_dtypes()) == np.dtype("bool")
 
 
 def test_minimise_array_strategy():
@@ -260,7 +255,7 @@ def test_minimise_array_strategy():
             nps.array_shapes(max_dims=3, max_side=3),
         )
     )
-    assert smallest.dtype == np.dtype(u"bool") and not smallest.any()
+    assert smallest.dtype == np.dtype("bool") and not smallest.any()
 
 
 @given(nps.array_dtypes(allow_subarrays=False))
@@ -415,7 +410,7 @@ def test_may_not_fill_with_non_nan_when_unique_is_set(arr):
 
 
 @fails_with(InvalidArgument)
-@given(nps.arrays(dtype="U", shape=10, unique=True, fill=st.just(u"")))
+@given(nps.arrays(dtype="U", shape=10, unique=True, fill=st.just("")))
 def test_may_not_fill_with_non_nan_when_unique_is_set_and_type_is_not_number(arr):
     pass
 
@@ -1048,7 +1043,7 @@ def test_mutually_broadcastable_shapes_can_generate_arbitrary_ndims(
             base_shape=base_shape,
             min_side=0,
             max_dims=max_dims,
-            **kwargs
+            **kwargs,
         ),
         lambda x: {len(s) for s in x.input_shapes} == set(desired_ndims),
         settings(max_examples=10 ** 6),

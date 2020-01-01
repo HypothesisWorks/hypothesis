@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import functools
 
@@ -48,7 +44,7 @@ def test_errors_when_given_varargs():
 
     with pytest.raises(InvalidArgument) as e:
         has_varargs()
-    assert u"varargs" in e.value.args[0]
+    assert "varargs" in e.value.args[0]
 
 
 def test_varargs_without_positional_arguments_allowed():
@@ -64,7 +60,7 @@ def test_errors_when_given_varargs_and_kwargs_with_positional_arguments():
 
     with pytest.raises(InvalidArgument) as e:
         has_varargs()
-    assert u"varargs" in e.value.args[0]
+    assert "varargs" in e.value.args[0]
 
 
 def test_varargs_and_kwargs_without_positional_arguments_allowed():
@@ -119,7 +115,7 @@ def test_can_put_arguments_in_the_middle():
 
 def test_float_ranges():
     with pytest.raises(InvalidArgument):
-        floats(float(u"nan"), 0).example()
+        floats(float("nan"), 0).example()
     with pytest.raises(InvalidArgument):
         floats(1, -1).example()
 

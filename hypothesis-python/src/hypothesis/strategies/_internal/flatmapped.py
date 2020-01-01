@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -15,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.strategies import SearchStrategy
@@ -24,7 +20,7 @@ from hypothesis.strategies._internal.strategies import SearchStrategy
 
 class FlatMapStrategy(SearchStrategy):
     def __init__(self, strategy, expand):
-        super(FlatMapStrategy, self).__init__()
+        super().__init__()
         self.flatmapped_strategy = strategy
         self.expand = expand
 
@@ -32,8 +28,8 @@ class FlatMapStrategy(SearchStrategy):
         return recur(self.flatmapped_strategy)
 
     def __repr__(self):
-        if not hasattr(self, u"_cached_repr"):
-            self._cached_repr = u"%r.flatmap(%s)" % (
+        if not hasattr(self, "_cached_repr"):
+            self._cached_repr = "%r.flatmap(%s)" % (
                 self.flatmapped_strategy,
                 get_pretty_function_description(self.expand),
             )

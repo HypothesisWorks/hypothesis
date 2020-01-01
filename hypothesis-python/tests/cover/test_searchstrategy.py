@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import functools
 from collections import namedtuple
@@ -33,7 +29,7 @@ from tests.common.debug import assert_no_examples
 def test_or_errors_when_given_non_strategy():
     bools = tuples(booleans())
     with pytest.raises(ValueError):
-        bools | u"foo"
+        bools | "foo"
 
 
 def test_joining_zero_strategies_fails():
@@ -41,7 +37,7 @@ def test_joining_zero_strategies_fails():
         one_of_strategies(())
 
 
-SomeNamedTuple = namedtuple(u"SomeNamedTuple", (u"a", u"b"))
+SomeNamedTuple = namedtuple("SomeNamedTuple", ("a", "b"))
 
 
 def last(xs):
@@ -63,16 +59,16 @@ def test_random_only_produces_special_random():
 
 
 def test_just_strategy_uses_repr():
-    class WeirdRepr(object):
+    class WeirdRepr:
         def __repr__(self):
-            return u"ABCDEFG"
+            return "ABCDEFG"
 
-    assert repr(just(WeirdRepr())) == u"just(%r)" % (WeirdRepr(),)
+    assert repr(just(WeirdRepr())) == "just(%r)" % (WeirdRepr(),)
 
 
 def test_can_map():
-    s = integers().map(pack=lambda t: u"foo")
-    assert s.example() == u"foo"
+    s = integers().map(pack=lambda t: "foo")
+    assert s.example() == "foo"
 
 
 def test_example_raises_unsatisfiable_when_too_filtered():

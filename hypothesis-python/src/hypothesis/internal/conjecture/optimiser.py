@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -15,15 +13,13 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, NO_SCORE
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
 
-class Optimiser(object):
+class Optimiser:
     """A fairly basic optimiser designed to increase the value of scores for
     targeted property-based testing.
 

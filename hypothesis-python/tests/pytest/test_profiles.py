@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -15,14 +13,13 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 import pytest
 
 from hypothesis.extra.pytestplugin import LOAD_PROFILE_OPTION
 from hypothesis.version import __version__
 
-pytest_plugins = str("pytester")
+pytest_plugins = "pytester"
+
 
 CONFTEST = """
 from hypothesis._settings import settings

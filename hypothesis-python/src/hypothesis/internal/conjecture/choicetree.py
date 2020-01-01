@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -15,14 +13,12 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from collections import defaultdict
 
 from hypothesis.internal.compat import hrange
 
 
-class Chooser(object):
+class Chooser:
     """A source of nondeterminism for use in shrink passes."""
 
     def __init__(self, tree, prefix):
@@ -102,7 +98,7 @@ class Chooser(object):
         return tuple(next_value)
 
 
-class ChoiceTree(object):
+class ChoiceTree:
     """Records sequences of choices made during shrinking so that we
     can track what parts of a pass has run. Used to create Chooser
     objects that are the main interface that a pass uses to make
@@ -126,7 +122,7 @@ class ChoiceTree(object):
         return chooser.finish()
 
 
-class TreeNode(object):
+class TreeNode:
     def __init__(self):
         self.children = defaultdict(TreeNode)
         self.live_child_count = None

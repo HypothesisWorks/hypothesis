@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 from enum import Enum
 
@@ -95,7 +91,7 @@ def dominance(left, right):
     return DominanceRelation.LEFT_DOMINATES
 
 
-class ParetoFront(object):
+class ParetoFront:
     """Maintains an approximate pareto front of ConjectureData objects. That
     is, we try to maintain a collection of objects such that no element of the
     collection is pareto dominated by any other. In practice we don't quite
@@ -273,7 +269,7 @@ class ParetoFront(object):
                 f(data)
 
 
-class ParetoOptimiser(object):
+class ParetoOptimiser:
     """Class for managing optimisation of the pareto front. That is, given the
     current best known pareto front, this class runs an optimisation process
     that attempts to bring it closer to the actual pareto front.

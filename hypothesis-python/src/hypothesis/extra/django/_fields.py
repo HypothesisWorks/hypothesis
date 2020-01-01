@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import re
 import string
@@ -196,7 +192,7 @@ def _for_text(field):
         min_size = 0
     strategy = st.text(
         alphabet=st.characters(
-            blacklist_characters=u"\x00", blacklist_categories=("Cs",)
+            blacklist_characters="\x00", blacklist_categories=("Cs",)
         ),
         min_size=min_size,
         max_size=field.max_length,
@@ -259,13 +255,13 @@ def from_field(field):
             else:
                 choices.append(value)
         # form fields automatically include an empty choice, strip it out
-        if u"" in choices:
-            choices.remove(u"")
+        if "" in choices:
+            choices.remove("")
         min_size = 1
         if isinstance(field, (dm.CharField, dm.TextField)) and field.blank:
-            choices.insert(0, u"")
+            choices.insert(0, "")
         elif isinstance(field, (df.Field)) and not field.required:
-            choices.insert(0, u"")
+            choices.insert(0, "")
             min_size = 0
         strategy = st.sampled_from(choices)
         if isinstance(field, (df.MultipleChoiceField, df.TypedMultipleChoiceField)):

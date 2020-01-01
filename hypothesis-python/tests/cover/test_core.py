@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import pytest
 from _pytest.outcomes import Failed, Skipped
@@ -113,7 +109,7 @@ def test_no_such_example():
 def test_validates_strategies_for_test_method():
     invalid_strategy = s.lists(s.nothing(), min_size=1)
 
-    class TestStrategyValidation(object):
+    class TestStrategyValidation:
         @given(invalid_strategy)
         def test_method_with_bad_strategy(self, x):
             pass

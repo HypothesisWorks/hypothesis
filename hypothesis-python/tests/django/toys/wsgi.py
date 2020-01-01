@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -23,13 +21,10 @@ For more information on this file, see
 https://docs.djangoproject.com/en/1.7/howto/deployment/wsgi/
 """
 
-
-from __future__ import absolute_import, division, print_function
-
 import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault(u"DJANGO_SETTINGS_MODULE", u"toys.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "toys.settings")
 
 application = get_wsgi_application()

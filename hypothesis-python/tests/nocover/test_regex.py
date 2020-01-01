@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import re
 import string
@@ -31,27 +27,27 @@ def charset(draw):
     negated = draw(st.booleans())
     chars = draw(st.text(string.ascii_letters + string.digits, min_size=1))
     if negated:
-        return u"[^%s]" % (chars,)
+        return "[^%s]" % (chars,)
     else:
-        return u"[%s]" % (chars,)
+        return "[%s]" % (chars,)
 
 
-COMBINED_MATCHER = re.compile(u"[?+*]{2}")
+COMBINED_MATCHER = re.compile("[?+*]{2}")
 
 
 @st.composite
 def conservative_regex(draw):
     result = draw(
         st.one_of(
-            st.just(u"."),
+            st.just("."),
             st.sampled_from([re.escape(c) for c in string.printable]),
             charset(),
-            CONSERVATIVE_REGEX.map(lambda s: u"(%s)" % (s,)),
-            CONSERVATIVE_REGEX.map(lambda s: s + u"+"),
-            CONSERVATIVE_REGEX.map(lambda s: s + u"?"),
-            CONSERVATIVE_REGEX.map(lambda s: s + u"*"),
-            st.lists(CONSERVATIVE_REGEX, min_size=1, max_size=3).map(u"|".join),
-            st.lists(CONSERVATIVE_REGEX, min_size=1, max_size=3).map(u"".join),
+            CONSERVATIVE_REGEX.map(lambda s: "(%s)" % (s,)),
+            CONSERVATIVE_REGEX.map(lambda s: s + "+"),
+            CONSERVATIVE_REGEX.map(lambda s: s + "?"),
+            CONSERVATIVE_REGEX.map(lambda s: s + "*"),
+            st.lists(CONSERVATIVE_REGEX, min_size=1, max_size=3).map("|".join),
+            st.lists(CONSERVATIVE_REGEX, min_size=1, max_size=3).map("".join),
         )
     )
     assume(COMBINED_MATCHER.search(result) is None)

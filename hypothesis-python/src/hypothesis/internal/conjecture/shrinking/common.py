@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -15,11 +13,7 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
-
-"""This module implements various useful common functions for shrinking tasks.
-"""
+"""This module implements various useful common functions for shrinking tasks."""
 
 
 def find_integer(f):
@@ -60,7 +54,7 @@ def find_integer(f):
     return lo
 
 
-class Shrinker(object):
+class Shrinker:
     """A Shrinker object manages a single value and a predicate it should
     satisfy, and attempts to improve it in some direction, making it smaller
     and simpler."""
@@ -106,7 +100,7 @@ class Shrinker(object):
             other_class,
             convert_to(self.current),
             lambda v: self.consider(convert_from(v)),
-            **kwargs
+            **kwargs,
         )
 
     def call_shrinker(self, other_class, initial, predicate, **kwargs):

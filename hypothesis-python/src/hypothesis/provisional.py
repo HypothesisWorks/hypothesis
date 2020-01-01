@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -24,8 +22,6 @@ Internet strategies should conform to :rfc:`3986` or the authoritative
 definitions it links to.  If not, report the bug!
 """
 # https://tools.ietf.org/html/rfc3696
-
-from __future__ import absolute_import, division, print_function
 
 import os.path
 import string
@@ -93,7 +89,7 @@ class DomainNameStrategy(SearchStrategy):
             1, 63, max_element_length, "max_element_length"
         )
 
-        super(DomainNameStrategy, self).__init__()
+        super().__init__()
         self.max_length = max_length
         self.max_element_length = max_element_length
 
@@ -121,7 +117,7 @@ class DomainNameStrategy(SearchStrategy):
             .flatmap(
                 lambda tld: st.tuples(
                     *[st.sampled_from([c.lower(), c.upper()]) for c in tld]
-                ).map(u"".join)
+                ).map("".join)
             )
         )
         # The maximum possible number of subdomains is 126,
@@ -165,7 +161,7 @@ def urls():
     paths = st.lists(st.text(string.printable).map(url_encode)).map("/".join)
 
     return st.builds(
-        u"{}://{}{}/{}".format, schemes, domains(), st.just(u"") | ports, paths
+        "{}://{}{}/{}".format, schemes, domains(), st.just("") | ports, paths
     )
 
 
@@ -177,7 +173,7 @@ def ip4_addr_strings():
     This consists of four strings representing integers [0..255],
     without zero-padding, joined by dots.
     """
-    return st.builds(u"{}.{}.{}.{}".format, *(4 * [st.integers(0, 255)]))
+    return st.builds("{}.{}.{}.{}".format, *(4 * [st.integers(0, 255)]))
 
 
 @st.defines_strategy_with_reusable_values
@@ -188,5 +184,5 @@ def ip6_addr_strings():
     This consists of sixteen quads of hex digits (0000 .. FFFF), joined
     by colons.  Values do not currently have zero-segments collapsed.
     """
-    part = st.integers(0, 2 ** 16 - 1).map(u"{:04x}".format)
-    return st.tuples(*[part] * 8).map(lambda a: u":".join(a).upper())
+    part = st.integers(0, 2 ** 16 - 1).map("{:04x}".format)
+    return st.tuples(*[part] * 8).map(lambda a: ":".join(a).upper())

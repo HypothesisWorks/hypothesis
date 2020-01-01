@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import datetime as dt
 import enum
@@ -150,7 +146,7 @@ else:
 _strategies = set()
 
 
-class FloatKey(object):
+class FloatKey:
     def __init__(self, f):
         self.value = float_to_int(f)
 
@@ -520,9 +516,9 @@ def floats(
             max_value = next_down(max_value, width)
         assert max_value < max_arg  # type: ignore
 
-    if min_value == float(u"-inf"):
+    if min_value == float("-inf"):
         min_value = None
-    if max_value == float(u"inf"):
+    if max_value == float("inf"):
         max_value = None
 
     bad_zero_bounds = (
@@ -812,7 +808,7 @@ def frozensets(
 
 
 @implements_iterator
-class PrettyIter(object):
+class PrettyIter:
     def __init__(self, values):
         self._values = values
         self._iter = iter(self._values)
@@ -1086,7 +1082,7 @@ def text(
             else nothing()
         )
     if (max_size == 0 or char_strategy.is_empty) and not min_size:
-        return just(u"")
+        return just("")
     return StringStrategy(lists(char_strategy, min_size=min_size, max_size=max_size))
 
 
@@ -1162,7 +1158,7 @@ def randoms():
     return integers().map(RandomWithSeed)
 
 
-class RandomSeeder(object):
+class RandomSeeder:
     def __init__(self, seed):
         self.seed = seed
 
@@ -1574,7 +1570,7 @@ def _as_finite_decimal(
             "allow_infinity=%r, but %s=%r" % (allow_infinity, name, value)
         )
     # This could be infinity, quiet NaN, or signalling NaN
-    raise InvalidArgument(u"Invalid %s=%r" % (name, value))
+    raise InvalidArgument("Invalid %s=%r" % (name, value))
 
 
 @cacheable
@@ -2071,7 +2067,7 @@ def runner(default=not_set):
     return RunnerStrategy(default)
 
 
-class DataObject(object):
+class DataObject:
     """This type only exists so that you can write type hints for tests using
     the :func:`~hypothesis.strategies.data` strategy.  Do not use it directly!
     """
@@ -2229,7 +2225,7 @@ def emails():
     local_chars = string.ascii_letters + string.digits + "!#$%&'*+-/=^_`{|}~"
     local_part = text(local_chars, min_size=1, max_size=64)
     # TODO: include dot-atoms, quoted strings, escaped chars, etc in local part
-    return builds(u"{}@{}".format, local_part, domains()).filter(
+    return builds("{}@{}".format, local_part, domains()).filter(
         lambda addr: len(addr) <= 254
     )
 

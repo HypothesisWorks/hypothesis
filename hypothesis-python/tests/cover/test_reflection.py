@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import sys
 from copy import deepcopy
@@ -189,7 +185,7 @@ def test_names_of_functions_are_pretty():
     )
 
 
-class Foo(object):
+class Foo:
     @classmethod
     def bar(cls):
         pass
@@ -296,7 +292,7 @@ def test_arg_string_does_not_include_unprovided_defaults():
     assert arg_string(foo, (1,), {"b": 1, "d": 11}) == "a=1, b=1, d=11"
 
 
-class A(object):
+class A:
     def f(self):
         pass
 
@@ -520,7 +516,7 @@ def test_define_function_signature_validates_function_name():
         )
 
 
-class Container(object):
+class Container:
     def funcy(self):
         pass
 
@@ -587,12 +583,12 @@ def test_can_proxy_lambdas(func, args, expected):
     assert wrapped(*args) == expected
 
 
-class Snowman(object):
+class Snowman:
     def __repr__(self):
         return "☃"
 
 
-class BittySnowman(object):
+class BittySnowman:
     def __repr__(self):
         return "☃"
 
@@ -605,7 +601,7 @@ def test_can_handle_unicode_repr():
     assert arg_string(foo, [], {"x": Snowman()}) == "x=☃"
 
 
-class NoRepr(object):
+class NoRepr:
     pass
 
 
@@ -659,7 +655,7 @@ def test_is_mock_with_positive_cases():
     assert is_mock(NonCallableMagicMock())
 
 
-class Target(object):
+class Target:
     def __init__(self, a, b):
         pass
 

@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import sys
 import warnings
@@ -678,7 +674,7 @@ filter_not_satisfied = UniqueIdentifier("filter not satisfied")
 
 class FilteredStrategy(SearchStrategy):
     def __init__(self, strategy, conditions):
-        super(FilteredStrategy, self).__init__()
+        super().__init__()
         if isinstance(strategy, FilteredStrategy):
             # Flatten chained filters into a single filter with multiple
             # conditions.

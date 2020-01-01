@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -20,8 +18,6 @@
 Either an explicit settings object can be used or the default object on
 this module can be modified.
 """
-
-from __future__ import absolute_import, division, print_function
 
 import contextlib
 import datetime
@@ -51,7 +47,7 @@ __all__ = ["settings"]
 all_settings = {}  # type: Dict[str, Setting]
 
 
-class settingsProperty(object):
+class settingsProperty:
     def __init__(self, name, show_default):
         self.name = name
         self.show_default = show_default
@@ -95,7 +91,7 @@ default_variable = DynamicVariable(None)
 
 class settingsMeta(type):
     def __init__(self, *args, **kwargs):
-        super(settingsMeta, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @property
     def default(self):
@@ -347,7 +343,7 @@ def local_settings(s):
 
 
 @attr.s()
-class Setting(object):
+class Setting:
     name = attr.ib()
     description = attr.ib()
     default = attr.ib()
@@ -608,7 +604,7 @@ settings._define_setting(
     "deadline",
     default=duration(milliseconds=200),
     validator=_validate_deadline,
-    description=u"""
+    description="""
 If set, a duration (as timedelta, or integer or float number of milliseconds)
 that each individual example (i.e. each time your test
 function is called, not the whole decorated test) within a test is not

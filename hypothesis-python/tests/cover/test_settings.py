@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import datetime
 import subprocess
@@ -57,7 +53,7 @@ def setup_function(fn):
 def test_cannot_set_non_settings():
     s = settings()
     with pytest.raises(AttributeError):
-        s.databas_file = u"some_file"
+        s.databas_file = "some_file"
 
 
 def test_settings_uses_defaults():
@@ -94,7 +90,7 @@ def test_can_repeatedly_push_the_same_thing():
 
 def test_cannot_create_settings_with_invalid_options():
     with pytest.raises(InvalidArgument):
-        settings(a_setting_with_limited_options=u"spoon")
+        settings(a_setting_with_limited_options="spoon")
 
 
 def test_cannot_register_with_parent_and_settings_args():
@@ -399,7 +395,7 @@ settings_step_count = 1
 @settings(stateful_step_count=settings_step_count)
 class StepCounter(RuleBasedStateMachine):
     def __init__(self):
-        super(StepCounter, self).__init__()
+        super().__init__()
         self.step_count = 0
 
     @rule()
@@ -474,7 +470,7 @@ def test_invalid_settings_are_errors(kwargs):
 
 
 def test_invalid_parent():
-    class NotSettings(object):
+    class NotSettings:
         def __repr__(self):
             return "(not settings repr)"
 

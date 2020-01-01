@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 from collections import OrderedDict
 from random import Random
@@ -41,7 +37,7 @@ from tests.common.utils import flaky
 
 
 @pytest.mark.parametrize(
-    (u"col", u"strat"),
+    ("col", "strat"),
     [
         ((), tuples()),
         ([], lists(none(), max_size=0)),
@@ -62,14 +58,14 @@ def test_find_empty_collection_gives_empty(col, strat):
 
 
 @pytest.mark.parametrize(
-    (u"coltype", u"strat"), [(list, lists), (set, sets), (frozenset, frozensets)]
+    ("coltype", "strat"), [(list, lists), (set, sets), (frozenset, frozensets)]
 )
 def test_find_non_empty_collection_gives_single_zero(coltype, strat):
     assert minimal(strat(integers()), bool) == coltype((0,))
 
 
 @pytest.mark.parametrize(
-    (u"coltype", u"strat"), [(list, lists), (set, sets), (frozenset, frozensets)]
+    ("coltype", "strat"), [(list, lists), (set, sets), (frozenset, frozensets)]
 )
 def test_minimizes_to_empty(coltype, strat):
     assert minimal(strat(integers()), lambda x: True) == coltype()
@@ -100,12 +96,12 @@ def test_fixed_dictionaries_with_optional_and_empty_keys(d):
     assert 1 not in d
 
 
-@pytest.mark.parametrize(u"n", range(10))
+@pytest.mark.parametrize("n", range(10))
 def test_lists_of_fixed_length(n):
     assert minimal(lists(integers(), min_size=n, max_size=n), lambda x: True) == [0] * n
 
 
-@pytest.mark.parametrize(u"n", range(10))
+@pytest.mark.parametrize("n", range(10))
 def test_sets_of_fixed_length(n):
     x = minimal(sets(integers(), min_size=n, max_size=n), lambda x: True)
     assert len(x) == n
@@ -116,7 +112,7 @@ def test_sets_of_fixed_length(n):
         assert x == set(range(min(x), min(x) + n))
 
 
-@pytest.mark.parametrize(u"n", range(10))
+@pytest.mark.parametrize("n", range(10))
 def test_dictionaries_of_fixed_length(n):
     x = set(
         minimal(
@@ -130,7 +126,7 @@ def test_dictionaries_of_fixed_length(n):
         assert x == set(range(min(x), min(x) + n))
 
 
-@pytest.mark.parametrize(u"n", range(10))
+@pytest.mark.parametrize("n", range(10))
 def test_lists_of_lower_bounded_length(n):
     x = minimal(lists(integers(), min_size=n), lambda x: sum(x) >= 2 * n)
     assert n <= len(x) <= 2 * n
@@ -175,8 +171,8 @@ def test_small_sized_sets(x):
 
 def test_minimize_dicts_with_incompatible_keys():
     assert minimal(
-        fixed_dictionaries({1: booleans(), u"hi": lists(booleans())}), lambda x: True
-    ) == {1: False, u"hi": []}
+        fixed_dictionaries({1: booleans(), "hi": lists(booleans())}), lambda x: True
+    ) == {1: False, "hi": []}
 
 
 @given(

@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
-# https://github.com/HypothesisWorks/hypothesis-python
+# https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2016 David R. MacIver
+# Most of this work is copyright (C) 2013-2019 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -72,7 +70,6 @@ Inheritance diagram:
             Portions (c) 2009 by Robert Kern.
 :license: BSD License.
 """
-from __future__ import absolute_import, division, print_function
 
 import datetime
 import platform
@@ -121,7 +118,7 @@ else:  # pragma: no cover
         """StringIO that casts str to unicode on Python 2."""
 
         def write(self, text):
-            return super(CUnicodeIO, self).write(
+            return super().write(
                 cast_unicode(text, encoding=get_stream_enc(sys.stdout))
             )
 
@@ -152,7 +149,7 @@ def pprint(
     sys.stdout.flush()
 
 
-class _PrettyPrinterBase(object):
+class _PrettyPrinterBase:
     @contextmanager
     def indent(self, indent):
         """with statement support for indenting/dedenting."""
@@ -427,7 +424,7 @@ class RepresentationPrinter(PrettyPrinter):
         return printer
 
 
-class Printable(object):
+class Printable:
     def output(self, stream, output_width):  # pragma: no cover
         raise NotImplementedError()
 
@@ -475,7 +472,7 @@ class Group(Printable):
         self.want_break = False
 
 
-class GroupQueue(object):
+class GroupQueue:
     def __init__(self, *groups):
         self.queue = []
         for group in groups:

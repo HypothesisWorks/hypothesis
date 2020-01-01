@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import math
 import sys
@@ -38,7 +34,7 @@ def test_positive_negative_int():
 
 
 boundaries = pytest.mark.parametrize(
-    u"boundary",
+    "boundary",
     sorted(
         [2 ** i for i in range(10)]
         + [2 ** i - 1 for i in range(10)]
@@ -113,7 +109,7 @@ def test_negative_floats_simplify_to_zero():
 
 
 def test_minimal_infinite_float_is_positive():
-    assert minimal(floats(), math.isinf) == float(u"inf")
+    assert minimal(floats(), math.isinf) == float("inf")
 
 
 def test_can_minimal_infinite_negative_float():
@@ -130,7 +126,7 @@ def test_minimize_nan():
 
 def test_minimize_very_large_float():
     t = sys.float_info.max / 2
-    assert t <= minimal(floats(), lambda x: x >= t) < float(u"inf")
+    assert t <= minimal(floats(), lambda x: x >= t) < float("inf")
 
 
 def is_integral(value):
@@ -171,7 +167,7 @@ def test_minimizes_lists_of_negative_ints_up_to_boundary():
 
 
 @pytest.mark.parametrize(
-    (u"left", u"right"),
+    ("left", "right"),
     [(0.0, 5e-324), (-5e-324, 0.0), (-5e-324, 5e-324), (5e-324, 1e-323)],
 )
 def test_floats_in_constrained_range(left, right):
@@ -213,7 +209,7 @@ def test_no_allow_infinity_lower(x):
     assert not math.isinf(x)
 
 
-class TestFloatsAreFloats(object):
+class TestFloatsAreFloats:
     @given(floats())
     def test_unbounded(self, arg):
         assert isinstance(arg, float)

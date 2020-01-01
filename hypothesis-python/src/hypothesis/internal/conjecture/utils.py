@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import enum
 import hashlib
@@ -245,7 +241,7 @@ def biased_coin(data, p):
     return result
 
 
-class Sampler(object):
+class Sampler:
     """Sampler based on Vose's algorithm for the alias method. See
     http://www.keithschwarz.com/darts-dice-coins/ for a good explanation.
 
@@ -339,7 +335,7 @@ class Sampler(object):
             return base
 
 
-class many(object):
+class many:
     """Utility class for collections. Bundles up the logic we use for "should I
     keep drawing more values?" and handles starting and stopping examples in
     the right place.

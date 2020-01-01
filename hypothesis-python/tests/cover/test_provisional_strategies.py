@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import re
 import string
@@ -55,7 +51,7 @@ def test_is_IP6_addr(address):
     as_hex = address.split(":")
     assert len(as_hex) == 8
     assert all(len(part) == 4 for part in as_hex)
-    raw = unhexlify(address.replace(u":", u"").encode("ascii"))
+    raw = unhexlify(address.replace(":", "").encode("ascii"))
     assert len(raw) == 16
 
 

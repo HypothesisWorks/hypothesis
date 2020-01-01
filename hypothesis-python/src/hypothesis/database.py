@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import binascii
 import os
@@ -68,7 +64,7 @@ class EDMeta(type):
     def __call__(self, *args, **kwargs):
         if self is ExampleDatabase:
             return _db_for_path(*args, **kwargs)
-        return super(EDMeta, self).__call__(*args, **kwargs)
+        return super().__call__(*args, **kwargs)
 
 
 class ExampleDatabase(EDMeta("ExampleDatabase", (object,), {})):  # type: ignore
@@ -125,8 +121,7 @@ class InMemoryExampleDatabase(ExampleDatabase):
         return "InMemoryExampleDatabase(%r)" % (self.data,)
 
     def fetch(self, key):
-        for v in self.data.get(key, ()):
-            yield v
+        yield from self.data.get(key, ())
 
     def save(self, key, value):
         self.data.setdefault(key, set()).add(hbytes(value))
@@ -173,7 +168,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             try:
                 with open(os.path.join(kp, path), "rb") as i:
                     yield hbytes(i.read())
-            except EnvironmentError:
+            except OSError:
                 pass
 
     def save(self, key, value):

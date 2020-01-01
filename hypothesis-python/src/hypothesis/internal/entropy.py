@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -15,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 import contextlib
 import random
 import sys
@@ -27,7 +23,7 @@ from hypothesis.internal.compat import integer_types
 RANDOMS_TO_MANAGE = [random]  # type: list
 
 
-class NumpyRandomWrapper(object):
+class NumpyRandomWrapper:
     def __init__(self):
         assert "numpy" in sys.modules
         # This class provides a shim that matches the numpy to stdlib random,

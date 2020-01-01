@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict
 from enum import IntEnum
@@ -41,7 +37,7 @@ TOP_LABEL = calc_label_from_name("top")
 DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
 
 
-class ExtraInformation(object):
+class ExtraInformation:
     """A class for holding shared state on a ``ConjectureData`` that should
     be added to the final ``ConjectureResult``."""
 
@@ -65,7 +61,7 @@ class Status(IntEnum):
 
 
 @attr.s(frozen=True, slots=True)
-class StructuralCoverageTag(object):
+class StructuralCoverageTag:
     label = attr.ib()
 
 
@@ -79,7 +75,7 @@ def structural_coverage(label):
         return STRUCTURAL_COVERAGE_CACHE.setdefault(label, StructuralCoverageTag(label))
 
 
-class Example(object):
+class Example:
     """Examples track the hierarchical structure of draws from the byte stream,
     within a single test run.
 
@@ -192,7 +188,7 @@ class Example(object):
         return [self.owner[i] for i in self.owner.children[self.index]]
 
 
-class ExampleProperty(object):
+class ExampleProperty:
     """There are many properties of examples that we calculate by
     essentially rerunning the test case multiple times based on the
     calls which we record in ExampleRecord.
@@ -293,7 +289,7 @@ STOP_EXAMPLE_NO_DISCARD_RECORD = 2
 START_EXAMPLE_RECORD = 3
 
 
-class ExampleRecord(object):
+class ExampleRecord:
     """Records the series of ``start_example``, ``stop_example``, and
     ``draw_bits`` calls so that these may be stored in ``Examples`` and
     replayed when we need to know about the structure of individual
@@ -330,7 +326,7 @@ class ExampleRecord(object):
         self.trail.append(DRAW_BITS_RECORD)
 
 
-class Examples(object):
+class Examples:
     """A lazy collection of ``Example`` objects, derived from
     the record of recorded behaviour in ``ExampleRecord``.
 
@@ -456,7 +452,7 @@ class Examples(object):
 
 
 @attr.s(slots=True, frozen=True)
-class Block(object):
+class Block:
     """Blocks track the flat list of lowest-level draws from the byte stream,
     within a single test run.
 
@@ -493,7 +489,7 @@ class Block(object):
         return self.forced or self.all_zero
 
 
-class Blocks(object):
+class Blocks:
     """A lazily calculated list of blocks for a particular ``ConjectureResult``
     or ``ConjectureData`` object.
 
@@ -663,7 +659,7 @@ class Blocks(object):
         return "Block([%s])" % (", ".join(parts),)
 
 
-class _Overrun(object):
+class _Overrun:
     status = Status.OVERRUN
 
     def __repr__(self):
@@ -681,7 +677,7 @@ global_test_counter = 0
 MAX_DEPTH = 100
 
 
-class DataObserver(object):
+class DataObserver:
     """Observer class for recording the behaviour of a
     ConjectureData object, primarily used for tracking
     the behaviour in the tree cache."""
@@ -707,7 +703,7 @@ class DataObserver(object):
 
 
 @attr.s(slots=True)
-class ConjectureResult(object):
+class ConjectureResult:
     """Result class storing the parts of ConjectureData that we
     will care about after the original ConjectureData has outlived its
     usefulness."""
@@ -740,7 +736,7 @@ BYTE_MASKS = [(1 << n) - 1 for n in hrange(8)]
 BYTE_MASKS[0] = 255
 
 
-class ConjectureData(object):
+class ConjectureData:
     @classmethod
     def for_buffer(self, buffer, observer=None):
         return ConjectureData(
@@ -766,7 +762,7 @@ class ConjectureData(object):
         self.blocks = Blocks(self)
         self.buffer = bytearray()
         self.index = 0
-        self.output = u""
+        self.output = ""
         self.status = Status.VALID
         self.frozen = False
         global global_test_counter

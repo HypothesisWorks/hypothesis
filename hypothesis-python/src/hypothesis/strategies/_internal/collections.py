@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 from collections import OrderedDict
 
@@ -132,7 +128,7 @@ class ListStrategy(SearchStrategy):
 
 class UniqueListStrategy(ListStrategy):
     def __init__(self, elements, min_size, max_size, keys):
-        super(UniqueListStrategy, self).__init__(elements, min_size, max_size)
+        super().__init__(elements, min_size, max_size)
         self.keys = keys
 
     def do_draw(self, data):
@@ -173,7 +169,7 @@ class UniqueListStrategy(ListStrategy):
 
 class UniqueSampledListStrategy(ListStrategy):
     def __init__(self, elements, min_size, max_size, keys):
-        super(UniqueSampledListStrategy, self).__init__(elements, min_size, max_size)
+        super().__init__(elements, min_size, max_size)
         self.keys = keys
 
     def do_draw(self, data):
@@ -223,9 +219,7 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
                 self.keys = tuple(sorted(strategy_dict.keys()))
             except TypeError:
                 self.keys = tuple(sorted(strategy_dict.keys(), key=repr))
-        super(FixedKeysDictStrategy, self).__init__(
-            strategy=TupleStrategy(strategy_dict[k] for k in self.keys)
-        )
+        super().__init__(strategy=TupleStrategy(strategy_dict[k] for k in self.keys))
 
     def calc_is_empty(self, recur):
         return recur(self.mapped_strategy)

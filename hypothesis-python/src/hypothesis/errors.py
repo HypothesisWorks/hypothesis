@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 
 class HypothesisException(Exception):
@@ -41,7 +37,7 @@ class NoSuchExample(HypothesisException):
     """
 
     def __init__(self, condition_string, extra=""):
-        super(NoSuchExample, self).__init__(
+        super().__init__(
             "No examples found of condition %s%s" % (condition_string, extra)
         )
 
@@ -108,7 +104,7 @@ class FailedHealthCheck(HypothesisWarning):
     execution."""
 
     def __init__(self, message, check):
-        super(FailedHealthCheck, self).__init__(message)
+        super().__init__(message)
         self.health_check = check
 
 
@@ -144,7 +140,7 @@ class DeadlineExceeded(HypothesisException):
     """Raised when an individual test body has taken too long to run."""
 
     def __init__(self, runtime, deadline):
-        super(DeadlineExceeded, self).__init__(
+        super().__init__(
             "Test took %.2fms, which exceeds the deadline of %.2fms"
             % (runtime.total_seconds() * 1000, deadline.total_seconds() * 1000)
         )
@@ -158,7 +154,7 @@ class StopTest(BaseException):
     """
 
     def __init__(self, testcounter):
-        super(StopTest, self).__init__(repr(testcounter))
+        super().__init__(repr(testcounter))
         self.testcounter = testcounter
 
 

@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
@@ -77,13 +73,13 @@ class StringStrategy(MappedSearchStrategy):
     single character text strings."""
 
     def __init__(self, list_of_one_char_strings_strategy):
-        super(StringStrategy, self).__init__(strategy=list_of_one_char_strings_strategy)
+        super().__init__(strategy=list_of_one_char_strings_strategy)
 
     def __repr__(self):
         return "%r.map(u''.join)" % self.mapped_strategy
 
     def pack(self, ls):
-        return u"".join(ls)
+        return "".join(ls)
 
 
 class BinaryStringStrategy(MappedSearchStrategy):

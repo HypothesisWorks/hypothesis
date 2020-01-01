@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 from contextlib import contextmanager
 
@@ -68,8 +64,8 @@ def test_includes_progress_in_verbose_mode():
         )
     out = o.getvalue()
     assert out
-    assert u"Trying example: " in out
-    assert u"Falsifying example: " in out
+    assert "Trying example: " in out
+    assert "Falsifying example: " in out
 
 
 def test_prints_initial_attempts_on_find():
@@ -93,7 +89,7 @@ def test_prints_initial_attempts_on_find():
 
         foo()
 
-    assert u"Trying example" in o.getvalue()
+    assert "Trying example" in o.getvalue()
 
 
 def test_includes_intermediate_results_in_verbose_mode():
@@ -112,5 +108,5 @@ def test_includes_intermediate_results_in_verbose_mode():
 
         test_foo()
     lines = o.getvalue().splitlines()
-    assert len([l for l in lines if u"example" in l]) > 2
-    assert [l for l in lines if u"AssertionError" in l]
+    assert len([l for l in lines if "example" in l]) > 2
+    assert [l for l in lines if "AssertionError" in l]

@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 from unittest import TestCase as VanillaTestCase
 
@@ -31,17 +27,17 @@ from hypothesis.strategies import integers
 from tests.django.toystore.models import Company
 
 
-class SomeStuff(object):
+class SomeStuff:
     @settings(suppress_health_check=[HealthCheck.too_slow])
     @given(integers())
     def test_is_blank_slate(self, unused):
-        Company.objects.create(name=u"MickeyCo")
+        Company.objects.create(name="MickeyCo")
 
     def test_normal_test_1(self):
-        Company.objects.create(name=u"MickeyCo")
+        Company.objects.create(name="MickeyCo")
 
     def test_normal_test_2(self):
-        Company.objects.create(name=u"MickeyCo")
+        Company.objects.create(name="MickeyCo")
 
 
 class TestConstraintsWithTransactions(SomeStuff, TestCase):
@@ -59,8 +55,8 @@ if not PYPY:
 class TestWorkflow(VanillaTestCase):
     def test_does_not_break_later_tests(self):
         def break_the_db(i):
-            Company.objects.create(name=u"MickeyCo")
-            Company.objects.create(name=u"MickeyCo")
+            Company.objects.create(name="MickeyCo")
+            Company.objects.create(name="MickeyCo")
 
         class LocalTest(TestCase):
             @given(integers().map(break_the_db))
@@ -71,9 +67,9 @@ class TestWorkflow(VanillaTestCase):
                 pass
 
             def test_normal_test_1(self):
-                Company.objects.create(name=u"MickeyCo")
+                Company.objects.create(name="MickeyCo")
 
-        t = LocalTest(u"test_normal_test_1")
+        t = LocalTest("test_normal_test_1")
         try:
             t.test_does_not_break_other_things()
         except IntegrityError:

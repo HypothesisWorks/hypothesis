@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -15,10 +13,8 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
 
-
-class IntervalSet(object):
+class IntervalSet:
     def __init__(self, intervals):
         self.intervals = tuple(intervals)
         self.offsets = [0]
@@ -31,8 +27,7 @@ class IntervalSet(object):
 
     def __iter__(self):
         for u, v in self.intervals:
-            for i in range(u, v + 1):
-                yield i
+            yield from range(u, v + 1)
 
     def __getitem__(self, i):
         if i < 0:

@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import math
 import re
@@ -78,45 +74,45 @@ def from_dtype(dtype):
         return arrays(subtype, shape)
 
     # Scalar datatypes
-    if dtype.kind == u"b":
+    if dtype.kind == "b":
         result = st.booleans()  # type: SearchStrategy[Any]
-    elif dtype.kind == u"f":
+    elif dtype.kind == "f":
         if dtype.itemsize == 2:
             result = st.floats(width=16)
         elif dtype.itemsize == 4:
             result = st.floats(width=32)
         else:
             result = st.floats()
-    elif dtype.kind == u"c":
+    elif dtype.kind == "c":
         if dtype.itemsize == 8:
             float32 = st.floats(width=32)
             result = st.builds(complex, float32, float32)
         else:
             result = st.complex_numbers()
-    elif dtype.kind in (u"S", u"a"):
+    elif dtype.kind in ("S", "a"):
         # Numpy strings are null-terminated; only allow round-trippable values.
         # `itemsize == 0` means 'fixed length determined at array creation'
         result = st.binary(max_size=dtype.itemsize or None).filter(
             lambda b: b[-1:] != b"\0"
         )
-    elif dtype.kind == u"u":
+    elif dtype.kind == "u":
         result = st.integers(min_value=0, max_value=2 ** (8 * dtype.itemsize) - 1)
-    elif dtype.kind == u"i":
+    elif dtype.kind == "i":
         overflow = 2 ** (8 * dtype.itemsize - 1)
         result = st.integers(min_value=-overflow, max_value=overflow - 1)
-    elif dtype.kind == u"U":
+    elif dtype.kind == "U":
         # Encoded in UTF-32 (four bytes/codepoint) and null-terminated
         result = st.text(max_size=(dtype.itemsize or 0) // 4 or None).filter(
-            lambda b: b[-1:] != u"\0"
+            lambda b: b[-1:] != "\0"
         )
-    elif dtype.kind in (u"m", u"M"):
+    elif dtype.kind in ("m", "M"):
         if "[" in dtype.str:
             res = st.just(dtype.str.split("[")[-1][:-1])
         else:
             res = st.sampled_from(TIME_RESOLUTIONS)
         result = st.builds(dtype.type, st.integers(-(2 ** 63), 2 ** 63 - 1), res)
     else:
-        raise InvalidArgument(u"No strategy inference for {}".format(dtype))
+        raise InvalidArgument("No strategy inference for {}".format(dtype))
     return result.map(dtype.type)
 
 
@@ -130,14 +126,14 @@ def check_argument(condition, fail_message, *f_args, **f_kwargs):
 def order_check(name, floor, small, large):
     check_argument(
         floor <= small,
-        u"min_{name} must be at least {} but was {}",
+        "min_{name} must be at least {} but was {}",
         floor,
         small,
         name=name,
     )
     check_argument(
         small <= large,
-        u"min_{name}={} is larger than max_{name}={}",
+        "min_{name}={} is larger than max_{name}={}",
         small,
         large,
         name=name,
@@ -174,7 +170,7 @@ class ArrayStrategy(SearchStrategy):
         # Because Numpy allocates memory for strings at array creation, if we have
         # an unsized string dtype we'll fill an object array and then cast it back.
         unsized_string_dtype = (
-            self.dtype.kind in (u"S", u"a", u"U") and self.dtype.itemsize == 0
+            self.dtype.kind in ("S", "a", "U") and self.dtype.itemsize == 0
         )
 
         # This could legitimately be a np.empty, but the performance gains for
@@ -480,7 +476,7 @@ def dtype_factory(kind, sizes, valid_sizes, endianness):
     valid_endian = ("?", "<", "=", ">")
     check_argument(
         endianness in valid_endian,
-        u"Unknown endianness: was {}, must be in {}",
+        "Unknown endianness: was {}, must be in {}",
         endianness,
         valid_endian,
     )
@@ -490,7 +486,7 @@ def dtype_factory(kind, sizes, valid_sizes, endianness):
         check_argument(sizes, "Dtype must have at least one possible size.")
         check_argument(
             all(s in valid_sizes for s in sizes),
-            u"Invalid sizes: was {} must be an item or sequence " u"in {}",
+            "Invalid sizes: was {} must be an item or sequence in {}",
             sizes,
             valid_sizes,
         )
@@ -561,13 +557,13 @@ def complex_number_dtypes(endianness="?", sizes=(64, 128)):
 def validate_time_slice(max_period, min_period):
     check_argument(
         max_period in TIME_RESOLUTIONS,
-        u"max_period {} must be a valid resolution in {}",
+        "max_period {} must be a valid resolution in {}",
         max_period,
         TIME_RESOLUTIONS,
     )
     check_argument(
         min_period in TIME_RESOLUTIONS,
-        u"min_period {} must be a valid resolution in {}",
+        "min_period {} must be a valid resolution in {}",
         min_period,
         TIME_RESOLUTIONS,
     )
@@ -575,7 +571,7 @@ def validate_time_slice(max_period, min_period):
     end = TIME_RESOLUTIONS.index(min_period) + 1
     check_argument(
         start < end,
-        u"max_period {} must be earlier in sequence {} than " u"min_period {}",
+        "max_period {} must be earlier in sequence {} than min_period {}",
         max_period,
         TIME_RESOLUTIONS,
         min_period,

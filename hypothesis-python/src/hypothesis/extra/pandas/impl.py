@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 from collections import OrderedDict
 from copy import copy
@@ -121,7 +117,7 @@ def elements_and_dtype(elements, dtype, source=None):
 
 class ValueIndexStrategy(st.SearchStrategy):
     def __init__(self, elements, dtype, min_size, max_size, unique):
-        super(ValueIndexStrategy, self).__init__()
+        super().__init__()
         self.elements = elements
         self.dtype = dtype
         self.min_size = min_size
@@ -311,7 +307,7 @@ def series(
 
 
 @attr.s(slots=True)
-class column(object):
+class column:
     """Data object for describing a column in a DataFrame.
 
     Arguments:

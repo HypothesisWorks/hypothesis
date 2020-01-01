@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 from hypothesis import given
 from hypothesis.internal.detection import is_hypothesis_test
@@ -31,7 +27,7 @@ def test_functions_default_to_not_tests():
 
 
 def test_methods_default_to_not_tests():
-    class Foo(object):
+    class Foo:
         def foo():
             pass
 
@@ -47,7 +43,7 @@ def test_detection_of_functions():
 
 
 def test_detection_of_methods():
-    class Foo(object):
+    class Foo:
         @given(integers())
         def test(self, i):
             pass

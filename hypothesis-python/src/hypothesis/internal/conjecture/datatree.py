@@ -1,9 +1,7 @@
-# coding=utf-8
-#
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -14,8 +12,6 @@
 # obtain one at https://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import absolute_import, division, print_function
 
 import attr
 
@@ -47,7 +43,7 @@ EMPTY = frozenset()
 
 
 @attr.s(slots=True)
-class Killed(object):
+class Killed:
     """Represents a transition to part of the tree which has been marked as
     "killed", meaning we want to treat it as not worth exploring, so it will
     be treated as if it were completely explored for the purposes of
@@ -57,7 +53,7 @@ class Killed(object):
 
 
 @attr.s(slots=True)
-class Branch(object):
+class Branch:
     """Represents a transition where multiple choices can be made as to what
     to drawn."""
 
@@ -70,7 +66,7 @@ class Branch(object):
 
 
 @attr.s(slots=True, frozen=True)
-class Conclusion(object):
+class Conclusion:
     """Represents a transition to a finished state."""
 
     status = attr.ib()
@@ -86,7 +82,7 @@ def conclusion(status, interesting_origin):
 
 
 @attr.s(slots=True)
-class TreeNode(object):
+class TreeNode:
     """Node in a tree that corresponds to previous interactions with
     a ``ConjectureData`` object according to some fixed test function.
 
@@ -198,7 +194,7 @@ class TreeNode(object):
         return self.is_exhausted
 
 
-class DataTree(object):
+class DataTree:
     """Tracks the tree structure of a collection of ConjectureData
     objects, for use in ConjectureRunner."""
 
