@@ -20,7 +20,8 @@ import unicodedata
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import assume, given, settings
+from hypothesis import HealthCheck, assume, given, settings
+from hypothesis._settings import local_settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import PYPY
 from hypothesis.strategies._internal.regex import (
@@ -143,7 +144,8 @@ def test_matching(category, predicate, invert, is_unicode):
 def test_can_generate(pattern, encode):
     if encode:
         pattern = pattern.encode("ascii")
-    assert_all_examples(st.from_regex(pattern), re.compile(pattern).search)
+    with local_settings(settings(suppress_health_check=[HealthCheck.data_too_large])):
+        assert_all_examples(st.from_regex(pattern), re.compile(pattern).search)
 
 
 @pytest.mark.parametrize(
