@@ -19,7 +19,6 @@ import pytest
 
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis import HealthCheck, settings
-from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.conjecture.engine import ConjectureData, ConjectureRunner
 from hypothesis.strategies._internal import SearchStrategy
 
@@ -98,13 +97,13 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
     starts = [b.start for b in data.blocks if b.length == 2]
     assert len(starts) % 2 == 0
 
-    for i in hrange(0, len(starts), 2):
+    for i in range(0, len(starts), 2):
         # Now for each leaf position in the tree we try inserting a poison
         # value artificially. Additionally, we add a marker to the end that
         # must be preserved. The marker means that we are not allow to rely on
         # discarding the end of the buffer to get the desired shrink.
         u = starts[i]
-        marker = hbytes([1, 2, 3, 4])
+        marker = bytes([1, 2, 3, 4])
 
         def test_function_with_poison(data):
             v = data.draw(strat)
@@ -117,7 +116,7 @@ def test_can_reduce_poison_from_any_subtree(size, seed):
         )
 
         runner.cached_test_function(
-            data.buffer[:u] + hbytes([255]) * 4 + data.buffer[u + 4 :] + marker
+            data.buffer[:u] + bytes([255]) * 4 + data.buffer[u + 4 :] + marker
         )
 
         assert runner.interesting_examples

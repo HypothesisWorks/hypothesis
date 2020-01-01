@@ -19,7 +19,6 @@ import pytest
 
 from hypothesis import Phase, example, given, seed, settings, strategies as st, target
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import string_types
 
 
 @example(0.0, "this covers the branch where context.data is None")
@@ -81,7 +80,7 @@ def everything_except(type_):
 @example(float("-inf"), "")
 @example("1", "Non-float observations are invalid")
 @example(0.0, ["a list of strings is not a valid label"])
-@given(observation=everything_except(float), label=everything_except(string_types))
+@given(observation=everything_except(float), label=everything_except(str))
 def test_disallowed_inputs_to_target(observation, label):
     with pytest.raises(InvalidArgument):
         target(observation, label)

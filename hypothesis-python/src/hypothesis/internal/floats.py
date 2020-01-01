@@ -14,13 +14,9 @@
 # END HEADER
 
 import math
+import struct
 
-from hypothesis.internal.compat import (
-    CAN_PACK_HALF_FLOAT,
-    quiet_raise,
-    struct_pack,
-    struct_unpack,
-)
+from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT
 
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
@@ -35,15 +31,13 @@ STRUCT_FORMATS = {
 # 3.5 and earlier, and the elegant one for new versions.  We use the new
 # one if Numpy is unavailable too, because it's slightly faster in all cases.
 def reinterpret_bits(x, from_, to):
-    return struct_unpack(to, struct_pack(from_, x))[0]
+    return struct.unpack(to, struct.pack(from_, x))[0]
 
 
 if not CAN_PACK_HALF_FLOAT:  # pragma: no cover
     try:
         import numpy
-    except (ImportError, TypeError):
-        # We catch TypeError because that can be raised if Numpy is installed on
-        # PyPy for Python 2.7; and we only need a workaround until 2020-01-01.
+    except ImportError:
         pass
     else:
 
@@ -51,13 +45,13 @@ if not CAN_PACK_HALF_FLOAT:  # pragma: no cover
             if from_ == b"!e":
                 arr = numpy.array([x], dtype=">f2")
                 if numpy.isfinite(x) and not numpy.isfinite(arr[0]):
-                    quiet_raise(OverflowError("%r too large for float16" % (x,)))
+                    raise OverflowError("%r too large for float16" % (x,)) from None
                 buf = arr.tobytes()
             else:
-                buf = struct_pack(from_, x)
+                buf = struct.pack(from_, x)
             if to == b"!e":
                 return float(numpy.frombuffer(buf, dtype=">f2")[0])
-            return struct_unpack(to, buf)[0]
+            return struct.unpack(to, buf)[0]
 
 
 def float_of(x, width):

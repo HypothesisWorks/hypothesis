@@ -26,7 +26,6 @@ from hypothesis.errors import (
     NonInteractiveExampleWarning,
     UnsatisfiedAssumption,
 )
-from hypothesis.internal.compat import bit_length, hrange
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
     calc_label_from_name,
@@ -483,7 +482,7 @@ class SampledFromStrategy(SearchStrategy):
 
         # Start with ordinary rejection sampling. It's fast if it works, and
         # if it doesn't work then it was only a small amount of overhead.
-        for _ in hrange(3):
+        for _ in range(3):
             i = cu.integer_range(data, 0, len(self.elements) - 1)
             if check_index(i):
                 return self.elements[i]
@@ -495,7 +494,7 @@ class SampledFromStrategy(SearchStrategy):
 
         # Figure out the bit-length of the index that we will write back after
         # choosing an allowed element.
-        write_length = bit_length(len(self.elements))
+        write_length = len(self.elements).bit_length()
 
         # Impose an arbitrary cutoff to prevent us from wasting too much time
         # on very large element lists.
@@ -511,7 +510,7 @@ class SampledFromStrategy(SearchStrategy):
         # of them at random. But if we encounter the speculatively-chosen one,
         # just use that and return immediately.
         allowed_indices = []
-        for i in hrange(min(len(self.elements), cutoff)):
+        for i in range(min(len(self.elements), cutoff)):
             if check_index(i):
                 allowed_indices.append(i)
                 if len(allowed_indices) > speculative_index:
@@ -740,7 +739,7 @@ class FilteredStrategy(SearchStrategy):
         data.note_event(lazyformat("Retried draw from %r to satisfy filter", self))
 
     def default_do_filtered_draw(self, data):
-        for i in hrange(3):
+        for i in range(3):
             start_index = data.index
             value = data.draw(self.filtered_strategy)
             if self.condition(value):

@@ -19,13 +19,12 @@ import hypothesis.strategies as st
 from hypothesis import assume, core, find, given, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import NoSuchExample, Unsatisfiable
-from hypothesis.internal.compat import hbytes
 from hypothesis.internal.entropy import deterministic_PRNG
 from tests.common.utils import all_values, non_covering_examples
 
 
 def has_a_non_zero_byte(x):
-    return any(hbytes(x))
+    return any(bytes(x))
 
 
 def test_saves_incremental_steps_in_database():

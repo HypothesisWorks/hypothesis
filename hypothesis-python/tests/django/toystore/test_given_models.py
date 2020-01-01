@@ -28,7 +28,6 @@ from hypothesis.extra.django import (
     from_model,
     register_field_strategy,
 )
-from hypothesis.internal.compat import text_type
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies import binary, just, lists
 from tests.django.toystore.models import (
@@ -125,12 +124,12 @@ class TestGetsBasicModels(TestCase):
     @given(from_model(OddFields))
     def test_odd_fields(self, x):
         assert isinstance(x.uuid, UUID)
-        assert isinstance(x.slug, text_type)
+        assert isinstance(x.slug, str)
         assert " " not in x.slug
-        assert isinstance(x.ipv4, text_type)
+        assert isinstance(x.ipv4, str)
         assert len(x.ipv4.split(".")) == 4
         assert all(int(i) in range(256) for i in x.ipv4.split("."))
-        assert isinstance(x.ipv6, text_type)
+        assert isinstance(x.ipv6, str)
         assert set(x.ipv6).issubset(set("0123456789abcdefABCDEF:."))
 
     @given(from_model(ManyTimes))

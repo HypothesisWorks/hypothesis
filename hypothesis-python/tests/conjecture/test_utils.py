@@ -30,7 +30,6 @@ from hypothesis import (
     strategies as st,
 )
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
@@ -39,17 +38,17 @@ def test_does_draw_data_for_empty_range():
     data = ConjectureData.for_buffer(b"\1")
     assert cu.integer_range(data, 1, 1) == 1
     data.freeze()
-    assert data.buffer == hbytes(b"\0")
+    assert data.buffer == b"\0"
 
 
 def test_uniform_float_shrinks_to_zero():
-    d = ConjectureData.for_buffer(hbytes([0] * 7))
+    d = ConjectureData.for_buffer(bytes(7))
     assert cu.fractional_float(d) == 0.0
     assert len(d.buffer) == 7
 
 
 def test_uniform_float_can_draw_1():
-    d = ConjectureData.for_buffer(hbytes([255] * 7))
+    d = ConjectureData.for_buffer(bytes([255] * 7))
     assert cu.fractional_float(d) == 1.0
     assert len(d.buffer) == 7
 
@@ -86,7 +85,7 @@ def test_unbiased_coin_has_no_second_order():
     counts = Counter()
 
     for i in range(256):
-        buf = hbytes([i])
+        buf = bytes([i])
         data = ConjectureData.for_buffer(buf)
         result = cu.biased_coin(data, 0.5)
         if data.buffer == buf:
@@ -111,7 +110,7 @@ def test_drawing_impossible_coin_still_writes():
 
 def test_drawing_an_exact_fraction_coin():
     count = 0
-    for i in hrange(8):
+    for i in range(8):
         if cu.biased_coin(ConjectureData.for_buffer([i]), Fraction(3, 8)):
             count += 1
     assert count == 3

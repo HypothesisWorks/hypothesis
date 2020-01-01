@@ -18,7 +18,6 @@ import random
 import sys
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import integer_types
 
 RANDOMS_TO_MANAGE = [random]  # type: list
 
@@ -65,7 +64,7 @@ def get_seeder_and_restorer(seed=0):
     to force determinism on simulation or scheduling frameworks which avoid
     using the global random state.  See e.g. #1709.
     """
-    assert isinstance(seed, integer_types) and 0 <= seed < 2 ** 32
+    assert isinstance(seed, int) and 0 <= seed < 2 ** 32
     states = []  # type: list
 
     if "numpy" in sys.modules and not any(

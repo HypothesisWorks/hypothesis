@@ -16,7 +16,7 @@
 import pytest
 
 from hypothesis import settings
-from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
+from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -98,7 +98,7 @@ def test_can_optimise_last_with_following_empty():
         runner = ConjectureRunner(
             test, settings=settings(TEST_SETTINGS, max_examples=100)
         )
-        runner.cached_test_function(hbytes(101))
+        runner.cached_test_function(bytes(101))
 
         with pytest.raises(RunIsComplete):
             runner.optimise_targets()
@@ -143,7 +143,7 @@ def test_targeting_can_drive_length_very_high():
             data.target_observations[""] = min(count, 100)
 
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
-        runner.cached_test_function(hbytes(10))
+        runner.cached_test_function(bytes(10))
 
         try:
             runner.optimise_targets()
@@ -164,7 +164,7 @@ def test_optimiser_when_test_grows_buffer_to_invalid():
                 data.mark_invalid()
 
         runner = ConjectureRunner(test, settings=TEST_SETTINGS)
-        runner.cached_test_function(hbytes(10))
+        runner.cached_test_function(bytes(10))
 
         try:
             runner.optimise_targets()
@@ -181,10 +181,10 @@ def test_can_patch_up_examples():
             data.start_example(42)
             m = data.draw_bits(6)
             data.target_observations["m"] = m
-            for _ in hrange(m):
+            for _ in range(m):
                 data.draw_bits(1)
             data.stop_example()
-            for i in hrange(4):
+            for i in range(4):
                 if i != data.draw_bits(8):
                     data.mark_invalid()
 
@@ -212,7 +212,7 @@ def test_optimiser_when_test_grows_buffer_to_overflow():
                     data.mark_invalid()
 
             runner = ConjectureRunner(test, settings=TEST_SETTINGS)
-            runner.cached_test_function(hbytes(10))
+            runner.cached_test_function(bytes(10))
 
             try:
                 runner.optimise_targets()

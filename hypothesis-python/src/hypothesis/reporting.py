@@ -16,11 +16,7 @@
 import inspect
 
 from hypothesis._settings import Verbosity, settings
-from hypothesis.internal.compat import (
-    binary_type,
-    escape_unicode_characters,
-    print_unicode,
-)
+from hypothesis.internal.compat import escape_unicode_characters
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
@@ -30,9 +26,9 @@ def silent(value):
 
 def default(value):
     try:
-        print_unicode(value)
+        print(value)
     except UnicodeEncodeError:
-        print_unicode(escape_unicode_characters(value))
+        print(escape_unicode_characters(value))
 
 
 reporter = DynamicVariable(default)
@@ -53,7 +49,7 @@ def current_verbosity():
 def to_text(textish):
     if inspect.isfunction(textish):
         textish = textish()
-    if isinstance(textish, binary_type):
+    if isinstance(textish, bytes):
         textish = textish.decode("utf-8")
     return textish
 

@@ -54,27 +54,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import re
 from collections import Counter, OrderedDict, defaultdict, deque
+from io import StringIO
 
 import pytest
 
-from hypothesis.internal.compat import PY3, PYPY, a_good_encoding
+from hypothesis.internal.compat import PYPY
 from hypothesis.vendor import pretty
 from tests.common.utils import capture_out
 
-py2_only = pytest.mark.skipif(PY3, reason="This test only runs on python 2")
 
-if PY3:
-    from io import StringIO
-
-    def unicode_to_str(x, encoding=None):
-        return x
-
-
-else:
-    from StringIO import StringIO
-
-    def unicode_to_str(x, encoding=None):
-        return x.encode(encoding or a_good_encoding())
+def unicode_to_str(x, encoding=None):
+    return x
 
 
 def assert_equal(x, y):
@@ -444,83 +434,6 @@ def test_basic_class():
     assert_true(type_pprint_wrapper.called)
 
 
-# This is only run on Python 2 because in Python 3 the language prevents you
-# from setting a non-unicode value for __qualname__ on a metaclass, and it
-# doesn't respect the descriptor protocol if you subclass unicode and implement
-# __get__.
-@py2_only
-def test_fallback_to__name__on_type():
-    # Test that we correctly repr types that have non-string values for
-    # __qualname__ by falling back to __name__
-
-    class Type:
-        __qualname__ = 5
-
-    # Test repring of the type.
-    stream = StringIO()
-    printer = pretty.RepresentationPrinter(stream)
-
-    printer.pretty(Type)
-    printer.flush()
-    output = stream.getvalue()
-
-    # If __qualname__ is malformed, we should fall back to __name__.
-    expected = ".".join([__name__, Type.__name__])
-    assert_equal(output, expected)
-
-    # Clear stream buffer.
-    stream.buf = ""
-
-    # Test repring of an instance of the type.
-    instance = Type()
-    printer.pretty(instance)
-    printer.flush()
-    output = stream.getvalue()
-
-    # Should look like:
-    # <IPython.lib.tests.test_pretty.Type at 0x7f7658ae07d0>
-    prefix = "<" + ".".join([__name__, Type.__name__]) + " at 0x"
-    assert_true(output.startswith(prefix))
-
-
-@py2_only
-def test_fail_gracefully_on_bogus__qualname__and__name__():
-    # Test that we correctly repr types that have non-string values for both
-    # __qualname__ and __name__
-
-    class Meta(type):
-        __name__ = 5
-
-    class Type:
-        __metaclass__ = Meta  # noqa
-        __qualname__ = 5
-
-    stream = StringIO()
-    printer = pretty.RepresentationPrinter(stream)
-
-    printer.pretty(Type)
-    printer.flush()
-    output = stream.getvalue()
-
-    # If we can't find __name__ or __qualname__ just use a sentinel string.
-    expected = ".".join([__name__, "<unknown type>"])
-    assert_equal(output, expected)
-
-    # Clear stream buffer.
-    stream.buf = ""
-
-    # Test repring of an instance of the type.
-    instance = Type()
-    printer.pretty(instance)
-    printer.flush()
-    output = stream.getvalue()
-
-    # Should look like:
-    # <IPython.lib.tests.test_pretty.<unknown type> at 0x7f7658ae07d0>
-    prefix = "<" + ".".join([__name__, "<unknown type>"]) + " at 0x"
-    assert_true(output.startswith(prefix))
-
-
 def test_collections_defaultdict():
     # Create defaultdicts with cycles
     a = defaultdict()
@@ -544,7 +457,7 @@ def test_collections_defaultdict():
         assert_equal(pretty.pretty(obj), expected)
 
 
-@pytest.mark.skipif(PY3 and PYPY, reason="slightly different on PyPy3")
+@pytest.mark.skipif(PYPY, reason="slightly different on PyPy3")
 def test_collections_ordereddict():
     # Create OrderedDict with cycle
     a = OrderedDict()
@@ -743,7 +656,7 @@ def test_pretty_function():
 
 def test_empty_printer():
     printer = pretty.RepresentationPrinter(
-        pretty.CUnicodeIO(),
+        StringIO(),
         singleton_pprinters={},
         type_pprinters={int: pretty._repr_pprint, list: pretty._repr_pprint},
         deferred_pprinters={},

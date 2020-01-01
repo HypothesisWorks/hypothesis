@@ -23,7 +23,6 @@ from hypothesis import __version__, reproduce_failure, seed, settings as Setting
 from hypothesis.control import current_build_context
 from hypothesis.database import ExampleDatabase
 from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDefinition
-from hypothesis.internal.compat import print_unicode
 from hypothesis.stateful import (
     Bundle,
     RuleBasedStateMachine,
@@ -139,7 +138,7 @@ class DepthMachine(RuleBasedStateMachine):
 
 class MultipleRulesSameFuncMachine(RuleBasedStateMachine):
     def myfunc(self, data):
-        print_unicode(data)
+        print(data)
 
     rule1 = rule(data=just("rule1data"))(myfunc)
     rule2 = rule(data=just("rule2data"))(myfunc)
@@ -280,10 +279,10 @@ def test_bad_machines_fail(machine):
             with raises(AssertionError):
                 test_class().runTest()
     except Exception:
-        print_unicode(o.getvalue())
+        print(o.getvalue())
         raise
     v = o.getvalue()
-    print_unicode(v)
+    print(v)
     steps = [l for l in v.splitlines() if "Step " in l or "state." in l]
     assert 1 <= len(steps) <= 50
 

@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-from hypothesis.internal.compat import hrange
 from hypothesis.internal.conjecture.shrinking.common import Shrinker, find_integer
 
 
@@ -30,7 +29,7 @@ class Integer(Shrinker):
     """
 
     def short_circuit(self):
-        for i in hrange(2):
+        for i in range(2):
             if self.consider(i):
                 return True
         self.mask_high_bits()

@@ -80,8 +80,6 @@ from collections import deque
 from contextlib import contextmanager
 from io import StringIO
 
-from hypothesis.internal.compat import PY3, cast_unicode, get_stream_enc, string_types
-
 __all__ = [
     "pretty",
     "pprint",
@@ -110,24 +108,11 @@ def _safe_getattr(obj, attr, default=None):
         return default
 
 
-if PY3:
-    CUnicodeIO = StringIO
-else:  # pragma: no cover
-
-    class CUnicodeIO(StringIO):
-        """StringIO that casts str to unicode on Python 2."""
-
-        def write(self, text):
-            return super().write(
-                cast_unicode(text, encoding=get_stream_enc(sys.stdout))
-            )
-
-
 def pretty(
     obj, verbose=False, max_width=79, newline="\n", max_seq_length=MAX_SEQ_LENGTH
 ):
     """Pretty print the object's representation."""
-    stream = CUnicodeIO()
+    stream = StringIO()
     printer = RepresentationPrinter(
         stream, verbose, max_width, newline, max_seq_length=max_seq_length
     )
@@ -728,13 +713,13 @@ def _type_pprint(obj, p, cycle):
     mod = _safe_getattr(obj, "__module__", None)
     try:
         name = obj.__qualname__
-        if not isinstance(name, string_types):  # pragma: no cover
+        if not isinstance(name, str):  # pragma: no cover
             # This can happen if the type implements __qualname__ as a property
             # or other descriptor in Python 2.
             raise Exception("Try __name__")
     except Exception:  # pragma: no cover
         name = obj.__name__
-        if not isinstance(name, string_types):
+        if not isinstance(name, str):
             name = "<unknown type>"
 
     if mod in (None, "__builtin__", "builtins", "exceptions"):

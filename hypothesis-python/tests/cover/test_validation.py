@@ -231,8 +231,6 @@ def test_valid_sizes(strategy, min_size, max_size):
 
 
 def test_check_type_with_tuple_of_length_two():
-    # This test covers logic for length-two tuples that is essential on PY2,
-    # e.g. string_types (str, unicode) which are all length-one on Python 3.
     def type_checker(x):
         check_type((int, str), x, "x")
 

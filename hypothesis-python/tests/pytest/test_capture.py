@@ -17,7 +17,7 @@ import sys
 
 import pytest
 
-from hypothesis.internal.compat import PY2, WINDOWS, escape_unicode_characters, hunichr
+from hypothesis.internal.compat import WINDOWS, escape_unicode_characters
 
 pytest_plugins = "pytester"
 
@@ -47,7 +47,6 @@ UNICODE_EMITTING = """
 import pytest
 from hypothesis import given, settings, Verbosity
 from hypothesis.strategies import text
-from hypothesis.internal.compat import PY3
 import sys
 
 def test_emits_unicode():
@@ -64,7 +63,6 @@ def test_emits_unicode():
     WINDOWS,
     reason=("Encoding issues in running the subprocess, possibly pytest's fault"),
 )
-@pytest.mark.skipif(PY2, reason="Output streams don't have encodings in python 2")
 def test_output_emitting_unicode(testdir, monkeypatch):
     monkeypatch.setenv("LC_ALL", "C")
     monkeypatch.setenv("LANG", "C")
@@ -74,7 +72,7 @@ def test_output_emitting_unicode(testdir, monkeypatch):
     )
     out = "\n".join(result.stdout.lines)
     assert "test_emits_unicode" in out
-    assert hunichr(1001) in out or escape_unicode_characters(hunichr(1001)) in out
+    assert chr(1001) in out or escape_unicode_characters(chr(1001)) in out
     assert result.ret == 0
 
 

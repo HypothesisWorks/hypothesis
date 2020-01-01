@@ -14,7 +14,6 @@
 # END HEADER
 
 from hypothesis import given, strategies as st
-from hypothesis.internal.compat import hrange
 from hypothesis.strategies._internal.featureflags import FeatureFlags, FeatureStrategy
 from tests.common.debug import find_any, minimal
 
@@ -22,11 +21,11 @@ STRAT = FeatureStrategy()
 
 
 def test_can_all_be_enabled():
-    find_any(STRAT, lambda x: all(x.is_enabled(i) for i in hrange(100)))
+    find_any(STRAT, lambda x: all(x.is_enabled(i) for i in range(100)))
 
 
 def test_minimizes_open():
-    features = hrange(10)
+    features = range(10)
 
     flags = minimal(STRAT, lambda x: [x.is_enabled(i) for i in features])
 
@@ -34,7 +33,7 @@ def test_minimizes_open():
 
 
 def test_minimizes_individual_features_to_open():
-    features = list(hrange(10))
+    features = list(range(10))
 
     flags = minimal(
         STRAT, lambda x: sum(x.is_enabled(i) for i in features) < len(features)

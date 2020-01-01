@@ -16,6 +16,7 @@
 import math
 import re
 from collections import namedtuple
+from typing import NamedTuple, Tuple
 
 import numpy as np
 
@@ -23,31 +24,17 @@ import hypothesis.internal.conjecture.utils as cu
 import hypothesis.strategies._internal.core as st
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import (
-    PY2,
-    hrange,
-    integer_types,
-    quiet_raise,
-    string_types,
-)
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies, reserved_means_kwonly_star
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal import SearchStrategy
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
-if PY2:
-    BroadcastableShapes = namedtuple(
-        "BroadcastableShapes", ["input_shapes", "result_shape"]
-    )
-else:
-    from typing import NamedTuple, Tuple
-
-    Shape = Tuple[int, ...]  # noqa
-    BroadcastableShapes = NamedTuple(
-        "BroadcastableShapes",
-        [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
-    )
+Shape = Tuple[int, ...]  # noqa
+BroadcastableShapes = NamedTuple(
+    "BroadcastableShapes",
+    [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
+)
 
 if False:
     from typing import Any, Union, Sequence, Tuple  # noqa
@@ -207,7 +194,7 @@ class ArrayStrategy(SearchStrategy):
                     else:
                         elements.reject()
             else:
-                for i in hrange(len(result)):
+                for i in range(len(result)):
                     self.set_element(data, result, i)
         else:
             # We draw numpy arrays as "sparse with an offset". We draw a
@@ -398,11 +385,11 @@ def arrays(
     dtype = np.dtype(dtype)
     if elements is None:
         elements = from_dtype(dtype)
-    if isinstance(shape, integer_types):
+    if isinstance(shape, int):
         shape = (shape,)
     shape = tuple(shape)
     check_argument(
-        all(isinstance(s, integer_types) for s in shape),
+        all(isinstance(s, int) for s in shape),
         "Array shape must be integer in each dimension, provided shape was {}",
         shape,
     )
@@ -414,8 +401,8 @@ def arrays(
 def array_shapes(min_dims=1, max_dims=None, min_side=1, max_side=None):
     # type: (int, int, int, int) -> st.SearchStrategy[Shape]
     """Return a strategy for array shapes (tuples of int >= 1)."""
-    check_type(integer_types, min_dims, "min_dims")
-    check_type(integer_types, min_side, "min_side")
+    check_type(int, min_dims, "min_dims")
+    check_type(int, min_side, "min_side")
     if min_dims > 32:
         raise InvalidArgument(
             "Got min_dims=%r, but numpy does not support arrays greater than 32 dimensions"
@@ -423,7 +410,7 @@ def array_shapes(min_dims=1, max_dims=None, min_side=1, max_side=None):
         )
     if max_dims is None:
         max_dims = min(min_dims + 2, 32)
-    check_type(integer_types, max_dims, "max_dims")
+    check_type(int, max_dims, "max_dims")
     if max_dims > 32:
         raise InvalidArgument(
             "Got max_dims=%r, but numpy does not support arrays greater than 32 dimensions"
@@ -431,7 +418,7 @@ def array_shapes(min_dims=1, max_dims=None, min_side=1, max_side=None):
         )
     if max_side is None:
         max_side = min_side + 5
-    check_type(integer_types, max_side, "max_side")
+    check_type(int, max_side, "max_side")
     order_check("dims", 0, min_dims, max_dims)
     order_check("side", 0, min_side, max_side)
 
@@ -645,10 +632,7 @@ def array_dtypes(
     drawn from the given subtype strategy."""
     order_check("size", 0, min_size, max_size)
     # Field names must be native strings and the empty string is weird; see #1963.
-    if PY2:
-        field_names = st.binary(min_size=1)
-    else:
-        field_names = st.text(min_size=1)
+    field_names = st.text(min_size=1)
     elements = st.tuples(field_names, subtype_strategy)
     if allow_subarrays:
         elements |= st.tuples(
@@ -714,9 +698,9 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
     if max_size is None:
         max_size = ndim
 
-    check_type(integer_types, ndim, "ndim")
-    check_type(integer_types, min_size, "min_size")
-    check_type(integer_types, max_size, "max_size")
+    check_type(int, ndim, "ndim")
+    check_type(int, min_size, "min_size")
+    check_type(int, max_size, "max_size")
     order_check("size", 0, min_size, max_size)
     check_valid_interval(max_size, ndim, "max_size", "ndim")
 
@@ -755,18 +739,18 @@ def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=
     """
     check_type(tuple, shape, "shape")
     strict_check = max_side is None or max_dims is None
-    check_type(integer_types, min_side, "min_side")
-    check_type(integer_types, min_dims, "min_dims")
+    check_type(int, min_side, "min_side")
+    check_type(int, min_dims, "min_dims")
 
     if max_dims is None:
         max_dims = min(32, max(len(shape), min_dims) + 2)
     else:
-        check_type(integer_types, max_dims, "max_dims")
+        check_type(int, max_dims, "max_dims")
 
     if max_side is None:
         max_side = max(tuple(shape[-max_dims:]) + (min_side,)) + 2
     else:
-        check_type(integer_types, max_side, "max_side")
+        check_type(int, max_side, "max_side")
 
     order_check("dims", 0, min_dims, max_dims)
     order_check("side", 0, min_side, max_side)
@@ -1032,7 +1016,9 @@ def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
                         raise InvalidArgument(frozen_optional_err % (name, signature))
                 except ValueError:
                     if name.strip("?") in (names_out - names_in):
-                        quiet_raise(InvalidArgument(only_out_err % (name, signature)))
+                        raise InvalidArgument(
+                            only_out_err % (name, signature)
+                        ) from None
     return _GUfuncSig(input_shapes=input_shapes, result_shape=result_shape)
 
 
@@ -1128,8 +1114,8 @@ def mutually_broadcastable_shapes(
     arg_msg = "Pass either the `num_shapes` or the `signature` argument, but not both."
     if num_shapes is not not_set:
         check_argument(signature is not_set, arg_msg)
-        check_type(integer_types, num_shapes, "num_shapes")
-        assert isinstance(num_shapes, integer_types)  # for mypy
+        check_type(int, num_shapes, "num_shapes")
+        assert isinstance(num_shapes, int)  # for mypy
         check_argument(num_shapes >= 1, "num_shapes={} must be at least 1", num_shapes)
         parsed_signature = None
         sig_dims = 0
@@ -1140,7 +1126,7 @@ def mutually_broadcastable_shapes(
                 "Expected a string, but got invalid signature=None.  "
                 "(maybe .signature attribute of an element-wise ufunc?)"
             )
-        check_type(string_types, signature, "signature")
+        check_type(str, signature, "signature")
         parsed_signature = _hypothesis_parse_gufunc_signature(signature)
         sig_dims = min(
             map(len, parsed_signature.input_shapes + (parsed_signature.result_shape,))
@@ -1150,18 +1136,18 @@ def mutually_broadcastable_shapes(
 
     check_type(tuple, base_shape, "base_shape")
     strict_check = max_dims is not None
-    check_type(integer_types, min_side, "min_side")
-    check_type(integer_types, min_dims, "min_dims")
+    check_type(int, min_side, "min_side")
+    check_type(int, min_dims, "min_dims")
 
     if max_dims is None:
         max_dims = min(32 - sig_dims, max(len(base_shape), min_dims) + 2)
     else:
-        check_type(integer_types, max_dims, "max_dims")
+        check_type(int, max_dims, "max_dims")
 
     if max_side is None:
         max_side = max(tuple(base_shape[-max_dims:]) + (min_side,)) + 2
     else:
-        check_type(integer_types, max_side, "max_side")
+        check_type(int, max_side, "max_side")
 
     order_check("dims", 0, min_dims, max_dims)
     order_check("side", 0, min_side, max_side)
@@ -1308,18 +1294,18 @@ def basic_indices(
         raise InvalidArgument("Do not pass the __reserved argument.")
     check_type(bool, allow_ellipsis, "allow_ellipsis")
     check_type(bool, allow_newaxis, "allow_newaxis")
-    check_type(integer_types, min_dims, "min_dims")
+    check_type(int, min_dims, "min_dims")
     if max_dims is None:
         max_dims = min(max(len(shape), min_dims) + 2, 32)
     else:
-        check_type(integer_types, max_dims, "max_dims")
+        check_type(int, max_dims, "max_dims")
     order_check("dims", 0, min_dims, max_dims)
     check_argument(
         max_dims <= 32,
         "max_dims=%r, but numpy arrays have at most 32 dimensions" % (max_dims,),
     )
     check_argument(
-        all(isinstance(x, integer_types) and x >= 0 for x in shape),
+        all(isinstance(x, int) and x >= 0 for x in shape),
         "shape=%r, but all dimensions must be of integer size >= 0" % (shape,),
     )
     return BasicIndexStrategy(
@@ -1375,7 +1361,7 @@ def integer_array_indices(shape, result_shape=array_shapes(), dtype="int"):
     """
     check_type(tuple, shape, "shape")
     check_argument(
-        shape and all(isinstance(x, integer_types) and x > 0 for x in shape),
+        shape and all(isinstance(x, int) and x > 0 for x in shape),
         "shape=%r must be a non-empty tuple of integers > 0" % (shape,),
     )
     check_type(SearchStrategy, result_shape, "result_shape")

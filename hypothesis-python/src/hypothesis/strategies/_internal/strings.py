@@ -15,7 +15,6 @@
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
-from hypothesis.internal.compat import binary_type, hunichr
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal.strategies import (
@@ -65,7 +64,7 @@ class OneCharStringStrategy(SearchStrategy):
 
     def do_draw(self, data):
         i = integer_range(data, 0, len(self.intervals) - 1, center=self.zero_point)
-        return hunichr(self.intervals[i])
+        return chr(self.intervals[i])
 
 
 class StringStrategy(MappedSearchStrategy):
@@ -82,25 +81,9 @@ class StringStrategy(MappedSearchStrategy):
         return "".join(ls)
 
 
-class BinaryStringStrategy(MappedSearchStrategy):
-    """A strategy for strings of bytes, defined in terms of a strategy for
-    lists of bytes."""
-
-    def __repr__(self):
-        return "%r.map(bytearray).map(%s)" % (
-            self.mapped_strategy,
-            binary_type.__name__,
-        )
-
-    def pack(self, x):
-        assert isinstance(x, list), repr(x)
-        ba = bytearray(x)
-        return binary_type(ba)
-
-
 class FixedSizeBytes(SearchStrategy):
     def __init__(self, size):
         self.size = size
 
     def do_draw(self, data):
-        return binary_type(data.draw_bytes(self.size))
+        return bytes(data.draw_bytes(self.size))

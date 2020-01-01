@@ -164,7 +164,7 @@ So, convinced that our implementation is broken, we write a better one:
 .. code:: python
 
     def sort_nodes(xs):
-        for i in hrange(1, len(xs)):
+        for i in range(1, len(xs)):
             j = i - 1
             while j >= 0:
                 if xs[j].sorts_before(xs[j + 1]):

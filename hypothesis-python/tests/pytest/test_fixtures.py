@@ -13,16 +13,13 @@
 #
 # END HEADER
 
+from unittest.mock import Mock, create_autospec
+
 import pytest
 
 from hypothesis import example, given
 from hypothesis.strategies import integers
 from tests.common.utils import fails
-
-try:
-    from unittest.mock import Mock, create_autospec
-except ImportError:
-    from mock import Mock, create_autospec
 
 
 @pytest.fixture

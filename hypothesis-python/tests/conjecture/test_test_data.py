@@ -20,7 +20,6 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import given
 from hypothesis.errors import Frozen, InvalidArgument
-from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
     ConjectureData,
@@ -62,7 +61,7 @@ def test_can_draw_zero_bytes():
 
 
 def test_draw_past_end_sets_overflow():
-    x = ConjectureData.for_buffer(hbytes(5))
+    x = ConjectureData.for_buffer(bytes(5))
     with pytest.raises(StopTest) as e:
         x.draw_bytes(6)
     assert e.value.testcounter == x.testcounter
@@ -77,7 +76,7 @@ def test_notes_repr():
 
 
 def test_can_mark_interesting():
-    x = ConjectureData.for_buffer(hbytes())
+    x = ConjectureData.for_buffer(b"")
     with pytest.raises(StopTest):
         x.mark_interesting()
     assert x.frozen
@@ -85,12 +84,12 @@ def test_can_mark_interesting():
 
 
 def test_drawing_zero_bits_is_free():
-    x = ConjectureData.for_buffer(hbytes())
+    x = ConjectureData.for_buffer(b"")
     assert x.draw_bits(0) == 0
 
 
 def test_can_mark_invalid():
-    x = ConjectureData.for_buffer(hbytes())
+    x = ConjectureData.for_buffer(b"")
     with pytest.raises(StopTest):
         x.mark_invalid()
     assert x.frozen
@@ -132,7 +131,7 @@ def test_triviality():
     d.draw_bits(1)
     d.stop_example(1)
 
-    d.write(hbytes([2]))
+    d.write(bytes([2]))
     d.freeze()
 
     def eg(u, v):
@@ -145,7 +144,7 @@ def test_triviality():
 
 
 def test_example_depth_marking():
-    d = ConjectureData.for_buffer(hbytes(24))
+    d = ConjectureData.for_buffer(bytes(24))
 
     # These draw sizes are chosen so that each example has a unique length.
     d.draw_bytes(2)
@@ -163,14 +162,14 @@ def test_example_depth_marking():
 
 
 def test_has_examples_even_when_empty():
-    d = ConjectureData.for_buffer(hbytes())
+    d = ConjectureData.for_buffer(b"")
     d.draw(st.just(False))
     d.freeze()
     assert d.examples
 
 
 def test_has_cached_examples_even_when_overrun():
-    d = ConjectureData.for_buffer(hbytes(1))
+    d = ConjectureData.for_buffer(bytes(1))
     d.start_example(3)
     d.draw_bits(1)
     d.stop_example()
@@ -186,17 +185,17 @@ def test_has_cached_examples_even_when_overrun():
 def test_can_write_empty_string():
     d = ConjectureData.for_buffer([1, 1, 1])
     d.draw_bits(1)
-    d.write(hbytes())
+    d.write(b"")
     d.draw_bits(1)
     d.draw_bits(0, forced=0)
     d.draw_bits(1)
-    assert d.buffer == hbytes([1, 1, 1])
+    assert d.buffer == bytes([1, 1, 1])
 
 
 def test_blocks_preserve_identity():
     n = 10
     d = ConjectureData.for_buffer([1] * 10)
-    for _ in hrange(n):
+    for _ in range(n):
         d.draw_bits(1)
     d.freeze()
     blocks = [d.blocks[i] for i in range(n)]
@@ -207,10 +206,10 @@ def test_blocks_preserve_identity():
 
 def test_compact_blocks_during_generation():
     d = ConjectureData.for_buffer([1] * 10)
-    for _ in hrange(5):
+    for _ in range(5):
         d.draw_bits(1)
     assert len(list(d.blocks)) == 5
-    for _ in hrange(5):
+    for _ in range(5):
         d.draw_bits(1)
     assert len(list(d.blocks)) == 10
 
@@ -218,7 +217,7 @@ def test_compact_blocks_during_generation():
 def test_handles_indices_like_a_list():
     n = 5
     d = ConjectureData.for_buffer([1] * n)
-    for _ in hrange(n):
+    for _ in range(n):
         d.draw_bits(1)
     assert d.blocks[-1] is d.blocks[n - 1]
     assert d.blocks[-n] is d.blocks[0]
@@ -243,7 +242,7 @@ def test_can_observe_draws():
             self.log.append(("concluded",) + args)
 
     observer = LoggingObserver()
-    x = ConjectureData.for_buffer(hbytes([1, 2, 3]), observer=observer)
+    x = ConjectureData.for_buffer(bytes([1, 2, 3]), observer=observer)
 
     x.draw_bits(1)
     x.draw_bits(7, forced=10)
@@ -267,7 +266,7 @@ def test_calls_concluded_implicitly():
 
     observer = NoteConcluded()
 
-    x = ConjectureData.for_buffer(hbytes([1]), observer=observer)
+    x = ConjectureData.for_buffer(bytes([1]), observer=observer)
     x.draw_bits(1)
     x.freeze()
 
@@ -277,10 +276,10 @@ def test_calls_concluded_implicitly():
 def test_handles_start_indices_like_a_list():
     n = 5
     d = ConjectureData.for_buffer([1] * n)
-    for _ in hrange(n):
+    for _ in range(n):
         d.draw_bits(1)
 
-    for i in hrange(-2 * n, 2 * n + 1):
+    for i in range(-2 * n, 2 * n + 1):
         try:
             start = d.blocks.start(i)
         except IndexError:
@@ -301,7 +300,7 @@ def test_last_block_length():
     with pytest.raises(IndexError):
         d.blocks.last_block_length
 
-    for n in hrange(1, 5 + 1):
+    for n in range(1, 5 + 1):
         d.draw_bits(n * 8)
         assert d.blocks.last_block_length == n
 
@@ -321,7 +320,7 @@ def test_examples_show_up_as_discarded():
 
 
 def test_examples_support_negative_indexing():
-    d = ConjectureData.for_buffer(hbytes(2))
+    d = ConjectureData.for_buffer(bytes(2))
     d.draw_bits(1)
     d.draw_bits(1)
     d.freeze()
@@ -329,17 +328,17 @@ def test_examples_support_negative_indexing():
 
 
 def test_can_override_label():
-    d = ConjectureData.for_buffer(hbytes(2))
+    d = ConjectureData.for_buffer(bytes(2))
     d.draw(st.booleans(), label=7)
     d.freeze()
     assert any(ex.label == 7 for ex in d.examples)
 
 
 def test_will_mark_too_deep_examples_as_invalid():
-    d = ConjectureData.for_buffer(hbytes(0))
+    d = ConjectureData.for_buffer(bytes(0))
 
     s = st.none()
-    for _ in hrange(MAX_DEPTH + 1):
+    for _ in range(MAX_DEPTH + 1):
         s = s.map(lambda x: x)
 
     with pytest.raises(StopTest):
@@ -348,34 +347,34 @@ def test_will_mark_too_deep_examples_as_invalid():
 
 
 def test_empty_strategy_is_invalid():
-    d = ConjectureData.for_buffer(hbytes(0))
+    d = ConjectureData.for_buffer(bytes(0))
     with pytest.raises(StopTest):
         d.draw(st.nothing())
     assert d.status == Status.INVALID
 
 
 def test_will_error_on_find():
-    d = ConjectureData.for_buffer(hbytes(0))
+    d = ConjectureData.for_buffer(bytes(0))
     d.is_find = True
     with pytest.raises(InvalidArgument):
         d.draw(st.data())
 
 
 def test_can_note_non_str():
-    d = ConjectureData.for_buffer(hbytes(0))
+    d = ConjectureData.for_buffer(bytes(0))
     x = object()
     d.note(x)
     assert repr(x) in d.output
 
 
 def test_can_note_str_as_non_repr():
-    d = ConjectureData.for_buffer(hbytes(0))
+    d = ConjectureData.for_buffer(bytes(0))
     d.note("foo")
     assert d.output == "foo"
 
 
 def test_result_is_overrun():
-    d = ConjectureData.for_buffer(hbytes(0))
+    d = ConjectureData.for_buffer(bytes(0))
     with pytest.raises(StopTest):
         d.draw_bits(1)
     assert d.as_result() is Overrun
@@ -387,12 +386,12 @@ def test_trivial_before_force_agrees_with_trivial_after():
     d.draw_bits(1, forced=1)
     d.draw_bits(1)
 
-    t1 = [d.blocks.trivial(i) for i in hrange(3)]
+    t1 = [d.blocks.trivial(i) for i in range(3)]
     d.freeze()
     r = d.as_result()
     t2 = [b.trivial for b in r.blocks]
     assert d.blocks.owner is None
-    t3 = [r.blocks.trivial(i) for i in hrange(3)]
+    t3 = [r.blocks.trivial(i) for i in range(3)]
 
     assert t1 == t2 == t3
 
@@ -404,7 +403,7 @@ def test_events_are_noted():
 
 
 def test_blocks_end_points():
-    d = ConjectureData.for_buffer(hbytes(4))
+    d = ConjectureData.for_buffer(bytes(4))
     d.draw_bits(1)
     d.draw_bits(16, forced=1)
     d.draw_bits(8)
@@ -416,7 +415,7 @@ def test_blocks_end_points():
 
 
 def test_blocks_lengths():
-    d = ConjectureData.for_buffer(hbytes(7))
+    d = ConjectureData.for_buffer(bytes(7))
     d.draw_bits(32)
     d.draw_bits(16)
     d.draw_bits(1)
@@ -424,7 +423,7 @@ def test_blocks_lengths():
 
 
 def test_child_indices():
-    d = ConjectureData.for_buffer(hbytes(4))
+    d = ConjectureData.for_buffer(bytes(4))
 
     d.start_example(0)  # examples[1]
     d.start_example(0)  # examples[2]
@@ -446,7 +445,7 @@ def test_child_indices():
 
 
 def test_example_equality():
-    d = ConjectureData.for_buffer(hbytes(2))
+    d = ConjectureData.for_buffer(bytes(2))
 
     d.start_example(0)
     d.draw_bits(1)
@@ -481,7 +480,7 @@ def test_structural_coverage_is_cached():
 
 
 def test_examples_create_structural_coverage():
-    data = ConjectureData.for_buffer(hbytes(0))
+    data = ConjectureData.for_buffer(bytes(0))
     data.start_example(42)
     data.stop_example()
     data.freeze()
@@ -489,7 +488,7 @@ def test_examples_create_structural_coverage():
 
 
 def test_discarded_examples_do_not_create_structural_coverage():
-    data = ConjectureData.for_buffer(hbytes(0))
+    data = ConjectureData.for_buffer(bytes(0))
     data.start_example(42)
     data.stop_example(discard=True)
     data.freeze()
@@ -497,7 +496,7 @@ def test_discarded_examples_do_not_create_structural_coverage():
 
 
 def test_children_of_discarded_examples_do_not_create_structural_coverage():
-    data = ConjectureData.for_buffer(hbytes(0))
+    data = ConjectureData.for_buffer(bytes(0))
     data.start_example(10)
     data.start_example(42)
     data.stop_example()

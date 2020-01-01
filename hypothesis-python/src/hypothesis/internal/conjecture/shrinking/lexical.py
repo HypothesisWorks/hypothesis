@@ -13,7 +13,7 @@
 #
 # END HEADER
 
-from hypothesis.internal.compat import hbytes, int_from_bytes, int_to_bytes
+from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.shrinking.common import Shrinker
 from hypothesis.internal.conjecture.shrinking.integer import Integer
 from hypothesis.internal.conjecture.shrinking.ordering import Ordering
@@ -26,7 +26,7 @@ This module implements a lexicographic minimizer for blocks of bytes.
 
 class Lexical(Shrinker):
     def make_immutable(self, value):
-        return hbytes(value)
+        return bytes(value)
 
     @property
     def size(self):

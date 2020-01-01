@@ -20,7 +20,6 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import FailedHealthCheck, HypothesisWarning
-from hypothesis.internal.compat import PY2
 from tests.common.utils import fails_with
 
 
@@ -38,7 +37,7 @@ class Thing_with_a_subThing(unittest.TestCase):
 def test_subTest():
     suite = unittest.TestSuite()
     suite.addTest(Thing_with_a_subThing("thing"))
-    stream = io.BytesIO() if PY2 else io.StringIO()
+    stream = io.StringIO()
     out = unittest.TextTestRunner(stream=stream).run(suite)
     assert len(out.failures) <= out.testsRun, out
 

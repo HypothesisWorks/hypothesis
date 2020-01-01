@@ -15,7 +15,7 @@
 
 from hypothesis import given, settings, strategies as st
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
+from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
@@ -31,7 +31,7 @@ def test_lot_of_dead_nodes():
                 data.mark_invalid()
         data.mark_interesting()
 
-    assert x == hbytes([0, 1, 2, 3])
+    assert x == bytes([0, 1, 2, 3])
 
 
 def test_saves_data_while_shrinking(monkeypatch):
@@ -50,8 +50,8 @@ def test_saves_data_while_shrinking(monkeypatch):
     def f(data):
         x = data.draw_bytes(10)
         if sum(x) >= 2000 and len(seen) < n:
-            seen.add(hbytes(x))
-        if hbytes(x) in seen:
+            seen.add(x)
+        if x in seen:
             data.mark_interesting()
 
     runner = ConjectureRunner(f, settings=settings(database=db), database_key=key)
@@ -78,7 +78,7 @@ def test_can_discard(monkeypatch):
     def x(data):
         seen = set()
         while len(seen) < n:
-            seen.add(hbytes(data.draw_bytes(1)))
+            seen.add(bytes(data.draw_bytes(1)))
         data.mark_interesting()
 
     assert len(x) == n
@@ -91,8 +91,8 @@ def test_regression_1():
     # problem.
     @run_to_buffer
     def x(data):
-        data.write(hbytes(b"\x01\x02"))
-        data.write(hbytes(b"\x01\x00"))
+        data.write(b"\x01\x02")
+        data.write(b"\x01\x00")
         v = data.draw_bits(41)
         if v >= 512 or v == 254:
             data.mark_interesting()
@@ -109,11 +109,11 @@ def test_cached_with_masked_byte_agrees_with_results(byte_a, byte_b):
 
     runner = ConjectureRunner(f)
 
-    cached_a = runner.cached_test_function(hbytes([byte_a]))
-    cached_b = runner.cached_test_function(hbytes([byte_b]))
+    cached_a = runner.cached_test_function(bytes([byte_a]))
+    cached_b = runner.cached_test_function(bytes([byte_b]))
 
     data_b = ConjectureData.for_buffer(
-        hbytes([byte_b]), observer=runner.tree.new_observer()
+        bytes([byte_b]), observer=runner.tree.new_observer()
     )
     runner.test_function(data_b)
 
@@ -125,10 +125,10 @@ def test_cached_with_masked_byte_agrees_with_results(byte_a, byte_b):
 def test_block_programs_fail_efficiently(monkeypatch):
     # Create 256 byte-sized blocks. None of the blocks can be deleted, and
     # every deletion attempt produces a different buffer.
-    @shrinking_from(hbytes(hrange(256)))
+    @shrinking_from(bytes(range(256)))
     def shrinker(data):
         values = set()
-        for _ in hrange(256):
+        for _ in range(256):
             v = data.draw_bits(8)
             values.add(v)
         if len(values) == 256:

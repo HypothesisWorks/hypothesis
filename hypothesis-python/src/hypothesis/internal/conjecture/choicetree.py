@@ -15,8 +15,6 @@
 
 from collections import defaultdict
 
-from hypothesis.internal.compat import hrange
-
 
 class Chooser:
     """A source of nondeterminism for use in shrink passes."""
@@ -75,7 +73,7 @@ class Chooser:
         next_value = list(self.__choices)
         if next_value:
             next_value[-1] += 1
-            for i in hrange(len(next_value) - 1, -1, -1):
+            for i in range(len(next_value) - 1, -1, -1):
                 if next_value[i] >= self.__node_trail[i].n:
                     next_value[i] = 0
                     if i > 0:

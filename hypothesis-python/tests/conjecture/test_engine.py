@@ -23,7 +23,7 @@ import hypothesis.internal.conjecture.engine as engine_module
 from hypothesis import HealthCheck, Phase, Verbosity, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck, Flaky
-from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
+from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status
 from hypothesis.internal.conjecture.engine import (
     MIN_TEST_CALLS,
@@ -64,7 +64,7 @@ def test_non_cloneable_intervals():
         data.draw_bytes(9)
         data.mark_interesting()
 
-    assert x == hbytes(19)
+    assert x == bytes(19)
 
 
 def test_deletable_draws():
@@ -75,11 +75,11 @@ def test_deletable_draws():
             if x[0] == 255:
                 data.mark_interesting()
 
-    assert x == hbytes([255, 0])
+    assert x == bytes([255, 0])
 
 
 def zero_dist(random, n):
-    return hbytes(n)
+    return bytes(n)
 
 
 def test_can_load_data_from_a_corpus():
@@ -185,7 +185,7 @@ def test_draw_to_overrun():
         if d >= 2:
             data.mark_interesting()
 
-    assert x == hbytes([10]) + hbytes(128 * 2)
+    assert x == bytes([10]) + bytes(128 * 2)
 
 
 def test_can_navigate_to_a_valid_example():
@@ -205,7 +205,7 @@ def test_stops_after_max_examples_when_reading():
 
     db = ExampleDatabase(":memory:")
     for i in range(10):
-        db.save(key, hbytes([i]))
+        db.save(key, bytes([i]))
 
     seen = []
 
@@ -282,7 +282,7 @@ def test_phases_can_disable_shrinking():
     seen = set()
 
     def f(data):
-        seen.add(hbytes(data.draw_bytes(32)))
+        seen.add(bytes(data.draw_bytes(32)))
         data.mark_interesting()
 
     runner = ConjectureRunner(
@@ -351,7 +351,7 @@ def test_does_not_save_on_interrupt():
 
 
 def test_returns_written():
-    value = hbytes(b"\0\1\2\3")
+    value = b"\0\1\2\3"
 
     @run_to_buffer
     def written(data):
@@ -411,7 +411,7 @@ def test_can_shrink_variable_draws(n_large):
     @run_to_data
     def data(data):
         n = data.draw_bits(4)
-        b = [data.draw_bits(8) for _ in hrange(n)]
+        b = [data.draw_bits(8) for _ in range(n)]
         if sum(b) >= target:
             data.mark_interesting()
 
@@ -450,7 +450,7 @@ def test_debug_data(capsys):
     buf = [0, 1, 2]
 
     def f(data):
-        for x in hbytes(buf):
+        for x in bytes(buf):
             if data.draw_bits(8) != x:
                 data.mark_invalid()
             data.start_example(1)
@@ -480,8 +480,8 @@ def test_can_write_bytes_towards_the_end():
     def f(data):
         if data.draw_bits(1):
             data.draw_bytes(5)
-            data.write(hbytes(buf))
-            assert hbytes(data.buffer[-len(buf) :]) == buf
+            data.write(bytes(buf))
+            assert bytes(data.buffer[-len(buf) :]) == buf
 
     with buffer_size_limit(10):
         ConjectureRunner(f).run()
@@ -491,7 +491,7 @@ def test_uniqueness_is_preserved_when_writing_at_beginning():
     seen = set()
 
     def f(data):
-        data.write(hbytes(1))
+        data.write(bytes(1))
         n = data.draw_bits(3)
         assert n not in seen
         seen.add(n)
@@ -527,9 +527,9 @@ def test_clears_out_its_database_on_shrinking(
         random=Random(0),
     )
 
-    for n in hrange(256):
+    for n in range(256):
         if n != 127 or not skip_target:
-            db.save(runner.secondary_key, hbytes([n]))
+            db.save(runner.secondary_key, bytes([n]))
     runner.run()
     assert len(runner.interesting_examples) == 1
     for b in db.fetch(runner.secondary_key):
@@ -547,17 +547,17 @@ def test_detects_too_small_block_starts():
         data.mark_interesting()
 
     runner = ConjectureRunner(f, settings=settings(database=None))
-    r = runner.cached_test_function(hbytes(8))
+    r = runner.cached_test_function(bytes(8))
     assert r.status == Status.INTERESTING
     assert call_count[0] == 1
-    r2 = runner.cached_test_function(hbytes([255] * 7))
+    r2 = runner.cached_test_function(bytes([255] * 7))
     assert r2.status == Status.OVERRUN
     assert call_count[0] == 1
 
 
 def test_shrinks_both_interesting_examples(monkeypatch):
     def generate_new_examples(self):
-        self.cached_test_function(hbytes([1]))
+        self.cached_test_function(bytes([1]))
 
     monkeypatch.setattr(
         ConjectureRunner, "generate_new_examples", generate_new_examples
@@ -569,8 +569,8 @@ def test_shrinks_both_interesting_examples(monkeypatch):
 
     runner = ConjectureRunner(f, database_key=b"key")
     runner.run()
-    assert runner.interesting_examples[0].buffer == hbytes([0])
-    assert runner.interesting_examples[1].buffer == hbytes([1])
+    assert runner.interesting_examples[0].buffer == bytes([0])
+    assert runner.interesting_examples[1].buffer == bytes([1])
 
 
 def test_discarding(monkeypatch):
@@ -578,7 +578,7 @@ def test_discarding(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.cached_test_function(hbytes([0, 1] * 10)),
+        lambda runner: runner.cached_test_function(bytes([0, 1] * 10)),
     )
 
     @run_to_buffer
@@ -592,11 +592,11 @@ def test_discarding(monkeypatch):
             data.stop_example(discard=not b)
         data.mark_interesting()
 
-    assert x == hbytes(hbytes([1]) * 10)
+    assert x == bytes(bytes([1]) * 10)
 
 
 def test_can_remove_discarded_data():
-    @shrinking_from(hbytes([0] * 10) + hbytes([11]))
+    @shrinking_from(bytes([0] * 10 + [11]))
     def shrinker(data):
         while True:
             data.start_example(SOME_LABEL)
@@ -611,7 +611,7 @@ def test_can_remove_discarded_data():
 
 
 def test_discarding_iterates_to_fixed_point():
-    @shrinking_from(hbytes(list(hrange(100, -1, -1))))
+    @shrinking_from(bytes(list(range(100, -1, -1))))
     def shrinker(data):
         data.start_example(0)
         data.draw_bits(8)
@@ -625,7 +625,7 @@ def test_discarding_iterates_to_fixed_point():
 
 
 def test_discarding_is_not_fooled_by_empty_discards():
-    @shrinking_from(hbytes([1, 1]))
+    @shrinking_from(bytes([1, 1]))
     def shrinker(data):
         data.draw_bits(1)
         data.start_example(0)
@@ -638,7 +638,7 @@ def test_discarding_is_not_fooled_by_empty_discards():
 
 
 def test_discarding_can_fail(monkeypatch):
-    @shrinking_from(hbytes([1]))
+    @shrinking_from(bytes([1]))
     def shrinker(data):
         data.start_example(0)
         data.draw_bits(1)
@@ -653,16 +653,16 @@ def test_shrinking_from_mostly_zero(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda self: self.cached_test_function(hbytes(5) + hbytes([2])),
+        lambda self: self.cached_test_function(bytes(5) + bytes([2])),
     )
 
     @run_to_buffer
     def x(data):
-        s = [data.draw_bits(8) for _ in hrange(6)]
+        s = [data.draw_bits(8) for _ in range(6)]
         if any(s):
             data.mark_interesting()
 
-    assert x == hbytes(5) + hbytes([1])
+    assert x == bytes(5) + bytes([1])
 
 
 def test_handles_nesting_of_discard_correctly(monkeypatch):
@@ -670,7 +670,7 @@ def test_handles_nesting_of_discard_correctly(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner,
         "generate_new_examples",
-        lambda runner: runner.cached_test_function(hbytes([0, 0, 1, 1])),
+        lambda runner: runner.cached_test_function(bytes([0, 0, 1, 1])),
     )
 
     @run_to_buffer
@@ -685,7 +685,7 @@ def test_handles_nesting_of_discard_correctly(monkeypatch):
             if succeeded:
                 data.mark_interesting()
 
-    assert x == hbytes([1, 1])
+    assert x == bytes([1, 1])
 
 
 def test_database_clears_secondary_key():
@@ -707,7 +707,7 @@ def test_database_clears_secondary_key():
     )
 
     for i in range(10):
-        database.save(runner.secondary_key, hbytes([i]))
+        database.save(runner.secondary_key, bytes([i]))
 
     runner.cached_test_function([10])
     assert runner.interesting_examples
@@ -740,7 +740,7 @@ def test_database_uses_values_from_secondary_key():
     )
 
     for i in range(10):
-        database.save(runner.secondary_key, hbytes([i]))
+        database.save(runner.secondary_key, bytes([i]))
 
     runner.cached_test_function([10])
     assert runner.interesting_examples
@@ -819,7 +819,7 @@ def test_zero_examples_will_zero_blocks():
 
 
 def test_block_may_grow_during_lexical_shrinking():
-    initial = hbytes([2, 1, 1])
+    initial = bytes([2, 1, 1])
 
     @shrinking_from(initial)
     def shrinker(data):
@@ -891,7 +891,7 @@ def test_cached_test_function_returns_right_value():
 
     with deterministic_PRNG():
         runner = ConjectureRunner(tf, settings=TEST_SETTINGS)
-        for _ in hrange(2):
+        for _ in range(2):
             for b in (b"\0", b"\1"):
                 d = runner.cached_test_function(b)
                 assert d.status == Status.INTERESTING
@@ -905,16 +905,16 @@ def test_cached_test_function_does_not_reinvoke_on_prefix():
     def test_function(data):
         call_count[0] += 1
         data.draw_bits(8)
-        data.write(hbytes([7]))
+        data.write(bytes([7]))
         data.draw_bits(8)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(test_function, settings=TEST_SETTINGS)
 
-        data = runner.cached_test_function(hbytes(3))
+        data = runner.cached_test_function(bytes(3))
         assert data.status == Status.VALID
         for n in [2, 1, 0]:
-            prefix_data = runner.cached_test_function(hbytes(n))
+            prefix_data = runner.cached_test_function(bytes(n))
             assert prefix_data is Overrun
         assert call_count[0] == 1
 
@@ -950,16 +950,16 @@ def test_branch_ending_in_write():
         if count > 1:
             data.draw_bits(1, forced=0)
 
-        b = hbytes(data.buffer)
+        b = bytes(data.buffer)
         assert b not in seen
         seen.add(b)
 
     with deterministic_PRNG():
         runner = ConjectureRunner(tf, settings=TEST_SETTINGS)
 
-        for _ in hrange(100):
+        for _ in range(100):
             prefix = runner.generate_novel_prefix()
-            attempt = prefix + hbytes(2)
+            attempt = prefix + bytes(2)
             data = runner.cached_test_function(attempt)
             assert data.status == Status.VALID
             assert attempt.startswith(data.buffer)
@@ -990,7 +990,7 @@ def test_discards_kill_branches():
                 b = data.draw_bits(8)
                 data.stop_example(b != 0)
                 if len(data.buffer) == 1:
-                    s = hbytes(data.buffer)
+                    s = bytes(data.buffer)
                     assert s not in starts
                     starts.add(s)
                 if b == 0:
@@ -1048,7 +1048,7 @@ def test_does_not_shrink_multiple_bugs_when_told_not_to():
 
         results = {d.buffer for d in runner.interesting_examples.values()}
 
-    assert len(results.intersection({hbytes([0, 1]), hbytes([1, 0])})) == 1
+    assert len(results.intersection({bytes([0, 1]), bytes([1, 0])})) == 1
 
 
 def test_does_not_keep_generating_when_multiple_bugs():
@@ -1193,8 +1193,8 @@ def test_clears_defunct_pareto_front():
             database_key=b"stuff",
         )
 
-        for i in hrange(256):
-            db.save(runner.pareto_key, hbytes([i, 0]))
+        for i in range(256):
+            db.save(runner.pareto_key, bytes([i, 0]))
 
         runner.run()
 
@@ -1306,7 +1306,7 @@ def test_runs_optimisation_even_if_not_generating():
             test, settings=settings(TEST_SETTINGS, phases=[Phase.target])
         )
 
-        runner.cached_test_function(hbytes(2))
+        runner.cached_test_function(bytes(2))
 
         runner.run()
 

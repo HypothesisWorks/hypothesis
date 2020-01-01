@@ -13,7 +13,8 @@
 #
 # END HEADER
 
-from hypothesis.internal.compat import getfullargspec
+from inspect import getfullargspec
+
 from hypothesis.internal.reflection import (
     arg_string,
     convert_keyword_arguments,

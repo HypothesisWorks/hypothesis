@@ -19,7 +19,6 @@ from collections import namedtuple
 import pytest
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import text_type
 from hypothesis.strategies import booleans, integers, just, randoms, tuples
 from hypothesis.strategies._internal.strategies import one_of_strategies
 from hypothesis.types import RandomWithSeed
@@ -50,7 +49,7 @@ def last(xs):
 def test_random_repr_has_seed():
     rnd = randoms().example()
     seed = rnd.seed
-    assert text_type(seed) in repr(rnd)
+    assert str(seed) in repr(rnd)
 
 
 def test_random_only_produces_special_random():

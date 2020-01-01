@@ -16,7 +16,7 @@
 import pytest
 
 import hypothesis.internal.conjecture.floats as flt
-from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
+from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.shrinking import Float
@@ -29,7 +29,7 @@ def test_can_shrink_variable_draws_with_just_deletion(n, monkeypatch):
     @shrinking_from([n] + [0] * (n - 1) + [1])
     def shrinker(data):
         n = data.draw_bits(4)
-        b = [data.draw_bits(8) for _ in hrange(n)]
+        b = [data.draw_bits(8) for _ in range(n)]
         if any(b):
             data.mark_interesting()
 
@@ -52,11 +52,11 @@ def test_deletion_and_lowering_fails_to_shrink(monkeypatch):
 
     @run_to_buffer
     def x(data):
-        for _ in hrange(10):
+        for _ in range(10):
             data.draw_bytes(1)
         data.mark_interesting()
 
-    assert x == hbytes(10)
+    assert x == bytes(10)
 
 
 def test_duplicate_blocks_that_go_away():
@@ -66,12 +66,12 @@ def test_duplicate_blocks_that_go_away():
         y = data.draw_bits(32)
         if x != y:
             data.mark_invalid()
-        b = [data.draw_bytes(1) for _ in hrange(x & 255)]
+        b = [data.draw_bytes(1) for _ in range(x & 255)]
         if len(set(b)) <= 1:
             data.mark_interesting()
 
     shrinker.fixate_shrink_passes(["minimize_duplicated_blocks"])
-    assert shrinker.shrink_target.buffer == hbytes([0] * 8)
+    assert shrinker.shrink_target.buffer == bytes(8)
 
 
 def test_accidental_duplication(monkeypatch):
@@ -83,7 +83,7 @@ def test_accidental_duplication(monkeypatch):
             data.mark_invalid()
         if x < 5:
             data.mark_invalid()
-        b = [data.draw_bytes(1) for _ in hrange(x)]
+        b = [data.draw_bytes(1) for _ in range(x)]
         if len(set(b)) == 1:
             data.mark_interesting()
 
@@ -92,9 +92,9 @@ def test_accidental_duplication(monkeypatch):
 
 
 def test_can_zero_subintervals(monkeypatch):
-    @shrinking_from(hbytes([3, 0, 0, 0, 1]) * 10)
+    @shrinking_from(bytes([3, 0, 0, 0, 1]) * 10)
     def shrinker(data):
-        for _ in hrange(10):
+        for _ in range(10):
             data.start_example(SOME_LABEL)
             n = data.draw_bits(8)
             data.draw_bytes(n)
@@ -118,15 +118,15 @@ def test_can_pass_to_an_indirect_descendant(monkeypatch):
         data.stop_example(1)
         return label
 
-    initial = hbytes([1, 10, 0, 0, 1, 0, 0, 10, 0, 0])
-    target = hbytes([0, 10])
+    initial = bytes([1, 10, 0, 0, 1, 0, 0, 10, 0, 0])
+    target = bytes([0, 10])
 
     good = {initial, target}
 
     @shrinking_from(initial)
     def shrinker(data):
         tree(data)
-        if hbytes(data.buffer) in good:
+        if bytes(data.buffer) in good:
             data.mark_interesting()
 
     shrinker.fixate_shrink_passes(["pass_to_descendant"])
@@ -181,7 +181,7 @@ def test_handle_empty_draws(monkeypatch):
                 break
         data.mark_interesting()
 
-    assert x == hbytes([0])
+    assert x == bytes([0])
 
 
 def test_can_reorder_examples():
@@ -209,7 +209,7 @@ def test_permits_but_ignores_raising_order(monkeypatch):
     )
 
     monkeypatch.setattr(
-        Shrinker, "shrink", lambda self: self.incorporate_new_buffer(hbytes([2]))
+        Shrinker, "shrink", lambda self: self.incorporate_new_buffer(bytes([2]))
     )
 
     @run_to_buffer
@@ -245,7 +245,7 @@ def test_try_shrinking_blocks_ignores_overrun_blocks(monkeypatch):
     monkeypatch.setattr(
         Shrinker,
         "shrink",
-        lambda self: self.try_shrinking_blocks((0, 1, 5), hbytes([2])),
+        lambda self: self.try_shrinking_blocks((0, 1, 5), bytes([2])),
     )
 
     @run_to_buffer
@@ -313,7 +313,7 @@ def test_finding_a_minimal_balanced_binary_tree():
 
 
 def test_alphabet_minimization():
-    @shrink(hbytes((10, 11)) * 5, "alphabet_minimize")
+    @shrink(bytes((10, 11)) * 5, "alphabet_minimize")
     def x(data):
         buf = data.draw_bytes(10)
         if len(set(buf)) > 2:
@@ -328,12 +328,12 @@ def test_float_shrink_can_run_when_canonicalisation_does_not_work(monkeypatch):
     # This should be an error when called
     monkeypatch.setattr(Float, "shrink", None)
 
-    base_buf = int_to_bytes(flt.base_float_to_lex(1000.0), 8) + hbytes(1)
+    base_buf = int_to_bytes(flt.base_float_to_lex(1000.0), 8) + bytes(1)
 
     @shrinking_from(base_buf)
     def shrinker(data):
         flt.draw_float(data)
-        if hbytes(data.buffer) == base_buf:
+        if bytes(data.buffer) == base_buf:
             data.mark_interesting()
 
     shrinker.fixate_shrink_passes(["minimize_floats"])
@@ -342,16 +342,16 @@ def test_float_shrink_can_run_when_canonicalisation_does_not_work(monkeypatch):
 
 
 def test_try_shrinking_blocks_out_of_bounds():
-    @shrinking_from(hbytes([1]))
+    @shrinking_from(bytes([1]))
     def shrinker(data):
         data.draw_bits(1)
         data.mark_interesting()
 
-    assert not shrinker.try_shrinking_blocks((1,), hbytes([1]))
+    assert not shrinker.try_shrinking_blocks((1,), bytes([1]))
 
 
 def test_block_programs_are_adaptive():
-    @shrinking_from(hbytes(1000) + hbytes([1]))
+    @shrinking_from(bytes(1000) + bytes([1]))
     def shrinker(data):
         while not data.draw_bits(1):
             pass
@@ -365,21 +365,21 @@ def test_block_programs_are_adaptive():
 
 
 def test_zero_examples_is_adaptive():
-    @shrinking_from(hbytes([1]) * 1001)
+    @shrinking_from(bytes([1]) * 1001)
     def shrinker(data):
-        for _ in hrange(1000):
+        for _ in range(1000):
             data.draw_bits(1)
         if data.draw_bits(1):
             data.mark_interesting()
 
     shrinker.fixate_shrink_passes(["zero_examples"])
 
-    assert shrinker.shrink_target.buffer == hbytes(1000) + hbytes([1])
+    assert shrinker.shrink_target.buffer == bytes(1000) + bytes([1])
     assert shrinker.calls <= 60
 
 
 def test_zero_examples_with_variable_min_size():
-    @shrinking_from(hbytes([255]) * 100)
+    @shrinking_from(bytes([255]) * 100)
     def shrinker(data):
         any_nonzero = False
         for i in range(1, 10):
@@ -393,7 +393,7 @@ def test_zero_examples_with_variable_min_size():
 
 
 def test_zero_contained_examples():
-    @shrinking_from(hbytes([1]) * 8)
+    @shrinking_from(bytes([1]) * 8)
     def shrinker(data):
         for _ in range(4):
             data.start_example(1)
@@ -410,7 +410,7 @@ def test_zero_contained_examples():
 
 
 def test_adaptive_example_deletion_deletes_nothing():
-    @shrinking_from(hbytes([1]) * 8 + hbytes(1))
+    @shrinking_from(bytes([1]) * 8 + bytes(1))
     def shrinker(data):
         n = 0
         while data.draw_bits(8):
@@ -423,7 +423,7 @@ def test_adaptive_example_deletion_deletes_nothing():
 
 
 def test_zig_zags_quickly():
-    @shrinking_from(hbytes([255]) * 4)
+    @shrinking_from(bytes([255]) * 4)
     def shrinker(data):
         m = data.draw_bits(16)
         n = data.draw_bits(16)

@@ -16,7 +16,6 @@
 import pytest
 
 from hypothesis import example, given, strategies as st
-from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.junkdrawer import (
     IntList,
     LazySequenceCopy,
@@ -108,7 +107,7 @@ def test_assignment():
 
 
 def test_replacement():
-    replace_all(hbytes([1, 1, 1]), [(1, 3, hbytes([3, 4]))]) == hbytes([1, 3, 4, 1])
+    replace_all(bytes([1, 1, 1]), [(1, 3, bytes([3, 4]))]) == bytes([1, 3, 4, 1])
 
 
 def test_int_list_cannot_contain_negative():

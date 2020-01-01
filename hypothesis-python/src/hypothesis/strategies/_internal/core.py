@@ -22,7 +22,7 @@ import sys
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import reduce
-from inspect import isabstract, isclass
+from inspect import getfullargspec, isabstract, isclass
 from uuid import UUID
 
 import attr
@@ -32,17 +32,7 @@ from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import as_general_categories
-from hypothesis.internal.compat import (
-    ceil,
-    floor,
-    gcd,
-    get_type_hints,
-    getfullargspec,
-    hrange,
-    implements_iterator,
-    string_types,
-    typing_root_type,
-)
+from hypothesis.internal.compat import ceil, floor, get_type_hints, typing_root_type
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
     check_sample,
@@ -107,7 +97,6 @@ from hypothesis.strategies._internal.strategies import (
     SampledFromStrategy,
 )
 from hypothesis.strategies._internal.strings import (
-    BinaryStringStrategy,
     FixedSizeBytes,
     OneCharStringStrategy,
     StringStrategy,
@@ -807,7 +796,6 @@ def frozensets(
     ).map(frozenset)
 
 
-@implements_iterator
 class PrettyIter:
     def __init__(self, values):
         self._values = values
@@ -1063,7 +1051,7 @@ def text(
     if isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:
-        non_string = [c for c in alphabet if not isinstance(c, string_types)]
+        non_string = [c for c in alphabet if not isinstance(c, str)]
         if non_string:
             raise InvalidArgument(
                 "The following elements in alphabet are not unicode "
@@ -1139,11 +1127,9 @@ def binary(min_size=0, max_size=None):
     check_valid_sizes(min_size, max_size)
     if min_size == max_size is not None:
         return FixedSizeBytes(min_size)
-    return BinaryStringStrategy(
-        lists(
-            integers(min_value=0, max_value=255), min_size=min_size, max_size=max_size
-        )
-    )
+    return lists(
+        integers(min_value=0, max_value=255), min_size=min_size, max_size=max_size
+    ).map(bytes)
 
 
 @cacheable
@@ -1528,7 +1514,7 @@ def fractions(
             # After calculating our integer bounds and scale factor, we remove
             # the gcd to avoid drawing more bytes for the example than needed.
             # Note that `div` can be at most equal to `scale`.
-            div = gcd(scale, gcd(low, high))
+            div = math.gcd(scale, math.gcd(low, high))
             min_num = denom * low // div
             max_num = denom * high // div
             denom *= scale // div
@@ -1702,7 +1688,7 @@ class PermutationStrategy(SearchStrategy):
         # a later element.  This shrinks i==j for each element, i.e. to no
         # change.  We don't consider the last element as it's always a no-op.
         result = list(self.values)
-        for i in hrange(len(result) - 1):
+        for i in range(len(result) - 1):
             j = integer_range(data, i, len(result) - 1)
             result[i], result[j] = result[j], result[i]
         return result

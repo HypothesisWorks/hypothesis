@@ -19,7 +19,6 @@ import enum
 import hypothesis.strategies as st
 from hypothesis import given
 from hypothesis.errors import FailedHealthCheck, InvalidArgument, Unsatisfiable
-from hypothesis.internal.compat import hrange
 from hypothesis.strategies import sampled_from
 from tests.common.utils import fails_with
 
@@ -47,13 +46,13 @@ def test_can_sample_enums(member):
 
 
 @fails_with(FailedHealthCheck)
-@given(sampled_from(hrange(10)).filter(lambda x: x < 0))
+@given(sampled_from(range(10)).filter(lambda x: x < 0))
 def test_unsat_filtered_sampling(x):
     assert False
 
 
 @fails_with(Unsatisfiable)
-@given(sampled_from(hrange(2)).filter(lambda x: x < 0))
+@given(sampled_from(range(2)).filter(lambda x: x < 0))
 def test_unsat_filtered_sampling_in_rejection_stage(x):
     # Rejecting all possible indices before we calculate the allowed indices
     # takes an early exit path, so we need this test to cover that branch.
@@ -61,11 +60,11 @@ def test_unsat_filtered_sampling_in_rejection_stage(x):
 
 
 def test_easy_filtered_sampling():
-    x = sampled_from(hrange(100)).filter(lambda x: x == 0).example()
+    x = sampled_from(range(100)).filter(lambda x: x == 0).example()
     assert x == 0
 
 
-@given(sampled_from(hrange(100)).filter(lambda x: x == 99))
+@given(sampled_from(range(100)).filter(lambda x: x == 99))
 def test_filtered_sampling_finds_rare_value(x):
     assert x == 99
 
@@ -80,7 +79,7 @@ def test_does_not_include_duplicates_even_when_duplicated_in_collection(ls):
     assert len(ls) <= 1
 
 
-@given(st.lists(st.sampled_from(hrange(100)), max_size=3, unique=True))
+@given(st.lists(st.sampled_from(range(100)), max_size=3, unique=True))
 def test_max_size_is_respected_with_unique_sampled_from(ls):
     assert len(ls) <= 3
 

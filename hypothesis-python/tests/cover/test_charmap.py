@@ -22,7 +22,6 @@ import unicodedata
 import hypothesis.internal.charmap as cm
 import hypothesis.strategies as st
 from hypothesis import assume, given
-from hypothesis.internal.compat import hunichr
 
 
 def test_charmap_contains_all_unicode():
@@ -37,7 +36,7 @@ def test_charmap_has_right_categories():
     for cat, intervals in cm.charmap().items():
         for u, v in intervals:
             for i in range(u, v + 1):
-                real = unicodedata.category(hunichr(i))
+                real = unicodedata.category(chr(i))
                 assert real == cat, "%d is %s but reported in %s" % (i, real, cat)
 
 
@@ -58,7 +57,7 @@ def test_query_matches_categories(exclude, include):
     assert_valid_range_list(values)
     for u, v in values:
         for i in (u, v, (u + v) // 2):
-            cat = unicodedata.category(hunichr(i))
+            cat = unicodedata.category(chr(i))
             if include is not None:
                 assert cat in include
             assert cat not in exclude
@@ -81,7 +80,7 @@ def test_query_matches_categories_codepoints(exclude, include, m1, m2):
 
 @given(st.sampled_from(cm.categories()), st.integers(0, sys.maxunicode))
 def test_exclude_only_excludes_from_that_category(cat, i):
-    c = hunichr(i)
+    c = chr(i)
     assume(unicodedata.category(c) != cat)
     intervals = cm.query(exclude_categories=(cat,))
     assert any(a <= i <= b for a, b in intervals)

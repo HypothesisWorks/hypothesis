@@ -18,7 +18,6 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import hrange
 from tests.common.utils import counts_calls, fails_with
 
 
@@ -31,7 +30,7 @@ def test_filter_large_lists(n):
         assert cond.calls < filter_limit
         return x % 2 != 0
 
-    s = st.sampled_from(hrange(n)).filter(cond)
+    s = st.sampled_from(range(n)).filter(cond)
 
     @given(s)
     def run(x):
@@ -47,8 +46,8 @@ def rare_value_strategy(n, target):
         """Helper function to avoid Python variable scoping issues."""
         return s.filter(lambda x: x != forbidden)
 
-    s = st.sampled_from(hrange(n))
-    for i in hrange(n):
+    s = st.sampled_from(range(n))
+    for i in range(n):
         if i != target:
             s = forbid(s, i)
 

@@ -19,7 +19,6 @@ import pytest
 
 from hypothesis import Verbosity, core, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import text_type
 from hypothesis.internal.detection import is_hypothesis_test
 from hypothesis.reporting import default as default_reporter, with_reporter
 from hypothesis.statistics import collector
@@ -38,7 +37,7 @@ class StoringReporter:
     def __call__(self, msg):
         if self.config.getoption("capture", "fd") == "no":
             default_reporter(msg)
-        if not isinstance(msg, text_type):
+        if not isinstance(msg, str):
             msg = repr(msg)
         self.results.append(msg)
 

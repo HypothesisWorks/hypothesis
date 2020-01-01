@@ -19,7 +19,7 @@ import pytest
 
 import hypothesis.internal.conjecture.floats as flt
 from hypothesis import assume, example, given, strategies as st
-from hypothesis.internal.compat import ceil, floor, hbytes, int_from_bytes, int_to_bytes
+from hypothesis.internal.compat import ceil, floor, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import float_to_int
@@ -72,7 +72,7 @@ def test_double_reverse(i):
 @example(1.0)
 @given(st.floats())
 def test_draw_write_round_trip(f):
-    d = ConjectureData.for_buffer(hbytes(10))
+    d = ConjectureData.for_buffer(bytes(10))
     flt.write_float(d, f)
     d2 = ConjectureData.for_buffer(d.buffer)
     g = flt.draw_float(d2)
@@ -162,7 +162,7 @@ def float_runner(start, condition):
             data.mark_interesting()
 
     runner = ConjectureRunner(test_function)
-    runner.cached_test_function(int_to_bytes(flt.float_to_lex(start), 8) + hbytes(1))
+    runner.cached_test_function(int_to_bytes(flt.float_to_lex(start), 8) + bytes(1))
     assert runner.interesting_examples
     return runner
 

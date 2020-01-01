@@ -17,15 +17,13 @@ import enum
 import hashlib
 import heapq
 import sys
-from collections import OrderedDict
+from collections import OrderedDict, abc
 from fractions import Fraction
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import (
-    abc,
     bit_length,
     floor,
-    hrange,
     int_from_bytes,
     qualname,
     str_to_bytes,
@@ -263,7 +261,7 @@ class Sampler:
 
         n = len(weights)
 
-        self.table = [[i, None, None] for i in hrange(n)]
+        self.table = [[i, None, None] for i in range(n)]
 
         total = sum(weights)
 

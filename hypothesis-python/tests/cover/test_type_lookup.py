@@ -24,7 +24,6 @@ from hypothesis.errors import (
     InvalidArgument,
     ResolutionFailed,
 )
-from hypothesis.internal.compat import PY2, integer_types
 from hypothesis.strategies._internal import types
 from hypothesis.strategies._internal.core import _strategies
 from hypothesis.strategies._internal.types import _global_type_lookup
@@ -39,7 +38,7 @@ blacklist = [
     "runner",
     "sampled_from",
 ]
-types_with_core_strat = set(integer_types)
+types_with_core_strat = set()
 for thing in (
     getattr(st, name)
     for name in sorted(_strategies)
@@ -58,10 +57,7 @@ for thing in (
 def test_resolve_core_strategies(typ):
     @given(st.from_type(typ))
     def inner(ex):
-        if PY2 and issubclass(typ, integer_types):
-            assert isinstance(ex, integer_types)
-        else:
-            assert isinstance(ex, typ)
+        assert isinstance(ex, typ)
 
     inner()
 

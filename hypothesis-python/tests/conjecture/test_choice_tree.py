@@ -15,7 +15,6 @@
 
 import hypothesis.strategies as st
 from hypothesis import given
-from hypothesis.internal.compat import hrange
 from hypothesis.internal.conjecture.choicetree import ChoiceTree
 
 
@@ -41,11 +40,11 @@ def test_can_enumerate_a_shallow_set(ls):
 def test_can_enumerate_a_nested_set():
     @exhaust
     def nested(chooser):
-        i = chooser.choose(hrange(10))
-        j = chooser.choose(hrange(10), condition=lambda j: j > i)
+        i = chooser.choose(range(10))
+        j = chooser.choose(range(10), condition=lambda j: j > i)
         return (i, j)
 
-    assert sorted(nested) == [(i, j) for i in hrange(10) for j in hrange(i + 1, 10)]
+    assert sorted(nested) == [(i, j) for i in range(10) for j in range(i + 1, 10)]
 
 
 def test_can_enumerate_empty():
@@ -59,7 +58,7 @@ def test_can_enumerate_empty():
 def test_all_filtered_child():
     @exhaust
     def all_filtered(chooser):
-        chooser.choose(hrange(10), condition=lambda j: False)
+        chooser.choose(range(10), condition=lambda j: False)
 
     assert all_filtered == []
 
@@ -71,8 +70,8 @@ def test_skips_over_exhausted_children():
     def f(chooser):
         results.append(
             (
-                chooser.choose(hrange(3), condition=lambda x: x > 0),
-                chooser.choose(hrange(2)),
+                chooser.choose(range(3), condition=lambda x: x > 0),
+                chooser.choose(range(2)),
             )
         )
 
@@ -87,7 +86,7 @@ def test_skips_over_exhausted_children():
 
 def test_wraps_around_to_beginning():
     def f(chooser):
-        chooser.choose(hrange(3))
+        chooser.choose(range(3))
 
     tree = ChoiceTree()
 

@@ -18,7 +18,6 @@ import math
 from numbers import Rational, Real
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import integer_types
 from hypothesis.internal.coverage import check_function
 
 
@@ -27,9 +26,8 @@ def check_type(typ, arg, name=""):
     if name:
         name += "="
     if not isinstance(arg, typ):
-        if isinstance(typ, tuple) and len(typ) == 1:
-            typ = typ[0]
         if isinstance(typ, tuple):
+            assert len(typ) >= 2, "Use bare type instead of len-1 tuple"
             typ_string = "one of %s" % (", ".join(t.__name__ for t in typ))
         else:
             typ_string = typ.__name__
@@ -47,7 +45,7 @@ def check_valid_integer(value):
     """
     if value is None:
         return
-    check_type(integer_types, value)
+    check_type(int, value)
 
 
 @check_function
@@ -56,7 +54,7 @@ def check_valid_bound(value, name):
 
     Otherwise raises InvalidArgument.
     """
-    if value is None or isinstance(value, integer_types + (Rational,)):
+    if value is None or isinstance(value, (int, Rational)):
         return
     if not isinstance(value, (Real, decimal.Decimal)):
         raise InvalidArgument("%s=%r must be a real number." % (name, value))
@@ -100,7 +98,7 @@ def check_valid_size(value, name):
     """
     if value is None and name != "min_size":
         return
-    check_type(integer_types, value, name)
+    check_type(int, value, name)
     if value < 0:
         raise InvalidArgument("Invalid size %s=%r < 0" % (name, value))
 

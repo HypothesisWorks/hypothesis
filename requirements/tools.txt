@@ -27,7 +27,6 @@ dparse==0.4.1             # via pyupio, safety
 dpcontracts==0.6.0
 entrypoints==0.3          # via flake8
 filelock==3.0.12          # via tox
-flake8-alfred==1.1.1
 flake8-bandit==2.1.2
 flake8-bugbear==19.8.0
 flake8-comprehensions==3.1.4

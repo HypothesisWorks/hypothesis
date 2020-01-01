@@ -16,11 +16,11 @@
 import sys
 from copy import deepcopy
 from functools import partial
+from inspect import FullArgSpec, getfullargspec
 
 import pytest
 
 import hypothesis.internal.reflection as reflection
-from hypothesis.internal.compat import PY2, PY3, FullArgSpec, getfullargspec
 from hypothesis.internal.reflection import (
     arg_string,
     convert_keyword_arguments,
@@ -621,16 +621,6 @@ def test_can_handle_repr_of_none():
     assert arg_string(foo, [], {"x": None}) == "x=None"
 
 
-if not PY3:
-
-    def test_can_handle_non_unicode_repr_containing_non_ascii():
-        def foo(x):
-            pass
-
-        assert arg_string(foo, [BittySnowman()], {}) == "x=☃"
-        assert arg_string(foo, [], {"x": BittySnowman()}) == "x=☃"
-
-
 def test_kwargs_appear_in_arg_string():
     def varargs(*args, **kwargs):
         pass
@@ -689,7 +679,6 @@ def test_can_handle_unicode_identifier_in_same_line_as_lambda_def():
     assert get_pretty_function_description(is_str_pi) == "lambda x: x == pi"
 
 
-@pytest.mark.skipif(PY2, reason="detect_encoding does not exist in Python 2")
 def test_can_render_lambda_with_no_encoding(monkeypatch):
     is_positive = lambda x: x > 0
 
@@ -701,7 +690,6 @@ def test_can_render_lambda_with_no_encoding(monkeypatch):
     assert get_pretty_function_description(is_positive) == "lambda x: x > 0"
 
 
-@pytest.mark.skipif(PY2, reason="detect_encoding does not exist in Python 2")
 def test_does_not_crash_on_utf8_lambda_without_encoding(monkeypatch):
     # Monkey-patching out the `detect_encoding` method here means
     # that our reflection can't detect the encoding of the source file, and

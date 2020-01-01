@@ -17,7 +17,6 @@ from random import Random
 
 import hypothesis.strategies as st
 from hypothesis import example, given
-from hypothesis.internal.compat import hrange
 from hypothesis.internal.conjecture.shrinking import Ordering
 
 
@@ -50,7 +49,7 @@ def test_can_partially_sort_a_list_2():
 
 
 def test_adaptively_shrinks_around_hole():
-    initial = list(hrange(1000, 0, -1))
+    initial = list(range(1000, 0, -1))
     initial[500] = 2000
 
     intended_result = sorted(initial)

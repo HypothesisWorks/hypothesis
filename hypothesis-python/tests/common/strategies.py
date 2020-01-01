@@ -15,7 +15,6 @@
 
 import time
 
-from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.strategies._internal import SearchStrategy
 
 
@@ -35,7 +34,7 @@ class HardToShrink(SearchStrategy):
         self.accepted = set()
 
     def do_draw(self, data):
-        x = hbytes([data.draw_bits(8) for _ in range(100)])
+        x = bytes([data.draw_bits(8) for _ in range(100)])
         if x in self.accepted:
             return True
         ls = self.__last
@@ -46,7 +45,7 @@ class HardToShrink(SearchStrategy):
                 return True
             else:
                 return False
-        diffs = [i for i in hrange(len(x)) if x[i] != ls[i]]
+        diffs = [i for i in range(len(x)) if x[i] != ls[i]]
         if len(diffs) == 1:
             i = diffs[0]
             if x[i] + 1 == ls[i]:

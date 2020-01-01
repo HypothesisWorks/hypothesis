@@ -16,7 +16,7 @@
 import attr
 
 from hypothesis.errors import Flaky, HypothesisException
-from hypothesis.internal.compat import hbytes, int_to_bytes
+from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     DataObserver,
@@ -237,11 +237,11 @@ class DataTree:
                             break
                     # We've now found a value that is allowed to
                     # vary, so what follows is not fixed.
-                    return hbytes(novel_prefix)
+                    return bytes(novel_prefix)
             else:
                 assert not isinstance(current_node.transition, (Conclusion, Killed))
                 if current_node.transition is None:
-                    return hbytes(novel_prefix)
+                    return bytes(novel_prefix)
                 branch = current_node.transition
                 assert isinstance(branch, Branch)
                 n_bits = branch.bit_length
@@ -253,7 +253,7 @@ class DataTree:
                         child = branch.children[k]
                     except KeyError:
                         append_int(n_bits, k)
-                        return hbytes(novel_prefix)
+                        return bytes(novel_prefix)
                     if not child.is_exhausted:
                         append_int(n_bits, k)
                         current_node = child
@@ -273,7 +273,7 @@ class DataTree:
         the rewritten buffer and the status we would get from running that
         buffer with the test function. If the status cannot be predicted
         from the existing values it will be None."""
-        buffer = hbytes(buffer)
+        buffer = bytes(buffer)
 
         data = ConjectureData.for_buffer(buffer)
         try:

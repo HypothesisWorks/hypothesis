@@ -17,7 +17,6 @@ from contextlib import contextmanager
 
 import hypothesis.internal.conjecture.engine as engine_module
 from hypothesis import HealthCheck, settings
-from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name
@@ -41,7 +40,7 @@ def run_to_data(f):
 
 
 def run_to_buffer(f):
-    return hbytes(run_to_data(f).buffer)
+    return bytes(run_to_data(f).buffer)
 
 
 @contextmanager

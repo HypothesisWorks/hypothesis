@@ -20,7 +20,6 @@ from functools import reduce
 import pytest
 
 from hypothesis import assume, settings
-from hypothesis.internal.compat import hrange
 from hypothesis.strategies import (
     booleans,
     builds,
@@ -62,7 +61,7 @@ def test_minimize_string_to_empty():
 
 
 def test_minimize_one_of():
-    for _ in hrange(100):
+    for _ in range(100):
         assert minimal(integers() | text() | booleans()) in (0, "", False)
 
 
