@@ -117,7 +117,7 @@ def elements_and_dtype(elements, dtype, source=None):
 
 class ValueIndexStrategy(st.SearchStrategy):
     def __init__(self, elements, dtype, min_size, max_size, unique):
-        super(ValueIndexStrategy, self).__init__()
+        super().__init__()
         self.elements = elements
         self.dtype = dtype
         self.min_size = min_size
@@ -307,7 +307,7 @@ def series(
 
 
 @attr.s(slots=True)
-class column(object):
+class column:
     """Data object for describing a column in a DataFrame.
 
     Arguments:

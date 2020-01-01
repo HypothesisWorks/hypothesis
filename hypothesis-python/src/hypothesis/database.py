@@ -64,7 +64,7 @@ class EDMeta(type):
     def __call__(self, *args, **kwargs):
         if self is ExampleDatabase:
             return _db_for_path(*args, **kwargs)
-        return super(EDMeta, self).__call__(*args, **kwargs)
+        return super().__call__(*args, **kwargs)
 
 
 class ExampleDatabase(EDMeta("ExampleDatabase", (object,), {})):  # type: ignore
@@ -121,8 +121,7 @@ class InMemoryExampleDatabase(ExampleDatabase):
         return "InMemoryExampleDatabase(%r)" % (self.data,)
 
     def fetch(self, key):
-        for v in self.data.get(key, ()):
-            yield v
+        yield from self.data.get(key, ())
 
     def save(self, key, value):
         self.data.setdefault(key, set()).add(hbytes(value))
@@ -169,7 +168,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             try:
                 with open(os.path.join(kp, path), "rb") as i:
                     yield hbytes(i.read())
-            except EnvironmentError:
+            except OSError:
                 pass
 
     def save(self, key, value):

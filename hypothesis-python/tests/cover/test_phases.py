@@ -28,7 +28,7 @@ def test_only_runs_explicit_examples(i):
     assert i == 11
 
 
-@example(u"hello world")
+@example("hello world")
 @settings(phases=(Phase.reuse, Phase.generate, Phase.shrink))
 @given(st.booleans())
 def test_does_not_use_explicit_examples(i):

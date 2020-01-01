@@ -100,7 +100,7 @@ def skip_without(mod):
 assert_raises = pytest.raises
 
 
-class MyList(object):
+class MyList:
     def __init__(self, content):
         self.content = content
 
@@ -123,12 +123,12 @@ class MyDict(dict):
         p.text("MyDict(...)")
 
 
-class MyObj(object):
+class MyObj:
     def somemethod(self):
         pass
 
 
-class Dummy1(object):
+class Dummy1:
     def _repr_pretty_(self, p, cycle):
         p.text("Dummy1(...)")
 
@@ -137,14 +137,14 @@ class Dummy2(Dummy1):
     _repr_pretty_ = None
 
 
-class NoModule(object):
+class NoModule:
     pass
 
 
 NoModule.__module__ = None
 
 
-class Breaking(object):
+class Breaking:
     def _repr_pretty_(self, p, cycle):
         with p.group(4, "TG: ", ":"):
             p.text("Breaking(")
@@ -152,18 +152,18 @@ class Breaking(object):
             p.text(")")
 
 
-class BreakingRepr(object):
+class BreakingRepr:
     def __repr__(self):
         return "Breaking(\n)"
 
 
-class BreakingReprParent(object):
+class BreakingReprParent:
     def _repr_pretty_(self, p, cycle):
         with p.group(4, "TG: ", ":"):
             p.pretty(BreakingRepr())
 
 
-class BadRepr(object):
+class BadRepr:
     def __repr__(self):
         return 1 / 0
 
@@ -317,7 +317,7 @@ class BadException(Exception):
         return -1
 
 
-class ReallyBadRepr(object):
+class ReallyBadRepr:
     __module__ = 1
 
     @property
@@ -333,7 +333,7 @@ def test_really_bad_repr():
         pretty.pretty(ReallyBadRepr())
 
 
-class SA(object):
+class SA:
     pass
 
 
@@ -411,10 +411,10 @@ def test_metaclass_repr():
 
 
 def test_unicode_repr():
-    u = u"üniçodé"
+    u = "üniçodé"
     ustr = unicode_to_str(u)
 
-    class C(object):
+    class C:
         def __repr__(self):
             return ustr
 
@@ -422,7 +422,7 @@ def test_unicode_repr():
     p = pretty.pretty(c)
     assert_equal(p, u)
     p = pretty.pretty([c])
-    assert_equal(p, u"[%s]" % u)
+    assert_equal(p, "[%s]" % u)
 
 
 def test_basic_class():
@@ -453,7 +453,7 @@ def test_fallback_to__name__on_type():
     # Test that we correctly repr types that have non-string values for
     # __qualname__ by falling back to __name__
 
-    class Type(object):
+    class Type:
         __qualname__ = 5
 
     # Test repring of the type.
@@ -491,7 +491,7 @@ def test_fail_gracefully_on_bogus__qualname__and__name__():
     class Meta(type):
         __name__ = 5
 
-    class Type(object):
+    class Type:
         __metaclass__ = Meta  # noqa
         __qualname__ = 5
 
@@ -632,7 +632,7 @@ def test_cyclic_dequeue():
     assert pretty.pretty(x) == "deque([deque(...)])"
 
 
-class HashItAnyway(object):
+class HashItAnyway:
     def __init__(self, value):
         self.value = value
 
@@ -707,13 +707,13 @@ def test_re_evals():
         re.compile(r"hi"),
         re.compile(r"b\nc", re.MULTILINE),
         re.compile(br"hi", 0),
-        re.compile(u"foo", re.MULTILINE | re.UNICODE),
+        re.compile("foo", re.MULTILINE | re.UNICODE),
     ]:
         r2 = eval(pretty.pretty(r), globals())
         assert r.pattern == r2.pattern and r.flags == r2.flags
 
 
-class CustomStuff(object):
+class CustomStuff:
     def __init__(self):
         self.hi = 1
         self.bye = "fish"
@@ -749,7 +749,7 @@ def test_empty_printer():
         deferred_pprinters={},
     )
     printer.pretty([1, 2, 3])
-    assert printer.output.getvalue() == u"[1, 2, 3]"
+    assert printer.output.getvalue() == "[1, 2, 3]"
 
 
 def test_breakable_at_group_boundary():

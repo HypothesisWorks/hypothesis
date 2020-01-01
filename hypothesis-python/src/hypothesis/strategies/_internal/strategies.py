@@ -674,7 +674,7 @@ filter_not_satisfied = UniqueIdentifier("filter not satisfied")
 
 class FilteredStrategy(SearchStrategy):
     def __init__(self, strategy, conditions):
-        super(FilteredStrategy, self).__init__()
+        super().__init__()
         if isinstance(strategy, FilteredStrategy):
             # Flatten chained filters into a single filter with multiple
             # conditions.

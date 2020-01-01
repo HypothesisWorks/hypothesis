@@ -91,7 +91,7 @@ def dominance(left, right):
     return DominanceRelation.LEFT_DOMINATES
 
 
-class ParetoFront(object):
+class ParetoFront:
     """Maintains an approximate pareto front of ConjectureData objects. That
     is, we try to maintain a collection of objects such that no element of the
     collection is pareto dominated by any other. In practice we don't quite
@@ -269,7 +269,7 @@ class ParetoFront(object):
                 f(data)
 
 
-class ParetoOptimiser(object):
+class ParetoOptimiser:
     """Class for managing optimisation of the pareto front. That is, given the
     current best known pareto front, this class runs an optimisation process
     that attempts to bring it closer to the actual pareto front.

@@ -430,7 +430,7 @@ def test_run_nothing():
     assert runner.call_count == 0
 
 
-class Foo(object):
+class Foo:
     def __repr__(self):
         return "stuff"
 
@@ -470,7 +470,7 @@ def test_debug_data(capsys):
     runner.run()
 
     out, _ = capsys.readouterr()
-    assert re.match(u"\\d+ bytes \\[.*\\] -> ", out)
+    assert re.match("\\d+ bytes \\[.*\\] -> ", out)
     assert "INTERESTING" in out
 
 

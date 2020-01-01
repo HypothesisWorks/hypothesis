@@ -25,7 +25,7 @@ class RandomWithSeed(Random):
     """
 
     def __init__(self, seed):
-        super(RandomWithSeed, self).__init__(seed)
+        super().__init__(seed)
         self.seed = seed
 
     def __copy__(self):
@@ -37,4 +37,4 @@ class RandomWithSeed(Random):
         return self.__copy__()
 
     def __repr__(self):
-        return u"RandomWithSeed(%s)" % (self.seed,)
+        return "RandomWithSeed(%s)" % (self.seed,)

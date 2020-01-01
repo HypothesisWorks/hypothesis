@@ -23,7 +23,7 @@ class FunctionStrategy(SearchStrategy):
     supports_find = False
 
     def __init__(self, like, returns):
-        super(FunctionStrategy, self).__init__()
+        super().__init__()
         self.like = like
         self.returns = returns
 

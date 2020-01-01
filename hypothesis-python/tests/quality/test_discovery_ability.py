@@ -48,11 +48,11 @@ from tests.common.utils import no_shrink
 RUNS = 100
 
 
-INITIAL_LAMBDA = re.compile(u"^lambda[^:]*:\\s*")
+INITIAL_LAMBDA = re.compile("^lambda[^:]*:\\s*")
 
 
 def strip_lambda(s):
-    return INITIAL_LAMBDA.sub(u"", s)
+    return INITIAL_LAMBDA.sub("", s)
 
 
 class HypothesisFalsified(AssertionError):
@@ -70,7 +70,7 @@ def define_test(
             def _condition(x):
                 return True
 
-            condition_string = u""
+            condition_string = ""
         else:
             _condition = condition
             condition_string = strip_lambda(
@@ -110,14 +110,14 @@ def define_test(
             event += "|"
             event += condition_string
 
-        description = (u"P(%s) ~ %d / %d = %.2f < %.2f") % (
+        description = ("P(%s) ~ %d / %d = %.2f < %.2f") % (
             event,
             successes,
             RUNS,
             successes / RUNS,
             (required_runs / RUNS),
         )
-        raise HypothesisFalsified(description + u" rejected")
+        raise HypothesisFalsified(description + " rejected")
 
     return run_test
 
@@ -138,7 +138,7 @@ test_can_produce_unstripped_strings = define_test(text(), lambda x: x != x.strip
 
 test_can_produce_stripped_strings = define_test(text(), lambda x: x == x.strip())
 
-test_can_produce_multi_line_strings = define_test(text(), lambda x: u"\n" in x)
+test_can_produce_multi_line_strings = define_test(text(), lambda x: "\n" in x)
 
 test_can_produce_ascii_strings = define_test(
     text(), lambda x: all(ord(c) <= 127 for c in x)
@@ -152,10 +152,10 @@ test_can_produce_short_strings_with_some_non_ascii = define_test(
     text(), lambda x: any(ord(c) > 127 for c in x), condition=lambda x: len(x) <= 3
 )
 
-test_can_produce_positive_infinity = define_test(floats(), lambda x: x == float(u"inf"))
+test_can_produce_positive_infinity = define_test(floats(), lambda x: x == float("inf"))
 
 test_can_produce_negative_infinity = define_test(
-    floats(), lambda x: x == float(u"-inf")
+    floats(), lambda x: x == float("-inf")
 )
 
 test_can_produce_nan = define_test(floats(), math.isnan)
@@ -224,7 +224,7 @@ test_mixes_2_reasonably_often = define_test(
 )
 
 test_partial_mixes_3_reasonably_often = define_test(
-    lists(booleans() | tuples() | just(u"hi")),
+    lists(booleans() | tuples() | just("hi")),
     lambda x: 1 < len(set(map(type, x))) < 3,
     condition=bool,
 )

@@ -48,17 +48,17 @@ if False:
     from typing import Any, Dict, List, Text  # noqa
 
 
-class TestCaseProperty(object):  # pragma: no cover
+class TestCaseProperty:  # pragma: no cover
     def __get__(self, obj, typ=None):
         if obj is not None:
             typ = type(obj)
         return typ._to_test_case()
 
     def __set__(self, obj, value):
-        raise AttributeError(u"Cannot set TestCase")
+        raise AttributeError("Cannot set TestCase")
 
     def __delete__(self, obj):
-        raise AttributeError(u"Cannot delete TestCase")
+        raise AttributeError("Cannot delete TestCase")
 
 
 def run_state_machine_as_test(state_machine_factory, settings=None):
@@ -164,7 +164,7 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
 
 class GenericStateMachineMeta(type):
     def __init__(self, *args, **kwargs):
-        super(GenericStateMachineMeta, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __setattr__(self, name, value):
         if name == "settings" and isinstance(value, Settings):
@@ -186,14 +186,14 @@ class _GenericStateMachine(
     def steps(self):
         """Return a SearchStrategy instance the defines the available next
         steps."""
-        raise NotImplementedError(u"%r.steps()" % (self,))
+        raise NotImplementedError("%r.steps()" % (self,))
 
     def execute_step(self, step):
         """Execute a step that has been previously drawn from self.steps()
 
         Returns the result of the step execution.
         """
-        raise NotImplementedError(u"%r.execute_step()" % (self,))
+        raise NotImplementedError("%r.execute_step()" % (self,))
 
     def print_start(self):
         """Called right at the start of printing.
@@ -212,8 +212,8 @@ class _GenericStateMachine(
 
         This is called right after a step is executed.
         """
-        self.step_count = getattr(self, u"step_count", 0) + 1
-        report(u"Step #%d: %s" % (self.step_count, nicerepr(step)))
+        self.step_count = getattr(self, "step_count", 0) + 1
+        report("Step #%d: %s" % (self.step_count, nicerepr(step)))
 
     def teardown(self):
         """Called after a run has finished executing to clean up any necessary
@@ -247,16 +247,16 @@ class _GenericStateMachine(
         runTest.is_hypothesis_test = True
         StateMachineTestCase.runTest = runTest
         base_name = state_machine_class.__name__
-        StateMachineTestCase.__name__ = str(base_name + u".TestCase")
+        StateMachineTestCase.__name__ = str(base_name + ".TestCase")
         StateMachineTestCase.__qualname__ = str(
-            getattr(state_machine_class, u"__qualname__", base_name) + u".TestCase"
+            getattr(state_machine_class, "__qualname__", base_name) + ".TestCase"
         )
         state_machine_class._test_case_cache[state_machine_class] = StateMachineTestCase
         return StateMachineTestCase
 
 
 @attr.s()
-class Rule(object):
+class Rule:
     targets = attr.ib()
     function = attr.ib(repr=qualname)
     arguments = attr.ib()
@@ -331,7 +331,7 @@ class Bundle(SearchStrategy):
 
 class BundleConsumer(Bundle):
     def __init__(self, bundle):
-        super(BundleConsumer, self).__init__(bundle.name, consume=True)
+        super().__init__(bundle.name, consume=True)
 
 
 def consumes(bundle):
@@ -353,7 +353,7 @@ def consumes(bundle):
 
 
 @attr.s()
-class MultipleResults(object):
+class MultipleResults:
     values = attr.ib()
 
 
@@ -396,10 +396,10 @@ def _convert_targets(targets, target):
     return tuple(converted_targets)
 
 
-RULE_MARKER = u"hypothesis_stateful_rule"
-INITIALIZE_RULE_MARKER = u"hypothesis_stateful_initialize_rule"
-PRECONDITION_MARKER = u"hypothesis_stateful_precondition"
-INVARIANT_MARKER = u"hypothesis_stateful_invariant"
+RULE_MARKER = "hypothesis_stateful_rule"
+INITIALIZE_RULE_MARKER = "hypothesis_stateful_initialize_rule"
+PRECONDITION_MARKER = "hypothesis_stateful_precondition"
+INVARIANT_MARKER = "hypothesis_stateful_invariant"
 
 
 def rule(targets=(), target=None, **kwargs):
@@ -493,7 +493,7 @@ def initialize(targets=(), target=None, **kwargs):
 
 
 @attr.s()
-class VarReference(object):
+class VarReference:
     name = attr.ib()
 
 
@@ -552,7 +552,7 @@ def precondition(precond):
 
 
 @attr.s()
-class Invariant(object):
+class Invariant:
     function = attr.ib()
     precondition = attr.ib()
 
@@ -628,7 +628,7 @@ class RuleStrategy(SearchStrategy):
 
     def do_draw(self, data):
         if not any(self.is_valid(rule) for rule in self.rules):
-            msg = u"No progress can be made from state %r" % (self.machine,)
+            msg = "No progress can be made from state %r" % (self.machine,)
             quiet_raise(InvalidDefinition(msg))
 
         feature_flags = data.draw(self.enabled_rules_strategy)
@@ -677,7 +677,7 @@ class RuleBasedStateMachine(_GenericStateMachine):
     def __init__(self):
         if not self.rules():
             raise InvalidDefinition(
-                u"Type %s defines no rules" % (type(self).__name__,)
+                "Type %s defines no rules" % (type(self).__name__,)
             )
         self.bundles = {}  # type: Dict[Text, list]
         self.name_counter = 1
@@ -700,15 +700,15 @@ class RuleBasedStateMachine(_GenericStateMachine):
         return self.__stream.getvalue()
 
     def __repr__(self):
-        return u"%s(%s)" % (type(self).__name__, nicerepr(self.bundles))
+        return "%s(%s)" % (type(self).__name__, nicerepr(self.bundles))
 
     def upcoming_name(self):
-        return u"v%d" % (self.name_counter,)
+        return "v%d" % (self.name_counter,)
 
     def last_names(self, n):
         assert self.name_counter > n
         count = self.name_counter
-        return [u"v%d" % (i,) for i in hrange(count - n, count)]
+        return ["v%d" % (i,) for i in hrange(count - n, count)]
 
     def new_name(self):
         result = self.upcoming_name()
@@ -800,17 +800,17 @@ class RuleBasedStateMachine(_GenericStateMachine):
         return self.__rules_strategy
 
     def print_start(self):
-        report(u"state = %s()" % (self.__class__.__name__,))
+        report("state = %s()" % (self.__class__.__name__,))
 
     def print_end(self):
-        report(u"state.teardown()")
+        report("state.teardown()")
 
     def print_step(self, step, result):
         rule, data = step
         data_repr = {}
         for k, v in data.items():
             data_repr[k] = self.__pretty(v)
-        self.step_count = getattr(self, u"step_count", 0) + 1
+        self.step_count = getattr(self, "step_count", 0) + 1
         # If the step has target bundles, and the result is a MultipleResults
         # then we want to assign to multiple variables.
         if isinstance(result, MultipleResults):
@@ -818,16 +818,16 @@ class RuleBasedStateMachine(_GenericStateMachine):
         else:
             n_output_vars = 1
         output_assignment = (
-            u"%s = " % (", ".join(self.last_names(n_output_vars)),)
+            "%s = " % (", ".join(self.last_names(n_output_vars)),)
             if rule.targets and n_output_vars >= 1
-            else u""
+            else ""
         )
         report(
-            u"%sstate.%s(%s)"
+            "%sstate.%s(%s)"
             % (
                 output_assignment,
                 rule.function.__name__,
-                u", ".join(u"%s=%s" % kv for kv in data_repr.items()),
+                ", ".join("%s=%s" % kv for kv in data_repr.items()),
             )
         )
 

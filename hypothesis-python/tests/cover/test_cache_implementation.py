@@ -26,7 +26,7 @@ class LRUCache(GenericCache):
     __slots__ = ("__tick",)
 
     def __init__(self, max_size):
-        super(LRUCache, self).__init__(max_size)
+        super().__init__(max_size)
         self.__tick = 0
 
     def new_entry(self, key, value):
@@ -66,7 +66,7 @@ class ValueScored(GenericCache):
 
 class RandomCache(GenericCache):
     def __init__(self, max_size):
-        super(RandomCache, self).__init__(max_size)
+        super().__init__(max_size)
         self.random = Random(0)
 
     def new_entry(self, key, value):

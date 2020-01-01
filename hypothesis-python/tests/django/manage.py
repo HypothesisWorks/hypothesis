@@ -19,7 +19,7 @@ import sys
 from hypothesis import HealthCheck, settings
 from tests.common.setup import run
 
-if __name__ == u"__main__":
+if __name__ == "__main__":
     run()
 
     settings.register_profile(
@@ -28,7 +28,7 @@ if __name__ == u"__main__":
 
     settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))
 
-    os.environ.setdefault(u"DJANGO_SETTINGS_MODULE", u"tests.django.toys.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tests.django.toys.settings")
 
     from django.core.management import execute_from_command_line
 

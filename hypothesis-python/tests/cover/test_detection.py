@@ -27,7 +27,7 @@ def test_functions_default_to_not_tests():
 
 
 def test_methods_default_to_not_tests():
-    class Foo(object):
+    class Foo:
         def foo():
             pass
 
@@ -43,7 +43,7 @@ def test_detection_of_functions():
 
 
 def test_detection_of_methods():
-    class Foo(object):
+    class Foo:
         @given(integers())
         def test(self, i):
             pass

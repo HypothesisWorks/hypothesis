@@ -44,7 +44,7 @@ def test_errors_when_given_varargs():
 
     with pytest.raises(InvalidArgument) as e:
         has_varargs()
-    assert u"varargs" in e.value.args[0]
+    assert "varargs" in e.value.args[0]
 
 
 def test_varargs_without_positional_arguments_allowed():
@@ -60,7 +60,7 @@ def test_errors_when_given_varargs_and_kwargs_with_positional_arguments():
 
     with pytest.raises(InvalidArgument) as e:
         has_varargs()
-    assert u"varargs" in e.value.args[0]
+    assert "varargs" in e.value.args[0]
 
 
 def test_varargs_and_kwargs_without_positional_arguments_allowed():
@@ -115,7 +115,7 @@ def test_can_put_arguments_in_the_middle():
 
 def test_float_ranges():
     with pytest.raises(InvalidArgument):
-        floats(float(u"nan"), 0).example()
+        floats(float("nan"), 0).example()
     with pytest.raises(InvalidArgument):
         floats(1, -1).example()
 

@@ -37,9 +37,9 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = u"Hypothesis"
-copyright = u"2013-%s, David R. MacIver" % datetime.datetime.utcnow().year
-author = u"David R. MacIver"
+project = "Hypothesis"
+copyright = "2013-%s, David R. MacIver" % datetime.datetime.utcnow().year
+author = "David R. MacIver"
 
 _d = {}
 with open(
@@ -103,16 +103,16 @@ html_favicon = "../../brand/favicon.ico"
 latex_elements = {}
 
 latex_documents = [
-    (master_doc, "Hypothesis.tex", u"Hypothesis Documentation", author, "manual",)
+    (master_doc, "Hypothesis.tex", "Hypothesis Documentation", author, "manual",)
 ]
 
-man_pages = [(master_doc, "hypothesis", u"Hypothesis Documentation", [author], 1)]
+man_pages = [(master_doc, "hypothesis", "Hypothesis Documentation", [author], 1)]
 
 texinfo_documents = [
     (
         master_doc,
         "Hypothesis",
-        u"Hypothesis Documentation",
+        "Hypothesis Documentation",
         author,
         "Hypothesis",
         "Advanced property-based testing for Python.",

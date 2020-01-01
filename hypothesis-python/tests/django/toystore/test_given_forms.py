@@ -37,7 +37,7 @@ from tests.django.toystore.forms import (
 )
 
 register_field_strategy(
-    BroadBooleanField, booleans() | sampled_from([u"1", u"0", u"True", u"False"])
+    BroadBooleanField, booleans() | sampled_from(["1", "0", "True", "False"])
 )
 
 

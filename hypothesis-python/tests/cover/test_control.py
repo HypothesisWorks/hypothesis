@@ -85,7 +85,7 @@ def test_suppresses_exceptions_in_teardown():
                 cleanup(foo)
                 assert False
 
-    assert u"ValueError" in o.getvalue()
+    assert "ValueError" in o.getvalue()
     assert _current_build_context.value is None
 
 
@@ -106,8 +106,8 @@ def test_runs_multiple_cleanup_with_teardown():
                 cleanup(bar)
                 assert False
 
-    assert u"ValueError" in o.getvalue()
-    assert u"TypeError" in o.getvalue()
+    assert "ValueError" in o.getvalue()
+    assert "TypeError" in o.getvalue()
     assert _current_build_context.value is None
 
 

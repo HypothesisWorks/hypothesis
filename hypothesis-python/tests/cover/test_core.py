@@ -109,7 +109,7 @@ def test_no_such_example():
 def test_validates_strategies_for_test_method():
     invalid_strategy = s.lists(s.nothing(), min_size=1)
 
-    class TestStrategyValidation(object):
+    class TestStrategyValidation:
         @given(invalid_strategy)
         def test_method_with_bad_strategy(self, x):
             pass

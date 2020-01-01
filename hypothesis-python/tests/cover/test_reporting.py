@@ -35,14 +35,14 @@ def test_can_suppress_output():
         with reporting.with_reporter(reporting.silent):
             with pytest.raises(AssertionError):
                 test_int()
-    assert u"Falsifying example" not in o.getvalue()
+    assert "Falsifying example" not in o.getvalue()
 
 
 def test_can_print_bytes():
     with capture_out() as o:
         with reporting.with_reporter(reporting.default):
             report(b"hi")
-    assert o.getvalue() == u"hi\n"
+    assert o.getvalue() == "hi\n"
 
 
 def test_prints_output_by_default():
@@ -54,7 +54,7 @@ def test_prints_output_by_default():
         with reporting.with_reporter(reporting.default):
             with pytest.raises(AssertionError):
                 test_int()
-    assert u"Falsifying example" in o.getvalue()
+    assert "Falsifying example" in o.getvalue()
 
 
 def test_does_not_print_debug_in_verbose():
@@ -65,7 +65,7 @@ def test_does_not_print_debug_in_verbose():
 
     with capture_out() as o:
         f()
-    assert u"Hi" not in o.getvalue()
+    assert "Hi" not in o.getvalue()
 
 
 def test_does_print_debug_in_debug():
@@ -76,7 +76,7 @@ def test_does_print_debug_in_debug():
 
     with capture_out() as o:
         f()
-    assert u"Hi" in o.getvalue()
+    assert "Hi" in o.getvalue()
 
 
 def test_does_print_verbose_in_debug():
@@ -87,7 +87,7 @@ def test_does_print_verbose_in_debug():
 
     with capture_out() as o:
         f()
-    assert u"Hi" in o.getvalue()
+    assert "Hi" in o.getvalue()
 
 
 @pytest.mark.skipif(PY2, reason="Output streams don't have encodings in python 2")
@@ -95,10 +95,10 @@ def test_can_report_when_system_locale_is_ascii(monkeypatch):
     import io
 
     read, write = os.pipe()
-    with io.open(read, "r", encoding="ascii") as read:
-        with io.open(write, "w", encoding="ascii") as write:
+    with open(read, "r", encoding="ascii") as read:
+        with open(write, "w", encoding="ascii") as write:
             monkeypatch.setattr(sys, "stdout", write)
-            reporting.default(u"☃")
+            reporting.default("☃")
 
 
 def test_can_report_functions():

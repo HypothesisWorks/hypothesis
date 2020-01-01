@@ -19,7 +19,7 @@ import pytest
 
 from hypothesis.internal.compat import hrange
 
-pytest_plugins = str("pytester")
+pytest_plugins = "pytester"
 
 
 TEST_SUITE = """

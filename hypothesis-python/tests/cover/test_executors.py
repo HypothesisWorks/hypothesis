@@ -24,7 +24,7 @@ from hypothesis.strategies import booleans, integers
 
 
 def test_must_use_result_of_test():
-    class DoubleRun(object):
+    class DoubleRun:
         def execute_example(self, function):
             x = function()
             if inspect.isfunction(x):
@@ -51,7 +51,7 @@ class TestTryReallyHard(TestCase):
         return f()
 
 
-class Valueless(object):
+class Valueless:
     def execute_example(self, f):
         try:
             return f()

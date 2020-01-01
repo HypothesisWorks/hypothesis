@@ -56,7 +56,7 @@ BUFFER_SIZE = 8 * 1024
 
 
 @attr.s
-class HealthCheckState(object):
+class HealthCheckState:
     valid_examples = attr.ib(default=0)
     invalid_examples = attr.ib(default=0)
     overrun_examples = attr.ib(default=0)
@@ -75,7 +75,7 @@ class RunIsComplete(Exception):
     pass
 
 
-class ConjectureRunner(object):
+class ConjectureRunner:
     def __init__(self, test_function, settings=None, random=None, database_key=None):
         self._test_function = test_function
         self.settings = settings or Settings()
@@ -423,7 +423,7 @@ class ConjectureRunner(object):
             for v in self.interesting_examples.values():
                 self.debug_data(v)
             self.debug(
-                u"Run complete after %d examples (%d valid) and %d shrinks"
+                "Run complete after %d examples (%d valid) and %d shrinks"
                 % (self.call_count, self.valid_examples, self.shrinks)
             )
 

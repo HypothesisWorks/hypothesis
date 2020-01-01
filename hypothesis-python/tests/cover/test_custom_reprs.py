@@ -39,7 +39,7 @@ def test_preserves_sequence_type_of_argument():
     assert repr(st.sampled_from([0])) == "sampled_from([0])"
 
 
-class IHaveABadRepr(object):
+class IHaveABadRepr:
     def __repr__(self):
         raise ValueError("Oh no!")
 

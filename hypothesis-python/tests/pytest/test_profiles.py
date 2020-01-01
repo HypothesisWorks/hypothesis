@@ -18,7 +18,7 @@ import pytest
 from hypothesis.extra.pytestplugin import LOAD_PROFILE_OPTION
 from hypothesis.version import __version__
 
-pytest_plugins = str("pytester")
+pytest_plugins = "pytester"
 
 CONFTEST = """
 from hypothesis._settings import settings

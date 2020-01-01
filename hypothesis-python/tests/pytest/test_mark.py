@@ -13,7 +13,7 @@
 #
 # END HEADER
 
-pytest_plugins = str("pytester")
+pytest_plugins = "pytester"
 
 
 TESTSUITE = """

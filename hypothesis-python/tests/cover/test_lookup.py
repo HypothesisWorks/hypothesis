@@ -350,12 +350,12 @@ def test_cannot_force_inference_for_unannotated_arg():
         st.builds(non_annotated_func, a=st.none(), c=infer).example()
 
 
-class UnknownType(object):
+class UnknownType:
     def __init__(self, arg):
         pass
 
 
-class UnknownAnnotatedType(object):
+class UnknownAnnotatedType:
     def __init__(self, arg: int):
         pass
 
@@ -423,7 +423,7 @@ def test_resolves_flag_enum(resolver):
     inner()
 
 
-class AnnotatedTarget(object):
+class AnnotatedTarget:
     def __init__(self, a: int, b: int):
         pass
 

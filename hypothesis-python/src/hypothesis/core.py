@@ -110,7 +110,7 @@ global_force_seed = None
 
 
 @attr.s()
-class Example(object):
+class Example:
     args = attr.ib()
     kwargs = attr.ib()
 
@@ -309,7 +309,7 @@ class ArtificialDataForExample(ConjectureData):
         self.__draws = 0
         self.__kwargs = kwargs
 
-        super(ArtificialDataForExample, self).__init__(
+        super().__init__(
             max_length=0, prefix=hbytes(), random=None,
         )
 
@@ -483,7 +483,7 @@ def new_given_argspec(original_argspec, given_kwargs):
     )
 
 
-class StateForActualGivenExecution(object):
+class StateForActualGivenExecution:
     def __init__(
         self, test_runner, search_strategy, test, settings, random, wrapped_test,
     ):
@@ -874,7 +874,7 @@ def fake_subTest(self, msg=None, **__):
 
 
 @attr.s()
-class HypothesisHandle(object):
+class HypothesisHandle:
     """This object is provided as the .hypothesis attribute on @given tests.
 
     Downstream users can reassign its attributes to insert custom logic into

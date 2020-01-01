@@ -19,7 +19,7 @@ from hypothesis.strategies._internal.strategies import SearchStrategy
 FEATURE_LABEL = cu.calc_label_from_name("feature flag")
 
 
-class FeatureFlags(object):
+class FeatureFlags:
     """Object that can be used to control a number of feature flags for a
     given test run.
 

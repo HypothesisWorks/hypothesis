@@ -19,7 +19,7 @@ from hypothesis.internal.conjecture.engine import BUFFER_SIZE, NO_SCORE
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
 
-class Optimiser(object):
+class Optimiser:
     """A fairly basic optimiser designed to increase the value of scores for
     targeted property-based testing.
 

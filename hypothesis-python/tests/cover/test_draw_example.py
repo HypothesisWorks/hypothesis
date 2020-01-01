@@ -19,11 +19,11 @@ from hypothesis.strategies import lists
 from tests.common import standard_types
 
 
-@pytest.mark.parametrize(u"spec", standard_types, ids=list(map(repr, standard_types)))
+@pytest.mark.parametrize("spec", standard_types, ids=list(map(repr, standard_types)))
 def test_single_example(spec):
     spec.example()
 
 
-@pytest.mark.parametrize(u"spec", standard_types, ids=list(map(repr, standard_types)))
+@pytest.mark.parametrize("spec", standard_types, ids=list(map(repr, standard_types)))
 def test_list_example(spec):
     lists(spec).example()

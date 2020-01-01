@@ -30,8 +30,8 @@ HAS_SUBPATTERN_FLAGS = sys.version_info[:2] >= (3, 6)
 UNICODE_CATEGORIES = set(categories())
 
 
-SPACE_CHARS = set(u" \t\n\r\f\v")
-UNICODE_SPACE_CHARS = SPACE_CHARS | set(u"\x1c\x1d\x1e\x1f\x85")
+SPACE_CHARS = set(" \t\n\r\f\v")
+UNICODE_SPACE_CHARS = SPACE_CHARS | set("\x1c\x1d\x1e\x1f\x85")
 UNICODE_DIGIT_CATEGORIES = {"Nd"}
 UNICODE_SPACE_CATEGORIES = set(as_general_categories("Z"))
 UNICODE_LETTER_CATEGORIES = set(as_general_categories("L"))
@@ -53,7 +53,7 @@ BYTES_LOOKUP = {
 
 # On Python 2, these unicode chars are matched by \W, meaning 'not word',
 # but unicodedata.category(c) returns one of the word categories above.
-UNICODE_WEIRD_NONWORD_CHARS = set(u"\U00012432\U00012433\U00012456\U00012457")
+UNICODE_WEIRD_NONWORD_CHARS = set("\U00012432\U00012433\U00012456\U00012457")
 
 
 GROUP_CACHE_STRATEGY = st.shared(st.builds(dict), key="hypothesis.regex.group_cache")
@@ -93,14 +93,14 @@ def clear_cache_after_draw(draw, base_strategy):
     return result
 
 
-class Context(object):
+class Context:
     __slots__ = ["flags"]
 
     def __init__(self, flags):
         self.flags = flags
 
 
-class CharactersBuilder(object):
+class CharactersBuilder:
     """Helper object that allows to configure `characters` strategy with
     various unicode categories and characters. Also allows negation of
     configured set.
@@ -157,12 +157,12 @@ class CharactersBuilder(object):
             )
         elif category == sre.CATEGORY_WORD:
             self._categories |= UNICODE_WORD_CATEGORIES
-            self._whitelist_chars.add(u"_")
+            self._whitelist_chars.add("_")
             if self._unicode and not PY3:  # pragma: no cover
                 self._blacklist_chars |= UNICODE_WEIRD_NONWORD_CHARS
         elif category == sre.CATEGORY_NOT_WORD:
             self._categories |= UNICODE_CATEGORIES - UNICODE_WORD_CATEGORIES
-            self._blacklist_chars.add(u"_")
+            self._blacklist_chars.add("_")
             if self._unicode and not PY3:  # pragma: no cover
                 self._whitelist_chars |= UNICODE_WEIRD_NONWORD_CHARS
         else:  # pragma: no cover
@@ -240,8 +240,8 @@ def regex_strategy(regex, fullmatch):
 
     if is_unicode:
         base_padding_strategy = st.text()
-        empty = st.just(u"")
-        newline = st.just(u"\n")
+        empty = st.just("")
+        newline = st.just("\n")
     else:
         base_padding_strategy = st.binary()
         empty = st.just(b"")
@@ -310,7 +310,7 @@ def _strategy(codes, context, is_unicode):
         return _strategy(codes, context, is_unicode)
 
     if is_unicode:
-        empty = u""
+        empty = ""
         to_char = hunichr
     else:
         empty = b""
@@ -418,7 +418,7 @@ def _strategy(codes, context, is_unicode):
             if is_unicode:
                 if context.flags & re.DOTALL:
                     return st.characters()
-                return st.characters(blacklist_characters=u"\n")
+                return st.characters(blacklist_characters="\n")
             else:
                 if context.flags & re.DOTALL:
                     return binary_char

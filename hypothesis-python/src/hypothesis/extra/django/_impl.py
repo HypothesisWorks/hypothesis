@@ -34,7 +34,7 @@ if False:
     from hypothesis.utils.conventions import InferType  # noqa
 
 
-class HypothesisTestCase(object):
+class HypothesisTestCase:
     def setup_example(self):
         self._pre_setup()
 
@@ -43,7 +43,7 @@ class HypothesisTestCase(object):
 
     def __call__(self, result=None):
         testMethod = getattr(self, self._testMethodName)
-        if getattr(testMethod, u"is_hypothesis_test", False):
+        if getattr(testMethod, "is_hypothesis_test", False):
             return unittest.TestCase.__call__(self, result)
         else:
             return dt.SimpleTestCase.__call__(self, result)

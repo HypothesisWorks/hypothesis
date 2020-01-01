@@ -81,7 +81,7 @@ def function_digest(function):
     try:
         hasher.update(to_unicode(inspect.getsource(function)).encode("utf-8"))
     # Different errors on different versions of python. What fun.
-    except (OSError, IOError, TypeError):
+    except (OSError, TypeError):
         pass
     try:
         hasher.update(str_to_bytes(function.__name__))
@@ -303,7 +303,7 @@ def extract_lambda_source(f):
         return if_confused
     try:
         source = inspect.getsource(f)
-    except IOError:
+    except OSError:
         return if_confused
 
     source = LINE_CONTINUATION.sub(" ", source)

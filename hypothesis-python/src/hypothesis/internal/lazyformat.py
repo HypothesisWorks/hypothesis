@@ -14,7 +14,7 @@
 # END HEADER
 
 
-class lazyformat(object):
+class lazyformat:
     """A format string that isn't evaluated until it's needed."""
 
     def __init__(self, format_string, *args):

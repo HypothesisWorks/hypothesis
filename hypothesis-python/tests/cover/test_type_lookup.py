@@ -96,7 +96,7 @@ def test_lookup_overrides_defaults(typ):
     assert st.from_type(typ).example() is not sentinel
 
 
-class ParentUnknownType(object):
+class ParentUnknownType:
     pass
 
 
@@ -202,7 +202,7 @@ def test_error_if_enum_is_empty():
         assert st.from_type(EmptyEnum).is_empty
 
 
-class BrokenClass(object):
+class BrokenClass:
     __init__ = "Hello!"
 
 

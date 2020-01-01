@@ -53,7 +53,7 @@ __all__ = ["from_lark"]
 
 
 @attr.s()
-class DrawState(object):
+class DrawState:
     """Tracks state of a single draw from a lark grammar.
 
     Currently just wraps a list of tokens that will be emitted at the
@@ -146,7 +146,7 @@ class LarkStrategy(SearchStrategy):
         state = DrawState()
         start = data.draw(self.start)
         self.draw_symbol(data, start, state)
-        return u"".join(state.result)
+        return "".join(state.result)
 
     def rule_label(self, name):
         try:

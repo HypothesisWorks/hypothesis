@@ -20,7 +20,7 @@ from hypothesis.strategies._internal.strategies import SearchStrategy
 
 class FlatMapStrategy(SearchStrategy):
     def __init__(self, strategy, expand):
-        super(FlatMapStrategy, self).__init__()
+        super().__init__()
         self.flatmapped_strategy = strategy
         self.expand = expand
 
@@ -28,8 +28,8 @@ class FlatMapStrategy(SearchStrategy):
         return recur(self.flatmapped_strategy)
 
     def __repr__(self):
-        if not hasattr(self, u"_cached_repr"):
-            self._cached_repr = u"%r.flatmap(%s)" % (
+        if not hasattr(self, "_cached_repr"):
+            self._cached_repr = "%r.flatmap(%s)" % (
                 self.flatmapped_strategy,
                 get_pretty_function_description(self.expand),
             )

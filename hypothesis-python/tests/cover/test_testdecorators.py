@@ -97,7 +97,7 @@ def test_integer_division_shrinks_positive_integers(n):
     assert n / 2 < n
 
 
-class TestCases(object):
+class TestCases:
     @given(integers())
     def test_abs_non_negative(self, x):
         assert abs(x) >= 0
@@ -242,7 +242,7 @@ def test_does_not_print_on_success():
     with capture_out() as out:
         test_is_an_int()
     out = out.getvalue()
-    lines = [l.strip() for l in out.split(u"\n")]
+    lines = [l.strip() for l in out.split("\n")]
     assert all(not l for l in lines), lines
 
 
@@ -307,7 +307,7 @@ def test_has_ascii(x):
     if not x:
         return
     ascii_characters = (
-        u"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ \t\n"
+        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ \t\n"
     )
     assert any(c in ascii_characters for c in x)
 
@@ -385,19 +385,19 @@ def test_fails_in_reify(x):
     pass
 
 
-@given(text(u"a"))
+@given(text("a"))
 def test_a_text(x):
-    assert set(x).issubset(set(u"a"))
+    assert set(x).issubset(set("a"))
 
 
-@given(text(u""))
+@given(text(""))
 def test_empty_text(x):
     assert not x
 
 
-@given(text(u"abcdefg"))
+@given(text("abcdefg"))
 def test_mixed_text(x):
-    assert set(x).issubset(set(u"abcdefg"))
+    assert set(x).issubset(set("abcdefg"))
 
 
 def test_when_set_to_no_simplifies_runs_failing_example_twice():

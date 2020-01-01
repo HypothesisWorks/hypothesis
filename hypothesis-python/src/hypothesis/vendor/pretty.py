@@ -118,7 +118,7 @@ else:  # pragma: no cover
         """StringIO that casts str to unicode on Python 2."""
 
         def write(self, text):
-            return super(CUnicodeIO, self).write(
+            return super().write(
                 cast_unicode(text, encoding=get_stream_enc(sys.stdout))
             )
 
@@ -149,7 +149,7 @@ def pprint(
     sys.stdout.flush()
 
 
-class _PrettyPrinterBase(object):
+class _PrettyPrinterBase:
     @contextmanager
     def indent(self, indent):
         """with statement support for indenting/dedenting."""
@@ -424,7 +424,7 @@ class RepresentationPrinter(PrettyPrinter):
         return printer
 
 
-class Printable(object):
+class Printable:
     def output(self, stream, output_width):  # pragma: no cover
         raise NotImplementedError()
 
@@ -472,7 +472,7 @@ class Group(Printable):
         self.want_break = False
 
 
-class GroupQueue(object):
+class GroupQueue:
     def __init__(self, *groups):
         self.queue = []
         for group in groups:

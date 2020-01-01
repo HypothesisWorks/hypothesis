@@ -37,12 +37,12 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "slow: pandas expects this marker to exist.")
 
 
-@pytest.fixture(scope=u"function", autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 def gc_before_each_test():
     gc.collect()
 
 
-@pytest.fixture(scope=u"function", autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 def consistently_increment_time(monkeypatch):
     """Rather than rely on real system time we monkey patch time.time so that
     it passes at a consistent rate between calls.

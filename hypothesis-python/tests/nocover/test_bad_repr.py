@@ -21,7 +21,7 @@ from hypothesis.internal.compat import PY3
 from hypothesis.internal.reflection import arg_string
 
 
-class BadRepr(object):
+class BadRepr:
     def __init__(self, value):
         self.value = value
 

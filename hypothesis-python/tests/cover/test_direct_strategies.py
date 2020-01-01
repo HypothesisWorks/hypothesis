@@ -428,7 +428,7 @@ def test_no_nan_for_min_max_values(value, parameter_name):
     test_not_nan()
 
 
-class Sneaky(object):
+class Sneaky:
     """It's like a strategy, but it's not a strategy."""
 
     is_empty = False

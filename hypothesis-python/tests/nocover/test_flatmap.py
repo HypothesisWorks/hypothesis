@@ -98,7 +98,7 @@ def test_mixed_list_flatmap():
 
     result = minimal(s, criterion)
     assert len(result) == 6
-    assert set(result) == {False, u""}
+    assert set(result) == {False, ""}
 
 
 @pytest.mark.parametrize("n", range(1, 10))

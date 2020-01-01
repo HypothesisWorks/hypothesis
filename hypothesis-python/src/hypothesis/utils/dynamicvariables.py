@@ -17,7 +17,7 @@ import threading
 from contextlib import contextmanager
 
 
-class DynamicVariable(object):
+class DynamicVariable:
     def __init__(self, default):
         self.default = default
         self.data = threading.local()

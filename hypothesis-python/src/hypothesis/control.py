@@ -51,11 +51,11 @@ _current_build_context = DynamicVariable(None)
 def current_build_context():
     context = _current_build_context.value
     if context is None:
-        raise InvalidArgument(u"No build context registered")
+        raise InvalidArgument("No build context registered")
     return context
 
 
-class BuildContext(object):
+class BuildContext:
     def __init__(self, data, is_final=False, close_on_capture=True):
         assert isinstance(data, ConjectureData)
         self.data = data
@@ -97,7 +97,7 @@ def cleanup(teardown):
     """
     context = _current_build_context.value
     if context is None:
-        raise InvalidArgument(u"Cannot register cleanup outside of build context")
+        raise InvalidArgument("Cannot register cleanup outside of build context")
     context.tasks.append(teardown)
 
 

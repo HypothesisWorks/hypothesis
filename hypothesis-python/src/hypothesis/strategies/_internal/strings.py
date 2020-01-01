@@ -73,13 +73,13 @@ class StringStrategy(MappedSearchStrategy):
     single character text strings."""
 
     def __init__(self, list_of_one_char_strings_strategy):
-        super(StringStrategy, self).__init__(strategy=list_of_one_char_strings_strategy)
+        super().__init__(strategy=list_of_one_char_strings_strategy)
 
     def __repr__(self):
         return "%r.map(u''.join)" % self.mapped_strategy
 
     def pack(self, ls):
-        return u"".join(ls)
+        return "".join(ls)
 
 
 class BinaryStringStrategy(MappedSearchStrategy):

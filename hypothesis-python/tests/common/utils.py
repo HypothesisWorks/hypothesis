@@ -62,7 +62,7 @@ def capture_out():
         sys.stdout = old_out
 
 
-class ExcInfo(object):
+class ExcInfo:
     pass
 
 

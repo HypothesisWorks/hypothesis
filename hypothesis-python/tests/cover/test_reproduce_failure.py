@@ -184,7 +184,7 @@ def test_does_not_print_reproduction_for_large_data_examples_by_default():
     assert "@reproduce_failure" not in o.getvalue()
 
 
-class Foo(object):
+class Foo:
     def __repr__(self):
         return "not a valid python expression"
 

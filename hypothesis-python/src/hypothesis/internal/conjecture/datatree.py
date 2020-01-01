@@ -43,7 +43,7 @@ EMPTY = frozenset()
 
 
 @attr.s(slots=True)
-class Killed(object):
+class Killed:
     """Represents a transition to part of the tree which has been marked as
     "killed", meaning we want to treat it as not worth exploring, so it will
     be treated as if it were completely explored for the purposes of
@@ -53,7 +53,7 @@ class Killed(object):
 
 
 @attr.s(slots=True)
-class Branch(object):
+class Branch:
     """Represents a transition where multiple choices can be made as to what
     to drawn."""
 
@@ -66,7 +66,7 @@ class Branch(object):
 
 
 @attr.s(slots=True, frozen=True)
-class Conclusion(object):
+class Conclusion:
     """Represents a transition to a finished state."""
 
     status = attr.ib()
@@ -82,7 +82,7 @@ def conclusion(status, interesting_origin):
 
 
 @attr.s(slots=True)
-class TreeNode(object):
+class TreeNode:
     """Node in a tree that corresponds to previous interactions with
     a ``ConjectureData`` object according to some fixed test function.
 
@@ -194,7 +194,7 @@ class TreeNode(object):
         return self.is_exhausted
 
 
-class DataTree(object):
+class DataTree:
     """Tracks the tree structure of a collection of ConjectureData
     objects, for use in ConjectureRunner."""
 

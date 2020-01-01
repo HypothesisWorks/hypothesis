@@ -20,7 +20,7 @@
 # the Django extra.
 
 
-class UniqueIdentifier(object):
+class UniqueIdentifier:
     def __init__(self, identifier):
         self.identifier = identifier
 
@@ -36,5 +36,5 @@ class InferType(UniqueIdentifier):
     pass
 
 
-infer = InferType(u"infer")
-not_set = UniqueIdentifier(u"not_set")
+infer = InferType("infer")
+not_set = UniqueIdentifier("not_set")

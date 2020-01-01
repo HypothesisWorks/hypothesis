@@ -192,7 +192,7 @@ def _for_text(field):
         min_size = 0
     strategy = st.text(
         alphabet=st.characters(
-            blacklist_characters=u"\x00", blacklist_categories=("Cs",)
+            blacklist_characters="\x00", blacklist_categories=("Cs",)
         ),
         min_size=min_size,
         max_size=field.max_length,
@@ -255,13 +255,13 @@ def from_field(field):
             else:
                 choices.append(value)
         # form fields automatically include an empty choice, strip it out
-        if u"" in choices:
-            choices.remove(u"")
+        if "" in choices:
+            choices.remove("")
         min_size = 1
         if isinstance(field, (dm.CharField, dm.TextField)) and field.blank:
-            choices.insert(0, u"")
+            choices.insert(0, "")
         elif isinstance(field, (df.Field)) and not field.required:
-            choices.insert(0, u"")
+            choices.insert(0, "")
             min_size = 0
         strategy = st.sampled_from(choices)
         if isinstance(field, (df.MultipleChoiceField, df.TypedMultipleChoiceField)):

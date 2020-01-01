@@ -15,7 +15,7 @@
 
 import pytest
 
-pytest_plugins = str("pytester")
+pytest_plugins = "pytester"
 
 
 PYTEST_TESTSUITE = """

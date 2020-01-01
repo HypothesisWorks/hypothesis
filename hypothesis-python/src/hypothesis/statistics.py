@@ -22,7 +22,7 @@ from hypothesis.utils.dynamicvariables import DynamicVariable
 collector = DynamicVariable(None)
 
 
-class Statistics(object):
+class Statistics:
     def __init__(self, engine):
         self.passing_examples = len(engine.status_runtimes.get(Status.VALID, ()))
         self.invalid_examples = len(

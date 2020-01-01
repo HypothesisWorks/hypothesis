@@ -63,7 +63,7 @@ SHRINK_PASS_DEFINITIONS = {}  # type: Dict[str, ShrinkPassDefinition]
 
 
 @attr.s()
-class ShrinkPassDefinition(object):
+class ShrinkPassDefinition:
     """A shrink pass bundles together a large number of local changes to
     the current shrink target.
 
@@ -105,7 +105,7 @@ def defines_shrink_pass():
     return accept
 
 
-class Shrinker(object):
+class Shrinker:
     """A shrinker is a child object of a ConjectureRunner which is designed to
     manage the associated state of a particular shrink problem. That is, we
     have some initial ConjectureData object and some property of interest
@@ -1445,7 +1445,7 @@ def block_program(description):
 
 
 @attr.s(slots=True, eq=False)
-class ShrinkPass(object):
+class ShrinkPass:
     run_with_chooser = attr.ib()
     index = attr.ib()
     shrinker = attr.ib()

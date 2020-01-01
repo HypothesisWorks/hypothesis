@@ -241,7 +241,7 @@ def biased_coin(data, p):
     return result
 
 
-class Sampler(object):
+class Sampler:
     """Sampler based on Vose's algorithm for the alias method. See
     http://www.keithschwarz.com/darts-dice-coins/ for a good explanation.
 
@@ -335,7 +335,7 @@ class Sampler(object):
             return base
 
 
-class many(object):
+class many:
     """Utility class for collections. Bundles up the logic we use for "should I
     keep drawing more values?" and handles starting and stopping examples in
     the right place.

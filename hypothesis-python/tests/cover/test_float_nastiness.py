@@ -61,7 +61,7 @@ def test_can_generate_both_zeros(sign):
 
 
 @pytest.mark.parametrize(
-    (u"l", u"r"),
+    ("l", "r"),
     [(-1.0, 1.0), (-0.0, 1.0), (-1.0, 0.0), (-sys.float_info.min, sys.float_info.min)],
 )
 @pytest.mark.parametrize("sign", [-1, 1])

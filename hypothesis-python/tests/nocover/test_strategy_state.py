@@ -56,14 +56,14 @@ def clamp(lower, value, upper):
 
 class HypothesisSpec(RuleBasedStateMachine):
     def __init__(self):
-        super(HypothesisSpec, self).__init__()
+        super().__init__()
         self.database = None
 
-    strategies = Bundle(u"strategy")
-    strategy_tuples = Bundle(u"tuples")
-    objects = Bundle(u"objects")
-    basic_data = Bundle(u"basic")
-    varied_floats = Bundle(u"varied_floats")
+    strategies = Bundle("strategy")
+    strategy_tuples = Bundle("tuples")
+    objects = Bundle("objects")
+    basic_data = Bundle("basic")
+    varied_floats = Bundle("varied_floats")
 
     def teardown(self):
         self.clear_database()
@@ -112,7 +112,7 @@ class HypothesisSpec(RuleBasedStateMachine):
         def is_good(x):
             return bool(
                 Random(
-                    hashlib.sha384((mixer + repr(x)).encode(u"utf-8")).digest()
+                    hashlib.sha384((mixer + repr(x)).encode("utf-8")).digest()
                 ).randint(0, level)
             )
 
@@ -158,7 +158,7 @@ class HypothesisSpec(RuleBasedStateMachine):
 
         def do_map(value):
             rep = repr(value)
-            random = Random(hashlib.sha384((mixer + rep).encode(u"utf-8")).digest())
+            random = Random(hashlib.sha384((mixer + rep).encode("utf-8")).digest())
             if random.random() <= p:
                 return result1
             else:
@@ -189,10 +189,10 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(strat=strategies)
     def repr_is_good(self, strat):
-        assert u" at 0x" not in repr(strat)
+        assert " at 0x" not in repr(strat)
 
 
-MAIN = __name__ == u"__main__"
+MAIN = __name__ == "__main__"
 
 TestHypothesis = HypothesisSpec.TestCase
 

@@ -126,7 +126,7 @@ def a_converter(x) -> int:
 
 
 @attr.s
-class Inferrables(object):
+class Inferrables:
     annot_converter = attr.ib(converter=a_converter)
 
 

@@ -47,7 +47,7 @@ __all__ = ["settings"]
 all_settings = {}  # type: Dict[str, Setting]
 
 
-class settingsProperty(object):
+class settingsProperty:
     def __init__(self, name, show_default):
         self.name = name
         self.show_default = show_default
@@ -91,7 +91,7 @@ default_variable = DynamicVariable(None)
 
 class settingsMeta(type):
     def __init__(self, *args, **kwargs):
-        super(settingsMeta, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @property
     def default(self):
@@ -343,7 +343,7 @@ def local_settings(s):
 
 
 @attr.s()
-class Setting(object):
+class Setting:
     name = attr.ib()
     description = attr.ib()
     default = attr.ib()
@@ -604,7 +604,7 @@ settings._define_setting(
     "deadline",
     default=duration(milliseconds=200),
     validator=_validate_deadline,
-    description=u"""
+    description="""
 If set, a duration (as timedelta, or integer or float number of milliseconds)
 that each individual example (i.e. each time your test
 function is called, not the whole decorated test) within a test is not

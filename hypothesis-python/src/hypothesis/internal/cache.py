@@ -17,7 +17,7 @@ import attr
 
 
 @attr.s(slots=True)
-class Entry(object):
+class Entry:
     key = attr.ib()
     value = attr.ib()
     score = attr.ib()
@@ -34,7 +34,7 @@ class Entry(object):
             return (1,)
 
 
-class GenericCache(object):
+class GenericCache:
     """Generic supertype for cache implementations.
 
     Defines a dict-like mapping with a maximum size, where as well as mapping
@@ -251,7 +251,7 @@ class LRUReusedCache(GenericCache):
     __slots__ = ("__tick",)
 
     def __init__(self, max_size):
-        super(LRUReusedCache, self).__init__(max_size)
+        super().__init__(max_size)
         self.__tick = 0
 
     def tick(self):

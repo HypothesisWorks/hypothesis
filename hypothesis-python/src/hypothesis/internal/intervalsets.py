@@ -14,7 +14,7 @@
 # END HEADER
 
 
-class IntervalSet(object):
+class IntervalSet:
     def __init__(self, intervals):
         self.intervals = tuple(intervals)
         self.offsets = [0]
@@ -27,8 +27,7 @@ class IntervalSet(object):
 
     def __iter__(self):
         for u, v in self.intervals:
-            for i in range(u, v + 1):
-                yield i
+            yield from range(u, v + 1)
 
     def __getitem__(self, i):
         if i < 0:

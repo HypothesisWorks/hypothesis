@@ -61,7 +61,7 @@ def test_local_types_are_garbage_collected_issue_493():
     store = [None]
 
     def run_locally():
-        class Test(object):
+        class Test:
             @settings(database=None)
             @given(st.integers())
             def test(self, i):

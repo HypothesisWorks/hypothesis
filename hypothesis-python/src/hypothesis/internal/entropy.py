@@ -23,7 +23,7 @@ from hypothesis.internal.compat import integer_types
 RANDOMS_TO_MANAGE = [random]  # type: list
 
 
-class NumpyRandomWrapper(object):
+class NumpyRandomWrapper:
     def __init__(self):
         assert "numpy" in sys.modules
         # This class provides a shim that matches the numpy to stdlib random,

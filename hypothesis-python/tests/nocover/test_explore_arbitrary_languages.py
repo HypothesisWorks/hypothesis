@@ -35,19 +35,19 @@ def teardown_module(module):
 
 
 @attr.s()
-class Write(object):
+class Write:
     value = attr.ib()
     child = attr.ib()
 
 
 @attr.s()
-class Branch(object):
+class Branch:
     bits = attr.ib()
     children = attr.ib(default=attr.Factory(dict))
 
 
 @attr.s()
-class Terminal(object):
+class Terminal:
     status = attr.ib()
     payload = attr.ib(default=None)
 

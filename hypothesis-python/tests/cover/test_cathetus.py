@@ -60,17 +60,17 @@ def test_cathetus_large_no_overflow():
     "h,a",
     [
         # NaN hypot
-        (float(u"nan"), 3),
-        (float(u"nan"), 0),
-        (float(u"nan"), float(u"inf")),
-        (float(u"nan"), float(u"nan")),
+        (float("nan"), 3),
+        (float("nan"), 0),
+        (float("nan"), float("inf")),
+        (float("nan"), float("nan")),
         # Infeasible
         (2, 3),
         (2, -3),
-        (2, float(u"inf")),
-        (2, float(u"nan")),
+        (2, float("inf")),
+        (2, float("nan")),
         # Surprisingly consistent with c99 hypot()
-        (float(u"inf"), float(u"inf")),
+        (float("inf"), float("inf")),
     ],
 )
 def test_cathetus_nan(h, a):
@@ -80,10 +80,10 @@ def test_cathetus_nan(h, a):
 @pytest.mark.parametrize(
     "h,a",
     [
-        (float(u"inf"), 3),
-        (float(u"inf"), -3),
-        (float(u"inf"), 0),
-        (float(u"inf"), float(u"nan")),
+        (float("inf"), 3),
+        (float("inf"), -3),
+        (float("inf"), 0),
+        (float("inf"), float("nan")),
     ],
 )
 def test_cathetus_infinite(h, a):

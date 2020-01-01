@@ -54,7 +54,7 @@ def find_integer(f):
     return lo
 
 
-class Shrinker(object):
+class Shrinker:
     """A Shrinker object manages a single value and a predicate it should
     satisfy, and attempts to improve it in some direction, making it smaller
     and simpler."""

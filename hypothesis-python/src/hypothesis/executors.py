@@ -52,7 +52,7 @@ def default_new_style_executor(data, function):
     return function(data)
 
 
-class ConjectureRunner(object):
+class ConjectureRunner:
     def hypothesis_execute_example_with_data(self, data, function):
         return function(data)
 

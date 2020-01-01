@@ -74,7 +74,7 @@ counter = 0
 seen = []
 
 
-class Foo(object):
+class Foo:
     def __eq__(self, other):
         return True
 

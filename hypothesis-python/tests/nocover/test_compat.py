@@ -53,9 +53,9 @@ class Foo:
 
 
 def test_qualname():
-    assert qualname(Foo.bar) == u"Foo.bar"
-    assert qualname(Foo().bar) == u"Foo.bar"
-    assert qualname(qualname) == u"qualname"
+    assert qualname(Foo.bar) == "Foo.bar"
+    assert qualname(Foo().bar) == "Foo.bar"
+    assert qualname(qualname) == "qualname"
 
 
 def a(b, c, d):

@@ -23,7 +23,7 @@ from tests.common.debug import minimal
 from tests.common.utils import flaky
 
 
-@pytest.mark.parametrize(u"spec", standard_types, ids=list(map(repr, standard_types)))
+@pytest.mark.parametrize("spec", standard_types, ids=list(map(repr, standard_types)))
 @flaky(min_passes=1, max_runs=2)
 def test_can_collectively_minimize(spec):
     """This should generally exercise strategies' strictly_simpler heuristic by

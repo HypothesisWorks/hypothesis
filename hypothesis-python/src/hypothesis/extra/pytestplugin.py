@@ -30,7 +30,7 @@ PRINT_STATISTICS_OPTION = "--hypothesis-show-statistics"
 SEED_OPTION = "--hypothesis-seed"
 
 
-class StoringReporter(object):
+class StoringReporter:
     def __init__(self, config):
         self.config = config
         self.results = []

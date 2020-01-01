@@ -82,7 +82,7 @@ def test_exclude_characters_of_major_categories():
 
 def test_find_one():
     char = minimal(characters(min_codepoint=48, max_codepoint=48), lambda _: True)
-    assert char == u"0"
+    assert char == "0"
 
 
 def test_find_something_rare():
@@ -95,12 +95,12 @@ def test_find_something_rare():
 
 def test_whitelisted_characters_alone():
     with pytest.raises(InvalidArgument):
-        characters(whitelist_characters=u"te02тест49st").example()
+        characters(whitelist_characters="te02тест49st").example()
 
 
 def test_whitelisted_characters_overlap_blacklisted_characters():
-    good_chars = u"te02тест49st"
-    bad_chars = u"ts94тсет"
+    good_chars = "te02тест49st"
+    bad_chars = "ts94тсет"
     with pytest.raises(InvalidArgument) as exc:
         characters(
             min_codepoint=ord("0"),
@@ -113,7 +113,7 @@ def test_whitelisted_characters_overlap_blacklisted_characters():
 
 
 def test_whitelisted_characters_override():
-    good_characters = u"teтестst"
+    good_characters = "teтестst"
     st = characters(
         min_codepoint=ord("0"),
         max_codepoint=ord("9"),
@@ -127,7 +127,7 @@ def test_whitelisted_characters_override():
 
 
 def test_blacklisted_characters():
-    bad_chars = u"te02тест49st"
+    bad_chars = "te02тест49st"
     st = characters(
         min_codepoint=ord("0"), max_codepoint=ord("9"), blacklist_characters=bad_chars
     )
@@ -138,8 +138,8 @@ def test_blacklisted_characters():
 
 
 def test_whitelist_characters_disjoint_blacklist_characters():
-    good_chars = u"123abc"
-    bad_chars = u"456def"
+    good_chars = "123abc"
+    bad_chars = "456def"
     st = characters(
         min_codepoint=ord("0"),
         max_codepoint=ord("9"),

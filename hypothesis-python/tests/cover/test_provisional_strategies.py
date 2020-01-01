@@ -51,7 +51,7 @@ def test_is_IP6_addr(address):
     as_hex = address.split(":")
     assert len(as_hex) == 8
     assert all(len(part) == 4 for part in as_hex)
-    raw = unhexlify(address.replace(u":", u"").encode("ascii"))
+    raw = unhexlify(address.replace(":", "").encode("ascii"))
     assert len(raw) == 16
 
 

@@ -19,7 +19,7 @@ import pytest
 
 from hypothesis.internal.compat import PY2, WINDOWS, escape_unicode_characters, hunichr
 
-pytest_plugins = str("pytester")
+pytest_plugins = "pytester"
 
 TESTSUITE = """
 from hypothesis import given, settings, Verbosity

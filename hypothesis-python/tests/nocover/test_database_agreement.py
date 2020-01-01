@@ -24,7 +24,7 @@ from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
 class DatabaseComparison(RuleBasedStateMachine):
     def __init__(self):
-        super(DatabaseComparison, self).__init__()
+        super().__init__()
         self.tempd = tempfile.mkdtemp()
         exampledir = os.path.join(self.tempd, "examples")
 

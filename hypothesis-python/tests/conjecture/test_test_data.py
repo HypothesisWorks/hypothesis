@@ -370,8 +370,8 @@ def test_can_note_non_str():
 
 def test_can_note_str_as_non_repr():
     d = ConjectureData.for_buffer(hbytes(0))
-    d.note(u"foo")
-    assert d.output == u"foo"
+    d.note("foo")
+    assert d.output == "foo"
 
 
 def test_result_is_overrun():

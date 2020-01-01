@@ -26,10 +26,10 @@ def test_can_find_non_trivial_permutation():
     assert x == [1, 0, 2, 3, 4]
 
 
-@given(permutations(list(u"abcd")))
+@given(permutations(list("abcd")))
 def test_permutation_values_are_permutations(perm):
     assert len(perm) == 4
-    assert set(perm) == set(u"abcd")
+    assert set(perm) == set("abcd")
 
 
 @given(permutations([]))

@@ -37,9 +37,9 @@ def test_defaults_to_the_default():
 
 
 def test_can_set_homedir_and_it_will_exist(tmpdir):
-    fs.set_hypothesis_home_dir(str(tmpdir.mkdir(u"kittens")))
+    fs.set_hypothesis_home_dir(str(tmpdir.mkdir("kittens")))
     d = fs.storage_directory()
-    assert u"kittens" in d
+    assert "kittens" in d
     assert os.path.exists(d)
 
 
@@ -51,4 +51,4 @@ def test_will_pick_up_location_from_env(monkeypatch, tmpdir):
 
 def test_storage_directories_are_not_created_automatically(tmpdir):
     fs.set_hypothesis_home_dir(str(tmpdir))
-    assert not os.path.exists(fs.storage_directory(u"badgers"))
+    assert not os.path.exists(fs.storage_directory("badgers"))

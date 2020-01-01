@@ -27,7 +27,7 @@ class LimitReached(BaseException):
 
 class LimitedStrategy(SearchStrategy):
     def __init__(self, strategy):
-        super(LimitedStrategy, self).__init__()
+        super().__init__()
         self.base_strategy = strategy
         self.marker = 0
         self.currently_capped = False

@@ -86,7 +86,7 @@ def test_timezone_aware_times_are_timezone_aware(dt):
 
 def test_can_generate_non_utc():
     times(timezones=timezones()).filter(
-        lambda d: assume(d.tzinfo) and d.tzinfo.zone != u"UTC"
+        lambda d: assume(d.tzinfo) and d.tzinfo.zone != "UTC"
     ).validate()
 
 

@@ -22,7 +22,7 @@ from hypothesis.strategies import integers, lists
 
 
 @pytest.mark.parametrize(
-    (u"specifier", u"condition"),
+    ("specifier", "condition"),
     [(integers(), lambda x: x > 1), (lists(integers()), bool)],
 )
 def test_filter_correctly(specifier, condition):

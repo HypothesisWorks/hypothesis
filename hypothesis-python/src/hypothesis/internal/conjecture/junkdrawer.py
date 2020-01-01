@@ -48,7 +48,7 @@ ARRAY_CODES = ["B", "H", "I", "L", "Q", "O"]
 NEXT_ARRAY_CODE = dict(zip(ARRAY_CODES, ARRAY_CODES[1:]))
 
 
-class IntList(object):
+class IntList:
     """Class for storing a list of non-negative integers compactly.
 
     We store them as the smallest size integer array we can get
@@ -156,7 +156,7 @@ def uniform(random, n):
     return int_to_bytes(random.getrandbits(n * 8), n)
 
 
-class LazySequenceCopy(object):
+class LazySequenceCopy:
     """A "copy" of a sequence that works by inserting a mask in front
     of the underlying sequence, so that you can mutate it without changing
     the underlying sequence. Effectively behaves as if you could do list(x)

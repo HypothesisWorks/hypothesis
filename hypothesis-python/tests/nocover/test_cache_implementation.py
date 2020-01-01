@@ -28,7 +28,7 @@ from hypothesis.stateful import (
 
 class CacheWithScores(GenericCache):
     def __init__(self, max_size):
-        super(CacheWithScores, self).__init__(max_size)
+        super().__init__(max_size)
         self.scores = {}
 
     def new_entry(self, key, value):

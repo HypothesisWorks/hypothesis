@@ -61,7 +61,7 @@ def check_valid_bound(value, name):
     if not isinstance(value, (Real, decimal.Decimal)):
         raise InvalidArgument("%s=%r must be a real number." % (name, value))
     if math.isnan(value):
-        raise InvalidArgument(u"Invalid end point %s=%r" % (name, value))
+        raise InvalidArgument("Invalid end point %s=%r" % (name, value))
 
 
 @check_function
@@ -102,7 +102,7 @@ def check_valid_size(value, name):
         return
     check_type(integer_types, value, name)
     if value < 0:
-        raise InvalidArgument(u"Invalid size %s=%r < 0" % (name, value))
+        raise InvalidArgument("Invalid size %s=%r < 0" % (name, value))
 
 
 @check_function

@@ -27,7 +27,7 @@ except ImportError:
 
 
 @attr.s
-class Inferrables(object):
+class Inferrables:
     type_ = attr.ib(type=int)
     type_converter = attr.ib(converter=bool)
     validator_type = attr.ib(validator=attr.validators.instance_of(str))
@@ -71,12 +71,12 @@ class Inferrables(object):
 
 
 @attr.s
-class Required(object):
+class Required:
     a = attr.ib()
 
 
 @attr.s
-class UnhelpfulConverter(object):
+class UnhelpfulConverter:
     a = attr.ib(converter=lambda x: x)
 
 

@@ -28,12 +28,12 @@ class Store(models.Model):
 
 class CharmField(models.Field):
     def db_type(self, connection):
-        return u"char(1)"
+        return "char(1)"
 
 
 class CustomishField(models.Field):
     def db_type(self, connection):
-        return u"char(1)"
+        return "char(1)"
 
 
 class Customish(models.Model):
@@ -57,15 +57,15 @@ class CouldBeCharming(models.Model):
 
 
 class SelfLoop(models.Model):
-    me = models.ForeignKey(u"self", null=True, on_delete=models.SET_NULL)
+    me = models.ForeignKey("self", null=True, on_delete=models.SET_NULL)
 
 
 class LoopA(models.Model):
-    b = models.ForeignKey(u"LoopB", null=False, on_delete=models.CASCADE)
+    b = models.ForeignKey("LoopB", null=False, on_delete=models.CASCADE)
 
 
 class LoopB(models.Model):
-    a = models.ForeignKey(u"LoopA", null=True, on_delete=models.SET_NULL)
+    a = models.ForeignKey("LoopA", null=True, on_delete=models.SET_NULL)
 
 
 class ManyNumerics(models.Model):
@@ -94,7 +94,7 @@ class OddFields(models.Model):
 
 
 class CustomishDefault(models.Model):
-    customish = CustomishField(default=u"b")
+    customish = CustomishField(default="b")
 
 
 class MandatoryComputed(models.Model):
@@ -102,11 +102,11 @@ class MandatoryComputed(models.Model):
     company = models.ForeignKey(Company, null=False, on_delete=models.CASCADE)
 
     def __init__(self, **kw):
-        if u"company" in kw:
+        if "company" in kw:
             raise RuntimeError()
-        cname = kw[u"name"] + u"_company"
-        kw[u"company"] = Company.objects.create(name=cname)
-        super(MandatoryComputed, self).__init__(**kw)
+        cname = kw["name"] + "_company"
+        kw["company"] = Company.objects.create(name=cname)
+        super().__init__(**kw)
 
 
 def validate_even(value):
