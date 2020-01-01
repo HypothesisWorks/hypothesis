@@ -15,6 +15,7 @@
 
 import abc
 import collections
+import datetime
 import enum
 import io
 import string
@@ -35,7 +36,7 @@ from hypothesis.internal.compat import (
 )
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import types
-from tests.common.debug import find_any, minimal
+from tests.common.debug import assert_all_examples, find_any, minimal
 from tests.common.utils import fails_with
 
 sentinel = object()
@@ -630,3 +631,9 @@ def test_supportscast_types_support_protocol_or_are_castable(protocol, typ, data
 def test_can_cast():
     assert types.can_cast(int, "0")
     assert not types.can_cast(int, "abc")
+
+
+@pytest.mark.parametrize("type_", [datetime.timezone, datetime.tzinfo])
+def test_timezone_lookup(type_):
+    assert issubclass(type_, datetime.tzinfo)
+    assert_all_examples(st.from_type(type_), lambda t: isinstance(t, datetime.timezone))

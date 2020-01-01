@@ -230,6 +230,10 @@ def can_cast(type, value):
         return False
 
 
+utc_offsets = st.builds(
+    datetime.timedelta, minutes=st.integers(0, 59), hours=st.integers(-23, 23)
+)
+
 _global_type_lookup = {
     # Types with core Hypothesis strategies
     type(None): st.none(),
@@ -245,6 +249,8 @@ _global_type_lookup = {
     datetime.date: st.dates(),
     datetime.time: st.times(),
     datetime.timedelta: st.timedeltas(),
+    datetime.timezone: st.builds(datetime.timezone, offset=utc_offsets)
+    | st.builds(datetime.timezone, offset=utc_offsets, name=st.text(st.characters())),
     uuid.UUID: st.uuids(),
     tuple: st.builds(tuple),
     list: st.builds(list),
@@ -299,12 +305,6 @@ _global_type_lookup[type] = st.sampled_from(
     [type(None)] + sorted(_global_type_lookup, key=str)
 )
 
-try:
-    from hypothesis.extra.pytz import timezones
-
-    _global_type_lookup[datetime.tzinfo] = timezones()
-except ImportError:  # pragma: no cover
-    pass
 try:  # pragma: no cover
     import numpy as np
     from hypothesis.extra.numpy import (
@@ -336,7 +336,7 @@ else:
             typing.ByteString: st.binary() | st.binary().map(bytearray),
             # Reversible is somehow a subclass of Hashable, so we tuplize it.
             # See also the discussion at https://bugs.python.org/issue39046
-            typing.Reversible: st.lists(st.integers()).map(tuple),  # type: ignore
+            typing.Reversible: st.lists(st.integers()).map(tuple),
             typing.SupportsAbs: st.one_of(
                 st.booleans(),
                 st.integers(),
