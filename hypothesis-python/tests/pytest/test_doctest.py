@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 pytest_plugins = "pytester"
 
 func_with_doctest = """

@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, Verbosity, given, settings as Settings
 from hypothesis.errors import Found, NoSuchExample, Unsatisfiable

@@ -23,8 +23,6 @@ definitions it links to.  If not, report the bug!
 """
 # https://tools.ietf.org/html/rfc3696
 
-from __future__ import absolute_import, division, print_function
-
 import os.path
 import string
 

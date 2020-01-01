@@ -21,9 +21,6 @@ Notably, the set of steps available at any point may depend on the
 execution to date.
 """
 
-
-from __future__ import absolute_import, division, print_function
-
 import inspect
 from copy import copy
 from unittest import TestCase

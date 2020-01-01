@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 import hypothesis.extra.pandas as pdst
 import hypothesis.strategies as st
 from tests.common.arguments import argument_validation_test, e

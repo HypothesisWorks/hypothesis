@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 import os
 
 __hypothesis_home_directory_default = os.path.join(os.getcwd(), ".hypothesis")

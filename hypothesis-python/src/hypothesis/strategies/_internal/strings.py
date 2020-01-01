@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
 from hypothesis.internal.compat import binary_type, hunichr

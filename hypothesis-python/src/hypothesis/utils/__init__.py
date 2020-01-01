@@ -15,5 +15,3 @@
 
 """hypothesis.utils is a package for things that you can consider part of the
 semi-public Hypothesis API but aren't really the core point."""
-
-from __future__ import absolute_import, division, print_function

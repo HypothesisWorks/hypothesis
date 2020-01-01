@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from hypothesis import given
 from hypothesis.extra.django import TestCase, from_form, register_field_strategy
 from hypothesis.strategies import booleans, sampled_from

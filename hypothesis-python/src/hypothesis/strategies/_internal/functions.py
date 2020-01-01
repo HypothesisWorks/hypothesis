@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from hypothesis.control import note
 from hypothesis.errors import InvalidState
 from hypothesis.internal.reflection import arg_string, nicerepr, proxies

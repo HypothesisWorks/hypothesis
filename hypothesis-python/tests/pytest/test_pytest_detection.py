@@ -13,11 +13,6 @@
 #
 # END HEADER
 
-"""This module provides the core primitives of Hypothesis, such as given."""
-
-
-from __future__ import absolute_import, division, print_function
-
 import subprocess
 import sys
 

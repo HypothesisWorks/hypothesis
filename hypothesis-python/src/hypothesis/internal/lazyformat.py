@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 
 class lazyformat(object):
     """A format string that isn't evaluated until it's needed."""

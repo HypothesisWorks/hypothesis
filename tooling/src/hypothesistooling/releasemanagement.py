@@ -21,9 +21,6 @@ probably makes all sorts of undocumented assumptions, even as it looks
 like a nice tidy reusable set of functionality.
 """
 
-
-from __future__ import absolute_import, division, print_function
-
 import re
 from datetime import datetime
 

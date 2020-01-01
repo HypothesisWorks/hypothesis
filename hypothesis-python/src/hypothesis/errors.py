@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 
 class HypothesisException(Exception):
     """Generic parent class for exceptions thrown by Hypothesis."""

@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT
 
 SHOULD_NOT_IMPORT_NUMPY = """

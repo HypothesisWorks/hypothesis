@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 import sys
 from copy import deepcopy
 from functools import partial

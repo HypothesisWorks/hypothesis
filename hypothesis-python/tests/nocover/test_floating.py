@@ -13,11 +13,7 @@
 #
 # END HEADER
 
-"""Tests for being able to generate weird and wonderful floating point
-numbers."""
-
-
-from __future__ import absolute_import, division, print_function
+"""Tests for being able to generate weird and wonderful floating point numbers."""
 
 import math
 import sys

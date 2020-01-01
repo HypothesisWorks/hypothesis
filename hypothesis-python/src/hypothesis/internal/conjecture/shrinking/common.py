@@ -13,11 +13,7 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
-
-"""This module implements various useful common functions for shrinking tasks.
-"""
+"""This module implements various useful common functions for shrinking tasks."""
 
 
 def find_integer(f):

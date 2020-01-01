@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from hypothesis import HealthCheck, Phase, settings
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes, hrange, int_to_bytes

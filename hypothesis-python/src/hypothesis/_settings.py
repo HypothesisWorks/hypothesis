@@ -19,8 +19,6 @@ Either an explicit settings object can be used or the default object on
 this module can be modified.
 """
 
-from __future__ import absolute_import, division, print_function
-
 import contextlib
 import datetime
 import inspect

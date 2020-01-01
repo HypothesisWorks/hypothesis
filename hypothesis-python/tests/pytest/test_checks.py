@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 TEST_DECORATORS_ALONE = """
 import hypothesis
 from hypothesis.strategies import composite

@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.strategies._internal.strategies import SearchStrategy
 

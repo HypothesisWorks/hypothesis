@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from django.core.exceptions import ValidationError
 from django.db import models
 

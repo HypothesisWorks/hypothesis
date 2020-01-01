@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from collections import Counter, defaultdict
 from enum import Enum
 from random import Random, getrandbits

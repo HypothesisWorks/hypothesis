@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from hypothesis import given, strategies as st
 
 # Tests that convert_keyword_arguments in reflection.py can handle

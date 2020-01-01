@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 import hypothesis.strategies as st
 from hypothesis import given
 from hypothesis.strategies._internal.types import _global_type_lookup

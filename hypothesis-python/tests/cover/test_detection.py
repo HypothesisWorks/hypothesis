@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from hypothesis import given
 from hypothesis.internal.detection import is_hypothesis_test
 from hypothesis.stateful import RuleBasedStateMachine, rule

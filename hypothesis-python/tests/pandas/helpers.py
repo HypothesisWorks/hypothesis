@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 import numpy as np
 
 PANDAS_TIME_DTYPES = tuple(map(np.dtype, ["<M8[ns]", "<m8[ns]", ">M8[ns]", ">m8[ns]"]))

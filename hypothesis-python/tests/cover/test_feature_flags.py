@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from hypothesis import given, strategies as st
 from hypothesis.internal.compat import hrange
 from hypothesis.strategies._internal.featureflags import FeatureFlags, FeatureStrategy

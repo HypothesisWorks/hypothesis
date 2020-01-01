@@ -15,7 +15,6 @@
 
 """Checks that @given, @mock.patch, and pytest fixtures work as expected."""
 
-from __future__ import absolute_import, division, print_function
 
 import math
 from unittest import mock

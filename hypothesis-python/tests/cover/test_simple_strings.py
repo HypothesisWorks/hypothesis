@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from hypothesis import given
 from hypothesis.strategies import binary, characters, text, tuples
 from tests.common.debug import minimal

@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from hypothesis import HealthCheck, given, reject, settings
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.strategies import integers

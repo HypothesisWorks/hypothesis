@@ -25,8 +25,6 @@ You can use this strategy to make
 :py:func:`hypothesis.strategies.times` produce timezone-aware values.
 """
 
-from __future__ import absolute_import, division, print_function
-
 import datetime as dt
 
 import pytz

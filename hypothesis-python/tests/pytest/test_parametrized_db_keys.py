@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 DB_KEY_TESTCASE = """
 from hypothesis import settings, given
 from hypothesis.database import InMemoryExampleDatabase

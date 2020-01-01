@@ -20,8 +20,6 @@ this work on Windows as well by using Anaconda (as our build already
 does).
 """
 
-from __future__ import absolute_import, division, print_function
-
 import os
 import shutil
 import subprocess

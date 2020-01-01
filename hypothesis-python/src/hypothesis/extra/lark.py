@@ -34,7 +34,6 @@ infeasible.  We may also be quite aggressive in bumping the minimum version of
 Lark, unless someone volunteers to either fund or do the maintainence.
 """
 
-from __future__ import absolute_import, division, print_function
 
 import attr
 import lark

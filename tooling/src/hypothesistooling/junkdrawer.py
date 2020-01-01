@@ -18,8 +18,6 @@
 See https://twitter.com/betsythemuffin/status/1003313844108824584
 """
 
-from __future__ import absolute_import, division, print_function
-
 import ast
 import os
 from contextlib import contextmanager

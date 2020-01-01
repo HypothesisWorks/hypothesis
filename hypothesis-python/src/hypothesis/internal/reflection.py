@@ -16,9 +16,6 @@
 """This file can approximately be considered the collection of hypothesis going
 to really unreasonable lengths to produce pretty output."""
 
-
-from __future__ import absolute_import, division, print_function
-
 import ast
 import hashlib
 import inspect

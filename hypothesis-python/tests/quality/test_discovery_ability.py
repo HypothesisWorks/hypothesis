@@ -23,9 +23,6 @@ drawing data from the distribution produced by some specifier is >=
 REQUIRED_P
 """
 
-
-from __future__ import absolute_import, division, print_function
-
 import collections
 import math
 import re

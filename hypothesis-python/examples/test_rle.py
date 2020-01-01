@@ -27,8 +27,6 @@ It also has an example of testing invariants in response to changes in the
 underlying data.
 """
 
-from __future__ import absolute_import, division, print_function
-
 import hypothesis.strategies as st
 from hypothesis import assume, given
 

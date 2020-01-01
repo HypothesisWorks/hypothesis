@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.conjecture.shrinking.common import Shrinker, find_integer
 

@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-# coding: utf-8
-
 """This file originates in the IPython project and is made use of under the
 following licensing terms:
 
@@ -53,8 +51,6 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
-
-from __future__ import absolute_import, division, print_function
 
 import re
 from collections import Counter, OrderedDict, defaultdict, deque

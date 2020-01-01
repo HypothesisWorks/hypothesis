@@ -25,8 +25,6 @@ because `combining contracts and property-based testing works really well
 It requires ``dpcontracts >= 0.4``.
 """
 
-from __future__ import absolute_import, division, print_function
-
 from dpcontracts import PreconditionError
 
 from hypothesis import reject

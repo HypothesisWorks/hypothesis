@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 import hypothesis.strategies as st
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.conjecture.junkdrawer import IntList

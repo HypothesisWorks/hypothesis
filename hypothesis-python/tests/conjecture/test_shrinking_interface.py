@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from random import Random
 
 from hypothesis.internal.conjecture.shrinking import Integer

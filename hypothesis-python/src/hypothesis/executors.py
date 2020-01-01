@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 
 def default_executor(function):  # pragma: nocover
     raise NotImplementedError()  # We don't actually use this any more

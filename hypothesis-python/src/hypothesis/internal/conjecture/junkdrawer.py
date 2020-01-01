@@ -17,9 +17,6 @@
 obviously belong anywhere else. If you spot a better home for
 anything that lives here, please move it."""
 
-
-from __future__ import absolute_import, division, print_function
-
 from hypothesis.internal.compat import (
     array_or_list,
     hbytes,

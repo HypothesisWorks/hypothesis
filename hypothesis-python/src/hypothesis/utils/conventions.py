@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 # Notes: we use instances of these objects as singletons which serve as
 # identifiers in various patches of code.  The more specific types
 # (DefaultValueType and InferType) exist so that typecheckers such as Mypy

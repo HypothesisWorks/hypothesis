@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
-
 from collections import OrderedDict, namedtuple
 from fractions import Fraction
 from functools import reduce
