@@ -10,6 +10,19 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.1.0:
+
+------------------
+5.1.0 - 2020-01-03
+------------------
+
+This release teaches :func:`~hypothesis.strategies.from_type` how to generate
+:class:`python:datetime.timezone`.  As a result, you can now generate
+:class:`python:datetime.tzinfo` objects without having :pypi:`pytz` installed.
+
+If your tests specifically require :pypi:`pytz` timezones, you should be using
+:func:`hypothesis.extra.pytz.timezones` instead of ``st.from_type(tzinfo)``.
+
 .. _v5.0.1:
 
 ------------------
