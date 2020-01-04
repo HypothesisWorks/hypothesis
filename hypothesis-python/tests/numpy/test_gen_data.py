@@ -310,6 +310,17 @@ def test_unicode_string_dtypes_generate_unicode_strings(data):
     assert isinstance(result, str)
 
 
+def test_unicode_string_dtypes_need_not_be_utf8():
+    def cannot_encode(string):
+        try:
+            string.encode("utf-8")
+            return False
+        except UnicodeEncodeError:
+            return True
+
+    find_any(nps.from_dtype(np.dtype("U")), cannot_encode)
+
+
 @given(st.data())
 def test_byte_string_dtypes_generate_unicode_strings(data):
     dt = data.draw(nps.byte_string_dtypes())
