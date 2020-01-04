@@ -286,7 +286,7 @@ try:  # pragma: no cover
         arrays,
         array_shapes,
         scalar_dtypes,
-        nested_dtypes,
+        array_dtypes,
         from_dtype,
         integer_dtypes,
         unsigned_integer_dtypes,
@@ -294,7 +294,7 @@ try:  # pragma: no cover
 
     _global_type_lookup.update(
         {
-            np.dtype: nested_dtypes(),
+            np.dtype: array_dtypes(),
             np.ndarray: arrays(scalar_dtypes(), array_shapes(max_dims=2)),
         }
     )
