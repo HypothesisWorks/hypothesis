@@ -25,7 +25,7 @@ MAX_PRECISE_INTEGER = 2 ** 53
 
 class Float(Shrinker):
     def setup(self):
-        self.NAN = float("nan")
+        self.NAN = math.nan
         self.debugging_enabled = True
 
     def make_immutable(self, f):
@@ -46,11 +46,11 @@ class Float(Shrinker):
         return lex1 < lex2
 
     def short_circuit(self):
-        for g in [sys.float_info.max, float("inf"), float("nan")]:
+        for g in [sys.float_info.max, math.inf, math.nan]:
             self.consider(g)
 
-        # If we're stuck at a nasty float don't try to shrink it further. These
-        if math.isinf(self.current) or math.isnan(self.current):
+        # If we're stuck at a nasty float don't try to shrink it further.
+        if not math.isfinite(self.current):
             return True
 
         # If its too large to represent as an integer, bail out here. It's

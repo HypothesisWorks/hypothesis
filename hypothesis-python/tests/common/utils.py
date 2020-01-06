@@ -16,11 +16,10 @@
 import contextlib
 import sys
 import traceback
-from io import BytesIO, StringIO
+from io import StringIO
 
 from hypothesis._settings import Phase
 from hypothesis.errors import HypothesisDeprecationWarning
-from hypothesis.internal.compat import PY2
 from hypothesis.internal.reflection import proxies
 from hypothesis.reporting import default, with_reporter
 
@@ -54,7 +53,7 @@ def flaky(max_runs, min_passes):
 def capture_out():
     old_out = sys.stdout
     try:
-        new_out = BytesIO() if PY2 else StringIO()
+        new_out = StringIO()
         sys.stdout = new_out
         with with_reporter(default):
             yield new_out

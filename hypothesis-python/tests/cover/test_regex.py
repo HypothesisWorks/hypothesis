@@ -20,15 +20,15 @@ import unicodedata
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import assume, given, settings
+from hypothesis import HealthCheck, assume, given, settings
+from hypothesis._settings import local_settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import PY2, PY3, PYPY, hrange, hunichr
+from hypothesis.internal.compat import PYPY
 from hypothesis.strategies._internal.regex import (
     SPACE_CHARS,
     UNICODE_DIGIT_CATEGORIES,
     UNICODE_SPACE_CATEGORIES,
     UNICODE_SPACE_CHARS,
-    UNICODE_WEIRD_NONWORD_CHARS,
     UNICODE_WORD_CATEGORIES,
     base_regex_strategy,
 )
@@ -56,18 +56,12 @@ def is_unicode_space(s):
 
 def is_word(s):
     return all(
-        c == "_"
-        or (
-            (PY3 or c not in UNICODE_WEIRD_NONWORD_CHARS)
-            and unicodedata.category(c) in UNICODE_WORD_CATEGORIES
-        )
-        for c in s
+        c == "_" or unicodedata.category(c) in UNICODE_WORD_CATEGORIES for c in s
     )
 
 
 def ascii_regex(pattern):
-    flags = re.ASCII if PY3 else 0
-    return re.compile(pattern, flags)
+    return re.compile(pattern, re.ASCII)
 
 
 def unicode_regex(pattern):
@@ -77,8 +71,8 @@ def unicode_regex(pattern):
 def _test_matching_pattern(pattern, isvalidchar, is_unicode=False):
     r = unicode_regex(pattern) if is_unicode else ascii_regex(pattern)
 
-    codepoints = hrange(0, sys.maxunicode + 1) if is_unicode else hrange(1, 128)
-    for c in [hunichr(x) for x in codepoints]:
+    codepoints = range(0, sys.maxunicode + 1) if is_unicode else range(1, 128)
+    for c in [chr(x) for x in codepoints]:
         if isvalidchar(c):
             assert r.search(c), (
                 '"%s" supposed to match "%s" (%r, category "%s"), '
@@ -150,7 +144,8 @@ def test_matching(category, predicate, invert, is_unicode):
 def test_can_generate(pattern, encode):
     if encode:
         pattern = pattern.encode("ascii")
-    assert_all_examples(st.from_regex(pattern), re.compile(pattern).search)
+    with local_settings(settings(suppress_health_check=[HealthCheck.data_too_large])):
+        assert_all_examples(st.from_regex(pattern), re.compile(pattern).search)
 
 
 @pytest.mark.parametrize(
@@ -273,7 +268,7 @@ def test_groupref_not_shared_between_regex():
 
 
 @pytest.mark.skipif(
-    PYPY or PY2,  # Skip for now so we can test the rest
+    PYPY,  # Skip for now so we can test the rest
     reason=r"Triggers bugs in poor handling of unicode in re for these implementations",
 )
 @given(st.data())

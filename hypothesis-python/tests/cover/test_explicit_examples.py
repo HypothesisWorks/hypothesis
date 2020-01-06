@@ -20,7 +20,6 @@ import pytest
 
 from hypothesis import Phase, Verbosity, example, given, note, reporting, settings
 from hypothesis.errors import DeadlineExceeded, InvalidArgument
-from hypothesis.internal.compat import integer_types, print_unicode
 from hypothesis.strategies import integers, nothing, text
 from tests.common.utils import assert_falsifying_output, capture_out
 
@@ -29,17 +28,17 @@ class TestInstanceMethods(TestCase):
     @given(integers())
     @example(1)
     def test_hi_1(self, x):
-        assert isinstance(x, integer_types)
+        assert isinstance(x, int)
 
     @given(integers())
     @example(x=1)
     def test_hi_2(self, x):
-        assert isinstance(x, integer_types)
+        assert isinstance(x, int)
 
     @given(x=integers())
     @example(x=1)
     def test_hi_3(self, x):
-        assert isinstance(x, integer_types)
+        assert isinstance(x, int)
 
 
 def test_kwarg_example_on_testcase():
@@ -47,7 +46,7 @@ def test_kwarg_example_on_testcase():
         @given(integers())
         @example(x=1)
         def test_hi(self, x):
-            assert isinstance(x, integer_types)
+            assert isinstance(x, int)
 
     Stuff("test_hi").test_hi()
 
@@ -183,7 +182,7 @@ def test_examples_are_tried_in_order():
     @settings(phases=[Phase.explicit])
     @example(x=3)
     def test(x):
-        print_unicode("x -> %d" % (x,))
+        print("x -> %d" % (x,))
 
     with capture_out() as out:
         with reporting.with_reporter(reporting.default):
@@ -205,7 +204,7 @@ def test_prints_note_in_failing_example():
             with pytest.raises(AssertionError):
                 test()
     v = out.getvalue()
-    print_unicode(v)
+    print(v)
     assert "x -> 43" in v
     assert "x -> 42" not in v
 

@@ -19,7 +19,6 @@ from random import Random
 
 import pytest
 
-from hypothesis.internal.compat import ceil
 from hypothesis.internal.conjecture.shrinking import Integer, Lexical, Ordering
 
 
@@ -34,7 +33,7 @@ def measure_baseline(cls, value, **kwargs):
 def test_meets_budgetary_requirements(cls, example):
     # Somewhat arbitrary but not unreasonable budget.
     n = len(example)
-    budget = n * ceil(math.log(n, 2)) + 5
+    budget = n * math.ceil(math.log(n, 2)) + 5
     assert measure_baseline(cls, example) <= budget
 
 

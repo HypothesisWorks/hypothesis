@@ -13,12 +13,8 @@
 #
 # END HEADER
 
-import pytest
-
 import hypothesis.strategies as st
 from hypothesis import given
-from hypothesis.internal.compat import PY3
-from hypothesis.internal.reflection import arg_string
 
 
 class BadRepr:
@@ -44,16 +40,6 @@ def test_sampling_snowmen():
 
 def varargs(*args, **kwargs):
     pass
-
-
-@pytest.mark.skipif(PY3, reason="Unicode repr is kosher on python 3")
-def test_arg_strings_are_bad_repr_safe():
-    assert arg_string(varargs, (Frosty,), {}) == "☃"
-
-
-@pytest.mark.skipif(PY3, reason="Unicode repr is kosher on python 3")
-def test_arg_string_kwargs_are_bad_repr_safe():
-    assert arg_string(varargs, (), {"x": Frosty}) == "x=☃"
 
 
 @given(

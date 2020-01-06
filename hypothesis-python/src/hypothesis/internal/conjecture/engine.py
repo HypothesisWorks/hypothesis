@@ -23,7 +23,7 @@ import attr
 from hypothesis import HealthCheck, Phase, Verbosity, settings as Settings
 from hypothesis._settings import local_settings
 from hypothesis.internal.cache import LRUReusedCache
-from hypothesis.internal.compat import ceil, hbytes, int_from_bytes
+from hypothesis.internal.compat import ceil, int_from_bytes
 from hypothesis.internal.conjecture.data import (
     ConjectureData,
     ConjectureResult,
@@ -341,7 +341,7 @@ class ConjectureRunner:
             key = self.sub_key(sub_key)
             if key is None:
                 return
-            self.settings.database.save(key, hbytes(buffer))
+            self.settings.database.save(key, bytes(buffer))
 
     def downgrade_buffer(self, buffer):
         if self.settings.database is not None and self.database_key is not None:
@@ -516,7 +516,7 @@ class ConjectureRunner:
 
         self.debug("Generating new examples")
 
-        zero_data = self.cached_test_function(hbytes(BUFFER_SIZE))
+        zero_data = self.cached_test_function(bytes(BUFFER_SIZE))
         if zero_data.status > Status.OVERRUN:
             self.__data_cache.pin(zero_data.buffer)
 
@@ -618,7 +618,7 @@ class ConjectureRunner:
                 and consecutive_zero_extend_is_invalid < 5
             ):
                 minimal_example = self.cached_test_function(
-                    prefix + hbytes(BUFFER_SIZE - len(prefix))
+                    prefix + bytes(BUFFER_SIZE - len(prefix))
                 )
 
                 if minimal_example.status < Status.VALID:
@@ -930,7 +930,7 @@ class ConjectureRunner:
         result has discards if we cannot determine from previous runs whether
         it will have a discard.
         """
-        buffer = hbytes(buffer)[:BUFFER_SIZE]
+        buffer = bytes(buffer)[:BUFFER_SIZE]
 
         max_length = min(BUFFER_SIZE, len(buffer) + extend)
 

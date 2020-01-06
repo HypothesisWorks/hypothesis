@@ -22,7 +22,7 @@ import sys
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import reduce
-from inspect import isabstract, isclass
+from inspect import getfullargspec, isabstract, isclass
 from uuid import UUID
 
 import attr
@@ -32,17 +32,7 @@ from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.cathetus import cathetus
 from hypothesis.internal.charmap import as_general_categories
-from hypothesis.internal.compat import (
-    ceil,
-    floor,
-    gcd,
-    get_type_hints,
-    getfullargspec,
-    hrange,
-    implements_iterator,
-    string_types,
-    typing_root_type,
-)
+from hypothesis.internal.compat import ceil, floor, get_type_hints, typing_root_type
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
     check_sample,
@@ -64,7 +54,6 @@ from hypothesis.internal.reflection import (
     nicerepr,
     proxies,
     required_args,
-    reserved_means_kwonly_star,
 )
 from hypothesis.internal.validation import (
     check_type,
@@ -107,7 +96,6 @@ from hypothesis.strategies._internal.strategies import (
     SampledFromStrategy,
 )
 from hypothesis.strategies._internal.strings import (
-    BinaryStringStrategy,
     FixedSizeBytes,
     OneCharStringStrategy,
     StringStrategy,
@@ -441,7 +429,7 @@ def floats(
     Excluding either signed zero will also exclude the other.
     Attempting to exclude an endpoint which is None will raise an error;
     use ``allow_infinity=False`` to generate finite floats.  You can however
-    use e.g. ``min_value=float("-inf"), exclude_min=True`` to exclude only
+    use e.g. ``min_value=-math.inf, exclude_min=True`` to exclude only
     one infinite endpoint.
 
     Examples from this strategy have a complicated and hard to explain
@@ -492,9 +480,9 @@ def floats(
             "%d - use max_value=%r instead" % (max_arg, width, max_value)
         )
 
-    if exclude_min and (min_value is None or min_value == float("inf")):
+    if exclude_min and (min_value is None or min_value == math.inf):
         raise InvalidArgument("Cannot exclude min_value=%r" % (min_value,))
-    if exclude_max and (max_value is None or max_value == float("-inf")):
+    if exclude_max and (max_value is None or max_value == -math.inf):
         raise InvalidArgument("Cannot exclude max_value=%r" % (max_value,))
 
     if min_value is not None and (
@@ -516,9 +504,9 @@ def floats(
             max_value = next_down(max_value, width)
         assert max_value < max_arg  # type: ignore
 
-    if min_value == float("-inf"):
+    if min_value == -math.inf:
         min_value = None
-    if max_value == float("inf"):
+    if max_value == math.inf:
         max_value = None
 
     bad_zero_bounds = (
@@ -549,9 +537,9 @@ def floats(
                 "Cannot have allow_infinity=%r, with both min_value and "
                 "max_value" % (allow_infinity)
             )
-    elif min_value == float("inf"):
+    elif min_value == math.inf:
         raise InvalidArgument("allow_infinity=False excludes min_value=inf")
-    elif max_value == float("-inf"):
+    elif max_value == -math.inf:
         raise InvalidArgument("allow_infinity=False excludes max_value=-inf")
 
     unbounded_floats = FloatStrategy(
@@ -807,7 +795,6 @@ def frozensets(
     ).map(frozenset)
 
 
-@implements_iterator
 class PrettyIter:
     def __init__(self, values):
         self._values = values
@@ -849,11 +836,10 @@ def iterables(
 
 
 @defines_strategy
-@reserved_means_kwonly_star
 def fixed_dictionaries(
     mapping,  # type: Dict[T, SearchStrategy[Ex]]
-    __reserved=not_set,  # type: Any
-    optional=None,  # type: Dict[T, SearchStrategy[Ex]]
+    *,
+    optional=None  # type: Dict[T, SearchStrategy[Ex]]
 ):
     # type: (...) -> SearchStrategy[Dict[T, Ex]]
     """Generates a dictionary of the same type as mapping with a fixed set of
@@ -870,8 +856,6 @@ def fixed_dictionaries(
     check_type(dict, mapping, "mapping")
     for k, v in mapping.items():
         check_strategy(v, "mapping[%r]" % (k,))
-    if __reserved is not not_set:
-        raise InvalidArgument("Do not pass __reserved; got %r" % (__reserved,))
     if optional is not None:
         check_type(dict, optional, "optional")
         for k, v in optional.items():
@@ -1063,7 +1047,7 @@ def text(
     if isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:
-        non_string = [c for c in alphabet if not isinstance(c, string_types)]
+        non_string = [c for c in alphabet if not isinstance(c, str)]
         if non_string:
             raise InvalidArgument(
                 "The following elements in alphabet are not unicode "
@@ -1139,11 +1123,9 @@ def binary(min_size=0, max_size=None):
     check_valid_sizes(min_size, max_size)
     if min_size == max_size is not None:
         return FixedSizeBytes(min_size)
-    return BinaryStringStrategy(
-        lists(
-            integers(min_value=0, max_value=255), min_size=min_size, max_size=max_size
-        )
-    )
+    return lists(
+        integers(min_value=0, max_value=255), min_size=min_size, max_size=max_size
+    ).map(bytes)
 
 
 @cacheable
@@ -1528,7 +1510,7 @@ def fractions(
             # After calculating our integer bounds and scale factor, we remove
             # the gcd to avoid drawing more bytes for the example than needed.
             # Note that `div` can be at most equal to `scale`.
-            div = gcd(scale, gcd(low, high))
+            div = math.gcd(scale, math.gcd(low, high))
             min_num = denom * low // div
             max_num = denom * high // div
             denom *= scale // div
@@ -1702,7 +1684,7 @@ class PermutationStrategy(SearchStrategy):
         # a later element.  This shrinks i==j for each element, i.e. to no
         # change.  We don't consider the last element as it's always a no-op.
         result = list(self.values)
-        for i in hrange(len(result) - 1):
+        for i in range(len(result) - 1):
             j = integer_range(data, i, len(result) - 1)
             result[i], result[j] = result[j], result[i]
         return result
@@ -1929,7 +1911,7 @@ def complex_numbers(
     check_valid_magnitude(min_magnitude, "min_magnitude")
     check_valid_magnitude(max_magnitude, "max_magnitude")
     check_valid_interval(min_magnitude, max_magnitude, "min_magnitude", "max_magnitude")
-    if max_magnitude == float("inf"):
+    if max_magnitude == math.inf:
         max_magnitude = None
     if min_magnitude == 0:
         min_magnitude = None

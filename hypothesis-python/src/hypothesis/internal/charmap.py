@@ -22,7 +22,6 @@ import unicodedata
 
 from hypothesis.configuration import mkdir_p, storage_directory
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import hunichr
 
 if False:
     from typing import Dict, Tuple
@@ -66,10 +65,10 @@ def charmap():
             # https://github.com/HypothesisWorks/hypothesis/issues/2108 but it helps.
             category = unicodedata.category  # Local variable -> ~20% speedup!
             tmp_charmap = {}
-            last_cat = category(hunichr(0))
+            last_cat = category(chr(0))
             last_start = 0
             for i in range(1, sys.maxunicode + 1):
-                cat = category(hunichr(i))
+                cat = category(chr(i))
                 if cat != last_cat:
                     tmp_charmap.setdefault(last_cat, []).append([last_start, i - 1])
                     last_cat, last_start = cat, i

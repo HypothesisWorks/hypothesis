@@ -14,7 +14,7 @@
 # END HEADER
 
 import decimal
-from math import copysign
+from math import copysign, inf
 
 import pytest
 
@@ -40,16 +40,8 @@ def test_fuzz_floats_bounds(data):
     low, high = data.draw(tuples(bound, bound), label="low, high")
     if low is not None and high is not None and low > high:
         low, high = high, low
-    exmin = (
-        low is not None
-        and low != float("inf")
-        and data.draw(booleans(), label="exclude_min")
-    )
-    exmax = (
-        high is not None
-        and high != float("-inf")
-        and data.draw(booleans(), label="exclude_max")
-    )
+    exmin = low is not None and low != inf and data.draw(booleans(), label="ex_min")
+    exmax = high is not None and high != -inf and data.draw(booleans(), label="ex_max")
     try:
         val = data.draw(
             floats(low, high, exclude_min=exmin, exclude_max=exmax), label="value"

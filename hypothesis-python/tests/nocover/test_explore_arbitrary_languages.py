@@ -21,7 +21,6 @@ import pytest
 import hypothesis.internal.escalation as esc
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, Phase, Verbosity, assume, given, note, settings
-from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
@@ -75,7 +74,7 @@ def run_language_test_for(root, data, seed):
         node = root
         while not isinstance(node, Terminal):
             if isinstance(node, Write):
-                local_data.write(hbytes(node.value))
+                local_data.write(node.value)
                 node = node.child
             else:
                 assert isinstance(node, Branch)

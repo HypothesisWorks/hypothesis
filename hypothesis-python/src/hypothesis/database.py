@@ -20,7 +20,6 @@ from hashlib import sha384
 
 from hypothesis.configuration import mkdir_p, storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
-from hypothesis.internal.compat import hbytes
 from hypothesis.utils.conventions import not_set
 
 
@@ -124,10 +123,10 @@ class InMemoryExampleDatabase(ExampleDatabase):
         yield from self.data.get(key, ())
 
     def save(self, key, value):
-        self.data.setdefault(key, set()).add(hbytes(value))
+        self.data.setdefault(key, set()).add(bytes(value))
 
     def delete(self, key, value):
-        self.data.get(key, set()).discard(hbytes(value))
+        self.data.get(key, set()).discard(bytes(value))
 
     def close(self):
         pass
@@ -167,7 +166,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         for path in os.listdir(kp):
             try:
                 with open(os.path.join(kp, path), "rb") as i:
-                    yield hbytes(i.read())
+                    yield i.read()
             except OSError:
                 pass
 
@@ -178,10 +177,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         mkdir_p(self._key_path(key))
         path = self._value_path(key, value)
         if not os.path.exists(path):
-            suffix = binascii.hexlify(os.urandom(16))
-            if not isinstance(suffix, str):  # pragma: no branch
-                # On Python 3, binascii.hexlify returns bytes
-                suffix = suffix.decode("ascii")
+            suffix = binascii.hexlify(os.urandom(16)).decode("ascii")
             tmpname = path + "." + suffix
             with open(tmpname, "wb") as o:
                 o.write(value)

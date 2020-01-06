@@ -23,6 +23,7 @@ execution to date.
 
 import inspect
 from copy import copy
+from io import StringIO
 from unittest import TestCase
 
 import attr
@@ -33,13 +34,12 @@ from hypothesis._settings import HealthCheck, Verbosity, settings as Settings
 from hypothesis.control import current_build_context
 from hypothesis.core import given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
-from hypothesis.internal.compat import hrange, quiet_raise
 from hypothesis.internal.reflection import function_digest, nicerepr, proxies, qualname
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
 from hypothesis.strategies._internal.featureflags import FeatureStrategy
 from hypothesis.strategies._internal.strategies import OneOfStrategy, SearchStrategy
-from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
+from hypothesis.vendor.pretty import RepresentationPrinter
 
 STATE_MACHINE_RUN_LABEL = cu.calc_label_from_name("another state machine step")
 SHOULD_CONTINUE_LABEL = cu.calc_label_from_name("should we continue drawing")
@@ -247,8 +247,8 @@ class _GenericStateMachine(
         runTest.is_hypothesis_test = True
         StateMachineTestCase.runTest = runTest
         base_name = state_machine_class.__name__
-        StateMachineTestCase.__name__ = str(base_name + ".TestCase")
-        StateMachineTestCase.__qualname__ = str(
+        StateMachineTestCase.__name__ = base_name + ".TestCase"
+        StateMachineTestCase.__qualname__ = (
             getattr(state_machine_class, "__qualname__", base_name) + ".TestCase"
         )
         state_machine_class._test_case_cache[state_machine_class] = StateMachineTestCase
@@ -629,7 +629,7 @@ class RuleStrategy(SearchStrategy):
     def do_draw(self, data):
         if not any(self.is_valid(rule) for rule in self.rules):
             msg = "No progress can be made from state %r" % (self.machine,)
-            quiet_raise(InvalidDefinition(msg))
+            raise InvalidDefinition(msg) from None
 
         feature_flags = data.draw(self.enabled_rules_strategy)
 
@@ -680,7 +680,7 @@ class RuleBasedStateMachine(_GenericStateMachine):
         self.bundles = {}  # type: Dict[Text, list]
         self.name_counter = 1
         self.names_to_values = {}  # type: Dict[Text, Any]
-        self.__stream = CUnicodeIO()
+        self.__stream = StringIO()
         self.__printer = RepresentationPrinter(self.__stream)
         self._initialize_rules_to_run = copy(self.initialize_rules())
         self.__rules_strategy = RuleStrategy(self)
@@ -706,7 +706,7 @@ class RuleBasedStateMachine(_GenericStateMachine):
     def last_names(self, n):
         assert self.name_counter > n
         count = self.name_counter
-        return ["v%d" % (i,) for i in hrange(count - n, count)]
+        return ["v%d" % (i,) for i in range(count - n, count)]
 
     def new_name(self):
         result = self.upcoming_name()

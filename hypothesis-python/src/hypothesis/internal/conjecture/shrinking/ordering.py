@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-from hypothesis.internal.compat import hrange
 from hypothesis.internal.conjecture.shrinking.common import Shrinker, find_integer
 
 
@@ -77,7 +76,7 @@ class Ordering(Shrinker):
         regions centered on each element, where that element is treated as
         fixed and the elements around it are sorted..
         """
-        for i in hrange(1, len(self.current) - 1):
+        for i in range(1, len(self.current) - 1):
             if self.current[i - 1] <= self.current[i] <= self.current[i + 1]:
                 continue
 

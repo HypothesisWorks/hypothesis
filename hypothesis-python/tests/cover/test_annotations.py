@@ -14,6 +14,7 @@
 # END HEADER
 
 import sys
+from inspect import getfullargspec
 
 import attr
 import pytest
@@ -21,7 +22,6 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import getfullargspec
 from hypothesis.internal.reflection import (
     convert_positional_arguments,
     define_function_signature,

@@ -22,7 +22,6 @@ import hypothesis.strategies as st
 from hypothesis import Verbosity, assume, given, settings
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck
-from hypothesis.internal.compat import hrange
 from tests.common.utils import all_values, capture_out
 
 
@@ -77,7 +76,7 @@ def test_uses_global_force(monkeypatch):
 
     output = []
 
-    for _ in hrange(2):
+    for _ in range(2):
         with capture_out() as o:
             with pytest.raises(ValueError):
                 test()

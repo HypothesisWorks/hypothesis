@@ -22,26 +22,16 @@ import inspect
 import re
 import types
 from functools import wraps
+from tokenize import detect_encoding
 from types import ModuleType
 
 from hypothesis.internal.compat import (
-    ARG_NAME_ATTRIBUTE,
-    PY2,
-    getfullargspec,
-    hrange,
-    isidentifier,
     qualname,
     str_to_bytes,
-    to_str,
     to_unicode,
     update_code_location,
 )
 from hypothesis.vendor.pretty import pretty
-
-try:
-    from tokenize import detect_encoding
-except ImportError:  # pragma: no cover
-    detect_encoding = None
 
 if False:
     from typing import TypeVar  # noqa
@@ -91,7 +81,7 @@ def function_digest(function):
     except AttributeError:
         pass
     try:
-        hasher.update(str_to_bytes(repr(getfullargspec(function))))
+        hasher.update(str_to_bytes(repr(inspect.getfullargspec(function))))
     except TypeError:
         pass
     try:
@@ -129,9 +119,9 @@ def required_args(target, args=(), kwargs=()):
     if inspect.isclass(target) and is_typed_named_tuple(target):
         provided = set(kwargs) | set(target._fields[: len(args)])
         return set(target._fields) - provided
-    # Then we try to do the right thing with getfullargspec
+    # Then we try to do the right thing with inspect.getfullargspec
     try:
-        spec = getfullargspec(
+        spec = inspect.getfullargspec(
             getattr(target, "__init__", target) if inspect.isclass(target) else target
         )
     except TypeError:  # pragma: no cover
@@ -156,7 +146,7 @@ def convert_keyword_arguments(function, args, kwargs):
 
     **kwargs the dictionary will always be empty.
     """
-    argspec = getfullargspec(function)
+    argspec = inspect.getfullargspec(function)
     new_args = []
     kwargs = dict(kwargs)
 
@@ -170,7 +160,7 @@ def convert_keyword_arguments(function, args, kwargs):
 
     n = max(len(args), len(argspec.args))
 
-    for i in hrange(n):
+    for i in range(n):
         if i < len(args):
             new_args.append(args[i])
         else:
@@ -203,7 +193,7 @@ def convert_positional_arguments(function, args, kwargs):
 
     new_args will only be non-empty if function has a variadic argument.
     """
-    argspec = getfullargspec(function)
+    argspec = inspect.getfullargspec(function)
     new_kwargs = dict(argspec.kwonlydefaults or {})
     new_kwargs.update(kwargs)
     if not argspec.varkw:
@@ -214,7 +204,7 @@ def convert_positional_arguments(function, args, kwargs):
                     % (function.__name__, k)
                 )
     if len(args) < len(argspec.args):
-        for i in hrange(len(args), len(argspec.args) - len(argspec.defaults or ())):
+        for i in range(len(args), len(argspec.args) - len(argspec.defaults or ())):
             if argspec.args[i] not in kwargs:
                 raise TypeError(
                     "No value provided for argument %s" % (argspec.args[i],)
@@ -253,7 +243,7 @@ def extract_all_lambdas(tree):
 
 
 def args_for_lambda_ast(l):
-    return [getattr(n, ARG_NAME_ATTRIBUTE) for n in l.args.args]
+    return [n.arg for n in l.args.args]
 
 
 LINE_CONTINUATION = re.compile(r"\\\n")
@@ -270,19 +260,11 @@ def extract_lambda_source(f):
     This is not a good function and I am sorry for it. Forgive me my
     sins, oh lord
     """
-    argspec = getfullargspec(f)
+    argspec = inspect.getfullargspec(f)
     arg_strings = []
-    # In Python 2 you can have destructuring arguments to functions. This
-    # results in an argspec with non-string values. I'm not very interested in
-    # handling these properly, but it's important to not crash on them.
-    bad_lambda = False
     for a in argspec.args:
-        if isinstance(a, (tuple, list)):  # pragma: no cover
-            arg_strings.append("(%s)" % (", ".join(a),))
-            bad_lambda = True
-        else:
-            assert isinstance(a, str)
-            arg_strings.append(a)
+        assert isinstance(a, str)
+        arg_strings.append(a)
     if argspec.varargs:
         arg_strings.append("*" + argspec.varargs)
     elif argspec.kwonlyargs:
@@ -298,8 +280,6 @@ def extract_lambda_source(f):
         if_confused = "lambda %s: <unknown>" % (", ".join(arg_strings),)
     else:
         if_confused = "lambda: <unknown>"
-    if bad_lambda:  # pragma: no cover
-        return if_confused
     try:
         source = inspect.getsource(f)
     except OSError:
@@ -315,7 +295,7 @@ def extract_lambda_source(f):
     try:
         tree = ast.parse(source)
     except SyntaxError:
-        for i in hrange(len(source) - 1, len("lambda"), -1):
+        for i in range(len(source) - 1, len("lambda"), -1):
             prefix = source[:i]
             if "lambda" not in prefix:
                 break
@@ -332,7 +312,7 @@ def extract_lambda_source(f):
             # eventually be syntactically valid and break out of the loop. Thus
             # this loop can never terminate normally, so a no branch pragma is
             # appropriate.
-            for i in hrange(len(source) + 1):  # pragma: no branch
+            for i in range(len(source) + 1):  # pragma: no branch
                 p = source[1:i]
                 if "lambda" in p:
                     try:
@@ -369,13 +349,6 @@ def extract_lambda_source(f):
     # an OSError.  Or if `f` is a built-in function, in which case we get a
     # TypeError.  In both cases, fall back to splitting the Unicode string.
     # It's not perfect, but it's the best we can do.
-    #
-    # Note 2: You can only detect the encoding with `tokenize.detect_encoding`
-    # in Python 3.2 or later.  But that's okay, because the only version that
-    # affects for us is Python 2.7, and 2.7 doesn't support non-ASCII identifiers:
-    # https://www.python.org/dev/peps/pep-3131/. In this case we'll get an
-    # TypeError again because we set detect_encoding to None above.
-    #
     try:
         with open(inspect.getsourcefile(f), "rb") as src_f:
             encoding, _ = detect_encoding(src_f.readline)
@@ -401,7 +374,7 @@ def extract_lambda_source(f):
     except ValueError:
         return if_confused
 
-    for i in hrange(len(source), len("lambda"), -1):  # pragma: no branch
+    for i in range(len(source), len("lambda"), -1):  # pragma: no branch
         try:
             parsed = ast.parse(source[:i])
             assert len(parsed.body) == 1
@@ -441,14 +414,14 @@ def nicerepr(v):
     elif isinstance(v, type):
         return v.__name__
     else:
-        return to_str(pretty(v))
+        return pretty(v)
 
 
 def arg_string(f, args, kwargs, reorder=True):
     if reorder:
         args, kwargs = convert_positional_arguments(f, args, kwargs)
 
-    argspec = getfullargspec(f)
+    argspec = inspect.getfullargspec(f)
 
     bits = []
 
@@ -469,7 +442,7 @@ def unbind_method(f):
 
 
 def check_valid_identifier(identifier):
-    if not isidentifier(identifier):
+    if not identifier.isidentifier():
         raise ValueError("%r is not a valid python identifier" % (identifier,))
 
 
@@ -528,7 +501,7 @@ def define_function_signature(name, docstring, argspec):
         check_valid_identifier(a)
 
     def accept(f):
-        fargspec = getfullargspec(f)
+        fargspec = inspect.getfullargspec(f)
         must_pass_as_kwargs = []
         invocation_parts = []
         for a in argspec.args:
@@ -556,9 +529,7 @@ def define_function_signature(name, docstring, argspec):
             parts.append("**" + argspec.varkw)
             invocation_parts.append("**" + argspec.varkw)
 
-        candidate_names = ["f"] + [
-            "f_%d" % (i,) for i in hrange(1, len(used_names) + 2)
-        ]
+        candidate_names = ["f"] + ["f_%d" % (i,) for i in range(1, len(used_names) + 2)]
 
         for funcname in candidate_names:  # pragma: no branch
             if funcname not in used_names:
@@ -614,44 +585,9 @@ def proxies(target):
                 define_function_signature(
                     target.__name__.replace("<lambda>", "_lambda_"),
                     target.__doc__,
-                    getfullargspec(target),
+                    inspect.getfullargspec(target),
                 )(proxy)
             )
         )
 
     return accept
-
-
-def reserved_means_kwonly_star(func):
-    # type: (C) -> C
-    """A decorator to implement Python-2-compatible kwonly args.
-
-    The following functions behave identically:
-        def f(a, __reserved=not_set, b=None): ...
-        def f(a, *, b=None): ...
-
-    Obviously this doesn't allow required kwonly args, but it's a nice way
-    of defining forward-compatible APIs given our plans to turn all args
-    with default values into kwonly args.
-    """
-    if PY2:
-        return func
-
-    signature = inspect.signature(func)
-    seen = False
-    parameters = []
-    for param in signature.parameters.values():
-        assert param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
-        if param.name == "__reserved":
-            seen = True
-        elif not seen:
-            parameters.append(param)
-        else:
-            parameters.append(param.replace(kind=inspect.Parameter.KEYWORD_ONLY))
-    assert seen, "function does not have `__reserved` argument"
-
-    func.__signature__ = signature.replace(parameters=parameters)
-    newsig = define_function_signature(
-        func.__name__, func.__doc__, getfullargspec(func)
-    )
-    return impersonate(func)(wraps(func)(newsig(func)))

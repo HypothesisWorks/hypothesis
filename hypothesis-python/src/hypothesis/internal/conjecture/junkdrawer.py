@@ -17,12 +17,13 @@
 obviously belong anywhere else. If you spot a better home for
 anything that lives here, please move it."""
 
-from hypothesis.internal.compat import (
-    array_or_list,
-    hbytes,
-    int_to_bytes,
-    integer_types,
-)
+import array
+
+
+def array_or_list(code, contents):
+    if code == "O":
+        return list(contents)
+    return array.array(code, contents)
 
 
 def replace_all(buffer, replacements):
@@ -41,7 +42,7 @@ def replace_all(buffer, replacements):
         offset += len(r) - (v - u)
     result.extend(buffer[prev:])
     assert len(result) == len(buffer) + offset
-    return hbytes(result)
+    return bytes(result)
 
 
 ARRAY_CODES = ["B", "H", "I", "L", "Q", "O"]
@@ -69,7 +70,7 @@ class IntList:
             raise AssertionError("Could not create storage for %r" % (values,))
         if isinstance(self.__underlying, list):
             for v in self.__underlying:
-                if v < 0 or not isinstance(v, integer_types):
+                if v < 0 or not isinstance(v, int):
                     raise ValueError("Could not create IntList for %r" % (values,))
 
     @classmethod
@@ -152,8 +153,8 @@ def binary_search(lo, hi, f):
 
 
 def uniform(random, n):
-    """Returns an hbytes of length n, distributed uniformly at random."""
-    return int_to_bytes(random.getrandbits(n * 8), n)
+    """Returns a bytestring of length n, distributed uniformly at random."""
+    return random.getrandbits(n * 8).to_bytes(n, "big")
 
 
 class LazySequenceCopy:

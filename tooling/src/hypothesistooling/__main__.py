@@ -170,8 +170,6 @@ HEADER = """
 @task()
 def format():
     def should_format_file(path):
-        if "vendor" in path.split(os.path.sep):
-            return False
         return path.endswith(".py")
 
     def should_format_doc_file(path):

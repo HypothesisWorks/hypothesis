@@ -271,19 +271,3 @@ def e(a, **kwargs):
 def test_raise_invalid_argument(function, kwargs):
     with pytest.raises(InvalidArgument):
         function(**kwargs).example()
-
-
-def test_test_basic_indices_kwonly_emulation():
-    with pytest.raises(TypeError):
-        nps.basic_indices((), 0, 1).validate()
-    with pytest.raises(TypeError):
-        nps.basic_indices((), __reserved=None).validate()
-
-
-@pytest.mark.parametrize("args", ({}, (1,), {"num_shapes": 1, "__reserved": None}))
-def test_test_mutually_broadcastable_shapes_kwonly_emulation(args):
-    with pytest.raises(TypeError):
-        if isinstance(args, dict):
-            nps.mutually_broadcastable_shapes(**args).validate()
-        else:
-            nps.mutually_broadcastable_shapes(*args).validate()

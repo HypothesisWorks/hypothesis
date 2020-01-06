@@ -13,11 +13,12 @@
 #
 # END HEADER
 
+from inspect import getfullargspec
+
 import pytest
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument, InvalidState
-from hypothesis.internal.compat import getfullargspec
 from hypothesis.strategies import booleans, functions
 
 

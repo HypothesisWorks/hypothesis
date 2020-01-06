@@ -22,7 +22,7 @@ import sys
 import hypothesis.strategies as st
 from hypothesis import reject
 from hypothesis.internal.charmap import as_general_categories, categories
-from hypothesis.internal.compat import PY3, hrange, hunichr, int_to_byte, text_type
+from hypothesis.internal.compat import int_to_byte
 
 HAS_SUBPATTERN_FLAGS = sys.version_info[:2] >= (3, 6)
 
@@ -50,10 +50,6 @@ BYTES_LOOKUP = {
     sre.CATEGORY_NOT_SPACE: BYTES_ALL - BYTES_SPACE,
     sre.CATEGORY_NOT_WORD: BYTES_ALL - BYTES_WORD,
 }
-
-# On Python 2, these unicode chars are matched by \W, meaning 'not word',
-# but unicodedata.category(c) returns one of the word categories above.
-UNICODE_WEIRD_NONWORD_CHARS = set("\U00012432\U00012433\U00012456\U00012457")
 
 
 GROUP_CACHE_STRATEGY = st.shared(st.builds(dict), key="hypothesis.regex.group_cache")
@@ -116,8 +112,8 @@ class CharactersBuilder:
         self._blacklist_chars = set()
         self._negate = negate
         self._ignorecase = flags & re.IGNORECASE
-        self._unicode = not bool(flags & re.ASCII) if PY3 else bool(flags & re.UNICODE)
-        self.code_to_char = hunichr
+        self._unicode = not bool(flags & re.ASCII)
+        self.code_to_char = chr
 
     @property
     def strategy(self):
@@ -158,13 +154,9 @@ class CharactersBuilder:
         elif category == sre.CATEGORY_WORD:
             self._categories |= UNICODE_WORD_CATEGORIES
             self._whitelist_chars.add("_")
-            if self._unicode and not PY3:  # pragma: no cover
-                self._blacklist_chars |= UNICODE_WEIRD_NONWORD_CHARS
         elif category == sre.CATEGORY_NOT_WORD:
             self._categories |= UNICODE_CATEGORIES - UNICODE_WORD_CATEGORIES
             self._blacklist_chars.add("_")
-            if self._unicode and not PY3:  # pragma: no cover
-                self._whitelist_chars |= UNICODE_WEIRD_NONWORD_CHARS
         else:  # pragma: no cover
             raise AssertionError("Unknown character category: %s" % category)
 
@@ -218,9 +210,7 @@ def base_regex_strategy(regex, parsed=None):
     if parsed is None:
         parsed = sre_parse.parse(regex.pattern, flags=regex.flags)
     return clear_cache_after_draw(
-        _strategy(
-            parsed, Context(flags=regex.flags), isinstance(regex.pattern, text_type)
-        )
+        _strategy(parsed, Context(flags=regex.flags), isinstance(regex.pattern, str))
     )
 
 
@@ -228,7 +218,7 @@ def regex_strategy(regex, fullmatch):
     if not hasattr(regex, "pattern"):
         regex = re.compile(regex)
 
-    is_unicode = isinstance(regex.pattern, text_type)
+    is_unicode = isinstance(regex.pattern, str)
 
     parsed = sre_parse.parse(regex.pattern, flags=regex.flags)
 
@@ -311,7 +301,7 @@ def _strategy(codes, context, is_unicode):
 
     if is_unicode:
         empty = ""
-        to_char = hunichr
+        to_char = chr
     else:
         empty = b""
         to_char = int_to_byte
@@ -402,7 +392,7 @@ def _strategy(codes, context, is_unicode):
                 elif charset_code == sre.RANGE:
                     # Regex '[a-z]' (char range)
                     low, high = charset_value
-                    for char_code in hrange(low, high + 1):
+                    for char_code in range(low, high + 1):
                         builder.add_char(char_code)
                 elif charset_code == sre.CATEGORY:
                     # Regex '[\w]' (char category)

@@ -21,7 +21,6 @@ from lark.lark import Lark
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.lark import from_lark
-from hypothesis.internal.compat import integer_types, text_type
 from hypothesis.strategies import data, just
 from tests.common.debug import find_any
 
@@ -63,8 +62,8 @@ def test_generates_valid_json(string):
     [
         ("dict", dict),
         ("list", list),
-        ("STRING", text_type),
-        ("NUMBER", integer_types + (float,)),
+        ("STRING", str),
+        ("NUMBER", (int, float)),
         ("TRUE", bool),
         ("FALSE", bool),
         ("NULL", type(None)),

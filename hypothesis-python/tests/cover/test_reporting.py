@@ -20,7 +20,6 @@ import pytest
 
 from hypothesis import given, reporting
 from hypothesis._settings import Verbosity, settings
-from hypothesis.internal.compat import PY2
 from hypothesis.reporting import debug_report, report, verbose_report
 from hypothesis.strategies import integers
 from tests.common.utils import capture_out
@@ -90,7 +89,6 @@ def test_does_print_verbose_in_debug():
     assert "Hi" in o.getvalue()
 
 
-@pytest.mark.skipif(PY2, reason="Output streams don't have encodings in python 2")
 def test_can_report_when_system_locale_is_ascii(monkeypatch):
     read, write = os.pipe()
     with open(read, "r", encoding="ascii") as read:

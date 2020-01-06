@@ -20,7 +20,7 @@ import pytest
 import hypothesis.internal.conjecture.utils as cu
 import hypothesis.strategies as st
 from hypothesis import settings
-from hypothesis.internal.compat import ceil, hrange
+from hypothesis.internal.compat import ceil
 from hypothesis.internal.conjecture.engine import ConjectureData, ConjectureRunner
 from hypothesis.strategies._internal import SearchStrategy
 
@@ -47,7 +47,7 @@ class LinearLists(SearchStrategy):
         self.__elements = elements
 
     def do_draw(self, data):
-        return [data.draw(self.__elements) for _ in hrange(data.draw(self.__length))]
+        return [data.draw(self.__elements) for _ in range(data.draw(self.__length))]
 
 
 class Matrices(SearchStrategy):
@@ -60,7 +60,7 @@ class Matrices(SearchStrategy):
         n = data.draw(self.__length)
         m = data.draw(self.__length)
 
-        return [data.draw(self.__elements) for _ in hrange(n * m)]
+        return [data.draw(self.__elements) for _ in range(n * m)]
 
 
 LOTS = 10 ** 6

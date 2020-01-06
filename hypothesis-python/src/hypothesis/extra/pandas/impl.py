@@ -13,7 +13,7 @@
 #
 # END HEADER
 
-from collections import OrderedDict
+from collections import OrderedDict, abc
 from copy import copy
 
 import attr
@@ -25,7 +25,6 @@ import hypothesis.internal.conjecture.utils as cu
 import hypothesis.strategies._internal.core as st
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import abc, hrange
 from hypothesis.internal.coverage import check, check_function
 from hypothesis.internal.validation import (
     check_type,
@@ -574,7 +573,7 @@ def data_frames(
                     )
                 seen = {c.name: set() for c in columns_without_fill if c.unique}
 
-                for i in hrange(len(index)):
+                for i in range(len(index)):
                     for c in columns_without_fill:
                         if c.unique:
                             for _ in range(5):
@@ -631,8 +630,8 @@ def data_frames(
                 while all_seen[-1] is None:
                     all_seen.pop()
 
-            for row_index in hrange(len(index)):
-                for _ in hrange(5):
+            for row_index in range(len(index)):
+                for _ in range(5):
                     original_row = draw(rows)
                     row = original_row
                     if isinstance(row, dict):

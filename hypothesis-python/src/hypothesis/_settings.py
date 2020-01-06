@@ -33,7 +33,6 @@ from hypothesis.errors import (
     InvalidArgument,
     InvalidState,
 )
-from hypothesis.internal.compat import integer_types, quiet_raise, string_types
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type, try_convert
 from hypothesis.utils.conventions import not_set
@@ -308,14 +307,14 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         keyword arguments for each setting that will be set differently to
         parent (or settings.default, if parent is None).
         """
-        check_type(string_types, name, "name")
+        check_type(str, name, "name")
         settings._profiles[name] = settings(parent=parent, **kwargs)
 
     @staticmethod
     def get_profile(name):
         # type: (str) -> settings
         """Return the profile with the given name."""
-        check_type(string_types, name, "name")
+        check_type(str, name, "name")
         try:
             return settings._profiles[name]
         except KeyError:
@@ -330,7 +329,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         Any setting not defined in the profile will be the library
         defined default for that setting.
         """
-        check_type(string_types, name, "name")
+        check_type(str, name, "name")
         settings._current_profile = name
         settings._assign_default_internal(settings.get_profile(name))
 
@@ -578,18 +577,16 @@ def _validate_deadline(x):
         "number of milliseconds, or None to disable the per-test-case deadline."
         % (x, type(x).__name__)
     )
-    if isinstance(x, integer_types + (float,)):
+    if isinstance(x, (int, float)):
         if isinstance(x, bool):
             raise invalid_deadline_error
         try:
             x = duration(milliseconds=x)
         except OverflowError:
-            quiet_raise(
-                InvalidArgument(
-                    "deadline=%r is invalid, because it is too large to represent "
-                    "as a timedelta. Use deadline=None to disable deadlines." % (x,)
-                )
-            )
+            raise InvalidArgument(
+                "deadline=%r is invalid, because it is too large to represent "
+                "as a timedelta. Use deadline=None to disable deadlines." % (x,)
+            ) from None
     if isinstance(x, datetime.timedelta):
         if x <= datetime.timedelta(0):
             raise InvalidArgument(
@@ -630,7 +627,7 @@ If set to True, Hypothesis will print code for failing examples that can be used
 settings.lock_further_definitions()
 
 
-def note_deprecation(message, since):
+def note_deprecation(message, *, since):
     # type: (str, str) -> None
     if since != "RELEASEDAY":
         date = datetime.datetime.strptime(since, "%Y-%m-%d").date()

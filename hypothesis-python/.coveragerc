@@ -21,6 +21,4 @@ exclude_lines =
     __copy__
     __deepcopy__
     except ImportError:
-    if PY2:
     assert all\(.+\)
-    if __reserved is not not_set:

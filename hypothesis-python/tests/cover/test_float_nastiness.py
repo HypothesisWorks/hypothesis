@@ -242,21 +242,21 @@ def test_can_exclude_endpoints(x):
     assert 0 < x < 1
 
 
-@given(st.floats(float("-inf"), -1e307, exclude_min=True))
+@given(st.floats(-math.inf, -1e307, exclude_min=True))
 def test_can_exclude_neg_infinite_endpoint(x):
     assert not math.isinf(x)
 
 
-@given(st.floats(1e307, float("inf"), exclude_max=True))
+@given(st.floats(1e307, math.inf, exclude_max=True))
 def test_can_exclude_pos_infinite_endpoint(x):
     assert not math.isinf(x)
 
 
 def test_exclude_infinite_endpoint_is_invalid():
     with pytest.raises(InvalidArgument):
-        st.floats(min_value=float("inf"), exclude_min=True).validate()
+        st.floats(min_value=math.inf, exclude_min=True).validate()
     with pytest.raises(InvalidArgument):
-        st.floats(max_value=float("-inf"), exclude_max=True).validate()
+        st.floats(max_value=-math.inf, exclude_max=True).validate()
 
 
 @pytest.mark.parametrize("lo,hi", [(True, False), (False, True), (True, True)])

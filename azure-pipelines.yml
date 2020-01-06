@@ -66,7 +66,7 @@ jobs:
       displayName: Install dependencies
     - script: |
         cd hypothesis-python
-        pytest
+        pytest --numprocesses auto
       displayName: Run tests
 
   - job: osx

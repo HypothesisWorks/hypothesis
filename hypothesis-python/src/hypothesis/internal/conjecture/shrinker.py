@@ -17,7 +17,7 @@ from collections import defaultdict
 
 import attr
 
-from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, int_to_bytes
+from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.choicetree import ChoiceTree
 from hypothesis.internal.conjecture.data import ConjectureResult, Overrun, Status
 from hypothesis.internal.conjecture.floats import (
@@ -336,7 +336,7 @@ class Shrinker:
     def consider_new_buffer(self, buffer):
         """Returns True if after running this buffer the result would be
         the current shrink_target."""
-        buffer = hbytes(buffer)
+        buffer = bytes(buffer)
         return buffer.startswith(self.buffer) or self.incorporate_new_buffer(buffer)
 
     def incorporate_new_buffer(self, buffer):
@@ -344,7 +344,7 @@ class Shrinker:
         that changed the shrink_target, or determines that doing so would
         be useless and returns False without running it."""
 
-        buffer = hbytes(buffer[: self.shrink_target.index])
+        buffer = bytes(buffer[: self.shrink_target.index])
         # Sometimes an attempt at lexicographic minimization will do the wrong
         # thing because the buffer has changed under it (e.g. something has
         # turned into a write, the bit size has changed). The result would be
@@ -384,7 +384,7 @@ class Shrinker:
             self.debug(self.__pending_shrink_explanation)
             self.__pending_shrink_explanation = None
 
-        buffer = hbytes(buffer)
+        buffer = bytes(buffer)
         result = self.engine.cached_test_function(buffer)
         self.incorporate_test_data(result)
         return result
@@ -411,7 +411,7 @@ class Shrinker:
         # operating on a block of all zero bytes so can use non-zeroness as a
         # signpost of complexity).
         if not any(self.shrink_target.buffer) or self.incorporate_new_buffer(
-            hbytes(len(self.shrink_target.buffer))
+            bytes(len(self.shrink_target.buffer))
         ):
             return
 
@@ -628,7 +628,7 @@ class Shrinker:
 
         ls = self.examples_by_label[label]
 
-        i = chooser.choose(hrange(len(ls) - 1))
+        i = chooser.choose(range(len(ls) - 1))
 
         ancestor = ls[i]
 
@@ -712,14 +712,14 @@ class Shrinker:
         offset = min(ints)
         assert offset > 0
 
-        for i in hrange(len(ints)):
+        for i in range(len(ints)):
             ints[i] -= offset
 
         def reoffset(o):
             new_blocks = list(blocked)
             for i, v in zip(changed, ints):
                 new_blocks[i] = int_to_bytes(v + o, len(blocked[i]))
-            return self.incorporate_new_buffer(hbytes().join(new_blocks))
+            return self.incorporate_new_buffer(b"".join(new_blocks))
 
         Integer.shrink(offset, reoffset, random=self.random)
         self.clear_change_tracking()
@@ -770,7 +770,7 @@ class Shrinker:
 
                 # Between these two changed regions we now do a linear scan to
                 # check if any specific block values have changed.
-                for i in hrange(first_changed, last_changed + 1):
+                for i in range(first_changed, last_changed + 1):
                     u, v = blocks.bounds(i)
                     if i not in self.__all_changed_blocks and prev[u:v] != new[u:v]:
                         self.__all_changed_blocks.add(i)
@@ -984,7 +984,7 @@ class Shrinker:
         u = ex.start
         v = ex.end
         attempt = self.cached_test_function(
-            self.buffer[:u] + hbytes(v - u) + self.buffer[v:]
+            self.buffer[:u] + bytes(v - u) + self.buffer[v:]
         )
 
         if attempt is Overrun:
@@ -996,7 +996,7 @@ class Shrinker:
         if attempt is not self.shrink_target:
             if in_replacement.end < len(attempt.buffer) and used < ex.length:
                 self.incorporate_new_buffer(
-                    self.buffer[:u] + hbytes(used) + self.buffer[v:]
+                    self.buffer[:u] + bytes(used) + self.buffer[v:]
                 )
         return self.examples[ex.index].trivial
 
@@ -1217,7 +1217,7 @@ class Shrinker:
 
         ex = self.examples[
             chooser.choose(
-                hrange(first_example_after_block, len(self.examples)),
+                range(first_example_after_block, len(self.examples)),
                 lambda i: self.examples[i].length > 0,
             )
         ]
@@ -1287,7 +1287,7 @@ class Shrinker:
             if d < 0:
                 return False
 
-            if self.consider_new_buffer(hbytes([d if b == c else b for b in buf])):
+            if self.consider_new_buffer(bytes([d if b == c else b for b in buf])):
                 if d <= 1:
                     # For small values of d if this succeeds we take this
                     # as evidence that it is worth doing a a bulk replacement
@@ -1306,7 +1306,7 @@ class Shrinker:
                             return c - k <= b <= c and d < b
 
                         return self.consider_new_buffer(
-                            hbytes([d if should_replace_byte(b) else b for b in buf])
+                            bytes([d if should_replace_byte(b) else b for b in buf])
                         )
 
                     find_integer(replace_range)
@@ -1363,7 +1363,7 @@ class Shrinker:
         if i + len(description) > len(original.blocks) or i < 0:
             return False
         attempt = bytearray(original.buffer)
-        for _ in hrange(repeats):
+        for _ in range(repeats):
             for k, d in reversed(list(enumerate(description))):
                 j = i + k
                 u, v = original.blocks[j].bounds
@@ -1407,7 +1407,7 @@ def block_program(description):
             """Adaptively attempt to run the block program at the current
             index. If this successfully applies the block program ``k`` times
             then this runs in ``O(log(k))`` test function calls."""
-            i = chooser.choose(hrange(len(self.shrink_target.blocks) - n))
+            i = chooser.choose(range(len(self.shrink_target.blocks) - n))
             # First, run the block program at the chosen index. If this fails,
             # don't do any extra work, so that failure is as cheap as possible.
             if not self.run_block_program(i, description, original=self.shrink_target):

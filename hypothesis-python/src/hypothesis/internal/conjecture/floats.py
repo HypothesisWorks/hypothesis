@@ -15,7 +15,6 @@
 
 from array import array
 
-from hypothesis.internal.compat import hrange
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.floats import float_to_int, int_to_float
 
@@ -100,7 +99,7 @@ def exponent_key(e):
         return unbiased
 
 
-ENCODING_TABLE = array("H", sorted(hrange(MAX_EXPONENT + 1), key=exponent_key))
+ENCODING_TABLE = array("H", sorted(range(MAX_EXPONENT + 1), key=exponent_key))
 DECODING_TABLE = array("H", [0]) * len(ENCODING_TABLE)
 
 for i, b in enumerate(ENCODING_TABLE):

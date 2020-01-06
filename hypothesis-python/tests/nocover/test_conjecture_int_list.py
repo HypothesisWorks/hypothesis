@@ -14,7 +14,6 @@
 # END HEADER
 
 import hypothesis.strategies as st
-from hypothesis.internal.compat import hrange
 from hypothesis.internal.conjecture.junkdrawer import IntList
 from hypothesis.stateful import RuleBasedStateMachine, initialize, invariant, rule
 
@@ -33,7 +32,7 @@ def valid_index(draw):
 def valid_slice(draw):
     machine = draw(st.runner())
     result = [
-        draw(st.integers(0, max(3, len(machine.model) * 2 - 1))) for _ in hrange(2)
+        draw(st.integers(0, max(3, len(machine.model) * 2 - 1))) for _ in range(2)
     ]
     result.sort()
     return slice(*result)

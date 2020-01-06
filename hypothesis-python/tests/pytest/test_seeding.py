@@ -17,8 +17,6 @@ import re
 
 import pytest
 
-from hypothesis.internal.compat import hrange
-
 pytest_plugins = "pytester"
 
 
@@ -52,7 +50,7 @@ def test_runs_repeatably_when_seed_is_set(seed, testdir):
         testdir.runpytest(
             script, "--verbose", "--strict", "--hypothesis-seed", str(seed)
         )
-        for _ in hrange(2)
+        for _ in range(2)
     ]
 
     for r in results:

@@ -22,12 +22,8 @@ from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import (
     benchmark_time,
     bit_length,
-    hbytes,
-    hrange,
     int_from_bytes,
     int_to_bytes,
-    text_type,
-    unicode_safe_repr,
 )
 from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
 from hypothesis.internal.conjecture.utils import calc_label_from_name
@@ -427,7 +423,7 @@ class Examples:
     @property
     def children(self):
         if self.__children is None:
-            self.__children = [IntList() for _ in hrange(len(self))]
+            self.__children = [IntList() for _ in range(len(self))]
             for i, p in enumerate(self.parentage):
                 if i > 0:
                     self.__children[p].append(i)
@@ -645,12 +641,12 @@ class Blocks:
             self.owner = None
 
     def __iter__(self):
-        for i in hrange(len(self)):
+        for i in range(len(self)):
             yield self[i]
 
     def __repr__(self):
         parts = []
-        for i in hrange(len(self)):
+        for i in range(len(self)):
             b = self.__known_block(i)
             if b is None:
                 parts.append("...")
@@ -732,7 +728,7 @@ class ConjectureResult:
 
 # Masks for masking off the first byte of an n-bit buffer.
 # The appropriate mask is stored at position n % 8.
-BYTE_MASKS = [(1 << n) - 1 for n in hrange(8)]
+BYTE_MASKS = [(1 << n) - 1 for n in range(8)]
 BYTE_MASKS[0] = 255
 
 
@@ -840,8 +836,8 @@ class ConjectureData:
 
     def note(self, value):
         self.__assert_not_frozen("note")
-        if not isinstance(value, text_type):
-            value = unicode_safe_repr(value)
+        if not isinstance(value, str):
+            value = repr(value)
         self.output += value
 
     def draw(self, strategy, label=None):
@@ -959,7 +955,7 @@ class ConjectureData:
 
     def freeze(self):
         if self.frozen:
-            assert isinstance(self.buffer, hbytes)
+            assert isinstance(self.buffer, bytes)
             return
         self.finish_time = benchmark_time()
         assert len(self.buffer) == self.index
@@ -973,7 +969,7 @@ class ConjectureData:
 
         self.frozen = True
 
-        self.buffer = hbytes(self.buffer)
+        self.buffer = bytes(self.buffer)
         self.events = frozenset(self.events)
         self.observer.conclude_test(self.status, self.interesting_origin)
 
@@ -1006,7 +1002,7 @@ class ConjectureData:
         # If we have a number of bits that is not a multiple of 8
         # we have to mask off the high bits.
         buf[0] &= BYTE_MASKS[n % 8]
-        buf = hbytes(buf)
+        buf = bytes(buf)
         result = int_from_bytes(buf)
 
         self.observer.draw_bits(n, forced is not None, result)
@@ -1018,7 +1014,7 @@ class ConjectureData:
         self.index = len(self.buffer)
 
         if forced is not None:
-            self.forced_indices.update(hrange(initial, self.index))
+            self.forced_indices.update(range(initial, self.index))
 
         self.blocks.add_endpoint(self.index)
 
@@ -1032,7 +1028,7 @@ class ConjectureData:
     def write(self, string):
         """Write ``string`` to the output buffer."""
         self.__assert_not_frozen("write")
-        string = hbytes(string)
+        string = bytes(string)
         if not string:
             return
         self.draw_bits(len(string) * 8, forced=int_from_bytes(string))

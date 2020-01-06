@@ -20,7 +20,7 @@ import attr
 
 import hypothesis.strategies as st
 from hypothesis.errors import ResolutionFailed
-from hypothesis.internal.compat import get_type_hints, string_types
+from hypothesis.internal.compat import get_type_hints
 from hypothesis.strategies._internal.types import is_a_type, type_sorting_key
 from hypothesis.utils.conventions import infer
 
@@ -66,7 +66,7 @@ def from_attrs_attribute(attrib, target):
             vs = [validator]
         for v in vs:
             if isinstance(v, attr.validators._InValidator):
-                if isinstance(v.options, string_types):
+                if isinstance(v.options, str):
                     in_collections.append(list(all_substrings(v.options)))
                 else:
                     in_collections.append(v.options)

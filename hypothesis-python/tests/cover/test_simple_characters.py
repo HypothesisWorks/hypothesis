@@ -18,7 +18,6 @@ import unicodedata
 import pytest
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import text_type
 from hypothesis.strategies import characters
 from tests.common.debug import assert_no_examples, find_any, minimal
 from tests.common.utils import fails_with
@@ -108,8 +107,8 @@ def test_whitelisted_characters_overlap_blacklisted_characters():
             whitelist_characters=good_chars,
             blacklist_characters=bad_chars,
         ).example()
-        assert repr(good_chars) in text_type(exc)
-        assert repr(bad_chars) in text_type(exc)
+        assert repr(good_chars) in str(exc)
+        assert repr(bad_chars) in str(exc)
 
 
 def test_whitelisted_characters_override():

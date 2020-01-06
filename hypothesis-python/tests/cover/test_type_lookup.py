@@ -24,7 +24,6 @@ from hypothesis.errors import (
     InvalidArgument,
     ResolutionFailed,
 )
-from hypothesis.internal.compat import PY2, integer_types
 from hypothesis.strategies._internal import types
 from hypothesis.strategies._internal.core import _strategies
 from hypothesis.strategies._internal.types import _global_type_lookup
@@ -39,7 +38,7 @@ blacklist = [
     "runner",
     "sampled_from",
 ]
-types_with_core_strat = set(integer_types)
+types_with_core_strat = set()
 for thing in (
     getattr(st, name)
     for name in sorted(_strategies)
@@ -58,10 +57,7 @@ for thing in (
 def test_resolve_core_strategies(typ):
     @given(st.from_type(typ))
     def inner(ex):
-        if PY2 and issubclass(typ, integer_types):
-            assert isinstance(ex, integer_types)
-        else:
-            assert isinstance(ex, typ)
+        assert isinstance(ex, typ)
 
     inner()
 
@@ -98,13 +94,6 @@ def test_lookup_overrides_defaults(typ):
 
 class ParentUnknownType:
     pass
-
-
-def test_can_resolve_trivial_types():
-    # Under Python 2, this inherits a special wrapper_descriptor slots
-    # thing from object.__init__, which chokes inspect.getargspec.
-    # from_type should and does work anyway; see issues #1655 and #1656.
-    st.from_type(ParentUnknownType).example()
 
 
 class UnknownType(ParentUnknownType):
@@ -184,7 +173,7 @@ def test_pulic_interface_works():
         fails.example()
 
 
-def test_given_can_infer_on_py2():
+def test_given_can_infer_from_manual_annotations():
     # Editing annotations before decorating is hilariously awkward, but works!
     def inner(a):
         pass

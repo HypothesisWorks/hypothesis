@@ -17,7 +17,6 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import assume, given
-from hypothesis.internal.compat import PY2
 from hypothesis.internal.conjecture.junkdrawer import IntList
 
 non_neg_lists = st.lists(st.integers(min_value=0, max_value=2 ** 63 - 1))
@@ -45,10 +44,6 @@ def test_basic_equality():
     assert not s
 
 
-@pytest.mark.skipif(
-    PY2,
-    reason="The Python 2 list fallback handles this and we don't really care enough to validate it there.",
-)
 def test_error_on_invalid_value():
     with pytest.raises(ValueError):
         IntList([-1])

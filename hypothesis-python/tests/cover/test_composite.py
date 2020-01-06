@@ -18,7 +18,6 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import hrange
 from tests.common.debug import minimal
 from tests.common.utils import flaky
 
@@ -26,7 +25,7 @@ from tests.common.utils import flaky
 @st.composite
 def badly_draw_lists(draw, m=0):
     length = draw(st.integers(m, m + 10))
-    return [draw(st.integers()) for _ in hrange(length)]
+    return [draw(st.integers()) for _ in range(length)]
 
 
 def test_simplify_draws():

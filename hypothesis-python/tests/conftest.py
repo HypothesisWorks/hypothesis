@@ -70,10 +70,7 @@ def consistently_increment_time(monkeypatch):
         frozen[0] = True
 
     monkeypatch.setattr(time_module, "time", time)
-    try:
-        monkeypatch.setattr(time_module, "monotonic", time)
-    except AttributeError:
-        assert sys.version_info[0] == 2
+    monkeypatch.setattr(time_module, "monotonic", time)
     monkeypatch.setattr(time_module, "sleep", sleep)
     monkeypatch.setattr(time_module, "freeze", freeze, raising=False)
 

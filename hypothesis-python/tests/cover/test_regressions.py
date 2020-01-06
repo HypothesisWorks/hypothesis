@@ -14,15 +14,11 @@
 # END HEADER
 
 import random
+from unittest.mock import Mock
 
 import pytest
 
 from hypothesis import Verbosity, assume, given, seed, settings, strategies as st
-
-try:
-    from unittest.mock import Mock
-except ImportError:
-    from mock import Mock
 
 
 def strat():

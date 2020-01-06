@@ -15,7 +15,7 @@
 
 from hypothesis import HealthCheck, Phase, settings
 from hypothesis.database import InMemoryExampleDatabase
-from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
+from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.entropy import deterministic_PRNG
@@ -102,8 +102,8 @@ def test_clears_defunct_pareto_front():
             database_key=b"stuff",
         )
 
-        for i in hrange(256):
-            db.save(runner.pareto_key, hbytes([i, 0]))
+        for i in range(256):
+            db.save(runner.pareto_key, bytes([i, 0]))
 
         runner.run()
 
@@ -130,7 +130,7 @@ def test_down_samples_the_pareto_front():
             database_key=b"stuff",
         )
 
-        for i in hrange(10000):
+        for i in range(10000):
             db.save(runner.pareto_key, int_to_bytes(i, 2))
 
         runner.reuse_existing_examples()
@@ -159,7 +159,7 @@ def test_stops_loading_pareto_front_if_interesting():
             database_key=b"stuff",
         )
 
-        for i in hrange(10000):
+        for i in range(10000):
             db.save(runner.pareto_key, int_to_bytes(i, 2))
 
         runner.reuse_existing_examples()

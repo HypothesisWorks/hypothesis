@@ -21,19 +21,12 @@ import functools
 import inspect
 import io
 import numbers
-import sys
 import uuid
+from types import FunctionType
 
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
-from hypothesis.internal.compat import (
-    PY2,
-    ForwardRef,
-    abc,
-    binary_type,
-    text_type,
-    typing_root_type,
-)
+from hypothesis.internal.compat import ForwardRef, typing_root_type
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import OneOfStrategy
 
@@ -47,7 +40,7 @@ def type_sorting_key(t):
     if not isinstance(t, type):  # pragma: no cover
         # Some generics in the typing module are not actually types in 3.7
         return (2, repr(t))
-    return (int(issubclass(t, abc.Container)), repr(t))
+    return (int(issubclass(t, collections.abc.Container)), repr(t))
 
 
 def try_issubclass(thing, superclass):
@@ -163,8 +156,8 @@ def from_typing_type(thing):
     # (In 3.6 they're just aliases for the collections.abc classes)
     origin = getattr(thing, "__origin__", thing)
     if (
-        typing.Hashable is not abc.Hashable
-        and origin in vars(abc).values()
+        typing.Hashable is not collections.abc.Hashable
+        and origin in vars(collections.abc).values()
         and len(getattr(thing, "__args__", None) or []) == 0
     ):  # pragma: no cover  # impossible on 3.6 where we measure coverage.
         return st.from_type(origin)
@@ -202,7 +195,7 @@ def from_typing_type(thing):
             union_elems = elem_type.__union_params__  # python 3.5 only
         else:
             union_elems = ()
-        if PY2 or not any(
+        if not any(
             isinstance(T, type) and issubclass(int, T)
             for T in list(union_elems) + [elem_type]
         ):
@@ -243,8 +236,8 @@ _global_type_lookup = {
     complex: st.complex_numbers(),
     fractions.Fraction: st.fractions(),
     decimal.Decimal: st.decimals(),
-    text_type: st.text(),
-    binary_type: st.binary(),
+    str: st.text(),
+    bytes: st.binary(),
     datetime.datetime: st.datetimes(),
     datetime.date: st.dates(),
     datetime.time: st.times(),
@@ -255,10 +248,10 @@ _global_type_lookup = {
     tuple: st.builds(tuple),
     list: st.builds(list),
     set: st.builds(set),
-    abc.MutableSet: st.builds(set),
+    collections.abc.MutableSet: st.builds(set),
     frozenset: st.builds(frozenset),
     dict: st.builds(dict),
-    type(lambda: None): st.functions(),
+    FunctionType: st.functions(),
     # Built-in types
     type(Ellipsis): st.just(Ellipsis),
     type(NotImplemented): st.just(NotImplemented),
@@ -274,32 +267,14 @@ _global_type_lookup = {
         st.none() | st.integers(),
         st.none() | st.integers(),
         st.none() | st.integers(),
-    )
+    ),
+    range: st.one_of(
+        st.integers(min_value=0).map(range),
+        st.builds(range, st.integers(), st.integers()),
+        st.builds(range, st.integers(), st.integers(), st.integers().filter(bool)),
+    ),
     # Pull requests with more types welcome!
 }
-
-if PY2:
-    # xrange's |stop - start| must fit in a C long
-    int64_strat = st.integers(-sys.maxint // 2, sys.maxint // 2)  # noqa
-    _global_type_lookup.update(
-        {
-            int: st.integers().filter(lambda x: isinstance(x, int)),
-            long: st.integers().map(long),  # noqa
-            xrange: st.integers(min_value=0, max_value=sys.maxint).map(xrange)  # noqa
-            | st.builds(xrange, int64_strat, int64_strat)  # noqa
-            | st.builds(
-                xrange, int64_strat, int64_strat, int64_strat.filter(bool)  # noqa
-            ),
-        }
-    )
-else:
-    _global_type_lookup.update(
-        {
-            range: st.integers(min_value=0).map(range)
-            | st.builds(range, st.integers(), st.integers())
-            | st.builds(range, st.integers(), st.integers(), st.integers().filter(bool))
-        }
-    )
 
 _global_type_lookup[type] = st.sampled_from(
     [type(None)] + sorted(_global_type_lookup, key=str)
@@ -311,7 +286,7 @@ try:  # pragma: no cover
         arrays,
         array_shapes,
         scalar_dtypes,
-        nested_dtypes,
+        array_dtypes,
         from_dtype,
         integer_dtypes,
         unsigned_integer_dtypes,
@@ -319,7 +294,7 @@ try:  # pragma: no cover
 
     _global_type_lookup.update(
         {
-            np.dtype: nested_dtypes(),
+            np.dtype: array_dtypes(),
             np.ndarray: arrays(scalar_dtypes(), array_shapes(max_dims=2)),
         }
     )

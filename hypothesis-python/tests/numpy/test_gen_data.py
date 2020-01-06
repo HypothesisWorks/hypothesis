@@ -15,6 +15,7 @@
 
 import sys
 from functools import reduce
+from itertools import zip_longest
 
 import numpy as np
 import pytest
@@ -23,16 +24,9 @@ import hypothesis.extra.numpy as nps
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, assume, given, note, settings
 from hypothesis.errors import InvalidArgument, Unsatisfiable
-from hypothesis.internal.compat import PY2, binary_type, text_type
 from hypothesis.strategies._internal import SearchStrategy
 from tests.common.debug import find_any, minimal
 from tests.common.utils import fails_with, flaky
-
-if PY2:
-    from itertools import izip_longest as zip_longest
-else:
-    from itertools import zip_longest
-
 
 ANY_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=0, max_side=32)
 ANY_NONZERO_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=1, max_side=32)
@@ -57,8 +51,8 @@ STANDARD_TYPES = list(
             "datetime64",
             "timedelta64",
             bool,
-            text_type,
-            binary_type,
+            str,
+            bytes,
         ],
     )
 )
@@ -93,16 +87,6 @@ def test_can_handle_zero_dimensions(x):
 @given(nps.arrays("uint32", (5, 5)))
 def test_generates_unsigned_ints(x):
     assert (x >= 0).all()
-
-
-@given(st.data())
-def test_can_handle_long_shapes(data):
-    """We can eliminate this test once we drop Py2 support."""
-    for tt in (int,):
-        X = data.draw(nps.arrays(float, (tt(5),)))
-        assert X.shape == (5,)
-        X = data.draw(nps.arrays(float, (tt(5), tt(5))))
-        assert X.shape == (5, 5)
 
 
 @given(nps.arrays(int, (1,)))
@@ -323,14 +307,14 @@ def test_can_cast_for_arrays(data):
 def test_unicode_string_dtypes_generate_unicode_strings(data):
     dt = data.draw(nps.unicode_string_dtypes())
     result = data.draw(nps.from_dtype(dt))
-    assert isinstance(result, text_type)
+    assert isinstance(result, str)
 
 
 @given(st.data())
 def test_byte_string_dtypes_generate_unicode_strings(data):
     dt = data.draw(nps.byte_string_dtypes())
     result = data.draw(nps.from_dtype(dt))
-    assert isinstance(result, binary_type)
+    assert isinstance(result, bytes)
 
 
 @pytest.mark.parametrize("dtype", ["U", "S", "a"])
@@ -354,7 +338,7 @@ def test_cannot_generate_unique_array_of_too_many_elements():
     nps.arrays(
         elements=st.just(0.0),
         dtype=float,
-        fill=st.just(float("nan")),
+        fill=st.just(np.nan),
         shape=st.integers(0, 20),
         unique=True,
     )
@@ -376,7 +360,7 @@ def test_may_fill_with_nan_when_unique_is_set():
             elements=st.floats(allow_nan=False),
             shape=10,
             unique=True,
-            fill=st.just(float("nan")),
+            fill=st.just(np.nan),
         ),
         lambda x: np.isnan(x).any(),
     )
@@ -388,7 +372,7 @@ def test_may_fill_with_nan_when_unique_is_set():
         elements=st.floats(allow_nan=False),
         shape=10,
         unique=True,
-        fill=st.just(float("nan")),
+        fill=st.just(np.nan),
     )
 )
 def test_is_still_unique_with_nan_fill(xs):

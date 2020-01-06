@@ -19,7 +19,6 @@ import pytest
 
 from hypothesis import HealthCheck, settings
 from hypothesis.errors import Flaky
-from hypothesis.internal.compat import hbytes, hrange
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.datatree import DataTree
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -38,7 +37,7 @@ def runner_for(*examples):
         runner.exit_with = lambda reason: None
         ran_examples = []
         for e in examples:
-            e = hbytes(e)
+            e = bytes(e)
             data = runner.cached_test_function(e)
             ran_examples.append((e, data))
         for e, d in ran_examples:
@@ -115,7 +114,7 @@ def test_novel_prefixes_are_novel():
     runner = ConjectureRunner(tf, settings=TEST_SETTINGS, random=Random(0))
     for _ in range(100):
         prefix = runner.tree.generate_novel_prefix(runner.random)
-        example = prefix + hbytes(8 - len(prefix))
+        example = prefix + bytes(8 - len(prefix))
         assert runner.tree.rewrite(example)[1] is None
         result = runner.cached_test_function(example)
         assert runner.tree.rewrite(example)[0] == result.buffer
@@ -140,9 +139,9 @@ def test_overruns_if_prefix():
 
 
 def test_stores_the_tree_flat_until_needed():
-    @runner_for(hbytes(10))
+    @runner_for(bytes(10))
     def runner(data):
-        for _ in hrange(10):
+        for _ in range(10):
             data.draw_bits(1)
         data.mark_interesting()
 
@@ -167,7 +166,7 @@ def test_split_in_the_middle():
 
 
 def test_stores_forced_nodes():
-    @runner_for(hbytes(3))
+    @runner_for(bytes(3))
     def runner(data):
         data.draw_bits(1, forced=0)
         data.draw_bits(1)
@@ -304,14 +303,14 @@ def test_changing_value_of_forced_is_flaky():
 
 def test_does_not_truncate_if_unseen():
     tree = DataTree()
-    b = hbytes([1, 2, 3, 4])
+    b = bytes([1, 2, 3, 4])
     assert tree.rewrite(b) == (b, None)
 
 
 def test_truncates_if_seen():
     tree = DataTree()
 
-    b = hbytes([1, 2, 3, 4])
+    b = bytes([1, 2, 3, 4])
 
     data = ConjectureData.for_buffer(b, observer=tree.new_observer())
     data.draw_bits(8)

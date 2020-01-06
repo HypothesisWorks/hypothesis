@@ -28,12 +28,7 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, assume, given, infer, settings
 from hypothesis.errors import InvalidArgument, ResolutionFailed, Unsatisfiable
-from hypothesis.internal.compat import (
-    ForwardRef,
-    get_type_hints,
-    integer_types,
-    typing_root_type,
-)
+from hypothesis.internal.compat import ForwardRef, get_type_hints, typing_root_type
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import types
 from tests.common.debug import assert_all_examples, find_any, minimal
@@ -396,9 +391,9 @@ def test_resolves_NewType():
     typ = typing.NewType("T", int)
     nested = typing.NewType("NestedT", typ)
     uni = typing.NewType("UnionT", typing.Optional[int])
-    assert isinstance(from_type(typ).example(), integer_types)
-    assert isinstance(from_type(nested).example(), integer_types)
-    assert isinstance(from_type(uni).example(), integer_types + (type(None),))
+    assert isinstance(from_type(typ).example(), int)
+    assert isinstance(from_type(nested).example(), int)
+    assert isinstance(from_type(uni).example(), (int, type(None)))
 
 
 E = enum.Enum("E", "a b c")

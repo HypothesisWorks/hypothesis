@@ -17,7 +17,6 @@ import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import hrange
 from tests.common.debug import assert_no_examples, minimal
 
 
@@ -131,7 +130,7 @@ def test_very_deep_deferral():
         else:
             return st.deferred(lambda: st.tuples(strategies[(i + 1) % len(strategies)]))
 
-    strategies = list(map(strat, hrange(100)))
+    strategies = list(map(strat, range(100)))
 
     assert strategies[0].has_reusable_values
     assert not strategies[0].is_empty

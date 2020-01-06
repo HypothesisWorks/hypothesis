@@ -26,7 +26,6 @@ from hypothesis.errors import (
     StopTest,
     UnsatisfiedAssumption,
 )
-from hypothesis.internal.compat import binary_type, encoded_filepath, text_type
 
 if False:
     from typing import Dict  # noqa
@@ -37,7 +36,7 @@ def belongs_to(package):
         return lambda filepath: False
 
     root = os.path.dirname(package.__file__)
-    cache = {text_type: {}, binary_type: {}}
+    cache = {str: {}, bytes: {}}
 
     def accept(filepath):
         ftype = type(filepath)
@@ -45,10 +44,8 @@ def belongs_to(package):
             return cache[ftype][filepath]
         except KeyError:
             pass
-        new_filepath = encoded_filepath(filepath)
-        result = os.path.abspath(new_filepath).startswith(root)
+        result = os.path.abspath(filepath).startswith(root)
         cache[ftype][filepath] = result
-        cache[type(new_filepath)][new_filepath] = result
         return result
 
     accept.__name__ = "is_%s_file" % (package.__name__,)

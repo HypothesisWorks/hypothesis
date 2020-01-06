@@ -26,7 +26,6 @@ from hypothesis import (
     reject,
     settings,
 )
-from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.strategies._internal.numbers import WideRangeIntStrategy
@@ -46,7 +45,7 @@ def problems(draw):
             pass
         else:
             if stop > 0 and k > 0:
-                return (draw(st.integers(0, k - 1)), hbytes(d.buffer))
+                return (draw(st.integers(0, k - 1)), bytes(d.buffer))
 
 
 @example((2, b"\x00\x00\n\x01"))
@@ -61,7 +60,6 @@ def problems(draw):
 @given(problems())
 def test_always_reduces_integers_to_smallest_suitable_sizes(problem):
     n, blob = problem
-    blob = hbytes(blob)
     try:
         d = ConjectureData.for_buffer(blob)
         k = d.draw(st.integers())

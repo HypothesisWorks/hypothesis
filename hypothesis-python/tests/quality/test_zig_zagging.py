@@ -18,14 +18,14 @@ from math import log
 
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, Phase, Verbosity, assume, example, given, settings
-from hypothesis.internal.compat import ceil, hbytes, int_from_bytes
+from hypothesis.internal.compat import ceil, int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
 
 @st.composite
 def problem(draw):
-    b = hbytes(draw(st.binary(min_size=1, max_size=8)))
+    b = draw(st.binary(min_size=1, max_size=8))
     m = int_from_bytes(b) * 256
     assume(m > 0)
     marker = draw(st.binary(max_size=8))
@@ -71,9 +71,6 @@ def test_avoids_zig_zag_trap(p):
 
     random.seed(0)
 
-    b = hbytes(b)
-    marker = hbytes(marker)
-
     n_bits = 8 * (len(b) + 1)
 
     def test_function(data):
@@ -92,7 +89,7 @@ def test_avoids_zig_zag_trap(p):
         settings=settings(base_settings, phases=(Phase.generate, Phase.shrink)),
     )
 
-    runner.cached_test_function(b + hbytes([0]) + b + hbytes([1]) + marker)
+    runner.cached_test_function(b + bytes([0]) + b + bytes([1]) + marker)
 
     assert runner.interesting_examples
 

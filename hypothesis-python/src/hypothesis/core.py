@@ -24,6 +24,8 @@ import sys
 import traceback
 import warnings
 import zlib
+from inspect import getfullargspec
+from io import StringIO
 from random import Random
 from unittest import TestCase
 
@@ -54,13 +56,9 @@ from hypothesis.errors import (
 )
 from hypothesis.executors import new_style_executor
 from hypothesis.internal.compat import (
-    PY2,
     bad_django_TestCase,
     benchmark_time,
-    binary_type,
     get_type_hints,
-    getfullargspec,
-    hbytes,
     int_from_bytes,
     qualname,
 )
@@ -95,7 +93,7 @@ from hypothesis.strategies._internal.strategies import (
     SearchStrategy,
 )
 from hypothesis.utils.conventions import infer
-from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
+from hypothesis.vendor.pretty import RepresentationPrinter
 from hypothesis.version import __version__
 
 if False:
@@ -182,9 +180,7 @@ def reproduce_failure(version, blob):
 
 
 def encode_failure(buffer):
-    # This needs to be a real bytes() instance, so we use binary_type()
-    # instead of hbytes() here.
-    buffer = binary_type(buffer)
+    buffer = bytes(buffer)
     compressed = zlib.compress(buffer)
     if len(compressed) < len(buffer):
         buffer = b"\1" + compressed
@@ -280,12 +276,6 @@ def is_invalid_test(name, original_argspec, given_arguments, given_kwargs):
             "%s() got an unexpected keyword argument %r, from `%s=%r` in @given"
             % (name, arg, arg, given_kwargs[arg])
         )
-    for a in original_argspec.args:
-        if isinstance(a, list):  # pragma: no cover
-            return invalid(
-                "Cannot decorate function %s() because it has destructuring arguments"
-                % (name,)
-            )
     if original_argspec.defaults or original_argspec.kwonlydefaults:
         return invalid("Cannot apply @given to a function with defaults.")
     missing = [repr(kw) for kw in original_argspec.kwonlyargs if kw not in given_kwargs]
@@ -308,10 +298,7 @@ class ArtificialDataForExample(ConjectureData):
     def __init__(self, kwargs):
         self.__draws = 0
         self.__kwargs = kwargs
-
-        super().__init__(
-            max_length=0, prefix=hbytes(), random=None,
-        )
+        super().__init__(max_length=0, prefix=b"", random=None)
 
     def draw_bits(self, n):
         raise NotImplementedError()  # pragma: no cover
@@ -562,7 +549,7 @@ class StateForActualGivenExecution:
                             text_repr[0] = arg_string(test, args, kwargs)
 
                         if print_example or current_verbosity() >= Verbosity.verbose:
-                            output = CUnicodeIO()
+                            output = StringIO()
 
                             printer = RepresentationPrinter(output)
                             if print_example:
@@ -1088,18 +1075,8 @@ def given(
                     # full of Hypothesis internals they don't care about.
                     # We have to do this inline, to avoid adding another
                     # internal stack frame just when we've removed the rest.
-                    if PY2:
-                        # Python 2 doesn't have Exception.with_traceback(...);
-                        # instead it has a three-argument form of the `raise`
-                        # statement.  Unfortunately this is a SyntaxError on
-                        # Python 3, and before Python 2.7.9 it was *also* a
-                        # SyntaxError to use it in a nested function so we
-                        # can't `exec` or `eval` our way out (BPO-21591).
-                        # So unless we break some versions of Python 2, none
-                        # of them get traceback elision.
-                        raise
-                    # On Python 3, we swap out the real traceback for our
-                    # trimmed version.  Using a variable ensures that the line
+                    #
+                    # Using a variable for our trimmed error ensures that the line
                     # which will actually appear in tracebacks is as clear as
                     # possible - "raise the_error_hypothesis_found".
                     the_error_hypothesis_found = e.with_traceback(

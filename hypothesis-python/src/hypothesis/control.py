@@ -18,7 +18,6 @@ import traceback
 
 from hypothesis import Verbosity, settings
 from hypothesis.errors import CleanupFailed, InvalidArgument, UnsatisfiedAssumption
-from hypothesis.internal.compat import string_types
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import report, verbose_report
@@ -169,9 +168,9 @@ def target(observation, label=""):
     example shrinks right down to the threshold of failure (:issue:`2180`).
     """
     check_type(float, observation, "observation")
-    if math.isinf(observation) or math.isnan(observation):
+    if not math.isfinite(observation):
         raise InvalidArgument("observation=%r must be a finite float." % observation)
-    check_type(string_types, label, "label")
+    check_type(str, label, "label")
 
     context = _current_build_context.value
     if context is None:

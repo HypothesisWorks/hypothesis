@@ -1,8 +1,6 @@
 [flake8]
 
 exclude =
-    compat.py,
-    hypothesis-python/src/hypothesis/vendor/*,
     test_reflection.py,
     test_imports.py,
     test_lambda_formatting.py
@@ -15,7 +13,3 @@ ignore =
     B008,B011,
     # flake8-bandit security warnings we disagree with or don't mind
     S101,S102,S105,S110,S307,S311,S404,S6
-
-# Use flake8-alfred to forbid builtins that require compatibility wrappers.
-warn-symbols=
-    bytes=Instead of bytes(), use hbytes() or binary_type

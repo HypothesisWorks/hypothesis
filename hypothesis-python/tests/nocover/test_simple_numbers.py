@@ -109,7 +109,7 @@ def test_negative_floats_simplify_to_zero():
 
 
 def test_minimal_infinite_float_is_positive():
-    assert minimal(floats(), math.isinf) == float("inf")
+    assert minimal(floats(), math.isinf) == math.inf
 
 
 def test_can_minimal_infinite_negative_float():
@@ -126,7 +126,7 @@ def test_minimize_nan():
 
 def test_minimize_very_large_float():
     t = sys.float_info.max / 2
-    assert t <= minimal(floats(), lambda x: x >= t) < float("inf")
+    assert t <= minimal(floats(), lambda x: x >= t) < math.inf
 
 
 def is_integral(value):
@@ -138,8 +138,7 @@ def is_integral(value):
 
 def test_can_minimal_float_far_from_integral():
     minimal(
-        floats(),
-        lambda x: not (math.isnan(x) or math.isinf(x) or is_integral(x * (2 ** 32))),
+        floats(), lambda x: math.isfinite(x) and not is_integral(x * (2 ** 32)),
     )
 
 

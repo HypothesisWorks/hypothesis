@@ -31,12 +31,11 @@ from hypothesis import (
 )
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument, UnsatisfiedAssumption
-from hypothesis.internal.compat import hbytes
 from tests.common.utils import capture_out, no_shrink
 
 
-@example(hbytes(20))  # shorter compressed
-@example(hbytes(3))  # shorter uncompressed
+@example(bytes(20))  # shorter compressed
+@example(bytes(3))  # shorter uncompressed
 @given(st.binary() | st.binary(min_size=100))
 def test_encoding_loop(b):
     assert decode_failure(encode_failure(b)) == b

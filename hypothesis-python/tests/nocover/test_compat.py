@@ -13,38 +13,14 @@
 #
 # END HEADER
 
-import inspect
-import warnings
-
-import pytest
-
 from hypothesis import given, strategies as st
 from hypothesis.internal.compat import (
-    FullArgSpec,
     ceil,
     floor,
-    getfullargspec,
-    hrange,
     int_from_bytes,
     int_to_bytes,
-    integer_types,
     qualname,
 )
-
-
-def test_small_hrange():
-    assert list(hrange(5)) == [0, 1, 2, 3, 4]
-    assert list(hrange(3, 5)) == [3, 4]
-    assert list(hrange(1, 10, 2)) == [1, 3, 5, 7, 9]
-
-
-def test_large_hrange():
-    n = 1 << 1024
-    assert list(hrange(n, n + 5, 2)) == [n, n + 2, n + 4]
-    assert list(hrange(n, n)) == []
-
-    with pytest.raises(ValueError):
-        hrange(n, n, 0)
 
 
 class Foo:
@@ -56,34 +32,6 @@ def test_qualname():
     assert qualname(Foo.bar) == "Foo.bar"
     assert qualname(Foo().bar) == "Foo.bar"
     assert qualname(qualname) == "qualname"
-
-
-def a(b, c, d):
-    pass
-
-
-def b(c, d, *ar):
-    pass
-
-
-def c(c, d, *ar, **k):
-    pass
-
-
-def d(a1, a2=1, a3=2, a4=None):
-    pass
-
-
-@pytest.mark.parametrize("f", [a, b, c, d])
-def test_agrees_on_argspec(f):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        basic = inspect.getargspec(f)
-    full = getfullargspec(f)
-    assert basic.args == full.args
-    assert basic.varargs == full.varargs
-    assert basic.keywords == full.varkw
-    assert basic.defaults == full.defaults
 
 
 @given(st.binary())
@@ -110,22 +58,6 @@ def test_to_bytes_in_big_endian_order(x, y):
     assert int_to_bytes(x, 8) <= int_to_bytes(y, 8)
 
 
-@pytest.mark.skipif(
-    not hasattr(inspect, "getfullargspec"),
-    reason="inspect.getfullargspec only exists under Python 3",
-)
-def test_inspection_compat():
-    assert getfullargspec is inspect.getfullargspec
-
-
-@pytest.mark.skipif(
-    not hasattr(inspect, "FullArgSpec"),
-    reason="inspect.FullArgSpec only exists under Python 3",
-)
-def test_inspection_result_compat():
-    assert FullArgSpec is inspect.FullArgSpec
-
-
 @given(st.fractions())
 def test_ceil(x):
     """The compat ceil function always has the Python 3 semantics.
@@ -134,11 +66,11 @@ def test_ceil(x):
     integers - for example, `float(2**53) == float(2**53 + 1)` - and this
     is obviously incorrect for unlimited-precision integer operations.
     """
-    assert isinstance(ceil(x), integer_types)
+    assert isinstance(ceil(x), int)
     assert x <= ceil(x) < x + 1
 
 
 @given(st.fractions())
 def test_floor(x):
-    assert isinstance(floor(x), integer_types)
+    assert isinstance(floor(x), int)
     assert x - 1 < floor(x) <= x

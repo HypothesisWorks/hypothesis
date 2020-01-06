@@ -41,16 +41,9 @@ from hypothesis.strategies import (
 )
 from tests.common.debug import TIME_INCREMENT
 
-try:
-    import pytest
-except ImportError:
-    pytest = None
-
-
 __all__ = ["standard_types", "OrderedPair", "TIME_INCREMENT"]
 
 OrderedPair = namedtuple("OrderedPair", ("left", "right"))
-
 
 ordered_pair = integers().flatmap(
     lambda right: integers(min_value=0).map(

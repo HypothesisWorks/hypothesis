@@ -1,7 +1,7 @@
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis/
 #
-# Most of this work is copyright (C) 2013-2019 David R. MacIver
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-# -*- coding: utf-8 -*-
 """
 Python advanced pretty printer.  This pretty printer is intended to
 replace the old `pprint` python module which does not allow developers
@@ -80,8 +79,6 @@ from collections import deque
 from contextlib import contextmanager
 from io import StringIO
 
-from hypothesis.internal.compat import PY3, cast_unicode, get_stream_enc, string_types
-
 __all__ = [
     "pretty",
     "pprint",
@@ -110,24 +107,11 @@ def _safe_getattr(obj, attr, default=None):
         return default
 
 
-if PY3:
-    CUnicodeIO = StringIO
-else:  # pragma: no cover
-
-    class CUnicodeIO(StringIO):
-        """StringIO that casts str to unicode on Python 2."""
-
-        def write(self, text):
-            return super().write(
-                cast_unicode(text, encoding=get_stream_enc(sys.stdout))
-            )
-
-
 def pretty(
     obj, verbose=False, max_width=79, newline="\n", max_seq_length=MAX_SEQ_LENGTH
 ):
     """Pretty print the object's representation."""
-    stream = CUnicodeIO()
+    stream = StringIO()
     printer = RepresentationPrinter(
         stream, verbose, max_width, newline, max_seq_length=max_seq_length
     )
@@ -152,7 +136,7 @@ def pprint(
 class _PrettyPrinterBase:
     @contextmanager
     def indent(self, indent):
-        """with statement support for indenting/dedenting."""
+        """`with`-statement support for indenting/dedenting."""
         self.indentation += indent
         try:
             yield
@@ -161,7 +145,7 @@ class _PrettyPrinterBase:
 
     @contextmanager
     def group(self, indent=0, open="", close=""):
-        """like begin_group / end_group but for the with statement."""
+        """Like begin_group / end_group but for the with statement."""
         self.begin_group(indent, open)
         try:
             yield
@@ -276,7 +260,7 @@ class PrettyPrinter(_PrettyPrinterBase):
         self.indentation += indent
 
     def _enumerate(self, seq):
-        """like enumerate, but with an upper limit on the number of items."""
+        """Like enumerate, but with an upper limit on the number of items."""
         for idx, x in enumerate(seq):
             if self.max_seq_length and idx >= self.max_seq_length:
                 self.text(",")
@@ -502,12 +486,6 @@ class GroupQueue:
             pass
 
 
-try:
-    _baseclass_reprs = (object.__repr__, types.InstanceType.__repr__)
-except AttributeError:  # Python 3
-    _baseclass_reprs = (object.__repr__,)  # type: ignore
-
-
 def _default_pprint(obj, p, cycle):
     """The default print function.
 
@@ -516,7 +494,7 @@ def _default_pprint(obj, p, cycle):
 
     """
     klass = _safe_getattr(obj, "__class__", None) or type(obj)
-    if _safe_getattr(klass, "__repr__", None) not in _baseclass_reprs:
+    if _safe_getattr(klass, "__repr__", None) is not object.__repr__:
         # A user-provided repr. Find newlines and replace them with p.break_()
         _repr_pprint(obj, p, cycle)
         return
@@ -728,13 +706,13 @@ def _type_pprint(obj, p, cycle):
     mod = _safe_getattr(obj, "__module__", None)
     try:
         name = obj.__qualname__
-        if not isinstance(name, string_types):  # pragma: no cover
+        if not isinstance(name, str):  # pragma: no cover
             # This can happen if the type implements __qualname__ as a property
             # or other descriptor in Python 2.
             raise Exception("Try __name__")
     except Exception:  # pragma: no cover
         name = obj.__name__
-        if not isinstance(name, string_types):
+        if not isinstance(name, str):
             name = "<unknown type>"
 
     if mod in (None, "__builtin__", "builtins", "exceptions"):
@@ -803,25 +781,10 @@ _type_pprinters = {
     datetime.datetime: _repr_pprint,
     datetime.timedelta: _repr_pprint,
     _exception_base: _exception_pprint,
+    slice: _repr_pprint,
+    range: _repr_pprint,
+    bytes: _repr_pprint,
 }
-
-try:  # pragma: no cover
-    if types.DictProxyType != dict:
-        _type_pprinters[types.DictProxyType] = _dict_pprinter_factory(
-            "<dictproxy {", "}>"
-        )
-    _type_pprinters[types.ClassType] = _type_pprint
-    _type_pprinters[types.SliceType] = _repr_pprint
-except AttributeError:  # Python 3
-    _type_pprinters[slice] = _repr_pprint
-
-try:  # pragma: no cover
-    _type_pprinters[xrange] = _repr_pprint  # type: ignore
-    _type_pprinters[long] = _repr_pprint  # type: ignore
-    _type_pprinters[unicode] = _repr_pprint  # type: ignore
-except NameError:
-    _type_pprinters[range] = _repr_pprint
-    _type_pprinters[bytes] = _repr_pprint
 
 #: printers for types specified by name
 _deferred_type_pprinters = {}  # type: ignore
