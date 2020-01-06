@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.1.1:
+
+------------------
+5.1.1 - 2020-01-06
+------------------
+
+This patch contains many small refactorings to replace our Python 2
+compatibility functions with their native Python 3 equivalents.
+Since Hypothesis is now Python 3 only, there is no user-visible change.
+
 .. _v5.1.0:
 
 ------------------
