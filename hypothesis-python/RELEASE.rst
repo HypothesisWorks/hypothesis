@@ -1,5 +1,7 @@
 RELEASE_TYPE: patch
 
-This release fixes a bug related to the falsifying examples produced by
-stateful testing with multiple results. The ``MultipleResults`` is now
-iterable, which allows for proper unpacking.
+This patch makes :func:`~hypothesis.stateful.multiple` iterable, so that
+output like ``a, b = state.some_rule()`` is actually executable and
+can be used to reproduce failing examples.
+
+Thanks to Vincent Michel for reporting and fixing :issue:`2311`!
