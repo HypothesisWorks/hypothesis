@@ -22,6 +22,7 @@ execution to date.
 """
 
 import inspect
+from collections.abc import Iterable
 from copy import copy
 from io import StringIO
 from unittest import TestCase
@@ -353,8 +354,11 @@ def consumes(bundle):
 
 
 @attr.s()
-class MultipleResults:
+class MultipleResults(Iterable):
     values = attr.ib()
+
+    def __iter__(self):
+        return iter(self.values)
 
 
 def multiple(*args):

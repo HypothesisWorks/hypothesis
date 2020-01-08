@@ -437,6 +437,12 @@ def test_multiple_variables_printed():
     # expanded to 2 variables.
     assert assignment_line == "v1, v2 = state.populate_bundle()"
 
+    # Make sure the printed code can execute
+    with raises(AssertionError):
+        state = ProducesMultiple()
+        v1, v2 = state.populate_bundle()
+        state.fail_fast()
+
 
 def test_no_variables_printed():
     class ProducesNoVariables(RuleBasedStateMachine):
