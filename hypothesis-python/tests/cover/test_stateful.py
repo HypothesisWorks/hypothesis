@@ -437,6 +437,13 @@ def test_multiple_variables_printed():
     # expanded to 2 variables.
     assert assignment_line == "v1, v2 = state.populate_bundle()"
 
+    # Make sure MultipleResult is iterable so the printed code is valid.
+    # See https://github.com/HypothesisWorks/hypothesis/issues/2311
+    state = ProducesMultiple()
+    v1, v2 = state.populate_bundle()
+    with raises(AssertionError):
+        state.fail_fast()
+
 
 def test_no_variables_printed():
     class ProducesNoVariables(RuleBasedStateMachine):
