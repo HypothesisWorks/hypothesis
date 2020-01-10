@@ -285,6 +285,7 @@ their individual contributions.
 * `Tyler Gibbons <https://www.github.com/kavec>`_ (tyler.gibbons@flexport.com)
 * `Tyler Nickerson <https://www.github.com/nmbrgts>`_
 * `Vidya Rani <https://www.github.com/vidyarani-dg>`_ (vidyarani.d.g@gmail.com)
+* `Vincent Michel <https://www.github.com/vxgmichel>`_ (vxgmichel@gmail.com)
 * `Will Hall <https://www.github.com/wrhall>`_ (wrsh07@gmail.com)
 * `Will Thompson <https://www.github.com/wjt>`_ (will@willthompson.co.uk)
 * `Wilfred Hughes <https://www.github.com/wilfred>`_

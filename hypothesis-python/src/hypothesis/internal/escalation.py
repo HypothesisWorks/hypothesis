@@ -17,6 +17,7 @@ import os
 import sys
 import traceback
 from inspect import getframeinfo
+from pathlib import Path
 from typing import Dict
 
 import hypothesis
@@ -33,7 +34,7 @@ def belongs_to(package):
     if not hasattr(package, "__file__"):  # pragma: no cover
         return lambda filepath: False
 
-    root = os.path.dirname(package.__file__)
+    root = Path(package.__file__).resolve().parent
     cache = {str: {}, bytes: {}}
 
     def accept(filepath):
@@ -42,7 +43,12 @@ def belongs_to(package):
             return cache[ftype][filepath]
         except KeyError:
             pass
-        result = os.path.abspath(filepath).startswith(root)
+        abspath = Path(filepath).resolve()
+        try:
+            abspath.relative_to(root)
+            result = True
+        except ValueError:
+            result = False
         cache[ftype][filepath] = result
         return result
 
