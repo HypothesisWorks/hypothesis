@@ -46,8 +46,7 @@ def __zone_sort_key(zone):
 
 @st.cacheable
 @st.defines_strategy
-def timezones():
-    # type: () -> st.SearchStrategy[dt.tzinfo]
+def timezones() -> st.SearchStrategy[dt.tzinfo]:
     """Any timezone in dateutil.
 
     This strategy minimises to UTC, or the timezone with the smallest offset

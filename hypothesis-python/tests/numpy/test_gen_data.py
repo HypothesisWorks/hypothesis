@@ -647,8 +647,7 @@ def _draw_valid_bounds(data, shape, max_dims, permit_none=True):
     return min_side, max_side
 
 
-def _broadcast_two_shapes(shape_a, shape_b):
-    # type: (nps.Shape, nps.Shape) -> nps.Shape
+def _broadcast_two_shapes(shape_a: nps.Shape, shape_b: nps.Shape) -> nps.Shape:
     result = []
     for a, b in zip_longest(reversed(shape_a), reversed(shape_b), fillvalue=1):
         if a != b and (a != 1) and (b != 1):

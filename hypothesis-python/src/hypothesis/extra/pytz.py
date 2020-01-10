@@ -37,8 +37,7 @@ __all__ = ["timezones"]
 
 @st.cacheable
 @st.defines_strategy
-def timezones():
-    # type: () -> st.SearchStrategy[dt.tzinfo]
+def timezones() -> st.SearchStrategy[dt.tzinfo]:
     """Any timezone in the Olsen database, as a pytz tzinfo object.
 
     This strategy minimises to UTC, or the smallest possible fixed

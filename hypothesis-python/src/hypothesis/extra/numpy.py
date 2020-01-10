@@ -16,7 +16,7 @@
 import math
 import re
 from collections import namedtuple
-from typing import NamedTuple, Tuple
+from typing import Any, NamedTuple, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -28,26 +28,21 @@ from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal import SearchStrategy
+from hypothesis.strategies._internal.strategies import T
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
-Shape = Tuple[int, ...]  # noqa
+Shape = Tuple[int, ...]
+BasicIndex = Tuple[Union[int, slice, "ellipsis", np.newaxis], ...]
 BroadcastableShapes = NamedTuple(
     "BroadcastableShapes",
     [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
 )
 
-if False:
-    from typing import Any, Union, Sequence, Tuple  # noqa
-    from hypothesis.strategies._internal.strategies import T  # noqa
-
-    BasicIndex = Tuple[Union[int, slice, ellipsis, np.newaxis], ...]  # noqa
-
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
 
 
 @st.defines_strategy_with_reusable_values
-def from_dtype(dtype):
-    # type: (np.dtype) -> st.SearchStrategy[Any]
+def from_dtype(dtype: np.dtype) -> st.SearchStrategy[Any]:
     """Creates a strategy which can generate any value of the given dtype."""
     check_type(np.dtype, dtype, "dtype")
     # Compound datatypes, eg 'f4,f4,f4'
@@ -292,13 +287,12 @@ def fill_for(elements, unique, fill, name=""):
 
 @st.defines_strategy
 def arrays(
-    dtype,  # type: Any
-    shape,  # type: Union[int, Shape, st.SearchStrategy[Shape]]
-    elements=None,  # type: st.SearchStrategy[Any]
-    fill=None,  # type: st.SearchStrategy[Any]
-    unique=False,  # type: bool
-):
-    # type: (...) -> st.SearchStrategy[np.ndarray]
+    dtype: Any,
+    shape: Union[int, Shape, st.SearchStrategy[Shape]],
+    elements: st.SearchStrategy[Any] = None,
+    fill: st.SearchStrategy[Any] = None,
+    unique: bool = False,
+) -> st.SearchStrategy[np.ndarray]:
     r"""Returns a strategy for generating :class:`numpy:numpy.ndarray`\ s.
 
     * ``dtype`` may be any valid input to :class:`~numpy:numpy.dtype`
@@ -398,8 +392,9 @@ def arrays(
 
 
 @st.defines_strategy
-def array_shapes(min_dims=1, max_dims=None, min_side=1, max_side=None):
-    # type: (int, int, int, int) -> st.SearchStrategy[Shape]
+def array_shapes(
+    min_dims: int = 1, max_dims: int = None, min_side: int = 1, max_side: int = None,
+) -> st.SearchStrategy[Shape]:
     """Return a strategy for array shapes (tuples of int >= 1)."""
     check_type(int, min_dims, "min_dims")
     check_type(int, min_side, "min_side")
@@ -428,8 +423,7 @@ def array_shapes(min_dims=1, max_dims=None, min_side=1, max_side=None):
 
 
 @st.defines_strategy
-def scalar_dtypes():
-    # type: () -> st.SearchStrategy[np.dtype]
+def scalar_dtypes() -> st.SearchStrategy[np.dtype]:
     """Return a strategy that can return any non-flexible scalar dtype."""
     return st.one_of(
         boolean_dtypes(),
@@ -442,8 +436,7 @@ def scalar_dtypes():
     )
 
 
-def defines_dtype_strategy(strat):
-    # type: (T) -> T
+def defines_dtype_strategy(strat: T) -> T:
     @st.defines_strategy
     @proxies(strat)
     def inner(*args, **kwargs):
@@ -453,8 +446,7 @@ def defines_dtype_strategy(strat):
 
 
 @defines_dtype_strategy
-def boolean_dtypes():
-    # type: () -> st.SearchStrategy[np.dtype]
+def boolean_dtypes() -> st.SearchStrategy[np.dtype]:
     return st.just("?")
 
 
@@ -488,8 +480,9 @@ def dtype_factory(kind, sizes, valid_sizes, endianness):
 
 
 @defines_dtype_strategy
-def unsigned_integer_dtypes(endianness="?", sizes=(8, 16, 32, 64)):
-    # type: (str, Sequence[int]) -> st.SearchStrategy[np.dtype]
+def unsigned_integer_dtypes(
+    endianness: str = "?", sizes: Sequence[int] = (8, 16, 32, 64)
+) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for unsigned integer dtypes.
 
     endianness may be ``<`` for little-endian, ``>`` for big-endian,
@@ -503,8 +496,9 @@ def unsigned_integer_dtypes(endianness="?", sizes=(8, 16, 32, 64)):
 
 
 @defines_dtype_strategy
-def integer_dtypes(endianness="?", sizes=(8, 16, 32, 64)):
-    # type: (str, Sequence[int]) -> st.SearchStrategy[np.dtype]
+def integer_dtypes(
+    endianness: str = "?", sizes: Sequence[int] = (8, 16, 32, 64)
+) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for signed integer dtypes.
 
     endianness and sizes are treated as for
@@ -514,8 +508,9 @@ def integer_dtypes(endianness="?", sizes=(8, 16, 32, 64)):
 
 
 @defines_dtype_strategy
-def floating_dtypes(endianness="?", sizes=(16, 32, 64)):
-    # type: (str, Sequence[int]) -> st.SearchStrategy[np.dtype]
+def floating_dtypes(
+    endianness: str = "?", sizes: Sequence[int] = (16, 32, 64)
+) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for floating-point dtypes.
 
     sizes is the size in bits of floating-point number.  Some machines support
@@ -529,8 +524,9 @@ def floating_dtypes(endianness="?", sizes=(16, 32, 64)):
 
 
 @defines_dtype_strategy
-def complex_number_dtypes(endianness="?", sizes=(64, 128)):
-    # type: (str, Sequence[int]) -> st.SearchStrategy[np.dtype]
+def complex_number_dtypes(
+    endianness: str = "?", sizes: Sequence[int] = (64, 128)
+) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for complex-number dtypes.
 
     sizes is the total size in bits of a complex number, which consists
@@ -567,8 +563,9 @@ def validate_time_slice(max_period, min_period):
 
 
 @defines_dtype_strategy
-def datetime64_dtypes(max_period="Y", min_period="ns", endianness="?"):
-    # type: (str, str, str) -> st.SearchStrategy[np.dtype]
+def datetime64_dtypes(
+    max_period: str = "Y", min_period: str = "ns", endianness: str = "?"
+) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for datetime64 dtypes, with various precisions from
     year to attosecond."""
     return dtype_factory(
@@ -580,8 +577,9 @@ def datetime64_dtypes(max_period="Y", min_period="ns", endianness="?"):
 
 
 @defines_dtype_strategy
-def timedelta64_dtypes(max_period="Y", min_period="ns", endianness="?"):
-    # type: (str, str, str) -> st.SearchStrategy[np.dtype]
+def timedelta64_dtypes(
+    max_period: str = "Y", min_period: str = "ns", endianness: str = "?"
+) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for timedelta64 dtypes, with various precisions from
     year to attosecond."""
     return dtype_factory(
@@ -593,8 +591,9 @@ def timedelta64_dtypes(max_period="Y", min_period="ns", endianness="?"):
 
 
 @defines_dtype_strategy
-def byte_string_dtypes(endianness="?", min_len=1, max_len=16):
-    # type: (str, int, int) -> st.SearchStrategy[np.dtype]
+def byte_string_dtypes(
+    endianness: str = "?", min_len: int = 1, max_len: int = 16
+) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for generating bytestring dtypes, of various lengths
     and byteorder.
 
@@ -607,8 +606,9 @@ def byte_string_dtypes(endianness="?", min_len=1, max_len=16):
 
 
 @defines_dtype_strategy
-def unicode_string_dtypes(endianness="?", min_len=1, max_len=16):
-    # type: (str, int, int) -> st.SearchStrategy[np.dtype]
+def unicode_string_dtypes(
+    endianness: str = "?", min_len: int = 1, max_len: int = 16
+) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for generating unicode string dtypes, of various
     lengths and byteorder.
 
@@ -622,12 +622,11 @@ def unicode_string_dtypes(endianness="?", min_len=1, max_len=16):
 
 @defines_dtype_strategy
 def array_dtypes(
-    subtype_strategy=scalar_dtypes(),  # type: st.SearchStrategy[np.dtype]
-    min_size=1,  # type: int
-    max_size=5,  # type: int
-    allow_subarrays=False,  # type: bool
-):
-    # type: (...) -> st.SearchStrategy[np.dtype]
+    subtype_strategy: st.SearchStrategy[np.dtype] = scalar_dtypes(),
+    min_size: int = 1,
+    max_size: int = 5,
+    allow_subarrays: bool = False,
+) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for generating array (compound) dtypes, with members
     drawn from the given subtype strategy."""
     order_check("size", 0, min_size, max_size)
@@ -648,11 +647,10 @@ def array_dtypes(
 
 @st.defines_strategy
 def nested_dtypes(
-    subtype_strategy=scalar_dtypes(),  # type: st.SearchStrategy[np.dtype]
-    max_leaves=10,  # type: int
-    max_itemsize=None,  # type: int
-):
-    # type: (...) -> st.SearchStrategy[np.dtype]
+    subtype_strategy: st.SearchStrategy[np.dtype] = scalar_dtypes(),
+    max_leaves: int = 10,
+    max_itemsize: int = None,
+) -> st.SearchStrategy[np.dtype]:
     """Return the most-general dtype strategy.
 
     Elements drawn from this strategy may be simple (from the
@@ -667,8 +665,9 @@ def nested_dtypes(
 
 
 @st.defines_strategy
-def valid_tuple_axes(ndim, min_size=0, max_size=None):
-    # type: (int, int, int) -> st.SearchStrategy[Shape]
+def valid_tuple_axes(
+    ndim: int, min_size: int = 0, max_size: int = None
+) -> st.SearchStrategy[Shape]:
     """Return a strategy for generating permissible tuple-values for the
     ``axis`` argument for a numpy sequential function (e.g.
     :func:`numpy:numpy.sum`), given an array of the specified
@@ -712,8 +711,13 @@ def valid_tuple_axes(ndim, min_size=0, max_size=None):
 
 
 @st.defines_strategy
-def broadcastable_shapes(shape, min_dims=0, max_dims=None, min_side=1, max_side=None):
-    # type: (Shape, int, int, int, int) -> st.SearchStrategy[Shape]
+def broadcastable_shapes(
+    shape: Shape,
+    min_dims: int = 0,
+    max_dims: int = None,
+    min_side: int = 1,
+    max_side: int = None,
+) -> st.SearchStrategy[Shape]:
     """Return a strategy for generating shapes that are broadcast-compatible
     with the provided shape.
 
@@ -1025,15 +1029,14 @@ def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
 @st.defines_strategy
 def mutually_broadcastable_shapes(
     *,
-    num_shapes=not_set,  # type: Union[UniqueIdentifier, int]
-    signature=not_set,  # type: Union[UniqueIdentifier, str]
-    base_shape=(),  # type: Shape
-    min_dims=0,  # type: int
-    max_dims=None,  # type: int
-    min_side=1,  # type: int
-    max_side=None  # type: int
-):
-    # type: (...) -> st.SearchStrategy[BroadcastableShapes]
+    num_shapes: Union[UniqueIdentifier, int] = not_set,
+    signature: Union[UniqueIdentifier, str] = not_set,
+    base_shape: Shape = (),
+    min_dims: int = 0,
+    max_dims: int = None,
+    min_side: int = 1,
+    max_side: int = None
+) -> st.SearchStrategy[BroadcastableShapes]:
     """Return a strategy for generating a specified number of shapes, N, that are
     mutually-broadcastable with one another and with the provided "base-shape".
 
@@ -1248,9 +1251,13 @@ class BasicIndexStrategy(SearchStrategy):
 
 @st.defines_strategy
 def basic_indices(
-    shape, *, min_dims=0, max_dims=None, allow_newaxis=False, allow_ellipsis=True
-):
-    # type: (Shape, int, int, bool, bool) -> st.SearchStrategy[BasicIndex]
+    shape: Shape,
+    *,
+    min_dims: int = 0,
+    max_dims: int = None,
+    allow_newaxis: bool = False,
+    allow_ellipsis: bool = True
+) -> st.SearchStrategy[BasicIndex]:
     """
     The ``basic_indices`` strategy generates `basic indexes
     <https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html>`__  for
@@ -1306,8 +1313,11 @@ def basic_indices(
 
 
 @st.defines_strategy
-def integer_array_indices(shape, result_shape=array_shapes(), dtype="int"):
-    # type: (Shape, SearchStrategy[Shape], np.dtype) -> st.SearchStrategy[Tuple[np.ndarray, ...]]
+def integer_array_indices(
+    shape: Shape,
+    result_shape: SearchStrategy[Shape] = array_shapes(),
+    dtype: np.dtype = "int",
+) -> st.SearchStrategy[Tuple[np.ndarray, ...]]:
     """Return a search strategy for tuples of integer-arrays that, when used
     to index into an array of shape ``shape``, given an array whose shape
     was drawn from ``result_shape``.

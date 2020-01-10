@@ -21,6 +21,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
 
 autodoc_member_order = "bysource"
+autodoc_typehints = "none"
 
 extensions = [
     "sphinx.ext.autodoc",

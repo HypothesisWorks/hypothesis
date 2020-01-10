@@ -25,6 +25,7 @@ import inspect
 import threading
 import warnings
 from enum import Enum, IntEnum, unique
+from typing import Any, Dict, List
 
 import attr
 
@@ -37,9 +38,6 @@ from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type, try_convert
 from hypothesis.utils.conventions import not_set
 from hypothesis.utils.dynamicvariables import DynamicVariable
-
-if False:
-    from typing import Any, Dict, List  # noqa
 
 __all__ = ["settings"]
 
@@ -141,8 +139,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         else:
             raise AttributeError("settings has no attribute %s" % (name,))
 
-    def __init__(self, parent=None, **kwargs):
-        # type: (settings, **Any) -> None
+    def __init__(self, parent: "settings" = None, **kwargs: Any) -> None:
         if parent is not None and not isinstance(parent, settings):
             raise InvalidArgument(
                 "Invalid argument: parent=%r is not a settings instance" % (parent,)
@@ -293,8 +290,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         return ", ".join(sorted(bits, key=len))
 
     @staticmethod
-    def register_profile(name, parent=None, **kwargs):
-        # type: (str, settings, **Any) -> None
+    def register_profile(name: str, parent: "settings" = None, **kwargs: Any) -> None:
         """Registers a collection of values to be used as a settings profile.
 
         Settings profiles can be loaded by name - for example, you might
@@ -311,8 +307,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
         settings._profiles[name] = settings(parent=parent, **kwargs)
 
     @staticmethod
-    def get_profile(name):
-        # type: (str) -> settings
+    def get_profile(name: str) -> "settings":
         """Return the profile with the given name."""
         check_type(str, name, "name")
         try:
@@ -321,8 +316,7 @@ class settings(settingsMeta("settings", (object,), {})):  # type: ignore
             raise InvalidArgument("Profile %r is not registered" % (name,))
 
     @staticmethod
-    def load_profile(name):
-        # type: (str) -> None
+    def load_profile(name: str) -> None:
         """Loads in the settings defined in the profile provided.
 
         If the profile does not exist, InvalidArgument will be raised.
@@ -446,8 +440,7 @@ class HealthCheck(Enum):
         return "%s.%s" % (self.__class__.__name__, self.name)
 
     @classmethod
-    def all(cls):
-        # type: () -> List[HealthCheck]
+    def all(cls) -> List["HealthCheck"]:
         return list(HealthCheck)
 
     data_too_large = 1
@@ -627,8 +620,7 @@ If set to True, Hypothesis will print code for failing examples that can be used
 settings.lock_further_definitions()
 
 
-def note_deprecation(message, *, since):
-    # type: (str, str) -> None
+def note_deprecation(message: str, *, since: str) -> None:
     if since != "RELEASEDAY":
         date = datetime.datetime.strptime(since, "%Y-%m-%d").date()
         assert datetime.date(2016, 1, 1) <= date

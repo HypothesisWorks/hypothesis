@@ -35,6 +35,7 @@ Lark, unless someone volunteers to either fund or do the maintainence.
 """
 
 from inspect import getfullargspec
+from typing import Dict
 
 import attr
 import lark
@@ -45,9 +46,6 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal import SearchStrategy
-
-if False:
-    from typing import Dict, Text  # noqa
 
 __all__ = ["from_lark"]
 
@@ -197,11 +195,10 @@ def check_explicit(name):
 @st.cacheable
 @st.defines_strategy_with_reusable_values
 def from_lark(
-    grammar,  # type: lark.lark.Lark
-    start=None,  # type: Text
-    explicit=None,  # type: Dict[Text, st.SearchStrategy[Text]]
-):
-    # type: (...) -> st.SearchStrategy[Text]
+    grammar: lark.lark.Lark,
+    start: str = None,
+    explicit: Dict[str, st.SearchStrategy[str]] = None,
+) -> st.SearchStrategy[str]:
     """A strategy for strings accepted by the given context-free grammar.
 
     ``grammar`` must be a ``Lark`` object, which wraps an EBNF specification.

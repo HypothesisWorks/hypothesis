@@ -17,6 +17,7 @@ import sys
 import warnings
 from collections import defaultdict
 from random import choice as random_choice
+from typing import Any, Callable, Generic, List, TypeVar
 
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
@@ -26,6 +27,7 @@ from hypothesis.errors import (
     NonInteractiveExampleWarning,
     UnsatisfiedAssumption,
 )
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,
     calc_label_from_name,
@@ -37,17 +39,8 @@ from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type
 from hypothesis.utils.conventions import UniqueIdentifier
 
-try:
-    from typing import Any, List, Callable, TypeVar, Generic, Optional  # noqa
-
-    Ex = TypeVar("Ex", covariant=True)
-    T = TypeVar("T")
-
-    from hypothesis.internal.conjecture.data import ConjectureData  # noqa
-
-except ImportError:  # pragma: no cover
-    Ex = "key"  # type: ignore
-    Generic = {Ex: object}  # type: ignore
+Ex = TypeVar("Ex", covariant=True)
+T = TypeVar("T")
 
 calculating = UniqueIdentifier("calculating")
 
@@ -259,8 +252,7 @@ class SearchStrategy(Generic[Ex]):
     def calc_has_reusable_values(self, recur):
         return False
 
-    def example(self):
-        # type: () -> Ex
+    def example(self) -> Ex:
         """Provide an example of the sort of value that this strategy
         generates. This is biased to be slightly simpler than is typical for
         values from this strategy, for clarity purposes.
@@ -322,8 +314,7 @@ class SearchStrategy(Generic[Ex]):
         example_generating_inner_function()
         return random_choice(examples)
 
-    def map(self, pack):
-        # type: (Callable[[Ex], T]) -> SearchStrategy[T]
+    def map(self, pack: Callable[[Ex], T]) -> "SearchStrategy[T]":
         """Returns a new strategy that generates values by generating a value
         from this strategy and then calling pack() on the result, giving that.
 
@@ -331,8 +322,9 @@ class SearchStrategy(Generic[Ex]):
         """
         return MappedSearchStrategy(pack=pack, strategy=self)
 
-    def flatmap(self, expand):
-        # type: (Callable[[Ex], SearchStrategy[T]]) -> SearchStrategy[T]
+    def flatmap(
+        self, expand: Callable[[Ex], "SearchStrategy[T]"]
+    ) -> "SearchStrategy[T]":
         """Returns a new strategy that generates values by generating a value
         from this strategy, say x, then generating a value from
         strategy(expand(x))
@@ -343,8 +335,7 @@ class SearchStrategy(Generic[Ex]):
 
         return FlatMapStrategy(expand=expand, strategy=self)
 
-    def filter(self, condition):
-        # type: (Callable[[Ex], Any]) -> SearchStrategy[Ex]
+    def filter(self, condition: Callable[[Ex], Any]) -> "SearchStrategy[Ex]":
         """Returns a new strategy that generates values from this strategy
         which satisfy the provided condition. Note that if the condition is too
         hard to satisfy this might result in your tests failing with
@@ -361,8 +352,7 @@ class SearchStrategy(Generic[Ex]):
         return filter_strategy.default_do_filtered_draw(data)
 
     @property
-    def branches(self):
-        # type: () -> List[SearchStrategy[Ex]]
+    def branches(self) -> List["SearchStrategy[Ex]"]:
         return [self]
 
     def __or__(self, other):
@@ -375,8 +365,7 @@ class SearchStrategy(Generic[Ex]):
             raise ValueError("Cannot | a SearchStrategy with %r" % (other,))
         return one_of_strategies((self, other))
 
-    def validate(self):
-        # type: () -> None
+    def validate(self) -> None:
         """Throw an exception if the strategy is not valid.
 
         This can happen due to lazy construction
@@ -420,8 +409,7 @@ class SearchStrategy(Generic[Ex]):
     def do_validate(self):
         pass
 
-    def do_draw(self, data):
-        # type: (ConjectureData) -> Ex
+    def do_draw(self, data: ConjectureData) -> Ex:
         raise NotImplementedError("%s.do_draw" % (type(self).__name__,))
 
     def __init__(self):
@@ -581,8 +569,7 @@ class OneOfStrategy(SearchStrategy):
             self.class_label, *[p.label for p in self.original_strategies]
         )
 
-    def do_draw(self, data):
-        # type: (ConjectureData) -> Ex
+    def do_draw(self, data: ConjectureData) -> Ex:
         strategy = data.draw(
             SampledFromStrategy(self.element_strategies).filter(
                 lambda s: s.available(data)
@@ -644,8 +631,7 @@ class MappedSearchStrategy(SearchStrategy):
         into a value suitable for outputting from this strategy."""
         raise NotImplementedError("%s.pack()" % (self.__class__.__name__))
 
-    def do_draw(self, data):
-        # type: (ConjectureData) -> Ex
+    def do_draw(self, data: ConjectureData) -> Ex:
         for _ in range(3):
             i = data.index
             try:
@@ -660,8 +646,7 @@ class MappedSearchStrategy(SearchStrategy):
         raise UnsatisfiedAssumption()
 
     @property
-    def branches(self):
-        # type: () -> List[SearchStrategy[Ex]]
+    def branches(self) -> List[SearchStrategy[Ex]]:
         return [
             MappedSearchStrategy(pack=self.pack, strategy=strategy)
             for strategy in self.mapped_strategy.branches
@@ -723,8 +708,7 @@ class FilteredStrategy(SearchStrategy):
                 )
         return self.__condition
 
-    def do_draw(self, data):
-        # type: (ConjectureData) -> Ex
+    def do_draw(self, data: ConjectureData) -> Ex:
         result = self.filtered_strategy.do_filtered_draw(
             data=data, filter_strategy=self
         )
@@ -755,8 +739,7 @@ class FilteredStrategy(SearchStrategy):
         return filter_not_satisfied
 
     @property
-    def branches(self):
-        # type: () -> List[SearchStrategy[Ex]]
+    def branches(self) -> List[SearchStrategy[Ex]]:
         return [
             FilteredStrategy(strategy=strategy, conditions=self.flat_conditions)
             for strategy in self.filtered_strategy.branches

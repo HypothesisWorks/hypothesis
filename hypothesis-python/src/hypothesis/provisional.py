@@ -31,11 +31,6 @@ import hypothesis.strategies._internal.core as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
-if False:
-    from typing import Text  # noqa
-    from hypothesis.strategies._internal.strategies import SearchStrategy, Ex  # noqa
-
-
 URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'(),")
 
 
@@ -138,10 +133,8 @@ class DomainNameStrategy(SearchStrategy):
 
 @st.defines_strategy_with_reusable_values
 def domains(
-    max_length=255,  # type: int
-    max_element_length=63,  # type: int
-):
-    # type: (...) -> SearchStrategy[Text]
+    max_length: int = 255, max_element_length: int = 63,
+) -> SearchStrategy[str]:
     """Generate :rfc:`1035` compliant fully qualified domain names."""
     return DomainNameStrategy(
         max_length=max_length, max_element_length=max_element_length
@@ -149,8 +142,7 @@ def domains(
 
 
 @st.defines_strategy_with_reusable_values
-def urls():
-    # type: () -> SearchStrategy[Text]
+def urls() -> SearchStrategy[str]:
     """A strategy for :rfc:`3986`, generating http/https URLs."""
 
     def url_encode(s):
@@ -166,8 +158,7 @@ def urls():
 
 
 @st.defines_strategy_with_reusable_values
-def ip4_addr_strings():
-    # type: () -> SearchStrategy[Text]
+def ip4_addr_strings() -> SearchStrategy[str]:
     """A strategy for IPv4 address strings.
 
     This consists of four strings representing integers [0..255],
@@ -177,8 +168,7 @@ def ip4_addr_strings():
 
 
 @st.defines_strategy_with_reusable_values
-def ip6_addr_strings():
-    # type: () -> SearchStrategy[Text]
+def ip6_addr_strings() -> SearchStrategy[str]:
     """A strategy for IPv6 address strings.
 
     This consists of sixteen quads of hex digits (0000 .. FFFF), joined
