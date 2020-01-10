@@ -19,7 +19,7 @@ import inspect
 import platform
 import sys
 import time
-from typing import Tuple, Type  # noqa
+from typing import Tuple  # noqa
 
 PYPY = platform.python_implementation() == "PyPy"
 CAN_PACK_HALF_FLOAT = sys.version_info[:2] >= (3, 6)
