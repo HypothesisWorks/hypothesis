@@ -1363,26 +1363,25 @@ def from_type(thing):
             raise ResolutionFailed("Error: %r resolved to an empty strategy" % (thing,))
         return strategy
 
-    if typing is not None:  # pragma: no branch
-        if not isinstance(thing, type):
-            if types.is_a_new_type(thing):
-                # Check if we have an explicitly registered strategy for this thing,
-                # resolve it so, and otherwise resolve as for the base type.
-                if thing in types._global_type_lookup:
-                    return as_strategy(types._global_type_lookup[thing], thing)
-                return from_type(thing.__supertype__)
-            # Under Python 3.6, Unions are not instances of `type` - but we
-            # still want to resolve them!
-            if getattr(thing, "__origin__", None) is typing.Union:
-                args = sorted(thing.__args__, key=types.type_sorting_key)
-                return one_of([from_type(t) for t in args])
-        # We can't resolve forward references, and under Python 3.5 (only)
-        # a forward reference is an instance of type.  Hence, explicit check:
-        elif type(thing) == getattr(typing, "_ForwardRef", None):  # pragma: no cover
-            raise ResolutionFailed(
-                "thing=%s cannot be resolved.  Upgrading to python>=3.6 may "
-                "fix this problem via improvements to the typing module." % (thing,)
-            )
+    if not isinstance(thing, type):
+        if types.is_a_new_type(thing):
+            # Check if we have an explicitly registered strategy for this thing,
+            # resolve it so, and otherwise resolve as for the base type.
+            if thing in types._global_type_lookup:
+                return as_strategy(types._global_type_lookup[thing], thing)
+            return from_type(thing.__supertype__)
+        # Under Python 3.6, Unions are not instances of `type` - but we
+        # still want to resolve them!
+        if getattr(thing, "__origin__", None) is typing.Union:
+            args = sorted(thing.__args__, key=types.type_sorting_key)
+            return one_of([from_type(t) for t in args])
+    # We can't resolve forward references, and under Python 3.5 (only)
+    # a forward reference is an instance of type.  Hence, explicit check:
+    elif type(thing) == getattr(typing, "_ForwardRef", None):  # pragma: no cover
+        raise ResolutionFailed(
+            "thing=%s cannot be resolved.  Upgrading to python>=3.6 may "
+            "fix this problem via improvements to the typing module." % (thing,)
+        )
     if not types.is_a_type(thing):
         raise InvalidArgument("thing=%s must be a type" % (thing,))
     # Now that we know `thing` is a type, the first step is to check for an
@@ -1397,9 +1396,8 @@ def from_type(thing):
     # We'll start by checking if thing is from from the typing module,
     # because there are several special cases that don't play well with
     # subclass and instance checks.
-    if typing is not None:  # pragma: no branch
-        if isinstance(thing, typing_root_type):
-            return types.from_typing_type(thing)
+    if isinstance(thing, typing_root_type):
+        return types.from_typing_type(thing)
     # If it's not from the typing module, we get all registered types that are
     # a subclass of `thing` and are not themselves a subtype of any other such
     # type.  For example, `Number -> integers() | floats()`, but bools() is

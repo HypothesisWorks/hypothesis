@@ -24,6 +24,7 @@ import types
 from functools import wraps
 from tokenize import detect_encoding
 from types import ModuleType
+from typing import TypeVar
 
 from hypothesis.internal.compat import (
     qualname,
@@ -33,10 +34,7 @@ from hypothesis.internal.compat import (
 )
 from hypothesis.vendor.pretty import pretty
 
-if False:
-    from typing import TypeVar  # noqa
-
-    C = TypeVar("C", bound=callable)
+C = TypeVar("C", bound=callable)
 
 
 def fully_qualified_name(f):

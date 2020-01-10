@@ -19,15 +19,13 @@ import os
 import sys
 import tempfile
 import unicodedata
+from typing import Dict, Tuple
 
 from hypothesis.configuration import mkdir_p, storage_directory
 from hypothesis.errors import InvalidArgument
 
-if False:
-    from typing import Dict, Tuple
-
-    intervals = Tuple[Tuple[int, int], ...]
-    cache_type = Dict[Tuple[Tuple[str, ...], int, int, intervals], intervals]
+intervals = Tuple[Tuple[int, int], ...]
+cache_type = Dict[Tuple[Tuple[str, ...], int, int, intervals], intervals]
 
 
 def charmap_file():

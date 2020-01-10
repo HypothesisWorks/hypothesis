@@ -19,7 +19,7 @@ import inspect
 import platform
 import sys
 import time
-from typing import Tuple, Type  # noqa
+import typing
 
 PYPY = platform.python_implementation() == "PyPy"
 CAN_PACK_HALF_FLOAT = sys.version_info[:2] >= (3, 6)
@@ -73,25 +73,19 @@ def qualname(f):
 
 
 try:
-    import typing
-except ImportError:
-    typing_root_type = ()  # type: Tuple[type, ...]
-    ForwardRef = None
-else:
+    # These types are new in Python 3.7, but also (partially) backported to the
+    # typing backport on PyPI.  Use if possible; or fall back to older names.
+    typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
+    ForwardRef = typing.ForwardRef  # type: ignore
+except AttributeError:
+    typing_root_type = (typing.TypingMeta, typing.TypeVar)  # type: ignore
     try:
-        # These types are new in Python 3.7, but also (partially) backported to the
-        # typing backport on PyPI.  Use if possible; or fall back to older names.
-        typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
-        ForwardRef = typing.ForwardRef  # type: ignore
+        typing_root_type += (typing._Union,)  # type: ignore
     except AttributeError:
-        typing_root_type = (typing.TypingMeta, typing.TypeVar)  # type: ignore
-        try:
-            typing_root_type += (typing._Union,)  # type: ignore
-        except AttributeError:
-            # Under Python 3.5.0, we'll just give up... if users want strategies
-            # inferred from Union-typed attrs attributes they can try a newer Python.
-            pass
-        ForwardRef = typing._ForwardRef  # type: ignore
+        # Under Python 3.5.0, we'll just give up... if users want strategies
+        # inferred from Union-typed attrs attributes they can try a newer Python.
+        pass
+    ForwardRef = typing._ForwardRef  # type: ignore
 
 
 if sys.version_info[:2] < (3, 6):
@@ -109,7 +103,6 @@ if sys.version_info[:2] < (3, 6):
 
 
 else:
-    import typing
 
     def get_type_hints(thing):
         try:

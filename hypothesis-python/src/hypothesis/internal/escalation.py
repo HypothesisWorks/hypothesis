@@ -17,6 +17,7 @@ import os
 import sys
 import traceback
 from inspect import getframeinfo
+from typing import Dict
 
 import hypothesis
 from hypothesis.errors import (
@@ -26,9 +27,6 @@ from hypothesis.errors import (
     StopTest,
     UnsatisfiedAssumption,
 )
-
-if False:
-    from typing import Dict  # noqa
 
 
 def belongs_to(package):

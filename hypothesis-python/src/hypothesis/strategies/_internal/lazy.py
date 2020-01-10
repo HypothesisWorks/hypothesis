@@ -14,6 +14,7 @@
 # END HEADER
 
 from inspect import getfullargspec
+from typing import Dict
 
 from hypothesis.internal.reflection import (
     arg_string,
@@ -21,10 +22,6 @@ from hypothesis.internal.reflection import (
     convert_positional_arguments,
 )
 from hypothesis.strategies._internal.strategies import SearchStrategy
-
-if False:
-    from typing import Dict  # noqa
-
 
 unwrap_cache = {}  # type: Dict[SearchStrategy, SearchStrategy]
 unwrap_depth = 0
