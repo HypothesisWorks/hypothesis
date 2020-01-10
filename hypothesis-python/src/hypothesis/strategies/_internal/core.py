@@ -31,6 +31,7 @@ from typing import (
     Callable,
     Dict,
     FrozenSet,
+    Hashable,
     Iterable,
     List,
     Optional,
@@ -127,6 +128,7 @@ from hypothesis.utils.conventions import InferType, infer, not_set
 
 K = TypeVar("K")
 V = TypeVar("V")
+UniqueBy = Union[Callable[[Ex], Hashable], Tuple[Callable[[Ex], Hashable], ...]]
 # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
 Real = Union[int, float, Fraction, Decimal]
 
@@ -661,7 +663,7 @@ def lists(
     elements: SearchStrategy[Ex],
     min_size: int = 0,
     max_size: int = None,
-    unique_by: Union[Callable, Tuple[Callable, ...]] = None,
+    unique_by: UniqueBy = None,
     unique: bool = False,
 ) -> SearchStrategy[List[Ex]]:
     """Returns a list containing values drawn from elements with length in the
@@ -794,7 +796,7 @@ def iterables(
     elements: SearchStrategy[Ex],
     min_size: int = 0,
     max_size: int = None,
-    unique_by: Union[Callable, Tuple[Callable, ...]] = None,
+    unique_by: UniqueBy = None,
     unique: bool = False,
 ) -> SearchStrategy[Iterable[Ex]]:
     """This has the same behaviour as lists, but returns iterables instead.
@@ -1152,8 +1154,9 @@ def random_module() -> SearchStrategy[RandomSeeder]:
 @cacheable
 @defines_strategy
 def builds(
-    *callable_and_args: Any, **kwargs: Union[SearchStrategy[Any], InferType]
-) -> SearchStrategy[Any]:
+    *callable_and_args: Union[Callable[..., Ex], SearchStrategy[Any]],
+    **kwargs: Union[SearchStrategy[Any], InferType]
+) -> SearchStrategy[Ex]:
     """Generates values by drawing from ``args`` and ``kwargs`` and passing
     them to the callable (provided as the first positional argument) in the
     appropriate argument position.
@@ -1196,7 +1199,7 @@ def builds(
     required = required_args(target, args, kwargs) or set()
     to_infer = {k for k, v in kwargs.items() if v is infer}
     if required or to_infer:
-        if isclass(target) and attr.has(target):
+        if isinstance(target, type) and attr.has(target):
             # Use our custom introspection for attrs classes
             from hypothesis.strategies._internal.attrs import from_attrs
 
@@ -1205,9 +1208,9 @@ def builds(
         if isclass(target):
             if is_typed_named_tuple(target):
                 # Special handling for typing.NamedTuple
-                hints = target._field_types
+                hints = target._field_types  # type: ignore
             else:
-                hints = get_type_hints(target.__init__)
+                hints = get_type_hints(target.__init__)  # type: ignore
         else:
             hints = get_type_hints(target)
         if to_infer - set(hints):
@@ -1218,9 +1221,9 @@ def builds(
         for kw in set(hints) & (required | to_infer):
             kwargs[kw] = from_type(hints[kw])
     # Mypy doesn't realise that `infer` is gone from kwargs now
-    kwarg_strat = fixed_dictionaries(kwargs)  # type: ignore
-    return tuples(tuples(*args), kwarg_strat).map(
-        lambda value: target(*value[0], **value[1])
+    # and thinks that target and args have the same (union) type.
+    return tuples(tuples(*args), fixed_dictionaries(kwargs)).map(  # type: ignore
+        lambda value: target(*value[0], **value[1])  # type: ignore
     )
 
 
@@ -1747,7 +1750,7 @@ def dates(
 def times(
     min_value: dt.time = dt.time.min,
     max_value: dt.time = dt.time.max,
-    timezones: SearchStrategy = none(),
+    timezones: SearchStrategy[Optional[dt.tzinfo]] = none(),
 ) -> SearchStrategy[dt.time]:
     """A strategy for times between ``min_value`` and ``max_value``.
 
@@ -1846,7 +1849,7 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
 @cacheable
 def complex_numbers(
     min_magnitude: Optional[Real] = 0,
-    max_magnitude: Real = None,
+    max_magnitude: Optional[Real] = None,
     allow_infinity: bool = None,
     allow_nan: bool = None,
 ) -> SearchStrategy[complex]:
@@ -1932,7 +1935,7 @@ def complex_numbers(
     return constrained_complex()
 
 
-def shared(base: SearchStrategy[Ex], key: Any = None) -> SearchStrategy[Ex]:
+def shared(base: SearchStrategy[Ex], key: Hashable = None) -> SearchStrategy[Ex]:
     """Returns a strategy that draws a single shared value per run, drawn from
     base. Any two shared instances with the same key will share the same value,
     otherwise the identity of this strategy will be used. That is:
@@ -2082,8 +2085,8 @@ def data() -> SearchStrategy[DataObject]:
 
 
 def register_type_strategy(
-    custom_type: type,
-    strategy: Union[SearchStrategy, Callable[[type], SearchStrategy]],
+    custom_type: Type[Ex],
+    strategy: Union[SearchStrategy[Ex], Callable[[Type[Ex]], SearchStrategy[Ex]]],
 ) -> None:
     """Add an entry to the global type-to-strategy lookup.
 

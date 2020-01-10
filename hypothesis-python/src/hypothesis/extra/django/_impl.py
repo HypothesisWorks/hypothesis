@@ -122,10 +122,10 @@ def _models_impl(draw, strat):
 
 @st.defines_strategy
 def from_form(
-    form: Type[dm.Model],
+    form: Type[df.Form],
     form_kwargs: dict = None,
     **field_strategies: Union[st.SearchStrategy, InferType]
-) -> st.SearchStrategy:
+) -> st.SearchStrategy[df.Form]:
     """Return a strategy for examples of ``form``.
 
     ``form`` must be an subclass of :class:`~django:django.forms.Form`.

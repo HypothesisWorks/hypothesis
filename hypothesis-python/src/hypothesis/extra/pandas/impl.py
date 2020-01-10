@@ -180,7 +180,7 @@ def indexes(
     min_size: int = 0,
     max_size: int = None,
     unique: bool = True,
-):
+) -> st.SearchStrategy[pandas.Index]:
     """Provides a strategy for producing a :class:`pandas.Index`.
 
     Arguments:

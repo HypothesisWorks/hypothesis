@@ -27,7 +27,7 @@ import zlib
 from inspect import getfullargspec
 from io import StringIO
 from random import Random
-from typing import Any, Callable, Hashable, TypeVar, Union
+from typing import Any, Callable, Hashable, List, TypeVar, Union
 from unittest import TestCase
 
 import attr
@@ -1105,10 +1105,10 @@ def given(
 
 
 def find(
-    specifier: SearchStrategy,
+    specifier: SearchStrategy[Ex],
     condition: Callable[[Any], bool],
     settings: Settings = None,
-    random: Any = None,
+    random: Random = None,
     database_key: bytes = None,
 ) -> Ex:
     """Returns the minimal example from the given strategy ``specifier`` that
@@ -1129,13 +1129,13 @@ def find(
         )
     specifier.validate()
 
-    last = [None]
+    last = []  # type: List[Ex]
 
     @settings
     @given(specifier)
     def test(v):
         if condition(v):
-            last[0] = v
+            last[:] = [v]
             raise Found()
 
     if random is not None:
