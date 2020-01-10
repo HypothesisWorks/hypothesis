@@ -82,7 +82,7 @@ def try_convert(typ, value, name):
         return value
     try:
         return typ(value)
-    except (TypeError, OverflowError, ValueError, ArithmeticError):
+    except (TypeError, ValueError, ArithmeticError):
         raise InvalidArgument(
             "Cannot convert %s=%r of type %s to type %s"
             % (name, value, type(value).__name__, typ.__name__)
