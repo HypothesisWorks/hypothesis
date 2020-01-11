@@ -21,6 +21,7 @@ import functools
 import inspect
 import io
 import numbers
+import typing
 import uuid
 from types import FunctionType
 
@@ -90,8 +91,7 @@ def from_typing_type(thing):
     # information to sensibly resolve to strategies at runtime.
     # Finally, we run a variation of the subclass lookup in st.from_type
     # among generic types in the lookup.
-    import typing
-
+    #
     # Under 3.6 Union is handled directly in st.from_type, as the argument is
     # not an instance of `type`. However, under Python 3.5 Union *is* a type
     # and we have to handle it here, including failing if it has no parameters.
@@ -282,197 +282,182 @@ _global_type_lookup[type] = st.sampled_from(
 
 try:  # pragma: no cover
     import numpy as np
-    from hypothesis.extra.numpy import (
-        arrays,
-        array_shapes,
-        scalar_dtypes,
-        array_dtypes,
-        from_dtype,
-        integer_dtypes,
-        unsigned_integer_dtypes,
-    )
+    from hypothesis.extra.numpy import arrays, array_shapes, scalar_dtypes, array_dtypes
 
-    _global_type_lookup.update(
-        {
-            np.dtype: array_dtypes(),
-            np.ndarray: arrays(scalar_dtypes(), array_shapes(max_dims=2)),
-        }
-    )
-except ImportError:  # pragma: no cover
-    np = None
-
-try:
-    import typing
-except ImportError:  # pragma: no cover
+    _global_type_lookup[np.dtype] = array_dtypes()
+    _global_type_lookup[np.ndarray] = arrays(scalar_dtypes(), array_shapes(max_dims=2))
+except ImportError:
     pass
-else:
-    _global_type_lookup.update(
-        {
-            typing.ByteString: st.binary() | st.binary().map(bytearray),
-            # Reversible is somehow a subclass of Hashable, so we tuplize it.
-            # See also the discussion at https://bugs.python.org/issue39046
-            typing.Reversible: st.lists(st.integers()).map(tuple),
-            typing.SupportsAbs: st.one_of(
-                st.booleans(),
-                st.integers(),
-                st.floats(),
-                st.complex_numbers(),
-                st.fractions(),
-                st.decimals(),
-                st.timedeltas(),
-            ),
-            typing.SupportsComplex: st.one_of(
-                st.booleans(),
-                st.integers(),
-                st.floats(),
-                st.complex_numbers(),
-                st.decimals(),
-                st.fractions(),
-            ),
-            typing.SupportsFloat: st.one_of(
-                st.booleans(),
-                st.integers(),
-                st.floats(),
-                st.decimals(),
-                st.fractions(),
-                # with floats its far more annoying to capture all
-                # the magic in a regex. so we just stringify some floats
-                st.floats().map(str),
-            ),
-            typing.SupportsInt: st.one_of(
-                st.booleans(),
-                st.integers(),
-                st.floats(),
-                st.uuids(),
-                st.decimals(),
-                # this generates strings that should able to be parsed into integers
-                st.from_regex(r"-?\d+", fullmatch=True).filter(
-                    lambda value: can_cast(int, value)
-                ),
-            ),
-            # xIO are only available in .io on Python 3.5, but available directly
-            # as typing.*IO from 3.6 onwards and mypy 0.730 errors on the compat form.
-            typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),  # type: ignore
-            typing.io.TextIO: st.builds(io.StringIO, st.text()),  # type: ignore
-        }
-    )
 
-    try:
-        # These aren't present in the typing module backport.
-        _global_type_lookup[typing.SupportsBytes] = st.one_of(
+
+_global_type_lookup.update(
+    {
+        typing.ByteString: st.binary() | st.binary().map(bytearray),
+        # Reversible is somehow a subclass of Hashable, so we tuplize it.
+        # See also the discussion at https://bugs.python.org/issue39046
+        typing.Reversible: st.lists(st.integers()).map(tuple),
+        # TODO: SupportsAbs and SupportsRound should be covariant, ie have functions.
+        typing.SupportsAbs: st.one_of(
+            st.booleans(),
+            st.integers(),
+            st.floats(),
+            st.complex_numbers(),
+            st.fractions(),
+            st.decimals(),
+            st.timedeltas(),
+        ),
+        typing.SupportsRound: st.one_of(
+            st.booleans(), st.integers(), st.floats(), st.decimals(), st.fractions()
+        ),
+        typing.SupportsComplex: st.one_of(
+            st.booleans(),
+            st.integers(),
+            st.floats(),
+            st.complex_numbers(),
+            st.decimals(),
+            st.fractions(),
+        ),
+        typing.SupportsFloat: st.one_of(
+            st.booleans(),
+            st.integers(),
+            st.floats(),
+            st.decimals(),
+            st.fractions(),
+            # with floats its far more annoying to capture all
+            # the magic in a regex. so we just stringify some floats
+            st.floats().map(str),
+        ),
+        typing.SupportsInt: st.one_of(
+            st.booleans(),
+            st.integers(),
+            st.floats(),
+            st.uuids(),
+            st.decimals(),
+            # this generates strings that should able to be parsed into integers
+            st.from_regex(r"-?\d+", fullmatch=True).filter(
+                lambda value: can_cast(int, value)
+            ),
+        ),
+        typing.SupportsBytes: st.one_of(
             st.booleans(),
             st.binary(),
             st.integers(0, 255),
             # As with Reversible, we tuplize this for compatibility with Hashable.
             st.lists(st.integers(0, 255)).map(tuple),  # type: ignore
-        )
-        _global_type_lookup[typing.SupportsRound] = st.one_of(
-            st.booleans(), st.integers(), st.floats(), st.decimals(), st.fractions()
-        )
-    except AttributeError:  # pragma: no cover
-        pass
-    try:
-        strat = st.integers() | st.booleans()
-        if np is not None:  # pragma: no branch
-            strat |= (unsigned_integer_dtypes() | integer_dtypes()).flatmap(from_dtype)
-        _global_type_lookup[typing.SupportsIndex] = strat  # type: ignore
-    except AttributeError:  # pragma: no cover
-        pass
+        ),
+        # xIO are only available in .io on Python 3.5, but available directly
+        # as typing.*IO from 3.6 onwards and mypy 0.730 errors on the compat form.
+        typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),  # type: ignore
+        typing.io.TextIO: st.builds(io.StringIO, st.text()),  # type: ignore
+    }
+)
+if hasattr(typing, "SupportsIndex"):  # pragma: no cover  # new in Python 3.8
+    _global_type_lookup[typing.SupportsIndex] = st.integers() | st.booleans()  # type: ignore
 
-    def register(type_, fallback=None):
-        if isinstance(type_, str):
-            # Use the name of generic types which are not available on all
-            # versions, and the function just won't be added to the registry
-            type_ = getattr(typing, type_, None)
-            if type_ is None:  # pragma: no cover
-                return lambda f: f
 
-        def inner(func):
-            if fallback is None:
-                _global_type_lookup[type_] = func
-                return func
+def register(type_, fallback=None):
+    if isinstance(type_, str):
+        # Use the name of generic types which are not available on all
+        # versions, and the function just won't be added to the registry
+        type_ = getattr(typing, type_, None)
+        if type_ is None:  # pragma: no cover
+            return lambda f: f
 
-            @functools.wraps(func)
-            def really_inner(thing):
-                if getattr(thing, "__args__", None) is None:
-                    return fallback
-                return func(thing)
+    def inner(func):
+        if fallback is None:
+            _global_type_lookup[type_] = func
+            return func
 
-            _global_type_lookup[type_] = really_inner
-            return really_inner
+        @functools.wraps(func)
+        def really_inner(thing):
+            if getattr(thing, "__args__", None) is None:
+                return fallback
+            return func(thing)
 
-        return inner
+        _global_type_lookup[type_] = really_inner
+        return really_inner
 
-    @register("Type")
-    def resolve_Type(thing):
-        if thing.__args__ is None:
-            return st.just(type)
-        args = (thing.__args__[0],)
-        if getattr(args[0], "__origin__", None) is typing.Union:
-            args = args[0].__args__
-        elif hasattr(args[0], "__union_params__"):  # pragma: no cover
-            args = args[0].__union_params__
-        if isinstance(ForwardRef, type):  # pragma: no cover
-            # Duplicate check from from_type here - only paying when needed.
-            for a in args:
-                if type(a) == ForwardRef:
-                    raise ResolutionFailed(
-                        "thing=%s cannot be resolved.  Upgrading to "
-                        "python>=3.6 may fix this problem via improvements "
-                        "to the typing module." % (thing,)
-                    )
-        return st.sampled_from(sorted(args, key=type_sorting_key))
+    return inner
 
-    @register(typing.List, st.builds(list))
-    def resolve_List(thing):
-        return st.lists(st.from_type(thing.__args__[0]))
 
-    @register(typing.Set, st.builds(set))
-    def resolve_Set(thing):
-        return st.sets(st.from_type(thing.__args__[0]))
+@register("Type")
+def resolve_Type(thing):
+    if thing.__args__ is None:
+        return st.just(type)
+    args = (thing.__args__[0],)
+    if getattr(args[0], "__origin__", None) is typing.Union:
+        args = args[0].__args__
+    elif hasattr(args[0], "__union_params__"):  # pragma: no cover
+        args = args[0].__union_params__
+    if isinstance(ForwardRef, type):  # pragma: no cover
+        # Duplicate check from from_type here - only paying when needed.
+        for a in args:
+            if type(a) == ForwardRef:
+                raise ResolutionFailed(
+                    "thing=%s cannot be resolved.  Upgrading to "
+                    "python>=3.6 may fix this problem via improvements "
+                    "to the typing module." % (thing,)
+                )
+    return st.sampled_from(sorted(args, key=type_sorting_key))
 
-    @register(typing.FrozenSet, st.builds(frozenset))
-    def resolve_FrozenSet(thing):
-        return st.frozensets(st.from_type(thing.__args__[0]))
 
-    @register(typing.Dict, st.builds(dict))
-    def resolve_Dict(thing):
-        # If thing is a Collection instance, we need to fill in the values
-        keys_vals = [st.from_type(t) for t in thing.__args__] * 2
-        return st.dictionaries(keys_vals[0], keys_vals[1])
+@register(typing.List, st.builds(list))
+def resolve_List(thing):
+    return st.lists(st.from_type(thing.__args__[0]))
 
-    @register("DefaultDict", st.builds(collections.defaultdict))
-    def resolve_DefaultDict(thing):
-        return resolve_Dict(thing).map(lambda d: collections.defaultdict(None, d))
 
-    @register(typing.ItemsView, st.builds(dict).map(dict.items))
-    def resolve_ItemsView(thing):
-        return resolve_Dict(thing).map(dict.items)
+@register(typing.Set, st.builds(set))
+def resolve_Set(thing):
+    return st.sets(st.from_type(thing.__args__[0]))
 
-    @register(typing.KeysView, st.builds(dict).map(dict.keys))
-    def resolve_KeysView(thing):
-        return st.dictionaries(st.from_type(thing.__args__[0]), st.none()).map(
-            dict.keys
-        )
 
-    @register(typing.ValuesView, st.builds(dict).map(dict.values))
-    def resolve_ValuesView(thing):
-        return st.dictionaries(st.integers(), st.from_type(thing.__args__[0])).map(
-            dict.values
-        )
+@register(typing.FrozenSet, st.builds(frozenset))
+def resolve_FrozenSet(thing):
+    return st.frozensets(st.from_type(thing.__args__[0]))
 
-    @register(typing.Iterator, st.iterables(st.nothing()))
-    def resolve_Iterator(thing):
-        return st.iterables(st.from_type(thing.__args__[0]))
 
-    @register(typing.Callable, st.functions())
-    def resolve_Callable(thing):
-        # Generated functions either accept no arguments, or arbitrary arguments.
-        # This is looser than ideal, but anything tighter would generally break
-        # use of keyword arguments and we'd rather not force positional-only.
-        if not thing.__args__:  # pragma: no cover  # varies by minor version
-            return st.functions()
-        return st.functions(
-            like=(lambda: None) if len(thing.__args__) == 1 else (lambda *a, **k: None),
-            returns=st.from_type(thing.__args__[-1]),
-        )
+@register(typing.Dict, st.builds(dict))
+def resolve_Dict(thing):
+    # If thing is a Collection instance, we need to fill in the values
+    keys_vals = [st.from_type(t) for t in thing.__args__] * 2
+    return st.dictionaries(keys_vals[0], keys_vals[1])
+
+
+@register("DefaultDict", st.builds(collections.defaultdict))
+def resolve_DefaultDict(thing):
+    return resolve_Dict(thing).map(lambda d: collections.defaultdict(None, d))
+
+
+@register(typing.ItemsView, st.builds(dict).map(dict.items))
+def resolve_ItemsView(thing):
+    return resolve_Dict(thing).map(dict.items)
+
+
+@register(typing.KeysView, st.builds(dict).map(dict.keys))
+def resolve_KeysView(thing):
+    return st.dictionaries(st.from_type(thing.__args__[0]), st.none()).map(dict.keys)
+
+
+@register(typing.ValuesView, st.builds(dict).map(dict.values))
+def resolve_ValuesView(thing):
+    return st.dictionaries(st.integers(), st.from_type(thing.__args__[0])).map(
+        dict.values
+    )
+
+
+@register(typing.Iterator, st.iterables(st.nothing()))
+def resolve_Iterator(thing):
+    return st.iterables(st.from_type(thing.__args__[0]))
+
+
+@register(typing.Callable, st.functions())
+def resolve_Callable(thing):
+    # Generated functions either accept no arguments, or arbitrary arguments.
+    # This is looser than ideal, but anything tighter would generally break
+    # use of keyword arguments and we'd rather not force positional-only.
+    if not thing.__args__:  # pragma: no cover  # varies by minor version
+        return st.functions()
+    return st.functions(
+        like=(lambda: None) if len(thing.__args__) == 1 else (lambda *a, **k: None),
+        returns=st.from_type(thing.__args__[-1]),
+    )

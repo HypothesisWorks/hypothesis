@@ -17,11 +17,9 @@ import json
 import os
 import sys
 from contextlib import contextmanager
+from typing import Dict, Set, Tuple
 
 from hypothesis.internal.reflection import proxies
-
-if False:
-    from typing import Set, Dict, Tuple  # noqa
 
 """
 This module implements a custom coverage system that records conditions and

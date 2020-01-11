@@ -15,6 +15,7 @@
 
 from collections import OrderedDict, abc
 from copy import copy
+from typing import Any, List, Sequence, Set, Union
 
 import attr
 import numpy as np
@@ -32,6 +33,7 @@ from hypothesis.internal.validation import (
     check_valid_size,
     try_convert,
 )
+from hypothesis.strategies._internal.strategies import Ex
 
 try:
     from pandas.api.types import is_categorical_dtype
@@ -41,11 +43,6 @@ except ImportError:  # pragma: no cover
         if isinstance(dt, np.dtype):
             return False
         return dt == "category"
-
-
-if False:
-    from typing import Any, List, Union, Sequence, Set  # noqa
-    from hypothesis.strategies._internal.strategies import Ex  # noqa
 
 
 def dtype_for_elements_strategy(s):
@@ -155,8 +152,9 @@ DEFAULT_MAX_SIZE = 10
 
 @st.cacheable
 @st.defines_strategy
-def range_indexes(min_size=0, max_size=None):
-    # type: (int, int) -> st.SearchStrategy[pandas.RangeIndex]
+def range_indexes(
+    min_size: int = 0, max_size: int = None
+) -> st.SearchStrategy[pandas.RangeIndex]:
     """Provides a strategy which generates an :class:`~pandas.Index` whose
     values are 0, 1, ..., n for some n.
 
@@ -177,12 +175,12 @@ def range_indexes(min_size=0, max_size=None):
 @st.cacheable
 @st.defines_strategy
 def indexes(
-    elements=None,  # type: st.SearchStrategy[Ex]
-    dtype=None,  # type: Any
-    min_size=0,  # type: int
-    max_size=None,  # type: int
-    unique=True,  # type: bool
-):
+    elements: st.SearchStrategy[Ex] = None,
+    dtype: Any = None,
+    min_size: int = 0,
+    max_size: int = None,
+    unique: bool = True,
+) -> st.SearchStrategy[pandas.Index]:
     """Provides a strategy for producing a :class:`pandas.Index`.
 
     Arguments:
@@ -216,13 +214,12 @@ def indexes(
 
 @st.defines_strategy
 def series(
-    elements=None,  # type: st.SearchStrategy[Ex]
-    dtype=None,  # type: Any
-    index=None,  # type: st.SearchStrategy[Union[Sequence, pandas.Index]]
-    fill=None,  # type: st.SearchStrategy[Ex]
-    unique=False,  # type: bool
-):
-    # type: (...) -> st.SearchStrategy[pandas.Series]
+    elements: st.SearchStrategy[Ex] = None,
+    dtype: Any = None,
+    index: st.SearchStrategy[Union[Sequence, pandas.Index]] = None,
+    fill: st.SearchStrategy[Ex] = None,
+    unique: bool = False,
+) -> st.SearchStrategy[pandas.Series]:
     """Provides a strategy for producing a :class:`pandas.Series`.
 
     Arguments:
@@ -331,13 +328,12 @@ class column:
 
 
 def columns(
-    names_or_number,  # type: Union[int, Sequence[str]]
-    dtype=None,  # type: Any
-    elements=None,  # type: st.SearchStrategy[Ex]
-    fill=None,  # type: st.SearchStrategy[Ex]
-    unique=False,  # type: bool
-):
-    # type: (...) -> List[column]
+    names_or_number: Union[int, Sequence[str]],
+    dtype: Any = None,
+    elements: st.SearchStrategy[Ex] = None,
+    fill: st.SearchStrategy[Ex] = None,
+    unique: bool = False,
+) -> List[column]:
     """A convenience function for producing a list of :class:`column` objects
     of the same general shape.
 
@@ -359,11 +355,10 @@ def columns(
 
 @st.defines_strategy
 def data_frames(
-    columns=None,  # type: Sequence[column]
-    rows=None,  # type: st.SearchStrategy[Union[dict, Sequence[Any]]]
-    index=None,  # type: st.SearchStrategy[Ex]
-):
-    # type: (...) -> st.SearchStrategy[pandas.DataFrame]
+    columns: Sequence[column] = None,
+    rows: st.SearchStrategy[Union[dict, Sequence[Any]]] = None,
+    index: st.SearchStrategy[Ex] = None,
+) -> st.SearchStrategy[pandas.DataFrame]:
     """Provides a strategy for producing a :class:`pandas.DataFrame`.
 
     Arguments:

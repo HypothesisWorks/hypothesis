@@ -17,6 +17,7 @@ import re
 import string
 from datetime import timedelta
 from decimal import Decimal
+from typing import Any, Callable, Dict, Type, TypeVar, Union
 
 import django
 import django.db.models as dm
@@ -34,13 +35,8 @@ from hypothesis.internal.validation import check_type
 from hypothesis.provisional import ip4_addr_strings, ip6_addr_strings, urls
 from hypothesis.strategies import emails
 
-if False:
-    from datetime import tzinfo  # noqa
-    from typing import Any, Callable, Dict, List, Optional  # noqa
-    from typing import Text, Type, TypeVar, Union  # noqa
-
-    AnyField = Union[dm.Field, df.Field]
-    F = TypeVar("F", bound=AnyField)
+AnyField = Union[dm.Field, df.Field]
+F = TypeVar("F", bound=AnyField)
 
 
 # Mapping of field types, to strategy objects or functions of (type) -> strategy
@@ -209,8 +205,9 @@ def _for_form_boolean(field):
     return st.booleans()
 
 
-def register_field_strategy(field_type, strategy):
-    # type: (Type[AnyField], st.SearchStrategy) -> None
+def register_field_strategy(
+    field_type: Type[AnyField], strategy: st.SearchStrategy
+) -> None:
     """Add an entry to the global field-to-strategy lookup used by
     :func:`~hypothesis.extra.django.from_field`.
 
@@ -233,8 +230,7 @@ def register_field_strategy(field_type, strategy):
     _global_field_lookup[field_type] = strategy
 
 
-def from_field(field):
-    # type: (F) -> st.SearchStrategy[Union[F, None]]
+def from_field(field: F) -> st.SearchStrategy[Union[F, None]]:
     """Return a strategy for values that fit the given field.
 
     This function is used by :func:`~hypothesis.extra.django.from_form` and

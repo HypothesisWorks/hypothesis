@@ -15,6 +15,7 @@
 
 import unittest
 from functools import partial
+from typing import Type, Union
 
 import django.db.models as dm
 import django.forms as df
@@ -26,12 +27,7 @@ import hypothesis.strategies._internal.core as st
 from hypothesis import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django._fields import from_field
-from hypothesis.utils.conventions import infer
-
-if False:
-    from datetime import tzinfo  # noqa
-    from typing import Any, Type, Optional, List, Text, Callable, Union  # noqa
-    from hypothesis.utils.conventions import InferType  # noqa
+from hypothesis.utils.conventions import InferType, infer
 
 
 class HypothesisTestCase:
@@ -59,10 +55,8 @@ class TransactionTestCase(HypothesisTestCase, dt.TransactionTestCase):
 
 @st.defines_strategy
 def from_model(
-    model,  # type: Type[dm.Model]
-    **field_strategies  # type: Union[st.SearchStrategy[Any], InferType]
-):
-    # type: (...) -> st.SearchStrategy[Any]
+    model: Type[dm.Model], **field_strategies: Union[st.SearchStrategy, InferType]
+) -> st.SearchStrategy:
     """Return a strategy for examples of ``model``.
 
     .. warning::
@@ -128,11 +122,10 @@ def _models_impl(draw, strat):
 
 @st.defines_strategy
 def from_form(
-    form,  # type: Type[dm.Model]
-    form_kwargs=None,  # type: dict
-    **field_strategies  # type: Union[st.SearchStrategy[Any], InferType]
-):
-    # type: (...) -> st.SearchStrategy[Any]
+    form: Type[df.Form],
+    form_kwargs: dict = None,
+    **field_strategies: Union[st.SearchStrategy, InferType]
+) -> st.SearchStrategy[df.Form]:
     """Return a strategy for examples of ``form``.
 
     ``form`` must be an subclass of :class:`~django:django.forms.Form`.

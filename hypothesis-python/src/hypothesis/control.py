@@ -15,6 +15,7 @@
 
 import math
 import traceback
+from typing import Any
 
 from hypothesis import Verbosity, settings
 from hypothesis.errors import CleanupFailed, InvalidArgument, UnsatisfiedAssumption
@@ -23,16 +24,12 @@ from hypothesis.internal.validation import check_type
 from hypothesis.reporting import report, verbose_report
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
-if False:
-    from typing import Any, AnyStr  # noqa
-
 
 def reject():
     raise UnsatisfiedAssumption()
 
 
-def assume(condition):
-    # type: (Any) -> bool
+def assume(condition: Any) -> bool:
     """Calling ``assume`` is like an :ref:`assert <python:assert>` that marks
     the example as bad, rather than failing the test.
 
@@ -100,8 +97,7 @@ def cleanup(teardown):
     context.tasks.append(teardown)
 
 
-def note(value):
-    # type: (AnyStr) -> None
+def note(value: str) -> None:
     """Report this value in the final execution."""
     context = _current_build_context.value
     if context is None:
@@ -111,8 +107,7 @@ def note(value):
         report(value)
 
 
-def event(value):
-    # type: (AnyStr) -> None
+def event(value: str) -> None:
     """Record an event that occurred this test. Statistics on number of test
     runs with each event will be reported at the end if you run Hypothesis in
     statistics reporting mode.
@@ -126,8 +121,7 @@ def event(value):
     context.data.note_event(value)
 
 
-def target(observation, label=""):
-    # type: (float, str) -> None
+def target(observation: float, label: str = "") -> None:
     """Calling this function with a ``float`` observation gives it feedback
     with which to guide our search for inputs that will cause an error, in
     addition to all the usual heuristics.  Observations must always be finite.

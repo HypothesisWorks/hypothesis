@@ -34,8 +34,7 @@ class NumpyRandomWrapper:
         self.setstate = numpy.random.set_state
 
 
-def register_random(r):
-    # type: (random.Random) -> None
+def register_random(r: random.Random) -> None:
     """Register the given Random instance for management by Hypothesis.
 
     You can pass ``random.Random`` instances (or other objects with seed,

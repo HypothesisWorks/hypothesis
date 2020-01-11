@@ -27,6 +27,7 @@ import zlib
 from inspect import getfullargspec
 from io import StringIO
 from random import Random
+from typing import Any, Callable, Hashable, List, TypeVar, Union
 from unittest import TestCase
 
 import attr
@@ -89,18 +90,15 @@ from hypothesis.reporting import (
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.strategies._internal.collections import TupleStrategy
 from hypothesis.strategies._internal.strategies import (
+    Ex,
     MappedSearchStrategy,
     SearchStrategy,
 )
-from hypothesis.utils.conventions import infer
+from hypothesis.utils.conventions import InferType, infer
 from hypothesis.vendor.pretty import RepresentationPrinter
 from hypothesis.version import __version__
 
-if False:
-    from typing import Any, Dict, Callable, Hashable, Optional, Union, TypeVar  # noqa
-    from hypothesis.utils.conventions import InferType  # noqa
-
-    TestFunc = TypeVar("TestFunc", bound=Callable)
+TestFunc = TypeVar("TestFunc", bound=Callable)
 
 
 running_under_pytest = False
@@ -113,8 +111,7 @@ class Example:
     kwargs = attr.ib()
 
 
-def example(*args, **kwargs):
-    # type: (*Any, **Any) -> Callable[[TestFunc], TestFunc]
+def example(*args: Any, **kwargs: Any) -> Callable[[TestFunc], TestFunc]:
     """A decorator which ensures a specific example is always tested."""
     if args and kwargs:
         raise InvalidArgument(
@@ -132,8 +129,7 @@ def example(*args, **kwargs):
     return accept
 
 
-def seed(seed):
-    # type: (Hashable) -> Callable[[TestFunc], TestFunc]
+def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:
     """seed: Start the test execution from a specific seed.
 
     May be any hashable object. No exact meaning for seed is provided
@@ -880,10 +876,9 @@ class HypothesisHandle:
 
 
 def given(
-    *_given_arguments,  # type: Union[SearchStrategy, InferType]
-    **_given_kwargs  # type: Union[SearchStrategy, InferType]
-):
-    # type: (...) -> Callable[[Callable[..., None]], Callable[..., None]]
+    *_given_arguments: Union[SearchStrategy, InferType],
+    **_given_kwargs: Union[SearchStrategy, InferType]
+) -> Callable[[Callable[..., None]], Callable[..., None]]:
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
 
@@ -1110,13 +1105,12 @@ def given(
 
 
 def find(
-    specifier,  # type: SearchStrategy
-    condition,  # type: Callable[[Any], bool]
-    settings=None,  # type: Settings
-    random=None,  # type: Any
-    database_key=None,  # type: bytes
-):
-    # type: (...) -> Any
+    specifier: SearchStrategy[Ex],
+    condition: Callable[[Any], bool],
+    settings: Settings = None,
+    random: Random = None,
+    database_key: bytes = None,
+) -> Ex:
     """Returns the minimal example from the given strategy ``specifier`` that
     matches the predicate function ``condition``."""
     if settings is None:
@@ -1135,13 +1129,13 @@ def find(
         )
     specifier.validate()
 
-    last = [None]
+    last = []  # type: List[Ex]
 
     @settings
     @given(specifier)
     def test(v):
         if condition(v):
-            last[0] = v
+            last[:] = [v]
             raise Found()
 
     if random is not None:
