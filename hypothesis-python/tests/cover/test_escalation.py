@@ -13,8 +13,12 @@
 #
 # END HEADER
 
+import os
+import sys
+
 import pytest
 
+import hypothesis
 import hypothesis.internal.escalation as esc
 import hypothesis.strategies as st
 from hypothesis import given
@@ -62,3 +66,25 @@ def test_immediately_escalates_errors_in_generation():
         test()
 
     assert count == [1]
+
+
+def test_is_hypothesis_file_not_confused_by_prefix(monkeypatch):
+    # Errors in third-party extensions such as `hypothesis-trio` or
+    # `hypothesis-jsonschema` used to be incorrectly considered to be
+    # Hypothesis internal errors, which could result in confusing error
+    # messages. This test makes sure that files like:
+    # `[...]/python3.7/site-packages/hypothesis_something/[...]`
+    # are not considered as hypothesis files.
+    root = os.path.dirname(hypothesis.__file__)
+    assert esc.is_hypothesis_file(hypothesis.__file__)
+    assert esc.is_hypothesis_file(esc.__file__)
+
+    # Ignore `Path.resolve` for python 3.5 because it is strict by default
+    # and some paths in this test are made up (this behavior has been changed
+    # since python 3.6)
+    if sys.version_info < (3, 6):
+        monkeypatch.setattr("pathlib.Path.resolve", lambda x: x, raising=False)
+
+    assert not esc.is_hypothesis_file(pytest.__file__)
+    assert not esc.is_hypothesis_file(root + "-suffix")
+    assert not esc.is_hypothesis_file(root + "-suffix/something.py")
