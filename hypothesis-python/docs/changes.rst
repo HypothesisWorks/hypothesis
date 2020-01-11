@@ -10,6 +10,19 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.1.4:
+
+------------------
+5.1.4 - 2020-01-11
+------------------
+
+This patch fixes a bug where errors in third-party extensions such as
+:pypi:`hypothesis-trio` or :pypi:`hypothesis-jsonschema` were incorrectly
+considered to be Hypothesis internal errors, which could result in
+confusing error messages.
+
+Thanks to Vincent Michel for reporting and fixing the bug!
+
 .. _v5.1.3:
 
 ------------------
