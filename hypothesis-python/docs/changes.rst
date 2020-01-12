@@ -33,7 +33,7 @@ This release converts the type hint comments on our public API to
 :pep:`484` type annotations.
 
 Thanks to Ivan Levkivskyi for :pypi:`com2ann` - with the refactoring
-tools from :`5.0.1 <v5.0.1>` it made this process remarkably easy!
+tools from :ref:`5.0.1 <v5.0.1>` it made this process remarkably easy!
 
 .. _v5.1.2:
 
@@ -188,7 +188,7 @@ with :func:`~hypothesis.strategies.from_type`:
 
 Note that using :func:`~hypothesis.strategies.from_type` with one of the above strategies will not
 ensure that the the specified function will execute successfully (ie : the strategy returned for
-``from_type(typing.SupportsAbs)`` may include NaNs or things this will cause the :func:`python:abs`
+``from_type(typing.SupportsAbs)`` may include NaNs or things which cause the :func:`python:abs`
 function to error. )
 
 Thanks to Lea Provenzano for this patch.

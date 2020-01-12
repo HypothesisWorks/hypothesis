@@ -412,8 +412,8 @@ def floats(
     required to represent the generated float. Valid values are 16, 32, or 64.
     Passing ``width=32`` will still use the builtin 64-bit ``float`` class,
     but always for values which can be exactly represented as a 32-bit float.
-    Half-precision floats (``width=16``) are only supported on Python 3.6, or
-    if :pypi:`Numpy` is installed.
+    Half-precision floats (``width=16``) are not supported on Python 3.5,
+    unless :pypi:`Numpy` is installed.
 
     The exclude_min and exclude_max argument can be used to generate numbers
     from open or half-open intervals, by excluding the respective endpoints.
@@ -639,8 +639,8 @@ def sampled_from(elements):
     may also generate any combination of their members.
 
     Examples from this strategy shrink by replacing them with values earlier in
-    the list. So e.g. sampled_from((10, 1)) will shrink by trying to replace
-    1 values with 10, and sampled_from((1, 10)) will shrink by trying to
+    the list. So e.g. ``sampled_from([10, 1])`` will shrink by trying to replace
+    1 values with 10, and ``sampled_from([1, 10])`` will shrink by trying to
     replace 10 values with 1.
     """
     values = check_sample(elements, "sampled_from")
@@ -684,6 +684,7 @@ def lists(
 
     For example, the following will produce two columns of integers with both
     columns being unique respectively.
+
     .. code-block:: pycon
 
         >>> twoints = st.tuples(st.integers(), st.integers())
@@ -1692,19 +1693,18 @@ def datetimes(
         common source of bugs.
 
     :py:func:`hypothesis.extra.pytz.timezones` requires the :pypi:`pytz`
-    package, but provides all timezones in the Olsen database.  If you want to
-    allow naive datetimes, combine strategies like ``none() | timezones()``.
-
+    package, but provides all timezones in the Olsen database.
     :py:func:`hypothesis.extra.dateutil.timezones` requires the
     :pypi:`python-dateutil` package, and similarly provides all timezones
-    there.
+    there.  If you want to allow naive datetimes, combine strategies
+    like ``none() | timezones()``.
 
     Alternatively, you can create a list of the timezones you wish to allow
-    (e.g. from the standard library, :pypi:`dateutil`, or :pypi:`pytz`) and use
-    :py:func:`sampled_from`.  Ensure that simple values such as None or UTC
-    are at the beginning of the list for proper minimisation.
+    (e.g. from the standard library, :pypi:`dateutil <python-dateutil>`,
+    or :pypi:`pytz`) and use :py:func:`sampled_from`.
 
-    Examples from this strategy shrink towards midnight on January 1st 2000.
+    Examples from this strategy shrink towards midnight on January 1st 2000,
+    local time.
     """
     # Why must bounds be naive?  In principle, we could also write a strategy
     # that took aware bounds, but the API and validation is much harder.

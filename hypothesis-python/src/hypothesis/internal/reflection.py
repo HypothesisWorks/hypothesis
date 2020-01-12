@@ -140,9 +140,8 @@ def required_args(target, args=(), kwargs=()):
 
 def convert_keyword_arguments(function, args, kwargs):
     """Returns a pair of a tuple and a dictionary which would be equivalent
-    passed as positional and keyword args to the function. Unless function has.
-
-    **kwargs the dictionary will always be empty.
+    passed as positional and keyword args to the function. Unless function has
+    kwonlyargs or **kwargs the dictionary will always be empty.
     """
     argspec = inspect.getfullargspec(function)
     new_args = []
