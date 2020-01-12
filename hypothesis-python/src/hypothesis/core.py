@@ -297,7 +297,7 @@ class ArtificialDataForExample(ConjectureData):
         super().__init__(max_length=0, prefix=b"", random=None)
 
     def draw_bits(self, n):
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError("Dummy object should never be asked for bits.")
 
     def draw(self, strategy):
         assert self.__draws == 0
