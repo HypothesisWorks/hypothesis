@@ -73,8 +73,6 @@ We have a reasonably distinctive style when it comes to handling arguments:
   ``lists(elements, *, min_size=0, max_size=None, unique_by=None, unique=False)``.
   We intend to `migrate to this style after dropping Python 2 support <https://github.com/HypothesisWorks/hypothesis/issues/2130>`__
   in early 2020, with a gentle deprecation pathway.
-  New functions or argumemnts can implement a forward-compatible signature with
-  ``hypothesis.internal.reflection.reserved_to_kwonly``.
 * When adding arguments to strategies, think carefully about whether the user
   is likely to want that value to vary often. If so, make it a strategy instead
   of a value. In particular if it's likely to be common that they would want to

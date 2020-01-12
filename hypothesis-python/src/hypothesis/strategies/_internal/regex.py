@@ -157,8 +157,8 @@ class CharactersBuilder:
         elif category == sre.CATEGORY_NOT_WORD:
             self._categories |= UNICODE_CATEGORIES - UNICODE_WORD_CATEGORIES
             self._blacklist_chars.add("_")
-        else:  # pragma: no cover
-            raise AssertionError("Unknown character category: %s" % category)
+        else:
+            raise NotImplementedError("Unknown character category: %s" % category)
 
     def add_char(self, char):
         """Add given char to the whitelist."""
@@ -397,10 +397,10 @@ def _strategy(codes, context, is_unicode):
                 elif charset_code == sre.CATEGORY:
                     # Regex '[\w]' (char category)
                     builder.add_category(charset_value)
-                else:  # pragma: no cover
+                else:
                     # Currently there are no known code points other than
                     # handled here. This code is just future proofing
-                    raise AssertionError("Unknown charset code: %s" % charset_code)
+                    raise NotImplementedError("Unknown charset code: %s" % charset_code)
             return builder.strategy
 
         elif code == sre.ANY:
@@ -473,7 +473,7 @@ def _strategy(codes, context, is_unicode):
                 recurse(value[2]) if value[2] else st.just(empty),
             )
 
-        else:  # pragma: no cover
+        else:
             # Currently there are no known code points other than handled here.
             # This code is just future proofing
-            raise AssertionError("Unknown code point: %s" % repr(code))
+            raise NotImplementedError("Unknown code point: %s" % repr(code))

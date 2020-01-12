@@ -12,13 +12,11 @@ omit =
 
 [report]
 exclude_lines =
-    @abc.abstractmethod
-    @abc.abstractproperty
-    NotImplementedError
     pragma: no cover
-    __repr__
-    __ne__
-    __copy__
-    __deepcopy__
+    raise NotImplementedError
+    def __repr__
+    def __ne__
+    def __copy__
+    def __deepcopy__
     except ImportError:
     assert all\(.+\)

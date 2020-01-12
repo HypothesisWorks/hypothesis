@@ -43,11 +43,10 @@ def belongs_to(package):
             return cache[ftype][filepath]
         except KeyError:
             pass
-        abspath = Path(filepath).resolve()
         try:
-            abspath.relative_to(root)
+            Path(filepath).resolve().relative_to(root)
             result = True
-        except ValueError:
+        except Exception:
             result = False
         cache[ftype][filepath] = result
         return result

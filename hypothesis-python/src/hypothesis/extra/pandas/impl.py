@@ -37,7 +37,7 @@ from hypothesis.strategies._internal.strategies import Ex
 
 try:
     from pandas.api.types import is_categorical_dtype
-except ImportError:  # pragma: no cover
+except ImportError:
 
     def is_categorical_dtype(dt):
         if isinstance(dt, np.dtype):

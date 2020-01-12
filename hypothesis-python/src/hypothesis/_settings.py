@@ -612,7 +612,7 @@ settings._define_setting(
     default=False,
     options=(True, False),
     description="""
-If set to True, Hypothesis will print code for failing examples that can be used with
+If set to ``True``, Hypothesis will print code for failing examples that can be used with
 :func:`@reproduce_failure <hypothesis.reproduce_failure>` to reproduce the failing example.
 """,
 )

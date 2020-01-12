@@ -17,7 +17,7 @@ import re
 import string
 from datetime import timedelta
 from decimal import Decimal
-from typing import Any, Callable, Dict, Type, TypeVar, Union
+from typing import Any, Callable, Dict, TypeVar, Union
 
 import django
 import django.db.models as dm
@@ -34,6 +34,12 @@ from hypothesis.extra.pytz import timezones
 from hypothesis.internal.validation import check_type
 from hypothesis.provisional import ip4_addr_strings, ip6_addr_strings, urls
 from hypothesis.strategies import emails
+
+try:
+    # New in Python 3.5.2; so we only use the string form in annotations
+    from typing import Type
+except ImportError:
+    pass
 
 AnyField = Union[dm.Field, df.Field]
 F = TypeVar("F", bound=AnyField)
@@ -206,7 +212,7 @@ def _for_form_boolean(field):
 
 
 def register_field_strategy(
-    field_type: Type[AnyField], strategy: st.SearchStrategy
+    field_type: "Type[AnyField]", strategy: st.SearchStrategy
 ) -> None:
     """Add an entry to the global field-to-strategy lookup used by
     :func:`~hypothesis.extra.django.from_field`.

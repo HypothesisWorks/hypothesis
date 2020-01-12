@@ -13,14 +13,10 @@
 #
 # END HEADER
 
-# Notes: we use instances of these objects as singletons which serve as
-# identifiers in various patches of code.  The more specific types
-# (DefaultValueType and InferType) exist so that typecheckers such as Mypy
-# can distinguish them from the others.  DefaultValueType is only used in
-# the Django extra.
-
 
 class UniqueIdentifier:
+    """A factory for sentinel objects with nice reprs."""
+
     def __init__(self, identifier):
         self.identifier = identifier
 
@@ -28,12 +24,8 @@ class UniqueIdentifier:
         return self.identifier
 
 
-class DefaultValueType(UniqueIdentifier):
-    pass
-
-
 class InferType(UniqueIdentifier):
-    pass
+    """We have a subclass for `infer` so we can type-hint public APIs."""
 
 
 infer = InferType("infer")
