@@ -18,8 +18,7 @@ import re
 import shlex
 import subprocess
 import sys
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from glob import glob
 
 from coverage.config import CoverageConfig
@@ -91,17 +90,6 @@ def do_release(package):
         return
 
     os.chdir(package.BASE_DIR)
-
-    # If we're making a release late on New Year's Eve, hold the release
-    # for a few minutes and ship it at midnight.  For timeout details, see:
-    # https://docs.travis-ci.com/user/customizing-the-build/#build-timeouts
-    max_timeout = timedelta(minutes=40)
-    while True:
-        now = datetime.utcnow()
-        if now.year == (now + max_timeout).year:
-            break
-        print("Waiting for the midnight release...")
-        time.sleep(10)
 
     print("Updating changelog and version")
     package.update_changelog_and_version()
