@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.1.5:
+
+------------------
+5.1.5 - 2020-01-12
+------------------
+
+This patch fixes an internal error when running in an :pypi:`IPython` repl or
+:pypi:`Jupyter` notebook on Windows (:issue:`2319`), and an internal error on
+Python 3.5.1 (:issue:`2318`).
+
 .. _v5.1.4:
 
 ------------------
