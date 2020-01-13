@@ -632,3 +632,21 @@ def test_can_cast():
 def test_timezone_lookup(type_):
     assert issubclass(type_, datetime.tzinfo)
     assert_all_examples(st.from_type(type_), lambda t: isinstance(t, datetime.timezone))
+
+
+@pytest.mark.parametrize(
+    "typ",
+    [
+        typing.Set[typing.Hashable],
+        typing.FrozenSet[typing.Hashable],
+        typing.Dict[typing.Hashable, int],
+    ],
+)
+def test_generic_collections_only_use_hashable_elements(typ):
+    assert_all_examples(from_type(typ), lambda x: True)
+
+
+def test_hashable_type_unhashable_value():
+    # Decimal("snan") is not hashable; we should be able to generate it.
+    # See https://github.com/HypothesisWorks/hypothesis/issues/2320
+    find_any(from_type(typing.Hashable), lambda x: not types._can_hash(x))
