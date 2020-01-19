@@ -10,6 +10,17 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.1.6:
+
+------------------
+5.1.6 - 2020-01-19
+------------------
+
+This patch fixes :issue:`2320`, where ``from_type(Set[Hashable])`` could raise
+an internal error because ``Decimal("snan")`` is of a hashable type, but raises
+an error when hashed.  We now ensure that set elements and dict keys in generic
+types can actually be hashed.
+
 .. _v5.1.5:
 
 ------------------
