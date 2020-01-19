@@ -406,21 +406,29 @@ def resolve_List(thing):
     return st.lists(st.from_type(thing.__args__[0]))
 
 
+def _can_hash(val):
+    try:
+        hash(val)
+        return True
+    except Exception:
+        return False
+
+
 @register(typing.Set, st.builds(set))
 def resolve_Set(thing):
-    return st.sets(st.from_type(thing.__args__[0]))
+    return st.sets(st.from_type(thing.__args__[0]).filter(_can_hash))
 
 
 @register(typing.FrozenSet, st.builds(frozenset))
 def resolve_FrozenSet(thing):
-    return st.frozensets(st.from_type(thing.__args__[0]))
+    return st.frozensets(st.from_type(thing.__args__[0]).filter(_can_hash))
 
 
 @register(typing.Dict, st.builds(dict))
 def resolve_Dict(thing):
     # If thing is a Collection instance, we need to fill in the values
     keys_vals = [st.from_type(t) for t in thing.__args__] * 2
-    return st.dictionaries(keys_vals[0], keys_vals[1])
+    return st.dictionaries(keys_vals[0].filter(_can_hash), keys_vals[1])
 
 
 @register("DefaultDict", st.builds(collections.defaultdict))
@@ -435,7 +443,9 @@ def resolve_ItemsView(thing):
 
 @register(typing.KeysView, st.builds(dict).map(dict.keys))
 def resolve_KeysView(thing):
-    return st.dictionaries(st.from_type(thing.__args__[0]), st.none()).map(dict.keys)
+    return st.dictionaries(
+        st.from_type(thing.__args__[0]).filter(_can_hash), st.none()
+    ).map(dict.keys)
 
 
 @register(typing.ValuesView, st.builds(dict).map(dict.values))
