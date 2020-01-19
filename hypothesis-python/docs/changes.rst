@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.2.0:
+
+------------------
+5.2.0 - 2020-01-19
+------------------
+
+This release allows :func:`~hypothesis.extra.numpy.from_dtype` to generate
+Unicode strings which cannot be encoded in UTF-8, but are valid in Numpy
+arrays (which use UTF-32).
+
 .. _v5.1.6:
 
 ------------------
