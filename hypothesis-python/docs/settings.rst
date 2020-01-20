@@ -93,7 +93,7 @@ up the verbosity setting.
     >>> from hypothesis import find, settings, Verbosity
     >>> from hypothesis.strategies import lists, integers
     >>> @given(lists(integers())
-    ... @settings(verbosity=Verbosity.verbose))
+    ... @settings(verbosity=Verbosity.verbose)
     ... def f(x): assert not any(x)
     ... f()
     Trying example: []
