@@ -18,6 +18,7 @@ import decimal
 import fractions
 import math
 from datetime import date, datetime, time, timedelta
+from ipaddress import IPv4Network, IPv6Network
 
 import pytest
 
@@ -175,6 +176,13 @@ def fn_ktest(*fnkwargs):
     (ds.slices, {"size": -1}),
     (ds.slices, {"size": 2.3}),
     (ds.sampled_from, {"elements": ()}),
+    (ds.ip_addresses, {"v": "4"}),
+    (ds.ip_addresses, {"v": 4.0}),
+    (ds.ip_addresses, {"v": 5}),
+    (ds.ip_addresses, {"v": 4, "network": "::/64"}),
+    (ds.ip_addresses, {"v": 6, "network": "127.0.0.0/8"}),
+    (ds.ip_addresses, {"network": b"127.0.0.0/8"}),  # only unicode strings are valid
+    (ds.ip_addresses, {"network": b"::/64"}),
 )
 def test_validates_keyword_arguments(fn, kwargs):
     with pytest.raises(InvalidArgument):
@@ -243,6 +251,17 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.text, {"alphabet": ds.sampled_from("abc")}),
     (ds.characters, {"whitelist_categories": ["N"]}),
     (ds.characters, {"blacklist_categories": []}),
+    (ds.ip_addresses, {}),
+    (ds.ip_addresses, {"v": 4}),
+    (ds.ip_addresses, {"v": 6}),
+    (ds.ip_addresses, {"network": "127.0.0.0/8"}),
+    (ds.ip_addresses, {"network": "::/64"}),
+    (ds.ip_addresses, {"v": 4, "network": "127.0.0.0/8"}),
+    (ds.ip_addresses, {"v": 6, "network": "::/64"}),
+    (ds.ip_addresses, {"network": IPv4Network("127.0.0.0/8")}),
+    (ds.ip_addresses, {"network": IPv6Network("::/64")}),
+    (ds.ip_addresses, {"v": 4, "network": IPv4Network("127.0.0.0/8")}),
+    (ds.ip_addresses, {"v": 6, "network": IPv6Network("::/64")}),
 )
 def test_produces_valid_examples_from_keyword(fn, kwargs):
     fn(**kwargs).example()
@@ -458,3 +477,17 @@ def test_chained_filter(x):
 def test_chained_filter_tracks_all_conditions():
     s = ds.integers().filter(bool).filter(lambda x: x % 3)
     assert len(s.flat_conditions) == 2
+
+
+@pytest.mark.parametrize("version", [4, 6])
+@given(data=ds.data())
+def test_ipaddress_from_network_is_always_correct_version(data, version):
+    ip = data.draw(ds.ip_addresses(v=version), label="address")
+    assert ip.version == version
+
+
+@given(data=ds.data(), network=ds.from_type(IPv4Network) | ds.from_type(IPv6Network))
+def test_ipaddress_from_network_is_always_in_network(data, network):
+    ip = data.draw(ds.ip_addresses(network=network), label="address")
+    assert ip in network
+    assert ip.version == network.version

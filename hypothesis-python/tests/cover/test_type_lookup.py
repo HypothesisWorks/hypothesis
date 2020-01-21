@@ -31,6 +31,7 @@ from hypothesis.strategies._internal.types import _global_type_lookup
 # Build a set of all types output by core strategies
 blacklist = [
     "builds",
+    "ip_addresses",
     "iterables",
     "permutations",
     "random_module",

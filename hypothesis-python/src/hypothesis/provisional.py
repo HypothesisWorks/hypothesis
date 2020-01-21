@@ -28,7 +28,9 @@ import string
 
 import hypothesis.internal.conjecture.utils as cu
 import hypothesis.strategies._internal.core as st
+from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
+from hypothesis.strategies._internal.ipaddress import ip_addresses
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
 URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'(),")
@@ -159,20 +161,19 @@ def urls() -> SearchStrategy[str]:
 
 @st.defines_strategy_with_reusable_values
 def ip4_addr_strings() -> SearchStrategy[str]:
-    """A strategy for IPv4 address strings.
-
-    This consists of four strings representing integers [0..255],
-    without zero-padding, joined by dots.
-    """
-    return st.builds("{}.{}.{}.{}".format, *(4 * [st.integers(0, 255)]))
+    note_deprecation(
+        "Use `ip_addresses(v=4).map(str)` instead of `ip4_addr_strings()`; "
+        "the provisional strategy is less flexible and will be removed.",
+        since="RELEASEDAY",
+    )
+    return ip_addresses(v=4).map(str)
 
 
 @st.defines_strategy_with_reusable_values
 def ip6_addr_strings() -> SearchStrategy[str]:
-    """A strategy for IPv6 address strings.
-
-    This consists of sixteen quads of hex digits (0000 .. FFFF), joined
-    by colons.  Values do not currently have zero-segments collapsed.
-    """
-    part = st.integers(0, 2 ** 16 - 1).map("{:04x}".format)
-    return st.tuples(*[part] * 8).map(lambda a: ":".join(a).upper())
+    note_deprecation(
+        "Use `ip_addresses(v=6).map(str)` instead of `ip6_addr_strings()`; "
+        "the provisional strategy is less flexible and will be removed.",
+        since="RELEASEDAY",
+    )
+    return ip_addresses(v=6).map(str)

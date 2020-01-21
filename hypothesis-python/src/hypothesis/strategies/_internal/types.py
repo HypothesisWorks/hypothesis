@@ -20,6 +20,7 @@ import fractions
 import functools
 import inspect
 import io
+import ipaddress
 import numbers
 import typing
 import uuid
@@ -28,6 +29,11 @@ from types import FunctionType
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import ForwardRef, typing_root_type
+from hypothesis.strategies._internal.ipaddress import (
+    SPECIAL_IPv4_RANGES,
+    SPECIAL_IPv6_RANGES,
+    ip_addresses,
+)
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import OneOfStrategy
 
@@ -223,12 +229,25 @@ def can_cast(type, value):
         return False
 
 
+def _networks(bits):
+    return st.tuples(st.integers(0, 2 ** bits - 1), st.integers(-bits, 0).map(abs))
+
+
 utc_offsets = st.builds(
     datetime.timedelta, minutes=st.integers(0, 59), hours=st.integers(-23, 23)
 )
 
+# These builtin and standard-library types have Hypothesis strategies,
+# seem likely to appear in type annotations, or are otherwise notable.
+#
+# The strategies below must cover all possible values from the type, because
+# many users treat them as comprehensive and one of Hypothesis' design goals
+# is to avoid testing less than expected.
+#
+# As a general rule, we try to limit this to scalars because from_type()
+# would have to decide on arbitrary collection elements, and we'd rather
+# not (with typing module generic types and some builtins as exceptions).
 _global_type_lookup = {
-    # Types with core Hypothesis strategies
     type(None): st.none(),
     bool: st.booleans(),
     int: st.integers(),
@@ -252,7 +271,6 @@ _global_type_lookup = {
     frozenset: st.builds(frozenset),
     dict: st.builds(dict),
     FunctionType: st.functions(),
-    # Built-in types
     type(Ellipsis): st.just(Ellipsis),
     type(NotImplemented): st.just(NotImplemented),
     bytearray: st.binary().map(bytearray),
@@ -272,6 +290,18 @@ _global_type_lookup = {
         st.integers(min_value=0).map(range),
         st.builds(range, st.integers(), st.integers()),
         st.builds(range, st.integers(), st.integers(), st.integers().filter(bool)),
+    ),
+    ipaddress.IPv4Address: ip_addresses(v=4),
+    ipaddress.IPv6Address: ip_addresses(v=6),
+    ipaddress.IPv4Interface: _networks(32).map(ipaddress.IPv4Interface),
+    ipaddress.IPv6Interface: _networks(128).map(ipaddress.IPv6Interface),
+    ipaddress.IPv4Network: st.one_of(
+        _networks(32).map(lambda x: ipaddress.IPv4Network(x, strict=False)),
+        st.sampled_from(SPECIAL_IPv4_RANGES).map(ipaddress.IPv4Network),
+    ),
+    ipaddress.IPv6Network: st.one_of(
+        _networks(128).map(lambda x: ipaddress.IPv6Network(x, strict=False)),
+        st.sampled_from(SPECIAL_IPv6_RANGES).map(ipaddress.IPv6Network),
     ),
     # Pull requests with more types welcome!
 }
