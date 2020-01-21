@@ -84,9 +84,9 @@ def from_dtype(dtype: np.dtype) -> st.SearchStrategy[Any]:
         result = st.integers(min_value=-overflow, max_value=overflow - 1)
     elif dtype.kind == "U":
         # Encoded in UTF-32 (four bytes/codepoint) and null-terminated
-        result = st.text(
-            alphabet=st.characters(), max_size=(dtype.itemsize or 0) // 4 or None
-        ).filter(lambda b: b[-1:] != "\0")
+        result = st.text(max_size=(dtype.itemsize or 0) // 4 or None).filter(
+            lambda b: b[-1:] != "\0"
+        )
     elif dtype.kind in ("m", "M"):
         if "[" in dtype.str:
             res = st.just(dtype.str.split("[")[-1][:-1])
