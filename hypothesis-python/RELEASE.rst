@@ -8,3 +8,5 @@ arguments).
 
 If you use them in type annotations, :func:`~hypothesis.strategies.from_type` now
 has strategies registered for :mod:`ipaddress` address, network, and interface types.
+
+The provisional strategies for IP address strings are therefore deprecated.

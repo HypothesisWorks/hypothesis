@@ -13,9 +13,9 @@
 #
 # END HEADER
 
+import ipaddress
 import re
 import string
-from binascii import unhexlify
 
 import pytest
 
@@ -23,6 +23,7 @@ from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.provisional import domains, ip4_addr_strings, ip6_addr_strings, urls
 from tests.common.debug import find_any
+from tests.common.utils import checks_deprecated_behaviour
 
 
 @given(urls())
@@ -36,6 +37,7 @@ def test_is_URL(url):
     )
 
 
+@checks_deprecated_behaviour
 @given(ip4_addr_strings())
 def test_is_IP4_addr(address):
     as_num = [int(n) for n in address.split(".")]
@@ -43,16 +45,12 @@ def test_is_IP4_addr(address):
     assert all(0 <= n <= 255 for n in as_num)
 
 
+@checks_deprecated_behaviour
 @given(ip6_addr_strings())
 def test_is_IP6_addr(address):
-    # Works for non-normalised addresses produced by this strategy, but not
-    # a particularly general test
-    assert address == address.upper()
-    as_hex = address.split(":")
-    assert len(as_hex) == 8
-    assert all(len(part) == 4 for part in as_hex)
-    raw = unhexlify(address.replace(":", "").encode("ascii"))
-    assert len(raw) == 16
+    # The IPv6Address constructor does all the validation we could need
+    assert isinstance(address, str)
+    ipaddress.IPv6Address(address)
 
 
 @pytest.mark.parametrize("max_length", [-1, 0, 3, 4.0, 256])
@@ -68,8 +66,6 @@ def test_valid_domains_arguments(max_length, max_element_length):
     domains(max_length=max_length, max_element_length=max_element_length).example()
 
 
-@pytest.mark.parametrize(
-    "strategy", [domains(), ip4_addr_strings(), ip6_addr_strings(), urls()]
-)
+@pytest.mark.parametrize("strategy", [domains(), urls()])
 def test_find_any_non_empty(strategy):
     find_any(strategy, lambda s: len(s) > 0)
