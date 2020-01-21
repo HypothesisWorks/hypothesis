@@ -60,6 +60,7 @@ from hypothesis.strategies._internal.core import (
     tuples,
     uuids,
 )
+from hypothesis.strategies._internal.ipaddress import ip_addresses
 
 # The implementation of all of these lives in `_strategies.py`, but we
 # re-export them via this module to avoid exposing implementation details
@@ -89,6 +90,7 @@ __all__ = [
     "frozensets",
     "functions",
     "integers",
+    "ip_addresses",
     "iterables",
     "just",
     "lists",

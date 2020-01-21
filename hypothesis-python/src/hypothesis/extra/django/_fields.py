@@ -32,7 +32,7 @@ import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
 from hypothesis.internal.validation import check_type
-from hypothesis.provisional import ip4_addr_strings, ip6_addr_strings, urls
+from hypothesis.provisional import urls
 from hypothesis.strategies import emails
 
 try:
@@ -69,6 +69,10 @@ _global_field_lookup = {
     df.URLField: urls(),
     df.UUIDField: st.uuids(),
 }  # type: Dict[Type[AnyField], Union[st.SearchStrategy, Callable[[Any], st.SearchStrategy]]]
+
+_ipv6_strings = st.one_of(
+    st.ip_addresses(v=6).map(str), st.ip_addresses(v=6).map(lambda addr: addr.exploded),
+)
 
 
 def register_for(field_type):
@@ -139,9 +143,9 @@ def _for_slug(field):
 @register_for(dm.GenericIPAddressField)
 def _for_model_ip(field):
     return {
-        "ipv4": ip4_addr_strings(),
-        "ipv6": ip6_addr_strings(),
-        "both": ip4_addr_strings() | ip6_addr_strings(),
+        "ipv4": st.ip_addresses(v=4).map(str),
+        "ipv6": _ipv6_strings,
+        "both": st.ip_addresses(v=4).map(str) | _ipv6_strings,
     }[field.protocol.lower()]
 
 
@@ -151,11 +155,11 @@ def _for_form_ip(field):
     #  of address they want, so direct comparison with the validator
     #  function has to be used instead. Sorry for the potato logic here
     if validate_ipv46_address in field.default_validators:
-        return ip4_addr_strings() | ip6_addr_strings()
+        return st.ip_addresses(v=4).map(str) | _ipv6_strings
     if validate_ipv4_address in field.default_validators:
-        return ip4_addr_strings()
+        return st.ip_addresses(v=4).map(str)
     if validate_ipv6_address in field.default_validators:
-        return ip6_addr_strings()
+        return _ipv6_strings
     raise InvalidArgument("No IP version validator on field=%r" % field)
 
 
