@@ -310,6 +310,13 @@ def test_unicode_string_dtypes_generate_unicode_strings(data):
     assert isinstance(result, str)
 
 
+@given(nps.arrays(dtype="U99", shape=(10,)))
+def test_can_unicode_strings_without_decode_error(arr):
+    # See https://github.com/numpy/numpy/issues/15363
+    pass
+
+
+@pytest.mark.xfail(strict=False, reason="mitigation for issue above")
 def test_unicode_string_dtypes_need_not_be_utf8():
     def cannot_encode(string):
         try:
