@@ -547,21 +547,31 @@ class OneOfStrategy(SearchStrategy):
     @property
     def element_strategies(self):
         if self.__element_strategies is None:
+            # While strategies are hashable, they use object.__hash__ and are
+            # therefore distinguished only by identity.
+            #
+            # In principle we could "just" define a __hash__ method
+            # (and __eq__, but that's easy in terms of type() and hash())
+            # to make this more powerful, but this is harder than it sounds:
+            #
+            # 1. Strategies are often distinguished by non-hashable attributes,
+            #    or by attributes that have the same hash value ("^.+" / b"^.+").
+            # 2. LazyStrategy: can't reify the wrapped strategy without breaking
+            #    laziness, so there's a hash each for the lazy and the nonlazy.
+            #
+            # Having made several attempts, the minor benefits of making strategies
+            # hashable are simply not worth the engineering effort it would take.
+            # See also issues #2291 and #2327.
+            seen = {self}
             strategies = []
             for arg in self.original_strategies:
                 check_strategy(arg)
                 if not arg.is_empty:
-                    strategies.extend([s for s in arg.branches if not s.is_empty])
-            pruned = []
-            seen = set()
-            for s in strategies:
-                if s is self:
-                    continue
-                if s in seen:
-                    continue
-                seen.add(s)
-                pruned.append(s)
-            self.__element_strategies = pruned
+                    for s in arg.branches:
+                        if s not in seen and not s.is_empty:
+                            seen.add(s)
+                            strategies.append(s)
+            self.__element_strategies = strategies
         return self.__element_strategies
 
     def calc_label(self):

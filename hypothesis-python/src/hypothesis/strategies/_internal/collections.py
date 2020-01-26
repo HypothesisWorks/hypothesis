@@ -167,11 +167,7 @@ class UniqueListStrategy(ListStrategy):
         return result
 
 
-class UniqueSampledListStrategy(ListStrategy):
-    def __init__(self, elements, min_size, max_size, keys):
-        super().__init__(elements, min_size, max_size)
-        self.keys = keys
-
+class UniqueSampledListStrategy(UniqueListStrategy):
     def do_draw(self, data):
         should_draw = cu.many(
             data,

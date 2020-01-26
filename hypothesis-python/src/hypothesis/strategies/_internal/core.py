@@ -1799,9 +1799,8 @@ def timedeltas(
 
 
 class CompositeStrategy(SearchStrategy):
-    def __init__(self, definition, label, args, kwargs):
+    def __init__(self, definition, args, kwargs):
         self.definition = definition
-        self.__label = label
         self.args = args
         self.kwargs = kwargs
 
@@ -1809,7 +1808,7 @@ class CompositeStrategy(SearchStrategy):
         return self.definition(data.draw, *self.args, **self.kwargs)
 
     def calc_label(self):
-        return self.__label
+        return calc_label_from_cls(self.definition)
 
 
 @cacheable
@@ -1841,12 +1840,10 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
     }
     new_argspec = argspec._replace(args=argspec.args[1:], annotations=annots)
 
-    label = calc_label_from_cls(f)
-
     @defines_strategy
     @define_function_signature(f.__name__, f.__doc__, new_argspec)
     def accept(*args, **kwargs):
-        return CompositeStrategy(f, label, args, kwargs)
+        return CompositeStrategy(f, args, kwargs)
 
     accept.__module__ = f.__module__
     return accept
