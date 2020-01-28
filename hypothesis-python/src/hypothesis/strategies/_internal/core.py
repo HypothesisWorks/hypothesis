@@ -39,8 +39,10 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
+    overload,
 )
 from uuid import UUID
 
@@ -123,15 +125,6 @@ from hypothesis.strategies._internal.strings import (
 )
 from hypothesis.types import RandomWithSeed
 from hypothesis.utils.conventions import InferType, infer, not_set
-
-try:
-    # New in Python 3.5.2; so we only use the string form in annotations
-    from typing import Type, overload
-except ImportError:
-
-    def overload(f):
-        return f
-
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -629,7 +622,7 @@ def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]:
 
 
 @overload  # noqa: F811
-def sampled_from(elements: "Type[enum.Enum]") -> SearchStrategy[Any]:
+def sampled_from(elements: Type[enum.Enum]) -> SearchStrategy[Any]:
     # `SearchStrategy[Enum]` is unreliable due to metaclass issues.
     pass  # pragma: no cover
 
@@ -1247,7 +1240,7 @@ def _defer_from_type(func: T) -> T:
 
 @cacheable
 @_defer_from_type
-def from_type(thing: "Type[Ex]") -> SearchStrategy[Ex]:
+def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     """Looks up the appropriate search strategy for the given type.
 
     ``from_type`` is used internally to fill in missing arguments to
@@ -2089,8 +2082,8 @@ def data() -> SearchStrategy[DataObject]:
 
 
 def register_type_strategy(
-    custom_type: "Type[Ex]",
-    strategy: Union[SearchStrategy[Ex], Callable[["Type[Ex]"], SearchStrategy[Ex]]],
+    custom_type: Type[Ex],
+    strategy: Union[SearchStrategy[Ex], Callable[[Type[Ex]], SearchStrategy[Ex]]],
 ) -> None:
     """Add an entry to the global type-to-strategy lookup.
 
