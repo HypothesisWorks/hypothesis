@@ -115,9 +115,9 @@ __all__ = [
     "SearchStrategy",
 ]
 
-assert _strategies.issubset(set(__all__)), (
-    _strategies - set(__all__),
-    set(__all__) - _strategies,
+assert set(_strategies).issubset(__all__), (
+    set(_strategies) - set(__all__),
+    set(__all__) - set(_strategies),
 )
 _public = {n for n in dir() if n[0] not in "_@"}
 assert set(__all__) == _public, (set(__all__) - _public, _public - set(__all__))

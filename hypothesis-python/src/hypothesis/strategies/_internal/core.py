@@ -24,7 +24,7 @@ import typing
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import reduce
-from inspect import getfullargspec, isabstract, isclass
+from inspect import getfullargspec, isabstract, isclass, signature
 from typing import (
     Any,
     AnyStr,
@@ -132,7 +132,7 @@ UniqueBy = Union[Callable[[Ex], Hashable], Tuple[Callable[[Ex], Hashable], ...]]
 # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
 Real = Union[int, float, Fraction, Decimal]
 
-_strategies = set()
+_strategies = {}  # type: Dict[str, Callable[..., SearchStrategy]]
 
 
 class FloatKey:
@@ -192,7 +192,7 @@ def base_defines_strategy(force_reusable: bool) -> Callable[[T], T]:
     def decorator(strategy_definition):
         """A decorator that registers the function as a strategy and makes it
         lazily evaluated."""
-        _strategies.add(strategy_definition.__name__)
+        _strategies[strategy_definition.__name__] = signature(strategy_definition)
 
         @proxies(strategy_definition)
         def accept(*args, **kwargs):
