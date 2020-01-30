@@ -76,7 +76,7 @@ def test_fuzz_fractions_bounds(data):
     if low is not None and high is not None and low > high:
         low, high = high, low
     try:
-        val = data.draw(fractions(low, high, denom), label="value")
+        val = data.draw(fractions(low, high, max_denominator=denom), label="value")
     except InvalidArgument:
         reject()  # fractions too close for given max_denominator
     if low is not None:

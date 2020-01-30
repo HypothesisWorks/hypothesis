@@ -26,7 +26,7 @@ def func_a():
     pass
 
 
-@given(functions(func_a, booleans()))
+@given(functions(like=func_a, returns=booleans()))
 def test_functions_no_args(f):
     assert f.__name__ == "func_a"
     assert f is not func_a
@@ -37,7 +37,7 @@ def func_b(a, b, c):
     pass
 
 
-@given(functions(func_b, booleans()))
+@given(functions(like=func_b, returns=booleans()))
 def test_functions_with_args(f):
     assert f.__name__ == "func_b"
     assert f is not func_b
@@ -50,7 +50,7 @@ def func_c(**kwargs):
     pass
 
 
-@given(functions(func_c, booleans()))
+@given(functions(like=func_c, returns=booleans()))
 def test_functions_kw_args(f):
     assert f.__name__ == "func_c"
     assert f is not func_c
@@ -59,7 +59,7 @@ def test_functions_kw_args(f):
     assert isinstance(f(a=1, b=2, c=3), bool)
 
 
-@given(functions(lambda: None, booleans()))
+@given(functions(like=lambda: None, returns=booleans()))
 def test_functions_argless_lambda(f):
     assert f.__name__ == "<lambda>"
     with pytest.raises(TypeError):
@@ -67,7 +67,7 @@ def test_functions_argless_lambda(f):
     assert isinstance(f(), bool)
 
 
-@given(functions(lambda a: None, booleans()))
+@given(functions(like=lambda a: None, returns=booleans()))
 def test_functions_lambda_with_arg(f):
     assert f.__name__ == "<lambda>"
     with pytest.raises(TypeError):
@@ -78,7 +78,7 @@ def test_functions_lambda_with_arg(f):
 @pytest.mark.parametrize("like,returns", [(None, booleans()), (lambda: None, None)])
 def test_invalid_arguments(like, returns):
     with pytest.raises(InvalidArgument):
-        functions(like, returns).example()
+        functions(like=like, returns=returns).example()
 
 
 def test_functions_valid_within_given_invalid_outside():
@@ -97,16 +97,16 @@ def test_functions_valid_within_given_invalid_outside():
 def test_can_call_default_like_arg():
     # This test is somewhat silly, but coverage complains about the uncovered
     # branch for calling it otherwise and alternative workarounds are worse.
-    like, returns = getfullargspec(functions).defaults
-    assert like() is None
-    assert returns.example() is None
+    defaults = getfullargspec(functions).kwonlydefaults
+    assert defaults["like"]() is None
+    assert defaults["returns"].example() is None
 
 
 def func(arg, *, kwonly_arg):
     pass
 
 
-@given(functions(func))
+@given(functions(like=func))
 def test_functions_strategy_with_kwonly_args(f):
     with pytest.raises(TypeError):
         f(1, 2)

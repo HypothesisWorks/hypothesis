@@ -27,6 +27,7 @@ import hypothesis.strategies._internal.core as st
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.coverage import check, check_function
+from hypothesis.internal.reflection import deprecated_posargs
 from hypothesis.internal.validation import (
     check_type,
     check_valid_interval,
@@ -174,12 +175,14 @@ def range_indexes(
 
 @st.cacheable
 @st.defines_strategy
+@deprecated_posargs
 def indexes(
+    *,
     elements: st.SearchStrategy[Ex] = None,
     dtype: Any = None,
     min_size: int = 0,
     max_size: int = None,
-    unique: bool = True,
+    unique: bool = True
 ) -> st.SearchStrategy[pandas.Index]:
     """Provides a strategy for producing a :class:`pandas.Index`.
 
@@ -213,12 +216,14 @@ def indexes(
 
 
 @st.defines_strategy
+@deprecated_posargs
 def series(
+    *,
     elements: st.SearchStrategy[Ex] = None,
     dtype: Any = None,
     index: st.SearchStrategy[Union[Sequence, pandas.Index]] = None,
     fill: st.SearchStrategy[Ex] = None,
-    unique: bool = False,
+    unique: bool = False
 ) -> st.SearchStrategy[pandas.Series]:
     """Provides a strategy for producing a :class:`pandas.Series`.
 
@@ -327,12 +332,14 @@ class column:
     unique = attr.ib(default=False)
 
 
+@deprecated_posargs
 def columns(
     names_or_number: Union[int, Sequence[str]],
+    *,
     dtype: Any = None,
     elements: st.SearchStrategy[Ex] = None,
     fill: st.SearchStrategy[Ex] = None,
-    unique: bool = False,
+    unique: bool = False
 ) -> List[column]:
     """A convenience function for producing a list of :class:`column` objects
     of the same general shape.
@@ -353,11 +360,13 @@ def columns(
     ]
 
 
+@deprecated_posargs
 @st.defines_strategy
 def data_frames(
     columns: Sequence[column] = None,
+    *,
     rows: st.SearchStrategy[Union[dict, Sequence[Any]]] = None,
-    index: st.SearchStrategy[Ex] = None,
+    index: st.SearchStrategy[Ex] = None
 ) -> st.SearchStrategy[pandas.DataFrame]:
     """Provides a strategy for producing a :class:`pandas.DataFrame`.
 
