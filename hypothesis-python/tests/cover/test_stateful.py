@@ -643,14 +643,14 @@ def test_saves_failing_example_in_database():
     db = ExampleDatabase(":memory:")
     with raises(AssertionError):
         run_state_machine_as_test(
-            SetStateMachine, Settings(database=db, max_examples=100)
+            SetStateMachine, settings=Settings(database=db, max_examples=100)
         )
     assert any(list(db.data.values()))
 
 
 def test_can_run_with_no_db():
     with raises(AssertionError):
-        run_state_machine_as_test(SetStateMachine, Settings(database=None))
+        run_state_machine_as_test(SetStateMachine, settings=Settings(database=None))
 
 
 def test_stateful_double_rule_is_forbidden(recwarn):

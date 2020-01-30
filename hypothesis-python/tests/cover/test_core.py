@@ -98,7 +98,7 @@ def test_pytest_skip_skips_shrinking():
 
 
 def test_can_find_with_db_eq_none():
-    find(s.integers(), bool, settings(database=None, max_examples=100))
+    find(s.integers(), bool, settings=settings(database=None, max_examples=100))
 
 
 def test_no_such_example():
