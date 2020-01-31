@@ -115,6 +115,8 @@ jobs:
           TASK: check-pandas24
         check-pandas25:
           TASK: check-pandas25
+        check-pandas100:
+          TASK: check-pandas100
     steps:
     - task: UsePythonVersion@0
       inputs:
