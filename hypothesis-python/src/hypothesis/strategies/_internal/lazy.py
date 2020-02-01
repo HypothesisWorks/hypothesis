@@ -70,10 +70,10 @@ class LazyStrategy(SearchStrategy):
     Its parameter and distribution come from that other strategy.
     """
 
-    def __init__(self, function, args, kwargs):
+    def __init__(self, function, args, kwargs, *, force_repr=None):
         SearchStrategy.__init__(self)
         self.__wrapped_strategy = None
-        self.__representation = None
+        self.__representation = force_repr
         self.function = function
         self.__args = args
         self.__kwargs = kwargs

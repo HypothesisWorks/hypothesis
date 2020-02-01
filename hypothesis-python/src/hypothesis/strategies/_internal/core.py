@@ -312,6 +312,11 @@ def one_of(*args):  # noqa: F811
             args = tuple(args[0])
         except TypeError:
             pass
+    if len(args) == 1 and isinstance(args[0], SearchStrategy):
+        # This special-case means that we can one_of over lists of any size
+        # without incurring any performance overhead when there is only one
+        # strategy, and keeps our reprs simple.
+        return args[0]
     return OneOfStrategy(args)
 
 
@@ -1228,18 +1233,7 @@ def builds(
     )
 
 
-def _defer_from_type(func: T) -> T:
-    """Decorator to make from_type lazy to support recursive definitions."""
-
-    @proxies(func)
-    def inner(*args, **kwargs):
-        return deferred(lambda: func(*args, **kwargs))
-
-    return inner
-
-
 @cacheable
-@_defer_from_type
 def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     """Looks up the appropriate search strategy for the given type.
 
@@ -1291,6 +1285,22 @@ def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     This is useful when writing tests which check that invalid input is
     rejected in a certain way.
     """
+    # This tricky little dance is because we want to show the repr of the actual
+    # underlying strategy wherever possible, as a form of user education, but
+    # would prefer to fall back to the default "from_type(...)" repr instead of
+    # "deferred(...)" for recursive types or invalid arguments.
+    try:
+        return _from_type(thing)
+    except Exception:
+        return LazyStrategy(
+            lambda thing: deferred(lambda: _from_type(thing)),
+            (thing,),
+            {},
+            force_repr="from_type(%r)" % (thing,),
+        )
+
+
+def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     if (
         hasattr(typing, "_TypedDictMeta")
         and type(thing) is typing._TypedDictMeta  # type: ignore

@@ -439,7 +439,7 @@ class SampledFromStrategy(SearchStrategy):
         assert self.elements
 
     def __repr__(self):
-        return "sampled_from(%s)" % ", ".join(map(repr, self.elements))
+        return "sampled_from([%s])" % ", ".join(map(repr, self.elements))
 
     def calc_has_reusable_values(self, recur):
         return True
