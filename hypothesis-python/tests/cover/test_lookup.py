@@ -650,3 +650,15 @@ def test_hashable_type_unhashable_value():
     # Decimal("snan") is not hashable; we should be able to generate it.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2320
     find_any(from_type(typing.Hashable), lambda x: not types._can_hash(x))
+
+
+@pytest.mark.parametrize(
+    "typ,repr_",
+    [
+        (int, "integers()"),
+        (typing.List[str], "lists(elements=text())"),
+        ("not a type", "from_type('not a type')"),
+    ],
+)
+def test_repr_passthrough(typ, repr_):
+    assert repr(st.from_type(typ)) == repr_

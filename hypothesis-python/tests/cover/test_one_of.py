@@ -32,3 +32,9 @@ def test_one_of_filtered(i):
 @given(st.one_of(st.just(100).flatmap(st.integers)))
 def test_one_of_flatmapped(i):
     assert i >= 100
+
+
+def test_one_of_single_strategy_is_noop():
+    s = st.integers()
+    assert st.one_of(s) is s
+    assert st.one_of([s]) is s
