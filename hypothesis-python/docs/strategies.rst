@@ -22,9 +22,10 @@ Some packages provide strategies directly:
 
 * :pypi:`hypothesis-fspaths` - strategy to generate filesystem paths.
 * :pypi:`hypothesis-geojson` - strategy to generate `GeoJson <http://geojson.org/>`_.
+* :pypi:`hypothesis-geometry` - strategies to generate geometric objects.
 * :pypi:`hs-dbus-signature` - strategy to generate arbitrary
   `D-Bus signatures <https://dbus.freedesktop.org>`_.
-* :pypi:`hypothesis_sqlalchemy` - strategies to generate :pypi:`SQLAlchemy` objects.
+* :pypi:`hypothesis-sqlalchemy` - strategies to generate :pypi:`SQLAlchemy` objects.
 * :pypi:`hypothesis-ros` - strategies to generate messages and parameters for the `Robot Operating System <https://www.ros.org/>`_.
 * :pypi:`hypothesis-csv` - strategy to generate CSV files.
 * :pypi:`hypothesis-networkx` - strategy to generate :pypi:`networkx` graphs.
