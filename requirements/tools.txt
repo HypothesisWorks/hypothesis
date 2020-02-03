@@ -45,7 +45,7 @@ isort==4.3.21
 jedi==0.16.0              # via ipython
 jinja2==2.11.1            # via pyupio, sphinx
 keyring==21.1.0           # via twine
-lark-parser==0.7.8
+lark-parser==0.8.1
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8
 more-itertools==8.1.0     # via pytest, zipp
