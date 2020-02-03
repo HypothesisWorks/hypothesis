@@ -40,7 +40,7 @@ idna==2.8                 # via requests
 imagesize==1.2.0          # via sphinx
 importlib-metadata==1.5.0  # via flake8-comprehensions, keyring, pluggy, pytest, tox, twine
 ipython-genutils==0.2.0   # via traitlets
-ipython==7.11.1
+ipython==7.12.0
 isort==4.3.21
 jedi==0.15.2              # via ipython
 jinja2==2.10.3            # via pyupio, sphinx
