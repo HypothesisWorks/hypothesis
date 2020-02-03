@@ -57,7 +57,7 @@ parso==0.6.0              # via jedi
 pathspec==0.7.0           # via black
 pbr==5.4.4                # via stevedore
 pickleshare==0.7.5        # via ipython
-pip-tools==4.4.0
+pip-tools==4.4.1
 pkginfo==1.5.0.1          # via twine
 pluggy==0.13.1            # via pytest, tox
 prompt-toolkit==3.0.2     # via ipython
