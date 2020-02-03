@@ -38,7 +38,7 @@ gitdb2==2.0.6             # via gitpython
 gitpython==3.0.5          # via bandit
 idna==2.8                 # via requests
 imagesize==1.2.0          # via sphinx
-importlib-metadata==1.4.0  # via flake8-comprehensions, keyring, pluggy, pytest, tox, twine
+importlib-metadata==1.5.0  # via flake8-comprehensions, keyring, pluggy, pytest, tox, twine
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.11.1
 isort==4.3.21
