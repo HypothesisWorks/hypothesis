@@ -9,7 +9,7 @@ atomicwrites==1.3.0       # via pytest
 attrs==19.3.0
 execnet==1.7.1            # via pytest-xdist
 importlib-metadata==1.5.0  # via pluggy, pytest
-more-itertools==8.1.0     # via pytest, zipp
+more-itertools==8.2.0     # via pytest, zipp
 packaging==20.0           # via pytest
 pexpect==4.8.0
 pluggy==0.13.1            # via pytest
