@@ -157,7 +157,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         return directory
 
     def _value_path(self, key, value):
-        return os.path.join(self._key_path(key), sha384(value).hexdigest()[:16])
+        return os.path.join(self._key_path(key), _hash(value))
 
     def fetch(self, key):
         kp = self._key_path(key)
