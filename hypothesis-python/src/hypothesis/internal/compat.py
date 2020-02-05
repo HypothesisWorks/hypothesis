@@ -78,7 +78,11 @@ try:
     typing_root_type = (typing._Final, typing._GenericAlias)  # type: ignore
     ForwardRef = typing.ForwardRef  # type: ignore
 except AttributeError:
-    typing_root_type = (typing.TypingMeta, typing.TypeVar, typing._Union)  # type: ignore
+    typing_root_type = (typing.TypingMeta, typing.TypeVar)  # type: ignore
+    try:
+        typing_root_type += (typing._Union,)  # type: ignore
+    except AttributeError:
+        pass
     ForwardRef = typing._ForwardRef  # type: ignore
 
 
