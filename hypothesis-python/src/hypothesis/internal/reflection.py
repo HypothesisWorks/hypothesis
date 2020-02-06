@@ -19,6 +19,7 @@ to really unreasonable lengths to produce pretty output."""
 import ast
 import hashlib
 import inspect
+import os
 import re
 import types
 from functools import wraps
@@ -35,6 +36,7 @@ from hypothesis.internal.compat import (
 from hypothesis.vendor.pretty import pretty
 
 C = TypeVar("C", bound=Callable)
+READTHEDOCS = os.environ.get("READTHEDOCS", None) == "True"
 
 
 def fully_qualified_name(f):
@@ -601,6 +603,10 @@ def deprecated_posargs(func: C) -> C:
     This turns out to be fairly tricky to get right with our preferred style of
     error handling (exhaustive) and various function-rewriting wrappers.
     """
+    if READTHEDOCS:  # pragma: no cover
+        # Documentation should show the new signatures without deprecation helpers.
+        return func
+
     signature = inspect.signature(func)
     parameters = list(signature.parameters.values())
     vararg = inspect.Parameter(

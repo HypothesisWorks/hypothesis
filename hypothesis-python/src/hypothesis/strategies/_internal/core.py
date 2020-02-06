@@ -1710,7 +1710,9 @@ def datetimes(
     *,
     timezones: SearchStrategy[Optional[dt.tzinfo]] = none()
 ) -> SearchStrategy[dt.datetime]:
-    """A strategy for generating datetimes, which may be timezone-aware.
+    """datetimes(min_value=datetime.datetime.min, max_value=datetime.datetime.max, *, timezones=none())
+
+    A strategy for generating datetimes, which may be timezone-aware.
 
     This strategy works by drawing a naive datetime between ``min_value``
     and ``max_value``, which must both be naive (have no timezone).
@@ -1769,7 +1771,9 @@ def datetimes(
 def dates(
     min_value: dt.date = dt.date.min, max_value: dt.date = dt.date.max
 ) -> SearchStrategy[dt.date]:
-    """A strategy for dates between ``min_value`` and ``max_value``.
+    """dates(min_value=datetime.date.min, max_value=datetime.date.max)
+
+    A strategy for dates between ``min_value`` and ``max_value``.
 
     Examples from this strategy shrink towards January 1st 2000.
     """
@@ -1789,7 +1793,9 @@ def times(
     *,
     timezones: SearchStrategy[Optional[dt.tzinfo]] = none()
 ) -> SearchStrategy[dt.time]:
-    """A strategy for times between ``min_value`` and ``max_value``.
+    """times(min_value=datetime.time.min, max_value=datetime.time.max, *, timezones=none())
+
+    A strategy for times between ``min_value`` and ``max_value``.
 
     The ``timezones`` argument is handled as for :py:func:`datetimes`.
 
@@ -1816,7 +1822,9 @@ def timedeltas(
     min_value: dt.timedelta = dt.timedelta.min,
     max_value: dt.timedelta = dt.timedelta.max,
 ) -> SearchStrategy[dt.timedelta]:
-    """A strategy for timedeltas between ``min_value`` and ``max_value``.
+    """timedeltas(min_value=datetime.timedelta.min, max_value=datetime.timedelta.max)
+
+    A strategy for timedeltas between ``min_value`` and ``max_value``.
 
     Examples from this strategy shrink towards zero.
     """
@@ -2218,7 +2226,9 @@ def functions(
 ) -> SearchStrategy[Callable[..., Any]]:
     # The proper type signature of `functions()` would have T instead of Any, but mypy
     # disallows default args for generics: https://github.com/python/mypy/issues/3737
-    """A strategy for functions, which can be used in callbacks.
+    """functions(*, like=lambda: None, returns=none())
+
+    A strategy for functions, which can be used in callbacks.
 
     The generated functions will mimic the interface of ``like``, which must
     be a callable (including a class, method, or function).  The return value
