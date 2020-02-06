@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.4.2:
+
+------------------
+5.4.2 - 2020-02-06
+------------------
+
+This patch fixes compatibility with Python 3.5.2 (:issue:`2334`).
+Note that :doc:`we only test the latest patch of each minor version <supported>`,
+though as in this case we usually accept pull requests for older patch versions.
+
 .. _v5.4.1:
 
 ------------------
