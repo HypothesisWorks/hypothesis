@@ -10,6 +10,14 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.5.1:
+
+------------------
+5.5.1 - 2020-02-07
+------------------
+
+This patch has some tiny internal code clean-ups, with no user-visible change.
+
 .. _v5.5.0:
 
 ------------------
