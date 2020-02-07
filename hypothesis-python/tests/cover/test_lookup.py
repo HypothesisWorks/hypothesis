@@ -656,7 +656,7 @@ def test_hashable_type_unhashable_value():
     "typ,repr_",
     [
         (int, "integers()"),
-        (typing.List[str], "lists(elements=text())"),
+        (typing.List[str], "lists(text())"),
         ("not a type", "from_type('not a type')"),
     ],
 )

@@ -38,10 +38,10 @@ def test_cannot_use_in_find_without_default():
 
 def test_is_default_in_find():
     t = object()
-    assert find(st.runner(t), lambda x: True) == t
+    assert find(st.runner(default=t), lambda x: True) == t
 
 
-@given(st.runner(1))
+@given(st.runner(default=1))
 def test_is_default_without_self(runner):
     assert runner == 1
 

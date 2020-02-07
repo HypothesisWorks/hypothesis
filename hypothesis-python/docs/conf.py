@@ -17,6 +17,8 @@ import datetime
 import os
 import sys
 
+import sphinx_rtd_theme
+
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
 
@@ -86,12 +88,9 @@ extlinks = {
 
 # -- Options for HTML output ----------------------------------------------
 
-if os.environ.get("READTHEDOCS", None) != "True":
-    # only import and set the theme if we're building docs locally
-    import sphinx_rtd_theme
+html_theme = "sphinx_rtd_theme"
 
-    html_theme = "sphinx_rtd_theme"
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 html_static_path = ["_static"]
 

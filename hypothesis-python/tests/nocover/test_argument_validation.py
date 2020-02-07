@@ -13,7 +13,12 @@
 #
 # END HEADER
 
+from inspect import Parameter
+
+import pytest
+
 import hypothesis.strategies as st
+from hypothesis.strategies._internal.core import _strategies
 from tests.common.arguments import argument_validation_test, e
 
 BAD_ARGS = []
@@ -43,3 +48,16 @@ for ex in [
 BAD_ARGS.extend([e(st.lists, st.nothing(), unique=True, min_size=1)])
 
 test_raise_invalid_argument = argument_validation_test(BAD_ARGS)
+
+
+@pytest.mark.parametrize("name", sorted(_strategies))
+def test_consistent_with_api_guide_on_kwonly_args(name):
+    # Enforce our style-guide: if it has a default value, it should be
+    # keyword-only with a very few exceptions.
+    for arg in _strategies[name].parameters.values():
+        assert (
+            arg.default == Parameter.empty
+            or arg.kind != Parameter.POSITIONAL_OR_KEYWORD
+            or arg.name in ("min_value", "max_value", "subtype_strategy", "columns")
+            or name in ("text", "range_indexes", "badly_draw_lists", "write_pattern")
+        ), "need kwonly args in %s" % (name,)

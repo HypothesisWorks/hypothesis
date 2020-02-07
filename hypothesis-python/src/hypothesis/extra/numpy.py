@@ -25,7 +25,7 @@ import hypothesis.strategies._internal.core as st
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.coverage import check_function
-from hypothesis.internal.reflection import proxies
+from hypothesis.internal.reflection import deprecated_posargs, proxies
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal import SearchStrategy
 from hypothesis.strategies._internal.strategies import T
@@ -286,12 +286,14 @@ def fill_for(elements, unique, fill, name=""):
 
 
 @st.defines_strategy
+@deprecated_posargs
 def arrays(
     dtype: Any,
     shape: Union[int, Shape, st.SearchStrategy[Shape]],
+    *,
     elements: st.SearchStrategy[Any] = None,
     fill: st.SearchStrategy[Any] = None,
-    unique: bool = False,
+    unique: bool = False
 ) -> st.SearchStrategy[np.ndarray]:
     r"""Returns a strategy for generating :class:`numpy:numpy.ndarray`\ s.
 
@@ -392,8 +394,9 @@ def arrays(
 
 
 @st.defines_strategy
+@deprecated_posargs
 def array_shapes(
-    min_dims: int = 1, max_dims: int = None, min_side: int = 1, max_side: int = None,
+    *, min_dims: int = 1, max_dims: int = None, min_side: int = 1, max_side: int = None
 ) -> st.SearchStrategy[Shape]:
     """Return a strategy for array shapes (tuples of int >= 1)."""
     check_type(int, min_dims, "min_dims")
@@ -480,8 +483,9 @@ def dtype_factory(kind, sizes, valid_sizes, endianness):
 
 
 @defines_dtype_strategy
+@deprecated_posargs
 def unsigned_integer_dtypes(
-    endianness: str = "?", sizes: Sequence[int] = (8, 16, 32, 64)
+    *, endianness: str = "?", sizes: Sequence[int] = (8, 16, 32, 64)
 ) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for unsigned integer dtypes.
 
@@ -496,8 +500,9 @@ def unsigned_integer_dtypes(
 
 
 @defines_dtype_strategy
+@deprecated_posargs
 def integer_dtypes(
-    endianness: str = "?", sizes: Sequence[int] = (8, 16, 32, 64)
+    *, endianness: str = "?", sizes: Sequence[int] = (8, 16, 32, 64)
 ) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for signed integer dtypes.
 
@@ -508,8 +513,9 @@ def integer_dtypes(
 
 
 @defines_dtype_strategy
+@deprecated_posargs
 def floating_dtypes(
-    endianness: str = "?", sizes: Sequence[int] = (16, 32, 64)
+    *, endianness: str = "?", sizes: Sequence[int] = (16, 32, 64)
 ) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for floating-point dtypes.
 
@@ -524,8 +530,9 @@ def floating_dtypes(
 
 
 @defines_dtype_strategy
+@deprecated_posargs
 def complex_number_dtypes(
-    endianness: str = "?", sizes: Sequence[int] = (64, 128)
+    *, endianness: str = "?", sizes: Sequence[int] = (64, 128)
 ) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for complex-number dtypes.
 
@@ -563,8 +570,9 @@ def validate_time_slice(max_period, min_period):
 
 
 @defines_dtype_strategy
+@deprecated_posargs
 def datetime64_dtypes(
-    max_period: str = "Y", min_period: str = "ns", endianness: str = "?"
+    *, max_period: str = "Y", min_period: str = "ns", endianness: str = "?"
 ) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for datetime64 dtypes, with various precisions from
     year to attosecond."""
@@ -577,8 +585,9 @@ def datetime64_dtypes(
 
 
 @defines_dtype_strategy
+@deprecated_posargs
 def timedelta64_dtypes(
-    max_period: str = "Y", min_period: str = "ns", endianness: str = "?"
+    *, max_period: str = "Y", min_period: str = "ns", endianness: str = "?"
 ) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for timedelta64 dtypes, with various precisions from
     year to attosecond."""
@@ -591,8 +600,9 @@ def timedelta64_dtypes(
 
 
 @defines_dtype_strategy
+@deprecated_posargs
 def byte_string_dtypes(
-    endianness: str = "?", min_len: int = 1, max_len: int = 16
+    *, endianness: str = "?", min_len: int = 1, max_len: int = 16
 ) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for generating bytestring dtypes, of various lengths
     and byteorder.
@@ -606,8 +616,9 @@ def byte_string_dtypes(
 
 
 @defines_dtype_strategy
+@deprecated_posargs
 def unicode_string_dtypes(
-    endianness: str = "?", min_len: int = 1, max_len: int = 16
+    *, endianness: str = "?", min_len: int = 1, max_len: int = 16
 ) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for generating unicode string dtypes, of various
     lengths and byteorder.
@@ -621,11 +632,13 @@ def unicode_string_dtypes(
 
 
 @defines_dtype_strategy
+@deprecated_posargs
 def array_dtypes(
     subtype_strategy: st.SearchStrategy[np.dtype] = scalar_dtypes(),
+    *,
     min_size: int = 1,
     max_size: int = 5,
-    allow_subarrays: bool = False,
+    allow_subarrays: bool = False
 ) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for generating array (compound) dtypes, with members
     drawn from the given subtype strategy."""
@@ -646,10 +659,12 @@ def array_dtypes(
 
 
 @st.defines_strategy
+@deprecated_posargs
 def nested_dtypes(
     subtype_strategy: st.SearchStrategy[np.dtype] = scalar_dtypes(),
+    *,
     max_leaves: int = 10,
-    max_itemsize: int = None,
+    max_itemsize: int = None
 ) -> st.SearchStrategy[np.dtype]:
     """Return the most-general dtype strategy.
 
@@ -660,13 +675,16 @@ def nested_dtypes(
     argument.
     """
     return st.recursive(
-        subtype_strategy, lambda x: array_dtypes(x, allow_subarrays=True), max_leaves
+        subtype_strategy,
+        lambda x: array_dtypes(x, allow_subarrays=True),
+        max_leaves=max_leaves,
     ).filter(lambda d: max_itemsize is None or d.itemsize <= max_itemsize)
 
 
 @st.defines_strategy
+@deprecated_posargs
 def valid_tuple_axes(
-    ndim: int, min_size: int = 0, max_size: int = None
+    ndim: int, *, min_size: int = 0, max_size: int = None
 ) -> st.SearchStrategy[Shape]:
     """Return a strategy for generating permissible tuple-values for the
     ``axis`` argument for a numpy sequential function (e.g.
@@ -707,16 +725,20 @@ def valid_tuple_axes(
     axes = st.integers(0, max(0, 2 * ndim - 1)).map(
         lambda x: x if x < ndim else x - 2 * ndim
     )
-    return st.lists(axes, min_size, max_size, unique_by=lambda x: x % ndim).map(tuple)
+    return st.lists(
+        axes, min_size=min_size, max_size=max_size, unique_by=lambda x: x % ndim
+    ).map(tuple)
 
 
 @st.defines_strategy
+@deprecated_posargs
 def broadcastable_shapes(
     shape: Shape,
+    *,
     min_dims: int = 0,
     max_dims: int = None,
     min_side: int = 1,
-    max_side: int = None,
+    max_side: int = None
 ) -> st.SearchStrategy[Shape]:
     """Return a strategy for generating shapes that are broadcast-compatible
     with the provided shape.
@@ -1313,10 +1335,12 @@ def basic_indices(
 
 
 @st.defines_strategy
+@deprecated_posargs
 def integer_array_indices(
     shape: Shape,
+    *,
     result_shape: SearchStrategy[Shape] = array_shapes(),
-    dtype: np.dtype = "int",
+    dtype: np.dtype = "int"
 ) -> st.SearchStrategy[Tuple[np.ndarray, ...]]:
     """Return a search strategy for tuples of integer-arrays that, when used
     to index into an array of shape ``shape``, given an array whose shape

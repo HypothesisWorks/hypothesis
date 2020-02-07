@@ -19,7 +19,7 @@ from hypothesis.extra.numpy import arrays
 from tests.common.debug import find_any, minimal
 
 
-@given(arrays(object, 100, st.builds(list)))
+@given(arrays(object, 100, elements=st.builds(list)))
 def test_generated_lists_are_distinct(ls):
     assert len(set(map(id, ls))) == len(ls)
 
@@ -32,14 +32,14 @@ def distinct_integers(draw):
     return i
 
 
-@given(arrays("uint64", 10, distinct_integers()))
+@given(arrays("uint64", 10, elements=distinct_integers()))
 def test_does_not_reuse_distinct_integers(arr):
     assert len(set(arr)) == len(arr)
 
 
 def test_may_reuse_distinct_integers_if_asked():
     find_any(
-        arrays("uint64", 10, distinct_integers(), fill=distinct_integers()),
+        arrays("uint64", 10, elements=distinct_integers(), fill=distinct_integers()),
         lambda x: len(set(x)) < len(x),
     )
 

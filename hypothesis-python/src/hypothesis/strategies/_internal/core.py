@@ -24,7 +24,7 @@ import typing
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import reduce
-from inspect import getfullargspec, isabstract, isclass
+from inspect import getfullargspec, isabstract, isclass, signature
 from typing import (
     Any,
     AnyStr,
@@ -71,6 +71,7 @@ from hypothesis.internal.floats import (
 )
 from hypothesis.internal.reflection import (
     define_function_signature,
+    deprecated_posargs,
     is_typed_named_tuple,
     nicerepr,
     proxies,
@@ -132,7 +133,7 @@ UniqueBy = Union[Callable[[Ex], Hashable], Tuple[Callable[[Ex], Hashable], ...]]
 # See https://github.com/python/mypy/issues/3186 - numbers.Real is wrong!
 Real = Union[int, float, Fraction, Decimal]
 
-_strategies = set()
+_strategies = {}  # type: Dict[str, Callable[..., SearchStrategy]]
 
 
 class FloatKey:
@@ -192,7 +193,7 @@ def base_defines_strategy(force_reusable: bool) -> Callable[[T], T]:
     def decorator(strategy_definition):
         """A decorator that registers the function as a strategy and makes it
         lazily evaluated."""
-        _strategies.add(strategy_definition.__name__)
+        _strategies[strategy_definition.__name__] = signature(strategy_definition)
 
         @proxies(strategy_definition)
         def accept(*args, **kwargs):
@@ -390,14 +391,16 @@ def booleans() -> SearchStrategy[bool]:
 
 @cacheable
 @defines_strategy_with_reusable_values
+@deprecated_posargs
 def floats(
     min_value: Real = None,
     max_value: Real = None,
+    *,
     allow_nan: bool = None,
     allow_infinity: bool = None,
     width: int = 64,
     exclude_min: bool = False,
-    exclude_max: bool = False,
+    exclude_max: bool = False
 ) -> SearchStrategy[float]:
     """Returns a strategy which generates floats.
 
@@ -664,12 +667,14 @@ def sampled_from(elements):
 
 @cacheable
 @defines_strategy
+@deprecated_posargs
 def lists(
     elements: SearchStrategy[Ex],
+    *,
     min_size: int = 0,
     max_size: int = None,
     unique_by: UniqueBy = None,
-    unique: bool = False,
+    unique: bool = False
 ) -> SearchStrategy[List[Ex]]:
     """Returns a list containing values drawn from elements with length in the
     interval [min_size, max_size] (no bounds in that direction if these are
@@ -753,8 +758,9 @@ def lists(
 
 @cacheable
 @defines_strategy
+@deprecated_posargs
 def sets(
-    elements: SearchStrategy[Ex], min_size: int = 0, max_size: int = None,
+    elements: SearchStrategy[Ex], *, min_size: int = 0, max_size: int = None
 ) -> SearchStrategy[Set[Ex]]:
     """This has the same behaviour as lists, but returns sets instead.
 
@@ -772,8 +778,9 @@ def sets(
 
 @cacheable
 @defines_strategy
+@deprecated_posargs
 def frozensets(
-    elements: SearchStrategy[Ex], min_size: int = 0, max_size: int = None,
+    elements: SearchStrategy[Ex], *, min_size: int = 0, max_size: int = None
 ) -> SearchStrategy[FrozenSet[Ex]]:
     """This is identical to the sets function but instead returns
     frozensets."""
@@ -798,12 +805,14 @@ class PrettyIter:
 
 
 @defines_strategy
+@deprecated_posargs
 def iterables(
     elements: SearchStrategy[Ex],
+    *,
     min_size: int = 0,
     max_size: int = None,
     unique_by: UniqueBy = None,
-    unique: bool = False,
+    unique: bool = False
 ) -> SearchStrategy[Iterable[Ex]]:
     """This has the same behaviour as lists, but returns iterables instead.
 
@@ -861,12 +870,14 @@ def fixed_dictionaries(
 
 @cacheable
 @defines_strategy
+@deprecated_posargs
 def dictionaries(
     keys: SearchStrategy[Ex],
     values: SearchStrategy[T],
+    *,
     dict_class: type = dict,
     min_size: int = 0,
-    max_size: int = None,
+    max_size: int = None
 ) -> SearchStrategy[Dict[Ex, T]]:
     # Describing the exact dict_class to Mypy drops the key and value types,
     # so we report Dict[K, V] instead of Mapping[Any, Any] for now.  Sorry!
@@ -895,13 +906,15 @@ def dictionaries(
 
 @cacheable
 @defines_strategy_with_reusable_values
+@deprecated_posargs
 def characters(
+    *,
     whitelist_categories: Sequence[str] = None,
     blacklist_categories: Sequence[str] = None,
     blacklist_characters: Sequence[str] = None,
     min_codepoint: int = None,
     max_codepoint: int = None,
-    whitelist_characters: Sequence[str] = None,
+    whitelist_characters: Sequence[str] = None
 ) -> SearchStrategy[str]:
     r"""Generates characters, length-one :class:`python:str`\ ings,
     following specified filtering rules.
@@ -1000,12 +1013,14 @@ def characters(
 
 @cacheable
 @defines_strategy_with_reusable_values
+@deprecated_posargs
 def text(
     alphabet: Union[Sequence[str], SearchStrategy[str]] = characters(
         blacklist_categories=("Cs",)
     ),
+    *,
     min_size: int = 0,
-    max_size: int = None,
+    max_size: int = None
 ) -> SearchStrategy[str]:
     """Generates strings with characters drawn from ``alphabet``, which should
     be a collection of length one strings or a strategy generating such strings.
@@ -1054,8 +1069,9 @@ def text(
 
 @cacheable
 @defines_strategy
+@deprecated_posargs
 def from_regex(
-    regex: Union[AnyStr, Pattern[AnyStr]], fullmatch: bool = False
+    regex: Union[AnyStr, Pattern[AnyStr]], *, fullmatch: bool = False
 ) -> SearchStrategy[AnyStr]:
     r"""Generates strings that contain a match for the given regex (i.e. ones
     for which :func:`python:re.search` will return a non-None result).
@@ -1094,7 +1110,8 @@ def from_regex(
 
 @cacheable
 @defines_strategy_with_reusable_values
-def binary(min_size: int = 0, max_size: int = None) -> SearchStrategy[bytes]:
+@deprecated_posargs
+def binary(*, min_size: int = 0, max_size: int = None) -> SearchStrategy[bytes]:
     """Generates :class:`python:bytes`.
 
     min_size and max_size have the usual interpretations.
@@ -1154,7 +1171,7 @@ def random_module() -> SearchStrategy[RandomSeeder]:
 
     Examples from these strategy shrink to seeds closer to zero.
     """
-    return shared(RandomModule(), "hypothesis.strategies.random_module()")
+    return shared(RandomModule(), key="hypothesis.strategies.random_module()")
 
 
 @cacheable
@@ -1425,10 +1442,12 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
 
 @cacheable
 @defines_strategy_with_reusable_values
+@deprecated_posargs
 def fractions(
     min_value: Union[Real, str] = None,
     max_value: Union[Real, str] = None,
-    max_denominator: int = None,
+    *,
+    max_denominator: int = None
 ) -> SearchStrategy[Fraction]:
     """Returns a strategy which generates Fractions.
 
@@ -1533,12 +1552,14 @@ def _as_finite_decimal(
 
 @cacheable
 @defines_strategy_with_reusable_values
+@deprecated_posargs
 def decimals(
     min_value: Union[Real, str] = None,
     max_value: Union[Real, str] = None,
+    *,
     allow_nan: bool = None,
     allow_infinity: bool = None,
-    places: int = None,
+    places: int = None
 ) -> SearchStrategy[Decimal]:
     """Generates instances of :class:`python:decimal.Decimal`, which may be:
 
@@ -1619,10 +1640,12 @@ def decimals(
     return strat | (sampled_from(special) if special else nothing())
 
 
+@deprecated_posargs
 def recursive(
     base: SearchStrategy[Ex],
     extend: Callable[[SearchStrategy[Any]], SearchStrategy[T]],
-    max_leaves: int = 100,
+    *,
+    max_leaves: int = 100
 ) -> SearchStrategy[Union[T, Ex]]:
     """base: A strategy to start from.
 
@@ -1680,12 +1703,16 @@ def permutations(values: Sequence[T]) -> SearchStrategy[List[T]]:
 
 
 @defines_strategy_with_reusable_values
+@deprecated_posargs
 def datetimes(
     min_value: dt.datetime = dt.datetime.min,
     max_value: dt.datetime = dt.datetime.max,
-    timezones: SearchStrategy[Optional[dt.tzinfo]] = none(),
+    *,
+    timezones: SearchStrategy[Optional[dt.tzinfo]] = none()
 ) -> SearchStrategy[dt.datetime]:
-    """A strategy for generating datetimes, which may be timezone-aware.
+    """datetimes(min_value=datetime.datetime.min, max_value=datetime.datetime.max, *, timezones=none())
+
+    A strategy for generating datetimes, which may be timezone-aware.
 
     This strategy works by drawing a naive datetime between ``min_value``
     and ``max_value``, which must both be naive (have no timezone).
@@ -1744,7 +1771,9 @@ def datetimes(
 def dates(
     min_value: dt.date = dt.date.min, max_value: dt.date = dt.date.max
 ) -> SearchStrategy[dt.date]:
-    """A strategy for dates between ``min_value`` and ``max_value``.
+    """dates(min_value=datetime.date.min, max_value=datetime.date.max)
+
+    A strategy for dates between ``min_value`` and ``max_value``.
 
     Examples from this strategy shrink towards January 1st 2000.
     """
@@ -1757,12 +1786,16 @@ def dates(
 
 
 @defines_strategy_with_reusable_values
+@deprecated_posargs
 def times(
     min_value: dt.time = dt.time.min,
     max_value: dt.time = dt.time.max,
-    timezones: SearchStrategy[Optional[dt.tzinfo]] = none(),
+    *,
+    timezones: SearchStrategy[Optional[dt.tzinfo]] = none()
 ) -> SearchStrategy[dt.time]:
-    """A strategy for times between ``min_value`` and ``max_value``.
+    """times(min_value=datetime.time.min, max_value=datetime.time.max, *, timezones=none())
+
+    A strategy for times between ``min_value`` and ``max_value``.
 
     The ``timezones`` argument is handled as for :py:func:`datetimes`.
 
@@ -1789,7 +1822,9 @@ def timedeltas(
     min_value: dt.timedelta = dt.timedelta.min,
     max_value: dt.timedelta = dt.timedelta.max,
 ) -> SearchStrategy[dt.timedelta]:
-    """A strategy for timedeltas between ``min_value`` and ``max_value``.
+    """timedeltas(min_value=datetime.timedelta.min, max_value=datetime.timedelta.max)
+
+    A strategy for timedeltas between ``min_value`` and ``max_value``.
 
     Examples from this strategy shrink towards zero.
     """
@@ -1854,11 +1889,13 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
 
 @defines_strategy_with_reusable_values
 @cacheable
+@deprecated_posargs
 def complex_numbers(
+    *,
     min_magnitude: Optional[Real] = 0,
     max_magnitude: Optional[Real] = None,
     allow_infinity: bool = None,
-    allow_nan: bool = None,
+    allow_nan: bool = None
 ) -> SearchStrategy[complex]:
     """Returns a strategy that generates complex numbers.
 
@@ -1942,7 +1979,8 @@ def complex_numbers(
     return constrained_complex()
 
 
-def shared(base: SearchStrategy[Ex], key: Hashable = None) -> SearchStrategy[Ex]:
+@deprecated_posargs
+def shared(base: SearchStrategy[Ex], *, key: Hashable = None) -> SearchStrategy[Ex]:
     """Returns a strategy that draws a single shared value per run, drawn from
     base. Any two shared instances with the same key will share the same value,
     otherwise the identity of this strategy will be used. That is:
@@ -1964,7 +2002,8 @@ def shared(base: SearchStrategy[Ex], key: Hashable = None) -> SearchStrategy[Ex]
 
 @cacheable
 @defines_strategy_with_reusable_values
-def uuids(version: int = None) -> SearchStrategy[UUID]:
+@deprecated_posargs
+def uuids(*, version: int = None) -> SearchStrategy[UUID]:
     """Returns a strategy that generates :class:`UUIDs <uuid.UUID>`.
 
     If the optional version argument is given, value is passed through
@@ -2008,7 +2047,8 @@ class RunnerStrategy(SearchStrategy):
 
 
 @defines_strategy_with_reusable_values
-def runner(default: Any = not_set) -> SearchStrategy[Any]:
+@deprecated_posargs
+def runner(*, default: Any = not_set) -> SearchStrategy[Any]:
     """A strategy for getting "the current test runner", whatever that may be.
     The exact meaning depends on the entry point, but it will usually be the
     associated 'self' value for it.
@@ -2180,12 +2220,15 @@ def emails() -> SearchStrategy[str]:
 
 
 @defines_strategy
+@deprecated_posargs
 def functions(
-    like: Callable[..., Any] = lambda: None, returns: SearchStrategy[Any] = none(),
+    *, like: Callable[..., Any] = lambda: None, returns: SearchStrategy[Any] = none()
 ) -> SearchStrategy[Callable[..., Any]]:
     # The proper type signature of `functions()` would have T instead of Any, but mypy
     # disallows default args for generics: https://github.com/python/mypy/issues/3737
-    """A strategy for functions, which can be used in callbacks.
+    """functions(*, like=lambda: None, returns=none())
+
+    A strategy for functions, which can be used in callbacks.
 
     The generated functions will mimic the interface of ``like``, which must
     be a callable (including a class, method, or function).  The return value

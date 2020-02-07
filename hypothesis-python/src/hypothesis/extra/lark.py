@@ -44,6 +44,7 @@ from lark.grammar import NonTerminal, Terminal
 import hypothesis.strategies._internal.core as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.utils import calc_label_from_name
+from hypothesis.internal.reflection import deprecated_posargs
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal import SearchStrategy
 
@@ -194,10 +195,12 @@ def check_explicit(name):
 
 @st.cacheable
 @st.defines_strategy_with_reusable_values
+@deprecated_posargs
 def from_lark(
     grammar: lark.lark.Lark,
+    *,
     start: str = None,
-    explicit: Dict[str, st.SearchStrategy[str]] = None,
+    explicit: Dict[str, st.SearchStrategy[str]] = None
 ) -> st.SearchStrategy[str]:
     """A strategy for strings accepted by the given context-free grammar.
 

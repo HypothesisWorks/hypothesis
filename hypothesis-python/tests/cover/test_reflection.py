@@ -15,6 +15,7 @@
 
 import sys
 from copy import deepcopy
+from datetime import time
 from functools import partial
 from inspect import FullArgSpec, getfullargspec
 from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
@@ -22,6 +23,7 @@ from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 import pytest
 
 import hypothesis.internal.reflection as reflection
+import hypothesis.strategies as st
 from hypothesis.internal.reflection import (
     arg_string,
     convert_keyword_arguments,
@@ -36,7 +38,7 @@ from hypothesis.internal.reflection import (
     source_exec_as_module,
     unbind_method,
 )
-from tests.common.utils import raises
+from tests.common.utils import checks_deprecated_behaviour, raises
 
 
 def do_conversion_test(f, args, kwargs):
@@ -693,3 +695,29 @@ def test_does_not_crash_on_utf8_lambda_without_encoding(monkeypatch):
 
     monkeypatch.setattr(reflection, "detect_encoding", None)
     assert get_pretty_function_description(is_str_pi) == "lambda x: <unknown>"
+
+
+def test_too_many_posargs_fails():
+    with pytest.raises(TypeError):
+        st.times(time.min, time.max, st.none(), st.none()).validate()
+
+
+def test_overlapping_posarg_kwarg_fails():
+    with pytest.raises(TypeError):
+        st.times(time.min, time.max, st.none(), timezones=st.just(None)).validate()
+
+
+@checks_deprecated_behaviour
+def test_fails_to_detect_kwarg_with_default_value():
+    # Unfortunately we can't detect that this is an error, so you only get
+    # the warning about passing an argument positionally.  At least it warns!
+    st.floats(0, 1, False, allow_nan=None).validate()
+
+
+def test_repr_suggests_kwargs_for_deprecated_posargs():
+    # We don't get a deprecation warning here because we only instantiate the lazy
+    # wrapper, not the underlying strategy.  Note that this omits posargs that carry
+    # their default value from the resulting repr - it's "how to get this strategy",
+    # not "here's exactly what you passed in" (usually but not always the same).
+    strat = st.floats(0, None, False, True)
+    assert repr(strat) == "floats(min_value=0, allow_infinity=True, allow_nan=False)"

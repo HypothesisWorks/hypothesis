@@ -24,7 +24,7 @@ from hypothesis.errors import InvalidArgument
 @example(0.0, "this covers the branch where context.data is None")
 @given(observation=st.floats(allow_nan=False, allow_infinity=False), label=st.text())
 def test_allowed_inputs_to_target(observation, label):
-    target(observation, label)
+    target(observation, label=label)
 
 
 @given(
@@ -32,7 +32,7 @@ def test_allowed_inputs_to_target(observation, label):
     label=st.sampled_from(["a", "few", "labels"]),
 )
 def test_allowed_inputs_to_target_fewer_labels(observation, label):
-    target(observation, label)
+    target(observation, label=label)
 
 
 @given(st.floats(min_value=1, max_value=10))
@@ -49,7 +49,7 @@ def test_target_without_label(observation):
 )
 def test_multiple_target_calls(args):
     for observation, label in args:
-        target(observation, label)
+        target(observation, label=label)
 
 
 @given(
@@ -83,12 +83,12 @@ def everything_except(type_):
 @given(observation=everything_except(float), label=everything_except(str))
 def test_disallowed_inputs_to_target(observation, label):
     with pytest.raises(InvalidArgument):
-        target(observation, label)
+        target(observation, label=label)
 
 
 def test_cannot_target_outside_test():
     with pytest.raises(InvalidArgument):
-        target(1.0, "example label")
+        target(1.0, label="example label")
 
 
 @given(st.none())

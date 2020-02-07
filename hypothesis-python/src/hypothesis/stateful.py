@@ -36,7 +36,13 @@ from hypothesis._settings import HealthCheck, Verbosity, settings as Settings
 from hypothesis.control import current_build_context
 from hypothesis.core import given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
-from hypothesis.internal.reflection import function_digest, nicerepr, proxies, qualname
+from hypothesis.internal.reflection import (
+    deprecated_posargs,
+    function_digest,
+    nicerepr,
+    proxies,
+    qualname,
+)
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
 from hypothesis.strategies._internal.featureflags import FeatureStrategy
@@ -60,7 +66,8 @@ class TestCaseProperty:  # pragma: no cover
         raise AttributeError("Cannot delete TestCase")
 
 
-def run_state_machine_as_test(state_machine_factory, settings=None):
+@deprecated_posargs
+def run_state_machine_as_test(state_machine_factory, *, settings=None):
     """Run a state machine definition as a test, either silently doing nothing
     or printing a minimal breaking program and raising an exception.
 
@@ -404,7 +411,8 @@ PRECONDITION_MARKER = "hypothesis_stateful_precondition"
 INVARIANT_MARKER = "hypothesis_stateful_invariant"
 
 
-def rule(targets=(), target=None, **kwargs):
+@deprecated_posargs
+def rule(*, targets=(), target=None, **kwargs):
     """Decorator for RuleBasedStateMachine. Any name present in target or
     targets will define where the end result of this function should go. If
     both are empty then the end result will be discarded.
@@ -453,7 +461,8 @@ def rule(targets=(), target=None, **kwargs):
     return accept
 
 
-def initialize(targets=(), target=None, **kwargs):
+@deprecated_posargs
+def initialize(*, targets=(), target=None, **kwargs):
     """Decorator for RuleBasedStateMachine.
 
     An initialize decorator behaves like a rule, but the decorated

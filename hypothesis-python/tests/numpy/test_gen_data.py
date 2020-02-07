@@ -122,7 +122,7 @@ foos = st.tuples().map(lambda _: Foo())
 
 
 def test_can_create_arrays_of_composite_types():
-    arr = minimal(nps.arrays(object, 100, foos))
+    arr = minimal(nps.arrays(object, 100, elements=foos))
     for x in arr:
         assert isinstance(x, Foo)
 
@@ -137,18 +137,20 @@ def test_can_create_zero_dim_arrays_of_lists(x, data):
 
 def test_can_create_arrays_of_tuples():
     arr = minimal(
-        nps.arrays(object, 10, st.tuples(st.integers(), st.integers())),
+        nps.arrays(object, 10, elements=st.tuples(st.integers(), st.integers())),
         lambda x: all(t0 != t1 for t0, t1 in x),
     )
     assert all(a in ((1, 0), (0, 1)) for a in arr)
 
 
-@given(nps.arrays(object, (2, 2), st.tuples(st.integers())))
+@given(nps.arrays(object, (2, 2), elements=st.tuples(st.integers())))
 def test_does_not_flatten_arrays_of_tuples(arr):
     assert isinstance(arr[0][0], tuple)
 
 
-@given(nps.arrays(object, (2, 2), st.lists(st.integers(), min_size=1, max_size=1)))
+@given(
+    nps.arrays(object, (2, 2), elements=st.lists(st.integers(), min_size=1, max_size=1))
+)
 def test_does_not_flatten_arrays_of_lists(arr):
     assert isinstance(arr[0][0], list)
 
@@ -164,7 +166,10 @@ def test_can_generate_array_shapes(shape):
 def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
     smallest = minimal(
         nps.array_shapes(
-            min_dims, min_dims + dim_range, min_side, min_side + side_range
+            min_dims=min_dims,
+            max_dims=min_dims + dim_range,
+            min_side=min_side,
+            max_side=min_side + side_range,
         )
     )
     assert len(smallest) == min_dims and all(k == min_side for k in smallest)
@@ -216,7 +221,7 @@ def test_infer_strategy_from_dtype(dtype, data):
     strat = nps.from_dtype(dtype)
     assert isinstance(strat, SearchStrategy)
     # And use it to fill an array of that dtype
-    data.draw(nps.arrays(dtype, 10, strat))
+    data.draw(nps.arrays(dtype, 10, elements=strat))
 
 
 @given(nps.nested_dtypes())
@@ -251,7 +256,7 @@ def test_can_turn_off_subarrays(dt):
 @pytest.mark.parametrize("byteorder", ["<", ">"])
 @given(data=st.data())
 def test_can_restrict_endianness(data, byteorder):
-    dtype = data.draw(nps.integer_dtypes(byteorder, sizes=(16, 32, 64)))
+    dtype = data.draw(nps.integer_dtypes(endianness=byteorder, sizes=(16, 32, 64)))
     if byteorder == ("<" if sys.byteorder == "little" else ">"):
         assert dtype.byteorder == "="
     else:
@@ -469,7 +474,10 @@ def test_overflowing_integers_are_deprecated(fill, data):
     [
         ("float16", st.floats(min_value=65520, allow_infinity=False)),
         ("float32", st.floats(min_value=10 ** 40, allow_infinity=False)),
-        ("complex64", st.complex_numbers(10 ** 300, allow_infinity=False)),
+        (
+            "complex64",
+            st.complex_numbers(min_magnitude=10 ** 300, allow_infinity=False),
+        ),
         ("U1", st.text(min_size=2, max_size=2)),
         ("S1", st.binary(min_size=2, max_size=2)),
     ],
@@ -523,7 +531,9 @@ def test_unique_array_without_fill(arr):
 def test_mapped_positive_axes_are_unique(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
     max_size = data.draw(st.integers(min_size, ndim), label="max_size")
-    axes = data.draw(nps.valid_tuple_axes(ndim, min_size, max_size), label="axes")
+    axes = data.draw(
+        nps.valid_tuple_axes(ndim, min_size=min_size, max_size=max_size), label="axes"
+    )
     assert len(set(axes)) == len({i if 0 < i else ndim + i for i in axes})
 
 
@@ -531,7 +541,9 @@ def test_mapped_positive_axes_are_unique(ndim, data):
 def test_length_bounds_are_satisfied(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
     max_size = data.draw(st.integers(min_size, ndim), label="max_size")
-    axes = data.draw(nps.valid_tuple_axes(ndim, min_size, max_size), label="axes")
+    axes = data.draw(
+        nps.valid_tuple_axes(ndim, min_size=min_size, max_size=max_size), label="axes"
+    )
     assert min_size <= len(axes) <= max_size
 
 
@@ -547,7 +559,7 @@ def test_axes_are_valid_inputs_to_sum(shape, data):
 def test_minimize_tuple_axes(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
     max_size = data.draw(st.integers(min_size, ndim), label="max_size")
-    smallest = minimal(nps.valid_tuple_axes(ndim, min_size, max_size))
+    smallest = minimal(nps.valid_tuple_axes(ndim, min_size=min_size, max_size=max_size))
     assert len(smallest) == min_size and all(k > -1 for k in smallest)
 
 
@@ -557,7 +569,8 @@ def test_minimize_negative_tuple_axes(ndim, data):
     min_size = data.draw(st.integers(0, ndim), label="min_size")
     max_size = data.draw(st.integers(min_size, ndim), label="max_size")
     smallest = minimal(
-        nps.valid_tuple_axes(ndim, min_size, max_size), lambda x: all(i < 0 for i in x)
+        nps.valid_tuple_axes(ndim, min_size=min_size, max_size=max_size),
+        lambda x: all(i < 0 for i in x),
     )
     assert len(smallest) == min_size
 
