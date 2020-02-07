@@ -119,7 +119,7 @@ class settingsMeta(type):
         return type.__setattr__(self, name, value)
 
 
-class settings(settingsMeta("settings", (object,), {})):  # type: ignore
+class settings(metaclass=settingsMeta):
     """A settings object controls a variety of parameters that are used in
     falsification. These may control both the falsification strategy and the
     details of the data that is generated.

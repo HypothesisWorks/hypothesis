@@ -755,13 +755,6 @@ def _exception_pprint(obj, p, cycle):
     p.end_group(step, ")")
 
 
-#: the exception base
-try:
-    _exception_base = BaseException
-except NameError:  # pragma: no cover
-    _exception_base = Exception  # type: ignore
-
-
 #: printers for builtin types
 _type_pprinters = {
     int: _repr_pprint,
@@ -780,7 +773,7 @@ _type_pprinters = {
     types.MethodType: _repr_pprint,
     datetime.datetime: _repr_pprint,
     datetime.timedelta: _repr_pprint,
-    _exception_base: _exception_pprint,
+    BaseException: _exception_pprint,
     slice: _repr_pprint,
     range: _repr_pprint,
     bytes: _repr_pprint,
