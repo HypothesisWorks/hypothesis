@@ -21,9 +21,10 @@ if [ -n "${PIPELINE_WORKSPACE-}" ] ; then
     # We're on Azure Pipelines and already set up a suitable Python
     PYTHON=$(command -v python)
 else
-    # Otherwise, we install it from scratch
-    "$SCRIPTS/ensure-python.sh" 3.6.8
-    PYTHON=$(pythonloc 3.6.8)/bin/python
+    # Otherwise, we install it from scratch.  Note: this should be kept
+    # in sync with `PY36` in `tooling/src/hypothesistooling/__main__.py`
+    "$SCRIPTS/ensure-python.sh" 3.6.9
+    PYTHON=$(pythonloc 3.6.9)/bin/python
 fi
 
 TOOL_REQUIREMENTS="$ROOT/requirements/tools.txt"
