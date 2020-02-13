@@ -687,6 +687,7 @@ class ConjectureRunner:
             ):
                 initial_calls = self.call_count
                 failed_mutations = 0
+                groups = None
                 while (
                     should_generate_more()
                     # We implement fairly conservative checks for how long we
@@ -695,11 +696,12 @@ class ConjectureRunner:
                     and self.call_count <= initial_calls + 5
                     and failed_mutations <= 5
                 ):
-                    groups = defaultdict(list)
-                    for ex in data.examples:
-                        groups[ex.label, ex.depth].append(ex)
+                    if groups is None:
+                        groups = defaultdict(list)
+                        for ex in data.examples:
+                            groups[ex.label, ex.depth].append(ex)
 
-                    groups = [v for v in groups.values() if len(v) > 1]
+                        groups = [v for v in groups.values() if len(v) > 1]
 
                     if not groups:
                         break
@@ -750,6 +752,7 @@ class ConjectureRunner:
                         )
                     ):
                         data = new_data
+                        groups = None
                         failed_mutations = 0
                     else:
                         failed_mutations += 1
