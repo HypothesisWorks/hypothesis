@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.5.2:
+
+------------------
+5.5.2 - 2020-02-13
+------------------
+
+This release makes Hypothesis faster at generating test cases that contain
+duplicated values in their inputs.
+
 .. _v5.5.1:
 
 ------------------
