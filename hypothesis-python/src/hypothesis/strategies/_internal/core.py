@@ -24,7 +24,7 @@ import typing
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import reduce
-from inspect import getfullargspec, isabstract, isclass, signature
+from inspect import Parameter, getfullargspec, isabstract, isclass, signature
 from typing import (
     Any,
     AnyStr,
@@ -1174,6 +1174,10 @@ def random_module() -> SearchStrategy[RandomSeeder]:
     return shared(RandomModule(), key="hypothesis.strategies.random_module()")
 
 
+# The ideal signature builds(target, /, *args, **kwargs) is unfortunately a
+# SyntaxError before Python 3.8 so we emulate it with manual argument unpacking.
+# Note that for the benefit of documentation and introspection tools, we set the
+# __signature__ attribute to show the semantic rather than actual signature.
 @cacheable
 @defines_strategy
 def builds(
@@ -1247,6 +1251,24 @@ def builds(
     # and thinks that target and args have the same (union) type.
     return tuples(tuples(*args), fixed_dictionaries(kwargs)).map(  # type: ignore
         lambda value: target(*value[0], **value[1])  # type: ignore
+    )
+
+
+if sys.version_info[:2] >= (3, 8):  # pragma: no cover
+    # See notes above definition - this signature is compatible and better
+    # matches the semantics of the function.  Great for documentation!
+    sig = signature(builds)
+    args, kwargs = sig.parameters.values()
+    builds.__signature__ = sig.replace(
+        parameters=[
+            Parameter(
+                name="target",
+                kind=Parameter.POSITIONAL_ONLY,
+                annotation=Callable[..., Ex],
+            ),
+            args.replace(name="args", annotation=SearchStrategy[Any]),
+            kwargs,
+        ]
     )
 
 
