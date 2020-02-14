@@ -10,6 +10,17 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.5.3:
+
+------------------
+5.5.3 - 2020-02-14
+------------------
+
+This patch improves the signature of :func:`~hypothesis.strategies.builds` by
+specifying ``target`` as a positional-only argument on Python 3.8 (see :pep:`570`).
+The semantics of :func:`~hypothesis.strategies.builds` have not changed at all -
+this just clarifies the documentation.
+
 .. _v5.5.2:
 
 ------------------
