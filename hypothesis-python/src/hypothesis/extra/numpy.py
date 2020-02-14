@@ -381,6 +381,7 @@ def arrays(
     dtype = np.dtype(dtype)
     if elements is None:
         elements = from_dtype(dtype)
+    check_type(SearchStrategy, elements, "elements")
     if isinstance(shape, int):
         shape = (shape,)
     shape = tuple(shape)
