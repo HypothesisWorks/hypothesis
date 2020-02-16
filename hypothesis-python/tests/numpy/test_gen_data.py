@@ -1240,3 +1240,22 @@ def test_basic_indices_generate_valid_indexers(
         assert min_dims <= view.ndim <= (32 if max_dims is None else max_dims)
         if view.size:
             assert np.shares_memory(view, array)
+
+
+@pytest.mark.parametrize("dtype_str", ["m8", "M8"])
+@given(data=st.data())
+def test_from_dtype_works_without_time_unit(data, dtype_str):
+    arr = data.draw(nps.from_dtype(np.dtype(dtype_str)))
+    assert (dtype_str + "[") in arr.dtype.str
+
+
+@pytest.mark.parametrize("dtype_str", ["m8", "M8"])
+@given(data=st.data())
+def test_arrays_selects_consistent_time_unit(data, dtype_str):
+    arr = data.draw(nps.arrays(dtype_str, 10))
+    assert (dtype_str + "[") in arr.dtype.str
+
+
+def test_arrays_gives_useful_error_on_inconsistent_time_unit():
+    with pytest.raises(InvalidArgument, match="mismatch of time units in dtypes"):
+        nps.arrays("m8[Y]", 10, elements=nps.from_dtype(np.dtype("m8[D]"))).example()

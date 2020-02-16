@@ -91,6 +91,9 @@ def from_dtype(dtype: np.dtype) -> st.SearchStrategy[Any]:
         if "[" in dtype.str:
             res = st.just(dtype.str.split("[")[-1][:-1])
         else:
+            # Note that this case isn't valid to pass to arrays(), but we support
+            # it here because we'd have to guard against equivalents in arrays()
+            # regardless and drawing scalars is a valid use-case.
             res = st.sampled_from(TIME_RESOLUTIONS)
         result = st.builds(dtype.type, st.integers(-(2 ** 63), 2 ** 63 - 1), res)
     else:
@@ -135,7 +138,13 @@ class ArrayStrategy(SearchStrategy):
     def set_element(self, data, result, idx, strategy=None):
         strategy = strategy or self.element_strategy
         val = data.draw(strategy)
-        result[idx] = val
+        try:
+            result[idx] = val
+        except TypeError as err:
+            raise InvalidArgument(
+                "Could not add element=%r of %r to array of %r - possible mismatch "
+                "of time units in dtypes?" % (val, val.dtype, result.dtype)
+            ) from err
         if self._check_elements and val != result[idx] and val == val:
             raise InvalidArgument(
                 "Generated array element %r from %r cannot be represented as "
@@ -380,7 +389,18 @@ def arrays(
     # From here on, we're only dealing with values and it's relatively simple.
     dtype = np.dtype(dtype)
     if elements is None:
+        if dtype.kind in ("m", "M") and "[" not in dtype.str:
+            # For datetime and timedelta dtypes, we have a tricky situation -
+            # because they *may or may not* specify a unit as part of the dtype.
+            # If not, we flatmap over the various resolutions so that array
+            # elements have consistent units but units may vary between arrays.
+            return (
+                st.sampled_from(TIME_RESOLUTIONS)
+                .map((dtype.str + "[{}]").format)
+                .flatmap(lambda d: arrays(d, shape=shape, fill=fill, unique=unique))
+            )
         elements = from_dtype(dtype)
+    check_type(SearchStrategy, elements, "elements")
     if isinstance(shape, int):
         shape = (shape,)
     shape = tuple(shape)

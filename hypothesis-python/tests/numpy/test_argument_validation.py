@@ -45,6 +45,7 @@ def e(a, **kwargs):
         e(nps.arrays, dtype=object, shape=1),
         e(nps.arrays, dtype=float, shape=1, fill=3),
         e(nps.arrays, dtype="U", shape=1, elements=st.just("abc\0\0")),
+        e(nps.arrays, dtype=int, shape=1, elements="not a strategy"),
         e(nps.byte_string_dtypes, min_len=-1),
         e(nps.byte_string_dtypes, min_len=2, max_len=1),
         e(nps.byte_string_dtypes, min_len=0, max_len=0),
