@@ -55,7 +55,7 @@ mypy-extensions==0.4.3    # via mypy
 mypy==0.761
 numpy==1.18.1
 packaging==20.1           # via dparse, pytest, pyupio, safety, sphinx, tox
-parso==0.6.0              # via jedi
+parso==0.6.1              # via jedi
 pathspec==0.7.0           # via black
 pbr==5.4.4                # via stevedore
 pexpect==4.8.0            # via ipython
