@@ -115,7 +115,7 @@ virtualenv==20.0.4        # via tox
 wcwidth==0.1.8            # via prompt-toolkit, pytest
 webencodings==0.5.1       # via bleach
 wrapt==1.12.0             # via deprecated
-zipp==2.1.0               # via importlib-metadata
+zipp==2.2.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
