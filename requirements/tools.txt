@@ -5,7 +5,7 @@
 #    pip-compile --output-file=requirements/tools.txt requirements/tools.in
 #
 alabaster==0.7.12         # via sphinx
-appdirs==1.4.3            # via black
+appdirs==1.4.3            # via black, virtualenv
 asgiref==3.2.3            # via django
 attrs==19.3.0
 autoflake==1.3.1
@@ -16,30 +16,32 @@ black==19.10b0
 blacken-docs==1.5.0
 bleach==3.1.0             # via readme-renderer
 certifi==2019.11.28       # via requests
-cffi==1.13.2              # via cryptography
+cffi==1.14.0              # via cryptography
 chardet==3.0.4            # via requests
 click==7.0                # via black, pip-tools, pyupio, safety
 coverage==5.0.3
 cryptography==2.8         # via secretstorage
 decorator==4.4.1          # via ipython, traitlets
 deprecated==1.2.7         # via pygithub
+distlib==0.3.0            # via virtualenv
 django==3.0.3
 docutils==0.16            # via readme-renderer, restructuredtext-lint, sphinx
 dparse==0.4.1             # via pyupio, safety
 dpcontracts==0.6.0
 entrypoints==0.3          # via flake8
-filelock==3.0.12          # via tox
+filelock==3.0.12          # via tox, virtualenv
 flake8-bandit==2.1.2
 flake8-bugbear==20.1.4
 flake8-comprehensions==3.2.2
 flake8-docstrings==1.5.0
 flake8-polyfill==1.0.2    # via flake8-bandit
 flake8==3.7.9
-gitdb2==2.0.6             # via gitpython
-gitpython==3.0.5          # via bandit
+gitdb2==3.0.2             # via gitpython
+gitpython==3.0.8          # via bandit
 idna==2.8                 # via requests
 imagesize==1.2.0          # via sphinx
-importlib-metadata==1.5.0  # via flake8-comprehensions, keyring, pluggy, pytest, tox, twine
+importlib-metadata==1.5.0  # via flake8-comprehensions, keyring, pluggy, pytest, tox, twine, virtualenv
+importlib-resources==1.0.2  # via virtualenv
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.12.0
 isort==4.3.21
@@ -55,7 +57,7 @@ mypy-extensions==0.4.3    # via mypy
 mypy==0.761
 numpy==1.18.1
 packaging==20.1           # via dparse, pytest, pyupio, safety, sphinx, tox
-parso==0.6.0              # via jedi
+parso==0.6.1              # via jedi
 pathspec==0.7.0           # via black
 pbr==5.4.4                # via stevedore
 pexpect==4.8.0            # via ipython
@@ -70,13 +72,13 @@ pycodestyle==2.5.0        # via flake8, flake8-bandit
 pycparser==2.19           # via cffi
 pydocstyle==5.0.2         # via flake8-docstrings
 pyflakes==2.1.1           # via autoflake, flake8
-pygithub==1.45            # via pyupio
+pygithub==1.46            # via pyupio
 pygments==2.5.2           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pyparsing==2.4.6          # via packaging
 pytest==5.3.5
 python-dateutil==2.8.1
-python-gitlab==2.0.0      # via pyupio
+python-gitlab==2.0.1      # via pyupio
 pytz==2019.3              # via babel, django
 pyupgrade==1.26.2
 pyupio==1.0.2
@@ -88,12 +90,12 @@ requests==2.22.0
 restructuredtext-lint==1.3.0
 safety==1.8.5             # via pyupio
 secretstorage==3.1.2      # via keyring
-six==1.14.0               # via bandit, bleach, cryptography, dparse, packaging, pip-tools, pygithub, python-dateutil, pyupio, readme-renderer, stevedore, tox, traitlets
+six==1.14.0               # via bandit, bleach, cryptography, dparse, packaging, pip-tools, python-dateutil, pyupio, readme-renderer, stevedore, tox, traitlets, virtualenv
 smmap2==2.0.5             # via gitdb2
 snowballstemmer==2.0.0    # via pydocstyle, sphinx
 sortedcontainers==2.1.0
 sphinx-rtd-theme==0.4.3
-sphinx==2.3.1
+sphinx==2.4.1
 sphinxcontrib-applehelp==1.0.1  # via sphinx
 sphinxcontrib-devhelp==1.0.1  # via sphinx
 sphinxcontrib-htmlhelp==1.0.2  # via sphinx
@@ -101,21 +103,21 @@ sphinxcontrib-jsmath==1.0.1  # via sphinx
 sphinxcontrib-qthelp==1.0.2  # via sphinx
 sphinxcontrib-serializinghtml==1.1.3  # via sphinx
 sqlparse==0.3.0           # via django
-stevedore==1.31.0         # via bandit
+stevedore==1.32.0         # via bandit
 tokenize-rt==3.2.0        # via pyupgrade
 toml==0.10.0
-tox==3.14.3
+tox==3.14.5
 tqdm==4.42.1              # via pyupio, twine
 traitlets==4.3.3          # via ipython
 twine==3.1.1
 typed-ast==1.4.1          # via black, mypy
 typing-extensions==3.7.4.1  # via mypy
 urllib3==1.25.8           # via requests
-virtualenv==16.7.9        # via tox
+virtualenv==20.0.4        # via tox
 wcwidth==0.1.8            # via prompt-toolkit, pytest
 webencodings==0.5.1       # via bleach
-wrapt==1.11.2             # via deprecated
-zipp==2.1.0               # via importlib-metadata
+wrapt==1.12.0             # via deprecated
+zipp==2.2.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
