@@ -35,7 +35,7 @@ flake8-comprehensions==3.2.2
 flake8-docstrings==1.5.0
 flake8-polyfill==1.0.2    # via flake8-bandit
 flake8==3.7.9
-gitdb2==2.0.6             # via gitpython
+gitdb2==3.0.2             # via gitpython
 gitpython==3.0.5          # via bandit
 idna==2.8                 # via requests
 imagesize==1.2.0          # via sphinx
