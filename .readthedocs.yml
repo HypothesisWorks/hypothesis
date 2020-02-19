@@ -9,10 +9,7 @@ formats: all
 
 # Optionally set the version of Python and requirements required to build your docs
 python:
-   # We'd like to use 3.8 for builds() signature, but it's not supported yet.
-   # See https://github.com/readthedocs/readthedocs.org/issues/6324
-   # and https://github.com/readthedocs/readthedocs.org/issues/6551
-   version: 3.7
+   version: 3.8
    install:
       - requirements: requirements/tools.txt
       - path: hypothesis-python/
