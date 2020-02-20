@@ -32,9 +32,9 @@ The two prototype implementations of Hypothesis for other languages are:
 
 * `Hypothesis for Ruby <hypothesis-ruby>`_
   is a reasonable start on a port of Hypothesis to Ruby. It worked pretty well,
-  but uses a core Rust implementation that is unfortunately not compatible with
+  but used a core Rust implementation that is unfortunately not compatible with
   recent versions of Rust, due to its dependency on Helix (which now seems to
-  be mostly unmaintained) and as a result is currently unsupported pending a
+  be mostly unmaintained). As a result it is currently unsupported pending a
   rewrite of the bridging code between Rust and Ruby. We don't at present have
   the time or funding for this project, but it is likely not a massive undertaking
   if anyone would like to provide either of these.
