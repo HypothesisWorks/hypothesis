@@ -11,3 +11,4 @@ requirements:
 
 schedule: "every week on monday"
 search: False
+label_prs: "tests/build/CI"
