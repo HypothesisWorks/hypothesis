@@ -1,9 +1,5 @@
 language: c
 
-sudo: false
-
-env: PYTHONDONTWRITEBYTECODE=x
-
 os:
     - linux
 
@@ -14,12 +10,8 @@ branches:
 cache:
     apt: true
     directories:
-        - $HOME/.cargo
-        - $HOME/.rustup
-        - $HOME/.gem
         - $HOME/.cache/pip
         - $HOME/wheelhouse
-        - $HOME/.stack
         - $HOME/.local
         - vendor/bundle
 
@@ -27,24 +19,22 @@ env:
     global:
         - BUILD_RUNTIMES=$HOME/.runtimes
         - FORMAT_ALL=true
+        - PYTHONDONTWRITEBYTECODE=x
 
 jobs:
+  fast_finish: true
   include:
     # Prechecks that we want to run to make sure the deploy is good.
     - stage: precheck
       env: TASK=check-whole-repo-tests
     - env: TASK=lint
     - env: TASK=check-py36
-      sudo: required
       dist: xenial
     - stage: deploy
       env: TASK=deploy
 
 script:
     - ./build.sh
-
-matrix:
-    fast_finish: true
 
 stages:
     - precheck

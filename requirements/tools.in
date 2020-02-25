@@ -28,3 +28,4 @@ sphinx-rtd-theme
 toml
 tox
 twine
+zipp==1.2.0  # later dropped support for 3.5; required via importlib-metadata

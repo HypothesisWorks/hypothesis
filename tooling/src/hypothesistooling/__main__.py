@@ -247,7 +247,7 @@ def check_format():
     for f in tools.all_files():
         if not f.endswith(".py"):
             continue
-        with open(f, "r", encoding="utf-8") as i:
+        with open(f, encoding="utf-8") as i:
             start = i.read(n)
             if not any(start.startswith(s) for s in VALID_STARTS):
                 print("%s has incorrect start %r" % (f, start), file=sys.stderr)
