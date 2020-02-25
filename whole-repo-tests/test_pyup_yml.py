@@ -20,7 +20,7 @@ import hypothesistooling as tools
 
 
 def test_pyup_yml_is_valid():
-    with open(tools.PYUP_FILE, "r") as i:
+    with open(tools.PYUP_FILE) as i:
         data = yaml.safe_load(i.read())
     config = Config()
     config.update_config(data)
