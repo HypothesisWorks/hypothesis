@@ -14,10 +14,12 @@
 # END HEADER
 
 from distutils.version import LooseVersion
+from inspect import signature
 
 import pytest
 
 from hypothesis import Verbosity, core, settings
+from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.detection import is_hypothesis_test
 from hypothesis.reporting import default as default_reporter, with_reporter
@@ -144,6 +146,25 @@ else:
                     raise InvalidArgument(message % (name,))
             yield
         else:
+            # Warn about function-scoped fixtures, excluding autouse fixtures because
+            # the advice is probably not actionable and the status quo seems OK...
+            # See https://github.com/HypothesisWorks/hypothesis/issues/377 for detail.
+            argnames = None
+            for fx_defs in item._request._fixturemanager.getfixtureinfo(
+                node=item, func=item.function, cls=None
+            ).name2fixturedefs.values():
+                if argnames is None:
+                    argnames = frozenset(signature(item.function).parameters)
+                for fx in fx_defs:
+                    if fx.scope == "function" and fx.argname in argnames:
+                        note_deprecation(
+                            "%s uses the %r fixture, but function-scoped fixtures "
+                            "should not be used with @given(...) tests, because "
+                            "fixtures are not reset between generated examples!"
+                            % (item.nodeid, fx.argname),
+                            since="RELEASEDAY",
+                        )
+
             if item.get_closest_marker("parametrize") is not None:
                 # Give every parametrized test invocation a unique database key
                 key = item.nodeid.encode("utf-8")
