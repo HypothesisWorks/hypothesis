@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.5.5:
+
+------------------
+5.5.5 - 2020-02-29
+------------------
+
+This release cleans up the internal machinery for :doc:`stateful`,
+after we dropped the legacy APIs in Hypothesis 5.0 (:issue:`2218`).
+There is no user-visible change.
+
 .. _v5.5.4:
 
 ------------------
