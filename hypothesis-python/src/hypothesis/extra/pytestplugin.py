@@ -162,7 +162,7 @@ else:
                             "should not be used with @given(...) tests, because "
                             "fixtures are not reset between generated examples!"
                             % (item.nodeid, fx.argname),
-                            since="RELEASEDAY",
+                            since="2020-02-29",
                         )
 
             if item.get_closest_marker("parametrize") is not None:

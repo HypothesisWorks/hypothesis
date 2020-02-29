@@ -10,6 +10,22 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.6.0:
+
+------------------
+5.6.0 - 2020-02-29
+------------------
+
+This release adds an explicit warning for tests that are both decorated with
+:func:`@given(...) <hypothesis.given>` and request a
+:doc:`function-scoped pytest fixture <pytest:fixture>`, because such fixtures
+are only executed once for *all* Hypothesis test cases and that often causes
+trouble (:issue:`377`).
+
+It's *very* difficult to fix this on the :pypi:`pytest` side, so since 2015
+our advice has been "just don't use function-scoped fixtures with Hypothesis".
+Now we detect and warn about the issue at runtime!
+
 .. _v5.5.5:
 
 ------------------
