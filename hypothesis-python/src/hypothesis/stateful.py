@@ -24,6 +24,7 @@ execution to date.
 import inspect
 from collections.abc import Iterable
 from copy import copy
+from functools import lru_cache
 from io import StringIO
 from typing import Any, Dict, List
 from unittest import TestCase
@@ -86,25 +87,20 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None):
     @settings
     @given(st.data())
     def run_state_machine(factory, data):
+        cd = data.conjecture_data
         machine = factory()
-        if not isinstance(machine, _GenericStateMachine):
-            raise InvalidArgument(
-                "Expected RuleBasedStateMachine but state_machine_factory() "
-                "returned %r (type=%s)" % (machine, type(machine).__name__)
-            )
-        data.conjecture_data.hypothesis_runner = machine
+        check_type(RuleBasedStateMachine, machine, "state_machine_factory()")
+        cd.hypothesis_runner = machine
 
         print_steps = (
             current_build_context().is_final or current_verbosity() >= Verbosity.debug
         )
         try:
             if print_steps:
-                machine.print_start()
+                report("state = %s()" % (machine.__class__.__name__,))
             machine.check_invariants()
             max_steps = settings.stateful_step_count
             steps_run = 0
-
-            cd = data.conjecture_data
 
             while True:
                 # We basically always want to run the maximum number of steps,
@@ -134,22 +130,46 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None):
                             break
                 steps_run += 1
 
-                value = data.conjecture_data.draw(machine.steps())
-                # Assign 'result' here in case 'execute_step' fails below
+                # Choose a rule to run, preferring an initialize rule if there are
+                # any which have not been run yet.
+                if machine._initialize_rules_to_run:
+                    init_rules = [
+                        st.tuples(st.just(rule), st.fixed_dictionaries(rule.arguments))
+                        for rule in machine._initialize_rules_to_run
+                    ]
+                    rule, data = cd.draw(st.one_of(init_rules))
+                    machine._initialize_rules_to_run.remove(rule)
+                else:
+                    rule, data = cd.draw(machine._rules_strategy)
+                data_to_print = dict(data)
+
+                # Assign 'result' here in case executing the rule fails below
                 result = multiple()
                 try:
-                    result = machine.execute_step(value)
+                    data = dict(data)
+                    for k, v in list(data.items()):
+                        if isinstance(v, VarReference):
+                            data[k] = machine.names_to_values[v.name]
+                    result = rule.function(machine, **data)
+                    if rule.targets:
+                        if isinstance(result, MultipleResults):
+                            for single_result in result.values:
+                                machine._add_result_to_targets(
+                                    rule.targets, single_result
+                                )
+                        else:
+                            machine._add_result_to_targets(rule.targets, result)
                 finally:
                     if print_steps:
                         # 'result' is only used if the step has target bundles.
                         # If it does, and the result is a 'MultipleResult',
                         # then 'print_step' prints a multi-variable assignment.
-                        machine.print_step(value, result)
+                        machine._print_step(rule, data_to_print, result)
                 machine.check_invariants()
-                data.conjecture_data.stop_example()
+                cd.stop_example()
         finally:
             if print_steps:
-                machine.print_end()
+                report("state.teardown()")
             machine.teardown()
 
     # Use a machine digest to identify stateful tests in the example database
@@ -168,10 +188,7 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None):
     run_state_machine(state_machine_factory)
 
 
-class GenericStateMachineMeta(type):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
+class StateMachineMeta(type):
     def __setattr__(self, name, value):
         if name == "settings" and isinstance(value, Settings):
             raise AttributeError(
@@ -184,42 +201,169 @@ class GenericStateMachineMeta(type):
         return type.__setattr__(self, name, value)
 
 
-class _GenericStateMachine(
-    GenericStateMachineMeta("_GenericStateMachine", (object,), {})  # type: ignore
-):
-    # TODO: this is now internal-only and we can refactor RuleBasedStateMachine
+class RuleBasedStateMachine(metaclass=StateMachineMeta):
+    """A RuleBasedStateMachine gives you a structured way to define state machines.
 
-    def steps(self):
-        """Return a SearchStrategy instance the defines the available next
-        steps."""
-        raise NotImplementedError("%r.steps()" % (self,))
+    The idea is that a state machine carries a bunch of types of data
+    divided into Bundles, and has a set of rules which may read data
+    from bundles (or just from normal strategies) and push data onto
+    bundles. At any given point a random applicable rule will be
+    executed.
+    """
 
-    def execute_step(self, step):
-        """Execute a step that has been previously drawn from self.steps()
+    _rules_per_class = {}  # type: Dict[type, List[classmethod]]
+    _invariants_per_class = {}  # type: Dict[type, List[classmethod]]
+    _base_rules_per_class = {}  # type: Dict[type, List[classmethod]]
+    _initializers_per_class = {}  # type: Dict[type, List[classmethod]]
+    _base_initializers_per_class = {}  # type: Dict[type, List[classmethod]]
 
-        Returns the result of the step execution.
-        """
-        raise NotImplementedError("%r.execute_step()" % (self,))
+    def __init__(self):
+        if not self.rules():
+            raise InvalidDefinition("Type %s defines no rules" % (type(self).__name__,))
+        self.bundles = {}  # type: Dict[str, list]
+        self.name_counter = 1
+        self.names_to_values = {}  # type: Dict[str, Any]
+        self.__stream = StringIO()
+        self.__printer = RepresentationPrinter(self.__stream)
+        self._initialize_rules_to_run = copy(self.initialize_rules())
+        self._rules_strategy = RuleStrategy(self)
 
-    def print_start(self):
-        """Called right at the start of printing.
+    def __pretty(self, value):
+        if isinstance(value, VarReference):
+            return value.name
+        self.__stream.seek(0)
+        self.__stream.truncate(0)
+        self.__printer.output_width = 0
+        self.__printer.buffer_width = 0
+        self.__printer.buffer.clear()
+        self.__printer.pretty(value)
+        self.__printer.flush()
+        return self.__stream.getvalue()
 
-        By default does nothing.
-        """
+    def __repr__(self):
+        return "%s(%s)" % (type(self).__name__, nicerepr(self.bundles))
 
-    def print_end(self):
-        """Called right at the end of printing.
+    def _new_name(self):
+        result = "v%d" % (self.name_counter,)
+        self.name_counter += 1
+        return result
 
-        By default does nothing.
-        """
+    def _last_names(self, n):
+        assert self.name_counter > n
+        count = self.name_counter
+        return ["v%d" % (i,) for i in range(count - n, count)]
 
-    def print_step(self, step, result):
-        """Print a step to the current reporter.
+    def bundle(self, name):
+        return self.bundles.setdefault(name, [])
 
-        This is called right after a step is executed.
-        """
+    @classmethod
+    def initialize_rules(cls):
+        try:
+            return cls._initializers_per_class[cls]
+        except KeyError:
+            pass
+
+        for _, v in inspect.getmembers(cls):
+            r = getattr(v, INITIALIZE_RULE_MARKER, None)
+            if r is not None:
+                cls.define_initialize_rule(
+                    r.targets, r.function, r.arguments, r.precondition
+                )
+        cls._initializers_per_class[cls] = cls._base_initializers_per_class.pop(cls, [])
+        return cls._initializers_per_class[cls]
+
+    @classmethod
+    def rules(cls):
+        try:
+            return cls._rules_per_class[cls]
+        except KeyError:
+            pass
+
+        for _, v in inspect.getmembers(cls):
+            r = getattr(v, RULE_MARKER, None)
+            if r is not None:
+                cls.define_rule(r.targets, r.function, r.arguments, r.precondition)
+        cls._rules_per_class[cls] = cls._base_rules_per_class.pop(cls, [])
+        return cls._rules_per_class[cls]
+
+    @classmethod
+    def invariants(cls):
+        try:
+            return cls._invariants_per_class[cls]
+        except KeyError:
+            pass
+
+        target = []
+        for _, v in inspect.getmembers(cls):
+            i = getattr(v, INVARIANT_MARKER, None)
+            if i is not None:
+                target.append(i)
+        cls._invariants_per_class[cls] = target
+        return cls._invariants_per_class[cls]
+
+    @classmethod
+    def define_initialize_rule(cls, targets, function, arguments, precondition=None):
+        converted_arguments = {}
+        for k, v in arguments.items():
+            converted_arguments[k] = v
+        if cls in cls._initializers_per_class:
+            target = cls._initializers_per_class[cls]
+        else:
+            target = cls._base_initializers_per_class.setdefault(cls, [])
+
+        return target.append(Rule(targets, function, converted_arguments, precondition))
+
+    @classmethod
+    def define_rule(cls, targets, function, arguments, precondition=None):
+        converted_arguments = {}
+        for k, v in arguments.items():
+            converted_arguments[k] = v
+        if cls in cls._rules_per_class:
+            target = cls._rules_per_class[cls]
+        else:
+            target = cls._base_rules_per_class.setdefault(cls, [])
+
+        return target.append(Rule(targets, function, converted_arguments, precondition))
+
+    def _print_step(self, rule, data, result):
+        data_repr = {}
+        for k, v in data.items():
+            data_repr[k] = self.__pretty(v)
         self.step_count = getattr(self, "step_count", 0) + 1
-        report("Step #%d: %s" % (self.step_count, nicerepr(step)))
+        # If the step has target bundles, and the result is a MultipleResults
+        # then we want to assign to multiple variables.
+        if isinstance(result, MultipleResults):
+            n_output_vars = len(result.values)
+        else:
+            n_output_vars = 1
+        output_assignment = (
+            "%s = " % (", ".join(self._last_names(n_output_vars)),)
+            if rule.targets and n_output_vars >= 1
+            else ""
+        )
+        report(
+            "%sstate.%s(%s)"
+            % (
+                output_assignment,
+                rule.function.__name__,
+                ", ".join("%s=%s" % kv for kv in data_repr.items()),
+            )
+        )
+
+    def _add_result_to_targets(self, targets, result):
+        name = self._new_name()
+        self.__printer.singleton_pprinters.setdefault(
+            id(result), lambda obj, p, cycle: p.text(name)
+        )
+        self.names_to_values[name] = result
+        for target in targets:
+            self.bundles.setdefault(target, []).append(VarReference(name))
+
+    def check_invariants(self):
+        for invar in self.invariants():
+            if invar.precondition and not invar.precondition(self):
+                continue
+            invar.function(self)
 
     def teardown(self):
         """Called after a run has finished executing to clean up any necessary
@@ -228,36 +372,21 @@ class _GenericStateMachine(
         Does nothing by default.
         """
 
-    def check_invariants(self):
-        """Called after initializing and after executing each step."""
-
-    _test_case_cache = {}  # type: dict
-
     TestCase = TestCaseProperty()
 
     @classmethod
+    @lru_cache()
     def _to_test_case(state_machine_class):
-        try:
-            return state_machine_class._test_case_cache[state_machine_class]
-        except KeyError:
-            pass
-
         class StateMachineTestCase(TestCase):
             settings = Settings(deadline=None, suppress_health_check=HealthCheck.all())
 
-        # We define this outside of the class and assign it because you can't
-        # assign attributes to instance method values in Python 2
-        def runTest(self):
-            run_state_machine_as_test(state_machine_class)
+            def runTest(self):
+                run_state_machine_as_test(state_machine_class)
 
-        runTest.is_hypothesis_test = True
-        StateMachineTestCase.runTest = runTest
-        base_name = state_machine_class.__name__
-        StateMachineTestCase.__name__ = base_name + ".TestCase"
-        StateMachineTestCase.__qualname__ = (
-            getattr(state_machine_class, "__qualname__", base_name) + ".TestCase"
-        )
-        state_machine_class._test_case_cache[state_machine_class] = StateMachineTestCase
+            runTest.is_hypothesis_test = True
+
+        StateMachineTestCase.__name__ = state_machine_class.__name__ + ".TestCase"
+        StateMachineTestCase.__qualname__ = qualname(state_machine_class) + ".TestCase"
         return StateMachineTestCase
 
 
@@ -667,207 +796,3 @@ class RuleStrategy(SearchStrategy):
             if not bundle:
                 return False
         return True
-
-
-class RuleBasedStateMachine(_GenericStateMachine):
-    """A RuleBasedStateMachine gives you a structured way to define state machines.
-
-    The idea is that a state machine carries a bunch of types of data
-    divided into Bundles, and has a set of rules which may read data
-    from bundles (or just from normal strategies) and push data onto
-    bundles. At any given point a random applicable rule will be
-    executed.
-    """
-
-    _rules_per_class = {}  # type: Dict[type, List[classmethod]]
-    _invariants_per_class = {}  # type: Dict[type, List[classmethod]]
-    _base_rules_per_class = {}  # type: Dict[type, List[classmethod]]
-    _initializers_per_class = {}  # type: Dict[type, List[classmethod]]
-    _base_initializers_per_class = {}  # type: Dict[type, List[classmethod]]
-
-    def __init__(self):
-        if not self.rules():
-            raise InvalidDefinition("Type %s defines no rules" % (type(self).__name__,))
-        self.bundles = {}  # type: Dict[str, list]
-        self.name_counter = 1
-        self.names_to_values = {}  # type: Dict[str, Any]
-        self.__stream = StringIO()
-        self.__printer = RepresentationPrinter(self.__stream)
-        self._initialize_rules_to_run = copy(self.initialize_rules())
-        self.__rules_strategy = RuleStrategy(self)
-
-    def __pretty(self, value):
-        if isinstance(value, VarReference):
-            return value.name
-        self.__stream.seek(0)
-        self.__stream.truncate(0)
-        self.__printer.output_width = 0
-        self.__printer.buffer_width = 0
-        self.__printer.buffer.clear()
-        self.__printer.pretty(value)
-        self.__printer.flush()
-        return self.__stream.getvalue()
-
-    def __repr__(self):
-        return "%s(%s)" % (type(self).__name__, nicerepr(self.bundles))
-
-    def upcoming_name(self):
-        return "v%d" % (self.name_counter,)
-
-    def last_names(self, n):
-        assert self.name_counter > n
-        count = self.name_counter
-        return ["v%d" % (i,) for i in range(count - n, count)]
-
-    def new_name(self):
-        result = self.upcoming_name()
-        self.name_counter += 1
-        return result
-
-    def bundle(self, name):
-        return self.bundles.setdefault(name, [])
-
-    @classmethod
-    def initialize_rules(cls):
-        try:
-            return cls._initializers_per_class[cls]
-        except KeyError:
-            pass
-
-        for _, v in inspect.getmembers(cls):
-            r = getattr(v, INITIALIZE_RULE_MARKER, None)
-            if r is not None:
-                cls.define_initialize_rule(
-                    r.targets, r.function, r.arguments, r.precondition
-                )
-        cls._initializers_per_class[cls] = cls._base_initializers_per_class.pop(cls, [])
-        return cls._initializers_per_class[cls]
-
-    @classmethod
-    def rules(cls):
-        try:
-            return cls._rules_per_class[cls]
-        except KeyError:
-            pass
-
-        for _, v in inspect.getmembers(cls):
-            r = getattr(v, RULE_MARKER, None)
-            if r is not None:
-                cls.define_rule(r.targets, r.function, r.arguments, r.precondition)
-        cls._rules_per_class[cls] = cls._base_rules_per_class.pop(cls, [])
-        return cls._rules_per_class[cls]
-
-    @classmethod
-    def invariants(cls):
-        try:
-            return cls._invariants_per_class[cls]
-        except KeyError:
-            pass
-
-        target = []
-        for _, v in inspect.getmembers(cls):
-            i = getattr(v, INVARIANT_MARKER, None)
-            if i is not None:
-                target.append(i)
-        cls._invariants_per_class[cls] = target
-        return cls._invariants_per_class[cls]
-
-    @classmethod
-    def define_initialize_rule(cls, targets, function, arguments, precondition=None):
-        converted_arguments = {}
-        for k, v in arguments.items():
-            converted_arguments[k] = v
-        if cls in cls._initializers_per_class:
-            target = cls._initializers_per_class[cls]
-        else:
-            target = cls._base_initializers_per_class.setdefault(cls, [])
-
-        return target.append(Rule(targets, function, converted_arguments, precondition))
-
-    @classmethod
-    def define_rule(cls, targets, function, arguments, precondition=None):
-        converted_arguments = {}
-        for k, v in arguments.items():
-            converted_arguments[k] = v
-        if cls in cls._rules_per_class:
-            target = cls._rules_per_class[cls]
-        else:
-            target = cls._base_rules_per_class.setdefault(cls, [])
-
-        return target.append(Rule(targets, function, converted_arguments, precondition))
-
-    def steps(self):
-        # Pick initialize rules first
-        if self._initialize_rules_to_run:
-            return st.one_of(
-                [
-                    st.tuples(st.just(rule), st.fixed_dictionaries(rule.arguments))
-                    for rule in self._initialize_rules_to_run
-                ]
-            )
-
-        return self.__rules_strategy
-
-    def print_start(self):
-        report("state = %s()" % (self.__class__.__name__,))
-
-    def print_end(self):
-        report("state.teardown()")
-
-    def print_step(self, step, result):
-        rule, data = step
-        data_repr = {}
-        for k, v in data.items():
-            data_repr[k] = self.__pretty(v)
-        self.step_count = getattr(self, "step_count", 0) + 1
-        # If the step has target bundles, and the result is a MultipleResults
-        # then we want to assign to multiple variables.
-        if isinstance(result, MultipleResults):
-            n_output_vars = len(result.values)
-        else:
-            n_output_vars = 1
-        output_assignment = (
-            "%s = " % (", ".join(self.last_names(n_output_vars)),)
-            if rule.targets and n_output_vars >= 1
-            else ""
-        )
-        report(
-            "%sstate.%s(%s)"
-            % (
-                output_assignment,
-                rule.function.__name__,
-                ", ".join("%s=%s" % kv for kv in data_repr.items()),
-            )
-        )
-
-    def _add_result_to_targets(self, targets, result):
-        name = self.new_name()
-        self.__printer.singleton_pprinters.setdefault(
-            id(result), lambda obj, p, cycle: p.text(name)
-        )
-        self.names_to_values[name] = result
-        for target in targets:
-            self.bundle(target).append(VarReference(name))
-
-    def execute_step(self, step):
-        rule, data = step
-        data = dict(data)
-        for k, v in list(data.items()):
-            if isinstance(v, VarReference):
-                data[k] = self.names_to_values[v.name]
-        result = rule.function(self, **data)
-        if rule.targets:
-            if isinstance(result, MultipleResults):
-                for single_result in result.values:
-                    self._add_result_to_targets(rule.targets, single_result)
-            else:
-                self._add_result_to_targets(rule.targets, result)
-        if self._initialize_rules_to_run:
-            self._initialize_rules_to_run.remove(rule)
-        return result
-
-    def check_invariants(self):
-        for invar in self.invariants():
-            if invar.precondition and not invar.precondition(self):
-                continue
-            invar.function(self)

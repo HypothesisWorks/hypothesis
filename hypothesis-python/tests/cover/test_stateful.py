@@ -26,7 +26,6 @@ from hypothesis.errors import DidNotReproduce, Flaky, InvalidArgument, InvalidDe
 from hypothesis.stateful import (
     Bundle,
     RuleBasedStateMachine,
-    _GenericStateMachine,
     consumes,
     initialize,
     invariant,
@@ -35,51 +34,10 @@ from hypothesis.stateful import (
     rule,
     run_state_machine_as_test,
 )
-from hypothesis.strategies import (
-    binary,
-    booleans,
-    integers,
-    just,
-    lists,
-    none,
-    sampled_from,
-    tuples,
-)
+from hypothesis.strategies import binary, booleans, data, integers, just, lists
 from tests.common.utils import capture_out, raises
 
 NO_BLOB_SETTINGS = Settings(print_blob=False)
-
-
-class SetStateMachine(_GenericStateMachine):
-    def __init__(self):
-        self.elements = []
-
-    def steps(self):
-        strat = tuples(just(False), integers(0, 5))
-        if self.elements:
-            strat |= tuples(just(True), sampled_from(self.elements))
-        return strat
-
-    def execute_step(self, step):
-        delete, value = step
-        if delete:
-            self.elements.remove(value)
-            assert value not in self.elements
-        else:
-            self.elements.append(value)
-
-
-class OrderedStateMachine(_GenericStateMachine):
-    def __init__(self):
-        self.counter = 0
-
-    def steps(self):
-        return integers(self.counter - 1, self.counter + 50)
-
-    def execute_step(self, step):
-        assert step >= self.counter
-        self.counter = step
-
 
 Leaf = namedtuple("Leaf", ("label",))
 Split = namedtuple("Split", ("left", "right"))
@@ -297,22 +255,18 @@ def test_multiple_rules_same_func():
 
 
 def test_can_get_test_case_off_machine_instance():
-    assert SetStateMachine().TestCase is SetStateMachine().TestCase
-    assert SetStateMachine().TestCase is not None
+    assert DepthMachine().TestCase is DepthMachine().TestCase
+    assert DepthMachine().TestCase is not None
 
 
-class FlakyDrawLessMachine(_GenericStateMachine):
-    def steps(self):
-        cb = current_build_context()
-        if cb.is_final:
-            return binary(min_size=1, max_size=1)
+class FlakyDrawLessMachine(RuleBasedStateMachine):
+    @rule(d=data())
+    def action(self, d):
+        if current_build_context().is_final:
+            d.draw(binary(min_size=1, max_size=1))
         else:
-            return binary(min_size=1024, max_size=1024)
-
-    def execute_step(self, step):
-        cb = current_build_context()
-        if not cb.is_final:
-            assert 0 not in bytearray(step)
+            buffer = binary(min_size=1024, max_size=1024)
+            assert 0 not in buffer
 
 
 def test_flaky_draw_less_raises_flaky():
@@ -320,11 +274,9 @@ def test_flaky_draw_less_raises_flaky():
         FlakyDrawLessMachine.TestCase().runTest()
 
 
-class FlakyStateMachine(_GenericStateMachine):
-    def steps(self):
-        return just(())
-
-    def execute_step(self, step):
+class FlakyStateMachine(RuleBasedStateMachine):
+    @rule()
+    def action(self):
         assert current_build_context().is_final
 
 
@@ -333,15 +285,14 @@ def test_flaky_raises_flaky():
         FlakyStateMachine.TestCase().runTest()
 
 
-class FlakyRatchettingMachine(_GenericStateMachine):
+class FlakyRatchettingMachine(RuleBasedStateMachine):
     ratchet = 0
 
-    def steps(self):
+    @rule(d=data())
+    def action(self, d):
         FlakyRatchettingMachine.ratchet += 1
         n = FlakyRatchettingMachine.ratchet
-        return lists(integers(), min_size=n, max_size=n)
-
-    def execute_step(self, step):
+        d.draw(lists(integers(), min_size=n, max_size=n))
         assert False
 
 
@@ -550,14 +501,13 @@ def test_new_rules_are_picked_up_before_and_after_rules_call():
 def test_minimizes_errors_in_teardown():
     counter = [0]
 
-    class Foo(_GenericStateMachine):
-        def __init__(self):
+    class Foo(RuleBasedStateMachine):
+        @initialize()
+        def init(self):
             counter[0] = 0
 
-        def steps(self):
-            return tuples()
-
-        def execute_step(self, value):
+        @rule()
+        def increment(self):
             counter[0] += 1
 
         def teardown(self):
@@ -568,15 +518,13 @@ def test_minimizes_errors_in_teardown():
     assert counter[0] == 1
 
 
-class RequiresInit(_GenericStateMachine):
+class RequiresInit(RuleBasedStateMachine):
     def __init__(self, threshold):
         super().__init__()
         self.threshold = threshold
 
-    def steps(self):
-        return integers()
-
-    def execute_step(self, value):
+    @rule(value=integers())
+    def action(self, value):
         if value > self.threshold:
             raise ValueError("%d is too high" % (value,))
 
@@ -588,15 +536,13 @@ def test_can_use_factory_for_tests():
         )
 
 
-class FailsEventually(_GenericStateMachine):
+class FailsEventually(RuleBasedStateMachine):
     def __init__(self):
         super().__init__()
         self.counter = 0
 
-    def steps(self):
-        return none()
-
-    def execute_step(self, _):
+    @rule()
+    def increment(self):
         self.counter += 1
         assert self.counter < 10
 
@@ -643,14 +589,14 @@ def test_saves_failing_example_in_database():
     db = ExampleDatabase(":memory:")
     with raises(AssertionError):
         run_state_machine_as_test(
-            SetStateMachine, settings=Settings(database=db, max_examples=100)
+            DepthMachine, settings=Settings(database=db, max_examples=100)
         )
     assert any(list(db.data.values()))
 
 
 def test_can_run_with_no_db():
     with raises(AssertionError):
-        run_state_machine_as_test(SetStateMachine, settings=Settings(database=None))
+        run_state_machine_as_test(DepthMachine, settings=Settings(database=None))
 
 
 def test_stateful_double_rule_is_forbidden(recwarn):
