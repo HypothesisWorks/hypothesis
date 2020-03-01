@@ -1159,3 +1159,24 @@ def test_reproduce_failure_fails_if_no_error():
 def test_cannot_have_zero_steps():
     with pytest.raises(InvalidArgument):
         Settings(stateful_step_count=0)
+
+
+def test_arguments_do_not_use_names_of_return_values():
+    # See https://github.com/HypothesisWorks/hypothesis/issues/2341
+    class TrickyPrintingMachine(RuleBasedStateMachine):
+        data = Bundle("data")
+
+        @initialize(target=data, value=integers())
+        def init_data(self, value):
+            return value
+
+        @rule(d=data)
+        def mostly_fails(self, d):
+            assert d == 42
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            run_state_machine_as_test(TrickyPrintingMachine)
+    output = o.getvalue()
+    assert "v1 = state.init_data(value=0)" in output
+    assert "v1 = state.init_data(value=v1)" not in output

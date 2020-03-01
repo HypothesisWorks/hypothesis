@@ -141,7 +141,15 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None):
                     machine._initialize_rules_to_run.remove(rule)
                 else:
                     rule, data = cd.draw(machine._rules_strategy)
-                data_to_print = dict(data)
+
+                # Pretty-print the values this rule was called with *before* calling
+                # _add_result_to_targets, to avoid printing arguments which are also
+                # a return value using the variable name they are assigned to.
+                # See https://github.com/HypothesisWorks/hypothesis/issues/2341
+                if print_steps:
+                    data_to_print = {
+                        k: machine._pretty_print(v) for k, v in data.items()
+                    }
 
                 # Assign 'result' here in case executing the rule fails below
                 result = multiple()
@@ -228,7 +236,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         self._initialize_rules_to_run = copy(self.initialize_rules())
         self._rules_strategy = RuleStrategy(self)
 
-    def __pretty(self, value):
+    def _pretty_print(self, value):
         if isinstance(value, VarReference):
             return value.name
         self.__stream.seek(0)
@@ -326,9 +334,6 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
         return target.append(Rule(targets, function, converted_arguments, precondition))
 
     def _print_step(self, rule, data, result):
-        data_repr = {}
-        for k, v in data.items():
-            data_repr[k] = self.__pretty(v)
         self.step_count = getattr(self, "step_count", 0) + 1
         # If the step has target bundles, and the result is a MultipleResults
         # then we want to assign to multiple variables.
@@ -346,7 +351,7 @@ class RuleBasedStateMachine(metaclass=StateMachineMeta):
             % (
                 output_assignment,
                 rule.function.__name__,
-                ", ".join("%s=%s" % kv for kv in data_repr.items()),
+                ", ".join("%s=%s" % kv for kv in data.items()),
             )
         )
 
