@@ -15,7 +15,6 @@
 
 import math
 import re
-from collections import namedtuple
 from typing import Any, NamedTuple, Sequence, Tuple, Union
 
 import numpy as np
@@ -1011,7 +1010,9 @@ _ARGUMENT_LIST = "{0}(?:,{0})*".format(_SHAPE)
 _SIGNATURE = r"^{}->{}$".format(_ARGUMENT_LIST, _SHAPE)
 _SIGNATURE_MULTIPLE_OUTPUT = r"^{0}->{0}$".format(_ARGUMENT_LIST)
 
-_GUfuncSig = namedtuple("_GUfuncSig", ["input_shapes", "result_shape"])
+_GUfuncSig = NamedTuple(
+    "_GUfuncSig", [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)]
+)
 
 
 def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
