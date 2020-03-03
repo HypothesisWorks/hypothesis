@@ -249,8 +249,12 @@ def test_minimise_array_strategy():
 
 @given(nps.array_dtypes(allow_subarrays=False))
 def test_can_turn_off_subarrays(dt):
-    for field, _ in dt.fields.values():
-        assert field.shape == ()
+    for name in dt.names:
+        assert dt.fields[name][0].shape == ()
+
+
+def test_array_dtypes_may_have_field_titles():
+    find_any(nps.array_dtypes(), lambda dt: len(dt.fields) > len(dt.names))
 
 
 @pytest.mark.parametrize("byteorder", ["<", ">"])

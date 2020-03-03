@@ -650,6 +650,18 @@ def unicode_string_dtypes(
     return dtype_factory("U", list(range(min_len, max_len + 1)), None, endianness)
 
 
+def _no_title_is_name_of_a_titled_field(ls):
+    seen = set()
+    for title_and_name, *_ in ls:
+        if isinstance(title_and_name, tuple):
+            if seen.intersection(title_and_name):  # pragma: no cover
+                # Our per-element filters below make this as rare as possible,
+                # so it's not always covered.
+                return False
+            seen.update(title_and_name)
+    return True
+
+
 @defines_dtype_strategy
 @deprecated_posargs
 def array_dtypes(
@@ -662,19 +674,29 @@ def array_dtypes(
     """Return a strategy for generating array (compound) dtypes, with members
     drawn from the given subtype strategy."""
     order_check("size", 0, min_size, max_size)
-    # Field names must be native strings and the empty string is weird; see #1963.
-    field_names = st.text(min_size=1)
-    elements = st.tuples(field_names, subtype_strategy)
+    # The empty string is replaced by f{idx}; see #1963 for details.  Much easier to
+    # insist that field names be unique and just boost f{idx} strings manually.
+    field_names = st.integers(0, 127).map("f{}".format) | st.text(min_size=1)
+    name_titles = st.one_of(
+        field_names,
+        st.tuples(field_names, field_names).filter(lambda ns: ns[0] != ns[1]),
+    )
+    elements = st.tuples(name_titles, subtype_strategy)
     if allow_subarrays:
         elements |= st.tuples(
-            field_names, subtype_strategy, array_shapes(max_dims=2, max_side=2)
+            name_titles, subtype_strategy, array_shapes(max_dims=2, max_side=2)
         )
     return st.lists(
         elements=elements,
         min_size=min_size,
         max_size=max_size,
-        unique_by=lambda d: d[0],
-    )
+        unique_by=(
+            # Deduplicate by both name and title for efficiency before filtering.
+            # (Field names must be unique, as must titles, and no intersections)
+            lambda d: d[0] if isinstance(d[0], str) else d[0][0],
+            lambda d: d[0] if isinstance(d[0], str) else d[0][1],
+        ),
+    ).filter(_no_title_is_name_of_a_titled_field)
 
 
 @st.defines_strategy
