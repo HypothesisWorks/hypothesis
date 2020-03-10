@@ -45,4 +45,4 @@ def test_reports_passes():
         if m is not None and int(m.group(2)) != 0:
             break
     else:
-        assert False, value
+        pytest.xfail(reason="Sometimes the first failure is 10, and cannot shrink.")

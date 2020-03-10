@@ -9,7 +9,7 @@ attrs==19.3.0             # via -r requirements/test.in, pytest
 execnet==1.7.1            # via pytest-xdist
 importlib-metadata==1.5.0  # via pluggy, pytest
 more-itertools==8.2.0     # via pytest
-packaging==20.1           # via pytest
+packaging==20.3           # via pytest
 pexpect==4.8.0            # via -r requirements/test.in
 pluggy==0.13.1            # via pytest
 ptyprocess==0.6.0         # via pexpect

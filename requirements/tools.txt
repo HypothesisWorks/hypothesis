@@ -18,13 +18,13 @@ bleach==3.1.1             # via readme-renderer
 certifi==2019.11.28       # via requests
 cffi==1.14.0              # via cryptography
 chardet==3.0.4            # via requests
-click==7.0                # via black, pip-tools, pyupio, safety
+click==7.1.1              # via black, pip-tools, pyupio, safety
 coverage==5.0.3           # via -r requirements/tools.in
 cryptography==2.8         # via secretstorage
 decorator==4.4.2          # via ipython, traitlets
 deprecated==1.2.7         # via pygithub
 distlib==0.3.0            # via virtualenv
-django==3.0.3             # via -r requirements/tools.in
+django==3.0.4             # via -r requirements/tools.in
 docutils==0.16            # via readme-renderer, restructuredtext-lint, sphinx
 dparse==0.4.1             # via pyupio, safety
 dpcontracts==0.6.0        # via -r requirements/tools.in
@@ -41,22 +41,22 @@ gitpython==3.1.0          # via bandit
 idna==2.9                 # via requests
 imagesize==1.2.0          # via sphinx
 importlib-metadata==1.5.0  # via flake8-comprehensions, importlib-resources, keyring, pluggy, pytest, tox, twine, virtualenv
-importlib-resources==1.2.0  # via virtualenv
+importlib-resources==1.3.1  # via virtualenv
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.13.0           # via -r requirements/tools.in
 isort==4.3.21             # via -r requirements/tools.in
 jedi==0.16.0              # via ipython
-jeepney==0.4.2            # via keyring, secretstorage
+jeepney==0.4.3            # via keyring, secretstorage
 jinja2==2.11.1            # via pyupio, sphinx
-keyring==21.1.0           # via twine
-lark-parser==0.8.1        # via -r requirements/tools.in
+keyring==21.1.1           # via twine
+lark-parser==0.8.2        # via -r requirements/tools.in
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8
 more-itertools==8.2.0     # via pytest
 mypy-extensions==0.4.3    # via mypy
 mypy==0.761               # via -r requirements/tools.in
 numpy==1.18.1             # via -r requirements/tools.in
-packaging==20.1           # via dparse, pytest, pyupio, safety, sphinx, tox
+packaging==20.3           # via dparse, pytest, pyupio, safety, sphinx, tox
 parso==0.6.2              # via jedi
 pathspec==0.7.0           # via black
 pbr==5.4.4                # via stevedore
@@ -65,20 +65,20 @@ pickleshare==0.7.5        # via ipython
 pip-tools==4.5.1          # via -r requirements/tools.in
 pkginfo==1.5.0.1          # via twine
 pluggy==0.13.1            # via pytest, tox
-prompt-toolkit==3.0.3     # via ipython
+prompt-toolkit==3.0.4     # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.8.1                 # via pytest, tox
 pycodestyle==2.5.0        # via flake8, flake8-bandit
-pycparser==2.19           # via cffi
+pycparser==2.20           # via cffi
 pydocstyle==5.0.2         # via flake8-docstrings
 pyflakes==2.1.1           # via autoflake, flake8
 pygithub==1.46            # via pyupio
-pygments==2.5.2           # via ipython, readme-renderer, sphinx
+pygments==2.6.1           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pyparsing==2.4.6          # via packaging
 pytest==5.3.5             # via -r requirements/tools.in
 python-dateutil==2.8.1    # via -r requirements/tools.in
-python-gitlab==2.0.1      # via pyupio
+python-gitlab==2.1.2      # via pyupio
 pytz==2019.3              # via babel, django
 pyupgrade==2.1.0          # via -r requirements/tools.in
 pyupio==1.0.2             # via -r requirements/tools.in
@@ -95,7 +95,7 @@ smmap==3.0.1              # via gitdb
 snowballstemmer==2.0.0    # via pydocstyle, sphinx
 sortedcontainers==2.1.0   # via -r requirements/tools.in
 sphinx-rtd-theme==0.4.3   # via -r requirements/tools.in
-sphinx==2.4.3             # via -r requirements/tools.in, sphinx-rtd-theme
+sphinx==2.4.4             # via -r requirements/tools.in, sphinx-rtd-theme
 sphinxcontrib-applehelp==1.0.2  # via sphinx
 sphinxcontrib-devhelp==1.0.2  # via sphinx
 sphinxcontrib-htmlhelp==1.0.3  # via sphinx
@@ -113,10 +113,10 @@ twine==3.1.1              # via -r requirements/tools.in
 typed-ast==1.4.1          # via black, mypy
 typing-extensions==3.7.4.1  # via mypy
 urllib3==1.25.8           # via requests
-virtualenv==20.0.7        # via tox
+virtualenv==20.0.9        # via tox
 wcwidth==0.1.8            # via prompt-toolkit, pytest
 webencodings==0.5.1       # via bleach
-wrapt==1.12.0             # via deprecated
+wrapt==1.12.1             # via deprecated
 zipp==1.2.0               # via -r requirements/tools.in, importlib-metadata, importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
