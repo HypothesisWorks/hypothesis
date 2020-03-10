@@ -18,7 +18,7 @@ bleach==3.1.1             # via readme-renderer
 certifi==2019.11.28       # via requests
 cffi==1.14.0              # via cryptography
 chardet==3.0.4            # via requests
-click==7.1                # via black, pip-tools, pyupio, safety
+click==7.1.1              # via black, pip-tools, pyupio, safety
 coverage==5.0.3           # via -r requirements/tools.in
 cryptography==2.8         # via secretstorage
 decorator==4.4.2          # via ipython, traitlets
