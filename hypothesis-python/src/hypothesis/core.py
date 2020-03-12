@@ -918,6 +918,27 @@ def given(
 
         argspec = new_given_argspec(original_argspec, given_kwargs)
 
+        # Use type information to convert "infer" arguments into appropriate strategies.
+        if infer in given_kwargs.values():
+            hints = get_type_hints(test)
+        for name in [name for name, value in given_kwargs.items() if value is infer]:
+            if name not in hints:
+                # As usual, we want to emit this error when the test is executed,
+                # not when it's decorated.
+
+                @impersonate(test)
+                @define_function_signature(test.__name__, test.__doc__, argspec)
+                def wrapped_test(*arguments, **kwargs):
+                    __tracebackhide__ = True
+                    raise InvalidArgument(
+                        "passed %s=infer for %s, but %s has no type annotation"
+                        % (name, test.__name__, name)
+                    )
+
+                return wrapped_test
+
+            given_kwargs[name] = st.from_type(hints[name])
+
         @impersonate(test)
         @define_function_signature(test.__name__, test.__doc__, argspec)
         def wrapped_test(*arguments, **kwargs):
@@ -942,20 +963,6 @@ def given(
             settings = wrapped_test._hypothesis_internal_use_settings
 
             random = get_random_for_wrapped_test(test, wrapped_test)
-
-            # Use type information to convert "infer" arguments into appropriate
-            # strategies.
-            if infer in given_kwargs.values():
-                hints = get_type_hints(test)
-            for name in [
-                name for name, value in given_kwargs.items() if value is infer
-            ]:
-                if name not in hints:
-                    raise InvalidArgument(
-                        "passed %s=infer for %s, but %s has no type annotation"
-                        % (name, test.__name__, name)
-                    )
-                given_kwargs[name] = st.from_type(hints[name])
 
             processed_args = process_arguments_to_given(
                 wrapped_test, arguments, kwargs, given_kwargs, argspec, settings,
