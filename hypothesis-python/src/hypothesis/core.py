@@ -376,7 +376,7 @@ def get_random_for_wrapped_test(test, wrapped_test):
 
 
 def process_arguments_to_given(
-    wrapped_test, arguments, kwargs, given_kwargs, argspec, test, settings,
+    wrapped_test, arguments, kwargs, given_kwargs, argspec, settings,
 ):
     selfy = None
     arguments, kwargs = convert_positional_arguments(wrapped_test, arguments, kwargs)
@@ -958,7 +958,7 @@ def given(
                 given_kwargs[name] = st.from_type(hints[name])
 
             processed_args = process_arguments_to_given(
-                wrapped_test, arguments, kwargs, given_kwargs, argspec, test, settings,
+                wrapped_test, arguments, kwargs, given_kwargs, argspec, settings,
             )
             arguments, kwargs, test_runner, search_strategy = processed_args
 
