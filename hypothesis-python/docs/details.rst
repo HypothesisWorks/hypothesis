@@ -694,3 +694,55 @@ on working with markers <pytest:mark examples>`.
 .. note::
     Pytest will load the plugin automatically if Hypothesis is installed.
     You don't need to do anything at all to use it.
+
+
+.. _fuzz_one_input:
+
+-------------------------
+Use with external fuzzers
+-------------------------
+
+.. warning::
+
+    This feature is experimental, and may change or be removed in a minor update.
+
+Sometimes, you might want to point a traditional fuzzer such as
+`python-afl <https://github.com/jwilk/python-afl>`__ or :pypi:`pythonfuzz`
+at your code. Wouldn't it be nice if you could use any of your
+:func:`@given <hypothesis.given>` tests as fuzz targets?
+
+.. code:: python
+
+    @given(st.text())
+    def test_foo(s):
+        ...
+
+
+    # This is a traditional fuzz target - call it with a bytestring,
+    # or a binary IO object, and it runs the test once.
+    fuzz_target = test_foo.hypothesis.fuzz_one_input
+
+    # For example:
+    fuzz_target(b"\x00\x00\x00\x00\x00\x00\x00\x00")
+    fuzz_target(io.BytesIO(...))
+
+Depending on the input to ``fuzz_one_input``, one of three things will happen:
+
+- If the bytestring was invalid, for example because it was too short or
+  failed a filter or :func:`~hypothesis.assume` too many times,
+  ``fuzz_one_input`` returns ``None``.
+
+- If the bytestring was valid and the test passed, ``fuzz_one_input`` returns
+  a canonicalised and pruned buffer which will replay that test case.  This
+  is provided as an option to improve the performance of mutating fuzzers,
+  but can safely be ignored.
+
+- If the test *failed*, i.e. raised an exception, ``fuzz_one_input`` will add
+  the pruned buffer to :doc:`the Hypothesis example database <database>`
+  and then re-raise that exception.  All you need to do to reproduce, minimize,
+  and de-duplicate all the failures found via fuzzing is run your test suite!
+
+Note that the interpretation of both input and output bytestrings is specific
+to the exact version of Hypothesis you are using and the strategies given to
+the test, just like the :doc:`example database <database>` and
+:func:`@reproduce_failure <hypothesis.reproduce_failure>` decorator.
