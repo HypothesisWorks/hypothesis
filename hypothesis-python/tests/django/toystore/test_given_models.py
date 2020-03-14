@@ -21,7 +21,11 @@ from django.contrib.auth.models import User
 
 from hypothesis import HealthCheck, assume, given, infer, settings
 from hypothesis.control import reject
-from hypothesis.errors import HypothesisException, InvalidArgument
+from hypothesis.errors import (
+    HypothesisDeprecationWarning,
+    HypothesisException,
+    InvalidArgument,
+)
 from hypothesis.extra.django import (
     TestCase,
     TransactionTestCase,
@@ -31,6 +35,7 @@ from hypothesis.extra.django import (
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies import binary, just, lists
 from tests.django.toystore.models import (
+    Car,
     Company,
     CompanyExtension,
     CouldBeCharming,
@@ -187,3 +192,16 @@ class TestValidatorInference(TestCase):
     @given(from_model(User))
     def test_user_issue_1112_regression(self, user):
         assert user.username
+
+
+class TestPosOnlyArg(TestCase):
+    @given(from_model(Car))
+    def test_user_issue_2369_regression(self, val):
+        pass
+
+    def test_from_model_argspec(self):
+        self.assertRaises(TypeError, from_model().example)
+        self.assertRaises(TypeError, from_model(Car, None).example)
+        self.assertWarns(
+            HypothesisDeprecationWarning, from_model(model=Customer).example
+        )

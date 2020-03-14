@@ -13,8 +13,10 @@
 #
 # END HEADER
 
+import sys
 import unittest
 from functools import partial
+from inspect import Parameter, signature
 from typing import Type, Union
 
 import django.db.models as dm
@@ -25,6 +27,7 @@ from django.db import IntegrityError
 
 import hypothesis.strategies._internal.core as st
 from hypothesis import reject
+from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django._fields import from_field
 from hypothesis.utils.conventions import InferType, infer
@@ -55,7 +58,7 @@ class TransactionTestCase(HypothesisTestCase, dt.TransactionTestCase):
 
 @st.defines_strategy
 def from_model(
-    model: Type[dm.Model], **field_strategies: Union[st.SearchStrategy, InferType]
+    *model: Type[dm.Model], **field_strategies: Union[st.SearchStrategy, InferType]
 ) -> st.SearchStrategy:
     """Return a strategy for examples of ``model``.
 
@@ -66,7 +69,8 @@ def from_model(
 
     ``model`` must be an subclass of :class:`~django:django.db.models.Model`.
     Strategies for fields may be passed as keyword arguments, for example
-    ``is_staff=st.just(False)``.
+    ``is_staff=st.just(False)``.  In order to support models with fields named
+    "model", this is a positional-only parameter.
 
     Hypothesis can often infer a strategy based the field type and validators,
     and will attempt to do so for any required fields.  No strategy will be
@@ -81,10 +85,25 @@ def from_model(
     :obj:`~hypothesis.infer` as a keyword argument to infer a strategy for
     a field which has a default value instead of using the default.
     """
-    if not issubclass(model, dm.Model):
+    if len(model) == 1:
+        m_type = model[0]
+    elif len(model) > 1:
+        raise TypeError("Too many positional arguments")
+    else:
+        try:
+            m_type = field_strategies.pop("model")  # type: ignore
+        except KeyError:
+            raise TypeError("Missing required positional argument `model`") from None
+        else:
+            note_deprecation(
+                "The `model` argument will be positional-only in a future version",
+                since="RELEASEDAY",
+            )
+
+    if not issubclass(m_type, dm.Model):
         raise InvalidArgument("model=%r must be a subtype of Model" % (model,))
 
-    fields_by_name = {f.name: f for f in model._meta.concrete_fields}
+    fields_by_name = {f.name: f for f in m_type._meta.concrete_fields}
     for name, value in sorted(field_strategies.items()):
         if value is infer:
             field_strategies[name] = from_field(fields_by_name[name])
@@ -97,18 +116,27 @@ def from_model(
             field_strategies[name] = from_field(field)
 
     for field in field_strategies:
-        if model._meta.get_field(field).primary_key:
+        if m_type._meta.get_field(field).primary_key:
             # The primary key is generated as part of the strategy. We
             # want to find any existing row with this primary key and
             # overwrite its contents.
             kwargs = {field: field_strategies.pop(field)}
             kwargs["defaults"] = st.fixed_dictionaries(field_strategies)  # type: ignore
-            return _models_impl(st.builds(model.objects.update_or_create, **kwargs))
+            return _models_impl(st.builds(m_type.objects.update_or_create, **kwargs))
 
     # The primary key is not generated as part of the strategy, so we
     # just match against any row that has the same value for all
     # fields.
-    return _models_impl(st.builds(model.objects.get_or_create, **field_strategies))
+    return _models_impl(st.builds(m_type.objects.get_or_create, **field_strategies))
+
+
+if sys.version_info[:2] >= (3, 8):  # pragma: no cover
+    # See notes above definition of st.builds() - this signature is compatible
+    # and better matches the semantics of the function.  Great for documentation!
+    sig = signature(from_model)
+    params = list(sig.parameters.values())
+    params[0] = params[0].replace(kind=Parameter.POSITIONAL_ONLY)
+    from_model.__signature__ = sig.replace(parameters=params)
 
 
 @st.composite
