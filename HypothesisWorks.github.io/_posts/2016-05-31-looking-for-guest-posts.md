@@ -15,7 +15,7 @@ Hypothesis in the wild. Could that be you?
 
 Details of how to guest post on here:
 
-1. This site is [a Jekyll site on Github](https://github.com/HypothesisWorks/HypothesisWorks.github.io).
+1. This site is [a Jekyll site on GitHub](https://github.com/HypothesisWorks/HypothesisWorks.github.io).
    To add a post, create a markdown file in the _posts directory with the
    appropriate structure and send a pull request.
 2. You will want to add an entry for yourself to [the authors data file](https://github.com/HypothesisWorks/HypothesisWorks.github.io/blob/master/_data/authors.yml)
