@@ -71,7 +71,7 @@ jobs:
 
   - job: osx
     pool:
-      vmImage: 'macOS-10.13'
+      vmImage: 'macOS-10.15'
     strategy:
       matrix:
         check-py36:

@@ -26,6 +26,11 @@ class Store(models.Model):
     company = models.ForeignKey(Company, null=False, on_delete=models.CASCADE)
 
 
+class Car(models.Model):
+    # See https://github.com/HypothesisWorks/hypothesis/issues/2369
+    model = models.CharField(max_length=100, unique=True)
+
+
 class CharmField(models.Field):
     def db_type(self, connection):
         return "char(1)"

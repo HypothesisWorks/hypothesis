@@ -1,4 +1,5 @@
-language: c
+language: python
+python: "3.6"
 
 os:
     - linux
