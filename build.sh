@@ -20,6 +20,9 @@ source "$SCRIPTS/common.sh"
 if [ -n "${PIPELINE_WORKSPACE-}" ] ; then
     # We're on Azure Pipelines and already set up a suitable Python
     PYTHON=$(command -v python)
+elif [ -n "${TRAVIS-}" ] ; then
+    # We're on Travis and already set up a suitable Python
+    PYTHON=$(command -v python)
 else
     # Otherwise, we install it from scratch
     "$SCRIPTS/ensure-python.sh" 3.6.8
