@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.6.1:
+
+------------------
+5.6.1 - 2020-03-18
+------------------
+
+This makes ``model`` a positional-only argument to
+:func:`~hypothesis.extra.django.from_model`, to support models
+with a field literally named "model" (:issue:`2369`).
+
 .. _v5.6.0:
 
 ------------------
