@@ -102,3 +102,26 @@ def test_autouse_function_scoped_fixture(x):
 def test_given_plus_function_scoped_non_autouse_fixtures_are_deprecated(testdir):
     script = testdir.makepyfile(TESTSUITE)
     testdir.runpytest(script, "-Werror").assert_outcomes(passed=1, failed=1)
+
+
+TESTSCRIPT_OVERRIDE_FIXTURE = """
+import pytest
+from hypothesis import given, strategies as st
+
+@pytest.fixture(scope="function", name="event_loop")
+def event_loop_1():
+    return
+
+@pytest.fixture(scope="module", name="event_loop")
+def event_loop_2():
+    return
+
+@given(x=st.integers())
+def test_override_fixture(event_loop, x):
+    pass
+"""
+
+
+def test_given_plus_overridden_fixture(testdir):
+    script = testdir.makepyfile(TESTSCRIPT_OVERRIDE_FIXTURE)
+    testdir.runpytest(script, "-Werror").assert_outcomes(passed=1, failed=0)
