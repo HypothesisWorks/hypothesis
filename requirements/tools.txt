@@ -83,7 +83,7 @@ python-gitlab==2.1.2      # via pyupio
 pytz==2019.3              # via babel, django
 pyupgrade==2.1.0          # via -r requirements/tools.in
 pyupio==1.1.0             # via -r requirements/tools.in
-pyyaml==5.3.1               # via bandit, dparse, pyupio
+pyyaml==5.3.1             # via bandit, dparse, pyupio
 readme-renderer==25.0     # via twine
 regex==2020.2.20          # via black
 requests-toolbelt==0.9.1  # via twine
@@ -119,7 +119,7 @@ virtualenv==20.0.13       # via pipenv, tox
 wcwidth==0.1.9            # via prompt-toolkit, pytest
 webencodings==0.5.1       # via bleach
 wrapt==1.12.1             # via deprecated
-zipp==3.1.0               # via -r requirements/tools.in, importlib-metadata, importlib-resources
+zipp==1.2.0               # via -r requirements/tools.in, importlib-metadata, importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
