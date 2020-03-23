@@ -116,7 +116,7 @@ typing-extensions==3.7.4.1  # via mypy
 urllib3==1.25.8           # via requests
 virtualenv-clone==0.5.3   # via pipenv
 virtualenv==20.0.13       # via pipenv, tox
-wcwidth==0.1.8            # via prompt-toolkit, pytest
+wcwidth==0.1.9            # via prompt-toolkit, pytest
 webencodings==0.5.1       # via bleach
 wrapt==1.12.1             # via deprecated
 zipp==1.2.0               # via -r requirements/tools.in, importlib-metadata, importlib-resources
