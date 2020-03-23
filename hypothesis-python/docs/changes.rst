@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.7.1:
+
+------------------
+5.7.1 - 2020-03-23
+------------------
+
+This patch fixes :issue:`2375`, preventing incorrect failure when a function
+scoped fixture is overridden with a higher scoped fixture.
+
 .. _v5.7.0:
 
 ------------------
