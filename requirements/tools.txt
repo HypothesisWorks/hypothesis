@@ -14,7 +14,7 @@ backcall==0.1.0           # via ipython
 bandit==1.6.2             # via flake8-bandit
 black==19.10b0            # via -r requirements/tools.in, blacken-docs
 blacken-docs==1.6.0       # via -r requirements/tools.in
-bleach==3.1.1             # via readme-renderer
+bleach==3.1.3             # via readme-renderer
 certifi==2019.11.28       # via pipenv, requests
 cffi==1.14.0              # via cryptography
 chardet==3.0.4            # via requests
