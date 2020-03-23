@@ -156,14 +156,17 @@ else:
                 if argnames is None:
                     argnames = frozenset(signature(item.function).parameters)
                 for fx in fx_defs:
-                    if fx.scope == "function" and fx.argname in argnames:
-                        note_deprecation(
-                            "%s uses the %r fixture, but function-scoped fixtures "
-                            "should not be used with @given(...) tests, because "
-                            "fixtures are not reset between generated examples!"
-                            % (item.nodeid, fx.argname),
-                            since="2020-02-29",
-                        )
+                    if fx.argname in argnames:
+                        active_fx = item._request._get_active_fixturedef(fx.argname)
+                        if active_fx.scope == "function":
+                            note_deprecation(
+                                "%s uses the %r fixture, but function-scoped"
+                                " fixtures should not be used with @given(...)"
+                                " tests, because fixtures are not reset "
+                                "between generated examples!"
+                                % (item.nodeid, fx.argname),
+                                since="2020-02-29",
+                            )
 
             if item.get_closest_marker("parametrize") is not None:
                 # Give every parametrized test invocation a unique database key
