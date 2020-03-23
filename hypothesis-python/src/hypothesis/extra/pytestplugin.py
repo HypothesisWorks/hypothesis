@@ -157,8 +157,7 @@ else:
                     argnames = frozenset(signature(item.function).parameters)
                 for fx in fx_defs:
                     if fx.argname in argnames:
-                        active_fx = item._request._get_active_fixturedef(
-                            fx.argname)
+                        active_fx = item._request._get_active_fixturedef(fx.argname)
                         if active_fx.scope == "function":
                             note_deprecation(
                                 "%s uses the %r fixture, but function-scoped"
