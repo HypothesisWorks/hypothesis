@@ -10,6 +10,17 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.8.0:
+
+------------------
+5.8.0 - 2020-03-24
+------------------
+
+This release adds a :ref:`.hypothesis.fuzz_one_input <fuzz_one_input>`
+attribute to :func:`@given <hypothesis.given>` tests, for easy integration
+with external fuzzers such as `python-afl <https://github.com/jwilk/python-afl>`__
+(supporting :issue:`171`).
+
 .. _v5.7.2:
 
 ------------------
