@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.7.2:
+
+------------------
+5.7.2 - 2020-03-24
+------------------
+
+This patch fixes :issue:`2341`, ensuring that the printed output from a
+stateful test cannot use variable names before they are defined.
+
 .. _v5.7.1:
 
 ------------------
