@@ -19,6 +19,7 @@ import base64
 import contextlib
 import datetime
 import inspect
+import io
 import random as rnd_module
 import sys
 import traceback
@@ -27,7 +28,7 @@ import zlib
 from inspect import getfullargspec
 from io import StringIO
 from random import Random
-from typing import Any, Callable, Hashable, List, TypeVar, Union
+from typing import Any, BinaryIO, Callable, Hashable, List, Optional, TypeVar, Union
 from unittest import TestCase
 
 import attr
@@ -376,7 +377,7 @@ def get_random_for_wrapped_test(test, wrapped_test):
 
 
 def process_arguments_to_given(
-    wrapped_test, arguments, kwargs, given_kwargs, argspec, test, settings,
+    wrapped_test, arguments, kwargs, given_kwargs, argspec, settings,
 ):
     selfy = None
     arguments, kwargs = convert_positional_arguments(wrapped_test, arguments, kwargs)
@@ -874,6 +875,7 @@ class HypothesisHandle:
     """
 
     inner_test = attr.ib()
+    fuzz_one_input = attr.ib()
 
 
 def given(
@@ -918,6 +920,27 @@ def given(
 
         argspec = new_given_argspec(original_argspec, given_kwargs)
 
+        # Use type information to convert "infer" arguments into appropriate strategies.
+        if infer in given_kwargs.values():
+            hints = get_type_hints(test)
+        for name in [name for name, value in given_kwargs.items() if value is infer]:
+            if name not in hints:
+                # As usual, we want to emit this error when the test is executed,
+                # not when it's decorated.
+
+                @impersonate(test)
+                @define_function_signature(test.__name__, test.__doc__, argspec)
+                def wrapped_test(*arguments, **kwargs):
+                    __tracebackhide__ = True
+                    raise InvalidArgument(
+                        "passed %s=infer for %s, but %s has no type annotation"
+                        % (name, test.__name__, name)
+                    )
+
+                return wrapped_test
+
+            given_kwargs[name] = st.from_type(hints[name])
+
         @impersonate(test)
         @define_function_signature(test.__name__, test.__doc__, argspec)
         def wrapped_test(*arguments, **kwargs):
@@ -943,22 +966,8 @@ def given(
 
             random = get_random_for_wrapped_test(test, wrapped_test)
 
-            # Use type information to convert "infer" arguments into appropriate
-            # strategies.
-            if infer in given_kwargs.values():
-                hints = get_type_hints(test)
-            for name in [
-                name for name, value in given_kwargs.items() if value is infer
-            ]:
-                if name not in hints:
-                    raise InvalidArgument(
-                        "passed %s=infer for %s, but %s has no type annotation"
-                        % (name, test.__name__, name)
-                    )
-                given_kwargs[name] = st.from_type(hints[name])
-
             processed_args = process_arguments_to_given(
-                wrapped_test, arguments, kwargs, given_kwargs, argspec, test, settings,
+                wrapped_test, arguments, kwargs, given_kwargs, argspec, settings,
             )
             arguments, kwargs, test_runner, search_strategy = processed_args
 
@@ -1080,6 +1089,45 @@ def given(
                     )
                     raise the_error_hypothesis_found
 
+        def fuzz_one_input(
+            buffer: Union[bytes, bytearray, memoryview, BinaryIO]
+        ) -> Optional[bytes]:
+            """Run the test as a fuzz target, driven with the `buffer` of bytes.
+
+            Returns None if buffer invalid for the strategy, canonical pruned
+            bytes if the buffer was valid, and leaves raised exceptions alone.
+
+            Note: this feature is experimental and may change or be removed.
+            """
+            if isinstance(buffer, io.IOBase):
+                buffer = buffer.read()
+            if isinstance(buffer, (bytearray, memoryview)):
+                buffer = bytes(buffer)
+            assert isinstance(buffer, bytes)
+
+            test = wrapped_test.hypothesis.inner_test
+            settings = wrapped_test._hypothesis_internal_use_settings
+            random = get_random_for_wrapped_test(test, wrapped_test)
+            _args, _kwargs, test_runner, search_strategy = process_arguments_to_given(
+                wrapped_test, (), {}, given_kwargs, argspec, settings,
+            )
+            assert not _args
+            assert not _kwargs
+            state = StateForActualGivenExecution(
+                test_runner, search_strategy, test, settings, random, wrapped_test,
+            )
+
+            data = ConjectureData.for_buffer(buffer)
+            try:
+                state.execute_once(data)
+            except (StopTest, UnsatisfiedAssumption):
+                return None
+            except BaseException:
+                if settings.database is not None:
+                    settings.database.save(function_digest(test), bytes(data.buffer))
+                raise
+            return bytes(data.buffer)
+
         # After having created the decorated test function, we need to copy
         # over some attributes to make the switch as seamless as possible.
 
@@ -1099,7 +1147,7 @@ def given(
         wrapped_test._hypothesis_internal_use_reproduce_failure = getattr(
             test, "_hypothesis_internal_use_reproduce_failure", None
         )
-        wrapped_test.hypothesis = HypothesisHandle(test)
+        wrapped_test.hypothesis = HypothesisHandle(test, fuzz_one_input)
         return wrapped_test
 
     return run_test_as_given
