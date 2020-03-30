@@ -49,7 +49,7 @@ jedi==0.16.0              # via ipython
 jeepney==0.4.3            # via keyring, secretstorage
 jinja2==2.11.1            # via pyupio, sphinx
 keyring==21.2.0           # via twine
-lark-parser==0.8.2        # via -r requirements/tools.in
+lark-parser==0.8.5        # via -r requirements/tools.in
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8
 more-itertools==8.2.0     # via pytest
