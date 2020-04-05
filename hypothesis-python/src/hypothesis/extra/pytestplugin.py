@@ -163,7 +163,10 @@ else:
                                 "%s uses the %r fixture, but function-scoped"
                                 " fixtures should not be used with @given(...)"
                                 " tests, because fixtures are not reset "
-                                "between generated examples!"
+                                "between generated examples! See "
+                                "https://docs.pytest.org/en/latest/fixture.html"
+                                "#scope-sharing-a-fixture-instance-across-tests"
+                                "-in-a-class-module-or-session"
                                 % (item.nodeid, fx.argname),
                                 since="2020-02-29",
                             )
