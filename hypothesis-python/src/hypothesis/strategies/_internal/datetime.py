@@ -28,7 +28,8 @@ from hypothesis.strategies._internal.core import (
 )
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
-__all__ = ["DateStrategy", "DatetimeStrategy", "TimedeltaStrategy"]
+DATENAMES = ("year", "month", "day")
+TIMENAMES = ("hour", "minute", "second", "microsecond")
 
 
 def is_pytz_timezone(tz):
@@ -36,6 +37,32 @@ def is_pytz_timezone(tz):
         return False
     module = type(tz).__module__
     return module == "pytz" or module.startswith("pytz.")
+
+
+def draw_capped_multipart(data, min_value, max_value):
+    assert isinstance(min_value, (dt.date, dt.time, dt.datetime))
+    assert type(min_value) == type(max_value)
+    assert min_value <= max_value
+    result = {}
+    cap_low, cap_high = True, True
+    duration_names_by_type = {
+        dt.date: DATENAMES,
+        dt.time: TIMENAMES,
+        dt.datetime: DATENAMES + TIMENAMES,
+    }
+    for name in duration_names_by_type[type(min_value)]:
+        low = getattr(min_value if cap_low else dt.datetime.min, name)
+        high = getattr(max_value if cap_high else dt.datetime.max, name)
+        if name == "day" and not cap_high:
+            _, high = monthrange(**result)
+        if name == "year":
+            val = utils.integer_range(data, low, high, 2000)
+        else:
+            val = utils.integer_range(data, low, high)
+        result[name] = val
+        cap_low = cap_low and val == low
+        cap_high = cap_high and val == high
+    return result
 
 
 class DatetimeStrategy(SearchStrategy):
@@ -46,25 +73,12 @@ class DatetimeStrategy(SearchStrategy):
         assert max_value.tzinfo is None
         assert min_value <= max_value
         assert isinstance(timezones_strat, SearchStrategy)
-        self.min_dt = min_value
-        self.max_dt = max_value
+        self.min_value = min_value
+        self.max_value = max_value
         self.tz_strat = timezones_strat
 
     def do_draw(self, data):
-        result = {}
-        cap_low, cap_high = True, True
-        for name in ("year", "month", "day", "hour", "minute", "second", "microsecond"):
-            low = getattr(self.min_dt if cap_low else dt.datetime.min, name)
-            high = getattr(self.max_dt if cap_high else dt.datetime.max, name)
-            if name == "day" and not cap_high:
-                _, high = monthrange(**result)
-            if name == "year":
-                val = utils.integer_range(data, low, high, 2000)
-            else:
-                val = utils.integer_range(data, low, high)
-            result[name] = val
-            cap_low = cap_low and val == low
-            cap_high = cap_high and val == high
+        result = draw_capped_multipart(data, self.min_value, self.max_value)
         result = dt.datetime(**result)
         tz = data.draw(self.tz_strat)
         try:
@@ -74,7 +88,7 @@ class DatetimeStrategy(SearchStrategy):
             return result.replace(tzinfo=tz)
         except (ValueError, OverflowError):
             msg = "Failed to draw a datetime between %r and %r with timezone from %r."
-            data.note_event(msg % (self.min_dt, self.max_dt, self.tz_strat))
+            data.note_event(msg % (self.min_value, self.max_value, self.tz_strat))
             data.mark_invalid()
 
 
@@ -181,12 +195,10 @@ class DateStrategy(SearchStrategy):
         assert isinstance(max_value, dt.date)
         assert min_value < max_value
         self.min_value = min_value
-        self.days_apart = (max_value - min_value).days
-        self.center = (dt.date(2000, 1, 1) - min_value).days
+        self.max_value = max_value
 
     def do_draw(self, data):
-        days = utils.integer_range(data, 0, self.days_apart, center=self.center)
-        return self.min_value + dt.timedelta(days=days)
+        return dt.date(**draw_capped_multipart(data, self.min_value, self.max_value))
 
 
 @defines_strategy_with_reusable_values
