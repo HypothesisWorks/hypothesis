@@ -24,8 +24,6 @@ from hypothesis.strategies._internal.core import (
     complex_numbers,
     composite,
     data,
-    dates,
-    datetimes,
     decimals,
     deferred,
     dictionaries,
@@ -55,11 +53,10 @@ from hypothesis.strategies._internal.core import (
     shared,
     slices,
     text,
-    timedeltas,
-    times,
     tuples,
     uuids,
 )
+from hypothesis.strategies._internal.datetime import dates, datetimes, timedeltas, times
 from hypothesis.strategies._internal.ipaddress import ip_addresses
 
 # The implementation of all of these lives in `_strategies.py`, but we

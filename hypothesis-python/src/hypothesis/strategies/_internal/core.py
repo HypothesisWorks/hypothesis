@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-import datetime as dt
 import enum
 import math
 import operator
@@ -95,11 +94,6 @@ from hypothesis.strategies._internal.collections import (
     TupleStrategy,
     UniqueListStrategy,
     UniqueSampledListStrategy,
-)
-from hypothesis.strategies._internal.datetime import (
-    DateStrategy,
-    DatetimeStrategy,
-    TimedeltaStrategy,
 )
 from hypothesis.strategies._internal.deferred import DeferredStrategy
 from hypothesis.strategies._internal.functions import FunctionStrategy
@@ -1722,140 +1716,6 @@ def permutations(values: Sequence[T]) -> SearchStrategy[List[T]]:
         return builds(list)
 
     return PermutationStrategy(values)
-
-
-@defines_strategy_with_reusable_values
-@deprecated_posargs
-def datetimes(
-    min_value: dt.datetime = dt.datetime.min,
-    max_value: dt.datetime = dt.datetime.max,
-    *,
-    timezones: SearchStrategy[Optional[dt.tzinfo]] = none()
-) -> SearchStrategy[dt.datetime]:
-    """datetimes(min_value=datetime.datetime.min, max_value=datetime.datetime.max, *, timezones=none())
-
-    A strategy for generating datetimes, which may be timezone-aware.
-
-    This strategy works by drawing a naive datetime between ``min_value``
-    and ``max_value``, which must both be naive (have no timezone).
-
-    ``timezones`` must be a strategy that generates
-    :class:`~python:datetime.tzinfo` objects (or None,
-    which is valid for naive datetimes).  A value drawn from this strategy
-    will be added to a naive datetime, and the resulting tz-aware datetime
-    returned.
-
-    .. note::
-        tz-aware datetimes from this strategy may be ambiguous or non-existent
-        due to daylight savings, leap seconds, timezone and calendar
-        adjustments, etc.  This is intentional, as malformed timestamps are a
-        common source of bugs.
-
-    :py:func:`hypothesis.extra.pytz.timezones` requires the :pypi:`pytz`
-    package, but provides all timezones in the Olsen database.
-    :py:func:`hypothesis.extra.dateutil.timezones` requires the
-    :pypi:`python-dateutil` package, and similarly provides all timezones
-    there.  If you want to allow naive datetimes, combine strategies
-    like ``none() | timezones()``.
-
-    Alternatively, you can create a list of the timezones you wish to allow
-    (e.g. from the standard library, :pypi:`dateutil <python-dateutil>`,
-    or :pypi:`pytz`) and use :py:func:`sampled_from`.
-
-    Examples from this strategy shrink towards midnight on January 1st 2000,
-    local time.
-    """
-    # Why must bounds be naive?  In principle, we could also write a strategy
-    # that took aware bounds, but the API and validation is much harder.
-    # If you want to generate datetimes between two particular moments in
-    # time I suggest (a) just filtering out-of-bounds values; (b) if bounds
-    # are very close, draw a value and subtract its UTC offset, handling
-    # overflows and nonexistent times; or (c) do something customised to
-    # handle datetimes in e.g. a four-microsecond span which is not
-    # representable in UTC.  Handling (d), all of the above, leads to a much
-    # more complex API for all users and a useful feature for very few.
-    check_type(dt.datetime, min_value, "min_value")
-    check_type(dt.datetime, max_value, "max_value")
-    if min_value.tzinfo is not None:
-        raise InvalidArgument("min_value=%r must not have tzinfo" % (min_value,))
-    if max_value.tzinfo is not None:
-        raise InvalidArgument("max_value=%r must not have tzinfo" % (max_value,))
-    check_valid_interval(min_value, max_value, "min_value", "max_value")
-    if not isinstance(timezones, SearchStrategy):
-        raise InvalidArgument(
-            "timezones=%r must be a SearchStrategy that can provide tzinfo "
-            "for datetimes (either None or dt.tzinfo objects)" % (timezones,)
-        )
-    return DatetimeStrategy(min_value, max_value, timezones)
-
-
-@defines_strategy_with_reusable_values
-def dates(
-    min_value: dt.date = dt.date.min, max_value: dt.date = dt.date.max
-) -> SearchStrategy[dt.date]:
-    """dates(min_value=datetime.date.min, max_value=datetime.date.max)
-
-    A strategy for dates between ``min_value`` and ``max_value``.
-
-    Examples from this strategy shrink towards January 1st 2000.
-    """
-    check_type(dt.date, min_value, "min_value")
-    check_type(dt.date, max_value, "max_value")
-    check_valid_interval(min_value, max_value, "min_value", "max_value")
-    if min_value == max_value:
-        return just(min_value)
-    return DateStrategy(min_value, max_value)
-
-
-@defines_strategy_with_reusable_values
-@deprecated_posargs
-def times(
-    min_value: dt.time = dt.time.min,
-    max_value: dt.time = dt.time.max,
-    *,
-    timezones: SearchStrategy[Optional[dt.tzinfo]] = none()
-) -> SearchStrategy[dt.time]:
-    """times(min_value=datetime.time.min, max_value=datetime.time.max, *, timezones=none())
-
-    A strategy for times between ``min_value`` and ``max_value``.
-
-    The ``timezones`` argument is handled as for :py:func:`datetimes`.
-
-    Examples from this strategy shrink towards midnight, with the timezone
-    component shrinking as for the strategy that provided it.
-    """
-    check_type(dt.time, min_value, "min_value")
-    check_type(dt.time, max_value, "max_value")
-    if min_value.tzinfo is not None:
-        raise InvalidArgument("min_value=%r must not have tzinfo" % min_value)
-    if max_value.tzinfo is not None:
-        raise InvalidArgument("max_value=%r must not have tzinfo" % max_value)
-    check_valid_interval(min_value, max_value, "min_value", "max_value")
-    day = dt.date(2000, 1, 1)
-    return datetimes(
-        min_value=dt.datetime.combine(day, min_value),
-        max_value=dt.datetime.combine(day, max_value),
-        timezones=timezones,
-    ).map(lambda t: t.timetz())
-
-
-@defines_strategy_with_reusable_values
-def timedeltas(
-    min_value: dt.timedelta = dt.timedelta.min,
-    max_value: dt.timedelta = dt.timedelta.max,
-) -> SearchStrategy[dt.timedelta]:
-    """timedeltas(min_value=datetime.timedelta.min, max_value=datetime.timedelta.max)
-
-    A strategy for timedeltas between ``min_value`` and ``max_value``.
-
-    Examples from this strategy shrink towards zero.
-    """
-    check_type(dt.timedelta, min_value, "min_value")
-    check_type(dt.timedelta, max_value, "max_value")
-    check_valid_interval(min_value, max_value, "min_value", "max_value")
-    if min_value == max_value:
-        return just(min_value)
-    return TimedeltaStrategy(min_value=min_value, max_value=max_value)
 
 
 class CompositeStrategy(SearchStrategy):
