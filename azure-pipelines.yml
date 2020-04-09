@@ -103,8 +103,6 @@ jobs:
           TASK: check-django30
         check-django22:
           TASK: check-django22
-        check-django111:
-          TASK: check-django111
         check-pandas19:
           TASK: check-pandas19
         check-pandas22:
