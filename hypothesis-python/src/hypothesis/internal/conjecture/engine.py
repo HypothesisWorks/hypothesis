@@ -666,96 +666,7 @@ class ConjectureRunner:
 
             self.test_function(data)
 
-            # A thing that is often useful but rarely happens by accident is
-            # to generate the same value at multiple different points in the
-            # test case.
-            #
-            # Rather than make this the responsibility of individual strategies
-            # we implement a small mutator that just takes parts of the test
-            # case with the same label and tries replacing one of them with a
-            # copy of the other and tries running it. If we've made a good
-            # guess about what to put where, this will run a similar generated
-            # test case with more duplication.
-            if (
-                # An OVERRUN doesn't have enough information about the test
-                # case to mutate, so we just skip those.
-                data.status >= Status.INVALID
-                # This has a tendency to trigger some weird edge cases during
-                # generation so we don't let it run until we're done with the
-                # health checks.
-                and self.health_check_state is None
-            ):
-                initial_calls = self.call_count
-                failed_mutations = 0
-                groups = None
-                while (
-                    self.should_generate_more()
-                    # We implement fairly conservative checks for how long we
-                    # we should run mutation for, as it's generally not obvious
-                    # how helpful it is for any given test case.
-                    and self.call_count <= initial_calls + 5
-                    and failed_mutations <= 5
-                ):
-                    if groups is None:
-                        groups = defaultdict(list)
-                        for ex in data.examples:
-                            groups[ex.label, ex.depth].append(ex)
-
-                        groups = [v for v in groups.values() if len(v) > 1]
-
-                    if not groups:
-                        break
-
-                    group = self.random.choice(groups)
-
-                    ex1, ex2 = sorted(
-                        self.random.sample(group, 2), key=lambda i: i.index
-                    )
-                    assert ex1.end <= ex2.start
-
-                    replacements = [data.buffer[e.start : e.end] for e in [ex1, ex2]]
-
-                    replacement = self.random.choice(replacements)
-
-                    try:
-                        # We attempt to replace both the the examples with
-                        # whichever choice we made. Note that this might end
-                        # up messing up and getting the example boundaries
-                        # wrong - labels matching are only a best guess as to
-                        # whether the two are equivalent - but it doesn't
-                        # really matter. It may not achieve the desired result
-                        # but it's still a perfectly acceptable choice sequence.
-                        # to try.
-                        new_data = self.cached_test_function(
-                            data.buffer[: ex1.start]
-                            + replacement
-                            + data.buffer[ex1.end : ex2.start]
-                            + replacement
-                            + data.buffer[ex2.end :],
-                            # We set error_on_discard so that we don't end up
-                            # entering parts of the tree we consider redundant
-                            # and not worth exploring.
-                            error_on_discard=True,
-                            extend=BUFFER_SIZE,
-                        )
-                    except ContainsDiscard:
-                        failed_mutations += 1
-                        continue
-
-                    if (
-                        new_data.status >= data.status
-                        and data.buffer != new_data.buffer
-                        and all(
-                            k in new_data.target_observations
-                            and new_data.target_observations[k] >= v
-                            for k, v in data.target_observations.items()
-                        )
-                    ):
-                        data = new_data
-                        groups = None
-                        failed_mutations = 0
-                    else:
-                        failed_mutations += 1
+            self.generate_mutations_from(data)
 
             # Although the optimisations are logically a distinct phase, we
             # actually normally run them as part of example generation. The
@@ -769,6 +680,96 @@ class ConjectureRunner:
             ):
                 ran_optimisations = True
                 self.optimise_targets()
+
+    def generate_mutations_from(self, data):
+        # A thing that is often useful but rarely happens by accident is
+        # to generate the same value at multiple different points in the
+        # test case.
+        #
+        # Rather than make this the responsibility of individual strategies
+        # we implement a small mutator that just takes parts of the test
+        # case with the same label and tries replacing one of them with a
+        # copy of the other and tries running it. If we've made a good
+        # guess about what to put where, this will run a similar generated
+        # test case with more duplication.
+        if (
+            # An OVERRUN doesn't have enough information about the test
+            # case to mutate, so we just skip those.
+            data.status >= Status.INVALID
+            # This has a tendency to trigger some weird edge cases during
+            # generation so we don't let it run until we're done with the
+            # health checks.
+            and self.health_check_state is None
+        ):
+            initial_calls = self.call_count
+            failed_mutations = 0
+            groups = None
+            while (
+                self.should_generate_more()
+                # We implement fairly conservative checks for how long we
+                # we should run mutation for, as it's generally not obvious
+                # how helpful it is for any given test case.
+                and self.call_count <= initial_calls + 5
+                and failed_mutations <= 5
+            ):
+                if groups is None:
+                    groups = defaultdict(list)
+                    for ex in data.examples:
+                        groups[ex.label, ex.depth].append(ex)
+
+                    groups = [v for v in groups.values() if len(v) > 1]
+
+                if not groups:
+                    break
+
+                group = self.random.choice(groups)
+
+                ex1, ex2 = sorted(self.random.sample(group, 2), key=lambda i: i.index)
+                assert ex1.end <= ex2.start
+
+                replacements = [data.buffer[e.start : e.end] for e in [ex1, ex2]]
+
+                replacement = self.random.choice(replacements)
+
+                try:
+                    # We attempt to replace both the the examples with
+                    # whichever choice we made. Note that this might end
+                    # up messing up and getting the example boundaries
+                    # wrong - labels matching are only a best guess as to
+                    # whether the two are equivalent - but it doesn't
+                    # really matter. It may not achieve the desired result
+                    # but it's still a perfectly acceptable choice sequence.
+                    # to try.
+                    new_data = self.cached_test_function(
+                        data.buffer[: ex1.start]
+                        + replacement
+                        + data.buffer[ex1.end : ex2.start]
+                        + replacement
+                        + data.buffer[ex2.end :],
+                        # We set error_on_discard so that we don't end up
+                        # entering parts of the tree we consider redundant
+                        # and not worth exploring.
+                        error_on_discard=True,
+                        extend=BUFFER_SIZE,
+                    )
+                except ContainsDiscard:
+                    failed_mutations += 1
+                    continue
+
+                if (
+                    new_data.status >= data.status
+                    and data.buffer != new_data.buffer
+                    and all(
+                        k in new_data.target_observations
+                        and new_data.target_observations[k] >= v
+                        for k, v in data.target_observations.items()
+                    )
+                ):
+                    data = new_data
+                    groups = None
+                    failed_mutations = 0
+                else:
+                    failed_mutations += 1
 
     def optimise_targets(self):
         """If any target observations have been made, attempt to optimise them
