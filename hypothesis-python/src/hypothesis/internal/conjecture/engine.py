@@ -505,6 +505,34 @@ class ConjectureRunner:
         self.exit_reason = reason
         raise RunIsComplete()
 
+    def should_generate_more(self):
+        # End the generation phase where we would have ended it if no bugs had
+        # been found.  This reproduces the exit logic in `self.test_function`,
+        # but with the important distinction that this clause will move on to
+        # the shrinking phase having found one or more bugs, while the other
+        # will exit having found zero bugs.
+        if self.valid_examples >= self.settings.max_examples or self.call_count >= max(
+            self.settings.max_examples * 10, 1000
+        ):  # pragma: no cover
+            return False
+
+        # If we haven't found a bug, keep looking - if we hit any limits on
+        # the number of tests to run that will raise an exception and stop
+        # the run.
+        if not self.interesting_examples:
+            return True
+        # If we've found a bug and won't report more than one, stop looking.
+        elif not self.settings.report_multiple_bugs:
+            return False
+        assert self.first_bug_found_at <= self.last_bug_found_at <= self.call_count
+        # Otherwise, keep searching for between ten and 'a heuristic' calls.
+        # We cap 'calls after first bug' so errors are reported reasonably
+        # soon even for tests that are allowed to run for a very long time,
+        # or sooner if the latest half of our test effort has been fruitless.
+        return self.call_count < MIN_TEST_CALLS or self.call_count < min(
+            self.first_bug_found_at + 1000, self.last_bug_found_at * 2
+        )
+
     def generate_new_examples(self):
         if Phase.generate not in self.settings.phases:
             return
@@ -516,6 +544,7 @@ class ConjectureRunner:
 
         self.debug("Generating new examples")
 
+        assert self.should_generate_more()
         zero_data = self.cached_test_function(bytes(BUFFER_SIZE))
         if zero_data.status > Status.OVERRUN:
             self.__data_cache.pin(zero_data.buffer)
@@ -539,35 +568,6 @@ class ConjectureRunner:
             )
 
         self.health_check_state = HealthCheckState()
-
-        def should_generate_more():
-            # End the generation phase where we would have ended it if no bugs had
-            # been found.  This reproduces the exit logic in `self.test_function`,
-            # but with the important distinction that this clause will move on to
-            # the shrinking phase having found one or more bugs, while the other
-            # will exit having found zero bugs.
-            if (
-                self.valid_examples >= self.settings.max_examples
-                or self.call_count >= max(self.settings.max_examples * 10, 1000)
-            ):  # pragma: no cover
-                return False
-
-            # If we haven't found a bug, keep looking - if we hit any limits on
-            # the number of tests to run that will raise an exception and stop
-            # the run.
-            if not self.interesting_examples:
-                return True
-            # If we've found a bug and won't report more than one, stop looking.
-            elif not self.settings.report_multiple_bugs:
-                return False
-            assert self.first_bug_found_at <= self.last_bug_found_at <= self.call_count
-            # Otherwise, keep searching for between ten and 'a heuristic' calls.
-            # We cap 'calls after first bug' so errors are reported reasonably
-            # soon even for tests that are allowed to run for a very long time,
-            # or sooner if the latest half of our test effort has been fruitless.
-            return self.call_count < MIN_TEST_CALLS or self.call_count < min(
-                self.first_bug_found_at + 1000, self.last_bug_found_at * 2
-            )
 
         # We attempt to use the size of the minimal generated test case starting
         # from a given novel prefix as a guideline to generate smaller test
@@ -608,7 +608,7 @@ class ConjectureRunner:
         optimise_at = max(self.settings.max_examples // 2, small_example_cap + 1)
         ran_optimisations = False
 
-        while should_generate_more():
+        while self.should_generate_more():
             prefix = self.generate_novel_prefix()
             assert len(prefix) <= BUFFER_SIZE
             if (
@@ -655,7 +655,7 @@ class ConjectureRunner:
 
                 # We might have hit the cap on number of examples we should
                 # run when calculating the minimal example.
-                if not should_generate_more():
+                if not self.should_generate_more():
                     break
 
                 prefix = trial_data.buffer
@@ -689,7 +689,7 @@ class ConjectureRunner:
                 failed_mutations = 0
                 groups = None
                 while (
-                    should_generate_more()
+                    self.should_generate_more()
                     # We implement fairly conservative checks for how long we
                     # we should run mutation for, as it's generally not obvious
                     # how helpful it is for any given test case.
