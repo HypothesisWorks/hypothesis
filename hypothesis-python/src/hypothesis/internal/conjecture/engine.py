@@ -703,7 +703,7 @@ class ConjectureRunner:
         ):
             initial_calls = self.call_count
             failed_mutations = 0
-            groups = None
+
             while (
                 self.should_generate_more()
                 # We implement fairly conservative checks for how long we
@@ -712,19 +712,15 @@ class ConjectureRunner:
                 and self.call_count <= initial_calls + 5
                 and failed_mutations <= 5
             ):
-                if groups is None:
-                    groups = defaultdict(list)
-                    for ex in data.examples:
-                        groups[ex.label, ex.depth].append(ex)
-
-                    groups = [v for v in groups.values() if len(v) > 1]
-
+                groups = data.examples.mutator_groups
                 if not groups:
                     break
 
                 group = self.random.choice(groups)
 
-                ex1, ex2 = sorted(self.random.sample(group, 2), key=lambda i: i.index)
+                ex1, ex2 = [
+                    data.examples[i] for i in sorted(self.random.sample(group, 2))
+                ]
                 assert ex1.end <= ex2.start
 
                 replacements = [data.buffer[e.start : e.end] for e in [ex1, ex2]]
@@ -766,7 +762,6 @@ class ConjectureRunner:
                     )
                 ):
                     data = new_data
-                    groups = None
                     failed_mutations = 0
                 else:
                     failed_mutations += 1

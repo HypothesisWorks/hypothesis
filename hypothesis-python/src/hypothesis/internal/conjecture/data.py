@@ -420,6 +420,20 @@ class Examples:
         def start_example(self, i, label_index):
             self.result[i] = label_index
 
+    @calculated_example_property
+    class mutator_groups(ExampleProperty):
+        def begin(self):
+            self.groups = defaultdict(list)
+
+        def start_example(self, i, label_index):
+            depth = len(self.example_stack)
+            self.groups[label_index, depth].append(i)
+
+        def finish(self):
+            # Discard groups with only one example, since the mutator can't
+            # do anything useful with them.
+            return [g for g in self.groups.values() if len(g) >= 2]
+
     @property
     def children(self):
         if self.__children is None:
