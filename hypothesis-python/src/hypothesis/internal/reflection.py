@@ -120,9 +120,14 @@ def required_args(target, args=(), kwargs=()):
         provided = set(kwargs) | set(target._fields[: len(args)])
         return set(target._fields) - provided
     # Then we try to do the right thing with inspect.getfullargspec
+    # Note that for classes we inspect the __init__ method, *unless* the class
+    # has an explicit __signature__ attribute.  This allows us to support
+    # runtime-generated constraints on **kwargs, as for e.g. Pydantic models.
     try:
         spec = inspect.getfullargspec(
-            getattr(target, "__init__", target) if inspect.isclass(target) else target
+            getattr(target, "__init__", target)
+            if inspect.isclass(target) and not hasattr(target, "__signature__")
+            else target
         )
     except TypeError:  # pragma: no cover
         return None

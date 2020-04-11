@@ -1232,7 +1232,7 @@ def builds(
 
             return from_attrs(target, args, kwargs, required | to_infer)
         # Otherwise, try using type hints
-        if isclass(target):
+        if isclass(target) and not hasattr(target, "__signature__"):
             if is_typed_named_tuple(target):
                 # Special handling for typing.NamedTuple
                 hints = target._field_types  # type: ignore
