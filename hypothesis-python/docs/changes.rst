@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.8.1:
+
+------------------
+5.8.1 - 2020-04-12
+------------------
+
+This patch improves :func:`~hypothesis.strategies.dates` shrinking, to simplify
+year, month, and day like :func:`~hypothesis.strategies.datetimes` rather than
+minimizing the number of days since 2000-01-01.
+
 .. _v5.8.0:
 
 ------------------
