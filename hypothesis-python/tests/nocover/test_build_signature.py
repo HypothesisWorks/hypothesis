@@ -14,6 +14,7 @@
 # END HEADER
 
 from inspect import signature
+from typing import get_type_hints
 
 from hypothesis import given, strategies as st
 
@@ -25,6 +26,7 @@ def use_this_signature(self, a: int, b: bool = None, *, x: float, y: str):
 class Model:
     # Emulates the implementation of Pydantic models.  See e.g.
     # https://github.com/timothycrosley/hypothesis-auto/issues/10
+    __annotations__ = get_type_hints(use_this_signature)
     __signature__ = signature(use_this_signature)
 
     def __init__(self, **kwargs):

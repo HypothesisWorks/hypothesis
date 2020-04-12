@@ -28,6 +28,7 @@ from types import ModuleType
 from typing import Any, Callable, TypeVar
 
 from hypothesis.internal.compat import (
+    is_typed_named_tuple,
     qualname,
     str_to_bytes,
     to_unicode,
@@ -89,21 +90,6 @@ def function_digest(function):
     except AttributeError:
         pass
     return hasher.digest()
-
-
-def is_typed_named_tuple(cls):
-    """Return True if cls is probably a subtype of `typing.NamedTuple`.
-
-    Unfortunately types created with `class T(NamedTuple):` actually
-    subclass `tuple` directly rather than NamedTuple.  This is annoying,
-    and means we just have to hope that nobody defines a different tuple
-    subclass with similar attributes.
-    """
-    return (
-        issubclass(cls, tuple)
-        and hasattr(cls, "_fields")
-        and hasattr(cls, "_field_types")
-    )
 
 
 def required_args(target, args=(), kwargs=()):
