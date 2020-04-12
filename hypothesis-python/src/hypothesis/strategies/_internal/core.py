@@ -1226,14 +1226,7 @@ def builds(
 
             return from_attrs(target, args, kwargs, required | to_infer)
         # Otherwise, try using type hints
-        if isclass(target):
-            if is_typed_named_tuple(target):
-                # Special handling for typing.NamedTuple
-                hints = target._field_types  # type: ignore
-            else:
-                hints = get_type_hints(target.__init__)  # type: ignore
-        else:
-            hints = get_type_hints(target)
+        hints = get_type_hints(target)
         if to_infer - set(hints):
             raise InvalidArgument(
                 "passed infer for %s, but there is no type annotation"
@@ -1434,7 +1427,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     required = required_args(thing)
     if required and not any(
         [
-            required.issubset(get_type_hints(thing.__init__)),
+            required.issubset(get_type_hints(thing)),
             attr.has(thing),
             # NamedTuples are weird enough that we need a specific check for them.
             is_typed_named_tuple(thing),

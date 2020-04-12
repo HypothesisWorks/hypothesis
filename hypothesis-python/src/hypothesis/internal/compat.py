@@ -86,9 +86,31 @@ except AttributeError:
     ForwardRef = typing._ForwardRef  # type: ignore
 
 
+def is_typed_named_tuple(cls):
+    """Return True if cls is probably a subtype of `typing.NamedTuple`.
+
+    Unfortunately types created with `class T(NamedTuple):` actually
+    subclass `tuple` directly rather than NamedTuple.  This is annoying,
+    and means we just have to hope that nobody defines a different tuple
+    subclass with similar attributes.
+    """
+    return (
+        issubclass(cls, tuple)
+        and hasattr(cls, "_fields")
+        and hasattr(cls, "_field_types")
+    )
+
+
 if sys.version_info[:2] < (3, 6):
+    # When we drop support for Python 3.5, `get_type_hints` and
+    # `is_typed_named_tuple` should be moved to reflection.py
 
     def get_type_hints(thing):
+        if inspect.isclass(thing) and not hasattr(thing, "__signature__"):
+            if is_typed_named_tuple(thing):
+                # Special handling for typing.NamedTuple
+                return thing._field_types  # type: ignore
+            thing = thing.__init__  # type: ignore
         try:
             spec = inspect.getfullargspec(thing)
             return {
@@ -103,6 +125,11 @@ if sys.version_info[:2] < (3, 6):
 else:
 
     def get_type_hints(thing):
+        if inspect.isclass(thing) and not hasattr(thing, "__signature__"):
+            if is_typed_named_tuple(thing):
+                # Special handling for typing.NamedTuple
+                return thing._field_types  # type: ignore
+            thing = thing.__init__  # type: ignore
         try:
             return typing.get_type_hints(thing)
         except TypeError:

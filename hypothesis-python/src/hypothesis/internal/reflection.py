@@ -28,6 +28,7 @@ from types import ModuleType
 from typing import Any, Callable, TypeVar
 
 from hypothesis.internal.compat import (
+    is_typed_named_tuple,
     qualname,
     str_to_bytes,
     to_unicode,
@@ -91,21 +92,6 @@ def function_digest(function):
     return hasher.digest()
 
 
-def is_typed_named_tuple(cls):
-    """Return True if cls is probably a subtype of `typing.NamedTuple`.
-
-    Unfortunately types created with `class T(NamedTuple):` actually
-    subclass `tuple` directly rather than NamedTuple.  This is annoying,
-    and means we just have to hope that nobody defines a different tuple
-    subclass with similar attributes.
-    """
-    return (
-        issubclass(cls, tuple)
-        and hasattr(cls, "_fields")
-        and hasattr(cls, "_field_types")
-    )
-
-
 def required_args(target, args=(), kwargs=()):
     """Return a set of names of required args to target that were not supplied
     in args or kwargs.
@@ -120,9 +106,14 @@ def required_args(target, args=(), kwargs=()):
         provided = set(kwargs) | set(target._fields[: len(args)])
         return set(target._fields) - provided
     # Then we try to do the right thing with inspect.getfullargspec
+    # Note that for classes we inspect the __init__ method, *unless* the class
+    # has an explicit __signature__ attribute.  This allows us to support
+    # runtime-generated constraints on **kwargs, as for e.g. Pydantic models.
     try:
         spec = inspect.getfullargspec(
-            getattr(target, "__init__", target) if inspect.isclass(target) else target
+            getattr(target, "__init__", target)
+            if inspect.isclass(target) and not hasattr(target, "__signature__")
+            else target
         )
     except TypeError:  # pragma: no cover
         return None
