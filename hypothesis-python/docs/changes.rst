@@ -10,6 +10,18 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.8.3:
+
+------------------
+5.8.3 - 2020-04-12
+------------------
+
+This patch teaches :func:`~hypothesis.strategies.builds` and
+:func:`~hypothesis.strategies.from_type` to use the ``__signature__``
+attribute of classes where it has been set, improving our support
+for :pypi:`Pydantic` models (`in pydantic >= 1.5
+<https://github.com/samuelcolvin/pydantic/pull/1034>`__).
+
 .. _v5.8.2:
 
 ------------------
