@@ -21,7 +21,7 @@ import pytz
 from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
-from hypothesis.strategies import datetimes, sampled_from, times
+from hypothesis.strategies import data, datetimes, sampled_from, times
 from tests.common.debug import assert_can_trigger_event, minimal
 
 
@@ -102,3 +102,11 @@ def test_can_trigger_error_in_draw_near_max_date():
         ),
         lambda event: "Failed to draw a datetime" in event,
     )
+
+
+@given(data(), datetimes(), datetimes())
+def test_datetimes_stay_within_naive_bounds(data, lo, hi):
+    if lo > hi:
+        lo, hi = hi, lo
+    out = data.draw(datetimes(lo, hi, timezones=timezones()))
+    assert lo <= out.replace(tzinfo=None) <= hi

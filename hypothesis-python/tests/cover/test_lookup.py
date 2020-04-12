@@ -649,7 +649,11 @@ def test_generic_collections_only_use_hashable_elements(typ):
 def test_hashable_type_unhashable_value():
     # Decimal("snan") is not hashable; we should be able to generate it.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2320
-    find_any(from_type(typing.Hashable), lambda x: not types._can_hash(x))
+    find_any(
+        from_type(typing.Hashable),
+        lambda x: not types._can_hash(x),
+        settings(max_examples=10 ** 5),
+    )
 
 
 @pytest.mark.parametrize(
