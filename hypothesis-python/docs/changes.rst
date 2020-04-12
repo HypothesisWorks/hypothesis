@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.8.2:
+
+------------------
+5.8.2 - 2020-04-12
+------------------
+
+This release improves the performance of the part of the core engine that
+deliberately generates duplicate values.
+
 .. _v5.8.1:
 
 ------------------
