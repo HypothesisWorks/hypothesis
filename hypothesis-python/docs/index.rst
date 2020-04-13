@@ -37,7 +37,9 @@ your code should make - properties that should always hold true,
 regardless of what the world throws at you. Examples of such guarantees
 might be:
 
-* Your code shouldn't throw an exception, or should only throw a particular type of exception (this works particularly well if you have a lot of internal assertions).
+* Your code shouldn't throw an exception, or should only throw a particular
+  type of exception (this works particularly well if you have a lot of internal
+  assertions).
 * If you delete an object, it is no longer visible.
 * If you serialize and then deserialize a value, then you get the same value back.
 

@@ -28,6 +28,7 @@ you're not using Hypothesis to test your project then you're missing out.
 ------------------------
 Quick Start/Installation
 ------------------------
+
 If you just want to get started:
 
 .. code-block::
