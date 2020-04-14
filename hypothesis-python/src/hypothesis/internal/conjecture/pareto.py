@@ -308,30 +308,35 @@ class ParetoOptimiser:
                 continue
             assert target is not prev
             prev = target
-            # Note that during shrinking we may discover other smaller examples
-            # that will get added to the front. It's OK to slip and and out of
-            # these - in particular we may move to new shrink targets that are
-            # not dominating the current target. This is fine, because they
-            # will be added to the front and processed on later iterations of
-            # this loop.
-            shrunk = self.__engine.shrink(
-                target,
-                lambda data: data.status >= Status.VALID
-                and dominance(data, target)
-                in (DominanceRelation.EQUAL, DominanceRelation.LEFT_DOMINATES),
-            )
-            seen.add(shrunk.buffer)
 
-            # We can potentially fail to evict ``target`` despite ``shrunk``
-            # dominating it. If this happens then some element of the front
-            # must dominate ``target`` (either it's ``shrunk``, or ``shrunk``
-            # failed to be added because something else dominated it), so we
-            # explicitly remove it here.
-            if (
-                target in self.front.front
-                and dominance(shrunk, target) == DominanceRelation.LEFT_DOMINATES
-            ):
-                self.front.front.remove(target)
+            def shrink_to(data):
+                """Shrink to data that strictly pareto dominates the current
+                best value we've seen, which is the current target of the
+                shrinker.
+
+                Note that during shrinking we may discover other smaller
+                examples that this function will reject and will get added to
+                the front. This is fine, because they will be processed on
+                later iterations of this loop."""
+                if data.status < Status.VALID:
+                    return False
+                current = shrinker.shrink_target
+                dom = dominance(data, current)
+                if dom == DominanceRelation.LEFT_DOMINATES:
+                    # If ``data`` dominates ``current`` then ``current``
+                    # must be dominated in the front - either ``data`` is in
+                    # the front, or it was not added to it because it was
+                    # dominated by something in it.,
+                    try:
+                        self.front.front.remove(current)
+                    except ValueError:
+                        pass
+                    return True
+                return False
+
+            shrinker = self.__engine.new_shrinker(target, shrink_to)
+            shrinker.shrink()
+            seen.add(shrinker.shrink_target.buffer)
 
             # Note that the front may have changed shape arbitrarily when
             # we ran the shrinker. If it didn't change shape then this is
