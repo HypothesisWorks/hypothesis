@@ -298,6 +298,7 @@ class ParetoOptimiser:
         # we run the tests we improve the pareto front because we work on the
         # bits that we haven't covered yet.
         i = len(self.front) - 1
+        prev = None
         while i >= 0:
             assert self.front
             i = min(i, len(self.front) - 1)
@@ -305,20 +306,37 @@ class ParetoOptimiser:
             if target.buffer in seen:
                 i -= 1
                 continue
+            assert target is not prev
+            prev = target
 
-            # Note that during shrinking we may discover other smaller examples
-            # that will get added to the front. It's OK to slip and and out of
-            # these - in particular we may move to new shrink targets that are
-            # not dominating the current target. This is fine, because they
-            # will be added to the front and processed on later iterations of
-            # this loop.
-            shrunk = self.__engine.shrink(
-                target,
-                lambda data: data.status >= Status.VALID
-                and dominance(data, target)
-                in (DominanceRelation.EQUAL, DominanceRelation.LEFT_DOMINATES),
-            )
-            seen.add(shrunk.buffer)
+            def shrink_to(data):
+                """Shrink to data that strictly pareto dominates the current
+                best value we've seen, which is the current target of the
+                shrinker.
+
+                Note that during shrinking we may discover other smaller
+                examples that this function will reject and will get added to
+                the front. This is fine, because they will be processed on
+                later iterations of this loop."""
+                if data.status < Status.VALID:
+                    return False
+                current = shrinker.shrink_target
+                dom = dominance(data, current)
+                if dom == DominanceRelation.LEFT_DOMINATES:
+                    # If ``data`` dominates ``current`` then ``current``
+                    # must be dominated in the front - either ``data`` is in
+                    # the front, or it was not added to it because it was
+                    # dominated by something in it.,
+                    try:
+                        self.front.front.remove(current)
+                    except ValueError:
+                        pass
+                    return True
+                return False
+
+            shrinker = self.__engine.new_shrinker(target, shrink_to)
+            shrinker.shrink()
+            seen.add(shrinker.shrink_target.buffer)
 
             # Note that the front may have changed shape arbitrarily when
             # we ran the shrinker. If it didn't change shape then this is
