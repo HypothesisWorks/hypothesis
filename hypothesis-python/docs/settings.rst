@@ -178,8 +178,9 @@ so you are more likely to find bugs.
 Hypothesis allows you to define different settings profiles. These profiles
 can be loaded at any time.
 
-.. autoclass:: hypothesis.settings
-    :members: register_profile, get_profile, load_profile
+.. automethod:: hypothesis.settings.register_profile
+.. automethod:: hypothesis.settings.get_profile
+.. automethod:: hypothesis.settings.load_profile
 
 Loading a profile changes the default settings but will not change the behavior
 of tests that explicitly change the settings.
