@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/coverage.txt requirements/coverage.in
 #
-coverage==5.0.4           # via -r requirements/coverage.in
+coverage==5.1             # via -r requirements/coverage.in
 lark-parser==0.8.5        # via -r requirements/coverage.in
 numpy==1.18.2             # via -r requirements/coverage.in, pandas
 pandas==1.0.3             # via -r requirements/coverage.in
