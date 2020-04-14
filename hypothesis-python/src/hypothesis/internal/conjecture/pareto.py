@@ -298,6 +298,7 @@ class ParetoOptimiser:
         # we run the tests we improve the pareto front because we work on the
         # bits that we haven't covered yet.
         i = len(self.front) - 1
+        prev = None
         while i >= 0:
             assert self.front
             i = min(i, len(self.front) - 1)
@@ -305,7 +306,8 @@ class ParetoOptimiser:
             if target.buffer in seen:
                 i -= 1
                 continue
-
+            assert target is not prev
+            prev = target
             # Note that during shrinking we may discover other smaller examples
             # that will get added to the front. It's OK to slip and and out of
             # these - in particular we may move to new shrink targets that are
@@ -319,6 +321,17 @@ class ParetoOptimiser:
                 in (DominanceRelation.EQUAL, DominanceRelation.LEFT_DOMINATES),
             )
             seen.add(shrunk.buffer)
+
+            # We can potentially fail to evict ``target`` despite ``shrunk``
+            # dominating it. If this happens then some element of the front
+            # must dominate ``target`` (either it's ``shrunk``, or ``shrunk``
+            # failed to be added because something else dominated it), so we
+            # explicitly remove it here.
+            if (
+                target in self.front.front
+                and dominance(shrunk, target) == DominanceRelation.LEFT_DOMINATES
+            ):
+                self.front.front.remove(target)
 
             # Note that the front may have changed shape arbitrarily when
             # we ran the shrinker. If it didn't change shape then this is

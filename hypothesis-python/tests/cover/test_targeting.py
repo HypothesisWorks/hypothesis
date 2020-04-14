@@ -144,3 +144,13 @@ def test_targeting_can_be_disabled():
         return result[0]
 
     assert score(enabled=True) > score(enabled=False)
+
+
+def test_issue_2395_regression():
+    @given(d=st.floats().filter(lambda x: abs(x) < 1000))
+    @settings(max_examples=1000, database=None)
+    @seed(93962505385993024185959759429298090872)
+    def test_targeting_square_loss(d):
+        target(-((d - 42.5) ** 2.0))
+
+    test_targeting_square_loss()
