@@ -10,6 +10,14 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.8.4:
+
+------------------
+5.8.4 - 2020-04-14
+------------------
+
+This release fixes :issue:`2395`, where under some circumstances targeted property-based testing could cause Hypothesis to get caught in an infinite loop.
+
 .. _v5.8.3:
 
 ------------------
