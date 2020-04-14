@@ -230,3 +230,25 @@ def test_does_not_optimise_the_pareto_front_if_interesting():
     runner.optimise_targets()
 
     assert runner.interesting_examples
+
+
+def test_stops_optimising_once_interesting():
+    hi = 2 ** 16 - 1
+
+    def test(data):
+        n = data.draw_bits(16)
+        data.target_observations[""] = n
+        if n < hi:
+            data.mark_interesting()
+
+    runner = ConjectureRunner(
+        test,
+        settings=settings(max_examples=10000, database=InMemoryExampleDatabase(),),
+        database_key=b"stuff",
+    )
+
+    data = runner.cached_test_function([255] * 2)
+    assert data.status == Status.VALID
+    runner.pareto_optimise()
+    assert runner.call_count <= 10
+    assert runner.interesting_examples
