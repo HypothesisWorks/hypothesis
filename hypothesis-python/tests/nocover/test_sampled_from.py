@@ -13,6 +13,8 @@
 #
 # END HEADER
 
+import enum
+
 import pytest
 
 import hypothesis.strategies as st
@@ -68,3 +70,19 @@ def test_unsat_sets_of_samples(x):
 @given(st.sets(st.sampled_from(range(50)), min_size=50))
 def test_efficient_sets_of_samples(x):
     assert x == set(range(50))
+
+
+class AnEnum(enum.Enum):
+    a = enum.auto()
+    b = enum.auto()
+
+
+def test_enum_repr_uses_class_not_a_list():
+    strat = st.sampled_from(AnEnum)
+    # Our lazy repr looks exactly like our call
+    lazy_repr = repr(strat)
+    assert lazy_repr == "sampled_from(AnEnum)"
+    # The inner repr should have enough detail to find the class again
+    # (which is very useful for the ghostwriter logic we're working on)
+    inner_repr = repr(strat.wrapped_strategy)
+    assert inner_repr == "sampled_from(tests.nocover.test_sampled_from.AnEnum)"

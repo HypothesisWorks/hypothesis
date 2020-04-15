@@ -656,7 +656,7 @@ def sampled_from(elements):
         return sets(sampled_from(values), min_size=1).map(
             lambda s: reduce(operator.or_, s)
         )
-    return SampledFromStrategy(values)
+    return SampledFromStrategy(elements)
 
 
 @cacheable
