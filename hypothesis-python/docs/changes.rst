@@ -10,6 +10,17 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.8.6:
+
+------------------
+5.8.6 - 2020-04-15
+------------------
+
+This patch improves the docstring of :func:`~hypothesis.strategies.binary`,
+the :func:`python:repr` of :func:`~hypothesis.strategies.sampled_from` on
+an :class:`python:enum.Enum` subclass, and a warning in our pytest plugin.
+There is no change in runtime behaviour.
+
 .. _v5.8.5:
 
 ------------------
