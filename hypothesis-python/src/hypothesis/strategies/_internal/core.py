@@ -1109,7 +1109,7 @@ def binary(*, min_size: int = 0, max_size: int = None) -> SearchStrategy[bytes]:
     """Generates :class:`python:bytes`.
 
     The generated :class:`python:bytes` will have a length of at least ``min_size``
-    and at most ``max_size`.  If ``max_size is None`` there is no upper limit.
+    and at most ``max_size``.  If ``max_size`` is None there is no upper limit.
 
     Examples from this strategy shrink towards smaller strings and lower byte
     values.
