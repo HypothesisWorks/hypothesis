@@ -37,6 +37,7 @@ Others provide a function to infer a strategy from some other schema:
 * :pypi:`hypothesis-jsonschema` - infer strategies from `JSON schemas <https://json-schema.org/>`_.
 * :pypi:`lollipop-hypothesis` - infer strategies from :pypi:`lollipop` schemas.
 * :pypi:`hypothesis-drf` - infer strategies from a :pypi:`djangorestframework` serialiser.
+* :pypi:`hypothesis-graphql` - infer strategies from `GraphQL schemas <https://graphql.org/>`_.
 * :pypi:`hypothesis-mongoengine` - infer strategies from a :pypi:`mongoengine` model.
 * :pypi:`hypothesis-pb` - infer strategies from `Protocol Buffer
   <https://developers.google.com/protocol-buffers/>`_ schemas.
