@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.8.5:
+
+------------------
+5.8.5 - 2020-04-15
+------------------
+
+This release (potentially very significantly) improves the performance of failing tests in some rare cases,
+mostly only relevant when using :ref:`targeted property-based testing <targeted-search>`,
+by stopping further optimisation of unrelated test cases once a failing example is found.
+
 .. _v5.8.4:
 
 ------------------
