@@ -299,7 +299,7 @@ class ParetoOptimiser:
         # bits that we haven't covered yet.
         i = len(self.front) - 1
         prev = None
-        while i >= 0:
+        while i >= 0 and not self.__engine.interesting_examples:
             assert self.front
             i = min(i, len(self.front) - 1)
             target = self.front[i]
