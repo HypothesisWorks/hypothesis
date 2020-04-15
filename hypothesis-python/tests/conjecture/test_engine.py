@@ -1070,6 +1070,119 @@ def test_does_not_keep_generating_when_multiple_bugs():
     assert runner.call_count == 2
 
 
+def test_shrink_after_max_examples():
+    """If we find a bug, keep looking for more, and then hit the valid-example
+    limit, we should still proceed to shrinking.
+    """
+    max_examples = 100
+    fail_at = max_examples - 5
+
+    seen = set()
+    bad = set()
+    post_failure_calls = [0]
+
+    def test(data):
+        if bad:
+            post_failure_calls[0] += 1
+
+        value = data.draw_bits(8)
+
+        if value in seen and value not in bad:
+            return
+
+        seen.add(value)
+        if len(seen) == fail_at:
+            bad.add(value)
+
+        if value in bad:
+            data.mark_interesting()
+
+    # This shouldn't need to be deterministic, but it makes things much easier
+    # to debug if anything goes wrong.
+    with deterministic_PRNG():
+        runner = ConjectureRunner(
+            test,
+            settings=settings(
+                TEST_SETTINGS,
+                max_examples=max_examples,
+                phases=[Phase.generate, Phase.shrink],
+                report_multiple_bugs=True,
+            ),
+        )
+        runner.shrink_interesting_examples = Mock(name="shrink_interesting_examples")
+
+        runner.run()
+
+    # First, verify our test assumptions: we found a bug, kept running, and
+    # then hit max-examples.
+    assert runner.interesting_examples
+    assert post_failure_calls[0] >= (max_examples - fail_at)
+    assert runner.call_count >= max_examples
+    assert runner.valid_examples == max_examples
+
+    # Now check that we still performed shrinking, even after hitting the
+    # example limit.
+    assert runner.shrink_interesting_examples.call_count == 1
+    assert runner.exit_reason == ExitReason.finished
+
+
+def test_shrink_after_max_iterations():
+    """If we find a bug, keep looking for more, and then hit the test call
+    limit, we should still proceed to shrinking.
+    """
+    max_examples = 10
+    max_iterations = max_examples * 10
+    fail_at = max_iterations - 5
+
+    invalid = set()
+    bad = set()
+    post_failure_calls = [0]
+
+    def test(data):
+        if bad:
+            post_failure_calls[0] += 1
+
+        value = data.draw_bits(16)
+
+        if value in invalid:
+            data.mark_invalid()
+
+        if value in bad or (not bad and len(invalid) == fail_at):
+            bad.add(value)
+            data.mark_interesting()
+
+        invalid.add(value)
+        data.mark_invalid()
+
+    # This shouldn't need to be deterministic, but it makes things much easier
+    # to debug if anything goes wrong.
+    with deterministic_PRNG():
+        runner = ConjectureRunner(
+            test,
+            settings=settings(
+                TEST_SETTINGS,
+                max_examples=max_examples,
+                phases=[Phase.generate, Phase.shrink],
+                report_multiple_bugs=True,
+            ),
+        )
+        runner.shrink_interesting_examples = Mock(name="shrink_interesting_examples")
+
+        runner.run()
+
+    # First, verify our test assumptions: we found a bug, kept running, and
+    # then hit the test call limit.
+    assert runner.interesting_examples
+    assert post_failure_calls[0] >= (max_iterations - fail_at) - 1
+    assert runner.call_count >= max_iterations
+    assert runner.valid_examples == 0
+
+    # Now check that we still performed shrinking, even after hitting the
+    # test call limit.
+    assert runner.shrink_interesting_examples.call_count == 1
+    assert runner.exit_reason == ExitReason.finished
+
+
 def test_populates_the_pareto_front():
     with deterministic_PRNG():
 
