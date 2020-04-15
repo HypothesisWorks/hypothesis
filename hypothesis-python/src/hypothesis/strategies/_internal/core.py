@@ -377,8 +377,8 @@ def integers(min_value: int = None, max_value: int = None) -> SearchStrategy[int
 def booleans() -> SearchStrategy[bool]:
     """Returns a strategy which generates instances of :class:`python:bool`.
 
-    Examples from this strategy will shrink towards False (i.e.
-    shrinking will try to replace True with False where possible).
+    Examples from this strategy will shrink towards ``False`` (i.e.
+    shrinking will replace ``True`` with ``False`` where possible).
     """
     return sampled_from([False, True])
 
@@ -1108,13 +1108,14 @@ def from_regex(
 def binary(*, min_size: int = 0, max_size: int = None) -> SearchStrategy[bytes]:
     """Generates :class:`python:bytes`.
 
-    min_size and max_size have the usual interpretations.
+    The generated :class:`python:bytes` will have a length of at least ``min_size``
+    and at most ``max_size`.  If ``max_size is None`` there is no upper limit.
 
     Examples from this strategy shrink towards smaller strings and lower byte
     values.
     """
     check_valid_sizes(min_size, max_size)
-    if min_size == max_size is not None:
+    if min_size == max_size:
         return FixedSizeBytes(min_size)
     return lists(
         integers(min_value=0, max_value=255), min_size=min_size, max_size=max_size
