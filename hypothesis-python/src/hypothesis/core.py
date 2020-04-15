@@ -89,7 +89,7 @@ from hypothesis.reporting import (
     verbose_report,
     with_reporter,
 )
-from hypothesis.statistics import note_engine_for_statistics
+from hypothesis.statistics import describe_targets, note_engine_for_statistics
 from hypothesis.strategies._internal.collections import TupleStrategy
 from hypothesis.strategies._internal.strategies import (
     Ex,
@@ -752,6 +752,11 @@ class StateForActualGivenExecution:
         self.failed_normally = True
 
         flaky = 0
+
+        if runner.best_observed_targets:
+            for line in describe_targets(runner.best_observed_targets):
+                report(line)
+            report("")
 
         for falsifying_example in self.falsifying_examples:
             info = falsifying_example.extra_information

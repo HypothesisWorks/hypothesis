@@ -17,6 +17,31 @@ import pytest
 
 from hypothesis import Phase, given, settings, strategies as st, target
 
+pytest_plugins = "pytester"
+
+TESTSUITE = """
+from hypothesis import given, strategies as st, target
+
+@given(st.integers(min_value=0))
+def test_threshold_problem(x):
+    target(float(x))
+    {0}target(float(x * 2), label="double")
+    {0}assert x <= 100000
+    assert x <= 100
+"""
+
+
+@pytest.mark.parametrize("multiple", [False, True])
+def test_reports_target_results(testdir, multiple):
+    script = testdir.makepyfile(TESTSUITE.format("" if multiple else "# "))
+    result = testdir.runpytest(script)
+    out = "\n".join(result.stdout.lines)
+    assert "Falsifying example" in out
+    assert "x=101" in out
+    assert out.count("Highest target score") == 1
+    assert out.index("Highest target score") < out.index("Falsifying example")
+    assert result.ret != 0
+
 
 def test_targeting_increases_max_length():
     strat = st.lists(st.booleans())

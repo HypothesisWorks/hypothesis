@@ -105,13 +105,31 @@ class Statistics:
             % (self.draw_time_percentage,),
             "  - Stopped because %s" % (self.exit_reason,),
         ]
-        if self.targets:
-            lines.append("  - Highest target scores:")
-            for label, score in sorted(self.targets.items(), key=lambda x: x[::-1]):
-                lines.append("{:>20g}  ({})".format(score, repr(label)))
+        target_lines = describe_targets(self.targets)
+        if target_lines:
+            lines.append("  - " + target_lines[0])
+            lines.extend("    " + l for l in target_lines[1:])
         if self.events:
             lines.append("  - Events:")
             lines += ["    * %s" % (event,) for event in self.events]
+        return lines
+
+
+def describe_targets(best_targets):
+    """Return a list of lines describing the results of `target`, if any."""
+    # These lines are included in the general statistics description below,
+    # but also printed immediately below failing examples to alleviate the
+    # "threshold problem" where shrinking can make severe bug look trival.
+    # See https://github.com/HypothesisWorks/hypothesis/issues/2180
+    if not best_targets:
+        return []
+    elif len(best_targets) == 1:
+        label, score = next(iter(best_targets.items()))
+        return ["Highest target score: {:g}  (label={!r})".format(score, label)]
+    else:
+        lines = ["Highest target scores:"]
+        for label, score in sorted(best_targets.items(), key=lambda x: x[::-1]):
+            lines.append("{:>16g}  (label={!r})".format(score, label))
         return lines
 
 
