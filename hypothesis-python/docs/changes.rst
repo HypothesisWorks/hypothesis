@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.9.1:
+
+------------------
+5.9.1 - 2020-04-16
+------------------
+
+This patch fixes the rendering of :func:`~hypothesis.strategies.binary`
+docstring by using the proper backticks syntax.
+
 .. _v5.9.0:
 
 ------------------
