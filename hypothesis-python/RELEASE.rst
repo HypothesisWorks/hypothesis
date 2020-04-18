@@ -9,7 +9,10 @@ This may be set even when there is no transition, in which case the ``fold``
 value should be ignored.
 
 For consistency, timezones provided by the :pypi:`pytz` package can now
-generate imaginary times.  This has always been the case for other timezones.
+generate imaginary times (such as the hour skipped over when clocks 'spring forward'
+to daylight saving time, or during some historical timezone transitions).
+All other timezones have always supported generation of imaginary times.
 
 If you prefer the previous behaviour, :func:`~hypothesis.strategies.datetimes`
-now takes an argument ``allow_imaginary`` which defaults to ``True``.
+now takes an argument ``allow_imaginary`` which defaults to ``True`` but
+can be set to ``False`` for any timezones strategy.
