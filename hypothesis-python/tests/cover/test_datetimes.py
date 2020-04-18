@@ -139,8 +139,8 @@ def test_naive_times_are_naive(dt):
     assert dt.tzinfo is None
 
 
-# The fold attribute was added in Python 3.6, but is also missing from PyPy.
-# See https://bitbucket.org/pypy/pypy/issues/2987 for details.
+# The fold attribute was added in Python 3.6.  It's less clear why this also fails
+# on pypy3.6, but it seems to canonicalise fold to 0 for non-ambiguous times...
 @pytest.mark.skipif(PYPY or sys.version_info[:2] < (3, 6), reason="see comment")
 def test_can_generate_datetime_with_fold_1():
     find_any(datetimes(), lambda d: d.fold)

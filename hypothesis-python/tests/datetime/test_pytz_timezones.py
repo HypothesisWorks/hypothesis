@@ -17,12 +17,18 @@ import datetime as dt
 
 import pytest
 import pytz
+from dateutil.tz import datetime_exists
 
 from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
-from hypothesis.strategies import data, datetimes, sampled_from, times
-from tests.common.debug import assert_can_trigger_event, minimal
+from hypothesis.strategies import data, datetimes, just, sampled_from, times
+from tests.common.debug import (
+    assert_all_examples,
+    assert_can_trigger_event,
+    find_any,
+    minimal,
+)
 
 
 def test_utc_is_minimal():
@@ -110,3 +116,36 @@ def test_datetimes_stay_within_naive_bounds(data, lo, hi):
         lo, hi = hi, lo
     out = data.draw(datetimes(lo, hi, timezones=timezones()))
     assert lo <= out.replace(tzinfo=None) <= hi
+
+
+@pytest.mark.xfail(reason="is_dst not equivalent to fold when DST offset is negative")
+def test_datetimes_can_exclude_imaginary():
+    # The day of a spring-forward transition; 2am is imaginary
+    australia = {
+        "min_value": dt.datetime(2020, 10, 4),
+        "max_value": dt.datetime(2020, 10, 5),
+        "timezones": just(pytz.timezone("Australia/Sydney")),
+    }
+    # Ireland uses  *negative* offset DST, which means that our sloppy interpretation
+    # of "is_dst=not fold" bypasses the filter for imaginary times.  This is basically
+    # unfixable without redesigning pytz per PEP-495, and it's much more likely to be
+    # replaced by dateutil or PEP-615 zoneinfo in the standard library instead.
+    # (we use both so an optimistic `is_dst=bool(fold)` also fails the test)
+    ireland = {
+        "min_value": dt.datetime(2019, 3, 31),
+        "max_value": dt.datetime(2019, 4, 1),
+        "timezones": just(pytz.timezone("Europe/Dublin")),
+    }
+    # Sanity check: fail unless those days contain an imaginary hour to filter out
+    find_any(
+        datetimes(**australia, allow_imaginary=True), lambda x: not datetime_exists(x),
+    )
+    find_any(
+        datetimes(**ireland, allow_imaginary=True), lambda x: not datetime_exists(x),
+    )
+    # Assert that with allow_imaginary=False we only generate existing datetimes.
+    assert_all_examples(
+        datetimes(**australia, allow_imaginary=False)
+        | datetimes(**ireland, allow_imaginary=False),
+        datetime_exists,
+    )

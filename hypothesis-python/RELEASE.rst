@@ -10,3 +10,6 @@ value should be ignored.
 
 For consistency, timezones provided by the :pypi:`pytz` package can now
 generate imaginary times.  This has always been the case for other timezones.
+
+If you prefer the previous behaviour, :func:`~hypothesis.strategies.datetimes`
+now takes an argument ``allow_imaginary`` which defaults to ``True``.

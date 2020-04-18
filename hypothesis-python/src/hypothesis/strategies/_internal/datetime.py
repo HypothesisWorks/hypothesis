@@ -60,6 +60,24 @@ def replace_tzinfo(value, timezone):
     return value.replace(tzinfo=timezone)
 
 
+def datetime_does_not_exist(value):
+    # This function tests whether the given datetime can be round-tripped to and
+    # from UTC.  It is an exact inverse of (and very similar to) the dateutil method
+    # https://dateutil.readthedocs.io/en/stable/tz.html#dateutil.tz.datetime_exists
+    try:
+        # Does the naive portion of the datetime change when round-tripped to
+        # UTC?  If so, or if this overflows, we say that it does not exist.
+        roundtrip = value.astimezone(dt.timezone.utc).astimezone(value.tzinfo)
+    except OverflowError:
+        # Overflows at datetime.min or datetime.max boundary condition.
+        # Rejecting these is acceptable, because timezones are close to
+        # meaningless before ~1900 and subject to a lot of change by
+        # 9999, so it should be a very small fraction of possible values.
+        return True
+    assert value.tzinfo is roundtrip.tzinfo, "so only the naive portions are compared"
+    return value != roundtrip
+
+
 def draw_capped_multipart(data, min_value, max_value):
     assert isinstance(min_value, (dt.date, dt.time, dt.datetime))
     assert type(min_value) == type(max_value)
@@ -94,21 +112,37 @@ def draw_capped_multipart(data, min_value, max_value):
 
 
 class DatetimeStrategy(SearchStrategy):
-    def __init__(self, min_value, max_value, timezones_strat):
+    def __init__(self, min_value, max_value, timezones_strat, allow_imaginary):
         assert isinstance(min_value, dt.datetime)
         assert isinstance(max_value, dt.datetime)
         assert min_value.tzinfo is None
         assert max_value.tzinfo is None
         assert min_value <= max_value
         assert isinstance(timezones_strat, SearchStrategy)
+        assert isinstance(allow_imaginary, bool)
         self.min_value = min_value
         self.max_value = max_value
         self.tz_strat = timezones_strat
+        self.allow_imaginary = allow_imaginary
 
     def do_draw(self, data):
-        result = draw_capped_multipart(data, self.min_value, self.max_value)
-        result = dt.datetime(**result)
+        # We start by drawing a timezone, and an initial datetime.
         tz = data.draw(self.tz_strat)
+        result = self.draw_naive_datetime_and_combine(data, tz)
+
+        # TODO: with some probability, systematically search for one of
+        #   - an imaginary time (if allowed),
+        #   - a time within 24hrs of a leap second (if there any are within bounds),
+        #   - other subtle, little-known, or nasty issues as described in
+        #     https://github.com/HypothesisWorks/hypothesis/issues/69
+
+        # If we happened to end up with a disallowed imaginary time, reject it.
+        if (not self.allow_imaginary) and datetime_does_not_exist(result):
+            data.mark_invalid()
+        return result
+
+    def draw_naive_datetime_and_combine(self, data, tz):
+        result = draw_capped_multipart(data, self.min_value, self.max_value)
         try:
             return replace_tzinfo(dt.datetime(**result), timezone=tz)
         except (ValueError, OverflowError):
@@ -123,37 +157,29 @@ def datetimes(
     min_value: dt.datetime = dt.datetime.min,
     max_value: dt.datetime = dt.datetime.max,
     *,
-    timezones: SearchStrategy[Optional[dt.tzinfo]] = none()
+    timezones: SearchStrategy[Optional[dt.tzinfo]] = none(),
+    allow_imaginary: bool = True
 ) -> SearchStrategy[dt.datetime]:
-    """datetimes(min_value=datetime.datetime.min, max_value=datetime.datetime.max, *, timezones=none())
+    """datetimes(min_value=datetime.datetime.min, max_value=datetime.datetime.max, *, timezones=none(), allow_imaginary=True)
 
     A strategy for generating datetimes, which may be timezone-aware.
 
     This strategy works by drawing a naive datetime between ``min_value``
     and ``max_value``, which must both be naive (have no timezone).
 
-    ``timezones`` must be a strategy that generates
-    :class:`~python:datetime.tzinfo` objects (or None,
-    which is valid for naive datetimes).  A value drawn from this strategy
-    will be added to a naive datetime, and the resulting tz-aware datetime
-    returned.
+    ``timezones`` must be a strategy that generates either ``None``, for naive
+    datetimes, or :class:`~python:datetime.tzinfo` objects for 'aware' datetimes.
+    You can construct your own, though we recommend using the :pypi:`dateutil
+    <python-dateutil>` package and :func:`hypothesis.extra.dateutil.timezones`
+    strategy, and also provide :func:`hypothesis.extra.pytz.timezones`.
 
-    .. note::
-        tz-aware datetimes from this strategy may be ambiguous or non-existent
-        due to daylight savings, leap seconds, timezone and calendar
-        adjustments, etc.  This is intentional, as malformed timestamps are a
-        common source of bugs.
-
-    :py:func:`hypothesis.extra.pytz.timezones` requires the :pypi:`pytz`
-    package, but provides all timezones in the Olsen database.
-    :py:func:`hypothesis.extra.dateutil.timezones` requires the
-    :pypi:`python-dateutil` package, and similarly provides all timezones
-    there.  If you want to allow naive datetimes, combine strategies
-    like ``none() | timezones()``.
-
-    Alternatively, you can create a list of the timezones you wish to allow
-    (e.g. from the standard library, :pypi:`dateutil <python-dateutil>`,
-    or :pypi:`pytz`) and use :py:func:`sampled_from`.
+    You may pass ``allow_imaginary=False`` to filter out "imaginary" datetimes
+    which did not (or will not) occur due to daylight savings, leap seconds,
+    timezone and calendar adjustments, etc.  Imaginary datetimes are allowed
+    by default, because malformed timestamps are a common source of bugs.
+    Note that because :pypi:`pytz` predates :pep:`495`, this does not work
+    correctly with timezones that use a negative DST offset (such as
+    ``"Europe/Dublin"``).
 
     Examples from this strategy shrink towards midnight on January 1st 2000,
     local time.
@@ -167,6 +193,7 @@ def datetimes(
     # handle datetimes in e.g. a four-microsecond span which is not
     # representable in UTC.  Handling (d), all of the above, leads to a much
     # more complex API for all users and a useful feature for very few.
+    check_type(bool, allow_imaginary, "allow_imaginary")
     check_type(dt.datetime, min_value, "min_value")
     check_type(dt.datetime, max_value, "max_value")
     if min_value.tzinfo is not None:
@@ -179,7 +206,7 @@ def datetimes(
             "timezones=%r must be a SearchStrategy that can provide tzinfo "
             "for datetimes (either None or dt.tzinfo objects)" % (timezones,)
         )
-    return DatetimeStrategy(min_value, max_value, timezones)
+    return DatetimeStrategy(min_value, max_value, timezones, allow_imaginary)
 
 
 class TimeStrategy(SearchStrategy):
