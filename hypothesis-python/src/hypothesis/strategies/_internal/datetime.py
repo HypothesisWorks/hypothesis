@@ -39,6 +39,27 @@ def is_pytz_timezone(tz):
     return module == "pytz" or module.startswith("pytz.")
 
 
+def replace_tzinfo(value, timezone):
+    if is_pytz_timezone(timezone):
+        # Pytz timezones are a little complicated, and using the .replace method
+        # can cause some wierd issues, so we use their special "localise" instead.
+        #
+        # We use the fold attribute as a convenient boolean for is_dst, even though
+        # they're semantically distinct.  For ambiguous or imaginary hours, fold says
+        # whether you should use the offset that applies before the gap (fold=0) or
+        # the offset that applies after the gap (fold=1). is_dst says whether you
+        # should choose the side that is "DST" or "STD" (STD->STD or DST->DST
+        # transitions are unclear as you might expect).
+        #
+        # WARNING: this is INCORRECT for timezones with negative DST offsets such as
+        #       "Europe/Dublin", but it's unclear what we could do instead beyond
+        #       documenting the problem and recommending use of `dateutil` instead.
+        #
+        # TODO: after dropping Python 3.5 support we won't need the getattr
+        return timezone.localize(value, is_dst=not getattr(value, "fold", 0))
+    return value.replace(tzinfo=timezone)
+
+
 def draw_capped_multipart(data, min_value, max_value):
     assert isinstance(min_value, (dt.date, dt.time, dt.datetime))
     assert type(min_value) == type(max_value)
@@ -62,6 +83,13 @@ def draw_capped_multipart(data, min_value, max_value):
         result[name] = val
         cap_low = cap_low and val == low
         cap_high = cap_high and val == high
+    if hasattr(min_value, "fold"):
+        # The `fold` attribute is ignored in comparison of naive datetimes.
+        # In tz-aware datetimes it would require *very* invasive changes to
+        # the logic above, and be very sensitive to the specific timezone
+        # (at the cost of efficient shrinking and mutation), so at least for
+        # now we stick with the status quo and generate it independently.
+        result["fold"] = utils.integer_range(data, 0, 1)
     return result
 
 
@@ -82,10 +110,7 @@ class DatetimeStrategy(SearchStrategy):
         result = dt.datetime(**result)
         tz = data.draw(self.tz_strat)
         try:
-            if is_pytz_timezone(tz):
-                # Can't just construct; see http://pytz.sourceforge.net
-                return tz.normalize(tz.localize(result))
-            return result.replace(tzinfo=tz)
+            return replace_tzinfo(dt.datetime(**result), timezone=tz)
         except (ValueError, OverflowError):
             msg = "Failed to draw a datetime between %r and %r with timezone from %r."
             data.note_event(msg % (self.min_value, self.max_value, self.tz_strat))
