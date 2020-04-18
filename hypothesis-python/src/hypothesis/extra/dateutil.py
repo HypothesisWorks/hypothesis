@@ -18,11 +18,10 @@
 hypothesis[dateutil]
 --------------------
 
-This module provides ``dateutil`` timezones.
+This module provides :pypi:`dateutil <python-dateutil>` timezones.
 
-You can use this strategy to make
-:py:func:`hypothesis.strategies.datetimes` and
-:py:func:`hypothesis.strategies.times` produce timezone-aware values.
+You can use this strategy to make :func:`~hypothesis.strategies.datetimes`
+and :func:`~hypothesis.strategies.times` produce timezone-aware values.
 """
 
 import datetime as dt
@@ -47,7 +46,7 @@ def __zone_sort_key(zone):
 @st.cacheable
 @st.defines_strategy
 def timezones() -> st.SearchStrategy[dt.tzinfo]:
-    """Any timezone in dateutil.
+    """Any timezone from :pypi:`dateutil <python-dateutil>`.
 
     This strategy minimises to UTC, or the timezone with the smallest offset
     from UTC as of 2000-01-01, and is designed for use with
