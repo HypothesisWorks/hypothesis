@@ -157,6 +157,18 @@ def datetimes(
     return DatetimeStrategy(min_value, max_value, timezones)
 
 
+class TimeStrategy(SearchStrategy):
+    def __init__(self, min_value, max_value, timezones_strat):
+        self.min_value = min_value
+        self.max_value = max_value
+        self.tz_strat = timezones_strat
+
+    def do_draw(self, data):
+        result = draw_capped_multipart(data, self.min_value, self.max_value)
+        tz = data.draw(self.tz_strat)
+        return dt.time(**result, tzinfo=tz)
+
+
 @defines_strategy_with_reusable_values
 @deprecated_posargs
 def times(
@@ -181,12 +193,7 @@ def times(
     if max_value.tzinfo is not None:
         raise InvalidArgument("max_value=%r must not have tzinfo" % max_value)
     check_valid_interval(min_value, max_value, "min_value", "max_value")
-    day = dt.date(2000, 1, 1)
-    return datetimes(
-        min_value=dt.datetime.combine(day, min_value),
-        max_value=dt.datetime.combine(day, max_value),
-        timezones=timezones,
-    ).map(lambda t: t.timetz())
+    return TimeStrategy(min_value, max_value, timezones)
 
 
 class DateStrategy(SearchStrategy):
