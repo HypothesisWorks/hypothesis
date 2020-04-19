@@ -258,7 +258,7 @@ class Shrinker:
         accept.__name__ = fn.__name__
         return property(accept)
 
-    def __init__(self, engine, initial, predicate):
+    def __init__(self, engine, initial, predicate, allow_transition):
         """Create a shrinker for a particular engine, with a given starting
         point and predicate. When shrink() is called it will attempt to find an
         example for which predicate is True and which is strictly smaller than
@@ -267,8 +267,10 @@ class Shrinker:
         Note that initial is a ConjectureData object, and predicate
         takes ConjectureData objects.
         """
+        assert predicate is not None or allow_transition is not None
         self.engine = engine
-        self.__predicate = predicate
+        self.__predicate = predicate or (lambda data: True)
+        self.__allow_transition = allow_transition or (lambda source, destination: True)
         self.__derived_values = {}
         self.__pending_shrink_explanation = None
 
@@ -363,16 +365,15 @@ class Shrinker:
 
     def incorporate_test_data(self, data):
         """Takes a ConjectureData or Overrun object updates the current
-        shrink_target if this data represents an improvement over it,
-        returning True if it is."""
-        if data is Overrun or data is self.shrink_target:
+        shrink_target if this data represents an improvement over it."""
+        if data.status < Status.VALID or data is self.shrink_target:
             return
-        if self.__predicate(data) and sort_key(data.buffer) < sort_key(
-            self.shrink_target.buffer
+        if (
+            self.__predicate(data)
+            and sort_key(data.buffer) < sort_key(self.shrink_target.buffer)
+            and self.__allow_transition(self.shrink_target, data)
         ):
             self.update_shrink_target(data)
-            return True
-        return False
 
     def cached_test_function(self, buffer):
         """Returns a cached version of the underlying test function, so

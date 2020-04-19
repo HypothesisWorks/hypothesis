@@ -309,7 +309,7 @@ class ParetoOptimiser:
             assert target is not prev
             prev = target
 
-            def shrink_to(data):
+            def allow_transition(source, destination):
                 """Shrink to data that strictly pareto dominates the current
                 best value we've seen, which is the current target of the
                 shrinker.
@@ -318,25 +318,20 @@ class ParetoOptimiser:
                 examples that this function will reject and will get added to
                 the front. This is fine, because they will be processed on
                 later iterations of this loop."""
-                if data.status < Status.VALID:
-                    return False
-                current = shrinker.shrink_target
-                dom = dominance(data, current)
-                if dom == DominanceRelation.LEFT_DOMINATES:
-                    # If ``data`` dominates ``current`` then ``current``
-                    # must be dominated in the front - either ``data`` is in
+                if dominance(destination, source) == DominanceRelation.LEFT_DOMINATES:
+                    # If ``destination`` dominates ``source`` then ``source``
+                    # must be dominated in the front - either ``destination`` is in
                     # the front, or it was not added to it because it was
                     # dominated by something in it.,
                     try:
-                        self.front.front.remove(current)
+                        self.front.front.remove(source)
                     except ValueError:
                         pass
                     return True
                 return False
 
-            shrinker = self.__engine.new_shrinker(target, shrink_to)
-            shrinker.shrink()
-            seen.add(shrinker.shrink_target.buffer)
+            shrunk = self.__engine.shrink(target, allow_transition=allow_transition)
+            seen.add(shrunk.buffer)
 
             # Note that the front may have changed shape arbitrarily when
             # we ran the shrinker. If it didn't change shape then this is

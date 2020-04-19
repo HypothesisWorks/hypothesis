@@ -907,13 +907,13 @@ class ConjectureRunner:
                     # of this reason for interestingness.
                     self.settings.database.delete(self.secondary_key, c)
 
-    def shrink(self, example, predicate):
-        s = self.new_shrinker(example, predicate)
+    def shrink(self, example, predicate=None, allow_transition=None):
+        s = self.new_shrinker(example, predicate, allow_transition)
         s.shrink()
         return s.shrink_target
 
-    def new_shrinker(self, example, predicate):
-        return Shrinker(self, example, predicate)
+    def new_shrinker(self, example, predicate=None, allow_transition=None):
+        return Shrinker(self, example, predicate, allow_transition)
 
     def cached_test_function(self, buffer, error_on_discard=False, extend=0):
         """Checks the tree to see if we've tested this buffer, and returns the
