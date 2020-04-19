@@ -10,6 +10,14 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.10.1:
+
+-------------------
+5.10.1 - 2020-04-19
+-------------------
+
+This release is a small internal refactoring to how shrinking interacts with :ref:`targeted property-based testing <targeted-search>` that should have no user user visible impact.
+
 .. _v5.10.0:
 
 -------------------
