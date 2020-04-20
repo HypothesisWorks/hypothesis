@@ -92,3 +92,12 @@ def test_wraps_around_to_beginning():
     assert tree.step((), f) == (1,)
     assert tree.step((1,), f) == (0,)
     assert tree.step((0,), f) == ()
+
+
+def test_skips_over_exhausted_subtree():
+    def f(chooser):
+        chooser.choose(range(10))
+
+    tree = ChoiceTree()
+    assert tree.step((8,), f) == (7,)
+    assert tree.step((8,), f) == (6,)
