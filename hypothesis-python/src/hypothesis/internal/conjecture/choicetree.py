@@ -87,9 +87,6 @@ class Chooser:
             target.children[i] = DeadNode
             target.live_child_count -= 1
 
-        while len(next_value) > 0 and next_value[-1] == 0:
-            next_value.pop()
-
         return tuple(next_value)
 
 
