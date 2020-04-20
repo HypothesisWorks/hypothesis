@@ -39,13 +39,21 @@ def minimal(definition, condition=lambda x: True, settings=None, timeout_after=1
             runtime.append(0.0)
         return result
 
+    if settings is None:
+        settings = Settings(max_examples=50000)
+
+    verbosity = settings.verbosity
+    if verbosity == Verbosity.normal:
+        verbosity = Verbosity.quiet
+
     @given(definition)
     @Settings(
-        parent=settings or Settings(max_examples=50000, verbosity=Verbosity.quiet),
+        parent=settings,
         suppress_health_check=HealthCheck.all(),
         report_multiple_bugs=False,
         derandomize=True,
         database=None,
+        verbosity=verbosity,
     )
     def inner(x):
         if wrapped_condition(x):
