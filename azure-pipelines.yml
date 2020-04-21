@@ -43,7 +43,7 @@ jobs:
     - script: ./build.sh
       displayName: Run tests
 
-  - job: windows
+  - job: ms_windows
     pool:
       vmImage: 'windows-2019'
     strategy:
@@ -90,7 +90,7 @@ jobs:
 
   # We run these quick jobs last for higher utilisation of concurrent jobs,
   # and because they're unlikely to fail if everything else is passing.
-  - job: specificdeps
+  - job: specific_deps
     pool:
       vmImage: 'Ubuntu 16.04'
     strategy:
