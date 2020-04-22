@@ -44,9 +44,9 @@ class Chooser:
         if depth < len(self.__prefix):
             i = self.__prefix[depth]
             if i >= len(values):
-                i = 0
+                i = len(values) - 1
         else:
-            i = 0
+            i = len(values) - 1
 
         count = 0
         while node.live_child_count > 0:
@@ -61,7 +61,7 @@ class Chooser:
                 else:
                     node.children[i] = DeadNode
                     node.live_child_count -= 1
-            i = (i + 1) % len(values)
+            i = (i - 1) % len(values)
         raise DeadBranch()
 
     def finish(self):
@@ -71,15 +71,12 @@ class Chooser:
         assert len(self.__node_trail) == len(self.__choices) + 1
 
         next_value = list(self.__choices)
-        if next_value:
-            next_value[-1] += 1
-            for i in range(len(next_value) - 1, -1, -1):
-                if next_value[i] >= self.__node_trail[i].n:
-                    next_value[i] = 0
-                    if i > 0:
-                        next_value[i - 1] += 1
-                else:
-                    break
+        while next_value:
+            next_value[-1] -= 1
+            if next_value[-1] < 0:
+                next_value.pop()
+            else:
+                break
 
         self.__node_trail[-1].live_child_count = 0
         while len(self.__node_trail) > 1 and self.__node_trail[-1].exhausted:
@@ -89,9 +86,6 @@ class Chooser:
             target = self.__node_trail[-1]
             target.children[i] = DeadNode
             target.live_child_count -= 1
-
-        while len(next_value) > 0 and next_value[-1] == 0:
-            next_value.pop()
 
         return tuple(next_value)
 

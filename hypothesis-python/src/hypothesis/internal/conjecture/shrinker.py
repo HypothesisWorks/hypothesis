@@ -1044,6 +1044,7 @@ class Shrinker:
             if a < 0 or b > len(group):
                 return False
             regions = []
+
             for e in group[a:b]:
                 t = (e.start, e.end, replacement)
                 if not regions or t[0] >= regions[-1][1]:

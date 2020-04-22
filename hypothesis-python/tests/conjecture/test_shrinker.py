@@ -439,3 +439,123 @@ def test_zig_zags_quickly():
     shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
     assert shrinker.engine.valid_examples <= 100
     assert list(shrinker.shrink_target.buffer) == [0, 1, 0, 1]
+
+
+def test_zero_irregular_examples():
+    @shrinking_from([255] * 6)
+    def shrinker(data):
+        data.start_example(1)
+        data.draw_bits(8)
+        data.draw_bits(16)
+        data.stop_example()
+        data.start_example(1)
+        interesting = data.draw_bits(8) > 0 and data.draw_bits(16) > 0
+        data.stop_example()
+        if interesting:
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["zero_examples"])
+    assert list(shrinker.shrink_target.buffer) == [0] * 3 + [255] * 3
+
+
+def test_retain_end_of_buffer():
+    @shrinking_from([1, 2, 3, 4, 5, 6, 0])
+    def shrinker(data):
+        interesting = False
+        while True:
+            n = data.draw_bits(8)
+            if n == 6:
+                interesting = True
+            if n == 0:
+                break
+        if interesting:
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["adaptive_example_deletion"])
+    assert list(shrinker.buffer) == [6, 0]
+
+
+def test_can_expand_zeroed_region():
+    @shrinking_from([255] * 5)
+    def shrinker(data):
+        seen_non_zero = False
+        for _ in range(5):
+            if data.draw_bits(8) == 0:
+                if seen_non_zero:
+                    data.mark_invalid()
+            else:
+                seen_non_zero = True
+        data.mark_interesting()
+
+    sp = shrinker.shrink_pass("zero_examples")
+    for _ in range(5):
+        sp.step()
+    assert list(shrinker.shrink_target.buffer) == [0] * 5
+
+
+def test_can_expand_deleted_region():
+    @shrinking_from([1, 2, 3, 4, 0, 0])
+    def shrinker(data):
+        def t():
+            data.start_example(1)
+
+            data.start_example(1)
+            m = data.draw_bits(8)
+            data.stop_example()
+
+            data.start_example(1)
+            n = data.draw_bits(8)
+            data.stop_example()
+
+            data.stop_example()
+            return (m, n)
+
+        v1 = t()
+        if v1 == (1, 2):
+            if t() != (3, 4):
+                data.mark_invalid()
+        if v1 == (0, 0) or t() == (0, 0):
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["adaptive_example_deletion"])
+    assert list(shrinker.buffer) == [0, 0]
+
+
+def test_zero_coverage_edge_case():
+    """This is a weird and contrived test designed to trigger
+    a specific coverage target in the shrinker that is
+    surprisingly hard to hit. If at any point it becomes
+    more convenient to delete it, go right ahead."""
+
+    @shrinking_from([255] * 100)
+    def shrinker(data):
+        if data.draw_bits(8) == 0:
+            data.mark_invalid()
+
+        def t():
+            data.start_example(10)
+            a = data.draw_bits(8)
+            b = data.draw_bits(8)
+            data.stop_example()
+            if a != b:
+                data.mark_invalid()
+            return a
+
+        a = data.draw_bits(8)
+
+        data.start_example(10)
+
+        b = t()
+        c = t()
+
+        if c == 0 and not (a == 0 and b == 0):
+            return
+
+        if b == 0 and not a == 0:
+            return
+
+        data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["zero_examples"])
+
+    assert list(shrinker.buffer) == [255] + [0] * (len(shrinker.buffer) - 1)
