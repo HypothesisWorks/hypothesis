@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.10.2:
+
+-------------------
+5.10.2 - 2020-04-22
+-------------------
+
+This patch fixes :issue:`2406`, where use of :obj:`pandas:pandas.Timestamp`
+objects as bounds for the :func:`~hypothesis.strategies.datetimes` strategy
+caused an internal error.  This bug was introduced in :ref:`version 5.8.1 <v5.8.2>`.
+
 .. _v5.10.1:
 
 -------------------
