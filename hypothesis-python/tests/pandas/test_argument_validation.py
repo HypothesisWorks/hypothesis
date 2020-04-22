@@ -13,8 +13,13 @@
 #
 # END HEADER
 
+from datetime import datetime
+
+import pandas as pd
+
 import hypothesis.extra.pandas as pdst
 import hypothesis.strategies as st
+from hypothesis import given
 from tests.common.arguments import argument_validation_test, e
 
 BAD_ARGS = [
@@ -69,3 +74,13 @@ BAD_ARGS = [
 
 
 test_raise_invalid_argument = argument_validation_test(BAD_ARGS)
+
+lo, hi = pd.Timestamp(2017, 1, 1), pd.Timestamp(2084, 12, 21)
+
+
+@given(st.datetimes(min_value=lo, max_value=hi))
+def test_timestamp_as_datetime_bounds(dt):
+    # Would have caught https://github.com/HypothesisWorks/hypothesis/issues/2406
+    assert isinstance(dt, datetime)
+    assert lo <= dt <= hi
+    assert not isinstance(dt, pd.Timestamp)

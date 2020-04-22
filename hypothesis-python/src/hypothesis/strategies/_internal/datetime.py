@@ -78,18 +78,15 @@ def datetime_does_not_exist(value):
     return value != roundtrip
 
 
-def draw_capped_multipart(data, min_value, max_value):
+def draw_capped_multipart(
+    data, min_value, max_value, duration_names=DATENAMES + TIMENAMES
+):
     assert isinstance(min_value, (dt.date, dt.time, dt.datetime))
     assert type(min_value) == type(max_value)
     assert min_value <= max_value
     result = {}
     cap_low, cap_high = True, True
-    duration_names_by_type = {
-        dt.date: DATENAMES,
-        dt.time: TIMENAMES,
-        dt.datetime: DATENAMES + TIMENAMES,
-    }
-    for name in duration_names_by_type[type(min_value)]:
+    for name in duration_names:
         low = getattr(min_value if cap_low else dt.datetime.min, name)
         high = getattr(max_value if cap_high else dt.datetime.max, name)
         if name == "day" and not cap_high:
@@ -216,7 +213,7 @@ class TimeStrategy(SearchStrategy):
         self.tz_strat = timezones_strat
 
     def do_draw(self, data):
-        result = draw_capped_multipart(data, self.min_value, self.max_value)
+        result = draw_capped_multipart(data, self.min_value, self.max_value, TIMENAMES)
         tz = data.draw(self.tz_strat)
         return dt.time(**result, tzinfo=tz)
 
@@ -257,7 +254,9 @@ class DateStrategy(SearchStrategy):
         self.max_value = max_value
 
     def do_draw(self, data):
-        return dt.date(**draw_capped_multipart(data, self.min_value, self.max_value))
+        return dt.date(
+            **draw_capped_multipart(data, self.min_value, self.max_value, DATENAMES)
+        )
 
 
 @defines_strategy_with_reusable_values
