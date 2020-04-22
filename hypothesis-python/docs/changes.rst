@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.10.3:
+
+-------------------
+5.10.3 - 2020-04-22
+-------------------
+
+This release reverses the order in which some operations are tried during shrinking.
+This should generally be a slight performance improvement, but most tests are unlikely to notice much difference.
+
 .. _v5.10.2:
 
 -------------------
