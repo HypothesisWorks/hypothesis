@@ -38,6 +38,7 @@ and was used by `more than 4% of Python users surveyed by the PSF in 2018
 * `mariadb-dyncol <https://github.com/adamchainz/mariadb-dyncol>`_
 * `mercurial <https://www.mercurial-scm.org/>`_
 * `natsort <https://github.com/SethMMorton/natsort>`_
+* `poliastro <https://github.com/poliastro/poliastro>`_
 * `pretext <https://github.com/moreati/b-prefix-all-the-doctests>`_
 * `priority <https://github.com/python-hyper/priority>`_
 * `PyCEbox <https://github.com/AustinRochford/PyCEbox>`_
