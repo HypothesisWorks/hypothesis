@@ -125,14 +125,25 @@ if sys.version_info[:2] < (3, 6):
 else:
 
     def get_type_hints(thing):
-        if inspect.isclass(thing) and not hasattr(thing, "__signature__"):
-            if is_typed_named_tuple(thing):
-                # Special handling for typing.NamedTuple
-                return thing._field_types  # type: ignore
-            thing = thing.__init__  # type: ignore
+        """Like the typing version, but tries harder and never errors.
+
+        Tries harder: if the thing to inspect is a class but typing.get_type_hints
+        raises an error or returns no hints, then this function will try calling it
+        on the __init__ method.  This second step often helps with user-defined
+        classes on older versions of Python.
+
+        Never errors: instead of raising TypeError for uninspectable objects, or
+        NameError for unresolvable forward references, just return an empty dict.
+        """
         try:
-            return typing.get_type_hints(thing)
-        except TypeError:
+            hints = typing.get_type_hints(thing)
+        except (TypeError, NameError):
+            hints = {}
+        if hints or not inspect.isclass(thing):
+            return hints
+        try:
+            return typing.get_type_hints(thing.__init__)
+        except (TypeError, NameError, AttributeError):
             return {}
 
 

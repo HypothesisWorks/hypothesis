@@ -13,6 +13,7 @@
 #
 # END HEADER
 
+import dataclasses
 import typing
 
 import pytest
@@ -101,3 +102,14 @@ def test_layered_optional_key_is_optional():
     # Optional keys are not currently supported, as PEP-589 leaves no traces
     # at runtime.  See https://github.com/python/cpython/pull/17214
     find_any(from_type(C), lambda d: "b" not in d)
+
+
+@dataclasses.dataclass()
+class Node:
+    left: typing.Union["Node", int]
+    right: typing.Union["Node", int]
+
+
+@given(st.builds(Node))
+def test_can_resolve_recursive_dataclass(val):
+    assert isinstance(val, Node)
