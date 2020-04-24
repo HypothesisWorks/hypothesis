@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.10.4:
+
+-------------------
+5.10.4 - 2020-04-24
+-------------------
+
+This patch improves the internals of :func:`~hypothesis.strategies.builds` type
+inference, to handle recursive forward references in certain dataclasses.
+This is useful for e.g. :pypi:`hypothesmith`'s forthcoming :pypi:`LibCST` mode.
+
 .. _v5.10.3:
 
 -------------------
