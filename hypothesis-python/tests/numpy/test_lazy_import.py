@@ -15,6 +15,8 @@
 
 from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT
 
+pytest_plugins = "pytester"
+
 SHOULD_NOT_IMPORT_NUMPY = """
 import sys
 from hypothesis import given, strategies as st
