@@ -15,12 +15,12 @@ bandit==1.6.2             # via flake8-bandit
 black==19.10b0            # via -r requirements/tools.in, blacken-docs
 blacken-docs==1.6.0       # via -r requirements/tools.in
 bleach==3.1.4             # via readme-renderer
-certifi==2020.4.5.1       # via pipenv, requests
+certifi==2020.4.5.1       # via requests
 cffi==1.14.0              # via cryptography
 chardet==3.0.4            # via requests
 click==7.1.1              # via black, pip-tools, pyupio, safety
 coverage==5.1             # via -r requirements/tools.in
-cryptography==2.9.2         # via secretstorage
+cryptography==2.9.2       # via secretstorage
 decorator==4.4.2          # via ipython, traitlets
 deprecated==1.2.9         # via pygithub
 distlib==0.3.0            # via virtualenv
@@ -63,7 +63,6 @@ pbr==5.4.5                # via stevedore
 pexpect==4.8.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pip-tools==5.1.0          # via -r requirements/tools.in
-pipenv==2018.11.26        # via dparse
 pkginfo==1.5.0.1          # via twine
 pluggy==0.13.1            # via pytest, tox
 prompt-toolkit==3.0.5     # via ipython
@@ -72,7 +71,7 @@ py==1.8.1                 # via pytest, tox
 pycodestyle==2.5.0        # via flake8, flake8-bandit
 pycparser==2.20           # via cffi
 pydocstyle==5.0.2         # via flake8-docstrings
-pyflakes==2.2.0           # via autoflake, flake8
+pyflakes==2.1.1           # via autoflake, flake8
 pygithub==1.50            # via pyupio
 pygments==2.6.1           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
@@ -114,12 +113,11 @@ twine==3.1.1              # via -r requirements/tools.in
 typed-ast==1.4.1          # via black, mypy
 typing-extensions==3.7.4.2  # via mypy
 urllib3==1.25.9           # via requests
-virtualenv-clone==0.5.4   # via pipenv
-virtualenv==20.0.18       # via pipenv, tox
+virtualenv==20.0.18       # via tox
 wcwidth==0.1.9            # via prompt-toolkit, pytest
 webencodings==0.5.1       # via bleach
 wrapt==1.12.1             # via deprecated
-zipp==3.1.0               # via -r requirements/tools.in, importlib-metadata, importlib-resources
+zipp==1.2.0               # via -r requirements/tools.in, importlib-metadata, importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
