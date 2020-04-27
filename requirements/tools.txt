@@ -26,7 +26,7 @@ deprecated==1.2.9         # via pygithub
 distlib==0.3.0            # via virtualenv
 django==3.0.5             # via -r requirements/tools.in
 docutils==0.16            # via readme-renderer, restructuredtext-lint, sphinx
-dparse==0.5.0             # via pyupio, safety
+dparse==0.5.1             # via pyupio, safety
 dpcontracts==0.6.0        # via -r requirements/tools.in
 entrypoints==0.3          # via flake8
 filelock==3.0.12          # via tox, virtualenv
