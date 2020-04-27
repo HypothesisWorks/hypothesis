@@ -41,7 +41,7 @@ gitpython==3.1.1          # via bandit
 idna==2.9                 # via requests
 imagesize==1.2.0          # via sphinx
 importlib-metadata==1.6.0  # via flake8-comprehensions, importlib-resources, keyring, pluggy, pytest, tox, twine, virtualenv
-importlib-resources==1.4.0  # via virtualenv
+importlib-resources==1.5.0  # via virtualenv
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.13.0           # via -r requirements/tools.in
 isort==4.3.21             # via -r requirements/tools.in
