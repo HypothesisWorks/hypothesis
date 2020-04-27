@@ -20,7 +20,7 @@ cffi==1.14.0              # via cryptography
 chardet==3.0.4            # via requests
 click==7.1.1              # via black, pip-tools, pyupio, safety
 coverage==5.1             # via -r requirements/tools.in
-cryptography==2.9         # via secretstorage
+cryptography==2.9.2         # via secretstorage
 decorator==4.4.2          # via ipython, traitlets
 deprecated==1.2.9         # via pygithub
 distlib==0.3.0            # via virtualenv
