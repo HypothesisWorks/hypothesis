@@ -27,6 +27,10 @@ pip install ".[dpcontracts]"
 $PYTEST tests/dpcontracts/
 pip uninstall -y dpcontracts
 
+pip install typing_extensions
+$PYTEST tests/typing_extensions/
+pip uninstall -y typing_extensions
+
 pip install ".[lark]"
 $PYTEST tests/lark/
 pip install lark-parser==0.7.1

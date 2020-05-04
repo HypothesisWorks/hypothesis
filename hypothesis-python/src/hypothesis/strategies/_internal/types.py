@@ -39,6 +39,11 @@ from hypothesis.strategies._internal.ipaddress import (
 from hypothesis.strategies._internal.lazy import unwrap_strategies
 from hypothesis.strategies._internal.strategies import OneOfStrategy
 
+try:
+    import typing_extensions
+except ImportError:
+    typing_extensions = None  # type: ignore
+
 
 def type_sorting_key(t):
     """Minimise to None, then non-container types, then container types."""
@@ -68,9 +73,13 @@ def is_a_new_type(thing):
     # than an actual type, but we can check whether that thing matches.
     return (
         hasattr(thing, "__supertype__")
-        and hasattr(typing, "NewType")
+        and (
+            hasattr(typing, "NewType")
+            and getattr(thing, "__module__", None) == "typing"
+            or hasattr(typing_extensions, "NewType")
+            and getattr(thing, "__module__", None) == "typing_extensions"
+        )
         and inspect.isfunction(thing)
-        and getattr(thing, "__module__", None) == "typing"
     )
 
 
@@ -87,6 +96,8 @@ def is_typing_literal(thing):
     return (
         hasattr(typing, "Literal")
         and getattr(thing, "__origin__", None) == typing.Literal
+        or hasattr(typing_extensions, "Literal")
+        and getattr(thing, "__origin__", None) == typing_extensions.Literal
     )
 
 
@@ -393,11 +404,11 @@ if hasattr(typing, "SupportsIndex"):  # pragma: no cover  # new in Python 3.8
     _global_type_lookup[typing.SupportsIndex] = st.integers() | st.booleans()  # type: ignore
 
 
-def register(type_, fallback=None):
+def register(type_, fallback=None, *, module=typing):
     if isinstance(type_, str):
         # Use the name of generic types which are not available on all
         # versions, and the function just won't be added to the registry
-        type_ = getattr(typing, type_, None)
+        type_ = getattr(module, type_, None)
         if type_ is None:  # pragma: no cover
             return lambda f: f
 
@@ -419,6 +430,7 @@ def register(type_, fallback=None):
 
 
 @register("Type")
+@register("Type", module=typing_extensions)
 def resolve_Type(thing):
     if getattr(thing, "__args__", None) is None:
         return st.just(type)
@@ -488,6 +500,7 @@ def resolve_Dict(thing):
 
 
 @register("DefaultDict", st.builds(collections.defaultdict))
+@register("DefaultDict", st.builds(collections.defaultdict), module=typing_extensions)
 def resolve_DefaultDict(thing):
     return resolve_Dict(thing).map(lambda d: collections.defaultdict(None, d))
 
