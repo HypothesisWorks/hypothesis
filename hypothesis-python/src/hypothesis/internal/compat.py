@@ -222,21 +222,12 @@ def ceil(x):
     return y
 
 
-try:
-    from django.test import TransactionTestCase
-
-    def bad_django_TestCase(runner):
-        if runner is None:
-            return False
-        if not isinstance(runner, TransactionTestCase):
-            return False
-
-        from hypothesis.extra.django._impl import HypothesisTestCase
-
-        return not isinstance(runner, HypothesisTestCase)
-
-
-except Exception:
-    # Can't use ImportError, because of e.g. Django config errors
-    def bad_django_TestCase(runner):
+def bad_django_TestCase(runner):
+    if runner is None or "django.test" not in sys.modules:
         return False
+    if not isinstance(runner, sys.modules["django.test"].TransactionTestCase):
+        return False
+
+    from hypothesis.extra.django._impl import HypothesisTestCase
+
+    return not isinstance(runner, HypothesisTestCase)
