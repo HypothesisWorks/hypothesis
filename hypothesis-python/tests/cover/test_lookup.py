@@ -139,27 +139,22 @@ def test_specialised_collection_types(typ, coll_type, instance_of):
 def test_36_specialised_collection_types():
     @given(from_type(typing.DefaultDict[int, int]))
     def inner(ex):
-        if sys.version_info[:2] >= (3, 6):
-            assume(ex)
         assert isinstance(ex, collections.defaultdict)
+        assume(ex)
         assert all(isinstance(elem, int) for elem in ex)
         assert all(isinstance(elem, int) for elem in ex.values())
 
     inner()
 
 
-@pytest.mark.skipif(sys.version_info[:3] <= (3, 5, 1), reason="broken")
-def test_ItemsView():
-    @given(from_type(typing.ItemsView[int, int]))
-    def inner(ex):
-        # See https://github.com/python/typing/issues/177
-        if sys.version_info[:2] >= (3, 6):
-            assume(ex)
-        assert isinstance(ex, type({}.items()))
-        assert all(isinstance(elem, tuple) and len(elem) == 2 for elem in ex)
-        assert all(all(isinstance(e, int) for e in elem) for elem in ex)
-
-    inner()
+@given(from_type(typing.ItemsView[int, int]))
+def test_ItemsView(ex):
+    # See https://github.com/python/typing/issues/177
+    if sys.version_info[:2] >= (3, 6):
+        assume(ex)
+    assert isinstance(ex, type({}.items()))
+    assert all(isinstance(elem, tuple) and len(elem) == 2 for elem in ex)
+    assert all(all(isinstance(e, int) for e in elem) for elem in ex)
 
 
 def test_Optional_minimises_to_None():
@@ -177,7 +172,6 @@ def test_variable_length_tuples(n):
         raise
 
 
-@pytest.mark.skipif(sys.version_info[:3] <= (3, 5, 1), reason="broken")
 def test_lookup_overrides_defaults():
     sentinel = object()
     try:
@@ -642,8 +636,10 @@ def test_timezone_lookup(type_):
         typing.Dict[typing.Hashable, int],
     ],
 )
-def test_generic_collections_only_use_hashable_elements(typ):
-    assert_all_examples(from_type(typ), lambda x: True)
+@settings(suppress_health_check=[HealthCheck.data_too_large])
+@given(data=st.data())
+def test_generic_collections_only_use_hashable_elements(typ, data):
+    data.draw(from_type(typ))
 
 
 def test_hashable_type_unhashable_value():
