@@ -18,9 +18,18 @@ from unittest import TestCase
 
 import pytest
 
-from hypothesis import Phase, Verbosity, example, given, note, reporting, settings
+from hypothesis import (
+    Phase,
+    Verbosity,
+    assume,
+    example,
+    given,
+    note,
+    reporting,
+    settings,
+)
 from hypothesis.errors import DeadlineExceeded, InvalidArgument
-from hypothesis.strategies import integers, nothing, text
+from hypothesis.strategies import floats, integers, nothing, text
 from tests.common.utils import assert_falsifying_output, capture_out
 
 
@@ -228,3 +237,12 @@ def test_runs_deadline_for_examples():
 
     with pytest.raises(DeadlineExceeded):
         test()
+
+
+@given(value=floats(0, 1))
+@example(value=0.56789)
+@pytest.mark.parametrize("threshold", [0.5, 1])
+def test_unsatisfied_assumption_during_explicit_example(threshold, value):
+    # Regression test, expected to pass / skip depending on parametrize.
+    # See https://github.com/HypothesisWorks/hypothesis/issues/2125
+    assume(value < threshold)
