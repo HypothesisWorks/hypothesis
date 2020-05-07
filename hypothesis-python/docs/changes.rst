@@ -10,6 +10,25 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.11.0:
+
+-------------------
+5.11.0 - 2020-05-07
+-------------------
+
+This release improves the interaction between :func:`~hypothesis.assume`
+and the :func:`@example() <hypothesis.example>` decorator, so that the
+following test no longer fails with ``UnsatisfiedAssumption`` (:issue:`2125`):
+
+.. code-block:: python
+
+    @given(value=floats(0, 1))
+    @example(value=0.56789)  # used to make the test fail!
+    @pytest.mark.parametrize("threshold", [0.5, 1])
+    def test_foo(threshold, value):
+        assume(value < threshold)
+        ...
+
 .. _v5.10.5:
 
 -------------------
