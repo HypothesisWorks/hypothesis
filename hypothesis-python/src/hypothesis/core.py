@@ -347,6 +347,13 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs):
                         is_final=True,
                         print_example=True,
                     )
+            except UnsatisfiedAssumption:
+                # Odd though it seems, we deliberately support explicit examples that
+                # are then rejected by a call to `assume()`.  As well as iterative
+                # development, this is rather useful to replay Hypothesis' part of
+                # a saved failure when other arguments are supplied by e.g. pytest.
+                # See https://github.com/HypothesisWorks/hypothesis/issues/2125
+                pass
             except BaseException:
                 report_buffered()
                 raise
