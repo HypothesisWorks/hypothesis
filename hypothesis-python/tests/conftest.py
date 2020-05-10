@@ -20,6 +20,8 @@ import time as time_module
 
 import pytest
 
+from hypothesis import core as core_module
+from hypothesis.internal.conjecture import data as data_module, engine as engine_module
 from hypothesis.internal.detection import is_hypothesis_test
 from tests.common import TIME_INCREMENT
 from tests.common.setup import run
@@ -73,8 +75,13 @@ def consistently_increment_time(monkeypatch):
 
     monkeypatch.setattr(time_module, "time", time)
     monkeypatch.setattr(time_module, "monotonic", time)
+    monkeypatch.setattr(time_module, "perf_counter", time)
     monkeypatch.setattr(time_module, "sleep", sleep)
     monkeypatch.setattr(time_module, "freeze", freeze, raising=False)
+    # Also monkeypatch the modules which "from time import perf_counter"
+    monkeypatch.setattr(core_module, "perf_counter", time)
+    monkeypatch.setattr(data_module, "perf_counter", time)
+    monkeypatch.setattr(engine_module, "perf_counter", time)
 
 
 random_states_after_tests = {}
