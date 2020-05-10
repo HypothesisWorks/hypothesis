@@ -23,7 +23,7 @@ from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.detection import is_hypothesis_test
 from hypothesis.reporting import default as default_reporter, with_reporter
-from hypothesis.statistics import collector
+from hypothesis.statistics import collector, describe_statistics
 
 LOAD_PROFILE_OPTION = "--hypothesis-profile"
 VERBOSITY_OPTION = "--hypothesis-verbosity"
@@ -177,8 +177,8 @@ else:
             store = StoringReporter(item.config)
 
             def note_statistics(stats):
-                lines = [item.nodeid + ":", ""] + stats.get_description() + [""]
-                item.hypothesis_statistics = lines
+                stats["nodeid"] = item.nodeid
+                item.hypothesis_statistics = describe_statistics(stats)
 
             with collector.with_value(note_statistics):
                 with with_reporter(store):
@@ -205,10 +205,9 @@ else:
         # always be the key for a list of _pytest.reports.TestReport objects
         # (where we stored the statistics data in pytest_runtest_makereport above)
         for test_report in terminalreporter.stats.get("", []):
-            for name, lines in test_report.user_properties:
+            for name, value in test_report.user_properties:
                 if name == "hypothesis-stats" and test_report.when == "teardown":
-                    for li in lines:
-                        terminalreporter.write_line(li)
+                    terminalreporter.write_line(value + "\n\n")
 
     def pytest_collection_modifyitems(items):
         for item in items:

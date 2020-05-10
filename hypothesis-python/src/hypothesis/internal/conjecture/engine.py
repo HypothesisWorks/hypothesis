@@ -13,7 +13,9 @@
 #
 # END HEADER
 
-from collections import Counter, defaultdict
+import math
+from collections import defaultdict
+from contextlib import contextmanager
 from enum import Enum
 from random import Random, getrandbits
 from time import perf_counter
@@ -90,14 +92,14 @@ class ConjectureRunner:
         self.shrinks = 0
         self.finish_shrinking_deadline = None
         self.call_count = 0
-        self.event_call_counts = Counter()
         self.valid_examples = 0
         self.random = random or Random(getrandbits(128))
         self.database_key = database_key
-        self.status_runtimes = {}
 
-        self.all_drawtimes = []
-        self.all_runtimes = []
+        # Global dict of per-phase statistics, and a list of per-call stats
+        # which transfer to the global dict at the end of each phase.
+        self.statistics = {}
+        self.stats_per_test_case = []
 
         self.events_to_strings = WeakKeyDictionary()
 
@@ -130,6 +132,20 @@ class ConjectureRunner:
         # shrinking where we need to know about the structure of the
         # executed test case.
         self.__data_cache = LRUReusedCache(CACHE_SIZE)
+
+    @contextmanager
+    def _log_phase_statistics(self, phase):
+        self.stats_per_test_case.clear()
+        start_time = perf_counter()
+        try:
+            yield
+        finally:
+            self.statistics[phase + "-phase"] = {
+                "duration-seconds": perf_counter() - start_time,
+                "test-cases": list(self.stats_per_test_case),
+                "distinct-failures": len(self.interesting_examples),
+                "shrinks-successful": self.shrinks,
+            }
 
     @property
     def should_optimise(self):
@@ -173,7 +189,14 @@ class ConjectureRunner:
             # the KeyboardInterrupt, never continue to the code below.
             if not interrupted:  # pragma: no branch
                 data.freeze()
-                self.note_details(data)
+                call_stats = {
+                    "status": data.status.name.lower(),
+                    "runtime": data.finish_time - data.start_time,
+                    "drawtime": math.fsum(data.draw_times),
+                    "events": sorted({self.event_to_string(e) for e in data.events}),
+                }
+                self.stats_per_test_case.append(call_stats)
+                self.__data_cache[data.buffer] = data.as_result()
 
         self.debug_data(data)
 
@@ -386,15 +409,6 @@ class ConjectureRunner:
     def pareto_key(self):
         return self.sub_key(b"pareto")
 
-    def note_details(self, data):
-        self.__data_cache[data.buffer] = data.as_result()
-        runtime = max(data.finish_time - data.start_time, 0.0)
-        self.all_runtimes.append(runtime)
-        self.all_drawtimes.extend(data.draw_times)
-        self.status_runtimes.setdefault(data.status, []).append(runtime)
-        for event in set(map(self.event_to_string, data.events)):
-            self.event_call_counts[event] += 1
-
     def debug(self, message):
         if self.settings.verbosity >= Verbosity.debug:
             base_report(message)
@@ -525,6 +539,9 @@ class ConjectureRunner:
                         break
 
     def exit_with(self, reason):
+        self.statistics["stopped-because"] = reason.describe(self.settings)
+        if self.best_observed_targets:
+            self.statistics["targets"] = dict(self.best_observed_targets)
         self.debug("exit_with(%s)" % (reason.name,))
         self.exit_reason = reason
         raise RunIsComplete()
@@ -834,15 +851,17 @@ class ConjectureRunner:
             ParetoOptimiser(self).run()
 
     def _run(self):
-        self.reuse_existing_examples()
-        self.generate_new_examples()
-
-        # We normally run the targeting phase mixed in with the generate phase,
-        # but if we've been asked to run it but not generation then we have to
-        # run it explciitly on its own here.
-        if Phase.generate not in self.settings.phases:
-            self.optimise_targets()
-        self.shrink_interesting_examples()
+        with self._log_phase_statistics("reuse"):
+            self.reuse_existing_examples()
+        with self._log_phase_statistics("generate"):
+            self.generate_new_examples()
+            # We normally run the targeting phase mixed in with the generate phase,
+            # but if we've been asked to run it but not generation then we have to
+            # run it explciitly on its own here.
+            if Phase.generate not in self.settings.phases:
+                self.optimise_targets()
+        with self._log_phase_statistics("shrink"):
+            self.shrink_interesting_examples()
         self.exit_with(ExitReason.finished)
 
     def new_conjecture_data(self, prefix, max_length=BUFFER_SIZE, observer=None):

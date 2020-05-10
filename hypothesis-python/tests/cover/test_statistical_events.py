@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-import re
 import time
 import traceback
 
@@ -30,24 +29,22 @@ from hypothesis import (
     strategies as st,
     target,
 )
-from hypothesis.internal.conjecture.data import Status
-from hypothesis.internal.conjecture.engine import ConjectureRunner, ExitReason
-from hypothesis.statistics import Statistics, collector
+from hypothesis.statistics import collector, describe_statistics
 
 
 def call_for_statistics(test_function):
-    result = [None]
-
-    def callback(statistics):
-        result[0] = statistics
-
-    with collector.with_value(callback):
+    result = []
+    with collector.with_value(result.append):
         try:
             test_function()
         except Exception:
             traceback.print_exc()
-    assert result[0] is not None
+    assert len(result) == 1, result
     return result[0]
+
+
+def unique_events(stats):
+    return set(sum((t["events"] for t in stats["generate-phase"]["test-cases"]), []))
 
 
 def test_notes_hard_to_satisfy():
@@ -57,7 +54,7 @@ def test_notes_hard_to_satisfy():
         assume(i == 13)
 
     stats = call_for_statistics(test)
-    assert "satisfied assumptions" in stats.exit_reason
+    assert "satisfied assumptions" in stats["stopped-because"]
 
 
 def test_can_callback_with_a_string():
@@ -66,8 +63,7 @@ def test_can_callback_with_a_string():
         event("hi")
 
     stats = call_for_statistics(test)
-
-    assert any("hi" in s for s in stats.events)
+    assert any("hi" in s for s in unique_events(stats))
 
 
 counter = 0
@@ -100,9 +96,8 @@ def test_formats_are_evaluated_only_once():
         event(Foo())
 
     stats = call_for_statistics(test)
-
-    assert any("COUNTER 1" in s for s in stats.events)
-    assert not any("COUNTER 2" in s for s in stats.events)
+    assert "COUNTER 1" in unique_events(stats)
+    assert "COUNTER 2" not in unique_events(stats)
 
 
 def test_does_not_report_on_examples():
@@ -113,7 +108,7 @@ def test_does_not_report_on_examples():
             event("boo")
 
     stats = call_for_statistics(test)
-    assert not any("boo" in e for e in stats.events)
+    assert not unique_events(stats)
 
 
 def test_exact_timing():
@@ -122,8 +117,8 @@ def test_exact_timing():
     def test(i):
         time.sleep(0.5)
 
-    stats = call_for_statistics(test)
-    assert re.match(r"(~ |\d+-)5\d\dms", stats.runtimes) is not None, stats.runtimes
+    stats = describe_statistics(call_for_statistics(test))
+    assert "~ 529ms" in stats
 
 
 def test_apparently_instantaneous_tests():
@@ -133,8 +128,8 @@ def test_apparently_instantaneous_tests():
     def test(i):
         pass
 
-    stats = call_for_statistics(test)
-    assert stats.runtimes == "< 1ms"
+    stats = describe_statistics(call_for_statistics(test))
+    assert "< 1ms" in stats
 
 
 def test_flaky_exit():
@@ -150,7 +145,7 @@ def test_flaky_exit():
                 assert False
 
     stats = call_for_statistics(test)
-    assert stats.exit_reason == "test was flaky"
+    assert stats["stopped-because"] == "test was flaky"
 
 
 @pytest.mark.parametrize("draw_delay", [False, True])
@@ -168,13 +163,13 @@ def test_draw_time_percentage(draw_delay, test_delay):
         if test_delay:
             time.sleep(0.05)
 
-    stats = call_for_statistics(test)
+    stats = describe_statistics(call_for_statistics(test))
     if not draw_delay:
-        assert stats.draw_time_percentage == "~ 0%"
+        assert "~ 0%" in stats
     elif test_delay:
-        assert stats.draw_time_percentage == "~ 50%"
+        assert "~ 50%" in stats
     else:
-        assert stats.draw_time_percentage == "~ 100%"
+        assert "~ 100%" in stats
 
 
 def test_has_lambdas_in_output():
@@ -184,7 +179,7 @@ def test_has_lambdas_in_output():
         pass
 
     stats = call_for_statistics(test)
-    assert any("lambda x: x % 2 == 0" in e for e in stats.events)
+    assert any("lambda x: x % 2 == 0" in e for e in unique_events(stats))
 
 
 def test_stops_after_x_shrinks(monkeypatch):
@@ -199,22 +194,7 @@ def test_stops_after_x_shrinks(monkeypatch):
         assert n < 10
 
     stats = call_for_statistics(test)
-    assert "shrunk example" in stats.exit_reason
-
-
-@pytest.mark.parametrize("drawtime,runtime", [(1, 0), (-1, 0), (0, -1), (-1, -1)])
-def test_weird_drawtime_issues(drawtime, runtime):
-    # Regression test for #1346, where we don't have the expected relationship
-    # 0<=drawtime<= runtime due to changing clocks or floating-point issues.
-    engine = ConjectureRunner(lambda: None)
-    engine.exit_reason = ExitReason.finished
-    engine.status_runtimes[Status.VALID] = [0]
-
-    engine.all_drawtimes.append(drawtime)
-    engine.all_runtimes.extend([0, runtime])
-
-    stats = Statistics(engine)
-    assert stats.draw_time_percentage == "NaN"
+    assert "shrunk example" in stats["stopped-because"]
 
 
 def test_stateful_states_are_deduped():
@@ -230,7 +210,7 @@ def test_stateful_states_are_deduped():
             return
 
     stats = call_for_statistics(DemoStateMachine.TestCase().runTest)
-    assert len(stats.events) <= 2
+    assert len(unique_events(stats)) <= 2
 
 
 def test_stateful_with_one_of_bundles_states_are_deduped():
@@ -252,7 +232,7 @@ def test_stateful_with_one_of_bundles_states_are_deduped():
             return
 
     stats = call_for_statistics(DemoStateMachine.TestCase().runTest)
-    assert len(stats.events) <= 4
+    assert len(unique_events(stats)) <= 4
 
 
 def test_statistics_for_threshold_problem():
@@ -264,7 +244,18 @@ def test_statistics_for_threshold_problem():
         target(0.0, label="never in failing example")
 
     stats = call_for_statistics(threshold)
-    assert "  - Highest target scores:" in stats.get_description()
-    assert "never in failing example" in stats.targets
+    assert "  - Highest target scores:" in describe_statistics(stats)
+    assert "never in failing example" in describe_statistics(stats)
     # Check that we report far-from-threshold failing examples
-    assert stats.targets["error"] > 1
+    assert stats["targets"]["error"] > 10
+
+
+def test_statistics_with_events_and_target():
+    @given(st.sampled_from("1234"))
+    def test(value):
+        event(value)
+        target(float(value), label="a target")
+
+    stats = describe_statistics(call_for_statistics(test))
+    assert "- Events:" in stats
+    assert "- Highest target score: " in stats

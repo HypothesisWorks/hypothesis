@@ -72,11 +72,9 @@ You would see:
 
 .. code-block:: none
 
-  test_integers:
-
-    - 100 passing examples, 0 failing examples, 0 invalid examples
-    - Typical runtimes: ~ 1ms
-    - Fraction of time spent in data generation: ~ 12%
+    - during generate phase (0.06 seconds):
+        - Typical runtimes: < 1ms, ~ 47% in data generation
+        - 100 passing examples, 0 failing examples, 0 invalid examples
     - Stopped because settings.max_examples=100
 
 The final "Stopped because" line is particularly important to note: It tells you the
@@ -102,13 +100,13 @@ You would see something like:
 
   test_even_integers:
 
-      - 100 passing examples, 0 failing examples, 36 invalid examples
-      - Typical runtimes: 0-1 ms
-      - Fraction of time spent in data generation: ~ 16%
-      - Stopped because settings.max_examples=100
-      - Events:
-        * 80.88%, Retried draw from integers().filter(lambda x: <unknown>) to satisfy filter
-        * 26.47%, Aborted test because unable to satisfy integers().filter(lambda x: <unknown>)
+    - during generate phase (0.08 seconds):
+        - Typical runtimes: < 1ms, ~ 57% in data generation
+        - 100 passing examples, 0 failing examples, 12 invalid examples
+        - Events:
+          * 51.79%, Retried draw from integers().filter(lambda x: x % 2 == 0) to satisfy filter
+          * 10.71%, Aborted test because unable to satisfy integers().filter(lambda x: x % 2 == 0)
+    - Stopped because settings.max_examples=100
 
 You can also mark custom events in a test using the ``event`` function:
 
@@ -130,16 +128,16 @@ You will then see output like:
 
   test_even_integers:
 
-    - 100 passing examples, 0 failing examples, 38 invalid examples
-    - Typical runtimes: 0-1 ms
-    - Fraction of time spent in data generation: ~ 16%
+    - during generate phase (0.09 seconds):
+        - Typical runtimes: < 1ms, ~ 59% in data generation
+        - 100 passing examples, 0 failing examples, 32 invalid examples
+        - Events:
+          * 54.55%, Retried draw from integers().filter(lambda x: x % 2 == 0) to satisfy filter
+          * 31.06%, i mod 3 = 2
+          * 28.79%, i mod 3 = 0
+          * 24.24%, Aborted test because unable to satisfy integers().filter(lambda x: x % 2 == 0)
+          * 15.91%, i mod 3 = 1
     - Stopped because settings.max_examples=100
-    - Events:
-      * 80.43%, Retried draw from integers().filter(lambda x: <unknown>) to satisfy filter
-      * 31.88%, i mod 3 = 0
-      * 27.54%, Aborted test because unable to satisfy integers().filter(lambda x: <unknown>)
-      * 21.74%, i mod 3 = 1
-      * 18.84%, i mod 3 = 2
 
 Arguments to ``event`` can be any hashable type, but two events will be considered the same
 if they are the same when converted to a string with :obj:`python:str`.
