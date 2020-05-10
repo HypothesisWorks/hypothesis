@@ -35,6 +35,7 @@ from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.internal.entropy import deterministic_PRNG
+from hypothesis.statistics import Statistics
 from tests.common.strategies import SLOW, HardToShrink
 from tests.common.utils import no_shrink
 from tests.conjecture.common import (
@@ -776,6 +777,24 @@ def test_exit_because_max_iterations():
 
     assert runner.call_count <= 1000
     assert runner.exit_reason == ExitReason.max_iterations
+
+
+def test_exit_because_shrink_phase_timeout(monkeypatch):
+    val = [0]
+
+    def fast_time():
+        val[0] += 1000
+        return val[0]
+
+    def f(data):
+        if data.draw_bits(64) > 2 ** 33:
+            data.mark_interesting()
+
+    monkeypatch.setattr(engine_module, "perf_counter", fast_time)
+    runner = ConjectureRunner(f, settings=settings(database=None))
+    runner.run()
+    assert runner.exit_reason == ExitReason.very_slow_shrinking
+    assert Statistics(runner).exit_reason == "shrinking was very slow"
 
 
 def test_dependent_block_pairs_can_lower_to_zero():

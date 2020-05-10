@@ -16,6 +16,7 @@
 from collections import Counter, defaultdict
 from enum import Enum
 from random import Random, getrandbits
+from time import perf_counter
 from weakref import WeakKeyDictionary
 
 import attr
@@ -41,7 +42,7 @@ from hypothesis.internal.conjecture.junkdrawer import clamp
 from hypothesis.internal.conjecture.pareto import NO_SCORE, ParetoFront, ParetoOptimiser
 from hypothesis.internal.conjecture.shrinker import Shrinker, sort_key
 from hypothesis.internal.healthcheck import fail_health_check
-from hypothesis.reporting import base_report
+from hypothesis.reporting import base_report, report
 
 # Tell pytest to omit the body of this module from tracebacks
 # https://docs.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
@@ -72,6 +73,7 @@ class ExitReason(Enum):
     max_shrinks = "shrunk example %s times" % (MAX_SHRINKS,)
     finished = "nothing left to do"
     flaky = "test was flaky"
+    very_slow_shrinking = "shrinking was very slow"
 
     def describe(self, settings):
         return self.value.format(s=settings)
@@ -86,6 +88,7 @@ class ConjectureRunner:
         self._test_function = test_function
         self.settings = settings or Settings()
         self.shrinks = 0
+        self.finish_shrinking_deadline = None
         self.call_count = 0
         self.event_call_counts = Counter()
         self.valid_examples = 0
@@ -226,6 +229,21 @@ class ConjectureRunner:
 
             if self.shrinks >= MAX_SHRINKS:
                 self.exit_with(ExitReason.max_shrinks)
+
+        if (
+            self.finish_shrinking_deadline is not None
+            and self.finish_shrinking_deadline < perf_counter()
+        ):
+            # See https://github.com/HypothesisWorks/hypothesis/issues/2340
+            report(
+                "WARNING: Hypothesis has spent more than five minutes working to shrink "
+                "a failing example, and stopped because it is making very slow "
+                "progress.  When you re-run your tests, shrinking will resume and "
+                "may take this long before aborting again.\n"
+                "PLEASE REPORT THIS if you can provide a reproducing example, so that "
+                "we can improve shrinking performance for everyone."
+            )
+            self.exit_with(ExitReason.very_slow_shrinking)
 
         if not self.interesting_examples:
             # Note that this logic is reproduced to end the generation phase when
@@ -849,6 +867,12 @@ class ConjectureRunner:
             return
 
         self.debug("Shrinking interesting examples")
+
+        # If the shrinking phase takes more than five minutes, abort it early and print
+        # a warning.   Many CI systems will kill a build after around ten minutes with
+        # no output, and appearing to hang isn't great for interactive use either -
+        # showing partially-shrunk examples is better than quitting with no examples!
+        self.finish_shrinking_deadline = perf_counter() + 300
 
         for prev_data in sorted(
             self.interesting_examples.values(), key=lambda d: sort_key(d.buffer)
