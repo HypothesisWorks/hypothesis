@@ -18,7 +18,6 @@ import importlib
 import inspect
 import platform
 import sys
-import time
 import typing
 
 PYPY = platform.python_implementation() == "PyPy"
@@ -48,10 +47,6 @@ def int_to_bytes(i, size):
 
 def int_to_byte(i):
     return bytes([i])
-
-
-def benchmark_time():
-    return time.monotonic()
 
 
 def a_good_encoding():

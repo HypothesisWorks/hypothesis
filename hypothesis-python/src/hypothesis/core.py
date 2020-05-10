@@ -28,6 +28,7 @@ import zlib
 from inspect import getfullargspec
 from io import StringIO
 from random import Random
+from time import perf_counter
 from typing import Any, BinaryIO, Callable, Hashable, List, Optional, TypeVar, Union
 from unittest import TestCase
 
@@ -59,7 +60,6 @@ from hypothesis.errors import (
 from hypothesis.executors import new_style_executor
 from hypothesis.internal.compat import (
     bad_django_TestCase,
-    benchmark_time,
     get_type_hints,
     int_from_bytes,
     qualname,
@@ -527,9 +527,9 @@ class StateForActualGivenExecution:
             def test(*args, **kwargs):
                 self.__test_runtime = None
                 initial_draws = len(data.draw_times)
-                start = benchmark_time()
+                start = perf_counter()
                 result = self.test(*args, **kwargs)
-                finish = benchmark_time()
+                finish = perf_counter()
                 internal_draw_time = sum(data.draw_times[initial_draws:])
                 runtime = datetime.timedelta(
                     seconds=finish - start - internal_draw_time

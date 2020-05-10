@@ -16,7 +16,6 @@
 import math
 
 from hypothesis.internal.conjecture.data import Status
-from hypothesis.internal.conjecture.engine import MAX_SHRINKS, ExitReason
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 collector = DynamicVariable(None)
@@ -52,22 +51,7 @@ class Statistics:
         else:
             self.runtimes = "%d-%d ms" % (lower, upper)
 
-        if engine.exit_reason == ExitReason.finished:
-            self.exit_reason = "nothing left to do"
-        elif engine.exit_reason == ExitReason.flaky:
-            self.exit_reason = "test was flaky"
-        elif engine.exit_reason == ExitReason.max_shrinks:
-            self.exit_reason = "shrunk example %s times" % (MAX_SHRINKS,)
-        elif engine.exit_reason == ExitReason.max_iterations:
-            self.exit_reason = (
-                "settings.max_examples={}, but < 10% of examples satisfied "
-                "assumptions"
-            ).format(engine.settings.max_examples)
-        else:
-            self.exit_reason = "settings.%s=%r" % (
-                engine.exit_reason.name,
-                getattr(engine.settings, engine.exit_reason.name),
-            )
+        self.exit_reason = engine.exit_reason.describe(engine.settings)
 
         self.events = [
             "%6.2f%%, %s" % (c / engine.call_count * 100, e)
