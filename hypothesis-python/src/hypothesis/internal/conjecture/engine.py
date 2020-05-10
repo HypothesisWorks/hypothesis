@@ -64,11 +64,17 @@ class HealthCheckState:
 
 
 class ExitReason(Enum):
-    max_examples = 0
-    max_iterations = 1
-    max_shrinks = 3
-    finished = 4
-    flaky = 5
+    max_examples = "settings.max_examples={s.max_examples}"
+    max_iterations = (
+        "settings.max_examples={s.max_examples}, "
+        "but < 10% of examples satisfied assumptions"
+    )
+    max_shrinks = "shrunk example %s times" % (MAX_SHRINKS,)
+    finished = "nothing left to do"
+    flaky = "test was flaky"
+
+    def describe(self, settings):
+        return self.value.format(s=settings)
 
 
 class RunIsComplete(Exception):
