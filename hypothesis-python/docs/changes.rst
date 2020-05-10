@@ -10,6 +10,19 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.12.0:
+
+-------------------
+5.12.0 - 2020-05-10
+-------------------
+
+This release limits the maximum duration of the shrinking phase to five minutes,
+so that Hypothesis does not appear to hang when making very slow progress
+shrinking a failing example (:issue:`2340`).
+
+If one of your tests triggers this logic, we would really appreciate a bug
+report to help us improve the shrinker for difficult but realistic workloads.
+
 .. _v5.11.0:
 
 -------------------
