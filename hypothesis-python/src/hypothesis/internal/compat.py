@@ -93,8 +93,7 @@ def is_typed_named_tuple(cls):
         issubclass(cls, tuple)
         and hasattr(cls, "_fields")
         and (hasattr(cls, "_field_types")
-            or hasattr(cls, "__annotations__")
-            )
+             or hasattr(cls, "__annotations__"))
     )
 
 
