@@ -444,21 +444,39 @@ def _can_hash(val):
         return False
 
 
+# Some types are subclasses of typing.Hashable, because they define a __hash__
+# method, but have non-hashable instances such as `Decimal("snan")` or may contain
+# such instances (e.g. `FrozenSet[Decimal]`).  We therefore keep this whitelist of
+# types which are always hashable, and apply the `_can_hash` filter to all others.
+# Our goal is not completeness, it's to get a small performance boost for the most
+# common cases, and a short whitelist is basically free to maintain.
+ALWAYS_HASHABLE_TYPES = {type(None), bool, int, float, complex, str, bytes}
+
+
+def _from_hashable_type(type_):
+    if type_ in ALWAYS_HASHABLE_TYPES:
+        return st.from_type(type_)
+    else:
+        return st.from_type(type_).filter(_can_hash)
+
+
 @register(typing.Set, st.builds(set))
 def resolve_Set(thing):
-    return st.sets(st.from_type(thing.__args__[0]).filter(_can_hash))
+    return st.sets(_from_hashable_type(thing.__args__[0]))
 
 
 @register(typing.FrozenSet, st.builds(frozenset))
 def resolve_FrozenSet(thing):
-    return st.frozensets(st.from_type(thing.__args__[0]).filter(_can_hash))
+    return st.frozensets(_from_hashable_type(thing.__args__[0]))
 
 
 @register(typing.Dict, st.builds(dict))
 def resolve_Dict(thing):
     # If thing is a Collection instance, we need to fill in the values
-    keys_vals = [st.from_type(t) for t in thing.__args__] * 2
-    return st.dictionaries(keys_vals[0].filter(_can_hash), keys_vals[1])
+    keys_vals = thing.__args__ * 2
+    return st.dictionaries(
+        _from_hashable_type(keys_vals[0]), st.from_type(keys_vals[1])
+    )
 
 
 @register("DefaultDict", st.builds(collections.defaultdict))
@@ -473,9 +491,9 @@ def resolve_ItemsView(thing):
 
 @register(typing.KeysView, st.builds(dict).map(dict.keys))
 def resolve_KeysView(thing):
-    return st.dictionaries(
-        st.from_type(thing.__args__[0]).filter(_can_hash), st.none()
-    ).map(dict.keys)
+    return st.dictionaries(_from_hashable_type(thing.__args__[0]), st.none()).map(
+        dict.keys
+    )
 
 
 @register(typing.ValuesView, st.builds(dict).map(dict.values))
