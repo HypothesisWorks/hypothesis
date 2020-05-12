@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.12.2:
+
+-------------------
+5.12.2 - 2020-05-12
+-------------------
+
+This patch teaches the :func:`~hypothesis.strategies.from_type` internals to
+return slightly more efficient strategies for some generic sets and mappings.
+
 .. _v5.12.1:
 
 -------------------
