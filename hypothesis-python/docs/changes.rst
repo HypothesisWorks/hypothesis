@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.12.1:
+
+-------------------
+5.12.1 - 2020-05-12
+-------------------
+
+This patch adds a ``# noqa`` comment for :pypi:`flake8` 3.8.0, which
+disagrees with :pypi:`mypy` about how to write the type of ``...``.
+
 .. _v5.12.0:
 
 -------------------
