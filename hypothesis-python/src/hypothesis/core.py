@@ -89,7 +89,7 @@ from hypothesis.reporting import (
     verbose_report,
     with_reporter,
 )
-from hypothesis.statistics import describe_targets, note_engine_for_statistics
+from hypothesis.statistics import describe_targets, note_statistics
 from hypothesis.strategies._internal.collections import TupleStrategy
 from hypothesis.strategies._internal.strategies import (
     Ex,
@@ -730,7 +730,7 @@ class StateForActualGivenExecution:
         # Use the Conjecture engine to run the test function many times
         # on different inputs.
         runner.run()
-        note_engine_for_statistics(runner)
+        note_statistics(runner.statistics)
 
         if runner.call_count == 0:
             return

@@ -35,7 +35,6 @@ from hypothesis.internal.conjecture.pareto import DominanceRelation, dominance
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.internal.entropy import deterministic_PRNG
-from hypothesis.statistics import Statistics
 from tests.common.strategies import SLOW, HardToShrink
 from tests.common.utils import no_shrink
 from tests.conjecture.common import (
@@ -436,17 +435,6 @@ class Foo:
         return "stuff"
 
 
-@pytest.mark.parametrize("event", ["hi", Foo()])
-def test_note_events(event):
-    def f(data):
-        data.note_event(event)
-        data.draw_bytes(1)
-
-    runner = ConjectureRunner(f)
-    runner.run()
-    assert runner.event_call_counts[str(event)] == runner.call_count > 0
-
-
 def test_debug_data(capsys):
     buf = [0, 1, 2]
 
@@ -794,7 +782,7 @@ def test_exit_because_shrink_phase_timeout(monkeypatch):
     runner = ConjectureRunner(f, settings=settings(database=None))
     runner.run()
     assert runner.exit_reason == ExitReason.very_slow_shrinking
-    assert Statistics(runner).exit_reason == "shrinking was very slow"
+    assert runner.statistics["stopped-because"] == "shrinking was very slow"
 
 
 def test_dependent_block_pairs_can_lower_to_zero():

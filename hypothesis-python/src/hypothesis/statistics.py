@@ -14,89 +14,18 @@
 # END HEADER
 
 import math
+import statistics
+from collections import Counter
 
-from hypothesis.internal.conjecture.data import Status
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 collector = DynamicVariable(None)
 
 
-class Statistics:
-    def __init__(self, engine):
-        self.passing_examples = len(engine.status_runtimes.get(Status.VALID, ()))
-        self.invalid_examples = len(
-            engine.status_runtimes.get(Status.INVALID, [])
-            + engine.status_runtimes.get(Status.OVERRUN, [])
-        )
-        self.failing_examples = len(engine.status_runtimes.get(Status.INTERESTING, ()))
-        self.targets = dict(engine.best_observed_targets)
-
-        runtimes = sorted(
-            engine.status_runtimes.get(Status.VALID, [])
-            + engine.status_runtimes.get(Status.INVALID, [])
-            + engine.status_runtimes.get(Status.INTERESTING, [])
-        )
-
-        self.has_runs = bool(runtimes)
-        if not self.has_runs:
-            return
-
-        n = max(0, len(runtimes) - 1)
-        lower = int(runtimes[int(math.floor(n * 0.05))] * 1000)
-        upper = int(runtimes[int(math.ceil(n * 0.95))] * 1000)
-        if upper == 0:
-            self.runtimes = "< 1ms"
-        elif lower == upper:
-            self.runtimes = "~ %dms" % (lower,)
-        else:
-            self.runtimes = "%d-%d ms" % (lower, upper)
-
-        self.exit_reason = engine.exit_reason.describe(engine.settings)
-
-        self.events = [
-            "%6.2f%%, %s" % (c / engine.call_count * 100, e)
-            for e, c in sorted(
-                engine.event_call_counts.items(), key=lambda x: (-x[1], x[0])
-            )
-        ]
-
-        total_runtime = math.fsum(engine.all_runtimes)
-        total_drawtime = math.fsum(engine.all_drawtimes)
-
-        if total_drawtime == 0.0 and total_runtime >= 0.0:
-            self.draw_time_percentage = "~ 0%"
-        elif total_drawtime < 0.0 or total_runtime <= 0.0:
-            # This weird condition is possible in two ways:
-            # 1.  drawtime and/or runtime are negative, due to clock changes
-            #     on Python 2 or old OSs (we use monotonic() where available)
-            # 2.  floating-point issues *very rarely* cause math.fsum to be
-            #     off by the lowest bit, so drawtime==0 and runtime!=0, eek!
-            self.draw_time_percentage = "NaN"
-        else:
-            draw_time_percentage = 100.0 * min(1, total_drawtime / total_runtime)
-
-            self.draw_time_percentage = "~ %d%%" % (round(draw_time_percentage),)
-
-    def get_description(self):
-        """Return a list of lines describing the statistics, to be printed."""
-        if not self.has_runs:
-            return ["  - Test was never run"]
-        lines = [
-            "  - %d passing examples, %d failing examples, %d invalid examples"
-            % (self.passing_examples, self.failing_examples, self.invalid_examples),
-            "  - Typical runtimes: %s" % (self.runtimes,),
-            "  - Fraction of time spent in data generation: %s"
-            % (self.draw_time_percentage,),
-            "  - Stopped because %s" % (self.exit_reason,),
-        ]
-        target_lines = describe_targets(self.targets)
-        if target_lines:
-            lines.append("  - " + target_lines[0])
-            lines.extend("    " + l for l in target_lines[1:])
-        if self.events:
-            lines.append("  - Events:")
-            lines += ["    * %s" % (event,) for event in self.events]
-        return lines
+def note_statistics(stats_dict):
+    callback = collector.value
+    if callback is not None:
+        callback(stats_dict)
 
 
 def describe_targets(best_targets):
@@ -117,7 +46,85 @@ def describe_targets(best_targets):
         return lines
 
 
-def note_engine_for_statistics(engine):
-    callback = collector.value
-    if callback is not None:
-        callback(Statistics(engine))
+def describe_statistics(stats_dict):
+    """Return a multi-line string describing the passed run statistics.
+
+    `stats_dict` must be a dictionary of data in the format collected by
+    `hypothesis.internal.conjecture.engine.ConjectureRunner.statistics`.
+
+    We DO NOT promise that this format will be stable or supported over
+    time, but do aim to make it reasonably useful for downstream users.
+    It's also meant to support benchmarking for research purposes.
+
+    This function is responsible for the report which is printed in the
+    terminal for our pytest --hypothesis-show-statistics option.
+    """
+    lines = [stats_dict["nodeid"] + ":\n"] if "nodeid" in stats_dict else []
+    prev_failures = 0
+    for phase in ["reuse", "generate", "shrink"]:
+        d = stats_dict.get(phase + "-phase", {})
+        # Basic information we report for every phase
+        cases = d.get("test-cases", [])
+        if not cases:
+            continue
+        statuses = Counter(t["status"] for t in cases)
+        runtimes = sorted(t["runtime"] for t in cases)
+        n = max(0, len(runtimes) - 1)
+        lower = int(runtimes[int(math.floor(n * 0.05))] * 1000)
+        upper = int(runtimes[int(math.ceil(n * 0.95))] * 1000)
+        if upper == 0:
+            ms = "< 1ms"
+        elif lower == upper:
+            ms = "~ %dms" % (lower,)
+        else:
+            ms = "%d-%d ms" % (lower, upper)
+        drawtime_percent = 100 * statistics.mean(
+            t["drawtime"] / t["runtime"] if t["runtime"] > 0 else 0 for t in cases
+        )
+        lines.append(
+            "  - during {} phase ({:.2f} seconds):\n"
+            "    - Typical runtimes: {}, ~ {:.0f}% in data generation\n"
+            "    - {} passing examples, {} failing examples, {} invalid examples".format(
+                phase,
+                d["duration-seconds"],
+                ms,
+                drawtime_percent,
+                statuses["valid"],
+                statuses["interesting"],
+                statuses["invalid"] + statuses["overrun"],
+            )
+        )
+        # If we've found new distinct failures in this phase, report them
+        distinct_failures = d["distinct-failures"] - prev_failures
+        if distinct_failures:
+            plural = distinct_failures > 1
+            lines.append(
+                "    - Found {}{} failing example{} in this phase".format(
+                    distinct_failures, " more" * bool(prev_failures), "s" * plural
+                )
+            )
+        prev_failures = d["distinct-failures"]
+        # Report events during the generate phase, if there were any
+        if phase == "generate":
+            events = Counter(sum((t["events"] for t in cases), []))
+            if events:
+                lines.append("    - Events:")
+                lines += [
+                    "      * {:.2f}%, {}".format(100 * v / len(cases), k)
+                    for k, v in sorted(events.items(), key=lambda x: (-x[1], x[0]))
+                ]
+        # Some additional details on the shrinking phase
+        if phase == "shrink":
+            lines.append(
+                "    - Tried {} shrinks of which {} were successful".format(
+                    len(cases), d["shrinks-successful"],
+                )
+            )
+        lines.append("")
+
+    target_lines = describe_targets(stats_dict.get("targets", {}))
+    if target_lines:
+        lines.append("  - " + target_lines[0])
+        lines.extend("    " + l for l in target_lines[1:])
+    lines.append("  - Stopped because " + stats_dict["stopped-because"])
+    return "\n".join(lines)
