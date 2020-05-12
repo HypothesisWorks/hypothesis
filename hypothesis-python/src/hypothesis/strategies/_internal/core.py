@@ -1768,8 +1768,8 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
 @deprecated_posargs
 def complex_numbers(
     *,
-    min_magnitude: Optional[Real] = 0,
-    max_magnitude: Optional[Real] = None,
+    min_magnitude: Real = None,
+    max_magnitude: Real = None,
     allow_infinity: bool = None,
     allow_nan: bool = None
 ) -> SearchStrategy[complex]:
