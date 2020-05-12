@@ -31,7 +31,8 @@ from hypothesis.strategies._internal.strategies import T
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
 Shape = Tuple[int, ...]
-BasicIndex = Tuple[Union[int, slice, "ellipsis", np.newaxis], ...]
+# flake8 and mypy disagree about `ellipsis` (the type of `...`), and hence:
+BasicIndex = Tuple[Union[int, slice, "ellipsis", np.newaxis], ...]  # noqa: F821
 BroadcastableShapes = NamedTuple(
     "BroadcastableShapes",
     [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
