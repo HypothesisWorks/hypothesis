@@ -10,6 +10,17 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.13.0:
+
+-------------------
+5.13.0 - 2020-05-12
+-------------------
+
+This release upgrades the test statistics available via the
+:ref:`--hypothesis-show-statistics <statistics>` option to include
+separate information on each of the :attr:`~hypothesis.settings.phases`
+(:issue:`1555`).
+
 .. _v5.12.2:
 
 -------------------
