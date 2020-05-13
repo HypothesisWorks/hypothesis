@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.13.1:
+
+-------------------
+5.13.1 - 2020-05-13
+-------------------
+
+This patch fixes an internal error in :func:`~hypothesis.strategies.from_type`
+for :class:`python:typing.NamedTuple` in Python 3.9.  Thanks to Michel Salim
+for reporting and fixing :issue:`2427`!
+
 .. _v5.13.0:
 
 -------------------
