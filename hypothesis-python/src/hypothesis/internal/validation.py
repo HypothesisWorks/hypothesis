@@ -76,7 +76,8 @@ def check_valid_magnitude(value, name):
         from hypothesis._settings import note_deprecation
 
         note_deprecation(
-            "min_magnitude=None is deprecated; use min_magnitude=0 instead.",
+            "min_magnitude=None is deprecated; use min_magnitude=0 ",
+            "or omit the argument entirely.",
             since="RELEASEDAY",
         )
 
