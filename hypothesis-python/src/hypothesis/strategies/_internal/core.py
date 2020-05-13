@@ -1768,8 +1768,8 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
 @deprecated_posargs
 def complex_numbers(
     *,
-    min_magnitude: Optional[Real] = 0,
-    max_magnitude: Optional[Real] = None,
+    min_magnitude: Real = 0,
+    max_magnitude: Real = None,
     allow_infinity: bool = None,
     allow_nan: bool = None
 ) -> SearchStrategy[complex]:
@@ -1777,10 +1777,10 @@ def complex_numbers(
 
     This strategy draws complex numbers with constrained magnitudes.
     The ``min_magnitude`` and ``max_magnitude`` parameters should be
-    non-negative :class:`~python:numbers.Real` numbers; values
-    of ``None`` correspond to zero and infinite values respectively.
+    non-negative :class:`~python:numbers.Real` numbers; a value
+    of ``None`` corresponds an infinite upper bound.
 
-    If ``min_magnitude`` is positive or ``max_magnitude`` is finite, it
+    If ``min_magnitude`` is nonzero or ``max_magnitude`` is finite, it
     is an error to enable ``allow_nan``.  If ``max_magnitude`` is finite,
     it is an error to enable ``allow_infinity``.
 
@@ -1799,10 +1799,10 @@ def complex_numbers(
     check_valid_magnitude(min_magnitude, "min_magnitude")
     check_valid_magnitude(max_magnitude, "max_magnitude")
     check_valid_interval(min_magnitude, max_magnitude, "min_magnitude", "max_magnitude")
+    if min_magnitude is None:
+        min_magnitude = 0
     if max_magnitude == math.inf:
         max_magnitude = None
-    if min_magnitude == 0:
-        min_magnitude = None
 
     if allow_infinity is None:
         allow_infinity = bool(max_magnitude is None)
@@ -1812,15 +1812,15 @@ def complex_numbers(
             % (allow_infinity, max_magnitude)
         )
     if allow_nan is None:
-        allow_nan = bool(min_magnitude is None and max_magnitude is None)
-    elif allow_nan and not (min_magnitude is None and max_magnitude is None):
+        allow_nan = bool(min_magnitude == 0 and max_magnitude is None)
+    elif allow_nan and not (min_magnitude == 0 and max_magnitude is None):
         raise InvalidArgument(
             "Cannot have allow_nan=%r, min_magnitude=%r max_magnitude=%r"
             % (allow_nan, min_magnitude, max_magnitude)
         )
     allow_kw = {"allow_nan": allow_nan, "allow_infinity": allow_infinity}
 
-    if min_magnitude is None and max_magnitude is None:
+    if min_magnitude == 0 and max_magnitude is None:
         # In this simple but common case, there are no constraints on the
         # magnitude and therefore no relationship between the real and
         # imaginary parts.
@@ -1837,18 +1837,14 @@ def complex_numbers(
             zi = draw(floats(-max_magnitude, max_magnitude, **allow_kw))
             rmax = cathetus(max_magnitude, zi)
         # Draw the real part from the allowed range given the imaginary part
-        if min_magnitude is None or math.fabs(zi) >= min_magnitude:
+        if min_magnitude == 0 or math.fabs(zi) >= min_magnitude:
             zr = draw(floats(None if rmax is None else -rmax, rmax, **allow_kw))
         else:
             zr = draw(floats(cathetus(min_magnitude, zi), rmax, **allow_kw))
         # Order of conditions carefully tuned so that for a given pair of
         # magnitude arguments, we always either draw or do not draw the bool
         # (crucial for good shrinking behaviour) but only invert when needed.
-        if (
-            min_magnitude is not None
-            and draw(booleans())
-            and math.fabs(zi) <= min_magnitude
-        ):
+        if min_magnitude > 0 and draw(booleans()) and math.fabs(zi) <= min_magnitude:
             zr = -zr
         return complex(zr, zi)
 

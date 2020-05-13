@@ -207,6 +207,7 @@ their individual contributions.
 * `Daniel J. West <https://github.com/danieljwest>`_
 * `David Bonner <https://github.com/rascalking>`_ (dbonner@gmail.com)
 * `David Chudzicki <https://github.com/dchudz>`_ (dchudz@gmail.com)
+* `David Mascharka <https://github.com/davidmascharka>`_
 * `Derek Gustafson <https://www.github.com/degustaf>`_
 * `Dion Misic <https://www.github.com/kingdion>`_ (dion.misic@gmail.com)
 * `Eduardo Enriquez <https://www.github.com/eduzen>`_ (eduardo.a.enriquez@gmail.com)

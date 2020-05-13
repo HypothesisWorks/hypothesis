@@ -20,6 +20,7 @@ import hypothesis.strategies as st
 from hypothesis import given, reject
 from hypothesis.strategies import complex_numbers
 from tests.common.debug import minimal
+from tests.common.utils import checks_deprecated_behaviour
 
 
 def test_minimal():
@@ -75,6 +76,7 @@ def test_minimal_min_magnitude_zero():
     assert minimal(complex_numbers(min_magnitude=0), lambda x: True) == 0
 
 
+@checks_deprecated_behaviour
 def test_minimal_min_magnitude_none():
     assert minimal(complex_numbers(min_magnitude=None), lambda x: True) == 0
 
