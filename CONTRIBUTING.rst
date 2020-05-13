@@ -255,6 +255,7 @@ their individual contributions.
 * `Matt Bachmann <https://www.github.com/bachmann1234>`_ (bachmann.matt@gmail.com)
 * `Max Nordlund <https://www.github.com/maxnordlund>`_ (max.nordlund@gmail.com)
 * `Maxim Kulkin <https://www.github.com/maximkulkin>`_ (maxim.kulkin@gmail.com)
+* `Michel Alexandre Salim <https://github.com/michel-slm>`_ (michel@michel-slm.name)
 * `mulkieran <https://www.github.com/mulkieran>`_
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
 * `Nick Anyos <https://www.github.com/NickAnyos>`_
