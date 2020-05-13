@@ -1,3 +1,4 @@
 RELEASE_TYPE: minor
 
-This release deprecates the use of ``min_magnitude=None``, setting the default ``min_magnitude`` to 0.
+Passing ``min_magnitude=None`` to :func:`~hypothesis.strategies.complex_numbers` is now
+deprecated - you can explicitly pass ``min_magnitude=0``, or omit the argument entirely.
