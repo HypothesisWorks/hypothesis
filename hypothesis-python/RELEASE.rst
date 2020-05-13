@@ -1,3 +1,3 @@
-RELEASE_TYPE: patch
+RELEASE_TYPE: minor
 
-This patch updates the type annotation of the :func:`~hypothesis.strategies.complex_numbers` strategy for consistency.
+This release deprecates the use of ``min_magnitude=None``, setting the default ``min_magnitude`` to 0.
