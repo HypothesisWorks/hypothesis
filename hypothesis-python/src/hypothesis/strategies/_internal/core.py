@@ -1780,7 +1780,7 @@ def complex_numbers(
     non-negative :class:`~python:numbers.Real` numbers; a value
     of ``None`` corresponds an infinite upper bound.
 
-    If ``min_magnitude`` is positive or ``max_magnitude`` is finite, it
+    If ``min_magnitude`` is nonzero or ``max_magnitude`` is finite, it
     is an error to enable ``allow_nan``.  If ``max_magnitude`` is finite,
     it is an error to enable ``allow_infinity``.
 
