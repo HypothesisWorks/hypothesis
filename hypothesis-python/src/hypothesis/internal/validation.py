@@ -78,7 +78,7 @@ def check_valid_magnitude(value, name):
         note_deprecation(
             "min_magnitude=None is deprecated; use min_magnitude=0 "
             "or omit the argument entirely.",
-            since="RELEASEDAY",
+            since="2020-05-13",
         )
 
 

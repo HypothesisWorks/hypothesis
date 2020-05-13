@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.14.0:
+
+-------------------
+5.14.0 - 2020-05-13
+-------------------
+
+Passing ``min_magnitude=None`` to :func:`~hypothesis.strategies.complex_numbers` is now
+deprecated - you can explicitly pass ``min_magnitude=0``, or omit the argument entirely.
+
 .. _v5.13.1:
 
 -------------------
