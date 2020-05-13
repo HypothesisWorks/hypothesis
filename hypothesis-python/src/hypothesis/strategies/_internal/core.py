@@ -1842,7 +1842,7 @@ def complex_numbers(
         # Order of conditions carefully tuned so that for a given pair of
         # magnitude arguments, we always either draw or do not draw the bool
         # (crucial for good shrinking behaviour) but only invert when needed.
-        if min_magnitude != 0 and draw(booleans()) and math.fabs(zi) <= min_magnitude:
+        if min_magnitude > 0 and draw(booleans()) and math.fabs(zi) <= min_magnitude:
             zr = -zr
         return complex(zr, zi)
 
