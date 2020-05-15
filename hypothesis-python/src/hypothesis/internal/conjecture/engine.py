@@ -121,11 +121,9 @@ class ConjectureRunner:
         # is only marginally useful at present, but speeds up local development
         # because it means that large targets will be quickly surfaced in your
         # testing.
+        self.pareto_front = ParetoFront(self.random)
         if self.database_key is not None and self.settings.database is not None:
-            self.pareto_front = ParetoFront(self.random)
             self.pareto_front.on_evict(self.on_pareto_evict)
-        else:
-            self.pareto_front = None
 
         # We want to be able to get the ConjectureData object that results
         # from running a buffer without recalculating, especially during
@@ -200,7 +198,7 @@ class ConjectureRunner:
 
         self.debug_data(data)
 
-        if self.pareto_front is not None and self.pareto_front.add(data.as_result()):
+        if self.pareto_front.add(data.as_result()):
             self.save_buffer(data.buffer, sub_key=b"pareto")
 
         assert len(data.buffer) <= BUFFER_SIZE
@@ -847,8 +845,7 @@ class ConjectureRunner:
                 break
 
     def pareto_optimise(self):
-        if self.pareto_front is not None:
-            ParetoOptimiser(self).run()
+        ParetoOptimiser(self).run()
 
     def _run(self):
         with self._log_phase_statistics("reuse"):
