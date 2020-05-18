@@ -8,7 +8,7 @@ apipkg==1.5               # via execnet
 attrs==19.3.0             # via -r requirements/test.in, pytest
 execnet==1.7.1            # via pytest-xdist
 importlib-metadata==1.6.0  # via pluggy, pytest
-more-itertools==8.2.0     # via pytest
+more-itertools==8.3.0     # via pytest
 packaging==20.3           # via pytest
 pexpect==4.8.0            # via -r requirements/test.in
 pluggy==0.13.1            # via pytest
@@ -21,4 +21,4 @@ pytest==5.4.2             # via -r requirements/test.in, pytest-forked, pytest-x
 six==1.14.0               # via packaging, pytest-xdist
 sortedcontainers==2.1.0   # via -r requirements/test.in
 wcwidth==0.1.9            # via pytest
-zipp==1.2.0               # via -r requirements/test.in, importlib-metadata
+zipp==3.1.0               # via -r requirements/test.in, importlib-metadata
