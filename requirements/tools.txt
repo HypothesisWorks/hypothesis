@@ -51,7 +51,7 @@ keyring==21.2.1           # via twine
 lark-parser==0.8.5        # via -r requirements/tools.in
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8
-more-itertools==8.2.0     # via pytest
+more-itertools==8.3.0     # via pytest
 mypy-extensions==0.4.3    # via mypy
 mypy==0.770               # via -r requirements/tools.in
 numpy==1.18.4             # via -r requirements/tools.in
