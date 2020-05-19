@@ -10,6 +10,14 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.15.0:
+
+-------------------
+5.15.0 - 2020-05-19
+-------------------
+
+This patch fixes an error that happens when multiple threads create new strategies.
+
 .. _v5.14.0:
 
 -------------------
