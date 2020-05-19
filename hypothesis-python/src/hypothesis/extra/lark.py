@@ -85,13 +85,14 @@ class LarkStrategy(SearchStrategy):
     See ``from_lark`` for details.
     """
 
-    def __init__(self, grammar, start, explicit):
+    def __init__(self, grammar, start, explicit, seperator):
         assert isinstance(grammar, lark.lark.Lark)
         if start is None:
             start = grammar.options.start
         if not isinstance(start, list):
             start = [start]
         self.grammar = grammar
+        self.seperator = seperator
 
         if "start" in getfullargspec(grammar.grammar.compile).args:
             terminals, rules, ignore_names = grammar.grammar.compile(start)
@@ -145,7 +146,7 @@ class LarkStrategy(SearchStrategy):
         state = DrawState()
         start = data.draw(self.start)
         self.draw_symbol(data, start, state)
-        return "".join(state.result)
+        return self.seperator.join(state.result)
 
     def rule_label(self, name):
         try:
@@ -200,7 +201,8 @@ def from_lark(
     grammar: lark.lark.Lark,
     *,
     start: str = None,
-    explicit: Dict[str, st.SearchStrategy[str]] = None
+    explicit: Dict[str, st.SearchStrategy[str]] = None,
+    seperator: str = ""
 ) -> st.SearchStrategy[str]:
     """A strategy for strings accepted by the given context-free grammar.
 
@@ -234,4 +236,4 @@ def from_lark(
             k: v.map(check_explicit("explicit[%r]=%r" % (k, v)))
             for k, v in explicit.items()
         }
-    return LarkStrategy(grammar, start, explicit)
+    return LarkStrategy(grammar, start, explicit, seperator)
