@@ -210,6 +210,7 @@ their individual contributions.
 * `David Mascharka <https://github.com/davidmascharka>`_
 * `Derek Gustafson <https://www.github.com/degustaf>`_
 * `Dion Misic <https://www.github.com/kingdion>`_ (dion.misic@gmail.com)
+* `Dmitry Dygalo <https://www.github.com/Stranger6667>`_
 * `Eduardo Enriquez <https://www.github.com/eduzen>`_ (eduardo.a.enriquez@gmail.com)
 * `El Awbery <https://www.github.com/ElAwbery>`_
 * `Emmanuel Leblond <https://www.github.com/touilleMan>`_

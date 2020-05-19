@@ -19,6 +19,7 @@ import operator
 import random
 import string
 import sys
+import threading
 import typing
 from decimal import Context, Decimal, localcontext
 from fractions import Fraction
@@ -150,7 +151,20 @@ def convert_value(v):
     return (type(v), v)
 
 
-STRATEGY_CACHE = LRUReusedCache(1024)
+_CACHE = threading.local()
+
+
+def get_cache() -> LRUReusedCache:
+    try:
+        return _CACHE.STRATEGY_CACHE
+    except AttributeError:
+        _CACHE.STRATEGY_CACHE = LRUReusedCache(1024)
+        return _CACHE.STRATEGY_CACHE
+
+
+def clear_cache() -> None:
+    cache = get_cache()
+    cache.clear()
 
 
 def cacheable(fn: T) -> T:
@@ -161,18 +175,19 @@ def cacheable(fn: T) -> T:
         except TypeError:
             return fn(*args, **kwargs)
         cache_key = (fn, tuple(map(convert_value, args)), frozenset(kwargs_cache_key))
+        cache = get_cache()
         try:
-            if cache_key in STRATEGY_CACHE:
-                return STRATEGY_CACHE[cache_key]
+            if cache_key in cache:
+                return cache[cache_key]
         except TypeError:
             return fn(*args, **kwargs)
         else:
             result = fn(*args, **kwargs)
             if not isinstance(result, SearchStrategy) or result.is_cacheable:
-                STRATEGY_CACHE[cache_key] = result
+                cache[cache_key] = result
             return result
 
-    cached_strategy.__clear_cache = STRATEGY_CACHE.clear
+    cached_strategy.__clear_cache = clear_cache
     return cached_strategy
 
 

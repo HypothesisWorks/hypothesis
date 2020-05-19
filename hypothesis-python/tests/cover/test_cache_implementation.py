@@ -13,6 +13,8 @@
 #
 # END HEADER
 
+import threading
+from functools import partial
 from random import Random
 
 import pytest
@@ -293,3 +295,22 @@ def test_iterates_over_remaining_keys():
     for i in range(3):
         cache[i] = "hi"
     assert sorted(cache) == [1, 2]
+
+
+def test_cache_is_threadsafe_issue_2433_regression():
+    errors = []
+
+    def target():
+        for _ in range(1000):
+            try:
+                st.builds(partial(str))
+            except Exception as exc:
+                errors.append(exc)
+
+    workers = [threading.Thread(target=target) for _ in range(4)]
+    for worker in workers:
+        worker.start()
+    for worker in workers:
+        worker.join()
+
+    assert not errors
