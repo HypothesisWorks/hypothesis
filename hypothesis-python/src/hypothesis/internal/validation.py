@@ -31,6 +31,14 @@ def check_type(typ, arg, name=""):
             typ_string = "one of %s" % (", ".join(t.__name__ for t in typ))
         else:
             typ_string = typ.__name__
+
+            if typ_string == "SearchStrategy":
+                from hypothesis.strategies import SearchStrategy
+
+                # Use hypothesis.strategies._internal.strategies.check_strategy
+                # instead, as it has some helpful "did you mean..." logic.
+                assert typ is not SearchStrategy, "use check_strategy instead"
+
         raise InvalidArgument(
             "Expected %s but got %s%r (type=%s)"
             % (typ_string, name, arg, type(arg).__name__)

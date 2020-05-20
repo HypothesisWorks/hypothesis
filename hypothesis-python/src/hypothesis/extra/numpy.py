@@ -26,7 +26,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import deprecated_posargs, proxies
 from hypothesis.internal.validation import check_type, check_valid_interval
-from hypothesis.strategies._internal import SearchStrategy
+from hypothesis.strategies._internal import SearchStrategy, check_strategy
 from hypothesis.strategies._internal.strategies import T
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 
@@ -400,7 +400,7 @@ def arrays(
                 .flatmap(lambda d: arrays(d, shape=shape, fill=fill, unique=unique))
             )
         elements = from_dtype(dtype)
-    check_type(SearchStrategy, elements, "elements")
+    check_strategy(elements, "elements")
     if isinstance(shape, int):
         shape = (shape,)
     shape = tuple(shape)
@@ -1430,7 +1430,7 @@ def integer_array_indices(
         shape and all(isinstance(x, int) and x > 0 for x in shape),
         "shape=%r must be a non-empty tuple of integers > 0" % (shape,),
     )
-    check_type(SearchStrategy, result_shape, "result_shape")
+    check_strategy(result_shape, "result_shape")
     check_argument(
         np.issubdtype(dtype, np.integer), "dtype=%r must be an integer dtype" % (dtype,)
     )

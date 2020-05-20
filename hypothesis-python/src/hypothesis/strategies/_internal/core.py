@@ -902,8 +902,8 @@ def dictionaries(
     check_valid_sizes(min_size, max_size)
     if max_size == 0:
         return fixed_dictionaries(dict_class())
-    check_strategy(keys)
-    check_strategy(values)
+    check_strategy(keys, "keys")
+    check_strategy(values, "values")
 
     return lists(
         tuples(keys, values),
@@ -1964,7 +1964,7 @@ class DataObject:
         return "data(...)"
 
     def draw(self, strategy: SearchStrategy[Ex], label: Any = None) -> Ex:
-        check_type(SearchStrategy, strategy, "strategy")
+        check_strategy(strategy, "strategy")
         result = self.conjecture_data.draw(strategy)
         self.count += 1
         if label is not None:
@@ -2138,7 +2138,7 @@ def functions(
         hints = get_type_hints(like)
         returns = from_type(hints.get("return", type(None)))
 
-    check_type(SearchStrategy, returns)
+    check_strategy(returns, "returns")
     return FunctionStrategy(like, returns)
 
 

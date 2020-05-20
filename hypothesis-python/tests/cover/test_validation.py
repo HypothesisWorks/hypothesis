@@ -21,6 +21,7 @@ from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies import (
+    SearchStrategy as ActualSearchStrategy,
     binary,
     booleans,
     data,
@@ -247,3 +248,17 @@ def test_validation_happens_on_draw():
 
     with pytest.raises(InvalidArgument, match="has no values"):
         test()
+
+
+class SearchStrategy:
+    """Not the SearchStrategy type you were looking for."""
+
+
+def check_type_(*args):
+    return check_type(*args)
+
+
+def test_check_type_suggests_check_strategy():
+    check_type_(SearchStrategy, SearchStrategy(), "this is OK")
+    with pytest.raises(AssertionError, match="use check_strategy instead"):
+        check_type_(ActualSearchStrategy, None, "SearchStrategy assertion")

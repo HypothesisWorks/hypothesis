@@ -261,7 +261,7 @@ def series(
     if index is None:
         index = range_indexes()
     else:
-        st.check_strategy(index)
+        st.check_strategy(index, "index")
 
     elements, dtype = elements_and_dtype(elements, dtype)
     index_strategy = index
@@ -473,7 +473,7 @@ def data_frames(
     if index is None:
         index = range_indexes()
     else:
-        st.check_strategy(index)
+        st.check_strategy(index, "index")
 
     index_strategy = index
 
