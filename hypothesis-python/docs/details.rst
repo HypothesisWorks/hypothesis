@@ -744,3 +744,24 @@ Note that the interpretation of both input and output bytestrings is specific
 to the exact version of Hypothesis you are using and the strategies given to
 the test, just like the :doc:`example database <database>` and
 :func:`@reproduce_failure <hypothesis.reproduce_failure>` decorator.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~
+Interaction with settings
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``fuzz_one_input`` uses just enough of Hypothesis' internals to drive your
+test function with a fuzzer-provided bytestring, and most settings therefore
+have no effect in this mode.  We recommend running your tests the usual way
+before fuzzing to get the benefits of healthchecks, as well as afterwards to
+replay, shrink, deduplicate, and report whatever errors were discovered.
+
+- The :obj:`~hypothesis.settings.database` setting *is* used by fuzzing mode -
+  adding failures to the database to be replayed when you next run your tests
+  is our preferred reporting mechanism and reponse to
+  `the 'fuzzer taming' problem <https://blog.regehr.org/archives/925>`__.
+- The :obj:`~hypothesis.settings.verbosity` and
+  :obj:`~hypothesis.settings.stateful_step_count` settings work as usual.
+
+The ``deadline``, ``derandomize``, ``max_examples``, ``phases``, ``print_blob``,
+``report_multiple_bugs``, and ``suppress_health_check`` settings do not affect
+fuzzing mode.
