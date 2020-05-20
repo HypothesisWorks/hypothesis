@@ -412,7 +412,7 @@ def register(type_, fallback=None):
 
 @register("Type")
 def resolve_Type(thing):
-    if thing.__args__ is None:
+    if getattr(thing, '__args__', None) is None:
         return st.just(type)
     args = (thing.__args__[0],)
     if getattr(args[0], "__origin__", None) is typing.Union:
