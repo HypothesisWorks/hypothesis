@@ -10,6 +10,14 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.15.1:
+
+-------------------
+5.15.1 - 2020-05-21
+-------------------
+
+Fix :func:`~hypothesis.strategies.from_type` with generic types under Python 3.9.
+
 .. _v5.15.0:
 
 -------------------
