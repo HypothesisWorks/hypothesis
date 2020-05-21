@@ -38,6 +38,7 @@ sentinel = object()
 generics = sorted(
     (t for t in types._global_type_lookup if isinstance(t, typing_root_type)), key=str
 )
+xfail_on_39 = () if sys.version_info[:2] < (3, 9) else pytest.mark.xfail
 
 
 @pytest.mark.parametrize("typ", generics)
@@ -56,7 +57,7 @@ def test_resolve_typing_module(typ):
         elif isinstance(typ, typing._ProtocolMeta):
             pass
         elif typ is typing.Type and not isinstance(typing.Type, type):
-            assert isinstance(ex, typing.TypeVar)
+            assert ex is type or isinstance(ex, typing.TypeVar)
         else:
             try:
                 assert isinstance(ex, typ)
@@ -232,7 +233,7 @@ def if_available(name):
 @pytest.mark.parametrize(
     "typ",
     [
-        typing.Sequence,
+        pytest.param(typing.Sequence, marks=xfail_on_39),
         typing.Container,
         typing.Mapping,
         typing.Reversible,
