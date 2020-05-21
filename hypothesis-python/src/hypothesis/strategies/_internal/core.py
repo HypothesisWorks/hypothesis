@@ -2109,7 +2109,7 @@ def emails() -> SearchStrategy[str]:
 @defines_strategy
 @deprecated_posargs
 def functions(
-    *, like: Callable[..., Any] = lambda: None, returns: SearchStrategy[Any] = none()
+    *, like: Callable[..., Any] = lambda: None, returns: SearchStrategy[Any] = None
 ) -> SearchStrategy[Callable[..., Any]]:
     # The proper type signature of `functions()` would have T instead of Any, but mypy
     # disallows default args for generics: https://github.com/python/mypy/issues/3737
@@ -2128,6 +2128,10 @@ def functions(
     Generated functions can only be called within the scope of the ``@given``
     which created them.  This strategy does not support ``.example()``.
     """
+    if returns is None:
+        hints = get_type_hints(like)
+        returns = from_type(hints)
+
     check_type(SearchStrategy, returns)
     if not callable(like):
         raise InvalidArgument(
