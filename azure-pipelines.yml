@@ -30,6 +30,8 @@ jobs:
           TASK: check-py37
         check-py38:
           TASK: check-py38
+        check-py39:
+          TASK: check-py39
         check-quality:
           TASK: check-quality
     steps:
