@@ -34,6 +34,7 @@ infeasible.  We may also be quite aggressive in bumping the minimum version of
 Lark, unless someone volunteers to either fund or do the maintainence.
 """
 
+import re
 from inspect import getfullargspec
 from typing import Dict
 
@@ -99,6 +100,17 @@ class LarkStrategy(SearchStrategy):
         else:  # pragma: no cover
             # This branch is to support lark <= 0.7.1, without the start argument.
             terminals, rules, ignore_names = grammar.grammar.compile()
+        
+        # Create regular expression contraption to test
+        # if concatenated tokens form a single token:
+        terminal_regexes = '|'.join('({})'.format(
+            t.pattern.to_regexp())
+            for t in terminals
+            if t.name not in ignore_names
+        )
+        # TODO: add regexes for explicit symbols
+        terminal_regex = '^({})$'.format(terminal_regexes)
+        self._concat_prog = re.compile(terminal_regex)
 
         self.names_to_symbols = {}
 
@@ -146,7 +158,19 @@ class LarkStrategy(SearchStrategy):
         state = DrawState()
         start = data.draw(self.start)
         self.draw_symbol(data, start, state)
-        return self.seperator.join(state.result)
+
+        # Post processing
+        # Concatenate two tokens and check if they match up to any terminal:
+        tokens = []
+        if state.result:
+            tokens.append(state.result[0])
+            for token in state.result[1:]:
+                glued_tokens = tokens[-1] + token
+                if self._concat_prog.match(glued_tokens):
+                    tokens.append(' ')
+                tokens.append(token)
+
+        return self.seperator.join(tokens)
 
     def rule_label(self, name):
         try:
@@ -178,7 +202,7 @@ class LarkStrategy(SearchStrategy):
             data.stop_example()
 
     def gen_ignore(self, data, draw_state):
-        if self.ignored_symbols:
+        if self.ignored_symbols and data.draw_bits(2) == 3:
             emit = data.draw(st.sampled_from(self.ignored_symbols))
             self.draw_symbol(data, emit, draw_state)
 
