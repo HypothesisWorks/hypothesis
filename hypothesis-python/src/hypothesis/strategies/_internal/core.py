@@ -2128,16 +2128,18 @@ def functions(
     Generated functions can only be called within the scope of the ``@given``
     which created them.  This strategy does not support ``.example()``.
     """
-    if returns is None:
-        hints = get_type_hints(like)
-        returns = from_type(hints)
 
-    check_type(SearchStrategy, returns)
     if not callable(like):
         raise InvalidArgument(
             "The first argument to functions() must be a callable to imitate, "
             "but got non-callable like=%r" % (nicerepr(like),)
         )
+
+    if returns is None:
+        hints = get_type_hints(like)
+        returns = from_type(hints)
+
+    check_type(SearchStrategy, returns)
     return FunctionStrategy(like, returns)
 
 
