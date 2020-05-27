@@ -17,7 +17,7 @@ from inspect import getfullargspec
 
 import pytest
 
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument, InvalidState
 from hypothesis.strategies import booleans, functions
 
@@ -83,12 +83,15 @@ def test_invalid_arguments(like, returns):
         functions(like=like, returns=returns).example()
 
 
-def test_smart_returns():
-    def t() -> str:
-        return "string"
+def func_returns_str() -> str:
+    return "a string"
 
-    f = functions(like=t, returns=None).example()
-    assert f.__annotations__["return"] is str
+
+@given(functions(like=func_returns_str))
+def test_functions_strategy_return_type_inference(f):
+    result = f()
+    assume(result != "a string")
+    assert isinstance(result, str)
 
 
 def test_functions_valid_within_given_invalid_outside():
