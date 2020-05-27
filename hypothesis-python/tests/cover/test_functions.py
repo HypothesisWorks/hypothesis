@@ -17,7 +17,7 @@ from inspect import getfullargspec
 
 import pytest
 
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument, InvalidState
 from hypothesis.strategies import booleans, functions
 
@@ -75,10 +75,23 @@ def test_functions_lambda_with_arg(f):
     assert isinstance(f(1), bool)
 
 
-@pytest.mark.parametrize("like,returns", [(None, booleans()), (lambda: None, None)])
+@pytest.mark.parametrize(
+    "like,returns", [(None, booleans()), (lambda: None, "not a strategy")]
+)
 def test_invalid_arguments(like, returns):
     with pytest.raises(InvalidArgument):
         functions(like=like, returns=returns).example()
+
+
+def func_returns_str() -> str:
+    return "a string"
+
+
+@given(functions(like=func_returns_str))
+def test_functions_strategy_return_type_inference(f):
+    result = f()
+    assume(result != "a string")
+    assert isinstance(result, str)
 
 
 def test_functions_valid_within_given_invalid_outside():
@@ -99,7 +112,7 @@ def test_can_call_default_like_arg():
     # branch for calling it otherwise and alternative workarounds are worse.
     defaults = getfullargspec(functions).kwonlydefaults
     assert defaults["like"]() is None
-    assert defaults["returns"].example() is None
+    assert defaults["returns"] is None
 
 
 def func(arg, *, kwonly_arg):

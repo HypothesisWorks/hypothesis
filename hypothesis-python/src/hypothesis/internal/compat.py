@@ -108,13 +108,18 @@ if sys.version_info[:2] < (3, 6):
             thing = thing.__init__  # type: ignore
         try:
             spec = inspect.getfullargspec(thing)
-            return {
+            hints = {
                 k: v
                 for k, v in spec.annotations.items()
                 if k in (spec.args + spec.kwonlyargs) and isinstance(v, type)
             }
         except TypeError:
-            return {}
+            hints = {}
+        try:
+            hints["return"] = typing.get_type_hints(thing)["return"]
+        except Exception:
+            pass
+        return hints
 
 
 else:
