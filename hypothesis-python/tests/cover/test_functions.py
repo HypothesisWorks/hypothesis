@@ -83,6 +83,14 @@ def test_invalid_arguments(like, returns):
         functions(like=like, returns=returns).example()
 
 
+def test_smart_returns():
+    def t() -> str:
+        return "string"
+
+    f = functions(like=t, returns=None).example()
+    assert f.__annotations__["return"] is str
+
+
 def test_functions_valid_within_given_invalid_outside():
     cache = [None]
 

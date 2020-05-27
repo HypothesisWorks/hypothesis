@@ -185,6 +185,7 @@ their individual contributions.
 
 * `Adam Johnson <https://github.com/adamchainz>`_
 * `Adam Sven Johnson <https://www.github.com/pkqk>`_
+* `Akash Suresh <https://www.github.com/akash-suresh>`_ (akashsuresh36@gmail.com)
 * `Alex Gaynor <https://github.com/alex>`_
 * `Alex Stapleton <https://www.github.com/public>`_
 * `Alex Willmer <https://github.com/moreati>`_ (alex@moreati.org.uk)
