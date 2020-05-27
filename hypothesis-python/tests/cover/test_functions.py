@@ -75,7 +75,9 @@ def test_functions_lambda_with_arg(f):
     assert isinstance(f(1), bool)
 
 
-@pytest.mark.parametrize("like,returns", [(None, booleans())])
+@pytest.mark.parametrize(
+    "like,returns", [(None, booleans()), (lambda: None, "not a strategy")]
+)
 def test_invalid_arguments(like, returns):
     with pytest.raises(InvalidArgument):
         functions(like=like, returns=returns).example()
