@@ -15,6 +15,7 @@
 
 import math
 import re
+from distutils.version import LooseVersion
 from typing import Any, NamedTuple, Sequence, Tuple, Union
 
 import numpy as np
@@ -39,6 +40,9 @@ BroadcastableShapes = NamedTuple(
 )
 
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
+
+# See https://github.com/HypothesisWorks/hypothesis/pull/2329 and linked discussion.
+NP_FIXED_UNICODE = LooseVersion(np.__version__) >= LooseVersion("1.18.2")
 
 
 @st.defines_strategy_with_reusable_values
@@ -84,9 +88,12 @@ def from_dtype(dtype: np.dtype) -> st.SearchStrategy[Any]:
         result = st.integers(min_value=-overflow, max_value=overflow - 1)
     elif dtype.kind == "U":
         # Encoded in UTF-32 (four bytes/codepoint) and null-terminated
-        result = st.text(max_size=(dtype.itemsize or 0) // 4 or None).filter(
-            lambda b: b[-1:] != "\0"
-        )
+        max_size = (dtype.itemsize or 0) // 4 or None
+        if NP_FIXED_UNICODE:
+            result = st.text(alphabet=st.characters(), max_size=max_size)
+        else:  # pragma: no cover
+            result = st.text(max_size=max_size)
+        result = result.filter(lambda b: b[-1:] != "\0")
     elif dtype.kind in ("m", "M"):
         if "[" in dtype.str:
             res = st.just(dtype.str.split("[")[-1][:-1])
