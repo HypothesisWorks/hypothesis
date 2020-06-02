@@ -22,9 +22,7 @@ from hypothesis.internal.coverage import check_function
 
 
 @check_function
-def check_type(typ, arg, name=""):
-    if name:
-        name += "="
+def check_type(typ, arg, name):
     if not isinstance(arg, typ):
         if isinstance(typ, tuple):
             assert len(typ) >= 2, "Use bare type instead of len-1 tuple"
@@ -40,20 +38,20 @@ def check_type(typ, arg, name=""):
                 assert typ is not SearchStrategy, "use check_strategy instead"
 
         raise InvalidArgument(
-            "Expected %s but got %s%r (type=%s)"
+            "Expected %s but got %s=%r (type=%s)"
             % (typ_string, name, arg, type(arg).__name__)
         )
 
 
 @check_function
-def check_valid_integer(value):
+def check_valid_integer(value, name):
     """Checks that value is either unspecified, or a valid integer.
 
     Otherwise raises InvalidArgument.
     """
     if value is None:
         return
-    check_type(int, value)
+    check_type(int, value, name)
 
 
 @check_function

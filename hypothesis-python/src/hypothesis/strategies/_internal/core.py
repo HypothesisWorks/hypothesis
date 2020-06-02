@@ -1495,7 +1495,7 @@ def fractions(
     assert max_value is None or isinstance(max_value, Fraction)
 
     check_valid_interval(min_value, max_value, "min_value", "max_value")
-    check_valid_integer(max_denominator)
+    check_valid_integer(max_denominator, "max_denominator")
 
     if max_denominator is not None:
         if max_denominator < 1:
@@ -1607,7 +1607,7 @@ def decimals(
     try to maximize human readability when shrinking.
     """
     # Convert min_value and max_value to Decimal values, and validate args
-    check_valid_integer(places)
+    check_valid_integer(places, "places")
     if places is not None and places < 0:
         raise InvalidArgument("places=%r may not be negative" % places)
     min_value = _as_finite_decimal(min_value, "min_value", allow_infinity)
@@ -2152,7 +2152,7 @@ def slices(draw: Any, size: int) -> slice:
 
     Examples from this strategy shrink toward 0 and smaller values
     """
-    check_valid_integer(size)
+    check_valid_integer(size, "size")
     if size is None or size < 1:
         raise InvalidArgument("size=%r must be at least one" % size)
 
