@@ -16,7 +16,7 @@
 from collections import OrderedDict
 
 import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import given
 from hypothesis.control import reject
 from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
 
@@ -101,7 +101,6 @@ strategy_globals["baz"] = baz
 
 
 @given(Strategies)
-@settings(max_examples=2000)
 def test_repr_evals_to_thing_with_same_repr(strategy):
     r = repr(strategy)
     via_eval = eval(r, strategy_globals)
