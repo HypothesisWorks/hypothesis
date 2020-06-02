@@ -23,7 +23,7 @@ import numpy as np
 import hypothesis.internal.conjecture.utils as cu
 import hypothesis.strategies._internal.core as st
 from hypothesis import assume
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import HypothesisException, InvalidArgument
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import deprecated_posargs, proxies
 from hypothesis.internal.validation import check_type, check_valid_interval
@@ -152,7 +152,16 @@ class ArrayStrategy(SearchStrategy):
                 "Could not add element=%r of %r to array of %r - possible mismatch "
                 "of time units in dtypes?" % (val, val.dtype, result.dtype)
             ) from err
-        if self._check_elements and val != result[idx] and val == val:
+        try:
+            elem_changed = self._check_elements and val != result[idx] and val == val
+        except Exception as err:  # pragma: no cover
+            # This branch only exists to help debug weird behaviour in Numpy,
+            # such as the string problems we had a while back.
+            raise HypothesisException(
+                "Internal error when checking element=%r of %r to array of %r"
+                % (val, val.dtype, result.dtype)
+            ) from err
+        if elem_changed:
             raise InvalidArgument(
                 "Generated array element %r from %r cannot be represented as "
                 "dtype %r - instead it becomes %r (type %r).  Consider using a more "
