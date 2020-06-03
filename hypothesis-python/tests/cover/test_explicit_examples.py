@@ -28,7 +28,7 @@ from hypothesis import (
     reporting,
     settings,
 )
-from hypothesis.errors import DeadlineExceeded, InvalidArgument
+from hypothesis.errors import DeadlineExceeded, InvalidArgument, MultipleFailures
 from hypothesis.strategies import floats, integers, nothing, text
 from tests.common.utils import assert_falsifying_output, capture_out
 
@@ -246,3 +246,17 @@ def test_unsatisfied_assumption_during_explicit_example(threshold, value):
     # Regression test, expected to pass / skip depending on parametrize.
     # See https://github.com/HypothesisWorks/hypothesis/issues/2125
     assume(value < threshold)
+
+
+@pytest.mark.parametrize("exc", [MultipleFailures, AssertionError])
+def test_multiple_example_reporting(exc):
+    @example(1)
+    @example(2)
+    @settings(report_multiple_bugs=exc is MultipleFailures, phases=[Phase.explicit])
+    @given(integers())
+    def inner_test_multiple_failing_examples(x):
+        assert x < 2
+        assert x < 1
+
+    with pytest.raises(exc):
+        inner_test_multiple_failing_examples()
