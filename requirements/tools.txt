@@ -94,7 +94,7 @@ smmap==3.0.4              # via gitdb
 snowballstemmer==2.0.0    # via pydocstyle, sphinx
 sortedcontainers==2.2.2   # via -r requirements/tools.in
 sphinx-rtd-theme==0.4.3   # via -r requirements/tools.in
-sphinx==3.0.4             # via -r requirements/tools.in, sphinx-rtd-theme
+sphinx==3.1.0             # via -r requirements/tools.in, sphinx-rtd-theme
 sphinxcontrib-applehelp==1.0.2  # via sphinx
 sphinxcontrib-devhelp==1.0.2  # via sphinx
 sphinxcontrib-htmlhelp==1.0.3  # via sphinx
