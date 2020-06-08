@@ -53,7 +53,7 @@ markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8
 more-itertools==8.3.0     # via pytest
 mypy-extensions==0.4.3    # via mypy
-mypy==0.770               # via -r requirements/tools.in
+mypy==0.780               # via -r requirements/tools.in
 numpy==1.18.4             # via -r requirements/tools.in
 packaging==20.4           # via bleach, dparse, pytest, pyupio, safety, sphinx, tox
 parso==0.7.0              # via jedi
