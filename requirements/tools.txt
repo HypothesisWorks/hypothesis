@@ -24,7 +24,7 @@ cryptography==2.9.2       # via secretstorage
 decorator==4.4.2          # via ipython, traitlets
 deprecated==1.2.10        # via pygithub
 distlib==0.3.0            # via virtualenv
-django==3.0.6             # via -r requirements/tools.in
+django==3.0.7             # via -r requirements/tools.in
 docutils==0.16            # via readme-renderer, restructuredtext-lint, sphinx
 dparse==0.5.1             # via pyupio, safety
 dpcontracts==0.6.0        # via -r requirements/tools.in
