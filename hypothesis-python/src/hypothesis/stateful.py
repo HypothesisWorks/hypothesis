@@ -47,7 +47,11 @@ from hypothesis.internal.reflection import (
 from hypothesis.internal.validation import check_type
 from hypothesis.reporting import current_verbosity, report
 from hypothesis.strategies._internal.featureflags import FeatureStrategy
-from hypothesis.strategies._internal.strategies import OneOfStrategy, SearchStrategy
+from hypothesis.strategies._internal.strategies import (
+    OneOfStrategy,
+    SearchStrategy,
+    check_strategy,
+)
 from hypothesis.vendor.pretty import RepresentationPrinter
 
 STATE_MACHINE_RUN_LABEL = cu.calc_label_from_name("another state machine step")
@@ -568,7 +572,7 @@ def rule(*, targets=(), target=None, **kwargs):
     """
     converted_targets = _convert_targets(targets, target)
     for k, v in kwargs.items():
-        check_type(SearchStrategy, v, k)
+        check_strategy(v, name=k)
 
     def accept(f):
         existing_rule = getattr(f, RULE_MARKER, None)
@@ -606,7 +610,7 @@ def initialize(*, targets=(), target=None, **kwargs):
     """
     converted_targets = _convert_targets(targets, target)
     for k, v in kwargs.items():
-        check_type(SearchStrategy, v, k)
+        check_strategy(v, name=k)
 
     def accept(f):
         existing_rule = getattr(f, RULE_MARKER, None)

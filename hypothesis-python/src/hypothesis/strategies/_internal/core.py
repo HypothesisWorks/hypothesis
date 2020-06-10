@@ -902,8 +902,8 @@ def dictionaries(
     check_valid_sizes(min_size, max_size)
     if max_size == 0:
         return fixed_dictionaries(dict_class())
-    check_strategy(keys)
-    check_strategy(values)
+    check_strategy(keys, "keys")
+    check_strategy(values, "values")
 
     return lists(
         tuples(keys, values),
@@ -1495,7 +1495,7 @@ def fractions(
     assert max_value is None or isinstance(max_value, Fraction)
 
     check_valid_interval(min_value, max_value, "min_value", "max_value")
-    check_valid_integer(max_denominator)
+    check_valid_integer(max_denominator, "max_denominator")
 
     if max_denominator is not None:
         if max_denominator < 1:
@@ -1607,7 +1607,7 @@ def decimals(
     try to maximize human readability when shrinking.
     """
     # Convert min_value and max_value to Decimal values, and validate args
-    check_valid_integer(places)
+    check_valid_integer(places, "places")
     if places is not None and places < 0:
         raise InvalidArgument("places=%r may not be negative" % places)
     min_value = _as_finite_decimal(min_value, "min_value", allow_infinity)
@@ -1964,7 +1964,7 @@ class DataObject:
         return "data(...)"
 
     def draw(self, strategy: SearchStrategy[Ex], label: Any = None) -> Ex:
-        check_type(SearchStrategy, strategy, "strategy")
+        check_strategy(strategy, "strategy")
         result = self.conjecture_data.draw(strategy)
         self.count += 1
         if label is not None:
@@ -2138,7 +2138,7 @@ def functions(
         hints = get_type_hints(like)
         returns = from_type(hints.get("return", type(None)))
 
-    check_type(SearchStrategy, returns)
+    check_strategy(returns, "returns")
     return FunctionStrategy(like, returns)
 
 
@@ -2152,7 +2152,7 @@ def slices(draw: Any, size: int) -> slice:
 
     Examples from this strategy shrink toward 0 and smaller values
     """
-    check_valid_integer(size)
+    check_valid_integer(size, "size")
     if size is None or size < 1:
         raise InvalidArgument("size=%r must be at least one" % size)
 

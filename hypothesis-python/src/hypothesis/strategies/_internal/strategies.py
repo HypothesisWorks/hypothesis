@@ -25,6 +25,7 @@ from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, assume
 from hypothesis.errors import (
     HypothesisException,
+    InvalidArgument,
     NonInteractiveExampleWarning,
     UnsatisfiedAssumption,
 )
@@ -37,7 +38,6 @@ from hypothesis.internal.conjecture.utils import (
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.internal.validation import check_type
 from hypothesis.utils.conventions import UniqueIdentifier
 
 Ex = TypeVar("Ex", covariant=True)
@@ -767,4 +767,13 @@ class FilteredStrategy(SearchStrategy):
 
 @check_function
 def check_strategy(arg, name=""):
-    check_type(SearchStrategy, arg, name)
+    if not isinstance(arg, SearchStrategy):
+        hint = ""
+        if isinstance(arg, (list, tuple)):
+            hint = ", such as st.sampled_from({}),".format(name or "...")
+        if name:
+            name += "="
+        raise InvalidArgument(
+            "Expected a SearchStrategy%s but got %s%r (type=%s)"
+            % (hint, name, arg, type(arg).__name__)
+        )

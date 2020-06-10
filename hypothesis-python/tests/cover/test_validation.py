@@ -21,6 +21,7 @@ from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies import (
+    SearchStrategy as ActualSearchStrategy,
     binary,
     booleans,
     data,
@@ -34,6 +35,7 @@ from hypothesis.strategies import (
     sets,
     text,
 )
+from hypothesis.strategies._internal.strategies import check_strategy
 from tests.common.utils import fails_with
 
 
@@ -247,3 +249,32 @@ def test_validation_happens_on_draw():
 
     with pytest.raises(InvalidArgument, match="has no values"):
         test()
+
+
+class SearchStrategy:
+    """Not the SearchStrategy type you were looking for."""
+
+
+def check_type_(*args):
+    return check_type(*args)
+
+
+def test_check_type_suggests_check_strategy():
+    check_type_(SearchStrategy, SearchStrategy(), "this is OK")
+    with pytest.raises(AssertionError, match="use check_strategy instead"):
+        check_type_(ActualSearchStrategy, None, "SearchStrategy assertion")
+
+
+def check_strategy_(*args):
+    return check_strategy(*args)
+
+
+def test_check_strategy_might_suggest_sampled_from():
+    with pytest.raises(InvalidArgument) as excinfo:
+        check_strategy_("not a strategy")
+    assert "sampled_from" not in str(excinfo.value)
+    with pytest.raises(InvalidArgument, match="such as st.sampled_from"):
+        check_strategy_([1, 2, 3])
+    with pytest.raises(InvalidArgument, match="such as st.sampled_from"):
+        check_strategy_((1, 2, 3))
+    check_strategy_(integers(), "passes for our custom coverage check")

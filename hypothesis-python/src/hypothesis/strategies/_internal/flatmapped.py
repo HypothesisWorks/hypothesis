@@ -14,8 +14,7 @@
 # END HEADER
 
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.internal.validation import check_type
-from hypothesis.strategies._internal.strategies import SearchStrategy
+from hypothesis.strategies._internal.strategies import SearchStrategy, check_strategy
 
 
 class FlatMapStrategy(SearchStrategy):
@@ -38,7 +37,7 @@ class FlatMapStrategy(SearchStrategy):
     def do_draw(self, data):
         source = data.draw(self.flatmapped_strategy)
         expanded_source = self.expand(source)
-        check_type(SearchStrategy, expanded_source)
+        check_strategy(expanded_source)
         return data.draw(expanded_source)
 
     @property
