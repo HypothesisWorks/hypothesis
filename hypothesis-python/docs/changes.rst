@@ -10,6 +10,20 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.16.1:
+
+-------------------
+5.16.1 - 2020-06-10
+-------------------
+
+If you pass a :class:`python:list` or :class:`python:tuple` where a
+strategy was expected, the error message now mentions
+:func:`~hypothesis.strategies.sampled_from` as an example strategy.
+
+Thanks to the enthusiastic participants in the `PyCon Mentored Sprints
+<https://us.pycon.org/2020/hatchery/mentoredsprints/>`__ who suggested
+adding this hint.
+
 .. _v5.16.0:
 
 -------------------
