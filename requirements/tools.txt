@@ -79,7 +79,7 @@ pytest==5.4.3             # via -r requirements/tools.in
 python-dateutil==2.8.1    # via -r requirements/tools.in
 python-gitlab==2.3.1      # via pyupio
 pytz==2020.1              # via babel, django
-pyupgrade==2.5.0          # via -r requirements/tools.in
+pyupgrade==2.6.1          # via -r requirements/tools.in
 pyupio==1.1.1             # via -r requirements/tools.in
 pyyaml==5.3.1             # via bandit, dparse, pyupio
 readme-renderer==26.0     # via twine
