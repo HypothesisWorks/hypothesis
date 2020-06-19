@@ -167,7 +167,9 @@ else:
                     if fx.argname in argnames:
                         active_fx = item._request._get_active_fixturedef(fx.argname)
                         if active_fx.scope == "function":
-                            note_deprecation(msg % (item.nodeid, fx.argname), since="2020-02-29")
+                            note_deprecation(
+                                msg % (item.nodeid, fx.argname), since="2020-02-29"
+                            )
 
             if item.get_closest_marker("parametrize") is not None:
                 # Give every parametrized test invocation a unique database key
