@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.16.2:
+
+-------------------
+5.16.2 - 2020-06-19
+-------------------
+
+This patch fixes an internal error when warning about the use of function-scoped fixtures
+for parametrised tests where the parametrised value contained a ``%`` character.
+Thanks to Bryant for reporting and fixing this bug!
+
 .. _v5.16.1:
 
 -------------------
