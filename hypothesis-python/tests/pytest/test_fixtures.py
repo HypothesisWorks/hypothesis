@@ -93,6 +93,12 @@ def autofix(request):
 def test_requests_function_scoped_fixture(capsys, x):
     pass
 
+@pytest.mark.parametrize("percent", ["%", "%s"])
+@given(x=st.integers())
+def test_requests_function_scoped_fixture_percent_parametrized(capsys, x, percent):
+    # See https://github.com/HypothesisWorks/hypothesis/issues/2469
+    pass
+
 @given(x=st.integers())
 def test_autouse_function_scoped_fixture(x):
     pass
@@ -101,7 +107,8 @@ def test_autouse_function_scoped_fixture(x):
 
 def test_given_plus_function_scoped_non_autouse_fixtures_are_deprecated(testdir):
     script = testdir.makepyfile(TESTSUITE)
-    testdir.runpytest(script, "-Werror").assert_outcomes(passed=1, failed=1)
+    testdir.runpytest(script).assert_outcomes(passed=4)
+    testdir.runpytest(script, "-Werror").assert_outcomes(passed=1, failed=3)
 
 
 TESTSCRIPT_OVERRIDE_FIXTURE = """
