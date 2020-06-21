@@ -576,9 +576,10 @@ class StateForActualGivenExecution:
                                         printer.text(",")
                                         printer.breakable()
 
-                                    # We need to make sure to print these in the argument order for
-                                    # Python 2 and older versionf of Python 3.5. In modern versions
-                                    # this isn't an issue because kwargs is ordered.
+                                    # We need to make sure to print these in the
+                                    # argument order for Python 2 and older versions
+                                    # of Python 3.5. In modern versions this isn't
+                                    # an issue because kwargs is ordered.
                                     arg_order = {
                                         v: i
                                         for i, v in enumerate(
@@ -887,7 +888,28 @@ class HypothesisHandle:
     """
 
     inner_test = attr.ib()
-    fuzz_one_input = attr.ib()
+    _get_fuzz_target = attr.ib()
+
+    @property
+    def fuzz_one_input(
+        self,
+    ) -> Callable[[Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]]:
+        """Run the test as a fuzz target, driven with the `buffer` of bytes.
+
+        Returns None if buffer invalid for the strategy, canonical pruned
+        bytes if the buffer was valid, and leaves raised exceptions alone.
+
+        Note: this feature is experimental and may change or be removed.
+        """
+        # Note: most users, if they care about fuzzer performance, will access the
+        # property and assign it to a local variable to move the attribute lookup
+        # outside their fuzzing loop / before the fork point.  We cache it anyway,
+        # so that naive or unusual use-cases get the best possible performance too.
+        try:
+            return self.__cached_target  # type: ignore
+        except AttributeError:
+            self.__cached_target = self._get_fuzz_target()
+            return self.__cached_target
 
 
 def given(
@@ -1101,24 +1123,22 @@ def given(
                     )
                     raise the_error_hypothesis_found
 
-        def fuzz_one_input(
-            buffer: Union[bytes, bytearray, memoryview, BinaryIO]
-        ) -> Optional[bytes]:
-            """Run the test as a fuzz target, driven with the `buffer` of bytes.
-
-            Returns None if buffer invalid for the strategy, canonical pruned
-            bytes if the buffer was valid, and leaves raised exceptions alone.
-
-            Note: this feature is experimental and may change or be removed.
-            """
-            if isinstance(buffer, io.IOBase):
-                buffer = buffer.read()
-            if isinstance(buffer, (bytearray, memoryview)):
-                buffer = bytes(buffer)
-            assert isinstance(buffer, bytes)
-
+        def _get_fuzz_target() -> Callable[
+            [Union[bytes, bytearray, memoryview, BinaryIO]], Optional[bytes]
+        ]:
+            # Because fuzzing interfaces are very performance-sensitive, we use a
+            # somewhat more complicated structure here.  `_get_fuzz_target()` is
+            # called by the `HypothesisHandle.fuzz_one_input` property, allowing
+            # us to defer our collection of the settings, random instance, and
+            # reassignable `inner_test` (etc) until `fuzz_one_input` is accessed.
+            #
+            # We then share the performance cost of setting up `state` between
+            # many invocations of the target.  We explicitly force `deadline=None`
+            # for performance reasons, saving ~40% the runtime of an empty test.
             test = wrapped_test.hypothesis.inner_test
-            settings = wrapped_test._hypothesis_internal_use_settings
+            settings = Settings(
+                parent=wrapped_test._hypothesis_internal_use_settings, deadline=None
+            )
             random = get_random_for_wrapped_test(test, wrapped_test)
             _args, _kwargs, test_runner, search_strategy = process_arguments_to_given(
                 wrapped_test, (), {}, given_kwargs, argspec, settings,
@@ -1128,17 +1148,29 @@ def given(
             state = StateForActualGivenExecution(
                 test_runner, search_strategy, test, settings, random, wrapped_test,
             )
+            digest = function_digest(test)
 
-            data = ConjectureData.for_buffer(buffer)
-            try:
-                state.execute_once(data)
-            except (StopTest, UnsatisfiedAssumption):
-                return None
-            except BaseException:
-                if settings.database is not None:
-                    settings.database.save(function_digest(test), bytes(data.buffer))
-                raise
-            return bytes(data.buffer)
+            def fuzz_one_input(
+                buffer: Union[bytes, bytearray, memoryview, BinaryIO]
+            ) -> Optional[bytes]:
+                # This inner part is all that the fuzzer will actually run,
+                # so we keep it as small and as fast as possible.
+                if isinstance(buffer, io.IOBase):
+                    buffer = buffer.read()
+                assert isinstance(buffer, (bytes, bytearray, memoryview))
+                data = ConjectureData.for_buffer(buffer)
+                try:
+                    state.execute_once(data)
+                except (StopTest, UnsatisfiedAssumption):
+                    return None
+                except BaseException:
+                    if settings.database is not None:
+                        settings.database.save(digest, bytes(data.buffer))
+                    raise
+                return bytes(data.buffer)
+
+            fuzz_one_input.__doc__ = HypothesisHandle.fuzz_one_input.__doc__
+            return fuzz_one_input
 
         # After having created the decorated test function, we need to copy
         # over some attributes to make the switch as seamless as possible.
@@ -1159,7 +1191,7 @@ def given(
         wrapped_test._hypothesis_internal_use_reproduce_failure = getattr(
             test, "_hypothesis_internal_use_reproduce_failure", None
         )
-        wrapped_test.hypothesis = HypothesisHandle(test, fuzz_one_input)
+        wrapped_test.hypothesis = HypothesisHandle(test, _get_fuzz_target)
         return wrapped_test
 
     return run_test_as_given
