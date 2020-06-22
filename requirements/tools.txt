@@ -102,7 +102,7 @@ sphinxcontrib-jsmath==1.0.1  # via sphinx
 sphinxcontrib-qthelp==1.0.3  # via sphinx
 sphinxcontrib-serializinghtml==1.1.4  # via sphinx
 sqlparse==0.3.1           # via django
-stevedore==2.0.0          # via bandit
+stevedore==2.0.1          # via bandit
 tokenize-rt==4.0.0        # via pyupgrade
 toml==0.10.1              # via -r requirements/tools.in, black, dparse, tox
 tox==3.15.2               # via -r requirements/tools.in
