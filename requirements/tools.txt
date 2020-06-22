@@ -44,7 +44,7 @@ importlib-resources==2.0.1  # via virtualenv
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.15.0           # via -r requirements/tools.in
 isort==4.3.21             # via -r requirements/tools.in
-jedi==0.17.0              # via ipython
+jedi==0.17.1              # via ipython
 jeepney==0.4.3            # via keyring, secretstorage
 jinja2==2.11.2            # via pyupio, sphinx
 keyring==21.2.1           # via twine
