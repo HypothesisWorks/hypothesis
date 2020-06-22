@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.17.0:
+
+-------------------
+5.17.0 - 2020-06-22
+-------------------
+
+This patch adds strategy inference for the ``Literal``, ``NewType``, ``Type``,
+``DefaultDict``, and ``TypedDict`` types from the :pypi:`typing_extensions`
+backport on PyPI.
+
 .. _v5.16.3:
 
 -------------------
