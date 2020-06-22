@@ -1343,9 +1343,15 @@ def from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
 
 
 def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
+    # TODO: We would like to move this to the top level, but pending some major
+    # refactoring it's hard to do without creating circular imports.
+    from hypothesis.strategies._internal import types
+
     if (
         hasattr(typing, "_TypedDictMeta")
         and type(thing) is typing._TypedDictMeta  # type: ignore
+        or hasattr(types.typing_extensions, "_TypedDictMeta")
+        and type(thing) is types.typing_extensions._TypedDictMeta  # type: ignore
     ):  # pragma: no cover
         # The __optional_keys__ attribute may or may not be present, but if there's no
         # way to tell and we just have to assume that everything is required.
@@ -1356,10 +1362,6 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             mapping={k: v for k, v in anns.items() if k not in optional},
             optional={k: v for k, v in anns.items() if k in optional},
         )
-
-    # TODO: We would like to move this to the top level, but pending some major
-    # refactoring it's hard to do without creating circular imports.
-    from hypothesis.strategies._internal import types
 
     def as_strategy(strat_or_callable, thing, final=True):
         # User-provided strategies need some validation, and callables even more
