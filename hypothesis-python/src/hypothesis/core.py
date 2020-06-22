@@ -334,12 +334,6 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs):
 
         with local_settings(state.settings):
             fragments_reported = []
-
-            def report_buffered():
-                for f in fragments_reported:
-                    report(f)
-                del fragments_reported[:]
-
             try:
                 with with_reporter(fragments_reported.append):
                     state.execute_once(
@@ -354,17 +348,20 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs):
                 # a saved failure when other arguments are supplied by e.g. pytest.
                 # See https://github.com/HypothesisWorks/hypothesis/issues/2125
                 pass
-            except BaseException:
-                report_buffered()
-                raise
+            except BaseException as err:
+                # In order to support reporting of multiple failing examples, we yield
+                # each of the (report text, error) pairs we find back to the top-level
+                # runner.  This also ensures that user-facing stack traces have as few
+                # frames of Hypothesis internals as possible.
+                yield (fragments_reported, err.with_traceback(get_trimmed_traceback()))
+                if state.settings.report_multiple_bugs:
+                    continue
+                break
 
-            if current_verbosity() >= Verbosity.verbose:
-                prefix = "Falsifying example"
-                assert fragments_reported[0].startswith(prefix)
-                fragments_reported[0] = (
-                    "Trying example" + fragments_reported[0][len(prefix) :]
-                )
-                report_buffered()
+            assert fragments_reported[0].startswith("Falsifying example")
+            verbose_report(fragments_reported[0].replace("Falsifying", "Trying", 1))
+            for f in fragments_reported[1:]:
+                verbose_report(f)
 
 
 def get_random_for_wrapped_test(test, wrapped_test):
@@ -1069,8 +1066,28 @@ def given(
 
             # There was no @reproduce_failure, so start by running any explicit
             # examples from @example decorators.
-
-            execute_explicit_examples(state, wrapped_test, arguments, kwargs)
+            errors = list(
+                execute_explicit_examples(state, wrapped_test, arguments, kwargs)
+            )
+            with local_settings(state.settings):
+                if len(errors) > 1:
+                    # If we're not going to report multiple bugs, we would have
+                    # stopped running explicit examples at the first failure.
+                    assert state.settings.report_multiple_bugs
+                    for fragments, err in errors:
+                        for f in fragments:
+                            report(f)
+                        tb_lines = traceback.format_exception(
+                            type(err), err, err.__traceback__
+                        )
+                        report("".join(tb_lines))
+                    msg = "Hypothesis found %d failures in explicit examples."
+                    raise MultipleFailures(msg % (len(errors)))
+                elif errors:
+                    fragments, the_error_hypothesis_found = errors[0]
+                    for f in fragments:
+                        report(f)
+                    raise the_error_hypothesis_found
 
             # If there were any explicit examples, they all ran successfully.
             # The next step is to use the Conjecture engine to run the test on
