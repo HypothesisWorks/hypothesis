@@ -106,7 +106,7 @@ standard_types = [
     integers().filter(lambda x: abs(x) > 100),
     floats(min_value=-sys.float_info.max, max_value=sys.float_info.max),
     none(),
-    randoms(),
+    randoms(use_true_random=True),
     booleans().flatmap(lambda x: booleans() if x else complex_numbers()),
     recursive(base=booleans(), extend=lambda x: lists(x, max_size=3), max_leaves=10),
 ]

@@ -468,7 +468,7 @@ def test_example_equality():
         assert ex != "hello"
 
 
-@given(st.integers(0, 255), st.randoms())
+@given(st.integers(0, 255), st.randoms(use_true_random=True))
 def test_partial_buffer(n, rnd):
     data = ConjectureData(prefix=[n], random=rnd, max_length=2,)
 

@@ -62,9 +62,9 @@ Strategies = st.recursive(
             [
                 st.none(),
                 st.booleans(),
-                st.randoms(),
+                st.randoms(use_true_random=True),
                 st.complex_numbers(),
-                st.randoms(),
+                st.randoms(use_true_random=True),
                 st.fractions(),
                 st.decimals(),
             ]

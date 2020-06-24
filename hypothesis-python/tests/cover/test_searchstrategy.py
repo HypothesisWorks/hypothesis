@@ -19,9 +19,8 @@ from collections import namedtuple
 import pytest
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import booleans, integers, just, randoms, tuples
+from hypothesis.strategies import booleans, integers, just, tuples
 from hypothesis.strategies._internal.strategies import one_of_strategies
-from hypothesis.types import RandomWithSeed
 from tests.common.debug import assert_no_examples
 
 
@@ -44,17 +43,6 @@ def last(xs):
     for x in xs:
         t = x
     return t
-
-
-def test_random_repr_has_seed():
-    rnd = randoms().example()
-    seed = rnd.seed
-    assert str(seed) in repr(rnd)
-
-
-def test_random_only_produces_special_random():
-    st = randoms()
-    assert isinstance(st.example(), RandomWithSeed)
 
 
 def test_just_strategy_uses_repr():
