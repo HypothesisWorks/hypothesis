@@ -84,14 +84,12 @@ def test_skips_over_exhausted_children():
     assert results == [(1, 0), (1, 1), (2, 0)]
 
 
-def test_wraps_around_to_beginning():
+def test_starts_from_the_end():
     def f(chooser):
         chooser.choose(range(3))
 
     tree = ChoiceTree()
-    assert tree.step((), f) == (1,)
-    assert tree.step((1,), f) == (0,)
-    assert tree.step((0,), f) == ()
+    assert tree.step((), f) == (2,)
 
 
 def test_skips_over_exhausted_subtree():
@@ -99,5 +97,5 @@ def test_skips_over_exhausted_subtree():
         chooser.choose(range(10))
 
     tree = ChoiceTree()
+    assert tree.step((8,), f) == (8,)
     assert tree.step((8,), f) == (7,)
-    assert tree.step((8,), f) == (6,)

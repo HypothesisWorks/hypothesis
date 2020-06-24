@@ -1472,10 +1472,19 @@ class ShrinkPass:
         size = len(self.shrinker.shrink_target.buffer)
         self.shrinker.explain_next_call_as(self.name)
         try:
-            self.next_prefix = tree.step(
+            choices = tree.step(
                 self.next_prefix,
                 lambda chooser: self.run_with_chooser(self.shrinker, chooser),
             )
+
+            next_prefix = list(choices)
+            while next_prefix and next_prefix[-1] == 0:
+                next_prefix.pop()
+
+            if next_prefix:
+                next_prefix[-1] -= 1
+
+            self.next_prefix = next_prefix
         finally:
             self.calls += self.shrinker.calls - initial_calls
             self.shrinks += self.shrinker.shrinks - initial_shrinks

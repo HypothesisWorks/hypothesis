@@ -70,13 +70,7 @@ class Chooser:
         self.__finished = True
         assert len(self.__node_trail) == len(self.__choices) + 1
 
-        next_value = list(self.__choices)
-        while next_value:
-            next_value[-1] -= 1
-            if next_value[-1] < 0:
-                next_value.pop()
-            else:
-                break
+        result = tuple(self.__choices)
 
         self.__node_trail[-1].live_child_count = 0
         while len(self.__node_trail) > 1 and self.__node_trail[-1].exhausted:
@@ -87,7 +81,7 @@ class Chooser:
             target.children[i] = DeadNode
             target.live_child_count -= 1
 
-        return tuple(next_value)
+        return result
 
 
 class ChoiceTree:
