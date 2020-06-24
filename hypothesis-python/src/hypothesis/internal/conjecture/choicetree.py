@@ -26,6 +26,16 @@ class Chooser:
         self.__choices = []
         self.__finished = False
 
+    def __selection_order(self, depth, n):
+        if depth < len(self.__prefix):
+            i = self.__prefix[depth]
+            if i >= n:
+                i = n - 1
+            yield from range(i, -1, -1)
+            yield from range(n - 1, i, -1)
+        else:
+            yield from range(n - 1, -1, -1)
+
     def choose(self, values, condition=lambda x: True):
         """Return some element of values satisfying the condition
         that will not lead to an exhausted branch, or raise DeadBranch
@@ -39,19 +49,9 @@ class Chooser:
 
         assert node.live_child_count > 0 or len(values) == 0
 
-        depth = len(self.__choices)
-
-        if depth < len(self.__prefix):
-            i = self.__prefix[depth]
-            if i >= len(values):
-                i = len(values) - 1
-        else:
-            i = len(values) - 1
-
-        count = 0
-        while node.live_child_count > 0:
-            count += 1
-            assert count <= len(values)
+        for i in self.__selection_order(len(self.__choices), len(values)):
+            if node.live_child_count == 0:
+                break
             if not node.children[i].exhausted:
                 v = values[i]
                 if condition(v):
@@ -61,7 +61,7 @@ class Chooser:
                 else:
                     node.children[i] = DeadNode
                     node.live_child_count -= 1
-            i = (i - 1) % len(values)
+        assert node.live_child_count == 0
         raise DeadBranch()
 
     def finish(self):
