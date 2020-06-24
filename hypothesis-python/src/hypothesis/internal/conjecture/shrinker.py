@@ -571,9 +571,6 @@ class Shrinker:
             if 0 < len(successful_passes) < len(passes):
                 self.fixate_shrink_passes(successful_passes)
 
-        for sp in passes:
-            sp.fixed_point_at = self.shrink_target
-
     @property
     def buffer(self):
         return self.shrink_target.buffer
@@ -1453,16 +1450,12 @@ class ShrinkPass:
     shrinker = attr.ib()
 
     last_prefix = attr.ib(default=())
-    fixed_point_at = attr.ib(default=None)
     successes = attr.ib(default=0)
     calls = attr.ib(default=0)
     shrinks = attr.ib(default=0)
     deletions = attr.ib(default=0)
 
     def step(self):
-        if self.fixed_point_at is self.shrinker.shrink_target:
-            return False
-
         tree = self.shrinker.shrink_pass_choice_trees[self]
         if tree.exhausted:
             return False
