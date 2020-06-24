@@ -18,7 +18,7 @@ from collections import defaultdict
 import attr
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.choicetree import ChoiceTree
+from hypothesis.internal.conjecture.choicetree import ChoiceTree, prefix_selection_order
 from hypothesis.internal.conjecture.data import ConjectureResult, Overrun, Status
 from hypothesis.internal.conjecture.floats import (
     DRAW_FLOAT_LABEL,
@@ -1452,7 +1452,7 @@ class ShrinkPass:
     index = attr.ib()
     shrinker = attr.ib()
 
-    next_prefix = attr.ib(default=())
+    last_prefix = attr.ib(default=())
     fixed_point_at = attr.ib(default=None)
     successes = attr.ib(default=0)
     calls = attr.ib(default=0)
@@ -1472,19 +1472,10 @@ class ShrinkPass:
         size = len(self.shrinker.shrink_target.buffer)
         self.shrinker.explain_next_call_as(self.name)
         try:
-            choices = tree.step(
-                self.next_prefix,
+            self.last_prefix = tree.step(
+                prefix_selection_order(self.last_prefix),
                 lambda chooser: self.run_with_chooser(self.shrinker, chooser),
             )
-
-            next_prefix = list(choices)
-            while next_prefix and next_prefix[-1] == 0:
-                next_prefix.pop()
-
-            if next_prefix:
-                next_prefix[-1] -= 1
-
-            self.next_prefix = next_prefix
         finally:
             self.calls += self.shrinker.calls - initial_calls
             self.shrinks += self.shrinker.shrinks - initial_shrinks

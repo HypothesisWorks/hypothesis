@@ -16,25 +16,33 @@
 from collections import defaultdict
 
 
-class Chooser:
-    """A source of nondeterminism for use in shrink passes."""
+def prefix_selection_order(prefix):
+    """Select choices starting from ``prefix```,
+    preferring to move left then wrapping around
+    to the right."""
 
-    def __init__(self, tree, prefix):
-        self.__prefix = prefix
-        self.__tree = tree
-        self.__node_trail = [tree.root]
-        self.__choices = []
-        self.__finished = False
-
-    def __selection_order(self, depth, n):
-        if depth < len(self.__prefix):
-            i = self.__prefix[depth]
+    def selection_order(depth, n):
+        if depth < len(prefix):
+            i = prefix[depth]
             if i >= n:
                 i = n - 1
             yield from range(i, -1, -1)
             yield from range(n - 1, i, -1)
         else:
             yield from range(n - 1, -1, -1)
+
+    return selection_order
+
+
+class Chooser:
+    """A source of nondeterminism for use in shrink passes."""
+
+    def __init__(self, tree, selection_order):
+        self.__selection_order = selection_order
+        self.__tree = tree
+        self.__node_trail = [tree.root]
+        self.__choices = []
+        self.__finished = False
 
     def choose(self, values, condition=lambda x: True):
         """Return some element of values satisfying the condition
@@ -98,9 +106,10 @@ class ChoiceTree:
     def exhausted(self):
         return self.root.exhausted
 
-    def step(self, prefix, f):
+    def step(self, selection_order, f):
         assert not self.exhausted
-        chooser = Chooser(self, prefix)
+
+        chooser = Chooser(self, selection_order)
         try:
             f(chooser)
         except DeadBranch:
