@@ -10,6 +10,14 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.18.1:
+
+-------------------
+5.18.1 - 2020-06-25
+-------------------
+
+This release consists of some internal refactoring to the shrinker in preparation for future work. It has no user visible impact.
+
 .. _v5.18.0:
 
 -------------------
