@@ -15,7 +15,11 @@
 
 import hypothesis.strategies as st
 from hypothesis import given
-from hypothesis.internal.conjecture.choicetree import ChoiceTree
+from hypothesis.internal.conjecture.choicetree import ChoiceTree, prefix_selection_order
+
+
+def select(*args):
+    return prefix_selection_order(args)
 
 
 def exhaust(f):
@@ -26,7 +30,9 @@ def exhaust(f):
     prefix = ()
 
     while not tree.exhausted:
-        prefix = tree.step(prefix, lambda chooser: results.append(f(chooser)))
+        prefix = tree.step(
+            prefix_selection_order(prefix), lambda chooser: results.append(f(chooser))
+        )
     return results
 
 
@@ -77,21 +83,19 @@ def test_skips_over_exhausted_children():
 
     tree = ChoiceTree()
 
-    tree.step((1, 0), f)
-    tree.step((1, 1), f)
-    tree.step((0, 0), f)
+    tree.step(select(1, 0), f)
+    tree.step(select(1, 1), f)
+    tree.step(select(0, 0), f)
 
     assert results == [(1, 0), (1, 1), (2, 0)]
 
 
-def test_wraps_around_to_beginning():
+def test_starts_from_the_end():
     def f(chooser):
         chooser.choose(range(3))
 
     tree = ChoiceTree()
-    assert tree.step((), f) == (1,)
-    assert tree.step((1,), f) == (0,)
-    assert tree.step((0,), f) == ()
+    assert tree.step(select(), f) == (2,)
 
 
 def test_skips_over_exhausted_subtree():
@@ -99,5 +103,5 @@ def test_skips_over_exhausted_subtree():
         chooser.choose(range(10))
 
     tree = ChoiceTree()
-    assert tree.step((8,), f) == (7,)
-    assert tree.step((8,), f) == (6,)
+    assert tree.step(select(8), f) == (8,)
+    assert tree.step(select(8), f) == (7,)

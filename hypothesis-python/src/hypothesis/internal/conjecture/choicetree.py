@@ -16,11 +16,29 @@
 from collections import defaultdict
 
 
+def prefix_selection_order(prefix):
+    """Select choices starting from ``prefix```,
+    preferring to move left then wrapping around
+    to the right."""
+
+    def selection_order(depth, n):
+        if depth < len(prefix):
+            i = prefix[depth]
+            if i >= n:
+                i = n - 1
+            yield from range(i, -1, -1)
+            yield from range(n - 1, i, -1)
+        else:
+            yield from range(n - 1, -1, -1)
+
+    return selection_order
+
+
 class Chooser:
     """A source of nondeterminism for use in shrink passes."""
 
-    def __init__(self, tree, prefix):
-        self.__prefix = prefix
+    def __init__(self, tree, selection_order):
+        self.__selection_order = selection_order
         self.__tree = tree
         self.__node_trail = [tree.root]
         self.__choices = []
@@ -39,19 +57,9 @@ class Chooser:
 
         assert node.live_child_count > 0 or len(values) == 0
 
-        depth = len(self.__choices)
-
-        if depth < len(self.__prefix):
-            i = self.__prefix[depth]
-            if i >= len(values):
-                i = len(values) - 1
-        else:
-            i = len(values) - 1
-
-        count = 0
-        while node.live_child_count > 0:
-            count += 1
-            assert count <= len(values)
+        for i in self.__selection_order(len(self.__choices), len(values)):
+            if node.live_child_count == 0:
+                break
             if not node.children[i].exhausted:
                 v = values[i]
                 if condition(v):
@@ -61,7 +69,7 @@ class Chooser:
                 else:
                     node.children[i] = DeadNode
                     node.live_child_count -= 1
-            i = (i - 1) % len(values)
+        assert node.live_child_count == 0
         raise DeadBranch()
 
     def finish(self):
@@ -70,13 +78,7 @@ class Chooser:
         self.__finished = True
         assert len(self.__node_trail) == len(self.__choices) + 1
 
-        next_value = list(self.__choices)
-        while next_value:
-            next_value[-1] -= 1
-            if next_value[-1] < 0:
-                next_value.pop()
-            else:
-                break
+        result = tuple(self.__choices)
 
         self.__node_trail[-1].live_child_count = 0
         while len(self.__node_trail) > 1 and self.__node_trail[-1].exhausted:
@@ -87,7 +89,7 @@ class Chooser:
             target.children[i] = DeadNode
             target.live_child_count -= 1
 
-        return tuple(next_value)
+        return result
 
 
 class ChoiceTree:
@@ -104,9 +106,10 @@ class ChoiceTree:
     def exhausted(self):
         return self.root.exhausted
 
-    def step(self, prefix, f):
+    def step(self, selection_order, f):
         assert not self.exhausted
-        chooser = Chooser(self, prefix)
+
+        chooser = Chooser(self, selection_order)
         try:
             f(chooser)
         except DeadBranch:
