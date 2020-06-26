@@ -10,6 +10,14 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.18.2:
+
+-------------------
+5.18.2 - 2020-06-26
+-------------------
+
+This patch improves our docs for the :obj:`~hypothesis.settings.derandomize` setting.
+
 .. _v5.18.1:
 
 -------------------
