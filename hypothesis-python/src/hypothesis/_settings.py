@@ -379,13 +379,15 @@ settings._define_setting(
     default=False,
     options=(True, False),
     description="""
-If this is True then hypothesis will run in deterministic mode
-where each falsification uses a random number generator that is seeded
-based on the hypothesis to falsify, which will be consistent across
-multiple runs. This has the advantage that it will eliminate any
-randomness from your tests, which may be preferable for some situations.
-It does have the disadvantage of making your tests less likely to
-find novel breakages.
+If True, seed Hypothesis' random number generator using a hash of the test
+function, so that every run will test the same set of examples until you
+update Hypothesis, Python, or the test function.
+
+This allows you to `check for regressions and look for bugs
+<https://blog.nelhage.com/post/two-kinds-of-testing/>`__ using
+:ref:`separate settings profiles <settings_profiles>` - for example running
+quick deterministic tests on every commit, and a longer non-deterministic
+nightly testing run.
 """,
 )
 
