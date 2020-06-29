@@ -106,7 +106,7 @@ stevedore==2.0.1          # via bandit
 tokenize-rt==4.0.0        # via pyupgrade
 toml==0.10.1              # via -r requirements/tools.in, black, dparse, tox
 tox==3.16.0               # via -r requirements/tools.in
-tqdm==4.46.1              # via pyupio, twine
+tqdm==4.47.0              # via pyupio, twine
 traitlets==4.3.3          # via ipython
 twine==3.1.1              # via -r requirements/tools.in
 typed-ast==1.4.1          # via black, mypy
