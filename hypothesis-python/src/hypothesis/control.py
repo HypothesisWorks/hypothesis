@@ -60,7 +60,6 @@ class BuildContext:
         self.is_final = is_final
         self.close_on_capture = close_on_capture
         self.close_on_del = False
-        self.notes = []
 
     def __enter__(self):
         self.assign_variable = _current_build_context.with_value(self)
@@ -98,13 +97,16 @@ def cleanup(teardown):
     context.tasks.append(teardown)
 
 
-def note(value: str) -> None:
-    """Report this value in the final execution."""
+def should_note():
     context = _current_build_context.value
     if context is None:
         raise InvalidArgument("Cannot make notes outside of a test")
-    context.notes.append(value)
-    if context.is_final or settings.default.verbosity >= Verbosity.verbose:
+    return context.is_final or settings.default.verbosity >= Verbosity.verbose
+
+
+def note(value: str) -> None:
+    """Report this value in the final execution."""
+    if should_note():
         report(value)
 
 

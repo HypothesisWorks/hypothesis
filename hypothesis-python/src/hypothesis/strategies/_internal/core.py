@@ -48,6 +48,7 @@ from uuid import UUID
 
 import attr
 
+from hypothesis._settings import note_deprecation
 from hypothesis.control import cleanup, note, reject
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.cache import LRUReusedCache
@@ -119,7 +120,6 @@ from hypothesis.strategies._internal.strings import (
     OneCharStringStrategy,
     StringStrategy,
 )
-from hypothesis.types import RandomWithSeed
 from hypothesis.utils.conventions import InferType, infer, not_set
 
 K = TypeVar("K")
@@ -1139,13 +1139,38 @@ def binary(*, min_size: int = 0, max_size: int = None) -> SearchStrategy[bytes]:
 
 @cacheable
 @defines_strategy
-def randoms() -> SearchStrategy[random.Random]:
-    """Generates instances of ``random.Random``, tweaked to show the seed value
-    in the repr for reproducibility.
+def randoms(
+    *, note_method_calls: bool = False, use_true_random: bool = None
+) -> SearchStrategy[random.Random]:
+    """Generates instances of ``random.Random``. The generated Random instances
+    are of a special HypothesisRandom subclass.
 
-    Examples from this strategy shrink to seeds closer to zero.
+    - If ``note_method_calls`` is set to ``True``, Hypothesis will print the
+      randomly drawn values in any falsifying test case. This can be helpful
+      for debugging the behaviour of randomized algorithms.
+    - If ``use_true_random`` is set to ``True`` then values will be drawn from
+      their usual distribution, otherwise they will actually be Hypothesis
+      generated values (and will be shrunk accordingly for any failing test
+      case). Setting ``use_true_random=False`` will tend to expose bugs that
+      would occur with very low probability when it is set to True, and this
+      flag should only be set to True when your code relies on the distribution
+      of values for correctness.
     """
-    return integers().map(RandomWithSeed)
+    if use_true_random is None:
+        note_deprecation(
+            """Defaulting to old behaviour of use_true_random=True. If you want
+            to keep that behaviour, set use_true_random=True explicitly. If you
+            want the new behaviour (which will become the default in future),
+            set use_true_random=False.""",
+            since="RELEASEDAY",
+        )
+        use_true_random = True
+
+    from hypothesis.strategies._internal.random import RandomStrategy
+
+    return RandomStrategy(
+        use_true_random=use_true_random, note_method_calls=note_method_calls
+    )
 
 
 class RandomSeeder:
@@ -1912,9 +1937,9 @@ def uuids(*, version: int = None) -> SearchStrategy[UUID]:
             )
             % (version,)
         )
-    return shared(randoms(), key="hypothesis.strategies.uuids.generator").map(
-        lambda r: UUID(version=version, int=r.getrandbits(128))
-    )
+    return shared(
+        randoms(use_true_random=True), key="hypothesis.strategies.uuids.generator"
+    ).map(lambda r: UUID(version=version, int=r.getrandbits(128)))
 
 
 class RunnerStrategy(SearchStrategy):
