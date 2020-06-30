@@ -18,7 +18,11 @@ from collections import defaultdict
 import attr
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.choicetree import ChoiceTree, prefix_selection_order
+from hypothesis.internal.conjecture.choicetree import (
+    ChoiceTree,
+    prefix_selection_order,
+    random_selection_order,
+)
 from hypothesis.internal.conjecture.data import ConjectureResult, Overrun, Status
 from hypothesis.internal.conjecture.floats import (
     DRAW_FLOAT_LABEL,
@@ -484,29 +488,63 @@ class Shrinker:
         it twice will have exactly the same effect as calling it once.
         """
 
-        self.fixate_shrink_passes(
-            [
-                block_program("X" * 5),
-                block_program("X" * 4),
-                block_program("X" * 3),
-                block_program("X" * 2),
-                block_program("X" * 1),
-                "pass_to_descendant",
-                "adaptive_example_deletion",
-                "alphabet_minimize",
-                "zero_examples",
-                "reorder_examples",
-                "minimize_floats",
-                "minimize_duplicated_blocks",
-                block_program("-XX"),
-                "minimize_individual_blocks",
-                block_program("--X"),
-            ]
-        )
+        passes = [
+            block_program("X" * 5),
+            block_program("X" * 4),
+            block_program("X" * 3),
+            block_program("X" * 2),
+            block_program("X" * 1),
+            "pass_to_descendant",
+            "adaptive_example_deletion",
+            "alphabet_minimize",
+            "zero_examples",
+            "reorder_examples",
+            "minimize_floats",
+            "minimize_duplicated_blocks",
+            block_program("-XX"),
+            "minimize_individual_blocks",
+            block_program("--X"),
+        ]
+
+        while True:
+            selected = self.select_shrink_passes(passes)
+            if not selected:
+                break
+            self.debug("Selected passes %s" % (", ".join(sp.name for sp in selected)))
+            self.fixate_shrink_passes(selected)
 
     @derived_value
     def shrink_pass_choice_trees(self):
         return defaultdict(ChoiceTree)
+
+    def select_shrink_passes(self, passes):
+        """Select a subset of ``passes`` that it currently makes sense to run.
+
+        Will return an empty list if and only if no pass in the list can
+        currently make progress.
+        """
+
+        passes = list(map(self.shrink_pass, passes))
+
+        any_ran = True
+        max_failures = 3
+        while any_ran:
+            any_ran = False
+            selected = []
+            for sp in passes:
+                initial_calls = self.calls
+                while self.calls < initial_calls + max_failures:
+                    prev = self.shrink_target
+                    if not sp.step(random=True):
+                        break
+                    any_ran = True
+                    if prev is not self.shrink_target:
+                        selected.append(sp)
+                        break
+            if selected:
+                return selected
+            else:
+                max_failures *= 2
 
     def fixate_shrink_passes(self, passes):
         """Run steps from each pass in ``passes`` until the current shrink target
@@ -1455,7 +1493,7 @@ class ShrinkPass:
     shrinks = attr.ib(default=0)
     deletions = attr.ib(default=0)
 
-    def step(self):
+    def step(self, random=False):
         tree = self.shrinker.shrink_pass_choice_trees[self]
         if tree.exhausted:
             return False
@@ -1464,9 +1502,15 @@ class ShrinkPass:
         initial_calls = self.shrinker.calls
         size = len(self.shrinker.shrink_target.buffer)
         self.shrinker.explain_next_call_as(self.name)
+
+        if random:
+            selection_order = random_selection_order(self.shrinker.random)
+        else:
+            selection_order = prefix_selection_order(self.last_prefix)
+
         try:
             self.last_prefix = tree.step(
-                prefix_selection_order(self.last_prefix),
+                selection_order,
                 lambda chooser: self.run_with_chooser(self.shrinker, chooser),
             )
         finally:

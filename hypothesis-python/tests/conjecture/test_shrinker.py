@@ -559,3 +559,18 @@ def test_zero_coverage_edge_case():
     shrinker.fixate_shrink_passes(["zero_examples"])
 
     assert list(shrinker.buffer) == [255] + [0] * (len(shrinker.buffer) - 1)
+
+
+def test_selects_only_useful_shrink_passes():
+    @shrinking_from([255] * 10)
+    def shrinker(data):
+        for _ in range(10):
+            data.draw_bits(8)
+        data.mark_interesting()
+
+    assert {
+        sp.name
+        for sp in shrinker.select_shrink_passes(
+            [block_program("X"), "minimize_individual_blocks", "zero_examples"]
+        )
+    } == {"minimize_individual_blocks", "zero_examples"}
