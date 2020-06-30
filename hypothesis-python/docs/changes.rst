@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.19.0:
+
+-------------------
+5.19.0 - 2020-06-30
+-------------------
+
+This release improves the :func:`~hypothesis.strategies.randoms` strategy by adding support
+for ``Random`` instances where Hypothesis generates the random values
+rather than having them be "truly" random.
+
 .. _v5.18.3:
 
 -------------------

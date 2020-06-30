@@ -1162,7 +1162,7 @@ def randoms(
             to keep that behaviour, set use_true_random=True explicitly. If you
             want the new behaviour (which will become the default in future),
             set use_true_random=False.""",
-            since="RELEASEDAY",
+            since="2020-06-30",
         )
         use_true_random = True
 
