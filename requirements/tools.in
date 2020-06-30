@@ -24,6 +24,7 @@ requests
 restructuredtext-lint
 sortedcontainers
 sphinx
+sphinx-hoverxref
 sphinx-rtd-theme
 toml
 tox

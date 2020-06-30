@@ -30,6 +30,7 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
+    "hoverxref.extension",
 ]
 
 templates_path = ["_templates"]
@@ -59,6 +60,10 @@ exclude_patterns = ["_build"]
 pygments_style = "sphinx"
 
 todo_include_todos = False
+
+# See https://sphinx-hoverxref.readthedocs.io/en/latest/configuration.html
+hoverxref_auto_ref = True
+hoverxref_domains = ["py"]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
