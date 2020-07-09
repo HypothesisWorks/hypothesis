@@ -44,7 +44,7 @@ importlib-metadata==1.7.0  # via flake8, flake8-comprehensions, keyring, pluggy,
 importlib-resources==3.0.0  # via virtualenv
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.16.1           # via -r requirements/tools.in
-isort==4.3.21             # via -r requirements/tools.in
+isort==5.0.5              # via -r requirements/tools.in
 jedi==0.17.1              # via ipython
 jeepney==0.4.3            # via keyring, secretstorage
 jinja2==2.11.2            # via pyupio, sphinx
@@ -114,7 +114,7 @@ twine==3.2.0              # via -r requirements/tools.in
 typed-ast==1.4.1          # via black, mypy
 typing-extensions==3.7.4.2  # via mypy
 urllib3==1.25.9           # via requests
-virtualenv==20.0.25       # via tox
+virtualenv==20.0.26       # via tox
 wcwidth==0.2.5            # via prompt-toolkit, pytest
 webencodings==0.5.1       # via bleach
 wrapt==1.12.1             # via deprecated
