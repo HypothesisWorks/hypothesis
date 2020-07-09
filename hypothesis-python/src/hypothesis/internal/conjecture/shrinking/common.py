@@ -16,44 +16,6 @@
 """This module implements various useful common functions for shrinking tasks."""
 
 
-def find_integer(f):
-    """Finds a (hopefully large) integer such that f(n) is True and f(n + 1) is
-    False.
-
-    f(0) is assumed to be True and will not be checked.
-    """
-    # We first do a linear scan over the small numbers and only start to do
-    # anything intelligent if f(4) is true. This is because it's very hard to
-    # win big when the result is small. If the result is 0 and we try 2 first
-    # then we've done twice as much work as we needed to!
-    for i in range(1, 5):
-        if not f(i):
-            return i - 1
-
-    # We now know that f(4) is true. We want to find some number for which
-    # f(n) is *not* true.
-    # lo is the largest number for which we know that f(lo) is true.
-    lo = 4
-
-    # Exponential probe upwards until we find some value hi such that f(hi)
-    # is not true. Subsequently we maintain the invariant that hi is the
-    # smallest number for which we know that f(hi) is not true.
-    hi = 5
-    while f(hi):
-        lo = hi
-        hi *= 2
-
-    # Now binary search until lo + 1 = hi. At that point we have f(lo) and not
-    # f(lo + 1), as desired..
-    while lo + 1 < hi:
-        mid = (lo + hi) // 2
-        if f(mid):
-            lo = mid
-        else:
-            hi = mid
-    return lo
-
-
 class Shrinker:
     """A Shrinker object manages a single value and a predicate it should
     satisfy, and attempts to improve it in some direction, making it smaller
