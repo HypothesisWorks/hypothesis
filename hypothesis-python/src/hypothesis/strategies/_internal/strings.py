@@ -15,7 +15,7 @@
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
-from hypothesis.internal.conjecture.utils import integer_range
+from hypothesis.internal.conjecture.utils import biased_coin, integer_range
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.strategies._internal.strategies import (
     MappedSearchStrategy,
@@ -61,10 +61,45 @@ class OneCharStringStrategy(SearchStrategy):
             )
         self.intervals = IntervalSet(intervals)
         self.zero_point = self.intervals.index_above(ord("0"))
+        self.Z_point = min(
+            self.intervals.index_above(ord("Z")), len(self.intervals) - 1
+        )
 
     def do_draw(self, data):
-        i = integer_range(data, 0, len(self.intervals) - 1, center=self.zero_point)
+        if len(self.intervals) > 256:
+            if biased_coin(data, 0.2):
+                i = integer_range(data, 256, len(self.intervals) - 1)
+            else:
+                i = integer_range(data, 0, 255)
+        else:
+            i = integer_range(data, 0, len(self.intervals) - 1)
+
+        i = self.rewrite_integer(i)
+
         return chr(self.intervals[i])
+
+    def rewrite_integer(self, i):
+        # We would like it so that, where possible, shrinking replaces
+        # characters with simple ascii characters, so we rejig this
+        # bit so that the smallest values are 0, 1, 2, ..., Z.
+        #
+        # Imagine that numbers are laid out as abc0yyyZ...
+        # this rearranges them so that they are laid out as
+        # 0yyyZcba..., which gives a better shrinking order.
+        if i <= self.Z_point:
+            # We want to rewrite the integers [0, n] inclusive
+            # to [zero_point, Z_point].
+            n = self.Z_point - self.zero_point
+            if i <= n:
+                i += self.zero_point
+            else:
+                # We want to rewrite the integers [n + 1, Z_point] to
+                # [zero_point, 0] (reversing the order so that codepoints below
+                # zero_point shrink upwards).
+                i = self.zero_point - (i - n)
+                assert i < self.zero_point
+            assert 0 <= i <= self.Z_point
+        return i
 
 
 class StringStrategy(MappedSearchStrategy):
