@@ -87,7 +87,14 @@ class RunIsComplete(Exception):
 
 
 class ConjectureRunner:
-    def __init__(self, test_function, settings=None, random=None, database_key=None):
+    def __init__(
+        self,
+        test_function,
+        settings=None,
+        random=None,
+        database_key=None,
+        ignore_limits=False,
+    ):
         self._test_function = test_function
         self.settings = settings or Settings()
         self.shrinks = 0
@@ -96,6 +103,7 @@ class ConjectureRunner:
         self.valid_examples = 0
         self.random = random or Random(getrandbits(128))
         self.database_key = database_key
+        self.ignore_limits = ignore_limits
 
         # Global dict of per-phase statistics, and a list of per-call stats
         # which transfer to the global dict at the end of each phase.
@@ -273,7 +281,8 @@ class ConjectureRunner:
                 self.exit_with(ExitReason.max_shrinks)
 
         if (
-            self.finish_shrinking_deadline is not None
+            not self.ignore_limits
+            and self.finish_shrinking_deadline is not None
             and self.finish_shrinking_deadline < time.perf_counter()
         ):
             # See https://github.com/HypothesisWorks/hypothesis/issues/2340
@@ -558,6 +567,8 @@ class ConjectureRunner:
                         break
 
     def exit_with(self, reason):
+        if self.ignore_limits:
+            return
         self.statistics["stopped-because"] = reason.describe(self.settings)
         if self.best_observed_targets:
             self.statistics["targets"] = dict(self.best_observed_targets)

@@ -1572,3 +1572,18 @@ def test_does_not_cache_extended_prefix_if_overrun():
         d2 = runner.cached_test_function(b"", extend=8)
         assert d1.status == Status.OVERRUN
         assert d2.status == Status.VALID
+
+
+def test_can_be_set_to_ignore_limits():
+    def test(data):
+        data.draw_bits(8)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(
+            test, settings=settings(TEST_SETTINGS, max_examples=1), ignore_limits=True
+        )
+
+        for c in range(256):
+            runner.cached_test_function([c])
+
+        assert runner.tree.is_exhausted
