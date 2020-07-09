@@ -119,3 +119,18 @@ def test_all_matches_contained_in_all_matches(s1, s2, dfai):
     s = s1 + t + s2
 
     assert (len(s1), len(s1) + len(t)) in dfa.all_matches(s)
+
+
+@example(b'\x00\x00', DFA(((True, ((0, 0, 0),)),)))
+@settings(max_examples=10**6)
+@given(st.binary(), dfas())
+def test_all_matches_are_unique(s, dfa):
+    matches = dfa.all_matches(s)
+    assert len(set(matches)) == len(matches)
+
+
+
+@example(DFA([(True, [])]))
+@given(dfas())
+def test_can_serialize_a_dfa(dfa):
+    assert DFA.from_compact(dfa.to_compact()) == dfa
