@@ -43,6 +43,7 @@ class Chooser:
         self.__node_trail = [tree.root]
         self.__choices = []
         self.__finished = False
+        self.__cache_depth = 0
 
     def choose(self, values, condition=lambda x: True):
         """Return some element of values satisfying the condition
@@ -50,6 +51,7 @@ class Chooser:
         if no such element exist".
         """
         assert not self.__finished
+        self.__cache_depth = 0
         node = self.__node_trail[-1]
         if node.live_child_count is None:
             node.live_child_count = len(values)
@@ -71,6 +73,18 @@ class Chooser:
                     node.live_child_count -= 1
         assert node.live_child_count == 0
         raise DeadBranch()
+
+    def cached(self, f):
+        node = self.__node_trail[-1]
+        i = self.__cache_depth
+        self.__cache_depth += 1
+        if i < len(node.cache):
+            return node.cache[i]
+        else:
+            assert i == len(node.cache)
+            result = f()
+            node.cache.append(result)
+            return result
 
     def finish(self):
         """Record the decisions made in the underlying tree and return
@@ -122,6 +136,7 @@ class TreeNode:
         self.children = defaultdict(TreeNode)
         self.live_child_count = None
         self.n = None
+        self.cache = []
 
     @property
     def exhausted(self):

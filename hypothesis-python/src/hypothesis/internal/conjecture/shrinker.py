@@ -28,6 +28,9 @@ from hypothesis.internal.conjecture.floats import (
 from hypothesis.internal.conjecture.junkdrawer import binary_search, replace_all
 from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Ordering
 from hypothesis.internal.conjecture.shrinking.common import find_integer
+from hypothesis.internal.conjecture.dfa import Indexer
+from hypothesis.internal.conjecture.fixers import FIXERS
+
 
 if False:
     from typing import Dict  # noqa
@@ -287,6 +290,8 @@ class Shrinker:
         self.passes_by_name = {}
         self.passes = []
 
+        self.__dfa_indexers = {}
+
     @derived_value
     def cached_calculations(self):
         return {}
@@ -501,6 +506,7 @@ class Shrinker:
                 block_program("-XX"),
                 "minimize_individual_blocks",
                 block_program("--X"),
+                "apply_fixers",
             ]
         )
 
@@ -1339,6 +1345,36 @@ class Shrinker:
                 hi = mid
             else:
                 lo = mid
+
+    @defines_shrink_pass()
+    def apply_fixers(self, chooser):
+        fixer = chooser.choose(FIXERS)
+        matches = chooser.cached(lambda: sorted(fixer.all_matches(
+            self.buffer
+        )))
+
+        u, v = chooser.choose(matches)
+
+        s = self.buffer[u:v]
+
+        assert fixer.matches(s)
+
+        try:
+            indexer = self.__dfa_indexers[fixer]
+        except KeyError:
+            indexer = Indexer(fixer)
+            self.__dfa_indexers[fixer] = indexer
+
+        prefix = self.buffer[:u]
+        suffix = self.buffer[v:]
+
+        Integer.shrink(
+            indexer.index(s),
+            lambda i: self.consider_new_buffer(
+                prefix + indexer[i] + suffix
+            ),
+            random=self.random
+        )
 
     def run_block_program(self, i, description, original, repeats=1):
         """Block programs are a mini-DSL for block rewriting, defined as a sequence

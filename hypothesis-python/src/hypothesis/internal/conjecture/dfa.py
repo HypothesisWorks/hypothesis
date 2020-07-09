@@ -1,76 +1,89 @@
 
-from hypothesis.utils.conventions import UniqueIdentifier
 from collections import deque
 from functools import wraps
-
+from hypothesis.internal.conjecture.byteformat import Reader, Writer
+from hypothesis.utils.conventions import UniqueIdentifier
+from hypothesis.vendor.pretty import pretty
 
 
 DEAD = UniqueIdentifier("DEAD")
 
 
-class DFA:
-    def __init__(self, data):
-        """Accepts a list of pairs (accepting, transitions), where transitions is
-        a list of triples (start, end, j) representing that in state i, any
-        byte c in start <= c <= end will transition to state j."""
-        self.__states = tuple([
-            (accepting, tuple(sorted(transitions)))
-            for accepting, transitions in data
-        ])
-        self.__minimal = None
-        self.__predecessor_cache = {}
-        self.__completions = [None] * len(self.__states)
-
-    def __repr__(self):
-        return "DFA(%r)" % (self.__states,)
-
-    def __eq__(self, other):
-        if isinstance(other, DFA):
-            return self.__states == other.__states
-        else:
-            return NotImplemented
-
-    def __ne__(self, other):
-        if isinstance(other, DFA):
-            return self.__states != other.__states
-        else:
-            return NotImplemented
-
-    def __hash__(self):
-        return hash(self.__states)
-
+class DFA(object):
     @property
     def start(self):
-        return 0
+        raise NotImplementedError()
 
-    def accepting(self, i):
-        if i == DEAD:
+    def is_dead(self, s):
+        if self.is_accepting(s):
             return False
-        return self.__states[i][0]
+        for _, j in self.transitions(s):
+            if j != s:
+                return False
+        return True 
+
+    def is_accepting(self, s):
+        raise NotImplementedError()
 
     def transitions(self, i):
-        if i == DEAD:
-            return
-        for start, end, state in self.__states[i][1]:
-            for c in range(start, end + 1):
-                yield c, state
-
-    def dead(self, i):
-        return i == DEAD
+        for c in range(256):
+            j = self.transition(i, c)
+            yield c, j
 
     def transition(self, i, c):
-        if i == DEAD:
-            return DEAD
-        for start, end, j in self.__states[i][1]:
-            if start <= c <= end:
-                return j
-        return DEAD
+        raise NotImplementedError()
+
+    def __iter__(self):
+        queue = deque([(self.start, b'')])
+        while queue:
+            i, path = queue.popleft()
+            if self.is_dead(i):
+                continue
+            if self.is_accepting(i):
+                yield path
+            for c, j in self.transitions(i):
+                queue.append((j, path + bytes([c])))
+
+    def to_concrete(self):
+        state_to_index = {}
+        states = []
+
+        def state_for(s):
+            try:
+                return state_to_index[s]
+            except KeyError:
+                i = len(states)
+                states.append(s)
+                state_to_index[s] = i
+                return i
+
+        state_for(self.start)
+        assert states
+
+        result = []
+        i = 0
+        while i < len(states):
+            s = states[i]
+            i += 1
+            transitions = []
+            result.append((self.is_accepting(s), transitions))
+
+            c = 0
+            while c < 256:
+                t = self.transition(s, c)
+                d = c
+                while d < 255 and self.transition(s, d + 1) == t:
+                    d += 1
+                if not self.is_dead(t):
+                    transitions.append((c, d, state_for(t)))
+                c = d + 1
+        return ConcreteDFA(result)
 
     def matches(self, s):
         i = self.start
         for c in s:
             i = self.transition(i, c)
-        return self.accepting(i)
+        return self.is_accepting(i)
 
     def all_matches(self, s):
         results = []
@@ -92,14 +105,86 @@ class DFA:
                     partition[c] = (new_state, new_indices)
                 new_indices.append(i)
 
-                for new_state, new_indices in partition.values():
-                    if self.dead(new_state):
-                        continue
-                    if self.accepting(new_state):
-                        for i in new_indices:
-                            results.append((i, i + length + 1))
-                    pending.append((new_indices, length + 1, new_state))
+            for new_state, new_indices in partition.values():
+                if self.is_dead(new_state):
+                    continue
+                if self.is_accepting(new_state):
+                    for i in new_indices:
+                        results.append((i, i + length + 1))
+                pending.append((new_indices, length + 1, new_state))
         return results
+
+
+class ConcreteDFA(DFA):
+    def __init__(self, data):
+        """Accepts a list of pairs (accepting, transitions), where transitions is
+        a list of triples (start, end, j) representing that in state i, any
+        byte c in start <= c <= end will transition to state j."""
+        self.__states = tuple([
+            (accepting, tuple(sorted(transitions)))
+            for accepting, transitions in data
+        ])
+        for _, transitions in self.__states:
+            for _, _, j in transitions:
+                assert 0 <= j < len(self.__states)
+
+    def __repr__(self):
+        return pretty(self)
+
+    def _repr_pretty_(self, p, cycle):
+        assert not cycle
+        with p.group(8, 'ConcreteDFA([', '])'):
+            for idx, item in enumerate(self.__states):
+                if idx:
+                    p.text(',')
+                    p.breakable()
+                p.pretty(item)
+
+    def __eq__(self, other):
+        if isinstance(other, DFA):
+            return self.__states == other.__states
+        else:
+            return NotImplemented
+
+    def __ne__(self, other):
+        if isinstance(other, DFA):
+            return self.__states != other.__states
+        else:
+            return NotImplemented
+
+    def __hash__(self):
+        return hash(self.__states)
+
+    @property
+    def start(self):
+        return 0
+
+    def is_accepting(self, i):
+        if i == DEAD:
+            return False
+        return self.__states[i][0]
+
+    def is_dead(self, i):
+        return i == DEAD
+
+    def transitions(self, i):
+        if i == DEAD:
+            return
+        for start, end, state in self.__states[i][1]:
+            for c in range(start, end + 1):
+                yield c, state
+
+    def transition(self, i, c):
+        if i == DEAD:
+            return DEAD
+        for start, end, j in self.__states[i][1]:
+            if start <= c <= end:
+                return j
+        return DEAD
+
+    def to_concrete(self):
+        return self
+
 
 def cached(f):
     cache_name = '__cache_%s' % (f.__name__,)
@@ -155,7 +240,7 @@ class Indexer(object):
                     result.append(b)
                     state = j
                     break
-        assert self.__dfa.accepting(state)
+        assert self.__dfa.is_accepting(state)
         result = bytes(result)
         self.__index_to_string[i] = result
         self.__string_to_index[result] = i
@@ -211,9 +296,9 @@ class Indexer(object):
 
     @cached
     def __is_dead(self, i):
-        if self.__dfa.accepting(i):
+        if self.__dfa.is_accepting(i):
             return False
-        return not any(self.__dfa.accepting(j) for j in self.__reachable(i))
+        return not any(self.__dfa.is_accepting(j) for j in self.__reachable(i))
 
     @cached
     def __reachable(self, i):
@@ -248,7 +333,7 @@ class Indexer(object):
         if self.__is_dead(i):
             return 0
         if k == 0:
-            if self.__dfa.accepting(i):
+            if self.__dfa.is_accepting(i):
                 return 1
             else:
                 return 0
@@ -259,12 +344,4 @@ class Indexer(object):
             ])
 
     def __iter__(self):
-        queue = deque([(self.__dfa.start, b'')])
-        while queue:
-            i, path = queue.popleft()
-            if self.__is_dead(i):
-                continue
-            if self.__dfa.accepting(i):
-                yield path
-            for c, j in self.__dfa.transitions(i):
-                queue.append((j, path + bytes([c])))
+        return iter(self.__dfa)
