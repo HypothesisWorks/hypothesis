@@ -501,6 +501,7 @@ class Shrinker:
                 block_program("-XX"),
                 "minimize_individual_blocks",
                 block_program("--X"),
+                "minimize_some_byte_pairs",
             ]
         )
 
@@ -1144,6 +1145,102 @@ class Shrinker:
                 ),
                 random=self.random,
             )
+
+    def __try_shrinking_pair_of_bytes(self, i, j):
+        """Attempt to make a purely lexicographic shrink by modifying only the
+        values at ``i`` and ``j``, returning True if this makes any changes."""
+        prev = self.shrink_target
+        buf = self.buffer
+
+        def consider(u, v):
+            """Can we replace the values at these indices with (u, v)?"""
+            if min(u, v) < 0 or max(u, v) > 255:
+                return False
+            attempt = bytearray(buf)
+            attempt[i] = u
+            attempt[j] = v
+            return self.consider_new_buffer(attempt)
+
+        # If these are out of order we first try swapping them around.
+        if buf[j] < buf[i]:
+            consider(buf[j], buf[i])
+            buf = self.buffer
+
+        a = buf[i]
+        b = buf[j]
+
+        # If we can move value from i to j we just do that.
+        if find_integer(lambda k: consider(a - k, b + k)) == 0:
+            # Otherwise we try replacing this pair with its lexicographic
+            # predecessor, by subtracting 1 from a and setting b to maximum.
+            if consider(a - 1, 255):
+                find_integer(lambda k: consider(a - 1, 255 - k))
+        return prev is not self.shrink_target
+
+    @defines_shrink_pass()
+    def minimize_some_byte_pairs(self, chooser):
+        """This is a slightly weird shrink pass that ignores the
+        structure of generation and just treats adjacent bytes as
+        relevant regardless of whether they are part of the same block. This
+        sometimes gets us unstuck in cases where there is an easy lexicographic
+        transformation that happens to work for non-principled reasons. In
+        particular we sometimes can hit those problems in our text and floating
+        point generators.
+        """
+        i = chooser.choose(range(len(self.buffer) - 1), lambda i: self.buffer[i] > 0)
+
+        # This is a little bit fiddly because what we're trying to do is avoid
+        # some pathological cases where this makes a little bit of progress and
+        # then takes ages to make more, which ends up making the shrinker spend
+        # far too long making small changes.
+        #
+        # In particular what we're trying to do is avoid the case where we
+        # make a block huge by raising its leftmost byte, move backwards, and
+        # then shrug and leave it to the lexicographical shrinker to deal with
+        # whenever it happens to get to that block.
+        #
+        # So, what we do is this: We first find a suitable next index to fiddle
+        # with (see below for the logic). If we make any changes there, we can
+        # reasonably expect that it might be possible to lower it further, so
+        # we repeat the process starting from there.
+
+        prev = None
+        while i + 1 < len(self.buffer) and prev != self.shrink_target:
+            prev = self.shrink_target
+
+            # If we can successfully lower i to zero there's nothing more
+            # to do at this point.
+            if self.consider_new_buffer(
+                self.buffer[:i] + bytes(1) + self.buffer[i + 1 :]
+            ):
+                break
+
+            # If we can't zero it, lower the value at i as much as possible.
+            buf = self.buffer
+            find_integer(
+                lambda k: k <= buf[i]
+                and self.consider_new_buffer(
+                    buf[:i] + bytes([buf[i] - k]) + buf[i + 1 :]
+                )
+            )
+
+            buf = self.buffer
+            assert buf[i] > 0
+
+            # We try up to three possible indices to try changing: The first
+            # nonzero byte after i, the last zero byte before that, and the
+            # byte immediately after i. It is this latter one that we are most
+            # interested in, but doing it this way avoids problems where we
+            # have a run of bytes that we have laboriously zeroed that this
+            # then undoes.
+            nonzero = i + 1
+            while nonzero < len(buf) and buf[nonzero] == 0:
+                nonzero += 1
+
+            for j in sorted({nonzero, nonzero - 1, i + 1}, reverse=True):
+                if i < j < len(buf) and self.__try_shrinking_pair_of_bytes(i, j):
+                    i = j
+                    break
 
     @defines_shrink_pass()
     def minimize_individual_blocks(self, chooser):

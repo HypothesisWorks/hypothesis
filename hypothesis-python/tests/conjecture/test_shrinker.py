@@ -559,3 +559,37 @@ def test_zero_coverage_edge_case():
     shrinker.fixate_shrink_passes(["zero_examples"])
 
     assert list(shrinker.buffer) == [255] + [0] * (len(shrinker.buffer) - 1)
+
+
+def test_can_shrink_adjacent_unrelated_bytes():
+    @shrinking_from([1, 0])
+    def shrinker(data):
+        n = (data.draw_bits(8) << 8) | data.draw_bits(8)
+        if n >= 100:
+            data.mark_interesting()
+
+    shrinker.shrink()
+    assert list(shrinker.shrink_target.buffer) == [0, 100]
+
+
+def test_lower_individual_bytes_while_minimizing_pairs():
+    @shrinking_from([255, 2])
+    def shrinker(data):
+        data.draw_bits(8)
+        if data.draw_bits(8) == 2:
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["minimize_some_byte_pairs"])
+    assert list(shrinker.shrink_target.buffer) == [0, 2]
+
+
+def test_skips_over_intervening_zeros():
+    @shrinking_from([2] + [0] * 10 + [1])
+    def shrinker(data):
+        values = [data.draw_bits(8) for _ in range(12)]
+        if 1 in values and 2 in values:
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes(["minimize_some_byte_pairs"])
+    assert list(shrinker.shrink_target.buffer) == [0] * 10 + [1, 2]
+    assert shrinker.shrinks <= 3
