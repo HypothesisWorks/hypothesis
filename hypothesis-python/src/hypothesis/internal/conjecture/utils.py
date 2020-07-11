@@ -374,16 +374,17 @@ class many:
 
         if self.min_size == self.max_size:
             should_continue = self.count < self.min_size
-        elif self.force_stop:
-            should_continue = False
         else:
-            if self.count < self.min_size:
-                p_continue = 1.0
+            forced_result = None
+            if self.force_stop:
+                forced_result = False
+            elif self.count < self.min_size:
+                forced_result = True
             elif self.count >= self.max_size:
-                p_continue = 0.0
-            else:
-                p_continue = self.stopping_value
-            should_continue = biased_coin(self.data, p_continue)
+                forced_result = False
+            should_continue = biased_coin(
+                self.data, self.stopping_value, forced=forced_result
+            )
 
         if should_continue:
             self.count += 1
