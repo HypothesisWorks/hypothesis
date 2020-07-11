@@ -155,9 +155,11 @@ def boolean(data):
     return bool(data.draw_bits(1))
 
 
-def biased_coin(data, p):
+def biased_coin(data, p, forced=None):
     """Return True with probability p (assuming a uniform generator),
-    shrinking towards False."""
+    shrinking towards False. If ``forced`` is set to a non-None value, this
+    will always return that value but will write choices appropriate to having
+    drawn that value randomly."""
     data.start_example(BIASED_COIN_LABEL)
     while True:
         # The logic here is a bit complicated and special cased to make it
@@ -205,7 +207,10 @@ def biased_coin(data, p):
                 bits = 8
                 partial = True
 
-            i = data.draw_bits(bits)
+            if forced is None:
+                i = data.draw_bits(bits)
+            else:
+                i = data.draw_bits(bits, forced=int(forced))
 
             # We always label the region that causes us to repeat the loop as
             # 255 so that shrinking this byte never causes us to need to draw

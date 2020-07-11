@@ -38,13 +38,13 @@ class FeatureFlags:
 
     def __init__(self, data=None, enabled=(), disabled=()):
         self.__data = data
-        self.__decisions = {}
+        self.__is_disabled = {}
 
         for f in enabled:
-            self.__decisions[f] = 0
+            self.__is_disabled[f] = False
 
         for f in disabled:
-            self.__decisions[f] = 255
+            self.__is_disabled[f] = True
 
         # In the original swarm testing paper they turn features on or off
         # uniformly at random. Instead we decide the probability with which to
@@ -57,11 +57,12 @@ class FeatureFlags:
         # features will be enabled. This is so that we shrink in the direction
         # of more features being enabled.
         if self.__data is not None:
-            self.__baseline = data.draw_bits(8)
+            self.__p_disabled = data.draw_bits(8) / 255.0
         else:
             # If data is None we're in example mode so all that matters is the
-            # enabled/disabled lists above. We set this up so that
-            self.__baseline = 1
+            # enabled/disabled lists above. We set this up so that everything
+            # else is enabled by default.
+            self.__p_disabled = 0.0
 
     def is_enabled(self, name):
         """Tests whether the feature named ``name`` should be enabled on this
@@ -72,51 +73,34 @@ class FeatureFlags:
             # enabled, because that's our shrinking direction and they have no
             # impact on data generation if they weren't used while it was
             # running.
-            try:
-                return self.__is_value_enabled(self.__decisions[name])
-            except KeyError:
-                return True
+            return not self.__is_disabled.get(name, False)
 
         data = self.__data
 
         data.start_example(label=FEATURE_LABEL)
-        if name in self.__decisions:
-            # If we've already decided on this feature then we don't actually
-            # need to draw anything, but we do write the same decision to the
-            # input stream. This allows us to lazily decide whether a feature
-            # is enabled, because it means that if we happen to delete the part
-            # of the test case where we originally decided, the next point at
-            # which we make this decision just makes the decision it previously
-            # made.
-            value = self.__decisions[name]
-            data.draw_bits(8, forced=value)
-        else:
-            # If the baseline is 0 then everything is enabled so it doesn't
-            # matter what we have here and we might as well make the shrinker's
-            # life easier by forcing it to zero.
-            if self.__baseline == 0:
-                value = 0
-                data.draw_bits(8, forced=0)
-            else:
-                value = data.draw_bits(8)
-            self.__decisions[name] = value
-        data.stop_example()
-        return self.__is_value_enabled(value)
 
-    def __is_value_enabled(self, value):
-        """Check if a given value drawn for a feature counts as enabled. Note
-        that low values are more likely to be enabled. This is again in aid of
-        shrinking open. In particular a value of 255 is always enabled."""
-        return (255 - value) >= self.__baseline
+        # If we've already decided on this feature then we don't actually
+        # need to draw anything, but we do write the same decision to the
+        # input stream. This allows us to lazily decide whether a feature
+        # is enabled, because it means that if we happen to delete the part
+        # of the test case where we originally decided, the next point at
+        # which we make this decision just makes the decision it previously
+        # made.
+        is_disabled = cu.biased_coin(
+            self.__data, self.__p_disabled, forced=self.__is_disabled.get(name)
+        )
+        self.__is_disabled[name] = is_disabled
+        data.stop_example()
+        return not is_disabled
 
     def __repr__(self):
         enabled = []
         disabled = []
-        for k, v in self.__decisions.items():
-            if self.__is_value_enabled(v):
-                enabled.append(k)
+        for name, is_disabled in self.__is_disabled.items():
+            if is_disabled:
+                disabled.append(name)
             else:
-                disabled.append(k)
+                enabled.append(name)
         return "FeatureFlags(enabled=%r, disabled=%r)" % (enabled, disabled)
 
 

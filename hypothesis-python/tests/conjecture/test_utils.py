@@ -297,3 +297,8 @@ def test_many_with_max_size():
     assert many.more()
     assert many.more()
     assert not many.more()
+
+
+def test_biased_coin_can_be_forced():
+    assert cu.biased_coin(ConjectureData.for_buffer([0]), p=0.5, forced=True)
+    assert not cu.biased_coin(ConjectureData.for_buffer([1]), p=0.5, forced=False)
