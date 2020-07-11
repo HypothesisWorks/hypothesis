@@ -26,6 +26,7 @@ from hypothesis import (
     assume,
     example,
     given,
+    reject,
     settings,
     strategies as st,
 )
@@ -56,29 +57,19 @@ def test_uniform_float_can_draw_1():
 def test_coin_biased_towards_truth():
     p = 1 - 1.0 / 500
 
-    for i in range(255):
-        assert cu.biased_coin(ConjectureData.for_buffer([i]), p)
+    for i in range(1, 255):
+        assert cu.biased_coin(ConjectureData.for_buffer([0, i]), p)
 
-    second_order = [
-        cu.biased_coin(ConjectureData.for_buffer([255, i]), p) for i in range(255)
-    ]
-
-    assert False in second_order
-    assert True in second_order
+    assert not cu.biased_coin(ConjectureData.for_buffer([0, 0]), p)
 
 
 def test_coin_biased_towards_falsehood():
     p = 1.0 / 500
 
     for i in range(255):
-        assert not cu.biased_coin(ConjectureData.for_buffer([i]), p)
-
-    second_order = [
-        cu.biased_coin(ConjectureData.for_buffer([255, i]), p) for i in range(255)
-    ]
-
-    assert False in second_order
-    assert True in second_order
+        if i != 1:
+            assert not cu.biased_coin(ConjectureData.for_buffer([0, i]), p)
+    assert cu.biased_coin(ConjectureData.for_buffer([0, 1]), p)
 
 
 def test_unbiased_coin_has_no_second_order():
@@ -110,10 +101,18 @@ def test_drawing_impossible_coin_still_writes():
 
 def test_drawing_an_exact_fraction_coin():
     count = 0
-    for i in range(8):
-        if cu.biased_coin(ConjectureData.for_buffer([i]), Fraction(3, 8)):
-            count += 1
-    assert count == 3
+    total = 0
+    p = Fraction(3, 8)
+    for i in range(4):
+        for j in range(4):
+            total += 1
+            if cu.biased_coin(ConjectureData.for_buffer([i, j]), p):
+                count += 1
+    assert p == Fraction(count, total)
+
+
+def test_too_small_to_be_useful_coin():
+    assert not cu.biased_coin(ConjectureData.for_buffer([1]), 0.5 ** 65)
 
 
 @example([Fraction(1, 3), Fraction(1, 3), Fraction(1, 3)])
@@ -302,3 +301,17 @@ def test_many_with_max_size():
 def test_biased_coin_can_be_forced():
     assert cu.biased_coin(ConjectureData.for_buffer([0]), p=0.5, forced=True)
     assert not cu.biased_coin(ConjectureData.for_buffer([1]), p=0.5, forced=False)
+
+
+def test_assert_biased_coin_always_treats_one_as_true():
+    assert cu.biased_coin(ConjectureData.for_buffer([0, 1]), p=1.0 / 257)
+
+
+@example(p=0.31250000000000006, b=b"\x03\x03\x00")
+@example(p=0.4375000000000001, b=b"\x03\x00")
+@given(st.floats(0, 1), st.binary())
+def test_can_draw_arbitrary_fractions(p, b):
+    try:
+        cu.biased_coin(ConjectureData.for_buffer(b), p)
+    except StopTest:
+        reject()

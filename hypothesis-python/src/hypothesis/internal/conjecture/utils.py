@@ -16,9 +16,9 @@
 import enum
 import hashlib
 import heapq
+import math
 import sys
 from collections import OrderedDict, abc
-from fractions import Fraction
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import (
@@ -160,6 +160,27 @@ def biased_coin(data, p, forced=None):
     shrinking towards False. If ``forced`` is set to a non-None value, this
     will always return that value but will write choices appropriate to having
     drawn that value randomly."""
+
+    if p <= 0 or p >= 1:
+        bits = 1
+    else:
+        # When there is a meaningful draw, in order to shrink well we will
+        # set things up so that 0 and 1 always correspond to False and True
+        # respectively. This means we want enough bits available that in a
+        # draw we will always have at least one truthy value and one falsey
+        # value.
+        bits = math.ceil(-math.log(min(p, 1 - p), 2))
+    # In order to avoid stupidly large draws where the probability is
+    # effectively zero or one, we treat probabilities of under 2^-64 to be
+    # effectively zero.
+    if bits > 64:
+        # There isn't enough precision near one for this to occur for values
+        # far from 0.
+        p = 0.0
+        bits = 1
+
+    size = 2 ** bits
+
     data.start_example(BIASED_COIN_LABEL)
     while True:
         # The logic here is a bit complicated and special cased to make it
@@ -187,24 +208,13 @@ def biased_coin(data, p, forced=None):
             data.draw_bits(1, forced=1)
             result = True
         else:
-            falsey = floor(256 * (1 - p))
-            truthy = floor(256 * p)
-            remainder = 256 * p - truthy
+            falsey = floor(size * (1 - p))
+            truthy = floor(size * p)
+            remainder = size * p - truthy
 
-            if falsey + truthy == 256:
-                if isinstance(p, Fraction):
-                    m = p.numerator
-                    n = p.denominator
-                else:
-                    m, n = p.as_integer_ratio()
-                assert n & (n - 1) == 0, n  # n is a power of 2
-                assert n > m > 0
-                truthy = m
-                falsey = n - m
-                bits = bit_length(n) - 1
+            if falsey + truthy == size:
                 partial = False
             else:
-                bits = 8
                 partial = True
 
             if forced is None:
@@ -215,7 +225,7 @@ def biased_coin(data, p, forced=None):
             # We always label the region that causes us to repeat the loop as
             # 255 so that shrinking this byte never causes us to need to draw
             # more data.
-            if partial and i == 255:
+            if partial and i == size - 1:
                 p = remainder
                 continue
             if falsey == 0:
