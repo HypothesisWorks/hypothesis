@@ -58,9 +58,9 @@ def test_coin_biased_towards_truth():
     p = 1 - 1.0 / 500
 
     for i in range(1, 255):
-        assert cu.biased_coin(ConjectureData.for_buffer([0, i]), p)
+        assert cu.biased_coin(ConjectureData.for_buffer([0, i, 0, 0]), p)
 
-    assert not cu.biased_coin(ConjectureData.for_buffer([0, 0]), p)
+    assert not cu.biased_coin(ConjectureData.for_buffer([0, 0, 0, 1]), p)
 
 
 def test_coin_biased_towards_falsehood():
@@ -68,8 +68,8 @@ def test_coin_biased_towards_falsehood():
 
     for i in range(255):
         if i != 1:
-            assert not cu.biased_coin(ConjectureData.for_buffer([0, i]), p)
-    assert cu.biased_coin(ConjectureData.for_buffer([0, 1]), p)
+            assert not cu.biased_coin(ConjectureData.for_buffer([0, i, 0, 1]), p)
+    assert cu.biased_coin(ConjectureData.for_buffer([0, 1, 0, 0]), p)
 
 
 def test_unbiased_coin_has_no_second_order():
@@ -106,7 +106,7 @@ def test_drawing_an_exact_fraction_coin():
     for i in range(4):
         for j in range(4):
             total += 1
-            if cu.biased_coin(ConjectureData.for_buffer([i, j]), p):
+            if cu.biased_coin(ConjectureData.for_buffer([i, j, 0]), p):
                 count += 1
     assert p == Fraction(count, total)
 

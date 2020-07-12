@@ -52,6 +52,7 @@ def combine_labels(*labels):
 
 INTEGER_RANGE_DRAW_LABEL = calc_label_from_name("another draw in integer_range()")
 BIASED_COIN_LABEL = calc_label_from_name("biased_coin()")
+BIASED_COIN_INNER_LABEL = calc_label_from_name("inside biased_coin()")
 SAMPLE_IN_SAMPLER_LABLE = calc_label_from_name("a sample() in Sampler")
 ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
 
@@ -161,6 +162,10 @@ def biased_coin(data, p, *, forced=None):
     will always return that value but will write choices appropriate to having
     drawn that value randomly."""
 
+    # NB this function is vastly more complicated than it may seem reasonable
+    # for it to be. This is because it is used in a lot of places and it's
+    # important for it to shrink well, so it's worth the engineering effort.
+
     if p <= 0 or p >= 1:
         bits = 1
     else:
@@ -218,7 +223,15 @@ def biased_coin(data, p, *, forced=None):
                 partial = True
 
             if forced is None:
+                # We want to get to the point where True is represented by
+                # 1 and False is represented by 0 as quickly as possible, so
+                # we use the remove_discarded machinery in the shrinker to
+                # achieve that by discarding any draws that are > 1 and writing
+                # a suitable draw into the choice sequence at the end of the
+                # loop.
+                data.start_example(BIASED_COIN_INNER_LABEL)
                 i = data.draw_bits(bits)
+                data.stop_example(discard=i > 1)
             else:
                 i = data.draw_bits(bits, forced=int(forced))
 
@@ -249,6 +262,9 @@ def biased_coin(data, p, *, forced=None):
                 # except for i = 1. We know i > 1 here, so the test for truth
                 # becomes i > falsey.
                 result = i > falsey
+
+            if i > 1:
+                data.draw_bits(bits, forced=int(result))
         break
     data.stop_example()
     return result
