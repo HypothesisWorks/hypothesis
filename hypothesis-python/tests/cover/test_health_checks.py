@@ -227,7 +227,7 @@ def test_does_not_trigger_health_check_on_simple_strategies(monkeypatch):
     # we need it to pretend to be.
     def draw_bits(self, n, forced=None):
         time.sleep(0.001)
-        return existing_draw_bits(self, n, forced)
+        return existing_draw_bits(self, n, forced=forced)
 
     monkeypatch.setattr(ConjectureData, "draw_bits", draw_bits)
 
