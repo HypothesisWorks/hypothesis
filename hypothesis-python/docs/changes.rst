@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.19.1:
+
+-------------------
+5.19.1 - 2020-07-12
+-------------------
+
+This release slightly improves shrinking behaviour. This should mainly only
+impact stateful tests, but may have some minor positive impact on shrinking
+collections (lists, sets, etc).
+
 .. _v5.19.0:
 
 -------------------
