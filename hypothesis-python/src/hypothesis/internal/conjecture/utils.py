@@ -16,9 +16,9 @@
 import enum
 import hashlib
 import heapq
+import math
 import sys
 from collections import OrderedDict, abc
-from fractions import Fraction
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import (
@@ -52,6 +52,7 @@ def combine_labels(*labels):
 
 INTEGER_RANGE_DRAW_LABEL = calc_label_from_name("another draw in integer_range()")
 BIASED_COIN_LABEL = calc_label_from_name("biased_coin()")
+BIASED_COIN_INNER_LABEL = calc_label_from_name("inside biased_coin()")
 SAMPLE_IN_SAMPLER_LABLE = calc_label_from_name("a sample() in Sampler")
 ONE_FROM_MANY_LABEL = calc_label_from_name("one more from many()")
 
@@ -155,9 +156,36 @@ def boolean(data):
     return bool(data.draw_bits(1))
 
 
-def biased_coin(data, p):
+def biased_coin(data, p, *, forced=None):
     """Return True with probability p (assuming a uniform generator),
-    shrinking towards False."""
+    shrinking towards False. If ``forced`` is set to a non-None value, this
+    will always return that value but will write choices appropriate to having
+    drawn that value randomly."""
+
+    # NB this function is vastly more complicated than it may seem reasonable
+    # for it to be. This is because it is used in a lot of places and it's
+    # important for it to shrink well, so it's worth the engineering effort.
+
+    if p <= 0 or p >= 1:
+        bits = 1
+    else:
+        # When there is a meaningful draw, in order to shrink well we will
+        # set things up so that 0 and 1 always correspond to False and True
+        # respectively. This means we want enough bits available that in a
+        # draw we will always have at least one truthy value and one falsey
+        # value.
+        bits = math.ceil(-math.log(min(p, 1 - p), 2))
+    # In order to avoid stupidly large draws where the probability is
+    # effectively zero or one, we treat probabilities of under 2^-64 to be
+    # effectively zero.
+    if bits > 64:
+        # There isn't enough precision near one for this to occur for values
+        # far from 0.
+        p = 0.0
+        bits = 1
+
+    size = 2 ** bits
+
     data.start_example(BIASED_COIN_LABEL)
     while True:
         # The logic here is a bit complicated and special cased to make it
@@ -185,32 +213,32 @@ def biased_coin(data, p):
             data.draw_bits(1, forced=1)
             result = True
         else:
-            falsey = floor(256 * (1 - p))
-            truthy = floor(256 * p)
-            remainder = 256 * p - truthy
+            falsey = floor(size * (1 - p))
+            truthy = floor(size * p)
+            remainder = size * p - truthy
 
-            if falsey + truthy == 256:
-                if isinstance(p, Fraction):
-                    m = p.numerator
-                    n = p.denominator
-                else:
-                    m, n = p.as_integer_ratio()
-                assert n & (n - 1) == 0, n  # n is a power of 2
-                assert n > m > 0
-                truthy = m
-                falsey = n - m
-                bits = bit_length(n) - 1
+            if falsey + truthy == size:
                 partial = False
             else:
-                bits = 8
                 partial = True
 
-            i = data.draw_bits(bits)
+            if forced is None:
+                # We want to get to the point where True is represented by
+                # 1 and False is represented by 0 as quickly as possible, so
+                # we use the remove_discarded machinery in the shrinker to
+                # achieve that by discarding any draws that are > 1 and writing
+                # a suitable draw into the choice sequence at the end of the
+                # loop.
+                data.start_example(BIASED_COIN_INNER_LABEL)
+                i = data.draw_bits(bits)
+                data.stop_example(discard=i > 1)
+            else:
+                i = data.draw_bits(bits, forced=int(forced))
 
             # We always label the region that causes us to repeat the loop as
             # 255 so that shrinking this byte never causes us to need to draw
             # more data.
-            if partial and i == 255:
+            if partial and i == size - 1:
                 p = remainder
                 continue
             if falsey == 0:
@@ -234,6 +262,9 @@ def biased_coin(data, p):
                 # except for i = 1. We know i > 1 here, so the test for truth
                 # becomes i > falsey.
                 result = i > falsey
+
+            if i > 1:
+                data.draw_bits(bits, forced=int(result))
         break
     data.stop_example()
     return result
@@ -369,16 +400,17 @@ class many:
 
         if self.min_size == self.max_size:
             should_continue = self.count < self.min_size
-        elif self.force_stop:
-            should_continue = False
         else:
-            if self.count < self.min_size:
-                p_continue = 1.0
+            forced_result = None
+            if self.force_stop:
+                forced_result = False
+            elif self.count < self.min_size:
+                forced_result = True
             elif self.count >= self.max_size:
-                p_continue = 0.0
-            else:
-                p_continue = self.stopping_value
-            should_continue = biased_coin(self.data, p_continue)
+                forced_result = False
+            should_continue = biased_coin(
+                self.data, self.stopping_value, forced=forced_result
+            )
 
         if should_continue:
             self.count += 1
