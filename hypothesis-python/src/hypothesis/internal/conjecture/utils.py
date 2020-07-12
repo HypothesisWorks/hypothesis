@@ -155,7 +155,7 @@ def boolean(data):
     return bool(data.draw_bits(1))
 
 
-def biased_coin(data, p, forced=None):
+def biased_coin(data, p, *, forced=None):
     """Return True with probability p (assuming a uniform generator),
     shrinking towards False. If ``forced`` is set to a non-None value, this
     will always return that value but will write choices appropriate to having
