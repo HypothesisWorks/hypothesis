@@ -983,7 +983,7 @@ class ConjectureData:
         self.events = frozenset(self.events)
         self.observer.conclude_test(self.status, self.interesting_origin)
 
-    def draw_bits(self, n, forced=None):
+    def draw_bits(self, n, *, forced=None):
         """Return an ``n``-bit integer from the underlying source of
         bytes. If ``forced`` is set to an integer will instead
         ignore the underlying source and simulate a draw as if it had

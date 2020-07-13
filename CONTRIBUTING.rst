@@ -189,6 +189,7 @@ their individual contributions.
 * `Alex Gaynor <https://github.com/alex>`_
 * `Alex Stapleton <https://www.github.com/public>`_
 * `Alex Willmer <https://github.com/moreati>`_ (alex@moreati.org.uk)
+* `Andrea Pierré <https://www.github.com/kir0ul>`_
 * `Ben Peterson <https://github.com/killthrush>`_ (killthrush@hotmail.com)
 * `Benjamin Lee <https://github.com/Benjamin-Lee>`_ (benjamindlee@me.com)
 * `Benjamin Palmer <https://github.com/benjpalmer>`_
