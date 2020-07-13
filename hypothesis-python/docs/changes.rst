@@ -10,6 +10,17 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.19.2:
+
+-------------------
+5.19.2 - 2020-07-13
+-------------------
+
+This patch contains a small internal refactoring with no user-visible impact.
+
+Thanks to Andrea for writing this at
+`the SciPy 2020 Sprints <https://www.scipy2020.scipy.org/sprints-schedule>`__!
+
 .. _v5.19.1:
 
 -------------------
