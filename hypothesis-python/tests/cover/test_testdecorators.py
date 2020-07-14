@@ -17,15 +17,7 @@ import functools
 import threading
 from collections import namedtuple
 
-from hypothesis import (
-    HealthCheck,
-    Verbosity,
-    assume,
-    given,
-    note,
-    reporting as reporting,
-    settings,
-)
+from hypothesis import HealthCheck, Verbosity, assume, given, note, reporting, settings
 from hypothesis.strategies import (
     binary,
     booleans,
