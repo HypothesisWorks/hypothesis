@@ -21,8 +21,7 @@ from unittest import mock
 
 from _pytest.config import Config
 
-import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, strategies as st
 
 
 @given(thing=st.text())

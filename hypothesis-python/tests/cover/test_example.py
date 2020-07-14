@@ -21,8 +21,7 @@ from decimal import Decimal
 import pexpect
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import example, find, given
+from hypothesis import example, find, given, strategies as st
 from hypothesis.errors import (
     HypothesisException,
     NonInteractiveExampleWarning,

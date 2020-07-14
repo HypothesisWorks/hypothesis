@@ -15,8 +15,7 @@
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, strategies as st
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import HypothesisDeprecationWarning
 

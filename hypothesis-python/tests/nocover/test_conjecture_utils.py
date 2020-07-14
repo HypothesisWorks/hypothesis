@@ -15,8 +15,8 @@
 
 from fractions import Fraction
 
-import hypothesis.internal.conjecture.utils as cu
 from hypothesis.internal.compat import int_to_bytes
+from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData, StopTest
 
 

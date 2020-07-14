@@ -19,9 +19,8 @@ import tempfile
 import time
 import unicodedata
 
-import hypothesis.internal.charmap as cm
-import hypothesis.strategies as st
-from hypothesis import assume, given
+from hypothesis import assume, given, strategies as st
+from hypothesis.internal import charmap as cm
 
 
 def test_charmap_contains_all_unicode():

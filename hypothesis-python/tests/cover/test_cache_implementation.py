@@ -19,8 +19,15 @@ from random import Random
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import HealthCheck, assume, example, given, note, settings
+from hypothesis import (
+    HealthCheck,
+    assume,
+    example,
+    given,
+    note,
+    settings,
+    strategies as st,
+)
 from hypothesis.internal.cache import GenericCache, LRUReusedCache
 
 

@@ -16,9 +16,9 @@
 import numpy
 import pytest
 
-import hypothesis.extra.numpy as nps
-import hypothesis.strategies as st
+from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
+from hypothesis.extra import numpy as nps
 
 
 def e(a, **kwargs):

@@ -15,7 +15,7 @@
 
 import pytest
 
-import hypothesis.strategies as st
+from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 
 

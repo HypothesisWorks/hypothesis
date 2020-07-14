@@ -15,10 +15,8 @@
 
 import numpy as np
 
-import hypothesis.extra.numpy as npst
-import hypothesis.extra.pandas as pdst
-import hypothesis.strategies as st
-from hypothesis import HealthCheck, given, reject, settings
+from hypothesis import HealthCheck, given, reject, settings, strategies as st
+from hypothesis.extra import numpy as npst, pandas as pdst
 from tests.common.debug import find_any
 from tests.pandas.helpers import supported_by_pandas
 

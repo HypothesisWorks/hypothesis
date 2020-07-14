@@ -16,8 +16,7 @@
 import collections
 import enum
 
-import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, strategies as st
 from hypothesis.errors import FailedHealthCheck, InvalidArgument, Unsatisfiable
 from hypothesis.strategies import sampled_from
 from tests.common.utils import fails_with

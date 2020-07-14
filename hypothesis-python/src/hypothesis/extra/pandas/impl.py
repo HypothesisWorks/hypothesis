@@ -21,11 +21,10 @@ import attr
 import numpy as np
 import pandas
 
-import hypothesis.extra.numpy as npst
-import hypothesis.internal.conjecture.utils as cu
-import hypothesis.strategies._internal.core as st
 from hypothesis.control import reject
 from hypothesis.errors import InvalidArgument
+from hypothesis.extra import numpy as npst
+from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check, check_function
 from hypothesis.internal.reflection import deprecated_posargs
 from hypothesis.internal.validation import (
@@ -34,6 +33,7 @@ from hypothesis.internal.validation import (
     check_valid_size,
     try_convert,
 )
+from hypothesis.strategies._internal import core as st
 from hypothesis.strategies._internal.strategies import Ex
 
 try:

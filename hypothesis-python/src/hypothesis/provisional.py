@@ -26,11 +26,11 @@ definitions it links to.  If not, report the bug!
 import os.path
 import string
 
-import hypothesis.internal.conjecture.utils as cu
-import hypothesis.strategies._internal.core as st
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.reflection import deprecated_posargs
+from hypothesis.strategies._internal import core as st
 from hypothesis.strategies._internal.ipaddress import ip_addresses
 from hypothesis.strategies._internal.strategies import SearchStrategy
 

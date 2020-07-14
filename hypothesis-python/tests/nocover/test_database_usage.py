@@ -15,8 +15,7 @@
 
 import os.path
 
-import hypothesis.strategies as st
-from hypothesis import assume, core, find, given, settings
+from hypothesis import assume, core, find, given, settings, strategies as st
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.entropy import deterministic_PRNG

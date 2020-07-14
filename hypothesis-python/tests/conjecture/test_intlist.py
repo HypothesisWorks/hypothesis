@@ -15,8 +15,7 @@
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import assume, given
+from hypothesis import assume, given, strategies as st
 from hypothesis.internal.conjecture.junkdrawer import IntList
 
 non_neg_lists = st.lists(st.integers(min_value=0, max_value=2 ** 63 - 1))

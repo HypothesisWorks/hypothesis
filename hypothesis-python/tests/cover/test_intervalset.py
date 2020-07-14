@@ -15,8 +15,7 @@
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import assume, example, given
+from hypothesis import assume, example, given, strategies as st
 from hypothesis.internal.charmap import _subtract_intervals
 from hypothesis.internal.intervalsets import IntervalSet
 

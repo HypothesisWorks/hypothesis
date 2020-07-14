@@ -19,8 +19,7 @@ import unicodedata
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import HealthCheck, assume, given, settings
+from hypothesis import HealthCheck, assume, given, settings, strategies as st
 from hypothesis._settings import local_settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import PYPY

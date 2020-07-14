@@ -18,8 +18,7 @@ import typing
 import attr
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import given, infer
+from hypothesis import given, infer, strategies as st
 from hypothesis.errors import ResolutionFailed
 
 

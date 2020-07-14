@@ -17,10 +17,9 @@ from random import Random
 
 import pytest
 
-import hypothesis.internal.conjecture.utils as cu
-import hypothesis.strategies as st
-from hypothesis import settings
+from hypothesis import settings, strategies as st
 from hypothesis.internal.compat import ceil
+from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.engine import ConjectureData, ConjectureRunner
 from hypothesis.strategies._internal import SearchStrategy
 

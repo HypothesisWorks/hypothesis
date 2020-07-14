@@ -20,15 +20,15 @@ from decimal import Decimal
 from typing import Any, Callable, Dict, Type, TypeVar, Union
 
 import django
-import django.db.models as dm
-import django.forms as df
+from django import forms as df
 from django.core.validators import (
     validate_ipv4_address,
     validate_ipv6_address,
     validate_ipv46_address,
 )
+from django.db import models as dm
 
-import hypothesis.strategies as st
+from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
 from hypothesis.internal.validation import check_type

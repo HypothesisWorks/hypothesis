@@ -15,8 +15,8 @@
 
 from contextlib import contextmanager
 
-import hypothesis.internal.conjecture.engine as engine_module
 from hypothesis import HealthCheck, settings
+from hypothesis.internal.conjecture import engine as engine_module
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.utils import calc_label_from_name

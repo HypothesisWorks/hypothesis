@@ -18,9 +18,17 @@ import random
 import attr
 import pytest
 
-import hypothesis.internal.escalation as esc
-import hypothesis.strategies as st
-from hypothesis import HealthCheck, Phase, Verbosity, assume, given, note, settings
+from hypothesis import (
+    HealthCheck,
+    Phase,
+    Verbosity,
+    assume,
+    given,
+    note,
+    settings,
+    strategies as st,
+)
+from hypothesis.internal import escalation as esc
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 

@@ -34,7 +34,7 @@ from unittest import TestCase
 
 import attr
 
-import hypothesis.strategies as st
+from hypothesis import strategies as st
 from hypothesis._settings import (
     HealthCheck,
     Phase,

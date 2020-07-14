@@ -22,8 +22,7 @@ from ipaddress import IPv4Network, IPv6Network
 
 import pytest
 
-import hypothesis.strategies as ds
-from hypothesis import given, settings
+from hypothesis import given, settings, strategies as ds
 from hypothesis.errors import InvalidArgument
 from hypothesis.vendor.pretty import pretty
 from tests.common.debug import minimal

@@ -19,8 +19,7 @@ import warnings
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import assume, given
+from hypothesis import assume, given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT, WINDOWS
 from hypothesis.internal.floats import (

@@ -17,7 +17,7 @@ import os
 import shutil
 import tempfile
 
-import hypothesis.strategies as st
+from hypothesis import strategies as st
 from hypothesis.database import DirectoryBasedExampleDatabase, InMemoryExampleDatabase
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 

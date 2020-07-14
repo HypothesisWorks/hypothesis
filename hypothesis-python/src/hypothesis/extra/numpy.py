@@ -19,14 +19,13 @@ from typing import Any, NamedTuple, Sequence, Tuple, Union
 
 import numpy as np
 
-import hypothesis.internal.conjecture.utils as cu
-import hypothesis.strategies._internal.core as st
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import deprecated_posargs, proxies
 from hypothesis.internal.validation import check_type, check_valid_interval
-from hypothesis.strategies._internal import SearchStrategy, check_strategy
+from hypothesis.strategies._internal import SearchStrategy, check_strategy, core as st
 from hypothesis.strategies._internal.strategies import T
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 

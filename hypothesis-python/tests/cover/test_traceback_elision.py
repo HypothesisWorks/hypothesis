@@ -17,8 +17,7 @@ import traceback
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import Verbosity, given, settings
+from hypothesis import Verbosity, given, settings, strategies as st
 
 
 @pytest.mark.parametrize("verbosity", [Verbosity.normal, Verbosity.debug])

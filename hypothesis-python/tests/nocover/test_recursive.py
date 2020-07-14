@@ -13,8 +13,7 @@
 #
 # END HEADER
 
-import hypothesis.strategies as st
-from hypothesis import settings
+from hypothesis import settings, strategies as st
 from tests.common.debug import find_any, minimal
 from tests.common.utils import flaky
 

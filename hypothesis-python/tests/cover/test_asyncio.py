@@ -19,8 +19,7 @@ from unittest import TestCase
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import assume, given
+from hypothesis import assume, given, strategies as st
 from hypothesis.internal.compat import PYPY
 
 if sys.version_info < (3, 8):

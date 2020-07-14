@@ -13,8 +13,7 @@
 #
 # END HEADER
 
-import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, strategies as st
 from hypothesis.extra.numpy import arrays
 from tests.common.debug import find_any, minimal
 

@@ -17,9 +17,9 @@ import sys
 
 import pytest
 
-import hypothesis.internal.conjecture.floats as flt
 from hypothesis import assume, example, given, strategies as st
 from hypothesis.internal.compat import ceil, floor, int_from_bytes, int_to_bytes
+from hypothesis.internal.conjecture import floats as flt
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.floats import float_to_int

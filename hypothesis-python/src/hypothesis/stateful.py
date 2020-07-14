@@ -31,12 +31,12 @@ from unittest import TestCase
 
 import attr
 
-import hypothesis.internal.conjecture.utils as cu
-import hypothesis.strategies as st
+from hypothesis import strategies as st
 from hypothesis._settings import HealthCheck, Verbosity, settings as Settings
 from hypothesis.control import current_build_context
 from hypothesis.core import given
 from hypothesis.errors import InvalidArgument, InvalidDefinition
+from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.reflection import (
     deprecated_posargs,
     function_digest,

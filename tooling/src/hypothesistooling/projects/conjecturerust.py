@@ -17,8 +17,7 @@ import os
 import subprocess
 
 import hypothesistooling as tools
-import hypothesistooling.installers as install
-import hypothesistooling.releasemanagement as rm
+from hypothesistooling import installers as install, releasemanagement as rm
 from hypothesistooling.junkdrawer import in_dir, unlink_if_present, unquote_string
 
 PACKAGE_NAME = "conjecture-rust"

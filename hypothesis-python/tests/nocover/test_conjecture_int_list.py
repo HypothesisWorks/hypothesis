@@ -13,7 +13,7 @@
 #
 # END HEADER
 
-import hypothesis.strategies as st
+from hypothesis import strategies as st
 from hypothesis.internal.conjecture.junkdrawer import IntList
 from hypothesis.stateful import RuleBasedStateMachine, initialize, invariant, rule
 

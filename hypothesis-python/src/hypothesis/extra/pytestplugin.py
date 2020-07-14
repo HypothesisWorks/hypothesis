@@ -46,6 +46,7 @@ class StoringReporter:
 
 if LooseVersion(pytest.__version__) < "4.3":  # pragma: no cover
     import warnings
+
     from hypothesis.errors import HypothesisWarning
 
     PYTEST_TOO_OLD_MESSAGE = """

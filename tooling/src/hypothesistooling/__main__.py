@@ -24,10 +24,8 @@ from glob import glob
 from coverage.config import CoverageConfig
 
 import hypothesistooling as tools
-import hypothesistooling.installers as install
-import hypothesistooling.projects.conjecturerust as cr
-import hypothesistooling.projects.hypothesispython as hp
-import hypothesistooling.releasemanagement as rm
+from hypothesistooling import installers as install, releasemanagement as rm
+from hypothesistooling.projects import conjecturerust as cr, hypothesispython as hp
 from hypothesistooling.scripts import pip_tool
 
 TASKS = {}

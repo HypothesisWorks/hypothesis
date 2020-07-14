@@ -16,7 +16,7 @@
 import pytest
 
 import hypothesistooling as tools
-import hypothesistooling.releasemanagement as rm
+from hypothesistooling import releasemanagement as rm
 
 
 @pytest.mark.parametrize("project", tools.all_projects())

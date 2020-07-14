@@ -20,10 +20,9 @@ from itertools import zip_longest
 import numpy as np
 import pytest
 
-import hypothesis.extra.numpy as nps
-import hypothesis.strategies as st
-from hypothesis import HealthCheck, assume, given, note, settings
+from hypothesis import HealthCheck, assume, given, note, settings, strategies as st
 from hypothesis.errors import InvalidArgument, Unsatisfiable
+from hypothesis.extra import numpy as nps
 from hypothesis.strategies._internal import SearchStrategy
 from tests.common.debug import find_any, minimal
 from tests.common.utils import fails_with, flaky

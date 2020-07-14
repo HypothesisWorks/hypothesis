@@ -18,8 +18,7 @@ import time
 import pytest
 from pytest import raises
 
-import hypothesis.strategies as st
-from hypothesis import HealthCheck, Phase, given, settings
+from hypothesis import HealthCheck, Phase, given, settings, strategies as st
 from hypothesis.control import assume
 from hypothesis.errors import FailedHealthCheck, InvalidArgument
 from hypothesis.internal.compat import int_from_bytes

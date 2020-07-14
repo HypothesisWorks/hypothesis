@@ -16,8 +16,16 @@
 import random
 from math import log
 
-import hypothesis.strategies as st
-from hypothesis import HealthCheck, Phase, Verbosity, assume, example, given, settings
+from hypothesis import (
+    HealthCheck,
+    Phase,
+    Verbosity,
+    assume,
+    example,
+    given,
+    settings,
+    strategies as st,
+)
 from hypothesis.internal.compat import ceil, int_from_bytes
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner

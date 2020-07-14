@@ -18,7 +18,6 @@ from hypothesis.internal.conjecture.shrinking.common import Shrinker
 from hypothesis.internal.conjecture.shrinking.integer import Integer
 from hypothesis.internal.conjecture.shrinking.ordering import Ordering
 
-
 """
 This module implements a lexicographic minimizer for blocks of bytes.
 """

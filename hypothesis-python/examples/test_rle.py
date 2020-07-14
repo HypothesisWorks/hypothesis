@@ -27,8 +27,7 @@ It also has an example of testing invariants in response to changes in the
 underlying data.
 """
 
-import hypothesis.strategies as st
-from hypothesis import assume, given
+from hypothesis import assume, given, strategies as st
 
 
 def run_length_encode(seq):

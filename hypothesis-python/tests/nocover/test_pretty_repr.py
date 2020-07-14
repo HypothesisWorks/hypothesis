@@ -15,8 +15,7 @@
 
 from collections import OrderedDict
 
-import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, strategies as st
 from hypothesis.control import reject
 from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
 

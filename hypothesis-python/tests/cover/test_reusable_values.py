@@ -15,8 +15,7 @@
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import example, given, reject
+from hypothesis import example, given, reject, strategies as st
 from hypothesis.errors import HypothesisDeprecationWarning, InvalidArgument
 
 base_reusable_strategies = (

@@ -18,8 +18,7 @@ import weakref
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import given, settings, strategies as st
 
 
 @pytest.mark.parametrize(

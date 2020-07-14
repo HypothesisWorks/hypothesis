@@ -15,7 +15,7 @@
 
 import os
 
-import hypothesis.configuration as fs
+from hypothesis import configuration as fs
 
 previous_home_dir = None
 

@@ -15,8 +15,7 @@
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import Phase, example, given, settings
+from hypothesis import Phase, example, given, settings, strategies as st
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import InvalidArgument
 

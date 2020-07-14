@@ -17,8 +17,7 @@ import re
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import Verbosity, given, settings
+from hypothesis import Verbosity, given, settings, strategies as st
 from tests.common.utils import capture_out
 
 
