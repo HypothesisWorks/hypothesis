@@ -1312,7 +1312,10 @@ class BasicIndexStrategy(SearchStrategy):
         else:
             while result[-1:] == [slice(None, None)] and data.draw(st.integers(0, 7)):
                 result.pop()
-        return tuple(result)
+        if len(result) == 1 and data.draw(st.booleans()):
+            return result[0]
+        else:
+            return tuple(result)
 
 
 @st.defines_strategy

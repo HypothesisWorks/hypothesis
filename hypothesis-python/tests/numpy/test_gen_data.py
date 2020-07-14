@@ -16,6 +16,7 @@
 import sys
 from functools import reduce
 from itertools import zip_longest
+from collections.abc import Iterable
 
 import numpy as np
 import pytest
@@ -1186,6 +1187,12 @@ def test_basic_indices_can_generate_empty_tuple():
     find_any(nps.basic_indices(shape=(0, 0), allow_ellipsis=True), lambda ix: ix == ())
 
 
+def test_basic_indices_can_generate_non_tuples():
+    find_any(
+        nps.basic_indices(shape=(0, 0), allow_ellipsis=True),
+        lambda ix: not isinstance(ix, tuple))
+
+
 def test_basic_indices_can_generate_long_ellipsis():
     # Runs of slice(None) - such as [0,:,:,:,0] - can be replaced by e.g. [0,...,0]
     find_any(
@@ -1194,7 +1201,8 @@ def test_basic_indices_can_generate_long_ellipsis():
     )
 
 
-@given(nps.basic_indices(shape=(0, 0, 0, 0, 0)).filter(lambda idx: Ellipsis in idx))
+@given(nps.basic_indices(shape=(0, 0, 0, 0, 0)).filter(
+    lambda idx: isinstance(idx, Iterable) and Ellipsis in idx))
 def test_basic_indices_replaces_whole_axis_slices_with_ellipsis(idx):
     # If ... is in the slice, it replaces all ,:, entries for this shape.
     assert slice(None) not in idx
@@ -1224,7 +1232,10 @@ def test_basic_indices_generate_valid_indexers(
     )
     # Check that disallowed things are indeed absent
     if not allow_newaxis:
-        assert 0 <= len(indexer) <= len(shape) + int(allow_ellipsis)
+        if hasattr(indexer, "__len__"):
+            assert 0 <= len(indexer) <= len(shape) + int(allow_ellipsis)
+        else:
+            assert 1 <= len(shape) + int(allow_ellipsis)
         assert np.newaxis not in shape
     if not allow_ellipsis:
         assert Ellipsis not in shape
