@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.19.3:
+
+-------------------
+5.19.3 - 2020-07-15
+-------------------
+
+This patch removes an internal use of ``distutils`` in order to avoid
+`this setuptools warning <https://github.com/pypa/setuptools/issues/2261>`__
+for some users.
+
 .. _v5.19.2:
 
 -------------------
