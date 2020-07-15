@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-from distutils.version import LooseVersion
 from inspect import signature
 
 import pytest
@@ -44,7 +43,9 @@ class StoringReporter:
         self.results.append(msg)
 
 
-if LooseVersion(pytest.__version__) < "4.3":  # pragma: no cover
+# Avoiding distutils.version.LooseVersion due to
+# https://github.com/HypothesisWorks/hypothesis/issues/2490
+if tuple(map(int, pytest.__version__.split(".")[:2])) < (4, 3):  # pragma: no cover
     import warnings
     from hypothesis.errors import HypothesisWarning
 
