@@ -1496,3 +1496,60 @@ def test_does_cache_if_extend_is_not_used():
         assert d1.status == d2.status == Status.VALID
         assert d1.buffer == d2.buffer
         assert calls[0] == 1
+
+
+def test_does_result_for_reuse():
+    calls = [0]
+
+    def test(data):
+        calls[0] += 1
+        data.draw_bits(8)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+
+        d1 = runner.cached_test_function(b"\0", extend=8)
+        d2 = runner.cached_test_function(d1.buffer)
+        assert d1.status == d2.status == Status.VALID
+        assert d1.buffer == d2.buffer
+        assert calls[0] == 1
+
+
+def test_does_not_cache_overrun_if_extending():
+    def test(data):
+        data.draw_bits(64)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+
+        d1 = runner.cached_test_function(b"", extend=4)
+        d2 = runner.cached_test_function(b"", extend=8)
+        assert d1.status == Status.OVERRUN
+        assert d2.status == Status.VALID
+
+
+def test_does_cache_overrun_if_not_extending():
+    def test(data):
+        data.draw_bits(64)
+        data.draw_bits(64)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+
+        d1 = runner.cached_test_function(bytes(8), extend=0)
+        d2 = runner.cached_test_function(bytes(8), extend=8)
+        assert d1.status == Status.OVERRUN
+        assert d2.status == Status.VALID
+
+
+def test_does_not_cache_extended_prefix_if_overrun():
+    def test(data):
+        data.draw_bits(64)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+
+        d1 = runner.cached_test_function(b"", extend=4)
+        d2 = runner.cached_test_function(b"", extend=8)
+        assert d1.status == Status.OVERRUN
+        assert d2.status == Status.VALID
