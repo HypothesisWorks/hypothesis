@@ -124,8 +124,10 @@ class Optimiser:
                 # component we want to give it a couple of tries to succeed.
                 for _ in range(3):
                     attempt = self.engine.cached_test_function(
-                        prefix + v_as_bytes + self.current_data.buffer[block.end :],
-                        extend=BUFFER_SIZE,
+                        prefix
+                        + v_as_bytes
+                        + self.current_data.buffer[block.end :]
+                        + bytes(BUFFER_SIZE),
                     )
 
                     if self.consider_new_test_data(attempt):
