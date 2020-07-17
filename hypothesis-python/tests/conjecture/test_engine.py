@@ -1465,3 +1465,34 @@ def test_does_not_run_optimisation_when_max_examples_is_small():
         except RunIsComplete:
             pass
         assert runner.optimise_targets.call_count == 0
+
+
+def test_does_not_cache_extended_prefix():
+    def test(data):
+        data.draw_bits(64)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+
+        d1 = runner.cached_test_function(b"", extend=8)
+        d2 = runner.cached_test_function(b"", extend=8)
+        assert d1.status == d2.status == Status.VALID
+
+        assert d1.buffer != d2.buffer
+
+
+def test_does_cache_if_extend_is_not_used():
+    calls = [0]
+
+    def test(data):
+        calls[0] += 1
+        data.draw_bits(8)
+
+    with deterministic_PRNG():
+        runner = ConjectureRunner(test, settings=TEST_SETTINGS)
+
+        d1 = runner.cached_test_function(b"\0", extend=8)
+        d2 = runner.cached_test_function(b"\0", extend=8)
+        assert d1.status == d2.status == Status.VALID
+        assert d1.buffer == d2.buffer
+        assert calls[0] == 1

@@ -1033,7 +1033,8 @@ class ConjectureRunner:
         )
         self.test_function(data)
         result = check_result(data.as_result())
-        self.__data_cache[buffer] = result
+        if extend == 0 or len(result.buffer) <= len(buffer):
+            self.__data_cache[buffer] = result
         return result
 
     def event_to_string(self, event):
