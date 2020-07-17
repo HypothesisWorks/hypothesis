@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.20.1:
+
+-------------------
+5.20.1 - 2020-07-17
+-------------------
+
+This patch updates our formatting to use :pypi:`isort` 5.
+There is no user-visible change.
+
 .. _v5.20.0:
 
 -------------------
