@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.20.0:
+
+-------------------
+5.20.0 - 2020-07-17
+-------------------
+
+The :func:`~hypothesis.extra.numpy.basic_indices` strategy can now generate
+bare indexers in place of length-one tuples. Thanks to Andrea for this patch!
+
 .. _v5.19.3:
 
 -------------------
