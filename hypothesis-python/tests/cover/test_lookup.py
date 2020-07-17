@@ -25,8 +25,7 @@ from numbers import Real
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import HealthCheck, assume, given, infer, settings
+from hypothesis import HealthCheck, assume, given, infer, settings, strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed, Unsatisfiable
 from hypothesis.internal.compat import ForwardRef, get_type_hints, typing_root_type
 from hypothesis.strategies import from_type

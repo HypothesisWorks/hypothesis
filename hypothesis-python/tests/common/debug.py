@@ -13,8 +13,13 @@
 #
 # END HEADER
 
-import hypothesis.strategies as st
-from hypothesis import HealthCheck, Verbosity, given, settings as Settings
+from hypothesis import (
+    HealthCheck,
+    Verbosity,
+    given,
+    settings as Settings,
+    strategies as st,
+)
 from hypothesis.errors import Found, NoSuchExample, Unsatisfiable
 from hypothesis.internal.conjecture.data import ConjectureData, StopTest
 from hypothesis.internal.reflection import get_pretty_function_description

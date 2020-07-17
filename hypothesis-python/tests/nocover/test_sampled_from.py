@@ -17,8 +17,7 @@ import enum
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import counts_calls, fails_with
 

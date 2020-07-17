@@ -16,8 +16,7 @@
 import pytest
 from _pytest.outcomes import Failed, Skipped
 
-import hypothesis.strategies as s
-from hypothesis import find, given, reject, settings
+from hypothesis import find, given, reject, settings, strategies as s
 from hypothesis.errors import InvalidArgument, NoSuchExample, Unsatisfiable
 
 

@@ -47,6 +47,7 @@ class StoringReporter:
 # https://github.com/HypothesisWorks/hypothesis/issues/2490
 if tuple(map(int, pytest.__version__.split(".")[:2])) < (4, 3):  # pragma: no cover
     import warnings
+
     from hypothesis.errors import HypothesisWarning
 
     PYTEST_TOO_OLD_MESSAGE = """

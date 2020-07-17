@@ -15,8 +15,7 @@
 
 from random import Random
 
-import hypothesis.strategies as st
-from hypothesis import example, given
+from hypothesis import example, given, strategies as st
 from hypothesis.internal.conjecture.shrinking import Ordering
 
 

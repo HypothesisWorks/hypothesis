@@ -15,8 +15,7 @@
 
 import threading
 
-import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, strategies as st
 
 
 def test_can_run_given_in_thread():

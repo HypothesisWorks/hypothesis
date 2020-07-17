@@ -19,11 +19,11 @@ from unittest.mock import Mock
 
 import pytest
 
-import hypothesis.internal.conjecture.engine as engine_module
 from hypothesis import HealthCheck, Phase, Verbosity, settings
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.errors import FailedHealthCheck, Flaky
 from hypothesis.internal.compat import int_from_bytes
+from hypothesis.internal.conjecture import engine as engine_module
 from hypothesis.internal.conjecture.data import ConjectureData, Overrun, Status
 from hypothesis.internal.conjecture.engine import (
     MIN_TEST_CALLS,

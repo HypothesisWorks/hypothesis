@@ -232,7 +232,6 @@ IS_PULL_REQUEST = IS_TRAVIS_PULL_REQUEST or IS_CIRCLE_PULL_REQUEST
 
 
 def all_projects():
-    import hypothesistooling.projects.conjecturerust as cr
-    import hypothesistooling.projects.hypothesispython as hp
+    from hypothesistooling.projects import conjecturerust as cr, hypothesispython as hp
 
     return [cr, hp]

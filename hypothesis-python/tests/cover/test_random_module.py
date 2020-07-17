@@ -17,8 +17,7 @@ import random
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import find, given, register_random, reporting
+from hypothesis import find, given, register_random, reporting, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import entropy
 from hypothesis.internal.entropy import deterministic_PRNG

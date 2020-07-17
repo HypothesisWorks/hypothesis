@@ -15,8 +15,8 @@
 
 import pytest
 
-import hypothesis.internal.conjecture.floats as flt
 from hypothesis.internal.compat import int_to_bytes
+from hypothesis.internal.conjecture import floats as flt
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
 from hypothesis.internal.conjecture.shrinking import Float

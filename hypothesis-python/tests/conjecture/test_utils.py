@@ -19,7 +19,6 @@ from fractions import Fraction
 import numpy as np
 import pytest
 
-import hypothesis.internal.conjecture.utils as cu
 from hypothesis import (
     HealthCheck,
     Phase,
@@ -31,6 +30,7 @@ from hypothesis import (
     strategies as st,
 )
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 

@@ -20,7 +20,6 @@ from collections import defaultdict
 from random import choice as random_choice
 from typing import Any, Callable, Generic, List, TypeVar
 
-import hypothesis.internal.conjecture.utils as cu
 from hypothesis._settings import HealthCheck, Phase, Verbosity, settings
 from hypothesis.control import _current_build_context, assume
 from hypothesis.errors import (
@@ -29,6 +28,7 @@ from hypothesis.errors import (
     NonInteractiveExampleWarning,
     UnsatisfiedAssumption,
 )
+from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import (
     calc_label_from_cls,

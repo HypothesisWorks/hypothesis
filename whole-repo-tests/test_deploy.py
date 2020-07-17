@@ -18,8 +18,7 @@ import os
 import pytest
 
 import hypothesistooling as tools
-import hypothesistooling.__main__ as main
-import hypothesistooling.releasemanagement as rm
+from hypothesistooling import __main__ as main, releasemanagement as rm
 
 
 @pytest.mark.parametrize(

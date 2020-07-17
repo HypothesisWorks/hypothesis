@@ -13,8 +13,7 @@
 #
 # END HEADER
 
-import hypothesis.strategies as st
-from hypothesis import HealthCheck, Verbosity, assume, given, settings
+from hypothesis import HealthCheck, Verbosity, assume, given, settings, strategies as st
 
 
 @settings(max_examples=1, database=None)

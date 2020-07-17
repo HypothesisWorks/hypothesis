@@ -25,7 +25,7 @@ from collections import OrderedDict
 from textwrap import indent
 from typing import Callable, Dict, Tuple, Type, Union
 
-import hypothesis.strategies as st
+from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.utils.conventions import InferType, infer
 

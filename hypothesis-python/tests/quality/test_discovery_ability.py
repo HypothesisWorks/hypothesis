@@ -27,9 +27,9 @@ import collections
 import math
 import re
 
-import hypothesis.internal.reflection as reflection
 from hypothesis import HealthCheck, settings as Settings
 from hypothesis.errors import UnsatisfiedAssumption
+from hypothesis.internal import reflection as reflection
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.strategies import (
     booleans,

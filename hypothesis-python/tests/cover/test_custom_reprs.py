@@ -15,8 +15,7 @@
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, strategies as st
 
 
 def test_includes_non_default_args_in_repr():

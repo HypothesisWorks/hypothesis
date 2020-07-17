@@ -19,8 +19,7 @@ from inspect import getfullargspec
 import attr
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.reflection import (
     convert_positional_arguments,

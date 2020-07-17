@@ -19,11 +19,11 @@ from random import Random
 
 import attr
 
-import hypothesis.internal.conjecture.utils as cu
-import hypothesis.strategies._internal.core as st
 from hypothesis.control import should_note
+from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.reflection import define_function_signature
 from hypothesis.reporting import report
+from hypothesis.strategies._internal import core as st
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
 

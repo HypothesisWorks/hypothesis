@@ -19,17 +19,15 @@ from functools import partial
 from inspect import Parameter, signature
 from typing import Type, Union
 
-import django.db.models as dm
-import django.forms as df
-import django.test as dt
+from django import forms as df, test as dt
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError
+from django.db import IntegrityError, models as dm
 
-import hypothesis.strategies._internal.core as st
 from hypothesis import reject
 from hypothesis._settings import note_deprecation
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django._fields import from_field
+from hypothesis.strategies._internal import core as st
 from hypothesis.utils.conventions import InferType, infer
 
 

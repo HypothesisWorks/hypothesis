@@ -13,7 +13,7 @@
 #
 # END HEADER
 
-import hypothesis.strategies as st
+from hypothesis import strategies as st
 
 
 def test_labels_are_cached():

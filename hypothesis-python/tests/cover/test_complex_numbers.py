@@ -16,8 +16,7 @@
 import math
 import sys
 
-import hypothesis.strategies as st
-from hypothesis import given, reject
+from hypothesis import given, reject, strategies as st
 from hypothesis.strategies import complex_numbers
 from tests.common.debug import minimal
 from tests.common.utils import checks_deprecated_behaviour

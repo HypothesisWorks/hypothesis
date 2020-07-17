@@ -19,8 +19,7 @@ import sre_constants as sre
 import sre_parse
 import sys
 
-import hypothesis.strategies as st
-from hypothesis import reject
+from hypothesis import reject, strategies as st
 from hypothesis.internal.charmap import as_general_categories, categories
 from hypothesis.internal.compat import int_to_byte
 

@@ -15,7 +15,7 @@
 
 from collections import Counter
 
-import hypothesis.strategies as st
+from hypothesis import strategies as st
 from hypothesis.internal.cache import GenericCache
 from hypothesis.stateful import (
     Bundle,

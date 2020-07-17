@@ -20,8 +20,7 @@ from typing import Union
 import pytest
 from typing_extensions import DefaultDict, Literal, NewType, Type
 
-import hypothesis.strategies as st
-from hypothesis import assume, given
+from hypothesis import assume, given, strategies as st
 from hypothesis.strategies import from_type
 
 

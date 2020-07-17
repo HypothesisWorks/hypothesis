@@ -13,7 +13,7 @@
 #
 # END HEADER
 
-import hypothesis.strategies as st
+from hypothesis import strategies as st
 from tests.common.debug import find_any
 
 

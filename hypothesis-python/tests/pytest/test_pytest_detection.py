@@ -16,7 +16,7 @@
 import subprocess
 import sys
 
-import hypothesis.core as core
+from hypothesis import core as core
 
 
 def test_is_running_under_pytest():

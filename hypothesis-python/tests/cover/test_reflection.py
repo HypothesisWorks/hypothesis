@@ -22,8 +22,8 @@ from unittest.mock import MagicMock, Mock, NonCallableMagicMock, NonCallableMock
 
 import pytest
 
-import hypothesis.internal.reflection as reflection
-import hypothesis.strategies as st
+from hypothesis import strategies as st
+from hypothesis.internal import reflection
 from hypothesis.internal.reflection import (
     arg_string,
     convert_keyword_arguments,

@@ -15,8 +15,15 @@
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import HealthCheck, Verbosity, assume, example, given, settings
+from hypothesis import (
+    HealthCheck,
+    Verbosity,
+    assume,
+    example,
+    given,
+    settings,
+    strategies as st,
+)
 from hypothesis.internal.compat import ceil
 from tests.common.debug import minimal
 

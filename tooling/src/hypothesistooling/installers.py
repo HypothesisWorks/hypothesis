@@ -24,8 +24,7 @@ import os
 import shutil
 import subprocess
 
-import hypothesistooling.scripts as scripts
-from hypothesistooling import git
+from hypothesistooling import git, scripts
 from hypothesistooling.junkdrawer import once
 
 HOME = os.environ["HOME"]

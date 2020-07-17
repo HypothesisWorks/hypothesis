@@ -17,8 +17,7 @@ import random
 
 from pytest import raises
 
-import hypothesis.strategies as st
-from hypothesis import Verbosity, find, given, settings
+from hypothesis import Verbosity, find, given, settings, strategies as st
 from tests.common.utils import no_shrink
 
 

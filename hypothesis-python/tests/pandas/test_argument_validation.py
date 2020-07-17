@@ -17,9 +17,8 @@ from datetime import datetime
 
 import pandas as pd
 
-import hypothesis.extra.pandas as pdst
-import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, strategies as st
+from hypothesis.extra import pandas as pdst
 from tests.common.arguments import argument_validation_test, e
 
 BAD_ARGS = [

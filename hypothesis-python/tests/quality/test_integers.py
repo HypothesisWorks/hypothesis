@@ -15,7 +15,6 @@
 
 from random import Random
 
-import hypothesis.strategies as st
 from hypothesis import (
     HealthCheck,
     Phase,
@@ -25,6 +24,7 @@ from hypothesis import (
     given,
     reject,
     settings,
+    strategies as st,
 )
 from hypothesis.internal.conjecture.data import ConjectureData, Status, StopTest
 from hypothesis.internal.conjecture.engine import ConjectureRunner

@@ -22,7 +22,7 @@ import sys
 import requests
 
 import hypothesistooling as tools
-import hypothesistooling.releasemanagement as rm
+from hypothesistooling import releasemanagement as rm
 
 PACKAGE_NAME = "hypothesis-python"
 

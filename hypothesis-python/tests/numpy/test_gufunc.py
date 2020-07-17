@@ -17,10 +17,9 @@ import numpy as np
 import pytest
 from pytest import param
 
-import hypothesis.extra.numpy as nps
-import hypothesis.strategies as st
-from hypothesis import example, given, note, settings
+from hypothesis import example, given, note, settings, strategies as st
 from hypothesis.errors import InvalidArgument
+from hypothesis.extra import numpy as nps
 from tests.common.debug import find_any, minimal
 
 

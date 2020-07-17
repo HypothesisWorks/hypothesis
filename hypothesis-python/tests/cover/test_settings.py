@@ -20,8 +20,7 @@ from unittest import TestCase
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import example, given
+from hypothesis import example, given, strategies as st
 from hypothesis._settings import (
     Phase,
     Verbosity,

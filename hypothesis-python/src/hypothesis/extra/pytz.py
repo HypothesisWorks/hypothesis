@@ -30,7 +30,7 @@ import datetime as dt
 import pytz
 from pytz.tzfile import StaticTzInfo
 
-import hypothesis.strategies._internal.core as st
+from hypothesis.strategies._internal import core as st
 
 __all__ = ["timezones"]
 

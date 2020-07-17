@@ -15,7 +15,6 @@
 
 from hypothesis.internal.conjecture.shrinking.common import Shrinker, find_integer
 
-
 """
 This module implements a shrinker for non-negative integers.
 """

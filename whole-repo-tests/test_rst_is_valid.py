@@ -16,7 +16,7 @@
 import os
 
 import hypothesistooling as tools
-import hypothesistooling.projects.hypothesispython as hp
+from hypothesistooling.projects import hypothesispython as hp
 from hypothesistooling.scripts import pip_tool
 
 

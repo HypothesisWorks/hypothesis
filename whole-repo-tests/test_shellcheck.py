@@ -16,7 +16,7 @@
 import subprocess
 
 import hypothesistooling as tools
-import hypothesistooling.installers as install
+from hypothesistooling import installers as install
 
 SCRIPTS = [f for f in tools.all_files() if f.endswith(".sh")]
 

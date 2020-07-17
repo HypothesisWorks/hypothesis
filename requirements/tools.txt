@@ -20,12 +20,12 @@ cffi==1.14.0              # via cryptography
 chardet==3.0.4            # via requests
 click==7.1.2              # via black, pip-tools, pyupio, safety
 colorama==0.4.3           # via twine
-coverage==5.1             # via -r requirements/tools.in
+coverage==5.2             # via -r requirements/tools.in
 cryptography==2.9.2       # via secretstorage
 decorator==4.4.2          # via ipython, traitlets
 deprecated==1.2.10        # via pygithub
 distlib==0.3.1            # via virtualenv
-django==3.0.7             # via -r requirements/tools.in
+django==3.0.8             # via -r requirements/tools.in
 docutils==0.16            # via readme-renderer, restructuredtext-lint, sphinx
 dparse==0.5.1             # via pyupio, safety
 dpcontracts==0.6.0        # via -r requirements/tools.in
@@ -37,19 +37,19 @@ flake8-docstrings==1.5.0  # via -r requirements/tools.in
 flake8-polyfill==1.0.2    # via flake8-bandit
 flake8==3.8.3             # via -r requirements/tools.in, flake8-bandit, flake8-bugbear, flake8-comprehensions, flake8-docstrings, flake8-polyfill
 gitdb==4.0.5              # via gitpython
-gitpython==3.1.3          # via bandit
+gitpython==3.1.7          # via bandit
 idna==2.10                # via requests
 imagesize==1.2.0          # via sphinx
-importlib-metadata==1.7.0  # via flake8, flake8-comprehensions, importlib-resources, keyring, pluggy, pytest, tox, twine, virtualenv
-importlib-resources==2.0.1  # via virtualenv
+importlib-metadata==1.7.0  # via flake8, flake8-comprehensions, keyring, pluggy, pytest, stevedore, tox, twine, virtualenv
+importlib-resources==3.0.0  # via virtualenv
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.16.1           # via -r requirements/tools.in
-isort==4.3.21             # via -r requirements/tools.in
+isort==5.0.9              # via -r requirements/tools.in
 jedi==0.17.1              # via ipython
 jeepney==0.4.3            # via keyring, secretstorage
 jinja2==2.11.2            # via pyupio, sphinx
 keyring==21.2.1           # via twine
-lark-parser==0.8.9        # via -r requirements/tools.in
+lark-parser==0.9.0        # via -r requirements/tools.in
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8
 more-itertools==8.4.0     # via pytest
@@ -78,9 +78,9 @@ pyjwt==1.7.1              # via pygithub
 pyparsing==2.4.7          # via packaging
 pytest==5.4.3             # via -r requirements/tools.in
 python-dateutil==2.8.1    # via -r requirements/tools.in
-python-gitlab==2.3.1      # via pyupio
+python-gitlab==2.4.0      # via pyupio
 pytz==2020.1              # via babel, django
-pyupgrade==2.6.2          # via -r requirements/tools.in
+pyupgrade==2.7.0          # via -r requirements/tools.in
 pyupio==1.1.1             # via -r requirements/tools.in
 pyyaml==5.3.1             # via bandit, dparse, pyupio
 readme-renderer==26.0     # via twine
@@ -96,7 +96,7 @@ smmap==3.0.4              # via gitdb
 snowballstemmer==2.0.0    # via pydocstyle, sphinx
 sortedcontainers==2.2.2   # via -r requirements/tools.in
 sphinx-rtd-theme==0.5.0   # via -r requirements/tools.in
-sphinx==3.1.1             # via -r requirements/tools.in, sphinx-rtd-theme
+sphinx==3.1.2             # via -r requirements/tools.in, sphinx-rtd-theme
 sphinxcontrib-applehelp==1.0.2  # via sphinx
 sphinxcontrib-devhelp==1.0.2  # via sphinx
 sphinxcontrib-htmlhelp==1.0.3  # via sphinx
@@ -104,17 +104,17 @@ sphinxcontrib-jsmath==1.0.1  # via sphinx
 sphinxcontrib-qthelp==1.0.3  # via sphinx
 sphinxcontrib-serializinghtml==1.1.4  # via sphinx
 sqlparse==0.3.1           # via django
-stevedore==2.0.1          # via bandit
+stevedore==3.1.0          # via bandit
 tokenize-rt==4.0.0        # via pyupgrade
 toml==0.10.1              # via -r requirements/tools.in, black, dparse, tox
-tox==3.16.0               # via -r requirements/tools.in
+tox==3.16.1               # via -r requirements/tools.in
 tqdm==4.47.0              # via pyupio, twine
 traitlets==4.3.3          # via ipython
 twine==3.2.0              # via -r requirements/tools.in
 typed-ast==1.4.1          # via black, mypy
 typing-extensions==3.7.4.2  # via mypy
 urllib3==1.25.9           # via requests
-virtualenv==20.0.25       # via tox
+virtualenv==20.0.26       # via tox
 wcwidth==0.2.5            # via prompt-toolkit, pytest
 webencodings==0.5.1       # via bleach
 wrapt==1.12.1             # via deprecated

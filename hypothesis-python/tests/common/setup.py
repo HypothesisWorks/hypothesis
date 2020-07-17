@@ -69,7 +69,7 @@ def run():
     # We do a smoke test here before we mess around with settings.
     x = settings()
 
-    import hypothesis._settings as settings_module
+    from hypothesis import _settings as settings_module
 
     for s in settings_module.all_settings.values():
         v = getattr(x, s.name)

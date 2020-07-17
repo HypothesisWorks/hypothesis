@@ -19,7 +19,6 @@ import zlib
 
 import pytest
 
-import hypothesis.strategies as st
 from hypothesis import (
     Verbosity,
     __version__,
@@ -28,6 +27,7 @@ from hypothesis import (
     reject,
     reproduce_failure,
     settings,
+    strategies as st,
 )
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument, UnsatisfiedAssumption

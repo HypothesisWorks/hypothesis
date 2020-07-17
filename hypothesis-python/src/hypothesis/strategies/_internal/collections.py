@@ -15,8 +15,8 @@
 
 from collections import OrderedDict
 
-import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 from hypothesis.internal.conjecture.utils import combine_labels
 from hypothesis.strategies._internal.strategies import (

@@ -41,12 +41,11 @@ import attr
 import lark
 from lark.grammar import NonTerminal, Terminal
 
-import hypothesis.strategies._internal.core as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture.utils import calc_label_from_name
 from hypothesis.internal.reflection import deprecated_posargs
 from hypothesis.internal.validation import check_type
-from hypothesis.strategies._internal import SearchStrategy
+from hypothesis.strategies._internal import SearchStrategy, core as st
 
 __all__ = ["from_lark"]
 

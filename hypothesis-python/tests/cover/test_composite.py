@@ -15,8 +15,7 @@
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import assume, given
+from hypothesis import assume, given, strategies as st
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
 from tests.common.utils import flaky

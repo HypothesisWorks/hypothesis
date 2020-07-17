@@ -17,8 +17,8 @@ from random import Random
 
 import pytest
 
-import hypothesis.internal.conjecture.utils as cu
 from hypothesis import HealthCheck, settings
+from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.engine import ConjectureData, ConjectureRunner
 from hypothesis.strategies._internal import SearchStrategy
 

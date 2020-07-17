@@ -19,9 +19,8 @@ import sys
 import pytest
 
 import hypothesis
-import hypothesis.internal.escalation as esc
-import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, strategies as st
+from hypothesis.internal import escalation as esc
 
 
 def test_does_not_escalate_errors_in_non_hypothesis_file():

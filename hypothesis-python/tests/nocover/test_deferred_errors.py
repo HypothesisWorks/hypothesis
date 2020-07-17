@@ -15,8 +15,7 @@
 
 import pytest
 
-import hypothesis.strategies as st
-from hypothesis import find, given
+from hypothesis import find, given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies._internal.core import defines_strategy
 

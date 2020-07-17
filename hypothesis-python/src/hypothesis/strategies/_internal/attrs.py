@@ -18,7 +18,7 @@ from itertools import chain
 
 import attr
 
-import hypothesis.strategies as st
+from hypothesis import strategies as st
 from hypothesis.errors import ResolutionFailed
 from hypothesis.internal.compat import get_type_hints
 from hypothesis.strategies._internal.types import is_a_type, type_sorting_key
