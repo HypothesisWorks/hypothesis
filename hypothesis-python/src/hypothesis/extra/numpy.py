@@ -1336,7 +1336,7 @@ def basic_indices(
     ``...`` (Ellipsis), and :obj:`numpy:numpy.newaxis`; which when used to index a
     ``shape``-shaped array will produce either a scalar or a shared-memory view.
     When a length-one tuple would be generated, this strategy may instead return
-    the element which will index the first axis, e.g. `5` instead of `(5,)`.
+    the element which will index the first axis, e.g. ``5`` instead of ``(5,)``.
 
     * ``shape``: the array shape that will be indexed, as a tuple of integers >= 0.
       This must be at least two-dimensional for a tuple to be a valid basic index;
