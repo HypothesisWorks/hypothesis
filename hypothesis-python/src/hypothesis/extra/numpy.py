@@ -1313,9 +1313,9 @@ class BasicIndexStrategy(SearchStrategy):
             while result[-1:] == [slice(None, None)] and data.draw(st.integers(0, 7)):
                 result.pop()
         if len(result) == 1 and data.draw(st.booleans()):
+            # Sometimes generate bare element equivalent to a length-one tuple
             return result[0]
-        else:
-            return tuple(result)
+        return tuple(result)
 
 
 @st.defines_strategy
@@ -1335,6 +1335,8 @@ def basic_indices(
     It generates tuples containing some mix of integers, :obj:`python:slice` objects,
     ``...`` (Ellipsis), and :obj:`numpy:numpy.newaxis`; which when used to index a
     ``shape``-shaped array will produce either a scalar or a shared-memory view.
+    When a length-one tuple would be generated, this strategy may instead return
+    the element which will index the first axis, e.g. `5` instead of `(5,)`.
 
     * ``shape``: the array shape that will be indexed, as a tuple of integers >= 0.
       This must be at least two-dimensional for a tuple to be a valid basic index;

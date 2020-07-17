@@ -14,7 +14,6 @@
 # END HEADER
 
 import sys
-from collections.abc import Iterable
 from functools import reduce
 from itertools import zip_longest
 
@@ -1204,7 +1203,7 @@ def test_basic_indices_can_generate_long_ellipsis():
 
 @given(
     nps.basic_indices(shape=(0, 0, 0, 0, 0)).filter(
-        lambda idx: isinstance(idx, Iterable) and Ellipsis in idx
+        lambda idx: isinstance(idx, tuple) and Ellipsis in idx
     )
 )
 def test_basic_indices_replaces_whole_axis_slices_with_ellipsis(idx):
@@ -1236,7 +1235,7 @@ def test_basic_indices_generate_valid_indexers(
     )
     # Check that disallowed things are indeed absent
     if not allow_newaxis:
-        if hasattr(indexer, "__len__"):
+        if isinstance(indexer, tuple):
             assert 0 <= len(indexer) <= len(shape) + int(allow_ellipsis)
         else:
             assert 1 <= len(shape) + int(allow_ellipsis)
