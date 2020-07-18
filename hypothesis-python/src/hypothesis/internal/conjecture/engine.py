@@ -989,7 +989,9 @@ class ConjectureRunner:
             return result
 
         try:
-            return check_result(self.__data_cache[buffer])
+            cached = check_result(self.__data_cache[buffer])
+            if cached.status > Status.OVERRUN or extend == 0:
+                return cached
         except KeyError:
             pass
 
@@ -1033,7 +1035,8 @@ class ConjectureRunner:
         )
         self.test_function(data)
         result = check_result(data.as_result())
-        self.__data_cache[buffer] = result
+        if extend == 0 or (result is not Overrun and len(result.buffer) <= len(buffer)):
+            self.__data_cache[buffer] = result
         return result
 
     def event_to_string(self, event):
