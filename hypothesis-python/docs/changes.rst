@@ -10,6 +10,19 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.20.2:
+
+-------------------
+5.20.2 - 2020-07-18
+-------------------
+
+This release fixes a small caching bug in Hypothesis internals that may under
+some circumstances have resulted in a less diverse set of test cases being
+generated than was intended.
+
+Fixing this problem revealed some performance problems that could occur during targeted property based testing, so this release also fixes those. Targeted property-based testing should now be significantly faster in some cases,
+but this may be at the cost of reduced effectiveness.
+
 .. _v5.20.1:
 
 -------------------
