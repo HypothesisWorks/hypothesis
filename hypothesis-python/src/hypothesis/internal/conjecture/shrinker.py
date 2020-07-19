@@ -501,6 +501,7 @@ class Shrinker:
                 block_program("-XX"),
                 "minimize_individual_blocks",
                 block_program("--X"),
+                "redistribute_block_pairs",
             ]
         )
 
@@ -1144,6 +1145,41 @@ class Shrinker:
                 ),
                 random=self.random,
             )
+
+    @defines_shrink_pass()
+    def redistribute_block_pairs(self, chooser):
+        """If there is a sum of generated integers that we need their sum
+        to exceed some bound, lowering one of them requires raising the
+        other. This pass enables that."""
+
+        block = chooser.choose(self.blocks, lambda b: not b.all_zero)
+
+        for j in range(block.index + 1, len(self.blocks)):
+            next_block = self.blocks[j]
+            if next_block.length == block.length:
+                break
+        else:
+            return
+
+        buffer = self.buffer
+
+        m = int_from_bytes(buffer[block.start : block.end])
+        n = int_from_bytes(buffer[next_block.start : next_block.end])
+
+        def boost(k):
+            if k > m:
+                return False
+            attempt = bytearray(buffer)
+            attempt[block.start : block.end] = int_to_bytes(m - k, block.length)
+            try:
+                attempt[next_block.start : next_block.end] = int_to_bytes(
+                    n + k, block.length
+                )
+            except OverflowError:
+                return False
+            return self.consider_new_buffer(attempt)
+
+        find_integer(boost)
 
     @defines_shrink_pass()
     def minimize_individual_blocks(self, chooser):
