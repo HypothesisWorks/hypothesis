@@ -736,6 +736,53 @@ class ConjectureResult:
         return self
 
 
+class OutOfBits(Exception):
+    pass
+
+
+class BitSource:
+    """Some source of bits for consumption by a ConjectureData object."""
+
+    def draw_bits(self, n):
+        raise NotImplementedError()
+
+
+class BitSourceFromPrefix(BitSource):
+    """Main implementation of BitSource. Draws from a fixed sequence
+    of bytes, then uniformly at random from some random source,
+    up to a maximimum length."""
+
+    def __init__(self, prefix, max_length=float("inf"), random=None):
+        assert random is not None or max_length <= len(prefix)
+
+        self.__prefix = prefix
+        self.__max_length = max_length
+        self.__random = random
+        self.__bytes_drawn = 0
+
+    def draw_bits(self, n):
+        n_bytes = bits_to_bytes(n)
+        if self.__bytes_drawn + n_bytes > self.__max_length:
+            raise OutOfBits()
+
+        if self.__bytes_drawn < len(self.__prefix):
+            index = self.__bytes_drawn
+            buf = self.__prefix[index : index + n_bytes]
+            if len(buf) < n_bytes:
+                buf += uniform(self.__random, n_bytes - len(buf))
+        else:
+            buf = uniform(self.__random, n_bytes)
+        buf = bytearray(buf)
+        self.__bytes_drawn += n_bytes
+        assert len(buf) == n_bytes
+
+        # If we have a number of bits that is not a multiple of 8
+        # we have to mask off the high bits.
+        buf[0] &= BYTE_MASKS[n % 8]
+        buf = bytes(buf)
+        return int_from_bytes(buf)
+
+
 # Masks for masking off the first byte of an n-bit buffer.
 # The appropriate mask is stored at position n % 8.
 BYTE_MASKS = [(1 << n) - 1 for n in range(8)]
@@ -760,10 +807,10 @@ class ConjectureData:
         self.overdraw = 0
         self.__block_starts = defaultdict(list)
         self.__block_starts_calculated_to = 0
-        self.__prefix = prefix
-        self.__random = random
 
-        assert random is not None or max_length <= len(prefix)
+        self.__bit_source = BitSourceFromPrefix(
+            prefix=prefix, random=random, max_length=max_length,
+        )
 
         self.blocks = Blocks(self)
         self.buffer = bytearray()
@@ -992,35 +1039,23 @@ class ConjectureData:
         if n == 0:
             return 0
         assert n > 0
-        n_bytes = bits_to_bytes(n)
-        self.__check_capacity(n_bytes)
 
+        try:
+            result = self.__bit_source.draw_bits(n)
+        except OutOfBits:
+            self.mark_overrun()
+
+        # Note that we always draw the underlying source of bits
+        # even if we're going to force it, so as to keep this
+        # in sync with where we expect to be..
         if forced is not None:
-            buf = int_to_bytes(forced, n_bytes)
-        elif self.__bytes_drawn < len(self.__prefix):
-            index = self.__bytes_drawn
-            buf = self.__prefix[index : index + n_bytes]
-            if len(buf) < n_bytes:
-                buf += uniform(self.__random, n_bytes - len(buf))
-        else:
-            buf = uniform(self.__random, n_bytes)
-        buf = bytearray(buf)
-        self.__bytes_drawn += n_bytes
-
-        assert len(buf) == n_bytes
-
-        # If we have a number of bits that is not a multiple of 8
-        # we have to mask off the high bits.
-        buf[0] &= BYTE_MASKS[n % 8]
-        buf = bytes(buf)
-        result = int_from_bytes(buf)
+            result = forced
 
         self.observer.draw_bits(n, forced is not None, result)
         self.__example_record.draw_bits(n, forced)
 
-        initial = self.index
-
-        self.buffer.extend(buf)
+        initial = len(self.buffer)
+        self.buffer.extend(int_to_bytes(result, bits_to_bytes(n)))
         self.index = len(self.buffer)
 
         if forced is not None:
@@ -1043,10 +1078,6 @@ class ConjectureData:
             return
         self.draw_bits(len(string) * 8, forced=int_from_bytes(string))
         return self.buffer[-len(string) :]
-
-    def __check_capacity(self, n):
-        if self.index + n > self.max_length:
-            self.mark_overrun()
 
     def conclude_test(self, status, interesting_origin=None):
         assert (interesting_origin is None) or (status == Status.INTERESTING)
