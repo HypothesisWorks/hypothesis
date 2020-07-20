@@ -559,3 +559,16 @@ def test_zero_coverage_edge_case():
     shrinker.fixate_shrink_passes(["zero_examples"])
 
     assert list(shrinker.buffer) == [255] + [0] * (len(shrinker.buffer) - 1)
+
+
+def test_block_programs_adjust_to_block_size():
+    @shrinking_from([64] + [0] * 7 + [1])
+    def shrinker(data):
+        n = data.draw_bits(8)
+        m = data.draw_bits(n)
+        if m == 1:
+            data.mark_interesting()
+
+    shrinker.fixate_shrink_passes([block_program("-")])
+
+    assert list(shrinker.buffer) == [1, 1]
