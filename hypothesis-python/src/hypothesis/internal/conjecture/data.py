@@ -747,6 +747,11 @@ class BitSource:
         raise NotImplementedError()
 
 
+class EmptyBitSource:
+    def draw_bits(self, n):
+        raise OutOfBits()
+
+
 class BitSourceFromPrefix(BitSource):
     """Main implementation of BitSource. Draws from a fixed sequence
     of bytes, then uniformly at random from some random source,
@@ -793,24 +798,22 @@ class ConjectureData:
     @classmethod
     def for_buffer(self, buffer, observer=None):
         return ConjectureData(
-            prefix=buffer, max_length=len(buffer), random=None, observer=observer,
+            BitSourceFromPrefix(prefix=buffer, max_length=len(buffer), random=None),
+            observer=observer,
         )
 
-    def __init__(self, max_length, prefix, random, observer=None):
+    def __init__(self, bit_source, observer=None):
         if observer is None:
             observer = DataObserver()
         assert isinstance(observer, DataObserver)
         self.__bytes_drawn = 0
         self.observer = observer
-        self.max_length = max_length
         self.is_find = False
         self.overdraw = 0
         self.__block_starts = defaultdict(list)
         self.__block_starts_calculated_to = 0
 
-        self.__bit_source = BitSourceFromPrefix(
-            prefix=prefix, random=random, max_length=max_length,
-        )
+        self.__bit_source = bit_source
 
         self.blocks = Blocks(self)
         self.buffer = bytearray()

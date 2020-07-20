@@ -21,6 +21,7 @@ from hypothesis import given, strategies as st
 from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.conjecture.data import (
     MAX_DEPTH,
+    BitSourceFromPrefix,
     ConjectureData,
     DataObserver,
     Overrun,
@@ -469,7 +470,7 @@ def test_example_equality():
 
 @given(st.integers(0, 255), st.randoms(use_true_random=True))
 def test_partial_buffer(n, rnd):
-    data = ConjectureData(prefix=[n], random=rnd, max_length=2,)
+    data = ConjectureData(BitSourceFromPrefix(prefix=[n], random=rnd, max_length=2,))
 
     assert data.draw_bytes(2)[0] == n
 

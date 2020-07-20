@@ -64,7 +64,7 @@ from hypothesis.internal.compat import (
     int_from_bytes,
     qualname,
 )
-from hypothesis.internal.conjecture.data import ConjectureData, StopTest
+from hypothesis.internal.conjecture.data import ConjectureData, EmptyBitSource, StopTest
 from hypothesis.internal.conjecture.engine import ConjectureRunner, sort_key
 from hypothesis.internal.entropy import deterministic_PRNG
 from hypothesis.internal.escalation import (
@@ -296,7 +296,7 @@ class ArtificialDataForExample(ConjectureData):
     def __init__(self, kwargs):
         self.__draws = 0
         self.__kwargs = kwargs
-        super().__init__(max_length=0, prefix=b"", random=None)
+        super().__init__(EmptyBitSource())
 
     def draw_bits(self, n):
         raise NotImplementedError("Dummy object should never be asked for bits.")

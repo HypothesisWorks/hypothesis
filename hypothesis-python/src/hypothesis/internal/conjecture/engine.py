@@ -28,6 +28,7 @@ from hypothesis._settings import local_settings
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.internal.compat import ceil, int_from_bytes
 from hypothesis.internal.conjecture.data import (
+    BitSourceFromPrefix,
     ConjectureData,
     ConjectureResult,
     DataObserver,
@@ -866,9 +867,9 @@ class ConjectureRunner:
 
     def new_conjecture_data(self, prefix, max_length=BUFFER_SIZE, observer=None):
         return ConjectureData(
-            prefix=prefix,
-            max_length=max_length,
-            random=self.random,
+            BitSourceFromPrefix(
+                prefix=prefix, max_length=max_length, random=self.random
+            ),
             observer=observer or self.tree.new_observer(),
         )
 
