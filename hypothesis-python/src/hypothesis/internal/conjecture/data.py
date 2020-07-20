@@ -727,10 +727,19 @@ class ConjectureResult:
     examples = attr.ib(repr=False)
 
     index = attr.ib(init=False)
+    __choices = attr.ib(init=False, default=None)
 
     def __attrs_post_init__(self):
         self.index = len(self.buffer)
         self.forced_indices = frozenset(self.forced_indices)
+
+    @property
+    def choices(self):
+        if self.__choices is None:
+            self.__choices = IntList(
+                [int_from_bytes(self.buffer[u:v]) for u, v in self.blocks.all_bounds()]
+            )
+        return self.__choices
 
     def as_result(self):
         return self
