@@ -19,13 +19,24 @@ import attr
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.choicetree import ChoiceTree, prefix_selection_order
-from hypothesis.internal.conjecture.data import ConjectureResult, Overrun, Status
+from hypothesis.internal.conjecture.data import (
+    BitSourceFromChoices,
+    ConjectureData,
+    ConjectureResult,
+    Overrun,
+    Status,
+)
+from hypothesis.internal.conjecture.datatree import PreviouslyUnseenBehaviour
 from hypothesis.internal.conjecture.floats import (
     DRAW_FLOAT_LABEL,
     float_to_lex,
     lex_to_float,
 )
-from hypothesis.internal.conjecture.junkdrawer import binary_search, replace_all
+from hypothesis.internal.conjecture.junkdrawer import (
+    IntList,
+    binary_search,
+    replace_all,
+)
 from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Ordering
 from hypothesis.internal.conjecture.shrinking.common import find_integer
 
@@ -365,30 +376,57 @@ class Shrinker:
 
     def incorporate_test_data(self, data):
         """Takes a ConjectureData or Overrun object updates the current
-        shrink_target if this data represents an improvement over it."""
+        shrink_target if this data represents an improvement over it,
+        returning True if this changes the shrink target."""
         if data.status < Status.VALID or data is self.shrink_target:
-            return
+            return False
+        data = data.as_result()
         if (
             self.__predicate(data)
             and sort_key(data.buffer) < sort_key(self.shrink_target.buffer)
             and self.__allow_transition(self.shrink_target, data)
         ):
             self.update_shrink_target(data)
+            return data is self.shrink_target
+        return False
+
+    def __explain_call(self):
+        if self.__pending_shrink_explanation is not None:
+            self.debug(self.__pending_shrink_explanation)
+            self.__pending_shrink_explanation = None
 
     def cached_test_function(self, buffer):
         """Returns a cached version of the underlying test function, so
         that the result is either an Overrun object (if the buffer is
         too short to be a valid test case) or a ConjectureData object
         with status >= INVALID that would result from running this buffer."""
-
-        if self.__pending_shrink_explanation is not None:
-            self.debug(self.__pending_shrink_explanation)
-            self.__pending_shrink_explanation = None
-
+        self.__explain_call()
         buffer = bytes(buffer)
         result = self.engine.cached_test_function(buffer)
         self.incorporate_test_data(result)
         return result
+
+    def consider_choices(self, choices):
+        """Tries running a test case which makes this sequence of
+        choices, returning True if at the end of this the resulting
+        test case is the current shrink target (which may be because
+        it was already at the beginning)."""
+        dummy = ConjectureData(BitSourceFromChoices(choices))
+        try:
+            self.engine.tree.simulate_test_function(dummy)
+            dummy.freeze()
+            return dummy.buffer == self.shrink_target.buffer
+        except PreviouslyUnseenBehaviour:
+            pass
+
+        self.__explain_call()
+        data = ConjectureData(
+            BitSourceFromChoices(choices), observer=self.engine.tree.new_observer()
+        )
+        self.engine.test_function(data)
+        return data.buffer == self.buffer or self.incorporate_test_data(
+            data.as_result()
+        )
 
     def debug(self, msg):
         self.engine.debug(msg)
@@ -1358,26 +1396,23 @@ class Shrinker:
         Returns True if this successfully changes the underlying shrink target,
         else False.
         """
-        if i + len(description) > len(original.blocks) or i < 0:
+        if i + len(description) > len(original.choices) or i < 0:
             return False
-        attempt = bytearray(original.buffer)
+        attempt = IntList(original.choices)
         for _ in range(repeats):
             for k, d in reversed(list(enumerate(description))):
                 j = i + k
-                u, v = original.blocks[j].bounds
-                if v > len(attempt):
+                if j >= len(attempt):
                     return False
                 if d == "-":
-                    value = int_from_bytes(attempt[u:v])
-                    if value == 0:
+                    if attempt[j] == 0:
                         return False
-                    else:
-                        attempt[u:v] = int_to_bytes(value - 1, v - u)
+                    attempt[j] -= 1
                 elif d == "X":
-                    del attempt[u:v]
+                    del attempt[j]
                 else:  # pragma: no cover
                     raise AssertionError("Unrecognised command %r" % (d,))
-        return self.incorporate_new_buffer(attempt)
+        return self.consider_choices(attempt)
 
 
 def block_program(description):

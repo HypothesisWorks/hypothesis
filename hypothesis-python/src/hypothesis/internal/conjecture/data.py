@@ -797,6 +797,23 @@ class BitSourceFromPrefix(BitSource):
         return int_from_bytes(buf)
 
 
+class BitSourceFromChoices(BitSource):
+    def __init__(self, choices):
+        self.choices = choices
+        self.choices_made = 0
+
+    def draw_bits(self, n):
+        try:
+            result = self.choices[self.choices_made]
+        except IndexError:
+            raise OutOfBits()
+        self.choices_made += 1
+
+        if result.bit_length() > n:
+            result &= (1 << n) - 1
+        return result
+
+
 # Masks for masking off the first byte of an n-bit buffer.
 # The appropriate mask is stored at position n % 8.
 BYTE_MASKS = [(1 << n) - 1 for n in range(8)]
