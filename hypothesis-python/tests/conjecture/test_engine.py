@@ -14,6 +14,7 @@
 # END HEADER
 
 import re
+import time
 from random import Random
 from unittest.mock import Mock
 
@@ -778,7 +779,7 @@ def test_exit_because_shrink_phase_timeout(monkeypatch):
         if data.draw_bits(64) > 2 ** 33:
             data.mark_interesting()
 
-    monkeypatch.setattr(engine_module, "perf_counter", fast_time)
+    monkeypatch.setattr(time, "perf_counter", fast_time)
     runner = ConjectureRunner(f, settings=settings(database=None))
     runner.run()
     assert runner.exit_reason == ExitReason.very_slow_shrinking

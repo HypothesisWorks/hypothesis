@@ -13,9 +13,9 @@
 #
 # END HEADER
 
+import time
 from collections import defaultdict
 from enum import IntEnum
-from time import perf_counter
 
 import attr
 
@@ -774,7 +774,7 @@ class ConjectureData:
         global global_test_counter
         self.testcounter = global_test_counter
         global_test_counter += 1
-        self.start_time = perf_counter()
+        self.start_time = time.perf_counter()
         self.events = set()
         self.forced_indices = set()
         self.interesting_origin = None
@@ -866,7 +866,7 @@ class ConjectureData:
             # can be almost arbitrarily slow.  In cases like characters() and text()
             # where we cache something expensive, this led to Flaky deadline errors!
             # See https://github.com/HypothesisWorks/hypothesis/issues/2108
-            start_time = perf_counter()
+            start_time = time.perf_counter()
 
         strategy.validate()
 
@@ -888,7 +888,7 @@ class ConjectureData:
                     try:
                         return strategy.do_draw(self)
                     finally:
-                        self.draw_times.append(perf_counter() - start_time)
+                        self.draw_times.append(time.perf_counter() - start_time)
                 except BaseException as e:
                     mark_for_escalation(e)
                     raise
@@ -967,7 +967,7 @@ class ConjectureData:
         if self.frozen:
             assert isinstance(self.buffer, bytes)
             return
-        self.finish_time = perf_counter()
+        self.finish_time = time.perf_counter()
         assert len(self.buffer) == self.index
 
         # Always finish by closing all remaining examples so that we have a
