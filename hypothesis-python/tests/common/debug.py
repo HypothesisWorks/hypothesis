@@ -104,6 +104,7 @@ def assert_all_examples(strategy, predicate):
     :param predicate: (callable) Predicate that takes example and returns bool
     """
 
+    @Settings(database=None)
     @given(strategy)
     def assert_examples(s):
         msg = "Found %r using strategy %s which does not match" % (s, strategy)
