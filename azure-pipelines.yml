@@ -63,7 +63,7 @@ jobs:
         architecture: '$(python.architecture)'
     - script: |
         pip install --upgrade setuptools pip wheel
-        pip install -r requirements/test.txt typing-extensions
+        pip install -r requirements/test.txt typing-extensions black
         pip install hypothesis-python/[all]
       displayName: Install dependencies
     - script: |

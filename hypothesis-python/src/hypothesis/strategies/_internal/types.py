@@ -230,7 +230,9 @@ def from_typing_type(thing):
             "Could not resolve %s to a strategy; consider using "
             "register_type_strategy" % (empty or thing,)
         )
-    return st.one_of(strategies)
+    # This unusual construction de-nests any one_of() strategies in the repr,
+    # which is useful for the teaching / demonstration role of from_type().
+    return st.one_of(st.one_of(strategies).element_strategies)
 
 
 def can_cast(type, value):

@@ -448,6 +448,12 @@ class SampledFromStrategy(SearchStrategy):
                 self.raw_elements.__module__,
                 self.raw_elements.__name__,
             )
+        if (
+            len(self.elements) == 2
+            and self.elements[0] is False
+            and self.elements[1] is True
+        ):
+            return "booleans()"
         return "sampled_from([%s])" % ", ".join(map(repr, self.elements))
 
     def calc_has_reusable_values(self, recur):
