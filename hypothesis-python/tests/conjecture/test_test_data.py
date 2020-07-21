@@ -24,6 +24,7 @@ from hypothesis.internal.conjecture.data import (
     BitSourceFromPrefix,
     ConjectureData,
     DataObserver,
+    EmptyBitSource,
     Overrun,
     Status,
     StopTest,
@@ -504,3 +505,10 @@ def test_children_of_discarded_examples_do_not_create_structural_coverage():
     data.freeze()
     assert structural_coverage(42) not in data.tags
     assert structural_coverage(10) not in data.tags
+
+
+def test_empty_immediately_raises():
+    data = ConjectureData(EmptyBitSource())
+    with pytest.raises(StopTest):
+        data.draw_bits(1)
+    assert data.status == Status.OVERRUN
