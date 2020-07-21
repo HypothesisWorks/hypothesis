@@ -134,6 +134,8 @@ class ConjectureRunner:
         # executed test case.
         self.__data_cache = LRUReusedCache(CACHE_SIZE)
 
+        self.__pending_call_explanation = None
+
     @contextmanager
     def _log_phase_statistics(self, phase):
         self.stats_per_test_case.clear()
@@ -173,6 +175,10 @@ class ConjectureRunner:
                 raise
 
     def test_function(self, data):
+        if self.__pending_call_explanation is not None:
+            self.debug(self.__pending_call_explanation)
+            self.__pending_call_explanation = None
+
         assert isinstance(data.observer, TreeRecordingObserver)
         self.call_count += 1
 
@@ -964,6 +970,12 @@ class ConjectureRunner:
 
     def new_shrinker(self, example, predicate=None, allow_transition=None):
         return Shrinker(self, example, predicate, allow_transition)
+
+    def explain_next_call_as(self, explanation):
+        self.__pending_call_explanation = explanation
+
+    def clear_call_explanation(self):
+        self.__pending_call_explanation = None
 
     def cached_test_function(self, buffer, error_on_discard=False, extend=0):
         """Checks the tree to see if we've tested this buffer, and returns the

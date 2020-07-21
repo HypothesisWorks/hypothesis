@@ -283,7 +283,6 @@ class Shrinker:
         self.__predicate = predicate or (lambda data: True)
         self.__allow_transition = allow_transition or (lambda source, destination: True)
         self.__derived_values = {}
-        self.__pending_shrink_explanation = None
 
         self.initial_size = len(initial.buffer)
 
@@ -311,12 +310,6 @@ class Shrinker:
                 return self.cached_calculations.setdefault(cache_key, f())
 
         return accept
-
-    def explain_next_call_as(self, explanation):
-        self.__pending_shrink_explanation = explanation
-
-    def clear_call_explanation(self):
-        self.__pending_shrink_explanation = None
 
     def add_new_pass(self, run):
         """Creates a shrink pass corresponding to calling ``run(self)``"""
@@ -390,17 +383,11 @@ class Shrinker:
             return data is self.shrink_target
         return False
 
-    def __explain_call(self):
-        if self.__pending_shrink_explanation is not None:
-            self.debug(self.__pending_shrink_explanation)
-            self.__pending_shrink_explanation = None
-
     def cached_test_function(self, buffer):
         """Returns a cached version of the underlying test function, so
         that the result is either an Overrun object (if the buffer is
         too short to be a valid test case) or a ConjectureData object
         with status >= INVALID that would result from running this buffer."""
-        self.__explain_call()
         buffer = bytes(buffer)
         result = self.engine.cached_test_function(buffer)
         self.incorporate_test_data(result)
@@ -419,7 +406,6 @@ class Shrinker:
         except PreviouslyUnseenBehaviour:
             pass
 
-        self.__explain_call()
         data = ConjectureData(
             BitSourceFromChoices(choices), observer=self.engine.tree.new_observer()
         )
@@ -1497,7 +1483,7 @@ class ShrinkPass:
         initial_shrinks = self.shrinker.shrinks
         initial_calls = self.shrinker.calls
         size = len(self.shrinker.shrink_target.buffer)
-        self.shrinker.explain_next_call_as(self.name)
+        self.shrinker.engine.explain_next_call_as(self.name)
         try:
             self.last_prefix = tree.step(
                 prefix_selection_order(self.last_prefix),
@@ -1507,7 +1493,7 @@ class ShrinkPass:
             self.calls += self.shrinker.calls - initial_calls
             self.shrinks += self.shrinker.shrinks - initial_shrinks
             self.deletions += size - len(self.shrinker.shrink_target.buffer)
-            self.shrinker.clear_call_explanation()
+            self.shrinker.engine.clear_call_explanation()
         return True
 
     @property
