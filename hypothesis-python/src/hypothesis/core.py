@@ -22,13 +22,13 @@ import inspect
 import io
 import random as rnd_module
 import sys
+import time
 import traceback
 import warnings
 import zlib
 from inspect import getfullargspec
 from io import StringIO
 from random import Random
-from time import perf_counter
 from typing import Any, BinaryIO, Callable, Hashable, List, Optional, TypeVar, Union
 from unittest import TestCase
 
@@ -524,9 +524,9 @@ class StateForActualGivenExecution:
             def test(*args, **kwargs):
                 self.__test_runtime = None
                 initial_draws = len(data.draw_times)
-                start = perf_counter()
+                start = time.perf_counter()
                 result = self.test(*args, **kwargs)
-                finish = perf_counter()
+                finish = time.perf_counter()
                 internal_draw_time = sum(data.draw_times[initial_draws:])
                 runtime = datetime.timedelta(
                     seconds=finish - start - internal_draw_time

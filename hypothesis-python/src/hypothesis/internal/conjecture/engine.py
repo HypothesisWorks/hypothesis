@@ -14,11 +14,11 @@
 # END HEADER
 
 import math
+import time
 from collections import defaultdict
 from contextlib import contextmanager
 from enum import Enum
 from random import Random, getrandbits
-from time import perf_counter
 from weakref import WeakKeyDictionary
 
 import attr
@@ -136,12 +136,12 @@ class ConjectureRunner:
     @contextmanager
     def _log_phase_statistics(self, phase):
         self.stats_per_test_case.clear()
-        start_time = perf_counter()
+        start_time = time.perf_counter()
         try:
             yield
         finally:
             self.statistics[phase + "-phase"] = {
-                "duration-seconds": perf_counter() - start_time,
+                "duration-seconds": time.perf_counter() - start_time,
                 "test-cases": list(self.stats_per_test_case),
                 "distinct-failures": len(self.interesting_examples),
                 "shrinks-successful": self.shrinks,
@@ -255,7 +255,7 @@ class ConjectureRunner:
 
         if (
             self.finish_shrinking_deadline is not None
-            and self.finish_shrinking_deadline < perf_counter()
+            and self.finish_shrinking_deadline < time.perf_counter()
         ):
             # See https://github.com/HypothesisWorks/hypothesis/issues/2340
             report(
@@ -891,7 +891,7 @@ class ConjectureRunner:
         # a warning.   Many CI systems will kill a build after around ten minutes with
         # no output, and appearing to hang isn't great for interactive use either -
         # showing partially-shrunk examples is better than quitting with no examples!
-        self.finish_shrinking_deadline = perf_counter() + 300
+        self.finish_shrinking_deadline = time.perf_counter() + 300
 
         for prev_data in sorted(
             self.interesting_examples.values(), key=lambda d: sort_key(d.buffer)

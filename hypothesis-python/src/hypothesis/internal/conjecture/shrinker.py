@@ -483,7 +483,6 @@ class Shrinker:
         This method iterates to a fixed point and so is idempontent - calling
         it twice will have exactly the same effect as calling it once.
         """
-
         self.fixate_shrink_passes(
             [
                 block_program("X" * 5),
