@@ -10,6 +10,14 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.20.3:
+
+-------------------
+5.20.3 - 2020-07-21
+-------------------
+
+This release makes some internal changes for testing purposes and should have no user visible effect.
+
 .. _v5.20.2:
 
 -------------------
