@@ -187,6 +187,7 @@ def test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe():
     assert x == target
 
 
+@pytest.mark.skip  # See https://github.com/HypothesisWorks/hypothesis/issues/2497
 def test_find_large_union_list():
     size = 10
 
