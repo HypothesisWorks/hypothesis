@@ -14,6 +14,7 @@
 # END HEADER
 
 import itertools
+from random import Random
 
 import pytest
 
@@ -25,6 +26,7 @@ from hypothesis.internal.conjecture.data import (
     ConjectureData,
     DataObserver,
     EmptyBitSource,
+    OutOfBits,
     Overrun,
     Status,
     StopTest,
@@ -512,3 +514,13 @@ def test_empty_immediately_raises():
     with pytest.raises(StopTest):
         data.draw_bits(1)
     assert data.status == Status.OVERRUN
+
+
+def test_respects_max_length():
+    source = BitSourceFromPrefix(max_length=3, random=Random(0), prefix=())
+
+    source.draw_bits(1)
+    source.draw_bits(9)
+
+    with pytest.raises(OutOfBits):
+        source.draw_bits(1)
