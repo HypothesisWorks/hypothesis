@@ -13,8 +13,14 @@
 #
 # END HEADER
 
+from random import Random
+
 from hypothesis import given, strategies as st
-from hypothesis.internal.conjecture.choicetree import ChoiceTree, prefix_selection_order
+from hypothesis.internal.conjecture.choicetree import (
+    ChoiceTree,
+    prefix_selection_order,
+    random_selection_order,
+)
 
 
 def select(*args):
@@ -89,6 +95,15 @@ def test_skips_over_exhausted_children():
     assert results == [(1, 0), (1, 1), (2, 0)]
 
 
+def test_extends_prefix_from_right():
+    def f(chooser):
+        chooser.choose(range(4))
+
+    tree = ChoiceTree()
+    result = tree.step(select(), f)
+    assert result == (3,)
+
+
 def test_starts_from_the_end():
     def f(chooser):
         chooser.choose(range(3))
@@ -104,3 +119,33 @@ def test_skips_over_exhausted_subtree():
     tree = ChoiceTree()
     assert tree.step(select(8), f) == (8,)
     assert tree.step(select(8), f) == (7,)
+
+
+def test_exhausts_randomly():
+    def f(chooser):
+        chooser.choose(range(10))
+
+    tree = ChoiceTree()
+
+    random = Random()
+
+    seen = set()
+
+    for _ in range(10):
+        seen.add(tree.step(random_selection_order(random), f))
+
+    assert len(seen) == 10
+    assert tree.exhausted
+
+
+def test_exhausts_randomly_when_filtering():
+    def f(chooser):
+        chooser.choose(range(10), lambda x: False)
+
+    tree = ChoiceTree()
+
+    random = Random()
+
+    tree.step(random_selection_order(random), f)
+
+    assert tree.exhausted

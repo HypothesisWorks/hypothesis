@@ -15,6 +15,8 @@
 
 from collections import defaultdict
 
+from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy, pop_random
+
 
 def prefix_selection_order(prefix):
     """Select choices starting from ``prefix```,
@@ -30,6 +32,17 @@ def prefix_selection_order(prefix):
             yield from range(n - 1, i, -1)
         else:
             yield from range(n - 1, -1, -1)
+
+    return selection_order
+
+
+def random_selection_order(random):
+    """Select choices uniformly at random."""
+
+    def selection_order(depth, n):
+        pending = LazySequenceCopy(range(n))
+        while pending:
+            yield pop_random(random, pending)
 
     return selection_order
 
