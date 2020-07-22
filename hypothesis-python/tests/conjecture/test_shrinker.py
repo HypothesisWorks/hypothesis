@@ -572,3 +572,17 @@ def test_block_programs_adjust_to_block_size():
     shrinker.fixate_shrink_passes([block_program("-")])
 
     assert list(shrinker.buffer) == [1, 1]
+
+
+def test_caching_of_choice_based_calls():
+    @shrinking_from([1] * 5)
+    def shrinker(d):
+        for _ in range(5):
+            d.draw_bits(8)
+        d.mark_interesting()
+
+    initial = shrinker.calls
+    shrinker.consider_choices([0] * 4)
+    assert shrinker.calls == initial + 1
+    shrinker.consider_choices([0] * 4)
+    assert shrinker.calls == initial + 1
