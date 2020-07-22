@@ -301,14 +301,15 @@ class ArtificialRandom(HypothesisRandom):
                     "Sample size %d not in expected range 0 <= k <= %d" % (k, len(seq))
                 )
 
-            result = []
-            selected = set()
-            while len(result) < k:
-                i = cu.integer_range(self.__data, 0, len(seq) - 1)
-                if i not in selected:
-                    selected.add(i)
-                    result.append(i)
-            assert len(result) == len(selected)
+            result = self.__data.draw(
+                st.lists(
+                    st.sampled_from(range(len(seq))),
+                    min_size=k,
+                    max_size=k,
+                    unique=True,
+                )
+            )
+
         elif method == "getrandbits":
             result = self.__data.draw_bits(kwargs["n"])
         elif method == "triangular":

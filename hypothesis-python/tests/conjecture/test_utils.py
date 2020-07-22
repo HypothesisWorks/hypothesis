@@ -315,3 +315,8 @@ def test_can_draw_arbitrary_fractions(p, b):
         cu.biased_coin(ConjectureData.for_buffer(b), p)
     except StopTest:
         reject()
+
+
+def test_samples_from_a_range_directly():
+    s = cu.check_sample(range(10 ** 1000), "")
+    assert isinstance(s, range)

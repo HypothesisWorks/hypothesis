@@ -137,6 +137,8 @@ def check_sample(values, strategy_name):
                 values=repr(values), strategy=strategy_name
             )
         )
+    if isinstance(values, range):
+        return values
     return tuple(values)
 
 
