@@ -811,6 +811,7 @@ class BitSourceFromChoices(BitSource):
 
         if result.bit_length() > n:
             result &= (1 << n) - 1
+
         return result
 
 
@@ -1072,6 +1073,10 @@ class ConjectureData:
         try:
             result = self.__bit_source.draw_bits(n)
         except OutOfBits:
+            # Note that this will give a value of None if forced is None and
+            # that is correct behaviour (the tree interprets it as "we've
+            # seen a draw here but we've never seen a value for it")
+            self.observer.draw_bits(n, forced=forced is not None, value=forced)
             self.mark_overrun()
 
         # Note that we always draw the underlying source of bits

@@ -224,10 +224,14 @@ class DataTree:
         current_node = self.root
         while True:
             assert not current_node.is_exhausted
-            for i, (n_bits, value) in enumerate(
-                zip(current_node.bit_lengths, current_node.values)
-            ):
+            for i, n_bits in enumerate(current_node.bit_lengths):
+                try:
+                    value = current_node.values[i]
+                except IndexError:
+                    value = None
+
                 if i in current_node.forced:
+                    assert value is not None
                     append_int(n_bits, value)
                 else:
                     while True:
@@ -290,13 +294,11 @@ class DataTree:
         node = self.root
         try:
             while True:
-                for i, (n_bits, previous) in enumerate(
-                    zip(node.bit_lengths, node.values)
-                ):
+                for i, n_bits in enumerate(node.bit_lengths):
                     v = data.draw_bits(
                         n_bits, forced=node.values[i] if i in node.forced else None
                     )
-                    if v != previous:
+                    if i >= len(node.values) or v != node.values[i]:
                         raise PreviouslyUnseenBehaviour()
                 if isinstance(node.transition, Conclusion):
                     t = node.transition
@@ -328,10 +330,16 @@ class TreeRecordingObserver(DataObserver):
         self.killed = False
 
     def draw_bits(self, n_bits, forced, value):
+        node = self.__current_node
         i = self.__index_in_current_node
         self.__index_in_current_node += 1
-        node = self.__current_node
-        assert len(node.bit_lengths) == len(node.values)
+
+        if value is None:
+            if i == len(node.bit_lengths) and node.transition is None:
+                node.bit_lengths.append(n_bits)
+            return
+
+        assert len(node.values) <= len(node.bit_lengths) <= len(node.values) + 1
         if i < len(node.bit_lengths):
             if n_bits != node.bit_lengths[i]:
                 inconsistent_generation()
@@ -343,7 +351,11 @@ class TreeRecordingObserver(DataObserver):
             # draw and that's a pretty niche failure mode.
             if forced and i not in node.forced:
                 inconsistent_generation()
-            if value != node.values[i]:
+            if i == len(node.values):
+                assert node.transition is None
+                node.values.append(value)
+                assert len(node.values) == len(node.bit_lengths)
+            elif value != node.values[i]:
                 node.split_at(i)
                 assert i == len(node.values)
                 new_node = TreeNode()
@@ -352,10 +364,15 @@ class TreeRecordingObserver(DataObserver):
                 self.__current_node = new_node
                 self.__index_in_current_node = 0
         else:
+            assert len(node.values) == len(node.bit_lengths)
             trans = node.transition
             if trans is None:
                 node.bit_lengths.append(n_bits)
-                node.values.append(value)
+                if value is not None:
+                    node.values.append(value)
+                    assert len(node.values) == len(node.bit_lengths)
+                else:
+                    assert len(node.values) + 1 == len(node.bit_lengths)
                 if forced:
                     node.mark_forced(i)
             elif isinstance(trans, Conclusion):
@@ -404,7 +421,7 @@ class TreeRecordingObserver(DataObserver):
         i = self.__index_in_current_node
         node = self.__current_node
 
-        if i < len(node.values) or isinstance(node.transition, Branch):
+        if i < len(node.bit_lengths) or isinstance(node.transition, Branch):
             inconsistent_generation()
 
         new_transition = conclusion(status, interesting_origin)
@@ -426,7 +443,7 @@ class TreeRecordingObserver(DataObserver):
 
         assert node is self.__trail[-1]
         node.check_exhausted()
-        assert len(node.values) > 0 or node.check_exhausted()
+        assert len(node.bit_lengths) > 0 or node.check_exhausted()
 
         if not self.killed:
             self.__update_exhausted()

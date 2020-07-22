@@ -368,3 +368,43 @@ def test_will_mark_changes_in_discard_as_flaky():
 
     with pytest.raises(Flaky):
         data.stop_example(discard=True)
+
+
+def test_recognises_the_final_draw_before_an_overrun():
+    tree = DataTree()
+
+    data = ConjectureData.for_buffer([1, 1], observer=tree.new_observer())
+
+    with pytest.raises(StopTest):
+        data.draw_bits(1)
+        data.draw_bits(1)
+        data.draw_bits(1)
+
+    data = ConjectureData.for_buffer([1, 1])
+
+    tree.simulate_test_function(data)
+    assert data.status == Status.OVERRUN
+
+
+def test_splitting_bug():
+    """This triggers a fairly specific behaviour that witnessed a bug
+    in the data tree's handling of incomplete data. The bug this
+    tests for is quite specific and stupid and only happened during
+    development, but this is an easy test for triggering some otherwise
+    hard to reach behaviour so seemed worth including anyway."""
+    tree = DataTree()
+
+    def do(buf, overrun=False):
+        d = ConjectureData.for_buffer(buf, observer=tree.new_observer())
+        for _ in buf:
+            d.draw_bits(1)
+        if overrun:
+            with pytest.raises(StopTest):
+                d.draw_bits(1)
+        else:
+            d.freeze()
+
+    do([1])
+    do([0], overrun=True)
+    do([0, 1, 0])
+    do([0, 0])
