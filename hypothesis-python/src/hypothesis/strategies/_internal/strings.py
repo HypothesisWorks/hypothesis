@@ -17,10 +17,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
 from hypothesis.internal.conjecture.utils import biased_coin, integer_range
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.strategies._internal.strategies import (
-    MappedSearchStrategy,
-    SearchStrategy,
-)
+from hypothesis.strategies._internal.strategies import SearchStrategy
 
 
 class OneCharStringStrategy(SearchStrategy):
@@ -100,20 +97,6 @@ class OneCharStringStrategy(SearchStrategy):
                 assert i < self.zero_point
             assert 0 <= i <= self.Z_point
         return i
-
-
-class StringStrategy(MappedSearchStrategy):
-    """A strategy for text strings, defined in terms of a strategy for lists of
-    single character text strings."""
-
-    def __init__(self, list_of_one_char_strings_strategy):
-        super().__init__(strategy=list_of_one_char_strings_strategy)
-
-    def __repr__(self):
-        return "%r.map(u''.join)" % self.mapped_strategy
-
-    def pack(self, ls):
-        return "".join(ls)
 
 
 class FixedSizeBytes(SearchStrategy):

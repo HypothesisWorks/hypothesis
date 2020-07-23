@@ -396,9 +396,11 @@ def get_pretty_function_description(f):
     name = f.__name__
     if name == "<lambda>":
         return extract_lambda_source(f)
-    elif isinstance(f, types.MethodType):
+    elif isinstance(f, (types.MethodType, types.BuiltinMethodType)):
         self = f.__self__
-        if not (self is None or inspect.isclass(self)):
+        # Some objects, like `builtins.abs` are of BuiltinMethodType but have
+        # their module as __self__.  This might include c-extensions generally?
+        if not (self is None or inspect.isclass(self) or inspect.ismodule(self)):
             return "%r.%s" % (self, name)
     return name
 
