@@ -368,3 +368,19 @@ def test_can_find_end_of_range():
         st.randoms(use_true_random=False).map(lambda r: r.randrange(0, 10, 2)),
         lambda n: n == 8,
     )
+
+
+@given(st.randoms(use_true_random=False))
+def test_can_sample_from_whole_range(rnd):
+    xs = list(map(str, range(10)))
+    ys = rnd.sample(xs, len(xs))
+    assert sorted(ys) == sorted(xs)
+
+
+@given(st.randoms(use_true_random=False))
+def test_can_sample_from_large_subset(rnd):
+    xs = list(map(str, range(10)))
+    n = len(xs) // 3
+    ys = rnd.sample(xs, n)
+    assert set(ys).issubset(set(xs))
+    assert len(ys) == len(set(ys)) == n
