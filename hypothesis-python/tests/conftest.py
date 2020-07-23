@@ -39,6 +39,10 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "slow: pandas expects this marker to exist.")
 
 
+def pytest_addoption(parser):
+    parser.addoption("--hypothesis-update-outputs", action="store_true")
+
+
 @pytest.fixture(scope="function", autouse=True)
 def gc_before_each_test():
     gc.collect()
