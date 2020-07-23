@@ -13,6 +13,8 @@
 #
 # END HEADER
 
+import inspect
+
 import pytest
 
 from hypothesis import example, given, strategies as st
@@ -22,6 +24,7 @@ from hypothesis.internal.conjecture.junkdrawer import (
     binary_search,
     clamp,
     replace_all,
+    stack_depth_of_caller,
 )
 
 
@@ -147,3 +150,13 @@ def test_int_list_extend():
 def test_binary_search(n):
     i = binary_search(0, 100, lambda i: i <= n)
     assert i == n
+
+
+def recur(i):
+    assert len(inspect.stack(0)) == stack_depth_of_caller()
+    if i >= 1:
+        recur(i - 1)
+
+
+def test_stack_size_detection():
+    recur(100)

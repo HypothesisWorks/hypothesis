@@ -155,6 +155,24 @@ def test_detects_flakiness():
     assert count == [MIN_TEST_CALLS + 1]
 
 
+def recur(i, data):
+    try:
+        if i >= 1:
+            recur(i - 1, data)
+    except RecursionError:
+        data.mark_interesting()
+
+
+def test_recursion_error_is_not_flaky():
+    def tf(data):
+        i = data.draw_bits(16)
+        recur(i, data)
+
+    runner = ConjectureRunner(tf)
+    runner.run()
+    assert runner.exit_reason == ExitReason.finished
+
+
 def test_variadic_draw():
     def draw_list(data):
         result = []
