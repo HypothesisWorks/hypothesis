@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.21.0:
+
+-------------------
+5.21.0 - 2020-07-23
+-------------------
+
+This release ensures that tests which raise ``RecursionError`` are not
+reported as flaky simply because we run them from different initial
+stack depths (:issue:`2494`).
+
 .. _v5.20.4:
 
 -------------------
