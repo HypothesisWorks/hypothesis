@@ -18,6 +18,7 @@ obviously belong anywhere else. If you spot a better home for
 anything that lives here, please move it."""
 
 import array
+import sys
 
 
 def array_or_list(code, contents):
@@ -216,3 +217,19 @@ def swap(ls, i, j):
     if i == j:
         return
     ls[i], ls[j] = ls[j], ls[i]
+
+
+def stack_depth_of_caller():
+    """Get stack size for caller's frame.
+
+    From https://stackoverflow.com/a/47956089/9297601 , this is a simple
+    but much faster alternative to `len(inspect.stack(0))`.  We use it
+    with get/set recursionlimit to make stack overflows non-flaky; see
+    https://github.com/HypothesisWorks/hypothesis/issues/2494 for details.
+    """
+    frame = sys._getframe(2)
+    size = 1
+    while frame:
+        frame = frame.f_back
+        size += 1
+    return size
