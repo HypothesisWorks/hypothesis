@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.20.4:
+
+-------------------
+5.20.4 - 2020-07-23
+-------------------
+
+This release improves the performance of the ``sample`` method on objects obtained from :func:`~hypothesis.strategies.randoms`
+when ``use_true_random=False``. This should mostly only be noticeable when the sample size is a large fraction of the population size,
+but may also help avoid health check failures in some other cases.
+
 .. _v5.20.3:
 
 -------------------
