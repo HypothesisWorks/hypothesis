@@ -98,10 +98,8 @@ def test_no_hashability_filter():
     # decision.  They can pass `allow_nan=False`, fix their custom type's
     # hashing logic, or whatever else; simply doing nothing will usually work.
     source_code = ghostwriter.fuzz(hopefully_hashable)
+    assert "@given(foo=st.sets(st.decimals()))" in source_code
     assert "_can_hash" not in source_code
-    test = get_test_function(source_code)
-    with pytest.raises(TypeError, match="[Cc]annot hash a signaling NaN"):
-        test()
 
 
 @pytest.mark.parametrize("gw,args", [(ghostwriter.fuzz, ["not callable"])])
