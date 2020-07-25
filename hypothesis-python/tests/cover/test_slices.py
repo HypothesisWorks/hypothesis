@@ -102,7 +102,6 @@ def test_start_will_equal_stop(size):
     find_any(st.slices(size), lambda x: x.start == x.stop)
 
 
-@settings(deadline=None)
 def test_size_is_equal_0():
     assert_all_examples(
         st.slices(0), lambda x: x.step != 0 and x.start is None and x.stop is None
