@@ -49,7 +49,7 @@ def test_step_stays_within_bounds(size):
             x.indices(size)[0] + x.indices(size)[2] <= size
             and x.indices(size)[0] + x.indices(size)[2] >= -size
         )
-        or x.start == x.stop,
+        or x.start % size == x.stop % size,
     )
 
 
