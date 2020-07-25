@@ -10,6 +10,18 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.22.0:
+
+-------------------
+5.22.0 - 2020-07-25
+-------------------
+
+The :func:`~hypothesis.strategies.slices` strategy can now generate slices for empty sequences,
+slices with negative start and stop indices (from the end of the sequence),
+and ``step=None`` in place of ``step=1``.
+
+Thanks to Sangarshanan for implementing this feature at the EuroPython sprints!
+
 .. _v5.21.0:
 
 -------------------
