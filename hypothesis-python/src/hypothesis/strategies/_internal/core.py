@@ -2173,15 +2173,16 @@ def functions(
 def slices(draw: Any, size: int) -> slice:
     """Generates slices that will select indices up to the supplied size
 
-    Generated slices will have start and stop indices that range from 0 to size - 1
+    Generated slices will have start and stop indices that range from -size to size - 1
     and will step in the appropriate direction. Slices should only produce an empty selection
     if the start and end are the same.
 
     Examples from this strategy shrink toward 0 and smaller values
     """
-    check_valid_integer(size, "size")
-    if size is None or size < 1:
-        raise InvalidArgument("size=%r must be at least one" % size)
+    check_valid_size(size, "size")
+    if size == 0:
+        step = draw(none() | integers().filter(bool))
+        return slice(None, None, step)
 
     min_start = min_stop = 0
     max_start = max_stop = size
@@ -2204,5 +2205,9 @@ def slices(draw: Any, size: int) -> slice:
 
     if (stop or 0) < (start or 0):
         step *= -1
+
+    if draw(booleans()) and (start is not None and stop is not None):
+        start -= size
+        stop -= size
 
     return slice(start, stop, step)
