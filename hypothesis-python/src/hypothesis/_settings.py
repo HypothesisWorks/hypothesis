@@ -22,6 +22,7 @@ this module can be modified.
 import contextlib
 import datetime
 import inspect
+import os
 import threading
 import warnings
 from enum import Enum, IntEnum, unique
@@ -609,9 +610,15 @@ Set this to None to disable this behaviour entirely.
 )
 
 
+def is_in_ci() -> bool:
+    # GitHub Actions, Travis CI and AppVeyor have "CI"
+    # Azure Pipelines has "TF_BUILD"
+    return "CI" in os.environ or "TF_BUILD" in os.environ
+
+
 settings._define_setting(
     "print_blob",
-    default=False,
+    default=is_in_ci(),
     options=(True, False),
     description="""
 If set to ``True``, Hypothesis will print code for failing examples that can be used with
