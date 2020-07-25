@@ -619,10 +619,12 @@ def is_in_ci() -> bool:
 settings._define_setting(
     "print_blob",
     default=is_in_ci(),
+    show_default=False,
     options=(True, False),
     description="""
 If set to ``True``, Hypothesis will print code for failing examples that can be used with
 :func:`@reproduce_failure <hypothesis.reproduce_failure>` to reproduce the failing example.
+The default is ``True`` in CI and ``False`` in local development.
 """,
 )
 
