@@ -110,7 +110,7 @@ def check_valid_size(value, name):
 
     Otherwise raises InvalidArgument.
     """
-    if value is None and name != "min_size":
+    if value is None and name not in ("min_size", "size"):
         return
     check_type(int, value, name)
     if value < 0:
