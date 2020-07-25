@@ -40,7 +40,7 @@ def test_start_stay_within_bounds(size):
 @use_several_sizes
 def test_step_stays_within_bounds(size):
     # indices -> (start, stop, step)
-    # Stop is exclusive so we use -size as the floor.
+    # Stop is exclusive so we use -1 as the floor.
     # This uses the indices that slice produces to make this test more readable
     # due to how splice processes None being a little complex
     assert_all_examples(

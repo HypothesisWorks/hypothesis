@@ -2206,8 +2206,10 @@ def slices(draw: Any, size: int) -> slice:
     if (stop or 0) < (start or 0):
         step *= -1
 
-    if draw(booleans()) and (start is not None and stop is not None):
-        start -= size
-        stop -= size
+    if draw(booleans()):
+        if start is not None:
+            start -= size
+        if stop is not None:
+            stop -= size
 
     return slice(start, stop, step)
