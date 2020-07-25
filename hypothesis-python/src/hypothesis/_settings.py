@@ -624,7 +624,8 @@ settings._define_setting(
     description="""
 If set to ``True``, Hypothesis will print code for failing examples that can be used with
 :func:`@reproduce_failure <hypothesis.reproduce_failure>` to reproduce the failing example.
-The default is ``True`` in CI and ``False`` in local development.
+The default is ``True`` if the :envvar:`CI` or :envvar:`TF_BUILD` env vars are set,
+``False`` otherwise.
 """,
 )
 
