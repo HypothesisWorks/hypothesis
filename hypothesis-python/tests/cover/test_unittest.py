@@ -14,6 +14,7 @@
 # END HEADER
 
 import io
+import sys
 import unittest
 
 import pytest
@@ -50,3 +51,28 @@ class test_given_on_setUp_fails_health_check(unittest.TestCase):
 
     def test(self):
         """Provide something to set up for, so the setUp method is called."""
+
+
+SUBTEST_SUITE = """
+import unittest
+from hypothesis import given, strategies as st
+
+class MyTest(unittest.TestCase):
+    @given(s=st.text())
+    def test_subtest(self, s):
+        with self.subTest(text=s):
+            self.assertIsInstance(s, str)
+
+if __name__ == "__main__":
+    unittest.main()
+"""
+
+
+@pytest.mark.parametrize("err", [[], ["-Werror"]])
+def test_subTest_no_self(testdir, err):
+    # https://github.com/HypothesisWorks/hypothesis/issues/2462
+    # for some reason this issue happens only when running unittest from commandline
+    fname = testdir.makefile("tests.py", SUBTEST_SUITE)
+    result = testdir.run(sys.executable, *err, str(fname))
+    expected = pytest.ExitCode.TESTS_FAILED if err else pytest.ExitCode.OK
+    assert result.ret == expected, result.stderr.str()

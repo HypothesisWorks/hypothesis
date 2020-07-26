@@ -24,6 +24,7 @@ import random as rnd_module
 import sys
 import time
 import traceback
+import types
 import warnings
 import zlib
 from inspect import getfullargspec
@@ -1102,7 +1103,7 @@ def given(
                 if isinstance(runner, TestCase) and hasattr(runner, "subTest"):
                     subTest = runner.subTest
                     try:
-                        runner.subTest = fake_subTest
+                        runner.subTest = types.MethodType(fake_subTest, runner)
                         state.run_engine()
                     finally:
                         runner.subTest = subTest

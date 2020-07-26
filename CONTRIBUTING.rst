@@ -226,6 +226,7 @@ their individual contributions.
 * `Gregory Petrosyan <https://github.com/flyingmutant>`_
 * `Grigorios Giannakopoulos <https://github.com/grigoriosgiann>`_
 * `Hugo van Kemenade <https://github.com/hugovk>`_
+* `Israel Fruchter <https://github.com/fruch>`_
 * `Jack Massey <https://github.com/massey101>`_
 * `Jakub Nabaglo <https://github.com/nbgl>`_ (j@nab.gl)
 * `Jenny Rouleau <https://github.com/jennyrou>`_
