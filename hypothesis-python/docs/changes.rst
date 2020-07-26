@@ -10,6 +10,17 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.23.0:
+
+-------------------
+5.23.0 - 2020-07-26
+-------------------
+
+The default ``print_blob`` setting is now smarter. It defaults to ``True`` in CI and
+``False`` for local development.
+
+Thanks to Hugo van Kemenade for implementing this feature at the EuroPython sprints!
+
 .. _v5.22.0:
 
 -------------------
