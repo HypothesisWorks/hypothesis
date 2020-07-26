@@ -13,7 +13,8 @@
 #
 # END HEADER
 
-from hypothesis.internal.conjecture.shrinking.common import Shrinker, find_integer
+from hypothesis.internal.conjecture.junkdrawer import find_integer
+from hypothesis.internal.conjecture.shrinking.common import Shrinker
 
 """
 This module implements a shrinker for non-negative integers.

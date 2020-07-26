@@ -25,9 +25,12 @@ from hypothesis.internal.conjecture.floats import (
     float_to_lex,
     lex_to_float,
 )
-from hypothesis.internal.conjecture.junkdrawer import binary_search, replace_all
+from hypothesis.internal.conjecture.junkdrawer import (
+    binary_search,
+    find_integer,
+    replace_all,
+)
 from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Ordering
-from hypothesis.internal.conjecture.shrinking.common import find_integer
 
 if False:
     from typing import Dict  # noqa
