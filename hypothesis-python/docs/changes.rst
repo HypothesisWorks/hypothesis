@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.23.1:
+
+-------------------
+5.23.1 - 2020-07-26
+-------------------
+
+This release improves the behaviour of the :func:`~hypothesis.strategies.characters` strategy
+when shrinking, by changing which characters are considered smallest to prefer more "normal" ascii characters
+where available.
+
 .. _v5.23.0:
 
 -------------------
