@@ -147,6 +147,7 @@ def test_prints_reproduction_if_requested():
 
 
 def test_does_not_print_reproduction_for_simple_examples_by_default():
+    @settings(print_blob=False)
     @given(st.integers())
     def test(i):
         assert False
@@ -158,6 +159,7 @@ def test_does_not_print_reproduction_for_simple_examples_by_default():
 
 
 def test_does_not_print_reproduction_for_simple_data_examples_by_default():
+    @settings(print_blob=False)
     @given(st.data())
     def test(data):
         data.draw(st.integers())
@@ -170,7 +172,7 @@ def test_does_not_print_reproduction_for_simple_data_examples_by_default():
 
 
 def test_does_not_print_reproduction_for_large_data_examples_by_default():
-    @settings(phases=no_shrink)
+    @settings(phases=no_shrink, print_blob=False)
     @given(st.data())
     def test(data):
         b = data.draw(st.binary(min_size=1000, max_size=1000))
@@ -216,7 +218,7 @@ def test_raises_invalid_if_wrong_version():
 
 def test_does_not_print_reproduction_if_verbosity_set_to_quiet():
     @given(st.data())
-    @settings(verbosity=Verbosity.quiet)
+    @settings(verbosity=Verbosity.quiet, print_blob=False)
     def test_always_fails(data):
         assert data.draw(st.just(False))
 
