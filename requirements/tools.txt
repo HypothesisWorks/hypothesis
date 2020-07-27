@@ -108,7 +108,7 @@ sqlparse==0.3.1           # via django
 stevedore==3.2.0          # via bandit
 tokenize-rt==4.0.0        # via pyupgrade
 toml==0.10.1              # via -r requirements/tools.in, black, dparse, tox
-tox==3.17.1               # via -r requirements/tools.in
+tox==3.18.0               # via -r requirements/tools.in
 tqdm==4.48.0              # via pyupio, twine
 traitlets==4.3.3          # via ipython
 twine==3.2.0              # via -r requirements/tools.in
