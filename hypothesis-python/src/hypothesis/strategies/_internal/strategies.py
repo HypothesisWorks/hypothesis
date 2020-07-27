@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-import enum
 import sys
 import warnings
 from collections import defaultdict
@@ -434,21 +433,14 @@ class SampledFromStrategy(SearchStrategy):
     non-empty subset of the elements.
     """
 
-    def __init__(self, elements):
+    def __init__(self, elements, repr_=None):
         SearchStrategy.__init__(self)
-        self.raw_elements = elements
         self.elements = cu.check_sample(elements, "sampled_from")
         assert self.elements
+        self.repr_ = repr_
 
     def __repr__(self):
-        if isinstance(self.raw_elements, type) and issubclass(
-            self.raw_elements, enum.Enum
-        ):
-            return "sampled_from(%s.%s)" % (
-                self.raw_elements.__module__,
-                self.raw_elements.__name__,
-            )
-        return "sampled_from([%s])" % ", ".join(map(repr, self.elements))
+        return self.repr_ or "sampled_from(%r)" % (list(self.elements),)
 
     def calc_has_reusable_values(self, recur):
         return True

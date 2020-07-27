@@ -23,6 +23,11 @@ def test_includes_non_default_args_in_repr():
     assert repr(st.integers(min_value=1)) == "integers(min_value=1)"
 
 
+def test_sampled_repr_leaves_range_as_range():
+    huge = 10 ** 100
+    assert repr(st.sampled_from(range(huge))) == "sampled_from(range(0, %s))" % (huge,)
+
+
 def hi(there, stuff):
     return there
 
@@ -35,7 +40,8 @@ def test_supports_positional_and_keyword_args_in_builds():
 
 
 def test_preserves_sequence_type_of_argument():
-    assert repr(st.sampled_from([0])) == "sampled_from([0])"
+    assert repr(st.sampled_from([0, 1])) == "sampled_from([0, 1])"
+    assert repr(st.sampled_from((0, 1))) == "sampled_from((0, 1))"
 
 
 class IHaveABadRepr:

@@ -77,11 +77,17 @@ class AnEnum(enum.Enum):
 
 
 def test_enum_repr_uses_class_not_a_list():
-    strat = st.sampled_from(AnEnum)
-    # Our lazy repr looks exactly like our call
-    lazy_repr = repr(strat)
-    assert lazy_repr == "sampled_from(AnEnum)"
-    # The inner repr should have enough detail to find the class again
+    # The repr should have enough detail to find the class again
     # (which is very useful for the ghostwriter logic we're working on)
-    inner_repr = repr(strat.wrapped_strategy)
-    assert inner_repr == "sampled_from(tests.nocover.test_sampled_from.AnEnum)"
+    lazy_repr = repr(st.sampled_from(AnEnum))
+    assert lazy_repr == "sampled_from(tests.nocover.test_sampled_from.AnEnum)"
+
+
+class AFlag(enum.Flag):
+    a = enum.auto()
+    b = enum.auto()
+
+
+def test_flag_enum_repr_uses_class_not_a_list():
+    lazy_repr = repr(st.sampled_from(AFlag))
+    assert lazy_repr == "sampled_from(tests.nocover.test_sampled_from.AFlag)"
