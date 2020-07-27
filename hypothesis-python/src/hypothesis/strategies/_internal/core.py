@@ -191,12 +191,18 @@ def cacheable(fn: T) -> T:
     return cached_strategy
 
 
-def base_defines_strategy(force_reusable: bool) -> Callable[[T], T]:
+def base_defines_strategy(
+    force_reusable: bool, *, try_non_lazy: bool = False
+) -> Callable[[T], T]:
     """Returns a decorator for strategy functions.
 
     If force_reusable is True, the generated values are assumed to be
     reusable, i.e. immutable and safe to cache, across multiple test
     invocations.
+
+    If try_non_lazy is True, attempt to execute the strategy definition
+    function immediately, so that a LazyStrategy is only returned if this
+    raises an exception.
     """
 
     def decorator(strategy_definition):
@@ -206,6 +212,16 @@ def base_defines_strategy(force_reusable: bool) -> Callable[[T], T]:
 
         @proxies(strategy_definition)
         def accept(*args, **kwargs):
+            if try_non_lazy:
+                # Why not try this unconditionally?  Because we'd end up with very
+                # deep nesting of recursive strategies - better to be lazy unless we
+                # *know* that eager evaluation is the right choice.
+                try:
+                    return strategy_definition(*args, **kwargs)
+                except Exception:
+                    # If invoking the strategy definition raises an exception,
+                    # wrap that up in a LazyStrategy so it happens again later.
+                    pass
             result = LazyStrategy(strategy_definition, args, kwargs)
             if force_reusable:
                 result.force_has_reusable_values = True
@@ -220,6 +236,7 @@ def base_defines_strategy(force_reusable: bool) -> Callable[[T], T]:
 
 defines_strategy = base_defines_strategy(False)
 defines_strategy_with_reusable_values = base_defines_strategy(True)
+defines_strategy_without_laziness = base_defines_strategy(False, try_non_lazy=True)
 
 
 class Nothing(SearchStrategy):
@@ -644,7 +661,7 @@ def sampled_from(elements: Type[enum.Enum]) -> SearchStrategy[Any]:
     pass  # pragma: no cover
 
 
-@defines_strategy  # noqa: F811
+@defines_strategy_without_laziness  # noqa: F811
 def sampled_from(elements):
     """Returns a strategy which generates any value present in ``elements``.
 
@@ -665,13 +682,19 @@ def sampled_from(elements):
         raise InvalidArgument("Cannot sample from a length-zero sequence.")
     if len(values) == 1:
         return just(values[0])
+    if isinstance(elements, type) and issubclass(elements, enum.Enum):
+        repr_ = "sampled_from(%s.%s)" % (elements.__module__, elements.__name__)
+    else:
+        repr_ = "sampled_from(%r)" % (elements,)
     if hasattr(enum, "Flag") and isclass(elements) and issubclass(elements, enum.Flag):
         # Combinations of enum.Flag members are also members.  We generate
         # these dynamically, because static allocation takes O(2^n) memory.
-        return sets(sampled_from(values), min_size=1).map(
+        # LazyStrategy is used for the ease of force_repr.
+        inner = sets(sampled_from(list(values)), min_size=1).map(
             lambda s: reduce(operator.or_, s)
         )
-    return SampledFromStrategy(elements)
+        return LazyStrategy(lambda: inner, args=[], kwargs={}, force_repr=repr_)
+    return SampledFromStrategy(values, repr_)
 
 
 @cacheable

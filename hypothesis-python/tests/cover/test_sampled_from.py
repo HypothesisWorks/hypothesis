@@ -86,3 +86,21 @@ def test_max_size_is_respected_with_unique_sampled_from(ls):
 @given(st.lists(st.sampled_from([0, 0.0]), unique=True, min_size=1))
 def test_issue_2247_regression(ls):
     assert len(ls) == 1
+
+
+@given(st.data())
+def test_mutability_1(data):
+    # See https://github.com/HypothesisWorks/hypothesis/issues/2507
+    x = [1]
+    s = st.sampled_from(x)
+    x.append(2)
+    assert data.draw(s) != 2
+
+
+@given(st.data())
+def test_mutability_2(data):
+    x = [1]
+    s = st.sampled_from(x)
+    assert data.draw(s) != 2
+    x.append(2)
+    assert data.draw(s) != 2
