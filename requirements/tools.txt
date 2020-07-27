@@ -20,7 +20,7 @@ cffi==1.14.1              # via cryptography
 chardet==3.0.4            # via requests
 click==7.1.2              # via black, pip-tools, pyupio, safety
 colorama==0.4.3           # via twine
-coverage==5.2.1             # via -r requirements/tools.in
+coverage==5.2.1           # via -r requirements/tools.in
 cryptography==3.0         # via secretstorage
 decorator==4.4.2          # via ipython, traitlets
 deprecated==1.2.10        # via pygithub
@@ -114,12 +114,12 @@ traitlets==4.3.3          # via ipython
 twine==3.2.0              # via -r requirements/tools.in
 typed-ast==1.4.1          # via black, mypy
 typing-extensions==3.7.4.2  # via mypy
-urllib3==1.25.10           # via requests
+urllib3==1.25.10          # via requests
 virtualenv==20.0.28       # via tox
 wcwidth==0.2.5            # via prompt-toolkit, pytest
 webencodings==0.5.1       # via bleach
 wrapt==1.12.1             # via deprecated
-zipp==3.1.0               # via -r requirements/tools.in, importlib-metadata, importlib-resources
+zipp==1.2.0               # via -r requirements/tools.in, importlib-metadata, importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
