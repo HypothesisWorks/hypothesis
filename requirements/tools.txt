@@ -44,7 +44,7 @@ importlib-metadata==1.7.0  # via flake8, flake8-comprehensions, keyring, pluggy,
 importlib-resources==3.0.0  # via virtualenv
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.16.1           # via -r requirements/tools.in
-isort==5.1.4              # via -r requirements/tools.in
+isort==5.2.0              # via -r requirements/tools.in
 jedi==0.17.2              # via ipython
 jeepney==0.4.3            # via keyring, secretstorage
 jinja2==2.11.2            # via pyupio, sphinx
