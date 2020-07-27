@@ -10,6 +10,17 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.23.3:
+
+-------------------
+5.23.3 - 2020-07-27
+-------------------
+
+This release fixes :issue:`2507`, where lazy evaluation meant that the
+values drawn from a :func:`~hypothesis.strategies.sampled_from` strategy
+could depend on mutations of the sampled sequence that happened after
+the strategy was constructed.
+
 .. _v5.23.2:
 
 -------------------
