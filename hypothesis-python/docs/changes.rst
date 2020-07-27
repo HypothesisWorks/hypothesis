@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.23.2:
+
+-------------------
+5.23.2 - 2020-07-27
+-------------------
+
+This patch fixes :issue:`2462`, a bug in our handling of :meth:`unittest.TestCase.subTest`.
+Thanks to Israel Fruchter for fixing this at the EuroPython sprints!
+
 .. _v5.23.1:
 
 -------------------
