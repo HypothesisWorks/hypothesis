@@ -13,8 +13,11 @@
 #
 # END HEADER
 
+from bisect import bisect_right, insort
+from copy import copy
+
 from hypothesis.internal.conjecture.dfa import DFA
-from hypothesis.internal.conjecture.junkdrawer import find_integer
+from hypothesis.internal.conjecture.junkdrawer import IntList, find_integer
 
 """
 This module contains an implementation of the L* algorithm
@@ -36,7 +39,7 @@ The former explains the core algorithm, the latter a modification
 we use (which we have further modified) which allows it to
 be implemented more efficiently.
 
-We have two major departures from the paper:
+We have several major departures from the paper:
 
 1. We learn the automaton lazily as we traverse it. This is particularly
    valuable because if we make many corrections on the same string we only
@@ -45,6 +48,15 @@ We have two major departures from the paper:
 2. We make use of our ``find_integer`` method rather than a binary search
    as proposed in the Rivest and Schapire paper, as we expect that
    usually most strings will be mispredicted near the beginning.
+3. We try to learn a smaller alphabet of "interestingly distinct"
+   values. e.g. if all bytes larger than two result in an invalid
+   string, there is no point in distinguishing those bytes. In aid
+   of this we learn a single canonicalisation table which maps integers
+   to smaller integers that we currently think are equivalent, and learn
+   their inequivalence where necessary. This may require more learning
+   steps, as at each stage in the process we might learn either an
+   inequivalent pair of integers or a new experiment, but it may greatly
+   reduce the number of membership queries we have to make.
 
 A note on performance: This code is not really fast enough for
 us to ever want to run in production on large strings, and this
@@ -59,6 +71,7 @@ class LStar:
         self.__experiments = []
         self.__cache = {}
         self.__member = member
+        self.__normalizer = IntegerNormalizer()
 
         self.__add_experiment(b"")
 
@@ -82,7 +95,9 @@ class LStar:
         """Returns our current model of a DFA for matching
         the language we are learning."""
         if self.__dfa is None:
-            self.__dfa = ExperimentDFA(self.member, self.__experiments)
+            self.__dfa = ExperimentDFA(
+                self.member, self.__experiments, copy(self.__normalizer)
+            )
         return self.__dfa
 
     def learn(self, s):
@@ -119,7 +134,6 @@ class LStar:
         # agrees with the membership function on this string.
         while True:
             dfa = self.dfa
-
             states = [dfa.start]
 
             def seems_right(n):
@@ -153,7 +167,22 @@ class LStar:
             # the string that we have not read yet is an experiment
             # that allows us to distinguish the state that we ended
             # up in from the state that we should have ended up in.
-            self.__add_experiment(s[n + 1 :])
+            #
+            # There are two possibilities here: Either we have badly
+            # normalised the byte that lead to this transition, or
+            # we ended up in the wrong state because we could not
+            # distinguish the state we eneded up infrom the correct
+            # one.
+
+            prefix = s[:n]
+            suffix = s[n + 1 :]
+            if self.__normalizer.distinguish(
+                s[n], lambda x: self.member(prefix + bytes([x]) + suffix)
+            ):
+                self.__dfa = None
+                continue
+
+            self.__add_experiment(suffix)
 
     def __add_experiment(self, e):
         self.__experiments.append(e)
@@ -165,10 +194,11 @@ class ExperimentDFA(DFA):
     are labelled by some string that reaches them, and are
     distinguished by a membership test and a set of experiments."""
 
-    def __init__(self, member, experiments):
+    def __init__(self, member, experiments, normalizer):
         DFA.__init__(self)
         self.__experiments = tuple(experiments)
         self.__member = member
+        self.__normalizer = normalizer
 
         self.__states = [b""]
         self.__rows_to_states = {tuple(map(member, experiments)): 0}
@@ -185,6 +215,7 @@ class ExperimentDFA(DFA):
         return self.__member(self.__states[i])
 
     def transition(self, i, c):
+        c = self.__normalizer.normalize(c)
         key = (i, c)
         try:
             return self.__transition_cache[key]
@@ -219,3 +250,58 @@ class ExperimentDFA(DFA):
             self.__rows_to_states[row] = result
         self.__transition_cache[key] = result
         return result
+
+
+class IntegerNormalizer:
+    """A class for replacing non-negative integers with a
+    "canonical" value that is equivalent for all relevant
+    purposes."""
+
+    def __init__(self):
+        # We store canonical values as a sorted list of integers
+        # with each value being treated as equivalent to the largest
+        # integer in the list that is below it.
+        self.__values = IntList([0])
+
+    def __repr__(self):
+        return "IntegerNormalizer(%r)" % (list(self.__values),)
+
+    def __copy__(self):
+        result = IntegerNormalizer()
+        result.__values = IntList(self.__values)
+        return result
+
+    def normalize(self, value):
+        """Return the canonical integer considered equivalent
+        to ``value``."""
+        i = bisect_right(self.__values, value) - 1
+        assert i >= 0
+        return self.__values[i]
+
+    def distinguish(self, value, test):
+        """Checks whether ``test`` gives the same answer for
+        ``value`` and ``self.normalize(value)``. If it does
+        not, updates the list of canonical values so that
+        it does.
+
+        Returns True if and only if this makes a change to
+        the underlying canonical values."""
+        canonical = self.normalize(value)
+        value_test = test(value)
+        if canonical == value or test(canonical) == value_test:
+            return False
+
+        def can_lower(k):
+            new_canon = value - k
+            if new_canon <= canonical:
+                return False
+            return test(new_canon) == value_test
+
+        new_canon = value - find_integer(can_lower)
+
+        assert new_canon not in self.__values
+
+        insort(self.__values, new_canon)
+
+        assert self.normalize(value) == new_canon
+        return True
