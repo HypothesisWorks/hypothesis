@@ -16,6 +16,8 @@
 import threading
 from collections import deque
 
+from hypothesis.internal.reflection import proxies
+
 
 class DFA:
     """Base class for implementations of deterministic finite
@@ -31,6 +33,22 @@ class DFA:
 
     def __init__(self):
         self.__caches = threading.local()
+
+    def cached(fn):
+        @proxies(fn)
+        def wrapped(self, *args):
+            try:
+                cache = getattr(self.__caches, fn.__name__)
+            except AttributeError:
+                cache = {}
+                setattr(self.__caches, fn.__name__, cache)
+
+            try:
+                return cache[args]
+            except KeyError:
+                return cache.setdefault(args, fn(self, *args))
+
+        return wrapped
 
     @property
     def start(self):
@@ -61,22 +79,15 @@ class DFA:
             i = self.transition(i, c)
         return self.is_accepting(i)
 
+    @cached
     def is_dead(self, i):
         """Returns True if no strings can be accepted
         when starting from state ``i``."""
         if self.is_accepting(i):
             return False
 
-        try:
-            cache = self.__caches.dead
-        except AttributeError:
-            cache = {}
-            self.__caches.dead = cache
+        cache = self.__caches.is_dead
 
-        try:
-            return cache[i]
-        except KeyError:
-            pass
         seen = set()
         pending = deque([i])
         result = True
