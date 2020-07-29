@@ -95,6 +95,9 @@ class IntList:
     def __delitem__(self, i):
         del self.__underlying[i]
 
+    def insert(self, i, v):
+        self.__underlying.insert(i, v)
+
     def __iter__(self):
         return iter(self.__underlying)
 

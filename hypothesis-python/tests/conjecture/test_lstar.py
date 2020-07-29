@@ -15,7 +15,7 @@
 
 import itertools
 
-from hypothesis.internal.conjecture.dfa.lstar import LStar
+from hypothesis.internal.conjecture.dfa.lstar import IntegerNormalizer, LStar
 
 
 def test_can_learn_simple_predicate():
@@ -55,6 +55,9 @@ def test_can_learn_dead_nodes():
 
     assert learner.dfa.matches(bytes(4))
     assert learner.dfa.matches(bytes([1] * 4))
+    assert learner.dfa.matches(bytes([1] * 4))
+
+    learner.learn([2, 0, 0, 0])
 
     # Need a length 5 string to distinguish this from
     # something that just loops back to zero.
@@ -75,8 +78,13 @@ def test_iterates_over_learned_strings():
     learner.learn([1, 3])
     learner.learn([0, 5])
     learner.learn([0, 6])
+    learner.learn([2, 0])
+
+    learner.learn([2, 0, 0, 0])
+    learner.learn([2, 0, 0])
 
     dfa = learner.dfa
+
     n = 9
     matches = list(itertools.islice(dfa.all_matching_strings(), n + 1))
     assert len(matches) == n
@@ -89,6 +97,7 @@ def test_iteration_with_dead_nodes():
     learner.learn([0, 1, 1])
     learner.learn([1, 1, 0])
     learner.learn([1, 1, 1, 0, 1])
+    learner.learn([0, 0, 4])
 
     dfa = learner.dfa
     i = dfa.transition(dfa.start, 1)
@@ -125,3 +134,40 @@ def test_learning_is_just_checking_when_fully_explored():
     calls = count[0] - prev
 
     assert calls == 1
+
+
+def test_canonicalises_values_to_zero_where_appropriate():
+    calls = [0]
+
+    def member(s):
+        calls[0] += 1
+        return len(s) == 10
+
+    learner = LStar(member)
+
+    learner.learn(bytes(10))
+    learner.learn(bytes(11))
+
+    (prev,) = calls
+
+    assert learner.dfa.matches(bytes([1] * 10))
+
+    assert calls[0] == prev
+
+
+def test_normalizing_defaults_to_zero():
+    normalizer = IntegerNormalizer()
+
+    assert normalizer.normalize(10) == 0
+
+    assert not normalizer.distinguish(10, lambda n: True)
+
+    assert normalizer.normalize(10) == 0
+
+
+def test_normalizing_can_be_made_to_distinguish_values():
+    normalizer = IntegerNormalizer()
+
+    assert normalizer.distinguish(10, lambda n: n >= 5)
+    assert normalizer.normalize(10) == 5
+    assert normalizer.normalize(4) == 0
