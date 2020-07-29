@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.23.7:
+
+-------------------
+5.23.7 - 2020-07-29
+-------------------
+
+This release makes some performance improvements to shrinking. They should
+only be noticeable for tests that are currently particularly slow to shrink.
+
 .. _v5.23.6:
 
 -------------------
