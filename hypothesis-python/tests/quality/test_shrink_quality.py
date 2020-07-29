@@ -19,6 +19,7 @@ from functools import reduce
 
 import pytest
 
+import hypothesis.strategies as st
 from hypothesis import assume, settings
 from hypothesis.strategies import (
     booleans,
@@ -337,3 +338,48 @@ def test_sum_of_pair():
     assert minimal(
         tuples(integers(0, 1000), integers(0, 1000)), lambda x: sum(x) > 1000
     ) == (1, 1000)
+
+
+def test_calculator_benchmark():
+    """This test comes from
+    https://github.com/jlink/shrinking-challenge/blob/main/challenges/calculator.md,
+    which is originally from Pike, Lee. "SmartCheck: automatic and efficient
+    counterexample reduction and generalization."
+    Proceedings of the 2014 ACM SIGPLAN symposium on Haskell. 2014.
+    """
+
+    expression = st.deferred(
+        lambda: st.one_of(
+            st.integers(),
+            st.tuples(st.just("+"), expression, expression),
+            st.tuples(st.just("/"), expression, expression),
+        )
+    )
+
+    def div_subterms(e):
+        if isinstance(e, int):
+            return True
+        if e[0] == "/" and e[-1] == 0:
+            return False
+        return div_subterms(e[1]) and div_subterms(e[2])
+
+    def evaluate(e):
+        if isinstance(e, int):
+            return e
+        elif e[0] == "+":
+            return evaluate(e[1]) + evaluate(e[2])
+        else:
+            assert e[0] == "/"
+            return evaluate(e[1]) // evaluate(e[2])
+
+    def is_failing(e):
+        assume(div_subterms(e))
+        try:
+            evaluate(e)
+            return False
+        except ZeroDivisionError:
+            return True
+
+    x = minimal(expression, is_failing)
+
+    assert x == ("/", 0, ("+", 0, 0))
