@@ -308,12 +308,6 @@ class Shrinker:
 
         return accept
 
-    def explain_next_call_as(self, explanation):
-        self.__pending_shrink_explanation = explanation
-
-    def clear_call_explanation(self):
-        self.__pending_shrink_explanation = None
-
     def add_new_pass(self, run):
         """Creates a shrink pass corresponding to calling ``run(self)``"""
 
@@ -387,10 +381,6 @@ class Shrinker:
         that the result is either an Overrun object (if the buffer is
         too short to be a valid test case) or a ConjectureData object
         with status >= INVALID that would result from running this buffer."""
-
-        if self.__pending_shrink_explanation is not None:
-            self.debug(self.__pending_shrink_explanation)
-            self.__pending_shrink_explanation = None
 
         buffer = bytes(buffer)
         result = self.engine.cached_test_function(buffer)
@@ -1514,7 +1504,7 @@ class ShrinkPass:
         initial_shrinks = self.shrinker.shrinks
         initial_calls = self.shrinker.calls
         size = len(self.shrinker.shrink_target.buffer)
-        self.shrinker.explain_next_call_as(self.name)
+        self.shrinker.engine.explain_next_call_as(self.name)
 
         if random_order:
             selection_order = random_selection_order(self.shrinker.random)
@@ -1530,7 +1520,7 @@ class ShrinkPass:
             self.calls += self.shrinker.calls - initial_calls
             self.shrinks += self.shrinker.shrinks - initial_shrinks
             self.deletions += size - len(self.shrinker.shrink_target.buffer)
-            self.shrinker.clear_call_explanation()
+            self.shrinker.engine.clear_call_explanation()
         return True
 
     @property

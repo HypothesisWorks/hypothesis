@@ -145,6 +145,13 @@ class ConjectureRunner:
         # We ensure that the test has this much stack space remaining, no matter
         # the size of the stack when called, to de-flake RecursionErrors (#2494).
         self.__recursion_limit = sys.getrecursionlimit()
+        self.__pending_call_explanation = None
+
+    def explain_next_call_as(self, explanation):
+        self.__pending_call_explanation = explanation
+
+    def clear_call_explanation(self):
+        self.__pending_call_explanation = None
 
     @contextmanager
     def _log_phase_statistics(self, phase):
@@ -199,6 +206,10 @@ class ConjectureRunner:
             sys.setrecursionlimit(self.__recursion_limit)
 
     def test_function(self, data):
+        if self.__pending_call_explanation is not None:
+            self.debug(self.__pending_call_explanation)
+            self.__pending_call_explanation = None
+
         assert isinstance(data.observer, TreeRecordingObserver)
         self.call_count += 1
 
