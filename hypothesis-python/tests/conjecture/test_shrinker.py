@@ -18,7 +18,7 @@ import pytest
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture import floats as flt
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.conjecture.shrinker import Shrinker, block_program
+from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPass, block_program
 from hypothesis.internal.conjecture.shrinking import Float
 from hypothesis.internal.conjecture.utils import Sampler
 from tests.conjecture.common import SOME_LABEL, run_to_buffer, shrinking_from
@@ -559,3 +559,14 @@ def test_zero_coverage_edge_case():
     shrinker.fixate_shrink_passes(["zero_examples"])
 
     assert list(shrinker.buffer) == [255] + [0] * (len(shrinker.buffer) - 1)
+
+
+def test_shrink_pass_method_is_idempotent():
+    @shrinking_from([255])
+    def shrinker(data):
+        data.draw_bits(8)
+        data.mark_interesting()
+
+    sp = shrinker.shrink_pass("adaptive_example_deletion")
+    assert isinstance(sp, ShrinkPass)
+    assert shrinker.shrink_pass(sp) is sp

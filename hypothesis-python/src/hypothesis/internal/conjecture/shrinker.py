@@ -18,7 +18,11 @@ from collections import defaultdict
 import attr
 
 from hypothesis.internal.compat import int_from_bytes, int_to_bytes
-from hypothesis.internal.conjecture.choicetree import ChoiceTree, prefix_selection_order
+from hypothesis.internal.conjecture.choicetree import (
+    ChoiceTree,
+    prefix_selection_order,
+    random_selection_order,
+)
 from hypothesis.internal.conjecture.data import ConjectureResult, Overrun, Status
 from hypothesis.internal.conjecture.floats import (
     DRAW_FLOAT_LABEL,
@@ -520,7 +524,9 @@ class Shrinker:
         while any_ran:
             any_ran = False
 
-            # We run remove_discarded after every step to do cleanup
+            reordering = {}
+
+            # We run remove_discarded after every pass to do cleanup
             # keeping track of whether that actually works. Either there is
             # no discarded data and it is basically free, or it reliably works
             # and deletes data, or it doesn't work. In that latter case we turn
@@ -528,51 +534,58 @@ class Shrinker:
             # try again once all of the passes have been run.
             can_discard = self.remove_discarded()
 
-            successful_passes = set()
-
             for sp in passes:
-                # We run each pass until it has failed a certain number
-                # of times, where a "failure" is any step where it made
-                # at least one call and did not result in a shrink.
-                # This gives passes which work reasonably often more of
-                # chance to run.
+                if can_discard:
+                    can_discard = self.remove_discarded()
+
+                before_sp = self.shrink_target
+
+                # Run the shrink pass until it fails to make any progress
+                # max_failures times in a row. This implicitly boosts shrink
+                # passes that are more likely to work.
                 failures = 0
-                successes = 0
-
-                # The choice of 3 is fairly arbitrary and was hand tuned
-                # to some particular examples. It is very unlikely that
-                # is the best choice in general, but it's not an
-                # unreasonable choice: Making it smaller than this would
-                # give too high a chance of an otherwise very worthwhile
-                # pass getting screened out too early if it got unlucky,
-                # and making it much larger than this would result in us
-                # spending too much time on bad passes.
-                max_failures = 3
-
+                max_failures = 20
                 while failures < max_failures:
-                    prev_calls = self.calls
                     prev = self.shrink_target
-                    if sp.step():
-                        any_ran = True
-                    else:
+                    initial_calls = self.calls
+                    # It's better for us to run shrink passes in a deterministic
+                    # order, to avoid repeat work, but this can cause us to create
+                    # long stalls when there are a lot of steps which fail to do
+                    # anything useful. In order to avoid this, once we've noticed
+                    # we're in a stall (i.e. half of max_failures calls have failed
+                    # to do anything) we switch to randomly jumping around. If we
+                    # find a success then we'll resume deterministic order from
+                    # there which, with any luck, is in a new good region.
+                    if not sp.step(random_order=failures >= max_failures // 2):
+                        # step returns False when there is nothing to do because
+                        # the entire choice tree is exhausted. If this happens
+                        # we break because we literally can't run this pass any
+                        # more than we already have until something else makes
+                        # progress.
                         break
-                    if prev_calls != self.calls:
-                        if can_discard:
-                            can_discard = self.remove_discarded()
-                        if prev is self.shrink_target:
-                            failures += 1
-                        else:
-                            successes += 1
-                if successes > 0:
-                    successful_passes.add(sp)
+                    any_ran = True
 
-            # If only some of our shrink passes are doing anything useful
-            # then run all of those to a fixed point before running the
-            # full set. This is particularly important when an emergency
-            # shrink pass unlocks some non-emergency ones and it suddenly
-            # becomes very expensive to find a bunch of small changes.
-            if 0 < len(successful_passes) < len(passes):
-                self.fixate_shrink_passes(successful_passes)
+                    # Don't count steps that didn't actually try to do
+                    # anything as failures. Otherwise, this call is a failure
+                    # if it failed to make any changes to the shrink target.
+                    if initial_calls != self.calls:
+                        if prev is not self.shrink_target:
+                            failures = 0
+                        else:
+                            failures += 1
+
+                # We reorder the shrink passes so that on our next run through
+                # we try good ones first. The rule is that shrink passes that
+                # did nothing useful are the worst, shrink passes that reduced
+                # the length are the best.
+                if self.shrink_target is before_sp:
+                    reordering[sp] = 1
+                elif len(self.buffer) < len(before_sp.buffer):
+                    reordering[sp] = -1
+                else:
+                    reordering[sp] = 0
+
+            passes.sort(key=reordering.__getitem__)
 
     @property
     def buffer(self):
@@ -1493,7 +1506,7 @@ class ShrinkPass:
     shrinks = attr.ib(default=0)
     deletions = attr.ib(default=0)
 
-    def step(self):
+    def step(self, random_order=False):
         tree = self.shrinker.shrink_pass_choice_trees[self]
         if tree.exhausted:
             return False
@@ -1502,9 +1515,15 @@ class ShrinkPass:
         initial_calls = self.shrinker.calls
         size = len(self.shrinker.shrink_target.buffer)
         self.shrinker.explain_next_call_as(self.name)
+
+        if random_order:
+            selection_order = random_selection_order(self.shrinker.random)
+        else:
+            selection_order = prefix_selection_order(self.last_prefix)
+
         try:
             self.last_prefix = tree.step(
-                prefix_selection_order(self.last_prefix),
+                selection_order,
                 lambda chooser: self.run_with_chooser(self.shrinker, chooser),
             )
         finally:
