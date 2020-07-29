@@ -10,6 +10,14 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.23.4:
+
+-------------------
+5.23.4 - 2020-07-29
+-------------------
+
+This release improves shrinking quality in some special cases.
+
 .. _v5.23.3:
 
 -------------------
