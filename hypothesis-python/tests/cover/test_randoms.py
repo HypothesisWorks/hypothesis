@@ -71,7 +71,8 @@ define_method_strategy(
 define_method_strategy(
     "vonmisesvariate", mu=st.floats(0, math.pi * 2), kappa=beta_param
 )
-define_method_strategy("paretovariate", alpha=beta_param)
+# Small alpha may raise ZeroDivisionError, see https://bugs.python.org/issue41421
+define_method_strategy("paretovariate", alpha=st.floats(min_value=1.0))
 define_method_strategy("shuffle", x=st.lists(st.integers()))
 define_method_strategy("randbytes", n=st.integers(0, 100))
 
