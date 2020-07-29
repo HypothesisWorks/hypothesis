@@ -289,7 +289,13 @@ class Shrinker:
         self.update_shrink_target(initial)
         self.shrinks = 0
 
+        # We terminate shrinks that seem to have reached their logical
+        # conclusion: If we've called the underlying test function at
+        # least self.max_stall times since the last time we shrunk,
+        # it's time to stop shrinking.
+        self.max_stall = 200
         self.initial_calls = self.engine.call_count
+        self.calls_at_last_shrink = self.initial_calls
 
         self.passes_by_name = {}
         self.passes = []
@@ -385,6 +391,8 @@ class Shrinker:
         buffer = bytes(buffer)
         result = self.engine.cached_test_function(buffer)
         self.incorporate_test_data(result)
+        if self.calls - self.calls_at_last_shrink >= self.max_stall:
+            raise StopShrinking()
         return result
 
     def debug(self, msg):
@@ -415,6 +423,8 @@ class Shrinker:
 
         try:
             self.greedy_shrink()
+        except StopShrinking:
+            pass
         finally:
             if self.engine.report_debug_info:
 
@@ -786,6 +796,15 @@ class Shrinker:
         assert isinstance(new_target, ConjectureResult)
         if self.shrink_target is not None:
             self.shrinks += 1
+            # If we are just taking a long time to shrink we don't want to
+            # trigger this heuristic, so whenever we shrink successfully
+            # we give ourselves a bit of breathing room to make sure we
+            # would find a shrink that took that long to find the next
+            # time.
+            self.max_stall = max(
+                self.max_stall, (self.calls - self.calls_at_last_shrink) * 2
+            )
+            self.calls_at_last_shrink = self.calls
         else:
             self.__all_changed_blocks = set()
             self.__last_checked_changed_at = new_target
@@ -1544,3 +1563,7 @@ def expand_region(f, a, b):
     b += find_integer(lambda k: f(a, b + k))
     a -= find_integer(lambda k: f(a - k, b))
     return (a, b)
+
+
+class StopShrinking(Exception):
+    pass

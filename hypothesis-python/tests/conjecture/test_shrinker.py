@@ -13,6 +13,8 @@
 #
 # END HEADER
 
+import time
+
 import pytest
 
 from hypothesis.internal.compat import int_to_bytes
@@ -570,3 +572,24 @@ def test_shrink_pass_method_is_idempotent():
     sp = shrinker.shrink_pass("adaptive_example_deletion")
     assert isinstance(sp, ShrinkPass)
     assert shrinker.shrink_pass(sp) is sp
+
+
+def test_will_terminate_stalled_shrinks():
+    # Suppress the time based slow shrinking check - we only want
+    # the one that checks if we're in a stall where we've shrunk
+    # as far as we're going to get.
+    time.freeze()
+
+    @shrinking_from([255] * 100)
+    def shrinker(data):
+        count = 0
+
+        for _ in range(100):
+            if data.draw_bits(8) != 255:
+                count += 1
+                if count >= 10:
+                    return
+        data.mark_interesting()
+
+    shrinker.shrink()
+    assert shrinker.calls <= 1 + 2 * shrinker.max_stall
