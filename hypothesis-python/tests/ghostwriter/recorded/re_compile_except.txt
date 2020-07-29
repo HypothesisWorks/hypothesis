@@ -1,0 +1,15 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+import re
+from hypothesis import given, reject, strategies as st
+
+
+# TODO: replace st.nothing() with an appropriate strategy
+
+
+@given(pattern=st.nothing(), flags=st.just(0))
+def test_fuzz_compile(pattern, flags):
+    try:
+        re.compile(pattern=pattern, flags=flags)
+    except re.error:
+        reject()

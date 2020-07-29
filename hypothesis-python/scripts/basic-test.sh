@@ -37,6 +37,12 @@ pip install lark-parser==0.7.1
 $PYTEST tests/lark/
 pip uninstall -y lark-parser
 
+if [ "$(python -c 'import sys, platform; print(sys.version_info[:2] >= (3, 6) and platform.python_implementation() != "PyPy")')" = "True" ] ; then
+  pip install black
+  $PYTEST tests/ghostwriter/
+  pip uninstall -y black
+fi
+
 if [ "$(python -c 'import sys; print(sys.version_info[:2] == (3, 6))')" = "False" ] ; then
   exit 0
 fi

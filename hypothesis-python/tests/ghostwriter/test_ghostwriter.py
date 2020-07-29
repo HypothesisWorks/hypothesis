@@ -17,13 +17,16 @@ import ast
 import enum
 import json
 import re
+import unittest
 from decimal import Decimal
+from types import ModuleType
 from typing import List, Sequence, Set
 
 import pytest
 
-from hypothesis import ghostwriter
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import InvalidArgument, Unsatisfiable
+from hypothesis.extra import ghostwriter
+from hypothesis.strategies import from_type, just
 
 varied_excepts = pytest.mark.parametrize("ex", [(), ValueError, (TypeError, re.error)])
 
@@ -34,7 +37,11 @@ def get_test_function(source_code):
     # AND free from undefined names, import problems, and so on.
     namespace = {}
     exec(source_code, namespace)
-    tests = [v for k, v in namespace.items() if k.startswith(("test_", "Test"))]
+    tests = [
+        v
+        for k, v in namespace.items()
+        if k.startswith(("test_", "Test")) and not isinstance(v, ModuleType)
+    ]
     assert len(tests) == 1, tests
     return tests[0]
 
@@ -45,6 +52,25 @@ def get_test_function(source_code):
 def test_invalid_exceptions(badness):
     with pytest.raises(InvalidArgument):
         ghostwriter._check_except(badness)
+
+
+def test_style_validation():
+    ghostwriter._check_style("pytest")
+    ghostwriter._check_style("unittest")
+    with pytest.raises(InvalidArgument):
+        ghostwriter._check_style("not a valid style")
+
+
+def test_strategies_with_invalid_syntax_repr_as_nothing():
+    msg = "$$ this repr is not Python syntax $$"
+
+    class NoRepr:
+        def __repr__(self):
+            return msg
+
+    s = just(NoRepr())
+    assert repr(s) == f"just({msg})"
+    assert ghostwriter._valid_syntax_repr(s) == "nothing()"
 
 
 class AnEnum(enum.Enum):
@@ -69,6 +95,11 @@ def timsort(seq: Sequence[int]) -> List[int]:
     return sorted(seq)
 
 
+def test_flattens_one_of_repr():
+    assert repr(from_type(Sequence[int])).count("one_of(") == 2
+    assert repr(ghostwriter._get_strategies(timsort)["seq"]).count("one_of(") == 1
+
+
 @varied_excepts
 @pytest.mark.parametrize(
     "func", [re.compile, json.loads, json.dump, timsort, ast.literal_eval]
@@ -76,6 +107,15 @@ def timsort(seq: Sequence[int]) -> List[int]:
 def test_ghostwriter_fuzz(func, ex):
     source_code = ghostwriter.fuzz(func, except_=ex)
     get_test_function(source_code)
+
+
+@varied_excepts
+@pytest.mark.parametrize(
+    "func", [re.compile, json.loads, json.dump, timsort, ast.literal_eval]
+)
+def test_ghostwriter_unittest_style(func, ex):
+    source_code = ghostwriter.fuzz(func, except_=ex, style="unittest")
+    assert issubclass(get_test_function(source_code), unittest.TestCase)
 
 
 def no_annotations(foo=None, bar=False):
@@ -106,3 +146,15 @@ def test_no_hashability_filter():
 def test_invalid_func_inputs(gw, args):
     with pytest.raises(InvalidArgument):
         gw(*args)
+
+
+def test_run_ghostwriter_fuzz():
+    # This test covers the whole lifecycle: first, we get the default code.
+    # The first argument is unknown, so we fail to draw from st.nothing()
+    source_code = ghostwriter.fuzz(sorted)
+    with pytest.raises(Unsatisfiable):
+        get_test_function(source_code)()
+    # Replacing that nothing() with a strategy for sequences of integers makes the
+    # test pass, incidentally checking our handling of positional-only arguments.
+    source_code = source_code.replace("st.nothing()", "st.lists(st.integers())")
+    get_test_function(source_code)()

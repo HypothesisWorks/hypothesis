@@ -118,7 +118,6 @@ from hypothesis.strategies._internal.strategies import (
 from hypothesis.strategies._internal.strings import (
     FixedSizeBytes,
     OneCharStringStrategy,
-    StringStrategy,
 )
 from hypothesis.utils.conventions import InferType, infer, not_set
 
@@ -412,7 +411,7 @@ def booleans() -> SearchStrategy[bool]:
     Examples from this strategy will shrink towards ``False`` (i.e.
     shrinking will replace ``True`` with ``False`` where possible).
     """
-    return sampled_from([False, True])
+    return SampledFromStrategy([False, True], repr_="booleans()")
 
 
 @cacheable
@@ -1096,7 +1095,7 @@ def text(
         )
     if (max_size == 0 or char_strategy.is_empty) and not min_size:
         return just("")
-    return StringStrategy(lists(char_strategy, min_size=min_size, max_size=max_size))
+    return lists(char_strategy, min_size=min_size, max_size=max_size).map("".join)
 
 
 @cacheable
