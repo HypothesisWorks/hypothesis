@@ -287,8 +287,11 @@ class IntegerNormalizer:
         Returns True if and only if this makes a change to
         the underlying canonical values."""
         canonical = self.normalize(value)
+        if canonical == value:
+            return False
+
         value_test = test(value)
-        if canonical == value or test(canonical) == value_test:
+        if test(canonical) == value_test:
             return False
 
         def can_lower(k):
