@@ -138,6 +138,8 @@ def test_block_programs_fail_efficiently(monkeypatch):
         Shrinker, "run_block_program", counts_calls(Shrinker.run_block_program)
     )
 
+    shrinker.max_stall = 500
+
     shrinker.fixate_shrink_passes([block_program("XX")])
 
     assert shrinker.shrinks == 0
