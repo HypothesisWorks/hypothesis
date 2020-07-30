@@ -13,6 +13,7 @@
 #
 # END HEADER
 
+from hypothesis import given, note, reject, settings, strategies as st
 from hypothesis.internal.conjecture.dfa import ConcreteDFA
 
 
@@ -42,3 +43,42 @@ def test_enumeration_of_very_long_strings():
 def test_max_length_of_empty_dfa_is_zero():
     dfa = ConcreteDFA([{}], {0})
     assert dfa.max_length(dfa.start) == 0
+
+
+@st.composite
+def dfas(draw):
+    states = draw(st.integers(1, 20))
+
+    a_state = st.integers(0, states - 1)
+
+    start = draw(a_state)
+    accepting = draw(st.sets(a_state, min_size=1))
+    transitions = [{} for _ in range(states)]
+
+    for _ in range(draw(st.integers(0, states * 10))):
+        transitions[draw(a_state)][draw(st.integers(0, 255))] = draw(a_state)
+
+    return ConcreteDFA(transitions, accepting, start)
+
+
+@settings(max_examples=20)
+@given(dfas(), st.booleans())
+def test_canonicalised_matches_same_strings(dfa, via_repr):
+    canon = dfa.canonicalise()
+    note(canon)
+
+    if via_repr:
+        canon = eval(repr(canon))
+
+    assert dfa.max_length(dfa.start) == canon.max_length(canon.start)
+
+    try:
+        minimal = next(dfa.all_matching_strings())
+    except StopIteration:
+        reject()
+
+    assert minimal == next(canon.all_matching_strings())
+
+    assert dfa.count_strings(dfa.start, len(minimal)) == canon.count_strings(
+        canon.start, len(minimal)
+    )

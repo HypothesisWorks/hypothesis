@@ -224,6 +224,38 @@ class DFA:
             j = self.transition(i, c)
             yield c, j
 
+    def canonicalise(self):
+        # We map all states to their index of appearance in depth
+        # first search. This both is useful for canonicalising and
+        # also allows for states that aren't integers.
+        state_map = {}
+        reverse_state_map = []
+        accepting = set()
+
+        seen = set()
+
+        queue = deque([self.start])
+        while queue:
+            state = queue.popleft()
+            if state in state_map:
+                continue
+            i = len(reverse_state_map)
+            if self.is_accepting(state):
+                accepting.add(i)
+            reverse_state_map.append(state)
+            state_map[state] = i
+            for _, j in self.__raw_transitions(state):
+                if j in seen:
+                    continue
+                seen.add(j)
+                queue.append(j)
+
+        transitions = [
+            {c: state_map[s] for c, s in self.transitions(t)} for t in reverse_state_map
+        ]
+
+        return ConcreteDFA(transitions, accepting)
+
 
 DEAD = "DEAD"
 
@@ -233,17 +265,27 @@ class ConcreteDFA(DFA):
         super().__init__()
         self.__start = start
         self.__accepting = accepting
-        self.__transitions = transitions
+        self.__transitions = list(transitions)
 
     def __repr__(self):
+        transitions = []
+        for i in range(len(self.__transitions)):
+            table = []
+            for c, j in self.transitions(i):
+                if not table or j != table[-1][-1] or c != table[-1][1] + 1:
+                    table.append([c, c, j])
+                else:
+                    table[-1][1] = c
+            transitions.append([(u, j) if u == v else (u, v, j) for u, v, j in table])
+
         if self.__start != 0:
             return "ConcreteDFA(%r, %r, start=%r)" % (
-                self.__transitions,
+                transitions,
                 self.__accepting,
                 self.__start,
             )
         else:
-            return "ConcreteDFA(%r, %r)" % (self.__transitions, self.__accepting,)
+            return "ConcreteDFA(%r, %r)" % (transitions, self.__accepting,)
 
     @property
     def start(self):
@@ -257,7 +299,33 @@ class ConcreteDFA(DFA):
         character c from a string."""
         if i == DEAD:
             return i
-        try:
-            return self.__transitions[i][c]
-        except KeyError:
+
+        table = self.__transitions[i]
+
+        if not isinstance(table, dict) and len(table) >= 5:
+            new_table = {}
+            for t in table:
+                if len(t) == 2:
+                    new_table[t[0]] = t[1]
+                else:
+                    u, v, j = t
+                    for c in range(u, v + 1):
+                        new_table[c] = j
+            self.__transitions[i] = new_table
+            table = new_table
+
+        if isinstance(table, dict):
+            try:
+                return self.__transitions[i][c]
+            except KeyError:
+                return DEAD
+        else:
+            for t in table:
+                if len(t) == 2:
+                    if t[0] == c:
+                        return t[1]
+                else:
+                    u, v, j = t
+                    if u <= c <= v:
+                        return j
             return DEAD
