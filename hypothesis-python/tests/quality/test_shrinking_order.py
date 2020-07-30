@@ -17,6 +17,7 @@ from itertools import islice
 from random import Random
 
 from hypothesis import HealthCheck, Verbosity, settings, strategies as st
+from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal.conjecture.data import ConjectureData, Status
 from hypothesis.internal.conjecture.dfa.lstar import LStar
 from hypothesis.internal.conjecture.engine import BUFFER_SIZE, ConjectureRunner
@@ -35,7 +36,10 @@ def learner_for(strategy):
         pass
 
     def test_function(data):
-        data.draw(strategy)
+        try:
+            data.draw(strategy)
+        except UnsatisfiedAssumption:
+            data.mark_invalid()
         data.mark_interesting()
 
     runner = ConjectureRunner(
