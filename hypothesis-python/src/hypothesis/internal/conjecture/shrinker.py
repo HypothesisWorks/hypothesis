@@ -1310,7 +1310,24 @@ class Shrinker:
         return self.incorporate_new_buffer(attempt)
 
 
-def block_program(description):
+def shrink_pass_family(f):
+    def accept(*args):
+        name = "%s(%s)" % (f.__name__, ", ".join(map(repr, args)),)
+        if name not in SHRINK_PASS_DEFINITIONS:
+
+            def run(self, chooser):
+                return f(self, chooser, *args)
+
+            run.__name__ = name
+            defines_shrink_pass()(run)
+        assert name in SHRINK_PASS_DEFINITIONS
+        return name
+
+    return accept
+
+
+@shrink_pass_family
+def block_program(self, chooser, description):
     """Mini-DSL for block rewriting. A sequence of commands that will be run
     over all contiguous sequences of blocks of the description length in order.
     Commands are:
@@ -1324,52 +1341,40 @@ def block_program(description):
     block) the block will be silently skipped over. As a side effect of
     running a block program its score will be updated.
     """
-    name = "block_program(%r)" % (description,)
+    n = len(description)
 
-    if name not in SHRINK_PASS_DEFINITIONS:
-        """Defines a shrink pass that runs the block program ``description``
-        at every block index."""
-        n = len(description)
+    """Adaptively attempt to run the block program at the current
+    index. If this successfully applies the block program ``k`` times
+    then this runs in ``O(log(k))`` test function calls."""
+    i = chooser.choose(range(len(self.shrink_target.blocks) - n))
+    # First, run the block program at the chosen index. If this fails,
+    # don't do any extra work, so that failure is as cheap as possible.
+    if not self.run_block_program(i, description, original=self.shrink_target):
+        return
 
-        def run(self, chooser):
-            """Adaptively attempt to run the block program at the current
-            index. If this successfully applies the block program ``k`` times
-            then this runs in ``O(log(k))`` test function calls."""
-            i = chooser.choose(range(len(self.shrink_target.blocks) - n))
-            # First, run the block program at the chosen index. If this fails,
-            # don't do any extra work, so that failure is as cheap as possible.
-            if not self.run_block_program(i, description, original=self.shrink_target):
-                return
+    # Because we run in a random order we will often find ourselves in the middle
+    # of a region where we could run the block program. We thus start by moving
+    # left to the beginning of that region if possible in order to to start from
+    # the beginning of that region.
+    def offset_left(k):
+        return i - k * n
 
-            # Because we run in a random order we will often find ourselves in the middle
-            # of a region where we could run the block program. We thus start by moving
-            # left to the beginning of that region if possible in order to to start from
-            # the beginning of that region.
-            def offset_left(k):
-                return i - k * n
-
-            i = offset_left(
-                find_integer(
-                    lambda k: self.run_block_program(
-                        offset_left(k), description, original=self.shrink_target
-                    )
-                )
+    i = offset_left(
+        find_integer(
+            lambda k: self.run_block_program(
+                offset_left(k), description, original=self.shrink_target
             )
+        )
+    )
 
-            original = self.shrink_target
+    original = self.shrink_target
 
-            # Now try to run the block program multiple times here.
-            find_integer(
-                lambda k: self.run_block_program(
-                    i, description, original=original, repeats=k
-                )
-            )
+    # Now try to run the block program multiple times here.
+    find_integer(
+        lambda k: self.run_block_program(i, description, original=original, repeats=k)
+    )
 
-        run.__name__ = name
 
-        defines_shrink_pass()(run)
-        assert name in SHRINK_PASS_DEFINITIONS
-    return name
 
 
 @attr.s(slots=True, eq=False)
