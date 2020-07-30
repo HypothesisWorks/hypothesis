@@ -20,7 +20,12 @@ import pytest
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture import floats as flt
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.conjecture.shrinker import Shrinker, ShrinkPass, block_program
+from hypothesis.internal.conjecture.shrinker import (
+    Shrinker,
+    ShrinkPass,
+    StopShrinking,
+    block_program,
+)
 from hypothesis.internal.conjecture.shrinking import Float
 from hypothesis.internal.conjecture.utils import Sampler
 from tests.conjecture.common import SOME_LABEL, run_to_buffer, shrinking_from
@@ -593,3 +598,21 @@ def test_will_terminate_stalled_shrinks():
 
     shrinker.shrink()
     assert shrinker.calls <= 1 + 2 * shrinker.max_stall
+
+
+def test_will_let_fixate_shrink_passes_do_a_full_run_through():
+    @shrinking_from(range(50))
+    def shrinker(data):
+        for i in range(50):
+            if data.draw_bits(8) != i:
+                data.mark_invalid()
+        data.mark_interesting()
+
+    shrinker.max_stall = 5
+
+    passes = [block_program("X" * i) for i in range(1, 11)]
+
+    with pytest.raises(StopShrinking):
+        shrinker.fixate_shrink_passes(passes)
+
+    assert shrinker.shrink_pass(passes[-1]).calls > 0

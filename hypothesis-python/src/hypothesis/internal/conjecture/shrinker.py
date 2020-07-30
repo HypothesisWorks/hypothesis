@@ -534,6 +534,13 @@ class Shrinker:
             # try again once all of the passes have been run.
             can_discard = self.remove_discarded()
 
+            calls_at_loop_start = self.calls
+
+            # We keep track of how many calls can be made by a single step
+            # without making progress and use this to test how much to pad
+            # out self.max_stall by as we go along.
+            max_calls_per_failing_step = 1
+
             for sp in passes:
                 if can_discard:
                     can_discard = self.remove_discarded()
@@ -546,6 +553,20 @@ class Shrinker:
                 failures = 0
                 max_failures = 20
                 while failures < max_failures:
+                    # We don't allow more than max_stall consecutive failures
+                    # to shrink, but this means that if we're unlucky and the
+                    # shrink passes are in a bad order where only the ones at
+                    # the end are useful, if we're not careful this heuristic
+                    # might stop us before we've tried everything. In order to
+                    # avoid that happening, we make sure that there's always
+                    # plenty of breathing room to make it through a single
+                    # iteration of the fixate_shrink_passes loop.
+                    self.max_stall = max(
+                        self.max_stall,
+                        2 * max_calls_per_failing_step
+                        + (self.calls - calls_at_loop_start),
+                    )
+
                     prev = self.shrink_target
                     initial_calls = self.calls
                     # It's better for us to run shrink passes in a deterministic
@@ -572,6 +593,9 @@ class Shrinker:
                         if prev is not self.shrink_target:
                             failures = 0
                         else:
+                            max_calls_per_failing_step = max(
+                                max_calls_per_failing_step, self.calls - initial_calls
+                            )
                             failures += 1
 
                 # We reorder the shrink passes so that on our next run through
