@@ -799,8 +799,9 @@ class Shrinker:
             # If we are just taking a long time to shrink we don't want to
             # trigger this heuristic, so whenever we shrink successfully
             # we give ourselves a bit of breathing room to make sure we
-            # would find a shrink that took that long to find the next
-            # time.
+            # would find a shrink that took that long to find the next time.
+            # The case where we're taking a long time but making steady 
+            # progress is handled by `finish_shrinking_deadline` in engine.py
             self.max_stall = max(
                 self.max_stall, (self.calls - self.calls_at_last_shrink) * 2
             )
