@@ -289,7 +289,13 @@ class Shrinker:
         self.update_shrink_target(initial)
         self.shrinks = 0
 
+        # We terminate shrinks that seem to have reached their logical
+        # conclusion: If we've called the underlying test function at
+        # least self.max_stall times since the last time we shrunk,
+        # it's time to stop shrinking.
+        self.max_stall = 200
         self.initial_calls = self.engine.call_count
+        self.calls_at_last_shrink = self.initial_calls
 
         self.passes_by_name = {}
         self.passes = []
@@ -307,12 +313,6 @@ class Shrinker:
                 return self.cached_calculations.setdefault(cache_key, f())
 
         return accept
-
-    def explain_next_call_as(self, explanation):
-        self.__pending_shrink_explanation = explanation
-
-    def clear_call_explanation(self):
-        self.__pending_shrink_explanation = None
 
     def add_new_pass(self, run):
         """Creates a shrink pass corresponding to calling ``run(self)``"""
@@ -388,13 +388,11 @@ class Shrinker:
         too short to be a valid test case) or a ConjectureData object
         with status >= INVALID that would result from running this buffer."""
 
-        if self.__pending_shrink_explanation is not None:
-            self.debug(self.__pending_shrink_explanation)
-            self.__pending_shrink_explanation = None
-
         buffer = bytes(buffer)
         result = self.engine.cached_test_function(buffer)
         self.incorporate_test_data(result)
+        if self.calls - self.calls_at_last_shrink >= self.max_stall:
+            raise StopShrinking()
         return result
 
     def debug(self, msg):
@@ -425,6 +423,8 @@ class Shrinker:
 
         try:
             self.greedy_shrink()
+        except StopShrinking:
+            pass
         finally:
             if self.engine.report_debug_info:
 
@@ -534,6 +534,13 @@ class Shrinker:
             # try again once all of the passes have been run.
             can_discard = self.remove_discarded()
 
+            calls_at_loop_start = self.calls
+
+            # We keep track of how many calls can be made by a single step
+            # without making progress and use this to test how much to pad
+            # out self.max_stall by as we go along.
+            max_calls_per_failing_step = 1
+
             for sp in passes:
                 if can_discard:
                     can_discard = self.remove_discarded()
@@ -546,6 +553,20 @@ class Shrinker:
                 failures = 0
                 max_failures = 20
                 while failures < max_failures:
+                    # We don't allow more than max_stall consecutive failures
+                    # to shrink, but this means that if we're unlucky and the
+                    # shrink passes are in a bad order where only the ones at
+                    # the end are useful, if we're not careful this heuristic
+                    # might stop us before we've tried everything. In order to
+                    # avoid that happening, we make sure that there's always
+                    # plenty of breathing room to make it through a single
+                    # iteration of the fixate_shrink_passes loop.
+                    self.max_stall = max(
+                        self.max_stall,
+                        2 * max_calls_per_failing_step
+                        + (self.calls - calls_at_loop_start),
+                    )
+
                     prev = self.shrink_target
                     initial_calls = self.calls
                     # It's better for us to run shrink passes in a deterministic
@@ -572,6 +593,9 @@ class Shrinker:
                         if prev is not self.shrink_target:
                             failures = 0
                         else:
+                            max_calls_per_failing_step = max(
+                                max_calls_per_failing_step, self.calls - initial_calls
+                            )
                             failures += 1
 
                 # We reorder the shrink passes so that on our next run through
@@ -796,6 +820,16 @@ class Shrinker:
         assert isinstance(new_target, ConjectureResult)
         if self.shrink_target is not None:
             self.shrinks += 1
+            # If we are just taking a long time to shrink we don't want to
+            # trigger this heuristic, so whenever we shrink successfully
+            # we give ourselves a bit of breathing room to make sure we
+            # would find a shrink that took that long to find the next time.
+            # The case where we're taking a long time but making steady
+            # progress is handled by `finish_shrinking_deadline` in engine.py
+            self.max_stall = max(
+                self.max_stall, (self.calls - self.calls_at_last_shrink) * 2
+            )
+            self.calls_at_last_shrink = self.calls
         else:
             self.__all_changed_blocks = set()
             self.__last_checked_changed_at = new_target
@@ -1514,7 +1548,7 @@ class ShrinkPass:
         initial_shrinks = self.shrinker.shrinks
         initial_calls = self.shrinker.calls
         size = len(self.shrinker.shrink_target.buffer)
-        self.shrinker.explain_next_call_as(self.name)
+        self.shrinker.engine.explain_next_call_as(self.name)
 
         if random_order:
             selection_order = random_selection_order(self.shrinker.random)
@@ -1530,7 +1564,7 @@ class ShrinkPass:
             self.calls += self.shrinker.calls - initial_calls
             self.shrinks += self.shrinker.shrinks - initial_shrinks
             self.deletions += size - len(self.shrinker.shrink_target.buffer)
-            self.shrinker.clear_call_explanation()
+            self.shrinker.engine.clear_call_explanation()
         return True
 
     @property
@@ -1554,3 +1588,7 @@ def expand_region(f, a, b):
     b += find_integer(lambda k: f(a, b + k))
     a -= find_integer(lambda k: f(a - k, b))
     return (a, b)
+
+
+class StopShrinking(Exception):
+    pass

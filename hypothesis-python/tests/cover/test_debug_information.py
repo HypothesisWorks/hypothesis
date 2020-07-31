@@ -33,7 +33,7 @@ def test_reports_passes():
 
     value = out.getvalue()
 
-    assert "adaptive_example_deletion" in value
+    assert "minimize_individual_blocks" in value
     assert "calls" in value
     assert "shrinks" in value
 
