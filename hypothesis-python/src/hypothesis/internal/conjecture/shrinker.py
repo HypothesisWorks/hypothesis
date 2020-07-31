@@ -498,7 +498,6 @@ class Shrinker:
                 block_program("X" * 2),
                 block_program("X" * 1),
                 "pass_to_descendant",
-                "alphabet_minimize",
                 "reorder_examples",
                 "minimize_floats",
                 "minimize_duplicated_blocks",
@@ -1269,81 +1268,6 @@ class Shrinker:
             ),
             random=self.random,
         )
-
-    @derived_value
-    def alphabet(self):
-        return sorted(set(self.buffer))
-
-    @defines_shrink_pass()
-    def alphabet_minimize(self, chooser):
-        """Attempts to minimize the "alphabet" - the set of bytes that
-        are used in the representation of the current buffer. The main
-        benefit of this is that it significantly increases our cache hit rate
-        by making things that are equivalent more likely to have the same
-        representation, but it's also generally a rather effective "fuzzing"
-        step that gives us a lot of good opportunities to slip to a smaller
-        representation of the same bug.
-        """
-        c = chooser.choose(self.alphabet)
-        buf = self.buffer
-
-        def can_replace_with(d):
-            if d < 0:
-                return False
-
-            if self.consider_new_buffer(bytes([d if b == c else b for b in buf])):
-                if d <= 1:
-                    # For small values of d if this succeeds we take this
-                    # as evidence that it is worth doing a a bulk replacement
-                    # where we replace all values which are close
-                    # to c but smaller with d as well. This helps us substantially
-                    # in cases where we have a lot of "dead" bytes that don't really do
-                    # much, as it allows us to replace many of them in one go rather
-                    # than one at a time. An example of where this matters is
-                    # test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe
-                    # in test_shrink_quality.py
-                    def replace_range(k):
-                        if k > c:
-                            return False
-
-                        def should_replace_byte(b):
-                            return c - k <= b <= c and d < b
-
-                        return self.consider_new_buffer(
-                            bytes([d if should_replace_byte(b) else b for b in buf])
-                        )
-
-                    find_integer(replace_range)
-                return True
-
-        if (
-            # If we cannot replace the current byte with its predecessor,
-            # assume it is already minimal and continue on. This ensures
-            # we make no more than one call per distinct byte value in the
-            # event that no shrinks are possible here.
-            not can_replace_with(c - 1)
-            # We next try replacing with 0 or 1. If this works then
-            # there is nothing else to do here.
-            or can_replace_with(0)
-            or can_replace_with(1)
-            # Finally we try to replace with c - 2 before going on to the
-            # binary search so that in cases which were already nearly
-            # minimal we don't do log(n) extra work.
-            or not can_replace_with(c - 2)
-        ):
-            return
-
-        # Now binary search to find a small replacement.
-
-        # Invariant: We cannot replace with lo, we can replace with hi.
-        lo = 1
-        hi = c - 2
-        while lo + 1 < hi:
-            mid = (lo + hi) // 2
-            if can_replace_with(mid):
-                hi = mid
-            else:
-                lo = mid
 
     def run_block_program(self, i, description, original, repeats=1):
         """Block programs are a mini-DSL for block rewriting, defined as a sequence

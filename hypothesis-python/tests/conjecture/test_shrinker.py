@@ -313,18 +313,6 @@ def test_finding_a_minimal_balanced_binary_tree():
     assert list(shrinker.shrink_target.buffer) == [1, 0, 1, 0, 1, 0, 0]
 
 
-def test_alphabet_minimization():
-    @shrink(bytes((10, 11)) * 5, "alphabet_minimize")
-    def x(data):
-        buf = data.draw_bytes(10)
-        if len(set(buf)) > 2:
-            data.mark_invalid()
-        if buf[0] < buf[1] and buf[1] > 1:
-            data.mark_interesting()
-
-    assert x == [0, 2] * 5
-
-
 def test_float_shrink_can_run_when_canonicalisation_does_not_work(monkeypatch):
     # This should be an error when called
     monkeypatch.setattr(Float, "shrink", None)
