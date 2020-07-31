@@ -169,13 +169,7 @@ def test_shrinking_blocks_from_common_offset():
     assert sorted(x) == [0, 1]
 
 
-def test_handle_empty_draws(monkeypatch):
-    monkeypatch.setattr(
-        Shrinker,
-        "shrink",
-        lambda self: self.fixate_shrink_passes(["adaptive_example_deletion"]),
-    )
-
+def test_handle_empty_draws():
     @run_to_buffer
     def x(data):
         while True:
@@ -314,7 +308,7 @@ def test_finding_a_minimal_balanced_binary_tree():
         if not b:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["adaptive_example_deletion", "reorder_examples"])
+    shrinker.shrink()
 
     assert list(shrinker.shrink_target.buffer) == [1, 0, 1, 0, 1, 0, 0]
 
@@ -416,19 +410,6 @@ def test_zero_contained_examples():
     assert list(shrinker.shrink_target.buffer) == [1, 0] * 4
 
 
-def test_adaptive_example_deletion_deletes_nothing():
-    @shrinking_from(bytes([1]) * 8 + bytes(1))
-    def shrinker(data):
-        n = 0
-        while data.draw_bits(8):
-            n += 1
-        if n >= 8:
-            data.mark_interesting()
-
-    shrinker.fixate_shrink_passes(["adaptive_example_deletion"])
-    assert list(shrinker.shrink_target.buffer) == [1] * 8 + [0]
-
-
 def test_zig_zags_quickly():
     @shrinking_from(bytes([255]) * 4)
     def shrinker(data):
@@ -478,7 +459,7 @@ def test_retain_end_of_buffer():
         if interesting:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["adaptive_example_deletion"])
+    shrinker.shrink()
     assert list(shrinker.buffer) == [6, 0]
 
 
@@ -524,7 +505,7 @@ def test_can_expand_deleted_region():
         if v1 == (0, 0) or t() == (0, 0):
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["adaptive_example_deletion"])
+    shrinker.shrink()
     assert list(shrinker.buffer) == [0, 0]
 
 
@@ -574,7 +555,7 @@ def test_shrink_pass_method_is_idempotent():
         data.draw_bits(8)
         data.mark_interesting()
 
-    sp = shrinker.shrink_pass("adaptive_example_deletion")
+    sp = shrinker.shrink_pass(block_program("X"))
     assert isinstance(sp, ShrinkPass)
     assert shrinker.shrink_pass(sp) is sp
 

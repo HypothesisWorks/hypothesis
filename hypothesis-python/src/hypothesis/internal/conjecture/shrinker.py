@@ -498,7 +498,6 @@ class Shrinker:
                 block_program("X" * 2),
                 block_program("X" * 1),
                 "pass_to_descendant",
-                "adaptive_example_deletion",
                 "alphabet_minimize",
                 "zero_examples",
                 "reorder_examples",
@@ -988,46 +987,6 @@ class Shrinker:
             if not self.incorporate_new_buffer(attempt):
                 return False
         return True
-
-    @defines_shrink_pass()
-    def adaptive_example_deletion(self, chooser):
-        """Attempts to delete every example from the test case.
-
-        That is, it is logically equivalent to trying ``self.buffer[:ex.start] +
-        self.buffer[ex.end:]`` for every example ``ex``. The order in which
-        examples are tried is randomized, and when deletion is successful it
-        will attempt to adapt to delete more than one example at a time.
-        """
-        example = chooser.choose(self.examples)
-
-        if not self.incorporate_new_buffer(
-            self.buffer[: example.start] + self.buffer[example.end :]
-        ):
-            return
-
-        # If we successfully deleted one example there may be a useful
-        # deletable region around here.
-
-        original = self.shrink_target
-        endpoints = set()
-        for ex in original.examples:
-            if ex.depth <= example.depth:
-                endpoints.add(ex.start)
-                endpoints.add(ex.end)
-
-        partition = sorted(endpoints)
-        j = partition.index(example.start)
-
-        def delete_region(a, b):
-            assert a <= j <= b
-            if a < 0 or b >= len(partition) - 1:
-                return False
-            return self.consider_new_buffer(
-                original.buffer[: partition[a]] + original.buffer[partition[b] :]
-            )
-
-        to_right = find_integer(lambda n: delete_region(j, j + n))
-        find_integer(lambda n: delete_region(j - n, j + to_right))
 
     def try_zero_example(self, ex):
         u = ex.start
