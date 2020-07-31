@@ -10,6 +10,20 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.23.8:
+
+-------------------
+5.23.8 - 2020-07-31
+-------------------
+
+This release adds a heuristic to detect when shrinking has finished despite the fact
+that there are many more possible transformations to try. This will be particularly
+useful for tests where the minimum failing test case is very large despite there being
+many smaller test cases possible, where it is likely to speed up shrinking dramatically.
+
+In some cases it is likely that this will result in worse shrunk test cases. In those
+cases rerunning the test will result in further shrinking.
+
 .. _v5.23.7:
 
 -------------------
