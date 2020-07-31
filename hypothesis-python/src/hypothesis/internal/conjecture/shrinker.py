@@ -1425,14 +1425,5 @@ def non_zero_suffix(b):
     return b[i:]
 
 
-def expand_region(f, a, b):
-    """Attempts to find u, v with u <= a, v >= b such that f(u, v) is true.
-    Assumes that f(a, b) is already true.
-    """
-    b += find_integer(lambda k: f(a, b + k))
-    a -= find_integer(lambda k: f(a - k, b))
-    return (a, b)
-
-
 class StopShrinking(Exception):
     pass
