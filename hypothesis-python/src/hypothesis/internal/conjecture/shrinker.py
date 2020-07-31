@@ -23,7 +23,7 @@ from hypothesis.internal.conjecture.choicetree import (
     prefix_selection_order,
     random_selection_order,
 )
-from hypothesis.internal.conjecture.data import ConjectureResult, Overrun, Status
+from hypothesis.internal.conjecture.data import ConjectureResult, Status
 from hypothesis.internal.conjecture.floats import (
     DRAW_FLOAT_LABEL,
     float_to_lex,
@@ -499,7 +499,6 @@ class Shrinker:
                 block_program("X" * 1),
                 "pass_to_descendant",
                 "alphabet_minimize",
-                "zero_examples",
                 "reorder_examples",
                 "minimize_floats",
                 "minimize_duplicated_blocks",
@@ -987,78 +986,6 @@ class Shrinker:
             if not self.incorporate_new_buffer(attempt):
                 return False
         return True
-
-    def try_zero_example(self, ex):
-        u = ex.start
-        v = ex.end
-        attempt = self.cached_test_function(
-            self.buffer[:u] + bytes(v - u) + self.buffer[v:]
-        )
-
-        if attempt is Overrun:
-            return False
-
-        in_replacement = attempt.examples[ex.index]
-        used = in_replacement.length
-
-        if attempt is not self.shrink_target:
-            if in_replacement.end < len(attempt.buffer) and used < ex.length:
-                self.incorporate_new_buffer(
-                    self.buffer[:u] + bytes(used) + self.buffer[v:]
-                )
-        return self.examples[ex.index].trivial
-
-    @defines_shrink_pass()
-    def zero_examples(self, chooser):
-        """Attempt to replace each example with a minimal version of itself."""
-
-        ex = chooser.choose(self.examples, lambda ex: not ex.trivial)
-
-        # If the example is already trivial, assume there's nothing to do here.
-        # We could attempt to use it as an adaptive replacement for other
-        # similar examples, but that seems to be ineffective, resulting mostly
-        # in redundant work rather than helping.
-
-        if not self.try_zero_example(ex):
-            return
-
-        # If we zeroed the example we need to get the new one that replaced it.
-        ex = self.examples[ex.index]
-
-        original = self.shrink_target
-        group = self.examples_by_label[ex.label]
-        i = group.index(ex)
-        replacement = self.buffer[ex.start : ex.end]
-
-        # We first expand to cover the trivial region surrounding this group.
-        # This avoids a situation where the adaptive phase "succeeds" a lot by
-        # virtue of not doing anything and then goes into a galloping phase
-        # where it does a bunch of useless work.
-        def all_trivial(a, b):
-            if a < 0 or b > len(group):
-                return False
-            return all(e.trivial for e in group[a:b])
-
-        start, end = expand_region(all_trivial, i, i + 1)
-
-        # If we've got multiple trivial examples of different lengths then
-        # this isn't going to work as a replacement for all of them and so we
-        # skip out early.
-        if any(e.length != len(replacement) for e in group[start:end]):
-            return
-
-        def can_zero(a, b):
-            if a < 0 or b > len(group):
-                return False
-            regions = []
-
-            for e in group[a:b]:
-                t = (e.start, e.end, replacement)
-                if not regions or t[0] >= regions[-1][1]:
-                    regions.append(t)
-            return self.consider_new_buffer(replace_all(original.buffer, regions))
-
-        expand_region(can_zero, start, end)
 
     @derived_value
     def blocks_by_non_zero_suffix(self):

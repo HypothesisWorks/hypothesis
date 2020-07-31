@@ -831,19 +831,6 @@ def test_handle_size_too_large_during_dependent_lowering():
     shrinker.fixate_shrink_passes(["minimize_individual_blocks"])
 
 
-def test_zero_examples_will_zero_blocks():
-    @shrinking_from([1, 1, 1])
-    def shrinker(data):
-        n = data.draw_bits(1)
-        data.draw_bits(1)
-        m = data.draw_bits(1)
-        if n == m == 1:
-            data.mark_interesting()
-
-    shrinker.fixate_shrink_passes(["zero_examples"])
-    assert list(shrinker.shrink_target.buffer) == [1, 0, 1]
-
-
 def test_block_may_grow_during_lexical_shrinking():
     initial = bytes([2, 1, 1])
 

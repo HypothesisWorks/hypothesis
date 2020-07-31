@@ -110,7 +110,7 @@ def test_can_zero_subintervals(monkeypatch):
                 return
         data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["zero_examples"])
+    shrinker.shrink()
     assert list(shrinker.buffer) == [0, 1] * 10
 
 
@@ -365,20 +365,6 @@ def test_block_programs_are_adaptive():
     assert shrinker.calls <= 60
 
 
-def test_zero_examples_is_adaptive():
-    @shrinking_from(bytes([1]) * 1001)
-    def shrinker(data):
-        for _ in range(1000):
-            data.draw_bits(1)
-        if data.draw_bits(1):
-            data.mark_interesting()
-
-    shrinker.fixate_shrink_passes(["zero_examples"])
-
-    assert shrinker.shrink_target.buffer == bytes(1000) + bytes([1])
-    assert shrinker.calls <= 60
-
-
 def test_zero_examples_with_variable_min_size():
     @shrinking_from(bytes([255]) * 100)
     def shrinker(data):
@@ -389,7 +375,7 @@ def test_zero_examples_with_variable_min_size():
             data.mark_invalid()
         data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["zero_examples"])
+    shrinker.shrink()
     assert len([d for d in shrinker.shrink_target.blocks if not d.all_zero]) == 1
 
 
@@ -406,7 +392,7 @@ def test_zero_contained_examples():
             data.stop_example()
         data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["zero_examples"])
+    shrinker.shrink()
     assert list(shrinker.shrink_target.buffer) == [1, 0] * 4
 
 
@@ -442,8 +428,8 @@ def test_zero_irregular_examples():
         if interesting:
             data.mark_interesting()
 
-    shrinker.fixate_shrink_passes(["zero_examples"])
-    assert list(shrinker.shrink_target.buffer) == [0] * 3 + [255] * 3
+    shrinker.shrink()
+    assert list(shrinker.shrink_target.buffer) == [0] * 3 + [1, 0, 1]
 
 
 def test_retain_end_of_buffer():
@@ -475,9 +461,7 @@ def test_can_expand_zeroed_region():
                 seen_non_zero = True
         data.mark_interesting()
 
-    sp = shrinker.shrink_pass("zero_examples")
-    for _ in range(5):
-        sp.step()
+    shrinker.shrink()
     assert list(shrinker.shrink_target.buffer) == [0] * 5
 
 
@@ -507,46 +491,6 @@ def test_can_expand_deleted_region():
 
     shrinker.shrink()
     assert list(shrinker.buffer) == [0, 0]
-
-
-def test_zero_coverage_edge_case():
-    """This is a weird and contrived test designed to trigger
-    a specific coverage target in the shrinker that is
-    surprisingly hard to hit. If at any point it becomes
-    more convenient to delete it, go right ahead."""
-
-    @shrinking_from([255] * 100)
-    def shrinker(data):
-        if data.draw_bits(8) == 0:
-            data.mark_invalid()
-
-        def t():
-            data.start_example(10)
-            a = data.draw_bits(8)
-            b = data.draw_bits(8)
-            data.stop_example()
-            if a != b:
-                data.mark_invalid()
-            return a
-
-        a = data.draw_bits(8)
-
-        data.start_example(10)
-
-        b = t()
-        c = t()
-
-        if c == 0 and not (a == 0 and b == 0):
-            return
-
-        if b == 0 and not a == 0:
-            return
-
-        data.mark_interesting()
-
-    shrinker.fixate_shrink_passes(["zero_examples"])
-
-    assert list(shrinker.buffer) == [255] + [0] * (len(shrinker.buffer) - 1)
 
 
 def test_shrink_pass_method_is_idempotent():
