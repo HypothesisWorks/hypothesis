@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.23.10:
+
+--------------------
+5.23.10 - 2020-08-04
+--------------------
+
+This release improves the quality of shrunk test cases in some special cases.
+Specifically, it should get shrinking unstuck in some scenarios which require
+simultaneously changing two parts of the generated test case.
+
 .. _v5.23.9:
 
 -------------------
