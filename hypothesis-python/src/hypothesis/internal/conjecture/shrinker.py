@@ -508,6 +508,7 @@ class Shrinker:
                 "minimize_individual_blocks",
                 block_program("--X"),
                 "redistribute_block_pairs",
+                "lower_blocks_together",
             ]
         )
 
@@ -1222,13 +1223,46 @@ class Shrinker:
             attempt[block.start : block.end] = int_to_bytes(m - k, block.length)
             try:
                 attempt[next_block.start : next_block.end] = int_to_bytes(
-                    n + k, block.length
+                    n + k, next_block.length
                 )
             except OverflowError:
                 return False
             return self.consider_new_buffer(attempt)
 
         find_integer(boost)
+
+    @defines_shrink_pass()
+    def lower_blocks_together(self, chooser):
+        block = chooser.choose(self.blocks, lambda b: not b.all_zero)
+
+        # Choose the next block to be up to eight blocks onwards. We don't
+        # want to go too far (to avoid quadratic time) but it's worth a
+        # reasonable amount of lookahead, especially as we expect most
+        # blocks are zero by this point anyway.
+        next_block = self.blocks[
+            chooser.choose(
+                range(block.index + 1, min(len(self.blocks), block.index + 9)),
+                lambda j: not self.blocks[j].all_zero,
+            )
+        ]
+
+        buffer = self.buffer
+
+        m = int_from_bytes(buffer[block.start : block.end])
+        n = int_from_bytes(buffer[next_block.start : next_block.end])
+
+        def lower(k):
+            if k > min(m, n):
+                return False
+            attempt = bytearray(buffer)
+            attempt[block.start : block.end] = int_to_bytes(m - k, block.length)
+            attempt[next_block.start : next_block.end] = int_to_bytes(
+                n - k, next_block.length
+            )
+            assert len(attempt) == len(buffer)
+            return self.consider_new_buffer(attempt)
+
+        find_integer(lower)
 
     @defines_shrink_pass()
     def minimize_individual_blocks(self, chooser):
