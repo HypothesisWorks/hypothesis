@@ -15,6 +15,7 @@
 
 import os
 import sys
+import warnings
 
 from hypothesis import HealthCheck, settings
 from tests.common.setup import run
@@ -30,6 +31,10 @@ if __name__ == "__main__":
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tests.django.toys.settings")
 
-    from django.core.management import execute_from_command_line
+    # This triggers a deprecation warning on some older versions of Django
+    # because of its use of the imp module.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=DeprecationWarning)
+        from django.core.management import execute_from_command_line
 
     execute_from_command_line(sys.argv)
