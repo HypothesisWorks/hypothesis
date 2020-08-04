@@ -7,7 +7,7 @@
 coverage==5.2.1           # via -r requirements/coverage.in
 lark-parser==0.9.0        # via -r requirements/coverage.in
 numpy==1.19.1             # via -r requirements/coverage.in, pandas
-pandas==1.0.5             # via -r requirements/coverage.in
+pandas==1.1.0             # via -r requirements/coverage.in
 python-dateutil==2.8.1    # via pandas
 pytz==2020.1              # via -r requirements/coverage.in, pandas
 six==1.15.0               # via python-dateutil
