@@ -72,8 +72,15 @@ class LStar:
         self.__cache = {}
         self.__member = member
         self.__normalizer = IntegerNormalizer()
+        self.__generation = 0
 
         self.__add_experiment(b"")
+
+    def __dfa_changed(self):
+        """Note that something has changed, updating the generation
+        and resetting any cached state."""
+        self.__generation += 1
+        self.__dfa = None
 
     def member(self, s):
         """Check whether this string is a member of the language
@@ -88,7 +95,7 @@ class LStar:
     def generation(self):
         """Return an integer value that will be incremented
         every time the DFA we predict changes."""
-        return len(self.__experiments)
+        return self.__generation
 
     @property
     def dfa(self):
@@ -179,14 +186,14 @@ class LStar:
             if self.__normalizer.distinguish(
                 s[n], lambda x: self.member(prefix + bytes([x]) + suffix)
             ):
-                self.__dfa = None
+                self.__dfa_changed()
                 continue
 
             self.__add_experiment(suffix)
 
     def __add_experiment(self, e):
         self.__experiments.append(e)
-        self.__dfa = None
+        self.__dfa_changed()
 
 
 class ExperimentDFA(DFA):

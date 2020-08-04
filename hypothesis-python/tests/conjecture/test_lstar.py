@@ -15,6 +15,7 @@
 
 import itertools
 
+from hypothesis import example, given, strategies as st
 from hypothesis.internal.conjecture.dfa.lstar import IntegerNormalizer, LStar
 
 
@@ -186,3 +187,22 @@ def test_learning_large_dfa():
     for i, s in enumerate(itertools.islice(learner.dfa.all_matching_strings(), 500)):
         assert len(s) == 20
         assert i == int.from_bytes(s, "big")
+
+
+@st.composite
+def byte_order(draw):
+    ls = draw(st.permutations(range(256)))
+    n = draw(st.integers(0, len(ls)))
+    return ls[:n]
+
+
+@example({0}, [1])
+@given(st.sets(st.integers(0, 255)), byte_order())
+def test_learning_always_changes_generation(chars, order):
+    learner = LStar(lambda s: len(s) == 1 and s[0] in chars)
+    for c in order:
+        prev = learner.generation
+        s = bytes([c])
+        if learner.dfa.matches(s) != learner.member(s):
+            learner.learn(s)
+            assert learner.generation > prev
