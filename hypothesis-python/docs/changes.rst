@@ -10,6 +10,14 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.23.11:
+
+--------------------
+5.23.11 - 2020-08-04
+--------------------
+
+This release fixes a bug in some internal Hypothesis support code. It has no user visible impact.
+
 .. _v5.23.10:
 
 --------------------
