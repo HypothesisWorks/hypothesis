@@ -42,6 +42,7 @@ idna==2.10                # via requests
 imagesize==1.2.0          # via sphinx
 importlib-metadata==1.7.0  # via flake8, flake8-comprehensions, keyring, pluggy, pytest, stevedore, tox, twine, virtualenv
 importlib-resources==3.0.0  # via virtualenv
+iniconfig==1.0.1          # via pytest
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.16.1           # via -r requirements/tools.in
 isort==5.2.2              # via -r requirements/tools.in
@@ -107,16 +108,16 @@ sphinxcontrib-serializinghtml==1.1.4  # via sphinx
 sqlparse==0.3.1           # via django
 stevedore==3.2.0          # via bandit
 tokenize-rt==4.0.0        # via pyupgrade
-toml==0.10.1              # via -r requirements/tools.in, black, dparse, tox
+toml==0.10.1              # via -r requirements/tools.in, black, dparse, pytest, tox
 tox==3.18.1               # via -r requirements/tools.in
-tqdm==4.48.1              # via pyupio, twine
+tqdm==4.48.2              # via pyupio, twine
 traitlets==4.3.3          # via ipython
 twine==3.2.0              # via -r requirements/tools.in
 typed-ast==1.4.1          # via black, mypy
 typing-extensions==3.7.4.2  # via mypy
 urllib3==1.25.10          # via requests
 virtualenv==20.0.29       # via tox
-wcwidth==0.2.5            # via prompt-toolkit, pytest
+wcwidth==0.2.5            # via prompt-toolkit
 webencodings==0.5.1       # via bleach
 wrapt==1.12.1             # via deprecated
 zipp==1.2.0               # via -r requirements/tools.in, importlib-metadata, importlib-resources
