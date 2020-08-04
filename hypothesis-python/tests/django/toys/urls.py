@@ -13,7 +13,7 @@
 #
 # END HEADER
 
-from django.conf.urls import include, url
+from django.conf.urls import include, re_path
 from django.contrib import admin
 
 patterns, namespace, name = admin.site.urls
@@ -22,5 +22,5 @@ urlpatterns = [
     # Examples:
     # url(r'^$', 'toys.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
-    url(r"^admin/", include((patterns, name), namespace=namespace))
+    re_path(r"^admin/", include((patterns, name), namespace=namespace))
 ]
