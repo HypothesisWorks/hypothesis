@@ -29,7 +29,7 @@ class WideRangeIntStrategy(SearchStrategy):
     sizes = [8, 16, 32, 64, 128]
 
     def __repr__(self):
-        return "WideRangeIntStrategy()"
+        return "integers()"
 
     def do_draw(self, data):
         size = self.sizes[self.distribution.sample(data)]
@@ -51,7 +51,7 @@ class BoundedIntStrategy(SearchStrategy):
         self.end = end
 
     def __repr__(self):
-        return "BoundedIntStrategy(%d, %d)" % (self.start, self.end)
+        return "integers(%d, %d)" % (self.start, self.end)
 
     def do_draw(self, data):
         return d.integer_range(data, self.start, self.end)
@@ -107,8 +107,8 @@ class FloatStrategy(SearchStrategy):
         self.sampler = d.Sampler(weights)
 
     def __repr__(self):
-        return "{}(allow_infinity={}, allow_nan={}, width={})".format(
-            self.__class__.__name__, self.allow_infinity, self.allow_nan, self.width
+        return "floats(allow_infinity={}, allow_nan={}, width={})".format(
+            self.allow_infinity, self.allow_nan, self.width
         )
 
     def permitted(self, f):
@@ -161,7 +161,7 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         self.width = width
 
     def __repr__(self):
-        return "FixedBoundedFloatStrategy(%s, %s, %s)" % (
+        return "floats(%s, %s, width=%s)" % (
             self.lower_bound,
             self.upper_bound,
             self.width,

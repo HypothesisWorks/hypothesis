@@ -19,6 +19,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils as cu
 from hypothesis.internal.conjecture.junkdrawer import LazySequenceCopy
 from hypothesis.internal.conjecture.utils import combine_labels
+from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.strategies._internal.strategies import (
     MappedSearchStrategy,
     SearchStrategy,
@@ -44,11 +45,7 @@ class TupleStrategy(SearchStrategy):
         )
 
     def __repr__(self):
-        if len(self.element_strategies) == 1:
-            tuple_string = "%s," % (repr(self.element_strategies[0]),)
-        else:
-            tuple_string = ", ".join(map(repr, self.element_strategies))
-        return "TupleStrategy((%s))" % (tuple_string,)
+        return "tuples({})".format(", ".join(map(repr, self.element_strategies)))
 
     def calc_has_reusable_values(self, recur):
         return all(recur(e) for e in self.element_strategies)
@@ -74,6 +71,7 @@ class ListStrategy(SearchStrategy):
             0.5 * (self.min_size + self.max_size),
         )
         self.element_strategy = elements
+        self.keys = ()
 
     def calc_label(self):
         return combine_labels(self.class_label, self.element_strategy.label)
@@ -118,11 +116,11 @@ class ListStrategy(SearchStrategy):
         return result
 
     def __repr__(self):
-        return "%s(%r, min_size=%r, max_size=%r)" % (
-            self.__class__.__name__,
+        return "lists(%r, min_size=%r, max_size=%r, unique_by=(%s))" % (
             self.element_strategy,
             self.min_size,
             self.max_size,
+            ", ".join(get_pretty_function_description(f) for f in self.keys) or "None",
         )
 
 
@@ -148,11 +146,10 @@ class UniqueListStrategy(ListStrategy):
         # We construct a filtered strategy here rather than using a check-and-reject
         # approach because some strategies have special logic for generation under a
         # filter, and FilteredStrategy can consolidate multiple filters.
-        filtered = self.element_strategy.filter(
-            lambda val: all(
-                key(val) not in seen for (key, seen) in zip(self.keys, seen_sets)
-            )
-        )
+        def can_add_element_to_unique_list(x):
+            return all(key(x) not in seen for key, seen in zip(self.keys, seen_sets))
+
+        filtered = self.element_strategy.filter(can_add_element_to_unique_list)
         while elements.more():
             value = filtered.filtered_strategy.do_filtered_draw(
                 data=data, filter_strategy=filtered
