@@ -15,6 +15,8 @@
 
 import math
 
+from hypothesis.internal.conjecture.junkdrawer import find_integer
+
 
 class DFAIndex:
     """Represents the language matched by some DFA as a random
@@ -24,6 +26,17 @@ class DFAIndex:
         self.dfa = dfa
 
         self.__length = None
+        self.__max_string_length = self.dfa.max_length(self.dfa.start)
+        self.__running_counts = [self.dfa.count_strings(self.dfa.start, 0)]
+
+    def __count_strings_up_to(self, length):
+        length = min(length, self.dfa.max_length(self.dfa.start))
+        while length >= len(self.__running_counts):
+            self.__running_counts.append(
+                self.dfa.count_strings(self.dfa.start, len(self.__running_counts))
+                + self.__running_counts[-1]
+            )
+        return self.__running_counts[length]
 
     def __iter__(self):
         return self.dfa.all_matching_strings()
@@ -31,14 +44,12 @@ class DFAIndex:
     def length(self):
         """Like len(self) but will return math.inf when the collection
         is infinite rather than raising an error."""
+        max_length = self.__max_string_length
         if self.__length is None:
-            if not math.isfinite(self.dfa.max_length(self.dfa.start)):
+            if not math.isfinite(max_length):
                 self.__length = math.inf
             else:
-                self.__length = sum(
-                    self.dfa.count_strings(self.dfa.start, k)
-                    for k in range(self.dfa.max_length(self.dfa.start) + 1)
-                )
+                self.__length = self.__count_strings_up_to(max_length)
         return self.__length
 
     def __len__(self):
@@ -48,18 +59,21 @@ class DFAIndex:
         if i < 0:
             raise IndexError("Negative indices not supported")
 
-        running_index = i
+        if i == 0 and self.dfa.matches(b""):
+            return b""
 
-        length = 0
-        while True:
-            n = self.dfa.count_strings(self.dfa.start, length)
-            if n > running_index:
-                break
-            running_index -= n
-            length += 1
-            if length > self.dfa.max_length(self.dfa.start):
-                assert i >= self.length()
-                raise IndexError("Index %d out of range [0, %d)" % (i, self.length()))
+        length = (
+            find_integer(
+                lambda n: n <= self.__max_string_length
+                and self.__count_strings_up_to(n) <= i
+            )
+            + 1
+        )
+        if length > self.__max_string_length:
+            assert i >= self.length()
+            raise IndexError("%d out of range [0, %d)" % (i, len(self)))
+
+        running_index = i - self.__count_strings_up_to(length - 1)
 
         result = bytearray()
         state = self.dfa.start
@@ -88,9 +102,7 @@ class DFAIndex:
         if not string:
             return 0
 
-        result = 0
-        for k in range(len(string)):
-            result += self.dfa.count_strings(self.dfa.start, k)
+        result = self.__count_strings_up_to(len(string) - 1)
 
         state = self.dfa.start
         for i, c in enumerate(string):
