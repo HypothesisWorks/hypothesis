@@ -19,7 +19,7 @@ import pytest
 
 from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument, InvalidState
-from hypothesis.strategies import booleans, functions
+from hypothesis.strategies import booleans, functions, integers
 
 
 def func_a():
@@ -76,11 +76,16 @@ def test_functions_lambda_with_arg(f):
 
 
 @pytest.mark.parametrize(
-    "like,returns", [(None, booleans()), (lambda: None, "not a strategy")]
+    "like,returns,pure",
+    [
+        (None, booleans(), False),
+        (lambda: None, "not a strategy", True),
+        (lambda: None, booleans(), None),
+    ],
 )
-def test_invalid_arguments(like, returns):
+def test_invalid_arguments(like, returns, pure):
     with pytest.raises(InvalidArgument):
-        functions(like=like, returns=returns).example()
+        functions(like=like, returns=returns, pure=pure).example()
 
 
 def func_returns_str() -> str:
@@ -125,3 +130,57 @@ def test_functions_strategy_with_kwonly_args(f):
         f(1, 2)
     f(1, kwonly_arg=2)
     f(kwonly_arg=2, arg=1)
+
+
+def pure_func(arg1, arg2):
+    pass
+
+
+@given(
+    f=functions(like=pure_func, returns=integers(), pure=True),
+    arg1=integers(),
+    arg2=integers(),
+)
+def test_functions_pure_with_same_args(f, arg1, arg2):
+    # Same regardless of calling convention, unlike functools.lru_cache()
+    expected = f(arg1, arg2)
+    assert f(arg1, arg2) == expected
+    assert f(arg1, arg2=arg2) == expected
+    assert f(arg1=arg1, arg2=arg2) == expected
+    assert f(arg2=arg2, arg1=arg1) == expected
+
+
+@given(
+    f=functions(like=pure_func, returns=integers(), pure=True),
+    arg1=integers(),
+    arg2=integers(),
+)
+def test_functions_pure_with_different_args(f, arg1, arg2):
+    r1 = f(arg1, arg2)
+    r2 = f(arg2, arg1)
+    assume(r1 != r2)
+    # If this is never true, the test will fail with Unsatisfiable
+
+
+@given(
+    f1=functions(like=pure_func, returns=integers(), pure=True),
+    f2=functions(like=pure_func, returns=integers(), pure=True),
+)
+def test_functions_pure_two_functions_different_args_different_result(f1, f2):
+    r1 = f1(1, 2)
+    r2 = f2(3, 4)
+    assume(r1 != r2)
+    # If this is never true, the test will fail with Unsatisfiable
+
+
+@given(
+    f1=functions(like=pure_func, returns=integers(), pure=True),
+    f2=functions(like=pure_func, returns=integers(), pure=True),
+    arg1=integers(),
+    arg2=integers(),
+)
+def test_functions_pure_two_functions_same_args_different_result(f1, f2, arg1, arg2):
+    r1 = f1(arg1, arg2)
+    r2 = f2(arg1, arg2)
+    assume(r1 != r2)
+    # If this is never true, the test will fail with Unsatisfiable
