@@ -158,7 +158,7 @@ def test_functions_pure_with_different_args(f, arg1, arg2):
     r1 = f(arg1, arg2)
     r2 = f(arg2, arg1)
     assume(r1 != r2)
-    assert r1 != r2
+    # If this is never true, the test will fail with Unsatisfiable
 
 
 @given(
