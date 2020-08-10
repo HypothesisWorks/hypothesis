@@ -19,7 +19,7 @@ import pytest
 
 from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument, InvalidState
-from hypothesis.strategies import booleans, functions
+from hypothesis.strategies import booleans, functions, integers
 
 
 def func_a():
@@ -76,11 +76,15 @@ def test_functions_lambda_with_arg(f):
 
 
 @pytest.mark.parametrize(
-    "like,returns", [(None, booleans()), (lambda: None, "not a strategy")]
+    "like,returns,pure", [
+        (None, booleans(), False),
+        (lambda: None, "not a strategy", True),
+        (lambda: None, booleans(), None)
+    ]
 )
-def test_invalid_arguments(like, returns):
+def test_invalid_arguments(like, returns, pure):
     with pytest.raises(InvalidArgument):
-        functions(like=like, returns=returns).example()
+        functions(like=like, returns=returns, pure=pure).example()
 
 
 def func_returns_str() -> str:
@@ -125,3 +129,59 @@ def test_functions_strategy_with_kwonly_args(f):
         f(1, 2)
     f(1, kwonly_arg=2)
     f(kwonly_arg=2, arg=1)
+
+
+def pure_func(arg1, arg2):
+    ...
+
+
+@given(
+    f=functions(like=pure_func, pure=True),
+    arg1=integers(),
+    arg2=integers()
+)
+def test_functions_pure_with_same_args(f, arg1, arg2):
+    assert f(arg1, arg2) == f(arg1, arg2)
+
+
+@given(
+    f=functions(like=pure_func, pure=True),
+    arg1=integers(),
+    arg2=integers()
+)
+def test_functions_pure_with_different_args(f, arg1, arg2):
+    r1 = f(arg1, arg2)
+    r2 = f(arg2, arg1)
+    assert r1 != r2 or r1 == r2
+
+
+@given(
+    f1=functions(like=pure_func, pure=True),
+    f2=functions(like=pure_func, pure=True)
+)
+def test_functions_pure_two_functions_different_args_same_result(f1, f2):
+    r1 = f1(1, 2)
+    r2 = f2(0, 0)
+    assume(r1 == r2)
+    assert r1 == r2
+
+
+@given(
+    f1=functions(like=pure_func, pure=True),
+    f2=functions(like=pure_func, pure=True)
+)
+def test_functions_pure_two_functions_same_args_same_result(f1, f2):
+    r1 = f1(0, 0)
+    r2 = f2(0, 0)
+    assume(r1 == r2)
+    assert r1 == r2
+
+
+@given(
+    f1=functions(like=pure_func, pure=True),
+    f2=functions(like=pure_func, pure=True)
+)
+def test_functions_pure_two_functions_different_args_different_result(f1, f2):
+    r1 = f1(1, 2)
+    r2 = f2(3, 4)
+    assert r1 != r2 or r1 == r2

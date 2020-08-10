@@ -15,17 +15,24 @@
 
 from hypothesis.control import note
 from hypothesis.errors import InvalidState
-from hypothesis.internal.reflection import arg_string, nicerepr, proxies
+from hypothesis.internal.reflection import (
+    arg_string,
+    convert_positional_arguments,
+    nicerepr,
+    proxies,
+)
+from hypothesis.strategies._internal.shared import SharedStrategy
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
 
 class FunctionStrategy(SearchStrategy):
     supports_find = False
 
-    def __init__(self, like, returns):
+    def __init__(self, like, returns, pure):
         super().__init__()
         self.like = like
         self.returns = returns
+        self.pure = pure
 
     def calc_is_empty(self, recur):
         return recur(self.returns)
@@ -38,7 +45,12 @@ class FunctionStrategy(SearchStrategy):
                     "This generated %s function can only be called within the "
                     "scope of the @given that created it." % (nicerepr(self.like),)
                 )
-            val = data.draw(self.returns)
+            if self.pure:
+                args, kwargs = convert_positional_arguments(self.like, args, kwargs)
+                key = (inner, args, frozenset(kwargs.items()))
+                val = data.draw(SharedStrategy(base=self.returns, key=key))
+            else:
+                val = data.draw(self.returns)
             note(
                 "Called function: %s(%s) -> %r"
                 % (nicerepr(self.like), arg_string(self.like, args, kwargs), val)

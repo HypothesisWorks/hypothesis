@@ -2158,7 +2158,10 @@ def emails() -> SearchStrategy[str]:
 @defines_strategy
 @deprecated_posargs
 def functions(
-    *, like: Callable[..., Any] = lambda: None, returns: SearchStrategy[Any] = None
+    *,
+    like: Callable[..., Any] = lambda: None,
+    returns: SearchStrategy[Any] = None,
+    pure: bool = False
 ) -> SearchStrategy[Callable[..., Any]]:
     # The proper type signature of `functions()` would have T instead of Any, but mypy
     # disallows default args for generics: https://github.com/python/mypy/issues/3737
@@ -2171,12 +2174,17 @@ def functions(
     for the function is drawn from the ``returns`` argument, which must be a
     strategy.
 
-    Note that the generated functions do not validate their arguments, and
+    If ``pure=True``, all arguments passed to the generated function must be
+    hashable, and if passed identical arguments the original return value will
+    be returned again - *not* regenerated, so beware mutable values.
+
+    If ``pure=False``, generated functions do not validate their arguments, and
     may return a different value if called again with the same arguments.
 
     Generated functions can only be called within the scope of the ``@given``
     which created them.  This strategy does not support ``.example()``.
     """
+    check_type(bool, pure, "pure")
     if not callable(like):
         raise InvalidArgument(
             "The first argument to functions() must be a callable to imitate, "
@@ -2188,7 +2196,7 @@ def functions(
         returns = from_type(hints.get("return", type(None)))
 
     check_strategy(returns, "returns")
-    return FunctionStrategy(like, returns)
+    return FunctionStrategy(like, returns, pure)
 
 
 @composite
