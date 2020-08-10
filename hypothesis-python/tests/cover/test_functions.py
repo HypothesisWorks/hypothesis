@@ -76,11 +76,12 @@ def test_functions_lambda_with_arg(f):
 
 
 @pytest.mark.parametrize(
-    "like,returns,pure", [
+    "like,returns,pure",
+    [
         (None, booleans(), False),
         (lambda: None, "not a strategy", True),
-        (lambda: None, booleans(), None)
-    ]
+        (lambda: None, booleans(), None),
+    ],
 )
 def test_invalid_arguments(like, returns, pure):
     with pytest.raises(InvalidArgument):
@@ -138,7 +139,7 @@ def pure_func(arg1, arg2):
 @given(
     f=functions(like=pure_func, returns=integers(), pure=True),
     arg1=integers(),
-    arg2=integers()
+    arg2=integers(),
 )
 def test_functions_pure_with_same_args(f, arg1, arg2):
     # Same regardless of calling convention, unlike functools.lru_cache()
@@ -152,7 +153,7 @@ def test_functions_pure_with_same_args(f, arg1, arg2):
 @given(
     f=functions(like=pure_func, returns=integers(), pure=True),
     arg1=integers(),
-    arg2=integers()
+    arg2=integers(),
 )
 def test_functions_pure_with_different_args(f, arg1, arg2):
     r1 = f(arg1, arg2)
@@ -163,10 +164,23 @@ def test_functions_pure_with_different_args(f, arg1, arg2):
 
 @given(
     f1=functions(like=pure_func, returns=integers(), pure=True),
-    f2=functions(like=pure_func, returns=integers(), pure=True)
+    f2=functions(like=pure_func, returns=integers(), pure=True),
 )
 def test_functions_pure_two_functions_different_args_different_result(f1, f2):
     r1 = f1(1, 2)
     r2 = f2(3, 4)
+    assume(r1 != r2)
+    # If this is never true, the test will fail with Unsatisfiable
+
+
+@given(
+    f1=functions(like=pure_func, returns=integers(), pure=True),
+    f2=functions(like=pure_func, returns=integers(), pure=True),
+    arg1=integers(),
+    arg2=integers(),
+)
+def test_functions_pure_two_functions_same_args_different_result(f1, f2, arg1, arg2):
+    r1 = f1(arg1, arg2)
+    r2 = f2(arg1, arg2)
     assume(r1 != r2)
     # If this is never true, the test will fail with Unsatisfiable
