@@ -136,7 +136,7 @@ def pure_func(arg1, arg2):
 
 
 @given(
-    f=functions(like=pure_func, pure=True),
+    f=functions(like=pure_func, returns=integers(), pure=True),
     arg1=integers(),
     arg2=integers()
 )
@@ -145,19 +145,20 @@ def test_functions_pure_with_same_args(f, arg1, arg2):
 
 
 @given(
-    f=functions(like=pure_func, pure=True),
+    f=functions(like=pure_func, returns=integers(), pure=True),
     arg1=integers(),
     arg2=integers()
 )
 def test_functions_pure_with_different_args(f, arg1, arg2):
     r1 = f(arg1, arg2)
     r2 = f(arg2, arg1)
-    assert r1 != r2 or r1 == r2
+    assume(r1 != r2)
+    assert r1 != r2
 
 
 @given(
-    f1=functions(like=pure_func, pure=True),
-    f2=functions(like=pure_func, pure=True)
+    f1=functions(like=pure_func, returns=integers(), pure=True),
+    f2=functions(like=pure_func, returns=integers(), pure=True)
 )
 def test_functions_pure_two_functions_different_args_same_result(f1, f2):
     r1 = f1(1, 2)
@@ -167,8 +168,8 @@ def test_functions_pure_two_functions_different_args_same_result(f1, f2):
 
 
 @given(
-    f1=functions(like=pure_func, pure=True),
-    f2=functions(like=pure_func, pure=True)
+    f1=functions(like=pure_func, returns=integers(), pure=True),
+    f2=functions(like=pure_func, returns=integers(), pure=True)
 )
 def test_functions_pure_two_functions_same_args_same_result(f1, f2):
     r1 = f1(0, 0)
@@ -178,10 +179,11 @@ def test_functions_pure_two_functions_same_args_same_result(f1, f2):
 
 
 @given(
-    f1=functions(like=pure_func, pure=True),
-    f2=functions(like=pure_func, pure=True)
+    f1=functions(like=pure_func, returns=integers(), pure=True),
+    f2=functions(like=pure_func, returns=integers(), pure=True)
 )
 def test_functions_pure_two_functions_different_args_different_result(f1, f2):
     r1 = f1(1, 2)
     r2 = f2(3, 4)
-    assert r1 != r2 or r1 == r2
+    assume(r1 != r2)
+    assert r1 != r2
