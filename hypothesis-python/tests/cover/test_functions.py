@@ -132,7 +132,7 @@ def test_functions_strategy_with_kwonly_args(f):
 
 
 def pure_func(arg1, arg2):
-    ...
+    pass
 
 
 @given(
@@ -165,30 +165,8 @@ def test_functions_pure_with_different_args(f, arg1, arg2):
     f1=functions(like=pure_func, returns=integers(), pure=True),
     f2=functions(like=pure_func, returns=integers(), pure=True)
 )
-def test_functions_pure_two_functions_different_args_same_result(f1, f2):
-    r1 = f1(1, 2)
-    r2 = f2(0, 0)
-    assume(r1 == r2)
-    assert r1 == r2
-
-
-@given(
-    f1=functions(like=pure_func, returns=integers(), pure=True),
-    f2=functions(like=pure_func, returns=integers(), pure=True)
-)
-def test_functions_pure_two_functions_same_args_same_result(f1, f2):
-    r1 = f1(0, 0)
-    r2 = f2(0, 0)
-    assume(r1 == r2)
-    assert r1 == r2
-
-
-@given(
-    f1=functions(like=pure_func, returns=integers(), pure=True),
-    f2=functions(like=pure_func, returns=integers(), pure=True)
-)
 def test_functions_pure_two_functions_different_args_different_result(f1, f2):
     r1 = f1(1, 2)
     r2 = f2(3, 4)
     assume(r1 != r2)
-    assert r1 != r2
+    # If this is never true, the test will fail with Unsatisfiable
