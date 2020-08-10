@@ -141,7 +141,12 @@ def pure_func(arg1, arg2):
     arg2=integers()
 )
 def test_functions_pure_with_same_args(f, arg1, arg2):
-    assert f(arg1, arg2) == f(arg1, arg2)
+    # Same regardless of calling convention, unlike functools.lru_cache()
+    expected = f(arg1, arg2)
+    assert f(arg1, arg2) == expected
+    assert f(arg1, arg2=arg2) == expected
+    assert f(arg1=arg1, arg2=arg2) == expected
+    assert f(arg2=arg2, arg1=arg1) == expected
 
 
 @given(
