@@ -35,15 +35,18 @@ class DFA:
     def __init__(self):
         self.__caches = threading.local()
 
+    def __cache(self, name):
+        try:
+            cache = getattr(self.__caches, name)
+        except AttributeError:
+            cache = {}
+            setattr(self.__caches, name, cache)
+        return cache
+
     def cached(fn):
         @proxies(fn)
         def wrapped(self, *args):
-            try:
-                cache = getattr(self.__caches, fn.__name__)
-            except AttributeError:
-                cache = {}
-                setattr(self.__caches, fn.__name__, cache)
-
+            cache = self.__cache(fn.__name__)
             try:
                 return cache[args]
             except KeyError:
