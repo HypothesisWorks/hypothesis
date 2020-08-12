@@ -41,6 +41,7 @@ def pytest_configure(config):
 
 def pytest_addoption(parser):
     parser.addoption("--hypothesis-update-outputs", action="store_true")
+    parser.addoption("--hypothesis-learn-to-normalize", action="store_true")
 
 
 @pytest.fixture(scope="function", autouse=True)

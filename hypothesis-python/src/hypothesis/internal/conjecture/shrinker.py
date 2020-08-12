@@ -35,6 +35,7 @@ from hypothesis.internal.conjecture.junkdrawer import (
     replace_all,
 )
 from hypothesis.internal.conjecture.shrinking import Float, Integer, Lexical, Ordering
+from hypothesis.internal.conjecture.shrinking.dfas import SHRINKING_DFAS
 
 if False:
     from typing import Dict  # noqa
@@ -300,6 +301,10 @@ class Shrinker:
         self.passes_by_name = {}
         self.passes = []
 
+        # Extra DFAs that may be installed. This is used solely for
+        # testing and learning purposes.
+        self.extra_dfas = {}
+
     @derived_value
     def cached_calculations(self):
         return {}
@@ -335,6 +340,24 @@ class Shrinker:
         if name not in self.passes_by_name:
             self.add_new_pass(name)
         return self.passes_by_name[name]
+
+    @derived_value
+    def match_cache(self):
+        return {}
+
+    def matching_regions(self, dfa):
+        """Returns all pairs (u, v) such that self.buffer[u:v] is accepted
+        by this DFA."""
+
+        try:
+            return self.match_cache[dfa]
+        except KeyError:
+            pass
+        results = dfa.all_matching_regions(self.buffer)
+        results.sort(key=lambda t: (t[1] - t[0], t[1]))
+        assert all(dfa.matches(self.buffer[u:v]) for u, v in results)
+        self.match_cache[dfa] = results
+        return results
 
     @property
     def calls(self):
@@ -507,6 +530,7 @@ class Shrinker:
                 "redistribute_block_pairs",
                 "lower_blocks_together",
             ]
+            + [dfa_replacement(n) for n in SHRINKING_DFAS]
         )
 
     @derived_value
@@ -1310,7 +1334,24 @@ class Shrinker:
         return self.incorporate_new_buffer(attempt)
 
 
-def block_program(description):
+def shrink_pass_family(f):
+    def accept(*args):
+        name = "%s(%s)" % (f.__name__, ", ".join(map(repr, args)),)
+        if name not in SHRINK_PASS_DEFINITIONS:
+
+            def run(self, chooser):
+                return f(self, chooser, *args)
+
+            run.__name__ = name
+            defines_shrink_pass()(run)
+        assert name in SHRINK_PASS_DEFINITIONS
+        return name
+
+    return accept
+
+
+@shrink_pass_family
+def block_program(self, chooser, description):
     """Mini-DSL for block rewriting. A sequence of commands that will be run
     over all contiguous sequences of blocks of the description length in order.
     Commands are:
@@ -1324,52 +1365,65 @@ def block_program(description):
     block) the block will be silently skipped over. As a side effect of
     running a block program its score will be updated.
     """
-    name = "block_program(%r)" % (description,)
+    n = len(description)
 
-    if name not in SHRINK_PASS_DEFINITIONS:
-        """Defines a shrink pass that runs the block program ``description``
-        at every block index."""
-        n = len(description)
+    """Adaptively attempt to run the block program at the current
+    index. If this successfully applies the block program ``k`` times
+    then this runs in ``O(log(k))`` test function calls."""
+    i = chooser.choose(range(len(self.shrink_target.blocks) - n))
+    # First, run the block program at the chosen index. If this fails,
+    # don't do any extra work, so that failure is as cheap as possible.
+    if not self.run_block_program(i, description, original=self.shrink_target):
+        return
 
-        def run(self, chooser):
-            """Adaptively attempt to run the block program at the current
-            index. If this successfully applies the block program ``k`` times
-            then this runs in ``O(log(k))`` test function calls."""
-            i = chooser.choose(range(len(self.shrink_target.blocks) - n))
-            # First, run the block program at the chosen index. If this fails,
-            # don't do any extra work, so that failure is as cheap as possible.
-            if not self.run_block_program(i, description, original=self.shrink_target):
-                return
+    # Because we run in a random order we will often find ourselves in the middle
+    # of a region where we could run the block program. We thus start by moving
+    # left to the beginning of that region if possible in order to to start from
+    # the beginning of that region.
+    def offset_left(k):
+        return i - k * n
 
-            # Because we run in a random order we will often find ourselves in the middle
-            # of a region where we could run the block program. We thus start by moving
-            # left to the beginning of that region if possible in order to to start from
-            # the beginning of that region.
-            def offset_left(k):
-                return i - k * n
-
-            i = offset_left(
-                find_integer(
-                    lambda k: self.run_block_program(
-                        offset_left(k), description, original=self.shrink_target
-                    )
-                )
+    i = offset_left(
+        find_integer(
+            lambda k: self.run_block_program(
+                offset_left(k), description, original=self.shrink_target
             )
+        )
+    )
 
-            original = self.shrink_target
+    original = self.shrink_target
 
-            # Now try to run the block program multiple times here.
-            find_integer(
-                lambda k: self.run_block_program(
-                    i, description, original=original, repeats=k
-                )
-            )
+    # Now try to run the block program multiple times here.
+    find_integer(
+        lambda k: self.run_block_program(i, description, original=original, repeats=k)
+    )
 
-        run.__name__ = name
 
-        defines_shrink_pass()(run)
-        assert name in SHRINK_PASS_DEFINITIONS
-    return name
+@shrink_pass_family
+def dfa_replacement(self, chooser, dfa_name):
+    """Use one of our previously learned shrinking DFAs to reduce
+    the current test case. This works by finding a match of the DFA in the
+    current buffer that is not already minimal and attempting to replace it
+    with the minimal string matching that DFA.
+    """
+
+    try:
+        dfa = SHRINKING_DFAS[dfa_name]
+    except KeyError:
+        dfa = self.extra_dfas[dfa_name]
+
+    matching_regions = self.matching_regions(dfa)
+    minimal = next(dfa.all_matching_strings())
+    u, v = chooser.choose(
+        matching_regions, lambda t: self.buffer[t[0] : t[1]] != minimal
+    )
+    p = self.buffer[u:v]
+    assert sort_key(minimal) < sort_key(p)
+    replaced = self.buffer[:u] + minimal + self.buffer[v:]
+
+    assert sort_key(replaced) < sort_key(self.buffer)
+
+    self.consider_new_buffer(replaced)
 
 
 @attr.s(slots=True, eq=False)

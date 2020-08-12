@@ -250,5 +250,5 @@ def test_stops_optimising_once_interesting():
     data = runner.cached_test_function([255] * 2)
     assert data.status == Status.VALID
     runner.pareto_optimise()
-    assert runner.call_count <= 10
+    assert runner.call_count <= 20
     assert runner.interesting_examples

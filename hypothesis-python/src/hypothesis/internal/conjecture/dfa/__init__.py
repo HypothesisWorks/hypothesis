@@ -14,7 +14,7 @@
 # END HEADER
 
 import threading
-from collections import deque
+from collections import defaultdict, deque
 from math import inf
 
 from hypothesis.internal.reflection import proxies
@@ -84,6 +84,38 @@ class DFA:
             i = self.transition(i, c)
         return self.is_accepting(i)
 
+    def all_matching_regions(self, string):
+        """Return all pairs ``(u, v)`` such that ``self.matches(string[u:v])``."""
+
+        # Stack format: (k, state, indices). After reading ``k`` characters
+        # starting from any i in ``indices`` the DFA would be at ``state``.
+        stack = [(0, self.start, range(len(string)))]
+
+        results = []
+
+        while stack:
+            k, state, indices = stack.pop()
+
+            # If the state is dead, abort early - no point continuing on
+            # from here where there will be no more matches.
+            if self.is_dead(state):
+                continue
+
+            # If the state is accepting, then every one of these indices
+            # has a matching region of length ``k`` starting from it.
+            if self.is_accepting(state):
+                results.extend([(i, i + k) for i in indices])
+
+            next_by_state = defaultdict(list)
+
+            for i in indices:
+                if i + k < len(string):
+                    c = string[i + k]
+                    next_by_state[self.transition(state, c)].append(i)
+            for next_state, next_indices in next_by_state.items():
+                stack.append((k + 1, next_state, next_indices))
+        return results
+
     @cached
     def max_length(self, i):
         """Returns the maximum length of a string that is
@@ -143,6 +175,11 @@ class DFA:
     def all_matching_strings_of_length(self, k):
         """Yields all matching strings whose length is ``k``, in ascending
         lexicographic order."""
+        if k == 0:
+            if self.is_accepting(self.start):
+                yield b""
+            return
+
         if self.count_strings(self.start, k) == 0:
             return
 
@@ -206,15 +243,12 @@ class DFA:
                     if self.count_strings(states[-1], k - len(path)) > 0:
                         break
 
-    def all_matching_strings(self):
+    def all_matching_strings(self, min_length=0):
         """Iterate over all strings matched by this automaton
         in shortlex-ascending order."""
-        if self.is_accepting(self.start):
-            yield b""
-
         # max_length might be infinite, hence the while loop
         max_length = self.max_length(self.start)
-        length = 1
+        length = min_length
         while length <= max_length:
             yield from self.all_matching_strings_of_length(length)
             length += 1
@@ -224,26 +258,180 @@ class DFA:
             j = self.transition(i, c)
             yield c, j
 
+    def canonicalise(self):
+        """Return a canonical version of ``self`` as a ConcreteDFA.
+
+        The DFA is not minimized, but nodes are sorted and relabelled
+        and dead nodes are pruned, so two minimized DFAs for the same
+        language will end up with identical canonical representatives.
+        This is mildly important because it means that the output of
+        L* should produce the same canonical DFA regardless of what
+        order we happen to have run it in.
+        """
+        # We map all states to their index of appearance in depth
+        # first search. This both is useful for canonicalising and
+        # also allows for states that aren't integers.
+        state_map = {}
+        reverse_state_map = []
+        accepting = set()
+
+        seen = set()
+
+        queue = deque([self.start])
+        while queue:
+            state = queue.popleft()
+            if state in state_map:
+                continue
+            i = len(reverse_state_map)
+            if self.is_accepting(state):
+                accepting.add(i)
+            reverse_state_map.append(state)
+            state_map[state] = i
+            for _, j in self.transitions(state):
+                if j in seen:
+                    continue
+                seen.add(j)
+                queue.append(j)
+
+        transitions = [
+            {c: state_map[s] for c, s in self.transitions(t)} for t in reverse_state_map
+        ]
+
+        result = ConcreteDFA(transitions, accepting)
+        assert self.equivalent(result)
+        return result
+
+    def equivalent(self, other):
+        """Checks whether this DFA and other match precisely the same
+        language.
+
+        Uses the classic algorith of Hopcroft and Karp (more or less):
+        Hopcroft, John E. A linear algorithm for testing equivalence
+        of finite automata. Vol. 114. Defense Technical Information Center, 1971.
+        """
+
+        # The basic idea of this algorithm is that we repeatedly
+        # merge states that would be equivalent if the two start
+        # states were. This starts by merging the two start states,
+        # and whenever we merge two states merging all pairs of
+        # states that are reachable by following the same character
+        # from that point.
+        #
+        # Whenever we merge two states, we check if one of them
+        # is accepting and the other non-accepting. If so, we have
+        # obtained a contradiction and have made a bad merge, so
+        # the two start states must not have been equivalent in the
+        # first place and we return False.
+        #
+        # If the languages matched are different then some string
+        # is contained in one but not the other. By looking at
+        # the pairs of states visited by traversing the string in
+        # each automaton in parallel, we eventually come to a pair
+        # of states that would have to be merged by this algorithm
+        # where one is accepting and the other is not. Thus this
+        # algorithm always returns False as a result of a bad merge
+        # if the two languages are not the same.
+        #
+        # If we successfully complete all merges without a contradiction
+        # we can thus safely return True.
+
+        # We maintain a union/find table for tracking merges of states.
+        table = {}
+
+        def find(s):
+            trail = [s]
+            while trail[-1] in table and table[trail[-1]] != trail[-1]:
+                trail.append(table[trail[-1]])
+
+            for t in trail:
+                table[t] = trail[-1]
+
+            return trail[-1]
+
+        def union(s, t):
+            s = find(s)
+            t = find(t)
+            table[s] = t
+
+        alphabet = sorted(set(self.alphabet) | set(other.alphabet))
+
+        queue = deque([((self.start, other.start))])
+        while queue:
+            self_state, other_state = queue.popleft()
+
+            # We use a DFA/state pair for keys because the same value
+            # may represent a different state in each DFA.
+            self_key = (self, self_state)
+            other_key = (other, other_state)
+
+            # We have already merged these, no need to remerge.
+            if find(self_key) == find(other_key):
+                continue
+
+            # We have found a contradiction, therefore the two DFAs must
+            # not be equivalent.
+            if self.is_accepting(self_state) != other.is_accepting(other_state):
+                return False
+
+            # Merge the two states
+            union(self_key, other_key)
+
+            # And also queue any logical consequences of merging those
+            # two states for merging.
+            for c in alphabet:
+                queue.append(
+                    (self.transition(self_state, c), other.transition(other_state, c))
+                )
+        return True
+
 
 DEAD = "DEAD"
 
 
 class ConcreteDFA(DFA):
+    """A concrete representation of a DFA in terms of an explicit list
+    of states."""
+
     def __init__(self, transitions, accepting, start=0):
+        """
+        * ``transitions`` is a list where transitions[i] represents the
+          valid transitions out of state ``i``. Elements may be either dicts
+          (in which case they map characters to other states) or lists. If they
+          are a list they may contain tuples of length 2 or 3. A tuple ``(c, j)``
+          indicates that this state transitions to state ``j`` given ``c``. A
+          tuple ``(u, v, j)`` indicates this state transitiosn to state ``j``
+          given any ``c`` with ``u <= c <= v``.
+        * ``accepting`` is a set containing the integer labels of accepting
+          states.
+        * ``start`` is the integer label of the starting state.
+        """
         super().__init__()
         self.__start = start
         self.__accepting = accepting
-        self.__transitions = transitions
+        self.__transitions = list(transitions)
 
     def __repr__(self):
+        transitions = []
+        # Particularly for including in source code it's nice to have the more
+        # compact repr, so where possible we convert to the tuple based representation
+        # which can represent ranges more compactly.
+        for i in range(len(self.__transitions)):
+            table = []
+            for c, j in self.transitions(i):
+                if not table or j != table[-1][-1] or c != table[-1][1] + 1:
+                    table.append([c, c, j])
+                else:
+                    table[-1][1] = c
+            transitions.append([(u, j) if u == v else (u, v, j) for u, v, j in table])
+
         if self.__start != 0:
             return "ConcreteDFA(%r, %r, start=%r)" % (
-                self.__transitions,
+                transitions,
                 self.__accepting,
                 self.__start,
             )
         else:
-            return "ConcreteDFA(%r, %r)" % (self.__transitions, self.__accepting,)
+            return "ConcreteDFA(%r, %r)" % (transitions, self.__accepting,)
 
     @property
     def start(self):
@@ -257,7 +445,35 @@ class ConcreteDFA(DFA):
         character c from a string."""
         if i == DEAD:
             return i
-        try:
-            return self.__transitions[i][c]
-        except KeyError:
+
+        table = self.__transitions[i]
+
+        # Given long transition tables we convert them to
+        # dictionaries for more efficient lookup.
+        if not isinstance(table, dict) and len(table) >= 5:
+            new_table = {}
+            for t in table:
+                if len(t) == 2:
+                    new_table[t[0]] = t[1]
+                else:
+                    u, v, j = t
+                    for c in range(u, v + 1):
+                        new_table[c] = j
+            self.__transitions[i] = new_table
+            table = new_table
+
+        if isinstance(table, dict):
+            try:
+                return self.__transitions[i][c]
+            except KeyError:
+                return DEAD
+        else:
+            for t in table:
+                if len(t) == 2:
+                    if t[0] == c:
+                        return t[1]
+                else:
+                    u, v, j = t
+                    if u <= c <= v:
+                        return j
             return DEAD
