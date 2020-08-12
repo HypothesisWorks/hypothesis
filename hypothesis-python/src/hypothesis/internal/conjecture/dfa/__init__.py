@@ -75,7 +75,7 @@ class DFA:
     def transitions(self, i):
         """Iterates over all pairs (byte, state) of transitions
         which do not lead to dead states."""
-        for c, j in self.__raw_transitions(i):
+        for c, j in self.raw_transitions(i):
             if not self.is_dead(j):
                 yield c, j
 
@@ -159,7 +159,7 @@ class DFA:
 
         while queue:
             j = queue.popleft()
-            for _, k in self.__raw_transitions(j):
+            for _, k in self.raw_transitions(j):
                 if k not in reached:
                     reached.add(k)
                     if k != i:
@@ -256,7 +256,7 @@ class DFA:
             yield from self.all_matching_strings_of_length(length)
             length += 1
 
-    def __raw_transitions(self, i):
+    def raw_transitions(self, i):
         for c in self.alphabet:
             j = self.transition(i, c)
             yield c, j
@@ -480,3 +480,18 @@ class ConcreteDFA(DFA):
                     if u <= char <= v:
                         return j
             return DEAD
+
+    def raw_transitions(self, i):
+        if i == DEAD:
+            return
+        transitions = self.__transitions[i]
+        if isinstance(transitions, dict):
+            yield from sorted(transitions.items())
+        else:
+            for t in transitions:
+                if len(t) == 2:
+                    yield t
+                else:
+                    u, v, j = t
+                    for c in range(u, v + 1):
+                        yield c, j
