@@ -283,6 +283,25 @@ You can use :func:`assume <hypothesis.assume>` inside composite functions:
 This works as :func:`assume <hypothesis.assume>` normally would, filtering out any examples for which the
 passed in argument is falsey.
 
+Take care that your function can cope with adversarial draws, or explicitly rejects
+them using the ``.filter()`` method or :func:`~hypothesis.assume` - our mutation
+and shrinking logic can do some strange things, and a naive implementation might
+lead to serious performance problems.  For example:
+
+.. code-block:: python
+
+    @composite
+    def reimplementing_sets_strategy(draw, elements=st.integers(), size=5):
+        # The bad way: if Hypothesis keeps generating e.g. zero,
+        # we'll keep looping for a very long time.
+        result = set()
+        while len(result) < size:
+            result.add(draw(elements))
+        # The good way: use a filter, so Hypothesis can tell what's valid!
+        for _ in range(size):
+            result.add(draw(elements.filter(lambda x: x not in result)))
+        return result
+
 
 .. _interactive-draw:
 
