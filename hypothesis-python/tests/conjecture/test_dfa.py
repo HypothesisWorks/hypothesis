@@ -141,3 +141,9 @@ def test_all_matching_regions_include_all_matches(x, y, z):
     s = x + y + z
 
     assert (len(x), len(x) + len(y)) in y_matcher.all_matching_regions(s)
+
+
+def test_max_length_of_long_dfa():
+    dfa = ConcreteDFA([{0: i + 1} for i in range(1000)] + [{}], {1000})
+    assert not dfa.is_dead(dfa.start)
+    assert dfa.max_length(dfa.start) == 1000
