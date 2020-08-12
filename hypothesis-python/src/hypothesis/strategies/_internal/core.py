@@ -868,15 +868,18 @@ def fixed_dictionaries(
     optional: Dict[T, SearchStrategy[Ex]] = None
 ) -> SearchStrategy[Dict[T, Ex]]:
     """Generates a dictionary of the same type as mapping with a fixed set of
-    keys mapping to strategies. mapping must be a dict subclass.
+    keys mapping to strategies. ``mapping`` must be a dict subclass.
 
     Generated values have all keys present in mapping, with the
     corresponding values drawn from mapping[key]. If mapping is an
     instance of OrderedDict the keys will also be in the same order,
     otherwise the order is arbitrary.
 
+    If ``optional`` is passed, the generated value *may or may not* contain each
+    key from ``optional`` and a value drawn from the corresponding strategy.
+
     Examples from this strategy shrink by shrinking each individual value in
-    the generated dictionary.
+    the generated dictionary, and omitting optional key-value pairs.
     """
     check_type(dict, mapping, "mapping")
     for k, v in mapping.items():
