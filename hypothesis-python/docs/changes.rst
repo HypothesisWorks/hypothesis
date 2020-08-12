@@ -10,6 +10,14 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.24.1:
+
+-------------------
+5.24.1 - 2020-08-12
+-------------------
+
+This patch updates some docstrings, without changing runtime behaviour.
+
 .. _v5.24.0:
 
 -------------------
