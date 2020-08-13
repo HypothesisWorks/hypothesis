@@ -440,13 +440,13 @@ class ConcreteDFA(DFA):
     def is_accepting(self, i):
         return i in self.__accepting
 
-    def transition(self, i, c):
+    def transition(self, state, char):
         """Returns the state that i transitions to on reading
         character c from a string."""
-        if i == DEAD:
-            return i
+        if state == DEAD:
+            return DEAD
 
-        table = self.__transitions[i]
+        table = self.__transitions[state]
 
         # Given long transition tables we convert them to
         # dictionaries for more efficient lookup.
@@ -459,21 +459,21 @@ class ConcreteDFA(DFA):
                     u, v, j = t
                     for c in range(u, v + 1):
                         new_table[c] = j
-            self.__transitions[i] = new_table
+            self.__transitions[state] = new_table
             table = new_table
 
         if isinstance(table, dict):
             try:
-                return self.__transitions[i][c]
+                return self.__transitions[state][char]
             except KeyError:
                 return DEAD
         else:
             for t in table:
                 if len(t) == 2:
-                    if t[0] == c:
+                    if t[0] == char:
                         return t[1]
                 else:
                     u, v, j = t
-                    if u <= c <= v:
+                    if u <= char <= v:
                         return j
             return DEAD
