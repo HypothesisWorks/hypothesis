@@ -149,31 +149,90 @@ class DFA:
         return sum(self.count_strings(j, k - 1) for _, j in self.transitions(i))
 
     @cached
-    def reachable(self, i):
-        """Returns the set of all states reachable
-        by traversing some non-empty string starting from
-        state i."""
-        reached = set()
+    def successor_states(self, state):
+        """Returns all of the distinct states that can be reached via one
+        transition from ``state``, in the lexicographic order of the
+        smallest character that reaches them."""
+        seen = set()
+        result = []
+        for _, j in self.raw_transitions(state):
+            if j not in seen:
+                seen.add(j)
+                result.append(j)
+        return tuple(result)
 
-        queue = deque([i])
+    def is_dead(self, state):
+        """Returns True if no strings can be accepted
+        when starting from ``state``."""
+        return not self.is_live(state)
 
+    def is_live(self, state):
+        """Returns True if any strings can be accepted
+        when starting from ``state``."""
+        if self.is_accepting(state):
+            return True
+
+        # We work this out by calculating is_live for all nodes
+        # reachable from state which have not already had it calculated.
+        cache = self.__cache("is_live")
+        try:
+            return cache[state]
+        except KeyError:
+            pass
+
+        # roots are states that we know already must be live,
+        # either because we have previously calculated them to
+        # be or because they are an accepting state.
+        roots = set()
+
+        # We maintain a backwards graph where ``j in backwards_graph[k]``
+        # if there is a transition from j to k. Thus if a key in this
+        # graph is live, so must all its values be.
+        backwards_graph = defaultdict(set)
+
+        # First we find all reachable nodes from i which have not
+        # already been cached, noting any which are roots and
+        # populating the backwards graph..
+
+        explored = set()
+        queue = deque([state])
         while queue:
             j = queue.popleft()
-            for _, k in self.raw_transitions(j):
-                if k not in reached:
-                    reached.add(k)
-                    if k != i:
-                        queue.append(k)
-        return frozenset(reached)
+            if cache.get(j, self.is_accepting(j)):
+                # If j can be immediately determined to be live
+                # then there is no point in exploring beneath it,
+                # because any effect of states below it is screened
+                # off by the known answer for j.
+                roots.add(j)
+                continue
 
-    @cached
-    def is_dead(self, i):
-        """Returns True if no strings can be accepted
-        when starting from state ``i``."""
-        if self.is_accepting(i):
-            return False
+            if j in cache:
+                # Likewise if j is known to be dead then there is
+                # no point exploring beneath it because we know
+                # that all nodes reachable from it must be dead.
+                continue
 
-        return not any(self.is_accepting(j) for j in self.reachable(i))
+            if j in explored:
+                continue
+            explored.add(j)
+
+            for k in self.successor_states(j):
+                backwards_graph[k].add(j)
+                queue.append(k)
+
+        marked_live = set()
+        queue = deque(roots)
+        while queue:
+            j = queue.popleft()
+            if j in marked_live:
+                continue
+            marked_live.add(j)
+            for k in backwards_graph[j]:
+                queue.append(k)
+        for j in explored:
+            cache[j] = j in marked_live
+
+        return cache[state]
 
     def all_matching_strings_of_length(self, k):
         """Yields all matching strings whose length is ``k``, in ascending
