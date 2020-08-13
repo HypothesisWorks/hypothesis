@@ -119,20 +119,78 @@ class DFA:
                 stack.append((k + 1, next_state, next_indices))
         return results
 
-    @cached
     def max_length(self, i):
         """Returns the maximum length of a string that is
         accepted when starting from i."""
         if self.is_dead(i):
             return 0
-        if i in self.reachable(i):
-            return inf
-        next_states = {self.max_length(j) for _, j in self.transitions(i)}
-        if next_states:
-            return 1 + max(next_states)
-        else:
-            assert self.is_accepting(i)
-            return 0
+
+        cache = self.__cache("max_length")
+
+        try:
+            return cache[i]
+        except KeyError:
+            pass
+
+        # Naively we can calculate this as 1 longer than the
+        # max length of the non-dead states this can immediately
+        # transition to, but a) We don't want unbounded recursion
+        # because that's how you get RecursionErrors and b) This
+        # makes it hard to look for cycles. So we basically do
+        # the recursion explicitly with a stack, but we maintain
+        # a parallel set that tracks what's already on the stack
+        # so that when we encounter a loop we can immediately
+        # determine that the max length here is infinite.
+
+        stack = [i]
+        stack_set = {i}
+
+        def pop():
+            """Remove the top element from the stack, maintaining
+            the stack set appropriately."""
+            assert len(stack) == len(stack_set)
+            j = stack.pop()
+            stack_set.discard(j)
+            assert len(stack) == len(stack_set)
+
+        while stack:
+            j = stack[-1]
+            assert not self.is_dead(j)
+            # If any of the children have infinite max_length we don't
+            # need to check all of them to know that this state does
+            # too.
+            if any(cache.get(k) == inf for k in self.successor_states(j)):
+                cache[j] = inf
+                pop()
+                continue
+
+            # Recurse to the first child node that we have not yet
+            # calculated max_length for.
+            for k in self.successor_states(j):
+                if k in stack_set:
+                    # We should never have put a dead node on the
+                    # stack in the first place.
+                    assert not self.is_dead(k)
+                    cache[k] = inf
+                    break
+                elif k not in cache and not self.is_dead(k):
+                    stack.append(k)
+                    stack_set.add(k)
+                    break
+            else:
+                cache[j] = max(
+                    (
+                        1 + cache[k]
+                        for k in self.successor_states(j)
+                        if not self.is_dead(k)
+                    ),
+                    default=0,
+                )
+
+                # j is live so either must be acceptin gor have a live child.
+                assert self.is_accepting(j) or cache[j] > 0
+                pop()
+        return cache[i]
 
     @cached
     def count_strings(self, i, k):
