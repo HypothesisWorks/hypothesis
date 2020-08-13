@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.24.3:
+
+-------------------
+5.24.3 - 2020-08-13
+-------------------
+
+This release fixes a small internal bug in Hypothesis's internal automaton library.
+Fortunately this bug was currently impossible to hit in user facing code, so this
+has no user visible impact.
+
 .. _v5.24.2:
 
 -------------------
