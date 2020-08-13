@@ -72,20 +72,7 @@ def dfas(draw):
     start = draw(a_state)
     accepting = draw(st.sets(a_state, min_size=1))
 
-    transitions = [
-        draw(
-            st.one_of(
-                st.lists(
-                    st.tuples(a_byte, a_state)
-                    | st.tuples(a_byte, a_byte, a_state).map(
-                        lambda t: (t[1], t[0], t[2]) if t[0] > t[1] else t
-                    )
-                ),
-                st.dictionaries(a_byte, a_state),
-            )
-        )
-        for _ in range(states)
-    ]
+    transitions = [draw(st.dictionaries(a_byte, a_state)) for _ in range(states)]
 
     return ConcreteDFA(transitions, accepting, start)
 
