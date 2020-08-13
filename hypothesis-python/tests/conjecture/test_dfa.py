@@ -124,10 +124,14 @@ def test_has_string_of_max_length(dfa):
 
 
 def test_converts_long_tables_to_dicts():
-    dfa = ConcreteDFA([[(0, 0), (1, 1), (2, 2), (3, 1), (4, 0)], [(0, 0)], []], {2})
-    list(dfa.transitions(0))
+    dfa = ConcreteDFA(
+        [[(0, 0), (1, 1), (2, 2), (3, 1), (4, 0), (7, 10, 1)], [(0, 0)], []], {2}
+    )
+    assert dfa.transition(0, 2) == 2
+    assert dfa.transition(1, 0) == 0
 
     assert isinstance(dfa._ConcreteDFA__transitions[0], dict)
+    assert isinstance(dfa._ConcreteDFA__transitions[1], list)
 
 
 @settings(max_examples=20)
