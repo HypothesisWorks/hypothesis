@@ -1,0 +1,12 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import numpy
+from hypothesis import given, strategies as st
+
+# TODO: replace st.nothing() with appropriate strategies
+
+
+@given(a=st.nothing(), b=st.nothing())
+def test_fuzz_add(a, b):
+    numpy.add(a, b)

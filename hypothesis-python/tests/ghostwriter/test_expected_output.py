@@ -24,6 +24,7 @@ import pathlib
 import re
 from typing import Sequence
 
+import numpy
 import pytest
 
 from hypothesis.extra import ghostwriter
@@ -51,6 +52,8 @@ class A_Class:
     [
         ("fuzz_sorted", ghostwriter.fuzz(sorted)),
         ("fuzz_classmethod", ghostwriter.fuzz(A_Class.a_classmethod)),
+        ("fuzz_ufunc", ghostwriter.fuzz(numpy.add)),
+        ("magic_gufunc", ghostwriter.magic(numpy.matmul)),
         ("re_compile", ghostwriter.fuzz(re.compile)),
         (
             "re_compile_except",

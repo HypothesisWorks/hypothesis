@@ -21,9 +21,11 @@ See https://github.com/HypothesisWorks/hypothesis/pull/2344 for progress.
 import builtins
 import enum
 import inspect
+import sys
 import types
 from collections import OrderedDict
 from itertools import permutations, zip_longest
+from string import ascii_lowercase
 from textwrap import indent
 from typing import Callable, Dict, Set, Tuple, Type, Union
 
@@ -128,7 +130,21 @@ def _strategy_for(param: inspect.Parameter) -> Union[st.SearchStrategy, InferTyp
 def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
     """Get non-vararg parameters of `func` as an ordered dict."""
     var_param_kinds = (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-    params = list(inspect.signature(func).parameters.values())
+    try:
+        params = list(inspect.signature(func).parameters.values())
+    except Exception:
+        # `inspect.signature` doesn't work on ufunc objects, but we can work out
+        # what the required parameters would look like if it did.
+        if not _is_probably_ufunc(func):
+            raise
+        # Note that we use args named a, b, c... to match the `operator` module,
+        # rather than x1, x2, x3... like the Numpy docs.  Because they're pos-only
+        # this doesn't make a runtime difference, and it's much nicer for use-cases
+        # like `equivalent(numpy.add, operator.add)`.
+        params = [
+            inspect.Parameter(name=name, kind=inspect.Parameter.POSITIONAL_ONLY)
+            for name in ascii_lowercase[: func.nin]  # type: ignore
+        ]
     return OrderedDict((p.name, p) for p in params if p.kind not in var_param_kinds)
 
 
@@ -200,11 +216,30 @@ def _valid_syntax_repr(strategy):
         return "nothing()"
 
 
+# (g)ufuncs do not have a __module__ attribute, so we simply look for them in
+# any of the following modules which are found in sys.modules.  The order of
+# these entries doesn't matter, because we check identity of the found object.
+LOOK_FOR_UFUNCS_IN_MODULES = ("numpy", "astropy", "erfa", "dask", "numba")
+
+
+def _get_module(obj):
+    try:
+        return obj.__module__
+    except AttributeError:
+        if not _is_probably_ufunc(obj):
+            raise
+    for module_name in LOOK_FOR_UFUNCS_IN_MODULES:
+        if obj is getattr(sys.modules.get(module_name), obj.__name__, None):
+            return module_name
+    raise RuntimeError(f"Could not find module for ufunc {obj.__name__} ({obj!r}")
+
+
 def _get_qualname(obj, full=False):
     # Replacing angle-brackets for objects defined in `.<locals>.`
-    qname = obj.__qualname__.replace("<", "_").replace(">", "_")
+    qname = getattr(obj, "__qualname__", obj.__name__)
+    qname = qname.replace("<", "_").replace(">", "_")
     if full:
-        return obj.__module__ + "." + qname
+        return _get_module(obj) + "." + qname
     return qname
 
 
@@ -214,14 +249,11 @@ def _write_call(func: Callable, *pass_variables: str) -> str:
     >>> _write_call(sorted, "my_seq", "func")
     "builtins.sorted(my_seq, key=func, reverse=reverse)"
     """
-    pos_only = {
-        p.name
-        for p in inspect.signature(func).parameters.values()
-        if p.kind is inspect.Parameter.POSITIONAL_ONLY
-    }
     args = ", ".join(
-        (v or p) if p in pos_only else f"{p}={v or p}"
-        for v, p in zip_longest(pass_variables, _get_params(func))
+        (v or p.name)
+        if p.kind is inspect.Parameter.POSITIONAL_ONLY
+        else f"{p.name}={v or p.name}"
+        for v, p in zip_longest(pass_variables, _get_params(func).values())
     )
     return f"{_get_qualname(func, full=True)}({args})"
 
@@ -246,7 +278,7 @@ def _make_test_body(
     # A set of modules to import - we might add to this later.  The import code
     # is written later, so we can have one import section for multiple magic()
     # test functions.
-    imports = {f.__module__ for f in funcs}
+    imports = {_get_module(f) for f in funcs}
 
     if except_:
         # This is reminiscent of de-duplication logic I wrote for flake8-bugbear,
@@ -288,7 +320,7 @@ def _make_test_body(
         imports.add("unittest")
         body = "class Test{}{}(unittest.TestCase):\n".format(
             ghost.title(),
-            "".join(f.__qualname__.replace(".", "").title() for f in funcs),
+            "".join(_get_qualname(f).replace(".", "").title() for f in funcs),
         ) + indent(body, "    ")
 
     return imports, body
@@ -310,6 +342,18 @@ def _make_test(imports: Set[str], body: str) -> str:
     elif nothings >= 1:
         header += "# TODO: replace st.nothing() with appropriate strategies\n\n"
     return black.format_str(header + body, mode=black.FileMode())
+
+
+def _is_probably_ufunc(obj):
+    # See https://numpy.org/doc/stable/reference/ufuncs.html - there doesn't seem
+    # to be an upstream function to detect this, so we just guess.
+    has_attributes = "nin nout nargs ntypes types identity signature".split()
+    not_attributes = ("__qualname__", "__module__")
+    return (
+        callable(obj)
+        and all(hasattr(obj, name) for name in has_attributes)
+        and not any(hasattr(obj, name) for name in not_attributes)
+    )
 
 
 def magic(
