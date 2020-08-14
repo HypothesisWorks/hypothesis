@@ -187,7 +187,7 @@ class DFA:
                     default=0,
                 )
 
-                # j is live so either must be acceptin gor have a live child.
+                # j is live so it must either be accepting or have a live child.
                 assert self.is_accepting(j) or cache[j] > 0
                 pop()
         return cache[i]
