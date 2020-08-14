@@ -192,19 +192,40 @@ class DFA:
                 pop()
         return cache[i]
 
-    @cached
-    def count_strings(self, i, k):
+    def count_strings(self, state, length):
         """Returns the number of strings of length ``k``
         that are accepted when starting from state ``i``."""
-        assert k >= 0
-        if k == 0:
-            if self.is_accepting(i):
-                return 1
+        assert length >= 0
+        cache = self.__cache("count_strings")
+
+        try:
+            return cache[state, length]
+        except KeyError:
+            pass
+
+        pending = [(state, length)]
+        seen = set()
+        i = 0
+
+        while i < len(pending):
+            s, n = pending[i]
+            i += 1
+            if n > 0:
+                for t in self.successor_states(s):
+                    key = (t, n - 1)
+                    if key not in cache and key not in seen:
+                        assert key not in pending
+                        pending.append(key)
+                        seen.add(key)
+
+        while pending:
+            s, n = pending.pop()
+            if n == 0:
+                cache[s, n] = int(self.is_accepting(s))
             else:
-                return 0
-        if k > self.max_length(i):
-            return 0
-        return sum(self.count_strings(j, k - 1) for _, j in self.transitions(i))
+                cache[s, n] = sum(cache[t, n - 1] for _, t in self.transitions(s))
+
+        return cache[state, length]
 
     @cached
     def successor_states(self, state):
