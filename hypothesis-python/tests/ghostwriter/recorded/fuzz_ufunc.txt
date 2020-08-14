@@ -1,12 +1,12 @@
 # This test code was written by the `hypothesis.extra.ghostwriter` module
 # and is provided under the Creative Commons Zero public domain dedication.
 
-import re
+import numpy
 from hypothesis import given, strategies as st
 
-# TODO: replace st.nothing() with an appropriate strategy
+# TODO: replace st.nothing() with appropriate strategies
 
 
-@given(pattern=st.nothing(), flags=st.just(0))
-def test_fuzz_compile(pattern, flags):
-    re.compile(pattern=pattern, flags=flags)
+@given(a=st.nothing(), b=st.nothing())
+def test_fuzz_add(a, b):
+    numpy.add(a, b)

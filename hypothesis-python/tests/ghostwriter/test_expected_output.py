@@ -19,10 +19,12 @@
 To update the recorded outputs, run `pytest --hypothesis-update-outputs ...`.
 """
 
+import base64
 import pathlib
 import re
 from typing import Sequence
 
+import numpy
 import pytest
 
 from hypothesis.extra import ghostwriter
@@ -37,12 +39,21 @@ def timsort(seq: Sequence[int]) -> Sequence[int]:
     return sorted(seq)
 
 
+class A_Class:
+    @classmethod
+    def a_classmethod(cls, arg: int):
+        pass
+
+
 # Note: for some of the `expected` outputs, we replace away some small
 #       parts which vary between minor versions of Python.
 @pytest.mark.parametrize(
     "data",
     [
         ("fuzz_sorted", ghostwriter.fuzz(sorted)),
+        ("fuzz_classmethod", ghostwriter.fuzz(A_Class.a_classmethod)),
+        ("fuzz_ufunc", ghostwriter.fuzz(numpy.add)),
+        ("magic_gufunc", ghostwriter.magic(numpy.matmul)),
         ("re_compile", ghostwriter.fuzz(re.compile)),
         (
             "re_compile_except",
@@ -51,6 +62,7 @@ def timsort(seq: Sequence[int]) -> Sequence[int]:
             .replace("import sre_constants\n", "").replace("sre_constants.", "re."),
         ),
         ("re_compile_unittest", ghostwriter.fuzz(re.compile, style="unittest")),
+        ("base64_magic", ghostwriter.magic(base64)),
     ],
     ids=lambda x: x[0],
 )
