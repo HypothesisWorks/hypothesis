@@ -117,7 +117,7 @@ def _strategy_for(param: inspect.Parameter) -> Union[st.SearchStrategy, InferTyp
         return st.just(param.default)
     # If there's no annotation and no default value, we check against a table
     # of guesses of simple strategies for common argument names.
-    if "string" in param.name:
+    if "string" in param.name and "as" not in param.name:
         return st.text()
     for strategy, names in _GUESS_STRATEGIES_BY_NAME:
         if param.name in names:
@@ -234,11 +234,11 @@ def _get_module(obj):
     raise RuntimeError(f"Could not find module for ufunc {obj.__name__} ({obj!r}")
 
 
-def _get_qualname(obj, full=False):
+def _get_qualname(obj, include_module=False):
     # Replacing angle-brackets for objects defined in `.<locals>.`
     qname = getattr(obj, "__qualname__", obj.__name__)
     qname = qname.replace("<", "_").replace(">", "_")
-    if full:
+    if include_module:
         return _get_module(obj) + "." + qname
     return qname
 
@@ -255,7 +255,7 @@ def _write_call(func: Callable, *pass_variables: str) -> str:
         else f"{p.name}={v or p.name}"
         for v, p in zip_longest(pass_variables, _get_params(func).values())
     )
-    return f"{_get_qualname(func, full=True)}({args})"
+    return f"{_get_qualname(func, include_module=True)}({args})"
 
 
 def _make_test_body(
@@ -295,7 +295,7 @@ def _make_test_body(
                 exceptions.append(ex.__qualname__)
             else:
                 imports.add(ex.__module__)
-                exceptions.append(_get_qualname(ex, full=True))
+                exceptions.append(_get_qualname(ex, include_module=True))
         # And finally indent the existing test body into a try-except block
         # which catches these exceptions and calls `hypothesis.reject()`.
         test_body = SUPPRESS_BLOCK.format(
@@ -348,12 +348,7 @@ def _is_probably_ufunc(obj):
     # See https://numpy.org/doc/stable/reference/ufuncs.html - there doesn't seem
     # to be an upstream function to detect this, so we just guess.
     has_attributes = "nin nout nargs ntypes types identity signature".split()
-    not_attributes = ("__qualname__", "__module__")
-    return (
-        callable(obj)
-        and all(hasattr(obj, name) for name in has_attributes)
-        and not any(hasattr(obj, name) for name in not_attributes)
-    )
+    return callable(obj) and all(hasattr(obj, name) for name in has_attributes)
 
 
 def magic(
