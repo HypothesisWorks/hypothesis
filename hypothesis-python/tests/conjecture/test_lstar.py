@@ -76,16 +76,19 @@ def test_can_learn_dead_nodes():
 def test_iterates_over_learned_strings():
     upper_bound = bytes([1, 2])
     learner = LStar(lambda s: len(s) == 2 and max(s) <= 5 and s <= upper_bound)
-    learner.learn(upper_bound)
-    learner.learn([1, 2, 0])
-    learner.learn([6, 1, 2])
-    learner.learn([1, 3])
-    learner.learn([0, 5])
-    learner.learn([0, 6])
-    learner.learn([2, 0])
+    prev = -1
+    while learner.generation != prev:
+        prev = learner.generation
+        learner.learn(upper_bound)
+        learner.learn([1, 2, 0])
+        learner.learn([6, 1, 2])
+        learner.learn([1, 3])
+        learner.learn([0, 5])
+        learner.learn([0, 6])
+        learner.learn([2, 0])
 
-    learner.learn([2, 0, 0, 0])
-    learner.learn([2, 0, 0])
+        learner.learn([2, 0, 0, 0])
+        learner.learn([2, 0, 0])
 
     dfa = learner.dfa
 

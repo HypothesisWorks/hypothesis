@@ -39,6 +39,22 @@ The former explains the core algorithm, the latter a modification
 we use (which we have further modified) which allows it to
 be implemented more efficiently.
 
+We also use ideas from:
+
+* Howar, Falk M. Active learning of interface programs. Diss. 2012.
+* Isberner, Malte, Falk Howar, and Bernhard Steffen. "The TTT algorithm:
+  a redundancy-free approach to active automata learning." International
+  Conference on Runtime Verification. Springer, Cham, 2014.
+
+But honestly this wasn't based on fully reading or understood either,
+just skimming and cherry picking a few good ideas, so you probably don't
+need to read those to understand this file.
+
+The main idea we currently use from those papers are the idea of
+a discriminator tree rather than calculating the full row for each
+string as in L*. Under some circumstances this will be a substantial
+speedup.
+
 We have several major departures from the paper:
 
 1. We learn the automaton lazily as we traverse it. This is particularly
@@ -65,10 +81,21 @@ learning languages offline that we can record for later use.
 
 """
 
+import attr
+
+
+@attr.s(slots=True)
+class DiscriminatorNode:
+    """Tree node representing a single experiment that can be
+    used to distinguish strings."""
+
+    experiment = attr.ib()
+    false_child = attr.ib()
+    true_child = attr.ib()
+
 
 class LStar:
     def __init__(self, member):
-        self.experiments = []
         self.normalizer = IntegerNormalizer()
 
         self.__rows_to_canonical = {}
@@ -77,15 +104,53 @@ class LStar:
         self.__member = member
         self.__generation = 0
 
-        self.__add_experiment(b"")
+        # Tree nodes are either bytes (representing a canonical
+        # representative of some equivalence class) or a
+        # DiscriminatorNode indicating that a test has to be made
+        # to distinguish a string further.
+        self.__tree = [b""]
+        self.__strings_to_tree_index = {b"": 0}
+
+        self.__dfa_changed()
 
     def __dfa_changed(self):
         """Note that something has changed, updating the generation
         and resetting any cached state."""
         self.__generation += 1
-        self.__rows_to_canonical.clear()
-        self.__canonicalization_cache.clear()
         self.dfa = LearnedDFA(self)
+
+    def __distinguish_strings(self, s1, s2, experiment):
+        """Update the tree so that ``s1`` and ``s2`` map to distinct
+        classes, as ``experiment`` witnesses that they should."""
+        assert (
+            s1 not in self.__strings_to_tree_index
+            or s2 not in self.__strings_to_tree_index
+        )
+
+        res1 = self.member(s1 + experiment)
+        res2 = self.member(s2 + experiment)
+        assert res1 != res2
+
+        if res2:
+            s1, s2 = s2, s1
+
+        i = self.__strings_to_tree_index.get(s1, self.__strings_to_tree_index.get(s2))
+        assert i is not None
+
+        child1 = self.__append_string_to_tree(s1)
+        child2 = self.__append_string_to_tree(s2)
+
+        self.__tree[i] = DiscriminatorNode(
+            experiment=experiment, true_child=child1, false_child=child2
+        )
+        self.__canonicalization_cache.clear()
+        self.__dfa_changed()
+
+    def __append_string_to_tree(self, string):
+        i = len(self.__tree)
+        self.__strings_to_tree_index[string] = i
+        self.__tree.append(string)
+        return i
 
     def canonicalize(self, string):
         """Map a string to a "canonical" version of itself - that is,
@@ -96,8 +161,17 @@ class LStar:
             return self.__canonicalization_cache[string]
         except KeyError:
             pass
-        row = tuple(self.member(string + e) for e in self.experiments)
-        result = self.__rows_to_canonical.setdefault(row, string)
+
+        node = self.__tree[0]
+        while True:
+            if isinstance(node, DiscriminatorNode):
+                if self.member(string + node.experiment):
+                    node = self.__tree[node.true_child]
+                else:
+                    node = self.__tree[node.false_child]
+            else:
+                result = node
+                break
         self.__canonicalization_cache[string] = result
         return result
 
@@ -198,11 +272,11 @@ class LStar:
                 self.__dfa_changed()
                 continue
 
-            self.__add_experiment(suffix)
-
-    def __add_experiment(self, e):
-        self.experiments.append(e)
-        self.__dfa_changed()
+            self.__distinguish_strings(
+                s1=self.dfa.label(states[n + 1]),
+                s2=self.dfa.label(states[n]) + s[n : n + 1],
+                experiment=suffix,
+            )
 
 
 class LearnedDFA(DFA):
@@ -217,7 +291,6 @@ class LearnedDFA(DFA):
 
         self.__normalizer = lstar.normalizer
         self.__member = lstar.member
-        self.__experiments = lstar.experiments
 
         self.__states = [self.__lstar.canonicalize(b"")]
         self.__state_to_index = {self.__states[0]: 0}
