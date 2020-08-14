@@ -21,10 +21,11 @@ See https://github.com/HypothesisWorks/hypothesis/pull/2344 for progress.
 import builtins
 import enum
 import inspect
+import types
 from collections import OrderedDict
 from itertools import permutations, zip_longest
 from textwrap import indent
-from typing import Callable, Dict, Tuple, Type, Union
+from typing import Callable, Dict, Set, Tuple, Type, Union
 
 import black
 
@@ -36,11 +37,12 @@ from hypothesis.utils.conventions import InferType, infer
 IMPORT_SECTION = """
 # This test code was written by the `hypothesis.extra.ghostwriter` module
 # and is provided under the Creative Commons Zero public domain dedication.
-{imports}
+
+{imports}from hypothesis import given, {reject}strategies as st
 """
 
 TEMPLATE = """
-{nothing_hint}@given({given_args})
+@given({given_args})
 def test_{test_kind}_{func_name}({arg_names}):
 {test_body}
 """
@@ -61,13 +63,13 @@ def _check_except(except_: Except) -> Tuple[Type[Exception], ...]:
             if not isinstance(e, type) or not issubclass(e, Exception):
                 raise InvalidArgument(
                     f"Expected an Exception but got except_[{i}]={e!r}"
-                    f" (type={type(e).__name__})"
+                    f" (type={_get_qualname(type(e))})"
                 )
         return except_
     if not isinstance(except_, type) or not issubclass(except_, Exception):
         raise InvalidArgument(
             "Expected an Exception or tuple of exceptions, but got except_="
-            f"{except_!r} (type={type(except_).__name__})"
+            f"{except_!r} (type={_get_qualname(type(except_))})"
         )
     return (except_,)
 
@@ -158,6 +160,14 @@ def _get_strategies(
                 # repr nested one_of as flattened (their real behaviour)
                 v = st.one_of(v.element_strategies)
             if repr(given_strategies.get(k, v)) != repr(v):
+                # In this branch, we have two functions that take an argument of the
+                # same name but different strategies - probably via the equivalent()
+                # ghostwriter.  In general, we would expect the test to pass given
+                # the *intersection* of the domains of these functions.  However:
+                #   - we can't take the intersection of two strategies
+                #   - this may indicate a problem which should be exposed to the user
+                # and so we take the *union* instead - either it'll work, or the
+                # user will be presented with a reasonable suite of options.
                 given_strategies[k] = given_strategies[k] | v
             else:
                 given_strategies[k] = v
@@ -216,14 +226,14 @@ def _write_call(func: Callable, *pass_variables: str) -> str:
     return f"{_get_qualname(func, full=True)}({args})"
 
 
-def _make_test(
+def _make_test_body(
     *funcs: Callable,
     ghost: str,
     test_body: str,
     except_: Tuple[Type[Exception], ...],
     style: str,
-) -> str:
-    # the common elements of each ghostwriter
+) -> Tuple[Set[str], str]:
+    # Get strategies for all the arguments to each function we're testing.
     given_strategies = _get_strategies(
         *funcs, pass_result_to_next_func=ghost in ("idempotent", "roundtrip")
     )
@@ -232,11 +242,11 @@ def _make_test(
     )
     for name in st.__all__:
         given_args = given_args.replace(f"{name}(", f"st.{name}(")
+
+    # A set of modules to import - we might add to this later.  The import code
+    # is written later, so we can have one import section for multiple magic()
+    # test functions.
     imports = {f.__module__ for f in funcs}
-    # We discard "builtins." below - this is probably not particularly useful
-    # for user code, but important for making a good impression in demos.
-    imports.discard("builtins")
-    imports.discard("__main__")
 
     if except_:
         # This is reminiscent of de-duplication logic I wrote for flake8-bugbear,
@@ -254,6 +264,8 @@ def _make_test(
             else:
                 imports.add(ex.__module__)
                 exceptions.append(_get_qualname(ex, full=True))
+        # And finally indent the existing test body into a try-except block
+        # which catches these exceptions and calls `hypothesis.reject()`.
         test_body = SUPPRESS_BLOCK.format(
             test_body=indent(test_body, prefix="    "),
             exceptions="(" + ", ".join(exceptions) + ")"
@@ -261,19 +273,17 @@ def _make_test(
             else exceptions[0],
         )
 
+    # Indent our test code to form the body of a function or method.
     argnames = (["self"] if style == "unittest" else []) + list(given_strategies)
     body = TEMPLATE.format(
-        nothing_hint=""
-        if "=st.nothing()" not in given_args
-        else "# TODO: replace st.nothing() with an appropriate strategy\n\n",
         given_args=given_args,
         test_kind=ghost,
         func_name="_".join(_get_qualname(f).replace(".", "_") for f in funcs),
         arg_names=", ".join(argnames),
         test_body=indent(test_body, prefix="    "),
     )
-    body = body.replace("builtins.", "").replace("__main__.", "")
 
+    # For unittest-style, indent method further into a class body
     if style == "unittest":
         imports.add("unittest")
         body = "class Test{}{}(unittest.TestCase):\n".format(
@@ -281,25 +291,91 @@ def _make_test(
             "".join(f.__qualname__.replace(".", "").title() for f in funcs),
         ) + indent(body, "    ")
 
-    result = (
-        IMPORT_SECTION.format(
-            imports="\n".join("import " + imp for imp in sorted(imports))
-        ).rstrip()
-        + "\nfrom hypothesis import given, {}strategies as st\n\n".format(
-            "reject, " if except_ else ""
-        )
-        + body
+    return imports, body
+
+
+def _make_test(imports: Set[str], body: str) -> str:
+    # Discarding "builtins." and "__main__" probably isn't particularly useful
+    # for user code, but important for making a good impression in demos.
+    body = body.replace("builtins.", "").replace("__main__.", "")
+    imports.discard("builtins")
+    imports.discard("__main__")
+    header = IMPORT_SECTION.format(
+        imports="".join(f"import {imp}\n" for imp in sorted(imports)),
+        reject="reject, " if "        reject()\n" in body else "",
     )
-    return black.format_str(result, mode=black.FileMode())
+    nothings = body.count("=st.nothing()")
+    if nothings == 1:
+        header += "# TODO: replace st.nothing() with an appropriate strategy\n\n"
+    elif nothings >= 1:
+        header += "# TODO: replace st.nothing() with appropriate strategies\n\n"
+    return black.format_str(header + body, mode=black.FileMode())
+
+
+def magic(
+    *modules_or_functions: Union[Callable, types.ModuleType],
+    except_: Except = (),
+    style: str = "pytest",
+) -> str:
+    """Guess which ghostwriters to use, for a module or collection of functions.
+
+    As for all ghostwriters, the ``except_`` argument should be an
+    :class:`python:Exception` or tuple of exceptions, and ``style`` may be either
+    ``"pytest"`` to write test functions or ``"unittest"`` to write test methods
+    and :class:`~python:unittest.TestCase`.
+
+    After finding the public functions attached to any modules, the ``magic``
+    ghostwriter looks for pairs of functions to pass to :func:`~roundtrip`,
+    and any others are passed to :func:`~fuzz`.
+    """
+    except_ = _check_except(except_)
+    _check_style(style)
+    if not modules_or_functions:
+        raise InvalidArgument("Must pass at least one function or module to test.")
+    functions = set()
+    for thing in modules_or_functions:
+        if callable(thing):
+            functions.add(thing)
+        elif isinstance(thing, types.ModuleType):
+            if hasattr(thing, "__all__"):
+                funcs = [getattr(thing, name) for name in thing.__all__]  # type: ignore
+            else:
+                funcs = [
+                    v
+                    for k, v in vars(thing).items()
+                    if callable(v) and not k.startswith("_")
+                ]
+            for f in funcs:
+                try:
+                    if callable(f) and inspect.signature(f).parameters:
+                        functions.add(f)
+                except ValueError:
+                    pass
+        else:
+            raise InvalidArgument(f"Can't test non-module non-callable {thing!r}")
+
+    imports = set()
+    parts = []
+    by_name = {_get_qualname(f): f for f in functions}
+    if len(by_name) < len(functions):
+        raise InvalidArgument("Functions to magic() test must have unique names")
+
+    # TODO: identify roundtrip pairs, and write a specific test for each
+
+    # For all remaining callables, just write a fuzz-test.  In principle we could
+    # guess at equivalence or idempotence; but it doesn't seem accurate enough to
+    # be worth the trouble when it's so easy for the user to specify themselves.
+    for _, f in sorted(by_name.items()):
+        imp, body = _make_test_body(
+            f, test_body=_write_call(f), except_=except_, ghost="fuzz", style=style,
+        )
+        imports |= imp
+        parts.append(body)
+    return _make_test(imports, "\n".join(parts))
 
 
 def fuzz(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
     """Write source code for a property-based test of ``func``.
-
-    As for all ghostwriters, the ``except_`` argument should be an
-    :class:`python:Exception` or tuple of exceptions, and ``style`` may be either
-    ``"pytest"`` to write a test function or ``"unittest"`` to write a test method
-    and :class:`~python:unittest.TestCase`.
 
     The resulting test checks that valid input only leads to expected exceptions.
     For example:
@@ -338,6 +414,8 @@ def fuzz(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
         raise InvalidArgument(f"Got non-callable func={func!r}")
     except_ = _check_except(except_)
     _check_style(style)
-    return _make_test(
+
+    imports, body = _make_test_body(
         func, test_body=_write_call(func), except_=except_, ghost="fuzz", style=style
     )
+    return _make_test(imports, body)

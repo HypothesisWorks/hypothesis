@@ -19,6 +19,7 @@
 To update the recorded outputs, run `pytest --hypothesis-update-outputs ...`.
 """
 
+import base64
 import pathlib
 import re
 from typing import Sequence
@@ -58,6 +59,7 @@ class A_Class:
             .replace("import sre_constants\n", "").replace("sre_constants.", "re."),
         ),
         ("re_compile_unittest", ghostwriter.fuzz(re.compile, style="unittest")),
+        ("base64_magic", ghostwriter.magic(base64)),
     ],
     ids=lambda x: x[0],
 )

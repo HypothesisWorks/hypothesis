@@ -1,0 +1,108 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import base64
+from hypothesis import given, strategies as st
+
+# TODO: replace st.nothing() with appropriate strategies
+
+
+@given(
+    b=st.nothing(),
+    foldspaces=st.booleans(),
+    adobe=st.booleans(),
+    ignorechars=st.just(b" \t\n\r\x0b"),
+)
+def test_fuzz_a85decode(b, foldspaces, adobe, ignorechars):
+    base64.a85decode(b=b, foldspaces=foldspaces, adobe=adobe, ignorechars=ignorechars)
+
+
+@given(
+    b=st.nothing(),
+    foldspaces=st.booleans(),
+    wrapcol=st.just(0),
+    pad=st.booleans(),
+    adobe=st.booleans(),
+)
+def test_fuzz_a85encode(b, foldspaces, wrapcol, pad, adobe):
+    base64.a85encode(b=b, foldspaces=foldspaces, wrapcol=wrapcol, pad=pad, adobe=adobe)
+
+
+@given(s=st.nothing(), casefold=st.booleans())
+def test_fuzz_b16decode(s, casefold):
+    base64.b16decode(s=s, casefold=casefold)
+
+
+@given(s=st.nothing())
+def test_fuzz_b16encode(s):
+    base64.b16encode(s=s)
+
+
+@given(s=st.nothing(), casefold=st.booleans(), map01=st.none())
+def test_fuzz_b32decode(s, casefold, map01):
+    base64.b32decode(s=s, casefold=casefold, map01=map01)
+
+
+@given(s=st.nothing())
+def test_fuzz_b32encode(s):
+    base64.b32encode(s=s)
+
+
+@given(s=st.nothing(), altchars=st.none(), validate=st.booleans())
+def test_fuzz_b64decode(s, altchars, validate):
+    base64.b64decode(s=s, altchars=altchars, validate=validate)
+
+
+@given(s=st.nothing(), altchars=st.none())
+def test_fuzz_b64encode(s, altchars):
+    base64.b64encode(s=s, altchars=altchars)
+
+
+@given(b=st.nothing())
+def test_fuzz_b85decode(b):
+    base64.b85decode(b=b)
+
+
+@given(b=st.nothing(), pad=st.booleans())
+def test_fuzz_b85encode(b, pad):
+    base64.b85encode(b=b, pad=pad)
+
+
+@given(input=st.nothing(), output=st.nothing())
+def test_fuzz_decode(input, output):
+    base64.decode(input=input, output=output)
+
+
+@given(s=st.nothing())
+def test_fuzz_decodebytes(s):
+    base64.decodebytes(s=s)
+
+
+@given(input=st.nothing(), output=st.nothing())
+def test_fuzz_encode(input, output):
+    base64.encode(input=input, output=output)
+
+
+@given(s=st.nothing())
+def test_fuzz_encodebytes(s):
+    base64.encodebytes(s=s)
+
+
+@given(s=st.nothing())
+def test_fuzz_standard_b64decode(s):
+    base64.standard_b64decode(s=s)
+
+
+@given(s=st.nothing())
+def test_fuzz_standard_b64encode(s):
+    base64.standard_b64encode(s=s)
+
+
+@given(s=st.nothing())
+def test_fuzz_urlsafe_b64decode(s):
+    base64.urlsafe_b64decode(s=s)
+
+
+@given(s=st.nothing())
+def test_fuzz_urlsafe_b64encode(s):
+    base64.urlsafe_b64encode(s=s)
