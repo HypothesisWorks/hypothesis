@@ -158,3 +158,25 @@ def test_run_ghostwriter_fuzz():
     # test pass, incidentally checking our handling of positional-only arguments.
     source_code = source_code.replace("st.nothing()", "st.lists(st.integers())")
     get_test_function(source_code)()
+
+
+class MyError(UnicodeDecodeError):
+    pass
+
+
+@pytest.mark.parametrize(
+    "exceptions,output",
+    [
+        # Discard subclasses of other exceptions to catch, including non-builtins,
+        # and replace OSError aliases with OSError.
+        ((Exception, UnicodeError), "Exception"),
+        ((UnicodeError, MyError), "UnicodeError"),
+        ((IOError,), "OSError"),
+        ((IOError, UnicodeError), "(OSError, UnicodeError)"),
+    ],
+)
+def test_exception_deduplication(exceptions, output):
+    _, body = ghostwriter._make_test_body(
+        lambda: None, ghost="", test_body="pass", except_=exceptions, style="pytest"
+    )
+    assert f"except {output}:" in body

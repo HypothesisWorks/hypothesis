@@ -22,7 +22,7 @@ import builtins
 import enum
 import inspect
 from collections import OrderedDict
-from itertools import zip_longest
+from itertools import permutations, zip_longest
 from textwrap import indent
 from typing import Callable, Dict, Tuple, Type, Union
 
@@ -210,8 +210,16 @@ def _make_test(
     imports.discard("__main__")
 
     if except_:
+        # This is reminiscent of de-duplication logic I wrote for flake8-bugbear,
+        # but with access to the actual objects we can just check for subclasses.
+        # This lets us print e.g. `Exception` instead of `(Exception, OSError)`.
+        uniques = list(except_)
+        for a, b in permutations(except_, 2):
+            if a in uniques and issubclass(a, b):
+                uniques.remove(a)
+        # Then convert to strings, either builtin names or qualified names.
         exceptions = []
-        for ex in except_:
+        for ex in uniques:
             if ex.__qualname__ in dir(builtins):
                 exceptions.append(ex.__qualname__)
             else:
