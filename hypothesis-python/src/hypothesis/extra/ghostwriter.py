@@ -77,23 +77,50 @@ def _check_style(style: str) -> None:
         raise InvalidArgument(f"Valid styles are 'pytest' or 'unittest', got {style!r}")
 
 
+# Simple strategies to guess for common argument names - we wouldn't do this in
+# builds() where strict correctness is required, but we only use these guesses
+# when the alternative is nothing() to force user edits anyway.
+#
+# This table was constructed manually after skimming through the documentation
+# for the builtins and a few stdlib modules.  Future enhancements could be based
+# on analysis of type-annotated code to detect arguments which almost always
+# take values of a particular type.
+_GUESS_STRATEGIES_BY_NAME = (
+    (st.text(), ["name", "filename", "fname"]),
+    (st.integers(min_value=0), ["index"]),
+    (st.floats(), ["real", "imag"]),
+    (st.functions(), ["function", "func", "f"]),
+    (st.iterables(st.integers()) | st.iterables(st.text()), ["iterable"]),
+)
+
+
 def _strategy_for(param: inspect.Parameter) -> Union[st.SearchStrategy, InferType]:
     # We use `infer` and go via `builds()` instead of directly through
     # `from_type()` so that `get_type_hints()` can resolve any forward
     # references for us.
     if param.annotation is not inspect.Parameter.empty:
         return infer
-    # If there's no annotation and no default value, the user will have to
-    # fill this in later.  We use nothing() as a placeholder to this effect.
-    if param.default is inspect.Parameter.empty:
-        return st.nothing()
     # If our default value is an Enum or a boolean, we assume that any value
     # of that type is acceptable.  Otherwise, we only generate the default.
     if isinstance(param.default, bool):
         return st.booleans()
     if isinstance(param.default, enum.Enum):
         return st.sampled_from(type(param.default))
-    return st.just(param.default)
+    if param.default is not inspect.Parameter.empty:
+        # Using `st.from_type(type(param.default))` would  introduce spurious
+        # failures in cases like the `flags` argument to regex functions.
+        # Better in to keep it simple, and let the user elaborate if desired.
+        return st.just(param.default)
+    # If there's no annotation and no default value, we check against a table
+    # of guesses of simple strategies for common argument names.
+    if "string" in param.name:
+        return st.text()
+    for strategy, names in _GUESS_STRATEGIES_BY_NAME:
+        if param.name in names:
+            return strategy
+    # And if all that failed, we'll return nothing() - the user will have to
+    # fill this in by hand, and we'll leave a comment to that effect later.
+    return st.nothing()
 
 
 def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
@@ -150,6 +177,8 @@ def _assert_eq(style, a, b):
 
 
 def _valid_syntax_repr(strategy):
+    if strategy == st.text().wrapped_strategy:
+        return "text()"
     # Return a syntactically-valid strategy repr, including fixing some
     # strategy reprs and replacing invalid syntax reprs with `"nothing()"`.
     # String-replace to hide the special case in from_type() for Decimal('snan')

@@ -24,7 +24,7 @@ from typing import List, Sequence, Set
 
 import pytest
 
-from hypothesis.errors import InvalidArgument, Unsatisfiable
+from hypothesis.errors import InvalidArgument
 from hypothesis.extra import ghostwriter
 from hypothesis.strategies import from_type, just
 
@@ -149,14 +149,10 @@ def test_invalid_func_inputs(gw, args):
 
 
 def test_run_ghostwriter_fuzz():
-    # This test covers the whole lifecycle: first, we get the default code.
-    # The first argument is unknown, so we fail to draw from st.nothing()
+    # Our strategy-guessing code works for all the arguments to sorted,
+    # and we handle positional-only arguments in calls correctly too.
     source_code = ghostwriter.fuzz(sorted)
-    with pytest.raises(Unsatisfiable):
-        get_test_function(source_code)()
-    # Replacing that nothing() with a strategy for sequences of integers makes the
-    # test pass, incidentally checking our handling of positional-only arguments.
-    source_code = source_code.replace("st.nothing()", "st.lists(st.integers())")
+    assert "st.nothing()" not in source_code
     get_test_function(source_code)()
 
 
