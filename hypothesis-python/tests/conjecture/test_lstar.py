@@ -15,7 +15,10 @@
 
 import itertools
 
+import pytest
+
 from hypothesis import example, given, strategies as st
+from hypothesis.errors import InvalidState
 from hypothesis.internal.conjecture.dfa.lstar import IntegerNormalizer, LStar
 
 
@@ -206,3 +209,11 @@ def test_learning_always_changes_generation(chars, order):
         if learner.dfa.matches(s) != learner.member(s):
             learner.learn(s)
             assert learner.generation > prev
+
+
+def test_cannot_reuse_dfa():
+    x = LStar(lambda x: len(x) == 3)
+    dfa = x.dfa
+    x.learn(bytes(3))
+    with pytest.raises(InvalidState):
+        dfa.start
