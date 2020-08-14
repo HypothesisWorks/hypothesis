@@ -15,7 +15,10 @@
 
 import itertools
 
+import pytest
+
 from hypothesis import assume, example, given, strategies as st
+from hypothesis.errors import InvalidState
 from hypothesis.internal.conjecture.dfa.lstar import IntegerNormalizer, LStar
 
 
@@ -242,3 +245,11 @@ def test_can_learn_varint_predicate(varints):
 
     for s in varints:
         assert learner.dfa.matches(s)
+
+
+def test_cannot_reuse_dfa():
+    x = LStar(lambda x: len(x) == 3)
+    dfa = x.dfa
+    x.learn(bytes(3))
+    with pytest.raises(InvalidState):
+        dfa.start

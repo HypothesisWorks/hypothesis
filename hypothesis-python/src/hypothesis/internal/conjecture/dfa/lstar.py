@@ -14,8 +14,8 @@
 # END HEADER
 
 from bisect import bisect_right, insort
-from copy import copy
 
+from hypothesis.errors import InvalidState
 from hypothesis.internal.conjecture.dfa import DFA
 from hypothesis.internal.conjecture.junkdrawer import IntList, find_integer
 
@@ -68,11 +68,12 @@ learning languages offline that we can record for later use.
 
 class LStar:
     def __init__(self, member):
-        self.__experiments = []
+        self.experiments = []
         self.__experiment_set = set()
+        self.normalizer = IntegerNormalizer()
+
         self.__cache = {}
         self.__member = member
-        self.__normalizer = IntegerNormalizer()
         self.__generation = 0
 
         self.__add_experiment(b"")
@@ -81,7 +82,7 @@ class LStar:
         """Note that something has changed, updating the generation
         and resetting any cached state."""
         self.__generation += 1
-        self.__dfa = None
+        self.dfa = LearnedDFA(self)
 
     def member(self, s):
         """Check whether this string is a member of the language
@@ -97,16 +98,6 @@ class LStar:
         """Return an integer value that will be incremented
         every time the DFA we predict changes."""
         return self.__generation
-
-    @property
-    def dfa(self):
-        """Returns our current model of a DFA for matching
-        the language we are learning."""
-        if self.__dfa is None:
-            self.__dfa = ExperimentDFA(
-                self.member, self.__experiments, copy(self.__normalizer)
-            )
-        return self.__dfa
 
     def learn(self, string):
         """Learn to give the correct answer on this string.
@@ -144,7 +135,7 @@ class LStar:
         # First we make sure that normalization is not the source of the
         # failure to match.
         while True:
-            normalized = bytes([self.__normalizer.normalize(c) for c in string])
+            normalized = bytes([self.normalizer.normalize(c) for c in string])
             # We can correctly replace the string with its normalized version
             # so normalization is not the problem here.
             if self.member(normalized) == correct_outcome:
@@ -159,8 +150,8 @@ class LStar:
                         return target
                     return bytes([b if c == a else c for c in target])
 
-                self.__normalizer.distinguish(a, lambda x: self.member(replace(x)))
-                target = replace(self.__normalizer.normalize(a))
+                self.normalizer.distinguish(a, lambda x: self.member(replace(x)))
+                target = replace(self.normalizer.normalize(a))
                 assert self.member(target) == correct_outcome
             assert target != normalized
             self.__dfa_changed()
@@ -213,37 +204,51 @@ class LStar:
 
     def __add_experiment(self, e):
         assert e not in self.__experiment_set
-        self.__experiments.append(e)
+        self.experiments.append(e)
         self.__experiment_set.add(e)
         self.__dfa_changed()
 
 
-class ExperimentDFA(DFA):
+class LearnedDFA(DFA):
     """This implements a lazily calculated DFA where states
     are labelled by some string that reaches them, and are
     distinguished by a membership test and a set of experiments."""
 
-    def __init__(self, member, experiments, normalizer):
+    def __init__(self, lstar):
         DFA.__init__(self)
-        self.__experiments = tuple(experiments)
-        self.__member = member
-        self.__normalizer = normalizer
+        self.__lstar = lstar
+        self.__generation = lstar.generation
+
+        self.__normalizer = lstar.normalizer
+        self.__member = lstar.member
+        self.__experiments = lstar.experiments
 
         self.__states = [b""]
-        self.__rows_to_states = {tuple(map(member, experiments)): 0}
+        self.__rows_to_states = {tuple(map(lstar.member, lstar.experiments)): 0}
         self.__transition_cache = {}
+
+    def __check_changed(self):
+        if self.__generation != self.__lstar.generation:
+            raise InvalidState(
+                "The underlying L* model has changed, so this DFA is no longer valid. "
+                "If you want to preserve a previously learned DFA for posterity, call "
+                "canonicalise() on it first."
+            )
 
     def label(self, i):
         return self.__states[i]
 
     @property
     def start(self):
+        self.__check_changed()
         return 0
 
     def is_accepting(self, i):
+        self.__check_changed()
         return self.__member(self.__states[i])
 
     def transition(self, i, c):
+        self.__check_changed()
         c = self.__normalizer.normalize(c)
         key = (i, c)
         try:
