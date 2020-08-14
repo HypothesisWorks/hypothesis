@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.24.4:
+
+-------------------
+5.24.4 - 2020-08-14
+-------------------
+
+This patch adds yet more internal functions to support a new feature
+we're working on, like :ref:`version 5.18.3 <v5.18.3>` and
+:ref:`version 5.23.6 <v5.23.6>`.  We promise it's worth the wait!
+
 .. _v5.24.3:
 
 -------------------
