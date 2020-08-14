@@ -71,7 +71,9 @@ class LStar:
         self.experiments = []
         self.normalizer = IntegerNormalizer()
 
-        self.__cache = {}
+        self.__rows_to_canonical = {}
+        self.__canonicalization_cache = {}
+        self.__member_cache = {}
         self.__member = member
         self.__generation = 0
 
@@ -81,16 +83,32 @@ class LStar:
         """Note that something has changed, updating the generation
         and resetting any cached state."""
         self.__generation += 1
+        self.__rows_to_canonical.clear()
+        self.__canonicalization_cache.clear()
         self.dfa = LearnedDFA(self)
+
+    def canonicalize(self, string):
+        """Map a string to a "canonical" version of itself - that is,
+        some string which we have chosen as the representative of strings
+        equivalent to it. The choice of string is arbitrary but will be
+        stable in the absence of further learning."""
+        try:
+            return self.__canonicalization_cache[string]
+        except KeyError:
+            pass
+        row = tuple(self.member(string + e) for e in self.experiments)
+        result = self.__rows_to_canonical.setdefault(row, string)
+        self.__canonicalization_cache[string] = result
+        return result
 
     def member(self, s):
         """Check whether this string is a member of the language
         to be learned."""
         s = bytes(s)
         try:
-            return self.__cache[s]
+            return self.__member_cache[s]
         except KeyError:
-            return self.__cache.setdefault(s, self.__member(s))
+            return self.__member_cache.setdefault(s, self.__member(s))
 
     @property
     def generation(self):
@@ -201,8 +219,8 @@ class LearnedDFA(DFA):
         self.__member = lstar.member
         self.__experiments = lstar.experiments
 
-        self.__states = [b""]
-        self.__rows_to_states = {tuple(map(lstar.member, lstar.experiments)): 0}
+        self.__states = [self.__lstar.canonicalize(b"")]
+        self.__state_to_index = {self.__states[0]: 0}
         self.__transition_cache = {}
 
     def __check_changed(self):
@@ -233,33 +251,15 @@ class LearnedDFA(DFA):
             return self.__transition_cache[key]
         except KeyError:
             pass
-        s = self.__states[i]
 
-        # t is either the string that labels our destination
-        # state or one equivalent to it.
-        t = s + bytes([c])
+        label = self.__lstar.canonicalize(self.__states[i] + bytes([c]))
 
-        # A row is a tuple of booleans that corresponds to
-        # the information our experiments can reveal about
-        # this string. Two strings with different rows *must*
-        # correspond to different states in the DFA for our
-        # membership function, because the same path out
-        # of them (taken by one of the experiments) leads to
-        # different results.
-        row = tuple(self.__member(t + e) for e in self.__experiments)
         try:
-            # If we have seen this row before, assume that this
-            # state is equivalent to that already discovered one.
-            # If it is not, we will have to find a new experiment
-            # to reveal that,
-            result = self.__rows_to_states[row]
+            result = self.__state_to_index[label]
         except KeyError:
-            # This string is definitely not equivalent to any of
-            # those visited before, so it must be a new state and
-            # we add it to our list of states.
             result = len(self.__states)
-            self.__states.append(t)
-            self.__rows_to_states[row] = result
+            self.__states.append(label)
+            self.__state_to_index[label] = result
         self.__transition_cache[key] = result
         return result
 
