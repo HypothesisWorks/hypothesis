@@ -78,18 +78,24 @@ def test_iterates_over_learned_strings():
     learner = LStar(lambda s: len(s) == 2 and max(s) <= 5 and s <= upper_bound)
 
     learner.learn(upper_bound)
-    learner.learn([1, 2, 0])
-    learner.learn([6, 1, 2])
-    learner.learn([1, 3])
-    learner.learn([0, 5])
-    learner.learn([0, 6])
-    learner.learn([2, 0])
 
-    learner.learn([2, 0, 0, 0])
-    learner.learn([2, 0, 0])
-    learner.learn([0, 6, 0, 0])
-    learner.learn([1, 3, 0, 0])
-    learner.learn([0, 0, 0, 0, 0])
+    prev = -1
+    while learner.generation != prev:
+        prev = learner.generation
+        learner.learn([1, 2, 0])
+        learner.learn([6, 1, 2])
+        learner.learn([1, 3])
+        for i in range(7):
+            learner.learn([0, i])
+            learner.learn([1, i])
+        learner.learn([2, 0])
+
+        learner.learn([2, 0, 0, 0])
+        learner.learn([2, 0, 0])
+        learner.learn([0, 6, 0, 0])
+        learner.learn([1, 3, 0, 0])
+        learner.learn([1, 6, 0, 0])
+        learner.learn([0, 0, 0, 0, 0])
 
     dfa = learner.dfa
 

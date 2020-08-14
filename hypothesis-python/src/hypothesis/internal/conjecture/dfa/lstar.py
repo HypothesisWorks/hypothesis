@@ -14,10 +14,16 @@
 # END HEADER
 
 from bisect import bisect_right, insort
+from collections import Counter
 
 from hypothesis.errors import InvalidState
 from hypothesis.internal.conjecture.dfa import DFA, cached
-from hypothesis.internal.conjecture.junkdrawer import IntList, find_integer
+from hypothesis.internal.conjecture.junkdrawer import (
+    IntList,
+    NotFound,
+    SelfOrganisingList,
+    find_integer,
+)
 
 """
 This module contains an implementation of the L* algorithm
@@ -39,7 +45,11 @@ The former explains the core algorithm, the latter a modification
 we use (which we have further modified) which allows it to
 be implemented more efficiently.
 
-We have several major departures from the paper:
+Although we continue to call this L*, we in fact depart heavily from it to the
+point where honestly this is an entirely different algorithm and we should come
+up with a better name.
+
+We have several major departures from the papers:
 
 1. We learn the automaton lazily as we traverse it. This is particularly
    valuable because if we make many corrections on the same string we only
@@ -58,6 +68,14 @@ We have several major departures from the paper:
    inequivalent pair of integers or a new experiment, but it may greatly
    reduce the number of membership queries we have to make.
 
+
+In addition, we have a totally different approach for mapping a string to its
+canonical representative, which will be explained below inline. The general gist
+is that our implementation is much more willing to make mistakes: It will often
+create a DFA that is demonstrably wrong, based on information that it already
+has, but where it is too expensive to discover that before it causes us to
+make a mistake.
+
 A note on performance: This code is not really fast enough for
 us to ever want to run in production on large strings, and this
 is somewhat intrinsic. We should only use it in testing or for
@@ -65,18 +83,76 @@ learning languages offline that we can record for later use.
 
 """
 
+import attr
+
+
+@attr.s(slots=True)
+class DistinguishedState:
+    """Relevant information for a state that we have witnessed as definitely
+    distinct from ones we have previously seen so far."""
+
+    # Index of this state in the learner's list of states
+    index = attr.ib()
+
+    # A string that witnesses this state (i.e. when starting from the origin
+    # and following this string you will end up in this state).
+    label = attr.ib()
+
+    # A boolean as to whether this is an accepting state.
+    accepting = attr.ib()
+
+    # A list of experiments that it is necessary to run to determine whether
+    # a string is in this state. This is stored as a dict mapping experiments
+    # to their expected result. A string is only considered to lead to this
+    # state if ``all(learner.member(s + experiment) == result for experiment,
+    # result in self.experiments.items())``.
+    experiments = attr.ib()
+
+    # A cache of transitions out of this state, mapping bytes to the states
+    # that they lead to.
+    transitions = attr.ib(default=attr.Factory(dict))
+
 
 class LStar:
+    """This class holds the state for learning a DFA. The current DFA can be
+    accessed as the ``dfa`` member of this class. Such a DFA becomes invalid
+    as soon as ``learn`` has been called, and should only be used until the
+    next call to ``learn``.
+
+    Note that many of the DFA methods are on this class, but it is not itself
+    a DFA. The reason for this is that it stores mutable state which can cause
+    the structure of the learned DFA to change in potentially arbitrary ways,
+    making all cached properties become nonsense.
+    """
+
     def __init__(self, member):
         self.experiments = []
         self.__experiment_set = set()
         self.normalizer = IntegerNormalizer()
 
-        self.__cache = {}
+        self.__member_cache = {}
         self.__member = member
         self.__generation = 0
 
-        self.__add_experiment(b"")
+        # A list of all state objects that correspond to strings we have
+        # seen and can demonstrate map to unique states.
+        self.__states = [
+            DistinguishedState(
+                index=0,
+                label=b"",
+                accepting=self.member(b""),
+                experiments={b"": self.member(b"")},
+            )
+        ]
+
+        # When we're trying to figure out what state a string leads to we will
+        # end up searching to find a suitable candidate. By putting states in
+        # a self-organisating list we ideally minimise the number of lookups.
+        self.__self_organising_states = SelfOrganisingList(self.__states)
+
+        self.start = 0
+
+        self.__dfa_changed()
 
     def __dfa_changed(self):
         """Note that something has changed, updating the generation
@@ -84,14 +160,83 @@ class LStar:
         self.__generation += 1
         self.dfa = LearnedDFA(self)
 
+    def is_accepting(self, i):
+        """Equivalent to ``self.dfa.is_accepting(i)``"""
+        return self.__states[i].accepting
+
+    def label(self, i):
+        """Returns the string label for state ``i``."""
+        return self.__states[i].label
+
+    def transition(self, i, c):
+        """Equivalent to ``self.dfa.transition(i, c)```"""
+        c = self.normalizer.normalize(c)
+        state = self.__states[i]
+        try:
+            return state.transitions[c]
+        except KeyError:
+            pass
+
+        # The state that we transition to when reading ``c`` is reached by
+        # this string, because this state is reached by state.label. We thus
+        # want our candidate for the transition to be some state with a label
+        # equivalent to this string.
+        #
+        # We find such a state by looking for one such that all of its listed
+        # experiments agree on the result for its state label and this string.
+        string = state.label + bytes([c])
+
+        # We keep track of some useful experiments for distinguishing this
+        # string from other states, as this both allows us to more accurately
+        # select the state to map to and, if necessary, create the new state
+        # that this string corresponds to with a decent set of starting
+        # experiments.
+        accumulated = {}
+        counts = Counter()
+
+        def equivalent(t):
+            """Checks if ``string`` could possibly lead to state ``t``."""
+            for e, expected in accumulated.items():
+                if self.member(t.label + e) != expected:
+                    counts[e] += 1
+                    return False
+
+            for e, expected in t.experiments.items():
+                result = self.member(string + e)
+                if result != expected:
+                    # We expect most experiments to return False so if we add
+                    # only True ones to our collection of essential experiments
+                    # we keep the size way down and select only ones that are
+                    # likely to provide useful information in future.
+                    if result:
+                        accumulated[e] = result
+                    return False
+            return True
+
+        try:
+            destination = self.__self_organising_states.find(equivalent)
+        except NotFound:
+            i = len(self.__states)
+            destination = DistinguishedState(
+                index=i,
+                label=string,
+                experiments=accumulated,
+                accepting=self.member(string),
+            )
+            self.__states.append(destination)
+            self.__self_organising_states.add(destination)
+        state.transitions[c] = destination.index
+        return destination.index
+
     def member(self, s):
         """Check whether this string is a member of the language
         to be learned."""
-        s = bytes(s)
         try:
-            return self.__cache[s]
+            return self.__member_cache[s]
         except KeyError:
-            return self.__cache.setdefault(s, self.__member(s))
+            result = self.__member(s)
+            self.__member_cache[s] = result
+            return result
 
     @property
     def generation(self):
@@ -156,6 +301,9 @@ class LStar:
             assert target != normalized
             self.__dfa_changed()
 
+        if self.dfa.matches(string) == correct_outcome:
+            return
+
         # Now we know normalization is correct we can attempt to determine if
         # any of our transitions are wrong.
         while True:
@@ -181,6 +329,8 @@ class LStar:
 
                 return self.member(dfa.label(states[n]) + string[n:]) == correct_outcome
 
+            assert seems_right(0)
+
             n = find_integer(seems_right)
 
             # We got to the end without ever finding ourself in a bad
@@ -195,18 +345,25 @@ class LStar:
             # that allows us to distinguish the state that we ended
             # up in from the state that we should have ended up in.
 
-            suffix = string[n + 1 :]
+            l1 = self.dfa.label(states[n + 1])
+            l2 = self.dfa.label(states[n]) + string[n : n + 1]
 
-            current = dfa.label(states[n + 1])
-            actual = dfa.label(states[n]) + string[n : n + 1]
-            assert self.member(current + suffix) != self.member(actual + suffix)
-            self.__add_experiment(suffix)
+            assert self.transition(states[n], string[n]) == states[n + 1]
 
-    def __add_experiment(self, e):
-        assert e not in self.__experiment_set
-        self.experiments.append(e)
-        self.__experiment_set.add(e)
-        self.__dfa_changed()
+            ex = string[n + 1 :]
+
+            assert self.member(l1 + ex) != self.member(l2 + ex)
+
+            # Adding this experiment causes us to distinguish l1 from the state
+            # labelled with l2.
+            self.__states[states[n + 1]].experiments[ex] = self.member(l1 + ex)
+
+            # We now clear the cached details that caused us to make this error
+            # so that when we recalculate this transition we get to a
+            # (hopefully now correct) different state.
+            del self.__states[states[n]].transitions[string[n]]
+            self.__dfa_changed()
+            assert self.transition(states[n], string[n]) != states[n + 1]
 
 
 class LearnedDFA(DFA):
@@ -219,14 +376,6 @@ class LearnedDFA(DFA):
         self.__lstar = lstar
         self.__generation = lstar.generation
 
-        self.__normalizer = lstar.normalizer
-        self.__member = lstar.member
-        self.__experiments = lstar.experiments
-
-        self.__states = [b""]
-        self.__rows_to_states = {tuple(map(lstar.member, lstar.experiments)): 0}
-        self.__transition_cache = {}
-
     def __check_changed(self):
         if self.__generation != self.__lstar.generation:
             raise InvalidState(
@@ -236,54 +385,22 @@ class LearnedDFA(DFA):
             )
 
     def label(self, i):
-        return self.__states[i]
+        self.__check_changed()
+        return self.__lstar.label(i)
 
     @property
     def start(self):
         self.__check_changed()
-        return 0
+        return self.__lstar.start
 
     def is_accepting(self, i):
         self.__check_changed()
-        return self.__member(self.__states[i])
+        return self.__lstar.is_accepting(i)
 
     def transition(self, i, c):
         self.__check_changed()
-        c = self.__normalizer.normalize(c)
-        key = (i, c)
-        try:
-            return self.__transition_cache[key]
-        except KeyError:
-            pass
-        s = self.__states[i]
 
-        # t is either the string that labels our destination
-        # state or one equivalent to it.
-        t = s + bytes([c])
-
-        # A row is a tuple of booleans that corresponds to
-        # the information our experiments can reveal about
-        # this string. Two strings with different rows *must*
-        # correspond to different states in the DFA for our
-        # membership function, because the same path out
-        # of them (taken by one of the experiments) leads to
-        # different results.
-        row = tuple(self.__member(t + e) for e in self.__experiments)
-        try:
-            # If we have seen this row before, assume that this
-            # state is equivalent to that already discovered one.
-            # If it is not, we will have to find a new experiment
-            # to reveal that,
-            result = self.__rows_to_states[row]
-        except KeyError:
-            # This string is definitely not equivalent to any of
-            # those visited before, so it must be a new state and
-            # we add it to our list of states.
-            result = len(self.__states)
-            self.__states.append(t)
-            self.__rows_to_states[row] = result
-        self.__transition_cache[key] = result
-        return result
+        return self.__lstar.transition(i, c)
 
     @cached
     def successor_states(self, state):
