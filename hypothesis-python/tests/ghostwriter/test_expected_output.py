@@ -37,12 +37,19 @@ def timsort(seq: Sequence[int]) -> Sequence[int]:
     return sorted(seq)
 
 
+class A_Class:
+    @classmethod
+    def a_classmethod(cls, arg: int):
+        pass
+
+
 # Note: for some of the `expected` outputs, we replace away some small
 #       parts which vary between minor versions of Python.
 @pytest.mark.parametrize(
     "data",
     [
         ("fuzz_sorted", ghostwriter.fuzz(sorted)),
+        ("fuzz_classmethod", ghostwriter.fuzz(A_Class.a_classmethod)),
         ("re_compile", ghostwriter.fuzz(re.compile)),
         (
             "re_compile_except",

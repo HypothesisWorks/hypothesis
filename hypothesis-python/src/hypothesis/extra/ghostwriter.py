@@ -161,12 +161,11 @@ def _valid_syntax_repr(strategy):
         return "nothing()"
 
 
-def _get_qualname(obj):
+def _get_qualname(obj, full=False):
     # Replacing angle-brackets for objects defined in `.<locals>.`
     qname = obj.__qualname__.replace("<", "_").replace(">", "_")
-    if obj.__module__ not in qname:
-        # to fix up e.g. `json.dumps.__qualname__ == "dumps"`
-        return obj.__module__ + "." + obj.__name__
+    if full:
+        return obj.__module__ + "." + qname
     return qname
 
 
@@ -185,7 +184,7 @@ def _write_call(func: Callable, *pass_variables: str) -> str:
         (v or p) if p in pos_only else f"{p}={v or p}"
         for v, p in zip_longest(pass_variables, _get_params(func))
     )
-    return f"{_get_qualname(func)}({args})"
+    return f"{_get_qualname(func, full=True)}({args})"
 
 
 def _make_test(
@@ -213,11 +212,11 @@ def _make_test(
     if except_:
         exceptions = []
         for ex in except_:
-            if ex.__name__ in dir(builtins):
-                exceptions.append(ex.__name__)
+            if ex.__qualname__ in dir(builtins):
+                exceptions.append(ex.__qualname__)
             else:
                 imports.add(ex.__module__)
-                exceptions.append(_get_qualname(ex))
+                exceptions.append(_get_qualname(ex, full=True))
         test_body = SUPPRESS_BLOCK.format(
             test_body=indent(test_body, prefix="    "),
             exceptions="(" + ", ".join(exceptions) + ")"
@@ -232,7 +231,7 @@ def _make_test(
         else "# TODO: replace st.nothing() with an appropriate strategy\n\n",
         given_args=given_args,
         test_kind=ghost,
-        func_name="_".join(f.__name__ for f in funcs),
+        func_name="_".join(_get_qualname(f).replace(".", "_") for f in funcs),
         arg_names=", ".join(argnames),
         test_body=indent(test_body, prefix="    "),
     )
@@ -241,7 +240,8 @@ def _make_test(
     if style == "unittest":
         imports.add("unittest")
         body = "class Test{}{}(unittest.TestCase):\n".format(
-            ghost.title(), "".join(f.__name__.title() for f in funcs)
+            ghost.title(),
+            "".join(f.__qualname__.replace(".", "").title() for f in funcs),
         ) + indent(body, "    ")
 
     result = (
