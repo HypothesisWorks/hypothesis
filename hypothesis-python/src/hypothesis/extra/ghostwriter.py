@@ -14,13 +14,37 @@
 # END HEADER
 
 """
-WARNING: this module is under development and should not be used... yet.
-See https://github.com/HypothesisWorks/hypothesis/pull/2344 for progress.
+Writing tests with Hypothesis frees you from the tedium of deciding on and
+writing out specific inputs to test.  Now, the ``hypothesis.extra.ghostwriter``
+module can write your test functions for you too!
+
+The idea is to provide **an easy way to start** property-based testing,
+**and a seamless transition** to more complex test code - because ghostwritten
+tests are source code that you could have written for yourself.
+
+So just pick a function you'd like tested, and feed it to one of the functions
+below!
+They follow imports, use but do not require type annotations, and generally
+do their best to write you a useful test.
+
+.. note::
+
+    The ghostwriter requires Python 3.6+ and :pypi:`black`, but the generated
+    code supports Python 3.5+ and has no dependencies beyond Hypothesis itself.
+
+.. note::
+
+    Legal questions?  While the ghostwriter fragments and logic is under the
+    MPL-2.0 license like the rest of Hypothesis, the *output* from the ghostwriter
+    is made available under the `Creative Commons Zero (CC0)
+    <https://creativecommons.org/share-your-work/public-domain/cc0/>`__
+    public domain dedication, so you can use it without any restrictions.
 """
 
 import builtins
 import enum
 import inspect
+import re
 import sys
 import types
 from collections import OrderedDict
@@ -351,6 +375,26 @@ def _is_probably_ufunc(obj):
     return callable(obj) and all(hasattr(obj, name) for name in has_attributes)
 
 
+# If we have a pair of functions where one name matches the regex and the second
+# is the result of formatting the template with matched groups, our magic()
+# ghostwriter will write a roundtrip test for them.  Additional patterns welcome.
+ROUNDTRIP_PAIRS = (
+    # Defined prefix, shared postfix.  The easy cases.
+    (r"write(.+)", "read{}"),
+    (r"save(.+)", "load{}"),
+    (r"dump(.+)", "load{}"),
+    (r"to(.+)", "from{}"),
+    # Known stem, maybe matching prefixes, maybe matching postfixes.
+    (r"(.*)encode(.*)", "{}decode{}"),
+    # Shared postfix, prefix only on "inverse" function
+    (r"(.+)", "de{}"),
+    (r"(.+)", "un{}"),
+    # a2b_postfix and b2a_postfix.  Not a fan of this pattern, but it's pretty
+    # common in code imitating an C API - see e.g. the stdlib binascii module.
+    (r"(.+)2(.+?)(_.+)?", "{1}2{0}{2}"),
+)
+
+
 def magic(
     *modules_or_functions: Union[Callable, types.ModuleType],
     except_: Except = (),
@@ -399,7 +443,20 @@ def magic(
     if len(by_name) < len(functions):
         raise InvalidArgument("Functions to magic() test must have unique names")
 
-    # TODO: identify roundtrip pairs, and write a specific test for each
+    # Look for pairs of functions that roundtrip, based on known naming patterns.
+    for writename, readname in ROUNDTRIP_PAIRS:
+        for name in sorted(by_name):
+            match = re.fullmatch(writename, name)
+            if match:
+                other = readname.format(*match.groups())
+                if other in by_name:
+                    imp, body = _make_roundtrip_body(
+                        (by_name.pop(name), by_name.pop(other)),
+                        except_=except_,
+                        style=style,
+                    )
+                    imports |= imp
+                    parts.append(body)
 
     # For all remaining callables, just write a fuzz-test.  In principle we could
     # guess at equivalence or idempotence; but it doesn't seem accurate enough to
@@ -456,5 +513,131 @@ def fuzz(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
 
     imports, body = _make_test_body(
         func, test_body=_write_call(func), except_=except_, ghost="fuzz", style=style
+    )
+    return _make_test(imports, body)
+
+
+def idempotent(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
+    """Write source code for a property-based test of ``func``.
+
+    The resulting test checks that if you call ``func`` on it's own output,
+    the result does not change.  For example:
+
+    .. code-block:: python
+
+        from typing import Sequence
+        from hypothesis.extra import ghostwriter
+
+        def timsort(seq: Sequence[int]) -> Sequence[int]:
+            return sorted(seq)
+
+        ghostwriter.idempotent(timsort)
+
+    Gives:
+
+    .. code-block:: python
+
+        # This test code was written by the `hypothesis.extra.ghostwriter` module
+        # and is provided under the Creative Commons Zero public domain dedication.
+
+        from hypothesis import given, strategies as st
+
+        @given(seq=st.one_of(st.binary(), st.binary().map(bytearray), st.lists(st.integers())))
+        def test_idempotent_timsort(seq):
+            result = timsort(seq=seq)
+            repeat = timsort(seq=result)
+            assert result == repeat, (result, repeat)
+    """
+    if not callable(func):
+        raise InvalidArgument(f"Got non-callable func={func!r}")
+    except_ = _check_except(except_)
+    _check_style(style)
+
+    test_body = "result = {}\nrepeat = {}\n{}".format(
+        _write_call(func),
+        _write_call(func, "result"),
+        _assert_eq(style, "result", "repeat"),
+    )
+
+    imports, body = _make_test_body(
+        func, test_body=test_body, except_=except_, ghost="idempotent", style=style
+    )
+    return _make_test(imports, body)
+
+
+def _make_roundtrip_body(funcs, except_, style):
+    first_param = next(iter(_get_params(funcs[0])))
+    test_lines = [
+        "value0 = " + _write_call(funcs[0]),
+        *(
+            f"value{i + 1} = " + _write_call(f, f"value{i}")
+            for i, f in enumerate(funcs[1:])
+        ),
+        _assert_eq(style, first_param, f"value{len(funcs) - 1}"),
+    ]
+    return _make_test_body(
+        *funcs,
+        test_body="\n".join(test_lines),
+        except_=except_,
+        ghost="roundtrip",
+        style=style,
+    )
+
+
+def roundtrip(*funcs: Callable, except_: Except = (), style: str = "pytest") -> str:
+    """Write source code for a property-based test of ``funcs``.
+
+    The resulting test checks that if you call the first function, pass the result
+    to the second (and so on), the final result is equal to the first input argument.
+
+    This is a *very* powerful property to test, especially when the config options
+    are varied along with the object to round-trip.  For example, try ghostwriting
+    a test for :func:`python:json.dumps` - would you have thought of all that?
+    """
+    if not funcs:
+        raise InvalidArgument("Round-trip of zero functions is meaningless.")
+    for i, f in enumerate(funcs):
+        if not callable(f):
+            raise InvalidArgument(f"Got non-callable funcs[{i}]={f!r}")
+    except_ = _check_except(except_)
+    _check_style(style)
+    return _make_test(*_make_roundtrip_body(funcs, except_, style))
+
+
+def equivalent(*funcs: Callable, except_: Except = (), style: str = "pytest") -> str:
+    """Write source code for a property-based test of ``funcs``.
+
+    The resulting test checks that calling each of the functions gives
+    the same result.  This can be used as a classic 'oracle', such as testing
+    a fast sorting algorithm against the :func:`python:sorted` builtin, or
+    for differential testing where none of the compared functions are fully
+    trusted but any difference indicates a bug (e.g. running a function on
+    different numbers of threads, or simply multiple times).
+
+    The functions should have reasonably similar signatures, as only the
+    common parameters will be passed the same arguments - any other parameters
+    will be allowed to vary.
+    """
+    if len(funcs) < 2:
+        raise InvalidArgument("Need at least two functions to compare.")
+    for i, f in enumerate(funcs):
+        if not callable(f):
+            raise InvalidArgument(f"Got non-callable funcs[{i}]={f!r}")
+    except_ = _check_except(except_)
+    _check_style(style)
+
+    var_names = [f"result_{f.__name__}" for f in funcs]
+    if len(set(var_names)) < len(var_names):
+        var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
+    test_lines = [
+        vname + " = " + _write_call(f) for vname, f in zip(var_names, funcs)
+    ] + [_assert_eq(style, var_names[0], vname) for vname in var_names[1:]]
+
+    imports, body = _make_test_body(
+        *funcs,
+        test_body="\n".join(test_lines),
+        except_=except_,
+        ghost="equivalent",
+        style=style,
     )
     return _make_test(imports, body)
