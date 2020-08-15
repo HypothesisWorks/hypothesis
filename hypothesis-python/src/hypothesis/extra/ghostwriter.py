@@ -23,7 +23,7 @@ The idea is to provide **an easy way to start** property-based testing,
 tests are source code that you could have written for yourself.
 
 So just pick a function you'd like tested, and feed it to one of the functions
-below!
+below or :ref:`our command-line interface <hypothesis-cli>` :command:`hypothesis write -h`!
 They follow imports, use but do not require type annotations, and generally
 do their best to write you a useful test.
 
@@ -410,6 +410,8 @@ def magic(
     After finding the public functions attached to any modules, the ``magic``
     ghostwriter looks for pairs of functions to pass to :func:`~roundtrip`,
     and any others are passed to :func:`~fuzz`.
+
+    For example, try :command:`hypothesis write gzip`!
     """
     except_ = _check_except(except_)
     _check_style(style)
@@ -593,6 +595,10 @@ def roundtrip(*funcs: Callable, except_: Except = (), style: str = "pytest") -> 
     This is a *very* powerful property to test, especially when the config options
     are varied along with the object to round-trip.  For example, try ghostwriting
     a test for :func:`python:json.dumps` - would you have thought of all that?
+
+    .. code-block:: shell
+
+        hypothesis write --roundtrip json.dumps json.loads
     """
     if not funcs:
         raise InvalidArgument("Round-trip of zero functions is meaningless.")
