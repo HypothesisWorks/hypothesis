@@ -214,7 +214,6 @@ class DFA:
                 for t in self.successor_states(s):
                     key = (t, n - 1)
                     if key not in cache and key not in seen:
-                        assert key not in pending
                         pending.append(key)
                         seen.add(key)
 
