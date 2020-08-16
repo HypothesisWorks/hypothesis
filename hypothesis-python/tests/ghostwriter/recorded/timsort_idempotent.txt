@@ -1,0 +1,12 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import test_expected_output
+from hypothesis import given, strategies as st
+
+
+@given(seq=st.one_of(st.binary(), st.binary().map(bytearray), st.lists(st.integers())))
+def test_idempotent_timsort(seq):
+    result = test_expected_output.timsort(seq=seq)
+    repeat = test_expected_output.timsort(seq=result)
+    assert result == repeat, (result, repeat)

@@ -1,0 +1,16 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import ast
+from hypothesis import given, strategies as st
+
+# TODO: replace st.nothing() with an appropriate strategy
+
+
+@given(
+    globals=st.none(), locals=st.none(), node_or_string=st.text(), source=st.nothing()
+)
+def test_equivalent_eval_literal_eval(globals, locals, node_or_string, source):
+    result_eval = eval(source, globals, locals)
+    result_literal_eval = ast.literal_eval(node_or_string=node_or_string)
+    assert result_eval == result_literal_eval, (result_eval, result_literal_eval)

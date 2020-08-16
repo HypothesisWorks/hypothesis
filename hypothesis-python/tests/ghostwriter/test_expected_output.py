@@ -19,6 +19,7 @@
 To update the recorded outputs, run `pytest --hypothesis-update-outputs ...`.
 """
 
+import ast
 import base64
 import pathlib
 import re
@@ -63,6 +64,10 @@ class A_Class:
         ),
         ("re_compile_unittest", ghostwriter.fuzz(re.compile, style="unittest")),
         ("base64_magic", ghostwriter.magic(base64)),
+        ("sorted_idempotent", ghostwriter.idempotent(sorted)),
+        ("timsort_idempotent", ghostwriter.idempotent(timsort)),
+        ("eval_equivalent", ghostwriter.equivalent(eval, ast.literal_eval)),
+        ("sorted_self_equivalent", ghostwriter.equivalent(sorted, sorted, sorted)),
     ],
     ids=lambda x: x[0],
 )

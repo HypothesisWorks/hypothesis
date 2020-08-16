@@ -63,6 +63,7 @@ check out some of the
   settings
   data
   extras
+  ghostwriter
   django
   numpy
   healthchecks

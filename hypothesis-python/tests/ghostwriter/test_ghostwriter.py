@@ -24,7 +24,7 @@ from typing import List, Sequence, Set
 
 import pytest
 
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import InvalidArgument, MultipleFailures, Unsatisfiable
 from hypothesis.extra import ghostwriter
 from hypothesis.strategies import from_type, just
 
@@ -142,7 +142,17 @@ def test_no_hashability_filter():
     assert "_can_hash" not in source_code
 
 
-@pytest.mark.parametrize("gw,args", [(ghostwriter.fuzz, ["not callable"])])
+@pytest.mark.parametrize(
+    "gw,args",
+    [
+        (ghostwriter.fuzz, ["not callable"]),
+        (ghostwriter.idempotent, ["not callable"]),
+        (ghostwriter.roundtrip, []),
+        (ghostwriter.roundtrip, ["not callable"]),
+        (ghostwriter.equivalent, [sorted]),
+        (ghostwriter.equivalent, [sorted, "not callable"]),
+    ],
+)
 def test_invalid_func_inputs(gw, args):
     with pytest.raises(InvalidArgument):
         gw(*args)
@@ -176,3 +186,54 @@ def test_exception_deduplication(exceptions, output):
         lambda: None, ghost="", test_body="pass", except_=exceptions, style="pytest"
     )
     assert f"except {output}:" in body
+
+
+def test_run_ghostwriter_roundtrip():
+    # This test covers the whole lifecycle: first, we get the default code.
+    # The first argument is unknown, so we fail to draw from st.nothing()
+    source_code = ghostwriter.roundtrip(json.dumps, json.loads)
+    with pytest.raises(Unsatisfiable):
+        get_test_function(source_code)()
+
+    # Replacing that nothing() with a strategy for JSON allows us to discover
+    # two possible failures: `nan` is not equal to itself, and if dumps is
+    # passed allow_nan=False it is a ValueError to pass a non-finite float.
+    source_code = source_code.replace(
+        "st.nothing()",
+        "st.recursive(st.one_of(st.none(), st.booleans(), st.floats(), st.text()), "
+        "lambda v: st.lists(v, max_size=2) | st.dictionaries(st.text(), v, max_size=2)"
+        ", max_leaves=2)",
+    )
+    try:
+        get_test_function(source_code)()
+    except (AssertionError, ValueError, MultipleFailures):
+        pass
+
+    # Finally, restricting ourselves to finite floats makes the test pass!
+    source_code = source_code.replace(
+        "st.floats()", "st.floats(allow_nan=False, allow_infinity=False)"
+    )
+    get_test_function(source_code)()
+
+
+@varied_excepts
+@pytest.mark.parametrize("func", [sorted, timsort])
+def test_ghostwriter_idempotent(func, ex):
+    source_code = ghostwriter.idempotent(func, except_=ex)
+    test = get_test_function(source_code)
+    if "=st.nothing()" in source_code:
+        with pytest.raises(Unsatisfiable):
+            test()
+    else:
+        test()
+
+
+def test_overlapping_args_use_union_of_strategies():
+    def f(arg: int) -> None:
+        pass
+
+    def g(arg: float) -> None:
+        pass
+
+    source_code = ghostwriter.equivalent(f, g)
+    assert "arg=st.one_of(st.integers(), st.floats())" in source_code

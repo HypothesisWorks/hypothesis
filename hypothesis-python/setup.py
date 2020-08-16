@@ -57,6 +57,8 @@ assert __version__ is not None
 
 
 extras = {
+    "cli": ["click>=7.0", "black>=19.10b0"],
+    "ghostwriter": ["black>=19.10b0"],
     "pytz": ["pytz>=2014.1"],
     "dateutil": ["python-dateutil>=1.4"],
     "lark": ["lark-parser>=0.6.5"],
@@ -114,7 +116,10 @@ setuptools.setup(
         "Topic :: Software Development :: Testing",
         "Typing :: Typed",
     ],
-    entry_points={"pytest11": ["hypothesispytest = hypothesis.extra.pytestplugin"]},
+    entry_points={
+        "pytest11": ["hypothesispytest = hypothesis.extra.pytestplugin"],
+        "console_scripts": ["hypothesis = hypothesis.extra.cli:main"],
+    },
     long_description=open(README).read(),
     long_description_content_type="text/x-rst",
     keywords="python testing fuzzing property-based-testing",

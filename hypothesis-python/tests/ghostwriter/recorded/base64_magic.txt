@@ -8,101 +8,74 @@ from hypothesis import given, strategies as st
 
 
 @given(
+    adobe=st.booleans(),
     b=st.nothing(),
     foldspaces=st.booleans(),
-    adobe=st.booleans(),
     ignorechars=st.just(b" \t\n\r\x0b"),
-)
-def test_fuzz_a85decode(b, foldspaces, adobe, ignorechars):
-    base64.a85decode(b=b, foldspaces=foldspaces, adobe=adobe, ignorechars=ignorechars)
-
-
-@given(
-    b=st.nothing(),
-    foldspaces=st.booleans(),
-    wrapcol=st.just(0),
     pad=st.booleans(),
-    adobe=st.booleans(),
+    wrapcol=st.just(0),
 )
-def test_fuzz_a85encode(b, foldspaces, wrapcol, pad, adobe):
-    base64.a85encode(b=b, foldspaces=foldspaces, wrapcol=wrapcol, pad=pad, adobe=adobe)
+def test_roundtrip_a85encode_a85decode(adobe, b, foldspaces, ignorechars, pad, wrapcol):
+    value0 = base64.a85encode(
+        b=b, foldspaces=foldspaces, wrapcol=wrapcol, pad=pad, adobe=adobe
+    )
+    value1 = base64.a85decode(
+        b=value0, foldspaces=foldspaces, adobe=adobe, ignorechars=ignorechars
+    )
+    assert b == value1, (b, value1)
 
 
-@given(s=st.nothing(), casefold=st.booleans())
-def test_fuzz_b16decode(s, casefold):
-    base64.b16decode(s=s, casefold=casefold)
+@given(casefold=st.booleans(), s=st.nothing())
+def test_roundtrip_b16encode_b16decode(casefold, s):
+    value0 = base64.b16encode(s=s)
+    value1 = base64.b16decode(s=value0, casefold=casefold)
+    assert s == value1, (s, value1)
 
 
-@given(s=st.nothing())
-def test_fuzz_b16encode(s):
-    base64.b16encode(s=s)
+@given(casefold=st.booleans(), map01=st.none(), s=st.nothing())
+def test_roundtrip_b32encode_b32decode(casefold, map01, s):
+    value0 = base64.b32encode(s=s)
+    value1 = base64.b32decode(s=value0, casefold=casefold, map01=map01)
+    assert s == value1, (s, value1)
 
 
-@given(s=st.nothing(), casefold=st.booleans(), map01=st.none())
-def test_fuzz_b32decode(s, casefold, map01):
-    base64.b32decode(s=s, casefold=casefold, map01=map01)
-
-
-@given(s=st.nothing())
-def test_fuzz_b32encode(s):
-    base64.b32encode(s=s)
-
-
-@given(s=st.nothing(), altchars=st.none(), validate=st.booleans())
-def test_fuzz_b64decode(s, altchars, validate):
-    base64.b64decode(s=s, altchars=altchars, validate=validate)
-
-
-@given(s=st.nothing(), altchars=st.none())
-def test_fuzz_b64encode(s, altchars):
-    base64.b64encode(s=s, altchars=altchars)
-
-
-@given(b=st.nothing())
-def test_fuzz_b85decode(b):
-    base64.b85decode(b=b)
+@given(altchars=st.none(), s=st.nothing(), validate=st.booleans())
+def test_roundtrip_b64encode_b64decode(altchars, s, validate):
+    value0 = base64.b64encode(s=s, altchars=altchars)
+    value1 = base64.b64decode(s=value0, altchars=altchars, validate=validate)
+    assert s == value1, (s, value1)
 
 
 @given(b=st.nothing(), pad=st.booleans())
-def test_fuzz_b85encode(b, pad):
-    base64.b85encode(b=b, pad=pad)
+def test_roundtrip_b85encode_b85decode(b, pad):
+    value0 = base64.b85encode(b=b, pad=pad)
+    value1 = base64.b85decode(b=value0)
+    assert b == value1, (b, value1)
 
 
 @given(input=st.nothing(), output=st.nothing())
-def test_fuzz_decode(input, output):
-    base64.decode(input=input, output=output)
+def test_roundtrip_encode_decode(input, output):
+    value0 = base64.encode(input=input, output=output)
+    value1 = base64.decode(input=value0, output=output)
+    assert input == value1, (input, value1)
 
 
 @given(s=st.nothing())
-def test_fuzz_decodebytes(s):
-    base64.decodebytes(s=s)
-
-
-@given(input=st.nothing(), output=st.nothing())
-def test_fuzz_encode(input, output):
-    base64.encode(input=input, output=output)
+def test_roundtrip_encodebytes_decodebytes(s):
+    value0 = base64.encodebytes(s=s)
+    value1 = base64.decodebytes(s=value0)
+    assert s == value1, (s, value1)
 
 
 @given(s=st.nothing())
-def test_fuzz_encodebytes(s):
-    base64.encodebytes(s=s)
+def test_roundtrip_standard_b64encode_standard_b64decode(s):
+    value0 = base64.standard_b64encode(s=s)
+    value1 = base64.standard_b64decode(s=value0)
+    assert s == value1, (s, value1)
 
 
 @given(s=st.nothing())
-def test_fuzz_standard_b64decode(s):
-    base64.standard_b64decode(s=s)
-
-
-@given(s=st.nothing())
-def test_fuzz_standard_b64encode(s):
-    base64.standard_b64encode(s=s)
-
-
-@given(s=st.nothing())
-def test_fuzz_urlsafe_b64decode(s):
-    base64.urlsafe_b64decode(s=s)
-
-
-@given(s=st.nothing())
-def test_fuzz_urlsafe_b64encode(s):
-    base64.urlsafe_b64encode(s=s)
+def test_roundtrip_urlsafe_b64encode_urlsafe_b64decode(s):
+    value0 = base64.urlsafe_b64encode(s=s)
+    value1 = base64.urlsafe_b64decode(s=value0)
+    assert s == value1, (s, value1)
