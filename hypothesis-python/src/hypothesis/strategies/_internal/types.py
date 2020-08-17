@@ -18,6 +18,7 @@ import datetime
 import decimal
 import fractions
 import functools
+import importlib
 import inspect
 import io
 import ipaddress
@@ -133,15 +134,19 @@ def is_generic_type(type_):
 
 def _try_import_forward_ref(thing, bound):
     """
-    Gets a real ``TypeVar`` bound to a ``ForwardRef`` to try to import the real bound type.
+    Tries to import a real bound type from ``TypeVar`` bound to a ``ForwardRef``.
 
     This function is very "magical" to say the least, please don't use it.
     """
     try:
-        module = __import__(thing.__module__)
+        module = importlib.import_module(thing.__module__)
         return st.from_type(getattr(module, bound.__forward_arg__))
     except (ImportError, AttributeError):
-        return bound  # ok, it didn't work, we fallback to a ForwardRef
+        # TODO: maybe some other fallback?
+        raise InvalidArgument(
+            "It was not possible to import bound %s from a TypeVar"
+            % (bound.__forward_arg__,),
+        )
 
 
 def from_typing_type(thing):
@@ -157,7 +162,6 @@ def from_typing_type(thing):
     # Under 3.6 Union is handled directly in st.from_type, as the argument is
     # not an instance of `type`. However, under Python 3.5 Union *is* a type
     # and we have to handle it here, including failing if it has no parameters.
-    print('thing', thing, getattr(thing, "__origin__", None))
     if hasattr(thing, "__union_params__"):  # pragma: no cover
         args = sorted(thing.__union_params__ or (), key=type_sorting_key)
         if not args:
