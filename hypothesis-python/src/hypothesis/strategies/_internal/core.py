@@ -73,6 +73,7 @@ from hypothesis.internal.floats import (
 from hypothesis.internal.reflection import (
     define_function_signature,
     deprecated_posargs,
+    get_pretty_function_description,
     is_typed_named_tuple,
     nicerepr,
     proxies,
@@ -2087,6 +2088,12 @@ def register_type_strategy(
 
     ``strategy`` may be a search strategy, or a function that takes a type and
     returns a strategy (useful for generic types).
+
+    Note that you may not register a parametrised generic type (such as
+    ``MyCollection[int]``) directly, because the resolution logic does not
+    handle this case correctly.  Instead, you may register a *function* for
+    ``MyCollection`` and `inspect the type parameters within that function
+    <https://stackoverflow.com/q/48572831>`__.
     """
     # TODO: We would like to move this to the top level, but pending some major
     # refactoring it's hard to do without creating circular imports.
@@ -2101,6 +2108,28 @@ def register_type_strategy(
         )
     elif isinstance(strategy, SearchStrategy) and strategy.is_empty:
         raise InvalidArgument("strategy=%r must not be empty")
+    elif types.has_type_arguments(custom_type):
+        origin = getattr(custom_type, "__origin__", None)
+        if callable(strategy):
+            strategy_repr = get_pretty_function_description(strategy)
+        else:
+            strategy_repr = repr(strategy)
+        note_deprecation(
+            "Registering a generic type with arguments (%r) is deprecated, and "
+            "will be an error in future, because the resolution logic is badly "
+            "broken.  Instead, register a function for the origin type (%r) "
+            "which can inspect specific type objects and return a strategy.  "
+            "%s will be registered for any type arguments."
+            % (custom_type, origin, strategy_repr),
+            since="RELEASEDAY",
+        )
+        if origin in types._global_type_lookup:
+            raise InvalidArgument(
+                "Cannot register %r, because the without-arguments form %r already "
+                "has a registered strategy %s" % (custom_type, origin, strategy_repr)
+            )
+        custom_type = origin
+
     types._global_type_lookup[custom_type] = strategy
     from_type.__clear_cache()  # type: ignore
 

@@ -31,7 +31,7 @@ from hypothesis.internal.compat import ForwardRef, get_type_hints, typing_root_t
 from hypothesis.strategies import from_type
 from hypothesis.strategies._internal import types
 from tests.common.debug import assert_all_examples, find_any, minimal
-from tests.common.utils import fails_with
+from tests.common.utils import fails_with, temp_registered
 
 sentinel = object()
 generics = sorted(
@@ -195,31 +195,19 @@ def test_lookup_overrides_defaults():
 
 def test_register_generic_typing_strats():
     # I don't expect anyone to do this, but good to check it works as expected
-    try:
+    with temp_registered(typing.Sequence, types._global_type_lookup[typing.Set]):
         # We register sets for the abstract sequence type, which masks subtypes
         # from supertype resolution but not direct resolution
-        st.register_type_strategy(
-            typing.Sequence, types._global_type_lookup[typing.Set]
+        assert_all_examples(
+            from_type(typing.Sequence[int]), lambda ex: isinstance(ex, set)
         )
-
-        @given(from_type(typing.Sequence[int]))
-        def inner_1(ex):
-            assert isinstance(ex, set)
-
-        @given(from_type(typing.Container[int]))
-        def inner_2(ex):
-            assert not isinstance(ex, typing.Sequence)
-
-        @given(from_type(typing.List[int]))
-        def inner_3(ex):
-            assert isinstance(ex, list)
-
-        inner_1()
-        inner_2()
-        inner_3()
-    finally:
-        types._global_type_lookup.pop(typing.Sequence)
-        st.from_type.__clear_cache()
+        assert_all_examples(
+            from_type(typing.Container[int]),
+            lambda ex: not isinstance(ex, typing.Sequence),
+        )
+        assert_all_examples(
+            from_type(typing.List[int]), lambda ex: isinstance(ex, list)
+        )
 
 
 def if_available(name):

@@ -22,6 +22,8 @@ from hypothesis._settings import Phase
 from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.internal.reflection import proxies
 from hypothesis.reporting import default, with_reporter
+from hypothesis.strategies._internal.core import from_type, register_type_strategy
+from hypothesis.strategies._internal.types import _global_type_lookup
 
 no_shrink = tuple(set(Phase) - {Phase.shrink})
 
@@ -164,3 +166,21 @@ def assert_falsifying_output(
 
     assert "%s example:" % (example_type,)
     assert_output_contains_failure(out.getvalue(), test, **kwargs)
+
+
+@contextlib.contextmanager
+def temp_registered(type_, strat_or_factory):
+    """Register and un-register a type for st.from_type().
+
+    This not too hard, but there's a subtlety in restoring the
+    previously-registered strategy which we got wrong in a few places.
+    """
+    prev = _global_type_lookup.get(type_)
+    try:
+        register_type_strategy(type_, strat_or_factory)
+        yield
+    finally:
+        del _global_type_lookup[type_]
+        from_type.__clear_cache()
+        if prev is not None:
+            register_type_strategy(type_, prev)
