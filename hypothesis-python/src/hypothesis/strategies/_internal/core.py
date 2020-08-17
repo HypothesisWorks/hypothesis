@@ -2121,7 +2121,7 @@ def register_type_strategy(
             "which can inspect specific type objects and return a strategy.  "
             "%s will be registered for any type arguments."
             % (custom_type, origin, strategy_repr),
-            since="RELEASEDAY",
+            since="2020-08-17",
         )
         if origin in types._global_type_lookup:
             raise InvalidArgument(
