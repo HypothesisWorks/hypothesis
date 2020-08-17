@@ -22,6 +22,21 @@ def test_bound_correct_forward_ref(built):
     assert isinstance(built, int)
 
 
+_Alias = TypeVar("_Alias ", bound="OurAlias")
+
+
+def alias_fun(thing: _Alias) -> int:
+    return thing.arg
+
+
+OurAlias = CustomType
+
+
+@given(st.builds(alias_fun))
+def test_bound_alias_forward_ref(built):
+    assert isinstance(built, int)
+
+
 _Missing = TypeVar("_Missing", bound="MissingType")
 
 

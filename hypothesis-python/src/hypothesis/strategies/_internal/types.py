@@ -140,7 +140,7 @@ def _try_import_forward_ref(thing, bound):
     """
     try:
         module = importlib.import_module(thing.__module__)
-        return st.from_type(getattr(module, bound.__forward_arg__))
+        return getattr(module, bound.__forward_arg__)
     except (ImportError, AttributeError):
         # TODO: maybe some other fallback?
         raise InvalidArgument(
@@ -199,7 +199,7 @@ def from_typing_type(thing):
         if getattr(thing, "__bound__", None) is not None:
             bound = thing.__bound__
             if isinstance(bound, ForwardRef):
-                bound = _try_import_forward_ref(thing, bound)
+                bound = st.from_type(_try_import_forward_ref(thing, bound))
             strat = unwrap_strategies(bound)
             if not isinstance(strat, OneOfStrategy):
                 return strat
