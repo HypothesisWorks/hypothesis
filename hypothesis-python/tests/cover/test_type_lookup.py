@@ -26,7 +26,7 @@ from hypothesis.errors import (
 from hypothesis.strategies._internal import types
 from hypothesis.strategies._internal.core import _strategies
 from hypothesis.strategies._internal.types import _global_type_lookup
-from tests.common.utils import fails_with
+from tests.common.utils import fails_with, temp_registered
 
 # Build a set of all types output by core strategies
 blacklist = [
@@ -85,13 +85,8 @@ def test_lookup_values_are_strategies():
 @pytest.mark.parametrize("typ", sorted(types_with_core_strat, key=str))
 def test_lookup_overrides_defaults(typ):
     sentinel = object()
-    try:
-        strat = types._global_type_lookup[typ]
-        st.register_type_strategy(typ, st.just(sentinel))
+    with temp_registered(typ, st.just(sentinel)):
         assert st.from_type(typ).example() is sentinel
-    finally:
-        st.register_type_strategy(typ, strat)
-        st.from_type.__clear_cache()
     assert st.from_type(typ).example() is not sentinel
 
 
@@ -112,51 +107,35 @@ def test_custom_type_resolution_fails_without_registering():
 
 def test_custom_type_resolution():
     sentinel = object()
-    try:
-        st.register_type_strategy(UnknownType, st.just(sentinel))
+    with temp_registered(UnknownType, st.just(sentinel)):
         assert st.from_type(UnknownType).example() is sentinel
         # Also covered by registration of child class
         assert st.from_type(ParentUnknownType).example() is sentinel
-    finally:
-        types._global_type_lookup.pop(UnknownType)
-        st.from_type.__clear_cache()
-        assert UnknownType not in types._global_type_lookup
 
 
 def test_custom_type_resolution_with_function():
     sentinel = object()
-    try:
-        st.register_type_strategy(UnknownType, lambda _: st.just(sentinel))
+    with temp_registered(UnknownType, lambda _: st.just(sentinel)):
         assert st.from_type(UnknownType).example() is sentinel
         assert st.from_type(ParentUnknownType).example() is sentinel
-    finally:
-        types._global_type_lookup.pop(UnknownType)
-        st.from_type.__clear_cache()
 
 
 def test_custom_type_resolution_with_function_non_strategy():
-    try:
-        st.register_type_strategy(UnknownType, lambda _: None)
+    with temp_registered(UnknownType, lambda _: None):
         with pytest.raises(ResolutionFailed):
             st.from_type(UnknownType).example()
         with pytest.raises(ResolutionFailed):
             st.from_type(ParentUnknownType).example()
-    finally:
-        types._global_type_lookup.pop(UnknownType)
 
 
 def test_errors_if_generic_resolves_empty():
-    try:
-        st.register_type_strategy(UnknownType, lambda _: st.nothing())
+    with temp_registered(UnknownType, lambda _: st.nothing()):
         fails_1 = st.from_type(UnknownType)
         with pytest.raises(ResolutionFailed):
             fails_1.example()
         fails_2 = st.from_type(ParentUnknownType)
         with pytest.raises(ResolutionFailed):
             fails_2.example()
-    finally:
-        types._global_type_lookup.pop(UnknownType)
-        st.from_type.__clear_cache()
 
 
 def test_cannot_register_empty():
