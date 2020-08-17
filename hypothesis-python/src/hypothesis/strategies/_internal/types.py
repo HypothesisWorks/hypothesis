@@ -44,6 +44,16 @@ try:
 except ImportError:
     typing_extensions = None  # type: ignore
 
+try:
+    from typing import GenericMeta as _GenericMeta  # python < 3.7
+except ImportError:
+    _GenericMeta = ()  # type: ignore
+
+try:
+    from typing import _GenericAlias  # type: ignore  # python >= 3.7
+except ImportError:
+    _GenericAlias = ()
+
 
 def type_sorting_key(t):
     """Minimise to None, then non-container types, then container types."""
@@ -85,11 +95,7 @@ def is_a_new_type(thing):
 
 def is_a_type(thing):
     """Return True if thing is a type or a generic type like thing."""
-    return (
-        isinstance(thing, type)
-        or isinstance(thing, typing_root_type)
-        or is_a_new_type(thing)
-    )
+    return isinstance(thing, type) or is_generic_type(thing) or is_a_new_type(thing)
 
 
 def is_typing_literal(thing):
@@ -98,6 +104,30 @@ def is_typing_literal(thing):
         and getattr(thing, "__origin__", None) == typing.Literal
         or hasattr(typing_extensions, "Literal")
         and getattr(thing, "__origin__", None) == typing_extensions.Literal
+    )
+
+
+def has_type_arguments(type_):
+    """Decides whethere or not this type has applied type arguments."""
+    args = getattr(type_, "__args__", None)
+    if args and isinstance(type_, (_GenericAlias, _GenericMeta)):
+        # There are some cases when declared types do already have type arguments
+        # Like `Sequence`, that is `_GenericAlias(abc.Sequence[T])[T]`
+        parameters = getattr(type_, "__parameters__", None)
+        if parameters:  # So, we need to know if type args are just "aliases"
+            return args != parameters
+    return bool(args)
+
+
+def is_generic_type(type_):
+    """Decides whethere a given type is generic or not."""
+    # The ugly truth is that `MyClass`, `MyClass[T]`, and `MyClass[int]` are very different.
+    # In different python versions the might have the same type (3.6)
+    # or it can be regular type vs `_GenericAlias` (3.7+)
+    # We check for `MyClass[T]` and `MyClass[int]` with the first condition,
+    # while the second condition is for `MyClass` in `python3.7+`.
+    return isinstance(type_, typing_root_type) or (
+        isinstance(type_, type) and typing.Generic in type_.__mro__
     )
 
 
@@ -187,7 +217,7 @@ def from_typing_type(thing):
     mapping = {
         k: v
         for k, v in _global_type_lookup.items()
-        if isinstance(k, typing_root_type) and try_issubclass(k, thing)
+        if is_generic_type(k) and try_issubclass(k, thing)
     }
     if typing.Dict in mapping:
         # The subtype relationships between generic and concrete View types
@@ -225,7 +255,7 @@ def from_typing_type(thing):
         if sum(try_issubclass(k, T) for T in mapping) == 1
     ]
     empty = ", ".join(repr(s) for s in strategies if s.is_empty)
-    if empty or not strategies:  # pragma: no cover
+    if empty or not strategies:
         raise ResolutionFailed(
             "Could not resolve %s to a strategy; consider using "
             "register_type_strategy" % (empty or thing,)
