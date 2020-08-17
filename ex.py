@@ -13,4 +13,4 @@ class X:
 
 @given(st.builds(some))
 def test_forward_ref(built):
-    assert built == 0
+    assert isinstance(built, int)

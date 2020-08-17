@@ -133,8 +133,10 @@ def is_generic_type(type_):
 
 def _try_import_forward_ref(thing, bound):
     """
-    Gets a real ``TypeVar`` bound to a ``ForwardRef`` to try
-    """"
+    Gets a real ``TypeVar`` bound to a ``ForwardRef`` to try to import the real bound type.
+
+    This function is very "magical" to say the least, please don't use it.
+    """
     try:
         module = __import__(thing.__module__)
         return st.from_type(getattr(module, bound.__forward_arg__))
