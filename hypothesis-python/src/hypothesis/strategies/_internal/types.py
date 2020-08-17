@@ -131,6 +131,17 @@ def is_generic_type(type_):
     )
 
 
+def _try_import_forward_ref(thing, bound):
+    """
+    Gets a real ``TypeVar`` bound to a ``ForwardRef`` to try
+    """"
+    try:
+        module = __import__(thing.__module__)
+        return st.from_type(getattr(module, bound.__forward_arg__))
+    except (ImportError, AttributeError):
+        return bound  # ok, it didn't work, we fallback to a ForwardRef
+
+
 def from_typing_type(thing):
     # We start with special-case support for Union and Tuple - the latter
     # isn't actually a generic type. Then we handle Literal since it doesn't
@@ -144,6 +155,7 @@ def from_typing_type(thing):
     # Under 3.6 Union is handled directly in st.from_type, as the argument is
     # not an instance of `type`. However, under Python 3.5 Union *is* a type
     # and we have to handle it here, including failing if it has no parameters.
+    print('thing', thing, getattr(thing, "__origin__", None))
     if hasattr(thing, "__union_params__"):  # pragma: no cover
         args = sorted(thing.__union_params__ or (), key=type_sorting_key)
         if not args:
@@ -179,7 +191,10 @@ def from_typing_type(thing):
         return st.sampled_from(literals)
     if isinstance(thing, typing.TypeVar):
         if getattr(thing, "__bound__", None) is not None:
-            strat = unwrap_strategies(st.from_type(thing.__bound__))
+            bound = thing.__bound__
+            if isinstance(bound, ForwardRef):
+                bound = _try_import_forward_ref(thing, bound)
+            strat = unwrap_strategies(bound)
             if not isinstance(strat, OneOfStrategy):
                 return strat
             # The bound was a union, or we resolved it as a union of subtypes,
