@@ -1,9 +1,15 @@
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 import pytest
 
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.compat import ForwardRef
+from tests.common.debug import find_any
+from tests.common.utils import temp_registered
+
+if TYPE_CHECKING:
+    from tests.common.utils import ExcInfo  # we just need any type
 
 _Correct = TypeVar("_Correct", bound="CustomType")
 
@@ -47,3 +53,15 @@ def missing_fun(thing: _Missing) -> int:
 def test_bound_missing_forward_ref():
     with pytest.raises(InvalidArgument):
         st.builds(missing_fun).example()
+
+
+_TypeChecking = TypeVar("_TypeChecking", bound="ExcInfo")
+
+
+def typechecking_only_fun(thing: _TypeChecking) -> int:
+    return 1
+
+
+def test_bound_type_cheking_only_forward_ref():
+    with temp_registered(ForwardRef("ExcInfo"), st.just(1)):
+        find_any(st.builds(typechecking_only_fun))
