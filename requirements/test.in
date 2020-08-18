@@ -1,5 +1,3 @@
-attrs
-sortedcontainers
 pexpect
 pytest
 pytest-xdist

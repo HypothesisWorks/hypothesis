@@ -268,7 +268,13 @@ def compile_requirements(upgrade=False):
     for f in glob(os.path.join("requirements", "*.in")):
         base, _ = os.path.splitext(f)
         pip_tool(
-            "pip-compile", *extra, f, "--output-file", base + ".txt", cwd=tools.ROOT
+            "pip-compile",
+            *extra,
+            f,
+            "hypothesis-python/setup.py",
+            "--output-file",
+            base + ".txt",
+            cwd=tools.ROOT,
         )
 
 

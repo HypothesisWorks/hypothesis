@@ -1,4 +1,3 @@
-attrs
 autoflake
 black
 blacken-docs
@@ -22,7 +21,6 @@ pyupgrade
 pyupio
 requests
 restructuredtext-lint
-sortedcontainers
 sphinx
 sphinx-hoverxref
 sphinx-rtd-theme
