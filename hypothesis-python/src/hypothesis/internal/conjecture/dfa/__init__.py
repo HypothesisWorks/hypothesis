@@ -196,8 +196,8 @@ class DFA:
         return cache[i]
 
     def count_strings(self, state, length):
-        """Returns the number of strings of length ``k``
-        that are accepted when starting from state ``i``."""
+        """Returns the number of strings of length ``length``
+        that are accepted when starting from state ``state``."""
         assert length >= 0
         cache = self.__cache("count_strings")
 
