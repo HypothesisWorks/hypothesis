@@ -150,7 +150,7 @@ class DFA:
             the stack set appropriately."""
             assert len(stack) == len(stack_set)
             j = stack.pop()
-            stack_set.discard(j)
+            stack_set.remove(j)
             assert len(stack) == len(stack_set)
 
         while stack:
@@ -168,8 +168,9 @@ class DFA:
             # calculated max_length for.
             for k in self.successor_states(j):
                 if k in stack_set:
-                    # We should never have put a dead node on the
-                    # stack in the first place.
+                    # k is part of a loop and is known to be live
+                    # (since we never push dead states on the stack),
+                    # so it can reach strings of unbounded length.
                     assert not self.is_dead(k)
                     cache[k] = inf
                     break
@@ -178,6 +179,8 @@ class DFA:
                     stack_set.add(k)
                     break
             else:
+                # All of j's successors have a known max_length or are dead,
+                # so we can now compute a max_length for j itself.
                 cache[j] = max(
                     (
                         1 + cache[k]
@@ -270,7 +273,7 @@ class DFA:
 
         # First we find all reachable nodes from i which have not
         # already been cached, noting any which are roots and
-        # populating the backwards graph..
+        # populating the backwards graph.
 
         explored = set()
         queue = deque([state])
