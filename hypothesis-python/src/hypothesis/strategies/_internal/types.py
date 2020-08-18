@@ -199,8 +199,8 @@ def from_typing_type(thing):
         if getattr(thing, "__bound__", None) is not None:
             bound = thing.__bound__
             if isinstance(bound, ForwardRef):
-                bound = st.from_type(_try_import_forward_ref(thing, bound))
-            strat = unwrap_strategies(bound)
+                bound = _try_import_forward_ref(thing, bound)
+            strat = unwrap_strategies(st.from_type(bound))
             if not isinstance(strat, OneOfStrategy):
                 return strat
             # The bound was a union, or we resolved it as a union of subtypes,
