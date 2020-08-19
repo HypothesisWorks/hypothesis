@@ -35,15 +35,18 @@ class DFA:
     def __init__(self):
         self.__caches = threading.local()
 
+    def __cache(self, name):
+        try:
+            cache = getattr(self.__caches, name)
+        except AttributeError:
+            cache = {}
+            setattr(self.__caches, name, cache)
+        return cache
+
     def cached(fn):
         @proxies(fn)
         def wrapped(self, *args):
-            try:
-                cache = getattr(self.__caches, fn.__name__)
-            except AttributeError:
-                cache = {}
-                setattr(self.__caches, fn.__name__, cache)
-
+            cache = self.__cache(fn.__name__)
             try:
                 return cache[args]
             except KeyError:
@@ -72,7 +75,7 @@ class DFA:
     def transitions(self, i):
         """Iterates over all pairs (byte, state) of transitions
         which do not lead to dead states."""
-        for c, j in self.__raw_transitions(i):
+        for c, j in self.raw_transitions(i):
             if not self.is_dead(j):
                 yield c, j
 
@@ -116,61 +119,201 @@ class DFA:
                 stack.append((k + 1, next_state, next_indices))
         return results
 
-    @cached
     def max_length(self, i):
         """Returns the maximum length of a string that is
         accepted when starting from i."""
         if self.is_dead(i):
             return 0
-        if i in self.reachable(i):
-            return inf
-        next_states = {self.max_length(j) for _, j in self.transitions(i)}
-        if next_states:
-            return 1 + max(next_states)
-        else:
-            assert self.is_accepting(i)
-            return 0
 
-    @cached
-    def count_strings(self, i, k):
-        """Returns the number of strings of length ``k``
-        that are accepted when starting from state ``i``."""
-        assert k >= 0
-        if k == 0:
-            if self.is_accepting(i):
-                return 1
+        cache = self.__cache("max_length")
+
+        try:
+            return cache[i]
+        except KeyError:
+            pass
+
+        # Naively we can calculate this as 1 longer than the
+        # max length of the non-dead states this can immediately
+        # transition to, but a) We don't want unbounded recursion
+        # because that's how you get RecursionErrors and b) This
+        # makes it hard to look for cycles. So we basically do
+        # the recursion explicitly with a stack, but we maintain
+        # a parallel set that tracks what's already on the stack
+        # so that when we encounter a loop we can immediately
+        # determine that the max length here is infinite.
+
+        stack = [i]
+        stack_set = {i}
+
+        def pop():
+            """Remove the top element from the stack, maintaining
+            the stack set appropriately."""
+            assert len(stack) == len(stack_set)
+            j = stack.pop()
+            stack_set.remove(j)
+            assert len(stack) == len(stack_set)
+
+        while stack:
+            j = stack[-1]
+            assert not self.is_dead(j)
+            # If any of the children have infinite max_length we don't
+            # need to check all of them to know that this state does
+            # too.
+            if any(cache.get(k) == inf for k in self.successor_states(j)):
+                cache[j] = inf
+                pop()
+                continue
+
+            # Recurse to the first child node that we have not yet
+            # calculated max_length for.
+            for k in self.successor_states(j):
+                if k in stack_set:
+                    # k is part of a loop and is known to be live
+                    # (since we never push dead states on the stack),
+                    # so it can reach strings of unbounded length.
+                    assert not self.is_dead(k)
+                    cache[k] = inf
+                    break
+                elif k not in cache and not self.is_dead(k):
+                    stack.append(k)
+                    stack_set.add(k)
+                    break
             else:
-                return 0
-        if k > self.max_length(i):
-            return 0
-        return sum(self.count_strings(j, k - 1) for _, j in self.transitions(i))
+                # All of j's successors have a known max_length or are dead,
+                # so we can now compute a max_length for j itself.
+                cache[j] = max(
+                    (
+                        1 + cache[k]
+                        for k in self.successor_states(j)
+                        if not self.is_dead(k)
+                    ),
+                    default=0,
+                )
+
+                # j is live so it must either be accepting or have a live child.
+                assert self.is_accepting(j) or cache[j] > 0
+                pop()
+        return cache[i]
+
+    def count_strings(self, state, length):
+        """Returns the number of strings of length ``length``
+        that are accepted when starting from state ``state``."""
+        assert length >= 0
+        cache = self.__cache("count_strings")
+
+        try:
+            return cache[state, length]
+        except KeyError:
+            pass
+
+        pending = [(state, length)]
+        seen = set()
+        i = 0
+
+        while i < len(pending):
+            s, n = pending[i]
+            i += 1
+            if n > 0:
+                for t in self.successor_states(s):
+                    key = (t, n - 1)
+                    if key not in cache and key not in seen:
+                        pending.append(key)
+                        seen.add(key)
+
+        while pending:
+            s, n = pending.pop()
+            if n == 0:
+                cache[s, n] = int(self.is_accepting(s))
+            else:
+                cache[s, n] = sum(cache[t, n - 1] for _, t in self.transitions(s))
+
+        return cache[state, length]
 
     @cached
-    def reachable(self, i):
-        """Returns the set of all states reachable
-        by traversing some non-empty string starting from
-        state i."""
-        reached = set()
+    def successor_states(self, state):
+        """Returns all of the distinct states that can be reached via one
+        transition from ``state``, in the lexicographic order of the
+        smallest character that reaches them."""
+        seen = set()
+        result = []
+        for _, j in self.raw_transitions(state):
+            if j not in seen:
+                seen.add(j)
+                result.append(j)
+        return tuple(result)
 
-        queue = deque([i])
+    def is_dead(self, state):
+        """Returns True if no strings can be accepted
+        when starting from ``state``."""
+        return not self.is_live(state)
 
+    def is_live(self, state):
+        """Returns True if any strings can be accepted
+        when starting from ``state``."""
+        if self.is_accepting(state):
+            return True
+
+        # We work this out by calculating is_live for all nodes
+        # reachable from state which have not already had it calculated.
+        cache = self.__cache("is_live")
+        try:
+            return cache[state]
+        except KeyError:
+            pass
+
+        # roots are states that we know already must be live,
+        # either because we have previously calculated them to
+        # be or because they are an accepting state.
+        roots = set()
+
+        # We maintain a backwards graph where ``j in backwards_graph[k]``
+        # if there is a transition from j to k. Thus if a key in this
+        # graph is live, so must all its values be.
+        backwards_graph = defaultdict(set)
+
+        # First we find all reachable nodes from i which have not
+        # already been cached, noting any which are roots and
+        # populating the backwards graph.
+
+        explored = set()
+        queue = deque([state])
         while queue:
             j = queue.popleft()
-            for _, k in self.__raw_transitions(j):
-                if k not in reached:
-                    reached.add(k)
-                    if k != i:
-                        queue.append(k)
-        return frozenset(reached)
+            if cache.get(j, self.is_accepting(j)):
+                # If j can be immediately determined to be live
+                # then there is no point in exploring beneath it,
+                # because any effect of states below it is screened
+                # off by the known answer for j.
+                roots.add(j)
+                continue
 
-    @cached
-    def is_dead(self, i):
-        """Returns True if no strings can be accepted
-        when starting from state ``i``."""
-        if self.is_accepting(i):
-            return False
+            if j in cache:
+                # Likewise if j is known to be dead then there is
+                # no point exploring beneath it because we know
+                # that all nodes reachable from it must be dead.
+                continue
 
-        return not any(self.is_accepting(j) for j in self.reachable(i))
+            if j in explored:
+                continue
+            explored.add(j)
+
+            for k in self.successor_states(j):
+                backwards_graph[k].add(j)
+                queue.append(k)
+
+        marked_live = set()
+        queue = deque(roots)
+        while queue:
+            j = queue.popleft()
+            if j in marked_live:
+                continue
+            marked_live.add(j)
+            for k in backwards_graph[j]:
+                queue.append(k)
+        for j in explored:
+            cache[j] = j in marked_live
+
+        return cache[state]
 
     def all_matching_strings_of_length(self, k):
         """Yields all matching strings whose length is ``k``, in ascending
@@ -253,7 +396,7 @@ class DFA:
             yield from self.all_matching_strings_of_length(length)
             length += 1
 
-    def __raw_transitions(self, i):
+    def raw_transitions(self, i):
         for c in self.alphabet:
             j = self.transition(i, c)
             yield c, j
@@ -477,3 +620,18 @@ class ConcreteDFA(DFA):
                     if u <= char <= v:
                         return j
             return DEAD
+
+    def raw_transitions(self, i):
+        if i == DEAD:
+            return
+        transitions = self.__transitions[i]
+        if isinstance(transitions, dict):
+            yield from sorted(transitions.items())
+        else:
+            for t in transitions:
+                if len(t) == 2:
+                    yield t
+                else:
+                    u, v, j = t
+                    for c in range(u, v + 1):
+                        yield c, j

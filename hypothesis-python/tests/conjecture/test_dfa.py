@@ -13,7 +13,11 @@
 #
 # END HEADER
 
+import itertools
 import math
+from math import inf
+
+import pytest
 
 from hypothesis import assume, example, given, note, reject, settings, strategies as st
 from hypothesis.internal.conjecture.dfa import DEAD, ConcreteDFA
@@ -40,6 +44,12 @@ def test_enumeration_of_very_long_strings():
         assert int.from_bytes(s, "big") == i
         if i >= 1000:
             break
+
+
+def test_is_dead_with_cache_reuse():
+    dfa = ConcreteDFA([{0: i + 1, 1: 11} for i in range(10)] + [{}, {}], {10})
+    for n in range(10, -1, -1):
+        assert not dfa.is_dead(n)
 
 
 def test_max_length_of_empty_dfa_is_zero():
@@ -72,20 +82,7 @@ def dfas(draw):
     start = draw(a_state)
     accepting = draw(st.sets(a_state, min_size=1))
 
-    transitions = [
-        draw(
-            st.one_of(
-                st.lists(
-                    st.tuples(a_byte, a_state)
-                    | st.tuples(a_byte, a_byte, a_state).map(
-                        lambda t: (t[1], t[0], t[2]) if t[0] > t[1] else t
-                    )
-                ),
-                st.dictionaries(a_byte, a_state),
-            )
-        )
-        for _ in range(states)
-    ]
+    transitions = [draw(st.dictionaries(a_byte, a_state)) for _ in range(states)]
 
     return ConcreteDFA(transitions, accepting, start)
 
@@ -154,3 +151,47 @@ def test_all_matching_regions_include_all_matches(x, y, z):
     s = x + y + z
 
     assert (len(x), len(x) + len(y)) in y_matcher.all_matching_regions(s)
+
+
+@pytest.mark.parametrize("n", [1, 10, 100, 1000])
+def test_max_length_of_long_dfa(n):
+    dfa = ConcreteDFA([{0: i + 1} for i in range(n)] + [{}], {n})
+    assert not dfa.is_dead(dfa.start)
+    assert dfa.max_length(dfa.start) == n
+
+
+def test_dfa_with_cached_dead():
+    dfa = ConcreteDFA([[{0: 1, 1: 2}], [], []], {2})
+
+    assert dfa.is_dead(1)
+    assert dfa.is_dead(0)
+
+
+@pytest.mark.parametrize("order", itertools.permutations((0, 1, 2)))
+def test_dead_nodes(order):
+    dfa = ConcreteDFA([{0: 1, 1: 2}, {}, {}], {2})
+    for i in order:
+        assert dfa.is_dead(i) == (i == 1)
+
+
+@given(st.permutations(range(5)))
+def test_max_length_of_recursive_dfa(order):
+    dfa = ConcreteDFA([{0: 1, 1: 2, 2: 3}, {0: 2}, {0: 1}, {0: 0, 1: 4}, {}], {4})
+    for i in order:
+        dfa.max_length(i)
+
+    assert dfa.max_length(0) == inf
+    assert dfa.max_length(1) == 0
+    assert dfa.max_length(2) == 0
+    assert dfa.max_length(3) == inf
+    assert dfa.max_length(4) == 0
+
+
+def test_transitions_out_of_dead_are_empty():
+    dfa = ConcreteDFA([{}], {0})
+    assert list(dfa.raw_transitions(DEAD)) == []
+
+
+def test_can_transition_from_dead():
+    dfa = ConcreteDFA([{}], {0})
+    assert dfa.transition(DEAD, 0) == DEAD
