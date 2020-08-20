@@ -128,7 +128,6 @@ def find_replacement(u, v, condition):
 
     for k in range(len(v) + 1 - common_suffix_length - common_prefix_length):
         for i in range(common_prefix_length, len(v) + 1 - common_suffix_length - k):
-            print(i, k)
             prefix = v[:i]
             suffix = v[i + k :]
             current = v[i : i + k]
