@@ -99,6 +99,8 @@ else:
     @click.option("--binary-op", "writer", flag_value="binary_operation")
     @click.option("--equivalent", "writer", flag_value="equivalent")
     @click.option("--roundtrip", "writer", flag_value="roundtrip")
+    # Note: we deliberately omit a --ufunc flag, because the magic()
+    # detection of ufuncs is both precise and complete.
     @click.option(
         "--style",
         type=click.Choice(["pytest", "unittest"]),

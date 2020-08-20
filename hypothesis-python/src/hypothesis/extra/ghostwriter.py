@@ -437,6 +437,7 @@ def magic(
 
     After finding the public functions attached to any modules, the ``magic``
     ghostwriter looks for pairs of functions to pass to :func:`~roundtrip`,
+    then checks for :func:`~binary_operation` and :func:`~ufunc` functions,
     and any others are passed to :func:`~fuzz`.
 
     For example, try :command:`hypothesis write gzip` on the command line!
@@ -497,6 +498,15 @@ def magic(
             a, b = hints.values()
             if a == b:
                 imp, body = _make_binop_body(func, except_=except_, style=style)
+                imports |= imp
+                parts.append(body)
+                del by_name[name]
+
+    # Look for Numpy ufuncs or gufuncs, and write array-oriented tests for them.
+    if "numpy" in sys.modules:
+        for name, func in sorted(by_name.items()):
+            if _is_probably_ufunc(func):
+                imp, body = _make_ufunc_body(func, except_=except_, style=style)
                 imports |= imp
                 parts.append(body)
                 del by_name[name]
@@ -844,3 +854,66 @@ def _make_binop_body(
         all_imports,
         classdef + f"{operands_name} = {operands_repr}\n" + "\n".join(parts),
     )
+
+
+def ufunc(func: Callable, *, except_: Except = (), style: str = "pytest") -> str:
+    """Write a property-based test for the :np-ref:`array unfunc <ufuncs.html>` ``func``.
+
+    The resulting test checks that your ufunc or :np-ref:`gufunc
+    <c-api/generalized-ufuncs.html>` has the expected broadcasting and dtype casting
+    behaviour.  You will probably want to add extra assertions, but as with the other
+    ghostwriters this gives you a great place to start.
+
+    .. code-block:: shell
+
+        hypothesis write numpy.matmul
+    """
+    if not _is_probably_ufunc(func):
+        raise InvalidArgument(f"func={func!r} does not seem to be a ufunc")
+    except_ = _check_except(except_)
+    _check_style(style)
+    return _make_test(*_make_ufunc_body(func, except_=except_, style=style))
+
+
+def _make_ufunc_body(func, *, except_, style):
+
+    import hypothesis.extra.numpy as npst
+
+    if func.signature is None:
+        shapes = npst.mutually_broadcastable_shapes(num_shapes=func.nin)
+    else:
+        shapes = npst.mutually_broadcastable_shapes(signature=func.signature)
+
+    body = """
+    input_shapes, expected_shape = shapes
+    input_dtypes, expected_dtype = types.split("->")
+    array_st = [npst.arrays(d, s) for d, s in zip(input_dtypes, input_shapes)]
+
+    {array_names} = data.draw(st.tuples(*array_st))
+    result = {call}
+
+    {shape_assert}
+    {type_assert}
+    """.format(
+        array_names=", ".join(ascii_lowercase[: func.nin]),
+        call=_write_call(func, *ascii_lowercase[: func.nin]),
+        shape_assert=_assert_eq(style, "result.shape", "expected_shape"),
+        type_assert=_assert_eq(style, "result.dtype.char", "expected_dtype"),
+    )
+
+    imports, body = _make_test_body(
+        func,
+        test_body=dedent(body).strip(),
+        except_=except_,
+        ghost="ufunc" if func.signature is None else "gufunc",
+        style=style,
+        given_strategies={
+            "data": st.data(),
+            "shapes": shapes,
+            "types": f"sampled_from({_get_qualname(func, include_module=True)}.types)"
+            ".filter(lambda sig: 'O' not in sig)",
+        },
+    )
+    imports.add("hypothesis.extra.numpy as npst")
+    body = body.replace("mutually_broadcastable", "npst.mutually_broadcastable")
+    return imports, body
