@@ -111,7 +111,8 @@ def find_replacement(u, v, condition):
         min_size = max(0, len(s) - (len(v) - len(u)))
         for k in range(min_size, len(s)):
             yield from ngrams_of_length(k)
-        for t in ngrams_of_length(len(s)):
+        # No branch because we must always break when we hit s in the ngrams
+        for t in ngrams_of_length(len(s)): # pragma: no branch
             if t >= s:
                 break
             yield t
