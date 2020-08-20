@@ -197,9 +197,12 @@ def test_learns_to_bridge_only_two():
         test_function, settings=settings(database=None), ignore_limits=True
     )
 
-    dfa = dfas.learn_a_new_dfa(
+    dfas = dfas.learn_new_dfas(
         runner, [10, 100], [2, 8], lambda d: d.status == Status.INTERESTING,
     )
+
+    assert len(dfas) == 1
+    dfa = dfas[0]
 
     assert dfa.max_length(dfa.start) == 2
 

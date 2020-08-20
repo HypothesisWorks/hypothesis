@@ -69,7 +69,7 @@ def update_learned_dfas():
             o.write(new_source)
 
 
-def learn_a_new_dfa(runner, u, v, predicate):
+def learn_new_dfas(runner, u, v, predicate, allowed_to_update=True, max_dfas=10):
     """Given two buffers ``u`` and ``v```, learn a DFA that will
     allow the shrinker to normalise them better. ``u`` and ``v``
     should not currently shrink to the same test case when calling
@@ -84,7 +84,19 @@ def learn_a_new_dfa(runner, u, v, predicate):
 
     u, v = sorted((u_shrunk.buffer, v_shrunk.buffer), key=sort_key)
 
-    assert u != v
+    if u == v:
+        return []
+
+    assert sort_key(u) < sort_key(v)
+
+    if not allowed_to_update:
+        raise FailedToNormalise(
+            "Shrinker failed to normalize %r to %r and we are not allowed to learn new DFAs."
+            % (u, v)
+        )
+
+    if 1 >= max_dfas:
+        raise FailedToNormalise("Test function is too hard to learn.")
 
     assert not v.startswith(u)
 
@@ -210,7 +222,7 @@ def learn_a_new_dfa(runner, u, v, predicate):
 
     assert sort_key(shrinker.buffer) < sort_key(v)
 
-    return new_dfa
+    return [new_dfa]
 
 
 def fully_shrink(runner, test_case, predicate):
@@ -295,41 +307,34 @@ def normalize(
         )
         current = fully_shrink(runner, attempt, shrinking_predicate)
 
-        if current.buffer == previous.buffer:
+        dfas = learn_new_dfas(
+            runner,
+            previous.buffer,
+            current.buffer,
+            shrinking_predicate,
+            allowed_to_update=allowed_to_update,
+            max_dfas=max_dfas - dfas_added,
+        )
+
+        if not dfas:
             consecutive_successes += 1
             continue
 
         consecutive_successes = 0
+        dfas_added += len(dfas)
 
-        if not allowed_to_update:
-            raise FailedToNormalise(
-                "Shrinker failed to normalize %r to %r and we are not allowed to learn new DFAs."
-                % (previous.buffer, current.buffer)
+        for new_dfa in dfas:
+            name = (
+                base_name
+                + "-"
+                + hashlib.sha256(repr(new_dfa).encode("utf-8")).hexdigest()[:10]
             )
 
-        if dfas_added >= max_dfas:
-            raise FailedToNormalise(
-                "Test function is too hard to learn: Added %d DFAs and still not done."
-                % (dfas_added,)
-            )
-
-        dfas_added += 1
-
-        new_dfa = learn_a_new_dfa(
-            runner, previous.buffer, current.buffer, shrinking_predicate
-        )
-
-        name = (
-            base_name
-            + "-"
-            + hashlib.sha256(repr(new_dfa).encode("utf-8")).hexdigest()[:10]
-        )
-
-        # If there is a name collision this DFA should already be being
-        # used for shrinking, so we should have already been able to shrink
-        # v further.
-        assert name not in SHRINKING_DFAS
-        SHRINKING_DFAS[name] = new_dfa
+            # If there is a name collision this DFA should already be being
+            # used for shrinking, so we should have already been able to shrink
+            # v further.
+            assert name not in SHRINKING_DFAS
+            SHRINKING_DFAS[name] = new_dfa
 
     if dfas_added > 0:
         # We've learned one or more DFAs in the course of normalising, so now
