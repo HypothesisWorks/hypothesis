@@ -531,6 +531,7 @@ class Shrinker:
                 "lower_blocks_together",
             ]
             + [dfa_replacement(n) for n in SHRINKING_DFAS]
+            + [dfa_replacement(n) for n in self.extra_dfas]
         )
 
     @derived_value

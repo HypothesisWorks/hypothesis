@@ -79,157 +79,172 @@ def learn_new_dfas(runner, u, v, predicate, allowed_to_update=True, max_dfas=10)
     assert predicate(runner.cached_test_function(u))
     assert predicate(runner.cached_test_function(v))
 
-    u_shrunk = fully_shrink(runner, u, predicate)
-    v_shrunk = fully_shrink(runner, v, predicate)
+    extra_dfas = {}
 
-    u, v = sorted((u_shrunk.buffer, v_shrunk.buffer), key=sort_key)
+    prev_dfas = -1
+    while True:
+        assert len(extra_dfas) > prev_dfas
+        prev_dfas = len(extra_dfas)
+        u_shrunk = fully_shrink(runner, u, predicate, extra_dfas=extra_dfas)
+        v_shrunk = fully_shrink(runner, v, predicate, extra_dfas=extra_dfas)
 
-    if u == v:
-        return []
+        u, v = sorted((u_shrunk.buffer, v_shrunk.buffer), key=sort_key)
 
-    assert sort_key(u) < sort_key(v)
+        if u == v:
+            return list(extra_dfas.values())
 
-    if not allowed_to_update:
-        raise FailedToNormalise(
-            "Shrinker failed to normalize %r to %r and we are not allowed to learn new DFAs."
-            % (u, v)
-        )
+        assert sort_key(u) < sort_key(v)
 
-    if 1 >= max_dfas:
-        raise FailedToNormalise("Test function is too hard to learn.")
+        if not allowed_to_update:
+            raise FailedToNormalise(
+                "Shrinker failed to normalize %r to %r and we are not allowed to learn new DFAs."
+                % (u, v)
+            )
 
-    assert not v.startswith(u)
+        if len(extra_dfas) >= max_dfas:
+            raise FailedToNormalise(
+                (
+                    "Test function is too hard to learn. Learned %d DFAs, "
+                    "exceeding remaining budget of %d, and still not done."
+                )
+                % (len(extra_dfas), max_dfas)
+            )
 
-    # We would like to avoid using LStar on large strings as its
-    # behaviour can be quadratic or worse. In order to help achieve
-    # this we peel off a common prefix and suffix of the two final
-    # results and just learn the internal bit where they differ.
-    #
-    # This potentially reduces the length quite far if there's
-    # just one tricky bit of control flow we're struggling to
-    # reduce inside a strategy somewhere and the rest of the
-    # test function reduces fine.
-    i = 0
-    while u[i] == v[i]:
-        i += 1
-    prefix = u[:i]
-    assert u.startswith(prefix)
-    assert v.startswith(prefix)
+        assert not v.startswith(u)
 
-    i = 1
-    while u[-i] == v[-i]:
-        i += 1
+        # We would like to avoid using LStar on large strings as its
+        # behaviour can be quadratic or worse. In order to help achieve
+        # this we peel off a common prefix and suffix of the two final
+        # results and just learn the internal bit where they differ.
+        #
+        # This potentially reduces the length quite far if there's
+        # just one tricky bit of control flow we're struggling to
+        # reduce inside a strategy somewhere and the rest of the
+        # test function reduces fine.
+        i = 0
+        while u[i] == v[i]:
+            i += 1
+        prefix = u[:i]
+        assert u.startswith(prefix)
+        assert v.startswith(prefix)
 
-    suffix = u[len(u) + 1 - i :]
-    assert u.endswith(suffix)
-    assert v.endswith(suffix)
+        i = 1
+        while u[-i] == v[-i]:
+            i += 1
 
-    u_core = u[len(prefix) : len(u) - len(suffix)]
-    v_core = v[len(prefix) : len(v) - len(suffix)]
+        suffix = u[len(u) + 1 - i :]
+        assert u.endswith(suffix)
+        assert v.endswith(suffix)
 
-    assert u == prefix + u_core + suffix
-    assert v == prefix + v_core + suffix
+        u_core = u[len(prefix) : len(u) - len(suffix)]
+        v_core = v[len(prefix) : len(v) - len(suffix)]
 
-    better = runner.cached_test_function(u)
-    worse = runner.cached_test_function(v)
+        assert u == prefix + u_core + suffix
+        assert v == prefix + v_core + suffix
 
-    allow_discards = worse.has_discards or better.has_discards
+        better = runner.cached_test_function(u)
+        worse = runner.cached_test_function(v)
 
-    def is_valid_core(s):
-        if not (len(u_core) <= len(s) <= len(v_core)):
-            return False
-        buf = prefix + s + suffix
-        result = runner.cached_test_function(buf)
-        return (
-            predicate(result)
-            # Because we're often using this to learn strategies
-            # rather than entire complex test functions, it's
-            # important that our replacements are precise and
-            # don't leave the rest of the test case in a weird
-            # state.
-            and result.buffer == buf
-            # Because the shrinker is good at removing discarded
-            # data, unless we need discards to allow one or both
-            # of u and v to result in valid shrinks, we don't
-            # count attempts that have them as valid. This will
-            # cause us to match fewer strings, which will make
-            # the resulting shrink pass more efficient when run
-            # on test functions it wasn't really intended for.
-            and (allow_discards or not result.has_discards)
-        )
+        allow_discards = worse.has_discards or better.has_discards
 
-    assert sort_key(u_core) < sort_key(v_core)
+        def is_valid_core(s):
+            if not (len(u_core) <= len(s) <= len(v_core)):
+                return False
+            buf = prefix + s + suffix
+            result = runner.cached_test_function(buf)
+            return (
+                predicate(result)
+                # Because we're often using this to learn strategies
+                # rather than entire complex test functions, it's
+                # important that our replacements are precise and
+                # don't leave the rest of the test case in a weird
+                # state.
+                and result.buffer == buf
+                # Because the shrinker is good at removing discarded
+                # data, unless we need discards to allow one or both
+                # of u and v to result in valid shrinks, we don't
+                # count attempts that have them as valid. This will
+                # cause us to match fewer strings, which will make
+                # the resulting shrink pass more efficient when run
+                # on test functions it wasn't really intended for.
+                and (allow_discards or not result.has_discards)
+            )
 
-    assert is_valid_core(u_core)
-    assert is_valid_core(v_core)
+        assert sort_key(u_core) < sort_key(v_core)
 
-    learner = LStar(is_valid_core)
+        assert is_valid_core(u_core)
+        assert is_valid_core(v_core)
 
-    prev = -1
-    while learner.generation != prev:
-        prev = learner.generation
-        learner.learn(u_core)
-        learner.learn(v_core)
+        learner = LStar(is_valid_core)
 
-        # L* has a tendency to learn DFAs which wrap around to
-        # the beginning. We don't want to it to do that unless
-        # it's accurate, so we use these as examples to show
-        # check going around the DFA twice.
-        learner.learn(u_core * 2)
-        learner.learn(v_core * 2)
+        prev = -1
+        while learner.generation != prev:
+            prev = learner.generation
+            learner.learn(u_core)
+            learner.learn(v_core)
 
-        if learner.dfa.max_length(learner.dfa.start) > len(v_core):
-            # The language we learn is finite and bounded above
-            # by the length of v_core. This is important in order
-            # to keep our shrink passes reasonably efficient -
-            # otherwise they can match far too much. So whenever
-            # we learn a DFA that could match a string longer
-            # than len(v_core) we fix it by finding the first
-            # string longer than v_core and learning that as
-            # a correction.
-            x = next(learner.dfa.all_matching_strings(min_length=len(v_core) + 1))
-            assert not is_valid_core(x)
-            learner.learn(x)
-            assert not learner.dfa.matches(x)
-            assert learner.generation != prev
-        else:
-            # We mostly care about getting the right answer on the
-            # minimal test case, but because we're doing this offline
-            # anyway we might as well spend a little more time trying
-            # small examples to make sure the learner gets them right.
-            for x in islice(learner.dfa.all_matching_strings(), 100):
-                if not is_valid_core(x):
-                    learner.learn(x)
-                    assert learner.generation != prev
-                    break
+            # L* has a tendency to learn DFAs which wrap around to
+            # the beginning. We don't want to it to do that unless
+            # it's accurate, so we use these as examples to show
+            # check going around the DFA twice.
+            learner.learn(u_core * 2)
+            learner.learn(v_core * 2)
 
-    # We've now successfully learned a DFA that works for shrinking
-    # our failed normalisation further. Canonicalise it into a concrete
-    # DFA so we can save it for later.
-    new_dfa = learner.dfa.canonicalise()
+            if learner.dfa.max_length(learner.dfa.start) > len(v_core):
+                # The language we learn is finite and bounded above
+                # by the length of v_core. This is important in order
+                # to keep our shrink passes reasonably efficient -
+                # otherwise they can match far too much. So whenever
+                # we learn a DFA that could match a string longer
+                # than len(v_core) we fix it by finding the first
+                # string longer than v_core and learning that as
+                # a correction.
+                x = next(learner.dfa.all_matching_strings(min_length=len(v_core) + 1))
+                assert not is_valid_core(x)
+                learner.learn(x)
+                assert not learner.dfa.matches(x)
+                assert learner.generation != prev
+            else:
+                # We mostly care about getting the right answer on the
+                # minimal test case, but because we're doing this offline
+                # anyway we might as well spend a little more time trying
+                # small examples to make sure the learner gets them right.
+                for x in islice(learner.dfa.all_matching_strings(), 100):
+                    if not is_valid_core(x):
+                        learner.learn(x)
+                        assert learner.generation != prev
+                        break
 
-    assert math.isfinite(new_dfa.max_length(new_dfa.start))
+        # We've now successfully learned a DFA that works for shrinking
+        # our failed normalisation further. Canonicalise it into a concrete
+        # DFA so we can save it for later.
+        new_dfa = learner.dfa.canonicalise()
 
-    shrinker = runner.new_shrinker(runner.cached_test_function(v), predicate)
+        assert math.isfinite(new_dfa.max_length(new_dfa.start))
 
-    assert (len(prefix), len(v) - len(suffix)) in shrinker.matching_regions(new_dfa)
+        shrinker = runner.new_shrinker(runner.cached_test_function(v), predicate)
 
-    name = "tmp-dfa-" + repr(new_dfa)
+        assert (len(prefix), len(v) - len(suffix)) in shrinker.matching_regions(new_dfa)
 
-    shrinker.extra_dfas[name] = new_dfa
+        name = "tmp-dfa-" + repr(new_dfa)
 
-    shrinker.fixate_shrink_passes([dfa_replacement(name)])
+        shrinker.extra_dfas[name] = new_dfa
 
-    assert sort_key(shrinker.buffer) < sort_key(v)
+        shrinker.fixate_shrink_passes([dfa_replacement(name)])
 
-    return [new_dfa]
+        assert sort_key(shrinker.buffer) < sort_key(v)
+        extra_dfas[name] = new_dfa
 
 
-def fully_shrink(runner, test_case, predicate):
+def fully_shrink(runner, test_case, predicate, extra_dfas=None):
     if not isinstance(test_case, ConjectureResult):
         test_case = runner.cached_test_function(test_case)
     while True:
-        shrunk = runner.shrink(test_case, predicate)
+        shrinker = runner.new_shrinker(test_case, predicate)
+        if extra_dfas:
+            shrinker.extra_dfas.update(extra_dfas)
+        shrinker.shrink()
+        shrunk = shrinker.shrink_target
         if shrunk.buffer == test_case.buffer:
             break
         test_case = shrunk
