@@ -67,7 +67,7 @@ hoverxref_domains = ["py"]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
-    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "pytest": ("https://docs.pytest.org/en/stable/", None),
     "django": ("https://django.readthedocs.io/en/stable/", None),
@@ -88,7 +88,8 @@ extlinks = {
     "pull": (_repo + "pull/%s", "pull request #"),
     "pypi": ("https://pypi.org/project/%s", ""),
     "bpo": ("https://bugs.python.org/issue%s", "bpo-"),
-    "np-ref": ("https://docs.scipy.org/doc/numpy/reference/%s", ""),
+    "np-ref": ("https://numpy.org/doc/stable/reference/%s", ""),
+    "wikipedia": ("https://en.wikipedia.org/wiki/%s", ""),
 }
 
 # -- Options for HTML output ----------------------------------------------

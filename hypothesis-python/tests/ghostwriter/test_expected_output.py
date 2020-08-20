@@ -21,6 +21,7 @@ To update the recorded outputs, run `pytest --hypothesis-update-outputs ...`.
 
 import ast
 import base64
+import operator
 import pathlib
 import re
 from typing import Sequence
@@ -46,6 +47,10 @@ class A_Class:
         pass
 
 
+def add(a: float, b: float) -> float:
+    return a + b
+
+
 # Note: for some of the `expected` outputs, we replace away some small
 #       parts which vary between minor versions of Python.
 @pytest.mark.parametrize(
@@ -68,6 +73,28 @@ class A_Class:
         ("timsort_idempotent", ghostwriter.idempotent(timsort)),
         ("eval_equivalent", ghostwriter.equivalent(eval, ast.literal_eval)),
         ("sorted_self_equivalent", ghostwriter.equivalent(sorted, sorted, sorted)),
+        ("addition_op_magic", ghostwriter.magic(add)),
+        (
+            "division_operator",
+            ghostwriter.binary_operation(
+                operator.truediv, associative=False, commutative=False
+            ),
+        ),
+        (
+            "multiplication_operator",
+            ghostwriter.binary_operation(
+                operator.mul, identity=1, distributes_over=operator.add
+            ),
+        ),
+        (
+            "multiplication_operator_unittest",
+            ghostwriter.binary_operation(
+                operator.mul,
+                identity=1,
+                distributes_over=operator.add,
+                style="unittest",
+            ),
+        ),
     ],
     ids=lambda x: x[0],
 )
