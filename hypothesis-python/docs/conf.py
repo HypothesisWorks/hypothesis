@@ -89,6 +89,7 @@ extlinks = {
     "pypi": ("https://pypi.org/project/%s", ""),
     "bpo": ("https://bugs.python.org/issue%s", "bpo-"),
     "np-ref": ("https://docs.scipy.org/doc/numpy/reference/%s", ""),
+    "wikipedia": ("https://en.wikipedia.org/wiki/%s", ""),
 }
 
 # -- Options for HTML output ----------------------------------------------

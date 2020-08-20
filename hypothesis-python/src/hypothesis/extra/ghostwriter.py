@@ -50,13 +50,15 @@ import types
 from collections import OrderedDict
 from itertools import permutations, zip_longest
 from string import ascii_lowercase
-from textwrap import indent
-from typing import Callable, Dict, Set, Tuple, Type, Union
+from textwrap import dedent, indent
+from typing import Callable, Dict, Mapping, Set, Tuple, Type, TypeVar, Union
 
 import black
 
-from hypothesis import strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis import find, strategies as st
+from hypothesis.errors import InvalidArgument, Unsatisfiable
+from hypothesis.internal.compat import get_type_hints
+from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.strategies import OneOfStrategy
 from hypothesis.utils.conventions import InferType, infer
 
@@ -157,18 +159,39 @@ def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
     try:
         params = list(inspect.signature(func).parameters.values())
     except Exception:
-        # `inspect.signature` doesn't work on ufunc objects, but we can work out
-        # what the required parameters would look like if it did.
-        if not _is_probably_ufunc(func):
+        if (
+            isinstance(func, (types.BuiltinFunctionType, types.BuiltinMethodType))
+            and hasattr(func, "__doc__")
+            and isinstance(func.__doc__, str)
+        ):
+            # inspect.signature doesn't work on all builtin functions or methods.
+            # In such cases, including the operator module on Python 3.6, we can try
+            # to reconstruct simple signatures from the docstring.
+            pattern = rf"^{func.__name__}\(([a-z]+(, [a-z]+)*)(, \\)?\)"
+            args = re.match(pattern, func.__doc__)
+            if args is None:
+                raise
+            params = [
+                # Note that we assume that the args are positional-only regardless of
+                # whether the signature shows a `/`, because this is often the case.
+                inspect.Parameter(name=name, kind=inspect.Parameter.POSITIONAL_ONLY)
+                for name in args.group(1).split(", ")
+            ]
+        elif _is_probably_ufunc(func):
+            # `inspect.signature` doesn't work on ufunc objects, but we can work out
+            # what the required parameters would look like if it did.
+            # Note that we use args named a, b, c... to match the `operator` module,
+            # rather than x1, x2, x3... like the Numpy docs.  Because they're pos-only
+            # this doesn't make a runtime difference, and it's much nicer for use-cases
+            # like `equivalent(numpy.add, operator.add)`.
+            params = [
+                inspect.Parameter(name=name, kind=inspect.Parameter.POSITIONAL_ONLY)
+                for name in ascii_lowercase[: func.nin]  # type: ignore
+            ]
+        else:
+            # If we haven't managed to recover a signature through the tricks above,
+            # we're out of ideas and should just re-raise the exception.
             raise
-        # Note that we use args named a, b, c... to match the `operator` module,
-        # rather than x1, x2, x3... like the Numpy docs.  Because they're pos-only
-        # this doesn't make a runtime difference, and it's much nicer for use-cases
-        # like `equivalent(numpy.add, operator.add)`.
-        params = [
-            inspect.Parameter(name=name, kind=inspect.Parameter.POSITIONAL_ONLY)
-            for name in ascii_lowercase[: func.nin]  # type: ignore
-        ]
     return OrderedDict((p.name, p) for p in params if p.kind not in var_param_kinds)
 
 
@@ -220,13 +243,17 @@ def _get_strategies(
 
 
 def _assert_eq(style, a, b):
-    return {
-        "pytest": f"assert {a} == {b}, ({a}, {b})",
-        "unittest": f"self.assertEqual({a}, {b})",
-    }[style]
+    if style == "unittest":
+        return f"self.assertEqual({a}, {b})"
+    assert style == "pytest"
+    if a.isidentifier() and b.isidentifier():
+        return f"assert {a} == {b}, ({a}, {b})"
+    return f"assert {a} == {b}"
 
 
 def _valid_syntax_repr(strategy):
+    if isinstance(strategy, str):
+        return strategy
     if strategy == st.text().wrapped_strategy:
         return "text()"
     # Return a syntactically-valid strategy repr, including fixing some
@@ -288,9 +315,10 @@ def _make_test_body(
     test_body: str,
     except_: Tuple[Type[Exception], ...],
     style: str,
+    given_strategies: Mapping[str, Union[str, st.SearchStrategy]] = None,
 ) -> Tuple[Set[str], str]:
     # Get strategies for all the arguments to each function we're testing.
-    given_strategies = _get_strategies(
+    given_strategies = given_strategies or _get_strategies(
         *funcs, pass_result_to_next_func=ghost in ("idempotent", "roundtrip")
     )
     given_args = ", ".join(
@@ -360,7 +388,7 @@ def _make_test(imports: Set[str], body: str) -> str:
         imports="".join(f"import {imp}\n" for imp in sorted(imports)),
         reject="reject, " if "        reject()\n" in body else "",
     )
-    nothings = body.count("=st.nothing()")
+    nothings = body.count("st.nothing()")
     if nothings == 1:
         header += "# TODO: replace st.nothing() with an appropriate strategy\n\n"
     elif nothings >= 1:
@@ -411,7 +439,7 @@ def magic(
     ghostwriter looks for pairs of functions to pass to :func:`~roundtrip`,
     and any others are passed to :func:`~fuzz`.
 
-    For example, try :command:`hypothesis write gzip`!
+    For example, try :command:`hypothesis write gzip` on the command line!
     """
     except_ = _check_except(except_)
     _check_style(style)
@@ -459,6 +487,19 @@ def magic(
                     )
                     imports |= imp
                     parts.append(body)
+
+    # Look for binary operators - functions with two identically-typed arguments,
+    # and the same return type.  The latter restriction might be lifted later.
+    for name, func in sorted(by_name.items()):
+        hints = get_type_hints(func)
+        hints.pop("return", None)
+        if len(hints) == len(_get_params(func)) == 2:
+            a, b = hints.values()
+            if a == b:
+                imp, body = _make_binop_body(func, except_=except_, style=style)
+                imports |= imp
+                parts.append(body)
+                del by_name[name]
 
     # For all remaining callables, just write a fuzz-test.  In principle we could
     # guess at equivalence or idempotence; but it doesn't seem accurate enough to
@@ -647,3 +688,159 @@ def equivalent(*funcs: Callable, except_: Except = (), style: str = "pytest") ->
         style=style,
     )
     return _make_test(imports, body)
+
+
+X = TypeVar("X")
+Y = TypeVar("Y")
+
+
+def binary_operation(
+    func: Callable[[X, X], Y],
+    *,
+    associative: bool = True,
+    commutative: bool = True,
+    identity: Union[X, InferType, None] = infer,
+    distributes_over: Callable[[X, X], X] = None,
+    except_: Except = (),
+    style: str = "pytest",
+) -> str:
+    """Write property tests for the binary operation ``func``.
+
+    While :wikipedia:`binary operations <Binary_operation>` are not particularly
+    common, they have such nice properties to test that it seems a shame not to
+    demonstrate them with a ghostwriter.  For an operator `f`, test that:
+
+    - if :wikipedia:`associative <Associative_property>`,
+      ``f(a, f(b, c)) == f(f(a, b), c)``
+    - if :wikipedia:`commutative <Commutative_property>`, ``f(a, b) == f(b, a)``
+    - if :wikipedia:`identity <Identity_element>` is not None, ``f(a, identity) == a``
+    - if :wikipedia:`distributes_over <Distributive_property>` is ``+``,
+      ``f(a, b) + f(a, c) == f(a, b+c)``
+
+    For example:
+
+    .. code-block:: python
+
+        ghostwriter.binary_operation(
+            operator.mul,
+            identity=1,
+            inverse=operator.div,
+            distributes_over=operator.add,
+            style="unittest",
+        )
+    """
+    if not callable(func):
+        raise InvalidArgument(f"Got non-callable func={func!r}")
+    except_ = _check_except(except_)
+    _check_style(style)
+    check_type(bool, associative, "associative")
+    check_type(bool, commutative, "commutative")
+    if distributes_over is not None and not callable(distributes_over):
+        raise InvalidArgument(
+            f"distributes_over={distributes_over!r} must be an operation which "
+            f"distributes over {func.__name__}"
+        )
+    if not any([associative, commutative, identity, distributes_over]):
+        raise InvalidArgument(
+            "You must select at least one property of the binary operation to test."
+        )
+    imports, body = _make_binop_body(
+        func,
+        associative=associative,
+        commutative=commutative,
+        identity=identity,
+        distributes_over=distributes_over,
+        except_=except_,
+        style=style,
+    )
+    return _make_test(imports, body)
+
+
+def _make_binop_body(
+    func: Callable[[X, X], Y],
+    *,
+    associative: bool = True,
+    commutative: bool = True,
+    identity: Union[X, InferType, None] = infer,
+    distributes_over: Callable[[X, X], X] = None,
+    except_: Tuple[Type[Exception], ...],
+    style: str,
+) -> Tuple[Set[str], str]:
+    # TODO: collapse togther first two strategies, keep any others (for flags etc.)
+    # assign this as a global variable, which will be prepended to the test bodies
+    strategies = _get_strategies(func)
+    operands, b = [strategies.pop(p) for p in list(_get_params(func))[:2]]
+    if repr(operands) != repr(b):
+        operands |= b
+    operands_name = func.__name__ + "_operands"
+
+    all_imports = set()
+    parts = []
+
+    def maker(sub_property: str, args: str, body: str, right: str = None) -> None:
+        if right is not None:
+            body = f"left={body}\nright={right}\n" + _assert_eq(style, "left", "right")
+        imports, body = _make_test_body(
+            func,
+            test_body=body,
+            ghost=sub_property + "_binary_operation",
+            except_=except_,
+            style=style,
+            given_strategies={**strategies, **{n: operands_name for n in args}},
+        )
+        all_imports.update(imports)
+        if style == "unittest":
+            endline = "(unittest.TestCase):\n"
+            body = body[body.index(endline) + len(endline) + 1 :]
+        parts.append(body)
+
+    if associative:
+        maker(
+            "associative",
+            "abc",
+            _write_call(func, "a", _write_call(func, "b", "c")),
+            _write_call(func, _write_call(func, "a", "b"), "c"),
+        )
+    if commutative:
+        maker(
+            "commutative",
+            "ab",
+            _write_call(func, "a", "b"),
+            _write_call(func, "b", "a"),
+        )
+    if identity is not None:
+        # Guess that the identity element is the minimal example from our operands
+        # strategy.  This is correct often enough to be worthwhile, and close enough
+        # that it's a good starting point to edit much of the rest.
+        if identity is infer:
+            try:
+                identity = find(operands, lambda x: True)
+            except Unsatisfiable:
+                identity = "identity element here"  # type: ignore
+        maker(
+            "identity",
+            "a",
+            _assert_eq(style, "a", _write_call(func, "a", repr(identity))),
+        )
+    if distributes_over:
+        maker(
+            distributes_over.__name__ + "_distributes_over",
+            "abc",
+            _write_call(
+                distributes_over,
+                _write_call(func, "a", "b"),
+                _write_call(func, "a", "c"),
+            ),
+            _write_call(func, "a", _write_call(distributes_over, "b", "c")),
+        )
+
+    operands_repr = repr(operands)
+    for name in st.__all__:
+        operands_repr = operands_repr.replace(f"{name}(", f"st.{name}(")
+    classdef = ""
+    if style == "unittest":
+        classdef = f"class TestBinaryOperation{func.__name__}(unittest.TestCase):\n    "
+    return (
+        all_imports,
+        classdef + f"{operands_name} = {operands_repr}\n" + "\n".join(parts),
+    )

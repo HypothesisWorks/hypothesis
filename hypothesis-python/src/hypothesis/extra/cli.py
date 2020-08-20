@@ -96,6 +96,7 @@ else:
     @main.command()  # type: ignore  # Click adds the .command attribute
     @click.argument("func", type=obj_name, required=True, nargs=-1)
     @click.option("--idempotent", "writer", flag_value="idempotent")
+    @click.option("--binary-op", "writer", flag_value="binary_operation")
     @click.option("--equivalent", "writer", flag_value="equivalent")
     @click.option("--roundtrip", "writer", flag_value="roundtrip")
     @click.option(
@@ -122,6 +123,7 @@ else:
             hypothesis write gzip
             hypothesis write re.compile --except re.error
             hypothesis write --style=unittest --idempotent sorted
+            hypothesis write --binary-op operator.add
             hypothesis write --equivalent ast.literal_eval eval
             hypothesis write --roundtrip json.dumps json.loads
         """

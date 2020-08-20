@@ -1,0 +1,34 @@
+# This test code was written by the `hypothesis.extra.ghostwriter` module
+# and is provided under the Creative Commons Zero public domain dedication.
+
+import _operator
+import unittest
+from hypothesis import given, strategies as st
+
+# TODO: replace st.nothing() with an appropriate strategy
+
+
+class TestBinaryOperationmul(unittest.TestCase):
+    mul_operands = st.nothing()
+
+    @given(a=mul_operands, b=mul_operands, c=mul_operands)
+    def test_associative_binary_operation_mul(self, a, b, c):
+        left = _operator.mul(a, _operator.mul(b, c))
+        right = _operator.mul(_operator.mul(a, b), c)
+        self.assertEqual(left, right)
+
+    @given(a=mul_operands, b=mul_operands)
+    def test_commutative_binary_operation_mul(self, a, b):
+        left = _operator.mul(a, b)
+        right = _operator.mul(b, a)
+        self.assertEqual(left, right)
+
+    @given(a=mul_operands)
+    def test_identity_binary_operation_mul(self, a):
+        self.assertEqual(a, _operator.mul(a, 1))
+
+    @given(a=mul_operands, b=mul_operands, c=mul_operands)
+    def test_add_distributes_over_binary_operation_mul(self, a, b, c):
+        left = _operator.add(_operator.mul(a, b), _operator.mul(a, c))
+        right = _operator.mul(a, _operator.add(b, c))
+        self.assertEqual(left, right)
