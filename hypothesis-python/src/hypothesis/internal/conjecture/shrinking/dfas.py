@@ -69,6 +69,65 @@ def update_learned_dfas():
             o.write(new_source)
 
 
+def find_replacement(u, v, condition):
+    """Given u, v with sort_key(u) < sort_key(v) and both satisfying the
+    condition, find some substring of v that can be replaced with a shortlex
+    smaller one while still satisfying the condition."""
+
+    # We would like to avoid using LStar on large strings as its
+    # behaviour can be quadratic or worse. In order to help achieve
+    # this we peel off a common prefix and suffix of the two final
+    # results and just learn the internal bit where they differ.
+    #
+    # This potentially reduces the length quite far if there's
+    # just one tricky bit of control flow we're struggling to
+    # reduce inside a strategy somewhere and the rest of the
+    # test function reduces fine.
+    common_prefix_length = 0
+    while u[common_prefix_length] == v[common_prefix_length]:
+        common_prefix_length += 1
+
+    i = 1
+    while u[-i] == v[-i]:
+        i += 1
+
+    common_suffix_length = i - 1
+
+    ngram_cache = {}
+
+    def ngrams_of_length(k):
+        if k == 0:
+            return (b"",)
+        try:
+            return ngram_cache[k]
+        except KeyError:
+            pass
+
+        return ngram_cache.setdefault(
+            k, sorted({t[i : i + k] for t in (u, v) for i in range(len(t) + 1 - k)})
+        )
+
+    def suggested_replacements_for(s):
+        min_size = max(0, len(s) - (len(v) - len(u)))
+        for k in range(min_size, len(s)):
+            yield from ngrams_of_length(k)
+        for t in ngrams_of_length(len(s)):
+            if t >= s:
+                break
+            yield t
+
+    for k in range(len(v) + 1 - common_suffix_length - common_prefix_length):
+        for i in range(common_prefix_length, len(v) + 1 - common_suffix_length - k):
+            print(i, k)
+            prefix = v[:i]
+            suffix = v[i + k :]
+            current = v[i : i + k]
+            for replacement in suggested_replacements_for(current):
+                if condition(prefix + replacement + suffix):
+                    return (prefix, (replacement, current), suffix)
+    assert False, "Did not find suitable replacement"  # pragma: no cover
+
+
 def learn_new_dfas(runner, u, v, predicate, allowed_to_update=True, max_dfas=10):
     """Given two buffers ``u`` and ``v```, learn a DFA that will
     allow the shrinker to normalise them better. ``u`` and ``v``
@@ -110,47 +169,11 @@ def learn_new_dfas(runner, u, v, predicate, allowed_to_update=True, max_dfas=10)
                 % (len(extra_dfas), max_dfas)
             )
 
-        assert not v.startswith(u)
-
-        # We would like to avoid using LStar on large strings as its
-        # behaviour can be quadratic or worse. In order to help achieve
-        # this we peel off a common prefix and suffix of the two final
-        # results and just learn the internal bit where they differ.
-        #
-        # This potentially reduces the length quite far if there's
-        # just one tricky bit of control flow we're struggling to
-        # reduce inside a strategy somewhere and the rest of the
-        # test function reduces fine.
-        i = 0
-        while u[i] == v[i]:
-            i += 1
-        prefix = u[:i]
-        assert u.startswith(prefix)
-        assert v.startswith(prefix)
-
-        i = 1
-        while u[-i] == v[-i]:
-            i += 1
-
-        suffix = u[len(u) + 1 - i :]
-        assert u.endswith(suffix)
-        assert v.endswith(suffix)
-
-        u_core = u[len(prefix) : len(u) - len(suffix)]
-        v_core = v[len(prefix) : len(v) - len(suffix)]
-
-        assert u == prefix + u_core + suffix
-        assert v == prefix + v_core + suffix
-
         better = runner.cached_test_function(u)
         worse = runner.cached_test_function(v)
-
         allow_discards = worse.has_discards or better.has_discards
 
-        def is_valid_core(s):
-            if not (len(u_core) <= len(s) <= len(v_core)):
-                return False
-            buf = prefix + s + suffix
+        def is_valid_buffer(buf):
             result = runner.cached_test_function(buf)
             return (
                 predicate(result)
@@ -170,36 +193,39 @@ def learn_new_dfas(runner, u, v, predicate, allowed_to_update=True, max_dfas=10)
                 and (allow_discards or not result.has_discards)
             )
 
-        assert sort_key(u_core) < sort_key(v_core)
+        prefix, (replacement, current), suffix = find_replacement(u, v, is_valid_buffer)
+        assert sort_key(replacement) < sort_key(current)
 
-        assert is_valid_core(u_core)
-        assert is_valid_core(v_core)
+        def is_valid_core(s):
+            if not (len(replacement) <= len(s) <= len(current)):
+                return False
+            return is_valid_buffer(prefix + s + suffix)
 
         learner = LStar(is_valid_core)
 
         prev = -1
         while learner.generation != prev:
             prev = learner.generation
-            learner.learn(u_core)
-            learner.learn(v_core)
+            learner.learn(replacement)
+            learner.learn(current)
 
             # L* has a tendency to learn DFAs which wrap around to
             # the beginning. We don't want to it to do that unless
             # it's accurate, so we use these as examples to show
             # check going around the DFA twice.
-            learner.learn(u_core * 2)
-            learner.learn(v_core * 2)
+            learner.learn(replacement * 2)
+            learner.learn(current * 2)
 
-            if learner.dfa.max_length(learner.dfa.start) > len(v_core):
+            if learner.dfa.max_length(learner.dfa.start) > len(current):
                 # The language we learn is finite and bounded above
-                # by the length of v_core. This is important in order
+                # by the length of current. This is important in order
                 # to keep our shrink passes reasonably efficient -
                 # otherwise they can match far too much. So whenever
                 # we learn a DFA that could match a string longer
-                # than len(v_core) we fix it by finding the first
-                # string longer than v_core and learning that as
+                # than len(current) we fix it by finding the first
+                # string longer than current and learning that as
                 # a correction.
-                x = next(learner.dfa.all_matching_strings(min_length=len(v_core) + 1))
+                x = next(learner.dfa.all_matching_strings(min_length=len(current) + 1))
                 assert not is_valid_core(x)
                 learner.learn(x)
                 assert not learner.dfa.matches(x)
