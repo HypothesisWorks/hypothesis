@@ -22,35 +22,42 @@ import pytest
 from hypothesis import settings
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.conjecture.shrinking import dfas
+from hypothesis.internal.conjecture.shrinking.dfas import (
+    LEARNED_DFA_FILE,
+    SHRINKING_DFAS,
+    FailedToNormalise,
+    learn_new_dfas,
+    normalize,
+    update_learned_dfas,
+)
 
 TEST_DFA_NAME = "test name"
 
 
 @contextmanager
 def preserving_dfas():
-    assert TEST_DFA_NAME not in dfas.SHRINKING_DFAS
-    for k in dfas.SHRINKING_DFAS:
+    assert TEST_DFA_NAME not in SHRINKING_DFAS
+    for k in SHRINKING_DFAS:
         assert not k.startswith(TEST_DFA_NAME)
-    original = dict(dfas.SHRINKING_DFAS)
+    original = dict(SHRINKING_DFAS)
     try:
         yield
     finally:
-        dfas.SHRINKING_DFAS.clear()
-        dfas.SHRINKING_DFAS.update(original)
-        dfas.update_learned_dfas()
-    assert TEST_DFA_NAME not in dfas.SHRINKING_DFAS
-    with open(dfas.learned_dfa_file) as i:
+        SHRINKING_DFAS.clear()
+        SHRINKING_DFAS.update(original)
+        update_learned_dfas()
+    assert TEST_DFA_NAME not in SHRINKING_DFAS
+    with open(LEARNED_DFA_FILE) as i:
         assert TEST_DFA_NAME not in i.read()
 
 
 def test_updating_the_file_makes_no_changes_normally():
-    with open(dfas.learned_dfa_file) as i:
+    with open(LEARNED_DFA_FILE) as i:
         source1 = i.read()
 
-    dfas.update_learned_dfas()
+    update_learned_dfas()
 
-    with open(dfas.learned_dfa_file) as i:
+    with open(LEARNED_DFA_FILE) as i:
         source2 = i.read()
 
     assert source1 == source2
@@ -58,22 +65,22 @@ def test_updating_the_file_makes_no_changes_normally():
 
 def test_updating_the_file_include_new_shrinkers():
     with preserving_dfas():
-        with open(dfas.learned_dfa_file) as i:
+        with open(LEARNED_DFA_FILE) as i:
             source1 = i.read()
 
-        dfas.SHRINKING_DFAS[TEST_DFA_NAME] = "hello"
+        SHRINKING_DFAS[TEST_DFA_NAME] = "hello"
 
-        dfas.update_learned_dfas()
+        update_learned_dfas()
 
-        with open(dfas.learned_dfa_file) as i:
+        with open(LEARNED_DFA_FILE) as i:
             source2 = i.read()
 
         assert source1 != source2
         assert repr(TEST_DFA_NAME) in source2
 
-    assert TEST_DFA_NAME not in dfas.SHRINKING_DFAS
+    assert TEST_DFA_NAME not in SHRINKING_DFAS
 
-    with open(dfas.learned_dfa_file) as i:
+    with open(LEARNED_DFA_FILE) as i:
         assert "test name" not in i.read()
 
 
@@ -111,8 +118,8 @@ def a_bad_test_function():
 
 
 def test_will_error_if_does_not_normalise_and_cannot_update():
-    with pytest.raises(dfas.FailedToNormalise) as excinfo:
-        dfas.normalize(
+    with pytest.raises(FailedToNormalise) as excinfo:
+        normalize(
             "bad",
             a_bad_test_function(),
             required_successes=10,
@@ -124,8 +131,8 @@ def test_will_error_if_does_not_normalise_and_cannot_update():
 
 def test_will_error_if_takes_too_long_to_normalize():
     with preserving_dfas():
-        with pytest.raises(dfas.FailedToNormalise) as excinfo:
-            dfas.normalize(
+        with pytest.raises(FailedToNormalise) as excinfo:
+            normalize(
                 "bad",
                 a_bad_test_function(),
                 required_successes=1000,
@@ -156,18 +163,16 @@ def non_normalized_test_function(data):
 
 def test_can_learn_to_normalize_the_unnormalized():
     with preserving_dfas():
-        prev = len(dfas.SHRINKING_DFAS)
+        prev = len(SHRINKING_DFAS)
 
-        dfas.normalize(
-            TEST_DFA_NAME, non_normalized_test_function, allowed_to_update=True
-        )
+        normalize(TEST_DFA_NAME, non_normalized_test_function, allowed_to_update=True)
 
-        assert len(dfas.SHRINKING_DFAS) == prev + 1
+        assert len(SHRINKING_DFAS) == prev + 1
 
 
 def test_will_error_on_uninteresting_test():
     with pytest.raises(AssertionError):
-        dfas.normalize(TEST_DFA_NAME, lambda data: data.draw_bits(64))
+        normalize(TEST_DFA_NAME, lambda data: data.draw_bits(64))
 
 
 def test_makes_no_changes_if_already_normalized():
@@ -176,11 +181,11 @@ def test_makes_no_changes_if_already_normalized():
             data.mark_interesting()
 
     with preserving_dfas():
-        before = dict(dfas.SHRINKING_DFAS)
+        before = dict(SHRINKING_DFAS)
 
-        dfas.normalize(TEST_DFA_NAME, test_function, allowed_to_update=True)
+        normalize(TEST_DFA_NAME, test_function, allowed_to_update=True)
 
-        after = dict(dfas.SHRINKING_DFAS)
+        after = dict(SHRINKING_DFAS)
 
         assert after == before
 
@@ -197,7 +202,7 @@ def test_learns_to_bridge_only_two():
         test_function, settings=settings(database=None), ignore_limits=True
     )
 
-    dfas = dfas.learn_new_dfas(
+    dfas = learn_new_dfas(
         runner, [10, 100], [2, 8], lambda d: d.status == Status.INTERESTING,
     )
 

@@ -23,7 +23,7 @@ from hypothesis.internal.conjecture.data import ConjectureResult, Status
 from hypothesis.internal.conjecture.dfa.lstar import LStar
 from hypothesis.internal.conjecture.shrinking.learned_dfas import (
     SHRINKING_DFAS,
-    __file__ as learned_dfa_file,
+    __file__ as LEARNED_DFA_FILE,
 )
 
 """
@@ -43,7 +43,7 @@ def update_learned_dfas():
     """Write any modifications to the SHRINKING_DFAS dictionary
     back to the learned DFAs file."""
 
-    with open(learned_dfa_file) as i:
+    with open(LEARNED_DFA_FILE) as i:
         source = i.read()
 
     lines = source.splitlines()
@@ -65,7 +65,7 @@ def update_learned_dfas():
     new_source = "\n".join(lines) + "\n"
 
     if new_source != source:
-        with open(learned_dfa_file, "w") as o:
+        with open(LEARNED_DFA_FILE, "w") as o:
             o.write(new_source)
 
 
