@@ -96,6 +96,7 @@ def find_replacement(u, v, condition):
     ngram_cache = {}
 
     def ngrams_of_length(k):
+        """All strings of length ``k`` appearing in either ``u`` or ``v``."""
         if k == 0:
             return (b"",)
         try:
@@ -108,6 +109,14 @@ def find_replacement(u, v, condition):
         )
 
     def suggested_replacements_for(s):
+        """Returns suitable candidate replacements for a string. These are
+        substrings of ``u`` or ``v`` that are shortlex smaller than ``s`` and
+        can reasonably be expected to work in its place."""
+
+        # We skip over strings where replacing them would cause the result to
+        # be shorter than ``u``. It's possible that these would work, but we're
+        # just trying to reduce ``v`` and don't need to consider them to
+        # achieve that.
         min_size = max(0, len(s) - (len(v) - len(u)))
         for k in range(min_size, len(s)):
             yield from ngrams_of_length(k)
