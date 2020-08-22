@@ -1,3 +1,18 @@
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis/
+#
+# Most of this work is copyright (C) 2013-2020 David R. MacIver
+# (david@drmaciver.com), but it contains contributions by others. See
+# CONTRIBUTING.rst for a full list of people who may hold copyright, and
+# consult the git log if you need to determine who owns an individual
+# contribution.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+#
+# END HEADER
+
 import sys
 from typing import TYPE_CHECKING, TypeVar
 
@@ -80,10 +95,13 @@ def missing_fun(thing: _Missing) -> int:
     return 1
 
 
+@pytest.mark.skipif(sys.version_info[:2] < (3, 6), reason="typing module was strange")
 def test_bound_missing_forward_ref():
     with pytest.raises(InvalidArgument):
         st.builds(missing_fun).example()
 
+
+# Type checking only:
 
 _TypeChecking = TypeVar("_TypeChecking", bound="ExcInfo")
 

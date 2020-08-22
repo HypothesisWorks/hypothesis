@@ -132,13 +132,13 @@ def is_generic_type(type_):
     )
 
 
-def _try_import_forward_ref(thing, bound):
+def _try_import_forward_ref(thing, bound):  # pragma: no cover
     """
     Tries to import a real bound type from ``TypeVar`` bound to a ``ForwardRef``.
 
     This function is very "magical" to say the least, please don't use it.
     """
-    if (  # pragma: no cover
+    if (
         isinstance(thing, typing.TypeVar)
         and getattr(thing, "__module__", None) == "typing"
     ):
