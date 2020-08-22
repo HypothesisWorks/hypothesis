@@ -150,8 +150,8 @@ def _try_import_forward_ref(thing, bound):
 
     try:
         module = importlib.import_module(thing.__module__)
-        return getattr(module, bound.__forward_arg__)
-    except (ImportError, AttributeError):
+        return typing._eval_type(bound, vars(module), None)
+    except (ImportError, AttributeError, NameError):
         # We fallback to `ForwardRef` instance, you can register it as a type as well:
         # >>> from typing import ForwardRef
         # >>> from hypothesis import strategies as st

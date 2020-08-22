@@ -6,11 +6,13 @@ import pytest
 from hypothesis import given, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import ForwardRef
+from tests.common import utils
 from tests.common.debug import find_any
-from tests.common.utils import temp_registered
 
 if TYPE_CHECKING:
     from tests.common.utils import ExcInfo  # we just need any type  # noqa: F401
+
+# Correct:
 
 _Correct = TypeVar("_Correct", bound="CustomType")
 
@@ -36,6 +38,8 @@ def test_bound_correct_forward_ref_old_versions():
         st.builds(correct_fun).example()
 
 
+# Alises:
+
 _Alias = TypeVar("_Alias ", bound="OurAlias")
 
 
@@ -51,6 +55,23 @@ OurAlias = CustomType
 def test_bound_alias_forward_ref(built):
     assert isinstance(built, int)
 
+
+# Dot access:
+
+_DotAccess = TypeVar("_DotAccess", bound="utils.ExcInfo")
+
+
+def dot_access_fun(thing: _DotAccess) -> int:
+    return 1
+
+
+@pytest.mark.skipif(sys.version_info[:2] < (3, 7), reason="typing module was broken")
+@given(st.builds(dot_access_fun))
+def test_bound_dot_access_forward_ref(built):
+    assert isinstance(built, int)
+
+
+# Missing:
 
 _Missing = TypeVar("_Missing", bound="MissingType")
 
@@ -73,12 +94,12 @@ def typechecking_only_fun(thing: _TypeChecking) -> int:
 
 @pytest.mark.skipif(sys.version_info[:2] < (3, 7), reason="typing module was broken")
 def test_bound_type_cheking_only_forward_ref():
-    with temp_registered(ForwardRef("ExcInfo"), st.just(1)):
+    with utils.temp_registered(ForwardRef("ExcInfo"), st.just(1)):
         find_any(st.builds(typechecking_only_fun))
 
 
 @pytest.mark.skipif(sys.version_info[:2] < (3, 7), reason="typing module was broken")
 def test_bound_type_cheking_only_forward_ref_wrong_type():
-    with temp_registered(ForwardRef("WrongType"), st.just(1)):
+    with utils.temp_registered(ForwardRef("WrongType"), st.just(1)):
         with pytest.raises(InvalidArgument):
             st.builds(typechecking_only_fun).example()
