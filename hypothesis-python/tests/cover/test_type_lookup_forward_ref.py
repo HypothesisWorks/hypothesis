@@ -48,12 +48,11 @@ def test_bound_correct_forward_ref(built):
 
 
 @pytest.mark.skipif(
-    sys.version_info[:2] < (3, 6) or sys.version_info[:2] >= (3, 7),
-    reason="typing is correct only on 3.7+",
+    sys.version_info[:2] != (3, 6), reason="typing in python3.6 is partially working",
 )
-@utils.checks_deprecated_behaviour
 def test_bound_correct_forward_ref_python36():
-    st.builds(correct_fun).example()
+    with pytest.raises(InvalidArgument):
+        st.builds(correct_fun).example()
 
 
 # Alises:
