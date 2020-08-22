@@ -138,15 +138,25 @@ def _try_import_forward_ref(thing, bound):
 
     This function is very "magical" to say the least, please don't use it.
     """
+    if (  # pragma: no cover
+        isinstance(thing, typing.TypeVar)
+        and getattr(thing, "__module__", None) == "typing"
+    ):
+        raise InvalidArgument(
+            "Looks like you are using python3.6 or any of the previous versions "
+            "together with a TypeVar bound to a ForwardRef. "
+            "It is not supported. Upgrading to python3.7+ will solve this problem."
+        )
+
     try:
         module = importlib.import_module(thing.__module__)
         return getattr(module, bound.__forward_arg__)
     except (ImportError, AttributeError):
-        # TODO: maybe some other fallback?
-        raise InvalidArgument(
-            "It was not possible to import bound %s from a TypeVar"
-            % (bound.__forward_arg__,),
-        )
+        # We fallback to `ForwardRef` instance, you can register it as a type as well:
+        # >>> from typing import ForwardRef
+        # >>> from hypothesis import strategies as st
+        # >>> st.register_type_strategy(ForwardRef('YourType'), your_strategy)
+        return bound
 
 
 def from_typing_type(thing):
