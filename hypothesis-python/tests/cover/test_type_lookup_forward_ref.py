@@ -47,10 +47,13 @@ def test_bound_correct_forward_ref(built):
     assert isinstance(built, int)
 
 
-@pytest.mark.skipif(sys.version_info[:2] >= (3, 7), reason="typing is now correct")
-def test_bound_correct_forward_ref_old_versions():
-    with pytest.raises(InvalidArgument):
-        st.builds(correct_fun).example()
+@pytest.mark.skipif(
+    sys.version_info[:2] < (3, 6) or sys.version_info[:2] >= (3, 7),
+    reason="typing is correct only on 3.7+",
+)
+@utils.checks_deprecated_behaviour
+def test_bound_correct_forward_ref_python36():
+    st.builds(correct_fun).example()
 
 
 # Alises:
