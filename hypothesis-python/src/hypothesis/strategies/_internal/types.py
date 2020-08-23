@@ -18,7 +18,6 @@ import datetime
 import decimal
 import fractions
 import functools
-import importlib
 import inspect
 import io
 import ipaddress
@@ -137,20 +136,21 @@ def _try_import_forward_ref(thing, bound):  # pragma: no cover
     Tries to import a real bound type from ``TypeVar`` bound to a ``ForwardRef``.
 
     This function is very "magical" to say the least, please don't use it.
+    This function fully covered, but is excluded from coverage
+    because we can only cover each path in a separate python version.
     """
-    if (
-        isinstance(thing, typing.TypeVar)
-        and getattr(thing, "__module__", None) == "typing"
-    ):
-        raise InvalidArgument(
-            "Looks like you are using python3.6 or any of the previous versions "
-            "together with a TypeVar bound to a ForwardRef. "
-            "It is not supported. Upgrading to python3.7+ will solve this problem."
-        )
-
     try:
-        return typing._eval_type(bound, sys.modules[thing.__module__], None)
+        return typing._eval_type(bound, vars(sys.modules[thing.__module__]), None)
     except (KeyError, AttributeError, NameError):
+        if (
+            isinstance(thing, typing.TypeVar)
+            and getattr(thing, "__module__", None) == "typing"
+        ):
+            raise ResolutionFailed(
+                "Looks like you are using python3.6 or any of the previous versions "
+                "together with a TypeVar bound to a ForwardRef. "
+                "It is not supported. Upgrading to python3.7+ will solve this problem."
+            ) from None
         # We fallback to `ForwardRef` instance, you can register it as a type as well:
         # >>> from typing import ForwardRef
         # >>> from hypothesis import strategies as st
