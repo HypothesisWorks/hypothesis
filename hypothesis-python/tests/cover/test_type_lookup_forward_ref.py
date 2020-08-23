@@ -36,10 +36,9 @@ from typing import TYPE_CHECKING, TypeVar
 import pytest
 
 from hypothesis import given, strategies as st
-from hypothesis.errors import InvalidArgument, ResolutionFailed
+from hypothesis.errors import ResolutionFailed
 from hypothesis.internal.compat import ForwardRef
 from tests.common import utils
-from tests.common.debug import find_any
 
 if TYPE_CHECKING:
     from tests.common.utils import ExcInfo  # we just need any type  # noqa: F401
@@ -128,7 +127,7 @@ def test_bound_correct_dot_access_forward_ref(built):
 
 
 @skip_before_python37
-@pytest.mark.parametrize("function", [wrong_dot_access_fun, missing_dot_access_fun,])
+@pytest.mark.parametrize("function", [wrong_dot_access_fun, missing_dot_access_fun])
 def test_bound_missing_dot_access_forward_ref(function):
     """Resolution of missing type in dot access in ``python3.7+``."""
     with pytest.raises(ResolutionFailed):
