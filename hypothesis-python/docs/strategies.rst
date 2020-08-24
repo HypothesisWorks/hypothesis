@@ -98,3 +98,58 @@ We particularly encourage pull requests for new composable primitives that
 make implementing other strategies easier, or for widely used types in the
 standard library. Strategies for other things are also welcome; anything with
 external dependencies just goes in hypothesis.extra.
+
+
+.. _entry-points:
+
+--------------------------------------------------
+Registering strategies via setuptools entry points
+--------------------------------------------------
+
+If you would like to ship Hypothesis strategies for a custom type - either as
+part of the upstream library, or as a third-party extension, there's a catch:
+:func:`~hypothesis.strategies.from_type` only works after the corresponding
+call to :func:`~hypothesis.strategies.register_type_strategy`.  This means that
+either
+
+- you have to try importing Hypothesis to register the strategy when *your*
+  library is imported, though that's only useful at test time, or
+- the user has to call a 'register the strategies' helper that you provide
+  before running their tests
+
+`Entry points <https://amir.rachum.com/blog/2017/07/28/python-entry-points/>`__
+are Python's standard way of automating the latter: when you register a
+``"hypothesis"`` entry point in your ``setup.py``, we'll import and run it
+automatically when *hypothesis* is imported.  Nothing happens unless Hypothesis
+is already in use, and it's totally seamless for downstream users!
+
+Let's look at an example.  You start by adding a function somewhere in your
+package that does all the Hypothesis-related setup work:
+
+.. code-block:: python
+
+    # mymodule.py
+
+
+    class MyCustomType:
+        def __init__(self, x: int):
+            assert x >= 0, f"got {x}, but only positive numbers are allowed"
+            self.x = x
+
+
+    def _hypothesis_setup_hook():
+        import hypothesis.strategies as st
+
+        st.register_type_strategy(MyCustomType, st.integers(min_value=0))
+
+and then tell ``setuptools`` that this is your ``"hypothesis"`` entry point:
+
+.. code-block:: python
+
+    # setup.py
+
+    ...
+    entry_points = {"hypothesis": ["_ = mymodule:_hypothesis_setup_hook"]}
+    ...
+
+And that's all it takes!
