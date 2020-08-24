@@ -131,6 +131,33 @@ def is_generic_type(type_):
     )
 
 
+def _try_import_forward_ref(thing, bound):  # pragma: no cover
+    """
+    Tries to import a real bound type from ``TypeVar`` bound to a ``ForwardRef``.
+
+    This function is very "magical" to say the least, please don't use it.
+    This function fully covered, but is excluded from coverage
+    because we can only cover each path in a separate python version.
+    """
+    try:
+        return typing._eval_type(bound, vars(sys.modules[thing.__module__]), None)
+    except (KeyError, AttributeError, NameError):
+        if (
+            isinstance(thing, typing.TypeVar)
+            and getattr(thing, "__module__", None) == "typing"
+        ):
+            raise ResolutionFailed(
+                "Looks like you are using python3.6 or any of the previous versions "
+                "together with a TypeVar bound to a ForwardRef. "
+                "It is not supported. Upgrading to python3.7+ will solve this problem."
+            ) from None
+        # We fallback to `ForwardRef` instance, you can register it as a type as well:
+        # >>> from typing import ForwardRef
+        # >>> from hypothesis import strategies as st
+        # >>> st.register_type_strategy(ForwardRef('YourType'), your_strategy)
+        return bound
+
+
 def from_typing_type(thing):
     # We start with special-case support for Union and Tuple - the latter
     # isn't actually a generic type. Then we handle Literal since it doesn't
@@ -179,7 +206,10 @@ def from_typing_type(thing):
         return st.sampled_from(literals)
     if isinstance(thing, typing.TypeVar):
         if getattr(thing, "__bound__", None) is not None:
-            strat = unwrap_strategies(st.from_type(thing.__bound__))
+            bound = thing.__bound__
+            if isinstance(bound, ForwardRef):
+                bound = _try_import_forward_ref(thing, bound)
+            strat = unwrap_strategies(st.from_type(bound))
             if not isinstance(strat, OneOfStrategy):
                 return strat
             # The bound was a union, or we resolved it as a union of subtypes,
