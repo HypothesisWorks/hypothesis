@@ -10,6 +10,17 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.29.0:
+
+-------------------
+5.29.0 - 2020-08-24
+-------------------
+
+This release adds support for :ref:`entry-points`, which allows for smoother
+integration of third-party Hypothesis extensions and external libraries.
+Unless you're publishing a library with Hypothesis integration, you'll
+probably only ever use this indirectly!
+
 .. _v5.28.0:
 
 -------------------
