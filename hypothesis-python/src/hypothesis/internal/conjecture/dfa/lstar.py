@@ -296,6 +296,7 @@ class IntegerNormalizer:
         # with each value being treated as equivalent to the largest
         # integer in the list that is below it.
         self.__values = IntList([0])
+        self.__cache = {}
 
     def __repr__(self):
         return "IntegerNormalizer(%r)" % (list(self.__values),)
@@ -308,9 +309,13 @@ class IntegerNormalizer:
     def normalize(self, value):
         """Return the canonical integer considered equivalent
         to ``value``."""
+        try:
+            return self.__cache[value]
+        except KeyError:
+            pass
         i = bisect_right(self.__values, value) - 1
         assert i >= 0
-        return self.__values[i]
+        return self.__cache.setdefault(value, self.__values[i])
 
     def distinguish(self, value, test):
         """Checks whether ``test`` gives the same answer for
@@ -325,8 +330,11 @@ class IntegerNormalizer:
             return False
 
         value_test = test(value)
+
         if test(canonical) == value_test:
             return False
+
+        self.__cache.clear()
 
         def can_lower(k):
             new_canon = value - k
