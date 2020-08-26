@@ -14,10 +14,22 @@
 # END HEADER
 
 import threading
-from collections import defaultdict, deque
+from collections import Counter, defaultdict, deque
 from math import inf
 
 from hypothesis.internal.reflection import proxies
+
+
+def cached(fn):
+    @proxies(fn)
+    def wrapped(self, *args):
+        cache = self._DFA__cache(fn.__name__)
+        try:
+            return cache[args]
+        except KeyError:
+            return cache.setdefault(args, fn(self, *args))
+
+    return wrapped
 
 
 class DFA:
@@ -43,17 +55,6 @@ class DFA:
             setattr(self.__caches, name, cache)
         return cache
 
-    def cached(fn):
-        @proxies(fn)
-        def wrapped(self, *args):
-            cache = self.__cache(fn.__name__)
-            try:
-                return cache[args]
-            except KeyError:
-                return cache.setdefault(args, fn(self, *args))
-
-        return wrapped
-
     @property
     def start(self):
         """Returns the starting state."""
@@ -78,6 +79,13 @@ class DFA:
         for c, j in self.raw_transitions(i):
             if not self.is_dead(j):
                 yield c, j
+
+    @cached
+    def transition_counts(self, state):
+        counts = Counter()
+        for _, j in self.transitions(state):
+            counts[j] += 1
+        return list(counts.items())
 
     def matches(self, s):
         """Returns whether the string ``s`` is accepted

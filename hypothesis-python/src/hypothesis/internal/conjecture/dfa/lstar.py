@@ -16,7 +16,7 @@
 from bisect import bisect_right, insort
 
 from hypothesis.errors import InvalidState
-from hypothesis.internal.conjecture.dfa import DFA
+from hypothesis.internal.conjecture.dfa import DFA, cached
 from hypothesis.internal.conjecture.junkdrawer import IntList, find_integer
 
 """
@@ -285,6 +285,20 @@ class LearnedDFA(DFA):
         self.__transition_cache[key] = result
         return result
 
+    @cached
+    def successor_states(self, state):
+        """Returns all of the distinct states that can be reached via one
+        transition from ``state``, in the lexicographic order of the
+        smallest character that reaches them."""
+        seen = set()
+        result = []
+        for c in self.__lstar.normalizer.representatives():
+            j = self.transition(state, c)
+            if j not in seen:
+                seen.add(j)
+                result.append(j)
+        return tuple(result)
+
 
 class IntegerNormalizer:
     """A class for replacing non-negative integers with a
@@ -305,6 +319,9 @@ class IntegerNormalizer:
         result = IntegerNormalizer()
         result.__values = IntList(self.__values)
         return result
+
+    def representatives(self):
+        yield from self.__values
 
     def normalize(self, value):
         """Return the canonical integer considered equivalent
