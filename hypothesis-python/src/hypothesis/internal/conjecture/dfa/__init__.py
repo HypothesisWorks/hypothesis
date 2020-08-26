@@ -203,6 +203,44 @@ class DFA:
                 pop()
         return cache[i]
 
+    @cached
+    def has_strings(self, state, length):
+        """Returns if any strings of length ``length`` are accepted when
+        starting from state ``state``."""
+        assert length >= 0
+
+        cache = self.__cache("has_strings")
+
+        try:
+            return cache[state, length]
+        except KeyError:
+            pass
+
+        pending = [(state, length)]
+        seen = set()
+        i = 0
+
+        while i < len(pending):
+            s, n = pending[i]
+            i += 1
+            if n > 0:
+                for t in self.successor_states(s):
+                    key = (t, n - 1)
+                    if key not in cache and key not in seen:
+                        pending.append(key)
+                        seen.add(key)
+
+        while pending:
+            s, n = pending.pop()
+            if n == 0:
+                cache[s, n] = self.is_accepting(s)
+            else:
+                cache[s, n] = any(
+                    cache.get((t, n - 1)) for t in self.successor_states(s)
+                )
+
+        return cache[state, length]
+
     def count_strings(self, state, length):
         """Returns the number of strings of length ``length``
         that are accepted when starting from state ``state``."""
@@ -233,7 +271,9 @@ class DFA:
             if n == 0:
                 cache[s, n] = int(self.is_accepting(s))
             else:
-                cache[s, n] = sum(cache[t, n - 1] for _, t in self.transitions(s))
+                cache[s, n] = sum(
+                    cache[t, n - 1] * k for t, k in self.transition_counts(s)
+                )
 
         return cache[state, length]
 
@@ -331,7 +371,7 @@ class DFA:
                 yield b""
             return
 
-        if self.count_strings(self.start, k) == 0:
+        if not self.has_strings(self.start, k):
             return
 
         # This tracks a path through the DFA. We alternate between growing
@@ -351,7 +391,7 @@ class DFA:
             while len(path) < k:
                 state = states[-1]
                 for c, j in self.transitions(state):
-                    if self.count_strings(j, k - len(path) - 1) > 0:
+                    if self.has_strings(j, k - len(path) - 1):
                         states.append(j)
                         path.append(c)
                         break
