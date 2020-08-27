@@ -95,17 +95,12 @@ def test_saving_a_key_twice_fetches_it_once(exampledatabase):
     assert list(exampledatabase.fetch(b"foo")) == [b"bar"]
 
 
-def test_can_close_a_database_without_touching_it(exampledatabase):
-    exampledatabase.close()
-
-
 def test_can_close_a_database_after_saving(exampledatabase):
     exampledatabase.save(b"foo", b"bar")
 
 
 def test_class_name_is_in_repr(exampledatabase):
     assert type(exampledatabase).__name__ in repr(exampledatabase)
-    exampledatabase.close()
 
 
 def test_an_absent_value_is_present_after_it_moves(exampledatabase):
