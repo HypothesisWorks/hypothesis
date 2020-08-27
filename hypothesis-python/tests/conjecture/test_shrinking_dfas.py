@@ -16,6 +16,7 @@
 import os
 import sys
 from contextlib import contextmanager
+from itertools import islice
 
 import pytest
 
@@ -207,3 +208,56 @@ def test_learns_to_bridge_only_two():
         [2, 8],
         [10, 100],
     ]
+
+
+def test_learns_to_bridge_only_two_with_overlap():
+    u = [50, 0, 0, 0, 50]
+    v = [50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50]
+
+    def test_function(data):
+        for i in range(len(u)):
+            c = data.draw_bits(8)
+            if c != u[i]:
+                if c != v[i]:
+                    return
+                break
+        else:
+            data.mark_interesting()
+        for j in range(i + 1, len(v)):
+            if data.draw_bits(8) != v[j]:
+                return
+
+        data.mark_interesting()
+
+    runner = ConjectureRunner(
+        test_function, settings=settings(database=None), ignore_limits=True
+    )
+
+    dfa = dfas.learn_a_new_dfa(runner, u, v, lambda d: d.status == Status.INTERESTING,)
+
+    assert list(islice(dfa.all_matching_strings(), 3)) == [b"", bytes(len(v) - len(u))]
+
+
+def test_learns_to_bridge_only_two_with_suffix():
+    u = [7]
+    v = [0] * 10 + [7]
+
+    def test_function(data):
+        n = data.draw_bits(8)
+        if n == 7:
+            data.mark_interesting()
+        elif n != 0:
+            return
+        for _ in range(9):
+            if data.draw_bits(8) != 0:
+                return
+        if data.draw_bits(8) == 7:
+            data.mark_interesting()
+
+    runner = ConjectureRunner(
+        test_function, settings=settings(database=None), ignore_limits=True
+    )
+
+    dfa = dfas.learn_a_new_dfa(runner, u, v, lambda d: d.status == Status.INTERESTING,)
+
+    assert list(islice(dfa.all_matching_strings(), 3)) == [b"", bytes(len(v) - len(u))]
