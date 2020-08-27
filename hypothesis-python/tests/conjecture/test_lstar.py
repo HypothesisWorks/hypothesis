@@ -15,7 +15,7 @@
 
 import itertools
 
-from hypothesis import example, given, strategies as st
+from hypothesis import assume, example, given, strategies as st
 from hypothesis.internal.conjecture.dfa.lstar import IntegerNormalizer, LStar
 
 
@@ -206,3 +206,39 @@ def test_learning_always_changes_generation(chars, order):
         if learner.dfa.matches(s) != learner.member(s):
             learner.learn(s)
             assert learner.generation > prev
+
+
+def varint_predicate(b):
+    if not b:
+        return False
+    n = b[0] & 15
+    if len(b) != n + 1:
+        return False
+    value = int.from_bytes(b[1:], "big")
+    return value >= 10
+
+
+@st.composite
+def varint(draw):
+    result = bytearray()
+    result.append(draw(st.integers(1, 255)))
+    n = result[0] & 15
+    assume(n > 0)
+    value = draw(st.integers(10, 256 ** n - 1))
+    result.extend(value.to_bytes(n, "big"))
+    return bytes(result)
+
+
+@example([b"\x02\x01\n"])
+@given(st.lists(varint(), min_size=1))
+def test_can_learn_varint_predicate(varints):
+    learner = LStar(varint_predicate)
+    prev = -1
+    while learner.generation != prev:
+        prev = learner.generation
+
+        for s in varints:
+            learner.learn(s)
+
+    for s in varints:
+        assert learner.dfa.matches(s)

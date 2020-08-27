@@ -69,6 +69,7 @@ learning languages offline that we can record for later use.
 class LStar:
     def __init__(self, member):
         self.__experiments = []
+        self.__experiment_set = set()
         self.__cache = {}
         self.__member = member
         self.__normalizer = IntegerNormalizer()
@@ -107,7 +108,7 @@ class LStar:
             )
         return self.__dfa
 
-    def learn(self, s):
+    def learn(self, string):
         """Learn to give the correct answer on this string.
         That is, after this method completes we will have
         ``self.dfa.matches(s) == self.member(s)``.
@@ -120,8 +121,8 @@ class LStar:
         each of a set of strings until the generation stops
         changing is guaranteed to terminate.
         """
-        s = bytes(s)
-        correct_outcome = self.member(s)
+        string = bytes(string)
+        correct_outcome = self.member(string)
 
         # We don't want to check this inside the loop because it potentially
         # causes us to evaluate more of the states than we actually need to,
@@ -129,7 +130,7 @@ class LStar:
         # we only need to evaluate strings that are of the form
         # ``state + experiment``, which will generally be cached and/or needed
         # later.
-        if self.dfa.matches(s) == correct_outcome:
+        if self.dfa.matches(string) == correct_outcome:
             return
 
         # In the papers they assume that we only run this process
@@ -139,8 +140,36 @@ class LStar:
         # Thus we iterate this to a fixed point where we repair
         # the DFA by repeatedly adding experiments until the DFA
         # agrees with the membership function on this string.
+
+        # First we make sure that normalization is not the source of the
+        # failure to match.
+        while True:
+            normalized = bytes([self.__normalizer.normalize(c) for c in string])
+            # We can correctly replace the string with its normalized version
+            # so normalization is not the problem here.
+            if self.member(normalized) == correct_outcome:
+                string = normalized
+                break
+            alphabet = sorted(set(string), reverse=True)
+            target = string
+            for a in alphabet:
+
+                def replace(b):
+                    if a == b:
+                        return target
+                    return bytes([b if c == a else c for c in target])
+
+                self.__normalizer.distinguish(a, lambda x: self.member(replace(x)))
+                target = replace(self.__normalizer.normalize(a))
+                assert self.member(target) == correct_outcome
+            assert target != normalized
+            self.__dfa_changed()
+
+        # Now we know normalization is correct we can attempt to determine if
+        # any of our transitions are wrong.
         while True:
             dfa = self.dfa
+
             states = [dfa.start]
 
             def seems_right(n):
@@ -152,21 +181,21 @@ class LStar:
                 If we are in the right state, that will replace a substring
                 with an equivalent one so must produce the same answer.
                 """
-                if n > len(s):
+                if n > len(string):
                     return False
 
                 # Populate enough of the states list to know where we are.
                 while n >= len(states):
-                    states.append(dfa.transition(states[-1], s[len(states) - 1]))
+                    states.append(dfa.transition(states[-1], string[len(states) - 1]))
 
-                return self.member(dfa.label(states[n]) + s[n:]) == correct_outcome
+                return self.member(dfa.label(states[n]) + string[n:]) == correct_outcome
 
             n = find_integer(seems_right)
 
             # We got to the end without ever finding ourself in a bad
             # state, so we must correctly match this string.
-            if n == len(s):
-                assert dfa.matches(s) == correct_outcome
+            if n == len(string):
+                assert dfa.matches(string) == correct_outcome
                 break
 
             # Reading n characters does not put us in a bad state but
@@ -174,25 +203,18 @@ class LStar:
             # the string that we have not read yet is an experiment
             # that allows us to distinguish the state that we ended
             # up in from the state that we should have ended up in.
-            #
-            # There are two possibilities here: Either we have badly
-            # normalised the byte that lead to this transition, or
-            # we ended up in the wrong state because we could not
-            # distinguish the state we eneded up infrom the correct
-            # one.
 
-            prefix = s[:n]
-            suffix = s[n + 1 :]
-            if self.__normalizer.distinguish(
-                s[n], lambda x: self.member(prefix + bytes([x]) + suffix)
-            ):
-                self.__dfa_changed()
-                continue
+            suffix = string[n + 1 :]
 
+            current = dfa.label(states[n + 1])
+            actual = dfa.label(states[n]) + string[n : n + 1]
+            assert self.member(current + suffix) != self.member(actual + suffix)
             self.__add_experiment(suffix)
 
     def __add_experiment(self, e):
+        assert e not in self.__experiment_set
         self.__experiments.append(e)
+        self.__experiment_set.add(e)
         self.__dfa_changed()
 
 
