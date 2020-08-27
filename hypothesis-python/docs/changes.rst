@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.29.3:
+
+-------------------
+5.29.3 - 2020-08-27
+-------------------
+
+This patch adds type annotations to the :doc:`hypothesis.database <database>`
+module.  There is no runtime change, but your typechecker might notice.
+
 .. _v5.29.2:
 
 -------------------
