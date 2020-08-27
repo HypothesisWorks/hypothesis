@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.29.1:
+
+-------------------
+5.29.1 - 2020-08-27
+-------------------
+
+This release fixes a bug in some Hypothesis internal support code for learning
+automata. This mostly doesn't have any user visible impact, although it slightly
+affects the learned shrink passes so shrinking may be subtly different.
+
 .. _v5.29.0:
 
 -------------------
