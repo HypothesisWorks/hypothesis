@@ -382,7 +382,7 @@ def get_random_for_wrapped_test(test, wrapped_test):
 
 
 def process_arguments_to_given(
-    wrapped_test, arguments, kwargs, given_kwargs, argspec, settings,
+    wrapped_test, arguments, kwargs, given_kwargs, argspec,
 ):
     selfy = None
     arguments, kwargs = convert_positional_arguments(wrapped_test, arguments, kwargs)
@@ -887,6 +887,7 @@ class HypothesisHandle:
 
     inner_test = attr.ib()
     _get_fuzz_target = attr.ib()
+    _given_kwargs = attr.ib()
 
     @property
     def fuzz_one_input(
@@ -999,7 +1000,7 @@ def given(
             random = get_random_for_wrapped_test(test, wrapped_test)
 
             processed_args = process_arguments_to_given(
-                wrapped_test, arguments, kwargs, given_kwargs, argspec, settings,
+                wrapped_test, arguments, kwargs, given_kwargs, argspec
             )
             arguments, kwargs, test_runner, search_strategy = processed_args
 
@@ -1159,7 +1160,7 @@ def given(
             )
             random = get_random_for_wrapped_test(test, wrapped_test)
             _args, _kwargs, test_runner, search_strategy = process_arguments_to_given(
-                wrapped_test, (), {}, given_kwargs, argspec, settings,
+                wrapped_test, (), {}, given_kwargs, argspec,
             )
             assert not _args
             assert not _kwargs
@@ -1209,7 +1210,7 @@ def given(
         wrapped_test._hypothesis_internal_use_reproduce_failure = getattr(
             test, "_hypothesis_internal_use_reproduce_failure", None
         )
-        wrapped_test.hypothesis = HypothesisHandle(test, _get_fuzz_target)
+        wrapped_test.hypothesis = HypothesisHandle(test, _get_fuzz_target, given_kwargs)
         return wrapped_test
 
     return run_test_as_given

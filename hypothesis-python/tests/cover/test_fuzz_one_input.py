@@ -108,3 +108,21 @@ def test_autopruning_of_returned_buffer():
     # Unused portions of the input buffer are discarded from output.
     # (and canonicalised, but that's a no-op for fixed-length `binary()`)
     assert test.hypothesis.fuzz_one_input(b"deadbeef") == b"dead"
+
+
+STRAT = st.builds(object)
+
+
+@given(x=STRAT)
+def addx(x, y):
+    pass
+
+
+@given(STRAT)
+def addy(x, y):
+    pass
+
+
+def test_can_access_strategy_for_wrapped_test():
+    assert addx.hypothesis._given_kwargs == {"x": STRAT}
+    assert addy.hypothesis._given_kwargs == {"y": STRAT}
