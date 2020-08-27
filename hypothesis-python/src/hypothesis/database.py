@@ -13,14 +13,22 @@
 #
 # END HEADER
 
+import abc
 import binascii
 import os
 import warnings
 from hashlib import sha384
+from typing import Iterable
 
 from hypothesis.configuration import mkdir_p, storage_directory
 from hypothesis.errors import HypothesisException, HypothesisWarning
 from hypothesis.utils.conventions import not_set
+
+__all__ = [
+    "DirectoryBasedExampleDatabase",
+    "ExampleDatabase",
+    "InMemoryExampleDatabase",
+]
 
 
 def _usable_dir(path):
@@ -59,43 +67,48 @@ def _db_for_path(path=None):
     return DirectoryBasedExampleDatabase(str(path))
 
 
-class EDMeta(type):
+class _EDMeta(abc.ABCMeta):
     def __call__(self, *args, **kwargs):
         if self is ExampleDatabase:
             return _db_for_path(*args, **kwargs)
         return super().__call__(*args, **kwargs)
 
 
-class ExampleDatabase(metaclass=EDMeta):
-    """Interface class for storage systems.
+class ExampleDatabase(metaclass=_EDMeta):
+    """An abstract base class for storing examples in Hypothesis' internal format.
 
-    A key -> multiple distinct values mapping.
-
-    Keys and values are binary data.
+    An ExampleDatabase maps each ``bytes`` key to many distinct ``bytes``
+    values, like a ``Mapping[bytes, AbstractSet[bytes]]``.
     """
 
-    def save(self, key, value):
+    @abc.abstractmethod
+    def save(self, key: bytes, value: bytes) -> None:
         """Save ``value`` under ``key``.
 
-        If this value is already present for this key, silently do
-        nothing
+        If this value is already present for this key, silently do nothing.
         """
         raise NotImplementedError("%s.save" % (type(self).__name__))
 
-    def delete(self, key, value):
+    @abc.abstractmethod
+    def fetch(self, key: bytes) -> Iterable[bytes]:
+        """Return an iterable over all values matching this key."""
+        raise NotImplementedError("%s.fetch" % (type(self).__name__))
+
+    @abc.abstractmethod
+    def delete(self, key: bytes, value: bytes) -> None:
         """Remove this value from this key.
 
         If this value is not present, silently do nothing.
         """
         raise NotImplementedError("%s.delete" % (type(self).__name__))
 
-    def move(self, src, dest, value):
-        """Move value from key src to key dest. Equivalent to delete(src,
-        value) followed by save(src, value) but may have a more efficient
-        implementation.
+    def move(self, src: bytes, dest: bytes, value: bytes) -> None:
+        """Move ``value`` from key ``src`` to key ``dest``. Equivalent to
+        ``delete(src, value)`` followed by ``save(src, value)``, but may
+        have a more efficient implementation.
 
-        Note that value will be inserted at dest regardless of whether
-        it is currently present at src.
+        Note that ``value`` will be inserted at ``dest`` regardless of whether
+        it is currently present at ``src``.
         """
         if src == dest:
             self.save(src, value)
@@ -103,33 +116,29 @@ class ExampleDatabase(metaclass=EDMeta):
         self.delete(src, value)
         self.save(dest, value)
 
-    def fetch(self, key):
-        """Return all values matching this key."""
-        raise NotImplementedError("%s.fetch" % (type(self).__name__))
-
-    def close(self):
-        """Clear up any resources associated with this database."""
-        raise NotImplementedError("%s.close" % (type(self).__name__))
-
 
 class InMemoryExampleDatabase(ExampleDatabase):
+    """A non-persistent example database, implemented in terms of a dict of sets.
+
+    This can be useful if you call a test function several times in a single
+    session, or for testing other database implementations, but because it
+    does not persist between runs we do not recommend it for general use.
+    """
+
     def __init__(self):
         self.data = {}
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "InMemoryExampleDatabase(%r)" % (self.data,)
 
-    def fetch(self, key):
+    def fetch(self, key: bytes) -> Iterable[bytes]:
         yield from self.data.get(key, ())
 
-    def save(self, key, value):
+    def save(self, key: bytes, value: bytes) -> None:
         self.data.setdefault(key, set()).add(bytes(value))
 
-    def delete(self, key, value):
+    def delete(self, key: bytes, value: bytes) -> None:
         self.data.get(key, set()).discard(bytes(value))
-
-    def close(self):
-        pass
 
 
 def _hash(key):
@@ -137,15 +146,19 @@ def _hash(key):
 
 
 class DirectoryBasedExampleDatabase(ExampleDatabase):
-    def __init__(self, path):
+    """Use a directory to store Hypothesis examples as files.
+
+    This is the default database for Hypothesis; see above for details.
+
+    .. i.e. see the documentation in database.rst
+    """
+
+    def __init__(self, path: str) -> None:
         self.path = path
-        self.keypaths = {}
+        self.keypaths = {}  # type: dict
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "DirectoryBasedExampleDatabase(%r)" % (self.path,)
-
-    def close(self):
-        pass
 
     def _key_path(self, key):
         try:
@@ -159,7 +172,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
     def _value_path(self, key, value):
         return os.path.join(self._key_path(key), _hash(value))
 
-    def fetch(self, key):
+    def fetch(self, key: bytes) -> Iterable[bytes]:
         kp = self._key_path(key)
         if not os.path.exists(kp):
             return
@@ -170,7 +183,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             except OSError:
                 pass
 
-    def save(self, key, value):
+    def save(self, key: bytes, value: bytes) -> None:
         # Note: we attempt to create the dir in question now. We
         # already checked for permissions, but there can still be other issues,
         # e.g. the disk is full
@@ -187,7 +200,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
                 os.unlink(tmpname)
             assert not os.path.exists(tmpname)
 
-    def move(self, src, dest, value):
+    def move(self, src: bytes, dest: bytes, value: bytes) -> None:
         if src == dest:
             self.save(src, value)
             return
@@ -197,7 +210,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             self.delete(src, value)
             self.save(dest, value)
 
-    def delete(self, key, value):
+    def delete(self, key: bytes, value: bytes) -> None:
         try:
             os.unlink(self._value_path(key, value))
         except OSError:

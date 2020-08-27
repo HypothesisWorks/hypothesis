@@ -66,3 +66,20 @@ Like everything under ``.hypothesis/``, the examples directory will be
 transparently created on demand.  Unlike the other subdirectories,
 ``examples/`` is designed to handle merges, deletes, etc if you just add the
 directory into git, mercurial, or any similar version control system.
+
+
+---------------------------------
+Defining your own ExampleDatabase
+---------------------------------
+
+You can define your :class:`~hypothesis.database.ExampleDatabase`, for example
+to use a shared datastore, with just a few methods:
+
+.. autoclass:: hypothesis.database.ExampleDatabase
+   :members:
+
+Two concrete :class:`~hypothesis.database.ExampleDatabase` classes ship with
+Hypothesis:
+
+.. autoclass:: hypothesis.database.DirectoryBasedExampleDatabase
+.. autoclass:: hypothesis.database.InMemoryExampleDatabase

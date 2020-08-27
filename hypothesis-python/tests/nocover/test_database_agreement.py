@@ -72,8 +72,6 @@ class DatabaseComparison(RuleBasedStateMachine):
             last_db = db
 
     def teardown(self):
-        for d in self.dbs:
-            d.close()
         shutil.rmtree(self.tempd)
 
 

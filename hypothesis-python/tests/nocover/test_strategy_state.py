@@ -71,7 +71,6 @@ class HypothesisSpec(RuleBasedStateMachine):
     @rule()
     def clear_database(self):
         if self.database is not None:
-            self.database.close()
             self.database = None
 
     @rule()
