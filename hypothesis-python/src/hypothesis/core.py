@@ -887,6 +887,7 @@ class HypothesisHandle:
 
     inner_test = attr.ib()
     _get_fuzz_target = attr.ib()
+    _given_kwargs = attr.ib()
 
     @property
     def fuzz_one_input(
@@ -1209,7 +1210,7 @@ def given(
         wrapped_test._hypothesis_internal_use_reproduce_failure = getattr(
             test, "_hypothesis_internal_use_reproduce_failure", None
         )
-        wrapped_test.hypothesis = HypothesisHandle(test, _get_fuzz_target)
+        wrapped_test.hypothesis = HypothesisHandle(test, _get_fuzz_target, given_kwargs)
         return wrapped_test
 
     return run_test_as_given
