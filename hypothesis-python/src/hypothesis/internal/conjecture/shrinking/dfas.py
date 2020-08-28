@@ -97,26 +97,33 @@ def learn_a_new_dfa(runner, u, v, predicate):
     # just one tricky bit of control flow we're struggling to
     # reduce inside a strategy somewhere and the rest of the
     # test function reduces fine.
-    i = 0
-    while u[i] == v[i]:
-        i += 1
-    prefix = u[:i]
-    assert u.startswith(prefix)
-    assert v.startswith(prefix)
+    if v.endswith(u):
+        prefix = b""
+        suffix = u
+        u_core = b""
+        assert len(u) > 0
+        v_core = v[: -len(u)]
+    else:
+        i = 0
+        while u[i] == v[i]:
+            i += 1
+        prefix = u[:i]
+        assert u.startswith(prefix)
+        assert v.startswith(prefix)
 
-    i = 1
-    while u[-i] == v[-i]:
-        i += 1
+        i = 1
+        while u[-i] == v[-i]:
+            i += 1
 
-    suffix = u[len(u) + 1 - i :]
-    assert u.endswith(suffix)
-    assert v.endswith(suffix)
+        suffix = u[max(len(prefix), len(u) + 1 - i) :]
+        assert u.endswith(suffix)
+        assert v.endswith(suffix)
 
-    u_core = u[len(prefix) : len(u) - len(suffix)]
-    v_core = v[len(prefix) : len(v) - len(suffix)]
+        u_core = u[len(prefix) : len(u) - len(suffix)]
+        v_core = v[len(prefix) : len(v) - len(suffix)]
 
-    assert u == prefix + u_core + suffix
-    assert v == prefix + v_core + suffix
+    assert u == prefix + u_core + suffix, (list(u), list(v))
+    assert v == prefix + v_core + suffix, (list(u), list(v))
 
     better = runner.cached_test_function(u)
     worse = runner.cached_test_function(v)
