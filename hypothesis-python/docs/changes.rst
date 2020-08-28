@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.29.4:
+
+-------------------
+5.29.4 - 2020-08-28
+-------------------
+
+This release fixes some hard to trigger bugs in Hypothesis's automata learning
+code. This code is only run as part of the Hypothesis build process, and not
+for user code, so this release has no user visible impact.
+
 .. _v5.29.3:
 
 -------------------
