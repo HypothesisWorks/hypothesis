@@ -25,7 +25,7 @@ SHRINKING_DFAS = {}
 
 # fmt: off
 
-SHRINKING_DFAS['datetimes()-1478f1f696'] = ConcreteDFA([[(0, 1), (1, 255, 2)], [(0, 3), (1, 255, 4)], [(0, 255, 4)], [(0, 5), (1, 255, 6)], [(0, 255, 6)], [(4, 255, 7)], [(0, 255, 8)], [(1, 9)], [(0, 1, 9)], []], {9})  # noqa: E501
+SHRINKING_DFAS['datetimes()-d66625c3b7'] = ConcreteDFA([[(0, 1), (1, 255, 2)], [(0, 3), (1, 255, 4)], [(0, 255, 4)], [(0, 5), (1, 255, 6)], [(0, 255, 6)], [(5, 255, 7)], [(0, 255, 7)], []], {7})  # noqa: E501
 SHRINKING_DFAS['emails()-fde8f71142'] = ConcreteDFA([[(0, 1), (1, 255, 2)], [(0, 255, 2)], []], {2})  # noqa: E501
 SHRINKING_DFAS['floats()-58ab5aefc9'] = ConcreteDFA([[(1, 1), (2, 255, 2)], [(1, 3)], [(0, 1, 3)], []], {3})  # noqa: E501
 SHRINKING_DFAS['floats()-6b86629f89'] = ConcreteDFA([[(3, 1), (4, 255, 2)], [(1, 3)], [(0, 1, 3)], []], {3})  # noqa: E501
