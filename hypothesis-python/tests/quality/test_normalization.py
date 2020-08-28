@@ -13,22 +13,14 @@
 #
 # END HEADER
 
-import math
 from itertools import islice
 
 import pytest
 
-from hypothesis import assume, strategies as st
+from hypothesis import strategies as st
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal.conjecture.shrinking import dfas
 from tests.quality.test_shrinking_order import iter_values
-
-
-@st.composite
-def non_integer_floats(draw):
-    result = draw(st.floats())
-    assume(math.isfinite(result) and result != int(result))
-    return result
 
 
 @pytest.fixture
@@ -41,9 +33,7 @@ def normalize_kwargs(request):
 
 @pytest.mark.parametrize("n", range(10, -1, -1))
 @pytest.mark.parametrize(
-    "strategy",
-    [st.floats(), st.text(), st.datetimes(), non_integer_floats()],
-    ids=repr,
+    "strategy", [st.floats(), st.text(), st.datetimes()], ids=repr,
 )
 def test_common_strategies_normalize_small_values(strategy, n, normalize_kwargs):
 
