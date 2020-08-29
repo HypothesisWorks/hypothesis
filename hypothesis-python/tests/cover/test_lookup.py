@@ -300,6 +300,7 @@ def test_distinct_typevars_distinct_type():
     )
 
 
+@pytest.mark.skipif(sys.version_info < (3, 6), reason="python3.5 is weird")
 @given(st.data())
 def test_same_typevars_same_type(data):
     """Ensures that single type argument will always have the same type in a single context."""
