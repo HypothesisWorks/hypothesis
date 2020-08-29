@@ -1468,6 +1468,11 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # convert empty results into an explicit error.
     if thing in types._global_type_lookup:
         return as_strategy(types._global_type_lookup[thing], thing)
+    # We also have a special case for TypeVars.
+    # They are represented as instances like `~T` when they come here.
+    # We need to work with their type instead.
+    if isinstance(thing, TypeVar) and type(thing) in types._global_type_lookup:
+        return as_strategy(types._global_type_lookup[type(thing)], thing)
     # If there's no explicitly registered strategy, maybe a subtype of thing
     # is registered - if so, we can resolve it to the subclass strategy.
     # We'll start by checking if thing is from from the typing module,

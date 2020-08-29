@@ -284,6 +284,43 @@ def test_distinct_typevars_same_constraint():
     )
 
 
+def test_distinct_typevars_distinct_type():
+    """Ensures that two different type vars have at least one different type in their strategies."""
+    A = typing.TypeVar("A")
+    B = typing.TypeVar("B")
+    find_any(
+        st.tuples(st.from_type(A), st.from_type(B)),
+        lambda ab: type(ab[0]) != type(ab[1]),  # noqa
+    )
+
+
+@given(st.data())
+def test_same_typevars_same_type(data):
+    """Ensures that single type argument will always have the same type in a single context."""
+    A = typing.TypeVar("A")
+
+    def same_type_args(a: A, b: A):
+        assert type(a) == type(b)
+
+    data.draw(st.builds(same_type_args))
+
+
+def test_typevars_can_be_redefined():
+    """We test that one can register a custom strategy for all type vars."""
+    A = typing.TypeVar("A")
+
+    with temp_registered(typing.TypeVar, st.just(1)):
+        assert_all_examples(st.from_type(A), lambda obj: obj == 1)
+
+
+def test_typevars_can_be_redefine_with_factory():
+    """We test that one can register a custom strategy for all type vars."""
+    A = typing.TypeVar("A")
+
+    with temp_registered(typing.TypeVar, lambda thing: st.just(thing.__name__)):
+        assert_all_examples(st.from_type(A), lambda obj: obj == "A")
+
+
 def annotated_func(a: int, b: int = 2, *, c: int, d: int = 4):
     return a + b + c + d
 
