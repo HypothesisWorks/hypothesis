@@ -1478,7 +1478,6 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # We'll start by checking if thing is from from the typing module,
     # because there are several special cases that don't play well with
     # subclass and instance checks.
-    print("root", isinstance(thing, typing_root_type))
     if isinstance(thing, typing_root_type):
         return types.from_typing_type(thing)
     # If it's not from the typing module, we get all registered types that are
