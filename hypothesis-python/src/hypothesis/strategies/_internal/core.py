@@ -1471,13 +1471,14 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # We also have a special case for TypeVars.
     # They are represented as instances like `~T` when they come here.
     # We need to work with their type instead.
-    if isinstance(thing, TypeVar) and type(thing) in types._global_type_lookup:
+    if isinstance(thing, TypeVar) and type(thing) in types._global_type_lookup:  # type: ignore
         return as_strategy(types._global_type_lookup[type(thing)], thing)
     # If there's no explicitly registered strategy, maybe a subtype of thing
     # is registered - if so, we can resolve it to the subclass strategy.
     # We'll start by checking if thing is from from the typing module,
     # because there are several special cases that don't play well with
     # subclass and instance checks.
+    print("root", isinstance(thing, typing_root_type))
     if isinstance(thing, typing_root_type):
         return types.from_typing_type(thing)
     # If it's not from the typing module, we get all registered types that are

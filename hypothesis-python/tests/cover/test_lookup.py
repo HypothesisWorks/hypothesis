@@ -35,7 +35,13 @@ from tests.common.utils import fails_with, temp_registered
 
 sentinel = object()
 generics = sorted(
-    (t for t in types._global_type_lookup if isinstance(t, typing_root_type)), key=str
+    (
+        t
+        for t in types._global_type_lookup
+        # We ignore TypeVar, because it is not a Generic type:
+        if isinstance(t, typing_root_type) and t != typing.TypeVar
+    ),
+    key=str,
 )
 xfail_on_39 = () if sys.version_info[:2] < (3, 9) else pytest.mark.xfail
 
