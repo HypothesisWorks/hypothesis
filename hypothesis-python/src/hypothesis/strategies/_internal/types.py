@@ -601,7 +601,7 @@ def resolve_TypeVar(thing):
             st.sampled_from(strat.original_strategies), key=type_var_key,
         ).flatmap(lambda s: s)
 
-    builtin_scalar_types = [type(None), bool, int, float, str, bytes, list, dict]
+    builtin_scalar_types = [type(None), bool, int, float, str, bytes]
     return st.shared(
         st.sampled_from(
             # Constraints may be None or () on various Python versions.
