@@ -161,11 +161,11 @@ def _try_import_forward_ref(thing, bound):  # pragma: no cover
 def from_typing_type(thing):
     # We start with special-case support for Union and Tuple - the latter
     # isn't actually a generic type. Then we handle Literal since it doesn't
-    # support `isinstance`. Support for Callable may be added to this section
-    # later.
+    # support `isinstance`.
+    #
     # We then explicitly error on non-Generic types, which don't carry enough
     # information to sensibly resolve to strategies at runtime.
-    # Finally, we run a variation of the subclass lookup in st.from_type
+    # Finally, we run a variation of the subclass lookup in `st.from_type`
     # among generic types in the lookup.
     #
     # Under 3.6 Union is handled directly in st.from_type, as the argument is
@@ -204,28 +204,6 @@ def from_typing_type(thing):
             else:
                 literals.append(arg)
         return st.sampled_from(literals)
-    if isinstance(thing, typing.TypeVar):
-        if getattr(thing, "__bound__", None) is not None:
-            bound = thing.__bound__
-            if isinstance(bound, ForwardRef):
-                bound = _try_import_forward_ref(thing, bound)
-            strat = unwrap_strategies(st.from_type(bound))
-            if not isinstance(strat, OneOfStrategy):
-                return strat
-            # The bound was a union, or we resolved it as a union of subtypes,
-            # so we need to unpack the strategy to ensure consistency across uses.
-            # This incantation runs a sampled_from over the strategies inferred for
-            # each part of the union, wraps that in shared so that we only generate
-            # from one type per testcase, and flatmaps that back to instances.
-            return st.shared(
-                st.sampled_from(strat.original_strategies), key="typevar=%r" % (thing,)
-            ).flatmap(lambda s: s)
-        if getattr(thing, "__constraints__", None):
-            return st.shared(
-                st.sampled_from(thing.__constraints__), key="typevar=%r" % (thing,)
-            ).flatmap(st.from_type)
-        # Constraints may be None or () on various Python versions.
-        return st.text()  # An arbitrary type for the typevar
     # Now, confirm that we're dealing with a generic type as we expected
     if not isinstance(thing, typing_root_type):  # pragma: no cover
         raise ResolutionFailed("Cannot resolve %s to a strategy" % (thing,))
@@ -601,3 +579,34 @@ def resolve_Callable(thing):
         like=(lambda: None) if len(thing.__args__) == 1 else (lambda *a, **k: None),
         returns=st.from_type(thing.__args__[-1]),
     )
+
+
+@register(typing.TypeVar)
+def resolve_TypeVar(thing):
+    type_var_key = "typevar=%r" % (thing,)
+
+    if getattr(thing, "__bound__", None) is not None:
+        bound = thing.__bound__
+        if isinstance(bound, ForwardRef):
+            bound = _try_import_forward_ref(thing, bound)
+        strat = unwrap_strategies(st.from_type(bound))
+        if not isinstance(strat, OneOfStrategy):
+            return strat
+        # The bound was a union, or we resolved it as a union of subtypes,
+        # so we need to unpack the strategy to ensure consistency across uses.
+        # This incantation runs a sampled_from over the strategies inferred for
+        # each part of the union, wraps that in shared so that we only generate
+        # from one type per testcase, and flatmaps that back to instances.
+        return st.shared(
+            st.sampled_from(strat.original_strategies), key=type_var_key,
+        ).flatmap(lambda s: s)
+
+    builtin_scalar_types = [type(None), bool, int, float, str, bytes]
+    return st.shared(
+        st.sampled_from(
+            # Constraints may be None or () on various Python versions.
+            getattr(thing, "__constraints__", None)
+            or builtin_scalar_types,
+        ),
+        key=type_var_key,
+    ).flatmap(st.from_type)

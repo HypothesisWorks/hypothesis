@@ -35,7 +35,13 @@ from tests.common.utils import fails_with, temp_registered
 
 sentinel = object()
 generics = sorted(
-    (t for t in types._global_type_lookup if isinstance(t, typing_root_type)), key=str
+    (
+        t
+        for t in types._global_type_lookup
+        # We ignore TypeVar, because it is not a Generic type:
+        if isinstance(t, typing_root_type) and t != typing.TypeVar
+    ),
+    key=str,
 )
 xfail_on_39 = () if sys.version_info[:2] < (3, 9) else pytest.mark.xfail
 
@@ -282,6 +288,44 @@ def test_distinct_typevars_same_constraint():
         st.tuples(st.from_type(A), st.from_type(B)),
         lambda ab: type(ab[0]) != type(ab[1]),  # noqa
     )
+
+
+def test_distinct_typevars_distinct_type():
+    """Ensures that two different type vars have at least one different type in their strategies."""
+    A = typing.TypeVar("A")
+    B = typing.TypeVar("B")
+    find_any(
+        st.tuples(st.from_type(A), st.from_type(B)),
+        lambda ab: type(ab[0]) != type(ab[1]),  # noqa
+    )
+
+
+@pytest.mark.skipif(sys.version_info < (3, 6), reason="python3.5 is weird")
+@given(st.data())
+def test_same_typevars_same_type(data):
+    """Ensures that single type argument will always have the same type in a single context."""
+    A = typing.TypeVar("A")
+
+    def same_type_args(a: A, b: A):
+        assert type(a) == type(b)
+
+    data.draw(st.builds(same_type_args))
+
+
+def test_typevars_can_be_redefined():
+    """We test that one can register a custom strategy for all type vars."""
+    A = typing.TypeVar("A")
+
+    with temp_registered(typing.TypeVar, st.just(1)):
+        assert_all_examples(st.from_type(A), lambda obj: obj == 1)
+
+
+def test_typevars_can_be_redefine_with_factory():
+    """We test that one can register a custom strategy for all type vars."""
+    A = typing.TypeVar("A")
+
+    with temp_registered(typing.TypeVar, lambda thing: st.just(thing.__name__)):
+        assert_all_examples(st.from_type(A), lambda obj: obj == "A")
 
 
 def annotated_func(a: int, b: int = 2, *, c: int, d: int = 4):
