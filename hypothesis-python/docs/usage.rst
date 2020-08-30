@@ -25,6 +25,7 @@ and was used by `more than 4% of Python users surveyed by the PSF in 2018
 * `cmph-cffi <https://github.com/URXtech/cmph-cffi>`_
 * `cryptography <https://github.com/pyca/cryptography>`_
 * `dbus-signature-pyparsing <https://github.com/stratis-storage/dbus-signature-pyparsing>`_
+* `dry-python/returns <https://github.com/dry-python/returns>`_
 * `fastnumbers <https://github.com/SethMMorton/fastnumbers>`_
 * `flocker <https://github.com/ClusterHQ/flocker>`_
 * `flownetpy <https://github.com/debsankha/flownetpy>`_
