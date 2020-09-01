@@ -7,12 +7,12 @@
 alabaster==0.7.12         # via sphinx
 appdirs==1.4.4            # via black, virtualenv
 asgiref==3.2.10           # via django
-attrs==20.1.0             # via black, flake8-bugbear, hypothesis (hypothesis-python/setup.py), pytest
+attrs==20.1.0             # via flake8-bugbear, hypothesis (hypothesis-python/setup.py), pytest
 autoflake==1.4            # via -r requirements/tools.in
 babel==2.8.0              # via sphinx
 backcall==0.2.0           # via ipython
 bandit==1.6.2             # via flake8-bandit
-black==19.10b0            # via -r requirements/tools.in, blacken-docs
+black==20.8b1             # via -r requirements/tools.in, blacken-docs
 blacken-docs==1.8.0       # via -r requirements/tools.in
 bleach==3.1.5             # via readme-renderer
 certifi==2020.6.20        # via requests
@@ -21,11 +21,12 @@ chardet==3.0.4            # via requests
 click==7.1.2              # via black, pip-tools, pyupio, safety
 colorama==0.4.3           # via twine
 coverage==5.2.1           # via -r requirements/tools.in
-cryptography==3.0         # via secretstorage
+cryptography==3.1         # via secretstorage
+dataclasses==0.7          # via black
 decorator==4.4.2          # via ipython, traitlets
 deprecated==1.2.10        # via pygithub
 distlib==0.3.1            # via virtualenv
-django==3.1               # via -r requirements/tools.in
+django==3.1.1             # via -r requirements/tools.in
 docutils==0.16            # via readme-renderer, restructuredtext-lint, sphinx
 dparse==0.5.1             # via pyupio, safety
 dpcontracts==0.6.0        # via -r requirements/tools.in
@@ -49,12 +50,12 @@ isort==5.4.2              # via -r requirements/tools.in
 jedi==0.17.2              # via ipython
 jeepney==0.4.3            # via keyring, secretstorage
 jinja2==2.11.2            # via pyupio, sphinx
-keyring==21.3.1           # via twine
+keyring==21.4.0           # via twine
 lark-parser==0.9.0        # via -r requirements/tools.in
 markupsafe==1.1.1         # via jinja2
 mccabe==0.6.1             # via flake8
-more-itertools==8.4.0     # via pytest
-mypy-extensions==0.4.3    # via mypy
+more-itertools==8.5.0     # via pytest
+mypy-extensions==0.4.3    # via black, mypy
 mypy==0.782               # via -r requirements/tools.in
 numpy==1.19.1             # via -r requirements/tools.in
 packaging==20.4           # via bleach, dparse, pytest, pyupio, safety, sphinx, tox
@@ -66,12 +67,12 @@ pickleshare==0.7.5        # via ipython
 pip-tools==5.3.1          # via -r requirements/tools.in
 pkginfo==1.5.0.1          # via twine
 pluggy==0.13.1            # via pytest, tox
-prompt-toolkit==3.0.6     # via ipython
+prompt-toolkit==3.0.7     # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.9.0                 # via pytest, tox
 pycodestyle==2.6.0        # via flake8, flake8-bandit
 pycparser==2.20           # via cffi
-pydocstyle==5.1.0         # via flake8-docstrings
+pydocstyle==5.1.1         # via flake8-docstrings
 pyflakes==2.2.0           # via autoflake, flake8
 pygithub==1.53            # via pyupio
 pygments==2.6.1           # via ipython, readme-renderer, sphinx
@@ -79,7 +80,7 @@ pyjwt==1.7.1              # via pygithub
 pyparsing==2.4.7          # via packaging
 pytest==6.0.1             # via -r requirements/tools.in
 python-dateutil==2.8.1    # via -r requirements/tools.in
-python-gitlab==2.4.0      # via pyupio
+python-gitlab==2.5.0      # via pyupio
 pytz==2020.1              # via babel, django
 pyupgrade==2.7.2          # via -r requirements/tools.in
 pyupio==1.1.1             # via -r requirements/tools.in
@@ -114,7 +115,7 @@ tqdm==4.48.2              # via pyupio, twine
 traitlets==4.3.3          # via ipython
 twine==3.2.0              # via -r requirements/tools.in
 typed-ast==1.4.1          # via black, mypy
-typing-extensions==3.7.4.3  # via mypy
+typing-extensions==3.7.4.3  # via black, mypy
 urllib3==1.25.10          # via requests
 virtualenv==20.0.31       # via tox
 wcwidth==0.2.5            # via prompt-toolkit
