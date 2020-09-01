@@ -136,7 +136,15 @@ else:
         NameError for unresolvable forward references, just return an empty dict.
         """
         try:
-            hints = typing.get_type_hints(thing)
+            if inspect.isclass(thing) and hasattr(thing, "__signature__"):
+                spec = inspect.getfullargspec(thing)
+                hints = {
+                    k: v
+                    for k, v in spec.annotations.items()
+                    if k in (spec.args + spec.kwonlyargs) and isinstance(v, type)
+                }
+            else:
+                hints = typing.get_type_hints(thing)
         except (TypeError, NameError):
             hints = {}
         if hints or not inspect.isclass(thing):
