@@ -61,9 +61,7 @@ def test_common_strategies_normalize_small_values(strategy, n, normalize_kwargs)
     dfas.normalize(repr(strategy), test_function, **normalize_kwargs)
 
 
-@pytest.mark.parametrize(
-    "strategy", [st.emails(), st.complex_numbers()], ids=repr,
-)
+@pytest.mark.parametrize("strategy", [st.emails(), st.complex_numbers()], ids=repr)
 def test_harder_strategies_normalize_to_minimal(strategy, normalize_kwargs):
     import random
 

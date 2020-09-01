@@ -574,7 +574,7 @@ class ConcreteDFA(DFA):
                 self.__start,
             )
         else:
-            return "ConcreteDFA(%r, %r)" % (transitions, self.__accepting,)
+            return "ConcreteDFA(%r, %r)" % (transitions, self.__accepting)
 
     @property
     def start(self):

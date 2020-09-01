@@ -1072,7 +1072,7 @@ class ConjectureRunner:
         result = None
 
         data = self.new_conjecture_data(
-            prefix=max((buffer, dummy_data.buffer), key=len), max_length=max_length,
+            prefix=max((buffer, dummy_data.buffer), key=len), max_length=max_length
         )
         self.test_function(data)
         result = check_result(data.as_result())

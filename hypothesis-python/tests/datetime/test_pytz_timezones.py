@@ -138,10 +138,12 @@ def test_datetimes_can_exclude_imaginary():
     }
     # Sanity check: fail unless those days contain an imaginary hour to filter out
     find_any(
-        datetimes(**australia, allow_imaginary=True), lambda x: not datetime_exists(x),
+        datetimes(**australia, allow_imaginary=True),
+        lambda x: not datetime_exists(x),
     )
     find_any(
-        datetimes(**ireland, allow_imaginary=True), lambda x: not datetime_exists(x),
+        datetimes(**ireland, allow_imaginary=True),
+        lambda x: not datetime_exists(x),
     )
     # Assert that with allow_imaginary=False we only generate existing datetimes.
     assert_all_examples(

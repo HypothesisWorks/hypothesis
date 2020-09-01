@@ -69,7 +69,7 @@ def test_bound_correct_forward_ref(built):
 
 
 @pytest.mark.skipif(
-    sys.version_info[:2] != (3, 6), reason="typing in python3.6 is partially working",
+    sys.version_info[:2] != (3, 6), reason="typing in python3.6 is partially working"
 )
 def test_bound_correct_forward_ref_python36():
     """

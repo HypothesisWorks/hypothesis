@@ -65,7 +65,8 @@ _global_field_lookup = {
 }  # type: Dict[Type[AnyField], Union[st.SearchStrategy, Callable[[Any], st.SearchStrategy]]]
 
 _ipv6_strings = st.one_of(
-    st.ip_addresses(v=6).map(str), st.ip_addresses(v=6).map(lambda addr: addr.exploded),
+    st.ip_addresses(v=6).map(str),
+    st.ip_addresses(v=6).map(lambda addr: addr.exploded),
 )
 
 

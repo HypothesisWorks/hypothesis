@@ -1611,7 +1611,7 @@ def fractions(
 
 
 def _as_finite_decimal(
-    value: Union[Real, str, None], name: str, allow_infinity: Optional[bool],
+    value: Union[Real, str, None], name: str, allow_infinity: Optional[bool]
 ) -> Optional[Decimal]:
     """Convert decimal bounds to decimals, carefully."""
     assert name in ("min_value", "max_value")

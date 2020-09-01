@@ -185,8 +185,8 @@ def run_state_machine_as_test(state_machine_factory, *, settings=None):
             machine.teardown()
 
     # Use a machine digest to identify stateful tests in the example database
-    run_state_machine.hypothesis.inner_test._hypothesis_internal_add_digest = function_digest(
-        state_machine_factory
+    run_state_machine.hypothesis.inner_test._hypothesis_internal_add_digest = (
+        function_digest(state_machine_factory)
     )
     # Copy some attributes so @seed and @reproduce_failure "just work"
     run_state_machine._hypothesis_internal_use_seed = getattr(
@@ -751,7 +751,7 @@ class RuleStrategy(SearchStrategy):
         self.rules = list(machine.rules())
 
         self.enabled_rules_strategy = st.shared(
-            FeatureStrategy(), key=("enabled rules", machine),
+            FeatureStrategy(), key=("enabled rules", machine)
         )
 
         # The order is a bit arbitrary. Primarily we're trying to group rules
