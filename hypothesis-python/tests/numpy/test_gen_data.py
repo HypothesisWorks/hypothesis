@@ -1276,3 +1276,13 @@ def test_arrays_selects_consistent_time_unit(data, dtype_str):
 def test_arrays_gives_useful_error_on_inconsistent_time_unit():
     with pytest.raises(InvalidArgument, match="mismatch of time units in dtypes"):
         nps.arrays("m8[Y]", 10, elements=nps.from_dtype(np.dtype("m8[D]"))).example()
+
+
+@given(
+    nps.arrays(
+        shape=nps.array_shapes(min_dims=0, min_side=0), dtype=nps.floating_dtypes()
+    )
+)
+def test_arrays_own_memory(x: np.ndarray):
+    assert x.base is None
+    assert x[...].base is x
