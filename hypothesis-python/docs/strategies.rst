@@ -73,6 +73,10 @@ fail - by trying all kinds of inputs and reporting whatever happens.
 
 :pypi:`pytest-subtesthack` functions as a workaround for :issue:`377`.
 
+:pypi:`returns` uses Hypothesis to verify that Higher Kinded Types correctly
+implement functor, applicative, monad, and other laws; allowing a declarative
+approach to be combined with traditional pythonic code.
+
 
 --------------------
 Writing an Extension
