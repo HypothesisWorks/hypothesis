@@ -67,6 +67,7 @@ else:
 
     def obj_name(s: str) -> object:
         """This "type" imports whatever object is named by a dotted string."""
+        s = s.strip()
         try:
             return importlib.import_module(s)
         except ImportError:

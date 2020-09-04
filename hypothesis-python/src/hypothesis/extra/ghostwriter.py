@@ -476,7 +476,7 @@ def magic(
             functions.add(thing)
         elif isinstance(thing, types.ModuleType):
             if hasattr(thing, "__all__"):
-                funcs = [getattr(thing, name) for name in thing.__all__]  # type: ignore
+                funcs = [getattr(thing, name, None) for name in thing.__all__]  # type: ignore
             else:
                 funcs = [
                     v
@@ -487,7 +487,7 @@ def magic(
                 try:
                     if (not is_mock(f)) and callable(f) and _get_params(f):
                         functions.add(f)
-                except ValueError:
+                except (TypeError, ValueError):
                     pass
         else:
             raise InvalidArgument(f"Can't test non-module non-callable {thing!r}")
@@ -500,7 +500,11 @@ def magic(
             by_name[_get_qualname(f, include_module=True)] = f
         except Exception:
             pass  # e.g. Pandas 'CallableDynamicDoc' object has no attribute '__name__'
-    assert by_name
+    if not by_name:
+        return (
+            f"# Found no testable functions in\n"
+            f"# {functions!r} from {modules_or_functions}\n"
+        )
 
     # Look for pairs of functions that roundtrip, based on known naming patterns.
     for writename, readname in ROUNDTRIP_PAIRS:
