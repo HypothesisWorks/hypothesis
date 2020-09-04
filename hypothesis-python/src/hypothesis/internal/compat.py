@@ -136,15 +136,21 @@ else:
         NameError for unresolvable forward references, just return an empty dict.
         """
         try:
+            hints = {}
             if inspect.isclass(thing) and hasattr(thing, "__signature__"):
+                # It is possible for the signature and annotations attributes to
+                # differ on an object due to renamed arguments.
+                # To prevent missing arguments we use the signature to provide any type hints it has
+                # and then override any common names with the more comprehensive type hint
+                # from get_type_hints
+                # See https://github.com/HypothesisWorks/hypothesis/pull/2580 for more details.
                 spec = inspect.getfullargspec(thing)
                 hints = {
                     k: v
                     for k, v in spec.annotations.items()
                     if k in (spec.args + spec.kwonlyargs) and isinstance(v, type)
                 }
-            else:
-                hints = typing.get_type_hints(thing)
+            hints.update(typing.get_type_hints(thing))
         except (AttributeError, TypeError, NameError):
             hints = {}
         if hints or not inspect.isclass(thing):
