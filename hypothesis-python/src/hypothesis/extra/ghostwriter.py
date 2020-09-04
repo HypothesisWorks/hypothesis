@@ -879,6 +879,17 @@ def _make_binop_body(
                 identity = find(operands, lambda x: True)
             except Exception:
                 identity = "identity element here"  # type: ignore
+        # If the repr of this element is invalid Python, stringify it - this
+        # can't be executed as-is, but at least makes it clear what should
+        # happpen.  E.g. type(None) -> <class 'NoneType'> -> quoted.
+        try:
+            # We don't actually execute this code object; we're just compiling
+            # to check that the repr is syntatically valid.  HOWEVER, we're
+            # going to output that code string into test code which will be
+            # executed; so you still shouldn't ghostwrite for hostile code.
+            compile(repr(identity), "<string>", "exec")
+        except SyntaxError:
+            identity = repr(identity)  # type: ignore
         maker(
             "identity",
             "a",
@@ -896,7 +907,7 @@ def _make_binop_body(
             _write_call(func, "a", _write_call(distributes_over, "b", "c")),
         )
 
-    operands_repr = repr(operands)
+    operands_repr = _valid_syntax_repr(operands)
     for name in st.__all__:
         operands_repr = operands_repr.replace(f"{name}(", f"st.{name}(")
     classdef = ""

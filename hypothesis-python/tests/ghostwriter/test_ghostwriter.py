@@ -277,3 +277,16 @@ def test_module_with_mock_does_not_break():
     # through the initial validation and then fail when used in more detailed
     # logic in the ghostwriter machinery.
     ghostwriter.magic(unittest.mock)
+
+
+def compose_types(x: type, y: type):
+    pass
+
+
+def test_unrepr_identity_elem():
+    # Works with inferred identity element
+    source_code = ghostwriter.binary_operation(compose_types)
+    exec(source_code, {})
+    # and also works with explicit identity element
+    source_code = ghostwriter.binary_operation(compose_types, identity=type)
+    exec(source_code, {})
