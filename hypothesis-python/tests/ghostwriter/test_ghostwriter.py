@@ -20,7 +20,7 @@ import re
 import unittest
 from decimal import Decimal
 from types import ModuleType
-from typing import List, Sequence, Set
+from typing import Any, List, Sequence, Set
 
 import pytest
 
@@ -99,6 +99,10 @@ def non_type_annotation(x: 3):  # type: ignore
     pass
 
 
+def annotated_any(x: Any):
+    pass
+
+
 def test_flattens_one_of_repr():
     assert repr(from_type(Sequence[int])).count("one_of(") == 2
     assert repr(ghostwriter._get_strategies(timsort)["seq"]).count("one_of(") == 1
@@ -114,6 +118,7 @@ def test_flattens_one_of_repr():
         timsort,
         ast.literal_eval,
         non_type_annotation,
+        annotated_any,
     ],
 )
 def test_ghostwriter_fuzz(func, ex):

@@ -42,6 +42,7 @@ do their best to write you a useful test.
 """
 
 import builtins
+import contextlib
 import enum
 import inspect
 import re
@@ -51,7 +52,7 @@ from collections import OrderedDict
 from itertools import permutations, zip_longest
 from string import ascii_lowercase
 from textwrap import dedent, indent
-from typing import Callable, Dict, Mapping, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Mapping, Set, Tuple, Type, TypeVar, Union
 
 import black
 
@@ -60,6 +61,7 @@ from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.strategies import OneOfStrategy
+from hypothesis.strategies._internal.types import _global_type_lookup
 from hypothesis.utils.conventions import InferType, infer
 
 IMPORT_SECTION = """
@@ -190,6 +192,25 @@ def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
     return OrderedDict((p.name, p) for p in params if p.kind not in var_param_kinds)
 
 
+@contextlib.contextmanager
+def _with_any_registered():
+    # If the user has registered their own strategy for Any, leave it alone
+    if Any in _global_type_lookup:
+        yield
+    # We usually want to force from_type(Any) to raise an error because we don't
+    # have enough information to accurately resolve user intent, but in this case
+    # we can treat it as a synonym for object - this is probably wrong, but you'll
+    # get at least _some_ output to edit later.  We then reset everything in order
+    # to avoid polluting the resolution logic in case you run tests later.
+    else:
+        try:
+            _global_type_lookup[Any] = st.builds(object)
+            yield
+        finally:
+            del _global_type_lookup[Any]
+            st.from_type.__clear_cache()
+
+
 def _get_strategies(
     *funcs: Callable, pass_result_to_next_func: bool = False
 ) -> Dict[str, st.SearchStrategy]:
@@ -210,7 +231,8 @@ def _get_strategies(
         builder_args = {
             k: infer if k in hints else _strategy_for(v) for k, v in params.items()
         }
-        strat = st.builds(f, **builder_args).wrapped_strategy  # type: ignore
+        with _with_any_registered():
+            strat = st.builds(f, **builder_args).wrapped_strategy  # type: ignore
 
         args, kwargs = strat.mapped_strategy.wrapped_strategy.element_strategies
         if args.element_strategies:
@@ -316,12 +338,13 @@ def _make_test_body(
     given_strategies: Mapping[str, Union[str, st.SearchStrategy]] = None,
 ) -> Tuple[Set[str], str]:
     # Get strategies for all the arguments to each function we're testing.
-    given_strategies = given_strategies or _get_strategies(
-        *funcs, pass_result_to_next_func=ghost in ("idempotent", "roundtrip")
-    )
-    given_args = ", ".join(
-        "{}={}".format(k, _valid_syntax_repr(v)) for k, v in given_strategies.items()
-    )
+    with _with_any_registered():
+        given_strategies = given_strategies or _get_strategies(
+            *funcs, pass_result_to_next_func=ghost in ("idempotent", "roundtrip")
+        )
+        given_args = ", ".join(
+            f"{k}={_valid_syntax_repr(v)}" for k, v in given_strategies.items()
+        )
     for name in st.__all__:
         given_args = given_args.replace(f"{name}(", f"st.{name}(")
 
@@ -382,6 +405,8 @@ def _make_test(imports: Set[str], body: str) -> str:
     body = body.replace("builtins.", "").replace("__main__.", "")
     imports.discard("builtins")
     imports.discard("__main__")
+    if "st.from_type(typing." in body:
+        imports.add("typing")
     header = IMPORT_SECTION.format(
         imports="".join(f"import {imp}\n" for imp in sorted(imports)),
         reject="reject, " if "        reject()\n" in body else "",
