@@ -18,6 +18,7 @@ import enum
 import json
 import re
 import unittest
+import unittest.mock
 from decimal import Decimal
 from types import ModuleType
 from typing import Any, List, Sequence, Set
@@ -255,3 +256,10 @@ def test_overlapping_args_use_union_of_strategies():
 
     source_code = ghostwriter.equivalent(f, g)
     assert "arg=st.one_of(st.integers(), st.floats())" in source_code
+
+
+def test_module_with_mock_does_not_break():
+    # Before we added an explicit check for unspec'd mocks, they would pass
+    # through the initial validation and then fail when used in more detailed
+    # logic in the ghostwriter machinery.
+    ghostwriter.magic(unittest.mock)

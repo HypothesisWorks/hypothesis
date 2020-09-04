@@ -59,6 +59,7 @@ import black
 from hypothesis import find, strategies as st
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.internal.compat import get_type_hints
+from hypothesis.internal.reflection import is_mock
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.strategies import OneOfStrategy
 from hypothesis.strategies._internal.types import _global_type_lookup
@@ -485,7 +486,7 @@ def magic(
                 ]
             for f in funcs:
                 try:
-                    if callable(f) and inspect.signature(f).parameters:
+                    if (not is_mock(f)) and callable(f) and _get_params(f):
                         functions.add(f)
                 except ValueError:
                     pass
