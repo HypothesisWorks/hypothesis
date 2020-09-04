@@ -309,7 +309,7 @@ def _get_module(obj):
 def _get_qualname(obj, include_module=False):
     # Replacing angle-brackets for objects defined in `.<locals>.`
     qname = getattr(obj, "__qualname__", obj.__name__)
-    qname = qname.replace("<", "_").replace(">", "_")
+    qname = qname.replace("<", "_").replace(">", "_").replace(" ", "")
     if include_module:
         return _get_module(obj) + "." + qname
     return qname

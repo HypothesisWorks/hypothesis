@@ -104,6 +104,9 @@ def annotated_any(x: Any):
     pass
 
 
+space_in_name = type("a name", (type,), {"__init__": lambda self: None})
+
+
 def test_flattens_one_of_repr():
     strat = from_type(Sequence[int])
     assert repr(strat).count("one_of(") > 1
@@ -121,6 +124,7 @@ def test_flattens_one_of_repr():
         ast.literal_eval,
         non_type_annotation,
         annotated_any,
+        space_in_name,
     ],
 )
 def test_ghostwriter_fuzz(func, ex):
