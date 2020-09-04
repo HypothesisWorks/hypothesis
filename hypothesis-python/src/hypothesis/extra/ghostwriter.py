@@ -48,7 +48,7 @@ import inspect
 import re
 import sys
 import types
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from itertools import permutations, zip_longest
 from string import ascii_lowercase
 from textwrap import dedent, indent
@@ -494,17 +494,17 @@ def magic(
 
     imports = set()
     parts = []
-    by_name = {_get_qualname(f): f for f in functions}
-    if len(by_name) < len(functions):
-        raise InvalidArgument("Functions to magic() test must have unique names")
+    by_name = {_get_qualname(f, include_module=True): f for f in functions}
 
     # Look for pairs of functions that roundtrip, based on known naming patterns.
     for writename, readname in ROUNDTRIP_PAIRS:
         for name in sorted(by_name):
-            match = re.fullmatch(writename, name)
+            match = re.fullmatch(writename, name.split(".")[-1])
             if match:
-                other = readname.format(*match.groups())
-                if other in by_name:
+                inverse_name = readname.format(*match.groups())
+                for other in sorted(
+                    n for n in by_name if n.split(".")[-1] == inverse_name
+                )[:1]:
                     imp, body = _make_roundtrip_body(
                         (by_name.pop(name), by_name.pop(other)),
                         except_=except_,
@@ -512,6 +512,22 @@ def magic(
                     )
                     imports |= imp
                     parts.append(body)
+
+    # Look for equivalent functions: same name, all required arguments of any can
+    # be found in all signatures, and if all have return-type annotations they match.
+    names = defaultdict(list)
+    for _, f in sorted(by_name.items()):
+        names[_get_qualname(f)].append(f)
+    for group in names.values():
+        if len(group) >= 2 and len({frozenset(_get_params(f)) for f in group}) == 1:
+            sentinel = object()
+            returns = {get_type_hints(f).get("return", sentinel) for f in group}
+            if len(returns - {sentinel}) <= 1:
+                imp, body = _make_equiv_body(group, except_=except_, style=style)
+                imports |= imp
+                parts.append(body)
+                for f in group:
+                    by_name.pop(_get_qualname(f, include_module=True))
 
     # Look for binary operators - functions with two identically-typed arguments,
     # and the same return type.  The latter restriction might be lifted later.
@@ -685,6 +701,23 @@ def roundtrip(*funcs: Callable, except_: Except = (), style: str = "pytest") -> 
     return _make_test(*_make_roundtrip_body(funcs, except_, style))
 
 
+def _make_equiv_body(funcs, except_, style):
+    var_names = [f"result_{f.__name__}" for f in funcs]
+    if len(set(var_names)) < len(var_names):
+        var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
+    test_lines = [
+        vname + " = " + _write_call(f) for vname, f in zip(var_names, funcs)
+    ] + [_assert_eq(style, var_names[0], vname) for vname in var_names[1:]]
+
+    return _make_test_body(
+        *funcs,
+        test_body="\n".join(test_lines),
+        except_=except_,
+        ghost="equivalent",
+        style=style,
+    )
+
+
 def equivalent(*funcs: Callable, except_: Except = (), style: str = "pytest") -> str:
     """Write source code for a property-based test of ``funcs``.
 
@@ -706,22 +739,7 @@ def equivalent(*funcs: Callable, except_: Except = (), style: str = "pytest") ->
             raise InvalidArgument(f"Got non-callable funcs[{i}]={f!r}")
     except_ = _check_except(except_)
     _check_style(style)
-
-    var_names = [f"result_{f.__name__}" for f in funcs]
-    if len(set(var_names)) < len(var_names):
-        var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
-    test_lines = [
-        vname + " = " + _write_call(f) for vname, f in zip(var_names, funcs)
-    ] + [_assert_eq(style, var_names[0], vname) for vname in var_names[1:]]
-
-    imports, body = _make_test_body(
-        *funcs,
-        test_body="\n".join(test_lines),
-        except_=except_,
-        ghost="equivalent",
-        style=style,
-    )
-    return _make_test(imports, body)
+    return _make_test(*_make_equiv_body(funcs, except_, style))
 
 
 X = TypeVar("X")
