@@ -104,8 +104,9 @@ def annotated_any(x: Any):
 
 
 def test_flattens_one_of_repr():
-    assert repr(from_type(Sequence[int])).count("one_of(") == 2
-    assert repr(ghostwriter._get_strategies(timsort)["seq"]).count("one_of(") == 1
+    strat = from_type(Sequence[int])
+    assert repr(strat).count("one_of(") > 1
+    assert ghostwriter._valid_syntax_repr(strat).count("one_of(") == 1
 
 
 @varied_excepts

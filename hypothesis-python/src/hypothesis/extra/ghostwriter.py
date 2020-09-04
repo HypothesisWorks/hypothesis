@@ -239,19 +239,8 @@ def _get_strategies(
             raise NotImplementedError("Expected to pass everything as kwargs")
 
         for k, v in zip(kwargs.keys, kwargs.mapped_strategy.element_strategies):
-            if isinstance(v, OneOfStrategy):
-                # repr nested one_of as flattened (their real behaviour)
-                v = st.one_of(v.element_strategies)
-            if repr(given_strategies.get(k, v)) != repr(v):
-                # In this branch, we have two functions that take an argument of the
-                # same name but different strategies - probably via the equivalent()
-                # ghostwriter.  In general, we would expect the test to pass given
-                # the *intersection* of the domains of these functions.  However:
-                #   - we can't take the intersection of two strategies
-                #   - this may indicate a problem which should be exposed to the user
-                # and so we take the *union* instead - either it'll work, or the
-                # user will be presented with a reasonable suite of options.
-                given_strategies[k] = given_strategies[k] | v
+            if k in given_strategies:
+                given_strategies[k] |= v
             else:
                 given_strategies[k] = v
 
@@ -272,8 +261,20 @@ def _assert_eq(style, a, b):
 
 
 def _valid_syntax_repr(strategy):
+    # For binary_op, we pass a variable name - so pass it right back again.
     if isinstance(strategy, str):
         return strategy
+    # Flatten and de-duplicate any one_of strategies, whether that's from resolving
+    # a Union type or combining inputs to multiple functions.
+    if isinstance(strategy, OneOfStrategy):
+        seen = set()
+        elems = []
+        for s in strategy.element_strategies:
+            if repr(s) not in seen:
+                elems.append(s)
+                seen.add(repr(s))
+        strategy = st.one_of(elems or st.nothing())
+    # Trivial special case because the wrapped repr for text() is terrible.
     if strategy == st.text().wrapped_strategy:
         return "text()"
     # Return a syntactically-valid strategy repr, including fixing some
