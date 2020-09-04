@@ -125,11 +125,6 @@ _GUESS_STRATEGIES_BY_NAME = (
 
 
 def _strategy_for(param: inspect.Parameter) -> Union[st.SearchStrategy, InferType]:
-    # We use `infer` and go via `builds()` instead of directly through
-    # `from_type()` so that `get_type_hints()` can resolve any forward
-    # references for us.
-    if param.annotation is not inspect.Parameter.empty:
-        return infer
     # If our default value is an Enum or a boolean, we assume that any value
     # of that type is acceptable.  Otherwise, we only generate the default.
     if isinstance(param.default, bool):
@@ -211,7 +206,10 @@ def _get_strategies(
         params = _get_params(f)
         if pass_result_to_next_func and i >= 1:
             del params[next(iter(params))]
-        builder_args = {k: _strategy_for(v) for k, v in params.items()}
+        hints = get_type_hints(f)
+        builder_args = {
+            k: infer if k in hints else _strategy_for(v) for k, v in params.items()
+        }
         strat = st.builds(f, **builder_args).wrapped_strategy  # type: ignore
 
         args, kwargs = strat.mapped_strategy.wrapped_strategy.element_strategies
