@@ -57,7 +57,7 @@ from typing import Any, Callable, Dict, Mapping, Set, Tuple, Type, TypeVar, Unio
 import black
 
 from hypothesis import find, strategies as st
-from hypothesis.errors import InvalidArgument, Unsatisfiable
+from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import get_type_hints
 from hypothesis.internal.reflection import is_mock
 from hypothesis.internal.validation import check_type
@@ -266,25 +266,25 @@ def _valid_syntax_repr(strategy):
         return strategy
     # Flatten and de-duplicate any one_of strategies, whether that's from resolving
     # a Union type or combining inputs to multiple functions.
-    if isinstance(strategy, OneOfStrategy):
-        seen = set()
-        elems = []
-        for s in strategy.element_strategies:
-            if repr(s) not in seen:
-                elems.append(s)
-                seen.add(repr(s))
-        strategy = st.one_of(elems or st.nothing())
-    # Trivial special case because the wrapped repr for text() is terrible.
-    if strategy == st.text().wrapped_strategy:
-        return "text()"
-    # Return a syntactically-valid strategy repr, including fixing some
-    # strategy reprs and replacing invalid syntax reprs with `"nothing()"`.
-    # String-replace to hide the special case in from_type() for Decimal('snan')
-    r = repr(strategy).replace(".filter(_can_hash)", "")
     try:
+        if isinstance(strategy, OneOfStrategy):
+            seen = set()
+            elems = []
+            for s in strategy.element_strategies:
+                if repr(s) not in seen:
+                    elems.append(s)
+                    seen.add(repr(s))
+            strategy = st.one_of(elems or st.nothing())
+        # Trivial special case because the wrapped repr for text() is terrible.
+        if strategy == st.text().wrapped_strategy:
+            return "text()"
+        # Return a syntactically-valid strategy repr, including fixing some
+        # strategy reprs and replacing invalid syntax reprs with `"nothing()"`.
+        # String-replace to hide the special case in from_type() for Decimal('snan')
+        r = repr(strategy).replace(".filter(_can_hash)", "")
         compile(r, "<string>", "eval")
         return r
-    except SyntaxError:
+    except (SyntaxError, ResolutionFailed):
         return "nothing()"
 
 
@@ -877,7 +877,7 @@ def _make_binop_body(
         if identity is infer:
             try:
                 identity = find(operands, lambda x: True)
-            except Unsatisfiable:
+            except Exception:
                 identity = "identity element here"  # type: ignore
         maker(
             "identity",

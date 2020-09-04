@@ -107,6 +107,15 @@ def annotated_any(x: Any):
 space_in_name = type("a name", (type,), {"__init__": lambda self: None})
 
 
+class NotResolvable:
+    def __init__(self, unannotated_required):
+        pass
+
+
+def non_resolvable_arg(x: NotResolvable):
+    pass
+
+
 def test_flattens_one_of_repr():
     strat = from_type(Sequence[int])
     assert repr(strat).count("one_of(") > 1
@@ -125,6 +134,7 @@ def test_flattens_one_of_repr():
         non_type_annotation,
         annotated_any,
         space_in_name,
+        non_resolvable_arg,
     ],
 )
 def test_ghostwriter_fuzz(func, ex):
