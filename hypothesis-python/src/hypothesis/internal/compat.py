@@ -140,10 +140,11 @@ else:
             if inspect.isclass(thing) and hasattr(thing, "__signature__"):
                 # It is possible for the signature and annotations attributes to
                 # differ on an object due to renamed arguments.
-                # To prevent missing arguments we use the signature to provide any type hints it has
-                # and then override any common names with the more comprehensive type hint
-                # from get_type_hints
-                # See https://github.com/HypothesisWorks/hypothesis/pull/2580 for more details.
+                # To prevent missing arguments we use the signature to provide any type
+                # hints it has and then override any common names with the more
+                # comprehensive type information from get_type_hints
+                # See https://github.com/HypothesisWorks/hypothesis/pull/2580
+                # for more details.
                 spec = inspect.getfullargspec(thing)
                 hints = {
                     k: v
