@@ -42,24 +42,27 @@ do their best to write you a useful test.
 """
 
 import builtins
+import contextlib
 import enum
 import inspect
 import re
 import sys
 import types
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from itertools import permutations, zip_longest
 from string import ascii_lowercase
 from textwrap import dedent, indent
-from typing import Callable, Dict, Mapping, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Mapping, Set, Tuple, Type, TypeVar, Union
 
 import black
 
 from hypothesis import find, strategies as st
-from hypothesis.errors import InvalidArgument, Unsatisfiable
+from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import get_type_hints
+from hypothesis.internal.reflection import is_mock
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.strategies import OneOfStrategy
+from hypothesis.strategies._internal.types import _global_type_lookup
 from hypothesis.utils.conventions import InferType, infer
 
 IMPORT_SECTION = """
@@ -117,7 +120,6 @@ def _check_style(style: str) -> None:
 # take values of a particular type.
 _GUESS_STRATEGIES_BY_NAME = (
     (st.text(), ["name", "filename", "fname"]),
-    (st.integers(min_value=0), ["index"]),
     (st.floats(), ["real", "imag"]),
     (st.functions(), ["function", "func", "f"]),
     (st.iterables(st.integers()) | st.iterables(st.text()), ["iterable"]),
@@ -125,11 +127,6 @@ _GUESS_STRATEGIES_BY_NAME = (
 
 
 def _strategy_for(param: inspect.Parameter) -> Union[st.SearchStrategy, InferType]:
-    # We use `infer` and go via `builds()` instead of directly through
-    # `from_type()` so that `get_type_hints()` can resolve any forward
-    # references for us.
-    if param.annotation is not inspect.Parameter.empty:
-        return infer
     # If our default value is an Enum or a boolean, we assume that any value
     # of that type is acceptable.  Otherwise, we only generate the default.
     if isinstance(param.default, bool):
@@ -195,6 +192,25 @@ def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
     return OrderedDict((p.name, p) for p in params if p.kind not in var_param_kinds)
 
 
+@contextlib.contextmanager
+def _with_any_registered():
+    # If the user has registered their own strategy for Any, leave it alone
+    if Any in _global_type_lookup:
+        yield
+    # We usually want to force from_type(Any) to raise an error because we don't
+    # have enough information to accurately resolve user intent, but in this case
+    # we can treat it as a synonym for object - this is probably wrong, but you'll
+    # get at least _some_ output to edit later.  We then reset everything in order
+    # to avoid polluting the resolution logic in case you run tests later.
+    else:
+        try:
+            _global_type_lookup[Any] = st.builds(object)
+            yield
+        finally:
+            del _global_type_lookup[Any]
+            st.from_type.__clear_cache()
+
+
 def _get_strategies(
     *funcs: Callable, pass_result_to_next_func: bool = False
 ) -> Dict[str, st.SearchStrategy]:
@@ -211,27 +227,20 @@ def _get_strategies(
         params = _get_params(f)
         if pass_result_to_next_func and i >= 1:
             del params[next(iter(params))]
-        builder_args = {k: _strategy_for(v) for k, v in params.items()}
-        strat = st.builds(f, **builder_args).wrapped_strategy  # type: ignore
+        hints = get_type_hints(f)
+        builder_args = {
+            k: infer if k in hints else _strategy_for(v) for k, v in params.items()
+        }
+        with _with_any_registered():
+            strat = st.builds(f, **builder_args).wrapped_strategy  # type: ignore
 
         args, kwargs = strat.mapped_strategy.wrapped_strategy.element_strategies
         if args.element_strategies:
             raise NotImplementedError("Expected to pass everything as kwargs")
 
         for k, v in zip(kwargs.keys, kwargs.mapped_strategy.element_strategies):
-            if isinstance(v, OneOfStrategy):
-                # repr nested one_of as flattened (their real behaviour)
-                v = st.one_of(v.element_strategies)
-            if repr(given_strategies.get(k, v)) != repr(v):
-                # In this branch, we have two functions that take an argument of the
-                # same name but different strategies - probably via the equivalent()
-                # ghostwriter.  In general, we would expect the test to pass given
-                # the *intersection* of the domains of these functions.  However:
-                #   - we can't take the intersection of two strategies
-                #   - this may indicate a problem which should be exposed to the user
-                # and so we take the *union* instead - either it'll work, or the
-                # user will be presented with a reasonable suite of options.
-                given_strategies[k] = given_strategies[k] | v
+            if k in given_strategies:
+                given_strategies[k] |= v
             else:
                 given_strategies[k] = v
 
@@ -252,18 +261,30 @@ def _assert_eq(style, a, b):
 
 
 def _valid_syntax_repr(strategy):
+    # For binary_op, we pass a variable name - so pass it right back again.
     if isinstance(strategy, str):
         return strategy
-    if strategy == st.text().wrapped_strategy:
-        return "text()"
-    # Return a syntactically-valid strategy repr, including fixing some
-    # strategy reprs and replacing invalid syntax reprs with `"nothing()"`.
-    # String-replace to hide the special case in from_type() for Decimal('snan')
-    r = repr(strategy).replace(".filter(_can_hash)", "")
+    # Flatten and de-duplicate any one_of strategies, whether that's from resolving
+    # a Union type or combining inputs to multiple functions.
     try:
+        if isinstance(strategy, OneOfStrategy):
+            seen = set()
+            elems = []
+            for s in strategy.element_strategies:
+                if repr(s) not in seen:
+                    elems.append(s)
+                    seen.add(repr(s))
+            strategy = st.one_of(elems or st.nothing())
+        # Trivial special case because the wrapped repr for text() is terrible.
+        if strategy == st.text().wrapped_strategy:
+            return "text()"
+        # Return a syntactically-valid strategy repr, including fixing some
+        # strategy reprs and replacing invalid syntax reprs with `"nothing()"`.
+        # String-replace to hide the special case in from_type() for Decimal('snan')
+        r = repr(strategy).replace(".filter(_can_hash)", "")
         compile(r, "<string>", "eval")
         return r
-    except SyntaxError:
+    except (SyntaxError, ResolutionFailed):
         return "nothing()"
 
 
@@ -288,7 +309,7 @@ def _get_module(obj):
 def _get_qualname(obj, include_module=False):
     # Replacing angle-brackets for objects defined in `.<locals>.`
     qname = getattr(obj, "__qualname__", obj.__name__)
-    qname = qname.replace("<", "_").replace(">", "_")
+    qname = qname.replace("<", "_").replace(">", "_").replace(" ", "")
     if include_module:
         return _get_module(obj) + "." + qname
     return qname
@@ -318,12 +339,13 @@ def _make_test_body(
     given_strategies: Mapping[str, Union[str, st.SearchStrategy]] = None,
 ) -> Tuple[Set[str], str]:
     # Get strategies for all the arguments to each function we're testing.
-    given_strategies = given_strategies or _get_strategies(
-        *funcs, pass_result_to_next_func=ghost in ("idempotent", "roundtrip")
-    )
-    given_args = ", ".join(
-        "{}={}".format(k, _valid_syntax_repr(v)) for k, v in given_strategies.items()
-    )
+    with _with_any_registered():
+        given_strategies = given_strategies or _get_strategies(
+            *funcs, pass_result_to_next_func=ghost in ("idempotent", "roundtrip")
+        )
+        given_args = ", ".join(
+            f"{k}={_valid_syntax_repr(v)}" for k, v in given_strategies.items()
+        )
     for name in st.__all__:
         given_args = given_args.replace(f"{name}(", f"st.{name}(")
 
@@ -384,6 +406,8 @@ def _make_test(imports: Set[str], body: str) -> str:
     body = body.replace("builtins.", "").replace("__main__.", "")
     imports.discard("builtins")
     imports.discard("__main__")
+    if "st.from_type(typing." in body:
+        imports.add("typing")
     header = IMPORT_SECTION.format(
         imports="".join(f"import {imp}\n" for imp in sorted(imports)),
         reject="reject, " if "        reject()\n" in body else "",
@@ -452,7 +476,7 @@ def magic(
             functions.add(thing)
         elif isinstance(thing, types.ModuleType):
             if hasattr(thing, "__all__"):
-                funcs = [getattr(thing, name) for name in thing.__all__]  # type: ignore
+                funcs = [getattr(thing, name, None) for name in thing.__all__]  # type: ignore
             else:
                 funcs = [
                     v
@@ -461,26 +485,36 @@ def magic(
                 ]
             for f in funcs:
                 try:
-                    if callable(f) and inspect.signature(f).parameters:
+                    if (not is_mock(f)) and callable(f) and _get_params(f):
                         functions.add(f)
-                except ValueError:
+                except (TypeError, ValueError):
                     pass
         else:
             raise InvalidArgument(f"Can't test non-module non-callable {thing!r}")
 
     imports = set()
     parts = []
-    by_name = {_get_qualname(f): f for f in functions}
-    if len(by_name) < len(functions):
-        raise InvalidArgument("Functions to magic() test must have unique names")
+    by_name = {}
+    for f in functions:
+        try:
+            by_name[_get_qualname(f, include_module=True)] = f
+        except Exception:
+            pass  # e.g. Pandas 'CallableDynamicDoc' object has no attribute '__name__'
+    if not by_name:
+        return (
+            f"# Found no testable functions in\n"
+            f"# {functions!r} from {modules_or_functions}\n"
+        )
 
     # Look for pairs of functions that roundtrip, based on known naming patterns.
     for writename, readname in ROUNDTRIP_PAIRS:
         for name in sorted(by_name):
-            match = re.fullmatch(writename, name)
+            match = re.fullmatch(writename, name.split(".")[-1])
             if match:
-                other = readname.format(*match.groups())
-                if other in by_name:
+                inverse_name = readname.format(*match.groups())
+                for other in sorted(
+                    n for n in by_name if n.split(".")[-1] == inverse_name
+                )[:1]:
                     imp, body = _make_roundtrip_body(
                         (by_name.pop(name), by_name.pop(other)),
                         except_=except_,
@@ -488,6 +522,22 @@ def magic(
                     )
                     imports |= imp
                     parts.append(body)
+
+    # Look for equivalent functions: same name, all required arguments of any can
+    # be found in all signatures, and if all have return-type annotations they match.
+    names = defaultdict(list)
+    for _, f in sorted(by_name.items()):
+        names[_get_qualname(f)].append(f)
+    for group in names.values():
+        if len(group) >= 2 and len({frozenset(_get_params(f)) for f in group}) == 1:
+            sentinel = object()
+            returns = {get_type_hints(f).get("return", sentinel) for f in group}
+            if len(returns - {sentinel}) <= 1:
+                imp, body = _make_equiv_body(group, except_=except_, style=style)
+                imports |= imp
+                parts.append(body)
+                for f in group:
+                    by_name.pop(_get_qualname(f, include_module=True))
 
     # Look for binary operators - functions with two identically-typed arguments,
     # and the same return type.  The latter restriction might be lifted later.
@@ -661,6 +711,23 @@ def roundtrip(*funcs: Callable, except_: Except = (), style: str = "pytest") -> 
     return _make_test(*_make_roundtrip_body(funcs, except_, style))
 
 
+def _make_equiv_body(funcs, except_, style):
+    var_names = [f"result_{f.__name__}" for f in funcs]
+    if len(set(var_names)) < len(var_names):
+        var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
+    test_lines = [
+        vname + " = " + _write_call(f) for vname, f in zip(var_names, funcs)
+    ] + [_assert_eq(style, var_names[0], vname) for vname in var_names[1:]]
+
+    return _make_test_body(
+        *funcs,
+        test_body="\n".join(test_lines),
+        except_=except_,
+        ghost="equivalent",
+        style=style,
+    )
+
+
 def equivalent(*funcs: Callable, except_: Except = (), style: str = "pytest") -> str:
     """Write source code for a property-based test of ``funcs``.
 
@@ -682,22 +749,7 @@ def equivalent(*funcs: Callable, except_: Except = (), style: str = "pytest") ->
             raise InvalidArgument(f"Got non-callable funcs[{i}]={f!r}")
     except_ = _check_except(except_)
     _check_style(style)
-
-    var_names = [f"result_{f.__name__}" for f in funcs]
-    if len(set(var_names)) < len(var_names):
-        var_names = [f"result_{i}_{ f.__name__}" for i, f in enumerate(funcs)]
-    test_lines = [
-        vname + " = " + _write_call(f) for vname, f in zip(var_names, funcs)
-    ] + [_assert_eq(style, var_names[0], vname) for vname in var_names[1:]]
-
-    imports, body = _make_test_body(
-        *funcs,
-        test_body="\n".join(test_lines),
-        except_=except_,
-        ghost="equivalent",
-        style=style,
-    )
-    return _make_test(imports, body)
+    return _make_test(*_make_equiv_body(funcs, except_, style))
 
 
 X = TypeVar("X")
@@ -825,8 +877,19 @@ def _make_binop_body(
         if identity is infer:
             try:
                 identity = find(operands, lambda x: True)
-            except Unsatisfiable:
+            except Exception:
                 identity = "identity element here"  # type: ignore
+        # If the repr of this element is invalid Python, stringify it - this
+        # can't be executed as-is, but at least makes it clear what should
+        # happpen.  E.g. type(None) -> <class 'NoneType'> -> quoted.
+        try:
+            # We don't actually execute this code object; we're just compiling
+            # to check that the repr is syntatically valid.  HOWEVER, we're
+            # going to output that code string into test code which will be
+            # executed; so you still shouldn't ghostwrite for hostile code.
+            compile(repr(identity), "<string>", "exec")
+        except SyntaxError:
+            identity = repr(identity)  # type: ignore
         maker(
             "identity",
             "a",
@@ -844,7 +907,7 @@ def _make_binop_body(
             _write_call(func, "a", _write_call(distributes_over, "b", "c")),
         )
 
-    operands_repr = repr(operands)
+    operands_repr = _valid_syntax_repr(operands)
     for name in st.__all__:
         operands_repr = operands_repr.replace(f"{name}(", f"st.{name}(")
     classdef = ""

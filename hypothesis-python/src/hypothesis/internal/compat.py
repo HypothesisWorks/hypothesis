@@ -145,7 +145,7 @@ else:
                 }
             else:
                 hints = typing.get_type_hints(thing)
-        except (TypeError, NameError):
+        except (AttributeError, TypeError, NameError):
             hints = {}
         if hints or not inspect.isclass(thing):
             return hints
