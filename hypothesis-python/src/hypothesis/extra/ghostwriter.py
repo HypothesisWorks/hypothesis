@@ -120,7 +120,6 @@ def _check_style(style: str) -> None:
 # take values of a particular type.
 _GUESS_STRATEGIES_BY_NAME = (
     (st.text(), ["name", "filename", "fname"]),
-    (st.integers(min_value=0), ["index"]),
     (st.floats(), ["real", "imag"]),
     (st.functions(), ["function", "func", "f"]),
     (st.iterables(st.integers()) | st.iterables(st.text()), ["iterable"]),
@@ -495,7 +494,13 @@ def magic(
 
     imports = set()
     parts = []
-    by_name = {_get_qualname(f, include_module=True): f for f in functions}
+    by_name = {}
+    for f in functions:
+        try:
+            by_name[_get_qualname(f, include_module=True)] = f
+        except Exception:
+            pass  # e.g. Pandas 'CallableDynamicDoc' object has no attribute '__name__'
+    assert by_name
 
     # Look for pairs of functions that roundtrip, based on known naming patterns.
     for writename, readname in ROUNDTRIP_PAIRS:
