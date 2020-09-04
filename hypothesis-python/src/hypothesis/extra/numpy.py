@@ -278,7 +278,11 @@ class ArrayStrategy(SearchStrategy):
                 )
             result = out
 
-        return result.reshape(self.shape)
+        result = result.reshape(self.shape).copy()
+
+        assert result.base is None
+
+        return result
 
 
 @check_function
