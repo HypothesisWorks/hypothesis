@@ -1278,11 +1278,12 @@ def test_arrays_gives_useful_error_on_inconsistent_time_unit():
         nps.arrays("m8[Y]", 10, elements=nps.from_dtype(np.dtype("m8[D]"))).example()
 
 
+# addresses https://github.com/HypothesisWorks/hypothesis/issues/2582
 @given(
     nps.arrays(
         shape=nps.array_shapes(min_dims=0, min_side=0), dtype=nps.floating_dtypes()
     )
 )
-def test_arrays_own_memory(x: np.ndarray):
+def test_array_owns_memory(x: np.ndarray):
     assert x.base is None
     assert x[...].base is x
