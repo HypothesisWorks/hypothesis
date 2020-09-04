@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.32.0:
+
+-------------------
+5.32.0 - 2020-09-04
+-------------------
+
+An array drawn from :func:`~hypothesis.extra.numpy.arrays` will own its own memory; previously most arrays returned by
+this strategy were views.
+
 .. _v5.31.0:
 
 -------------------
