@@ -26,6 +26,7 @@ import os
 import sys
 import typing
 import uuid
+from pathlib import PurePath
 from types import FunctionType
 
 from hypothesis import strategies as st
@@ -361,6 +362,8 @@ _global_type_lookup[type] = st.sampled_from(
     [type(None)] + sorted(_global_type_lookup, key=str)
 )
 
+if sys.version_info[:2] >= (3, 6):  # pragma: no branch
+    _global_type_lookup[os.PathLike] = st.builds(PurePath, st.text())
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     # subclass of MutableMapping, and in Python 3.9 we resolve to a union
     # which includes this... but we don't actually ever want to build one.
