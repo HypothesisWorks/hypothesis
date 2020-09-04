@@ -45,3 +45,30 @@ def test_builds_uses_signature_attribute(val):
 @given(st.from_type(Model))
 def test_from_type_uses_signature_attribute(val):
     assert isinstance(val, Model)
+
+
+def use_annotations(
+    self, test_a: int, test_b: str = None, *, test_x: float, test_y: str
+):
+    pass
+
+
+def use_signature(self, testA: int, testB: str = None, *, testX: float, testY: str):
+    pass
+
+
+class ModelWithAlias:
+    __annotations__ = get_type_hints(use_annotations)
+    __signature__ = signature(use_signature)
+
+    def __init__(self, **kwargs):
+        # Check that we're being called with the expected arguments
+        assert set(kwargs) == {"testA", "testX", "testY"}
+        assert isinstance(kwargs["testA"], int)
+        assert isinstance(kwargs["testX"], float)
+        assert isinstance(kwargs["testY"], str)
+
+
+@given(st.builds(ModelWithAlias))
+def test_build_using_different_signature_and_annotations(val):
+    assert isinstance(val, ModelWithAlias)
