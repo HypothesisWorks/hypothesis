@@ -74,6 +74,7 @@ def add(a: float, b: float) -> float:
         ("eval_equivalent", ghostwriter.equivalent(eval, ast.literal_eval)),
         ("sorted_self_equivalent", ghostwriter.equivalent(sorted, sorted, sorted)),
         ("addition_op_magic", ghostwriter.magic(add)),
+        ("addition_op_multimagic", ghostwriter.magic(add, operator.add, numpy.add)),
         (
             "division_operator",
             ghostwriter.binary_operation(

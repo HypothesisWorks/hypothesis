@@ -18,9 +18,10 @@ import enum
 import json
 import re
 import unittest
+import unittest.mock
 from decimal import Decimal
 from types import ModuleType
-from typing import List, Sequence, Set
+from typing import Any, List, Sequence, Set
 
 import pytest
 
@@ -95,14 +96,46 @@ def timsort(seq: Sequence[int]) -> List[int]:
     return sorted(seq)
 
 
+def non_type_annotation(x: 3):  # type: ignore
+    pass
+
+
+def annotated_any(x: Any):
+    pass
+
+
+space_in_name = type("a name", (type,), {"__init__": lambda self: None})
+
+
+class NotResolvable:
+    def __init__(self, unannotated_required):
+        pass
+
+
+def non_resolvable_arg(x: NotResolvable):
+    pass
+
+
 def test_flattens_one_of_repr():
-    assert repr(from_type(Sequence[int])).count("one_of(") == 2
-    assert repr(ghostwriter._get_strategies(timsort)["seq"]).count("one_of(") == 1
+    strat = from_type(Sequence[int])
+    assert repr(strat).count("one_of(") > 1
+    assert ghostwriter._valid_syntax_repr(strat).count("one_of(") == 1
 
 
 @varied_excepts
 @pytest.mark.parametrize(
-    "func", [re.compile, json.loads, json.dump, timsort, ast.literal_eval]
+    "func",
+    [
+        re.compile,
+        json.loads,
+        json.dump,
+        timsort,
+        ast.literal_eval,
+        non_type_annotation,
+        annotated_any,
+        space_in_name,
+        non_resolvable_arg,
+    ],
 )
 def test_ghostwriter_fuzz(func, ex):
     source_code = ghostwriter.fuzz(func, except_=ex)
@@ -237,3 +270,23 @@ def test_overlapping_args_use_union_of_strategies():
 
     source_code = ghostwriter.equivalent(f, g)
     assert "arg=st.one_of(st.integers(), st.floats())" in source_code
+
+
+def test_module_with_mock_does_not_break():
+    # Before we added an explicit check for unspec'd mocks, they would pass
+    # through the initial validation and then fail when used in more detailed
+    # logic in the ghostwriter machinery.
+    ghostwriter.magic(unittest.mock)
+
+
+def compose_types(x: type, y: type):
+    pass
+
+
+def test_unrepr_identity_elem():
+    # Works with inferred identity element
+    source_code = ghostwriter.binary_operation(compose_types)
+    exec(source_code, {})
+    # and also works with explicit identity element
+    source_code = ghostwriter.binary_operation(compose_types, identity=type)
+    exec(source_code, {})

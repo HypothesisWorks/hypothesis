@@ -113,3 +113,18 @@ def test_can_import_from_scripts_in_working_dir(tmpdir):
     )
     assert result.returncode == 0
     assert "Error: " not in result.stderr
+
+
+def test_empty_module_is_not_error(tmpdir):
+    (tmpdir / "mycode.py").write("# Nothing to see here\n")
+    result = subprocess.run(
+        "hypothesis write mycode",
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        shell=True,
+        universal_newlines=True,
+        cwd=tmpdir,
+    )
+    assert result.returncode == 0
+    assert "Error: " not in result.stderr
+    assert "# Found no testable functions" in result.stdout
