@@ -174,4 +174,3 @@ Look in ``.travis.yml`` for a short list of other supported build tasks.
 Note: The build requires a lot of different versions of python, so rather than have you install them yourself,
 the build system will install them itself in a local directory. This means that the first time you run a task you
 may have to wait a while as the build downloads and installs the right version of python for you.
-
