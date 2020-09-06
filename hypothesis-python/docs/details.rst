@@ -19,7 +19,7 @@ Normally the output of a failing test will look something like:
 With the ``repr`` of each keyword argument being printed.
 
 Sometimes this isn't enough, either because you have values with a ``repr`` that
-aren't very descriptive or because you need to see the output of some
+isn't very descriptive or because you need to see the output of some
 intermediate steps of your test. That's where the ``note`` function comes in:
 
 .. autofunction:: hypothesis.note
