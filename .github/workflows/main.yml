@@ -38,25 +38,29 @@ jobs:
       run: TASK=${{ matrix.task }} ./build.sh
   test-win:
     runs-on: windows-latest
-#     strategy:
-#       matrix:
-#         include:
-#           - task: check-py36-x64
-#             python.version: '3.6'
-#             python.architecture: 'x64'
-#           - task: check-py36-x86
-#             python.version: '3.6'
-#             python.architecture: 'x86'
-#       fail-fast: false
+    strategy:
+      matrix:
+        include:
+          - task: check-py36-x64
+            python.version: '3.6'
+            python.architecture: 'x64'
+          - task: check-py36-x86
+            python.version: '3.6'
+            python.architecture: 'x86'
+      fail-fast: false
     steps:
     - uses: actions/checkout@v2
-#     - name: Set up Python ${{ matrix.python-version }}
-#       uses: actions/setup-python@v2
-#       with:
-#         python-version: ${{ matrix.python-version }}
-#         architecture: ${{ matrix.python-architecture }}
-#     - name: Run tests
-#       run: TASK=${{ matrix.task }} cd hypothesis-python && pytest --numprocesses auto
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: ${{ matrix.python-architecture }}
+    - name: Install dependencies
+      run: pip install --upgrade setuptools pip wheel
+           pip install -r requirements/test.txt typing-extensions black
+           pip install hypothesis-python/[all]
+    - name: Run tests
+      run: cd hypothesis-python && pytest --numprocesses auto
   test-osx:
     runs-on: macos-latest
     strategy:
