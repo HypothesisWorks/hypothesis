@@ -104,6 +104,8 @@ htmlhelp_basename = "Hypothesisdoc"
 
 html_favicon = "../../brand/favicon.ico"
 
+html_logo = "../../brand/dragonfly-rainbow.svg"
+
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {}
