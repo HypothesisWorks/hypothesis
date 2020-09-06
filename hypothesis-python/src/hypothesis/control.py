@@ -15,7 +15,7 @@
 
 import math
 import traceback
-from typing import Any
+from typing import Any, Union
 
 from hypothesis import Verbosity, settings
 from hypothesis.errors import CleanupFailed, InvalidArgument, UnsatisfiedAssumption
@@ -125,8 +125,8 @@ def event(value: str) -> None:
 
 
 @deprecated_posargs
-def target(observation: float, *, label: str = "") -> None:
-    """Calling this function with a ``float`` observation gives it feedback
+def target(observation: Union[int, float], *, label: str = "") -> None:
+    """Calling this function with an ``int`` or ``float`` observation gives it feedback
     with which to guide our search for inputs that will cause an error, in
     addition to all the usual heuristics.  Observations must always be finite.
 
@@ -165,7 +165,7 @@ def target(observation: float, *, label: str = "") -> None:
     <https://hypothesis.works/articles/threshold-problem/>`__ when the minimal
     example shrinks right down to the threshold of failure (:issue:`2180`).
     """
-    check_type(float, observation, "observation")
+    check_type((int, float), observation, "observation")
     if not math.isfinite(observation):
         raise InvalidArgument("observation=%r must be a finite float." % observation)
     check_type(str, label, "label")

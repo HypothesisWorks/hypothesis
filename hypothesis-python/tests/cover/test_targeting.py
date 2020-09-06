@@ -22,13 +22,17 @@ from hypothesis.errors import InvalidArgument
 
 
 @example(0.0, "this covers the branch where context.data is None")
-@given(observation=st.floats(allow_nan=False, allow_infinity=False), label=st.text())
+@given(
+    observation=st.integers() | st.floats(allow_nan=False, allow_infinity=False),
+    label=st.text(),
+)
 def test_allowed_inputs_to_target(observation, label):
     target(observation, label=label)
 
 
 @given(
-    observation=st.floats(min_value=1, allow_nan=False, allow_infinity=False),
+    observation=st.integers(min_value=1)
+    | st.floats(min_value=1, allow_nan=False, allow_infinity=False),
     label=st.sampled_from(["a", "few", "labels"]),
 )
 def test_allowed_inputs_to_target_fewer_labels(observation, label):
@@ -80,7 +84,7 @@ def everything_except(type_):
 @example(float("-inf"), "")
 @example("1", "Non-float observations are invalid")
 @example(0.0, ["a list of strings is not a valid label"])
-@given(observation=everything_except(float), label=everything_except(str))
+@given(observation=everything_except((float, int)), label=everything_except(str))
 def test_disallowed_inputs_to_target(observation, label):
     with pytest.raises(InvalidArgument):
         target(observation, label=label)
