@@ -54,8 +54,6 @@ from string import ascii_lowercase
 from textwrap import dedent, indent
 from typing import Any, Callable, Dict, Mapping, Set, Tuple, Type, TypeVar, Union
 
-import black
-
 from hypothesis import find, strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import get_type_hints
@@ -401,6 +399,8 @@ def _make_test_body(
 
 
 def _make_test(imports: Set[str], body: str) -> str:
+    import black
+
     # Discarding "builtins." and "__main__" probably isn't particularly useful
     # for user code, but important for making a good impression in demos.
     body = body.replace("builtins.", "").replace("__main__.", "")
