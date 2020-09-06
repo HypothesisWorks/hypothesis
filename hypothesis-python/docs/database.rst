@@ -1,5 +1,5 @@
 ===============================
-The Hypothesis Example Database
+The Hypothesis example database
 ===============================
 
 When Hypothesis finds a bug it stores enough information in its database to reproduce it. This

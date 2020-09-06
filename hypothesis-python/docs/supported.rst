@@ -87,7 +87,7 @@ In terms of what's actually *known* to work:
     100% branch coverage.
 
 -----------------
-Optional Packages
+Optional packages
 -----------------
 
 The supported versions of optional packages, for strategies in ``hypothesis.extra``,

@@ -49,7 +49,7 @@ additional information you might need in your test.
 .. _statistics:
 
 ---------------
-Test Statistics
+Test statistics
 ---------------
 
 If you are using :pypi:`pytest` you can see a number of statistics about the executed tests
@@ -545,7 +545,7 @@ random number generators for you, and you can register others:
 .. _type-inference:
 
 -------------------
-Inferred Strategies
+Inferred strategies
 -------------------
 
 In some cases, Hypothesis can work out what to do when you omit arguments.
@@ -606,7 +606,7 @@ updating to a newer version of Python as a workaround.
 .. _our-type-hints:
 
 ------------------------------
-Type Annotations in Hypothesis
+Type annotations in Hypothesis
 ------------------------------
 
 If you install Hypothesis and use :pypi:`mypy` 0.590+, or another
@@ -668,7 +668,7 @@ it creates.  For example:
 .. _pytest-plugin:
 
 ----------------------------
-The Hypothesis pytest Plugin
+The Hypothesis pytest plugin
 ----------------------------
 
 Hypothesis includes a tiny plugin to improve integration with :pypi:`pytest`,

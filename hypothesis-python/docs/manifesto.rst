@@ -1,5 +1,5 @@
 =========================
-The Purpose of Hypothesis
+The purpose of Hypothesis
 =========================
 
 What is Hypothesis for?

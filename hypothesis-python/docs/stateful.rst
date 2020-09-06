@@ -45,7 +45,7 @@ though, where a higher level API comes into it's own, keep reading!
 .. _rulebasedstateful:
 
 -------------------------
-Rule based state machines
+Rule-based state machines
 -------------------------
 
 .. autoclass:: hypothesis.stateful.RuleBasedStateMachine

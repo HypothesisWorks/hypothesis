@@ -1,5 +1,5 @@
 ===================================
-Hypothesis for the Scientific Stack
+Hypothesis for the scientific stack
 ===================================
 
 .. _hypothesis-numpy:
@@ -41,7 +41,7 @@ a strategy for generating elements for it).
    :members:
 
 ~~~~~~~~~~~~~~~~~~
-Supported Versions
+Supported versions
 ~~~~~~~~~~~~~~~~~~
 
 There is quite a lot of variation between pandas versions. We only

@@ -236,7 +236,7 @@ Hypothesis, and how the :func:`~hypothesis.strategies.datetimes` strategy works.
     >>> test_adding_a_day_commutes()
 
 -------------------
-Condorcet's Paradox
+Condorcet's paradox
 -------------------
 
 A classic paradox in voting theory, called Condorcet's paradox, is that

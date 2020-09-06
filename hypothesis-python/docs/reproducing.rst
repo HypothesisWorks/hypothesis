@@ -1,5 +1,5 @@
 ====================
-Reproducing Failures
+Reproducing failures
 ====================
 
 One of the things that is often concerning for people using randomized testing

@@ -49,7 +49,7 @@ Available settings
 .. _phases:
 
 ~~~~~~~~~~~~~~~~~~~~~
-Controlling What Runs
+Controlling what runs
 ~~~~~~~~~~~~~~~~~~~~~
 
 Hypothesis divides tests into four logically distinct phases:
@@ -167,7 +167,7 @@ You can change the defaults by using profiles.
 .. _settings_profiles:
 
 ~~~~~~~~~~~~~~~~~
-settings Profiles
+Settings profiles
 ~~~~~~~~~~~~~~~~~
 
 Depending on your environment you may want different default settings.

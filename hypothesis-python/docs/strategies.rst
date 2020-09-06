@@ -15,7 +15,7 @@ If there's something missing which you think should be here, let us know!
     maintainers endorse a package.
 
 -------------------
-External Strategies
+External strategies
 -------------------
 
 Some packages provide strategies directly:
@@ -44,7 +44,7 @@ Others provide a function to infer a strategy from some other schema:
 
 
 -----------------
-Other Cool Things
+Other cool things
 -----------------
 
 :pypi:`schemathesis` is a tool for testing web applications built with `Open API / Swagger specifications <https://swagger.io/>`_.
@@ -79,7 +79,7 @@ approach to be combined with traditional pythonic code.
 
 
 --------------------
-Writing an Extension
+Writing an extension
 --------------------
 
 *See* :gh-file:`CONTRIBUTING.rst` *for more information.*

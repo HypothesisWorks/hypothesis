@@ -1,5 +1,5 @@
 ================
-Help and Support
+Help and support
 ================
 
 For questions you are happy to ask in public, the :doc:`Hypothesis community <community>` is a

@@ -1,5 +1,5 @@
 ====================
-Packaging Guidelines
+Packaging guidelines
 ====================
 
 Downstream packagers often want to package Hypothesis. Here are some guidelines.
