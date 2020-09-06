@@ -172,7 +172,7 @@ Running this gives us:
   Falsifying example: test_negation_is_self_inverse(x=float('nan'))
   AssertionError
 
-This is annoying. We know about `NaN <https://docs.python.org/3/library/math.html>`
+This is annoying. We know about `NaN <https://docs.python.org/3/library/math.html>`__
 and don't really care about it, but as soon as Hypothesis
 finds a NaN example it will get distracted by that and tell us about it. Also
 the test will fail and we want it to pass.
