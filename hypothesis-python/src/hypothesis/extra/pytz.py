@@ -36,7 +36,7 @@ __all__ = ["timezones"]
 
 
 @st.cacheable
-@st.defines_strategy
+@st.defines_strategy()
 def timezones() -> st.SearchStrategy[dt.tzinfo]:
     """Any timezone in the Olsen database, as a pytz tzinfo object.
 

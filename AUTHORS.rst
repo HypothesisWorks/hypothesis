@@ -41,6 +41,7 @@ their individual contributions.
 * `El Awbery <https://www.github.com/ElAwbery>`_
 * `Emmanuel Leblond <https://www.github.com/touilleMan>`_
 * `Felix Grünewald <https://www.github.com/fgruen>`_
+* `Felix Sheldon <https://www.github.com/darkpaw>`_
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
 * `Gary Donovan <https://www.github.com/garyd203>`_

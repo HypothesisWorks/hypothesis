@@ -40,7 +40,7 @@ BroadcastableShapes = NamedTuple(
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
 
 
-@st.defines_strategy_with_reusable_values
+@st.defines_strategy(force_reusable_values=True)
 def from_dtype(dtype: np.dtype) -> st.SearchStrategy[Any]:
     """Creates a strategy which can generate any value of the given dtype."""
     check_type(np.dtype, dtype, "dtype")
@@ -297,7 +297,7 @@ def fill_for(elements, unique, fill, name=""):
     return fill
 
 
-@st.defines_strategy
+@st.defines_strategy(force_reusable_values=True)
 @deprecated_posargs
 def arrays(
     dtype: Any,
@@ -416,7 +416,7 @@ def arrays(
     return ArrayStrategy(elements, shape, dtype, fill, unique)
 
 
-@st.defines_strategy
+@st.defines_strategy()
 @deprecated_posargs
 def array_shapes(
     *, min_dims: int = 1, max_dims: int = None, min_side: int = 1, max_side: int = None
@@ -448,7 +448,7 @@ def array_shapes(
     ).map(tuple)
 
 
-@st.defines_strategy
+@st.defines_strategy()
 def scalar_dtypes() -> st.SearchStrategy[np.dtype]:
     """Return a strategy that can return any non-flexible scalar dtype."""
     return st.one_of(
@@ -463,7 +463,7 @@ def scalar_dtypes() -> st.SearchStrategy[np.dtype]:
 
 
 def defines_dtype_strategy(strat: T) -> T:
-    @st.defines_strategy
+    @st.defines_strategy()
     @proxies(strat)
     def inner(*args, **kwargs):
         return strat(*args, **kwargs).map(np.dtype)
@@ -703,7 +703,7 @@ def array_dtypes(
     ).filter(_no_title_is_name_of_a_titled_field)
 
 
-@st.defines_strategy
+@st.defines_strategy()
 @deprecated_posargs
 def nested_dtypes(
     subtype_strategy: st.SearchStrategy[np.dtype] = scalar_dtypes(),
@@ -726,7 +726,7 @@ def nested_dtypes(
     ).filter(lambda d: max_itemsize is None or d.itemsize <= max_itemsize)
 
 
-@st.defines_strategy
+@st.defines_strategy()
 @deprecated_posargs
 def valid_tuple_axes(
     ndim: int, *, min_size: int = 0, max_size: int = None
@@ -775,7 +775,7 @@ def valid_tuple_axes(
     ).map(tuple)
 
 
-@st.defines_strategy
+@st.defines_strategy()
 @deprecated_posargs
 def broadcastable_shapes(
     shape: Shape,
@@ -1095,7 +1095,7 @@ def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
     return _GUfuncSig(input_shapes=input_shapes, result_shape=result_shape)
 
 
-@st.defines_strategy
+@st.defines_strategy()
 def mutually_broadcastable_shapes(
     *,
     num_shapes: Union[UniqueIdentifier, int] = not_set,
@@ -1321,7 +1321,7 @@ class BasicIndexStrategy(SearchStrategy):
         return tuple(result)
 
 
-@st.defines_strategy
+@st.defines_strategy()
 def basic_indices(
     shape: Shape,
     *,
@@ -1386,7 +1386,7 @@ def basic_indices(
     )
 
 
-@st.defines_strategy
+@st.defines_strategy()
 @deprecated_posargs
 def integer_array_indices(
     shape: Shape,

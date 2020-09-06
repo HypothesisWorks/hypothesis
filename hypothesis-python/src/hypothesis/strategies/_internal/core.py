@@ -191,8 +191,8 @@ def cacheable(fn: T) -> T:
     return cached_strategy
 
 
-def base_defines_strategy(
-    force_reusable: bool, *, try_non_lazy: bool = False
+def defines_strategy(
+    *, force_reusable_values: bool = False, try_non_lazy: bool = False
 ) -> Callable[[T], T]:
     """Returns a decorator for strategy functions.
 
@@ -223,7 +223,7 @@ def base_defines_strategy(
                     # wrap that up in a LazyStrategy so it happens again later.
                     pass
             result = LazyStrategy(strategy_definition, args, kwargs)
-            if force_reusable:
+            if force_reusable_values:
                 result.force_has_reusable_values = True
                 assert result.has_reusable_values
             return result
@@ -232,11 +232,6 @@ def base_defines_strategy(
         return accept
 
     return decorator
-
-
-defines_strategy = base_defines_strategy(False)
-defines_strategy_with_reusable_values = base_defines_strategy(True)
-defines_strategy_without_laziness = base_defines_strategy(False, try_non_lazy=True)
 
 
 class Nothing(SearchStrategy):
@@ -291,7 +286,7 @@ def just(value: T) -> SearchStrategy[T]:
     return JustStrategy(value)
 
 
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 def none() -> SearchStrategy[None]:
     """Return a strategy which only generates None.
 
@@ -348,7 +343,7 @@ def one_of(*args):  # noqa: F811
 
 
 @cacheable
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 def integers(min_value: int = None, max_value: int = None) -> SearchStrategy[int]:
     """Returns a strategy which generates integers.
 
@@ -405,7 +400,7 @@ def integers(min_value: int = None, max_value: int = None) -> SearchStrategy[int
 
 
 @cacheable
-@defines_strategy
+@defines_strategy()
 def booleans() -> SearchStrategy[bool]:
     """Returns a strategy which generates instances of :class:`python:bool`.
 
@@ -416,7 +411,7 @@ def booleans() -> SearchStrategy[bool]:
 
 
 @cacheable
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 @deprecated_posargs
 def floats(
     min_value: Real = None,
@@ -634,7 +629,7 @@ def floats(
 
 
 @cacheable
-@defines_strategy
+@defines_strategy()
 def tuples(*args: SearchStrategy) -> SearchStrategy[tuple]:
     """Return a strategy which generates a tuple of the same length as args by
     generating the value at index i from args[i].
@@ -661,7 +656,7 @@ def sampled_from(elements: Type[enum.Enum]) -> SearchStrategy[Any]:
     pass  # pragma: no cover
 
 
-@defines_strategy_without_laziness  # noqa: F811
+@defines_strategy(try_non_lazy=True)  # noqa: F811
 def sampled_from(elements):
     """Returns a strategy which generates any value present in ``elements``.
 
@@ -698,7 +693,7 @@ def sampled_from(elements):
 
 
 @cacheable
-@defines_strategy
+@defines_strategy()
 @deprecated_posargs
 def lists(
     elements: SearchStrategy[Ex],
@@ -789,7 +784,7 @@ def lists(
 
 
 @cacheable
-@defines_strategy
+@defines_strategy()
 @deprecated_posargs
 def sets(
     elements: SearchStrategy[Ex], *, min_size: int = 0, max_size: int = None
@@ -809,7 +804,7 @@ def sets(
 
 
 @cacheable
-@defines_strategy
+@defines_strategy()
 @deprecated_posargs
 def frozensets(
     elements: SearchStrategy[Ex], *, min_size: int = 0, max_size: int = None
@@ -836,7 +831,7 @@ class PrettyIter:
         return "iter({!r})".format(self._values)
 
 
-@defines_strategy
+@defines_strategy()
 @deprecated_posargs
 def iterables(
     elements: SearchStrategy[Ex],
@@ -862,7 +857,7 @@ def iterables(
     ).map(PrettyIter)
 
 
-@defines_strategy
+@defines_strategy()
 def fixed_dictionaries(
     mapping: Dict[T, SearchStrategy[Ex]],
     *,
@@ -904,7 +899,7 @@ def fixed_dictionaries(
 
 
 @cacheable
-@defines_strategy
+@defines_strategy()
 @deprecated_posargs
 def dictionaries(
     keys: SearchStrategy[Ex],
@@ -940,7 +935,7 @@ def dictionaries(
 
 
 @cacheable
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 @deprecated_posargs
 def characters(
     *,
@@ -1047,7 +1042,7 @@ def characters(
 
 
 @cacheable
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 @deprecated_posargs
 def text(
     alphabet: Union[Sequence[str], SearchStrategy[str]] = characters(
@@ -1103,7 +1098,7 @@ def text(
 
 
 @cacheable
-@defines_strategy
+@defines_strategy()
 @deprecated_posargs
 def from_regex(
     regex: Union[AnyStr, Pattern[AnyStr]], *, fullmatch: bool = False
@@ -1144,7 +1139,7 @@ def from_regex(
 
 
 @cacheable
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 @deprecated_posargs
 def binary(*, min_size: int = 0, max_size: int = None) -> SearchStrategy[bytes]:
     """Generates :class:`python:bytes`.
@@ -1164,7 +1159,7 @@ def binary(*, min_size: int = 0, max_size: int = None) -> SearchStrategy[bytes]:
 
 
 @cacheable
-@defines_strategy
+@defines_strategy()
 def randoms(
     *, note_method_calls: bool = False, use_true_random: bool = None
 ) -> SearchStrategy[random.Random]:
@@ -1217,7 +1212,7 @@ class RandomModule(SearchStrategy):
 
 
 @cacheable
-@defines_strategy
+@defines_strategy()
 def random_module() -> SearchStrategy[RandomSeeder]:
     """The Hypothesis engine handles PRNG state for the stdlib and Numpy random
     modules internally, always seeding them to zero and restoring the previous
@@ -1240,7 +1235,7 @@ def random_module() -> SearchStrategy[RandomSeeder]:
 # Note that for the benefit of documentation and introspection tools, we set the
 # __signature__ attribute to show the semantic rather than actual signature.
 @cacheable
-@defines_strategy
+@defines_strategy()
 def builds(
     *callable_and_args: Union[Callable[..., Ex], SearchStrategy[Any]],
     **kwargs: Union[SearchStrategy[Any], InferType]
@@ -1524,7 +1519,7 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
 
 
 @cacheable
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 @deprecated_posargs
 def fractions(
     min_value: Union[Real, str] = None,
@@ -1634,7 +1629,7 @@ def _as_finite_decimal(
 
 
 @cacheable
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 @deprecated_posargs
 def decimals(
     min_value: Union[Real, str] = None,
@@ -1770,7 +1765,7 @@ class PermutationStrategy(SearchStrategy):
         return result
 
 
-@defines_strategy
+@defines_strategy()
 def permutations(values: Sequence[T]) -> SearchStrategy[List[T]]:
     """Return a strategy which returns permutations of the ordered collection
     ``values``.
@@ -1827,7 +1822,7 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
     }
     new_argspec = argspec._replace(args=argspec.args[1:], annotations=annots)
 
-    @defines_strategy
+    @defines_strategy()
     @define_function_signature(f.__name__, f.__doc__, new_argspec)
     def accept(*args, **kwargs):
         return CompositeStrategy(f, args, kwargs)
@@ -1836,7 +1831,7 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
     return accept
 
 
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 @cacheable
 @deprecated_posargs
 def complex_numbers(
@@ -1946,7 +1941,7 @@ def shared(base: SearchStrategy[Ex], *, key: Hashable = None) -> SearchStrategy[
 
 
 @cacheable
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 @deprecated_posargs
 def uuids(*, version: int = None) -> SearchStrategy[UUID]:
     """Returns a strategy that generates :class:`UUIDs <uuid.UUID>`.
@@ -1991,7 +1986,7 @@ class RunnerStrategy(SearchStrategy):
             return runner
 
 
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 @deprecated_posargs
 def runner(*, default: Any = not_set) -> SearchStrategy[Any]:
     """A strategy for getting "the current test runner", whatever that may be.
@@ -2173,7 +2168,7 @@ def deferred(definition: Callable[[], SearchStrategy[Ex]]) -> SearchStrategy[Ex]
     return DeferredStrategy(definition)
 
 
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 def emails() -> SearchStrategy[str]:
     """A strategy for generating email addresses as unicode strings. The
     address format is specified in :rfc:`5322#section-3.4.1`. Values shrink
@@ -2192,7 +2187,7 @@ def emails() -> SearchStrategy[str]:
     )
 
 
-@defines_strategy
+@defines_strategy()
 @deprecated_posargs
 def functions(
     *,

@@ -44,7 +44,7 @@ def __zone_sort_key(zone):
 
 
 @st.cacheable
-@st.defines_strategy
+@st.defines_strategy()
 def timezones() -> st.SearchStrategy[dt.tzinfo]:
     """Any timezone from :pypi:`dateutil <python-dateutil>`.
 
