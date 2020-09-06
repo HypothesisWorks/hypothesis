@@ -1,5 +1,5 @@
 =====================================
-Open Source Projects using Hypothesis
+Open source projects using Hypothesis
 =====================================
 
 The following is a non-exhaustive list of open source projects I know are

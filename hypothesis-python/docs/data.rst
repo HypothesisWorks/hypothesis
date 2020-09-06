@@ -14,7 +14,7 @@ features, such as how they simplify, but the data they can generate is the only
 public part of their API.
 
 ~~~~~~~~~~~~~~~
-Core Strategies
+Core strategies
 ~~~~~~~~~~~~~~~
 
 Functions for building strategies are all available in the hypothesis.strategies
@@ -25,7 +25,7 @@ module. The salient functions from it are as follows:
   :exclude-members: SearchStrategy
 
 ~~~~~~~~~~~~~~~~~~~~~~
-Provisional Strategies
+Provisional strategies
 ~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: hypothesis.provisional

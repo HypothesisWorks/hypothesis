@@ -1,5 +1,5 @@
 ==============================
-Ongoing Hypothesis Development
+Ongoing Hypothesis development
 ==============================
 
 Hypothesis development is managed by me, `David R. MacIver <https://www.drmaciver.com>`_.
@@ -23,7 +23,7 @@ details and :pull:`154` for an example of how the process goes). This isn't
 
 .. _release-policy:
 
-Release Policy
+Release policy
 ==============
 
 Hypothesis releases follow `semantic versioning <https://semver.org/>`_.
@@ -39,7 +39,7 @@ published on PyPI as soon as it's merged onto master, after code review and
 passing our extensive test suite.
 
 
-Project Roadmap
+Project roadmap
 ===============
 
 Hypothesis does not have a long-term release plan.  We respond to bug reports
