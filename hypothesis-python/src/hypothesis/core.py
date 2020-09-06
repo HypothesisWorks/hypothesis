@@ -360,7 +360,11 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs):
                 break
 
             assert fragments_reported[0].startswith("Falsifying example")
-            verbose_report(fragments_reported[0].replace("Falsifying", "Trying", 1))
+            verbose_report(
+                fragments_reported[0].replace(
+                    "Falsifying example", "Failing example from @example decorator", 1
+                )
+            )
             for f in fragments_reported[1:]:
                 verbose_report(f)
 
