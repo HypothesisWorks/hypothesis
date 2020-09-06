@@ -1,0 +1,121 @@
+name: Hypothesis CI
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        task:
+          - check-whole-repo-tests
+          - lint
+          - check-format
+          - check-coverage
+          - check-conjecture-coverage
+          - check-py36
+          - check-quality
+        python-version: ["3.6"]
+        include:
+          - task: check-py35
+            python-version: "3.5"
+          - task: check-py37
+            python-version: "3.7"
+          - task: check-py38
+            python-version: "3.8"
+          - task: check-py39
+            python-version: "3.9-dev"
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Run tests
+      run: TASK=${{ matrix.task }} ./build.sh
+  test-win:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - task: check-py36-x64
+            python.version: '3.6'
+            python.architecture: 'x64'
+          - task: check-py36-x86
+            python.version: '3.6'
+            python.architecture: 'x86'
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: ${{ matrix.python-architecture }}
+    - name: Install dependencies
+      run: pip install --upgrade setuptools pip wheel
+           pip install -r requirements/test.txt typing-extensions black
+           pip install hypothesis-python/[all]
+    - name: Run tests
+      run: cd hypothesis-python && pytest --numprocesses auto
+  test-osx:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        task:
+          - check-py36
+        python-version: ["3.6"]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Run tests
+      run: TASK=${{ matrix.task }} ./build.sh
+  specific-deps:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        task:
+          - check-nose
+          - check-pytest43
+          - check-django30
+          - check-django22
+          - check-pandas19
+          - check-pandas22
+          - check-pandas23
+          - check-pandas24
+          - check-pandas25
+          - check-pandas100
+        python-version: ["3.6"]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Run tests
+      run: TASK=${{ matrix.task }} ./build.sh
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test, test-win, test-osx, specific-deps]
+    strategy:
+      matrix:
+        task:
+          - deploy
+        python-version: ["3.6"]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Deploy package
+      run: TASK=${{ matrix.task }} ./build.sh
