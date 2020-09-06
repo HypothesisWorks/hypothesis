@@ -18,8 +18,13 @@ Normally the output of a failing test will look something like:
 
 With the ``repr`` of each keyword argument being printed.
 
+<<<<<<< HEAD
 Sometimes this isn't enough, either because you have a value with a
 ``__repr__()`` method that isn't very descriptive or because you need to see the output of some
+=======
+Sometimes this isn't enough, either because you have values with a ``repr`` that
+isn't very descriptive or because you need to see the output of some
+>>>>>>> Julian-O-stackoverflow
 intermediate steps of your test. That's where the ``note`` function comes in:
 
 .. autofunction:: hypothesis.note
