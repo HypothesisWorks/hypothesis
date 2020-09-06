@@ -56,7 +56,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
         architecture: ${{ matrix.python-architecture }}
     - name: Run tests
-      run: TASK=${{ matrix.task }} ./build.sh
+      run: TASK=${{ matrix.task }} cd hypothesis-python && pytest --numprocesses auto
   test-osx:
     runs-on: macos-latest
     strategy:
