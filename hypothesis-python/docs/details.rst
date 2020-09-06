@@ -177,7 +177,7 @@ and don't really care about it, but as soon as Hypothesis
 finds a NaN example it will get distracted by that and tell us about it. Also
 the test will fail and we want it to pass.
 
-So lets block off this particular example:
+So let's block off this particular example:
 
 .. code:: python
 

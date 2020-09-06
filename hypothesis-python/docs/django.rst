@@ -132,7 +132,7 @@ the *flatmap* function as follows:
 
   company_with_shops_strategy = from_model(Company).flatmap(generate_with_shops)
 
-Lets unpack what this is doing:
+Let's unpack what this is doing:
 
 The way flatmap works is that we draw a value from the original strategy, then
 apply a function to it which gives us a new strategy. We then draw a value from
