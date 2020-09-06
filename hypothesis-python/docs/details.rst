@@ -250,7 +250,7 @@ Here's what happens if we try to run this:
 
   @given(lists(integers()))
   def test_sum_is_positive(xs):
-      assume(len(xs) > 10)
+      assume(len(xs) > 1)
       assume(all(x > 0 for x in xs))
       print(xs)
       assert sum(xs) > 0
