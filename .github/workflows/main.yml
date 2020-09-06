@@ -50,11 +50,11 @@ jobs:
 #       fail-fast: false
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: ${{ matrix.python-architecture }}
+#     - name: Set up Python ${{ matrix.python-version }}
+#       uses: actions/setup-python@v2
+#       with:
+#         python-version: ${{ matrix.python-version }}
+#         architecture: ${{ matrix.python-architecture }}
 #     - name: Run tests
 #       run: TASK=${{ matrix.task }} cd hypothesis-python && pytest --numprocesses auto
   test-osx:
