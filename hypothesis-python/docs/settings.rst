@@ -182,7 +182,7 @@ can be loaded at any time.
 .. automethod:: hypothesis.settings.get_profile
 .. automethod:: hypothesis.settings.load_profile
 
-Loading a profile changes the default settings but will not change the behavior
+Loading a profile changes the default settings but will not change the behaviour
 of tests that explicitly change the settings.
 
 .. code-block:: pycon
