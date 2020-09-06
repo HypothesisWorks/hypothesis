@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.33.0:
+
+-------------------
+5.33.0 - 2020-09-06
+-------------------
+
+When reporting failing examples, or tried examples in verbose mode, Hypothesis now
+identifies which were from :func:`@example(...) <hypothesis.example>` explicit examples.
+
 .. _v5.32.1:
 
 -------------------
