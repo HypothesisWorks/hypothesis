@@ -19,7 +19,7 @@ Normally the output of a failing test will look something like:
 With the ``repr`` of each keyword argument being printed.
 
 Sometimes this isn't enough, either because you have values with a ``repr`` that
-isn't very descriptive or because you need to see the output of some
+aren't very descriptive or because you need to see the output of some
 intermediate steps of your test. That's where the ``note`` function comes in:
 
 .. autofunction:: hypothesis.note
@@ -172,9 +172,10 @@ Running this gives us:
   Falsifying example: test_negation_is_self_inverse(x=float('nan'))
   AssertionError
 
-This is annoying. We know about NaN and don't really care about it, but as soon as Hypothesis
-finds a NaN example it will get distracted by that and tell us about it. Also the test will
-fail and we want it to pass.
+This is annoying. We know about `NaN <https://docs.python.org/3/library/math.html>`
+and don't really care about it, but as soon as Hypothesis
+finds a NaN example it will get distracted by that and tell us about it. Also
+the test will fail and we want it to pass.
 
 So lets block off this particular example:
 
@@ -622,7 +623,7 @@ up our type hints.
     version of this ecosystem, as well as older versions where practical.
 
     We may also find more precise ways to describe the type of various
-    interfaces, or change their type and runtime behaviour togther in a way
+    interfaces, or change their type and runtime behaviour together in a way
     which is otherwise backwards-compatible.  We often omit type hints for
     deprecated features or arguments, as an additional form of warning.
 
