@@ -19,14 +19,14 @@ from hypothesis import example, given, strategies as st
 from tests.common.utils import capture_out
 
 OUTPUT_NO_LINE_BREAK = """
-Falsifying example: test(
+Falsifying explicit example: test(
     x=%(input)s, y=%(input)s,
 )
 """
 
 
 OUTPUT_WITH_LINE_BREAK = """
-Falsifying example: test(
+Falsifying explicit example: test(
     x=%(input)s,
     y=%(input)s,
 )

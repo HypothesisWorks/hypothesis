@@ -358,8 +358,12 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs):
                 if state.settings.report_multiple_bugs:
                     continue
                 break
+            finally:
+                assert fragments_reported[0].startswith("Falsifying example")
+                fragments_reported[0] = fragments_reported[0].replace(
+                    "Falsifying example", "Falsifying explicit example", 1
+                )
 
-            assert fragments_reported[0].startswith("Falsifying example")
             verbose_report(fragments_reported[0].replace("Falsifying", "Trying", 1))
             for f in fragments_reported[1:]:
                 verbose_report(f)
