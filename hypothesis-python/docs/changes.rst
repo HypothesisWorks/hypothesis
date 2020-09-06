@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.32.1:
+
+-------------------
+5.32.1 - 2020-09-06
+-------------------
+
+This patch contains some internal refactoring.
+Thanks to Felix Sheldon for fixing :issue:`2516`!
+
 .. _v5.32.0:
 
 -------------------
