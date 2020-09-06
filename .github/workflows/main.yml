@@ -16,17 +16,17 @@ jobs:
           - check-coverage
           - check-conjecture-coverage
           - check-py36
+          - check-quality
         python-version: ["3.6"]
         include:
+          - task: check-py35
+            python-version: "3.5"
           - task: check-py37
             python-version: "3.7"
           - task: check-py38
             python-version: "3.8"
           - task: check-py39
             python-version: "3.9-dev"
-          # - task: check-py310
-          #   python-version: "3.10-dev"
-          #   continue-on-error: true
       fail-fast: false
     steps:
     - uses: actions/checkout@v2
@@ -36,3 +36,76 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
+#   test-win:
+#     runs-on: windows-latest
+#     strategy:
+#       matrix:
+#         task:
+#           - check-whole-repo-tests
+#           - lint
+#           - check-format
+#           - check-coverage
+#           - check-conjecture-coverage
+#           - check-py36
+#           - check-quality
+#         python-version: ["3.6"]
+#         include:
+#           - task: check-py35
+#             python-version: "3.5"
+#           - task: check-py37
+#             python-version: "3.7"
+#           - task: check-py38
+#             python-version: "3.8"
+#           - task: check-py39
+#             python-version: "3.9-dev"
+#       fail-fast: false
+#     steps:
+#     - uses: actions/checkout@v2
+#     - name: Set up Python ${{ matrix.python-version }}
+#       uses: actions/setup-python@v2
+#       with:
+#         python-version: ${{ matrix.python-version }}
+#     - name: Run tests
+#       run: TASK=${{ matrix.task }} ./build.sh
+  test-osx:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        task:
+          - check-py36
+        python-version: ["3.6"]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Run tests
+      run: TASK=${{ matrix.task }} ./build.sh
+  specific-deps:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        task:
+          - check-nose
+          - check-pytest43
+          - check-django30
+          - check-django22
+          - check-pandas19
+          - check-pandas22
+          - check-pandas23
+          - check-pandas24
+          - check-pandas25
+          - check-pandas100
+        python-version: ["3.6"]
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Run tests
+      run: TASK=${{ matrix.task }} ./build.sh
+      
