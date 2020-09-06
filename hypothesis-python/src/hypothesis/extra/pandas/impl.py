@@ -152,7 +152,7 @@ DEFAULT_MAX_SIZE = 10
 
 
 @st.cacheable
-@st.defines_strategy
+@st.defines_strategy()
 def range_indexes(
     min_size: int = 0, max_size: int = None
 ) -> st.SearchStrategy[pandas.RangeIndex]:
@@ -174,7 +174,7 @@ def range_indexes(
 
 
 @st.cacheable
-@st.defines_strategy
+@st.defines_strategy()
 @deprecated_posargs
 def indexes(
     *,
@@ -215,7 +215,7 @@ def indexes(
     return ValueIndexStrategy(elements, dtype, min_size, max_size, unique)
 
 
-@st.defines_strategy
+@st.defines_strategy()
 @deprecated_posargs
 def series(
     *,
@@ -361,7 +361,7 @@ def columns(
 
 
 @deprecated_posargs
-@st.defines_strategy
+@st.defines_strategy()
 def data_frames(
     columns: Sequence[column] = None,
     *,

@@ -59,7 +59,7 @@ def test_errors_on_example():
 def test_does_not_recalculate_the_strategy():
     calls = [0]
 
-    @defines_strategy
+    @defines_strategy()
     def foo():
         calls[0] += 1
         return st.just(1)

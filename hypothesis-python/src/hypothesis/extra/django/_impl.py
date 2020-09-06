@@ -54,7 +54,7 @@ class TransactionTestCase(HypothesisTestCase, dt.TransactionTestCase):
     pass
 
 
-@st.defines_strategy
+@st.defines_strategy()
 def from_model(
     *model: Type[dm.Model], **field_strategies: Union[st.SearchStrategy, InferType]
 ) -> st.SearchStrategy:
@@ -146,7 +146,7 @@ def _models_impl(draw, strat):
         reject()
 
 
-@st.defines_strategy
+@st.defines_strategy()
 def from_form(
     form: Type[df.Form],
     form_kwargs: dict = None,

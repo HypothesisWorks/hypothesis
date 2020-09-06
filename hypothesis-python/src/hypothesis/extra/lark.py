@@ -193,7 +193,7 @@ def check_explicit(name):
 
 
 @st.cacheable
-@st.defines_strategy_with_reusable_values
+@st.defines_strategy(force_reusable_values=True)
 @deprecated_posargs
 def from_lark(
     grammar: lark.lark.Lark,

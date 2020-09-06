@@ -21,7 +21,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.internal.conjecture import utils
 from hypothesis.internal.validation import check_type, check_valid_interval
 from hypothesis.strategies._internal.core import (
-    defines_strategy_with_reusable_values,
+    defines_strategy,
     deprecated_posargs,
     just,
     none,
@@ -148,7 +148,7 @@ class DatetimeStrategy(SearchStrategy):
             data.mark_invalid()
 
 
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 @deprecated_posargs
 def datetimes(
     min_value: dt.datetime = dt.datetime.min,
@@ -218,7 +218,7 @@ class TimeStrategy(SearchStrategy):
         return dt.time(**result, tzinfo=tz)
 
 
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 @deprecated_posargs
 def times(
     min_value: dt.time = dt.time.min,
@@ -259,7 +259,7 @@ class DateStrategy(SearchStrategy):
         )
 
 
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 def dates(
     min_value: dt.date = dt.date.min, max_value: dt.date = dt.date.max
 ) -> SearchStrategy[dt.date]:
@@ -299,7 +299,7 @@ class TimedeltaStrategy(SearchStrategy):
         return dt.timedelta(**result)
 
 
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 def timedeltas(
     min_value: dt.timedelta = dt.timedelta.min,
     max_value: dt.timedelta = dt.timedelta.max,

@@ -134,7 +134,7 @@ class DomainNameStrategy(SearchStrategy):
         return domain
 
 
-@st.defines_strategy_with_reusable_values
+@st.defines_strategy(force_reusable_values=True)
 @deprecated_posargs
 def domains(
     *, max_length: int = 255, max_element_length: int = 63
@@ -145,7 +145,7 @@ def domains(
     )
 
 
-@st.defines_strategy_with_reusable_values
+@st.defines_strategy(force_reusable_values=True)
 def urls() -> SearchStrategy[str]:
     """A strategy for :rfc:`3986`, generating http/https URLs."""
 
@@ -161,7 +161,7 @@ def urls() -> SearchStrategy[str]:
     )
 
 
-@st.defines_strategy_with_reusable_values
+@st.defines_strategy(force_reusable_values=True)
 def ip4_addr_strings() -> SearchStrategy[str]:
     note_deprecation(
         "Use `ip_addresses(v=4).map(str)` instead of `ip4_addr_strings()`; "
@@ -171,7 +171,7 @@ def ip4_addr_strings() -> SearchStrategy[str]:
     return ip_addresses(v=4).map(str)
 
 
-@st.defines_strategy_with_reusable_values
+@st.defines_strategy(force_reusable_values=True)
 def ip6_addr_strings() -> SearchStrategy[str]:
     note_deprecation(
         "Use `ip_addresses(v=6).map(str)` instead of `ip6_addr_strings()`; "

@@ -21,7 +21,7 @@ from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.core import (
     SearchStrategy,
     binary,
-    defines_strategy_with_reusable_values,
+    defines_strategy,
     integers,
     sampled_from,
 )
@@ -78,7 +78,7 @@ SPECIAL_IPv6_RANGES = (
 )
 
 
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 def ip_addresses(
     *, v: int = None, network: Union[str, IPv4Network, IPv6Network] = None
 ) -> SearchStrategy[Union[IPv4Address, IPv6Address]]:
