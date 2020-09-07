@@ -44,6 +44,7 @@ and try again.
 try:
     import click
 except ImportError:
+
     def main():
         """If `click` is not installed, tell the user to install it then exit."""
         sys.stderr.write(MESSAGE.format("click"))
