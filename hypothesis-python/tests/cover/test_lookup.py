@@ -412,6 +412,20 @@ def test_error_if_has_unresolvable_hints():
         inner()
 
 
+@given(st.data())
+def test_issue_2603_regression(data):
+    """It was impossible to build annotated classes with constructors."""
+    _ValueType = typing.TypeVar("_ValueType")
+
+    class Wrapper(typing.Generic[_ValueType]):
+        _inner_value: _ValueType
+
+        def __init__(self, inner_value: _ValueType) -> None:
+            self._inner_value = inner_value
+
+    assert isinstance(data.draw(st.builds(Wrapper)), Wrapper)
+
+
 @pytest.mark.skipif(not hasattr(typing, "NewType"), reason="test for NewType")
 def test_resolves_NewType():
     typ = typing.NewType("T", int)

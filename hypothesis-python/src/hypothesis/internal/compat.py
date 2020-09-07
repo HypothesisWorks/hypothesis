@@ -154,12 +154,16 @@ else:
             hints.update(typing.get_type_hints(thing))
         except (AttributeError, TypeError, NameError):
             hints = {}
-        if hints or not inspect.isclass(thing):
+
+        if not inspect.isclass(thing):
             return hints
+
         try:
-            return typing.get_type_hints(thing.__init__)
+            constructor_types = typing.get_type_hints(thing.__init__)
         except (TypeError, NameError, AttributeError):
-            return {}
+            constructor_types = {}
+        hints.update(constructor_types)
+        return hints
 
 
 importlib_invalidate_caches = getattr(importlib, "invalidate_caches", lambda: ())
