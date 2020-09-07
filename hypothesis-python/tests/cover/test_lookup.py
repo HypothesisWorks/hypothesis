@@ -412,6 +412,10 @@ def test_error_if_has_unresolvable_hints():
         inner()
 
 
+@pytest.mark.skipif(
+    sys.version_info[:2] < (3, 6),
+    reason="Attribute annotation does not work before 3.6",
+)
 @given(st.data())
 def test_issue_2603_regression(data):
     """It was impossible to build annotated classes with constructors."""
