@@ -10,6 +10,18 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.33.1:
+
+-------------------
+5.33.1 - 2020-09-07
+-------------------
+
+This patch improves the error message from the :command:`hypothesis write`
+command if :pypi:`black` (required for the :doc:`ghostwriter <ghostwriter>`)
+is not installed.
+
+Thanks to Nikita Sobolev for fixing :issue:`2604`!
+
 .. _v5.33.0:
 
 -------------------
