@@ -35,7 +35,7 @@ from difflib import get_close_matches
 from hypothesis.extra import ghostwriter
 
 try:
-    import black
+    import black  # noqa: F401
     import click
 except ImportError:
 
