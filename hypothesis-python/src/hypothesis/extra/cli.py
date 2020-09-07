@@ -35,14 +35,15 @@ from difflib import get_close_matches
 from hypothesis.extra import ghostwriter
 
 try:
+    import black
     import click
 except ImportError:
 
     def main():
-        """If `click` is not installed, tell the user to install it then exit."""
+        """If `click` or `black` are not installed, tell the user to install it then exit."""
         sys.stderr.write(
             """
-The Hypothesis command-line interface requires the `click` package,
+The Hypothesis command-line interface requires `black` and `click` packages,
 which you do not have installed.  Run:
 
     python -m pip install --upgrade hypothesis[cli]
