@@ -52,7 +52,7 @@ from collections import OrderedDict, defaultdict
 from itertools import permutations, zip_longest
 from string import ascii_lowercase
 from textwrap import dedent, indent
-from typing import Any, Callable, Dict, Mapping, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Mapping, Set, Tuple, Type, TypeVar, Union, Optional
 
 import black
 
@@ -336,7 +336,7 @@ def _make_test_body(
     test_body: str,
     except_: Tuple[Type[Exception], ...],
     style: str,
-    given_strategies: Mapping[str, Union[str, st.SearchStrategy]] = None,
+    given_strategies: Optional[Mapping[str, Union[str, st.SearchStrategy]]] = None,
 ) -> Tuple[Set[str], str]:
     # Get strategies for all the arguments to each function we're testing.
     with _with_any_registered():
@@ -763,7 +763,7 @@ def binary_operation(
     associative: bool = True,
     commutative: bool = True,
     identity: Union[X, InferType, None] = infer,
-    distributes_over: Callable[[X, X], X] = None,
+    distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Except = (),
     style: str = "pytest",
 ) -> str:
@@ -825,7 +825,7 @@ def _make_binop_body(
     associative: bool = True,
     commutative: bool = True,
     identity: Union[X, InferType, None] = infer,
-    distributes_over: Callable[[X, X], X] = None,
+    distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Tuple[Type[Exception], ...],
     style: str,
 ) -> Tuple[Set[str], str]:
@@ -840,7 +840,7 @@ def _make_binop_body(
     all_imports = set()
     parts = []
 
-    def maker(sub_property: str, args: str, body: str, right: str = None) -> None:
+    def maker(sub_property: str, args: str, body: str, right: Optional[str] = None) -> None:
         if right is not None:
             body = f"left={body}\nright={right}\n" + _assert_eq(style, "left", "right")
         imports, body = _make_test_body(
