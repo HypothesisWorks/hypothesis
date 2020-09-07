@@ -32,7 +32,14 @@ import importlib
 import sys
 from difflib import get_close_matches
 
-from hypothesis.extra import ghostwriter
+MESSAGE = """
+The Hypothesis command-line interface requires the `{}` package,
+which you do not have installed.  Run:
+
+    python -m pip install --upgrade hypothesis[cli]
+
+and try again.
+"""
 
 try:
     import click
@@ -40,16 +47,7 @@ except ImportError:
 
     def main():
         """If `click` is not installed, tell the user to install it then exit."""
-        sys.stderr.write(
-            """
-The Hypothesis command-line interface requires the `click` package,
-which you do not have installed.  Run:
-
-    python -m pip install --upgrade hypothesis[cli]
-
-and try again.
-"""
-        )
+        sys.stderr.write(MESSAGE.format("click"))
         sys.exit(1)
 
 
@@ -141,5 +139,11 @@ else:
             writer = "idempotent"
         elif writer == "equivalent" and len(func) == 1:
             writer = "fuzz"
+
+        try:
+            from hypothesis.extra import ghostwriter
+        except ImportError:
+            sys.stderr.write(MESSAGE.format("black"))
+            sys.exit(1)
 
         print(getattr(ghostwriter, writer)(*func, except_=except_ or (), style=style))
