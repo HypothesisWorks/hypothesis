@@ -31,3 +31,19 @@ class TreeForwardRefs(typing.NamedTuple):
 @given(st.builds(TreeForwardRefs))
 def test_resolves_forward_references_outside_annotations(t):
     assert isinstance(t, TreeForwardRefs)
+
+
+_ValueType = typing.TypeVar("_ValueType")
+
+
+class Wrapper(typing.Generic[_ValueType]):
+    _inner_value: _ValueType
+
+    def __init__(self, inner_value: _ValueType) -> None:
+        self._inner_value = inner_value
+
+
+@given(st.builds(Wrapper))
+def test_issue_2603_regression(built):
+    """It was impossible to build annotated classes with constructors."""
+    assert isinstance(built, Wrapper)

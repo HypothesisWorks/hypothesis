@@ -412,24 +412,6 @@ def test_error_if_has_unresolvable_hints():
         inner()
 
 
-@pytest.mark.skipif(
-    sys.version_info[:2] < (3, 6),
-    reason="Attribute annotation does not work before 3.6",
-)
-@given(st.data())
-def test_issue_2603_regression(data):
-    """It was impossible to build annotated classes with constructors."""
-    _ValueType = typing.TypeVar("_ValueType")
-
-    class Wrapper(typing.Generic[_ValueType]):
-        _inner_value: _ValueType
-
-        def __init__(self, inner_value: _ValueType) -> None:
-            self._inner_value = inner_value
-
-    assert isinstance(data.draw(st.builds(Wrapper)), Wrapper)
-
-
 @pytest.mark.skipif(not hasattr(typing, "NewType"), reason="test for NewType")
 def test_resolves_NewType():
     typ = typing.NewType("T", int)
