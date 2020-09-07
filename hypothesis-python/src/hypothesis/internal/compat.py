@@ -136,8 +136,20 @@ else:
         NameError for unresolvable forward references, just return an empty dict.
         """
         try:
+            hints = typing.get_type_hints(thing)
+        except (AttributeError, TypeError, NameError):
             hints = {}
-            if inspect.isclass(thing) and hasattr(thing, "__signature__"):
+
+        if not inspect.isclass(thing):
+            return hints
+
+        try:
+            hints.update(typing.get_type_hints(thing.__init__))
+        except (TypeError, NameError, AttributeError):
+            pass
+
+        try:
+            if hasattr(thing, "__signature__"):
                 # It is possible for the signature and annotations attributes to
                 # differ on an object due to renamed arguments.
                 # To prevent missing arguments we use the signature to provide any type
@@ -146,23 +158,16 @@ else:
                 # See https://github.com/HypothesisWorks/hypothesis/pull/2580
                 # for more details.
                 spec = inspect.getfullargspec(thing)
-                hints = {
-                    k: v
-                    for k, v in spec.annotations.items()
-                    if k in (spec.args + spec.kwonlyargs) and isinstance(v, type)
-                }
-            hints.update(typing.get_type_hints(thing))
+                hints.update(
+                    {
+                        k: v
+                        for k, v in spec.annotations.items()
+                        if k in (spec.args + spec.kwonlyargs) and isinstance(v, type)
+                    }
+                )
         except (AttributeError, TypeError, NameError):
-            hints = {}
+            pass
 
-        if not inspect.isclass(thing):
-            return hints
-
-        try:
-            constructor_types = typing.get_type_hints(thing.__init__)
-        except (TypeError, NameError, AttributeError):
-            constructor_types = {}
-        hints.update(constructor_types)
         return hints
 
 

@@ -14,6 +14,7 @@
 # END HEADER
 
 import typing
+from inspect import signature
 
 import pytest
 
@@ -61,3 +62,23 @@ class AnnotatedConstructor(typing.Generic[_ValueType]):
 def test_constructor_is_more_important(data):
     """Constructor types should take presence over all other annotations."""
     data.draw(st.builds(AnnotatedConstructor))
+
+
+def use_signature(self, value: str) -> None:
+    ...
+
+
+class AnnotatedConstructorWithSignature(typing.Generic[_ValueType]):
+    value: _ValueType  # the same name we have in `__init__`
+
+    __signature__ = signature(use_signature)
+
+    def __init__(self, value: int) -> None:
+        """By this example we show, that ``__signature__`` is the most important source."""
+        assert isinstance(value, str)
+
+
+@given(st.data())
+def test_signature_is_the_most_important_source(data):
+    """Signature types should take presence over all other annotations."""
+    data.draw(st.builds(AnnotatedConstructorWithSignature))
