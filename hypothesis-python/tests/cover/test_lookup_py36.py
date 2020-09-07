@@ -47,3 +47,17 @@ class Wrapper(typing.Generic[_ValueType]):
 def test_issue_2603_regression(built):
     """It was impossible to build annotated classes with constructors."""
     assert isinstance(built, Wrapper)
+
+
+class AnnotatedConstructor(typing.Generic[_ValueType]):
+    value: _ValueType  # the same name we have in `__init__`
+
+    def __init__(self, value: int) -> None:
+        """By this example we show, that ``int`` is more important than ``_ValueType``."""
+        assert isinstance(value, int)
+
+
+@given(st.data())
+def test_constructor_is_more_important(data):
+    """Constructor types should take presence over all other annotations."""
+    data.draw(st.builds(AnnotatedConstructor))
