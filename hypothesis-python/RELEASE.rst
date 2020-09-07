@@ -1,7 +1,7 @@
 RELEASE_TYPE: patch
 
-This patch ensures that we check that ``black`` is installed
-before actually using it in CLI.
-Previously, it was raising an ``ImportError``.
+This patch improves the error message from the :command:`hypothesis write`
+command if :pypi:`black` (required for the :doc:`ghostwriter <ghostwriter>`)
+is not installed.
 
 Thanks to Nikita Sobolev for fixing :issue:`2604`!
