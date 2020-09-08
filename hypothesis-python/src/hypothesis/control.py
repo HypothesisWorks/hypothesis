@@ -125,7 +125,7 @@ def event(value: str) -> None:
 
 
 @deprecated_posargs
-def target(observation: float, *, label: str = "") -> None:
+def target(observation: float, *, label: str = "", allow_outside_given_test=False) -> None:
     """Calling this function with a ``float`` observation gives it feedback
     with which to guide our search for inputs that will cause an error, in
     addition to all the usual heuristics.  Observations must always be finite.
@@ -171,7 +171,7 @@ def target(observation: float, *, label: str = "") -> None:
     check_type(str, label, "label")
 
     context = _current_build_context.value
-    if context is None:
+    if context is None and allow_outside_given_test is False:
         raise InvalidArgument("Calling target() outside of a test is invalid.")
     verbose_report("Saw target(observation=%r, label=%r)" % (observation, label))
 
