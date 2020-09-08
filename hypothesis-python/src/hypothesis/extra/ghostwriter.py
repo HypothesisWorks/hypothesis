@@ -52,7 +52,18 @@ from collections import OrderedDict, defaultdict
 from itertools import permutations, zip_longest
 from string import ascii_lowercase
 from textwrap import dedent, indent
-from typing import Any, Callable, Dict, Mapping, Set, Tuple, Type, TypeVar, Union, Optional
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import black
 
@@ -840,7 +851,9 @@ def _make_binop_body(
     all_imports = set()
     parts = []
 
-    def maker(sub_property: str, args: str, body: str, right: Optional[str] = None) -> None:
+    def maker(
+        sub_property: str, args: str, body: str, right: Optional[str] = None
+    ) -> None:
         if right is not None:
             body = f"left={body}\nright={right}\n" + _assert_eq(style, "left", "right")
         imports, body = _make_test_body(

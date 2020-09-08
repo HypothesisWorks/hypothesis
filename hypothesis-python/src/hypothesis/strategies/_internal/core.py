@@ -1137,7 +1137,9 @@ def from_regex(
 @cacheable
 @defines_strategy(force_reusable_values=True)
 @deprecated_posargs
-def binary(*, min_size: int = 0, max_size: Optional[int] = None) -> SearchStrategy[bytes]:
+def binary(
+    *, min_size: int = 0, max_size: Optional[int] = None
+) -> SearchStrategy[bytes]:
     """Generates :class:`python:bytes`.
 
     The generated :class:`python:bytes` will have a length of at least ``min_size``
@@ -1909,7 +1911,9 @@ def complex_numbers(
 
 
 @deprecated_posargs
-def shared(base: SearchStrategy[Ex], *, key: Optional[Hashable] = None) -> SearchStrategy[Ex]:
+def shared(
+    base: SearchStrategy[Ex], *, key: Optional[Hashable] = None
+) -> SearchStrategy[Ex]:
     """Returns a strategy that draws a single shared value per run, drawn from
     base. Any two shared instances with the same key will share the same value,
     otherwise the identity of this strategy will be used. That is:

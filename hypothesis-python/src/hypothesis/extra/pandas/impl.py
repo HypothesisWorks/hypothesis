@@ -15,7 +15,7 @@
 
 from collections import OrderedDict, abc
 from copy import copy
-from typing import Any, List, Sequence, Set, Union, Optional
+from typing import Any, List, Optional, Sequence, Set, Union
 
 import attr
 import numpy as np

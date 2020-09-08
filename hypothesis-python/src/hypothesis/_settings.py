@@ -291,7 +291,9 @@ class settings(metaclass=settingsMeta):
         return ", ".join(sorted(bits, key=len))
 
     @staticmethod
-    def register_profile(name: str, parent: Optional["settings"] = None, **kwargs: Any) -> None:
+    def register_profile(
+        name: str, parent: Optional["settings"] = None, **kwargs: Any
+    ) -> None:
         """Registers a collection of values to be used as a settings profile.
 
         Settings profiles can be loaded by name - for example, you might

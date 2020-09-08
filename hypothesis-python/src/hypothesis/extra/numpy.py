@@ -15,7 +15,7 @@
 
 import math
 import re
-from typing import Any, NamedTuple, Sequence, Tuple, Union, Optional
+from typing import Any, NamedTuple, Optional, Sequence, Tuple, Union
 
 import numpy as np
 

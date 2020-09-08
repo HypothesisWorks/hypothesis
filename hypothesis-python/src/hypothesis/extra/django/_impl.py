@@ -17,7 +17,7 @@ import sys
 import unittest
 from functools import partial
 from inspect import Parameter, signature
-from typing import Type, Union, Optional
+from typing import Optional, Type, Union
 
 from django import forms as df, test as dt
 from django.core.exceptions import ValidationError
