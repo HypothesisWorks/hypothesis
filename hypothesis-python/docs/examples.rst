@@ -128,7 +128,7 @@ versa, sorting things the first two nodes are equal because they have equal labe
 This makes the whole order non-transitive and produces basically nonsense results.
 
 But this is pretty unsatisfying. It only works because they have the same label. Perhaps
-we actually wanted our labels to be unique. Lets change the test to do that.
+we actually wanted our labels to be unique. Let's change the test to do that.
 
 .. code:: python
 
@@ -397,7 +397,7 @@ The :pypi:`swagger-conformance` package provides an excellent example of this!
                 data=data,
             )
 
-            # Lets not hammer the API too badly. This will of course make the
+            # Let's not hammer the API too badly. This will of course make the
             # tests even slower than they otherwise would have been, but that's
             # life.
             time.sleep(1.0)

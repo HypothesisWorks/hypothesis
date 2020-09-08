@@ -53,7 +53,7 @@ The invariant one tends to try when you've got this sort of encoding /
 decoding is that if you encode something and then decode it then you get the same
 value back.
 
-Lets see how you'd do that with Hypothesis:
+Let's see how you'd do that with Hypothesis:
 
 
 .. code:: python
