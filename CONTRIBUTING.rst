@@ -75,8 +75,8 @@ submitting a contribution you are agreeing to licence your work under those
 terms.
 
 Finally, if it is not there already, add your name (and a link to your GitHub
-and email address if you want) to the list of contributors found at
-the end of this document, in alphabetical order. It doesn't have to be your
+and email address if you want) to the list of contributors found in
+AUTHORS.rst, in alphabetical order. It doesn't have to be your
 "real" name (whatever that means), any sort of public identifier
 is fine. In particular a GitHub account is sufficient.
 
