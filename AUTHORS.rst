@@ -69,6 +69,7 @@ their individual contributions.
 * `Karthikeyan Singaravelan <https://www.github.com/tirkarthi>`_ (tir.karthi@gmail.com)
 * `Katrina Durance <https://github.com/kdurance>`_
 * `kbara <https://www.github.com/kbara>`_
+* `Kit pitman <https://www.github.com/purpledevau>`_
 * `Kristian Glass <https://www.github.com/doismellburning>`_
 * `Kyle Reeve <https://www.github.com/kreeve>`_ (krzw92@gmail.com)
 * `Lampros Mountrakis <https://www.github.com/lmount>`_
