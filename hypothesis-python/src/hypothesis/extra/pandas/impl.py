@@ -154,7 +154,7 @@ DEFAULT_MAX_SIZE = 10
 @st.cacheable
 @st.defines_strategy()
 def range_indexes(
-    min_size: int = 0, max_size: Optional[int] = None
+    min_size: int = 0, max_size: Optional[int] = None,
 ) -> st.SearchStrategy[pandas.RangeIndex]:
     """Provides a strategy which generates an :class:`~pandas.Index` whose
     values are 0, 1, ..., n for some n.

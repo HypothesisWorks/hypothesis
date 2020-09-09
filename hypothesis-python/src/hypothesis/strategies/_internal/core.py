@@ -345,7 +345,7 @@ def one_of(*args):  # noqa: F811
 @cacheable
 @defines_strategy(force_reusable_values=True)
 def integers(
-    min_value: Optional[int] = None, max_value: Optional[int] = None
+    min_value: Optional[int] = None, max_value: Optional[int] = None,
 ) -> SearchStrategy[int]:
     """Returns a strategy which generates integers.
 
@@ -783,7 +783,7 @@ def lists(
 @defines_strategy()
 @deprecated_posargs
 def sets(
-    elements: SearchStrategy[Ex], *, min_size: int = 0, max_size: Optional[int] = None
+    elements: SearchStrategy[Ex], *, min_size: int = 0, max_size: Optional[int] = None,
 ) -> SearchStrategy[Set[Ex]]:
     """This has the same behaviour as lists, but returns sets instead.
 
@@ -803,7 +803,7 @@ def sets(
 @defines_strategy()
 @deprecated_posargs
 def frozensets(
-    elements: SearchStrategy[Ex], *, min_size: int = 0, max_size: Optional[int] = None
+    elements: SearchStrategy[Ex], *, min_size: int = 0, max_size: Optional[int] = None,
 ) -> SearchStrategy[FrozenSet[Ex]]:
     """This is identical to the sets function but instead returns
     frozensets."""
@@ -1138,7 +1138,7 @@ def from_regex(
 @defines_strategy(force_reusable_values=True)
 @deprecated_posargs
 def binary(
-    *, min_size: int = 0, max_size: Optional[int] = None
+    *, min_size: int = 0, max_size: Optional[int] = None,
 ) -> SearchStrategy[bytes]:
     """Generates :class:`python:bytes`.
 
@@ -1159,7 +1159,7 @@ def binary(
 @cacheable
 @defines_strategy()
 def randoms(
-    *, note_method_calls: bool = False, use_true_random: Optional[bool] = None
+    *, note_method_calls: bool = False, use_true_random: Optional[bool] = None,
 ) -> SearchStrategy[random.Random]:
     """Generates instances of ``random.Random``. The generated Random instances
     are of a special HypothesisRandom subclass.
@@ -1912,7 +1912,7 @@ def complex_numbers(
 
 @deprecated_posargs
 def shared(
-    base: SearchStrategy[Ex], *, key: Optional[Hashable] = None
+    base: SearchStrategy[Ex], *, key: Optional[Hashable] = None,
 ) -> SearchStrategy[Ex]:
     """Returns a strategy that draws a single shared value per run, drawn from
     base. Any two shared instances with the same key will share the same value,

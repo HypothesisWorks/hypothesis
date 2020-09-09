@@ -733,7 +733,7 @@ def nested_dtypes(
 @st.defines_strategy()
 @deprecated_posargs
 def valid_tuple_axes(
-    ndim: int, *, min_size: int = 0, max_size: Optional[int] = None
+    ndim: int, *, min_size: int = 0, max_size: Optional[int] = None,
 ) -> st.SearchStrategy[Shape]:
     """Return a strategy for generating permissible tuple-values for the
     ``axis`` argument for a numpy sequential function (e.g.
