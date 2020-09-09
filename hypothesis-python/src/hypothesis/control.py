@@ -125,7 +125,9 @@ def event(value: str) -> None:
 
 
 @deprecated_posargs
-def target(observation: float, *, label: str = "", allow_outside_given_test: bool = False) -> None:
+def target(
+    observation: float, *, label: str = "", allow_outside_given_test: bool = False
+) -> None:
     """Calling this function with a ``float`` observation gives it feedback
     with which to guide our search for inputs that will cause an error, in
     addition to all the usual heuristics.  Observations must always be finite.
