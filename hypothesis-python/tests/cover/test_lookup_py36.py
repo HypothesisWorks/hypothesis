@@ -80,5 +80,5 @@ class AnnotatedConstructorWithSignature(typing.Generic[_ValueType]):
 
 @given(st.data())
 def test_signature_is_the_most_important_source(data):
-    """Signature types should take presence over all other annotations."""
+    """Signature types should take precedence over all other annotations."""
     data.draw(st.builds(AnnotatedConstructorWithSignature))
