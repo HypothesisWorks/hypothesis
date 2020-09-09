@@ -10,6 +10,17 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.33.2:
+
+-------------------
+5.33.2 - 2020-09-09
+-------------------
+
+This patch fixes a problem with :func:`~hypothesis.strategies.builds` that was not able to
+generate valid data for annotated classes with constructors.
+
+Thanks to Nikita Sobolev for fixing :issue:`2603`!
+
 .. _v5.33.1:
 
 -------------------
