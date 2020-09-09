@@ -129,15 +129,29 @@ else:
 
         Tries harder: if the thing to inspect is a class but typing.get_type_hints
         raises an error or returns no hints, then this function will try calling it
-        on the __init__ method.  This second step often helps with user-defined
-        classes on older versions of Python.
+        on the __init__ method. This second step often helps with user-defined
+        classes on older versions of Python. The third step we take is trying
+        to fetch types from the __signature__ property.
+        They override any other ones we found earlier.
 
         Never errors: instead of raising TypeError for uninspectable objects, or
         NameError for unresolvable forward references, just return an empty dict.
         """
         try:
+            hints = typing.get_type_hints(thing)
+        except (AttributeError, TypeError, NameError):
             hints = {}
-            if inspect.isclass(thing) and hasattr(thing, "__signature__"):
+
+        if not inspect.isclass(thing):
+            return hints
+
+        try:
+            hints.update(typing.get_type_hints(thing.__init__))
+        except (TypeError, NameError, AttributeError):
+            pass
+
+        try:
+            if hasattr(thing, "__signature__"):
                 # It is possible for the signature and annotations attributes to
                 # differ on an object due to renamed arguments.
                 # To prevent missing arguments we use the signature to provide any type
@@ -146,20 +160,17 @@ else:
                 # See https://github.com/HypothesisWorks/hypothesis/pull/2580
                 # for more details.
                 spec = inspect.getfullargspec(thing)
-                hints = {
-                    k: v
-                    for k, v in spec.annotations.items()
-                    if k in (spec.args + spec.kwonlyargs) and isinstance(v, type)
-                }
-            hints.update(typing.get_type_hints(thing))
+                hints.update(
+                    {
+                        k: v
+                        for k, v in spec.annotations.items()
+                        if k in (spec.args + spec.kwonlyargs) and isinstance(v, type)
+                    }
+                )
         except (AttributeError, TypeError, NameError):
-            hints = {}
-        if hints or not inspect.isclass(thing):
-            return hints
-        try:
-            return typing.get_type_hints(thing.__init__)
-        except (TypeError, NameError, AttributeError):
-            return {}
+            pass
+
+        return hints
 
 
 importlib_invalidate_caches = getattr(importlib, "invalidate_caches", lambda: ())
