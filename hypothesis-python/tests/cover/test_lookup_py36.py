@@ -60,7 +60,7 @@ class AnnotatedConstructor(typing.Generic[_ValueType]):
 
 @given(st.data())
 def test_constructor_is_more_important(data):
-    """Constructor types should take presence over all other annotations."""
+    """Constructor types should take precedence over all other annotations."""
     data.draw(st.builds(AnnotatedConstructor))
 
 

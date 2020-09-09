@@ -129,8 +129,10 @@ else:
 
         Tries harder: if the thing to inspect is a class but typing.get_type_hints
         raises an error or returns no hints, then this function will try calling it
-        on the __init__ method.  This second step often helps with user-defined
-        classes on older versions of Python.
+        on the __init__ method. This second step often helps with user-defined
+        classes on older versions of Python. The third step we take is trying
+        to fetch types from the __signature__ property.
+        They override any other ones we found earlier.
 
         Never errors: instead of raising TypeError for uninspectable objects, or
         NameError for unresolvable forward references, just return an empty dict.
