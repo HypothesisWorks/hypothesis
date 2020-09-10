@@ -168,7 +168,7 @@ def test_prints_verbose_output_for_explicit_examples():
         pass
 
     assert_falsifying_output(
-        test_always_passes, x="NOT AN INTEGER", example_type="Trying",
+        test_always_passes, x="NOT AN INTEGER", example_type="Trying"
     )
 
 
@@ -179,9 +179,7 @@ def test_captures_original_repr_of_example():
         x.append(1)
         assert not x
 
-    assert_falsifying_output(
-        test_mutation, x=[],
-    )
+    assert_falsifying_output(test_mutation, x=[])
 
 
 def test_examples_are_tried_in_order():

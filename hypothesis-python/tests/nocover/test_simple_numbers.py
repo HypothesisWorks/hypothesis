@@ -137,9 +137,7 @@ def is_integral(value):
 
 
 def test_can_minimal_float_far_from_integral():
-    minimal(
-        floats(), lambda x: math.isfinite(x) and not is_integral(x * (2 ** 32)),
-    )
+    minimal(floats(), lambda x: math.isfinite(x) and not is_integral(x * (2 ** 32)))
 
 
 def test_list_of_fractional_float():

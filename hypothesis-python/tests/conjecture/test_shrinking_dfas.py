@@ -199,7 +199,7 @@ def test_learns_to_bridge_only_two():
     )
 
     dfa = dfas.learn_a_new_dfa(
-        runner, [10, 100], [2, 8], lambda d: d.status == Status.INTERESTING,
+        runner, [10, 100], [2, 8], lambda d: d.status == Status.INTERESTING
     )
 
     assert dfa.max_length(dfa.start) == 2
@@ -233,7 +233,7 @@ def test_learns_to_bridge_only_two_with_overlap():
         test_function, settings=settings(database=None), ignore_limits=True
     )
 
-    dfa = dfas.learn_a_new_dfa(runner, u, v, lambda d: d.status == Status.INTERESTING,)
+    dfa = dfas.learn_a_new_dfa(runner, u, v, lambda d: d.status == Status.INTERESTING)
 
     assert list(islice(dfa.all_matching_strings(), 3)) == [b"", bytes(len(v) - len(u))]
 
@@ -258,6 +258,6 @@ def test_learns_to_bridge_only_two_with_suffix():
         test_function, settings=settings(database=None), ignore_limits=True
     )
 
-    dfa = dfas.learn_a_new_dfa(runner, u, v, lambda d: d.status == Status.INTERESTING,)
+    dfa = dfas.learn_a_new_dfa(runner, u, v, lambda d: d.status == Status.INTERESTING)
 
     assert list(islice(dfa.all_matching_strings(), 3)) == [b"", bytes(len(v) - len(u))]

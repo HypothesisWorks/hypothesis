@@ -142,7 +142,7 @@ def define_copy_method(name):
 
     spec = inspect.getfullargspec(STUBS.get(name, target))
 
-    result = define_function_signature(target.__name__, target.__doc__, spec,)(
+    result = define_function_signature(target.__name__, target.__doc__, spec)(
         implementation
     )
 

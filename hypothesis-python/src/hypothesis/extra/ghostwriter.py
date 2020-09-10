@@ -392,10 +392,11 @@ def _make_test_body(
     # For unittest-style, indent method further into a class body
     if style == "unittest":
         imports.add("unittest")
-        body = "class Test{}{}(unittest.TestCase):\n".format(
+        body = "class Test{}{}(unittest.TestCase):\n{}".format(
             ghost.title(),
             "".join(_get_qualname(f).replace(".", "").title() for f in funcs),
-        ) + indent(body, "    ")
+            indent(body, "    "),
+        )
 
     return imports, body
 
@@ -566,7 +567,7 @@ def magic(
     # be worth the trouble when it's so easy for the user to specify themselves.
     for _, f in sorted(by_name.items()):
         imp, body = _make_test_body(
-            f, test_body=_write_call(f), except_=except_, ghost="fuzz", style=style,
+            f, test_body=_write_call(f), except_=except_, ghost="fuzz", style=style
         )
         imports |= imp
         parts.append(body)
