@@ -29,8 +29,8 @@ do their best to write you a useful test.
 
 .. note::
 
-    The ghostwriter requires Python 3.6+ and :pypi:`black`, but the generated
-    code supports Python 3.5+ and has no dependencies beyond Hypothesis itself.
+    The ghostwriter requires :pypi:`black`, but the generated code has no
+    dependencies beyond Hypothesis itself.
 
 .. note::
 

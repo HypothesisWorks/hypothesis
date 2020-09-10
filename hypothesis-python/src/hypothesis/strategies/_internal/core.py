@@ -441,8 +441,6 @@ def floats(
     required to represent the generated float. Valid values are 16, 32, or 64.
     Passing ``width=32`` will still use the builtin 64-bit ``float`` class,
     but always for values which can be exactly represented as a 32-bit float.
-    Half-precision floats (``width=16``) are not supported on Python 3.5,
-    unless :pypi:`Numpy` is installed.
 
     The exclude_min and exclude_max argument can be used to generate numbers
     from open or half-open intervals, by excluding the respective endpoints.
