@@ -21,7 +21,7 @@ import pytest
 
 from hypothesis import assume, given, strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT, WINDOWS
+from hypothesis.internal.compat import WINDOWS
 from hypothesis.internal.floats import (
     float_of,
     float_to_int,
@@ -173,8 +173,7 @@ def test_float32_can_exclude_infinity(x):
     assert not math.isinf(x)
 
 
-@pytest.mark.skipif(not (numpy or CAN_PACK_HALF_FLOAT), reason="dependency")
-@given(st.floats(width=32, allow_infinity=False))
+@given(st.floats(width=16, allow_infinity=False))
 def test_float16_can_exclude_infinity(x):
     assert not math.isinf(x)
 
@@ -193,18 +192,8 @@ def test_float16_can_exclude_infinity(x):
     ],
 )
 def test_out_of_range(kwargs):
-    if kwargs.get("width") == 16 and not (CAN_PACK_HALF_FLOAT or numpy):
-        pytest.skip()
     with pytest.raises(OverflowError):
         st.floats(**kwargs).validate()
-
-
-def test_invalidargument_iff_half_float_unsupported():
-    if numpy is None and not CAN_PACK_HALF_FLOAT:
-        with pytest.raises(InvalidArgument):
-            st.floats(width=16).validate()
-    else:
-        st.floats(width=16).validate()
 
 
 def test_disallowed_width():
@@ -279,9 +268,7 @@ def test_cannot_exclude_endpoint_with_zero_interval(lo, hi, exmin, exmax):
         st.floats(lo, hi, exclude_min=exmin, exclude_max=exmax).validate()
 
 
-WIDTHS = (64, 32)
-if numpy or CAN_PACK_HALF_FLOAT:
-    WIDTHS += (16,)
+WIDTHS = (64, 32, 16)
 
 
 @pytest.mark.parametrize("nonfloat", [st.nothing(), st.none()])

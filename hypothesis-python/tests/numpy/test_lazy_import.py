@@ -13,8 +13,6 @@
 #
 # END HEADER
 
-from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT
-
 SHOULD_NOT_IMPORT_NUMPY = """
 import sys
 from hypothesis import given, strategies as st
@@ -26,10 +24,6 @@ def test_no_numpy_import(x):
 
 
 def test_hypothesis_is_not_the_first_to_import_numpy(testdir):
+    # We only import numpy if the user did so first.
     result = testdir.runpytest(testdir.makepyfile(SHOULD_NOT_IMPORT_NUMPY))
-    # OK, we import numpy on Python < 3.6 to get 16-bit float support.
-    # But otherwise we only import it if the user did so first.
-    if CAN_PACK_HALF_FLOAT:
-        result.assert_outcomes(passed=1, failed=0)
-    else:
-        result.assert_outcomes(passed=0, failed=1)
+    result.assert_outcomes(passed=1, failed=0)

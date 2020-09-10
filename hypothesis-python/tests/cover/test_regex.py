@@ -323,7 +323,6 @@ def test_group_backref_may_not_be_present(s):
     assert s[0] == s[1]
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 6), reason="requires Python 3.6")
 def test_subpattern_flags():
     strategy = st.from_regex("(?i)\\Aa(?-i:b)\\Z")
 

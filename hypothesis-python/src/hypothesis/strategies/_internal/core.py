@@ -471,10 +471,6 @@ def floats(
             "Got width=%r, but the only valid values are the integers 16, "
             "32, and 64." % (width,)
         )
-    if width == 16 and sys.version_info[:2] < (3, 6) and "numpy" not in sys.modules:
-        raise InvalidArgument(  # pragma: no cover
-            "width=16 requires either Numpy, or Python >= 3.6"
-        )
 
     check_valid_bound(min_value, "min_value")
     check_valid_bound(max_value, "max_value")
@@ -679,7 +675,7 @@ def sampled_from(elements):
         repr_ = "sampled_from(%s.%s)" % (elements.__module__, elements.__name__)
     else:
         repr_ = "sampled_from(%r)" % (elements,)
-    if hasattr(enum, "Flag") and isclass(elements) and issubclass(elements, enum.Flag):
+    if isclass(elements) and issubclass(elements, enum.Flag):
         # Combinations of enum.Flag members are also members.  We generate
         # these dynamically, because static allocation takes O(2^n) memory.
         # LazyStrategy is used for the ease of force_repr.
