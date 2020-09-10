@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-import sys
 from inspect import getfullargspec
 
 import attr
@@ -129,19 +128,11 @@ class Inferrables:
     annot_converter = attr.ib(converter=a_converter)
 
 
-@pytest.mark.skipif(
-    sys.version_info[:2] <= (3, 5),
-    reason="Too-old typing module can't get return value hint",
-)
 @given(st.builds(Inferrables))
 def test_attrs_inference_builds(c):
     pass
 
 
-@pytest.mark.skipif(
-    sys.version_info[:2] <= (3, 5),
-    reason="Too-old typing module can't get return value hint",
-)
 @given(st.from_type(Inferrables))
 def test_attrs_inference_from_type(c):
     pass

@@ -1441,13 +1441,6 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         if getattr(thing, "__origin__", None) is typing.Union:
             args = sorted(thing.__args__, key=types.type_sorting_key)
             return one_of([from_type(t) for t in args])
-    # We can't resolve forward references, and under Python 3.5 (only)
-    # a forward reference is an instance of type.  Hence, explicit check:
-    elif type(thing) == getattr(typing, "_ForwardRef", None):  # pragma: no cover
-        raise ResolutionFailed(
-            "thing=%s cannot be resolved.  Upgrading to python>=3.6 may "
-            "fix this problem via improvements to the typing module." % (thing,)
-        )
     if not types.is_a_type(thing):
         raise InvalidArgument("thing=%s must be a type" % (thing,))
     # Now that we know `thing` is a type, the first step is to check for an
