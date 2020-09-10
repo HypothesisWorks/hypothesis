@@ -64,7 +64,7 @@ def test_copying_preserves_argspec(f):
         ((lambda *, a=1: a), "lambda *, a=1: a"),
     ],
 )
-def test_py3only_lambda_formatting(lam, source):
+def test_kwonly_lambda_formatting(lam, source):
     # Testing kwonly lambdas, with and without varargs and default values
     assert get_pretty_function_description(lam) == source
 

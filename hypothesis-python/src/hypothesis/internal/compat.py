@@ -228,10 +228,10 @@ def get_stream_enc(stream, default=None):
     return getattr(stream, "encoding", None) or default
 
 
-# Under Python 2, math.floor and math.ceil return floats, which cannot
+# Under Python 2, math.floor and math.ceil returned floats, which cannot
 # represent large integers - eg `float(2**53) == float(2**53 + 1)`.
 # We therefore implement them entirely in (long) integer operations.
-# We use the same trick on Python 3, because Numpy values and other
+# We still use the same trick on Python 3, because Numpy values and other
 # custom __floor__ or __ceil__ methods may convert via floats.
 # See issue #1667, Numpy issue 9068.
 def floor(x):

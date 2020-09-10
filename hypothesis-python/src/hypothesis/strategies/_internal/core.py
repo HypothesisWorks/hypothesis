@@ -298,12 +298,12 @@ def none() -> SearchStrategy[None]:
 
 @overload
 def one_of(args: Sequence[SearchStrategy[Any]]) -> SearchStrategy[Any]:
-    pass  # pragma: no cover
+    raise NotImplementedError
 
 
 @overload  # noqa: F811
 def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:
-    pass  # pragma: no cover
+    raise NotImplementedError
 
 
 def one_of(*args):  # noqa: F811
@@ -645,13 +645,13 @@ def tuples(*args: SearchStrategy) -> SearchStrategy[tuple]:
 
 @overload
 def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]:
-    pass  # pragma: no cover
+    raise NotImplementedError
 
 
 @overload  # noqa: F811
 def sampled_from(elements: Type[enum.Enum]) -> SearchStrategy[Any]:
     # `SearchStrategy[Enum]` is unreliable due to metaclass issues.
-    pass  # pragma: no cover
+    raise NotImplementedError
 
 
 @defines_strategy(try_non_lazy=True)  # noqa: F811

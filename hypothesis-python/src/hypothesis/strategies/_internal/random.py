@@ -326,8 +326,7 @@ class ArtificialRandom(HypothesisRandom):
             result = self.__data.draw(st.floats(min_value=0.0))
         elif method == "shuffle":
             result = self.__data.draw(st.permutations(range(len(kwargs["x"]))))
-        # This is tested for but only appears in 3.9 so doesn't appear in
-        # coverage.
+        # This is tested for but only appears in 3.9 so doesn't appear in coverage.
         elif method == "randbytes":  # pragma: no cover
             n = kwargs["n"]
             result = self.__data.draw(st.binary(min_size=n, max_size=n))
