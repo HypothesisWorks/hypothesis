@@ -376,12 +376,10 @@ def run_tox(task, version):
 
 
 # Via https://github.com/pyenv/pyenv/tree/master/plugins/python-build/share/python-build
-PY35 = "3.5.7"
 PY36 = "3.6.9"
 PY37 = "3.7.4"
 PY38 = "3.8.0"
 PY39 = "3.9-dev"
-PYPY35 = "pypy3.5-7.0.0"
 PYPY36 = "pypy3.6-7.1.1"
 
 
@@ -391,9 +389,9 @@ def install_core():
 
 
 # ALIASES are the executable names for each Python version
-ALIASES = {PYPY35: "pypy3", PYPY36: "pypy3"}
+ALIASES = {PYPY36: "pypy3"}
 
-for n in [PY35, PY36, PY37, PY38, PY39]:
+for n in [PY36, PY37, PY38, PY39]:
     major, minor, patch = n.replace("-dev", ".").split(".")
     ALIASES[n] = "python%s.%s" % (major, minor)
 
@@ -405,11 +403,6 @@ python_tests = task(
         os.path.join(hp.HYPOTHESIS_PYTHON, "scripts"),
     )
 )
-
-
-@python_tests
-def check_py35():
-    run_tox("py35-full", PY35)
 
 
 @python_tests
@@ -430,11 +423,6 @@ def check_py38():
 @python_tests
 def check_py39():
     run_tox("py39-full", PY39)
-
-
-@python_tests
-def check_pypy35():
-    run_tox("pypy3-full", PYPY35)
 
 
 @python_tests
