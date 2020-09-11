@@ -10,6 +10,14 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.35.0:
+
+-------------------
+5.35.0 - 2020-09-11
+-------------------
+
+The :func:`~hypothesis.target` function now accepts integers as well as floats.
+
 .. _v5.34.1:
 
 -------------------
