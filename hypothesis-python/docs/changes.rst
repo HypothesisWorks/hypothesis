@@ -75,13 +75,14 @@ this strategy were views.
 5.31.0 - 2020-09-04
 -------------------
 
-:func:`~hypothesis.strategies.builds` will use the `__signature__` attribute of
+:func:`~hypothesis.strategies.builds` will use the ``__signature__`` attribute of
 the target, if it exists, to retrieve type hints.
 Previously :func:`python:typing.get_type_hints`, was used by default.
-If argument names varied between the `__annotations__` and `__signature__`,
+If argument names varied between the ``__annotations__`` and ``__signature__``,
 they would not be supplied to the target.
 
-This was particularily an issue in the case of a `pydantic` model which uses an alias generator.
+This was particularily an issue for :pypi:`pydantic` models which use an
+`alias generator <https://pydantic-docs.helpmanual.io/usage/model_config/#alias-generator>`__.
 
 .. _v5.30.1:
 
