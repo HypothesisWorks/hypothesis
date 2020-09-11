@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.34.0:
+
+-------------------
+5.34.0 - 2020-09-11
+-------------------
+
+This release drops support for Python 3.5, which `reached end of life upstream
+<https://devguide.python.org/#status-of-python-branches>`__ on 2020-09-13.
+
 .. _v5.33.2:
 
 -------------------
