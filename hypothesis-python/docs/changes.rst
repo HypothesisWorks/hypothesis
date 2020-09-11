@@ -10,6 +10,17 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.34.1:
+
+-------------------
+5.34.1 - 2020-09-11
+-------------------
+
+This patch adds explicit :class:`~python:typing.Optional` annotations to our public API,
+to better support users who run :pypi:`mypy` with ``--strict`` or ``no_implicit_optional=True``.
+
+Thanks to Krzysztof Przybyła for bringing this to our attention and writing the patch!
+
 .. _v5.34.0:
 
 -------------------
