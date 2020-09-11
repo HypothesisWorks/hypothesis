@@ -1223,9 +1223,9 @@ def find(
     specifier: SearchStrategy[Ex],
     condition: Callable[[Any], bool],
     *,
-    settings: Settings = None,
-    random: Random = None,
-    database_key: bytes = None
+    settings: Optional[Settings] = None,
+    random: Optional[Random] = None,
+    database_key: Optional[bytes] = None
 ) -> Ex:
     """Returns the minimal example from the given strategy ``specifier`` that
     matches the predicate function ``condition``."""

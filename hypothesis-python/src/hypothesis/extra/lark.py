@@ -35,7 +35,7 @@ Lark, unless someone volunteers to either fund or do the maintainence.
 """
 
 from inspect import getfullargspec
-from typing import Dict
+from typing import Dict, Optional
 
 import attr
 import lark
@@ -198,8 +198,8 @@ def check_explicit(name):
 def from_lark(
     grammar: lark.lark.Lark,
     *,
-    start: str = None,
-    explicit: Dict[str, st.SearchStrategy[str]] = None
+    start: Optional[str] = None,
+    explicit: Optional[Dict[str, st.SearchStrategy[str]]] = None
 ) -> st.SearchStrategy[str]:
     """A strategy for strings accepted by the given context-free grammar.
 
