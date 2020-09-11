@@ -74,7 +74,7 @@ def test_cathetus_nan(h, a):
 
 
 @pytest.mark.parametrize(
-    "h,a", [(math.inf, 3), (math.inf, -3), (math.inf, 0), (math.inf, math.nan)],
+    "h,a", [(math.inf, 3), (math.inf, -3), (math.inf, 0), (math.inf, math.nan)]
 )
 def test_cathetus_infinite(h, a):
     assert math.isinf(cathetus(h, a))

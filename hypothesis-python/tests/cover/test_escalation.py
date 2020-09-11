@@ -14,7 +14,6 @@
 # END HEADER
 
 import os
-import sys
 
 import pytest
 
@@ -77,12 +76,6 @@ def test_is_hypothesis_file_not_confused_by_prefix(monkeypatch):
     root = os.path.dirname(hypothesis.__file__)
     assert esc.is_hypothesis_file(hypothesis.__file__)
     assert esc.is_hypothesis_file(esc.__file__)
-
-    # Ignore `Path.resolve` for python 3.5 because it is strict by default
-    # and some paths in this test are made up (this behavior has been changed
-    # since python 3.6)
-    if sys.version_info < (3, 6):
-        monkeypatch.setattr("pathlib.Path.resolve", lambda x: x, raising=False)
 
     assert not esc.is_hypothesis_file(pytest.__file__)
     assert not esc.is_hypothesis_file(root + "-suffix")

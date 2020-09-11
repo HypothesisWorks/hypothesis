@@ -298,12 +298,12 @@ def none() -> SearchStrategy[None]:
 
 @overload
 def one_of(args: Sequence[SearchStrategy[Any]]) -> SearchStrategy[Any]:
-    pass  # pragma: no cover
+    raise NotImplementedError
 
 
 @overload  # noqa: F811
 def one_of(*args: SearchStrategy[Any]) -> SearchStrategy[Any]:
-    pass  # pragma: no cover
+    raise NotImplementedError
 
 
 def one_of(*args):  # noqa: F811
@@ -441,8 +441,6 @@ def floats(
     required to represent the generated float. Valid values are 16, 32, or 64.
     Passing ``width=32`` will still use the builtin 64-bit ``float`` class,
     but always for values which can be exactly represented as a 32-bit float.
-    Half-precision floats (``width=16``) are not supported on Python 3.5,
-    unless :pypi:`Numpy` is installed.
 
     The exclude_min and exclude_max argument can be used to generate numbers
     from open or half-open intervals, by excluding the respective endpoints.
@@ -472,10 +470,6 @@ def floats(
         raise InvalidArgument(
             "Got width=%r, but the only valid values are the integers 16, "
             "32, and 64." % (width,)
-        )
-    if width == 16 and sys.version_info[:2] < (3, 6) and "numpy" not in sys.modules:
-        raise InvalidArgument(  # pragma: no cover
-            "width=16 requires either Numpy, or Python >= 3.6"
         )
 
     check_valid_bound(min_value, "min_value")
@@ -647,13 +641,13 @@ def tuples(*args: SearchStrategy) -> SearchStrategy[tuple]:
 
 @overload
 def sampled_from(elements: Sequence[T]) -> SearchStrategy[T]:
-    pass  # pragma: no cover
+    raise NotImplementedError
 
 
 @overload  # noqa: F811
 def sampled_from(elements: Type[enum.Enum]) -> SearchStrategy[Any]:
     # `SearchStrategy[Enum]` is unreliable due to metaclass issues.
-    pass  # pragma: no cover
+    raise NotImplementedError
 
 
 @defines_strategy(try_non_lazy=True)  # noqa: F811
@@ -681,7 +675,7 @@ def sampled_from(elements):
         repr_ = "sampled_from(%s.%s)" % (elements.__module__, elements.__name__)
     else:
         repr_ = "sampled_from(%r)" % (elements,)
-    if hasattr(enum, "Flag") and isclass(elements) and issubclass(elements, enum.Flag):
+    if isclass(elements) and issubclass(elements, enum.Flag):
         # Combinations of enum.Flag members are also members.  We generate
         # these dynamically, because static allocation takes O(2^n) memory.
         # LazyStrategy is used for the ease of force_repr.
@@ -1447,13 +1441,6 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
         if getattr(thing, "__origin__", None) is typing.Union:
             args = sorted(thing.__args__, key=types.type_sorting_key)
             return one_of([from_type(t) for t in args])
-    # We can't resolve forward references, and under Python 3.5 (only)
-    # a forward reference is an instance of type.  Hence, explicit check:
-    elif type(thing) == getattr(typing, "_ForwardRef", None):  # pragma: no cover
-        raise ResolutionFailed(
-            "thing=%s cannot be resolved.  Upgrading to python>=3.6 may "
-            "fix this problem via improvements to the typing module." % (thing,)
-        )
     if not types.is_a_type(thing):
         raise InvalidArgument("thing=%s must be a type" % (thing,))
     # Now that we know `thing` is a type, the first step is to check for an
@@ -1606,7 +1593,7 @@ def fractions(
 
 
 def _as_finite_decimal(
-    value: Union[Real, str, None], name: str, allow_infinity: Optional[bool],
+    value: Union[Real, str, None], name: str, allow_infinity: Optional[bool]
 ) -> Optional[Decimal]:
     """Convert decimal bounds to decimals, carefully."""
     assert name in ("min_value", "max_value")

@@ -200,7 +200,7 @@ def test_center_in_middle_above():
 def test_restricted_bits():
     assert (
         cu.integer_range(
-            ConjectureData.for_buffer([1, 0, 0, 0, 0]), lower=0, upper=2 ** 64 - 1,
+            ConjectureData.for_buffer([1, 0, 0, 0, 0]), lower=0, upper=2 ** 64 - 1
         )
         == 0
     )
@@ -240,7 +240,7 @@ def test_choice():
 
 
 def test_fractional_float():
-    assert cu.fractional_float(ConjectureData.for_buffer([0] * 8),) == 0.0
+    assert cu.fractional_float(ConjectureData.for_buffer([0] * 8)) == 0.0
 
 
 def test_fixed_size_draw_many():

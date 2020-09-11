@@ -54,9 +54,7 @@ def replace_tzinfo(value, timezone):
         # WARNING: this is INCORRECT for timezones with negative DST offsets such as
         #       "Europe/Dublin", but it's unclear what we could do instead beyond
         #       documenting the problem and recommending use of `dateutil` instead.
-        #
-        # TODO: after dropping Python 3.5 support we won't need the getattr
-        return timezone.localize(value, is_dst=not getattr(value, "fold", 0))
+        return timezone.localize(value, is_dst=not value.fold)
     return value.replace(tzinfo=timezone)
 
 

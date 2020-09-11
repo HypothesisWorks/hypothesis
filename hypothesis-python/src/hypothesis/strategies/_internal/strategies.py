@@ -728,7 +728,7 @@ class FilteredStrategy(SearchStrategy):
 
         data.note_event("Aborted test because unable to satisfy %r" % (self,))
         data.mark_invalid()
-        raise AssertionError("Unreachable, for Mypy")  # pragma: no cover
+        raise NotImplementedError("Unreachable, for Mypy")
 
     def note_retried(self, data):
         data.note_event(lazyformat("Retried draw from %r to satisfy filter", self))

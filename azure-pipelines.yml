@@ -18,14 +18,10 @@ jobs:
           TASK: check-coverage
         check-conjecture-coverage:
           TASK: check-conjecture-coverage
-        check-pypy35:
-          TASK: check-pypy35
         check-pypy36:
           TASK: check-pypy36
         check-py36:
           TASK: check-py36
-        check-py35:
-          TASK: check-py35
         check-py37:
           TASK: check-py37
         check-py38:
@@ -101,22 +97,18 @@ jobs:
           TASK: check-nose
         check-pytest43:
           TASK: check-pytest43
+        check-django31:
+          TASK: check-django31
         check-django30:
           TASK: check-django30
         check-django22:
           TASK: check-django22
-        check-pandas19:
-          TASK: check-pandas19
-        check-pandas22:
-          TASK: check-pandas22
-        check-pandas23:
-          TASK: check-pandas23
-        check-pandas24:
-          TASK: check-pandas24
         check-pandas25:
           TASK: check-pandas25
         check-pandas100:
           TASK: check-pandas100
+        check-pandas111:
+          TASK: check-pandas111
     steps:
     - task: UsePythonVersion@0
       inputs:

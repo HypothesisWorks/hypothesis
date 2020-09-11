@@ -16,8 +16,6 @@
 import math
 import struct
 
-from hypothesis.internal.compat import CAN_PACK_HALF_FLOAT
-
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
 STRUCT_FORMATS = {
@@ -32,26 +30,6 @@ STRUCT_FORMATS = {
 # one if Numpy is unavailable too, because it's slightly faster in all cases.
 def reinterpret_bits(x, from_, to):
     return struct.unpack(to, struct.pack(from_, x))[0]
-
-
-if not CAN_PACK_HALF_FLOAT:  # pragma: no cover
-    try:
-        import numpy
-    except ImportError:
-        pass
-    else:
-
-        def reinterpret_bits(x, from_, to):  # noqa: F811
-            if from_ == b"!e":
-                arr = numpy.array([x], dtype=">f2")
-                if numpy.isfinite(x) and not numpy.isfinite(arr[0]):
-                    raise OverflowError("%r too large for float16" % (x,)) from None
-                buf = arr.tobytes()
-            else:
-                buf = struct.pack(from_, x)
-            if to == b"!e":
-                return float(numpy.frombuffer(buf, dtype=">f2")[0])
-            return struct.unpack(to, buf)[0]
 
 
 def float_of(x, width):

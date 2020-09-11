@@ -751,7 +751,7 @@ class RuleStrategy(SearchStrategy):
         self.rules = list(machine.rules())
 
         self.enabled_rules_strategy = st.shared(
-            FeatureStrategy(), key=("enabled rules", machine),
+            FeatureStrategy(), key=("enabled rules", machine)
         )
 
         # The order is a bit arbitrary. Primarily we're trying to group rules

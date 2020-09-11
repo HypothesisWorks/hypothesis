@@ -55,7 +55,7 @@ def test_database_contains_only_pareto_front():
         runner = ConjectureRunner(
             test,
             settings=settings(
-                max_examples=500, database=db, suppress_health_check=HealthCheck.all(),
+                max_examples=500, database=db, suppress_health_check=HealthCheck.all()
             ),
             database_key=b"stuff",
         )
@@ -178,7 +178,7 @@ def test_uses_tags_in_calculating_pareto_front():
 
         runner = ConjectureRunner(
             test,
-            settings=settings(max_examples=10, database=InMemoryExampleDatabase(),),
+            settings=settings(max_examples=10, database=InMemoryExampleDatabase()),
             database_key=b"stuff",
         )
 
@@ -197,7 +197,7 @@ def test_optimises_the_pareto_front():
 
     runner = ConjectureRunner(
         test,
-        settings=settings(max_examples=10000, database=InMemoryExampleDatabase(),),
+        settings=settings(max_examples=10000, database=InMemoryExampleDatabase()),
         database_key=b"stuff",
     )
 
@@ -219,7 +219,7 @@ def test_does_not_optimise_the_pareto_front_if_interesting():
 
     runner = ConjectureRunner(
         test,
-        settings=settings(max_examples=10000, database=InMemoryExampleDatabase(),),
+        settings=settings(max_examples=10000, database=InMemoryExampleDatabase()),
         database_key=b"stuff",
     )
 
@@ -243,7 +243,7 @@ def test_stops_optimising_once_interesting():
 
     runner = ConjectureRunner(
         test,
-        settings=settings(max_examples=10000, database=InMemoryExampleDatabase(),),
+        settings=settings(max_examples=10000, database=InMemoryExampleDatabase()),
         database_key=b"stuff",
     )
 

@@ -17,14 +17,10 @@ import operator
 import re
 import sre_constants as sre
 import sre_parse
-import sys
 
 from hypothesis import reject, strategies as st
 from hypothesis.internal.charmap import as_general_categories, categories
 from hypothesis.internal.compat import int_to_byte
-
-HAS_SUBPATTERN_FLAGS = sys.version_info[:2] >= (3, 6)
-
 
 UNICODE_CATEGORIES = set(categories())
 
@@ -422,9 +418,7 @@ def _strategy(codes, context, is_unicode):
         elif code == sre.SUBPATTERN:
             # Various groups: '(...)', '(:...)' or '(?P<name>...)'
             old_flags = context.flags
-            if HAS_SUBPATTERN_FLAGS:  # pragma: no cover
-                # This feature is available only in specific Python versions
-                context.flags = (context.flags | value[1]) & ~value[2]
+            context.flags = (context.flags | value[1]) & ~value[2]
 
             strat = _strategy(value[-1], context, is_unicode)
 
