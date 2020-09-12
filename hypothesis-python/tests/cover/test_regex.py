@@ -73,10 +73,8 @@ def _test_matching_pattern(pattern, isvalidchar, is_unicode=False):
     codepoints = range(0, sys.maxunicode + 1) if is_unicode else range(1, 128)
     for c in [chr(x) for x in codepoints]:
         if isvalidchar(c):
-            assert r.search(c), (
-                '"%s" supposed to match "%s" (%r, category "%s"), '
-                "but it doesn't" % (pattern, c, c, unicodedata.category(c))
-            )
+            msg = "%r supposed to match %r (%r, category %r), but it doesn't"
+            assert r.search(c), msg % (pattern, c, c, unicodedata.category(c))
         else:
             assert not r.search(c), (
                 '"%s" supposed not to match "%s" (%r, category "%s"), '
@@ -244,7 +242,7 @@ def test_end():
 
 def test_groupref_exists():
     assert_all_examples(
-        st.from_regex("^(<)?a(?(1)>)$"), lambda s: s in ("a", "a\n", "<a>", "<a>\n"),
+        st.from_regex("^(<)?a(?(1)>)$"), lambda s: s in ("a", "a\n", "<a>", "<a>\n")
     )
     assert_all_examples(
         st.from_regex("^(a)?(?(1)b|c)$"), lambda s: s in ("ab", "ab\n", "c", "c\n")
@@ -323,7 +321,6 @@ def test_group_backref_may_not_be_present(s):
     assert s[0] == s[1]
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 6), reason="requires Python 3.6")
 def test_subpattern_flags():
     strategy = st.from_regex("(?i)\\Aa(?-i:b)\\Z")
 

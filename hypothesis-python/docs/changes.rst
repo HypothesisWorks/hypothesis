@@ -10,6 +10,45 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.35.0:
+
+-------------------
+5.35.0 - 2020-09-11
+-------------------
+
+The :func:`~hypothesis.target` function now accepts integers as well as floats.
+
+.. _v5.34.1:
+
+-------------------
+5.34.1 - 2020-09-11
+-------------------
+
+This patch adds explicit :class:`~python:typing.Optional` annotations to our public API,
+to better support users who run :pypi:`mypy` with ``--strict`` or ``no_implicit_optional=True``.
+
+Thanks to Krzysztof Przybyła for bringing this to our attention and writing the patch!
+
+.. _v5.34.0:
+
+-------------------
+5.34.0 - 2020-09-11
+-------------------
+
+This release drops support for Python 3.5, which `reached end of life upstream
+<https://devguide.python.org/#status-of-python-branches>`__ on 2020-09-13.
+
+.. _v5.33.2:
+
+-------------------
+5.33.2 - 2020-09-09
+-------------------
+
+This patch fixes a problem with :func:`~hypothesis.strategies.builds` that was not able to
+generate valid data for annotated classes with constructors.
+
+Thanks to Nikita Sobolev for fixing :issue:`2603`!
+
 .. _v5.33.1:
 
 -------------------
@@ -55,13 +94,14 @@ this strategy were views.
 5.31.0 - 2020-09-04
 -------------------
 
-:func:`~hypothesis.strategies.builds` will use the `__signature__` attribute of
+:func:`~hypothesis.strategies.builds` will use the ``__signature__`` attribute of
 the target, if it exists, to retrieve type hints.
 Previously :func:`python:typing.get_type_hints`, was used by default.
-If argument names varied between the `__annotations__` and `__signature__`,
+If argument names varied between the ``__annotations__`` and ``__signature__``,
 they would not be supplied to the target.
 
-This was particularily an issue in the case of a `pydantic` model which uses an alias generator.
+This was particularily an issue for :pypi:`pydantic` models which use an
+`alias generator <https://pydantic-docs.helpmanual.io/usage/model_config/#alias-generator>`__.
 
 .. _v5.30.1:
 

@@ -29,8 +29,8 @@ do their best to write you a useful test.
 
 .. note::
 
-    The ghostwriter requires Python 3.6+ and :pypi:`black`, but the generated
-    code supports Python 3.5+ and has no dependencies beyond Hypothesis itself.
+    The ghostwriter requires :pypi:`black`, but the generated code has no
+    dependencies beyond Hypothesis itself.
 
 .. note::
 
@@ -52,7 +52,18 @@ from collections import OrderedDict, defaultdict
 from itertools import permutations, zip_longest
 from string import ascii_lowercase
 from textwrap import dedent, indent
-from typing import Any, Callable, Dict, Mapping, Set, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import black
 
@@ -336,7 +347,7 @@ def _make_test_body(
     test_body: str,
     except_: Tuple[Type[Exception], ...],
     style: str,
-    given_strategies: Mapping[str, Union[str, st.SearchStrategy]] = None,
+    given_strategies: Optional[Mapping[str, Union[str, st.SearchStrategy]]] = None,
 ) -> Tuple[Set[str], str]:
     # Get strategies for all the arguments to each function we're testing.
     with _with_any_registered():
@@ -392,10 +403,11 @@ def _make_test_body(
     # For unittest-style, indent method further into a class body
     if style == "unittest":
         imports.add("unittest")
-        body = "class Test{}{}(unittest.TestCase):\n".format(
+        body = "class Test{}{}(unittest.TestCase):\n{}".format(
             ghost.title(),
             "".join(_get_qualname(f).replace(".", "").title() for f in funcs),
-        ) + indent(body, "    ")
+            indent(body, "    "),
+        )
 
     return imports, body
 
@@ -566,7 +578,7 @@ def magic(
     # be worth the trouble when it's so easy for the user to specify themselves.
     for _, f in sorted(by_name.items()):
         imp, body = _make_test_body(
-            f, test_body=_write_call(f), except_=except_, ghost="fuzz", style=style,
+            f, test_body=_write_call(f), except_=except_, ghost="fuzz", style=style
         )
         imports |= imp
         parts.append(body)
@@ -762,7 +774,7 @@ def binary_operation(
     associative: bool = True,
     commutative: bool = True,
     identity: Union[X, InferType, None] = infer,
-    distributes_over: Callable[[X, X], X] = None,
+    distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Except = (),
     style: str = "pytest",
 ) -> str:
@@ -824,7 +836,7 @@ def _make_binop_body(
     associative: bool = True,
     commutative: bool = True,
     identity: Union[X, InferType, None] = infer,
-    distributes_over: Callable[[X, X], X] = None,
+    distributes_over: Optional[Callable[[X, X], X]] = None,
     except_: Tuple[Type[Exception], ...],
     style: str,
 ) -> Tuple[Set[str], str]:
@@ -839,7 +851,9 @@ def _make_binop_body(
     all_imports = set()
     parts = []
 
-    def maker(sub_property: str, args: str, body: str, right: str = None) -> None:
+    def maker(
+        sub_property: str, args: str, body: str, right: Optional[str] = None,
+    ) -> None:
         if right is not None:
             body = f"left={body}\nright={right}\n" + _assert_eq(style, "left", "right")
         imports, body = _make_test_body(

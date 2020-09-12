@@ -6,6 +6,8 @@ The primary author for most of Hypothesis is David R. MacIver (me). However the 
 people have also contributed work. As well as my thanks, they also have copyright over
 their individual contributions.
 
+.. NOTE - this list is in alphabetical order by first name (or handle).
+
 * `Adam Johnson <https://github.com/adamchainz>`_
 * `Adam Sven Johnson <https://www.github.com/pkqk>`_
 * `Akash Suresh <https://www.github.com/akash-suresh>`_ (akashsuresh36@gmail.com)
@@ -71,6 +73,7 @@ their individual contributions.
 * `kbara <https://www.github.com/kbara>`_
 * `Kit pitman <https://www.github.com/purpledevau>`_
 * `Kristian Glass <https://www.github.com/doismellburning>`_
+* `Krzysztof Przybyła <https://github.com/kprzybyla>`_
 * `Kyle Reeve <https://www.github.com/kreeve>`_ (krzw92@gmail.com)
 * `Lampros Mountrakis <https://www.github.com/lmount>`_
 * `Lea Provenzano <https://github.com/leaprovenzano>`_
@@ -114,6 +117,7 @@ their individual contributions.
 * `Sushobhit <https://github.com/sushobhit27>`_ (sushobhitsolanki@gmail.com)
 * `Tariq Khokhar <https://www.github.com/tkb>`_ (tariq@khokhar.net)
 * `Tessa Bradbury <https://www.github.com/tessereth>`_
+* `Thea Koutsoukis <https://www.github.com/theakaterina>`_
 * `Thomas Grainge <https://www.github.com/tgrainge>`_
 * `Tim Martin <https://www.github.com/timmartin>`_ (tim@asymptotic.co.uk)
 * `Thomas Kluyver <https://www.github.com/takluyver>`_ (thomas@kluyver.me.uk)

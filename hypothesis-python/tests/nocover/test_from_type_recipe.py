@@ -30,7 +30,7 @@ def everything_except(excluded_types):
 
 @given(
     excluded_types=st.lists(
-        st.sampled_from(TYPES), min_size=1, max_size=3, unique=True,
+        st.sampled_from(TYPES), min_size=1, max_size=3, unique=True
     ).map(tuple),
     data=st.data(),
 )

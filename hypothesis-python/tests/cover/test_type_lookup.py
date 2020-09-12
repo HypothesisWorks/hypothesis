@@ -280,7 +280,6 @@ def test_generic_origin_without_type_args(generic):
         pass
 
 
-@pytest.mark.skipif(sys.version_info[:2] <= (3, 5), reason="typing on 3.5 is wild")
 def test_generic_origin_from_type():
     with temp_registered(MyGeneric, st.builds(MyGeneric)):
         find_any(st.from_type(MyGeneric[T]))

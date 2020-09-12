@@ -21,7 +21,6 @@ import sys
 import typing
 
 PYPY = platform.python_implementation() == "PyPy"
-CAN_PACK_HALF_FLOAT = sys.version_info[:2] >= (3, 6)
 WINDOWS = platform.system() == "Windows"
 
 
@@ -96,70 +95,53 @@ def is_typed_named_tuple(cls):
     )
 
 
-if sys.version_info[:2] < (3, 6):
-    # When we drop support for Python 3.5, `get_type_hints` and
-    # `is_typed_named_tuple` should be moved to reflection.py
+def get_type_hints(thing):
+    """Like the typing version, but tries harder and never errors.
 
-    def get_type_hints(thing):
-        if inspect.isclass(thing) and not hasattr(thing, "__signature__"):
-            if is_typed_named_tuple(thing):
-                # Special handling for typing.NamedTuple
-                return thing._field_types  # type: ignore
-            thing = thing.__init__  # type: ignore
-        try:
-            spec = inspect.getfullargspec(thing)
-            hints = {
-                k: v
-                for k, v in spec.annotations.items()
-                if k in (spec.args + spec.kwonlyargs) and isinstance(v, type)
-            }
-        except TypeError:
-            hints = {}
-        try:
-            hints["return"] = typing.get_type_hints(thing)["return"]
-        except Exception:
-            pass
+    Tries harder: if the thing to inspect is a class but typing.get_type_hints
+    raises an error or returns no hints, then this function will try calling it
+    on the __init__ method. This second step often helps with user-defined
+    classes on older versions of Python. The third step we take is trying
+    to fetch types from the __signature__ property.
+    They override any other ones we found earlier.
+
+    Never errors: instead of raising TypeError for uninspectable objects, or
+    NameError for unresolvable forward references, just return an empty dict.
+    """
+    try:
+        hints = typing.get_type_hints(thing)
+    except (AttributeError, TypeError, NameError):
+        hints = {}
+
+    if not inspect.isclass(thing):
         return hints
 
+    try:
+        hints.update(typing.get_type_hints(thing.__init__))
+    except (TypeError, NameError, AttributeError):
+        pass
 
-else:
-
-    def get_type_hints(thing):
-        """Like the typing version, but tries harder and never errors.
-
-        Tries harder: if the thing to inspect is a class but typing.get_type_hints
-        raises an error or returns no hints, then this function will try calling it
-        on the __init__ method.  This second step often helps with user-defined
-        classes on older versions of Python.
-
-        Never errors: instead of raising TypeError for uninspectable objects, or
-        NameError for unresolvable forward references, just return an empty dict.
-        """
-        try:
-            hints = {}
-            if inspect.isclass(thing) and hasattr(thing, "__signature__"):
-                # It is possible for the signature and annotations attributes to
-                # differ on an object due to renamed arguments.
-                # To prevent missing arguments we use the signature to provide any type
-                # hints it has and then override any common names with the more
-                # comprehensive type information from get_type_hints
-                # See https://github.com/HypothesisWorks/hypothesis/pull/2580
-                # for more details.
-                spec = inspect.getfullargspec(thing)
-                hints = {
+    try:
+        if hasattr(thing, "__signature__"):
+            # It is possible for the signature and annotations attributes to
+            # differ on an object due to renamed arguments.
+            # To prevent missing arguments we use the signature to provide any type
+            # hints it has and then override any common names with the more
+            # comprehensive type information from get_type_hints
+            # See https://github.com/HypothesisWorks/hypothesis/pull/2580
+            # for more details.
+            spec = inspect.getfullargspec(thing)
+            hints.update(
+                {
                     k: v
                     for k, v in spec.annotations.items()
                     if k in (spec.args + spec.kwonlyargs) and isinstance(v, type)
                 }
-            hints.update(typing.get_type_hints(thing))
-        except (AttributeError, TypeError, NameError):
-            hints = {}
-        if hints or not inspect.isclass(thing):
-            return hints
-        try:
-            return typing.get_type_hints(thing.__init__)
-        except (TypeError, NameError, AttributeError):
-            return {}
+            )
+    except (AttributeError, TypeError, NameError):
+        pass
+
+    return hints
 
 
 importlib_invalidate_caches = getattr(importlib, "invalidate_caches", lambda: ())
@@ -217,10 +199,10 @@ def get_stream_enc(stream, default=None):
     return getattr(stream, "encoding", None) or default
 
 
-# Under Python 2, math.floor and math.ceil return floats, which cannot
+# Under Python 2, math.floor and math.ceil returned floats, which cannot
 # represent large integers - eg `float(2**53) == float(2**53 + 1)`.
 # We therefore implement them entirely in (long) integer operations.
-# We use the same trick on Python 3, because Numpy values and other
+# We still use the same trick on Python 3, because Numpy values and other
 # custom __floor__ or __ceil__ methods may convert via floats.
 # See issue #1667, Numpy issue 9068.
 def floor(x):

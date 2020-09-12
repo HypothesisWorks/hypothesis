@@ -189,14 +189,8 @@ def test_shrinks_both_failures():
             test()
 
     output = o.getvalue()
-
-    assert_output_contains_failure(
-        output, test, i=10000,
-    )
-
-    assert_output_contains_failure(
-        output, test, i=second_target[0],
-    )
+    assert_output_contains_failure(output, test, i=10000)
+    assert_output_contains_failure(output, test, i=second_target[0])
 
 
 def test_handles_flaky_tests_where_only_one_is_flaky():

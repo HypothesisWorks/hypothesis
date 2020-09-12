@@ -18,7 +18,7 @@ import sys
 from typing import Union
 
 import pytest
-from typing_extensions import DefaultDict, Literal, NewType, Type
+from typing_extensions import DefaultDict, Literal, NewType, Type, TypedDict
 
 from hypothesis import assume, given, strategies as st
 from hypothesis.strategies import from_type
@@ -46,26 +46,15 @@ def test_typing_extensions_Literal_nested(data):
     assert data.draw(st.from_type(literal_type)) in flattened_literals
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 5), reason="no attribute annotations")
-def test_simple_typeddict():
-    exec(
-        """
-from hypothesis import given
-from hypothesis.strategies import from_type
-from typing_extensions import TypedDict
-
 class A(TypedDict):
     a: int
+
 
 @given(from_type(A))
 def test_simple_typeddict(value):
     assert type(value) == dict
     assert set(value) == {"a"}
     assert isinstance(value["a"], int)
-
-test_simple_typeddict()
-"""
-    )
 
 
 def test_typing_extensions_Type_int():
@@ -86,7 +75,6 @@ def test_resolves_NewType():
     assert isinstance(from_type(uni).example(), (int, type(None)))
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 6), reason="new addition")
 @given(from_type(DefaultDict[int, int]))
 def test_defaultdict(ex):
     assert isinstance(ex, collections.defaultdict)

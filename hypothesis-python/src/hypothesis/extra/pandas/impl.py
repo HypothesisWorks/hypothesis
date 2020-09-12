@@ -15,7 +15,7 @@
 
 from collections import OrderedDict, abc
 from copy import copy
-from typing import Any, List, Sequence, Set, Union
+from typing import Any, List, Optional, Sequence, Set, Union
 
 import attr
 import numpy as np
@@ -154,7 +154,7 @@ DEFAULT_MAX_SIZE = 10
 @st.cacheable
 @st.defines_strategy()
 def range_indexes(
-    min_size: int = 0, max_size: int = None
+    min_size: int = 0, max_size: Optional[int] = None,
 ) -> st.SearchStrategy[pandas.RangeIndex]:
     """Provides a strategy which generates an :class:`~pandas.Index` whose
     values are 0, 1, ..., n for some n.
@@ -178,10 +178,10 @@ def range_indexes(
 @deprecated_posargs
 def indexes(
     *,
-    elements: st.SearchStrategy[Ex] = None,
+    elements: Optional[st.SearchStrategy[Ex]] = None,
     dtype: Any = None,
     min_size: int = 0,
-    max_size: int = None,
+    max_size: Optional[int] = None,
     unique: bool = True
 ) -> st.SearchStrategy[pandas.Index]:
     """Provides a strategy for producing a :class:`pandas.Index`.
@@ -219,10 +219,10 @@ def indexes(
 @deprecated_posargs
 def series(
     *,
-    elements: st.SearchStrategy[Ex] = None,
+    elements: Optional[st.SearchStrategy[Ex]] = None,
     dtype: Any = None,
-    index: st.SearchStrategy[Union[Sequence, pandas.Index]] = None,
-    fill: st.SearchStrategy[Ex] = None,
+    index: Optional[st.SearchStrategy[Union[Sequence, pandas.Index]]] = None,
+    fill: Optional[st.SearchStrategy[Ex]] = None,
     unique: bool = False
 ) -> st.SearchStrategy[pandas.Series]:
     """Provides a strategy for producing a :class:`pandas.Series`.
@@ -337,8 +337,8 @@ def columns(
     names_or_number: Union[int, Sequence[str]],
     *,
     dtype: Any = None,
-    elements: st.SearchStrategy[Ex] = None,
-    fill: st.SearchStrategy[Ex] = None,
+    elements: Optional[st.SearchStrategy[Ex]] = None,
+    fill: Optional[st.SearchStrategy[Ex]] = None,
     unique: bool = False
 ) -> List[column]:
     """A convenience function for producing a list of :class:`column` objects
@@ -363,10 +363,10 @@ def columns(
 @deprecated_posargs
 @st.defines_strategy()
 def data_frames(
-    columns: Sequence[column] = None,
+    columns: Optional[Sequence[column]] = None,
     *,
-    rows: st.SearchStrategy[Union[dict, Sequence[Any]]] = None,
-    index: st.SearchStrategy[Ex] = None
+    rows: Optional[st.SearchStrategy[Union[dict, Sequence[Any]]]] = None,
+    index: Optional[st.SearchStrategy[Ex]] = None
 ) -> st.SearchStrategy[pandas.DataFrame]:
     """Provides a strategy for producing a :class:`pandas.DataFrame`.
 

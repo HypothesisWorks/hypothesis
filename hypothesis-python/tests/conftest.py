@@ -29,8 +29,6 @@ run()
 # Skip collection of tests which require the Django test runner,
 # or that don't work on the current version of Python.
 collect_ignore_glob = ["django/*"]
-if sys.version_info < (3, 6):  # Remove after dropping Python 3.5
-    collect_ignore_glob.append("cover/*py36*")
 if sys.version_info < (3, 8):
     collect_ignore_glob.append("cover/*py38*")
 

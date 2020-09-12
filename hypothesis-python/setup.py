@@ -19,7 +19,7 @@ import warnings
 
 import setuptools
 
-if sys.version_info[:3] < (3, 5, 2):
+if sys.version_info[:2] < (3, 6):
     raise Exception(
         "This version of Python is too old to install new versions of Hypothesis.  "
         "Update `pip` and `setuptools`, try again, and you will automatically "
@@ -93,7 +93,7 @@ setuptools.setup(
     zip_safe=False,
     extras_require=extras,
     install_requires=["attrs>=19.2.0", "sortedcontainers>=2.1.0,<3.0.0"],
-    python_requires=">=3.5.2",
+    python_requires=">=3.6",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Framework :: Hypothesis",
@@ -106,7 +106,6 @@ setuptools.setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",

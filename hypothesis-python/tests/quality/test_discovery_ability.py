@@ -59,9 +59,7 @@ class HypothesisFalsified(AssertionError):
     pass
 
 
-def define_test(
-    specifier, predicate, condition=None, p=0.5, suppress_health_check=(),
-):
+def define_test(specifier, predicate, condition=None, p=0.5, suppress_health_check=()):
     required_runs = int(RUNS * p)
 
     def run_test():
@@ -366,5 +364,5 @@ for i in range(4):
 
 
 test_long_duplicates_strings = define_test(
-    tuples(text(), text()), lambda s: len(s[0]) >= 5 and s[0] == s[1],
+    tuples(text(), text()), lambda s: len(s[0]) >= 5 and s[0] == s[1]
 )

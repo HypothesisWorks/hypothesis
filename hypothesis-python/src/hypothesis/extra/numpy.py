@@ -15,7 +15,7 @@
 
 import math
 import re
-from typing import Any, NamedTuple, Sequence, Tuple, Union
+from typing import Any, NamedTuple, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -303,8 +303,8 @@ def arrays(
     dtype: Any,
     shape: Union[int, Shape, st.SearchStrategy[Shape]],
     *,
-    elements: st.SearchStrategy[Any] = None,
-    fill: st.SearchStrategy[Any] = None,
+    elements: Optional[st.SearchStrategy[Any]] = None,
+    fill: Optional[st.SearchStrategy[Any]] = None,
     unique: bool = False
 ) -> st.SearchStrategy[np.ndarray]:
     r"""Returns a strategy for generating :class:`numpy:numpy.ndarray`\ s.
@@ -419,7 +419,11 @@ def arrays(
 @st.defines_strategy()
 @deprecated_posargs
 def array_shapes(
-    *, min_dims: int = 1, max_dims: int = None, min_side: int = 1, max_side: int = None
+    *,
+    min_dims: int = 1,
+    max_dims: Optional[int] = None,
+    min_side: int = 1,
+    max_side: Optional[int] = None,
 ) -> st.SearchStrategy[Shape]:
     """Return a strategy for array shapes (tuples of int >= 1)."""
     check_type(int, min_dims, "min_dims")
@@ -709,7 +713,7 @@ def nested_dtypes(
     subtype_strategy: st.SearchStrategy[np.dtype] = scalar_dtypes(),
     *,
     max_leaves: int = 10,
-    max_itemsize: int = None
+    max_itemsize: Optional[int] = None
 ) -> st.SearchStrategy[np.dtype]:
     """Return the most-general dtype strategy.
 
@@ -729,7 +733,7 @@ def nested_dtypes(
 @st.defines_strategy()
 @deprecated_posargs
 def valid_tuple_axes(
-    ndim: int, *, min_size: int = 0, max_size: int = None
+    ndim: int, *, min_size: int = 0, max_size: Optional[int] = None,
 ) -> st.SearchStrategy[Shape]:
     """Return a strategy for generating permissible tuple-values for the
     ``axis`` argument for a numpy sequential function (e.g.
@@ -781,9 +785,9 @@ def broadcastable_shapes(
     shape: Shape,
     *,
     min_dims: int = 0,
-    max_dims: int = None,
+    max_dims: Optional[int] = None,
     min_side: int = 1,
-    max_side: int = None
+    max_side: Optional[int] = None
 ) -> st.SearchStrategy[Shape]:
     """Return a strategy for generating shapes that are broadcast-compatible
     with the provided shape.
@@ -1102,9 +1106,9 @@ def mutually_broadcastable_shapes(
     signature: Union[UniqueIdentifier, str] = not_set,
     base_shape: Shape = (),
     min_dims: int = 0,
-    max_dims: int = None,
+    max_dims: Optional[int] = None,
     min_side: int = 1,
-    max_side: int = None
+    max_side: Optional[int] = None
 ) -> st.SearchStrategy[BroadcastableShapes]:
     """Return a strategy for generating a specified number of shapes, N, that are
     mutually-broadcastable with one another and with the provided "base-shape".
@@ -1326,7 +1330,7 @@ def basic_indices(
     shape: Shape,
     *,
     min_dims: int = 0,
-    max_dims: int = None,
+    max_dims: Optional[int] = None,
     allow_newaxis: bool = False,
     allow_ellipsis: bool = True
 ) -> st.SearchStrategy[BasicIndex]:

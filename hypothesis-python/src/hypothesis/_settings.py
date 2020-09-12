@@ -26,7 +26,7 @@ import os
 import threading
 import warnings
 from enum import Enum, IntEnum, unique
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import attr
 
@@ -140,7 +140,7 @@ class settings(metaclass=settingsMeta):
         else:
             raise AttributeError("settings has no attribute %s" % (name,))
 
-    def __init__(self, parent: "settings" = None, **kwargs: Any) -> None:
+    def __init__(self, parent: Optional["settings"] = None, **kwargs: Any) -> None:
         if parent is not None and not isinstance(parent, settings):
             raise InvalidArgument(
                 "Invalid argument: parent=%r is not a settings instance" % (parent,)
@@ -291,7 +291,9 @@ class settings(metaclass=settingsMeta):
         return ", ".join(sorted(bits, key=len))
 
     @staticmethod
-    def register_profile(name: str, parent: "settings" = None, **kwargs: Any) -> None:
+    def register_profile(
+        name: str, parent: Optional["settings"] = None, **kwargs: Any,
+    ) -> None:
         """Registers a collection of values to be used as a settings profile.
 
         Settings profiles can be loaded by name - for example, you might
