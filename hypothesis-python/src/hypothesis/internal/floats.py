@@ -19,9 +19,9 @@ import struct
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
 STRUCT_FORMATS = {
-    16: (b"!H", b"!e"),  # Note: 'e' is new in Python 3.6, so we have helpers
-    32: (b"!I", b"!f"),
-    64: (b"!Q", b"!d"),
+    16: ("!H", "!e"),  # Note: 'e' is new in Python 3.6, so we have helpers
+    32: ("!I", "!f"),
+    64: ("!Q", "!d"),
 }
 
 
@@ -37,9 +37,9 @@ def float_of(x, width):
     if width == 64:
         return float(x)
     elif width == 32:
-        return reinterpret_bits(float(x), b"!f", b"!f")
+        return reinterpret_bits(float(x), "!f", "!f")
     else:
-        return reinterpret_bits(float(x), b"!e", b"!e")
+        return reinterpret_bits(float(x), "!e", "!e")
 
 
 def sign(x):
