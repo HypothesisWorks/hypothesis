@@ -94,6 +94,9 @@ def test_cannot_target_outside_test():
     with pytest.raises(InvalidArgument):
         target(1.0, label="example label")
 
+def test_can_target_outside_test_if_explicitly_allowed():
+    with pytest.raises(InvalidArgument):
+        target(1.0, label="example label")
 
 @given(st.none())
 def test_cannot_target_same_label_twice(_):

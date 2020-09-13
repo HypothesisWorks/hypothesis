@@ -150,6 +150,11 @@ def target(
     mean and standard deviation of a dataset.  It is an error to call
     ``target()`` with any label more than once per test case.
 
+    ``allow_outside_given_test=True`` disables the check for an enclosing 
+    ``@given`` test, which can be useful when defining e.g. a customised 
+    ``assert_almost_equal`` which uses ``target()`` when possible, but can
+    also be used in non-property-based tests.
+    
     .. note::
         **The more examples you run, the better this technique works.**
 
@@ -172,9 +177,12 @@ def target(
     if not math.isfinite(observation):
         raise InvalidArgument("observation=%r must be a finite float." % observation)
     check_type(str, label, "label")
-
+    
     context = _current_build_context.value
-    if context is None and allow_outside_given_test is False:
+    if context is None:
+        check_type(bool, allow_outside_given_test, "allow_outside_given_test")
+        if allow_outside_given_test:
+            return
         raise InvalidArgument("Calling target() outside of a test is invalid.")
     verbose_report("Saw target(observation=%r, label=%r)" % (observation, label))
 
