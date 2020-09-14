@@ -21,7 +21,7 @@ chardet==3.0.4            # via requests
 click==7.1.2              # via black, pip-tools, pyupio, safety
 colorama==0.4.3           # via twine
 coverage==5.3           # via -r requirements/tools.in
-cryptography==3.0         # via secretstorage
+cryptography==3.1         # via secretstorage
 decorator==4.4.2          # via ipython, traitlets
 deprecated==1.2.10        # via pygithub
 distlib==0.3.1            # via virtualenv
