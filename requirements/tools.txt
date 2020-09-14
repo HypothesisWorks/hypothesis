@@ -37,7 +37,7 @@ flake8-docstrings==1.5.0  # via -r requirements/tools.in
 flake8-polyfill==1.0.2    # via flake8-bandit
 flake8==3.8.3             # via -r requirements/tools.in, flake8-bandit, flake8-bugbear, flake8-comprehensions, flake8-docstrings, flake8-polyfill
 gitdb==4.0.5              # via gitpython
-gitpython==3.1.7          # via bandit
+gitpython==3.1.8          # via bandit
 idna==2.10                # via requests
 imagesize==1.2.0          # via sphinx
 importlib-metadata==1.7.0  # via flake8, flake8-comprehensions, keyring, pluggy, pytest, stevedore, tox, twine, virtualenv
