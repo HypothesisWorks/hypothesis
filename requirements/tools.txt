@@ -77,7 +77,7 @@ pygithub==1.53            # via pyupio
 pygments==2.7.0           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pyparsing==2.4.7          # via packaging
-pytest==6.0.1             # via -r requirements/tools.in
+pytest==6.0.2             # via -r requirements/tools.in
 python-dateutil==2.8.1    # via -r requirements/tools.in
 python-gitlab==2.4.0      # via pyupio
 pytz==2020.1              # via babel, django
