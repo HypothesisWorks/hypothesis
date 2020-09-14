@@ -66,7 +66,7 @@ pickleshare==0.7.5        # via ipython
 pip-tools==5.3.1          # via -r requirements/tools.in
 pkginfo==1.5.0.1          # via twine
 pluggy==0.13.1            # via pytest, tox
-prompt-toolkit==3.0.6     # via ipython
+prompt-toolkit==3.0.7     # via ipython
 ptyprocess==0.6.0         # via pexpect
 py==1.9.0                 # via pytest, tox
 pycodestyle==2.6.0        # via flake8, flake8-bandit
