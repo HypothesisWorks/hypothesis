@@ -347,28 +347,28 @@ class LStar:
 
             source = states[n]
             character = string[n]
-            current_destination = states[n + 1]
+            wrong_destination = states[n + 1]
 
             # We've made an error in transitioning from ``source`` to
-            # ``current_destination`` via ``character``. We now need to update
+            # ``wrong_destination`` via ``character``. We now need to update
             # the DFA so that this transition no longer occurs. Note that we
             # do not guarantee that the transition is *correct* after this,
             # only that we don't make this particular error.
-            assert self.transition(source, character) == current_destination
+            assert self.transition(source, character) == wrong_destination
 
-            labels_current_destination = self.dfa.label(current_destination)
+            labels_wrong_destination = self.dfa.label(wrong_destination)
             labels_correct_destination = self.dfa.label(source) + bytes([character])
 
             ex = string[n + 1 :]
 
-            assert self.member(labels_current_destination + ex) != self.member(
+            assert self.member(labels_wrong_destination + ex) != self.member(
                 labels_correct_destination + ex
             )
 
-            # Adding this experiment causes us to distinguish l1 from the state
-            # labelled with l2.
-            self.__states[current_destination].experiments[ex] = self.member(
-                labels_current_destination + ex
+            # Adding this experiment causes us to distinguish the wrong
+            # destination from the correct one.
+            self.__states[wrong_destination].experiments[ex] = self.member(
+                labels_wrong_destination + ex
             )
 
             # We now clear the cached details that caused us to make this error
@@ -380,7 +380,7 @@ class LStar:
             # We immediately recalculate the transition so that we can check
             # that it has changed as we expect it to have.
             new_destination = self.transition(source, string[n])
-            assert new_destination != current_destination
+            assert new_destination != wrong_destination
 
 
 class LearnedDFA(DFA):
