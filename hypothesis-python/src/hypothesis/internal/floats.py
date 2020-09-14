@@ -19,15 +19,12 @@ import struct
 # Format codes for (int, float) sized types, used for byte-wise casts.
 # See https://docs.python.org/3/library/struct.html#format-characters
 STRUCT_FORMATS = {
-    16: ("!H", "!e"),  # Note: 'e' is new in Python 3.6, so we have helpers
+    16: ("!H", "!e"),
     32: ("!I", "!f"),
     64: ("!Q", "!d"),
 }
 
 
-# There are two versions of this: the one that uses Numpy to support Python
-# 3.5 and earlier, and the elegant one for new versions.  We use the new
-# one if Numpy is unavailable too, because it's slightly faster in all cases.
 def reinterpret_bits(x, from_, to):
     return struct.unpack(to, struct.pack(from_, x))[0]
 
@@ -46,7 +43,9 @@ def sign(x):
     try:
         return math.copysign(1.0, x)
     except TypeError:
-        raise TypeError("Expected float but got %r of type %s" % (x, type(x).__name__))
+        raise TypeError(
+            "Expected float but got %r of type %s" % (x, type(x).__name__)
+        ) from None
 
 
 def is_negative(x):

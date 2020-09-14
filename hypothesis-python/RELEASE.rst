@@ -1,11 +1,10 @@
 RELEASE_TYPE: patch
 
-use str for struct module function calls because the struct module is
-documented as accepting only "format strings" and happens to implement
-"format bytes", which can cause Warnings when run with `python -bb`
-in some cases
+This patch changes some internal :obj:`python:struct.Struct.format` strings
+from ``bytes`` to ``str``, to avoid :class:`python:BytesWarning` when running
+`python -bb <https://docs.python.org/3/using/cmdline.html#cmdoption-b>`__.
 
-see https://docs.python.org/3/library/struct.html#struct-format-strings
-and https://bugs.python.org/issue41777
-and https://github.com/pytest-dev/pytest-xdist/issues/596
-and https://bugs.python.org/issue21071#msg292409
+Thanks to everyone involved in `pytest-xdist issue 596
+<https://github.com/pytest-dev/pytest-xdist/issues/596>`__,
+:bpo:`16349`, :bpo:`21071`, and :bpo:`41777` for their work on this -
+it was a remarkably subtle issue!
