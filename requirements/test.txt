@@ -9,7 +9,7 @@ attrs==20.2.0             # via hypothesis (hypothesis-python/setup.py), pytest
 execnet==1.7.1            # via pytest-xdist
 importlib-metadata==1.7.0  # via pluggy, pytest
 iniconfig==1.0.1          # via pytest
-more-itertools==8.4.0     # via pytest
+more-itertools==8.5.0     # via pytest
 packaging==20.4           # via pytest
 pexpect==4.8.0            # via -r requirements/test.in
 pluggy==0.13.1            # via pytest
