@@ -60,7 +60,7 @@ numpy==1.19.2             # via -r requirements/tools.in
 packaging==20.4           # via bleach, dparse, pytest, pyupio, safety, sphinx, tox
 parso==0.8.0              # via jedi
 pathspec==0.8.0           # via black
-pbr==5.4.5                # via stevedore
+pbr==5.5.0                # via stevedore
 pexpect==4.8.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pip-tools==5.3.1          # via -r requirements/tools.in
