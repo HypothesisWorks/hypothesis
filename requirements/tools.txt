@@ -56,7 +56,7 @@ mccabe==0.6.1             # via flake8
 more-itertools==8.5.0     # via pytest
 mypy-extensions==0.4.3    # via mypy
 mypy==0.782               # via -r requirements/tools.in
-numpy==1.19.1             # via -r requirements/tools.in
+numpy==1.19.2             # via -r requirements/tools.in
 packaging==20.4           # via bleach, dparse, pytest, pyupio, safety, sphinx, tox
 parso==0.7.1              # via jedi
 pathspec==0.8.0           # via black
