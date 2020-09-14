@@ -13,11 +13,13 @@
 #
 # END HEADER
 
+import pytest
+
 from hypothesis import HealthCheck, Phase, settings
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import int_to_bytes
 from hypothesis.internal.conjecture.data import Status
-from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis.internal.conjecture.engine import ConjectureRunner, RunIsComplete
 from hypothesis.internal.entropy import deterministic_PRNG
 
 
@@ -133,9 +135,10 @@ def test_down_samples_the_pareto_front():
         for i in range(10000):
             db.save(runner.pareto_key, int_to_bytes(i, 2))
 
-        runner.reuse_existing_examples()
+        with pytest.raises(RunIsComplete):
+            runner.reuse_existing_examples()
 
-        assert 0 < runner.valid_examples <= 100
+        assert runner.valid_examples == 1000
 
 
 def test_stops_loading_pareto_front_if_interesting():

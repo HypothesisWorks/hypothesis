@@ -311,6 +311,25 @@ def test_phases_can_disable_shrinking():
     assert len(seen) == MIN_TEST_CALLS
 
 
+def test_reuse_phase_runs_for_max_examples_if_generation_is_disabled():
+    with deterministic_PRNG():
+        db = InMemoryExampleDatabase()
+        for i in range(256):
+            db.save(b"key", bytes([i]))
+        seen = set()
+
+        def test(data):
+            seen.add(data.draw_bits(8))
+
+        ConjectureRunner(
+            test,
+            settings=settings(max_examples=100, database=db, phases=[Phase.reuse]),
+            database_key=b"key",
+        ).run()
+
+        assert len(seen) == 100
+
+
 def test_erratic_draws():
     n = [0]
 
