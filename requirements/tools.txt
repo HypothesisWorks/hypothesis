@@ -74,7 +74,7 @@ pycparser==2.20           # via cffi
 pydocstyle==5.1.1         # via flake8-docstrings
 pyflakes==2.2.0           # via autoflake, flake8
 pygithub==1.53            # via pyupio
-pygments==2.6.1           # via ipython, readme-renderer, sphinx
+pygments==2.7.0           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pyparsing==2.4.7          # via packaging
 pytest==6.0.1             # via -r requirements/tools.in
