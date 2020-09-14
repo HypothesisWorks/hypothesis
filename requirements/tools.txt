@@ -12,7 +12,7 @@ autoflake==1.4            # via -r requirements/tools.in
 babel==2.8.0              # via sphinx
 backcall==0.2.0           # via ipython
 bandit==1.6.2             # via flake8-bandit
-black==19.10b0            # via -r requirements/tools.in, blacken-docs
+black==20.8b1            # via -r requirements/tools.in, blacken-docs
 blacken-docs==1.8.0       # via -r requirements/tools.in
 bleach==3.1.5             # via readme-renderer
 certifi==2020.6.20        # via requests
