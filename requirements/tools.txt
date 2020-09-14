@@ -71,7 +71,7 @@ ptyprocess==0.6.0         # via pexpect
 py==1.9.0                 # via pytest, tox
 pycodestyle==2.6.0        # via flake8, flake8-bandit
 pycparser==2.20           # via cffi
-pydocstyle==5.1.0         # via flake8-docstrings
+pydocstyle==5.1.1         # via flake8-docstrings
 pyflakes==2.2.0           # via autoflake, flake8
 pygithub==1.53            # via pyupio
 pygments==2.6.1           # via ipython, readme-renderer, sphinx
