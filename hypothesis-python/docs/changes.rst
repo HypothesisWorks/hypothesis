@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.35.3:
+
+-------------------
+5.35.3 - 2020-09-15
+-------------------
+
+This release significantly improves the performance of Hypothesis's internal
+implementation of automaton learning. However this code does not run as part
+of the user-accessible API so this has no user-visible impact.
+
 .. _v5.35.2:
 
 -------------------
