@@ -33,7 +33,7 @@ jobs:
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.6'
+        versionSpec: '3.8'
     - script: sudo apt-get update && sudo apt-get install libreadline-dev libsqlite3-dev shellcheck
       displayName: Install apt dependencies
     - script: ./build.sh check-installed
@@ -47,10 +47,10 @@ jobs:
     strategy:
       matrix:
         check-py36-x64:
-          python.version: '3.6'
+          python.version: '3.8'
           python.architecture: 'x64'
         check-py36-x86:
-          python.version: '3.6'
+          python.version: '3.8'
           python.architecture: 'x86'
     steps:
     - task: UsePythonVersion@0
@@ -77,7 +77,7 @@ jobs:
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.6'
+        versionSpec: '3.8'
     - script: |
         brew update
         brew install readline xz ncurses
@@ -112,7 +112,7 @@ jobs:
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.6'
+        versionSpec: '3.8'
     - script: sudo apt-get update && sudo apt-get install libreadline-dev libsqlite3-dev shellcheck
       displayName: Install apt dependencies
     - script: ./build.sh check-installed

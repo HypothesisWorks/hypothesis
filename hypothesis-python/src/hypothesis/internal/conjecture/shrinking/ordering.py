@@ -79,7 +79,10 @@ class Ordering(Shrinker):
         """
         for i in range(1, len(self.current) - 1):
             if self.current[i - 1] <= self.current[i] <= self.current[i + 1]:
-                continue
+                # The `continue` line is optimised out of the bytecode on
+                # CPython >= 3.7 (https://bugs.python.org/issue2506) and on
+                # PyPy, and so coverage cannot tell that it has been taken.
+                continue  # pragma: no cover
 
             def can_sort(a, b):
                 if a < 0 or b > len(self.current):

@@ -58,8 +58,8 @@ except ImportError:
 
 def type_sorting_key(t):
     """Minimise to None, then non-container types, then container types."""
-    if not is_a_type(t):
-        raise InvalidArgument("thing=%s must be a type" % (t,))
+    if not is_a_type(t):  # This branch is for Python < 3.8
+        raise InvalidArgument("thing=%s must be a type" % (t,))  # pragma: no cover
     if t is None or t is type(None):  # noqa: E721
         return (-1, repr(t))
     if not isinstance(t, type):  # pragma: no cover
@@ -178,11 +178,9 @@ def from_typing_type(thing):
         elif len(elem_types) == 1 and elem_types[0] == ():
             return st.tuples()  # Empty tuple; see issue #1583
         return st.tuples(*map(st.from_type, elem_types))
-    if (
-        hasattr(typing, "Final") and getattr(thing, "__origin__", None) == typing.Final
-    ):  # pragma: no cover  # new in Python 3.8
+    if hasattr(typing, "Final") and getattr(thing, "__origin__", None) == typing.Final:
         return st.one_of([st.from_type(t) for t in thing.__args__])
-    if is_typing_literal(thing):  # pragma: no cover  # new in Python 3.8
+    if is_typing_literal(thing):
         args_dfs_stack = list(thing.__args__)
         literals = []
         while args_dfs_stack:
@@ -204,7 +202,7 @@ def from_typing_type(thing):
         typing.Hashable is not collections.abc.Hashable
         and origin in vars(collections.abc).values()
         and len(getattr(thing, "__args__", None) or []) == 0
-    ):  # pragma: no cover  # impossible on 3.6 where we measure coverage.
+    ):
         return st.from_type(origin)
 
     # Parametrised generic types have their __origin__ attribute set to the
@@ -219,7 +217,7 @@ def from_typing_type(thing):
         # ItemsView can cause test_lookup.py::test_specialised_collection_types
         # to fail, due to weird isinstance behaviour around the elements.
         mapping.pop(typing.ItemsView, None)
-        if sys.version_info[:2] == (3, 6):  # pragma: no branch
+        if sys.version_info[:2] == (3, 6):  # pragma: no cover
             # `isinstance(dict().values(), Container) is False` on py36 only -_-
             mapping.pop(typing.ValuesView, None)
     if len(mapping) > 1:
@@ -424,7 +422,7 @@ _global_type_lookup.update(
         typing.TextIO: st.builds(io.StringIO, st.text()),
     }
 )
-if hasattr(typing, "SupportsIndex"):  # pragma: no cover  # new in Python 3.8
+if hasattr(typing, "SupportsIndex"):  # pragma: no branch  # new in Python 3.8
     _global_type_lookup[typing.SupportsIndex] = st.integers() | st.booleans()  # type: ignore
 
 
@@ -443,8 +441,9 @@ def register(type_, fallback=None, *, module=typing):
 
         @functools.wraps(func)
         def really_inner(thing):
+            # This branch is for Python < 3.8, when __args__ was not always tracked
             if getattr(thing, "__args__", None) is None:
-                return fallback
+                return fallback  # pragma: no cover
             return func(thing)
 
         _global_type_lookup[type_] = really_inner
@@ -457,12 +456,13 @@ def register(type_, fallback=None, *, module=typing):
 @register("Type", module=typing_extensions)
 def resolve_Type(thing):
     if getattr(thing, "__args__", None) is None:
-        return st.just(type)
+        # This branch is for Python < 3.8, when __args__ was not always tracked
+        return st.just(type)  # pragma: no cover
     args = (thing.__args__[0],)
     if getattr(args[0], "__origin__", None) is typing.Union:
         args = args[0].__args__
     # Duplicate check from from_type here - only paying when needed.
-    for a in args:
+    for a in args:  # pragma: no cover  # only on Python 3.6
         if type(a) == ForwardRef:
             raise ResolutionFailed(
                 "thing=%s cannot be resolved.  Upgrading to "
