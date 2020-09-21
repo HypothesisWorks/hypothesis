@@ -429,7 +429,8 @@ def test_required_args(target, args, kwargs):
     ).example()
 
 
-AnnotatedNamedTuple = typing.NamedTuple("AnnotatedNamedTuple", [("a", str)])
+class AnnotatedNamedTuple(typing.NamedTuple):
+    a: str
 
 
 @given(st.builds(AnnotatedNamedTuple))
@@ -460,7 +461,7 @@ class Tree:
         self.right = right
 
     def __repr__(self):
-        return "Tree({}, {})".format(self.left, self.right)
+        return f"Tree({self.left}, {self.right})"
 
 
 def test_resolving_recursive_type():

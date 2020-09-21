@@ -267,7 +267,7 @@ def extract_lambda_source(f):
     for a in argspec.kwonlyargs or []:
         default = (argspec.kwonlydefaults or {}).get(a)
         if default:
-            arg_strings.append("{}={}".format(a, default))
+            arg_strings.append(f"{a}={default}")
         else:
             arg_strings.append(a)
 

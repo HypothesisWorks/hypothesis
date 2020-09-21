@@ -25,8 +25,8 @@ elif [ -n "${TRAVIS-}" ] ; then
     PYTHON=$(command -v python)
 else
     # Otherwise, we install it from scratch
-    "$SCRIPTS/ensure-python.sh" 3.6.8
-    PYTHON=$(pythonloc 3.6.8)/bin/python
+    "$SCRIPTS/ensure-python.sh" 3.8.5
+    PYTHON=$(pythonloc 3.8.5)/bin/python
 fi
 
 TOOL_REQUIREMENTS="$ROOT/requirements/tools.txt"

@@ -71,7 +71,9 @@ def test_deadlines_participate_in_shrinking():
             time.sleep(1)
 
     assert_falsifying_output(
-        slow_if_large, expected_exception=DeadlineExceeded, i=1000,
+        slow_if_large,
+        expected_exception=DeadlineExceeded,
+        i=1000,
     )
 
 

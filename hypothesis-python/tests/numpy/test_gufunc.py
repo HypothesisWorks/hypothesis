@@ -147,7 +147,7 @@ def test_matmul_sig_shrinks_as_documented(min_dims, min_side, n_fixed, data):
     else:
         n_value = min_side
 
-    note("signature: {}".format(sig))
+    note(f"signature: {sig}")
     max_dims = data.draw(st.none() | st.integers(min_dims, 4), label="max_dims")
     max_side = data.draw(st.none() | st.integers(min_side, 6), label="max_side")
 

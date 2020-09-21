@@ -150,7 +150,7 @@ def _models_impl(draw, strat):
 def from_form(
     form: Type[df.Form],
     form_kwargs: Optional[dict] = None,
-    **field_strategies: Union[st.SearchStrategy, InferType]
+    **field_strategies: Union[st.SearchStrategy, InferType],
 ) -> st.SearchStrategy[df.Form]:
     """Return a strategy for examples of ``form``.
 

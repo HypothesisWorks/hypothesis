@@ -239,7 +239,7 @@ def e(a, **kwargs):
         ),
         e(
             nps.mutually_broadcastable_shapes,  # shape with too many dimensions
-            signature="(" + ",".join("d{}".format(n) for n in range(33)) + ")->()",
+            signature="(" + ",".join(f"d{n}" for n in range(33)) + ")->()",
         ),
         e(
             nps.mutually_broadcastable_shapes,  # max_dims too large given ufunc

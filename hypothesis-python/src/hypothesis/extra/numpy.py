@@ -32,12 +32,12 @@ from hypothesis.utils.conventions import UniqueIdentifier, not_set
 Shape = Tuple[int, ...]
 # flake8 and mypy disagree about `ellipsis` (the type of `...`), and hence:
 BasicIndex = Tuple[Union[int, slice, "ellipsis", np.newaxis], ...]  # noqa: F821
-BroadcastableShapes = NamedTuple(
-    "BroadcastableShapes",
-    [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)],
-)
-
 TIME_RESOLUTIONS = tuple("Y  M  D  h  m  s  ms  us  ns  ps  fs  as".split())
+
+
+class BroadcastableShapes(NamedTuple):
+    input_shapes: Tuple[Shape, ...]
+    result_shape: Shape
 
 
 @st.defines_strategy(force_reusable_values=True)
@@ -96,7 +96,7 @@ def from_dtype(dtype: np.dtype) -> st.SearchStrategy[Any]:
             res = st.sampled_from(TIME_RESOLUTIONS)
         result = st.builds(dtype.type, st.integers(-(2 ** 63), 2 ** 63 - 1), res)
     else:
-        raise InvalidArgument("No strategy inference for {}".format(dtype))
+        raise InvalidArgument(f"No strategy inference for {dtype}")
     return result.map(dtype.type)
 
 
@@ -305,7 +305,7 @@ def arrays(
     *,
     elements: Optional[st.SearchStrategy[Any]] = None,
     fill: Optional[st.SearchStrategy[Any]] = None,
-    unique: bool = False
+    unique: bool = False,
 ) -> st.SearchStrategy[np.ndarray]:
     r"""Returns a strategy for generating :class:`numpy:numpy.ndarray`\ s.
 
@@ -677,7 +677,7 @@ def array_dtypes(
     *,
     min_size: int = 1,
     max_size: int = 5,
-    allow_subarrays: bool = False
+    allow_subarrays: bool = False,
 ) -> st.SearchStrategy[np.dtype]:
     """Return a strategy for generating array (compound) dtypes, with members
     drawn from the given subtype strategy."""
@@ -713,7 +713,7 @@ def nested_dtypes(
     subtype_strategy: st.SearchStrategy[np.dtype] = scalar_dtypes(),
     *,
     max_leaves: int = 10,
-    max_itemsize: Optional[int] = None
+    max_itemsize: Optional[int] = None,
 ) -> st.SearchStrategy[np.dtype]:
     """Return the most-general dtype strategy.
 
@@ -733,7 +733,10 @@ def nested_dtypes(
 @st.defines_strategy()
 @deprecated_posargs
 def valid_tuple_axes(
-    ndim: int, *, min_size: int = 0, max_size: Optional[int] = None,
+    ndim: int,
+    *,
+    min_size: int = 0,
+    max_size: Optional[int] = None,
 ) -> st.SearchStrategy[Shape]:
     """Return a strategy for generating permissible tuple-values for the
     ``axis`` argument for a numpy sequential function (e.g.
@@ -787,7 +790,7 @@ def broadcastable_shapes(
     min_dims: int = 0,
     max_dims: Optional[int] = None,
     min_side: int = 1,
-    max_side: Optional[int] = None
+    max_side: Optional[int] = None,
 ) -> st.SearchStrategy[Shape]:
     """Return a strategy for generating shapes that are broadcast-compatible
     with the provided shape.
@@ -1037,12 +1040,13 @@ class MutuallyBroadcastableShapesStrategy(SearchStrategy):
 _DIMENSION = r"\w+\??"  # Note that \w permits digits too!
 _SHAPE = r"\((?:{0}(?:,{0})".format(_DIMENSION) + r"{0,31})?\)"
 _ARGUMENT_LIST = "{0}(?:,{0})*".format(_SHAPE)
-_SIGNATURE = r"^{}->{}$".format(_ARGUMENT_LIST, _SHAPE)
+_SIGNATURE = fr"^{_ARGUMENT_LIST}->{_SHAPE}$"
 _SIGNATURE_MULTIPLE_OUTPUT = r"^{0}->{0}$".format(_ARGUMENT_LIST)
 
-_GUfuncSig = NamedTuple(
-    "_GUfuncSig", [("input_shapes", Tuple[Shape, ...]), ("result_shape", Shape)]
-)
+
+class _GUfuncSig(NamedTuple):
+    input_shapes: Tuple[Shape, ...]
+    result_shape: Shape
 
 
 def _hypothesis_parse_gufunc_signature(signature, all_checks=True):
@@ -1108,7 +1112,7 @@ def mutually_broadcastable_shapes(
     min_dims: int = 0,
     max_dims: Optional[int] = None,
     min_side: int = 1,
-    max_side: Optional[int] = None
+    max_side: Optional[int] = None,
 ) -> st.SearchStrategy[BroadcastableShapes]:
     """Return a strategy for generating a specified number of shapes, N, that are
     mutually-broadcastable with one another and with the provided "base-shape".
@@ -1332,7 +1336,7 @@ def basic_indices(
     min_dims: int = 0,
     max_dims: Optional[int] = None,
     allow_newaxis: bool = False,
-    allow_ellipsis: bool = True
+    allow_ellipsis: bool = True,
 ) -> st.SearchStrategy[BasicIndex]:
     """
     The ``basic_indices`` strategy generates `basic indexes
@@ -1396,7 +1400,7 @@ def integer_array_indices(
     shape: Shape,
     *,
     result_shape: SearchStrategy[Shape] = array_shapes(),
-    dtype: np.dtype = "int"
+    dtype: np.dtype = "int",
 ) -> st.SearchStrategy[Tuple[np.ndarray, ...]]:
     """Return a search strategy for tuples of integer-arrays that, when used
     to index into an array of shape ``shape``, given an array whose shape
