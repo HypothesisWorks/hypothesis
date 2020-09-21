@@ -237,7 +237,7 @@ def normalize(
     *,
     required_successes=100,
     allowed_to_update=False,
-    max_dfas=10
+    max_dfas=10,
 ):
     """Attempt to ensure that this test function successfully normalizes - i.e.
     whenever it declares a test case to be interesting, we are able

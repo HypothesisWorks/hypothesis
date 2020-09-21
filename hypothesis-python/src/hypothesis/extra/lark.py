@@ -199,7 +199,7 @@ def from_lark(
     grammar: lark.lark.Lark,
     *,
     start: Optional[str] = None,
-    explicit: Optional[Dict[str, st.SearchStrategy[str]]] = None
+    explicit: Optional[Dict[str, st.SearchStrategy[str]]] = None,
 ) -> st.SearchStrategy[str]:
     """A strategy for strings accepted by the given context-free grammar.
 

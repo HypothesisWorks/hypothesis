@@ -229,9 +229,9 @@ def format():
         "--remove-unused-variables",
         *files_to_format,
     )
-    pip_tool("pyupgrade", "--keep-percent-format", "--py3-plus", *files_to_format)
+    pip_tool("pyupgrade", "--keep-percent-format", "--py36-plus", *files_to_format)
     pip_tool("isort", *files_to_format)
-    pip_tool("black", "--target-version=py35", *files_to_format)
+    pip_tool("black", "--target-version=py36", *files_to_format)
 
 
 VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
@@ -378,7 +378,7 @@ def run_tox(task, version):
 # Via https://github.com/pyenv/pyenv/tree/master/plugins/python-build/share/python-build
 PY36 = "3.6.9"
 PY37 = "3.7.4"
-PY38 = "3.8.0"
+PY38 = "3.8.5"
 PY39 = "3.9-dev"
 PYPY36 = "pypy3.6-7.1.1"
 

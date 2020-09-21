@@ -82,7 +82,7 @@ SPECIAL_IPv6_RANGES = (
 def ip_addresses(
     *,
     v: Optional[int] = None,
-    network: Optional[Union[str, IPv4Network, IPv6Network]] = None
+    network: Optional[Union[str, IPv4Network, IPv6Network]] = None,
 ) -> SearchStrategy[Union[IPv4Address, IPv6Address]]:
     r"""Generate IP addresses - ``v=4`` for :class:`~python:ipaddress.IPv4Address`\ es,
     ``v=6`` for :class:`~python:ipaddress.IPv6Address`\ es, or leave unspecified

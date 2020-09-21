@@ -394,7 +394,7 @@ def convert_kwargs(name, kwargs):
         if args[-1] is signature.parameters[name].default:
             args.pop()
         else:
-            break
+            break  # pragma: no cover  # Only on Python < 3.8
 
     return (args, kwargs)
 

@@ -1,5 +1,5 @@
 language: python
-python: "3.6"
+python: "3.8"
 
 os:
     - linux
@@ -30,7 +30,7 @@ jobs:
     - stage: precheck
       env: TASK=check-whole-repo-tests
     - env: TASK=lint
-    - env: TASK=check-py36
+    - env: TASK=check-py38
     - stage: deploy
       env: TASK=deploy
 

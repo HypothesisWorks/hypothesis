@@ -68,4 +68,4 @@ def test_errors_are_deferred_until_repr_is_calculated():
 @given(st.iterables(st.integers()))
 def test_iterables_repr_is_useful(it):
     # fairly hard-coded but useful; also ensures _values are inexhaustible
-    assert repr(it) == "iter({!r})".format(it._values)
+    assert repr(it) == f"iter({it._values!r})"

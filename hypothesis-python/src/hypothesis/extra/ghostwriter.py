@@ -852,7 +852,10 @@ def _make_binop_body(
     parts = []
 
     def maker(
-        sub_property: str, args: str, body: str, right: Optional[str] = None,
+        sub_property: str,
+        args: str,
+        body: str,
+        right: Optional[str] = None,
     ) -> None:
         if right is not None:
             body = f"left={body}\nright={right}\n" + _assert_eq(style, "left", "right")

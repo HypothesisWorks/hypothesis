@@ -154,7 +154,8 @@ DEFAULT_MAX_SIZE = 10
 @st.cacheable
 @st.defines_strategy()
 def range_indexes(
-    min_size: int = 0, max_size: Optional[int] = None,
+    min_size: int = 0,
+    max_size: Optional[int] = None,
 ) -> st.SearchStrategy[pandas.RangeIndex]:
     """Provides a strategy which generates an :class:`~pandas.Index` whose
     values are 0, 1, ..., n for some n.
@@ -182,7 +183,7 @@ def indexes(
     dtype: Any = None,
     min_size: int = 0,
     max_size: Optional[int] = None,
-    unique: bool = True
+    unique: bool = True,
 ) -> st.SearchStrategy[pandas.Index]:
     """Provides a strategy for producing a :class:`pandas.Index`.
 
@@ -223,7 +224,7 @@ def series(
     dtype: Any = None,
     index: Optional[st.SearchStrategy[Union[Sequence, pandas.Index]]] = None,
     fill: Optional[st.SearchStrategy[Ex]] = None,
-    unique: bool = False
+    unique: bool = False,
 ) -> st.SearchStrategy[pandas.Series]:
     """Provides a strategy for producing a :class:`pandas.Series`.
 
@@ -339,7 +340,7 @@ def columns(
     dtype: Any = None,
     elements: Optional[st.SearchStrategy[Ex]] = None,
     fill: Optional[st.SearchStrategy[Ex]] = None,
-    unique: bool = False
+    unique: bool = False,
 ) -> List[column]:
     """A convenience function for producing a list of :class:`column` objects
     of the same general shape.
@@ -366,7 +367,7 @@ def data_frames(
     columns: Optional[Sequence[column]] = None,
     *,
     rows: Optional[st.SearchStrategy[Union[dict, Sequence[Any]]]] = None,
-    index: Optional[st.SearchStrategy[Ex]] = None
+    index: Optional[st.SearchStrategy[Ex]] = None,
 ) -> st.SearchStrategy[pandas.DataFrame]:
     """Provides a strategy for producing a :class:`pandas.DataFrame`.
 
