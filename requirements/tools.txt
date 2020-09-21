@@ -118,7 +118,7 @@ virtualenv==20.0.31       # via tox
 wcwidth==0.2.5            # via prompt-toolkit
 webencodings==0.5.1       # via bleach
 wrapt==1.12.1             # via deprecated
-zipp==1.2.0               # via -r requirements/tools.in
+zipp==3.1.0               # via -r requirements/tools.in
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
