@@ -21,4 +21,4 @@ pytest==6.0.2             # via -r requirements/test.in, pytest-forked, pytest-x
 six==1.15.0               # via packaging
 sortedcontainers==2.2.2   # via hypothesis (hypothesis-python/setup.py)
 toml==0.10.1              # via pytest
-zipp==1.2.0               # via -r requirements/test.in
+zipp==3.1.0               # via -r requirements/test.in
