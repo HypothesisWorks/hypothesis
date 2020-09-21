@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.35.4:
+
+-------------------
+5.35.4 - 2020-09-21
+-------------------
+
+This patch reformats our code with the latest :pypi:`black` to
+take advantage of the support for magic trailing commas.
+
 .. _v5.35.3:
 
 -------------------
