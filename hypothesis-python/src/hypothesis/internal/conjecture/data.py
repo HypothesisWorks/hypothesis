@@ -746,7 +746,7 @@ class ConjectureData:
     @classmethod
     def for_buffer(self, buffer, observer=None):
         return ConjectureData(
-            prefix=buffer, max_length=len(buffer), random=None, observer=observer,
+            prefix=buffer, max_length=len(buffer), random=None, observer=observer
         )
 
     def __init__(self, max_length, prefix, random, observer=None):

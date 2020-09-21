@@ -292,7 +292,9 @@ class settings(metaclass=settingsMeta):
 
     @staticmethod
     def register_profile(
-        name: str, parent: Optional["settings"] = None, **kwargs: Any,
+        name: str,
+        parent: Optional["settings"] = None,
+        **kwargs: Any,
     ) -> None:
         """Registers a collection of values to be used as a settings profile.
 

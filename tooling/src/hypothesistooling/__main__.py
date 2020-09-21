@@ -229,9 +229,9 @@ def format():
         "--remove-unused-variables",
         *files_to_format,
     )
-    pip_tool("pyupgrade", "--keep-percent-format", "--py3-plus", *files_to_format)
+    pip_tool("pyupgrade", "--keep-percent-format", "--py36-plus", *files_to_format)
     pip_tool("isort", *files_to_format)
-    pip_tool("black", "--target-version=py35", *files_to_format)
+    pip_tool("black", "--target-version=py36", *files_to_format)
 
 
 VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")

@@ -915,7 +915,7 @@ class HypothesisHandle:
 
 def given(
     *_given_arguments: Union[SearchStrategy, InferType],
-    **_given_kwargs: Union[SearchStrategy, InferType]
+    **_given_kwargs: Union[SearchStrategy, InferType],
 ) -> Callable[[Callable[..., None]], Callable[..., None]]:
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
@@ -1225,7 +1225,7 @@ def find(
     *,
     settings: Optional[Settings] = None,
     random: Optional[Random] = None,
-    database_key: Optional[bytes] = None
+    database_key: Optional[bytes] = None,
 ) -> Ex:
     """Returns the minimal example from the given strategy ``specifier`` that
     matches the predicate function ``condition``."""

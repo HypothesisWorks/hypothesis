@@ -580,7 +580,7 @@ def resolve_TypeVar(thing):
         # each part of the union, wraps that in shared so that we only generate
         # from one type per testcase, and flatmaps that back to instances.
         return st.shared(
-            st.sampled_from(strat.original_strategies), key=type_var_key,
+            st.sampled_from(strat.original_strategies), key=type_var_key
         ).flatmap(lambda s: s)
 
     builtin_scalar_types = [type(None), bool, int, float, str, bytes]

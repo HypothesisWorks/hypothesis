@@ -815,7 +815,7 @@ def test_minimize_broadcastable_shape(min_dims, shape, data):
             max_dims=max_dims,
         )
     )
-    note("(smallest): {}".format(smallest))
+    note(f"(smallest): {smallest}")
     n_leading = max(len(smallest) - len(shape), 0)
     n_aligned = max(len(smallest) - n_leading, 0)
     expected = [min_side] * n_leading + [

@@ -153,7 +153,7 @@ def datetimes(
     max_value: dt.datetime = dt.datetime.max,
     *,
     timezones: SearchStrategy[Optional[dt.tzinfo]] = none(),
-    allow_imaginary: bool = True
+    allow_imaginary: bool = True,
 ) -> SearchStrategy[dt.datetime]:
     """datetimes(min_value=datetime.datetime.min, max_value=datetime.datetime.max, *, timezones=none(), allow_imaginary=True)
 
@@ -222,7 +222,7 @@ def times(
     min_value: dt.time = dt.time.min,
     max_value: dt.time = dt.time.max,
     *,
-    timezones: SearchStrategy[Optional[dt.tzinfo]] = none()
+    timezones: SearchStrategy[Optional[dt.tzinfo]] = none(),
 ) -> SearchStrategy[dt.time]:
     """times(min_value=datetime.time.min, max_value=datetime.time.max, *, timezones=none())
 

@@ -33,7 +33,9 @@ def normalize_kwargs(request):
 
 @pytest.mark.parametrize("n", range(10, -1, -1))
 @pytest.mark.parametrize(
-    "strategy", [st.floats(), st.text(), st.datetimes()], ids=repr,
+    "strategy",
+    [st.floats(), st.text(), st.datetimes()],
+    ids=repr,
 )
 def test_common_strategies_normalize_small_values(strategy, n, normalize_kwargs):
 
