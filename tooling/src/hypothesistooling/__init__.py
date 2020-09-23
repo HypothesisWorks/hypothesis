@@ -128,11 +128,14 @@ def push_tag(tagname):
 
 def assert_can_release():
     assert not IS_PULL_REQUEST, "Cannot release from pull requests"
-    assert has_travis_secrets(), "Cannot release without travis secure vars"
+    assert has_secrets(), "Cannot release without secure vars"
 
 
-def has_travis_secrets():
-    return os.environ.get("TRAVIS_SECURE_ENV_VARS", None) == "true"
+def has_secrets():
+    return (
+        "encrypted_b8618e5d043b_key" in os.environ
+        and "encrypted_b8618e5d043b_iv" in os.environ
+    )
 
 
 def modified_files():
@@ -220,9 +223,7 @@ def decrypt_secrets():
     os.chmod(DEPLOY_KEY, int("0600", 8))
 
 
-IS_TRAVIS_PULL_REQUEST = os.environ.get("TRAVIS_EVENT_TYPE") == "pull_request"
-IS_GITHUB_ACTIONS_PULL_REQUEST = os.environ.get("GITHUB_EVENT_NAME") == "pull_request"
-IS_PULL_REQUEST = IS_TRAVIS_PULL_REQUEST or IS_GITHUB_ACTIONS_PULL_REQUEST
+IS_PULL_REQUEST = os.environ.get("GITHUB_EVENT_NAME") == "pull_request"
 
 
 def all_projects():

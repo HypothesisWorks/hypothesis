@@ -31,7 +31,7 @@ from hypothesistooling.scripts import pip_tool
 TASKS = {}
 BUILD_FILES = tuple(
     os.path.join(tools.ROOT, f)
-    for f in ["tooling", "requirements", ".travis.yml", "hypothesis-python/tox.ini"]
+    for f in ["tooling", "requirements", ".github", "hypothesis-python/tox.ini"]
 )
 
 
@@ -118,10 +118,6 @@ def deploy():
 
     if not tools.is_ancestor(HEAD, MASTER):
         print("Not deploying due to not being on master")
-        sys.exit(0)
-
-    if not tools.has_travis_secrets():
-        print("Running without access to secure variables, so no deployment")
         sys.exit(0)
 
     print("Decrypting secrets")
@@ -284,14 +280,8 @@ def upgrade_requirements():
 
 
 def is_pyup_branch():
-    if os.environ.get("TRAVIS_EVENT_TYPE") == "pull_request" and os.environ.get(
-        "TRAVIS_PULL_REQUEST_BRANCH", ""
-    ).startswith("pyup-scheduled-update"):
-        return True
-    return (
-        os.environ.get("Build.SourceBranchName", "").startswith("pyup-scheduled-update")
-        and os.environ.get("System.PullRequest.IsFork") == "False"
-        and os.environ.get("Build.Reason") == "PullRequest"
+    return os.environ.get("GITHUB_REF", "").startswith(
+        "refs/heads/pyup-scheduled-update"
     )
 
 
@@ -302,7 +292,7 @@ def push_pyup_requirements_commit():
     Depending on the changes, pyup might also have introduced
     whitespace errors.
 
-    If we've recompiled requirements.txt in Travis and made changes,
+    If we've recompiled requirements.txt in CI and made changes,
     and this is a PR where pyup is running, push a consistent set of
     versions as a new commit to the PR.
     """
@@ -325,7 +315,7 @@ def push_pyup_requirements_commit():
                 "-c",
                 "ssh-add %s && " % (shlex.quote(tools.DEPLOY_KEY),)
                 + "git push ssh-origin HEAD:%s"
-                % (os.environ["TRAVIS_PULL_REQUEST_BRANCH"],),
+                % (os.environ["GITHUB_REF"].split("/")[-1],),
             ]
         )
 

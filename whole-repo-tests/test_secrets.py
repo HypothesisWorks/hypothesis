@@ -21,8 +21,8 @@ import hypothesistooling as tools
 
 
 @pytest.mark.skipif(
-    os.environ.get("TRAVIS_SECURE_ENV_VARS", None) != "true",
-    reason="Not running in an environment with travis secure vars",
+    not tools.has_secrets(),
+    reason="Not running in an environment with secure vars",
 )
 def test_can_descrypt_secrets():
     tools.decrypt_secrets()

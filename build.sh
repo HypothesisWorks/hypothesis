@@ -17,11 +17,8 @@ SCRIPTS="$ROOT/tooling/scripts"
 # shellcheck source=tooling/scripts/common.sh
 source "$SCRIPTS/common.sh"
 
-if [ -n "${PIPELINE_WORKSPACE-}" ] ; then
-    # We're on Azure Pipelines and already set up a suitable Python
-    PYTHON=$(command -v python)
-elif [ -n "${TRAVIS-}" ] ; then
-    # We're on Travis and already set up a suitable Python
+if [ -n "${GITHUB_ACTIONS-}" ] ; then
+    # We're on GitHub Actions and already set up a suitable Python
     PYTHON=$(command -v python)
 else
     # Otherwise, we install it from scratch

@@ -12,7 +12,7 @@ library tests itself!
 The very short version
 ======================
 
-- To improve code coverage (eg because ``make check-coverage`` / the Travis
+- To improve code coverage (eg because ``make check-coverage`` / the
   build is failing), go to ``cover/``
 - For longer / system / integration tests, look in ``nocover/``
 - For tests that require an optional dependency, look in the directory
@@ -34,7 +34,7 @@ Some scenarios
     in ``test_direct_strategies.py``.  Strategies with optional dependencies
     should go in ``hypothesis.extras``, and the tests in their own module
     (ie not in ``cover``).  When you think you might be done, push and let
-    Travis point out any failing tests or non-covered code!
+    the CI system point out any failing tests or non-covered code!
 
 **I've made some internal changes**
     That's not very specific - you should probably refer to the test-finding

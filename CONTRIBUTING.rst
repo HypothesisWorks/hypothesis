@@ -147,7 +147,7 @@ unless you want to make changes to the test config. You also mostly don't need t
 except to type ``./build.sh`` followed by the name of the task you want to run.
 
 All of it will be checked on CI so you don't *have* to run anything locally, but you might
-find it useful to do so: A full Travis run takes about twenty minutes, and there's often a queue,
+find it useful to do so: A full CI run takes about twenty minutes, and there's often a queue,
 so running a smaller set of tests locally can be helpful.
 
 The build system should be "fairly" portable, but is currently only known to work on Linux or OS X. It *might* work
@@ -169,7 +169,7 @@ You can also use ``./build.sh check-format``, which will run format and some lin
 git diff. Note: This will error even if you started with a git diff, so if you've got any uncommitted changes
 this will necessarily report an error.
 
-Look in ``.travis.yml`` for a short list of other supported build tasks.
+Look in ``.github/workflows/main.yml`` for a short list of other supported build tasks.
 
 Note: The build requires a lot of different versions of python, so rather than have you install them yourself,
 the build system will install them itself in a local directory. This means that the first time you run a task you
