@@ -97,7 +97,7 @@ def git(*args):
     subprocess.check_call(("git",) + args)
 
 
-TOOLING_COMMITER_NAME = "Travis CI on behalf of David R. MacIver"
+TOOLING_COMMITER_NAME = "CI on behalf of David R. MacIver"
 
 
 def configure_git():
@@ -221,14 +221,8 @@ def decrypt_secrets():
 
 
 IS_TRAVIS_PULL_REQUEST = os.environ.get("TRAVIS_EVENT_TYPE") == "pull_request"
-
-IS_CIRCLE_PULL_REQUEST = (
-    os.environ.get("CIRCLE_BRANCH") == "master"
-    and os.environ.get("CI_PULL_REQUESTS", "") != ""
-)
-
-
-IS_PULL_REQUEST = IS_TRAVIS_PULL_REQUEST or IS_CIRCLE_PULL_REQUEST
+IS_GITHUB_ACTIONS_PULL_REQUEST = os.environ.get("GITHUB_EVENT_NAME") == "pull_request"
+IS_PULL_REQUEST = IS_TRAVIS_PULL_REQUEST or IS_GITHUB_ACTIONS_PULL_REQUEST
 
 
 def all_projects():
