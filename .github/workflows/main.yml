@@ -23,9 +23,9 @@ jobs:
           - task: check-whole-repo-tests
             python-version: "3.8"
             # This job can push updates back to pyup PRs
-            env:
-              encrypted_b8618e5d043b_key: ${{ secrets.encrypted_b8618e5d043b_key }}
-              encrypted_b8618e5d043b_iv: ${{ secrets.encrypted_b8618e5d043b_iv }}
+            # env:
+            #   encrypted_b8618e5d043b_key: ${{ secrets.encrypted_b8618e5d043b_key }}
+            #   encrypted_b8618e5d043b_iv: ${{ secrets.encrypted_b8618e5d043b_iv }}
           - task: check-py36
             python-version: "3.6"
           - task: check-py37
