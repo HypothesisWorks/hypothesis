@@ -23,53 +23,11 @@ import pytest
 from hypothesis import HealthCheck, assume, given, note, settings, strategies as st
 from hypothesis.errors import InvalidArgument, Unsatisfiable
 from hypothesis.extra import numpy as nps
-from hypothesis.strategies._internal import SearchStrategy
 from tests.common.debug import find_any, minimal
 from tests.common.utils import fails_with, flaky
 
 ANY_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=0, max_side=32)
 ANY_NONZERO_SHAPE = nps.array_shapes(min_dims=0, max_dims=32, min_side=1, max_side=32)
-STANDARD_TYPES = list(
-    map(
-        np.dtype,
-        [
-            "int8",
-            "int16",
-            "int32",
-            "int64",
-            "uint8",
-            "uint16",
-            "uint32",
-            "uint64",
-            "float",
-            "float16",
-            "float32",
-            "float64",
-            "complex64",
-            "complex128",
-            "datetime64",
-            "timedelta64",
-            bool,
-            str,
-            bytes,
-        ],
-    )
-)
-
-
-@given(nps.nested_dtypes())
-def test_strategies_for_standard_dtypes_have_reusable_values(dtype):
-    assert nps.from_dtype(dtype).has_reusable_values
-
-
-@pytest.mark.parametrize("t", STANDARD_TYPES)
-def test_produces_instances(t):
-    @given(nps.from_dtype(t))
-    def test_is_t(x):
-        assert isinstance(x, t.type)
-        assert x.dtype.kind == t.kind
-
-    test_is_t()
 
 
 @given(nps.arrays(float, ()))
@@ -211,18 +169,6 @@ def test_can_generate_data_compound_dtypes(arr):
     assert isinstance(arr, np.ndarray)
 
 
-@settings(max_examples=100)
-@given(nps.nested_dtypes(max_itemsize=400), st.data())
-def test_infer_strategy_from_dtype(dtype, data):
-    # Given a dtype
-    assert isinstance(dtype, np.dtype)
-    # We can infer a strategy
-    strat = nps.from_dtype(dtype)
-    assert isinstance(strat, SearchStrategy)
-    # And use it to fill an array of that dtype
-    data.draw(nps.arrays(dtype, 10, elements=strat))
-
-
 @given(nps.nested_dtypes())
 def test_np_dtype_is_idempotent(dtype):
     assert dtype == np.dtype(dtype)
@@ -280,21 +226,6 @@ def test_can_draw_arrays_from_scalars(data):
 
 
 @given(st.data())
-def test_can_cast_for_scalars(data):
-    # Note: this only passes with castable datatypes, certain dtype
-    # combinations will result in an error if numpy is not able to cast them.
-    dt_elements = np.dtype(data.draw(st.sampled_from(["bool", "<i2", ">i2"])))
-    dt_desired = np.dtype(
-        data.draw(st.sampled_from(["<i2", ">i2", "float32", "float64"]))
-    )
-    result = data.draw(
-        nps.arrays(dtype=dt_desired, elements=nps.from_dtype(dt_elements), shape=())
-    )
-    assert isinstance(result, np.ndarray)
-    assert result.dtype == dt_desired
-
-
-@given(st.data())
 def test_can_cast_for_arrays(data):
     # Note: this only passes with castable datatypes, certain dtype
     # combinations will result in an error if numpy is not able to cast them.
@@ -309,44 +240,6 @@ def test_can_cast_for_arrays(data):
     )
     assert isinstance(result, np.ndarray)
     assert result.dtype == dt_desired
-
-
-@given(st.data())
-def test_unicode_string_dtypes_generate_unicode_strings(data):
-    dt = data.draw(nps.unicode_string_dtypes())
-    result = data.draw(nps.from_dtype(dt))
-    assert isinstance(result, str)
-
-
-@given(nps.arrays(dtype="U99", shape=(10,)))
-def test_can_unicode_strings_without_decode_error(arr):
-    # See https://github.com/numpy/numpy/issues/15363
-    pass
-
-
-@pytest.mark.xfail(strict=False, reason="mitigation for issue above")
-def test_unicode_string_dtypes_need_not_be_utf8():
-    def cannot_encode(string):
-        try:
-            string.encode("utf-8")
-            return False
-        except UnicodeEncodeError:
-            return True
-
-    find_any(nps.from_dtype(np.dtype("U")), cannot_encode)
-
-
-@given(st.data())
-def test_byte_string_dtypes_generate_unicode_strings(data):
-    dt = data.draw(nps.byte_string_dtypes())
-    result = data.draw(nps.from_dtype(dt))
-    assert isinstance(result, bytes)
-
-
-@pytest.mark.parametrize("dtype", ["U", "S", "a"])
-def test_unsized_strings_length_gt_one(dtype):
-    # See https://github.com/HypothesisWorks/hypothesis/issues/2229
-    find_any(nps.arrays(dtype=dtype, shape=1), lambda arr: len(arr[0]) >= 2)
 
 
 @given(nps.arrays(dtype="int8", shape=st.integers(0, 20), unique=True))
@@ -423,41 +316,6 @@ def test_may_not_fill_with_non_nan_when_unique_is_set(arr):
 @given(nps.arrays(dtype="U", shape=10, unique=True, fill=st.just("")))
 def test_may_not_fill_with_non_nan_when_unique_is_set_and_type_is_not_number(arr):
     pass
-
-
-@given(
-    st.data(),
-    st.builds(
-        "{}[{}]".format,
-        st.sampled_from(("datetime64", "timedelta64")),
-        st.sampled_from(nps.TIME_RESOLUTIONS),
-    ).map(np.dtype),
-)
-def test_inferring_from_time_dtypes_gives_same_dtype(data, dtype):
-    ex = data.draw(nps.from_dtype(dtype))
-    assert dtype == ex.dtype
-
-
-@given(st.data(), nps.byte_string_dtypes() | nps.unicode_string_dtypes())
-def test_inferred_string_strategies_roundtrip(data, dtype):
-    # Check that we never generate too-long or nul-terminated strings, which
-    # cannot be read back out of an array.
-    arr = np.zeros(shape=1, dtype=dtype)
-    ex = data.draw(nps.from_dtype(arr.dtype))
-    arr[0] = ex
-    assert arr[0] == ex
-
-
-@given(st.data(), nps.scalar_dtypes())
-def test_all_inferred_scalar_strategies_roundtrip(data, dtype):
-    # We only check scalars here, because record/compound/nested dtypes always
-    # give an array of np.void objects.  We're interested in whether scalar
-    # values are safe, not known type coercion.
-    arr = np.zeros(shape=1, dtype=dtype)
-    ex = data.draw(nps.from_dtype(arr.dtype))
-    assume(ex == ex)  # If not, the roundtrip test *should* fail!  (eg NaN)
-    arr[0] = ex
-    assert arr[0] == ex
 
 
 @pytest.mark.parametrize("fill", [False, True])
@@ -1257,25 +1115,6 @@ def test_basic_indices_generate_valid_indexers(
         assert min_dims <= view.ndim <= (32 if max_dims is None else max_dims)
         if view.size:
             assert np.shares_memory(view, array)
-
-
-@pytest.mark.parametrize("dtype_str", ["m8", "M8"])
-@given(data=st.data())
-def test_from_dtype_works_without_time_unit(data, dtype_str):
-    arr = data.draw(nps.from_dtype(np.dtype(dtype_str)))
-    assert (dtype_str + "[") in arr.dtype.str
-
-
-@pytest.mark.parametrize("dtype_str", ["m8", "M8"])
-@given(data=st.data())
-def test_arrays_selects_consistent_time_unit(data, dtype_str):
-    arr = data.draw(nps.arrays(dtype_str, 10))
-    assert (dtype_str + "[") in arr.dtype.str
-
-
-def test_arrays_gives_useful_error_on_inconsistent_time_unit():
-    with pytest.raises(InvalidArgument, match="mismatch of time units in dtypes"):
-        nps.arrays("m8[Y]", 10, elements=nps.from_dtype(np.dtype("m8[D]"))).example()
 
 
 # addresses https://github.com/HypothesisWorks/hypothesis/issues/2582
