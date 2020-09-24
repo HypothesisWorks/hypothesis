@@ -367,6 +367,29 @@ def test_inferred_floats_do_not_overflow(arr):
     pass
 
 
+@given(nps.arrays(dtype="float16", shape=10, elements={"min_value": 0, "max_value": 1}))
+def test_inferred_floats_can_be_constrained_at_low_width(arr):
+    assert (arr >= 0).all()
+    assert (arr <= 1).all()
+
+
+@given(
+    nps.arrays(
+        dtype="float16",
+        shape=10,
+        elements={
+            "min_value": 0,
+            "max_value": 1,
+            "exclude_min": True,
+            "exclude_max": True,
+        },
+    )
+)
+def test_inferred_floats_can_be_constrained_at_low_width_excluding_endpoints(arr):
+    assert (arr > 0).all()
+    assert (arr < 1).all()
+
+
 @given(
     nps.arrays(
         dtype="float16",

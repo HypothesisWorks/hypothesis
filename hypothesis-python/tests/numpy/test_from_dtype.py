@@ -15,12 +15,12 @@
 
 import numpy as np
 import pytest
-from tests.common.debug import find_any
 
 from hypothesis import assume, given, settings, strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra import numpy as nps
 from hypothesis.strategies._internal import SearchStrategy
+from tests.common.debug import find_any
 
 STANDARD_TYPES = [
     np.dtype(t)
@@ -180,3 +180,44 @@ def test_arrays_selects_consistent_time_unit(data, dtype_str):
 def test_arrays_gives_useful_error_on_inconsistent_time_unit():
     with pytest.raises(InvalidArgument, match="mismatch of time units in dtypes"):
         nps.arrays("m8[Y]", 10, elements=nps.from_dtype(np.dtype("m8[D]"))).example()
+
+
+@pytest.mark.parametrize(
+    "dtype, kwargs, pred",
+    [
+        # Floating point: bounds, exclusive bounds, and excluding nonfinites
+        (float, {"min_value": 1, "max_value": 2}, lambda x: 1 <= x <= 2),
+        (
+            float,
+            {"min_value": 1, "max_value": 2, "exclude_min": True, "exclude_max": True},
+            lambda x: 1 < x < 2,
+        ),
+        (float, {"allow_nan": False}, lambda x: not np.isnan(x)),
+        (float, {"allow_infinity": False}, lambda x: not np.isinf(x)),
+        (float, {"allow_nan": False, "allow_infinity": False}, np.isfinite),
+        (complex, {"allow_nan": False}, lambda x: not np.isnan(x)),
+        (complex, {"allow_infinity": False}, lambda x: not np.isinf(x)),
+        (complex, {"allow_nan": False, "allow_infinity": False}, np.isfinite),
+        # Integer bounds, limited to the representable range
+        ("int8", {"min_value": -1, "max_value": 1}, lambda x: -1 <= x <= 1),
+        ("uint8", {"min_value": 1, "max_value": 2}, lambda x: 1 <= x <= 2),
+        # String arguments, bounding size and unicode alphabet
+        ("S", {"min_size": 1, "max_size": 2}, lambda x: 1 <= len(x) <= 2),
+        ("S4", {"min_size": 1, "max_size": 2}, lambda x: 1 <= len(x) <= 2),
+        ("U", {"min_size": 1, "max_size": 2}, lambda x: 1 <= len(x) <= 2),
+        ("U4", {"min_size": 1, "max_size": 2}, lambda x: 1 <= len(x) <= 2),
+        ("U", {"alphabet": "abc"}, lambda x: set(x).issubset("abc")),
+    ],
+)
+@given(data=st.data())
+def test_from_dtype_with_kwargs(data, dtype, kwargs, pred):
+    value = data.draw(nps.from_dtype(np.dtype(dtype), **kwargs))
+    assert pred(value)
+
+
+@given(nps.from_dtype(np.dtype("U20,uint8,float32"), min_size=1, allow_nan=False))
+def test_customize_structured_dtypes(x):
+    name, age, score = x
+    assert len(name) >= 1
+    assert 0 <= age <= 255
+    assert not np.isnan(score)
