@@ -10,6 +10,22 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.36.0:
+
+-------------------
+5.36.0 - 2020-09-24
+-------------------
+
+This release upgrades the :func:`~hypothesis.extra.numpy.from_dtype` strategy
+to pass optional ``**kwargs`` to the inferred strategy, and upgrades the
+:func:`~hypothesis.extra.numpy.arrays` strategy to accept an ``elements=kwargs``
+dict to pass through to :func:`~hypothesis.extra.numpy.from_dtype`.
+
+``arrays(floating_dtypes(), shape, elements={"min_value": -10, "max_value": 10})``
+is a particularly useful pattern, as it allows for any floating dtype without
+triggering the roundoff warning for smaller types or sacrificing variety for
+larger types (:issue:`2552`).
+
 .. _v5.35.4:
 
 -------------------
