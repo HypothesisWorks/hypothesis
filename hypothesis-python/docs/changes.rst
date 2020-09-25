@@ -10,6 +10,16 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.36.1:
+
+-------------------
+5.36.1 - 2020-09-25
+-------------------
+
+This patch adds some helpful suggestions to error messages you might see
+while learning to use the :func:`@example() <hypothesis.example>` decorator
+(:issue:`2611`) or the :func:`~hypothesis.strategies.one_of` strategy.
+
 .. _v5.36.0:
 
 -------------------
