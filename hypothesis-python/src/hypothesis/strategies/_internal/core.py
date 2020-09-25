@@ -340,6 +340,9 @@ def one_of(*args):  # noqa: F811
         # strategy, and keeps our reprs simple.
         return args[0]
     if args and not any(isinstance(a, SearchStrategy) for a in args):
+        # And this special case is to give a more-specific error message if it
+        # seems that the user has confused `one_of()` for  `sampled_from()`;
+        # the remaining validation is left to OneOfStrategy.  See PR #2627.
         raise InvalidArgument(
             f"Did you mean st.sampled_from({list(args)!r})?  st.one_of() is used "
             "to combine strategies, but all of the arguments were of other types."
