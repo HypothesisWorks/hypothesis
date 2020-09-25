@@ -339,6 +339,11 @@ def one_of(*args):  # noqa: F811
         # without incurring any performance overhead when there is only one
         # strategy, and keeps our reprs simple.
         return args[0]
+    if args and not any(isinstance(a, SearchStrategy) for a in args):
+        raise InvalidArgument(
+            f"Did you mean st.sampled_from({list(args)!r})?  st.one_of() is used "
+            "to combine strategies, but all of the arguments were of other types."
+        )
     return OneOfStrategy(args)
 
 

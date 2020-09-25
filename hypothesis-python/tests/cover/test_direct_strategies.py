@@ -266,7 +266,11 @@ def test_produces_valid_examples_from_keyword(fn, kwargs):
     fn(**kwargs).example()
 
 
-@fn_test((ds.one_of, (1,)), (ds.tuples, (1,)))
+@fn_test(
+    (ds.one_of, (1,)),
+    (ds.one_of, (1, ds.integers())),
+    (ds.tuples, (1,)),
+)
 def test_validates_args(fn, args):
     with pytest.raises(InvalidArgument):
         fn(*args).example()
