@@ -354,7 +354,24 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs):
                 # each of the (report text, error) pairs we find back to the top-level
                 # runner.  This also ensures that user-facing stack traces have as few
                 # frames of Hypothesis internals as possible.
-                yield (fragments_reported, err.with_traceback(get_trimmed_traceback()))
+                err = err.with_traceback(get_trimmed_traceback())
+
+                # One user error - whether misunderstanding or typo - we've seen a few
+                # times is to pass strategies to @example() where values are expected.
+                # Checking is easy, and false-positives not much of a problem, so:
+                if any(
+                    isinstance(arg, SearchStrategy)
+                    for arg in example.args + tuple(example.kwargs.values())
+                ):
+                    new = HypothesisWarning(
+                        "The @example() decorator expects to be passed values, but "
+                        "you passed strategies instead.  See https://hypothesis."
+                        "readthedocs.io/en/latest/reproducing.html for details."
+                    )
+                    new.__cause__ = err
+                    err = new
+
+                yield (fragments_reported, err)
                 if state.settings.report_multiple_bugs:
                     continue
                 break

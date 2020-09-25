@@ -13,7 +13,12 @@
 #
 # END HEADER
 
+import re
+
+import pytest
+
 from hypothesis import given, strategies as st
+from hypothesis.errors import InvalidArgument
 from tests.common.debug import assert_no_examples
 
 
@@ -37,3 +42,11 @@ def test_one_of_single_strategy_is_noop():
     s = st.integers()
     assert st.one_of(s) is s
     assert st.one_of([s]) is s
+
+
+def test_one_of_without_strategies_suggests_sampled_from():
+    with pytest.raises(
+        InvalidArgument,
+        match=re.escape("Did you mean st.sampled_from([1, 2, 3])?"),
+    ):
+        st.one_of(1, 2, 3)
