@@ -20,6 +20,8 @@ jobs:
           TASK: check-conjecture-coverage
         check-pypy36:
           TASK: check-pypy36
+        check-pypy37:
+          TASK: check-pypy37
         check-py36:
           TASK: check-py36
         check-py37:
