@@ -20,11 +20,29 @@ custom types, running the relevant code when *hypothesis* is imported instead of
 your package.
 """
 
-import pkg_resources
+try:
+    # We prefer to use importlib.metadata, or the backport on Python <= 3.7,
+    # because it's much faster than pkg_resources (200ms import time speedup).
+    try:
+        from importlib import metadata as importlib_metadata
+    except ImportError:
+        import importlib_metadata  # type: ignore  # mypy thinks this is a redefinition
+
+    def get_entry_points():
+        yield from importlib_metadata.entry_points().get("hypothesis", [])
+
+
+except ImportError:
+    # But if we're not on Python >= 3.8 and the importlib_metadata backport
+    # is not installed, we fall back to pkg_resources anyway.
+    import pkg_resources
+
+    def get_entry_points():
+        yield from pkg_resources.iter_entry_points("hypothesis")
 
 
 def run():
-    for entry in pkg_resources.iter_entry_points("hypothesis"):  # pragma: no cover
+    for entry in get_entry_points():  # pragma: no cover
         hook = entry.load()
         if callable(hook):
             hook()
