@@ -24,5 +24,7 @@ import pkg_resources
 
 
 def run():
-    for entry_point in pkg_resources.iter_entry_points("hypothesis"):
-        entry_point.load()  # pragma: no cover
+    for entry in pkg_resources.iter_entry_points("hypothesis"):  # pragma: no cover
+        hook = entry.load()
+        if callable(hook):
+            hook()
