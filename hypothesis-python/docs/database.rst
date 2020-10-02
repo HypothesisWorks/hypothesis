@@ -45,6 +45,7 @@ Hypothesis provides the following :class:`~hypothesis.database.ExampleDatabase` 
 .. autoclass:: hypothesis.database.DirectoryBasedExampleDatabase
 .. autoclass:: hypothesis.database.ReadOnlyDatabase
 .. autoclass:: hypothesis.database.MultiplexedDatabase
+.. autoclass:: hypothesis.extra.redis.RedisExampleDatabase
 
 ---------------------------------
 Defining your own ExampleDatabase

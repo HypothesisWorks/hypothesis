@@ -27,6 +27,10 @@ pip install ".[dpcontracts]"
 $PYTEST tests/dpcontracts/
 pip uninstall -y dpcontracts
 
+pip install fakeredis
+$PYTEST tests/redis/
+pip uninstall -y redis fakeredis
+
 pip install typing_extensions
 $PYTEST tests/typing_extensions/
 pip uninstall -y typing_extensions
