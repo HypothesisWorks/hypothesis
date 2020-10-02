@@ -43,6 +43,8 @@ Hypothesis provides the following :class:`~hypothesis.database.ExampleDatabase` 
 
 .. autoclass:: hypothesis.database.InMemoryExampleDatabase
 .. autoclass:: hypothesis.database.DirectoryBasedExampleDatabase
+.. autoclass:: hypothesis.database.ReadOnlyDatabase
+.. autoclass:: hypothesis.database.MultiplexedDatabase
 
 ---------------------------------
 Defining your own ExampleDatabase

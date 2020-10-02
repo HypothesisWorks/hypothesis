@@ -22,6 +22,8 @@ from hypothesis.database import (
     DirectoryBasedExampleDatabase,
     ExampleDatabase,
     InMemoryExampleDatabase,
+    MultiplexedDatabase,
+    ReadOnlyDatabase,
 )
 from hypothesis.strategies import binary, lists, tuples
 
@@ -133,3 +135,34 @@ def test_can_handle_disappearing_files(tmpdir, monkeypatch):
         os, "listdir", lambda d: base_listdir(d) + ["this-does-not-exist"]
     )
     assert list(db.fetch(b"foo")) == [b"bar"]
+
+
+def test_readonly_db_is_not_writable():
+    inner = InMemoryExampleDatabase()
+    wrapped = ReadOnlyDatabase(inner)
+    inner.save(b"key", b"value")
+    inner.save(b"key", b"value2")
+    wrapped.delete(b"key", b"value")
+    wrapped.move(b"key", b"key2", b"value2")
+    wrapped.save(b"key", b"value3")
+    assert set(wrapped.fetch(b"key")) == {b"value", b"value2"}
+    assert set(wrapped.fetch(b"key2")) == set()
+
+
+def test_multiplexed_dbs_read_and_write_all():
+    a = InMemoryExampleDatabase()
+    b = InMemoryExampleDatabase()
+    multi = MultiplexedDatabase(a, b)
+    a.save(b"a", b"aa")
+    b.save(b"b", b"bb")
+    multi.save(b"c", b"cc")
+    multi.move(b"a", b"b", b"aa")
+    for db in (a, b, multi):
+        assert set(db.fetch(b"a")) == set()
+        assert set(db.fetch(b"c")) == {b"cc"}
+    got = list(multi.fetch(b"b"))
+    assert len(got) == 2
+    assert set(got) == {b"aa", b"bb"}
+    multi.delete(b"c", b"cc")
+    for db in (a, b, multi):
+        assert set(db.fetch(b"c")) == set()
