@@ -30,6 +30,8 @@ jobs:
           TASK: check-py39
         check-quality:
           TASK: check-quality
+        check-examples3:
+          TASK: check-examples3
     steps:
     - task: UsePythonVersion@0
       inputs:
@@ -64,7 +66,7 @@ jobs:
       displayName: Install dependencies
     - script: |
         cd hypothesis-python
-        pytest --numprocesses auto
+        pytest --numprocesses auto tests/
       displayName: Run tests
 
   - job: osx
