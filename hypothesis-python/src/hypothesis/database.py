@@ -148,9 +148,21 @@ def _hash(key):
 class DirectoryBasedExampleDatabase(ExampleDatabase):
     """Use a directory to store Hypothesis examples as files.
 
-    This is the default database for Hypothesis; see above for details.
+    The default storage format is as a fairly opaque directory structure. Each test
+    corresponds to a directory, and each example to a file within that directory.
 
-    .. i.e. see the documentation in database.rst
+    A ``DirectoryBasedExampleDatabase`` can be shared by checking the directory
+    into version control, for example with the following ``.gitignore``::
+
+        # Ignore files cached by Hypothesis...
+        .hypothesis/*
+        # except for the examples directory
+        !.hypothesis/examples/
+
+    Note however that this only makes sense if you also pin to an exact version of
+    Hypothesis, and we would usually recommend implementing a shared database with
+    a network datastore - see :class:`~hypothesis.database.ExampleDatabase`, and
+    the :class:`~hypothesis.database.MultiplexedDatabase` helper.
     """
 
     def __init__(self, path: str) -> None:
