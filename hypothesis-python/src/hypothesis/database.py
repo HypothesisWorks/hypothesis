@@ -16,6 +16,7 @@
 import abc
 import binascii
 import os
+import sys
 import warnings
 from hashlib import sha384
 from typing import Iterable
@@ -74,6 +75,24 @@ class _EDMeta(abc.ABCMeta):
         if self is ExampleDatabase:
             return _db_for_path(*args, **kwargs)
         return super().__call__(*args, **kwargs)
+
+
+# This __call__ method is picked up by Sphinx as the signature of all ExampleDatabase
+# subclasses, which is accurate, reasonable, and unhelpful.  Fortunately Sphinx
+# maintains a list of metaclass-call-methods to ignore, and while they would prefer
+# not to maintain it upstream (https://github.com/sphinx-doc/sphinx/pull/8262) we
+# can insert ourselves here.
+#
+# This code only runs if Sphinx has already been imported; and it would live in our
+# docs/conf.py except that we would also like it to work for anyone documenting
+# downstream ExampleDatabase subclasses too.
+if "sphinx" in sys.modules:  # pragma: no cover
+    try:
+        from sphinx.ext.autodoc import _METACLASS_CALL_BLACKLIST
+
+        _METACLASS_CALL_BLACKLIST.append("hypothesis.database._EDMeta.__call__")
+    except Exception:
+        pass
 
 
 class ExampleDatabase(metaclass=_EDMeta):
