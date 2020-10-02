@@ -152,8 +152,27 @@ and then tell ``setuptools`` that this is your ``"hypothesis"`` entry point:
 
     # setup.py
 
-    ...
+    # You can list a module to import by dotted name
+    entry_points = {"hypothesis": ["_ = mymodule.a_submodule"]}
+
+    # Or name a specific function too, and Hypothesis will call it for you
     entry_points = {"hypothesis": ["_ = mymodule:_hypothesis_setup_hook"]}
-    ...
 
 And that's all it takes!
+
+
+Interaction with :pypi:`pytest-cov`
+-----------------------------------
+
+Because pytest does not load plugins from entrypoints in any particular order,
+using the Hypothesis entrypoint may import your module before :pypi:`pytest-cov`
+starts.  `This is a known issue <https://github.com/pytest-dev/pytest/issues/935>`__,
+but there are workarounds.
+
+You can use :command:`coverage run pytest ...` instead of :command:`pytest --cov ...`,
+opting out of the pytest plugin entirely.  Alternatively, you can ensure that Hypothesis
+is loaded after coverage measurement is started by disabling the entrypoint, and
+loading our pytest plugin from your ``conftest.py`` instead::
+
+    echo "pytest_plugins = ['hypothesis.extra.pytestplugin']\n" > tests/conftest.py
+    pytest -p "no:hypothesispytest" ...
