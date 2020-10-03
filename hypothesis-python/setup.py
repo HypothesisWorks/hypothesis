@@ -66,6 +66,7 @@ extras = {
     "pandas": ["pandas>=0.19"],
     "pytest": ["pytest>=4.3"],
     "dpcontracts": ["dpcontracts>=0.4"],
+    "redis": ["redis>=3.0.0"],
     # We only support Django versions with upstream support - see
     # https://www.djangoproject.com/download/#supported-versions
     "django": ["pytz>=2014.1", "django>=2.2"],

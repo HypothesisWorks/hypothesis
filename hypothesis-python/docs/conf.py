@@ -71,10 +71,11 @@ intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "pytest": ("https://docs.pytest.org/en/stable/", None),
     "django": ("https://django.readthedocs.io/en/stable/", None),
+    "redis": ("https://redis-py.readthedocs.io/en/stable/", None),
     "attrs": ("https://www.attrs.org/en/stable/", None),
 }
 
-autodoc_mock_imports = ["pandas"]
+autodoc_mock_imports = ["pandas", "redis"]
 
 # This config value must be a dictionary of external sites, mapping unique
 # short alias names to a base URL and a prefix.
