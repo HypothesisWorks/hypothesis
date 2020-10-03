@@ -10,6 +10,18 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.37.0:
+
+-------------------
+5.37.0 - 2020-10-03
+-------------------
+
+This release adds a new :class:`~hypothesis.extra.redis.RedisExampleDatabase`,
+along with the :class:`~hypothesis.database.ReadOnlyDatabase`
+and :class:`~hypothesis.database.MultiplexedDatabase` helpers, to support
+team workflows where failing examples can be seamlessly shared between everyone
+on the team - and your CI servers or buildbots.
+
 .. _v5.36.2:
 
 -------------------
