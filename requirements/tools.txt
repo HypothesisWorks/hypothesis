@@ -35,7 +35,7 @@ flake8-bugbear==20.1.4    # via -r requirements/tools.in
 flake8-comprehensions==3.2.3  # via -r requirements/tools.in
 flake8-docstrings==1.5.0  # via -r requirements/tools.in
 flake8-polyfill==1.0.2    # via flake8-bandit
-flake8==3.8.3             # via -r requirements/tools.in, flake8-bandit, flake8-bugbear, flake8-comprehensions, flake8-docstrings, flake8-polyfill
+flake8==3.8.4             # via -r requirements/tools.in, flake8-bandit, flake8-bugbear, flake8-comprehensions, flake8-docstrings, flake8-polyfill
 gitdb==4.0.5              # via gitpython
 gitpython==3.1.9          # via bandit
 idna==2.10                # via requests
@@ -74,7 +74,7 @@ pygithub==1.53            # via pyupio
 pygments==2.7.1           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pyparsing==2.4.7          # via packaging
-pytest==6.1.0             # via -r requirements/tools.in
+pytest==6.1.1             # via -r requirements/tools.in
 python-dateutil==2.8.1    # via -r requirements/tools.in
 python-gitlab==2.5.0      # via pyupio
 pytz==2020.1              # via babel, django
@@ -113,7 +113,7 @@ twine==3.2.0              # via -r requirements/tools.in
 typed-ast==1.4.1          # via black, mypy
 typing-extensions==3.7.4.3  # via black, mypy
 urllib3==1.25.10          # via requests
-virtualenv==20.0.32       # via tox
+virtualenv==20.0.33       # via tox
 wcwidth==0.2.5            # via prompt-toolkit
 webencodings==0.5.1       # via bleach
 wrapt==1.12.1             # via deprecated
