@@ -99,7 +99,8 @@ or help with some of the tricky details. Don't be afraid to ask for help.
 
 In order to get merged, a pull request will have to have a green build (naturally) and
 to be approved by a Hypothesis maintainer (and, depending on what it is, possibly specifically
-by DRMacIver).
+by DRMacIver).  Most pull requests will also need to `write a changelog entry in
+``hypothesis-python/RELEASE.rst`` <guides/documentation.rst#changelog-entries>`__.
 
 The review process is the same one that all changes to Hypothesis go through, regardless of
 whether you're an established maintainer or entirely new to the project. It's very much
@@ -126,8 +127,12 @@ It's generally much easier to get things working outside, because there's
 more freedom to experiment and fewer requirements in stability and API style.
 We're happy to review and help with external packages as well as pull requests;
 several parts of Hypothesis started life outside and were integrated later
-(with permission, of course).  For clarity, we suggest naming your package
-in the pattern of ``hypothesis-regex`` and ``hypothesis-protobuf`` on PyPI.
+(with permission, of course).
+
+To help people find your package, please use the `Framework :: Hypothesis
+<https://pypi.org/search/?c=Framework+%3A%3A+Hypothesis>`__ `trove classifier
+<https://pypi.org/classifiers/>`__.  We also recommend naming your package
+in the pattern of ``hypothesis-graphql`` and ``hypothesis-protobuf`` on PyPI.
 
 On the other hand, being inside gets you access to some deeper implementation
 features (if you need them) and better long-term guarantees about maintenance.
