@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.37.1:
+
+-------------------
+5.37.1 - 2020-10-07
+-------------------
+
+This patch fixes some broken links in the :mod:`~hypothesis.extra.lark`
+extra documentation.
+
 .. _v5.37.0:
 
 -------------------
