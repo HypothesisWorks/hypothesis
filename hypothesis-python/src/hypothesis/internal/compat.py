@@ -135,7 +135,7 @@ def get_type_hints(thing):
                 {
                     k: v
                     for k, v in spec.annotations.items()
-                    if k in (spec.args + spec.kwonlyargs) and isinstance(v, type)
+                    if k in (spec.args + spec.kwonlyargs)
                 }
             )
     except (AttributeError, TypeError, NameError):

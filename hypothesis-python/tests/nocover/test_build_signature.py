@@ -14,7 +14,7 @@
 # END HEADER
 
 from inspect import signature
-from typing import get_type_hints
+from typing import get_type_hints, Literal
 
 from hypothesis import given, strategies as st
 
@@ -53,7 +53,7 @@ def use_annotations(
     pass
 
 
-def use_signature(self, testA: int, testB: str = None, *, testX: float, testY: str):
+def use_signature(self, testA: int, testB: str = None, *, testX: float, testY: Literal["value"]):
     pass
 
 
@@ -66,7 +66,7 @@ class ModelWithAlias:
         assert set(kwargs) == {"testA", "testX", "testY"}
         assert isinstance(kwargs["testA"], int)
         assert isinstance(kwargs["testX"], float)
-        assert isinstance(kwargs["testY"], str)
+        assert kwargs["testY"] == "value"
 
 
 @given(st.builds(ModelWithAlias))
