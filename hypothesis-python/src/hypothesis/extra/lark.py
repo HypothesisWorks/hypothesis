@@ -92,7 +92,14 @@ class LarkStrategy(SearchStrategy):
             start = [start]
         self.grammar = grammar
 
-        if "start" in getfullargspec(grammar.grammar.compile).args:
+        # This is a total hack, but working around the changes is a nicer user
+        # experience than breaking for anyone who doesn't instantly update their
+        # installation of Lark alongside Hypothesis.
+        compile_args = getfullargspec(grammar.grammar.compile).args
+        if "terminals_to_keep" in compile_args:
+            terminals, rules, ignore_names = grammar.grammar.compile(start, ())
+        elif "start" in compile_args:  # pragma: no cover
+            # Support lark <= 0.10.0, without the terminals_to_keep argument.
             terminals, rules, ignore_names = grammar.grammar.compile(start)
         else:  # pragma: no cover
             # This branch is to support lark <= 0.7.1, without the start argument.
