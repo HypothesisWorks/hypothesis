@@ -14,7 +14,7 @@
 # END HEADER
 
 from inspect import signature
-from typing import get_type_hints, List
+from typing import List, get_type_hints
 
 from hypothesis import given, strategies as st
 
@@ -53,7 +53,9 @@ def use_annotations(
     pass
 
 
-def use_signature(self, testA: int, testB: str = None, *, testX: float, testY: List[str]):
+def use_signature(
+    self, testA: int, testB: str = None, *, testX: float, testY: List[str]
+):
     pass
 
 
@@ -75,7 +77,7 @@ def test_build_using_different_signature_and_annotations(val):
     assert isinstance(val, ModelWithAlias)
 
 
-def use_bad_signature(self, testA: 1, testB: "not_a_type", *, testX: float):
+def use_bad_signature(self, testA: 1, *, testX: float):
     pass
 
 
@@ -86,6 +88,7 @@ class ModelWithBadAliasSignature:
     def __init__(self, **kwargs):
         assert set(kwargs) == {"testX"}
         assert isinstance(kwargs["testX"], float)
+
 
 @given(st.builds(ModelWithBadAliasSignature))
 def test_build_with_non_types_in_signature(val):

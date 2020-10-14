@@ -131,6 +131,7 @@ def get_type_hints(thing):
             # See https://github.com/HypothesisWorks/hypothesis/pull/2580
             # for more details.
             from hypothesis.strategies._internal.types import is_a_type
+
             spec = inspect.getfullargspec(thing)
             hints.update(
                 {
