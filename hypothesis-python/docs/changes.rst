@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.37.2:
+
+-------------------
+5.37.2 - 2020-10-14
+-------------------
+
+This patch fixes :func:`~hypothesis.extra.lark.from_lark` with version
+0.10.1+ of the :pypi:`lark-parser` package.
+
 .. _v5.37.1:
 
 -------------------
