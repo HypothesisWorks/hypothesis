@@ -40,7 +40,7 @@ gitdb==4.0.5              # via gitpython
 gitpython==3.1.9          # via bandit
 idna==2.10                # via requests
 imagesize==1.2.0          # via sphinx
-iniconfig==1.0.1          # via pytest
+iniconfig==1.1.1          # via pytest
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.18.1           # via -r requirements/tools.in
 isort==5.6.4              # via -r requirements/tools.in
