@@ -14,7 +14,7 @@
 # END HEADER
 
 from inspect import signature
-from typing import get_type_hints
+from typing import List, get_type_hints
 
 from hypothesis import given, strategies as st
 
@@ -53,7 +53,9 @@ def use_annotations(
     pass
 
 
-def use_signature(self, testA: int, testB: str = None, *, testX: float, testY: str):
+def use_signature(
+    self, testA: int, testB: str = None, *, testX: float, testY: List[str]
+):
     pass
 
 
@@ -66,9 +68,28 @@ class ModelWithAlias:
         assert set(kwargs) == {"testA", "testX", "testY"}
         assert isinstance(kwargs["testA"], int)
         assert isinstance(kwargs["testX"], float)
-        assert isinstance(kwargs["testY"], str)
+        assert isinstance(kwargs["testY"], list)
+        assert all(isinstance(elem, str) for elem in kwargs["testY"])
 
 
 @given(st.builds(ModelWithAlias))
 def test_build_using_different_signature_and_annotations(val):
     assert isinstance(val, ModelWithAlias)
+
+
+def use_bad_signature(self, testA: 1, *, testX: float):
+    pass
+
+
+class ModelWithBadAliasSignature:
+    __annotations__ = get_type_hints(use_annotations)
+    __signature__ = signature(use_bad_signature)
+
+    def __init__(self, **kwargs):
+        assert set(kwargs) == {"testX"}
+        assert isinstance(kwargs["testX"], float)
+
+
+@given(st.builds(ModelWithBadAliasSignature))
+def test_build_with_non_types_in_signature(val):
+    assert isinstance(val, ModelWithBadAliasSignature)

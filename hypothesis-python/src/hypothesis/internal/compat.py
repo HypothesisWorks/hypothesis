@@ -130,12 +130,14 @@ def get_type_hints(thing):
             # comprehensive type information from get_type_hints
             # See https://github.com/HypothesisWorks/hypothesis/pull/2580
             # for more details.
+            from hypothesis.strategies._internal.types import is_a_type
+
             spec = inspect.getfullargspec(thing)
             hints.update(
                 {
                     k: v
                     for k, v in spec.annotations.items()
-                    if k in (spec.args + spec.kwonlyargs) and isinstance(v, type)
+                    if k in (spec.args + spec.kwonlyargs) and is_a_type(v)
                 }
             )
     except (AttributeError, TypeError, NameError):
