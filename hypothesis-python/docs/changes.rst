@@ -10,6 +10,19 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.37.3:
+
+-------------------
+5.37.3 - 2020-10-15
+-------------------
+
+This patch improves :func:`~hypothesis.strategies.builds` and
+:func:`~hypothesis.strategies.from_type` support for explicitly defined ``__signature__``
+attributes, from :ref:`version 5.8.3 <v5.8.3>`, to support generic types from the
+:mod:`python:typing` module.
+
+Thanks to Rónán Carrigan for identifying and fixing this problem!
+
 .. _v5.37.2:
 
 -------------------
