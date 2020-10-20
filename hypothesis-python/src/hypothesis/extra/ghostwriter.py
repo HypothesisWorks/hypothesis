@@ -456,6 +456,8 @@ ROUNDTRIP_PAIRS = (
     # a2b_postfix and b2a_postfix.  Not a fan of this pattern, but it's pretty
     # common in code imitating an C API - see e.g. the stdlib binascii module.
     (r"(.+)2(.+?)(_.+)?", "{1}2{0}{2}"),
+    # Common in e.g. the colorsys module
+    (r"(.+)_to_(.+)", "{1}_to_{0}"),
 )
 
 

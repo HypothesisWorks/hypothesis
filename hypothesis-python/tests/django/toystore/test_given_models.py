@@ -174,7 +174,7 @@ class TestsNeedingRollback(TransactionTestCase):
 class TestRestrictedFields(TestCase):
     @given(from_model(RestrictedFields))
     def test_constructs_valid_instance(self, instance):
-        self.assertTrue(isinstance(instance, RestrictedFields))
+        self.assertIsInstance(instance, RestrictedFields)
         instance.full_clean()
         self.assertLessEqual(len(instance.text_field_4), 4)
         self.assertLessEqual(len(instance.char_field_4), 4)

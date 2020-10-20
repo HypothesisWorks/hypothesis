@@ -86,17 +86,15 @@ else:
         )
 
     def pytest_report_header(config):
+        if config.option.verbose < 1 and settings.default.verbosity < Verbosity.verbose:
+            return None
         profile = config.getoption(LOAD_PROFILE_OPTION)
         if not profile:
             profile = settings._current_profile
         settings_str = settings.get_profile(profile).show_changed()
         if settings_str != "":
             settings_str = " -> %s" % (settings_str)
-        if (
-            config.option.verbose >= 1
-            or settings.default.verbosity >= Verbosity.verbose
-        ):
-            return "hypothesis profile %r%s" % (profile, settings_str)
+        return "hypothesis profile %r%s" % (profile, settings_str)
 
     def pytest_configure(config):
         core.running_under_pytest = True

@@ -293,8 +293,7 @@ def _category_key(exclude, include):
     assert include.issubset(cs)
     assert exclude.issubset(cs)
     include -= exclude
-    result = tuple(c for c in cs if c in include)
-    return result
+    return tuple(c for c in cs if c in include)
 
 
 def _query_for_key(key):

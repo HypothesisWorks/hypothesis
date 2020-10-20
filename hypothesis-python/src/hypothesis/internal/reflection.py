@@ -300,22 +300,22 @@ def extract_lambda_source(f):
                 break
             except SyntaxError:
                 continue
-    if tree is None:
-        if source.startswith("@"):
-            # This will always eventually find a valid expression because
-            # the decorator must be a valid Python function call, so will
-            # eventually be syntactically valid and break out of the loop. Thus
-            # this loop can never terminate normally, so a no branch pragma is
-            # appropriate.
-            for i in range(len(source) + 1):  # pragma: no branch
-                p = source[1:i]
-                if "lambda" in p:
-                    try:
-                        tree = ast.parse(p)
-                        source = p
-                        break
-                    except SyntaxError:
-                        pass
+    if tree is None and source.startswith("@"):
+        # This will always eventually find a valid expression because
+        # the decorator must be a valid Python function call, so will
+        # eventually be syntactically valid and break out of the loop.
+        # Thus, this loop can never terminate normally.
+        for i in range(len(source) + 1):
+            p = source[1:i]
+            if "lambda" in p:
+                try:
+                    tree = ast.parse(p)
+                    source = p
+                    break
+                except SyntaxError:
+                    pass
+        else:
+            raise NotImplementedError("expected to be unreachable")
 
     if tree is None:
         return if_confused
