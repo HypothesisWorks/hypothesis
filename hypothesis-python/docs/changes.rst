@@ -10,6 +10,17 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.37.4:
+
+-------------------
+5.37.4 - 2020-10-20
+-------------------
+
+This patch teaches the :func:`~hypothesis.extra.ghostwriter.magic` ghostwriter
+to recognise that pairs of functions like :func:`~python:colorsys.rgb_to_hsv`
+and :func:`~python:colorsys.hsv_to_rgb` should
+:func:`~hypothesis.extra.ghostwriter.roundtrip`.
+
 .. _v5.37.3:
 
 -------------------
