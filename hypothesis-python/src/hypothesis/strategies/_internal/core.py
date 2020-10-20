@@ -471,11 +471,10 @@ def floats(
 
     if allow_nan is None:
         allow_nan = bool(min_value is None and max_value is None)
-    elif allow_nan:
-        if min_value is not None or max_value is not None:
-            raise InvalidArgument(
-                "Cannot have allow_nan=%r, with min_value or max_value" % (allow_nan)
-            )
+    elif allow_nan and (min_value is not None or max_value is not None):
+        raise InvalidArgument(
+            "Cannot have allow_nan=%r, with min_value or max_value" % (allow_nan)
+        )
 
     if width not in (16, 32, 64):
         raise InvalidArgument(

@@ -30,12 +30,14 @@ docutils==0.16            # via readme-renderer, restructuredtext-lint, sphinx
 dparse==0.5.1             # via pyupio, safety
 dpcontracts==0.6.0        # via -r requirements/tools.in
 filelock==3.0.12          # via tox, virtualenv
+flake8-2020==1.6.0        # via -r requirements/tools.in
 flake8-bandit==2.1.2      # via -r requirements/tools.in
 flake8-bugbear==20.1.4    # via -r requirements/tools.in
 flake8-comprehensions==3.2.3  # via -r requirements/tools.in
 flake8-docstrings==1.5.0  # via -r requirements/tools.in
+flake8-mutable==1.2.0     # via -r requirements/tools.in
 flake8-polyfill==1.0.2    # via flake8-bandit
-flake8==3.8.4             # via -r requirements/tools.in, flake8-bandit, flake8-bugbear, flake8-comprehensions, flake8-docstrings, flake8-polyfill
+flake8==3.8.4             # via -r requirements/tools.in, flake8-2020, flake8-bandit, flake8-bugbear, flake8-comprehensions, flake8-docstrings, flake8-mutable, flake8-polyfill
 gitdb==4.0.5              # via gitpython
 gitpython==3.1.9          # via bandit
 idna==2.10                # via requests

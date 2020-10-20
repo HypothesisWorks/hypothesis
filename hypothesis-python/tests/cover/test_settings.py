@@ -481,6 +481,11 @@ def test_invalid_parent():
     assert "parent=(not settings repr)" in str(excinfo.value)
 
 
+def test_show_changed():
+    s = settings(max_examples=999, database=None)
+    assert s.show_changed() == "database=None, max_examples=999"
+
+
 def test_note_deprecation_checks_date():
     with pytest.warns(None) as rec:
         note_deprecation("This is bad", since="RELEASEDAY")
