@@ -550,6 +550,11 @@ def resolve_Iterator(thing):
     return st.iterables(st.from_type(thing.__args__[0]))
 
 
+@register(typing.Iterable, st.iterables(st.nothing()))
+def resolve_Iterable(thing):
+    return st.iterables(st.from_type(thing.__args__[0]))
+
+
 @register(typing.Callable, st.functions())
 def resolve_Callable(thing):
     # Generated functions either accept no arguments, or arbitrary arguments.
