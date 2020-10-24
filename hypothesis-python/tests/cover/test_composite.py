@@ -130,3 +130,48 @@ def test_does_not_change_arguments(data, ls):
 
     ex = data.draw(strat(ls))
     assert ex is ls
+
+
+class ClsWithStrategyMethods:
+    @classmethod
+    @st.composite
+    def st_classmethod_then_composite(draw, cls):
+        return draw(st.integers(0, 10))
+
+    @st.composite
+    @classmethod
+    def st_composite_then_classmethod(draw, cls):
+        return draw(st.integers(0, 10))
+
+    @staticmethod
+    @st.composite
+    def st_staticmethod_then_composite(draw):
+        return draw(st.integers(0, 10))
+
+    @st.composite
+    @staticmethod
+    def st_composite_then_staticmethod(draw):
+        return draw(st.integers(0, 10))
+
+    @st.composite
+    def st_composite_method(draw, self):
+        return draw(st.integers(0, 10))
+
+
+@given(st.data())
+def test_applying_composite_decorator_to_methods(data):
+    instance = ClsWithStrategyMethods()
+    for strategy in [
+        ClsWithStrategyMethods.st_classmethod_then_composite(),
+        ClsWithStrategyMethods.st_composite_then_classmethod(),
+        ClsWithStrategyMethods.st_staticmethod_then_composite(),
+        ClsWithStrategyMethods.st_composite_then_staticmethod(),
+        instance.st_classmethod_then_composite(),
+        instance.st_composite_then_classmethod(),
+        instance.st_staticmethod_then_composite(),
+        instance.st_composite_then_staticmethod(),
+        instance.st_composite_method(),
+    ]:
+        x = data.draw(strategy)
+        assert isinstance(x, int)
+        assert 0 <= x <= 10
