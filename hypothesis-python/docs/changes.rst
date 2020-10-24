@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.38.0:
+
+-------------------
+5.38.0 - 2020-10-24
+-------------------
+
+This release improves our support for :func:`@st.composite <hypothesis.strategies.composite>`
+on a :obj:`python:classmethod` or :obj:`python:staticmethod` (:issue:`2578`).
+
 .. _v5.37.5:
 
 -------------------
