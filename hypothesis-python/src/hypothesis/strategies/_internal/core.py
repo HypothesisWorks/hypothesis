@@ -1814,6 +1814,12 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
     Examples from this strategy shrink by shrinking the output of each draw
     call.
     """
+    if isinstance(f, (classmethod, staticmethod)):
+        special_method = type(f)
+        f = f.__func__
+    else:
+        special_method = None
+
     argspec = getfullargspec(f)
 
     if argspec.defaults is not None and len(argspec.defaults) == len(argspec.args):
@@ -1837,6 +1843,8 @@ def composite(f: Callable[..., Ex]) -> Callable[..., SearchStrategy[Ex]]:
         return CompositeStrategy(f, args, kwargs)
 
     accept.__module__ = f.__module__
+    if special_method is not None:
+        return special_method(accept)
     return accept
 
 

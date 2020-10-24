@@ -198,7 +198,7 @@ for your data type, returns a new strategy for it. So for example:
     {'de(l': None,
      'nK': {'(Rt)': None,
             '+hoZh1YU]gy8': True,
-            '8z]EIFA06^l`i^': 'LFE{Q',
+            '8z]EIFA06^li^': 'LFE{Q',
             '9,': 'l{cA=/'}}
 
 That is, we start with our leaf data and then we augment it by allowing lists and dictionaries of anything we can generate as JSON data.
@@ -301,6 +301,14 @@ lead to serious performance problems.  For example:
         for _ in range(size):
             result.add(draw(elements.filter(lambda x: x not in result)))
         return result
+
+If :func:`@composite <hypothesis.strategies.composite>` is used to decorate a
+method or classmethod, the ``draw`` argument must come before ``self`` or ``cls``.
+While we therefore recommend writing strategies as standalone functions and using
+the :func:`~hypothesis.strategies.register_type_strategy` function to associate
+them with a class, methods are supported and the ``@composite`` decorator may be
+applied either before or after ``@classmethod`` or ``@staticmethod``.
+See :issue:`2578` and :pull:`2634` for more details.
 
 
 .. _interactive-draw:
