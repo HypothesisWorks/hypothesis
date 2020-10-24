@@ -90,25 +90,30 @@ def test_typing_Type_Union(ex):
     assert ex in (str, list)
 
 
+class Elem:
+    pass
+
+
 @pytest.mark.parametrize(
     "typ,coll_type,instance_of",
     [
-        (typing.Set[int], set, int),
-        (typing.FrozenSet[int], frozenset, int),
-        (typing.Dict[int, int], dict, int),
-        (typing.DefaultDict[int, int], collections.defaultdict, int),
-        (typing.KeysView[int], type({}.keys()), int),
-        (typing.ValuesView[int], type({}.values()), int),
-        (typing.List[int], list, int),
-        (typing.Tuple[int], tuple, int),
-        (typing.Tuple[int, ...], tuple, int),
-        (typing.Iterator[int], typing.Iterator, int),
-        (typing.Sequence[int], typing.Sequence, int),
-        (typing.Iterable[int], typing.Iterable, int),
-        (typing.Mapping[int, None], typing.Mapping, int),
-        (typing.Container[int], typing.Container, int),
-        (typing.NamedTuple("A_NamedTuple", (("elem", int),)), tuple, int),
+        (typing.Set[Elem], set, Elem),
+        (typing.FrozenSet[Elem], frozenset, Elem),
+        (typing.Dict[Elem, Elem], dict, Elem),
+        (typing.DefaultDict[Elem, Elem], collections.defaultdict, Elem),
+        (typing.KeysView[Elem], type({}.keys()), Elem),
+        (typing.ValuesView[Elem], type({}.values()), Elem),
+        (typing.List[Elem], list, Elem),
+        (typing.Tuple[Elem], tuple, Elem),
+        (typing.Tuple[Elem, ...], tuple, Elem),
+        (typing.Iterator[Elem], typing.Iterator, Elem),
+        (typing.Sequence[Elem], typing.Sequence, Elem),
+        (typing.Iterable[Elem], typing.Iterable, Elem),
+        (typing.Mapping[Elem, None], typing.Mapping, Elem),
+        (typing.Container[Elem], typing.Container, Elem),
+        (typing.NamedTuple("A_NamedTuple", (("elem", Elem),)), tuple, Elem),
     ],
+    ids=repr,
 )
 @given(data=st.data())
 def test_specialised_collection_types(data, typ, coll_type, instance_of):
@@ -119,17 +124,17 @@ def test_specialised_collection_types(data, typ, coll_type, instance_of):
     assume(instances)  # non-empty collections without calling len(iterator)
 
 
-@given(from_type(typing.DefaultDict[int, int]).filter(len))
+@given(from_type(typing.DefaultDict[Elem, Elem]).filter(len))
 def test_defaultdict_values_type(ex):
-    assert all(isinstance(elem, int) for elem in ex.values())
+    assert all(isinstance(elem, Elem) for elem in ex.values())
 
 
-@given(from_type(typing.ItemsView[int, int]).filter(len))
+@given(from_type(typing.ItemsView[Elem, Elem]).filter(len))
 def test_ItemsView(ex):
     # See https://github.com/python/typing/issues/177
     assert isinstance(ex, type({}.items()))
     assert all(isinstance(elem, tuple) and len(elem) == 2 for elem in ex)
-    assert all(all(isinstance(e, int) for e in elem) for elem in ex)
+    assert all(all(isinstance(e, Elem) for e in elem) for elem in ex)
 
 
 def test_Optional_minimises_to_None():

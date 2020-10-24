@@ -21,7 +21,7 @@ import unittest
 import unittest.mock
 from decimal import Decimal
 from types import ModuleType
-from typing import Any, List, Sequence, Set
+from typing import Any, List, Sequence, Set, Union
 
 import pytest
 
@@ -117,7 +117,7 @@ def non_resolvable_arg(x: NotResolvable):
 
 
 def test_flattens_one_of_repr():
-    strat = from_type(Sequence[int])
+    strat = from_type(Union[int, Sequence[int]])
     assert repr(strat).count("one_of(") > 1
     assert ghostwriter._valid_syntax_repr(strat).count("one_of(") == 1
 

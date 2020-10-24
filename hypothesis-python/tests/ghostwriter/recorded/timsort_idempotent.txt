@@ -5,7 +5,7 @@ import test_expected_output
 from hypothesis import given, strategies as st
 
 
-@given(seq=st.one_of(st.binary(), st.binary().map(bytearray), st.lists(st.integers())))
+@given(seq=st.one_of(st.binary(), st.lists(st.integers())))
 def test_idempotent_timsort(seq):
     result = test_expected_output.timsort(seq=seq)
     repeat = test_expected_output.timsort(seq=result)

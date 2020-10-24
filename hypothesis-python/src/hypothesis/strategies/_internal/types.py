@@ -365,10 +365,10 @@ except ImportError:
 
 _global_type_lookup.update(
     {
-        typing.ByteString: st.binary() | st.binary().map(bytearray),
-        # Reversible is somehow a subclass of Hashable, so we tuplize it.
-        # See also the discussion at https://bugs.python.org/issue39046
-        typing.Reversible: st.lists(st.integers()).map(tuple),
+        # Note: while ByteString notionally also represents the bytearray and
+        # memoryview types, it is a subclass of Hashable and those types are not.
+        # We therefore only generate the bytes type.
+        typing.ByteString: st.binary(),
         # TODO: SupportsAbs and SupportsRound should be covariant, ie have functions.
         typing.SupportsAbs: st.one_of(
             st.booleans(),
