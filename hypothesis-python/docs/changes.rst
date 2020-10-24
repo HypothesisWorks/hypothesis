@@ -10,6 +10,15 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. _v5.37.5:
+
+-------------------
+5.37.5 - 2020-10-24
+-------------------
+
+This patch fixes :func:`~hypothesis.strategies.from_type` with
+:class:`Iterable[T] <python:typing.Iterable>` (:issue:`2645`).
+
 .. _v5.37.4:
 
 -------------------
