@@ -132,14 +132,13 @@ def get_type_hints(thing):
             # for more details.
             from hypothesis.strategies._internal.types import is_a_type
 
-            spec = inspect.getfullargspec(thing)
-            hints.update(
-                {
-                    k: v
-                    for k, v in spec.annotations.items()
-                    if k in (spec.args + spec.kwonlyargs) and is_a_type(v)
-                }
-            )
+            vkinds = (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+            for p in inspect.signature(thing).parameters.values():
+                if p.kind not in vkinds and is_a_type(p.annotation):
+                    if p.default is None:
+                        hints[p.name] = typing.Optional[p.annotation]
+                    else:
+                        hints[p.name] = p.annotation
     except (AttributeError, TypeError, NameError):
         pass
 

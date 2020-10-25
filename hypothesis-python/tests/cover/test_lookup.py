@@ -17,6 +17,7 @@ import abc
 import collections
 import datetime
 import enum
+import inspect
 import io
 import string
 import sys
@@ -655,3 +656,26 @@ class TreeForwardRefs(typing.NamedTuple):
 @given(st.builds(TreeForwardRefs))
 def test_resolves_forward_references_outside_annotations(t):
     assert isinstance(t, TreeForwardRefs)
+
+
+def constructor(a: str = None):
+    pass
+
+
+class WithOptionalInSignature:
+    __signature__ = inspect.signature(constructor)
+    __annotations__ = typing.get_type_hints(constructor)
+
+    def __init__(self, **kwargs):
+        assert set(kwargs) == {"a"}
+        self.a = kwargs["a"]
+
+
+def test_compat_get_type_hints_aware_of_None_default():
+    # Regression test for https://github.com/HypothesisWorks/hypothesis/issues/2648
+    strategy = st.builds(WithOptionalInSignature, a=infer)
+    find_any(strategy, lambda x: x.a is None)
+    find_any(strategy, lambda x: x.a is not None)
+
+    assert typing.get_type_hints(constructor)["a"] == typing.Optional[str]
+    assert inspect.signature(constructor).parameters["a"].annotation == str
