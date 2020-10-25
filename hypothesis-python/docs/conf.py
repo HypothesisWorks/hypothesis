@@ -31,6 +31,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "hoverxref.extension",
+    "sphinx_selective_exclude.eager_only",
 ]
 
 templates_path = ["_templates"]
@@ -52,6 +53,12 @@ with open(
     exec(f.read(), _d)
     version = _d["__version__"]
     release = _d["__version__"]
+
+
+def setup(app):
+    if os.path.isfile(os.path.join(os.path.dirname(__file__), "..", "RELEASE.rst")):
+        app.tags.add("has_release_file")
+
 
 language = None
 
