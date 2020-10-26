@@ -116,7 +116,7 @@ twine==3.2.0              # via -r requirements/tools.in
 typed-ast==1.4.1          # via black, mypy
 typing-extensions==3.7.4.3  # via black, mypy
 urllib3==1.25.11          # via requests
-virtualenv==20.0.35       # via tox
+virtualenv==20.1.0       # via tox
 wcwidth==0.2.5            # via prompt-toolkit
 webencodings==0.5.1       # via bleach
 wrapt==1.12.1             # via deprecated
