@@ -63,7 +63,7 @@ pbr==5.5.1                # via stevedore
 pexpect==4.8.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pip-tools==5.3.1          # via -r requirements/tools.in
-pkginfo==1.5.0.1          # via twine
+pkginfo==1.6.0          # via twine
 pluggy==0.13.1            # via pytest, tox
 prompt-toolkit==3.0.8     # via ipython
 ptyprocess==0.6.0         # via pexpect
