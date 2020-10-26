@@ -6,7 +6,7 @@
 #
 alabaster==0.7.12         # via sphinx
 appdirs==1.4.4            # via black, virtualenv
-asgiref==3.3.0           # via django
+asgiref==3.2.10           # via django
 attrs==20.2.0             # via flake8-bugbear, hypothesis (hypothesis-python/setup.py), pytest
 autoflake==1.4            # via -r requirements/tools.in
 babel==2.8.0              # via sphinx
@@ -21,7 +21,7 @@ chardet==3.0.4            # via requests
 click==7.1.2              # via black, pip-tools, pyupio, safety
 colorama==0.4.4           # via twine
 coverage==5.3             # via -r requirements/tools.in
-cryptography==3.2       # via secretstorage
+cryptography==3.2         # via secretstorage
 decorator==4.4.2          # via ipython
 deprecated==1.2.10        # via pygithub
 distlib==0.3.1            # via virtualenv
@@ -39,7 +39,7 @@ flake8-mutable==1.2.0     # via -r requirements/tools.in
 flake8-polyfill==1.0.2    # via flake8-bandit
 flake8==3.8.4             # via -r requirements/tools.in, flake8-2020, flake8-bandit, flake8-bugbear, flake8-comprehensions, flake8-docstrings, flake8-mutable, flake8-polyfill
 gitdb==4.0.5              # via gitpython
-gitpython==3.1.11          # via bandit
+gitpython==3.1.11         # via bandit
 idna==2.10                # via requests
 imagesize==1.2.0          # via sphinx
 iniconfig==1.1.1          # via pytest
@@ -57,13 +57,13 @@ mypy-extensions==0.4.3    # via black, mypy
 mypy==0.790               # via -r requirements/tools.in
 numpy==1.19.2             # via -r requirements/tools.in
 packaging==20.4           # via bleach, dparse, pytest, pyupio, safety, sphinx, tox
-parso==0.8.0              # via jedi
+parso==0.7.1              # via jedi
 pathspec==0.8.0           # via black
 pbr==5.5.1                # via stevedore
 pexpect==4.8.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pip-tools==5.3.1          # via -r requirements/tools.in
-pkginfo==1.6.0          # via twine
+pkginfo==1.6.0            # via twine
 pluggy==0.13.1            # via pytest, tox
 prompt-toolkit==3.0.8     # via ipython
 ptyprocess==0.6.0         # via pexpect
@@ -116,7 +116,7 @@ twine==3.2.0              # via -r requirements/tools.in
 typed-ast==1.4.1          # via black, mypy
 typing-extensions==3.7.4.3  # via black, mypy
 urllib3==1.25.11          # via requests
-virtualenv==20.1.0       # via tox
+virtualenv==20.1.0        # via tox
 wcwidth==0.2.5            # via prompt-toolkit
 webencodings==0.5.1       # via bleach
 wrapt==1.12.1             # via deprecated
