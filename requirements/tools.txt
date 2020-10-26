@@ -97,6 +97,7 @@ snowballstemmer==2.0.0    # via pydocstyle, sphinx
 sortedcontainers==2.2.2   # via hypothesis (hypothesis-python/setup.py)
 sphinx-hoverxref==0.5b1   # via -r requirements/tools.in
 sphinx-rtd-theme==0.5.0   # via -r requirements/tools.in
+sphinx-selective-exclude==1.0.3  # via -r requirements/tools.in
 sphinx==3.2.1             # via -r requirements/tools.in, sphinx-rtd-theme
 sphinxcontrib-applehelp==1.0.2  # via sphinx
 sphinxcontrib-devhelp==1.0.2  # via sphinx

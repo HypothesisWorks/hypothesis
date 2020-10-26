@@ -10,6 +10,14 @@ on `PyPI <https://pypi.org/project/hypothesis/>`__.
 Hypothesis 5.x
 ==============
 
+.. only:: has_release_file
+
+    --------------------
+    Current pull request
+    --------------------
+
+    .. include:: ../RELEASE.rst
+
 .. _v5.38.0:
 
 -------------------

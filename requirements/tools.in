@@ -26,6 +26,7 @@ restructuredtext-lint
 sphinx
 sphinx-hoverxref
 sphinx-rtd-theme
+sphinx-selective-exclude
 toml
 tox
 twine
