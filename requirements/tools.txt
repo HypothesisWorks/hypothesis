@@ -6,7 +6,7 @@
 #
 alabaster==0.7.12         # via sphinx
 appdirs==1.4.4            # via black, virtualenv
-asgiref==3.2.10           # via django
+asgiref==3.3.0           # via django
 attrs==20.2.0             # via flake8-bugbear, hypothesis (hypothesis-python/setup.py), pytest
 autoflake==1.4            # via -r requirements/tools.in
 babel==2.8.0              # via sphinx
