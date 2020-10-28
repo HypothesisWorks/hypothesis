@@ -65,11 +65,6 @@ is_hypothesis_file = belongs_to(hypothesis)
 HYPOTHESIS_CONTROL_EXCEPTIONS = (DeadlineExceeded, StopTest, UnsatisfiedAssumption)
 
 
-def mark_for_escalation(e):
-    if not isinstance(e, HYPOTHESIS_CONTROL_EXCEPTIONS):
-        e.hypothesis_internal_always_escalate = True
-
-
 def escalate_hypothesis_internal_error():
     if PREVENT_ESCALATION:
         return
@@ -79,8 +74,6 @@ def escalate_hypothesis_internal_error():
     if getattr(e, "hypothesis_internal_never_escalate", False):
         return
 
-    if getattr(e, "hypothesis_internal_always_escalate", False):
-        raise
     filepath = traceback.extract_tb(tb)[-1][0]
     if is_hypothesis_file(filepath) and not isinstance(
         e, (HypothesisException,) + HYPOTHESIS_CONTROL_EXCEPTIONS

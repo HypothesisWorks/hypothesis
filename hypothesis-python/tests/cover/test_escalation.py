@@ -18,7 +18,6 @@ import os
 import pytest
 
 import hypothesis
-from hypothesis import given, strategies as st
 from hypothesis.internal import escalation as esc
 
 
@@ -47,23 +46,6 @@ def test_does_not_escalate_errors_in_hypothesis_file_if_disabled(monkeypatch):
         assert False
     except AssertionError:
         esc.escalate_hypothesis_internal_error()
-
-
-def test_immediately_escalates_errors_in_generation():
-    count = [0]
-
-    def explode(s):
-        count[0] += 1
-        raise ValueError()
-
-    @given(st.integers().map(explode))
-    def test(i):
-        pass
-
-    with pytest.raises(ValueError):
-        test()
-
-    assert count == [1]
 
 
 def test_is_hypothesis_file_not_confused_by_prefix(monkeypatch):
