@@ -1470,8 +1470,14 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # common) way to resolve a type to a strategy.  Note that the value in the
     # lookup may be a strategy or a function from type -> strategy; and we
     # convert empty results into an explicit error.
-    if thing in types._global_type_lookup:
-        return as_strategy(types._global_type_lookup[thing], thing)
+    try:
+        if thing in types._global_type_lookup:
+            return as_strategy(types._global_type_lookup[thing], thing)
+    except TypeError:  # pragma: no cover
+        # This is due to a bizarre divergence in behaviour under Python 3.9.0:
+        # typing.Callable[[], foo] has __args__ = (foo,) but collections.abc.Callable
+        # has __args__ = ([], foo); and as a result is non-hashable.
+        pass
     # We also have a special case for TypeVars.
     # They are represented as instances like `~T` when they come here.
     # We need to work with their type instead.
@@ -1482,7 +1488,11 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
     # We'll start by checking if thing is from from the typing module,
     # because there are several special cases that don't play well with
     # subclass and instance checks.
-    if isinstance(thing, typing_root_type):
+    if isinstance(thing, typing_root_type) or (
+        sys.version_info[:2] >= (3, 9)
+        and isinstance(getattr(thing, "__origin__", None), type)
+        and getattr(thing, "__args__", None)
+    ):
         return types.from_typing_type(thing)
     # If it's not from the typing module, we get all registered types that are
     # a subclass of `thing` and are not themselves a subtype of any other such

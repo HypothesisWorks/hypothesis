@@ -191,7 +191,9 @@ def from_typing_type(thing):
                 literals.append(arg)
         return st.sampled_from(literals)
     # Now, confirm that we're dealing with a generic type as we expected
-    if not isinstance(thing, typing_root_type):  # pragma: no cover
+    if sys.version_info[:2] < (3, 9) and not isinstance(
+        thing, typing_root_type
+    ):  # pragma: no cover
         raise ResolutionFailed("Cannot resolve %s to a strategy" % (thing,))
 
     # Some "generic" classes are not generic *in* anything - for example both
@@ -557,8 +559,12 @@ def resolve_Callable(thing):
     # use of keyword arguments and we'd rather not force positional-only.
     if not thing.__args__:  # pragma: no cover  # varies by minor version
         return st.functions()
+    # Note that a list can only appear in __args__ under Python 3.9 with the
+    # collections.abc version; see https://bugs.python.org/issue42195
     return st.functions(
-        like=(lambda: None) if len(thing.__args__) == 1 else (lambda *a, **k: None),
+        like=(lambda: None)
+        if len(thing.__args__) == 1 or thing.__args__[0] == []
+        else (lambda *a, **k: None),
         returns=st.from_type(thing.__args__[-1]),
     )
 
