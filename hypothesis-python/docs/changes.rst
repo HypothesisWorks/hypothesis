@@ -18,6 +18,16 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.39.0:
+
+-------------------
+5.39.0 - 2020-10-30
+-------------------
+
+:func:`~hypothesis.strategies.from_type` now knows how to resolve :pep:`585`
+parameterized standard collection types, which are new in Python 3.9
+(:issue:`2629`).
+
 .. _v5.38.1:
 
 -------------------
