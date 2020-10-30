@@ -19,6 +19,7 @@ import datetime
 import enum
 import inspect
 import io
+import re
 import string
 import sys
 import typing
@@ -48,7 +49,7 @@ generics = sorted(
 xfail_on_39 = () if sys.version_info[:2] < (3, 9) else pytest.mark.xfail
 
 
-@pytest.mark.parametrize("typ", generics)
+@pytest.mark.parametrize("typ", generics, ids=repr)
 @settings(
     suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much],
     database=None,
@@ -92,6 +93,24 @@ def test_typing_Type_Union(ex):
     assert ex in (str, list)
 
 
+@pytest.mark.parametrize(
+    "typ",
+    [
+        collections.abc.ByteString,
+        # These are nonexistent or exist-but-are-not-types on Python 3.6
+        typing.Match if sys.version_info[:2] >= (3, 7) else int,
+        typing.Pattern if sys.version_info[:2] >= (3, 7) else int,
+        getattr(re, "Match", int),
+        getattr(re, "Pattern", int),
+    ],
+    ids=repr,
+)
+@given(data=st.data())
+def test_rare_types(data, typ):
+    ex = data.draw(from_type(typ))
+    assert isinstance(ex, typ)
+
+
 class Elem:
     pass
 
@@ -114,6 +133,8 @@ class Elem:
         (typing.Mapping[Elem, None], typing.Mapping),
         (typing.Container[Elem], typing.Container),
         (typing.NamedTuple("A_NamedTuple", (("elem", Elem),)), tuple),
+        (typing.Counter[Elem], typing.Counter),
+        (typing.Deque[Elem], typing.Deque),
     ],
     ids=repr,
 )
@@ -126,9 +147,30 @@ def test_specialised_collection_types(data, typ, coll_type):
     assume(instances)  # non-empty collections without calling len(iterator)
 
 
-@given(from_type(typing.DefaultDict[int, Elem]).filter(len))
-def test_defaultdict_values_type(ex):
-    assert all(isinstance(elem, Elem) for elem in ex.values())
+class ElemValue:
+    pass
+
+
+@pytest.mark.parametrize(
+    "typ,coll_type",
+    [
+        (typing.ChainMap[Elem, ElemValue], typing.ChainMap),
+        (typing.DefaultDict[Elem, ElemValue], typing.DefaultDict),
+    ]
+    + (
+        [(typing.OrderedDict[Elem, ElemValue], typing.OrderedDict)]
+        if hasattr(typing, "OrderedDict")  # Python 3.7.2 and later
+        else []
+    ),
+    ids=repr,
+)
+@given(data=st.data())
+def test_specialised_mapping_types(data, typ, coll_type):
+    ex = data.draw(from_type(typ).filter(len))
+    assert isinstance(ex, coll_type)
+    instances = [isinstance(elem, Elem) for elem in ex]
+    assert all(instances)
+    assert all(isinstance(elem, ElemValue) for elem in ex.values())
 
 
 @given(from_type(typing.ItemsView[Elem, Elem]).filter(len))
@@ -137,6 +179,27 @@ def test_ItemsView(ex):
     assert isinstance(ex, type({}.items()))
     assert all(isinstance(elem, tuple) and len(elem) == 2 for elem in ex)
     assert all(all(isinstance(e, Elem) for e in elem) for elem in ex)
+
+
+@pytest.mark.skipif(sys.version_info[:2] == (3, 6), reason="not a type on py36")
+@pytest.mark.parametrize("generic", [typing.Match, typing.Pattern])
+@pytest.mark.parametrize("typ", [bytes, str])
+@given(data=st.data())
+def test_regex_types(data, generic, typ):
+    x = data.draw(from_type(generic[typ]))
+    assert isinstance(x[0] if generic is typing.Match else x.pattern, typ)
+
+
+@given(x=infer)
+def test_Generator(x: typing.Generator[Elem, None, ElemValue]):
+    assert isinstance(x, typing.Generator)
+    try:
+        while True:
+            e = next(x)
+            assert isinstance(e, Elem)
+            x.send(None)  # The generators we create don't check the send type
+    except StopIteration as stop:
+        assert isinstance(stop.value, ElemValue)
 
 
 def test_Optional_minimises_to_None():

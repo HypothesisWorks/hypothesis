@@ -23,6 +23,7 @@ import io
 import ipaddress
 import numbers
 import os
+import re
 import sys
 import typing
 import uuid
@@ -32,6 +33,7 @@ from types import FunctionType
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import ForwardRef, typing_root_type
+from hypothesis.internal.conjecture.utils import many as conjecture_utils_many
 from hypothesis.strategies._internal.ipaddress import (
     SPECIAL_IPv4_RANGES,
     SPECIAL_IPv6_RANGES,
@@ -215,13 +217,17 @@ def from_typing_type(thing):
         for k, v in _global_type_lookup.items()
         if is_generic_type(k) and try_issubclass(k, thing)
     }
-    if typing.Dict in mapping:
+    if typing.Dict in mapping or typing.Set in mapping:
         # ItemsView can cause test_lookup.py::test_specialised_collection_types
         # to fail, due to weird isinstance behaviour around the elements.
         mapping.pop(typing.ItemsView, None)
         if sys.version_info[:2] == (3, 6):  # pragma: no cover
             # `isinstance(dict().values(), Container) is False` on py36 only -_-
             mapping.pop(typing.ValuesView, None)
+    if typing.Deque in mapping and len(mapping) > 1:
+        # Resolving generic sequences to include a deque is more trouble for e.g.
+        # the ghostwriter than it's worth, via undefined names in the repr.
+        mapping.pop(typing.Deque)
     if len(mapping) > 1:
         # issubclass treats bytestring as a kind of sequence, which it is,
         # but treating it as such breaks everything else when it is presumed
@@ -339,6 +345,7 @@ _global_type_lookup = {
         _networks(128).map(lambda x: ipaddress.IPv6Network(x, strict=False)),
         st.sampled_from(SPECIAL_IPv6_RANGES).map(ipaddress.IPv6Network),
     ),
+    os.PathLike: st.builds(PurePath, st.text()),
     # Pull requests with more types welcome!
 }
 
@@ -346,8 +353,11 @@ _global_type_lookup[type] = st.sampled_from(
     [type(None)] + sorted(_global_type_lookup, key=str)
 )
 
-if sys.version_info[:2] >= (3, 6):  # pragma: no branch
-    _global_type_lookup[os.PathLike] = st.builds(PurePath, st.text())
+if sys.version_info[:2] >= (3, 7):  # pragma: no branch
+    _global_type_lookup[re.Match] = (
+        st.text().map(lambda c: re.match(".", c, flags=re.DOTALL)).filter(bool)
+    )
+    _global_type_lookup[re.Pattern] = st.builds(re.compile, st.sampled_from(["", b""]))
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     # subclass of MutableMapping, and in Python 3.9 we resolve to a union
     # which includes this... but we don't actually ever want to build one.
@@ -371,6 +381,7 @@ _global_type_lookup.update(
         # memoryview types, it is a subclass of Hashable and those types are not.
         # We therefore only generate the bytes type.
         typing.ByteString: st.binary(),
+        collections.abc.ByteString: st.binary(),
         # TODO: SupportsAbs and SupportsRound should be covariant, ie have functions.
         typing.SupportsAbs: st.one_of(
             st.booleans(),
@@ -550,6 +561,74 @@ def resolve_ValuesView(thing):
 @register(typing.Iterator, st.iterables(st.nothing()))
 def resolve_Iterator(thing):
     return st.iterables(st.from_type(thing.__args__[0]))
+
+
+@register(typing.Counter, st.builds(collections.Counter))
+def resolve_Counter(thing):
+    return st.dictionaries(
+        keys=st.from_type(thing.__args__[0]),
+        values=st.integers(),
+    ).map(collections.Counter)
+
+
+@register(typing.Deque, st.builds(collections.deque))
+def resolve_deque(thing):
+    return st.lists(st.from_type(thing.__args__[0])).map(collections.deque)
+
+
+@register(typing.ChainMap, st.builds(dict).map(collections.ChainMap))
+def resolve_ChainMap(thing):
+    return resolve_Dict(thing).map(collections.ChainMap)
+
+
+@register("OrderedDict", st.builds(dict).map(collections.OrderedDict))
+def resolve_OrderedDict(thing):
+    # typing.OrderedDict is new in Python 3.7.2
+    return resolve_Dict(thing).map(collections.OrderedDict)
+
+
+@register(typing.Pattern, st.builds(re.compile, st.sampled_from(["", b""])))
+def resolve_Pattern(thing):
+    if isinstance(thing.__args__[0], typing.TypeVar):
+        return st.builds(re.compile, st.sampled_from(["", b""]))
+    return st.just(re.compile(thing.__args__[0]()))
+
+
+@register(  # pragma: no branch  # coverage does not see lambda->exit branch
+    typing.Match,
+    st.text().map(lambda c: re.match(".", c, flags=re.DOTALL)).filter(bool),
+)
+def resolve_Match(thing):
+    if thing.__args__[0] == bytes:
+        return (
+            st.binary(min_size=1)
+            .map(lambda c: re.match(b".", c, flags=re.DOTALL))
+            .filter(bool)
+        )
+    return st.text().map(lambda c: re.match(".", c, flags=re.DOTALL)).filter(bool)
+
+
+class GeneratorStrategy(st.SearchStrategy):
+    def __init__(self, yields, returns):
+        assert isinstance(yields, st.SearchStrategy)
+        assert isinstance(returns, st.SearchStrategy)
+        self.yields = yields
+        self.returns = returns
+
+    def __repr__(self):
+        return f"<generators yields={self.yields!r} returns={self.returns!r}>"
+
+    def do_draw(self, data):
+        elements = conjecture_utils_many(data, min_size=0, max_size=100, average_size=5)
+        while elements.more():
+            yield data.draw(self.yields)
+        return data.draw(self.returns)
+
+
+@register(typing.Generator, GeneratorStrategy(st.none(), st.none()))
+def resolve_Generator(thing):
+    yields, _, returns = thing.__args__
+    return GeneratorStrategy(st.from_type(yields), st.from_type(returns))
 
 
 @register(typing.Callable, st.functions())
