@@ -18,6 +18,7 @@ from __future__ import annotations
 import collections
 import collections.abc
 import contextlib
+import re
 import sys
 
 import pytest
@@ -88,10 +89,35 @@ def test_resolving_standard_frozenset_as_generic(x: frozenset[Elem]):
 
 
 @given(x=infer)
+def test_resolving_standard_deque_as_generic(x: collections.deque[Elem]):
+    check(collections.deque, x)
+
+
+@given(x=infer)
 def test_resolving_standard_defaultdict_as_generic(
     x: collections.defaultdict[Elem, Value]
 ):
     check(collections.defaultdict, x)
+    assert all(isinstance(e, Value) for e in x.values())
+
+
+@given(x=infer)
+def test_resolving_standard_ordered_dict_as_generic(
+    x: collections.OrderedDict[Elem, Value]
+):
+    check(collections.OrderedDict, x)
+    assert all(isinstance(e, Value) for e in x.values())
+
+
+@given(x=infer)
+def test_resolving_standard_counter_as_generic(x: collections.Counter[Elem]):
+    check(collections.Counter, x)
+    assume(any(x.values()))  # Check that we generated at least one nonzero count
+
+
+@given(x=infer)
+def test_resolving_standard_chainmap_as_generic(x: collections.ChainMap[Elem, Value]):
+    check(collections.ChainMap, x)
     assert all(isinstance(e, Value) for e in x.values())
 
 
@@ -103,6 +129,20 @@ def test_resolving_standard_iterable_as_generic(x: collections.abc.Iterable[Elem
 @given(x=infer)
 def test_resolving_standard_iterator_as_generic(x: collections.abc.Iterator[Elem]):
     check(collections.abc.Iterator, x)
+
+
+@given(x=infer)
+def test_resolving_standard_generator_as_generic(
+    x: collections.abc.Generator[Elem, None, Value]
+):
+    assert isinstance(x, collections.abc.Generator)
+    try:
+        while True:
+            e = next(x)
+            assert isinstance(e, Elem)
+            x.send(None)  # The generators we create don't check the send type
+    except StopIteration as stop:
+        assert isinstance(stop.value, Value)
 
 
 @given(x=infer)
@@ -139,6 +179,11 @@ def test_resolving_standard_callable_no_args(x: collections.abc.Callable[[], Ele
         x(1)
     with pytest.raises(TypeError):
         x(a=1)
+
+
+@given(x=infer)
+def test_resolving_standard_collections_set_as_generic(x: collections.abc.Set[Elem]):
+    check(collections.abc.Set, x)
 
 
 @given(x=infer)
@@ -198,3 +243,27 @@ def test_resolving_standard_contextmanager_as_generic(
     x: contextlib.AbstractContextManager[Elem],
 ):
     assert isinstance(x, contextlib.AbstractContextManager)
+
+
+@given(x=infer)
+def test_resolving_standard_re_match_bytes_as_generic(x: re.Match[bytes]):
+    assert isinstance(x, re.Match)
+    assert isinstance(x[0], bytes)
+
+
+@given(x=infer)
+def test_resolving_standard_re_match_str_as_generic(x: re.Match[str]):
+    assert isinstance(x, re.Match)
+    assert isinstance(x[0], str)
+
+
+@given(x=infer)
+def test_resolving_standard_re_pattern_bytes_as_generic(x: re.Pattern[bytes]):
+    assert isinstance(x, re.Pattern)
+    assert isinstance(x.pattern, bytes)
+
+
+@given(x=infer)
+def test_resolving_standard_re_pattern_str_as_generic(x: re.Pattern[str]):
+    assert isinstance(x, re.Pattern)
+    assert isinstance(x.pattern, str)
