@@ -18,6 +18,19 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.40.0:
+
+-------------------
+5.40.0 - 2020-10-30
+-------------------
+
+This release teaches :func:`~hypothesis.strategies.from_type` how to handle
+:class:`~python:typing.ChainMap`, :class:`~python:typing.Counter`,
+:class:`~python:typing.Deque`, :class:`~python:typing.Generator`,
+:class:`~python:typing.Match`, :class:`~python:typing.OrderedDict`,
+:class:`~python:typing.Pattern`, and :class:`python:collections.abc.Set`
+(:issue:`2654`).
+
 .. _v5.39.0:
 
 -------------------
