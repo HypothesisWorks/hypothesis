@@ -18,6 +18,16 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.41.0:
+
+-------------------
+5.41.0 - 2020-10-30
+-------------------
+
+Hypothesis now shrinks examples where the error is raised while drawing from
+a strategy.  This makes complicated custom strategies *much* easier to debug,
+at the cost of a slowdown for use-cases where you catch and ignore such errors.
+
 .. _v5.40.0:
 
 -------------------
