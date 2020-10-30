@@ -23,7 +23,6 @@ from hypothesis.errors import Frozen, InvalidArgument, StopTest
 from hypothesis.internal.compat import bit_length, int_from_bytes, int_to_bytes
 from hypothesis.internal.conjecture.junkdrawer import IntList, uniform
 from hypothesis.internal.conjecture.utils import calc_label_from_name
-from hypothesis.internal.escalation import mark_for_escalation
 
 TOP_LABEL = calc_label_from_name("top")
 DRAW_BYTES_LABEL = calc_label_from_name("draw_bytes() in ConjectureData")
@@ -883,15 +882,11 @@ class ConjectureData:
             if not at_top_level:
                 return strategy.do_draw(self)
             else:
+                strategy.validate()
                 try:
-                    strategy.validate()
-                    try:
-                        return strategy.do_draw(self)
-                    finally:
-                        self.draw_times.append(time.perf_counter() - start_time)
-                except BaseException as e:
-                    mark_for_escalation(e)
-                    raise
+                    return strategy.do_draw(self)
+                finally:
+                    self.draw_times.append(time.perf_counter() - start_time)
         finally:
             self.stop_example()
 
