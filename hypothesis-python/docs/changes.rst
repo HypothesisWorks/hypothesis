@@ -18,6 +18,14 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.41.1:
+
+-------------------
+5.41.1 - 2020-11-03
+-------------------
+
+This patch improves our :ref:`CLI help and documentation <hypothesis-cli>`.
+
 .. _v5.41.0:
 
 -------------------
