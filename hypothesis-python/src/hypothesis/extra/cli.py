@@ -20,11 +20,23 @@
 hypothesis[cli]
 ----------------
 
-This module provides Hypothesis' command-line interface, for e.g.
-:doc:`'ghostwriting' tests <ghostwriter>` via the terminal.
-It requires the :pypi:`click` package.
+::
 
-Run :command:`hypothesis --help` in your terminal for details.
+    $ hypothesis --help
+    Usage: hypothesis [OPTIONS] COMMAND [ARGS]...
+
+    Options:
+    --version   Show the version and exit.
+    -h, --help  Show this message and exit.
+
+    Commands:
+    fuzz   [hypofuzz] runs tests with an adaptive coverage-guided fuzzer.
+    write  `hypothesis write` writes property-based tests for you! Type...
+
+This module requires the :pypi:`click` package, and provides Hypothesis' command-line
+interface, for e.g. :doc:`'ghostwriting' tests <ghostwriter>` via the terminal.
+It's also where `HypoFuzz <https://hypofuzz.com/>`__ adds the :command:`hypothesis fuzz`
+command (`learn more about that here <https://hypofuzz.com/docs/quickstart.html>`__).
 """
 
 import builtins
@@ -94,10 +106,20 @@ else:
 
     @main.command()  # type: ignore  # Click adds the .command attribute
     @click.argument("func", type=obj_name, required=True, nargs=-1)
+    @click.option(
+        "--roundtrip",
+        "writer",
+        flag_value="roundtrip",
+        help="start by testing write/read or encode/decode!",
+    )
+    @click.option(
+        "--equivalent",
+        "writer",
+        flag_value="equivalent",
+        help="very useful when optimising or refactoring code",
+    )
     @click.option("--idempotent", "writer", flag_value="idempotent")
     @click.option("--binary-op", "writer", flag_value="binary_operation")
-    @click.option("--equivalent", "writer", flag_value="equivalent")
-    @click.option("--roundtrip", "writer", flag_value="roundtrip")
     # Note: we deliberately omit a --ufunc flag, because the magic()
     # detection of ufuncs is both precise and complete.
     @click.option(
@@ -122,11 +144,12 @@ else:
 
         \b
             hypothesis write gzip
+            hypothesis write numpy.matmul
             hypothesis write re.compile --except re.error
-            hypothesis write --style=unittest --idempotent sorted
-            hypothesis write --binary-op operator.add
             hypothesis write --equivalent ast.literal_eval eval
             hypothesis write --roundtrip json.dumps json.loads
+            hypothesis write --style=unittest --idempotent sorted
+            hypothesis write --binary-op operator.add
         """
         # NOTE: if you want to call this function from Python, look instead at the
         # ``hypothesis.extra.ghostwriter`` module.  Click-decorated functions have

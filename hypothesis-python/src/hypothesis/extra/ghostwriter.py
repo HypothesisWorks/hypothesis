@@ -23,14 +23,40 @@ The idea is to provide **an easy way to start** property-based testing,
 tests are source code that you could have written for yourself.
 
 So just pick a function you'd like tested, and feed it to one of the functions
-below or :ref:`our command-line interface <hypothesis-cli>` :command:`hypothesis write -h`!
-They follow imports, use but do not require type annotations, and generally
-do their best to write you a useful test.
+below.  They follow imports, use but do not require type annotations, and
+generally do their best to write you a useful test.  You can also use
+:ref:`our command-line interface <hypothesis-cli>`::
+
+    $ hypothesis write --help
+    Usage: hypothesis write [OPTIONS] FUNC...
+
+    `hypothesis write` writes property-based tests for you!
+
+    Type annotations are helpful but not required for our advanced
+    introspection and templating logic.  Try running the examples below to see
+    how it works:
+
+        hypothesis write gzip
+        hypothesis write numpy.matmul
+        hypothesis write re.compile --except re.error
+        hypothesis write --equivalent ast.literal_eval eval
+        hypothesis write --roundtrip json.dumps json.loads
+        hypothesis write --style=unittest --idempotent sorted
+        hypothesis write --binary-op operator.add
+
+    Options:
+    --roundtrip                start by testing write/read or encode/decode!
+    --equivalent               very useful when optimising or refactoring code
+    --idempotent
+    --binary-op
+    --style [pytest|unittest]  pytest-style function, or unittest-style method?
+    -e, --except OBJ_NAME      dotted name of exception(s) to ignore
+    -h, --help                 Show this message and exit.
 
 .. note::
 
-    The ghostwriter requires :pypi:`black`, but the generated code has no
-    dependencies beyond Hypothesis itself.
+    The ghostwriter requires :pypi:`black`, but the generated code only
+    requires Hypothesis itself.
 
 .. note::
 
@@ -800,7 +826,6 @@ def binary_operation(
         ghostwriter.binary_operation(
             operator.mul,
             identity=1,
-            inverse=operator.div,
             distributes_over=operator.add,
             style="unittest",
         )

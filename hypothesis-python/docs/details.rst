@@ -701,14 +701,17 @@ on working with markers <pytest:mark examples>`.
 Use with external fuzzers
 -------------------------
 
-.. warning::
+.. tip::
 
-    This feature is experimental, and may change or be removed in a minor update.
+    | Want an integrated workflow for your team's local tests, CI, and continuous fuzzing?
+    | Use `HypoFuzz <https://hypofuzz.com/>`__ to fuzz your whole test suite,
+      and find more bugs without more tests!
 
 Sometimes, you might want to point a traditional fuzzer such as
 `python-afl <https://github.com/jwilk/python-afl>`__ or :pypi:`pythonfuzz`
 at your code. Wouldn't it be nice if you could use any of your
-:func:`@given <hypothesis.given>` tests as fuzz targets?
+:func:`@given <hypothesis.given>` tests as fuzz targets, instead of
+converting bytestrings into your objects by hand?
 
 .. code:: python
 

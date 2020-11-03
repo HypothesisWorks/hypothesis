@@ -2,7 +2,7 @@
 First-party extensions
 ======================
 
-Hypothesis has minimal dependencies (just :pypi:`attrs`), to maximise
+Hypothesis has minimal dependencies, to maximise
 compatibility and make installing Hypothesis as easy as possible.
 
 Our integrations with specific packages are therefore provided by ``extra``
