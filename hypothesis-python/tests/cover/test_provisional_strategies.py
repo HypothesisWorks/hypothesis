@@ -28,7 +28,7 @@ from tests.common.utils import checks_deprecated_behaviour
 
 @given(urls())
 def test_is_URL(url):
-    allowed_chars = set(string.ascii_letters + string.digits + "$-_.+!*'(),%/")
+    allowed_chars = set(string.ascii_letters + string.digits + "$-_.+!*'(),~%/")
     url_schemeless = url.split("://", 1)[1]
     path = url_schemeless.split("/", 1)[1] if "/" in url_schemeless else ""
     assert all(c in allowed_chars for c in path)

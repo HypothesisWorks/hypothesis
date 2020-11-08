@@ -34,7 +34,7 @@ from hypothesis.strategies._internal import core as st
 from hypothesis.strategies._internal.ipaddress import ip_addresses
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
-URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'(),")
+URL_SAFE_CHARACTERS = frozenset(string.ascii_letters + string.digits + "$-_.+!*'(),~")
 
 
 # This file is sourced from http://data.iana.org/TLD/tlds-alpha-by-domain.txt
