@@ -18,6 +18,15 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.41.2:
+
+-------------------
+5.41.2 - 2020-11-08
+-------------------
+
+This patch fixes :func:`~hypothesis.provisional.urls` strategy ensuring that
+``~`` (tilde) is treated as one of the url-safe characters (:issue:`2658`).
+
 .. _v5.41.1:
 
 -------------------
