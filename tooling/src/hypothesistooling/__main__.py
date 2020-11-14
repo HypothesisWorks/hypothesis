@@ -229,9 +229,9 @@ def format():
         "--remove-unused-variables",
         *files_to_format,
     )
-    pip_tool("pyupgrade", "--keep-percent-format", "--py36-plus", *files_to_format)
+    pip_tool("pyupgrade", "--keep-percent-format", "--py38-plus", *files_to_format)
     pip_tool("isort", *files_to_format)
-    pip_tool("black", "--target-version=py36", *files_to_format)
+    pip_tool("black", "--target-version=py38", *files_to_format)
 
 
 VALID_STARTS = (HEADER.split()[0], "#!/usr/bin/env python")
@@ -387,7 +387,7 @@ PYPY37 = "pypy3.7-7.3.2"
 
 @task()
 def install_core():
-    install.python_executable(PY36)
+    install.python_executable(PY38)
 
 
 # ALIASES are the executable names for each Python version
@@ -443,7 +443,7 @@ def check_pypy37():
 
 
 def standard_tox_task(name):
-    TASKS["check-" + name] = python_tests(lambda: run_tox(name, PY36))
+    TASKS["check-" + name] = python_tests(lambda: run_tox(name, PY38))
 
 
 standard_tox_task("nose")
@@ -460,7 +460,7 @@ standard_tox_task("conjecture-coverage")
 
 @task()
 def check_quality():
-    run_tox("quality", PY36)
+    run_tox("quality", PY38)
 
 
 examples_task = task(
@@ -470,7 +470,7 @@ examples_task = task(
 
 @examples_task
 def check_examples3():
-    run_tox("examples3", PY36)
+    run_tox("examples3", PY38)
 
 
 @task()

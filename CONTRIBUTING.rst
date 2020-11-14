@@ -164,7 +164,7 @@ Some notable commands:
 ``./build.sh check-coverage`` will verify 100% code coverage by running a
 curated subset of the test suite.
 
-``./build.sh check-py36`` (etc.) will run most of the test suite against a
+``./build.sh check-py38`` (etc.) will run most of the test suite against a
 particular python version.
 
 ``./build.sh format`` will reformat your code according to the Hypothesis coding style. You should use this before each
