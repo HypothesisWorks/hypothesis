@@ -316,14 +316,8 @@ def _strategy(codes, context, is_unicode):
                     j += 1
 
                 if i + 1 < j:
-                    strategies.append(
-                        st.just(
-                            empty.join(
-                                [to_char(charcode) for (_, charcode) in codes[i:j]]
-                            )
-                        )
-                    )
-
+                    chars = (to_char(charcode) for _, charcode in codes[i:j])
+                    strategies.append(st.just(empty.join(chars)))
                     i = j
                     continue
 
