@@ -351,12 +351,28 @@ def _strategy(codes, context, is_unicode):
         elif code == sre.NOT_LITERAL:
             # Regex '[^a]' (negation of a single char)
             c = to_char(value)
-            blacklist = set(c)
+            blacklist = {c}
             if (
                 context.flags & re.IGNORECASE
                 and re.match(re.escape(c), c.swapcase(), re.IGNORECASE) is not None
             ):
-                blacklist |= set(c.swapcase())
+                # There are a few cases where .swapcase() returns two characters,
+                # but is still a case-insensitive match.  In such cases we add *both*
+                # characters to our blacklist, to avoid doing the wrong thing for
+                # patterns such as r"[^\u0130]+" where "i\u0307" matches.
+                #
+                # (that's respectively 'Latin letter capital I with dot above' and
+                # 'latin latter i' + 'combining dot above'; see issue #2657)
+                #
+                # As a final additional wrinkle, "latin letter capital I" *also*
+                # case-insensitive-matches, with or without combining dot character.
+                # We therefore have to chain .swapcase() calls until a fixpoint.
+                stack = [c.swapcase()]
+                while stack:
+                    for char in stack.pop():
+                        blacklist.add(char)
+                        stack.extend(set(char.swapcase()) - blacklist)
+
             if is_unicode:
                 return st.characters(blacklist_characters=blacklist)
             else:
