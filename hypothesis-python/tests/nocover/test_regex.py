@@ -104,3 +104,10 @@ def test_case_insensitive_not_literal_never_constructs_multichar_match(data):
         assert pattern.fullmatch(s) is not None
         # And to be on the safe side, we implment this stronger property:
         assert set(s).isdisjoint(I_WITH_DOT.swapcase())
+
+
+@given(st.from_regex(re.compile(f"[^{I_WITH_DOT}_]", re.IGNORECASE), fullmatch=True))
+def test_no_error_converting_negated_sets_to_strategy(s):
+    # CharactersBuilder no longer triggers an internal error converting sets
+    # or negated sets to a strategy when multi-char strings are whitelisted.
+    pass

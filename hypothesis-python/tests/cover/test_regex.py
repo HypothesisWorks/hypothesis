@@ -453,3 +453,12 @@ def test_fullmatch_must_be_bool():
 
 def test_issue_1786_regression():
     st.from_regex(re.compile("\\\\", flags=re.IGNORECASE)).validate()
+
+
+def test_sets_allow_multichar_output_in_ignorecase_mode():
+    # CharacterBuilder.strategy includes logic to add multi-character strings
+    # via sampled_from(), if any are whitelisted as matching.  See issue #2657.
+    find_any(
+        st.from_regex(re.compile("[\u0130_]", re.IGNORECASE)),
+        lambda s: len(s) > 1,
+    )

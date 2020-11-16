@@ -114,21 +114,29 @@ class CharactersBuilder:
     def strategy(self):
         """Returns resulting strategy that generates configured char set."""
         max_codepoint = None if self._unicode else 127
+        # Due to the .swapcase() issue described below (and in issue #2657),
+        # self._whitelist_chars may contain strings of len > 1.  We therefore
+        # have some extra logic to filter them out of st.characters() args,
+        # but still generate them if allowed to.
         if self._negate:
             black_chars = self._blacklist_chars - self._whitelist_chars
             return st.characters(
                 blacklist_categories=self._categories | {"Cc", "Cs"},
-                blacklist_characters=self._whitelist_chars,
+                blacklist_characters={c for c in self._whitelist_chars if len(c) == 1},
                 whitelist_characters=black_chars,
                 max_codepoint=max_codepoint,
             )
         white_chars = self._whitelist_chars - self._blacklist_chars
-        return st.characters(
+        multi_chars = {c for c in white_chars if len(c) > 1}
+        char_strategy = st.characters(
             whitelist_categories=self._categories,
             blacklist_characters=self._blacklist_chars,
-            whitelist_characters=white_chars,
+            whitelist_characters=white_chars - multi_chars,
             max_codepoint=max_codepoint,
         )
+        if multi_chars:
+            char_strategy |= st.sampled_from(sorted(multi_chars))
+        return char_strategy
 
     def add_category(self, category):
         """Update unicode state to match sre_parse object ``category``."""
@@ -163,6 +171,7 @@ class CharactersBuilder:
             self._ignorecase
             and re.match(re.escape(c), c.swapcase(), flags=re.IGNORECASE) is not None
         ):
+            # Note that it is possible that `len(c.swapcase()) > 1`
             self._whitelist_chars.add(c.swapcase())
 
 
