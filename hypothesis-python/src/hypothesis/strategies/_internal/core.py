@@ -2228,7 +2228,7 @@ def functions(
 ) -> SearchStrategy[Callable[..., Any]]:
     # The proper type signature of `functions()` would have T instead of Any, but mypy
     # disallows default args for generics: https://github.com/python/mypy/issues/3737
-    """functions(*, like=lambda: None, returns=none())
+    """functions(*, like=lambda: None, returns=none(), pure=False)
 
     A strategy for functions, which can be used in callbacks.
 
