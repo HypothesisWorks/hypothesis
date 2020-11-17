@@ -101,7 +101,7 @@ Reproducing an example with ``@reproduce_failure``
 Hypothesis has an opaque binary representation that it uses for all examples it
 generates. This representation is not intended to be stable across versions or
 with respect to changes in the test, but can be used to to reproduce failures
-with the ``@reproduce_example`` decorator.
+with the ``@reproduce_failure`` decorator.
 
 .. autofunction:: hypothesis.reproduce_failure
 
