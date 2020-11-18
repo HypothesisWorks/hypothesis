@@ -63,7 +63,7 @@ extras = {
     "dateutil": ["python-dateutil>=1.4"],
     "lark": ["lark-parser>=0.6.5"],
     "numpy": ["numpy>=1.9.0"],
-    "pandas": ["pandas>=0.19"],
+    "pandas": ["pandas>=0.25"],
     "pytest": ["pytest>=4.3"],
     "dpcontracts": ["dpcontracts>=0.4"],
     "redis": ["redis>=3.0.0"],
@@ -72,7 +72,9 @@ extras = {
     "django": ["pytz>=2014.1", "django>=2.2"],
 }
 
-extras["all"] = sorted(set(sum(extras.values(), [])))
+extras["all"] = sorted(
+    set(sum(extras.values(), ["importlib_metadata ; python_version<'3.8'"]))
+)
 
 
 setuptools.setup(
