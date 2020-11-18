@@ -17,6 +17,10 @@ that didn't work out, so this style guide is more normative than descriptive
 and existing APIs may not match it. Where relevant, backwards compatibility is
 much more important than conformance to the style.
 
+We also encourage `third-party extensions <https://hypothesis.readthedocs.io/en/latest/strategies.html>`_
+to follow this style guide, for consistent and user-friendly testing APIs,
+or get in touch to discuss changing it if it doesn't fit their domain.
+
 ~~~~~~~~~~~~~~~~~~
 General Guidelines
 ~~~~~~~~~~~~~~~~~~
@@ -43,6 +47,11 @@ Guidelines for strategies
 * Strategies should try to paper over non-uniformity in the underlying types
   as much as possible (e.g. ``hypothesis.extra.numpy`` has a number of
   workarounds for numpy's odd behaviour around object arrays).
+* Strategies should usually default to allowing generation of any example they
+  can support.  The only exceptions should be cases where certain inputs would
+  trigger test failures which are almost never of interest: currently just
+  non-UTF8 characters in ``st.text()``, and Numpy array shapes with zero
+  dimensions or sides of length zero.  In each case opting in should be trivial.
 
 ~~~~~~~~~~~~~~~~~
 Argument handling
@@ -161,6 +170,28 @@ The main reasons for preferring this style are:
   so that's the only place they can happen.
   It's nice to be consistent, and it's weird if sometimes strategy errors result in
   definition time errors and sometimes they result in test errors.
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Inferring strategies from specifications
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Functions which infer a strategy from some specification or schema are both
+convenient for users, and offer a single source of truth about what inputs
+are allegedly valid and actually tested for correctness.
+
+* Such functions should be named "``from_foo()``" and the first argument should
+  be the thing from which a strategy is inferred - like ``st.from_type()``,
+  ``st.from_regex()``, ``extra.lark.from_lark()``, ``extra.numpy.from_dtype()``,
+  etc.  Any other arguments should be optional keyword-only parameters.
+* There should be a smooth path to customise *parts* of an inferred strategy,
+  i.e. not require the user to start from scratch if they need something a
+  little more specific.  ``from_dtype()`` does this well; ``from_type()`` supports
+  it by `pointing users to builds() instead <https://hypothesis.works/articles/types-and-properties/>`_.
+* Where practical, ensure that the ``repr`` of the returned strategy shows
+  how it was constructed - only using e.g. ``@st.composite`` if required.
+  For example, ``repr(from_type(int)) == "integers()"``.
+
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 A catalogue of current violations
