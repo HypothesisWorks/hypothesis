@@ -72,7 +72,9 @@ extras = {
     "django": ["pytz>=2014.1", "django>=2.2"],
 }
 
-extras["all"] = sorted(set(sum(extras.values(), [])))
+extras["all"] = sorted(
+    set(sum(extras.values(), ["importlib_metadata ; python_version<'3.8'"]))
+)
 
 
 setuptools.setup(
