@@ -35,10 +35,26 @@ try:
 except ImportError:
     # But if we're not on Python >= 3.8 and the importlib_metadata backport
     # is not installed, we fall back to pkg_resources anyway.
-    import pkg_resources
+    try:
+        import pkg_resources
+    except ImportError:
+        import warnings
 
-    def get_entry_points():
-        yield from pkg_resources.iter_entry_points("hypothesis")
+        from hypothesis.errors import HypothesisWarning
+
+        warnings.warn(
+            "Under Python <= 3.7, Hypothesis requires either the importlib_metadata "
+            "or setuptools package in order to load plugins via entrypoints.",
+            HypothesisWarning,
+        )
+
+        def get_entry_points():
+            yield from ()
+
+    else:
+
+        def get_entry_points():
+            yield from pkg_resources.iter_entry_points("hypothesis")
 
 
 def run():
