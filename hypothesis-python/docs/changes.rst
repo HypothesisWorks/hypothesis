@@ -18,6 +18,17 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.41.3:
+
+-------------------
+5.41.3 - 2020-11-18
+-------------------
+
+This patch adds a final fallback clause to :ref:`our plugin logic <entry-points>`
+to fail with a warning rather than error on Python < 3.8 when neither the
+:pypi:`importlib_metadata` (preferred) or :pypi:`setuptools` (fallback)
+packages are available.
+
 .. _v5.41.2:
 
 -------------------
