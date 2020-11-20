@@ -1187,6 +1187,11 @@ def given(
                 test_runner, search_strategy, test, settings, random, wrapped_test
             )
             digest = function_digest(test)
+            # We track the minimal-so-far example for each distinct origin, so
+            # that we track log-n instead of n examples for long runs.  In particular
+            # it means that we saturate for common errors in long runs instead of
+            # storing huge volumes of low-value data.
+            minimal_failures: dict = {}
 
             def fuzz_one_input(
                 buffer: Union[bytes, bytearray, memoryview, BinaryIO]
@@ -1202,8 +1207,13 @@ def given(
                 except (StopTest, UnsatisfiedAssumption):
                     return None
                 except BaseException:
-                    if settings.database is not None:
-                        settings.database.save(digest, bytes(data.buffer))
+                    buffer = bytes(data.buffer)
+                    known = minimal_failures.get(data.interesting_origin)
+                    if settings.database is not None and (
+                        known is None or sort_key(buffer) <= sort_key(known)
+                    ):
+                        settings.database.save(digest, buffer)
+                        minimal_failures[data.interesting_origin] = buffer
                     raise
                 return bytes(data.buffer)
 

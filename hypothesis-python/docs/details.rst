@@ -708,7 +708,8 @@ Use with external fuzzers
       and find more bugs without more tests!
 
 Sometimes, you might want to point a traditional fuzzer such as
-`python-afl <https://github.com/jwilk/python-afl>`__ or :pypi:`pythonfuzz`
+`python-afl <https://github.com/jwilk/python-afl>`__, :pypi:`pythonfuzz`,
+or Google's :pypi:`atheris` (for Python *and* native extensions)
 at your code. Wouldn't it be nice if you could use any of your
 :func:`@given <hypothesis.given>` tests as fuzz targets, instead of
 converting bytestrings into your objects by hand?
