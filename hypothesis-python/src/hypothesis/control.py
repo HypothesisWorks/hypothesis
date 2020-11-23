@@ -125,7 +125,9 @@ def event(value: str) -> None:
 
 
 @deprecated_posargs
-def target(observation: Union[int, float], *, label: str = "") -> None:
+def target(
+    observation: Union[int, float], *, label: str = "", allow_noop: bool = False
+) -> None:
     """Calling this function with an ``int`` or ``float`` observation gives it feedback
     with which to guide our search for inputs that will cause an error, in
     addition to all the usual heuristics.  Observations must always be finite.
@@ -146,6 +148,11 @@ def target(observation: Union[int, float], *, label: str = "") -> None:
     and therefore separately optimise distinct observations, such as the
     mean and standard deviation of a dataset.  It is an error to call
     ``target()`` with any label more than once per test case.
+
+    Passing ``allow_noop=True`` allows use outside of an ``@given()`` or
+    stateful test, and should be used in custom ``assert_almost_equal()``
+    helpers which might be called from both traditional and property-based
+    tests.
 
     .. note::
         **The more examples you run, the better this technique works.**
@@ -169,9 +176,12 @@ def target(observation: Union[int, float], *, label: str = "") -> None:
     if not math.isfinite(observation):
         raise InvalidArgument("observation=%r must be a finite float." % observation)
     check_type(str, label, "label")
+    check_type(bool, allow_noop, "allow_noop")
 
     context = _current_build_context.value
     if context is None:
+        if allow_noop:
+            return
         raise InvalidArgument("Calling target() outside of a test is invalid.")
     verbose_report("Saw target(observation=%r, label=%r)" % (observation, label))
 

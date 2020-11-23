@@ -95,6 +95,12 @@ def test_cannot_target_outside_test():
         target(1.0, label="example label")
 
 
+def test_can_target_outside_test_with_allow_noop():
+    target(1.0, label="example label", allow_noop=True)
+    with pytest.raises(InvalidArgument):
+        target(1.0, label="example label", allow_noop=1)  # must be boolean
+
+
 @given(st.none())
 def test_cannot_target_same_label_twice(_):
     target(0.0, label="label")
