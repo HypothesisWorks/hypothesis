@@ -88,7 +88,21 @@ When a test fails unexpectedly, usually due to a health check failure,
 Hypothesis will print out a seed that led to that failure, if the test is not
 already running with a fixed seed. You can then recreate that failure using either
 the ``@seed`` decorator or (if you are running :pypi:`pytest`) with
-``--hypothesis-seed``.
+``--hypothesis-seed``.  For example, the following test function and
+:class:`~hypothesis.stateful.RuleBasedStateMachine` will each check the
+same examples each time they are executed, thanks to ``@seed()``:
+
+.. code-block:: python
+
+    @seed(1234)
+    @given(x=...)
+    def test(x):
+        ...
+
+
+    @seed(6789)
+    class MyModel(RuleBasedStateMachine):
+        ...
 
 The seed will not be printed if you could simply use ``@example`` instead.
 
