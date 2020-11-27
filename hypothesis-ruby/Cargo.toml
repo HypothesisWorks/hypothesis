@@ -4,9 +4,10 @@ version = "0.1.0"
 authors = ["David R. MacIver <david@drmaciver.com>"]
 
 [lib]
+name="rutie_ruby_example"
 crate-type = ["cdylib"]
 
 [dependencies]
-helix = '0.7.5'
+rutie = {version="0.8.1"}
 rand = '0.3'
 conjecture = { path = '../conjecture-rust' }

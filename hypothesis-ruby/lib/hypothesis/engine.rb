@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require 'helix_runtime'
-
-require_relative '../hypothesis-ruby/native'
+require 'rutie'
 
 require 'rspec/expectations'
 
@@ -24,14 +22,21 @@ module Hypothesis
 
       database = nil if database == false
 
-      @core_engine = HypothesisCoreEngine.new(
-        name, database, seed, options.fetch(:max_examples)
-      )
+      puts "Checking for lib in #{__dir__}"
+      Rutie.new(:rutie_ruby_example).init 'Init_rutie_ruby_example', "#{__dir__}/../"
+
+      # @core_engine = HypothesisCoreEngine.new(
+      #   name, database, seed, options.fetch(:max_examples)
+      # )
 
       @exceptions_to_tags = Hash.new { |h, k| h[k] = h.size }
     end
 
     def run
+      puts RutieExample.reverse('apples')
+    end
+
+    def run_todo
       loop do
         core = @core_engine.new_source
         break if core.nil?
