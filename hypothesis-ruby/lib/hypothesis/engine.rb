@@ -22,18 +22,18 @@ module Hypothesis
 
       database = nil if database == false
 
-      puts "Checking for lib in #{__dir__}"
       Rutie.new(:rutie_ruby_example).init 'Init_rutie_ruby_example', "#{__dir__}/../"
 
-      # @core_engine = HypothesisCoreEngine.new(
-      #   name, database, seed, options.fetch(:max_examples)
-      # )
+      @core_engine = HypothesisCoreEngine.new(
+        name, database, seed, options.fetch(:max_examples)
+      )
 
       @exceptions_to_tags = Hash.new { |h, k| h[k] = h.size }
     end
 
     def run
       puts RutieExample.reverse('apples')
+#      puts @core_engine.new_source
     end
 
     def run_todo
