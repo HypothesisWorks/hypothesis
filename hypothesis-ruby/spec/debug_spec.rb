@@ -13,6 +13,9 @@ RSpec.describe 'find' do
   # end
 
   it do
-    hypothesis {}
+    hypothesis do
+      puts "Debuggin"
+      puts any integers
+    end
   end
 end

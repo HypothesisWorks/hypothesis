@@ -33,7 +33,7 @@ methods!(
     }
 );
 
-struct HypothesisCoreDataSourceStruct {
+pub struct HypothesisCoreDataSourceStruct {
   source: Option<DataSource>,
 }
 
@@ -57,18 +57,19 @@ impl HypothesisCoreDataSourceStruct {
   }
 }
 
-// wrappable_struct!(HypothesisCoreDataSourceStruct, HypothesisCoreDataSourceStructWrapper, HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
+wrappable_struct!(HypothesisCoreDataSourceStruct, HypothesisCoreDataSourceStructWrapper, HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
 
-// class!(HypothesisCoreDataSource);
+class!(HypothesisCoreDataSource);
 
 // methods!(
 //   HypothesisCoreDataSource,
 //   itself,
 
-//   fn ruby_hypothesis_core_data_source_new(engine: AnyObject) -> AnyObject {
-//     let data_source = HypothesisCoreDataSourceStruct::new(engine.unwrap());
+//   fn ruby_hypothesis_core_data_source_new(engine: AnyObject) -> Integer {
+//   //  let data_source = HypothesisCoreDataSourceStruct::new(engine.unwrap());
+//     Integer::new(5)
 
-//     Class::from_existing("HypothesisCoreDataSource").wrap_data(data_source, &*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER)
+// //    Class::from_existing("HypothesisCoreDataSource").wrap_data(data_source, &*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER)
 //   }
 // );
 
@@ -125,6 +126,12 @@ methods!(
 
     Class::from_existing("HypothesisCoreEngine").wrap_data(core_engine, &*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER)
   }
+
+  fn ruby_hypothesis_core_engine_new_source() -> AnyObject {
+    let source = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER).new_source().unwrap();
+
+    Class::from_existing("HypothesisCoreDataSource").wrap_data(source, &*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER)
+  }
 );
 
 #[allow(non_snake_case)]
@@ -137,5 +144,8 @@ pub extern "C" fn Init_rutie_ruby_example() {
     let data_class = Class::from_existing("Data");
     Class::new("HypothesisCoreEngine", Some(&data_class)).define(|klass| {
       klass.def_self("new", ruby_hypothesis_core_engine_new);
+      klass.def("new_source", ruby_hypothesis_core_engine_new_source);
     });
+
+    Class::new("HypothesisCoreDataSource", None);
 }

@@ -33,7 +33,10 @@ module Hypothesis
 
     def run
       puts RutieExample.reverse('apples')
-#      puts @core_engine.new_source
+      core = @core_engine.new_source
+#      break if core.nil?
+      @current_source = TestCase.new(core)
+      yield(@current_source)
     end
 
     def run_todo
