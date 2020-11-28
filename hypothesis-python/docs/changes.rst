@@ -18,6 +18,17 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.41.4:
+
+-------------------
+5.41.4 - 2020-11-28
+-------------------
+
+This patch fixes :issue:`2657`, where passing unicode patterns compiled with
+:obj:`python:re.IGNORECASE` to :func:`~hypothesis.strategies.from_regex` could
+trigger an internal error when casefolding a character creates a longer string
+(e.g. ``"\u0130".lower() -> "i\u0370"``).
+
 .. _v5.41.3:
 
 -------------------
