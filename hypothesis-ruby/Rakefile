@@ -1,9 +1,12 @@
 # frozen_string_literal: true
 
 require 'rubygems'
-require 'helix_runtime/build_task'
 require 'date'
 require 'open3'
+
+task :build do
+  system('cargo build --release')
+end
 
 begin
   require 'rspec/core/rake_task'
@@ -19,8 +22,6 @@ begin
   task test: %i[build spec minitests]
 rescue LoadError
 end
-
-HelixRuntime::BuildTask.new
 
 def rubocop(fix:)
   sh "bundle exec rubocop #{'-a' if fix} lib spec minitests " \
