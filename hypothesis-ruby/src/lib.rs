@@ -6,12 +6,13 @@ extern crate conjecture;
 
 use std::mem;
 
-use rutie::{AnyObject, Class, Integer, NilClass, Object, RString, VM};
+use rutie::{AnyObject, Boolean, Class, Float, Integer, NilClass, Object, RString, VM};
 
 use conjecture::engine::Engine;
 use conjecture::data::{DataSource, Status, TestResult};
 use conjecture::database::{BoxedDatabase, NoDatabase, DirectoryDatabase};
 use conjecture::distributions;
+use conjecture::distributions::Repeat;
 
 pub struct HypothesisCoreDataSourceStruct {
   source: Option<DataSource>,
@@ -173,6 +174,61 @@ methods!(
   }
 );
 
+pub struct HypothesisCoreRepeatValuesStruct {
+  repeat: Repeat,
+}
+
+impl HypothesisCoreRepeatValuesStruct {
+  fn new(min_count: u64, max_count: u64, expected_count: f64) -> HypothesisCoreRepeatValuesStruct {
+    return HypothesisCoreRepeatValuesStruct {
+      repeat: Repeat::new(min_count, max_count, expected_count)
+    }
+  }
+
+  fn _should_continue(&mut self, data: &mut HypothesisCoreDataSourceStruct) -> Option<bool>{
+    return data.source.as_mut().and_then(|ref mut source| {
+      self.repeat.should_continue(source).ok()
+    })
+  }
+
+  fn reject(&mut self) {
+    self.repeat.reject();
+  }
+}
+
+wrappable_struct!(HypothesisCoreRepeatValuesStruct, HypothesisCoreRepeatValuesStructWrapper, HYPOTHESIS_CORE_REPEAT_VALUES_STRUCT_WRAPPER);
+
+class!(HypothesisCoreRepeatValues);
+
+methods!(
+  HypothesisCoreRepeatValues,
+  itself,
+
+  fn ruby_hypothesis_core_repeat_values_new(min_count: Integer, max_count: Integer, expected_count: Float) -> AnyObject {
+    let repeat_values = HypothesisCoreRepeatValuesStruct::new(
+      min_count.unwrap().to_u64(),
+      max_count.unwrap().to_u64(),
+      expected_count.unwrap().to_f64()
+    );
+
+    Class::from_existing("HypothesisCoreRepeatValues").wrap_data(repeat_values, &*HYPOTHESIS_CORE_REPEAT_VALUES_STRUCT_WRAPPER)
+  }
+
+  fn ruby_hypothesis_core_repeat_values_should_continue(data: AnyObject) -> AnyObject {
+    let mut rdata = data.unwrap();
+    let mut data_source = rdata.get_data_mut(&*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
+
+    let should_continue = itself
+      .get_data_mut(&*HYPOTHESIS_CORE_REPEAT_VALUES_STRUCT_WRAPPER)
+      ._should_continue(data_source);
+
+    match should_continue {
+      Some(b) => Boolean::new(b).into(),
+      None => NilClass::new().into()
+    }
+  }
+);
+
 #[allow(non_snake_case)]
 #[no_mangle]
 pub extern "C" fn Init_rutie_hypothesis_core() {
@@ -192,6 +248,11 @@ pub extern "C" fn Init_rutie_hypothesis_core() {
       klass.def_self("new", ruby_hypotheis_core_integers_new);
       klass.def("provide", ruby_hypothesis_core_integers_provide);
     });
+
+    Class::new("HypothesisCoreRepeatValues", None).define(|klass| {
+      klass.def_self("new", ruby_hypothesis_core_repeat_values_new);
+      klass.def("_should_continue", ruby_hypothesis_core_repeat_values_should_continue);
+    });
 }
 
 fn mark_child_status(engine: &mut Engine, child: &mut HypothesisCoreDataSourceStruct, status: Status) {
@@ -203,4 +264,3 @@ fn mark_child_status(engine: &mut Engine, child: &mut HypothesisCoreDataSourceSt
       None => (),
   }
 }
-

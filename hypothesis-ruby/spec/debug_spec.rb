@@ -14,8 +14,9 @@ RSpec.describe 'find' do
 
   it do
     hypothesis do
-      puts "Debuggin"
-      puts any integers
+      puts any(arrays(of: integers)).to_s
+#      puts "Debuggin"
+#      puts any integers
     end
   end
 end
