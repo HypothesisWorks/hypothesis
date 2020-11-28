@@ -138,9 +138,10 @@ methods!(
   }
 
   fn ruby_hypothesis_core_engine_new_source() -> AnyObject {
-    let source = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER).new_source().unwrap();
-
-    Class::from_existing("HypothesisCoreDataSource").wrap_data(source, &*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER)
+    match itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER).new_source() {
+      Some(ds) => Class::from_existing("HypothesisCoreDataSource").wrap_data(ds, &*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER),
+      None => NilClass::new().into()
+    }
   }
 
   fn ruby_hypothesis_core_engine_finish_valid(child: AnyObject) -> NilClass {

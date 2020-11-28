@@ -36,7 +36,7 @@ module Hypothesis
 
       loop do
         core = @core_engine.new_source
-  #      break if core.nil?
+        break if core.nil?
         @current_source = TestCase.new(core)
         yield(@current_source)
         @core_engine.finish_valid(core)
