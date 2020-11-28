@@ -114,21 +114,29 @@ class CharactersBuilder:
     def strategy(self):
         """Returns resulting strategy that generates configured char set."""
         max_codepoint = None if self._unicode else 127
+        # Due to the .swapcase() issue described below (and in issue #2657),
+        # self._whitelist_chars may contain strings of len > 1.  We therefore
+        # have some extra logic to filter them out of st.characters() args,
+        # but still generate them if allowed to.
         if self._negate:
             black_chars = self._blacklist_chars - self._whitelist_chars
             return st.characters(
                 blacklist_categories=self._categories | {"Cc", "Cs"},
-                blacklist_characters=self._whitelist_chars,
+                blacklist_characters={c for c in self._whitelist_chars if len(c) == 1},
                 whitelist_characters=black_chars,
                 max_codepoint=max_codepoint,
             )
         white_chars = self._whitelist_chars - self._blacklist_chars
-        return st.characters(
+        multi_chars = {c for c in white_chars if len(c) > 1}
+        char_strategy = st.characters(
             whitelist_categories=self._categories,
             blacklist_characters=self._blacklist_chars,
-            whitelist_characters=white_chars,
+            whitelist_characters=white_chars - multi_chars,
             max_codepoint=max_codepoint,
         )
+        if multi_chars:
+            char_strategy |= st.sampled_from(sorted(multi_chars))
+        return char_strategy
 
     def add_category(self, category):
         """Update unicode state to match sre_parse object ``category``."""
@@ -163,6 +171,7 @@ class CharactersBuilder:
             self._ignorecase
             and re.match(re.escape(c), c.swapcase(), flags=re.IGNORECASE) is not None
         ):
+            # Note that it is possible that `len(c.swapcase()) > 1`
             self._whitelist_chars.add(c.swapcase())
 
 
@@ -316,14 +325,8 @@ def _strategy(codes, context, is_unicode):
                     j += 1
 
                 if i + 1 < j:
-                    strategies.append(
-                        st.just(
-                            empty.join(
-                                [to_char(charcode) for (_, charcode) in codes[i:j]]
-                            )
-                        )
-                    )
-
+                    chars = (to_char(charcode) for _, charcode in codes[i:j])
+                    strategies.append(st.just(empty.join(chars)))
                     i = j
                     continue
 
@@ -357,12 +360,28 @@ def _strategy(codes, context, is_unicode):
         elif code == sre.NOT_LITERAL:
             # Regex '[^a]' (negation of a single char)
             c = to_char(value)
-            blacklist = set(c)
+            blacklist = {c}
             if (
                 context.flags & re.IGNORECASE
                 and re.match(re.escape(c), c.swapcase(), re.IGNORECASE) is not None
             ):
-                blacklist |= set(c.swapcase())
+                # There are a few cases where .swapcase() returns two characters,
+                # but is still a case-insensitive match.  In such cases we add *both*
+                # characters to our blacklist, to avoid doing the wrong thing for
+                # patterns such as r"[^\u0130]+" where "i\u0307" matches.
+                #
+                # (that's respectively 'Latin letter capital I with dot above' and
+                # 'latin latter i' + 'combining dot above'; see issue #2657)
+                #
+                # As a final additional wrinkle, "latin letter capital I" *also*
+                # case-insensitive-matches, with or without combining dot character.
+                # We therefore have to chain .swapcase() calls until a fixpoint.
+                stack = [c.swapcase()]
+                while stack:
+                    for char in stack.pop():
+                        blacklist.add(char)
+                        stack.extend(set(char.swapcase()) - blacklist)
+
             if is_unicode:
                 return st.characters(blacklist_characters=blacklist)
             else:

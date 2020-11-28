@@ -85,3 +85,29 @@ def test_fuzz_stuff(data):
 
     ex = data.draw(st.from_regex(regex))
     assert regex.search(ex)
+
+
+# Some preliminaries, to establish what's happening:
+I_WITH_DOT = "\u0130"
+assert I_WITH_DOT.swapcase() == "i\u0307"  # note: string of length two!
+assert re.compile(I_WITH_DOT, flags=re.IGNORECASE).match(I_WITH_DOT.swapcase())
+
+
+@given(st.data())
+def test_case_insensitive_not_literal_never_constructs_multichar_match(data):
+    # So our goal is to confirm that we can never accidentally create a non-matching
+    # string by assembling individually allowed characters.
+    pattern = re.compile(f"[^{I_WITH_DOT}]+", flags=re.IGNORECASE)
+    strategy = st.from_regex(pattern, fullmatch=True)
+    for _ in range(5):
+        s = data.draw(strategy)
+        assert pattern.fullmatch(s) is not None
+        # And to be on the safe side, we implment this stronger property:
+        assert set(s).isdisjoint(I_WITH_DOT.swapcase())
+
+
+@given(st.from_regex(re.compile(f"[^{I_WITH_DOT}_]", re.IGNORECASE), fullmatch=True))
+def test_no_error_converting_negated_sets_to_strategy(s):
+    # CharactersBuilder no longer triggers an internal error converting sets
+    # or negated sets to a strategy when multi-char strings are whitelisted.
+    pass
