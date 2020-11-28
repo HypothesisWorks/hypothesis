@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["David R. MacIver <david@drmaciver.com>"]
 
 [lib]
-name="rutie_ruby_example"
+name="hypothesis_ruby_core"
 crate-type = ["cdylib"]
 
 [dependencies]

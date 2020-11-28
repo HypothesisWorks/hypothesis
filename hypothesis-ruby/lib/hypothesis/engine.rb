@@ -22,7 +22,7 @@ module Hypothesis
 
       database = nil if database == false
 
-      Rutie.new(:rutie_ruby_example).init 'Init_rutie_ruby_example', "#{__dir__}/../"
+      Rutie.new(:hypothesis_ruby_core).init 'Init_rutie_hypothesis_core', "#{__dir__}/../"
 
       @core_engine = HypothesisCoreEngine.new(
         name, database, seed, options.fetch(:max_examples)
@@ -32,8 +32,6 @@ module Hypothesis
     end
 
     def run
-      puts RutieExample.reverse('apples')
-
       loop do
         core = @core_engine.new_source
         break if core.nil?

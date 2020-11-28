@@ -13,27 +13,6 @@ use conjecture::data::{DataSource, Status, TestResult};
 use conjecture::database::{BoxedDatabase, NoDatabase, DirectoryDatabase};
 use conjecture::distributions;
 
-class!(RutieExample);
-
-methods!(
-    RutieExample,
-    _rtself,
-
-    fn pub_reverse(input: RString) -> RString {
-        let ruby_string = input.
-          map_err(|e| VM::raise_ex(e) ).
-          unwrap();
-
-        RString::new_utf8(
-          &ruby_string.
-          to_string().
-          chars().
-          rev().
-          collect::<String>()
-        )
-    }
-);
-
 pub struct HypothesisCoreDataSourceStruct {
   source: Option<DataSource>,
 }
@@ -196,11 +175,7 @@ methods!(
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "C" fn Init_rutie_ruby_example() {
-    Class::new("RutieExample", None).define(|klass| {
-        klass.def_self("reverse", pub_reverse);
-    });
-
+pub extern "C" fn Init_rutie_hypothesis_core() {
     let data_class = Class::from_existing("Data");
     Class::new("HypothesisCoreEngine", Some(&data_class)).define(|klass| {
       klass.def_self("new", ruby_hypothesis_core_engine_new);
