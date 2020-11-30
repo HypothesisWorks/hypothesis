@@ -29,7 +29,7 @@ from django.core.validators import (
 from django.db import models as dm
 
 from hypothesis import strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.extra.pytz import timezones
 from hypothesis.internal.validation import check_type
 from hypothesis.provisional import urls
@@ -155,7 +155,7 @@ def _for_form_ip(field):
         return st.ip_addresses(v=4).map(str)
     if validate_ipv6_address in field.default_validators:
         return _ipv6_strings
-    raise InvalidArgument("No IP version validator on field=%r" % field)
+    raise ResolutionFailed("No IP version validator on field=%r" % field)
 
 
 @register_for(dm.DecimalField)
@@ -271,7 +271,7 @@ def from_field(field: F) -> st.SearchStrategy[Union[F, None]]:
         if type(field) not in _global_field_lookup:
             if getattr(field, "null", False):
                 return st.none()
-            raise InvalidArgument("Could not infer a strategy for %r", (field,))
+            raise ResolutionFailed("Could not infer a strategy for %r", (field,))
         strategy = _global_field_lookup[type(field)]  # type: ignore
         if not isinstance(strategy, st.SearchStrategy):
             strategy = strategy(field)
