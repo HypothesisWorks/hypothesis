@@ -64,7 +64,6 @@ _global_field_lookup = {
     dm.BigIntegerField: integers_for_field(-9223372036854775808, 9223372036854775807),
     dm.PositiveIntegerField: integers_for_field(0, 2147483647),
     dm.PositiveSmallIntegerField: integers_for_field(0, 32767),
-    dm.BinaryField: st.binary(),
     dm.BooleanField: st.booleans(),
     dm.DateField: st.dates(),
     dm.EmailField: emails(),
@@ -190,6 +189,25 @@ def _for_decimal(field):
     )
 
 
+def length_bounds_from_validators(field):
+    min_size = 1
+    max_size = field.max_length
+    for v in field.validators:
+        if isinstance(v, django.core.validators.MinLengthValidator):
+            min_size = max(min_size, v.limit_value)
+        elif isinstance(v, django.core.validators.MaxLengthValidator):
+            max_size = min(max_size or v.limit_value, v.limit_value)
+    return min_size, max_size
+
+
+@register_for(dm.BinaryField)
+def _for_binary(field):
+    min_size, max_size = length_bounds_from_validators(field)
+    if getattr(field, "blank", False) or not getattr(field, "required", True):
+        return st.just(b"") | st.binary(min_size=min_size, max_size=max_size)
+    return st.binary(min_size=min_size, max_size=max_size)
+
+
 @register_for(dm.CharField)
 @register_for(dm.TextField)
 @register_for(df.CharField)
@@ -213,18 +231,16 @@ def _for_text(field):
         # compute intersections of the full Python regex language.
         return st.one_of(*[st.from_regex(r) for r in regexes])
     # If there are no (usable) regexes, we use a standard text strategy.
-    min_size = 1
-    if getattr(field, "blank", False) or not getattr(field, "required", True):
-        min_size = 0
+    min_size, max_size = length_bounds_from_validators(field)
     strategy = st.text(
         alphabet=st.characters(
             blacklist_characters="\x00", blacklist_categories=("Cs",)
         ),
         min_size=min_size,
-        max_size=field.max_length,
-    )
-    if getattr(field, "required", True):
-        strategy = strategy.filter(lambda s: s.strip())
+        max_size=max_size,
+    ).filter(lambda s: min_size <= len(s.strip()))
+    if getattr(field, "blank", False) or not getattr(field, "required", True):
+        return st.just("") | strategy
     return strategy
 
 

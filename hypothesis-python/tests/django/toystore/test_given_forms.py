@@ -121,3 +121,4 @@ class TestGetsBasicForms(TestCase):
         self.assertTrue(1 <= x.data["_int_one_to_five"] <= 5)
         self.assertTrue(1 <= x.data["_decimal_one_to_five"] <= 5)
         self.assertTrue(1 <= x.data["_float_one_to_five"] <= 5)
+        self.assertTrue(5 <= len(x.data["_string_five_to_ten"]) <= 10)
