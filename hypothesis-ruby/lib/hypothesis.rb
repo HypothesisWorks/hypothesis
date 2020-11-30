@@ -200,9 +200,6 @@ module Hypothesis
     unless World.current_engine.nil?
       raise UsageError, 'Cannot nest hypothesis calls'
     end
-    unless Hypothesis.setup_called
-      raise UsageError, 'Hypothesis.setup must be called before executing hypothesis blocks'
-    end
 
     begin
       World.current_engine = Engine.new(
