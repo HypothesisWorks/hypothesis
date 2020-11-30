@@ -6,7 +6,7 @@ extern crate conjecture;
 
 use std::mem;
 
-use rutie::{AnyObject, Boolean, Class, Float, Integer, NilClass, Object, RString, VM};
+use rutie::{AnyObject, Boolean, Class, Float, Integer, NilClass, Object, RString};
 
 use conjecture::engine::Engine;
 use conjecture::data::{DataSource, Status, TestResult};
@@ -324,10 +324,6 @@ pub struct HypothesisCoreBoundedIntegersStruct {
 }
 
 impl HypothesisCoreBoundedIntegersStruct {
-  fn initialize(max_value: u64) -> HypothesisCoreBoundedIntegersStruct {
-    return HypothesisCoreBoundedIntegersStruct {max_value: max_value};
-  }
-
   fn provide(&mut self, data: &mut HypothesisCoreDataSourceStruct) -> Option<u64>{
     data.source.as_mut().and_then(|ref mut source| {
       distributions::bounded_int(source, self.max_value).ok()
@@ -364,8 +360,7 @@ methods!(
 #[allow(non_snake_case)]
 #[no_mangle]
 pub extern "C" fn Init_rutie_hypothesis_core() {
-    let data_class = Class::from_existing("Data");
-    Class::new("HypothesisCoreEngine", Some(&data_class)).define(|klass| {
+    Class::new("HypothesisCoreEngine", None).define(|klass| {
       klass.def_self("new", ruby_hypothesis_core_engine_new);
       klass.def("new_source", ruby_hypothesis_core_engine_new_source);
       klass.def("count_failing_examples", ruby_hypothesis_core_engine_count_failing_examples);
@@ -377,12 +372,12 @@ pub extern "C" fn Init_rutie_hypothesis_core() {
       klass.def("finish_interesting", ruby_hypothesis_core_engine_finish_interesting);
     });
 
-    Class::new("HypothesisCoreDataSource", Some(&data_class)).define(|klass| {
+    Class::new("HypothesisCoreDataSource", None).define(|klass| {
       klass.def("start_draw", ruby_hypothesis_core_data_source_start_draw);
       klass.def("stop_draw", ruby_hypothesis_core_data_source_stop_draw);
     });
 
-    Class::new("HypothesisCoreIntegers", Some(&data_class)).define(|klass| {
+    Class::new("HypothesisCoreIntegers", None).define(|klass| {
       klass.def_self("new", ruby_hypothesis_core_integers_new);
       klass.def("provide", ruby_hypothesis_core_integers_provide);
     });
