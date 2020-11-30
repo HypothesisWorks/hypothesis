@@ -116,7 +116,7 @@ RSpec.configure do |config|
     FileUtils.rm_rf Hypothesis::DEFAULT_DATABASE_PATH
   end
 
-  config.before(:all) do
+  config.before(:suite) do
     Hypothesis.setup
   end
 end
