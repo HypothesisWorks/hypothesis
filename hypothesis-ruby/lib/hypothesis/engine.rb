@@ -22,8 +22,6 @@ module Hypothesis
 
       database = nil if database == false
 
-      Rutie.new(:hypothesis_ruby_core).init 'Init_rutie_hypothesis_core', "#{__dir__}/../"
-
       @core_engine = HypothesisCoreEngine.new(
         name, database, seed, options.fetch(:max_examples)
       )
