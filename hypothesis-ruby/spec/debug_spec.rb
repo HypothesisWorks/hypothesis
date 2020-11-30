@@ -11,12 +11,4 @@ RSpec.describe 'find' do
       end
     end.to raise_exception(Hypothesis::Debug::NoSuchExample)
   end
-
-  it 'Rutie binding tests' do
-    hypothesis do
-      x = any(integers)
-      puts x
-      puts any(arrays(of: integers)).to_s
-    end
-  end
 end
