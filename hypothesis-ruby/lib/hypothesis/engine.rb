@@ -54,6 +54,11 @@ module Hypothesis
           @core_engine.finish_interesting(core, @exceptions_to_tags[key])
         end
       end
+      if @core_engine.count_failing_examples.zero?
+        raise Unsatisfiable if @core_engine.was_unsatisfiable
+        @current_source = nil
+        return
+      end
     end
 
     def run_todo

@@ -93,12 +93,24 @@ impl HypothesisCoreEngineStruct {
     }
   }
 
+  fn count_failing_examples(&self) -> usize {
+    self.interesting_examples.len()
+  }
+
+  fn was_unsatisfiable(&mut self) -> bool {
+    self.engine.was_unsatisfiable()
+  }
+
   fn finish_overflow(&mut self, child: &mut HypothesisCoreDataSourceStruct) {
     mark_child_status(&mut self.engine, child, Status::Overflow);
   }
 
   fn finish_valid(&mut self, child: &mut HypothesisCoreDataSourceStruct) {
     mark_child_status(&mut self.engine, child, Status::Valid);
+  }
+
+  fn finish_invalid(&mut self, child: &mut HypothesisCoreDataSourceStruct) {
+    mark_child_status(&mut self.engine, child, Status::Invalid);
   }
 
   fn finish_interesting(&mut self, child: &mut HypothesisCoreDataSourceStruct, label: u64) {
@@ -152,6 +164,16 @@ methods!(
     NilClass::new()
   }
 
+  fn ruby_hypothesis_core_engine_finish_invalid(child: AnyObject) -> NilClass {
+    let core_engine = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER);
+    let mut rdata_source = child.unwrap();
+    let data_source = rdata_source.get_data_mut(&*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
+
+    core_engine.finish_invalid(data_source);
+
+    NilClass::new()
+  }
+
   fn ruby_hypothesis_core_engine_finish_interesting(child: AnyObject, label: Integer) -> NilClass {
     let core_engine = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER);
     let mut rdata_source = child.unwrap();
@@ -160,6 +182,18 @@ methods!(
     core_engine.finish_interesting(data_source, label.unwrap().to_u64());
 
     NilClass::new()
+  }
+  
+  fn ruby_hypothesis_core_engine_count_failing_examples() -> Integer {
+    let core_engine = itself.get_data(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER);
+
+    Integer::new(core_engine.count_failing_examples() as i64)
+  }
+
+  fn ruby_hypothesis_core_engine_was_unsatisfiable() -> Boolean {
+    let core_engine = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER);
+
+    Boolean::new(core_engine.was_unsatisfiable())
   }
 );
 
@@ -309,8 +343,11 @@ pub extern "C" fn Init_rutie_hypothesis_core() {
     Class::new("HypothesisCoreEngine", Some(&data_class)).define(|klass| {
       klass.def_self("new", ruby_hypothesis_core_engine_new);
       klass.def("new_source", ruby_hypothesis_core_engine_new_source);
+      klass.def("count_failing_examples", ruby_hypothesis_core_engine_count_failing_examples);
+      klass.def("was_unsatisfiable", ruby_hypothesis_core_engine_was_unsatisfiable);
       klass.def("finish_overflow", ruby_hypothesis_core_engine_finish_overflow);
       klass.def("finish_valid", ruby_hypothesis_core_engine_finish_valid);
+      klass.def("finish_invalid", ruby_hypothesis_core_engine_finish_invalid);
       klass.def("finish_interesting", ruby_hypothesis_core_engine_finish_interesting);
     });
 
