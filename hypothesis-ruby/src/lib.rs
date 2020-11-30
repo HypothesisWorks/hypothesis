@@ -97,6 +97,13 @@ impl HypothesisCoreEngineStruct {
     self.interesting_examples.len()
   }
 
+  fn failing_example(&mut self, i: usize) -> HypothesisCoreDataSourceStruct {
+    self.pending = Some(
+      DataSource::from_vec(self.interesting_examples[i].record.clone())
+    );
+    HypothesisCoreDataSourceStruct::new(self)
+  }
+
   fn was_unsatisfiable(&mut self) -> bool {
     self.engine.was_unsatisfiable()
   }
@@ -189,6 +196,16 @@ methods!(
 
     Integer::new(core_engine.count_failing_examples() as i64)
   }
+
+  fn ruby_hypothesis_core_failing_example(i: Integer) -> AnyObject {
+    let core_engine = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER);
+    let int = i.unwrap().to_u64() as usize;
+    
+    let data_source = core_engine.failing_example(int);
+
+    Class::from_existing("HypothesisCoreDataSource").wrap_data(data_source, &*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER)
+  }
+
 
   fn ruby_hypothesis_core_engine_was_unsatisfiable() -> Boolean {
     let core_engine = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER);
@@ -292,6 +309,14 @@ methods!(
       None => NilClass::new().into()
     }
   }
+
+  fn ruby_hypothesis_core_repeat_values_reject() -> NilClass {
+    let repeat_values = itself.get_data_mut(&*HYPOTHESIS_CORE_REPEAT_VALUES_STRUCT_WRAPPER);
+
+    repeat_values.reject();
+
+    NilClass::new()
+  }
 );
 
 pub struct HypothesisCoreBoundedIntegersStruct {
@@ -344,6 +369,7 @@ pub extern "C" fn Init_rutie_hypothesis_core() {
       klass.def_self("new", ruby_hypothesis_core_engine_new);
       klass.def("new_source", ruby_hypothesis_core_engine_new_source);
       klass.def("count_failing_examples", ruby_hypothesis_core_engine_count_failing_examples);
+      klass.def("failing_example", ruby_hypothesis_core_failing_example);
       klass.def("was_unsatisfiable", ruby_hypothesis_core_engine_was_unsatisfiable);
       klass.def("finish_overflow", ruby_hypothesis_core_engine_finish_overflow);
       klass.def("finish_valid", ruby_hypothesis_core_engine_finish_valid);
@@ -364,6 +390,7 @@ pub extern "C" fn Init_rutie_hypothesis_core() {
     Class::new("HypothesisCoreRepeatValues", None).define(|klass| {
       klass.def_self("new", ruby_hypothesis_core_repeat_values_new);
       klass.def("_should_continue", ruby_hypothesis_core_repeat_values_should_continue);
+      klass.def("reject", ruby_hypothesis_core_repeat_values_reject);
     });
 
     Class::new("HypothesisCoreBoundedIntegers", None).define(|klass| {
