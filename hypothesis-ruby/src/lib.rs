@@ -136,7 +136,7 @@ methods!(
   fn ruby_hypothesis_core_engine_new(name: RString, database_path: RString, seed: Integer, max_example: Integer) -> AnyObject {
     let core_engine = HypothesisCoreEngineStruct::new(
       name.unwrap().to_string(),
-      Some(database_path.unwrap().to_string()),
+      database_path.ok().map(|p| p.to_string()),
       seed.unwrap().to_u64(),
       max_example.unwrap().to_u64()
     );
