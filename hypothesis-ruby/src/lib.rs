@@ -187,7 +187,7 @@ methods!(
   HypothesisCoreIntegers,
   itself,
 
-  fn ruby_hypotheis_core_integers_new() -> AnyObject {
+  fn ruby_hypothesis_core_integers_new() -> AnyObject {
     let core_integers = HypothesisCoreIntegersStruct::new();
 
     Class::from_existing("HypothesisCoreIntegers").wrap_data(core_integers, &*HYPOTHESIS_CORE_INTEGERS_STRUCT_WRAPPER)
@@ -260,6 +260,48 @@ methods!(
   }
 );
 
+pub struct HypothesisCoreBoundedIntegersStruct {
+  max_value: u64
+}
+
+impl HypothesisCoreBoundedIntegersStruct {
+  fn initialize(max_value: u64) -> HypothesisCoreBoundedIntegersStruct {
+    return HypothesisCoreBoundedIntegersStruct {max_value: max_value};
+  }
+
+  fn provide(&mut self, data: &mut HypothesisCoreDataSourceStruct) -> Option<u64>{
+    data.source.as_mut().and_then(|ref mut source| {
+      distributions::bounded_int(source, self.max_value).ok()
+    })
+  }
+}
+
+wrappable_struct!(HypothesisCoreBoundedIntegersStruct, HypothesisCoreBoundedIntegersStructWrapper, HYPOTHESIS_CORE_BOUNDED_INTEGERS_STRUCT_WRAPPER);
+
+class!(HypothesisCoreBoundedIntegers);
+
+methods!(
+  HypothesisCoreBoundedIntegers,
+  itself,
+
+  fn ruby_hypothesis_core_bounded_integers_new(max_value: Integer) -> AnyObject {
+    let bounded_integers = HypothesisCoreBoundedIntegersStruct { max_value: max_value.unwrap().to_u64() };
+    
+    Class::from_existing("HypothesisCoreBoundedIntegers").wrap_data(bounded_integers, &*HYPOTHESIS_CORE_BOUNDED_INTEGERS_STRUCT_WRAPPER)
+  }
+
+  fn ruby_hypothesis_core_bounded_integers_provide(data: AnyObject) -> AnyObject {
+    let mut rdata = data.unwrap();
+    let data_source = rdata.get_data_mut(&*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
+    let bounded_integers = itself.get_data_mut(&*HYPOTHESIS_CORE_BOUNDED_INTEGERS_STRUCT_WRAPPER);
+
+    match bounded_integers.provide(data_source) {
+      Some(i) => Integer::new(i as i64).into(),
+      None => NilClass::new().into()
+    }
+  }
+);
+
 #[allow(non_snake_case)]
 #[no_mangle]
 pub extern "C" fn Init_rutie_hypothesis_core() {
@@ -278,13 +320,18 @@ pub extern "C" fn Init_rutie_hypothesis_core() {
     });
 
     Class::new("HypothesisCoreIntegers", Some(&data_class)).define(|klass| {
-      klass.def_self("new", ruby_hypotheis_core_integers_new);
+      klass.def_self("new", ruby_hypothesis_core_integers_new);
       klass.def("provide", ruby_hypothesis_core_integers_provide);
     });
 
     Class::new("HypothesisCoreRepeatValues", None).define(|klass| {
       klass.def_self("new", ruby_hypothesis_core_repeat_values_new);
       klass.def("_should_continue", ruby_hypothesis_core_repeat_values_should_continue);
+    });
+
+    Class::new("HypothesisCoreBoundedIntegers", None).define(|klass| {
+      klass.def_self("new", ruby_hypothesis_core_bounded_integers_new);
+      klass.def("provide", ruby_hypothesis_core_bounded_integers_provide);
     });
 }
 
