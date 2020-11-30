@@ -39,13 +39,31 @@ AnyField = Union[dm.Field, df.Field]
 F = TypeVar("F", bound=AnyField)
 
 
+def numeric_bounds_from_validators(
+    field, min_value=float("-inf"), max_value=float("inf")
+):
+    for v in field.validators:
+        if isinstance(v, django.core.validators.MinValueValidator):
+            min_value = max(min_value, v.limit_value)
+        elif isinstance(v, django.core.validators.MaxValueValidator):
+            max_value = min(max_value, v.limit_value)
+    return min_value, max_value
+
+
+def integers_for_field(min_value, max_value):
+    def inner(field):
+        return st.integers(*numeric_bounds_from_validators(field, min_value, max_value))
+
+    return inner
+
+
 # Mapping of field types, to strategy objects or functions of (type) -> strategy
 _global_field_lookup = {
-    dm.SmallIntegerField: st.integers(-32768, 32767),
-    dm.IntegerField: st.integers(-2147483648, 2147483647),
-    dm.BigIntegerField: st.integers(-9223372036854775808, 9223372036854775807),
-    dm.PositiveIntegerField: st.integers(0, 2147483647),
-    dm.PositiveSmallIntegerField: st.integers(0, 32767),
+    dm.SmallIntegerField: integers_for_field(-32768, 32767),
+    dm.IntegerField: integers_for_field(-2147483648, 2147483647),
+    dm.BigIntegerField: integers_for_field(-9223372036854775808, 9223372036854775807),
+    dm.PositiveIntegerField: integers_for_field(0, 2147483647),
+    dm.PositiveSmallIntegerField: integers_for_field(0, 32767),
     dm.BinaryField: st.binary(),
     dm.BooleanField: st.booleans(),
     dm.DateField: st.dates(),
@@ -57,8 +75,10 @@ _global_field_lookup = {
     df.DateField: st.dates(),
     df.DurationField: st.timedeltas(),
     df.EmailField: emails(),
-    df.FloatField: st.floats(allow_nan=False, allow_infinity=False),
-    df.IntegerField: st.integers(-2147483648, 2147483647),
+    df.FloatField: lambda field: st.floats(
+        *numeric_bounds_from_validators(field), allow_nan=False, allow_infinity=False
+    ),
+    df.IntegerField: integers_for_field(-2147483648, 2147483647),
     df.NullBooleanField: st.one_of(st.none(), st.booleans()),
     df.URLField: urls(),
     df.UUIDField: st.uuids(),
@@ -161,8 +181,13 @@ def _for_form_ip(field):
 @register_for(dm.DecimalField)
 @register_for(df.DecimalField)
 def _for_decimal(field):
+    min_value, max_value = numeric_bounds_from_validators(field)
     bound = Decimal(10 ** field.max_digits - 1) / (10 ** field.decimal_places)
-    return st.decimals(min_value=-bound, max_value=bound, places=field.decimal_places)
+    return st.decimals(
+        min_value=max(min_value, -bound),
+        max_value=min(max_value, bound),
+        places=field.decimal_places,
+    )
 
 
 @register_for(dm.CharField)
