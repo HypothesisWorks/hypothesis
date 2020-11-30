@@ -21,13 +21,15 @@ module Hypothesis
   HYPOTHESIS_LOCATION = File.dirname(__FILE__)
   @@setup_called = false
 
-  def self.setup
-    @@setup_called = true
-    Rutie.new(:hypothesis_ruby_core).init 'Init_rutie_hypothesis_core', "#{__dir__}"
-  end
-
   def self.setup_called
     @@setup_called == true
+  end
+
+  def self.included(*)
+    if setup_called == false
+      Rutie.new(:hypothesis_ruby_core).init 'Init_rutie_hypothesis_core', "#{__dir__}"
+    end
+    @@setup_called = true
   end
 
   # @!visibility private
