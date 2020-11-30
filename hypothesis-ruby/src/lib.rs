@@ -93,8 +93,16 @@ impl HypothesisCoreEngineStruct {
     }
   }
 
+  fn finish_overflow(&mut self, child: &mut HypothesisCoreDataSourceStruct) {
+    mark_child_status(&mut self.engine, child, Status::Overflow);
+  }
+
   fn finish_valid(&mut self, child: &mut HypothesisCoreDataSourceStruct) {
     mark_child_status(&mut self.engine, child, Status::Valid);
+  }
+
+  fn finish_interesting(&mut self, child: &mut HypothesisCoreDataSourceStruct, label: u64) {
+    mark_child_status(&mut self.engine, child, Status::Interesting(label));
   }
 }
 
@@ -124,12 +132,32 @@ methods!(
     }
   }
 
+  fn ruby_hypothesis_core_engine_finish_overflow(child: AnyObject) -> NilClass {
+    let core_engine = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER);
+    let mut rdata_source = child.unwrap();
+    let data_source = rdata_source.get_data_mut(&*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
+
+    core_engine.finish_overflow(data_source);
+
+    NilClass::new()
+  }
+
   fn ruby_hypothesis_core_engine_finish_valid(child: AnyObject) -> NilClass {
     let core_engine = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER);
     let mut rdata_source = child.unwrap();
     let data_source = rdata_source.get_data_mut(&*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
 
     core_engine.finish_valid(data_source);
+
+    NilClass::new()
+  }
+
+  fn ruby_hypothesis_core_engine_finish_interesting(child: AnyObject, label: Integer) -> NilClass {
+    let core_engine = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER);
+    let mut rdata_source = child.unwrap();
+    let data_source = rdata_source.get_data_mut(&*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
+
+    core_engine.finish_interesting(data_source, label.unwrap().to_u64());
 
     NilClass::new()
   }
@@ -165,12 +193,15 @@ methods!(
     Class::from_existing("HypothesisCoreIntegers").wrap_data(core_integers, &*HYPOTHESIS_CORE_INTEGERS_STRUCT_WRAPPER)
   }
 
-  fn ruby_hypothesis_core_integers_provide(data: AnyObject) -> Integer {
+  fn ruby_hypothesis_core_integers_provide(data: AnyObject) -> AnyObject {
     let core_integers = itself.get_data_mut(&*HYPOTHESIS_CORE_INTEGERS_STRUCT_WRAPPER);
     let mut rdata = data.unwrap();
     let data_source = rdata.get_data_mut(&*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
 
-     Integer::new(core_integers.provide(data_source).unwrap())
+    match core_integers.provide(data_source) {
+      Some(i) => Integer::new(i).into(),
+      None => NilClass::new().into()
+    }
   }
 );
 
@@ -236,7 +267,9 @@ pub extern "C" fn Init_rutie_hypothesis_core() {
     Class::new("HypothesisCoreEngine", Some(&data_class)).define(|klass| {
       klass.def_self("new", ruby_hypothesis_core_engine_new);
       klass.def("new_source", ruby_hypothesis_core_engine_new_source);
+      klass.def("finish_overflow", ruby_hypothesis_core_engine_finish_overflow);
       klass.def("finish_valid", ruby_hypothesis_core_engine_finish_valid);
+      klass.def("finish_interesting", ruby_hypothesis_core_engine_finish_interesting);
     });
 
     Class::new("HypothesisCoreDataSource", Some(&data_class)).define(|klass| {

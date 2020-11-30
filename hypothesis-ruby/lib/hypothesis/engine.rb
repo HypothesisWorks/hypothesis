@@ -36,8 +36,25 @@ module Hypothesis
         core = @core_engine.new_source
         break if core.nil?
         @current_source = TestCase.new(core)
-        yield(@current_source)
-        @core_engine.finish_valid(core)
+        begin
+          result = yield(@current_source)
+          if is_find && result
+            @core_engine.finish_interesting(core, 0)
+          else
+            @core_engine.finish_valid(core)
+          end
+        rescue UnsatisfiedAssumption
+          @core_engine.finish_invalid(core)
+        rescue DataOverflow
+          @core_engine.finish_overflow(core)
+        rescue Exception => e
+          raise if is_find
+          key = [
+            e.class,
+            HypothesisJunkDrawer.find_first_relevant_line(e.backtrace)
+          ]
+          @core_engine.finish_interesting(core, @exceptions_to_tags[key])
+        end
       end
     end
 
