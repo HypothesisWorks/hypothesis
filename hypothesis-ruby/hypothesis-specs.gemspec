@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
     Hypothesis is a powerful, flexible, and easy to use library for property-based testing.
 DESCRIPTION
   s.summary     = s.description
-  s.authors     = ['David R. Maciver']
+  s.authors     = ['David R. Maciver', 'Alex Weisberger']
   s.email       = 'david@drmaciver.com'
   s.files       = Dir['{ext/*,src/**/*,lib/**/*}'] + [
     'Cargo.toml', 'LICENSE.txt', 'README.markdown', 'Rakefile',
