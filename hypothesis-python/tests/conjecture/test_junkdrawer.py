@@ -112,7 +112,8 @@ def test_assignment():
 
 
 def test_replacement():
-    replace_all(bytes([1, 1, 1]), [(1, 3, bytes([3, 4]))]) == bytes([1, 3, 4, 1])
+    result = replace_all(bytes([1, 1, 1, 1]), [(1, 3, bytes([3, 4]))])
+    assert result == bytes([1, 3, 4, 1])
 
 
 def test_int_list_cannot_contain_negative():
