@@ -8,7 +8,7 @@ apipkg==1.5               # via execnet
 attrs==20.3.0             # via hypothesis (hypothesis-python/setup.py), pytest
 execnet==1.7.1            # via pytest-xdist
 iniconfig==1.1.1          # via pytest
-packaging==20.4           # via pytest
+packaging==20.7           # via pytest
 pexpect==4.8.0            # via -r requirements/test.in
 pluggy==0.13.1            # via pytest
 ptyprocess==0.6.0         # via pexpect
@@ -17,6 +17,5 @@ pyparsing==2.4.7          # via packaging
 pytest-forked==1.3.0      # via pytest-xdist
 pytest-xdist==2.1.0       # via -r requirements/test.in
 pytest==6.1.2             # via -r requirements/test.in, pytest-forked, pytest-xdist
-six==1.15.0               # via packaging
 sortedcontainers==2.3.0   # via hypothesis (hypothesis-python/setup.py)
 toml==0.10.2              # via pytest

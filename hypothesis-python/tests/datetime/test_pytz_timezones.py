@@ -101,11 +101,16 @@ def test_time_bounds_must_be_naive(name, val):
         times(**{name: val}).validate()
 
 
-def test_can_trigger_error_in_draw_near_max_date():
+@pytest.mark.parametrize(
+    "bound",
+    [
+        {"min_value": dt.datetime.max - dt.timedelta(days=3)},
+        {"max_value": dt.datetime.min + dt.timedelta(days=3)},
+    ],
+)
+def test_can_trigger_error_in_draw_near_boundary(bound):
     assert_can_trigger_event(
-        datetimes(
-            min_value=dt.datetime.max - dt.timedelta(days=3), timezones=timezones()
-        ),
+        datetimes(**bound, timezones=timezones()),
         lambda event: "Failed to draw a datetime" in event,
     )
 
