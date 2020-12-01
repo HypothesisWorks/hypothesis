@@ -19,7 +19,7 @@ PYTEST="python -m pytest -n2"
 $PYTEST tests/cover tests/pytest
 
 # Run tests for each extra module while the requirements are installed
-pip install ".[pytz, dateutil]"
+pip install ".[pytz, dateutil, zoneinfo]"
 $PYTEST tests/datetime/
 pip uninstall -y pytz python-dateutil
 

@@ -67,6 +67,13 @@ extras = {
     "pytest": ["pytest>=4.3"],
     "dpcontracts": ["dpcontracts>=0.4"],
     "redis": ["redis>=3.0.0"],
+    # zoneinfo is an odd one: every dependency is conditional, because they're
+    # only necessary on old versions of Python or Windows systems.
+    "zoneinfo": [
+        "tzdata>=2020.4 ; sys_platform == 'win32'",
+        "backports.zoneinfo>=0.2.1 ; python_version<'3.9'",
+        "importlib_resources>=3.3.0 ; python_version<'3.7'",
+    ],
     # We only support Django versions with upstream support - see
     # https://www.djangoproject.com/download/#supported-versions
     "django": ["pytz>=2014.1", "django>=2.2"],

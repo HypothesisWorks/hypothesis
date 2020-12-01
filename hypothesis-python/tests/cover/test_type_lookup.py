@@ -43,6 +43,8 @@ blacklist = [
     "randoms",
     "runner",
     "sampled_from",
+    "timezone_keys",
+    "timezones",
 ]
 types_with_core_strat = set()
 for thing in (

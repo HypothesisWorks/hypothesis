@@ -671,7 +671,7 @@ def test_can_cast():
 @pytest.mark.parametrize("type_", [datetime.timezone, datetime.tzinfo])
 def test_timezone_lookup(type_):
     assert issubclass(type_, datetime.tzinfo)
-    assert_all_examples(st.from_type(type_), lambda t: isinstance(t, datetime.timezone))
+    assert_all_examples(st.from_type(type_), lambda t: isinstance(t, type_))
 
 
 @pytest.mark.parametrize(

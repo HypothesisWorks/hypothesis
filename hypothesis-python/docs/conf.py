@@ -78,6 +78,7 @@ intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "pytest": ("https://docs.pytest.org/en/stable/", None),
     "django": ("https://django.readthedocs.io/en/stable/", None),
+    "dateutil": ("https://dateutil.readthedocs.io/en/stable/", None),
     "redis": ("https://redis-py.readthedocs.io/en/stable/", None),
     "attrs": ("https://www.attrs.org/en/stable/", None),
 }

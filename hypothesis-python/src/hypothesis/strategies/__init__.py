@@ -56,7 +56,14 @@ from hypothesis.strategies._internal.core import (
     tuples,
     uuids,
 )
-from hypothesis.strategies._internal.datetime import dates, datetimes, timedeltas, times
+from hypothesis.strategies._internal.datetime import (
+    dates,
+    datetimes,
+    timedeltas,
+    times,
+    timezone_keys,
+    timezones,
+)
 from hypothesis.strategies._internal.ipaddress import ip_addresses
 
 # The implementation of all of these lives in `_strategies.py`, but we
@@ -107,6 +114,8 @@ __all__ = [
     "text",
     "timedeltas",
     "times",
+    "timezone_keys",
+    "timezones",
     "tuples",
     "uuids",
     "SearchStrategy",
