@@ -475,7 +475,7 @@ ROUNDTRIP_PAIRS = (
     (r"dump(.+)", "load{}"),
     (r"to(.+)", "from{}"),
     # Known stem, maybe matching prefixes, maybe matching postfixes.
-    (r"(.*)encode(.*)", "{}decode{}"),
+    (r"(.*)en(.+)", "{}de{}"),
     # Shared postfix, prefix only on "inverse" function
     (r"(.+)", "de{}"),
     (r"(.+)", "un{}"),
