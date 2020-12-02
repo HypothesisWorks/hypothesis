@@ -240,6 +240,13 @@ class settings(metaclass=settingsMeta):
         if options is not None:
             options = tuple(options)
             assert default in options
+
+            def validator(value):
+                if value not in options:
+                    msg = f"Invalid {name}, {value!r}. Valid options: {options!r}"
+                    raise InvalidArgument(msg)
+                return value
+
         else:
             assert validator is not None
 
@@ -247,7 +254,6 @@ class settings(metaclass=settingsMeta):
             name=name,
             description=description.strip(),
             default=default,
-            options=options,
             validator=validator,
         )
         setattr(settings, name, settingsProperty(name, show_default))
@@ -266,12 +272,6 @@ class settings(metaclass=settingsMeta):
                     " after construction."
                 )
             else:
-                setting = all_settings[name]
-                if setting.options is not None and value not in setting.options:
-                    raise InvalidArgument(
-                        "Invalid %s, %r. Valid options: %r"
-                        % (name, value, setting.options)
-                    )
                 return object.__setattr__(self, name, value)
         else:
             raise AttributeError("No such setting %s" % (name,))
@@ -343,7 +343,6 @@ class Setting:
     name = attr.ib()
     description = attr.ib()
     default = attr.ib()
-    options = attr.ib()
     validator = attr.ib()
 
 
