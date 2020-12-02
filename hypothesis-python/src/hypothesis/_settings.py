@@ -25,7 +25,7 @@ import inspect
 import os
 import warnings
 from enum import Enum, IntEnum, unique
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Collection, Dict, List, Optional, Union
 
 import attr
 
@@ -38,6 +38,9 @@ from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.validation import check_type, try_convert
 from hypothesis.utils.conventions import not_set
 from hypothesis.utils.dynamicvariables import DynamicVariable
+
+if TYPE_CHECKING:
+    from hypothesis.database import ExampleDatabase
 
 __all__ = ["settings"]
 
@@ -128,7 +131,6 @@ class settings(metaclass=settingsMeta):
     changes made there will be picked up in newly created settings.
     """
 
-    _WHITELISTED_REAL_PROPERTIES = ["_construction_complete", "storage"]
     __definitions_are_locked = False
     _profiles = {}  # type: dict
     __module__ = "hypothesis"
@@ -139,34 +141,45 @@ class settings(metaclass=settingsMeta):
         else:
             raise AttributeError("settings has no attribute %s" % (name,))
 
-    def __init__(self, parent: Optional["settings"] = None, **kwargs: Any) -> None:
-        if parent is not None and not isinstance(parent, settings):
-            raise InvalidArgument(
-                "Invalid argument: parent=%r is not a settings instance" % (parent,)
-            )
-        if kwargs.get("derandomize"):
-            if kwargs.get("database") is not None:
+    def __init__(
+        self,
+        parent: Optional["settings"] = None,
+        *,
+        # This looks pretty strange, but there's good reason: we want Mypy to detect
+        # bad calls downstream, but not to freak out about the `= not_set` part even
+        # though it's not semantically valid to pass that as an argument value.
+        # The intended use is "like **kwargs, but more tractable for tooling".
+        max_examples: int = not_set,  # type: ignore
+        derandomize: bool = not_set,  # type: ignore
+        database: Union[None, "ExampleDatabase"] = not_set,  # type: ignore
+        verbosity: "Verbosity" = not_set,  # type: ignore
+        phases: Collection["Phase"] = not_set,  # type: ignore
+        stateful_step_count: int = not_set,  # type: ignore
+        report_multiple_bugs: bool = not_set,  # type: ignore
+        suppress_health_check: Collection["HealthCheck"] = not_set,  # type: ignore
+        deadline: Union[None, int, float, datetime.timedelta] = not_set,  # type: ignore
+        print_blob: bool = not_set,  # type: ignore
+    ) -> None:
+        if parent is not None:
+            check_type(settings, parent, "parent")
+        if derandomize not in (not_set, False):
+            if database not in (not_set, None):
                 raise InvalidArgument(
                     "derandomize=True implies database=None, so passing "
-                    "database=%r too is invalid." % (kwargs["database"],)
+                    f"database={database!r} too is invalid."
                 )
-            kwargs["database"] = None
-        self._construction_complete = False
+            database = None
+
         defaults = parent or settings.default
         if defaults is not None:
             for setting in all_settings.values():
-                if kwargs.get(setting.name, not_set) is not_set:
-                    kwargs[setting.name] = getattr(defaults, setting.name)
+                value = locals()[setting.name]
+                if value is not_set:
+                    object.__setattr__(
+                        self, setting.name, getattr(defaults, setting.name)
+                    )
                 else:
-                    if setting.validator:
-                        kwargs[setting.name] = setting.validator(kwargs[setting.name])
-        for name, value in kwargs.items():
-            if name not in all_settings:
-                raise InvalidArgument(
-                    "Invalid argument: %r is not a valid setting" % (name,)
-                )
-            setattr(self, name, value)
-        self._construction_complete = True
+                    object.__setattr__(self, setting.name, setting.validator(value))
 
     def __call__(self, test):
         """Make the settings object (self) an attribute of the test.
@@ -263,18 +276,7 @@ class settings(metaclass=settingsMeta):
         settings.__definitions_are_locked = True
 
     def __setattr__(self, name, value):
-        if name in settings._WHITELISTED_REAL_PROPERTIES:
-            return object.__setattr__(self, name, value)
-        elif name in all_settings:
-            if self._construction_complete:
-                raise AttributeError(
-                    "settings objects are immutable and may not be assigned to"
-                    " after construction."
-                )
-            else:
-                return object.__setattr__(self, name, value)
-        else:
-            raise AttributeError("No such setting %s" % (name,))
+        raise AttributeError("settings objects are immutable")
 
     def __repr__(self):
         bits = ("%s=%r" % (name, getattr(self, name)) for name in all_settings)
@@ -645,3 +647,13 @@ def note_deprecation(message: str, *, since: str) -> None:
 settings.register_profile("default", settings())
 settings.load_profile("default")
 assert settings.default is not None
+
+
+# Check that the kwonly args to settings.__init__ is the same as the set of
+# defined settings - in case we've added or remove something from one but
+# not the other.
+assert set(all_settings) == {
+    p.name
+    for p in inspect.signature(settings.__init__).parameters.values()
+    if p.kind == inspect.Parameter.KEYWORD_ONLY
+}

@@ -87,11 +87,6 @@ def test_can_repeatedly_push_the_same_thing():
     assert settings().max_examples == original_default
 
 
-def test_cannot_create_settings_with_invalid_options():
-    with pytest.raises(InvalidArgument):
-        settings(a_setting_with_limited_options="spoon")
-
-
 def test_can_set_verbosity():
     settings(verbosity=Verbosity.quiet)
     settings(verbosity=Verbosity.normal)
