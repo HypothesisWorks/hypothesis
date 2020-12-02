@@ -23,7 +23,6 @@ import contextlib
 import datetime
 import inspect
 import os
-import threading
 import warnings
 from enum import Enum, IntEnum, unique
 from typing import Any, Dict, List, Optional
@@ -167,7 +166,6 @@ class settings(metaclass=settingsMeta):
                     "Invalid argument: %r is not a valid setting" % (name,)
                 )
             setattr(self, name, value)
-        self.storage = threading.local()
         self._construction_complete = True
 
     def __call__(self, test):

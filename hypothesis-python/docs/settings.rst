@@ -44,7 +44,7 @@ Available settings
 
 .. autoclass:: hypothesis.settings
     :members:
-    :exclude-members: register_profile, get_profile, load_profile, buffer_size
+    :exclude-members: register_profile, get_profile, load_profile
 
 .. _phases:
 
