@@ -64,7 +64,7 @@ class settingsProperty:
                     result = ExampleDatabase(not_set)
                 return result
             except KeyError:
-                raise AttributeError(self.name)
+                raise AttributeError(self.name) from None
 
     def __set__(self, obj, value):
         obj.__dict__[self.name] = value
@@ -316,7 +316,7 @@ class settings(metaclass=settingsMeta):
         try:
             return settings._profiles[name]
         except KeyError:
-            raise InvalidArgument("Profile %r is not registered" % (name,))
+            raise InvalidArgument(f"Profile {name!r} is not registered") from None
 
     @staticmethod
     def load_profile(name: str) -> None:
