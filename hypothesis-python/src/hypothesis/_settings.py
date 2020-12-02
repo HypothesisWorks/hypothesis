@@ -373,6 +373,9 @@ If you are writing one-off tests, running tens of thousands of examples is
 quite reasonable as Hypothesis may miss uncommon bugs with default settings.
 For very complex code, we have observed Hypothesis finding novel bugs after
 *several million* examples while testing :pypi:`SymPy`.
+If you are running more than 100k examples for a test, consider using our
+:ref:`integration for coverage-guided fuzzing <fuzz_one_input>` - it really
+shines when given minutes or hours to run.
 """,
 )
 
@@ -413,7 +416,7 @@ settings._define_setting(
     default=not_set,
     show_default=False,
     description="""
-An instance of hypothesis.database.ExampleDatabase that will be
+An instance of :class:`~hypothesis.database.ExampleDatabase` that will be
 used to save examples to and load previous examples from. May be ``None``
 in which case no storage will be used, ``":memory:"`` for an in-memory
 database, or any path for a directory-based example database.
@@ -607,7 +610,7 @@ allowed to exceed. Tests which take longer than that may be converted into
 errors (but will not necessarily be if close to the deadline, to allow some
 variability in test run time).
 
-Set this to None to disable this behaviour entirely.
+Set this to ``None`` to disable this behaviour entirely.
 """,
 )
 
