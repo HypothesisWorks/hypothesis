@@ -44,7 +44,7 @@ Available settings
 
 .. autoclass:: hypothesis.settings
     :members:
-    :exclude-members: register_profile, get_profile, load_profile, buffer_size
+    :exclude-members: register_profile, get_profile, load_profile
 
 .. _phases:
 
@@ -52,7 +52,7 @@ Available settings
 Controlling what runs
 ~~~~~~~~~~~~~~~~~~~~~
 
-Hypothesis divides tests into four logically distinct phases:
+Hypothesis divides tests into five logically distinct phases:
 
 1. Running explicit examples :ref:`provided with the @example decorator <providing-explicit-examples>`.
 2. Rerunning a selection of previously failing examples to reproduce a previously seen error

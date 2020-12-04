@@ -126,3 +126,32 @@ def addy(x, y):
 def test_can_access_strategy_for_wrapped_test():
     assert addx.hypothesis._given_kwargs == {"x": STRAT}
     assert addy.hypothesis._given_kwargs == {"y": STRAT}
+
+
+@pytest.mark.parametrize(
+    "buffers,db_size",
+    [
+        ([b"aa", b"bb", b"cc", b"dd"], 1),  # ascending -> only saves first
+        ([b"dd", b"cc", b"bb", b"aa"], 4),  # descending -> saves all
+        ([b"cc", b"dd", b"aa", b"bb"], 2),  # sawtooth -> saves cc then aa
+        ([b"aa", b"bb", b"cc", b"XX"], 2),  # two distinct errors -> saves both
+    ],
+)
+def test_fuzz_one_input_does_not_add_redundant_entries_to_database(buffers, db_size):
+    db = InMemoryExampleDatabase()
+    seen = []
+
+    @given(st.binary(min_size=2, max_size=2))
+    @settings(database=db)
+    def test(s):
+        seen.append(s)
+        assert s != b"XX"
+        raise AssertionError
+
+    for buf in buffers:
+        with pytest.raises(AssertionError):
+            test.hypothesis.fuzz_one_input(buf)
+
+    (saved_examples,) = db.data.values()
+    assert seen == buffers
+    assert len(saved_examples) == db_size

@@ -92,14 +92,6 @@ def test_cannot_create_settings_with_invalid_options():
         settings(a_setting_with_limited_options="spoon")
 
 
-def test_cannot_register_with_parent_and_settings_args():
-    with pytest.raises(InvalidArgument):
-        settings.register_profile(
-            "conflicted", settings.default, settings=settings.default
-        )
-    assert "conflicted" not in settings._profiles
-
-
 def test_can_set_verbosity():
     settings(verbosity=Verbosity.quiet)
     settings(verbosity=Verbosity.normal)
@@ -439,11 +431,6 @@ def test_assigning_to_settings_attribute_on_state_machine_raises_error():
     state_machine_instance.settings = "any value"
 
 
-def test_can_not_set_timeout_to_time():
-    with pytest.raises(InvalidArgument):
-        settings(timeout=60)
-
-
 def test_derandomise_with_explicit_database_is_invalid():
     with pytest.raises(InvalidArgument):
         settings(derandomize=True, database=ExampleDatabase(":memory:"))
@@ -454,7 +441,6 @@ def test_derandomise_with_explicit_database_is_invalid():
     [
         {"max_examples": -1},
         {"max_examples": 2.5},
-        {"buffer_size": -1},
         {"stateful_step_count": -1},
         {"stateful_step_count": 2.5},
         {"deadline": -1},
