@@ -18,6 +18,15 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.41.5:
+
+-------------------
+5.41.5 - 2020-12-05
+-------------------
+
+This patch adds a performance optimisation to avoid saving redundant
+seeds when using :ref:`the .fuzz_one_input hook <fuzz_one_input>`.
+
 .. _v5.41.4:
 
 -------------------
