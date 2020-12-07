@@ -8,7 +8,7 @@ attrs==20.3.0             # via hypothesis (hypothesis-python/setup.py)
 coverage==5.3             # via -r requirements/coverage.in
 lark-parser==0.11.1       # via -r requirements/coverage.in
 numpy==1.19.4             # via -r requirements/coverage.in, pandas
-pandas==1.1.4             # via -r requirements/coverage.in
+pandas==1.1.5             # via -r requirements/coverage.in
 python-dateutil==2.8.1    # via pandas
 pytz==2020.4              # via -r requirements/coverage.in, pandas
 six==1.15.0               # via python-dateutil
