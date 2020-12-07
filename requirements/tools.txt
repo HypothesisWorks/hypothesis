@@ -15,7 +15,7 @@ bandit==1.6.3             # via flake8-bandit
 black==20.8b1             # via -r requirements/tools.in, blacken-docs
 blacken-docs==1.8.0       # via -r requirements/tools.in
 bleach==3.2.1             # via readme-renderer
-certifi==2020.11.8        # via requests
+certifi==2020.12.5        # via requests
 cffi==1.14.4              # via cryptography
 chardet==3.0.4            # via requests
 click==7.1.2              # via black, pip-tools, pyupio, safety
