@@ -104,7 +104,7 @@ What counts as a user visible change is somewhat up to individual
 judgement, but you should err in the direction of assuming that
 if it might count then it does count.
 
-A good rule of thumb is that the ``RELEASE.rst`` uses the words "additionally"
+A good rule of thumb is that if the ``RELEASE.rst`` uses the words "additionally"
 or needs bullet points to be clear, it is likely too large.
 
 Ideally changes that are not user visible should also be self-contained
