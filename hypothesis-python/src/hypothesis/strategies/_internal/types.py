@@ -34,6 +34,7 @@ from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.internal.compat import ForwardRef, typing_root_type
 from hypothesis.internal.conjecture.utils import many as conjecture_utils_many
+from hypothesis.strategies._internal.datetime import zoneinfo
 from hypothesis.strategies._internal.ipaddress import (
     SPECIAL_IPv4_RANGES,
     SPECIAL_IPv6_RANGES,
@@ -348,6 +349,8 @@ _global_type_lookup = {
     os.PathLike: st.builds(PurePath, st.text()),
     # Pull requests with more types welcome!
 }
+if zoneinfo is not None:  # pragma: no branch
+    _global_type_lookup[zoneinfo.ZoneInfo] = st.timezones()
 
 _global_type_lookup[type] = st.sampled_from(
     [type(None)] + sorted(_global_type_lookup, key=str)

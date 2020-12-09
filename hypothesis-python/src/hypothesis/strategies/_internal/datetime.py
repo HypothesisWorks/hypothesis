@@ -14,7 +14,9 @@
 # END HEADER
 
 import datetime as dt
+import os.path
 from calendar import monthrange
+from functools import lru_cache
 from typing import Optional
 
 from hypothesis.errors import InvalidArgument
@@ -25,8 +27,29 @@ from hypothesis.strategies._internal.core import (
     deprecated_posargs,
     just,
     none,
+    sampled_from,
 )
 from hypothesis.strategies._internal.strategies import SearchStrategy
+
+# These standard-library modules are required for the timezones() and
+# timezone_keys() strategies, but not present in older versions of Python.
+# We therefore try to import them here, but only raise errors recommending
+# `pip install hypothesis[zoneinfo]` to install the backports (if needed)
+# when those strategies are actually used.
+try:
+    import importlib.resources as importlib_resources
+except ImportError:
+    try:
+        import importlib_resources  # type: ignore
+    except ImportError:
+        importlib_resources = None  # type: ignore
+try:
+    import zoneinfo
+except ImportError:
+    try:
+        from backports import zoneinfo  # type: ignore
+    except ImportError:
+        zoneinfo = None
 
 DATENAMES = ("year", "month", "day")
 TIMENAMES = ("hour", "minute", "second", "microsecond")
@@ -42,7 +65,7 @@ def is_pytz_timezone(tz):
 def replace_tzinfo(value, timezone):
     if is_pytz_timezone(timezone):
         # Pytz timezones are a little complicated, and using the .replace method
-        # can cause some wierd issues, so we use their special "localise" instead.
+        # can cause some weird issues, so we use their special "localize" instead.
         #
         # We use the fold attribute as a convenient boolean for is_dst, even though
         # they're semantically distinct.  For ambiguous or imaginary hours, fold says
@@ -320,3 +343,127 @@ def timedeltas(
     if min_value == max_value:
         return just(min_value)
     return TimedeltaStrategy(min_value=min_value, max_value=max_value)
+
+
+@lru_cache(maxsize=None)
+def _valid_key_cacheable(tzpath, key):
+    assert isinstance(tzpath, tuple)  # zoneinfo changed, better update this function!
+    for root in tzpath:
+        if os.path.exists(os.path.join(root, key)):  # pragma: no branch
+            # No branch because most systems only have one TZPATH component.
+            return True
+    else:  # pragma: no cover
+        # This branch is only taken for names which are known to zoneinfo
+        # but not present on the filesystem, i.e. on Windows with tzdata,
+        # and so is never executed by our coverage tests.
+        if importlib_resources is None:
+            raise ImportError(
+                "The importlib_resources module is required, but could not be "
+                "imported.  Run `pip install hypothesis[zoneinfo]` and try again."
+            )
+        *package_loc, resource_name = key.split("/")
+        package = "tzdata.zoneinfo." + ".".join(package_loc)
+        try:
+            return importlib_resources.is_resource(package, resource_name)
+        except ModuleNotFoundError:
+            return False
+
+
+@defines_strategy(force_reusable_values=True)
+def timezone_keys(
+    *,
+    # allow_alias: bool = True,
+    # allow_deprecated: bool = True,
+    allow_prefix: bool = True,
+) -> SearchStrategy[str]:
+    """A strategy for :wikipedia:`IANA timezone names <List_of_tz_database_time_zones>`.
+
+    As well as timezone names like ``"UTC"``, ``"Australia/Sydney"``, or
+    ``"America/New_York"``, this strategy can generate:
+
+    - Aliases such as ``"Antarctica/McMurdo"``, which links to ``"Pacific/Auckland"``.
+    - Deprecated names such as ``"Antarctica/South_Pole"``, which *also* links to
+      ``"Pacific/Auckland"``.  Note that most but
+      not all deprecated timezone names are also aliases.
+    - Timezone names with the ``"posix/"`` or ``"right/"`` prefixes, unless
+      ``allow_prefix=False``.
+
+    These strings are provided separately from Tzinfo objects - such as ZoneInfo
+    instances from the timezones() strategy - to facilitate testing of timezone
+    logic without needing workarounds to access non-canonical names.
+
+    .. note::
+
+        The :mod:`python:zoneinfo` module is new in Python 3.9, so you will need
+        to install the :pypi:`backports.zoneinfo` module on earlier versions, and
+        the :pypi:`importlib_resources` backport on Python 3.6.
+
+        ``pip install hypothesis[zoneinfo]`` will install these conditional
+        dependencies if and only if they are needed.
+
+    On Windows, you may need to access IANA timezone data via the :pypi:`tzdata`
+    package.  For non-IANA timezones, such as Windows-native names or GNU TZ
+    strings, we recommend using :func:`~hypothesis.strategies.sampled_from` with
+    the :pypi:`dateutil` package, e.g. :meth:`dateutil:dateutil.tz.tzwin.list`.
+    """
+    # check_type(bool, allow_alias, "allow_alias")
+    # check_type(bool, allow_deprecated, "allow_deprecated")
+    check_type(bool, allow_prefix, "allow_prefix")
+    if zoneinfo is None:  # pragma: no cover
+        raise ModuleNotFoundError(
+            "The zoneinfo module is required, but could not be imported.  "
+            "Run `pip install hypothesis[zoneinfo]` and try again."
+        )
+
+    available_timezones = ("UTC",) + tuple(sorted(zoneinfo.available_timezones()))
+
+    # TODO: filter out alias and deprecated names if disallowed
+
+    # When prefixes are allowed, we first choose a key and then flatmap to get our
+    # choice with one of the available prefixes.  That in turn means that we need
+    # some logic to determine which prefixes are available for a given key:
+
+    def valid_key(key):
+        return key == "UTC" or _valid_key_cacheable(zoneinfo.TZPATH, key)
+
+    # TODO: work out how to place a higher priority on "weird" timezones
+    # For details see https://github.com/HypothesisWorks/hypothesis/issues/2414
+    strategy = sampled_from([key for key in available_timezones if valid_key(key)])
+
+    if not allow_prefix:
+        return strategy
+
+    def sample_with_prefixes(zone):
+        keys_with_prefixes = (zone, f"posix/{zone}", f"right/{zone}")
+        return sampled_from([key for key in keys_with_prefixes if valid_key(key)])
+
+    return strategy.flatmap(sample_with_prefixes)
+
+
+@defines_strategy(force_reusable_values=True)
+def timezones(*, no_cache: bool = False) -> SearchStrategy["zoneinfo.ZoneInfo"]:
+    """A strategy for :class:`python:zoneinfo.ZoneInfo` objects.
+
+    If ``no_cache=True``, the generated instances are constructed using
+    :meth:`ZoneInfo.no_cache <python:zoneinfo.ZoneInfo.no_cache>` instead
+    of the usual constructor.  This may change the semantics of your datetimes
+    in surprising ways, so only use it if you know that you need to!
+
+    .. note::
+
+        The :mod:`python:zoneinfo` module is new in Python 3.9, so you will need
+        to install the :pypi:`backports.zoneinfo` module on earlier versions, and
+        the :pypi:`importlib_resources` backport on Python 3.6.
+
+        ``pip install hypothesis[zoneinfo]`` will install these conditional
+        dependencies if and only if they are needed.
+    """
+    check_type(bool, no_cache, "no_cache")
+    if zoneinfo is None:  # pragma: no cover
+        raise ModuleNotFoundError(
+            "The zoneinfo module is required, but could not be imported.  "
+            "Run `pip install hypothesis[zoneinfo]` and try again."
+        )
+    return timezone_keys().map(
+        zoneinfo.ZoneInfo.no_cache if no_cache else zoneinfo.ZoneInfo
+    )
