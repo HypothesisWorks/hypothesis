@@ -34,6 +34,7 @@ from tests.django.toystore.forms import (
     TemporalFieldForm,
     URLFieldForm,
     UUIDFieldForm,
+    WithValidatorsForm,
 )
 
 register_field_strategy(
@@ -114,3 +115,10 @@ class TestGetsBasicForms(TestCase):
     @given(from_form(ShortStringForm))
     def test_short_string_form(self, short_string_form):
         self.assertTrue(short_string_form.is_valid())
+
+    @given(from_form(WithValidatorsForm))
+    def test_tight_validators_form(self, x):
+        self.assertTrue(1 <= x.data["_int_one_to_five"] <= 5)
+        self.assertTrue(1 <= x.data["_decimal_one_to_five"] <= 5)
+        self.assertTrue(1 <= x.data["_float_one_to_five"] <= 5)
+        self.assertTrue(5 <= len(x.data["_string_five_to_ten"]) <= 10)

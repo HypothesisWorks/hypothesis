@@ -29,7 +29,7 @@ from django.core.validators import (
 from django.db import models as dm
 
 from hypothesis import strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.extra.pytz import timezones
 from hypothesis.internal.validation import check_type
 from hypothesis.provisional import urls
@@ -39,14 +39,31 @@ AnyField = Union[dm.Field, df.Field]
 F = TypeVar("F", bound=AnyField)
 
 
+def numeric_bounds_from_validators(
+    field, min_value=float("-inf"), max_value=float("inf")
+):
+    for v in field.validators:
+        if isinstance(v, django.core.validators.MinValueValidator):
+            min_value = max(min_value, v.limit_value)
+        elif isinstance(v, django.core.validators.MaxValueValidator):
+            max_value = min(max_value, v.limit_value)
+    return min_value, max_value
+
+
+def integers_for_field(min_value, max_value):
+    def inner(field):
+        return st.integers(*numeric_bounds_from_validators(field, min_value, max_value))
+
+    return inner
+
+
 # Mapping of field types, to strategy objects or functions of (type) -> strategy
 _global_field_lookup = {
-    dm.SmallIntegerField: st.integers(-32768, 32767),
-    dm.IntegerField: st.integers(-2147483648, 2147483647),
-    dm.BigIntegerField: st.integers(-9223372036854775808, 9223372036854775807),
-    dm.PositiveIntegerField: st.integers(0, 2147483647),
-    dm.PositiveSmallIntegerField: st.integers(0, 32767),
-    dm.BinaryField: st.binary(),
+    dm.SmallIntegerField: integers_for_field(-32768, 32767),
+    dm.IntegerField: integers_for_field(-2147483648, 2147483647),
+    dm.BigIntegerField: integers_for_field(-9223372036854775808, 9223372036854775807),
+    dm.PositiveIntegerField: integers_for_field(0, 2147483647),
+    dm.PositiveSmallIntegerField: integers_for_field(0, 32767),
     dm.BooleanField: st.booleans(),
     dm.DateField: st.dates(),
     dm.EmailField: emails(),
@@ -57,8 +74,10 @@ _global_field_lookup = {
     df.DateField: st.dates(),
     df.DurationField: st.timedeltas(),
     df.EmailField: emails(),
-    df.FloatField: st.floats(allow_nan=False, allow_infinity=False),
-    df.IntegerField: st.integers(-2147483648, 2147483647),
+    df.FloatField: lambda field: st.floats(
+        *numeric_bounds_from_validators(field), allow_nan=False, allow_infinity=False
+    ),
+    df.IntegerField: integers_for_field(-2147483648, 2147483647),
     df.NullBooleanField: st.one_of(st.none(), st.booleans()),
     df.URLField: urls(),
     df.UUIDField: st.uuids(),
@@ -155,14 +174,38 @@ def _for_form_ip(field):
         return st.ip_addresses(v=4).map(str)
     if validate_ipv6_address in field.default_validators:
         return _ipv6_strings
-    raise InvalidArgument("No IP version validator on field=%r" % field)
+    raise ResolutionFailed("No IP version validator on field=%r" % field)
 
 
 @register_for(dm.DecimalField)
 @register_for(df.DecimalField)
 def _for_decimal(field):
+    min_value, max_value = numeric_bounds_from_validators(field)
     bound = Decimal(10 ** field.max_digits - 1) / (10 ** field.decimal_places)
-    return st.decimals(min_value=-bound, max_value=bound, places=field.decimal_places)
+    return st.decimals(
+        min_value=max(min_value, -bound),
+        max_value=min(max_value, bound),
+        places=field.decimal_places,
+    )
+
+
+def length_bounds_from_validators(field):
+    min_size = 1
+    max_size = field.max_length
+    for v in field.validators:
+        if isinstance(v, django.core.validators.MinLengthValidator):
+            min_size = max(min_size, v.limit_value)
+        elif isinstance(v, django.core.validators.MaxLengthValidator):
+            max_size = min(max_size or v.limit_value, v.limit_value)
+    return min_size, max_size
+
+
+@register_for(dm.BinaryField)
+def _for_binary(field):
+    min_size, max_size = length_bounds_from_validators(field)
+    if getattr(field, "blank", False) or not getattr(field, "required", True):
+        return st.just(b"") | st.binary(min_size=min_size, max_size=max_size)
+    return st.binary(min_size=min_size, max_size=max_size)
 
 
 @register_for(dm.CharField)
@@ -188,18 +231,16 @@ def _for_text(field):
         # compute intersections of the full Python regex language.
         return st.one_of(*[st.from_regex(r) for r in regexes])
     # If there are no (usable) regexes, we use a standard text strategy.
-    min_size = 1
-    if getattr(field, "blank", False) or not getattr(field, "required", True):
-        min_size = 0
+    min_size, max_size = length_bounds_from_validators(field)
     strategy = st.text(
         alphabet=st.characters(
             blacklist_characters="\x00", blacklist_categories=("Cs",)
         ),
         min_size=min_size,
-        max_size=field.max_length,
-    )
-    if getattr(field, "required", True):
-        strategy = strategy.filter(lambda s: s.strip())
+        max_size=max_size,
+    ).filter(lambda s: min_size <= len(s.strip()))
+    if getattr(field, "blank", False) or not getattr(field, "required", True):
+        return st.just("") | strategy
     return strategy
 
 
@@ -271,7 +312,7 @@ def from_field(field: F) -> st.SearchStrategy[Union[F, None]]:
         if type(field) not in _global_field_lookup:
             if getattr(field, "null", False):
                 return st.none()
-            raise InvalidArgument("Could not infer a strategy for %r", (field,))
+            raise ResolutionFailed("Could not infer a strategy for %r", (field,))
         strategy = _global_field_lookup[type(field)]  # type: ignore
         if not isinstance(strategy, st.SearchStrategy):
             strategy = strategy(field)

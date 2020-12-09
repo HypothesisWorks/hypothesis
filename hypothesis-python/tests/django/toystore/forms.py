@@ -14,6 +14,12 @@
 # END HEADER
 
 from django import forms
+from django.core.validators import (
+    MaxLengthValidator,
+    MaxValueValidator,
+    MinLengthValidator,
+    MinValueValidator,
+)
 from django.forms import widgets
 
 from tests.django.toystore.models import (
@@ -102,6 +108,15 @@ class TemporalFieldForm(ReprForm):
     _duration = forms.DurationField()
     _time = forms.TimeField()
     _split_date_time = forms.SplitDateTimeField()
+
+
+class WithValidatorsForm(ReprForm):
+    num_validators = [MinValueValidator(1), MaxValueValidator(5)]
+    _int_one_to_five = forms.IntegerField(validators=num_validators)
+    _decimal_one_to_five = forms.FloatField(validators=num_validators)
+    _float_one_to_five = forms.FloatField(validators=num_validators)
+    len_validators = [MinLengthValidator(5), MaxLengthValidator(10)]
+    _string_five_to_ten = forms.CharField(validators=len_validators)
 
 
 class EmailFieldForm(ReprForm):
