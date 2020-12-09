@@ -13,6 +13,8 @@
 #
 # END HEADER
 
+import platform
+
 import pytest
 
 from hypothesis import given, strategies as st
@@ -56,6 +58,24 @@ def test_timezones_argument_validation(kwargs):
 def test_timezone_keys_argument_validation(kwargs):
     with pytest.raises(InvalidArgument):
         st.timezone_keys(**kwargs).validate()
+
+
+@pytest.mark.skipif(platform.system() != "Linux", reason="platform-specific")
+def test_can_generate_prefixes_if_allowed_and_available():
+    """
+    This is actually kinda fiddly: we may generate timezone keys with the
+    "posix/" or "right/" prefix if-and-only-if they are present on the filesystem.
+
+    This immediately rules out Windows (which uses the tzdata package instead),
+    along with OSX (which doesn't seem to have prefixed keys).  We believe that
+    they are present on at least most Linux distros, but have not done exhaustive
+    testing.
+
+    It's fine to just patch this test out if it fails - passing in the
+    Hypothesis CI demonstrates that the feature works on *some* systems.
+    """
+    find_any(st.timezone_keys(), lambda s: s.startswith("posix/"))
+    find_any(st.timezone_keys(), lambda s: s.startswith("right/"))
 
 
 def test_can_disallow_prefixes():
