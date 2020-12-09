@@ -18,6 +18,19 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.43.0:
+
+-------------------
+5.43.0 - 2020-12-09
+-------------------
+
+This release adds new :func:`~hypothesis.strategies.timezones` and
+:func:`~hypothesis.strategies.timezone_keys` strategies (:issue:`2630`)
+based on the new :mod:`python:zoneinfo` module in Python 3.9.
+
+``pip install hypothesis[zoneinfo]`` will ensure that you have the
+appropriate backports installed if you need them.
+
 .. _v5.42.3:
 
 -------------------
