@@ -18,6 +18,16 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.42.1:
+
+-------------------
+5.42.1 - 2020-12-09
+-------------------
+
+This patch refactors :class:`hypothesis.settings` to use type-annotated
+keyword arguments instead of ``**kwargs``, which makes tab-completion
+much more useful - as well as type-checkers like :pypi:`mypy`.
+
 .. _v5.42.0:
 
 -------------------
