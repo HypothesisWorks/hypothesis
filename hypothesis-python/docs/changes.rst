@@ -18,6 +18,16 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.42.2:
+
+-------------------
+5.42.2 - 2020-12-09
+-------------------
+
+This patch teaches :func:`hypothesis.extra.django.from_field` to infer
+more efficient strategies by inspecting (not just filtering by) field
+validators for numeric and string fields (:issue:`1116`).
+
 .. _v5.42.1:
 
 -------------------
