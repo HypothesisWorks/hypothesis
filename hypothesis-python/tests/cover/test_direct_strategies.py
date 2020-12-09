@@ -15,6 +15,7 @@
 
 import collections
 import decimal
+import enum
 import fractions
 import math
 from datetime import date, datetime, time, timedelta
@@ -494,3 +495,31 @@ def test_ipaddress_from_network_is_always_in_network(data, network):
     ip = data.draw(ds.ip_addresses(network=network), label="address")
     assert ip in network
     assert ip.version == network.version
+
+
+class AnEnum(enum.Enum):
+    a = 1
+
+
+def requires_arg(value):
+    """Similar to the enum.Enum.__call__ method."""
+
+
+@given(ds.data())
+def test_builds_error_messages(data):
+    # If we call them directly, we get a simple TypeError in both cases
+    with pytest.raises(TypeError):
+        requires_arg()
+    with pytest.raises(TypeError):
+        AnEnum()
+    # But we have an improved error message if you try to build an Enum
+    assert issubclass(InvalidArgument, TypeError)  # it's a valid substitution
+    with pytest.raises(TypeError):  # which only applies to enums
+        data.draw(ds.builds(requires_arg))
+    with pytest.raises(
+        InvalidArgument,
+        match=r".* try using sampled_from\(.+\) instead of builds\(.+\)",
+    ):
+        data.draw(ds.builds(AnEnum))
+    # and sampled_from() does in fact work
+    data.draw(ds.sampled_from(AnEnum))
