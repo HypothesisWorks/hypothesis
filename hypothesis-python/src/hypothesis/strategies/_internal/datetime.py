@@ -59,9 +59,15 @@ def replace_tzinfo(value, timezone):
 
 
 def datetime_does_not_exist(value):
-    # This function tests whether the given datetime can be round-tripped to and
-    # from UTC.  It is an exact inverse of (and very similar to) the dateutil method
-    # https://dateutil.readthedocs.io/en/stable/tz.html#dateutil.tz.datetime_exists
+    """This function tests whether the given datetime can be round-tripped to and
+    from UTC.  It is an exact inverse of (and very similar to) the dateutil method
+    https://dateutil.readthedocs.io/en/stable/tz.html#dateutil.tz.datetime_exists
+    """
+    # Naive datetimes cannot be imaginary, but we need this special case because
+    # chaining .astimezone() ends with *the system local timezone*, not None.
+    # See bug report in https://github.com/HypothesisWorks/hypothesis/issues/2662
+    if value.tzinfo is None:
+        return False
     try:
         # Does the naive portion of the datetime change when round-tripped to
         # UTC?  If so, or if this overflows, we say that it does not exist.

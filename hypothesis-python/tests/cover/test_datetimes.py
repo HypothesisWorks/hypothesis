@@ -147,3 +147,8 @@ def test_can_generate_datetime_with_fold_1():
 @pytest.mark.skipif(PYPY, reason="see comment")
 def test_can_generate_time_with_fold_1():
     find_any(times(), lambda d: d.fold)
+
+
+@given(datetimes(allow_imaginary=False))
+def test_allow_imaginary_is_not_an_error_for_naive_datetimes(d):
+    pass
