@@ -6,7 +6,7 @@ extern crate conjecture;
 
 use std::mem;
 
-use rutie::{AnyObject, Boolean, Class, Float, Integer, NilClass, Object, RString};
+use rutie::{AnyException, AnyObject, Boolean, Class, Float, Integer, NilClass, Object, RString, VM};
 
 use conjecture::data::{DataSource, Status, TestResult};
 use conjecture::database::{BoxedDatabase, DirectoryDatabase, NoDatabase};
@@ -154,10 +154,10 @@ methods!(
         max_example: Integer
     ) -> AnyObject {
         let core_engine = HypothesisCoreEngineStruct::new(
-            name.unwrap().to_string(),
+            safe_access(name).to_string(),
             database_path.ok().map(|p| p.to_string()),
-            seed.unwrap().to_u64(),
-            max_example.unwrap().to_u64(),
+            safe_access(seed).to_u64(),
+            safe_access(max_example).to_u64(),
         );
 
         Class::from_existing("HypothesisCoreEngine")
@@ -175,7 +175,7 @@ methods!(
     }
     fn ruby_hypothesis_core_engine_finish_overflow(child: AnyObject) -> NilClass {
         let core_engine = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER);
-        let mut rdata_source = child.unwrap();
+        let mut rdata_source = safe_access(child);
         let data_source = rdata_source.get_data_mut(&*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
 
         core_engine.finish_overflow(data_source);
@@ -184,7 +184,7 @@ methods!(
     }
     fn ruby_hypothesis_core_engine_finish_valid(child: AnyObject) -> NilClass {
         let core_engine = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER);
-        let mut rdata_source = child.unwrap();
+        let mut rdata_source = safe_access(child);
         let data_source = rdata_source.get_data_mut(&*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
 
         core_engine.finish_valid(data_source);
@@ -193,7 +193,7 @@ methods!(
     }
     fn ruby_hypothesis_core_engine_finish_invalid(child: AnyObject) -> NilClass {
         let core_engine = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER);
-        let mut rdata_source = child.unwrap();
+        let mut rdata_source = safe_access(child);
         let data_source = rdata_source.get_data_mut(&*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
 
         core_engine.finish_invalid(data_source);
@@ -205,10 +205,10 @@ methods!(
         label: Integer
     ) -> NilClass {
         let core_engine = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER);
-        let mut rdata_source = child.unwrap();
+        let mut rdata_source = safe_access(child);
         let data_source = rdata_source.get_data_mut(&*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
 
-        core_engine.finish_interesting(data_source, label.unwrap().to_u64());
+        core_engine.finish_interesting(data_source, safe_access(label).to_u64());
 
         NilClass::new()
     }
@@ -219,7 +219,7 @@ methods!(
     }
     fn ruby_hypothesis_core_failing_example(i: Integer) -> AnyObject {
         let core_engine = itself.get_data_mut(&*HYPOTHESIS_CORE_ENGINE_STRUCT_WRAPPER);
-        let int = i.unwrap().to_u64() as usize;
+        let int = safe_access(i).to_u64() as usize;
 
         let data_source = core_engine.failing_example(int);
 
@@ -270,7 +270,7 @@ methods!(
     }
     fn ruby_hypothesis_core_integers_provide(data: AnyObject) -> AnyObject {
         let core_integers = itself.get_data_mut(&*HYPOTHESIS_CORE_INTEGERS_STRUCT_WRAPPER);
-        let mut rdata = data.unwrap();
+        let mut rdata = safe_access(data);
         let data_source = rdata.get_data_mut(&*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
 
         match core_integers.provide(data_source) {
@@ -324,9 +324,9 @@ methods!(
         expected_count: Float
     ) -> AnyObject {
         let repeat_values = HypothesisCoreRepeatValuesStruct::new(
-            min_count.unwrap().to_u64(),
-            max_count.unwrap().to_u64(),
-            expected_count.unwrap().to_f64(),
+            safe_access(min_count).to_u64(),
+            safe_access(max_count).to_u64(),
+            safe_access(expected_count).to_f64(),
         );
 
         Class::from_existing("HypothesisCoreRepeatValues").wrap_data(
@@ -335,7 +335,7 @@ methods!(
         )
     }
     fn ruby_hypothesis_core_repeat_values_should_continue(data: AnyObject) -> AnyObject {
-        let mut rdata = data.unwrap();
+        let mut rdata = safe_access(data);
         let mut data_source = rdata.get_data_mut(&*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
 
         let should_continue = itself
@@ -381,7 +381,7 @@ methods!(
     itself,
     fn ruby_hypothesis_core_bounded_integers_new(max_value: Integer) -> AnyObject {
         let bounded_integers = HypothesisCoreBoundedIntegersStruct {
-            max_value: max_value.unwrap().to_u64(),
+            max_value: safe_access(max_value).to_u64(),
         };
 
         Class::from_existing("HypothesisCoreBoundedIntegers").wrap_data(
@@ -390,7 +390,7 @@ methods!(
         )
     }
     fn ruby_hypothesis_core_bounded_integers_provide(data: AnyObject) -> AnyObject {
-        let mut rdata = data.unwrap();
+        let mut rdata = safe_access(data);
         let data_source = rdata.get_data_mut(&*HYPOTHESIS_CORE_DATA_SOURCE_STRUCT_WRAPPER);
         let bounded_integers =
             itself.get_data_mut(&*HYPOTHESIS_CORE_BOUNDED_INTEGERS_STRUCT_WRAPPER);
@@ -462,4 +462,8 @@ fn mark_child_status(
     if let Some(source) = mem::take(&mut child.source) {
         engine.mark_finished(source, status)
     }
+}
+
+fn safe_access<T>(value: Result<T, AnyException>) -> T {
+  value.map_err(|e| VM::raise_ex(e)).unwrap()
 }
