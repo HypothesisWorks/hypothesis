@@ -18,6 +18,16 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.42.3:
+
+-------------------
+5.42.3 - 2020-12-09
+-------------------
+
+This patch fixes an internal error in :func:`~hypothesis.strategies.datetimes`
+with ``allow_imaginary=False`` where the ``timezones`` argument can generate
+``tzinfo=None`` (:issue:`2662`).
+
 .. _v5.42.2:
 
 -------------------
