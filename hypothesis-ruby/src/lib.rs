@@ -20,19 +20,17 @@ pub struct HypothesisCoreDataSourceStruct {
 
 impl HypothesisCoreDataSourceStruct {
   fn new(engine: &mut HypothesisCoreEngineStruct) -> HypothesisCoreDataSourceStruct {
-    let mut result = HypothesisCoreDataSourceStruct{ source: None};
-    mem::swap(&mut result.source, &mut engine.pending);
-    return result;
+    HypothesisCoreDataSourceStruct{ source: mem::take(&mut engine.pending) }
   }
 
   fn start_draw(&mut self) {
-    if let &mut Some(ref mut source) = &mut self.source {
+    if let Some(ref mut source) = self.source {
       source.start_draw();
     }
   }
 
   fn stop_draw(&mut self) {
-    if let &mut Some(ref mut source) = &mut self.source {
+    if let Some(ref mut source) = self.source {
       source.stop_draw();
     }
   }  
@@ -220,7 +218,7 @@ pub struct HypothesisCoreIntegersStruct {
 
 impl HypothesisCoreIntegersStruct {
   fn new() -> HypothesisCoreIntegersStruct {
-    return HypothesisCoreIntegersStruct { bitlengths: distributions::good_bitlengths() };
+    HypothesisCoreIntegersStruct { bitlengths: distributions::good_bitlengths() }
   }
 
   fn provide(&mut self, data: &mut HypothesisCoreDataSourceStruct) -> Option<i64> {
@@ -262,7 +260,7 @@ pub struct HypothesisCoreRepeatValuesStruct {
 
 impl HypothesisCoreRepeatValuesStruct {
   fn new(min_count: u64, max_count: u64, expected_count: f64) -> HypothesisCoreRepeatValuesStruct {
-    return HypothesisCoreRepeatValuesStruct {
+    HypothesisCoreRepeatValuesStruct {
       repeat: Repeat::new(min_count, max_count, expected_count)
     }
   }
@@ -351,7 +349,7 @@ methods!(
     let bounded_integers = itself.get_data_mut(&*HYPOTHESIS_CORE_BOUNDED_INTEGERS_STRUCT_WRAPPER);
 
     match bounded_integers.provide(data_source) {
-      Some(i) => Integer::new(i as i64).into(),
+      Some(i) => Integer::from(i).into(),
       None => NilClass::new().into()
     }
   }
@@ -395,11 +393,7 @@ pub extern "C" fn Init_rutie_hypothesis_core() {
 }
 
 fn mark_child_status(engine: &mut Engine, child: &mut HypothesisCoreDataSourceStruct, status: Status) {
-  let mut replacement = None;
-  mem::swap(&mut replacement, &mut child.source);
-
-  match replacement {
-      Some(source) => engine.mark_finished(source, status),
-      None => (),
+  if let Some(source) = mem::take(&mut child.source) {
+    engine.mark_finished(source, status)
   }
 }
