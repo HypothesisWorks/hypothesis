@@ -465,5 +465,5 @@ fn mark_child_status(
 }
 
 fn safe_access<T>(value: Result<T, AnyException>) -> T {
-  value.map_err(|e| VM::raise_ex(e)).unwrap()
+  value.map_err(VM::raise_ex).unwrap()
 }
