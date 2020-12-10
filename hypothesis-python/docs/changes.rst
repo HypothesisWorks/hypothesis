@@ -18,6 +18,17 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.43.2:
+
+-------------------
+5.43.2 - 2020-12-10
+-------------------
+
+This patch improves the error message from the
+:func:`~hypothesis.extra.pandas.data_frames` strategy when both the ``rows``
+and ``columns`` arguments are given, but there is a missing entry in ``rows``
+and the corresponding column has no ``fill`` value (:issue:`2678`).
+
 .. _v5.43.1:
 
 -------------------
