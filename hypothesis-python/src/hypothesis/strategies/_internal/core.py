@@ -1312,11 +1312,28 @@ def builds(
             )
         for kw in set(hints) & (required | to_infer):
             kwargs[kw] = from_type(hints[kw])
+
+    def build_target(value):
+        args, kwargs = value
+        try:
+            return target(*args, **kwargs)
+        except TypeError as err:
+            if (
+                isinstance(target, type)
+                and issubclass(target, enum.Enum)
+                and not (args or kwargs)
+            ):
+                name = target.__module__ + "." + target.__qualname__
+                raise InvalidArgument(
+                    f"Calling {name} with no arguments raised an error - "
+                    f"try using sampled_from({name}) instead of builds({name})"
+                ) from err
+            raise
+
     # Mypy doesn't realise that `infer` is gone from kwargs now
     # and thinks that target and args have the same (union) type.
-    return tuples(tuples(*args), fixed_dictionaries(kwargs)).map(  # type: ignore
-        lambda value: target(*value[0], **value[1])  # type: ignore
-    )
+    args_kwargs = tuples(tuples(*args), fixed_dictionaries(kwargs))  # type: ignore
+    return args_kwargs.map(build_target)
 
 
 if sys.version_info[:2] >= (3, 8):  # pragma: no cover
