@@ -50,6 +50,18 @@ BAD_ARGS = [
     e(pdst.data_frames, rows=st.integers(), index=pdst.range_indexes(0, 0)),
     e(pdst.data_frames, rows=st.integers(), index=pdst.range_indexes(1, 1)),
     e(pdst.data_frames, pdst.columns(1, dtype=int), rows=st.integers()),
+    e(
+        pdst.data_frames,
+        columns=pdst.columns(["a", "b"], dtype=str, elements=st.text()),
+        rows=st.just({"a": "x"}),
+        index=pdst.indexes(dtype=int, min_size=1),
+    ),
+    e(
+        pdst.data_frames,
+        columns=pdst.columns(["a", "b"], dtype=str, elements=st.text()),
+        rows=st.just(["x"]),
+        index=pdst.indexes(dtype=int, min_size=1),
+    ),
     e(pdst.indexes),
     e(pdst.indexes, dtype="category"),
     e(pdst.indexes, dtype="not a dtype"),

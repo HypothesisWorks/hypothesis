@@ -648,6 +648,11 @@ def data_frames(
                                 try:
                                     as_list[i] = fills[i]
                                 except KeyError:
+                                    if c.fill.is_empty:
+                                        raise InvalidArgument(
+                                            f"Empty fill strategy in {c!r} cannot "
+                                            f"complete row {original_row!r}"
+                                        ) from None
                                     fills[i] = draw(c.fill)
                                     as_list[i] = fills[i]
                         for k in row:
@@ -679,7 +684,13 @@ def data_frames(
                             % (original_row, len(row), len(rewritten_columns))
                         )
                     while len(row) < len(rewritten_columns):
-                        row.append(draw(rewritten_columns[len(row)].fill))
+                        c = rewritten_columns[len(row)]
+                        if c.fill.is_empty:
+                            raise InvalidArgument(
+                                f"Empty fill strategy in {c!r} cannot "
+                                f"complete row {original_row!r}"
+                            )
+                        row.append(draw(c.fill))
                     result.iloc[row_index] = row
                     break
                 else:
