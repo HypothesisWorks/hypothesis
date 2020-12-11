@@ -18,6 +18,16 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.43.3:
+
+-------------------
+5.43.3 - 2020-12-11
+-------------------
+
+This patch fixes :issue:`2696`, an internal error triggered when the
+:func:`@example <hypothesis.example>` decorator was used and the
+:obj:`~hypothesis.settings.verbosity` setting was ``quiet``.
+
 .. _v5.43.2:
 
 -------------------
