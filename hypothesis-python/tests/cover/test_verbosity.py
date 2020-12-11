@@ -15,7 +15,7 @@
 
 from contextlib import contextmanager
 
-from hypothesis import find, given
+from hypothesis import example, find, given
 from hypothesis._settings import Verbosity, settings
 from hypothesis.reporting import default as default_reporter, with_reporter
 from hypothesis.strategies import booleans, integers, lists
@@ -110,3 +110,28 @@ def test_includes_intermediate_results_in_verbose_mode():
     lines = o.getvalue().splitlines()
     assert len([l for l in lines if "example" in l]) > 2
     assert [l for l in lines if "AssertionError" in l]
+
+
+@example(0)
+@settings(verbosity=Verbosity.quiet)
+@given(integers())
+def test_no_indexerror_in_quiet_mode(x):
+    # Regression tests for https://github.com/HypothesisWorks/hypothesis/issues/2696
+    # where quiet mode -> no fragments to report -> IndexError accessing first report
+    pass
+
+
+@fails
+@example(0)
+@settings(verbosity=Verbosity.quiet, report_multiple_bugs=True)
+@given(integers())
+def test_no_indexerror_in_quiet_mode_report_multiple(x):
+    assert x
+
+
+@fails
+@example(0)
+@settings(verbosity=Verbosity.quiet, report_multiple_bugs=False)
+@given(integers())
+def test_no_indexerror_in_quiet_mode_report_one(x):
+    assert x

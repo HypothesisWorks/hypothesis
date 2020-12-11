@@ -376,14 +376,16 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs):
                     continue
                 break
             finally:
-                assert fragments_reported[0].startswith("Falsifying example")
-                fragments_reported[0] = fragments_reported[0].replace(
-                    "Falsifying example", "Falsifying explicit example", 1
-                )
+                if fragments_reported:
+                    assert fragments_reported[0].startswith("Falsifying example")
+                    fragments_reported[0] = fragments_reported[0].replace(
+                        "Falsifying example", "Falsifying explicit example", 1
+                    )
 
-            verbose_report(fragments_reported[0].replace("Falsifying", "Trying", 1))
-            for f in fragments_reported[1:]:
-                verbose_report(f)
+            if fragments_reported:
+                verbose_report(fragments_reported[0].replace("Falsifying", "Trying", 1))
+                for f in fragments_reported[1:]:
+                    verbose_report(f)
 
 
 def get_random_for_wrapped_test(test, wrapped_test):
