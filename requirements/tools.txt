@@ -13,7 +13,7 @@ babel==2.9.0              # via sphinx
 backcall==0.2.0           # via ipython
 bandit==1.7.0             # via flake8-bandit
 black==20.8b1             # via -r requirements/tools.in, blacken-docs
-blacken-docs==1.8.0       # via -r requirements/tools.in
+blacken-docs==1.9.1       # via -r requirements/tools.in
 bleach==3.2.1             # via readme-renderer
 certifi==2020.12.5        # via requests
 cffi==1.14.4              # via cryptography
