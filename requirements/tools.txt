@@ -11,7 +11,7 @@ attrs==20.3.0             # via flake8-bugbear, hypothesis (hypothesis-python/se
 autoflake==1.4            # via -r requirements/tools.in
 babel==2.9.0              # via sphinx
 backcall==0.2.0           # via ipython
-bandit==1.6.3             # via flake8-bandit
+bandit==1.7.0             # via flake8-bandit
 black==20.8b1             # via -r requirements/tools.in, blacken-docs
 blacken-docs==1.8.0       # via -r requirements/tools.in
 bleach==3.2.1             # via readme-renderer
