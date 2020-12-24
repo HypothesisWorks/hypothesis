@@ -18,6 +18,22 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.43.4:
+
+-------------------
+5.43.4 - 2020-12-24
+-------------------
+
+This change fixes a documentation error in the
+:obj:`~hypothesis.settings.database` setting.
+
+The previous documentation suggested that callers could specify a database
+path string, or the special string ``":memory:"``, but this setting has
+never actually allowed string arguments.
+
+Permitted values are ``None``, and instances of
+:class:`~hypothesis.database.ExampleDatabase`.
+
 .. _v5.43.3:
 
 -------------------
