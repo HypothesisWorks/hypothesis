@@ -30,28 +30,28 @@ generally do their best to write you a useful test.  You can also use
     $ hypothesis write --help
     Usage: hypothesis write [OPTIONS] FUNC...
 
-    `hypothesis write` writes property-based tests for you!
+      `hypothesis write` writes property-based tests for you!
 
-    Type annotations are helpful but not required for our advanced
-    introspection and templating logic.  Try running the examples below to see
-    how it works:
+      Type annotations are helpful but not required for our advanced
+      introspection and templating logic.  Try running the examples below to see
+      how it works:
 
-        hypothesis write gzip
-        hypothesis write numpy.matmul
-        hypothesis write re.compile --except re.error
-        hypothesis write --equivalent ast.literal_eval eval
-        hypothesis write --roundtrip json.dumps json.loads
-        hypothesis write --style=unittest --idempotent sorted
-        hypothesis write --binary-op operator.add
+          hypothesis write gzip
+          hypothesis write numpy.matmul
+          hypothesis write re.compile --except re.error
+          hypothesis write --equivalent ast.literal_eval eval
+          hypothesis write --roundtrip json.dumps json.loads
+          hypothesis write --style=unittest --idempotent sorted
+          hypothesis write --binary-op operator.add
 
     Options:
-    --roundtrip                start by testing write/read or encode/decode!
-    --equivalent               very useful when optimising or refactoring code
-    --idempotent
-    --binary-op
-    --style [pytest|unittest]  pytest-style function, or unittest-style method?
-    -e, --except OBJ_NAME      dotted name of exception(s) to ignore
-    -h, --help                 Show this message and exit.
+      --roundtrip                start by testing write/read or encode/decode!
+      --equivalent               very useful when optimising or refactoring code
+      --idempotent
+      --binary-op
+      --style [pytest|unittest]  pytest-style function, or unittest-style method?
+      -e, --except OBJ_NAME      dotted name of exception(s) to ignore
+      -h, --help                 Show this message and exit.
 
 .. note::
 

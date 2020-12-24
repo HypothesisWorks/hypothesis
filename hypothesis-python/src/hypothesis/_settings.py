@@ -419,8 +419,10 @@ settings._define_setting(
     description="""
 An instance of :class:`~hypothesis.database.ExampleDatabase` that will be
 used to save examples to and load previous examples from. May be ``None``
-in which case no storage will be used, ``":memory:"`` for an in-memory
-database, or any path for a directory-based example database.
+in which case no storage will be used.
+
+See the :doc:`example database documentation <database>` for a list of built-in
+example database implementations, and how to define custom implementations.
 """,
     validator=_validate_database,
 )

@@ -187,11 +187,12 @@ def test_can_have_none_database():
 
 
 @pytest.mark.parametrize("db", [None, ExampleDatabase(":memory:")])
-def test_database_type_must_be_ExampleDatabase(db):
+@pytest.mark.parametrize("bad_db", [":memory:", ".hypothesis/examples"])
+def test_database_type_must_be_ExampleDatabase(db, bad_db):
     with local_settings(settings(database=db)):
         settings_property_db = settings.database
         with pytest.raises(InvalidArgument):
-            settings(database=".hypothesis/examples")
+            settings(database=bad_db)
         assert settings.database is settings_property_db
 
 

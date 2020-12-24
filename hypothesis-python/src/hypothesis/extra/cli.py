@@ -26,12 +26,12 @@ hypothesis[cli]
     Usage: hypothesis [OPTIONS] COMMAND [ARGS]...
 
     Options:
-    --version   Show the version and exit.
-    -h, --help  Show this message and exit.
+      --version   Show the version and exit.
+      -h, --help  Show this message and exit.
 
     Commands:
-    fuzz   [hypofuzz] runs tests with an adaptive coverage-guided fuzzer.
-    write  `hypothesis write` writes property-based tests for you! Type...
+      fuzz     [hypofuzz] runs tests with an adaptive coverage-guided fuzzer.
+      write    `hypothesis write` writes property-based tests for you!
 
 This module requires the :pypi:`click` package, and provides Hypothesis' command-line
 interface, for e.g. :doc:`'ghostwriting' tests <ghostwriter>` via the terminal.
