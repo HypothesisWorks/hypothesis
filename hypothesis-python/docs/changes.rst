@@ -1635,6 +1635,9 @@ Miscellaneous
 ~~~~~~~~~~~~~
 - The ``.example()`` method of strategies (intended for interactive
   exploration) no longer takes a ``random`` argument.
+- It is now an error to apply :func:`@example <hypothesis.example>`,
+  :func:`@seed <hypothesis.seed>`, or :func:`@reproduce_failure <hypothesis.reproduce_failure>`
+  without also applying :func:`@given <hypothesis.given>`.
 - You may pass either the ``target`` or ``targets`` argument to stateful rules, but not both.
 - :obj:`~hypothesis.settings.deadline` must be ``None`` (to disable), a
   :class:`~python:datetime.timedelta`, or an integer or float number of milliseconds.
