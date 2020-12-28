@@ -74,7 +74,7 @@ pydocstyle==5.1.1         # via flake8-docstrings
 pyflakes==2.2.0           # via autoflake, flake8
 pygithub==1.54.1            # via pyupio
 pygments==2.7.3           # via ipython, readme-renderer, sphinx
-pyjwt==1.7.1              # via pygithub
+pyjwt==2.0.0              # via pygithub
 pyparsing==2.4.7          # via packaging
 pytest==6.1.2             # via -r requirements/tools.in
 python-dateutil==2.8.1    # via -r requirements/tools.in
