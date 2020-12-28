@@ -115,7 +115,7 @@ traitlets==5.0.5          # via ipython
 twine==3.3.0              # via -r requirements/tools.in
 typed-ast==1.4.1          # via black, mypy
 typing-extensions==3.7.4.3  # via black, mypy
-urllib3==1.25.11          # via requests
+urllib3==1.26.2          # via requests
 virtualenv==20.2.2        # via tox
 wcwidth==0.2.5            # via prompt-toolkit
 webencodings==0.5.1       # via bleach
