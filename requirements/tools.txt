@@ -46,7 +46,7 @@ iniconfig==1.1.1          # via pytest
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.19.0           # via -r requirements/tools.in
 isort==5.6.4              # via -r requirements/tools.in
-jedi==0.17.2              # via ipython
+jedi==0.18.0              # via ipython
 jeepney==0.6.0            # via keyring, secretstorage
 jinja2==2.11.2            # via pyupio, sphinx
 keyring==21.5.0           # via twine
