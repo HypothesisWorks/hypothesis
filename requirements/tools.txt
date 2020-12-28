@@ -72,7 +72,7 @@ pycodestyle==2.6.0        # via flake8, flake8-bandit
 pycparser==2.20           # via cffi
 pydocstyle==5.1.1         # via flake8-docstrings
 pyflakes==2.2.0           # via autoflake, flake8
-pygithub==1.54            # via pyupio
+pygithub==1.54.1            # via pyupio
 pygments==2.7.3           # via ipython, readme-renderer, sphinx
 pyjwt==1.7.1              # via pygithub
 pyparsing==2.4.7          # via packaging
