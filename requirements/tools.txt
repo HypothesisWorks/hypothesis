@@ -67,7 +67,7 @@ pkginfo==1.6.1            # via twine
 pluggy==0.13.1            # via pytest, tox
 prompt-toolkit==3.0.8     # via ipython
 ptyprocess==0.7.0         # via pexpect
-py==1.9.0                 # via pytest, tox
+py==1.10.0                 # via pytest, tox
 pycodestyle==2.6.0        # via flake8, flake8-bandit
 pycparser==2.20           # via cffi
 pydocstyle==5.1.1         # via flake8-docstrings
