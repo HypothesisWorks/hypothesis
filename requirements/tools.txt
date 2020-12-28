@@ -20,7 +20,7 @@ cffi==1.14.4              # via cryptography
 chardet==4.0.0            # via requests
 click==7.1.2              # via black, pip-tools, pyupio, safety
 colorama==0.4.4           # via twine
-coverage==5.3             # via -r requirements/tools.in
+coverage==5.3.1             # via -r requirements/tools.in
 cryptography==3.2.1       # via secretstorage
 decorator==4.4.2          # via ipython
 deprecated==1.2.10        # via pygithub
