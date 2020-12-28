@@ -79,7 +79,7 @@ pyparsing==2.4.7          # via packaging
 pytest==6.2.1             # via -r requirements/tools.in
 python-dateutil==2.8.1    # via -r requirements/tools.in
 python-gitlab==2.5.0      # via pyupio
-pytz==2020.4              # via babel, django
+pytz==2020.5              # via babel, django
 pyupgrade==2.7.4          # via -r requirements/tools.in
 pyupio==1.1.1             # via -r requirements/tools.in
 pyyaml==5.3.1             # via bandit, dparse, pyupio
