@@ -487,6 +487,13 @@ def check_rust_tests():
     cr.cargo("test")
 
 
+@task()
+def tasks():
+    """Print a list of all task names supported by the build system."""
+    for task_name in sorted(TASKS.keys()):
+        print(task_name)
+
+
 if __name__ == "__main__":
     if "SNAKEPIT" not in os.environ:
         print(
@@ -505,7 +512,8 @@ if __name__ == "__main__":
     if task_to_run is None:
         print(
             "No task specified. Either pass the task to run as an "
-            "argument or as an environment variable TASK."
+            "argument or as an environment variable TASK. "
+            '(Use "./build.sh tasks" to list all supported task names.)'
         )
         sys.exit(1)
 

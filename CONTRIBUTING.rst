@@ -174,7 +174,7 @@ You can also use ``./build.sh check-format``, which will run format and some lin
 git diff. Note: This will error even if you started with a git diff, so if you've got any uncommitted changes
 this will necessarily report an error.
 
-Look in ``.travis.yml`` for a short list of other supported build tasks.
+Run ``./build.sh tasks`` for a list of all supported build task names.
 
 Note: The build requires a lot of different versions of python, so rather than have you install them yourself,
 the build system will install them itself in a local directory. This means that the first time you run a task you
