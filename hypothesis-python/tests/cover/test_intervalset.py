@@ -97,7 +97,7 @@ def intervals_to_set(ints):
 @given(IntervalLists, IntervalLists)
 def test_subtraction_of_intervals(x, y):
     xs = intervals_to_set(x)
-    ys = intervals_to_set(x)
+    ys = intervals_to_set(y)
     assume(not xs.isdisjoint(ys))
     z = _subtract_intervals(x, y)
     assert z == tuple(sorted(z))
