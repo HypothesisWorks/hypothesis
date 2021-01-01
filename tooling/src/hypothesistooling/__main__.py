@@ -31,7 +31,7 @@ from hypothesistooling.scripts import pip_tool
 TASKS = {}
 BUILD_FILES = tuple(
     os.path.join(tools.ROOT, f)
-    for f in ["tooling", "requirements", ".travis.yml", "hypothesis-python/tox.ini"]
+    for f in ["tooling", "requirements", ".github", "hypothesis-python/tox.ini"]
 )
 
 
