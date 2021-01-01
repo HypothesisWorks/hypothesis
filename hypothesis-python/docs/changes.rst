@@ -18,6 +18,14 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.43.5:
+
+-------------------
+5.43.5 - 2021-01-01
+-------------------
+
+This patch updates our copyright headers to include 2021.  Happy new year!
+
 .. _v5.43.4:
 
 -------------------
