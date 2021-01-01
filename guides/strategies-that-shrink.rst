@@ -142,9 +142,9 @@ The exact behaviour of the shrinking is a topic of active research and
 development, so if you are interested in the details we recommend reading
 the `internals guide <https://github.com/HypothesisWorks/hypothesis/blob/master/guides/internals.rst>`_
 and the well-commented source code in
-``hypothesis.internal.conjecture``.  An earlier (mid-2018) version is
-illustrated in David's draft paper *Test-Case Reduction for Free*,
-along with an extensive evaluation.  Contact him if you would like a copy.
+``hypothesis.internal.conjecture`` as well as David's ECOOP 2020 paper
+`Test-Case Reduction via Test-Case Generation: Insights From the Hypothesis Reducer
+<https://2020.ecoop.org/details/ecoop-2020-papers/13/Test-Case-Reduction-via-Test-Case-Generation-Insights-From-the-Hypothesis-Reducer>`__.
 
 
 -------------------------------------

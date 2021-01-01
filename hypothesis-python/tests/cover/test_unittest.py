@@ -72,7 +72,7 @@ if __name__ == "__main__":
 def test_subTest_no_self(testdir, err):
     # https://github.com/HypothesisWorks/hypothesis/issues/2462
     # for some reason this issue happens only when running unittest from commandline
-    fname = testdir.makefile("tests.py", SUBTEST_SUITE)
+    fname = testdir.makepyfile(tests=SUBTEST_SUITE)
     result = testdir.run(sys.executable, *err, str(fname))
     expected = pytest.ExitCode.TESTS_FAILED if err else pytest.ExitCode.OK
     assert result.ret == expected, result.stderr.str()

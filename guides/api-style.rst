@@ -64,8 +64,14 @@ We have a reasonably distinctive style when it comes to handling arguments:
   internal exception.
 * We make extensive use of default arguments. If an argument could reasonably
   have a default, it should.
-* Exception to the above: Strategies for collection types should *not* have a
+* Exception to the above: strategies for collection types should *not* have a
   default argument for element strategies.
+* Arguments which have a default value should also be keyword-only, with the
+  exception of ``min_value`` and ``max_value`` (see "Argument Names" below).
+* ``min_value`` and ``max_value`` should default to None for unbounded types
+  such as integers, and the minimal or maximal values for bounded types such
+  as datetimes.  ``floats()`` is an explicit exception to this rule due to
+  special handling for infinities and not-a-number.
 * Interacting arguments (e.g. arguments that must be in a particular order, or
   where at most one is valid, or where one argument restricts the valid range
   of the other) are fine, but when this happens the behaviour of defaults
@@ -77,13 +83,6 @@ We have a reasonably distinctive style when it comes to handling arguments:
 * It's worth thinking about the order of arguments: the first one or two
   arguments are likely to be passed positionally, so try to put values there
   where this is useful and not too confusing.
-* Arguments which have a default value should also be keyword-only.
-  For example, the ideal signature for lists would be
-  ``lists(elements, *, min_size=0, max_size=None, unique_by=None, unique=False)``.
-  We are part-way through a deprecation cycle to convert existing APIs to
-  keyword-only arguments; all new APIs should use them natively.
-  New functions or arguments can implement a forward-compatible signature with
-  ``hypothesis.internal.reflection.reserved_to_kwonly``.
 * When adding arguments to strategies, think carefully about whether the user
   is likely to want that value to vary often. If so, make it a strategy instead
   of a value. In particular if it's likely to be common that they would want to
