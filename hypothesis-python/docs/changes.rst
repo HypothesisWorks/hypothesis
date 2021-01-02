@@ -18,6 +18,17 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.43.7:
+
+-------------------
+5.43.7 - 2021-01-02
+-------------------
+
+This patch extends our faster special case for
+:func:`~hypothesis.strategies.sampled_from` elements in unique
+:func:`~hypothesis.strategies.lists` to account for chains of
+``.map(...)`` and ``.filter(...)`` calls (:issue:`2036`).
+
 .. _v5.43.6:
 
 -------------------
