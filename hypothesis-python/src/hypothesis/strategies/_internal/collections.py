@@ -184,9 +184,11 @@ class UniqueSampledListStrategy(UniqueListStrategy):
             j = cu.integer_range(data, 0, i)
             if j != i:
                 remaining[i], remaining[j] = remaining[j], remaining[i]
-            value = remaining.pop()
+            value = self.element_strategy._transform(remaining.pop())
 
-            if all(key(value) not in seen for (key, seen) in zip(self.keys, seen_sets)):
+            if value is not filter_not_satisfied and all(
+                key(value) not in seen for key, seen in zip(self.keys, seen_sets)
+            ):
                 for key, seen in zip(self.keys, seen_sets):
                     seen.add(key(value))
                 result.append(value)

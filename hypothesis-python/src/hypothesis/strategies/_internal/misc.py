@@ -14,7 +14,9 @@
 # END HEADER
 
 from hypothesis.strategies._internal.strategies import (
+    FilteredStrategy,
     SampledFromStrategy,
+    filter_not_satisfied,
     is_simple_data,
 )
 
@@ -24,10 +26,13 @@ class JustStrategy(SampledFromStrategy):
 
     It's implemented as a length-one SampledFromStrategy so that all our
     special-case logic for filtering and sets applies also to just(x).
-    """
 
-    def __init__(self, value):
-        SampledFromStrategy.__init__(self, [value])
+    The important difference from a SampledFromStrategy with only one
+    element to choose is that JustStrategy *never* touches the underlying
+    choice sequence, i.e. drawing neither reads from nor writes to `data`.
+    This is a reasonably important optimisation (or semantic distinction!)
+    for both JustStrategy and SampledFromStrategy.
+    """
 
     @property
     def value(self):
@@ -45,4 +50,13 @@ class JustStrategy(SampledFromStrategy):
         return is_simple_data(self.value)
 
     def do_draw(self, data):
-        return self.value
+        result = self._transform(self.value)
+        if result is filter_not_satisfied:
+            data.note_event("Aborted test because unable to satisfy %r" % (self,))
+            data.mark_invalid()
+        return result
+
+    def do_filtered_draw(self, data, filter_strategy):
+        if isinstance(filter_strategy, FilteredStrategy):
+            return self._transform(self.value, filter_strategy.flat_conditions)
+        return self._transform(self.value)

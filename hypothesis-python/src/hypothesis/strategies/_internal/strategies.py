@@ -433,14 +433,32 @@ class SampledFromStrategy(SearchStrategy):
     non-empty subset of the elements.
     """
 
-    def __init__(self, elements, repr_=None):
+    def __init__(self, elements, repr_=None, transformations=()):
         SearchStrategy.__init__(self)
         self.elements = cu.check_sample(elements, "sampled_from")
         assert self.elements
         self.repr_ = repr_
+        self._transformations = transformations
+
+    def map(self, pack):
+        return type(self)(
+            self.elements,
+            repr_=self.repr_,
+            transformations=self._transformations + (("map", pack),),
+        )
+
+    def filter(self, condition):
+        return type(self)(
+            self.elements,
+            repr_=self.repr_,
+            transformations=self._transformations + (("filter", condition),),
+        )
 
     def __repr__(self):
-        return self.repr_ or "sampled_from(%r)" % (list(self.elements),)
+        return (self.repr_ or f"sampled_from({list(self.elements)!r})") + "".join(
+            f".{name}({get_pretty_function_description(f)})"
+            for name, f in self._transformations
+        )
 
     def calc_has_reusable_values(self, recur):
         return True
@@ -448,33 +466,50 @@ class SampledFromStrategy(SearchStrategy):
     def calc_is_cacheable(self, recur):
         return is_simple_data(self.elements)
 
+    def _transform(self, element, conditions=()):
+        # Used in UniqueSampledListStrategy
+        for name, f in self._transformations + tuple(("filter", c) for c in conditions):
+            if name == "map":
+                element = f(element)
+            else:
+                assert name == "filter"
+                if not f(element):
+                    return filter_not_satisfied
+        return element
+
     def do_draw(self, data):
-        return cu.choice(data, self.elements)
+        result = self.do_filtered_draw(data, self)
+        if result is filter_not_satisfied:
+            data.note_event("Aborted test because unable to satisfy %r" % (self,))
+            data.mark_invalid()
+        return result
+
+    def get_element(self, i, conditions=()):
+        return self._transform(self.elements[i], conditions=conditions)
 
     def do_filtered_draw(self, data, filter_strategy):
         # Set of indices that have been tried so far, so that we never test
         # the same element twice during a draw.
         known_bad_indices = set()
 
-        def check_index(i):
-            """Return ``True`` if the element at ``i`` satisfies the filter
-            condition.
-            """
-            if i in known_bad_indices:
-                return False
-            ok = filter_strategy.condition(self.elements[i])
-            if not ok:
-                if not known_bad_indices:
-                    filter_strategy.note_retried(data)
-                known_bad_indices.add(i)
-            return ok
+        # If we're being called via FilteredStrategy, the filter_strategy argument
+        # might have additional conditions we have to fulfill.
+        if isinstance(filter_strategy, FilteredStrategy):
+            conditions = filter_strategy.flat_conditions
+        else:
+            conditions = ()
 
         # Start with ordinary rejection sampling. It's fast if it works, and
         # if it doesn't work then it was only a small amount of overhead.
         for _ in range(3):
             i = cu.integer_range(data, 0, len(self.elements) - 1)
-            if check_index(i):
-                return self.elements[i]
+            if i not in known_bad_indices:
+                element = self.get_element(i, conditions=conditions)
+                if element is not filter_not_satisfied:
+                    return element
+                if not known_bad_indices:
+                    FilteredStrategy.note_retried(self, data)
+                known_bad_indices.add(i)
 
         # If we've tried all the possible elements, give up now.
         max_good_indices = len(self.elements) - len(known_bad_indices)
@@ -497,26 +532,27 @@ class SampledFromStrategy(SearchStrategy):
 
         # Calculate the indices of allowed values, so that we can choose one
         # of them at random. But if we encounter the speculatively-chosen one,
-        # just use that and return immediately.
-        allowed_indices = []
+        # just use that and return immediately.  Note that we also track the
+        # allowed elements, in case of .map(some_stateful_function)
+        allowed = []
         for i in range(min(len(self.elements), cutoff)):
-            if check_index(i):
-                allowed_indices.append(i)
-                if len(allowed_indices) > speculative_index:
-                    # Early-exit case: We reached the speculative index, so
-                    # we just return the corresponding element.
-                    data.draw_bits(write_length, forced=i)
-                    return self.elements[i]
+            if i not in known_bad_indices:
+                element = self.get_element(i, conditions=conditions)
+                if element is not filter_not_satisfied:
+                    allowed.append((i, element))
+                    if len(allowed) > speculative_index:
+                        # Early-exit case: We reached the speculative index, so
+                        # we just return the corresponding element.
+                        data.draw_bits(write_length, forced=i)
+                        return element
 
         # The speculative index didn't work out, but at this point we've built
-        # the complete list of allowed indices, so we can just choose one of
-        # them.
-        if allowed_indices:
-            i = cu.choice(data, allowed_indices)
+        # and can choose from the complete list of allowed indices and elements.
+        if allowed:
+            i, element = cu.choice(data, allowed)
             data.draw_bits(write_length, forced=i)
-            return self.elements[i]
+            return element
         # If there are no allowed indices, the filter couldn't be satisfied.
-
         return filter_not_satisfied
 
 
