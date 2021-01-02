@@ -120,7 +120,7 @@ def deploy():
         print("Not deploying due to not being on master")
         sys.exit(0)
 
-    if "PYPI_TOKEN" not in os.environ:
+    if "TWINE_PASSWORD" not in os.environ:
         print("Running without access to secure variables, so no deployment")
         sys.exit(0)
 
