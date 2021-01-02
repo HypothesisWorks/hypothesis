@@ -156,7 +156,7 @@ def seed(seed: Hashable) -> Callable[[TestFunc], TestFunc]:
     return accept
 
 
-def reproduce_failure(version, blob):
+def reproduce_failure(version: str, blob: bytes) -> Callable[[TestFunc], TestFunc]:
     """Run the example that corresponds to this data blob in order to reproduce
     a failure.
 

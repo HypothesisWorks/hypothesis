@@ -210,6 +210,7 @@ class SearchStrategy(Generic[Ex]):
     supports_find = True
     validate_called = False
     __label = None
+    __module__ = "hypothesis.strategies"
 
     def available(self, data):
         """Returns whether this strategy can *currently* draw any
