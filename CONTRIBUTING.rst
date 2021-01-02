@@ -152,12 +152,13 @@ unless you want to make changes to the test config. You also mostly don't need t
 except to type ``./build.sh`` followed by the name of the task you want to run.
 
 All of it will be checked on CI so you don't *have* to run anything locally, but you might
-find it useful to do so: A full Travis run takes about twenty minutes, and there's often a queue,
+find it useful to do so: A full CI run can take up to twenty minutes,
 so running a smaller set of tests locally can be helpful.
 
 The build system should be "fairly" portable, but is currently only known to work on Linux or OS X. It *might* work
-on a BSD or on Windows with cygwin installed, but it hasn't been tried. If you try it and find it doesn't
-work, please do submit patches to fix that.
+on a BSD or on Windows with cygwin installed, but it hasn't been tried.  Windows with WSL does work,
+as for Linux, and since OS-specific issues are rare for Hypothesis that's pretty useful.
+If you try it and find it doesn't work, please do submit patches to fix that.
 
 Some notable commands:
 

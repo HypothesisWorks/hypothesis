@@ -120,12 +120,10 @@ def deploy():
         print("Not deploying due to not being on master")
         sys.exit(0)
 
-    if not tools.has_travis_secrets():
+    if "PYPI_TOKEN" not in os.environ:
         print("Running without access to secure variables, so no deployment")
         sys.exit(0)
 
-    print("Decrypting secrets")
-    tools.decrypt_secrets()
     tools.configure_git()
 
     for project in tools.all_projects():

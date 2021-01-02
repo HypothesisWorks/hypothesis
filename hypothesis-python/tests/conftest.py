@@ -54,7 +54,7 @@ def consistently_increment_time(monkeypatch):
     """Rather than rely on real system time we monkey patch time.time so that
     it passes at a consistent rate between calls.
 
-    The reason for this is that when these tests run on travis, performance is
+    The reason for this is that when these tests run in CI, their performance is
     extremely variable and the VM the tests are on might go to sleep for a bit,
     introducing arbitrary delays. This can cause a number of tests to fail
     flakily.
