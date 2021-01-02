@@ -100,7 +100,7 @@ def upload_distribution():
     tools.assert_can_release()
 
     # Yes, cargo really will only look in this file. Yes this is terrible.
-    # This only runs on Travis, so we may be assumed to own it, but still.
+    # This only runs in CI, so we may be assumed to own it, but still.
     unlink_if_present(CARGO_CREDENTIALS)
 
     # symlink so that the actual secret credentials can't be leaked via the

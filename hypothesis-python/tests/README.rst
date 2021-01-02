@@ -12,8 +12,8 @@ library tests itself!
 The very short version
 ======================
 
-- To improve code coverage (eg because ``make check-coverage`` / the Travis
-  build is failing), go to ``cover/``
+- To improve code coverage (eg because ``make check-coverage`` or CI is failing),
+  go to ``cover/``
 - For longer / system / integration tests, look in ``nocover/``
 - For tests that require an optional dependency, look in the directory
   named for that dependency.
@@ -34,7 +34,7 @@ Some scenarios
     in ``test_direct_strategies.py``.  Strategies with optional dependencies
     should go in ``hypothesis.extras``, and the tests in their own module
     (ie not in ``cover``).  When you think you might be done, push and let
-    Travis point out any failing tests or non-covered code!
+    our CI system point out any failing tests or non-covered code!
 
 **I've made some internal changes**
     That's not very specific - you should probably refer to the test-finding
@@ -67,6 +67,9 @@ Still here?  Here's a note on what to expect in each directory.
     `pytest <https://docs.pytest.org/en/latest/contents.html>`_
     features such as ``mark.parametrize``, ``mark.skipif``, and ``raises``
     for other functions that are often useful when writing tests.
+
+``conjecture/``
+    As for ``cover/``, but specific to ``hypothesis.internal.conjecture``.
 
 ``cover/``
     The home of enough tests to get 100% branch coverage, as quickly as possible

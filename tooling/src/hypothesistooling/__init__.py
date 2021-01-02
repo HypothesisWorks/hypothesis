@@ -97,7 +97,7 @@ def git(*args):
     subprocess.check_call(("git",) + args)
 
 
-TOOLING_COMMITER_NAME = "Travis CI on behalf of David R. MacIver"
+TOOLING_COMMITER_NAME = "CI on behalf of the Hypothesis team"
 
 
 def configure_git():
@@ -128,11 +128,6 @@ def push_tag(tagname):
 
 def assert_can_release():
     assert not IS_PULL_REQUEST, "Cannot release from pull requests"
-    assert has_travis_secrets(), "Cannot release without travis secure vars"
-
-
-def has_travis_secrets():
-    return os.environ.get("TRAVIS_SECURE_ENV_VARS", None) == "true"
 
 
 def modified_files():
@@ -220,15 +215,7 @@ def decrypt_secrets():
     os.chmod(DEPLOY_KEY, int("0600", 8))
 
 
-IS_TRAVIS_PULL_REQUEST = os.environ.get("TRAVIS_EVENT_TYPE") == "pull_request"
-
-IS_CIRCLE_PULL_REQUEST = (
-    os.environ.get("CIRCLE_BRANCH") == "master"
-    and os.environ.get("CI_PULL_REQUESTS", "") != ""
-)
-
-
-IS_PULL_REQUEST = IS_TRAVIS_PULL_REQUEST or IS_CIRCLE_PULL_REQUEST
+IS_PULL_REQUEST = os.environ.get("GITHUB_REF", "").startswith("refs/pull/")
 
 
 def all_projects():
