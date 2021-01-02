@@ -283,7 +283,7 @@ def just(value: T) -> SearchStrategy[T]:
 
     Examples from this strategy do not shrink (because there is only one).
     """
-    return JustStrategy(value)
+    return JustStrategy([value])
 
 
 @defines_strategy(force_reusable_values=True)

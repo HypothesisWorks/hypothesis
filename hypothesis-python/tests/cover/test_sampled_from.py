@@ -16,9 +16,22 @@
 import collections
 import enum
 
+import pytest
+
 from hypothesis import given, strategies as st
-from hypothesis.errors import FailedHealthCheck, InvalidArgument, Unsatisfiable
+from hypothesis.errors import (
+    FailedHealthCheck,
+    InvalidArgument,
+    StopTest,
+    Unsatisfiable,
+)
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.strategies import sampled_from
+from hypothesis.strategies._internal.misc import JustStrategy
+from hypothesis.strategies._internal.strategies import (
+    FilteredStrategy,
+    filter_not_satisfied,
+)
 from tests.common.utils import fails_with
 
 an_enum = enum.Enum("A", "a b c")
@@ -76,6 +89,58 @@ def test_efficient_sets_of_samples(x):
 @given(st.lists(st.sampled_from([0] * 100), unique=True))
 def test_does_not_include_duplicates_even_when_duplicated_in_collection(ls):
     assert len(ls) <= 1
+
+
+@given(
+    st.sets(
+        st.sampled_from(range(50))
+        .map(lambda x: x * 2)
+        .filter(lambda x: x % 3)
+        .map(lambda x: x // 2),
+        min_size=33,
+    )
+)
+def test_efficient_sets_of_samples_with_chained_transformations(x):
+    assert x == {x for x in range(50) if (x * 2) % 3}
+
+
+@st.composite
+def stupid_sampled_sets(draw):
+    result = set()
+    s = st.sampled_from(range(20)).filter(lambda x: x % 3).map(lambda x: x * 2)
+    while len(result) < 13:
+        result.add(draw(s.filter(lambda x: x not in result)))
+    return result
+
+
+@given(stupid_sampled_sets())
+def test_efficient_sets_of_samples_with_chained_transformations_slow_path(x):
+    # This exercises the standard .do_filtered_draw method, rather than the
+    # special logic in UniqueSampledListStrategy, to the same if slower effect.
+    assert x == {x * 2 for x in range(20) if x % 3}
+
+
+@fails_with(Unsatisfiable)
+@given(FilteredStrategy(st.sampled_from([None, False, ""]), conditions=(bool,)))
+def test_unsatisfiable_explicit_filteredstrategy_sampled(x):
+    raise AssertionError("Unreachable because there are no valid examples")
+
+
+@fails_with(Unsatisfiable)
+@given(FilteredStrategy(st.none(), conditions=(bool,)))
+def test_unsatisfiable_explicit_filteredstrategy_just(x):
+    raise AssertionError("Unreachable because there are no valid examples")
+
+
+def test_transformed_just_strategy():
+    data = ConjectureData.for_buffer(bytes(100))
+    s = JustStrategy([1]).map(lambda x: x * 2)
+    assert s.do_draw(data) == 2
+    sf = s.filter(lambda x: False)
+    assert isinstance(sf, JustStrategy)
+    assert sf.do_filtered_draw(data, sf) == filter_not_satisfied
+    with pytest.raises(StopTest):
+        sf.do_draw(data)
 
 
 @given(st.lists(st.sampled_from(range(100)), max_size=3, unique=True))

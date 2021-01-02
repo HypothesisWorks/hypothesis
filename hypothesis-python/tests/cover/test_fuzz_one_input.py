@@ -91,7 +91,7 @@ def test_fuzzing_unsatisfiable_test_always_returns_None():
     @given(st.none().filter(bool))
     @settings(database=None)
     def test(s):
-        assert False
+        raise AssertionError("Unreachable because there are no valid examples")
 
     for _ in range(100):
         buf = bytes(random.getrandbits(8) for _ in range(3))
