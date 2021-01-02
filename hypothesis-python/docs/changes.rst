@@ -18,6 +18,15 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.43.6:
+
+-------------------
+5.43.6 - 2021-01-02
+-------------------
+
+This patch improves the type annotations on :func:`~hypothesis.assume`
+and :func:`@reproduce_failure() <hypothesis.reproduce_failure>`.
+
 .. _v5.43.5:
 
 -------------------
