@@ -214,15 +214,6 @@ def upload_distribution():
         auth=("Zac-HD", os.environ["Zac_release_token"]),
     ).raise_for_status()
 
-    # Post the release notes to Tidelift too - see https://tidelift.com/docs/api
-    requests.post(
-        "https://api.tidelift.com/external-api/lifting/pypi/hypothesis/release-notes/"
-        + current_version(),
-        json={"body": changelog_body},
-        headers={"Authorization": "Bearer {}".format(os.environ["TIDELIFT_API_TOKEN"])},
-        timeout=120,  # seconds
-    ).raise_for_status()
-
 
 def current_version():
     return __version__
