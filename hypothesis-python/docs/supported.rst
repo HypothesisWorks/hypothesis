@@ -99,7 +99,6 @@ Regularly verifying this
 ------------------------
 
 Everything mentioned above as explicitly supported is checked on every commit
-with `Travis <https://travis-ci.org/HypothesisWorks/hypothesis>`__, and
-`Azure Pipelines <https://dev.azure.com/HypothesisWorks/Hypothesis/>`__.
+with `GitHub Actions <https://github.com/HypothesisWorks/hypothesis/actions>`__.
 Our continuous delivery pipeline runs all of these checks before publishing
 each release, so when we say they're supported we really mean it.

@@ -423,9 +423,7 @@ _global_type_lookup.update(
             st.uuids(),
             st.decimals(),
             # this generates strings that should able to be parsed into integers
-            st.from_regex(r"-?\d+", fullmatch=True).filter(
-                lambda value: can_cast(int, value)
-            ),
+            st.from_regex(r"\A-?\d+\Z").filter(functools.partial(can_cast, int)),
         ),
         typing.SupportsBytes: st.one_of(
             st.booleans(),

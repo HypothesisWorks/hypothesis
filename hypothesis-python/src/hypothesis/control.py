@@ -15,7 +15,7 @@
 
 import math
 import traceback
-from typing import Any, Union
+from typing import NoReturn, Union
 
 from hypothesis import Verbosity, settings
 from hypothesis.errors import CleanupFailed, InvalidArgument, UnsatisfiedAssumption
@@ -26,11 +26,11 @@ from hypothesis.reporting import report, verbose_report
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
-def reject():
+def reject() -> NoReturn:
     raise UnsatisfiedAssumption()
 
 
-def assume(condition: Any) -> bool:
+def assume(condition: object) -> bool:
     """Calling ``assume`` is like an :ref:`assert <python:assert>` that marks
     the example as bad, rather than failing the test.
 

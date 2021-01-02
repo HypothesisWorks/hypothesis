@@ -13,7 +13,6 @@
 #
 # END HEADER
 
-import os
 import sys
 import warnings
 from decimal import Decimal
@@ -81,8 +80,6 @@ def test_interactive_example_does_not_emit_warning():
         child = pexpect.spawn("%s -Werror" % (sys.executable,))
         child.expect(">>> ", timeout=1)
     except pexpect.exceptions.EOF:
-        # See https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables
-        assert "Build.ArtifactStagingDirectory" not in os.environ
         pytest.skip(
             "Unable to run python with -Werror.  This may be because you are "
             "running from an old virtual environment - update your installed "
