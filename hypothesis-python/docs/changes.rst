@@ -18,6 +18,17 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.43.9:
+
+-------------------
+5.43.9 - 2021-01-02
+-------------------
+
+This patch fixes :issue:`2722`, where certain orderings of
+:func:`~hypothesis.strategies.register_type_strategy`,
+:class:`~python:typing.ForwardRef`, and :func:`~hypothesis.strategies.from_type`
+could trigger an internal error.
+
 .. _v5.43.8:
 
 -------------------
