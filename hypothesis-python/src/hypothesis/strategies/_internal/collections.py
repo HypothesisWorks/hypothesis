@@ -127,9 +127,10 @@ class ListStrategy(SearchStrategy):
 
 
 class UniqueListStrategy(ListStrategy):
-    def __init__(self, elements, min_size, max_size, keys):
+    def __init__(self, elements, min_size, max_size, keys, tuple_suffixes):
         super().__init__(elements, min_size, max_size)
         self.keys = keys
+        self.tuple_suffixes = tuple_suffixes
 
     def do_draw(self, data):
         if self.element_strategy.is_empty:
@@ -161,6 +162,8 @@ class UniqueListStrategy(ListStrategy):
             else:
                 for key, seen in zip(self.keys, seen_sets):
                     seen.add(key(value))
+                if self.tuple_suffixes is not None:
+                    value = (value,) + data.draw(self.tuple_suffixes)
                 result.append(value)
         assert self.max_size >= len(result) >= self.min_size
         return result
@@ -191,6 +194,8 @@ class UniqueSampledListStrategy(UniqueListStrategy):
             ):
                 for key, seen in zip(self.keys, seen_sets):
                     seen.add(key(value))
+                if self.tuple_suffixes is not None:
+                    value = (value,) + data.draw(self.tuple_suffixes)
                 result.append(value)
             else:
                 should_draw.reject()

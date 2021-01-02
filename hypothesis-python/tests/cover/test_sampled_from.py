@@ -86,6 +86,22 @@ def test_efficient_sets_of_samples(x):
     assert x == set(range(50))
 
 
+@given(st.dictionaries(keys=st.sampled_from(range(50)), values=st.none(), min_size=50))
+def test_efficient_dicts_with_sampled_keys(x):
+    assert set(x) == set(range(50))
+
+
+@given(
+    st.lists(
+        st.tuples(st.sampled_from(range(20)), st.builds(list)),
+        min_size=20,
+        unique_by=lambda asdf: asdf[0],
+    )
+)
+def test_efficient_lists_of_tuples_first_element_sampled_from(x):
+    assert {first for first, *_ in x} == set(range(20))
+
+
 @given(st.lists(st.sampled_from([0] * 100), unique=True))
 def test_does_not_include_duplicates_even_when_duplicated_in_collection(ls):
     assert len(ls) <= 1
