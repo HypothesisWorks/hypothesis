@@ -52,7 +52,7 @@ class DeferredStrategy(SearchStrategy):
                     % (result, type(result).__name__)
                 )
             self.__wrapped_strategy = result
-            del self.__definition
+            self.__definition = None
         return self.__wrapped_strategy
 
     @property
