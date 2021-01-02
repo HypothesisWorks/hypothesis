@@ -209,6 +209,7 @@ def upload_distribution():
             "body": changelog_body,
         },
         timeout=120,  # seconds
+        auth=("Zac-HD", os.environ["GH_TOKEN"]),
     ).raise_for_status()
 
 

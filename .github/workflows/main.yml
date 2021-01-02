@@ -134,5 +134,6 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Deploy package
       env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
       run: TASK=${{ matrix.task }} ./build.sh
