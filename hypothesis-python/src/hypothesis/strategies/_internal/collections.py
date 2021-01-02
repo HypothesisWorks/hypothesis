@@ -148,11 +148,10 @@ class UniqueListStrategy(ListStrategy):
         # We construct a filtered strategy here rather than using a check-and-reject
         # approach because some strategies have special logic for generation under a
         # filter, and FilteredStrategy can consolidate multiple filters.
-        filtered = self.element_strategy.filter(
-            lambda val: all(
-                key(val) not in seen for (key, seen) in zip(self.keys, seen_sets)
-            )
-        )
+        def not_yet_in_unique_list(val):
+            return all(key(val) not in seen for key, seen in zip(self.keys, seen_sets))
+
+        filtered = self.element_strategy.filter(not_yet_in_unique_list)
         while elements.more():
             value = filtered.filtered_strategy.do_filtered_draw(
                 data=data, filter_strategy=filtered
