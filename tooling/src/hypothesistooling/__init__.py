@@ -103,8 +103,6 @@ TOOLING_COMMITER_NAME = "CI on behalf of the Hypothesis team"
 def configure_git():
     git("config", "user.name", TOOLING_COMMITER_NAME)
     git("config", "user.email", "david@drmaciver.com")
-    git("config", "core.sshCommand", "ssh -i deploy_key")
-    git("remote", "add", "ssh-origin", "git@github.com:HypothesisWorks/hypothesis.git")
 
 
 def create_tag(tagname):
@@ -114,16 +112,8 @@ def create_tag(tagname):
 
 def push_tag(tagname):
     assert_can_release()
-    subprocess.check_call(
-        [
-            "ssh-agent",
-            "sh",
-            "-c",
-            "ssh-add %s && " % (shlex.quote(DEPLOY_KEY),)
-            + "git push ssh-origin HEAD:master &&"
-            + "git push ssh-origin %s" % (shlex.quote(tagname),),
-        ]
-    )
+    subprocess.check_call(["git", "push", "origin", shlex.quote(tagname)])
+    subprocess.check_call(["git", "push", "origin", "HEAD:master"])
 
 
 def assert_can_release():
@@ -173,46 +163,6 @@ def changed_files_from_master():
         if filepath:
             files.add(filepath)
     return files
-
-
-SECRETS_BASE = os.path.join(ROOT, "secrets")
-SECRETS_TAR = SECRETS_BASE + ".tar"
-ENCRYPTED_SECRETS = SECRETS_TAR + ".enc"
-
-SECRETS = os.path.join(ROOT, "secrets")
-
-DEPLOY_KEY = os.path.join(SECRETS, "deploy_key")
-PYPIRC = os.path.join(SECRETS, ".pypirc")
-
-CARGO_API_KEY = os.path.join(SECRETS, "cargo-credentials")
-
-
-SECRET_FILES = [DEPLOY_KEY, PYPIRC, CARGO_API_KEY]
-
-
-def decrypt_secrets():
-    subprocess.check_call(
-        [
-            "openssl",
-            "aes-256-cbc",
-            "-K",
-            os.environ["encrypted_b8618e5d043b_key"],
-            "-iv",
-            os.environ["encrypted_b8618e5d043b_iv"],
-            "-in",
-            ENCRYPTED_SECRETS,
-            "-out",
-            SECRETS_TAR,
-            "-d",
-        ]
-    )
-
-    subprocess.check_call(["tar", "-xvf", SECRETS_TAR], cwd=ROOT)
-
-    missing_files = [os.path.basename(f) for f in SECRET_FILES if not os.path.exists(f)]
-
-    assert not missing_files, missing_files
-    os.chmod(DEPLOY_KEY, int("0600", 8))
 
 
 IS_PULL_REQUEST = os.environ.get("GITHUB_REF", "").startswith("refs/pull/")
