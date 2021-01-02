@@ -20,9 +20,6 @@ source "$SCRIPTS/common.sh"
 if [ -n "${GITHUB_ACTIONS-}" ] ; then
     # We're on GitHub Actions and already set up a suitable Python
     PYTHON=$(command -v python)
-elif [ -n "${TRAVIS-}" ] ; then
-    # We're on Travis and already set up a suitable Python
-    PYTHON=$(command -v python)
 else
     # Otherwise, we install it from scratch
     "$SCRIPTS/ensure-python.sh" 3.8.5
