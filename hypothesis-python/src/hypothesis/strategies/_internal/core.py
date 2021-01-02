@@ -17,6 +17,7 @@ import enum
 import math
 import operator
 import random
+import re
 import string
 import sys
 import threading
@@ -25,6 +26,7 @@ from decimal import Context, Decimal, localcontext
 from fractions import Fraction
 from functools import reduce
 from inspect import Parameter, getfullargspec, isabstract, isclass, signature
+from types import FunctionType
 from typing import (
     Any,
     AnyStr,
@@ -696,6 +698,10 @@ def sampled_from(elements):
     return SampledFromStrategy(values, repr_)
 
 
+def identity(x):
+    return x
+
+
 @cacheable
 @defines_strategy()
 @deprecated_posargs
@@ -743,9 +749,7 @@ def lists(
                 "(you probably only want to set unique_by)"
             )
         else:
-
-            def unique_by(x):
-                return x
+            unique_by = identity
 
     if max_size == 0:
         return builds(list)
@@ -763,6 +767,29 @@ def lists(
                 raise InvalidArgument("unique_by[%i]=%r is not a callable" % (i, f))
         # Note that lazy strategies automatically unwrap when passed to a defines_strategy
         # function.
+        tuple_suffixes = None
+        if (
+            # We're generating a list of tuples unique by the first element, perhaps
+            # via st.dictionaries(), and this will be more efficient if we rearrange
+            # our strategy somewhat to draw the first element then draw add the rest.
+            isinstance(elements, TupleStrategy)
+            and len(elements.element_strategies) >= 1
+            and len(unique_by) == 1
+            and (
+                # Introspection for either `itemgetter(0)`, or `lambda x: x[0]`
+                isinstance(unique_by[0], operator.itemgetter)  # type: ignore
+                and repr(unique_by[0]) == "operator.itemgetter(0)"
+                or isinstance(unique_by[0], FunctionType)
+                and re.fullmatch(
+                    get_pretty_function_description(unique_by[0]),
+                    r"lambda ([a-z]+): \1\[0\]",
+                )
+            )
+        ):
+            unique_by = (identity,)
+            tuple_suffixes = TupleStrategy(elements.element_strategies[1:])
+            elements = elements.element_strategies[0]
+
         if isinstance(elements, SampledFromStrategy):
             element_count = len(elements.elements)
             if min_size > element_count:
@@ -778,11 +805,19 @@ def lists(
                 max_size = element_count
 
             return UniqueSampledListStrategy(
-                elements=elements, max_size=max_size, min_size=min_size, keys=unique_by
+                elements=elements,
+                max_size=max_size,
+                min_size=min_size,
+                keys=unique_by,
+                tuple_suffixes=tuple_suffixes,
             )
 
         return UniqueListStrategy(
-            elements=elements, max_size=max_size, min_size=min_size, keys=unique_by
+            elements=elements,
+            max_size=max_size,
+            min_size=min_size,
+            keys=unique_by,
+            tuple_suffixes=tuple_suffixes,
         )
     return ListStrategy(elements, min_size=min_size, max_size=max_size)
 
@@ -940,7 +975,7 @@ def dictionaries(
         tuples(keys, values),
         min_size=min_size,
         max_size=max_size,
-        unique_by=lambda x: x[0],
+        unique_by=operator.itemgetter(0),
     ).map(dict_class)
 
 
