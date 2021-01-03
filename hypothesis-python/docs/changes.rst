@@ -18,6 +18,15 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.44.0:
+
+-------------------
+5.44.0 - 2021-01-03
+-------------------
+
+This patch fixes :func:`~hypothesis.strategies.from_type` with
+the :pypi:`typing_extensions` ``Literal`` backport on Python 3.6.
+
 .. _v5.43.9:
 
 -------------------
