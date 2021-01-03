@@ -50,6 +50,8 @@ at the cost of additional configuration (adding ``'hypothesis.extra'`` to the
 .. autofunction:: refactor
 """
 
+import importlib
+from inspect import Parameter, signature
 from typing import List
 
 import libcst as cst
@@ -109,3 +111,113 @@ class HypothesisFixComplexMinMagnitude(VisitorBasedCodemodCommand):
         ):
             return updated_node.with_changes(value=cst.Integer("0"))
         return updated_node
+
+
+class HypothesisFixPositionalKeywonlyArgs(VisitorBasedCodemodCommand):
+    """Fix positional arguments for newly keyword-only parameters, e.g.::
+
+        st.fractions(0, 1, 9) -> st.fractions(0, 1, max_denominator=9)
+
+    Applies to a majority of our public API, since keyword-only parameters are
+    great but we couldn't use them until after we dropped support for Python 2.
+    """
+
+    DESCRIPTION = "Fix positional arguments for newly keyword-only parameters."
+    METADATA_DEPENDENCIES = (cst.metadata.QualifiedNameProvider,)
+
+    kwonly_functions = (
+        "hypothesis.target",
+        "hypothesis.find",
+        "hypothesis.extra.lark.from_lark",
+        "hypothesis.extra.numpy.arrays",
+        "hypothesis.extra.numpy.array_shapes",
+        "hypothesis.extra.numpy.unsigned_integer_dtypes",
+        "hypothesis.extra.numpy.integer_dtypes",
+        "hypothesis.extra.numpy.floating_dtypes",
+        "hypothesis.extra.numpy.complex_number_dtypes",
+        "hypothesis.extra.numpy.datetime64_dtypes",
+        "hypothesis.extra.numpy.timedelta64_dtypes",
+        "hypothesis.extra.numpy.byte_string_dtypes",
+        "hypothesis.extra.numpy.unicode_string_dtypes",
+        "hypothesis.extra.numpy.array_dtypes",
+        "hypothesis.extra.numpy.nested_dtypes",
+        "hypothesis.extra.numpy.valid_tuple_axes",
+        "hypothesis.extra.numpy.broadcastable_shapes",
+        "hypothesis.extra.pandas.indexes",
+        "hypothesis.extra.pandas.series",
+        "hypothesis.extra.pandas.columns",
+        "hypothesis.extra.pandas.data_frames",
+        "hypothesis.provisional.domains",
+        "hypothesis.stateful.run_state_machine_as_test",
+        "hypothesis.stateful.rule",
+        "hypothesis.stateful.initialize",
+        "hypothesis.strategies.floats",
+        "hypothesis.strategies.lists",
+        "hypothesis.strategies.sets",
+        "hypothesis.strategies.frozensets",
+        "hypothesis.strategies.iterables",
+        "hypothesis.strategies.dictionaries",
+        "hypothesis.strategies.characters",
+        "hypothesis.strategies.text",
+        "hypothesis.strategies.from_regex",
+        "hypothesis.strategies.binary",
+        "hypothesis.strategies.fractions",
+        "hypothesis.strategies.decimals",
+        "hypothesis.strategies.recursive",
+        "hypothesis.strategies.complex_numbers",
+        "hypothesis.strategies.shared",
+        "hypothesis.strategies.uuids",
+        "hypothesis.strategies.runner",
+        "hypothesis.strategies.functions",
+        "hypothesis.strategies.datetimes",
+        "hypothesis.strategies.times",
+    )
+
+    def leave_Call(self, original_node, updated_node):
+        """Convert positional to keyword arguments."""
+        metadata = self.get_metadata(cst.metadata.QualifiedNameProvider, original_node)
+        qualnames = {qn.name for qn in metadata}
+
+        # If this isn't one of our known functions, or it has no posargs, stop there.
+        if (
+            len(qualnames) != 1
+            or not qualnames.intersection(self.kwonly_functions)
+            or not m.matches(
+                updated_node,
+                m.Call(
+                    func=m.DoesNotMatch(m.Call()),
+                    args=[m.Arg(keyword=None), m.ZeroOrMore()],
+                ),
+            )
+        ):
+            return updated_node
+
+        # Get the actual function object so that we can inspect the signature.
+        # This does e.g. incur a dependency on Numpy to fix Numpy-dependent code,
+        # but having a single source of truth about the signatures is worth it.
+        mod, fn = list(qualnames.intersection(self.kwonly_functions))[0].rsplit(".", 1)
+        try:
+            func = getattr(importlib.import_module(mod), fn)
+        except ImportError:
+            return updated_node
+
+        # Create new arg nodes with the newly required keywords
+        params = [
+            p
+            for p in signature(func).parameters.values()
+            if p.kind is not Parameter.VAR_POSITIONAL
+        ]
+        # params comprehension is only useful after @deprecated_posargs applied
+        # once removed we can use paramaters.values(); if never applied why codemod?
+        assert len(params) < len(signature(func).parameters.values())
+        assign_nospace = cst.AssignEqual(
+            whitespace_before=cst.SimpleWhitespace(""),
+            whitespace_after=cst.SimpleWhitespace(""),
+        )
+        newargs = [
+            arg
+            if arg.keyword or arg.star or p.kind is not Parameter.KEYWORD_ONLY
+            else arg.with_changes(keyword=cst.Name(p.name), equal=assign_nospace)
+            for p, arg in zip(params, updated_node.args)
+        ]
+        return updated_node.with_changes(args=newargs)
