@@ -170,6 +170,9 @@ Public API changes must satisfy the following:
 3. If an API is deprecated, the deprecation warning must make it clear
    how the user should modify their code to adapt to this change (
    possibly by referring to documentation).
+   If the required code change could be automated, the deprecation should have either
+   `a codemod to fix it <https://github.com/HypothesisWorks/hypothesis/issues/2705>`__
+   or a tracking issue to write one (see "asking for more work" below).
 4. If it is likely that we will want to make backwards incompatible changes
    to an API later, to whatever extent possible these should be made immediately
    when it is introduced instead.

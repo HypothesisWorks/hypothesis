@@ -85,6 +85,7 @@ def check_valid_magnitude(value, name):
             "min_magnitude=None is deprecated; use min_magnitude=0 "
             "or omit the argument entirely.",
             since="2020-05-13",
+            has_codemod=True,
         )
 
 

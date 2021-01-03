@@ -26,7 +26,7 @@ def test_note_deprecation_blames_right_code_issue_652():
     @st.composite
     def deprecated_strategy(draw):
         draw(st.none())
-        note_deprecation(msg, since="RELEASEDAY")
+        note_deprecation(msg, since="RELEASEDAY", has_codemod=False)
 
     @given(deprecated_strategy())
     def f(x):

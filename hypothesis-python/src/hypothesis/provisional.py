@@ -167,6 +167,7 @@ def ip4_addr_strings() -> SearchStrategy[str]:
         "Use `ip_addresses(v=4).map(str)` instead of `ip4_addr_strings()`; "
         "the provisional strategy is less flexible and will be removed.",
         since="2020-01-21",
+        has_codemod=False,
     )
     return ip_addresses(v=4).map(str)
 
@@ -177,5 +178,6 @@ def ip6_addr_strings() -> SearchStrategy[str]:
         "Use `ip_addresses(v=6).map(str)` instead of `ip6_addr_strings()`; "
         "the provisional strategy is less flexible and will be removed.",
         since="2020-01-21",
+        has_codemod=False,
     )
     return ip_addresses(v=6).map(str)
