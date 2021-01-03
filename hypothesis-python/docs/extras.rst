@@ -23,6 +23,8 @@ There are separate pages for :doc:`django` and :doc:`numpy`.
 
 .. automodule:: hypothesis.extra.cli
 
+.. automodule:: hypothesis.extra.codemods
+
 .. automodule:: hypothesis.extra.dpcontracts
    :members:
 
