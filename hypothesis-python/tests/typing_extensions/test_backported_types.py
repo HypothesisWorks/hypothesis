@@ -14,7 +14,6 @@
 # END HEADER
 
 import collections
-import sys
 from typing import Union
 
 import pytest
@@ -24,13 +23,11 @@ from hypothesis import assume, given, strategies as st
 from hypothesis.strategies import from_type
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 7), reason="lovecraftian implemenation")
 @pytest.mark.parametrize("value", ["dog", b"goldfish", 42, 63.4, -80.5, False])
 def test_typing_extensions_Literal(value):
     assert from_type(Literal[value]).example() == value
 
 
-@pytest.mark.skipif(sys.version_info[:2] < (3, 7), reason="lovecraftian implemenation")
 @given(st.data())
 def test_typing_extensions_Literal_nested(data):
     lit = Literal
