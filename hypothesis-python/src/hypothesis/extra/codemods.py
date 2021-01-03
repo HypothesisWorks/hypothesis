@@ -24,6 +24,29 @@ This module provides codemods based on the :pypi:`LibCST` library, which can
 both detect *and automatically fix* issues with code that uses Hypothesis,
 including upgrading from deprecated features to our recommended style.
 
+You can run the codemods via our CLI::
+
+    $ hypothesis codemod --help
+    Usage: hypothesis codemod [OPTIONS] PATH...
+
+      `hypothesis codemod` refactors deprecated or inefficent code.
+
+      It adapts `python -m libcst.tool`, removing many features and config
+      options which are rarely relevant for this purpose.  If you need more
+      control, we encourage you to use the libcst CLI directly; if not this one
+      is easier.
+
+      PATH is the file(s) or directories of files to format in place, or "-" to
+      read from stdin and write to stdout.
+
+    Options:
+      -h, --help  Show this message and exit.
+
+Alternatively you can use ``python -m libcst.tool``, which offers more control
+at the cost of additional configuration (adding ``'hypothesis.extra'`` to the
+``modules`` list in ``.libcst.codemod.yaml``) and `some issues on Windows
+<https://github.com/Instagram/LibCST/issues/435>`__.
+
 .. autofunction:: refactor
 """
 
