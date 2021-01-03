@@ -30,7 +30,7 @@ hypothesis[cli]
       -h, --help  Show this message and exit.
 
     Commands:
-      codemod  `hypothesis codemod` refactors deprecated or inefficent code.
+      codemod  `hypothesis codemod` refactors deprecated or inefficient code.
       fuzz     [hypofuzz] runs tests with an adaptive coverage-guided fuzzer.
       write    `hypothesis write` writes property-based tests for you!
 
@@ -122,7 +122,7 @@ else:
     @main.command()  # type: ignore  # Click adds the .command attribute
     @click.argument("path", type=str, required=True, nargs=-1)
     def codemod(path):
-        """`hypothesis codemod` refactors deprecated or inefficent code.
+        """`hypothesis codemod` refactors deprecated or inefficient code.
 
         It adapts `python -m libcst.tool`, removing many features and config options
         which are rarely relevant for this purpose.  If you need more control, we
@@ -144,7 +144,7 @@ else:
             sys.exit(1)
 
         # Special case for stdin/stdout usage
-        if any(p == "-" for p in path):
+        if "-" in path:
             if len(path) > 1:
                 raise Exception(
                     "Cannot specify multiple paths when reading from stdin!"

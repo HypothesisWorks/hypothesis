@@ -29,7 +29,7 @@ You can run the codemods via our CLI::
     $ hypothesis codemod --help
     Usage: hypothesis codemod [OPTIONS] PATH...
 
-      `hypothesis codemod` refactors deprecated or inefficent code.
+      `hypothesis codemod` refactors deprecated or inefficient code.
 
       It adapts `python -m libcst.tool`, removing many features and config
       options which are rarely relevant for this purpose.  If you need more
