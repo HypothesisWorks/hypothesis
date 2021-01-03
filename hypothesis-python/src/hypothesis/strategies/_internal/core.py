@@ -1516,6 +1516,21 @@ def _from_type(thing: Type[Ex]) -> SearchStrategy[Ex]:
             args = sorted(thing.__args__, key=types.type_sorting_key)
             return one_of([from_type(t) for t in args])
     if not types.is_a_type(thing):
+        # The implementation of typing_extensions.Literal under Python 3.6 is
+        # *very strange*.  Notably, `type(Literal[x]) != Literal` so we have to
+        # use the first form directly, and because it uses __values__ instead of
+        # __args__ we inline the relevant logic here until the end of life date.
+        if types.is_typing_literal(thing):  # pragma: no cover
+            assert sys.version_info[:2] == (3, 6)
+            args_dfs_stack = list(thing.__values__)  # type: ignore
+            literals = []
+            while args_dfs_stack:
+                arg = args_dfs_stack.pop()
+                if types.is_typing_literal(arg):
+                    args_dfs_stack.extend(reversed(arg.__values__))
+                else:
+                    literals.append(arg)
+            return sampled_from(literals)
         raise InvalidArgument("thing=%s must be a type" % (thing,))
     # Now that we know `thing` is a type, the first step is to check for an
     # explicitly registered strategy.  This is the best (and hopefully most

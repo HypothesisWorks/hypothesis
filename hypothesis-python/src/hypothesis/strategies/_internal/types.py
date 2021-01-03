@@ -104,7 +104,11 @@ def is_typing_literal(thing):
         hasattr(typing, "Literal")
         and getattr(thing, "__origin__", None) == typing.Literal
         or hasattr(typing_extensions, "Literal")
-        and getattr(thing, "__origin__", None) == typing_extensions.Literal
+        and (
+            getattr(thing, "__origin__", None) == typing_extensions.Literal
+            or sys.version_info[:2] == (3, 6)
+            and isinstance(thing, type(typing_extensions.Literal[None]))
+        )
     )
 
 
