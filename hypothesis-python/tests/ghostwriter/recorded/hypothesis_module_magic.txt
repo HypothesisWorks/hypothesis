@@ -2,13 +2,12 @@
 # and is provided under the Creative Commons Zero public domain dedication.
 
 import hypothesis
+import typing
 from hypothesis import given, settings, strategies as st
 from random import Random
 
-# TODO: replace st.nothing() with appropriate strategies
 
-
-@given(condition=st.nothing())
+@given(condition=st.from_type(object))
 def test_fuzz_assume(condition):
     hypothesis.assume(condition=condition)
 
@@ -19,7 +18,7 @@ def test_fuzz_event(value):
 
 
 @given(
-    specifier=st.nothing(),
+    specifier=st.from_type(hypothesis.strategies.SearchStrategy),
     condition=st.functions(like=lambda *a: ..., returns=st.booleans()),
     settings=st.one_of(st.none(), st.builds(settings)),
     random=st.one_of(st.none(), st.builds(Random)),
@@ -50,7 +49,7 @@ def test_fuzz_reproduce_failure(version, blob):
     hypothesis.reproduce_failure(version=version, blob=blob)
 
 
-@given(seed=st.nothing())
+@given(seed=st.from_type(typing.Hashable))
 def test_fuzz_seed(seed):
     hypothesis.seed(seed=seed)
 

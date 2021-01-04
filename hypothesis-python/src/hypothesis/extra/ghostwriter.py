@@ -100,7 +100,7 @@ from hypothesis.internal.reflection import is_mock
 from hypothesis.internal.validation import check_type
 from hypothesis.strategies._internal.core import BuildsStrategy
 from hypothesis.strategies._internal.flatmapped import FlatMapStrategy
-from hypothesis.strategies._internal.lazy import unwrap_strategies
+from hypothesis.strategies._internal.lazy import LazyStrategy, unwrap_strategies
 from hypothesis.strategies._internal.strategies import (
     FilteredStrategy,
     MappedSearchStrategy,
@@ -282,6 +282,9 @@ def _get_strategies(
             raise NotImplementedError("Expected to pass everything as kwargs")
 
         for k, v in strat.kwargs.items():
+            if _valid_syntax_repr(v)[1] == "nothing()" and k in hints:
+                # e.g. from_type(Hashable) is OK but the unwrapped repr is not
+                v = LazyStrategy(st.from_type, (hints[k],), {})
             if k in given_strategies:
                 given_strategies[k] |= v
             else:
@@ -315,6 +318,11 @@ def _imports_for_object(obj):
 
 
 def _imports_for_strategy(strategy):
+    # If we have a lazy from_type strategy, because unwrapping it gives us an
+    # error or invalid syntax, import that type and we're done.
+    if isinstance(strategy, LazyStrategy) and strategy.function is st.from_type:
+        return _imports_for_object(strategy._LazyStrategy__args[0])
+
     imports = set()
     strategy = unwrap_strategies(strategy)
 
