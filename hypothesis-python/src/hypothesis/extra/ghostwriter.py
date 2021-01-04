@@ -318,6 +318,8 @@ def _valid_syntax_repr(strategy):
         # strategy reprs and replacing invalid syntax reprs with `"nothing()"`.
         # String-replace to hide the special case in from_type() for Decimal('snan')
         r = repr(strategy).replace(".filter(_can_hash)", "")
+        # Replace <unknown> with ... in confusing lambdas
+        r = re.sub(r"(lambda.*?: )(<unknown>)([,)])", r"\1...\3", r)
         compile(r, "<string>", "eval")
         return r
     except (SyntaxError, ResolutionFailed):
