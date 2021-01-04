@@ -46,7 +46,7 @@ jobs:
           $HOME/wheelhouse
           $HOME/.local
           vendor/bundle
-        key: deps-ubuntu-${{ matrix.python-version }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}
+        key: deps-ubuntu-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
@@ -116,7 +116,7 @@ jobs:
           $HOME/wheelhouse
           $HOME/.local
           vendor/bundle
-        key: deps-osx-${{ matrix.python-version }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}
+        key: deps-osx-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
@@ -152,7 +152,7 @@ jobs:
           $HOME/wheelhouse
           $HOME/.local
           vendor/bundle
-        key: deps-ubuntu-${{ matrix.python-version }}-${{ matrix.python-architecture }}-${{ hashFiles('requirements/tools.txt') }}
+        key: deps-ubuntu-${{ matrix.python-version }}-${{ hashFiles('requirements/tools.txt') }}
     - name: Run tests
       run: TASK=${{ matrix.task }} ./build.sh
 
