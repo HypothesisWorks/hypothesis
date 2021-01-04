@@ -478,6 +478,24 @@ class HealthCheck(Enum):
     """Checks if :func:`@given <hypothesis.given>` has been applied to a
     method defined by :class:`python:unittest.TestCase` (i.e. not a test)."""
 
+    function_scoped_fixture = 9
+    """Check if :func:`@given <hypothesis.given>` has been applied to a test
+    with a pytest function-scoped fixture. Function-scoped fixtures run once
+    for the whole function, not once per example, and this is usually not what
+    you want.
+
+    Because of this limitation, tests that need to need to set up or reset
+    state for every example need to do so manually within the test itself,
+    typically using an appropriate context manager.
+
+    Suppress this health check only in the rare case that you are using a
+    function-scoped fixture that does not need to be reset between individual
+    examples, but for some reason you cannot use a wider fixture scope
+    (e.g. session scope, module scope, class scope).
+
+    This check requires the :ref:`Hypothesis pytest plugin<pytest-plugin>`,
+    which is enabled by default when running Hypothesis inside pytest."""
+
 
 @unique
 class Verbosity(IntEnum):
