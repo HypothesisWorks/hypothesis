@@ -18,6 +18,17 @@ Hypothesis 5.x
 
     .. include:: ../RELEASE.rst
 
+.. _v5.46.0:
+
+-------------------
+5.46.0 - 2021-01-04
+-------------------
+
+This release upgrades :func:`~hypothesis.strategies.from_type`, to infer
+strategies for type-annotated arguments even if they have defaults when
+it otherwise falls back to :func:`~hypothesis.strategies.builds`
+(:issue:`2708`).
+
 .. _v5.45.0:
 
 -------------------
