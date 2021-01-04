@@ -1282,6 +1282,36 @@ def random_module() -> SearchStrategy[RandomSeeder]:
     return shared(RandomModule(), key="hypothesis.strategies.random_module()")
 
 
+class BuildsStrategy(SearchStrategy):
+    def __init__(self, target, args, kwargs):
+        self.target = target
+        self.args = args
+        self.kwargs = kwargs
+
+    def do_draw(self, data):
+        try:
+            return self.target(
+                *[data.draw(a) for a in self.args],
+                **{k: data.draw(v) for k, v in self.kwargs.items()},
+            )
+        except TypeError as err:
+            if (
+                isinstance(self.target, type)
+                and issubclass(self.target, enum.Enum)
+                and not (self.args or self.kwargs)
+            ):
+                name = self.target.__module__ + "." + self.target.__qualname__
+                raise InvalidArgument(
+                    f"Calling {name} with no arguments raised an error - "
+                    f"try using sampled_from({name}) instead of builds({name})"
+                ) from err
+            raise
+
+    def validate(self):
+        tuples(*self.args).validate()
+        fixed_dictionaries(self.kwargs).validate()
+
+
 # The ideal signature builds(target, /, *args, **kwargs) is unfortunately a
 # SyntaxError before Python 3.8 so we emulate it with manual argument unpacking.
 # Note that for the benefit of documentation and introspection tools, we set the
@@ -1349,27 +1379,9 @@ def builds(
         for kw in set(hints) & (required | to_infer):
             kwargs[kw] = from_type(hints[kw])
 
-    def build_target(value):
-        args, kwargs = value
-        try:
-            return target(*args, **kwargs)
-        except TypeError as err:
-            if (
-                isinstance(target, type)
-                and issubclass(target, enum.Enum)
-                and not (args or kwargs)
-            ):
-                name = target.__module__ + "." + target.__qualname__
-                raise InvalidArgument(
-                    f"Calling {name} with no arguments raised an error - "
-                    f"try using sampled_from({name}) instead of builds({name})"
-                ) from err
-            raise
-
     # Mypy doesn't realise that `infer` is gone from kwargs now
     # and thinks that target and args have the same (union) type.
-    args_kwargs = tuples(tuples(*args), fixed_dictionaries(kwargs))  # type: ignore
-    return args_kwargs.map(build_target)
+    return BuildsStrategy(target, args, kwargs)
 
 
 if sys.version_info[:2] >= (3, 8):  # pragma: no cover

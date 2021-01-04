@@ -271,11 +271,10 @@ def _get_strategies(
         with _with_any_registered():
             strat = st.builds(f, **builder_args).wrapped_strategy  # type: ignore
 
-        args, kwargs = strat.mapped_strategy.wrapped_strategy.element_strategies
-        if args.element_strategies:
+        if strat.args:
             raise NotImplementedError("Expected to pass everything as kwargs")
 
-        for k, v in zip(kwargs.keys, kwargs.mapped_strategy.element_strategies):
+        for k, v in strat.kwargs.items():
             if k in given_strategies:
                 given_strategies[k] |= v
             else:
